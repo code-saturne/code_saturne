@@ -1,0 +1,79 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Le flux de masse est pass\'e par les arguments \var{FLUMAS} et \var{FLUMAB}.
+
+\etape{Calcul de la matrice}
+Les \var{NCEL} matrices $3\times 3$ sont stock\'ees dans le tableau de travail
+\var{COCG},
+de dimension $NCELET\times 3\times 3$. Ce dernier est d'abord mis \`a z\'ero, puis
+son remplissage se fait dans des boucles sur les faces internes et les faces de 
+bord. La matrice \'etant sym\'etrique, ces boucles ne
+servent qu'\`a remplir la partie triangulaire sup\'erieure, le reste \'etant
+rempli par sym\'etrie \`a la fin.
+
+\etape{Inversion de la matrice}
+On calcule les coefficients de la comatrice, puis l'inverse.
+Pour des questions de vectorisation, la boucle sur les \var{NCEL} \'el\'ements
+est remplac\'ee par une
+s\'erie de boucles en vectorisation forc\'ee sur des blocs de \var{NBLOC=1024}
+\'el\'ements. Le reliquat ($\var{NCEL}-E(\var{NCEL}/1024)\times 1024$) est
+trait\'e apr\`es les boucles.
+\`A la fin, la matrice inverse est stock\'ee dans \var{COCG}
+(toujours en utilisant sa propri\'et\'e de sym\'etrie).
+
+\etape{Calcul du second membre et r\'esolution}
+Le second membre est stock\'e dans \var{BX}, \var{BY} et \var{BZ}. La vitesse
+finale est stock\'ee dans \var{UX}, \var{UY} et \var{UZ}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\etape{Vectorisation forc\'ee}
+Le d\'ecoupage en boucles de 1024 est-il vraiment n\'ecessaire ? Les machines
+vectorielles et les compilateurs sont-ils aujourd'hui capables
+d'effectuer la vectorisation sans cette aide ? On note cependant que ce
+d\'ecoupage en boucles de 1024 n'a pas de co\^ut CPU suppl\'ementaire, et un
+co\^ut m\'emoire n\'egligeable. Le seul inconv\'enient r\'eside dans la
+complexit\'e de l'\'ecriture.
+
+\etape{Suppression de la méthode \var{IREVMC} = 2}
+Sur un maillage ``1D'' d'hexaèdres tous orthogonaux sauf une face, on peut montrer que la méthode fait apparaître
+une composante de vitesse aberrante non nulle et directement déterminée par l'angle de non orthogonalité de la
+face (non consistance). On pourrait donc songer à supprimer purement cette méthode, dans la mesure où elle n'est
+{\em a priori} consistante que sur une classe réduite de maillages.
+

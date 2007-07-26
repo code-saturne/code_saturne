@@ -1,0 +1,46 @@
+THERMOCHIMIE
+8			Nb especes courantes
+11                      Nb de points de tabulation ENTH-TEMP
+ESPECES COURANTES    
+CH4 C2H4 CO O2 CO2 H2O N2 C(S)
+300.                    Tmin
+4000.                   Tmax
+4                       Nb especes elementaires / Composition C,H,O,N
+ .012        1          2          1          0          1          0          0          1
+ .001        4          4          0          0          0          2          0          0
+ .016        0          0          1          2          2          1          0          0
+ .014        0          0          0          0          0          0          2          0
+RAYONNEMENT
+1                       Rayonnement : (0 : pas de rayonnement ; 1 : constant donne ci-dessous ; 2 : par Modak ; 3 : comme 1 mais modele P-1 ; 4 : comme 2 mais modele P-1)
+0.1                     Coeff absorption pour le melange gazeux constant 
+CARACTERISTIQUES CHARBONS
+1                                                                              Nb de charbons
+1                                  0                                           Nb de classes
+50.E-6                                                                         Diametre initial de la classe (m)
+74.8                               60.5                                        Composition C (%) sur sec
+5.1                                4.14                                        Composition H (%) sur sec
+12.01                              5.55                                        Composition O (%) sur sec
+0  31524000.                       0  31524000.                                PCI (J/kg) sur pur (0) sur sec 1 
+1800.                              1800.                                       CP moyen du charbon (J/kg/K)
+1200.                              1200.                                       Masse volumique (kg/m3)
+0.                                 0.                                          Humidite du Charbon (%)
+Coke
+0.                                 0.                                          Composition C (%) sur sec
+0.                                 0.                                          Composition H (%) sur sec
+0.                                 0.                                          Composition O (%) sur sec
+0.                                 0.                                          PCI sur sec (J/kg)
+Cendres
+6.3                                6.3                                         Taux de cendres en masse (%)
+0.                                 0.                                          Enthalpie de formation des cendres (J/kg)
+0.                                 0.                                          CP des cendres (J/kg/K)
+Parametres de devolatilisation (modele de Kobayashi)
+1 0.37                                                                         Coef. stoe. (adim) Y1 si = 0 calcul automatique
+1 0.74                                                                         Coef. stoe. (adim) Y2 si = 0 calcul automatique
+370000.                                                                        Facteur pre-exponentielle A1 (s-1)
+1.3E13                                                                         Facteur pre-exponentielle A2 (s-1)
+74000.                                                                         Energie d'activation E1 (J/mol)
+250000.                                                                        Energie d'activation E2 (J/mol)
+Parametres de combustion heterogene (modele a sphere retrecissante)
+17.88                              17.88                                       Constante pre-exponentielle (kg/m2/s/atm)
+16.55                              16.55                                       Energie d'activation (kcal/mol)
+1                                  1                                           Ordre de la reaction 0.5 si = 0 1 si = 1 

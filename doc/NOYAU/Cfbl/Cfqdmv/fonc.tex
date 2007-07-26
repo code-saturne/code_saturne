@@ -1,0 +1,72 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+\programme{cfqdmv}
+%
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Pour les notations et l'algorithme dans son ensemble, 
+on se reportera \`a \fort{cfbase}. 
+
+Dans le premier pas fractionnaire (\fort{cfmsvl}), on a r\'esolu une 
+\'equation sur la masse volumique, obtenu une pr\'ediction de la pression
+et un flux convectif "acoustique".
+On consid\`ere ici un second pas fractionnaire au cours duquel seul varie
+le vecteur flux de masse $\vect{Q}=\rho\vect{u}$
+(seule varie la vitesse au centre des cellules).
+On r\'esout l'\'equation de Navier-Stokes ind\'ependamment
+pour chaque direction d'espace, et l'on utilise le flux de masse acoustique
+calcul\'e pr\'ec\'edemment comme flux convecteur (on pourrait aussi utiliser
+le vecteur quantit\'e de mouvement du pas de temps pr\'ec\'edent).
+De plus, on r\'esout en variable $\vect{u}$ et non $\vect{Q}$.
+
+Le syst\`eme \`a r\'esoudre entre $t^*$ et $t^{**}$ est (on exclut 
+la turbulence, dont le traitement n'a rien de particulier dans le 
+module compressible)~:
+
+\begin{equation}\label{Cfbl_Cfqdmv_eq_qdm_cfqdmv}
+\left\{\begin{array}{l}
+
+\rho^{**}=\rho^{*}=\rho^{n+1}\\
+\\
+\displaystyle\frac{\partial \rho\vect{u}}{\partial t}+
+\divv(\vect{u} \otimes \vect{Q}_{ac}) + \gradv{P}
+= \rho \vect{f}_v + \divv(\tens{\Sigma}^v)\\
+\\
+e^{**}=e^{*}=e^n\\
+
+\end{array}\right.
+\end{equation}
+
+La r\'esolution de cette \'etape est similaire \`a l'\'etape
+de pr\'ediction des vitesses du sch\'ema de base de \CS.

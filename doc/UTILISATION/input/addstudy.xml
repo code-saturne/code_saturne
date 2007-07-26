@@ -1,0 +1,8 @@
+  <study label='GRADIENT' status='on'>
+    <variable label='gradient' status='on'>
+      <tolerance>0.1</tolerance>
+    </variable>
+
+    <case label='CAS1' status='on' compute='on'>
+    </case>
+  </study>

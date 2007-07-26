@@ -1,0 +1,17 @@
+% FICHIER fridx1.ist
+% Personnalisation Numero 1 d'un index (faire makeindex -s fridx1.ist)
+% --------------------------------------------------------------------
+
+
+headings_flag 3
+heading_prefix "{\\large \\bf \\hfil--\\ "
+heading_suffix " --\\ \\hfil}\\nopagebreak\n"
+symhead_negative "symboles"
+symhead_positive "Symboles"
+
+delim_0 " \\dotfill \ "
+delim_1 " \\dotfill \ "
+delim_2 " \\dotfill \ "
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+

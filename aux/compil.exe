@@ -1,0 +1,17 @@
+#!/bin/ksh
+
+echo Compilation pour architecture $NOM_ARCH
+
+export CS_HOME=/home/saturne/Noyau/ncs-1.3.g
+cd $CS_HOME/bin
+
+rm -f ../aux/listing_${NOM_ARCH} 
+if [ "$1" = "-test" ] ; then
+  ./lance_install 1>../aux/listing_${NOM_ARCH} 2>&1   
+else
+  ./lance_install -DBG && ./lance_install 1>../aux/listing_${NOM_ARCH} 2>&1
+fi
+
+exit
+
+

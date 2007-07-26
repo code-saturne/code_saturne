@@ -1,0 +1,81 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Les principaux arguments pass\'es \`a \fort{itrmas} et \fort{itrgrp} sont la
+variable trait\'ee \var{PVAR} (la pression), ses conditions aux limites, le pas 
+de temps projet\'e aux faces\footnote{%
+Plus pr\'ecis\'ement, le pas de temps projet\'e aux faces, multipli\'e par la
+surface et divis\'e par $\overline{I^\prime J^\prime}$ ou $\overline{I^\prime F}$, cf. \fort{viscfa}}
+(\var{VISCF} et \var{VISCB}), le pas de temps au
+centre des cellules, \'eventuellement anisotrope (\var{VISELX}, \var{VISELY},
+\var{VISELZ}). \fort{itrmas} retourne les tableaux \var{FLUMAS} et \var{FLUMAB}
+(flux de masse aux faces) mis \`a jour. \fort{itrgrp} retourne directement la
+divergence du flux de masse mis \`a jour, dans le tableau \var{DIVERG}.
+
+\etape{Initialisation}
+Si \var{INIT} vaut 1, les variables \var{FLUMAS} et \var{FLUMAB} ou \var{DIVERG} 
+sont mises \`a z\'ero.
+
+\etape{Cas sans reconstruction}
+La prise en compte ou non des non orthogonalit\'es est d\'etermin\'ee par
+l'indicateur \var{NSWRGR} de la variable trait\'ee (nombre de sweeps de
+reconstruction des non orthogonalit\'es dans le calcul des gradients), pass\'e 
+par la variable \var{NSWRGP}. Une valeur inf\'erieure ou \'egale \`a 1 enclenche
+le traitement sans reconstruction.\\
+Des boucles sur les faces internes et les faces de bord utilisent directement
+les formules (\ref{Base_Itrmas_eq_intssrec}) et (\ref{Base_Itrmas_eq_brdssrec}) pour remplir les
+tableaux \var{FLUMAS} et \var{FLUMAB} (\fort{itrmas}) ou des variables de
+travail \var{FLUMAS} et \var{FLUMAB} qui servent \`a mettre \`a jour le tableau
+\var{DIVERG} (\fort{itrgrp}).
+
+\`A noter que les tableaux \var{VISCF} et \var{VISCB} contiennent respectivement 
+$\displaystyle\frac{\Delta t_{\,ij}S_{\,ij}}{\overline{I^\prime J^\prime}}$ et
+$\displaystyle\frac{\Delta t_{\,b_{ik}}S_{\,b_{ik}}}{\overline{I^\prime F}}$.
+
+\etape{Cas avec reconstruction}
+Apr\`es un appel \`a \fort{GRDCEL} pour calculer le gradient cellule de
+pression, on remplit les tableaux \var{FLUMAS} et \var{FLUMAB} ou \var{DIVERG}
+l\`a encore par une application directe des formules (\ref{Base_Itrmas_eq_intavcrec}) et
+(\ref{Base_Itrmas_eq_brdavcrec}). 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Il est un peu redondant de passer en argument \`a la fois le pas de temps
+projet\'e aux faces et le pas de temps au centre des cellules. Il faudrait
+s'assurer de la r\'eelle n\'ecessit\'e de cela, ou alors \'etudier des
+formulations plus simples de la partie reconstruction.
+

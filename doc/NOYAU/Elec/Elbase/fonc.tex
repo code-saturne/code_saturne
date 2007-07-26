@@ -1,0 +1,779 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+
+\programme{elec**}
+
+\vspace{0,5cm}
+On s'int\'eresse \`a la r\'esolution des \'equations de la
+magn\'etohydrodynamique, constitu\'ees de la r\'eunion des \'equations de
+l'a\'erothermodynamique et des \'equations de Maxwell. 
+
+On se place dans deux cadres d'utilisation bien sp\'ecifiques et distincts, 
+qui permettront chacun de r\'ealiser des simplifications~: les \'etudes dites 
+``d'arc
+\'electrique'' (dans lesquelles sont prises en compte les forces de Laplace et
+l'effet Joule) et les \'etudes dites ``Joule'' (dans lesquelles seul
+l'effet Joule est pris en compte). 
+
+Les \'etudes d'arc \'electrique sont associ\'ees en grande partie, pour EDF, aux
+probl\'ematiques relatives aux transformateurs. Les \'etudes Joule sont plus
+s\'ecifiquement li\'ees aux ph\'enom\`enes rencontr\'es dans les fours verriers.
+
+Outre la prise en compte ou non des forces de Laplace, ces deux types d'\'etudes
+se diff\'erencient \'egalement par le mode de d\'etermination de l'effet Joule 
+(utilisation d'un potentiel complexe pour les \'etudes Joule faisant intervenir
+un courant alternatif non monophas\'e). 
+
+On d\'ecrit tout d'abord les \'equations r\'esolues pour les \'etudes d'arc
+\'electrique. Les sp\'ecificit\'es des \'etudes Joule seront abord\'ees ensuite.
+
+
+Pour l'arc \'electrique, 
+les r\'ef\'erences [douce] et [delalondre] pourront compl\'eter la
+pr\'esentation~: 
+
+\noindent{\bf [delalondre] }Delalondre, Clarisse~: ``Mod\'elisation a\'erothermodynamique d'arcs
+\'electriques \`a forte intensit\'e avec prise en compte du d\'es\'equilibre
+thermodynamique local et du transfert thermique \`a la cathode'', Th\`ese de
+l'Universit\'e de Rouen, 1990
+ 
+\noindent{\bf [douce]} Douce, Alexandre~: ``Modélisation 3-D du chauffage d'un
+bain métallique par plasma d'arc transf\'er\'e. Application \`a un r\'eacteur
+axisym\'etrique'', HE-26/99/027A, HE-44/99/043A, Th\`ese de l'Ecole Centrale
+Paris et EDF, 1999 
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Notations}
+
+{\bf Variables utilis\'ees}
+\nopagebreak
+
+\begin{tabular}{lp{6cm}l}
+$\vect{A}$	&potentiel vecteur r\'eel	&$kg\,m\,s^{-2}\,A^{-1}$ \\
+$\vect{B}$	&champ magn\'etique 		&$T$ (ou $kg\,s^{-2}\,A^{-1}$) \\
+$\vect{D}$ 	&d\'eplacement \'electrique	&$A\,s\,m^{-2}$ \\
+$\vect{E}$ 	&champ \'electrique 		&$V\,m^{-1}$ \\
+$E$	 	&\'energie totale massique 	&$J\,kg^{-1}$ (ou $m^{2}\,s^{-2}$) \\
+$e$	 	&\'energie interne massique 	&$J\,kg^{-1}$ (ou $m^{2}\,s^{-2}$) \\
+$e_c$	 	&\'energie cin\'etique massique &$J\,kg^{-1}$ (ou $m^{2}\,s^{-2}$) \\
+$\vect{H}$ 	&excitation magn\'etique	&$A\,m^{-1}$ \\
+$h$ 	  	&enthalpie massique 		&$J\,kg^{-1}$ (ou $m^{2}\,s^{-2}$) \\
+$\vect{j}$	&densit\'e de courant 		&$A\,m^{-2}$  \\
+$P$ 	  	&pression 			&$kg\,m^{-1}\,s^{-2}$ \\
+$P_R$, $P_I$ 	&potentiel scalaire r\'eel, imaginaire	
+						&$V$ (ou $kg\,m^{2}\,s^{-3}\,A^{-1}$) \\
+$\vect{u}$ 	&vitesse			&$m\,s^{-1}$  \\
+ 		&				& \\
+$\varepsilon$ &permittivit\'e \'electrique
+						&$F\,m^{-1}$ (ou $m^{-3}\,kg^{-1}\,s^{4}\,A^{2}$) \\
+$\varepsilon_0$ &permittivit\'e \'electrique du vide
+						&$8,854\,10^{-12}\,\,F\,m^{-1}$ (ou $m^{-3}\,kg^{-1}\,s^{4}\,A^{2}$) \\
+$\mu$           &perm\'eabilit\'e \'electrique
+						&$H\,m^{-1}$ (ou $m\,kg\,s^{-2}\,A^{-2}$)\\
+$\mu_0$ 	&perm\'eabilit\'e \'electrique du vide
+						&$4\,\pi\,10^{-7}\,\,H\,m^{-1}$ (ou $m\,kg\,s^{-2}\,A^{-2}$)\\
+$\sigma$ 	&conductivit\'e \'electrique	&$S\,m^{-1}$ (ou $m^{-3}\,kg^{-1}\,s^3\,A^2$)\\
+\end{tabular}
+
+\vspace*{0,5cm}
+{\bf Notations d'analyse vectorielle}
+\nopagebreak
+
+On rappelle \'egalement la d\'efinition des notations employ\'ees\footnote{en
+utilisant la convention de sommation d'Einstein.}~:
+\begin{equation}\notag
+\left\{\begin{array}{lll}
+\left[\ggrad{\vect{a}}\right]_{ij} &=& \partial_j a_i\\
+\left[\dive(\tens{\sigma})\right]_i &=& \partial_j \sigma_{ij}\\
+\left[\vect{a}\otimes\vect{b}\right]_{ij} &= &
+a_i\,b_j\\
+\end{array}\right.
+\end{equation}
+et donc :
+\begin{equation}\notag
+\begin{array}{lll}
+\left[\dive(\vect{a}\otimes\vect{b})\right]_i &= &
+\partial_j (a_i\,b_j)
+\end{array} 
+\end{equation}
+
+
+\subsection{Arcs \'electriques}
+
+\subsubsection{Introduction}
+
+Pour les \'etudes d'arc \'electrique, on calcule, 
+\`a un pas de temps donn\'e~:
+\begin{itemize}
+\item la vitesse $\vect{u}$, la pression $P$, la variable \'energ\'etique
+enthalpie $h$ (et les grandeurs turbulentes), 
+\item un potentiel scalaire r\'eel $P_R$ 
+(dont le gradient permet d'obtenir le champ \'electrique $\vect{E}$ et 
+la densit\'e de courant $\vect{j}$),  
+\item un potentiel vecteur r\'eel $\vect{A}$ (dont
+le rotationnel permet d'obtenir  le champ magn\'etique $\vect{B}$). 
+\end{itemize}
+
+\bigskip
+Le champ \'electrique, la
+densit\'e de courant et le champ magn\'etique sont utilis\'es pour calculer les
+termes sources d'effet Joule et les forces de Laplace qui interviennent
+respectivement dans l'\'equation de l'enthalpie et dans celle 
+de la quantit\'e de mouvement. 
+
+
+\subsubsection{\'Equations continues}
+
+{\bf Syst\`eme d'\'equations} 
+\nopagebreak
+
+Les \'equations continues qui sont r\'esolues sont les suivantes~: 
+\begin{equation}
+\left\{\begin{array}{l}
+{\color{blue}\dive(\rho \vect{u}) = 0}\\
+{\color{blue}\displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) 
++\dive(\rho\, \vect{u} \otimes \vect{u})
+=\dive(\tens{\sigma}) + \vect{TS} + {\color{red}\vect{j} \times \vect{B}}}\\ 
+{\color{blue}\displaystyle\frac{\partial}{\partial t}(\rho h) 
++\dive(\rho\, \vect{u} h)
+=\Phi_v -
+\dive{\left(\left(\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}\right)\grad{h}\right)}
++ {\color{red}P_J}}\\
+{\color{red}\dive(\sigma\,\grad{P_R})=0}\\
+{\color{red}\dive(\ggrad{\vect{A}})=-\mu_0\vect{j}}
+\end{array}\right.
+\end{equation}
+
+avec les relations suivantes~:
+\begin{equation}
+\left\{\begin{array}{l}
+{\color{red}P_J=\vect{j}\cdot\vect{E}}\\
+{\color{red}\vect{E}=-\grad{P_R}}\\
+{\color{red}\vect{j}=\sigma\vect{E}}\\
+\end{array}\right.
+\end{equation}
+
+%On donne ci-apr\`es diff\'erents \'el\'ements permettant de pr\'eciser le mode
+%d'obtention de ces \'equations. 
+
+\vspace*{0,5cm}
+{\bf \'Equation de la masse} 
+\nopagebreak
+
+C'est l'\'equation r\'esolue en standard par \CS\ (contrainte
+stationnaire). 
+Elle n'a pas de traitement particulier dans
+le cadre du module pr\'esent. Un terme source de  masse peut \^etre pris en
+compte au second membre si l'utilisateur le souhaite. Pour simplifier l'expos\'e
+le terme source sera suppos\'e nul ici, dans la mesure o\`u il n'est pas
+sp\'ecifique au module \'electrique. 
+
+\vspace*{0,5cm}
+{\bf \'Equation de la quantit\'e de mouvement} 
+\nopagebreak
+
+Elle pr\'esente, par rapport \`a
+l'\'equation standard r\'esolue par \CS, un seul terme additionnel 
+($\vect{j} \times \vect{B}$) qui rend compte des forces de Laplace. 
+Pour l'obtenir, on fait l'hypoth\`ese que le milieu est 
+\'electriquement neutre. 
+
+En effet, une charge $q_i$ (Coulomb) anim\'ee d'une
+vitesse $\vect{v}_i$ subit, 
+sous l'effet du champ \'electrique $\vect{E}$ ($V\,m^{-1}$) et du champ magn\'etique 
+$\vect{B}$ (Tesla),  une force $\vect{f}_i$ ($kg\,m\,s^{-2}$)~: 
+\begin{equation}
+\vect{f}_i=q_i\left(\vect{E} + \vect{v}_i \times \vect{B}\right)
+\end{equation}
+Avec $n_i$ charges de type $q_i$ par unit\'e de volume et en sommant sur tous
+les types de charge $i$ (\'electrons, ions, mol\'ecules ionis\'ees...), on
+obtient la force de Laplace totale $\vect{F}_L$ ($kg\,m^{-2}\,s^{-2}$) subie par unit\'e de
+volume~:    
+\begin{equation}
+\vect{F}_L=\sum\limits_i\left[{n_i\,q_i\left(\vect{E} + \vect{v}_i \times \vect{B}\right)}\right]
+\end{equation}
+On introduit alors la densit\'e de courant $\vect{j}$ ($A\,m^{-2}$)~:
+\begin{equation}
+\vect{j}=\sum\limits_i n_i\,q_i\,\vect{v}_i 
+\end{equation}
+Avec l'hypoth\`ese que le milieu est \'electriquement neutre (\`a un
+niveau macroscopique)~: 
+\begin{equation}
+\sum\limits_i n_i\,q_i = 0 
+\end{equation}
+la force totale $\vect{F}_L$ s'\'ecrit alors~: 
+\begin{equation}
+\vect{F}_L=\vect{j} \times \vect{B}
+\end{equation}
+et on peut donc \'ecrire l'\'equation de la quantit\'e de mouvement~: 
+\begin{equation}
+\displaystyle{\color{blue}\frac{\partial}{\partial t}(\rho \vect{u}) 
++\dive(\rho\, \vect{u} \otimes \vect{u})
+=\dive(\tens{\sigma}) + \vect{TS} + {\color{red}\vect{j} \times \vect{B}}}
+\end{equation}
+
+\vspace*{0,5cm}
+{\bf \'Equation de l'enthalpie} 
+\nopagebreak
+
+Elle est obtenue \`a partir de l'équation de
+l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS\ et en
+prenant en compte le terme d'effet Joule li\'e \`a l'\'energie
+\'electromagn\'etique. 
+
+\underline{\'Energie \'electromagn\'etique}
+\nopagebreak
+
+Avec les m\^emes notations que pr\'ec\'edemment mais sans qu'il soit 
+besoin de supposer que le milieu est \'electriquement neutre, 
+la puissance re\c cue par une charge $q_i$ (particule dou\'ee de masse) 
+de vitesse $\vect{v}_i$ (vitesse du porteur de charge, contenant \'eventuellement 
+l'effet de la vitesse du fluide) sous l'effet 
+du champ \'electrique $\vect{E}$ ($V\,m^{-1}$) 
+et du champ magn\'etique  $\vect{B}$ ($T$) est (sans
+sommation sur $i$)~:  
+\begin{equation}
+P_i=\vect{f}_i\cdot\vect{v}_i=
+q_i(\vect{E}+\vect{v}_i\times\vect{B})\cdot\vect{v}_i 
+= q_i\vect{v}_i\cdot\vect{E}
+\end{equation} 
+Avec $n_i$ charges par unit\'e de volume et en sommant sur tous les types 
+de charges $i$, on obtient la puissance totale par unit\'e de volume~:
+\begin{equation}
+P_J=
+\sum\limits_i n_i\,q_i\,\vect{v}_i\cdot\vect{E}
+\end{equation} 
+On introduit alors la densit\'e de courant $\vect{j}=\sum\limits_i n_i\,q_i\,\vect{v}_i$ (en $A\,m^{-2}$) et on obtient l'expression usuelle de la puissance 
+\'electromagn\'etique dissip\'ee par effet Joule (en $W\,m^{-3}$)~:
+\begin{equation}
+P_J=\vect{j}\cdot\vect{E}
+\end{equation} 
+
+Pour reformuler la puissance dissip\'ee par effet Joule et obtenir 
+une \'equation d'\'evolution de l'\'energie \'electromagn\'etique, on utilise
+alors les \'equations de Maxwell. 
+Les \'equations s'\'ecrivent (lois d'Amp\`ere
+et de Faraday)~: 
+\begin{equation}
+\left\{
+\begin{array}{l}
+\displaystyle\frac{\partial \vect{D}}{\partial t} - \rot\vect{H} = -\vect{j}\\
+\displaystyle\frac{\partial \vect{B}}{\partial t} + \rot\vect{E} = 0 
+\end{array}
+\right.
+\end{equation} 
+
+On a donc~:
+\begin{equation}
+P_J=\vect{j}\cdot\vect{E}=\left(-\frac{\partial \vect{D}}{\partial t} +\rot\vect{H}\right)\cdot\vect{E}
+\end{equation} 
+On utilise alors la relation suivante~:
+\begin{equation}
+\rot\vect{H}\cdot\vect{E}=\vect{H}\cdot\rot\vect{E}-\dive(\vect{E}\times\vect{H})
+\end{equation} 
+En effet, elle permet de faire appara\^\i tre un 
+terme en divergence, caract\'eristique d'une redistribution spatiale~:
+\begin{equation}
+\begin{array}{lll}
+\vect{j}\cdot\vect{E}&=&
+\displaystyle-\frac{\partial \vect{D}}{\partial t}\cdot\vect{E} 
++\vect{H}\cdot\rot\vect{E}-\dive(\vect{E}\times\vect{H})\\
+\end{array}
+\end{equation} 
+Et en utilisant la loi de Faraday pour faire appara\^\i tre la d\'eriv\'ee en temps du champ magn\'etique~: 
+\begin{equation}
+\begin{array}{lll}
+\vect{j}\cdot\vect{E}&=&
+\displaystyle-\frac{\partial \vect{D}}{\partial t}\cdot\vect{E} 
+-\vect{H}\cdot\frac{\partial \vect{B}}{\partial t}-\dive(\vect{E}\times\vect{H})\\
+\end{array}
+\end{equation} 
+
+Dans le cadre de \CS, on fait les hypoth\`eses suivantes~:
+\begin{itemize}
+\item la perm\'eabilit\'e $\varepsilon$ et la permittivit\'e $\mu$
+sont constantes et uniformes (pour les gaz, en pratique, on utilise 
+les propri\'et\'es du vide $\varepsilon_0$ et $\mu_0$). 
+\item on utilise $\vect{B} = \mu \vect{H}$ et $\vect{D} = \varepsilon \vect{E}$
+\end{itemize}
+
+On a alors~: 
+
+\begin{equation}
+\begin{array}{lll}
+\displaystyle\vect{j}\cdot\vect{E}&=&
+\displaystyle-\frac{\varepsilon_0}{2}\frac{\partial E^2}{\partial t} 
+-\frac{1}{2\,\mu_0}\frac{\partial B^2}{\partial t} 
+-\frac{1}{\mu_0}\dive(\vect{E}\times\vect{B})
+\end{array}
+\end{equation} 
+
+\underline{\'Energie totale}
+\nopagebreak
+
+On \'etablit l'\'equation de l'\'energie totale en prenant en compte la
+puissance des forces de Laplace et le terme
+d'effet Joule.  
+
+Sans prendre en compte l'\'energie \'electromagn\'etique, 
+le premier principe de la thermodynamique s'\'ecrit d'ordinaire sous la
+forme suivante (pour un volume mat\'eriel suivi sur une unit\'e de temps)~: 
+\begin{equation}\label{Elec_Elbase_premier_ppe_eq}
+d\int_V \rho E dV=\delta Q+\delta W 
+\end{equation} 
+Dans cette relation, $E$ est l'\'energie totale par unit\'e de masse\footnote{Ne pas
+confondre le scalaire $E$, \'energie totale, avec le vecteur $\vect{E}$, champ
+\'electrique.}, soit $E=e+e_c$, $e$ \'etant l'\'energie interne massique et
+$e_c=\frac{1}{2}\,\vect{u}\cdot\vect{u}$ l'\'energie cin\'etique massique. Le terme  
+$\delta Q$  repr\'esente  la chaleur re\c cue au travers des fronti\`eres du 
+domaine consid\'er\'e tandis que le terme  $\delta W$ repr\'esente le travail 
+des forces ext\'erieures re\c cu par le syst\`eme (y compris les forces
+d\'erivant d'une \'energie potentielle). 
+
+Pour prendre en compte l'\'energie \'electromagn\'etique, il suffit d'int\'egrer
+\`a la relation (\ref{Elec_Elbase_premier_ppe_eq}) la puissance des forces de Laplace $(\vect{j} \times
+\vect{B})\cdot\vect{u}$ et le terme d'effet Joule $\vect{j}\cdot\vect{E}$ 
+(transformation volumique d'\'energie \'electromagn\'etique en \'energie 
+totale\footnote{Le terme en divergence
+$-\frac{1}{\mu_0}\dive(\vect{E}\times\vect{B})$ 
+traduit une redistribution spatiale d'\'energie \'electromagn\'etique~: 
+ce n'est donc pas un terme source pour l'\'energie totale.}).
+Dans cette relation, la vitesse $\vect{u}$ est la vitesse du fluide et non pas 
+celle des porteurs de charge~: elle n'est donc pas n\'ecessairement coli\'eaire
+au vecteur \vect{j} (par exemple, si le courant est d\^u \`a des \'electrons, 
+la vitesse du fluide pourra \^etre consid\'er\'ee comme d\'ecorr\'el\'ee de la 
+vitesse des porteurs de charges~; par contre, si le courant est d\^u \`a des ions, 
+la vitesse du fluide pourra \^etre plus directement influenc\'ee par 
+le d\'eplacement des porteurs de charge).
+Ainsi, le premier principe de la thermodynamique s'\'ecrit~: 
+\begin{equation}
+d\int_V \rho E dV=\delta Q+\delta W+\vect{j}\cdot\vect{E}\,V\,dt +(\vect{j} \times
+\vect{B})\cdot\vect{u}\,V\,dt
+\end{equation} 
+et l'\'equation locale pour l'\'energie totale est alors~:
+\begin{equation} 
+\displaystyle\frac{\partial}{\partial t}(\rho E) 
++\dive(\rho\, \vect{u} E)
+=\dive(\tens{\sigma}\,\vect{u}) + \vect{TS}\cdot\vect{u} + {\color{red}(\vect{j} \times
+\vect{B})\cdot\vect{u}} + \Phi_v - \dive{\vect{\Phi}_s} + {\color{red}\vect{j}\cdot \vect{E}}
+\end{equation} 
+Le terme $\Phi_v$ repr\'esente les termes sources volumiques d'\'energie
+autres que l'effet Joule (par exemple, il inclut le terme source de
+rayonnement, pour un milieu optiquement non transparent). Le terme $\vect{\Phi}_s$ est
+le flux d'\'energie surfacique\footnote{Dans \CS, il est mod\'elis\'e par 
+une hypoth\`ese de gradient et inclut également la ``diffusion'' turbulente.}. 
+
+\underline{Enthalpie}
+\nopagebreak
+
+Pour obtenir une \'equation sur l'enthalpie, qui est la variable \'energ\'etique
+choisie dans \CS\ dans le module \'electrique, on
+soustrait tout d'abord \`a l'\'equation de l'\'energie totale celle de l'\'energie
+cin\'etique pour obtenir une \'equation sur l'\'energie interne. 
+
+L'\'equation de l'\'energie
+cin\'etique (obtenue \`a partir de l'\'equation de la quantit\'e de mouvement
+\'ecrite sous forme non conservative) est~: 
+\begin{equation} 
+\displaystyle\frac{\partial}{\partial t}(\rho e_c) 
++\dive(\rho\, \vect{u} e_c)
+=\dive(\tens{\sigma}\,\vect{u}) - \tens{\sigma}:\left(\ggrad(\vect{u})\right)^t +
+\vect{TS}\cdot\vect{u} + (\vect{j} \times \vect{B})\cdot\vect{u} 
+\end{equation} 
+de sorte que, pour l'\'energie interne, on a~:
+\begin{equation} 
+\displaystyle\frac{\partial}{\partial t}(\rho e) 
++\dive(\rho\, \vect{u} e)
+=\tens{\sigma}:\left(\ggrad(\vect{u})\right)^t + \Phi_v - \dive{\Phi_s} + \vect{j}\cdot \vect{E}
+\end{equation} 
+et enfin, pour l'enthalpie $h=e+\frac{P}{\rho}$~: 
+\begin{equation} 
+\displaystyle\frac{\partial}{\partial t}(\rho h) 
++\dive(\rho\, \vect{u} h)
+=\tens{\sigma}:\left(\ggrad(\vect{u})\right)^t + \Phi_v - \dive{\Phi_s} + \vect{j}\cdot \vect{E}+\rho\frac{d}{dt}\left(\frac{P}{\rho}\right)
+\end{equation} 
+En faisant appara\^itre la pression dans le tenseur des contraintes
+$\tens{\sigma}=-P\tens{Id}+\tens{\tau}$, on peut \'ecrire~:
+\begin{equation} 
+\displaystyle\frac{\partial}{\partial t}(\rho h) 
++\dive(\rho\, \vect{u} h)
+=\tens{\tau}:\left(\ggrad(\vect{u})\right)^t + \Phi_v - \dive{\Phi_s} 
++ \vect{j}\cdot\vect{E} + \frac{dP}{dt}
+\end{equation} 
+
+Les approximations habituelles de \CS\ consistent alors 
+\`a n\'egliger le terme ``d'\'echauffement'' issu du tenseur des contraintes  
+$\tens{\tau}:\left(\ggrad(\vect{u})\right)^t$ et le terme en d\'eriv\'ee totale de la
+pression $\frac{dP}{dt}$, suppos\'es faibles en comparaison des autres termes 
+dans les applications trait\'ees (exemple~: terme d'effet Joule important, effets de
+compressibilit\'e faibles...). 
+De plus, le terme de flux est mod\'elis\'e en suivant
+une hypoth\`ese de gradient appliqu\'e \`a l'enthalpie (et non pas \`a la
+temp\'erature), soit donc~:
+\begin{equation} 
+{\color{blue}\displaystyle\frac{\partial}{\partial t}(\rho h) 
++\dive(\rho\, \vect{u} h)
+=\Phi_v -
+\dive{\left(\left(\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}\right)\grad h\right)} + {\color{red}\vect{j}\cdot\vect{E}}}
+\end{equation} 
+
+
+\vspace*{0,5cm}
+{\bf \'Equations \'electromagn\'etiques} 
+\nopagebreak
+
+Elles sont obtenues \`a partir des
+\'equations de Maxwell sous les hypoth\`eses d\'etaill\'ees dans [douce], 
+paragraphe 3.3.
+
+\underline{Densit\'e de courant}
+\nopagebreak
+
+La relation liant la densit\'e de courant et le champ \'electrique est issue de
+la loi d'Ohm que l'on suppose pouvoir utiliser sous la forme
+simplifi\'ee suivante~:
+\begin{equation}\label{Elec_Elbase_ohm_eq} 
+{\color{red}\vect{j}=\sigma\,\vect{E}} 
+\end{equation} 
+
+\underline{Champ \'electrique}
+\nopagebreak
+
+Le champ \'electrique s'obtient \`a partir d'un potentiel vecteur. 
+
+En effet, la loi de Faraday s'\'ecrit~:
+\begin{equation}
+\frac{\partial\vect{B}}{\partial t}+\rot\vect{E}=0
+\end{equation}  
+Avec une hypoth\`ese quasi-stationnaire, il reste~: 
+\begin{equation}
+\rot\vect{E}=0
+\end{equation}  
+Il est donc possible de postuler l'existence d'un potentiel scalaire $P_R$
+tel que~:
+\begin{equation}\label{Elec_Elbase_e_eq}
+{\color{red}\vect{E}=-\grad{P_R}}
+\end{equation}  
+
+\underline{Potentiel scalaire}
+\nopagebreak
+
+Le potentiel scalaire est solution d'une \'equation de Poisson.
+
+En effet, la conservation de la charge $q$ s'\'ecrit~: 
+\begin{equation} 
+\displaystyle\frac{\partial q}{\partial t} 
++\dive(\vect{j}) = 0
+\end{equation} 
+Pour un milieu \'electriquement neutre (\`a l'\'echelle macroscopique), on a
+$\displaystyle\frac{\partial q}{\partial t}=0$ soit donc~:
+\begin{equation} 
+\dive(\vect{j}) = 0
+\end{equation} 
+C'est-\`a-dire, avec la loi d'Ohm (\ref{Elec_Elbase_ohm_eq}), 
+\begin{equation} \label{Elec_Elbase_div_sigma_e_eq}
+\dive(\sigma\,\vect{E}) = 0
+\end{equation} 
+Avec (\ref{Elec_Elbase_e_eq}), on obtient donc une \'equation permettant de
+calculer le potentiel scalaire~:
+\begin{equation} 
+{\color{red}\dive(\sigma\,\grad{P_R}) = 0}
+\end{equation} 
+
+\underline{Champ magn\'etique}
+\nopagebreak
+
+Le champ magn\'etique s'obtient \`a partir d'un potentiel vecteur. 
+
+En effet, la loi d'Amp\`ere s'\'ecrit~:
+\begin{equation}
+\displaystyle\frac{\partial\vect{D}}{\partial t}-\rot\vect{H}=-\vect{j}
+\end{equation}  
+Sous les hypoth\`eses indiqu\'ees pr\'ec\'edemment, on \'ecrit~: 
+\begin{equation}
+\displaystyle\varepsilon_0\,\mu_0\,\frac{\partial\vect{E}}{\partial t}-\rot\vect{B}=-\mu_0\vect{j}
+\end{equation}  
+Avec une hypoth\`ese quasi-stationnaire, il reste~:
+\begin{equation}\label{Elec_Elbase_rot_b_eq}
+\rot\vect{B}=\mu_0\vect{j}
+\end{equation}  
+De plus, la conservation du flux magn\'etique s'\'ecrit\footnote{Prendre la
+divergence de la loi de Faraday, avec $\dive(\rot\vect{E})=0$ (par analyse
+vectorielle) donne $\dive\vect{B} = \text{cst}$.}~: 
+\begin{equation} 
+\dive\,\vect{B} = 0
+\end{equation} 
+et on peut donc postuler l'existence d'un potentiel vecteur $\vect{A}$ tel que~:
+\begin{equation}\label{Elec_Elbase_b_eq} 
+{\color{red}\vect{B} = \rot{\vect{A}}}
+\end{equation}
+  
+\underline{Potentiel vecteur}
+\nopagebreak
+
+Le potentiel vecteur est solution d'une \'equation de Poisson.
+
+En prenant le rotationnel de (\ref{Elec_Elbase_b_eq}) et avec (\ref{Elec_Elbase_rot_b_eq}), on obtient~:
+\begin{equation}
+-\rot(\rot{\vect{A}}) = -\mu_0\vect{j}
+\end{equation}
+Avec la relation donnant le Laplacien\footnote{En
+coordonn\'ees cart\'esiennes, le 
+Laplacien du vecteur $\vect{a}$ est le vecteur dont les
+composantes sont \'egales au Laplacien de chacune des composantes de $\vect{a}$.}
+d'un vecteur $\dive(\ggrad\vect{a})=\grad(\dive{\vect{a}})-\rot(\rot\vect{a})$ et sous
+la contrainte\footnote{La condition $\dive\vect{A}=0$, dite ``jauge de
+Coulomb'', est n\'ecessaire pour assurer
+l'unicit\'e du potentiel vecteur.} 
+que $\dive\vect{A}=0$, on obtient finalement une \'equation
+permettant de calculer le potentiel vecteur~:
+\begin{equation}
+{\color{red}\dive\,(\ggrad{\vect{A}}) = -\mu_0\vect{j}}
+\end{equation}
+
+
+
+\subsection{Effet Joule}
+
+\subsubsection{Introduction}
+
+Pour les \'etudes Joule, on calcule, 
+\`a un pas de temps donn\'e~:
+\begin{itemize}
+\item la vitesse $\vect{u}$, la pression $P$, la variable \'energ\'etique
+enthalpie $h$ (et les grandeurs turbulentes \'eventuelles), 
+\item un potentiel scalaire r\'eel $P_R$, 
+\item et, si le courant n'est ni continu, ni alternatif 
+monophas\'e, un potentiel scalaire imaginaire $P_I$. 
+\end{itemize}
+
+\bigskip
+Le gradient du potentiel permet d'obtenir  le champ \'electrique $\vect{E}$ et 
+la densit\'e de courant $\vect{j}$ (partie r\'eelle et, \'eventuellement, partie
+imaginaire). Le champ \'electrique et la
+densit\'e de courant sont utilis\'es pour calculer le 
+terme source d'effet Joule qui intervient dans l'\'equation de l'enthalpie. 
+
+{\bf La puissance instantan\'ee dissip\'ee par effet Joule} est \'egale 
+au produit instantan\'e $\vect{j}\cdot\vect{E}$. 
+Dans le cas g\'en\'eral, $\vect{j}$ et $\vect{E}$ sont des signaux alternatifs 
+($\vect{j}=\vect{|j|}cos(\omega\,t+\phi_j)$ et 
+$\vect{E}=\vect{|E|}cos(\omega\,t+\phi_E)$) que l'on peut repr\'esenter 
+par des complexes  
+($\vect{j}=\vect{|j|}\,e^{i\,(\omega\,t+\phi_j)}$  et 
+$\vect{E}=\vect{|E|}\,e^{i\,(\omega\,t+\phi_E)}$).
+La puissance instantan\'ee s'\'ecrit alors  
+$(\vect{|j|}\cdot\vect{|E|})cos(\omega\,t+\phi_j)cos(\omega\,t+\phi_E)$. 
+
+\begin{itemize}
+
+\item {\bf En courant continu} ($\omega=\phi_j=\phi_E=0$), 
+la puissance se calcule donc simplement comme 
+le produit scalaire $P_J=\vect{|j|}\cdot\vect{|E|}$. 
+Le calcul de la puissance 
+dissip\'ee par effet Joule ne pose donc pas de probl\`eme particulier
+car les variables densit\'e de courant et champ \'electrique r\'esolues 
+par \CS\ sont pr\'ecis\'ement $\vect{|j|}$ et $\vect{|E|}$ (les variables sont r\'eelles). 
+
+\item {\bf En courant alternatif}, la periode du courant est beaucoup plus petite que 
+les \'echelles de temps des ph\'enom\`enes thermohydrauliques pris en compte. 
+Il n'est donc pas utile de disposer de la puissance instantan\'ee dissip\'ee 
+par effet Joule~: la moyenne sur une p\'eriode est suffisante et elle 
+s'\'ecrit\footnote{L'int\'egrale de $cos^2 x$ sur un intervalle de longueur
+$2\,\pi$ est $\pi$.}~:
+% eh oui, car l'integrale de cos^2+sin^2 (qui vaut 1), c'est 2 \pi !! 
+$P_J=\frac{1}{2}(\vect{|j|}\cdot\vect{|E|})cos(\phi_j-\phi_E)$. Cette formule 
+peut \'egalement s'\'ecrire de mani\`ere \'equivalente sous forme complexe~: 
+$P_J=\frac{1}{2}\vect{j}\cdot\vect{E}^*$, o\`u $\vect{E}^*$ est le complexe 
+conjugu\'e de $\vect{E}$. 
+
+  \begin{itemize}
+  \item En courant alternatif monophas\'e ($\phi_j=\phi_E$), en particulier, 
+la formule donnant la puissance se simplifie sous la forme 
+$P_J=\frac{1}{2}(\vect{|j|}\cdot\vect{|E|})$, ou encore~:
+$P_J=\frac{1}{\sqrt{2}}\vect{|j|}\cdot\frac{1}{\sqrt{2}}\vect{|E|}$. 
+Il s'agit donc du produit des valeurs efficaces. Or, les variables r\'esolues
+par \CS\ en courant alternatif monophas\'e sont pr\'ecis\'ement les 
+valeurs efficaces (valeurs que l'on 
+d\'enomme abusivement "valeurs r\'eelles" dans le code source).
+
+  \item En courant alternatif non monophas\'e (triphas\'e, en particulier), 
+la formule donnant la puissance est utilis\'ee directement sous la forme  
+$P_J=\frac{1}{2}\vect{j}\cdot\vect{E}^*$. 
+On utilise pour la calculer les variables r\'esolues qui sont  
+la partie r\'eelle et la partie imaginaire de $\vect{j}$ et $\vect{E}$.
+ 
+  \end{itemize}
+
+\item {\bf En conclusion}, 
+
+  \begin{itemize}
+  \item en continu, les variables r\'esolues 
+$\vect{j}_{Res}$ et $\vect{E}_{Res}$ 
+sont les variables r\'eelles continues 
+et la puissance se calcule par la formule suivante~: 
+$P_J=\vect{j}_{Res}\cdot\vect{E}_{Res}$
+  \item en alternatif monophas\'e, les variables r\'esolues 
+$\vect{j}_{Res}$ et $\vect{E}_{Res}$ 
+sont les valeurs efficaces
+et la puissance se calcule par la formule suivante~: 
+$P_J=\vect{j}_{Res}\cdot\vect{E}_{Res}$
+  \item en alternatif non monophas\'e, les variables r\'esolues  
+$\vect{j}_{Res,R}$, $\vect{j}_{Res,I}$ et $\vect{E}_{Res,R}$, $\vect{E}_{Res,I}$ 
+sont la partie r\'eelle et la partie imaginaire de $\vect{j}$ et $\vect{E}$, 
+et la puissance se calcule par la formule suivante~: 
+$P_J=\frac{1}{2}(\vect{j}_{Res,R}\cdot\vect{E}_{Res,R}-\vect{j}_{Res,I}\vect{E}_{Res,I})$ 
+  \end{itemize}
+
+\end{itemize}
+
+
+{\bf Le potentiel imaginaire n'est donc utilis\'e dans le code que lorsque 
+le courant est alternatif et non monophas\'e.}
+En particulier, le potentiel imaginaire n'est pas utilis\'e lorsque le courant est
+continu ou alternatif monophas\'e. 
+En effet, la partie imaginaire n'est introduite en compl\'ement de la partie
+r\'eelle que dans le cas o\`u il est n\'ecessaire de disposer de deux grandeurs
+pour d\'efinir le potentiel, c'est-\`a-dire lorsqu'il importe de conna\^itre son
+amplitude et sa phase. 
+En courant continu, on n'a naturellement besoin que d'une seule information. En 
+alternatif monophas\'e, la valeur de la phase importe peu 
+(on ne travaille pas sur des grandeurs \'electriques instantan\'ees)~: 
+il suffit de conna\^itre l'amplitude du potentiel et il est donc inutile  
+d'introduire une variable imaginaire.
+
+
+{\bf La variable d\'enomm\'ee ``potentiel r\'eel'', $P_R$, repr\'esente une 
+valeur efficace
+si le courant est monophas\'e et une partie r\'eelle sinon.}
+De mani\`ere plus explicite, pour un potentiel physique alternatif sinuso\"idal
+$Pp$, de valeur maximale not\'ee $Pp_\text{max}$, de phase not\'ee $\phi$, la
+variable $P_R$ repr\'esente $\frac{1}{\sqrt{2}}\,Pp_\text{max}$ en
+monophas\'e et $Pp_\text{max}\,cos\phi$ sinon. En courant continu, $P_R$
+repr\'esente naturellement le potentiel (r\'eel, continu). 
+{\bf Il est donc indispensable de pr\^eter une attention particuli\`ere aux
+valeurs de potentiel impos\'ees aux limites} (facteur $\frac{1}{\sqrt{2}}$ ou
+$cos\phi$). 
+
+\subsubsection{\'Equations continues}
+
+{\bf Syst\`eme d'\'equations} 
+\nopagebreak
+
+Les \'equations continues qui sont r\'esolues sont les suivantes~: 
+\begin{equation}
+\left\{\begin{array}{l}
+{\color{blue}\dive(\rho \vect{u}) = 0}\\
+{\color{blue}\displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) 
++\dive(\rho\, \vect{u} \otimes \vect{u})
+=\dive(\tens{\sigma}) + \vect{TS}}  \\ 
+{\color{blue}\displaystyle\frac{\partial}{\partial t}(\rho h) 
++\dive(\rho\, \vect{u} h)
+=\Phi_v -
+\dive{\left(\left(\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}\right)\grad{h}\right)}
++ {\color{red}P_J}}\\
+{\color{red}\dive(\sigma\,\grad{P_R})=0}\\
+{\color{red}\dive(\sigma\,\grad{P_I})=0}\text{\ \ \ en alternatif non monophas\'e uniquement}\\
+\end{array}\right.
+\end{equation}
+
+avec, en continu ou alternatif monophas\'e~:
+\begin{equation}
+\left\{\begin{array}{l}
+{\color{red}P_J=\vect{j}\cdot\vect{E}} \\
+{\color{red}\vect{E}=-\grad{P_R}}\\
+{\color{red}\vect{j}=\sigma\vect{E}}\\
+\end{array}\right.
+\end{equation}
+
+et, en alternatif non monophas\'e (avec $i^2=-1$)~:
+\begin{equation}
+\left\{\begin{array}{l}
+{\color{red}\displaystyle P_J=\frac{1}{2}\,\vect{j}\cdot\vect{E}^*}\\
+{\color{red}\vect{E}=-\grad{(P_R+i\,P_I)}}\\
+{\color{red}\vect{j}=\sigma\vect{E}}\\
+\end{array}\right.
+\end{equation}
+
+\vspace*{0,5cm}
+{\bf \'Equation de la masse} 
+\nopagebreak
+
+C'est l'\'equation r\'esolue en standard par \CS\ (contrainte
+stationnaire d'incompressibilit\'e). Elle n'a pas de traitement particulier dans
+le cadre du module pr\'esent. Un terme source de  masse peut \^etre pris en
+compte au second membre si l'utilisateur le souhaite. Pour simplifier
+l'expos\'e, 
+le terme source sera suppos\'e nul ici, dans la mesure o\`u il n'est pas
+sp\'ecifique au module \'electrique. 
+
+\vspace*{0,5cm}
+{\bf \'Equation de la quantit\'e de mouvement} 
+\nopagebreak
+
+C'est l'\'equation r\'esolue en standard par \CS\ (les forces de Laplace 
+($\vect{j} \times \vect{B}$) sont suppos\'ees n\'egligeables). 
+
+\vspace*{0,5cm}
+{\bf \'Equation de l'enthalpie} 
+\nopagebreak
+
+On l'\'etablit comme dans le cas des arcs \'electriques\footnote{\`A ceci pr\`es
+que la puissance des
+forces de Laplace n'appara\^it pas du tout, au lieu de dispara\^itre lorsque
+l'on soustrait l'\'equation de l'\'energie cin\'etique \`a celle de l'\'energie
+totale.} \`a partir de l'équation de
+l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS\ et en
+prenant en compte le terme d'effet Joule li\'e \`a l'\'energie
+\'electromagn\'etique. 
+
+Par rapport \`a l'\'equation utilis\'ee pour les \'etudes d'arc \'electrique, 
+seule l'expression de l'effet Joule diff\`ere lorsque le courant est
+alternatif non monophas\'e.
+
+\vspace*{0,5cm}
+{\bf \'Equations \'electromagn\'etiques} 
+\nopagebreak
+
+Elles sont obtenues comme indiqu\'e dans la partie relative aux arcs
+\'electriques, mais on ne conserve que les relations associ\'ees \`a la
+densit\'e de courant, au champ \'electrique et au potentiel dont il d\'erive.
+
+
+
+

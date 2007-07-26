@@ -1,0 +1,206 @@
+#!/bin/sh
+#============================================================================
+#
+#                    Code_Saturne version 1.3
+#                    ------------------------
+#
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2007 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+#=================================================
+#     Aide Code_Saturne
+#=================================================
+#
+
+#
+# Styles
+# ======
+
+ NOM_ARCH=`uname -s`
+ TERM=$TERM
+
+ BO=`tput bold`
+ SO=`tput smso`
+ NO=`tput rmso ; tput sgr0`
+
+#
+# Fonction : exit
+# ===============
+
+ local_exit()
+ {
+   tput rmso
+   tput init 
+   exit
+ }
+
+#
+# Fonction : Message d'erreur avec sortie
+# =======================================
+
+ sortie()
+ {
+   dir_sortie=`pwd`
+   echo "   Directory : ${dir_sortie}"
+   echo
+   echo "   ${BO}Error${NO} : $*"
+   tput init 
+   echo 
+   local_exit
+ }
+
+
+#
+# Fonction utilisation
+# ====================
+
+ usage() {
+    echo
+    echo "   usage : ${BO}info_cs${NO}                      "
+    echo "      or : ${BO}info_cs${NO}  ${SO}<topic>${NO}   "
+    echo 
+    echo "        with :                                    "
+    echo "        ${SO}<topic>${NO} : ${BO}version${NO}   : Code_Saturne version"
+    echo "                  ${BO}user${NO}       : user manual (pdf)"
+    echo "                  ${BO}theory${NO}     : theory and programmer's guide (pdf)"
+    echo "                  ${BO}ecs${NO}        : usage for the Preprocessor module"
+    echo "                  ${BO}ecsmu${NO}      : user manual for the Preprocessor module (pdf)"
+    echo "                  ${BO}ecsmi${NO}      : theory and programmer's guide for the Preprocessor module (pdf)"
+    echo "                  ${BO}check_mesh${NO} : usage of mesh checking script"
+    echo "                  ${BO}gracehst${NO}   : usage of xmgrace launch script gracehst"
+    echo 
+    echo
+    tput init 
+    local_exit
+ }
+
+
+ if [ -z "$CS_HOME" ]; then
+   echo
+   echo " ${BO}WARNING${NO} : variable CS_HOME is not properly set"
+   echo "             Depending on the environment, it is possible to specify"
+   echo "             it in the .monprofile file."
+   echo "             Remember to logout and login again afterwards."
+   echo
+   tput init 
+   local_exit
+ fi
+
+# On teste l'existence de gv et xpdf
+isthere=`which xpdf 2>/dev/null |wc -w`
+if [ $isthere -eq 1 ] ; then
+  acroread=xpdf
+else
+  acroread=acroread
+fi
+
+
+ topic=$1
+ if   [ "$topic" = "version" ] ; then 
+# determination du repertoire ou se trouve info_cs (ie du repertoire sur lequel pointe PATH)
+   whichINFOCS=`which info_cs |grep -v "vous etes sur"`
+   varPATH=$whichINFOCS
+   varPATH=`dirname  $varPATH`
+   varPATH=`dirname  $varPATH`
+   version=$varPATH
+   if [ "$CS_HOME" != "$version" ] ; then 
+     echo
+     echo " ${BO}WARNING${NO}               : variable CS_HOME and the UNIX PATH"
+     echo "                             do not seem consistent :"
+     echo "        ${BO}CS_HOME variable     ${NO} : $CS_HOME"
+     echo "        ${BO}Path of info_cs      ${NO} : $whichINFOCS"
+     echo
+     echo " ${BO}Restart the session of necessary${NO}"
+     echo
+     tput init 
+   else
+     echo
+     echo " ${BO}Code_Saturne version${NO} : $version"
+     echo " ${BO}Preprocessor version${NO} : $ECS_HOME"
+     echo " ${BO}GUI version${NO}          : $CSGUI_HOME"
+     echo
+     tput init 
+  fi
+ elif [ "$topic" = "user" ] ; then
+   saturnepdf=$CS_HOME/doc/UTILISATION/saturne.pdf 
+   echo
+   echo " ${BO}user manual${NO} : $saturnepdf"
+   echo
+   tput init 
+   $acroread $saturnepdf  || sortie "The ${SO}$acroread $saturnepdf${NO} command failed"
+   tput init 
+ elif [ "$topic" = "theory" ] ; then
+   noyaupdf=$CS_HOME/doc/NOYAU/noyau.pdf 
+   echo
+   echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
+   echo
+   $acroread $noyaupdf 
+ elif [ "$topic" = "ecs" ] ; then 
+   ecs=$ECS_HOME/bin/ecs
+   echo
+   echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
+   echo
+   tput init 
+   eval $ecs -h || sortie "The ${SO}$ecs -h${NO} command failed."
+   echo
+   echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
+   echo
+   tput init 
+ elif [ "$topic" = "ecsmu" ] ; then 
+   ecsdocpdf=$ECS_HOME/doc/mu_ecs.pdf
+   echo
+   echo " ${BO}Preprocessor module user manual${NO} : $ecsdocpdf"
+   echo
+   tput init 
+   $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
+   tput init 
+ elif [ "$topic" = "ecsmi" ] ; then 
+   ecsdocpdf=$ECS_HOME/doc/mi_ecs.pdf
+   echo
+   echo " ${BO}Preprocessor module theory and programmer's guide${NO} : $ecsdocpdf"
+   echo
+   tput init 
+   $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
+   tput init 
+ elif [ "$topic" = "check_mesh" ] ; then 
+   check_mesh=$CS_HOME/bin/check_mesh
+   echo
+   echo " ${BO}mesh verification and quality with ${NO} : $check_mesh"
+   echo
+   tput init 
+   $check_mesh -h || sortie "The $check_mesh -h command failed"
+   tput init ; tput rmso 
+ elif [ "$topic" = "gracehst" ] ; then 
+   gracehst=$CS_HOME/bin/gracehst
+   echo
+   echo " ${BO}xmgrace launch script${NO} : $gracehst"
+   echo
+   tput init 
+   $gracehst -h || sortie "The $gracehst -h command failed"
+   tput init ; tput rmso 
+else
+  usage
+ fi

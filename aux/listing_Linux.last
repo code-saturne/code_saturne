@@ -1,0 +1,1482 @@
+[1m
+    Installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR MATI RAYT sous Linux
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.g
+       ==================================================================  
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Repertoire de base CS_HOME = /home/saturne/Noyau/ncs-1.3.g
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Protection prealable
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de BASE sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire BASE
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=BASE OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+gradco.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O2 -c gradco.F
+gradrc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O2 -c gradrc.F
+jacobi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O2 -c jacobi.F
+prcpol.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O2 -c prcpol.F
+promav.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O2 -c promav.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+prodsc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O6 -c prodsc.F
+prods2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O6 -c prods2.F
+prods3.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O6 -c prods3.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+gradmc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O0 -c gradmc.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+cs_ale.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_ale.c
+cs_base.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_base.c
+cs_benchmark.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_benchmark.c
+cs_blas.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_blas.c
+cs_blas.c: In function 'idamax_':
+cs_blas.c:530: warning: control reaches end of non-void function
+cs_comm.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_comm.c
+cs_comm.c: In function 'cs_comm_init_socket':
+cs_comm.c:1225: warning: implicit declaration of function 'gethostname'
+cs_comm.c:1225: warning: nested extern declaration of 'gethostname'
+cs_couplage.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_couplage.c
+cs_gui.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_gui.c
+cs_gui_matisse.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_gui_matisse.c
+cs_gui_radiative_transfer.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_gui_radiative_transfer.c
+cs_gui_util.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_gui_util.c
+cs_gui_util.c: In function 'cs_gui_get_nodes_name':
+cs_gui_util.c:612: warning: cast discards qualifiers from pointer target type
+cs_gui_util.c:613: warning: cast discards qualifiers from pointer target type
+cs_maillage.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_maillage.c
+cs_maillage_connect.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_maillage_connect.c
+cs_maillage_grd.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_maillage_grd.c
+cs_maillage_select.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_maillage_select.c
+cs_maillage_solcom.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_maillage_solcom.c
+cs_main.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_main.c
+cs_matrix.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_matrix.c
+cs_mesh_quality.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_mesh_quality.c
+cs_messages_ecs.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_messages_ecs.c
+cs_msg.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_msg.c
+cs_opts.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_opts.c
+cs_parallel.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_parallel.c
+cs_perio.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_perio.c
+cs_post.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_post.c
+cs_renumber.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_renumber.c
+cs_sles.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_sles.c
+cs_suite.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_suite.c
+cs_syr_coupling.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_syr_coupling.c
+cs_syr_messages.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_syr_messages.c
+cs_tpar1d.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_tpar1d.c
+cs_ventil.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_ventil.c
+cs_voiset.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_voiset.c
+tcpumx.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c tcpumx.c
+tremai.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c tremai.c
+alelap.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c alelap.F
+alemaj.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c alemaj.F
+altycl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c altycl.F
+armtps.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c armtps.F
+bilsc2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c bilsc2.F
+calgeo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c calgeo.F
+calgrg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c calgrg.F
+calhyd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c calhyd.F
+calmom.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c calmom.F
+caltri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c caltri.F
+catsma.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c catsma.F
+causta.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c causta.F
+cgstab.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cgstab.F
+clca66.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clca66.F
+cldijp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cldijp.F
+cldipo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cldipo.F
+clipke.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clipke.F
+clmlga.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clmlga.F
+clprij.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clprij.F
+clpsca.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clpsca.F
+clptur.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clptur.F
+clpv2f.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clpv2f.F
+clsurn.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clsurn.F
+clsyvt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clsyvt.F
+clvolc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c clvolc.F
+codits.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c codits.F
+condli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c condli.F
+cou1di.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cou1di.F
+cou1do.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cou1do.F
+coupbi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c coupbi.F
+coupbo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c coupbo.F
+covofi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c covofi.F
+cregeo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cregeo.F
+cs_post_util.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cs_post_util.F
+csclli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c csclli.F
+csflsh.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c csflsh.F
+csinit.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c csinit.F
+csprnt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c csprnt.F
+cycmgr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cycmgr.F
+distpr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c distpr.F
+distyp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c distyp.F
+divmas.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c divmas.F
+divrij.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c divrij.F
+dttvar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c dttvar.F
+dvvpst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c dvvpst.F
+ecrava.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ecrava.F
+ecrhis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ecrhis.F
+ecrlis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ecrlis.F
+filtre.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c filtre.F
+findpt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c findpt.F
+grdcel.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c grdcel.F
+hturbp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c hturbp.F
+iasize.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c iasize.F
+idrbla.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c idrbla.F
+impini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c impini.F
+iniini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c iniini.F
+inimas.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c inimas.F
+inipst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c inipst.F
+initi1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c initi1.F
+initi2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c initi2.F
+iniusi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c iniusi.F
+iniva0.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c iniva0.F
+inivar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c inivar.F
+invers.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c invers.F
+iprbla.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c iprbla.F
+itrgrp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c itrgrp.F
+itrmas.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c itrmas.F
+lecamo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lecamo.F
+lecamp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lecamp.F
+lecamx.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lecamx.F
+ledgeo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ledgeo.F
+letgeo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c letgeo.F
+limgrd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c limgrd.F
+matrdt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c matrdt.F
+matrix.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c matrix.F
+memale.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memale.F
+memcbr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcbr.F
+memclg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memclg.F
+memcli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcli.F
+memdis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memdis.F
+memdtv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memdtv.F
+memdyp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memdyp.F
+memgrg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memgrg.F
+memini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memini.F
+memkep.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memkep.F
+memkom.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memkom.F
+memnav.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memnav.F
+mempdc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mempdc.F
+mempgr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mempgr.F
+memphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memphy.F
+memrij.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memrij.F
+memsca.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memsca.F
+memt1d.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memt1d.F
+memtri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memtri.F
+memtsm.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memtsm.F
+memv2f.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memv2f.F
+memvor.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memvor.F
+modini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c modini.F
+modpar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c modpar.F
+navsto.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c navsto.F
+newmrk.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c newmrk.F
+numvec.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c numvec.F
+ordita.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ordita.F
+parge1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c parge1.F
+pergra.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pergra.F
+perinr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c perinr.F
+perinu.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c perinu.F
+phyvar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c phyvar.F
+postlc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c postlc.F
+ppcabs.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppcabs.F
+ppclim.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppclim.F
+ppcsca.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppcsca.F
+ppini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppini1.F
+ppinii.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppinii.F
+ppiniv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppiniv.F
+pplecd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pplecd.F
+ppphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppphyv.F
+ppprcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppprcl.F
+ppprop.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppprop.F
+ppray4.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppray4.F
+pptbht.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pptbht.F
+pptssc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pptssc.F
+pptycl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pptycl.F
+ppvarp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ppvarp.F
+precli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c precli.F
+preduv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c preduv.F
+premgr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c premgr.F
+prmoy0.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c prmoy0.F
+projts.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c projts.F
+prolon.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c prolon.F
+proxav.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c proxav.F
+rasize.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rasize.F
+recvmc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c recvmc.F
+reseps.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c reseps.F
+resmgr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c resmgr.F
+resolp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c resolp.F
+resrij.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c resrij.F
+resssg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c resssg.F
+resv2f.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c resv2f.F
+rijech.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rijech.F
+rijthe.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rijthe.F
+scalai.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c scalai.F
+schtmp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c schtmp.F
+strdep.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c strdep.F
+strhis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c strhis.F
+strini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c strini.F
+strpre.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c strpre.F
+tdesi1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c tdesi1.F
+testel.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c testel.F
+tridim.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c tridim.F
+tsepdc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c tsepdc.F
+turbke.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c turbke.F
+turbkw.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c turbkw.F
+turent.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c turent.F
+turrij.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c turrij.F
+typecl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c typecl.F
+undscr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c undscr.F
+usalcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usalcl.F
+usalin.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usalin.F
+usclim.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usclim.F
+usdpst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usdpst.F
+ushist.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ushist.F
+usini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usini1.F
+usiniv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usiniv.F
+uskpdc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uskpdc.F
+usmodg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usmodg.F
+usmpst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usmpst.F
+usnpst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usnpst.F
+usphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usphyv.F
+usppmo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usppmo.F
+usproj.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usproj.F
+uspt1d.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uspt1d.F
+usrubm.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usrubm.F
+usruet.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usruet.F
+ussmag.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ussmag.F
+usstru.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usstru.F
+usthht.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usthht.F
+ustske.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustske.F
+ustskw.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustskw.F
+ustsma.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustsma.F
+ustsns.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustsns.F
+ustsri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustsri.F
+ustssc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustssc.F
+ustsv2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ustsv2.F
+usvima.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usvima.F
+usvist.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usvist.F
+usvort.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usvort.F
+usvpst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usvpst.F
+vandri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vandri.F
+varpos.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c varpos.F
+vectds.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vectds.F
+vericl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vericl.F
+verini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c verini.F
+verlon.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c verlon.F
+vert1d.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vert1d.F
+viscfa.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c viscfa.F
+visdyn.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c visdyn.F
+vislmg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vislmg.F
+visort.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c visort.F
+vissec.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vissec.F
+vissma.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vissma.F
+vissst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vissst.F
+vor2cl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vor2cl.F
+vordep.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vordep.F
+vorimp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorimp.F
+vorin0.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorin0.F
+vorini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorini.F
+vorlgv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorlgv.F
+vorpre.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorpre.F
+vortex.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vortex.F
+vorver.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorver.F
+vorvit.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c vorvit.F
+zufall.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c zufall.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE/.readmeBASE
+   Nettoyage avec MOD=BASE OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/BASE'
+[7m *** Fin de la construction de BASE
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de CFBL sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire CFBL
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=CFBL OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+cfbsc2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfbsc2.F
+cfbsc3.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfbsc3.F
+cfcdts.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfcdts.F
+cfdivs.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfdivs.F
+cfdttv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfdttv.F
+cfener.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfener.F
+cfini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfini1.F
+cfiniv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfiniv.F
+cfmsfl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfmsfl.F
+cfmsgs.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfmsgs.F
+cfmsvl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfmsvl.F
+cfmsvs.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfmsvs.F
+cfphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfphyv.F
+cfprop.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfprop.F
+cfqdmv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfqdmv.F
+cfrusb.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfrusb.F
+cfvarp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfvarp.F
+cfxtcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cfxtcl.F
+memcfe.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcfe.F
+memcfm.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcfm.F
+memcft.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcft.F
+memcfv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcfv.F
+uscfcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfcl.F
+uscfpv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfpv.F
+uscfth.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfth.F
+uscfx1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfx1.F
+uscfx2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfx2.F
+uscfxi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscfxi.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL/.readmeCFBL
+   Nettoyage avec MOD=CFBL OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CFBL'
+[7m *** Fin de la construction de CFBL
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de COGZ sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire COGZ
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=COGZ OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+coini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c coini1.F
+colecd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c colecd.F
+copdfr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c copdfr.F
+coprop.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c coprop.F
+cothht.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cothht.F
+covarp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c covarp.F
+d3phst.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3phst.F
+d3pini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3pini.F
+d3pint.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3pint.F
+d3pphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3pphy.F
+d3ptcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3ptcl.F
+d3pver.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c d3pver.F
+ebuini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ebuini.F
+ebuphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ebuphy.F
+ebutcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ebutcl.F
+ebutss.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ebutss.F
+ebuver.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ebuver.F
+lwcgfu.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwcgfu.F
+lwcini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwcini.F
+lwcphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwcphy.F
+lwctcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwctcl.F
+lwctss.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwctss.F
+lwcurl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwcurl.F
+lwcver.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lwcver.F
+pdflwc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pdflwc.F
+pdfpp3.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pdfpp3.F
+pdfpp4.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c pdfpp4.F
+usd3p1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usd3p1.F
+usd3pc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usd3pc.F
+usd3pi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usd3pi.F
+usebu1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usebu1.F
+usebuc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usebuc.F
+usebui.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usebui.F
+uslwc1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslwc1.F
+uslwcc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslwcc.F
+uslwci.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslwci.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ/.readmeCOGZ
+   Nettoyage avec MOD=COGZ OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/COGZ'
+[7m *** Fin de la construction de COGZ
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de CPLV sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire CPLV
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=CPLV OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+cpcym1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpcym1.F
+cpflux.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpflux.F
+cpini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpini1.F
+cpiniv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpiniv.F
+cplecd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplecd.F
+cplin1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplin1.F
+cplini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplini.F
+cplph1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplph1.F
+cplphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplphy.F
+cplpro.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplpro.F
+cpltcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpltcl.F
+cpltss.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpltss.F
+cpltsv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpltsv.F
+cplvar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplvar.F
+cplver.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplver.F
+cplym1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cplym1.F
+cppdf4.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cppdf4.F
+cppdf5.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cppdf5.F
+cppdfr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cppdfr.F
+cpphy1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpphy1.F
+cpphy2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpphy2.F
+cpphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpphyv.F
+cpprop.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpprop.F
+cpptcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpptcl.F
+cprays.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cprays.F
+cpteh1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpteh1.F
+cpteh2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpteh2.F
+cptehm.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cptehm.F
+cpthp1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpthp1.F
+cpthp2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpthp2.F
+cptssc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cptssc.F
+cptsvc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cptsvc.F
+cptsvi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cptsvi.F
+cpvarp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpvarp.F
+cpveri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c cpveri.F
+memcp1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memcp1.F
+uscpcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscpcl.F
+uscpi1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscpi1.F
+uscpiv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscpiv.F
+uscpl1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscpl1.F
+uscplc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uscplc.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV/.readmeCPLV
+   Nettoyage avec MOD=CPLV OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/CPLV'
+[7m *** Fin de la construction de CPLV
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de ELEC sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire ELEC
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=ELEC OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+elflux.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elflux.F
+elini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elini1.F
+eliniv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c eliniv.F
+ellecd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ellecd.F
+elphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elphyv.F
+elprop.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elprop.F
+elthht.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elthht.F
+eltssc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c eltssc.F
+elvarp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elvarp.F
+elveri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c elveri.F
+uselcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uselcl.F
+uselen.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uselen.F
+useli1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c useli1.F
+useliv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c useliv.F
+uselph.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uselph.F
+uselrc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uselrc.F
+usetcl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usetcl.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC/.readmeELEC
+   Nettoyage avec MOD=ELEC OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/ELEC'
+[7m *** Fin de la construction de ELEC
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de LAGR sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire LAGR
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=LAGR OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+cs_lagr_perio.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_lagr_perio.c
+cs_lagrang.c
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gcc   -I/home/saturne/opt/bft-1.0.3/arch/Linux/include -I/home/saturne/opt/fvm-0.7.0/arch/Linux/include -isystem/home/saturne/opt/openmpi-1.2.0/arch/Linux/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_MPI  -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    -DNDEBUG  -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-uninitialized  -O -Wno-unused -c cs_lagrang.c
+diverv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c diverv.F
+enslag.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c enslag.F
+enswaf.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c enswaf.F
+lagaff.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagaff.F
+lagcar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagcar.F
+lagcel.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagcel.F
+lagcou.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagcou.F
+lagdeb.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagdeb.F
+lageli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lageli.F
+lagent.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagent.F
+lageqp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lageqp.F
+lagerr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagerr.F
+lages1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lages1.F
+lages2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lages2.F
+lagesp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagesp.F
+lagfch.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagfch.F
+laggra.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c laggra.F
+laghis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c laghis.F
+lagich.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagich.F
+lagidp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagidp.F
+lagimp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagimp.F
+lagini.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagini.F
+lagipn.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagipn.F
+lagitf.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagitf.F
+lagitg.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagitg.F
+lagitp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagitp.F
+laglec.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c laglec.F
+laglis.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c laglis.F
+lagnew.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagnew.F
+lagnpr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagnpr.F
+lagnwc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagnwc.F
+lagopt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagopt.F
+lagout.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagout.F
+lagphy.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagphy.F
+lagpoi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagpoi.F
+lagrus.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagrus.F
+lagsta.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagsta.F
+lagstf.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagstf.F
+lagtri.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagtri.F
+lagune.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c lagune.F
+memla1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memla1.F
+memla2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memla2.F
+ouestu.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c ouestu.F
+uslabo.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslabo.F
+usladp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usladp.F
+uslaed.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslaed.F
+uslaen.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslaen.F
+uslafe.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslafe.F
+uslag1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslag1.F
+uslag2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslag2.F
+uslain.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslain.F
+uslapr.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslapr.F
+uslaru.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslaru.F
+uslast.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslast.F
+uslatc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslatc.F
+uslatp.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c uslatp.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR/.readmeLAGR
+   Nettoyage avec MOD=LAGR OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/LAGR'
+[7m *** Fin de la construction de LAGR
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de MATI sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire MATI
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=MATI OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+memmat.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memmat.F
+mtimpi.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mtimpi.F
+mtini1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mtini1.F
+mtkpdc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mtkpdc.F
+mtphyv.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mtphyv.F
+mtproj.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mtproj.F
+mttsns.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mttsns.F
+mttssc.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mttssc.F
+mttycl.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c mttycl.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI/.readmeMATI
+   Nettoyage avec MOD=MATI OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/MATI'
+[7m *** Fin de la construction de MATI
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Construction de RAYT sous Linux
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>   Generation du repertoire RAYT
+   Lien sur le Makefile
+   Makefile deja en place, lien sur
+/home/saturne/Noyau/ncs-1.3.g/bin/Makefile
+   Lancement de make avec MOD=RAYT OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+
+***  Code_Saturne 1.3.g compilation/link
+***  System: Linux
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  Compilation
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Nothing to be done for `privdependobj'.
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+memra1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memra1.F
+memra2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memra2.F
+memra3.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c memra3.F
+raybrd.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raybrd.F
+raycli.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raycli.F
+raydak.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raydak.F
+raydir.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raydir.F
+raydom.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raydom.F
+rayens.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rayens.F
+raylec.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raylec.F
+rayopt.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rayopt.F
+rayout.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rayout.F
+raypar.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raypar.F
+raypun.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raypun.F
+raysca.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raysca.F
+raysol.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c raysol.F
+rmodak.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c rmodak.F
+usray1.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usray1.F
+usray2.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usray2.F
+usray3.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usray3.F
+usray4.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usray4.F
+usray5.F
+/home/saturne/opt/gcc-4.1.2/arch/Linux/bin/gfortran -D_CS_HAVE_XML    -I. -O1 -c usray5.F
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  Compilation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  Creating library
+***  Library creation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  Installing library
+***  Library installation finished
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT/.readmeRAYT
+   Nettoyage avec MOD=RAYT OPT=
+make[1]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+***  "make" in a library generation directory
+make[2]: Entering directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[2]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+make[1]: Leaving directory `/home/saturne/Noyau/ncs-1.3.g/build/Linux/RAYT'
+[7m *** Fin de la construction de RAYT
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m
+ *** Verification des acces
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[7m *** Fin de la verification des acces
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>[1m    Fin de l'installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR MATI RAYT
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.g
+
+[27m[m[!p[?3;4l[4l>[!p[?3;4l[4l>

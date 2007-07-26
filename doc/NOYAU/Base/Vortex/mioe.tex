@@ -1,0 +1,169 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{itemize}
+\item[$\star$] Aprés une étape de préparation de la mémoire (\fort{memvor}), on
+repère dans \fort{usvort} les faces d'entrée pour lesquelles la méthode va être
+utilisée. 
+\item[$\star$] Vérification des dimensions rentrées (\fort{vervor}).
+\\
+\item[$\star$] Le sous-programme \fort{vorpre} se charge ensuite de préparer le
+calcul (transmission de la géométrie des entrées à tous les processeurs en cas
+de parallélisme, et construction d'un tableau de connectivité). Le
+sous-programme procède ainsi : 
+\\
+\begin{itemize}
+
+\item[$\bullet$] On compte, pour chaque entrée \var{IENT}, le nombre de faces où
+est appliquée la méthode. Celui-ci est stocké dans le tableau
+\var{ICVOR(IENT)}. Un passage dans la sous-routine \fort{memvor} (avec
+\var{IAPPEL = 2}) permet d'allouer la mémoire nécessaire à cette phase de
+préparation. 
+
+\item[$\bullet$] Pour chaque processeur, on stocke les coordonnées des faces
+d'entrée repérées précédemment dans les tableaux de travail
+\var{RA(IW1X),RA(IW1Y),RA(IW1Z),...} 
+
+\item[$\bullet$]  On regarde ensuite pour chaque processeur (boucle
+\var{IPROC=1, NRANGP-1}), si le processeur \var{IPROC} a des données à envoyer
+aux autres processeurs (afin que tous disposent des coordonnées). 
+\begin{itemize}
+\item Si c'est le cas : \var{ICVOR(IENT)>0}, et on place les données à envoyer
+dans les tableaux de travail \var{RA(IW2X),RA(IW2Y),RA(IW2Z),...}. La valeur 
+\var{NCOMV = ICVOR(IENT)} correspond alors à la longueur des tableaux à envoyer.
+\item Sinon, on ne fait rien et \var{NCOM=0}.
+\end{itemize}
+\item[$\bullet$] Le processeur numéro \var{IPROC} distribue à tous les autres
+processeurs la valeur \var{NCOM}. Si \var{NCOM > 0}, il envoie également les
+données contenues dans les tableaux de travails \var{RA(IW2X),...}. Ces données
+sont ensuite stockées par tous les processeurs dans les tableaux
+\var{RA(IXYZV+III),...} afin de libérer les tableaux de travail pour la
+communication suivante, et l'indice \var{III = III + NCOM} est incrémenté de
+manière à ranger les valeurs de façon chronologique. 
+\\\\
+$\rightarrow$ Au final de la boucle sur \var{IPROC}, chaque processeur dispose
+des coordonnées des faces d'entrée pour lesquelles la méthode va être utilisée,
+et il est donc simple de construire la connectivité. 
+\\
+\item[$\bullet$] Construction de la connectivité. Au final, la vitesse au centre
+de la \var{II} éme face d'entrée utilisant la méthode est contenue à la
+\var{IA(IIFAGL+II)} ème ligne du tableau \var{RA(IUVORT)}.    
+
+\item[$\bullet$] La routine se termine par un appel au sous-programme
+\fort{memvor} ( avec \var{IAPPEL = 3}) afin de réserver la mémoire utile à la
+méthode des vortex. 
+\end{itemize}
+\end{itemize}
+\bigskip
+
+Cette phase d'initialisation est réalisée une seule fois au début du
+calcul. C'est après cette phase seulement que commence la méthode des vortex
+proprement dite. 
+\\
+\begin{itemize}
+\item[$\star$] Initialisation des variables avant intervention utilisateur (\fort{inivor}).
+\item[$\star$] Appel au sous-programme utilisateur \fort{usvort} (\var{IAPPEL = 2}).
+\item[$\star$] Vérification des paramètres rentrés (\fort{vervor}).
+\item[$\star$] Calcul de la vitesse par la méthode des vortex (\fort{vortex})
+\begin{itemize} 
+\item[$\bullet$] Initialisation du calcul génération du champ initial par appel
+au sous-programme \fort{vorini} : 
+
+\begin{itemize}
+\item Construction du repére local (et calcul de l'équation du plan d'entrée
+suivant les cas), localisation du centre de l'entrée, et transformation des
+coordonnées de l'entrée dans le repère local. Les tableaux \var{YZCEL(II,1)} et
+\var{YZCEL(II,2)} contiennent les coordonnées des faces du plan d'entrée une
+fois ramenées dans le repère $(0yz)$ (\var{II} est compris entre 1 et
+\var{NCEVOR} où \var{NCEVOR}=\var{ICVOR} représente le nombre de faces pour
+lesquelles la méthode va être utilisée a cette entrée). 
+\item Lecture du fichier de données, et initialisation des tableaux \var{XDAT},
+\var{YDAT}, \var{UDAT}, \var{VDAT}, \var{WDAT}, \var{DUYDAT}, \var{KDAT},
+\var{EPSDAT}, ... 
+\item Si on ne fait pas de suite (\var{ISUIVO=0}) ou que l'on réinitialise le
+calcul (\var{INITVO=1}), tirage aléatoire de la position des vortex et de leur
+sens de rotation, ainsi que calcul de leur durée de vie. Les positions sont
+stockées dans les tableaux \var{YZVOR(IVOR,1)} et \var{YZVOR(IVOR,2)}
+(\var{IVOR} désignant le numéro du vortex). 
+\item Stockage de la vitesse principale moyenne au centre de la cellule dans le
+tableau \var{XU}, et recherche pour chaque vortex, de la face d'entrée qui lui
+est la plus proche. 
+\end{itemize}
+
+\item[$\bullet$] Déplacement des vortex par appel au sous-programme \fort{vordep} :
+\begin{itemize}
+\item Convection des vortex.
+\item Traitement des conditions aux limites. Les vortex qui sortent du domaine
+de calcul sont replacés à leur position d'origine. 
+\item Régénération des vortex ``morts''. Si le temps de vie cumulé
+\var{TEMPS(II)} du vortex \var{II} est supérieur à sont temps de vie limite
+\var{TPSLIM(II)}, alors le vortex est détruit, et un nouveau vortex est généré. 
+\item Recherche pour chaque vortex de la face d'entrée qui lui est la plus
+proche après déplacement (mise à jour du tableau \var{IVORCE}). 
+\end{itemize}
+
+\item[$\bullet$] Calcul du champ de vitesse induit par appel au sous-programme \fort{vorvit} :
+\begin{itemize}
+\item Calcul de l'intensité du vortex.
+\item Calcul de la taille du vortex.
+\item Calcul du champ de vitesse induit par l'ensemble des vortex au centre des
+faces d'entrée. 
+\item Traitement suivant les cas, des conditions de périodicité de symétrie et
+des conditions de paroi par génération de vortex images. 
+\item Ajout de la vitesse moyenne dans les directions transverse aux tableaux
+\var{XV} et \var{XW}. 
+\end{itemize}
+
+\item[$\bullet$] Génération des fluctuations de vitesse dans la direction
+principale par appel au sous-programme \fort{vorlgv}. 
+\end{itemize}
+
+\item[$\star$] appel au sous-programme \fort{vor2cl} :
+\item[$\bullet$] Communication en cas de parallélisme de la vitesse calculée en
+entrée par le processeur 0 aux autres processeurs. 
+\item[$\bullet$] Application des conditions aux limites après utilisation d'un
+changement de repère éventuel. 
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Il serait possible de gagner de la mémoire en liberant l'espace aloué aux
+tableaux \var{IW1X},...,\var{IW2V} après le passage dans \fort{vorpre}. 

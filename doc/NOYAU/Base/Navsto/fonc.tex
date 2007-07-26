@@ -1,0 +1,116 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+
+\programme{navsto}
+
+\vspace{1cm}
+On s'int\'eresse \`a la r\'esolution du syst\`eme d'\'equations de Navier-Stokes
+tridimensionnelles monophasiques, \`a une pression, instationnaires, en
+incompressible ou faiblement dilatable, bas\'ees sur une discr\'etisation
+temporelle de type Euler implicite d'ordre 1 ou Crank-Nicolson d'ordre 2 et sur
+une discr\'etisation spatiale  par volumes finis colocalis\'ee. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  Dans ce sous-programme sont calcul\'ees, \`a un pas de temps donn\'e, les
+variables vitesse et pression de ce probl\`eme en proc\'edant en
+deux  \'etapes issues d'une d\'ecomposition des op\'erateurs (m\'ethode \`a
+pas fractionnaires).\\
+Les variables sont donc suppos\'ees connues \`a
+l'instant ${t^n}$ et on cherche \`a les d\'eterminer \`a l'instant\footnote{La pression est supposée connue à l'instant $t^{n-1+\theta}$ et recherchée en $t^{n+\theta}$, avec $\theta=1$ ou $1/2$ suivant le schéma en temps considéré.} ${t^{n+1}}$. Soit ${\Delta {t^n} ={t^{n+1}- {t^n}}}$ le pas de temps associ\'e. Dans un premier temps, on r\'ealise l'\'etape de
+pr\'ediction de la vitesse en r\'esolvant l'\'equation de quantit\'e de
+mouvement avec une pression explicite. Suit l'\'etape de correction de la
+pression (ou projection de la vitesse) qui permet d'obtenir un champ de vitesse \`a divergence nulle.\\\\
+Les \'equations en continu sont donc :   
+\begin{equation}
+\left\{\begin{array}{l}
+\displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) + \dive(\rho\, \vect{u} \otimes \vect{u})
+=\dive(\tens{\sigma}) + \vect{TS} - \tens{K}\,\vect{u}\\ 
+\dive(\rho \vect{u}) = \Gamma
+\end{array}\right.
+\end{equation}
+
+%(plus tard $\frac{\partial \rho}{\partial t} + \dive(\rho \vect{u}) = \Gamma$)
+
+
+
+avec $\rho$ la masse volumique, $\vect{u}$ le champ de vitesse, 
+$[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ les autres termes sources ($\tens{K}$~est un 
+tenseur diagonal positif par d\'efinition), $\tens{\sigma}$ le tenseur
+de contraintes, $\tens{\tau}$ le tenseur des contraintes visqueuses, $\mu$ la
+viscosit\'e dynamique (mol\'eculaire et \'eventuellement turbulente), $\kappa$
+la viscosité de 
+volume (usuellement nulle et négligée dans le code et dans la suite du document,
+sauf en compressible),
+$\tens{D}$ le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$,
+avec les flux diffusifs $\vect{D}_{\,ij}$ et $\vect{D}_{\,{b}_{ik}}$ d\'ecrits par la suite dans ce
+sous-programme.}, $\Gamma$ le terme source de masse.
+\begin{equation}
+\left\{\begin{array}{l}
+\tens{\sigma} = \tens{\tau} - P\tens{Id}  \\
+\tens{\tau} = 2\,\mu\ \tens{D} +\ (\kappa\ - \frac{2}{3}\mu)\  tr({\tens{D}})\
+\tens{Id}  \\
+\tens{D} = \frac{1}{2}(\ggrad\vect{u}+\,^{t}\ggrad\vect{u})
+\end{array}\right.
+\end{equation}
+ \\
+
+On rappelle la d\'efinition des notations employ\'ees\footnote{en
+utilisant la convention de sommation d'Einstein.}~:
+\begin{equation}\notag
+\left\{\begin{array}{lll}
+\left[\ggrad{\vect{a}}\right]_{ij} &=& \partial_j a_i\\
+\left[\dive(\tens{\sigma})\right]_i &=& \partial_j \sigma_{ij}\\
+\left[\vect{a}\otimes\vect{b}\right]_{ij} &= &
+a_i\,b_j\\
+\end{array}\right.
+\end{equation}
+et donc :
+\begin{equation}\notag
+\begin{array}{lll}
+\left[\dive(\vect{a}\otimes\vect{b})\right]_i &= &
+\partial_j (a_i\,b_j)
+\end{array} 
+\end{equation}
+
+\minititre{Remarque}
+Dans le cas de la prise en compte d'une masse volumique variable, l'équation de continuité s'écrit :
+$$\frac{\partial \rho}{\partial t} + \dive{\,(\rho\,\vect{u})} = \Gamma  $$
+Cette équation n'est pas prise en compte dans l'étape de projection (on continue à résoudre
+seulement
+$\displaystyle \dive(\,{\rho\,\vect{u}}) = \Gamma$) alors que le terme
+$\displaystyle \frac{\partial \rho}{\partial t}$ appara\^{\i}t lors de l'étape de pr\'ediction de la vitesse
+dans le sous-programme \fort{preduv}. Si ce terme joue un rôle sensible, l'algorithme compressible
+de \CS\ (qui résout l'équation complète) est alors sans doute plus adapté.

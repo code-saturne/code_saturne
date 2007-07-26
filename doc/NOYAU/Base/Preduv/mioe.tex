@@ -1,0 +1,506 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+L'équation de conservation de la quantité de mouvement est donc résolue de façon
+découplée. Ainsi, l'intégration des différents termes a été effectuée afin de
+traiter séparément l'équation obtenue pour chaque composante de la vitesse.\\
+Dans le sous-programme \fort{preduv}, on calcule pour chaque
+composante le second membre $f_s^{exp}$ du système  (\ref{Base_Preduv_eq_di2}), les termes implicites du système (à l'exception des termes de convection-diffusion), et le terme de viscosité totale aux faces internes\footnote{valeur nécessaire pour l'intégration du terme de diffusion dans \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} et de
+bord. Ces termes sont alors transmis au sous-programme \fort{codits} qui construit et
+résout le système complet obtenu pour chaque composante de la vitesse avec les termes de convection-diffusion.
+\\\\
+Le r\'esidu de normalisation pour la r\'esolution du syst\`eme en pression (\fort{resolp}) est calcul\'e dans
+\fort{preduv}. Il est d\'efini par la norme de la 
+grandeur  $$\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta t \grad{P^{n-1+\theta}})-\Gamma$$ 
+int\'egr\'ee sur chaque cellule \var{IEL} du maillage ($\Omega_{iel}$) soit, symboliquement, par la racine carr\'ee de la
+somme sur les cellules du maillage de la quantit\'e 
+\begin{center}
+\var{XNORMP(IEL)}=
+$\int\limits_{\Omega_{iel}}[{\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta\,t\,\grad{P^{n-1+\theta}})
+-\Gamma\,]\,d\Omega}$. 
+\end{center}
+
+Il repr\'esente le second membre du syst\`eme qui porterait sur la pression si
+le gradient de pression n'\'etait pas pris en compte lors de l'\'etape de pr\'ediction des vitesses. On note que si l'on utilisait directement le second membre de
+l'\'equation portant sur l'incr\'ement de pression, on obtiendrait, pour un calcul
+stationnaire men\'e \`a convergence, un r\'esidu de normalisation tendant vers z\'ero, ce qui serait p\'enalisant et
+peu utile.
+
+Au d\'ebut de \fort{preduv}, on ne dispose pas encore de $\widetilde{\vect{u}}^{n+1}$
+et il n'est donc pas possible de calculer le r\'esidu de normalisation en
+totalit\'e. Cependant, le calcul du r\'esidu complet \`a la fin de \fort{preduv}
+n'est pas souhaitable non plus, car on devrait alors  monopoliser un tableau de
+travail pour conserver le gradient de pression tout au long de \fort{preduv}.
+Le calcul du r\'esidu de normalisation est donc r\'ealis\'e en deux fois. 
+
+La quantit\'e $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ est calcul\'ee au d\'ebut de \fort{preduv} et on y ajoute le compl\'ement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ \`a la fin de \fort{preduv}. 
+
+On calcule donc tout d'abord le gradient de pression aux cellules \`a l'instant
+$n-1+\theta$ par un appel \`a \fort{grdcel}. On utilise alors \fort{inimas} pour
+\'evaluer $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ aux faces (de surface $S$ et de normale $\vect{n}$). Pour cela, en entr\'ee de \fort{inimas} , le tableau de travail \var{TRAV} contient $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$~; en sortie, les tableaux \var{VISCF} et \var{VISCB} contiennent la valeur de $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ aux faces internes et de bord respectivement. 
+
+On utilise ensuite \fort{divmas} qui place alors dans \var{XNORMP} la valeur de $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$ aux cellules
+\`a partir des tableaux \var{VISCF} et \var{VISCB}. 
+
+On ajoute enfin \`a \var{XNORMP} la contribution $\int\limits_{\Omega_{iel}}{ -\Gamma^{n} d\Omega}$ du terme source de masse. 
+
+On applique pour $\rho\,\widetilde{\vect{u}} + \Delta t \grad{P}$ les conditions
+aux limites de la vitesse. Les conditions aux limites utilisées pour le gradient
+de pression (ou 
+plut\^ot pour $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) pour le calcul de
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$
+sont donc les conditions aux limites de la vitesse homog\'en\'eis\'ees~: ainsi,
+on suppose 
+que dans la direction normale aux entr\'ees et aux parois, le gradient de
+pression (ou plut\^ot $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) est nul
+et que dans la direction normale aux sym\'etries et aux sorties, il reste
+inchang\'e. 
+
+De plus, pour gagner du temps calcul lors du passage par \fort{inimas}, 
+on se contente, sur les maillages non orthogonaux, 
+d'une \'evaluation des valeurs aux faces \`a l'ordre 1 en espace (pas de
+reconstruction~: \var{NSWRP=1}). En effet, on cherche \`a \'evaluer un simple
+r\'esidu de normalisation global~: la pr\'ecision locale n'a donc pas
+d'int\'er\^et. 
+
+Le calcul du r\'esidu sera compl\'et\'e \`a la fin de \fort{preduv}.
+
+
+\etape{Calcul en partie du r\'esidu de normalisation pour l'\'etape de pression}
+
+Dans cette première étape on calcule dans le tableau \var{XNORMP(NCELET)} la
+grandeur $$\dive(\Delta t \,\grad{P^{n-1+\theta}})-\Gamma$$ int\'egr\'ee sur chaque cellule \var{IEL} du maillage ($\Omega_{iel}$) 
+soit, symboliquement, 
+$$\var{XNORMP(IEL)}=\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}})-\Gamma
+d\Omega}$$
+On r\'ealise cette op\'eration en utilisant successivement \fort{inimas}
+(calcul aux faces dans \var{VISCF} et \var{VISCB} de $\Delta t\,\grad{P^{n-1+\theta}}$ \`a
+partir du tableau de travail \var{TRAV}=$\frac{\Delta t}{\rho}
+\grad{P^{n-1+\theta}}$, assorti des conditions  aux limites de vitesse
+homog\`enes et sans reconstruction) et \fort{divmas} (calcul dans \var{XNORMP}
+de l'int\'egrale sur les cellules).  Par une simple boucle, on 
+ajoute ensuite la contribution du terme source de masse $\Gamma$. 
+Ce calcul est complété \`a la fin de \fort{preduv}.\\
+
+\etape{Calcul en partie du terme $\underline{f}_s^{\,exp}$}
+
+Pour représenter le second membre correspondant à chaque composante de la
+vitesse, on utilise les tableaux \var{TRAV}(\var{IEL},\var{DIR}),
+\var{TRAVA}(\var{IEL},\var{DIR}) et \var{PROPCE},  
+où \var{IEL} est le numéro de la cellule et \var{DIR} la direction (x, y,
+z). Quatre cas sont à considérer suivant que les termes sources sont extrapolés
+en $n+\theta_S$, ou que l'on itère par un point fixe sur le système en
+vitesse-pression (\var{NTERUP}$>1$). 
+\\
+$\bullet$ Si on extrapole les termes sources et que l'on itère sur \fort{navsto}\\
+\begin{itemize}
+\item [-]\var{TRAV} reçoit les termes sources qui sont recalculés au cours de
+toutes les itérations sur \fort{navsto} et qui ne sont pas extrapolés
+($\grad{P^{n-1+\theta}}$ et $(\rho -\rho_0) \underline {g}$\footnote{en réalité
+$(\rho -\rho_0) \underline {g}$ ne change pas, mais il est rapide à calculer ce
+qui évite d'avoir un traitement supplémentaire pour ce terme.}).\\ 
+\item [-]\var{TRAVA} reçoit les termes sources qui ne changent pas au cours des
+itérations sur \fort{navsto} et qui ne sont pas extrapolés
+($T_s^{imp}\,u^n\,,-\rho\,\tens{K}_{d}\,u^n\,,\,-\Gamma^n\,u^n,...$).\\ 
+\item [-]\var{PROPCE} reçoit les termes sources devant \^etre extrapolés.\\
+\\
+\end{itemize}
+$\bullet$ Sans itération sur \fort{navsto}, \var{TRAVA} est inutile et son contenu est directement stocké dans \var{TRAV}.\\
+\\
+$\bullet$ Sans extrapolation des termes sources, \var{PROPCE} est inutile et son contenu est directement stocké dans \var{TRAVA} (ou dans \var{TRAV} si \var{TRAVA} est inutile).\\
+Ainsi, sans extrapolation des termes sources, et sans itération sur \fort{navsto}, tout les termes sources vont directement dans \var{TRAV}.\\
+\\
+\begin{itemize}
+\item On dispose d\'ej\`a du gradient de pression sur les cellules \`a l'instant $n-1+\theta$. Le terme de gravit\'e est alors ajouté au vecteur \var{TRAV} qui contient déjà le gradient de pression. Ainsi, on a par exemple pour la direction x :
+\begin{equation}
+\var{TRAV}(\var{IEL},1) = |\Omega_{IEL}| (-\displaystyle (\frac {\partial p}
+{\partial x})_{\var{IEL}}+(\rho(\var{IEL})-\rho_0)g_x)
+\end{equation}
+
+\item Si une extrapolation des termes sources est utilisée, le vecteur
+\var{TRAV} (ou \var{TRAVA}) reçoit à la première itération sur \fort{navsto},
+$-\theta_S$ fois la contribution au temps $n-1$ des termes sources devant \^etre
+extrapolés\footnote{car
+$(\underline{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\underline{T}_s^{exp})^n
+-\,\theta_S\, (\underline{T}_s^{exp})^{n-1}$} (stockée dans
+\var{PROPCE}). \var{PROPCE} est ensuite réinitialisé à zéro de façon à pouvoir
+recevoir plus tard la contribution au pas de temps courant des termes sources qui
+sont extrapolés. 
+
+\item Le terme correspondant au modèle de turbulence n'est calculé que lors de la premiere itération sur \fort{navsto} puis ajouté à \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapolés, ou que l'on itère sur \fort{navsto}.\\
+
+{\tiny$\blacksquare$} Modèles à viscosité turbulente :\\
+Si $\var{IGRHOK}=1$, alors on calcule $-\displaystyle \frac{2}{3}\ \rho\ \grad k$ (et non, comme on devrait, 
+$-\displaystyle \frac{2}{3}\grad (\rho k)$) par  simplification
+(cf. paragraphe~\ref{Base_Preduv_section4}). Le gradient de $k$ est calculé sur la cellule
+par le 
+sous-programme \fort{grdcel}. \\
+Si $\var{IGRHOK}=0$, ce terme est suppos\'e \^etre implicitement pris en compte
+dans la pression.\\
+{\tiny$\blacksquare$} Modèles  au second ordre :\\
+Le calcul du terme $-\dive(\rho \tens{R})$ s'effectue en deux temps. Tout
+d'abord, on appelle le sous-programme \fort{divrij} qui projette le vecteur 
+$\tens{R}.\underline{e}_{\var{DIR}}$ aux faces, pour la direction \var{DIR}. Puis, on
+appelle le sous-programme \fort{divmas} qui en calcule la divergence.\\
+\linebreak
+\item Les termes de viscosité secondaire $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ et de gradient
+transposé $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ sont calculés (s'ils sont pris en compte \emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, où \var{IPHAS} est le
+numéro de la phase traitée) par le sous-programme \fort{vissec}. Il ne sont calculés qu'à la première itération sur \fort{navsto}. Au cours de cette étape, le tableau \var{TRAV} est utilisé comme tableau de travail lors de l'appel au sous-programme \fort{vissec}. Il retrouve sa valeur à la fin de cet appel, son contenu étant temporairement stocké dans les vecteurs \var{W7} à \var{W9}.
+\\
+\item Les termes correspondant aux pertes de charges ($\rho \tens{K}_{\,pdc}
+{u}$), s'ils existent (\ $\var{NCEPDP}> 0$\ ), sont calculés par le
+sous-programme \fort{tsepdc} à la première itération sur \fort{navsto}. Ils sont
+décomposés en deux parties :\\ 
+{\tiny$\blacksquare$} Une première, correspondant à la contribution des termes
+diagonaux ($-\rho\,\tens{K}_{\,d}\underline{u}$) qui n'est pas extrapolée.\\ 
+{\tiny$\blacksquare$} Une seconde, correspondant aux  termes extradiagonaux
+($-\rho\,\tens{K}_{\,e}\underline{u}$) qui peut l'\^etre ou non.\\ 
+Au cours de cette étape, le tableau \var{TRAV} est utilisé comme tableau de
+travail lors de l'appel au sous-programme \fort{tsepdc}. Il retrouve sa valeur à
+la fin de cet appel, son contenu étant temporairement stocké dans les vecteurs
+\var{W7} à \var{W9}. 
+
+\end{itemize}
+
+\etape{Calcul du terme de viscosité aux faces
+$\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$}
+Le calcul du terme de viscosité totale aux faces est effectué par le
+sous-programme \fort{viscfa} et stocké dans les tableaux \var{VISCF} et
+\var{VISCB} pour les faces internes et faces de bord respectivement.\\
+Lors de l'intégration des termes de convection-diffusion dans le sous-programme
+\fort{codits}, on distingue les termes non reconstruits, int\'egr\'es dans la
+matrice $\tens{EM}$ , de l'ensemble des termes (non reconstruits +
+gradients de reconstruction) associ\'es \`a l'op\'erateur $\mathcal{E}$ (non
+lin\'eaire)\footnote{ par coh\'erence avec les op\'erateurs $\mathcal{EM}$ et $\mathcal{E}$ d\'efinis dans \fort{navsto} }. 
+De la même manière, on distingue la viscosité totale aux faces utilisée dans 
+$\mathcal{E}$, tableaux \var{VISCF} et \var{VISCB}, de la viscosité totale aux
+faces utilisée dans $\tens{EM}$, tableaux \var{VISCFI} et
+\var{VISCBI}.\\
+Pour les modèles à viscosité turbulente et en LES, ces deux tableaux sont identiques et contiennent $\mu_t+\mu$.
+Pour les modèles au second ordre, ils contiennent normalement $\mu$, mais pour des simples raisons de stabilité 
+numérique, on peut choisir de mettre $\mu_t+\mu$ dans la matrice (\textit{i.e.} dans $\tens{EM}$) en 
+conservant $\mu$ au second menbre (\textit{i.e.} dans $\mathcal{E}$). De par la résolution par incréments, cette
+ manipulation ne change pas le résultat. Cette option est activée par l'indicateur $\var{IRIJNU}\ =\ 1$\\
+Si la vitesse n'est pas diffusée (\ \var{IDIFF}(\var{IUIPH})\ $<$\ 1), alors les termes \var{VISCF} et \var{VISCB} sont mis à zéro.
+\linebreak
+
+\etape{Calcul du second membre complet, de $f_s^{\,imp}$ et résolution de l'équation}
+Les équations d'évolution des composantes de la quantité de mouvement sont
+résolues de façon découplée. On utilise, par conséquent, un seul tableau
+\var{ROVSDT} pour représenter la partie diagonale de la matrice obtenue pour chaque composante de la vitesse.\\
+Pour chaque composante de la vitesse :\\
+
+\begin{itemize} 
+\item Lors de la première itération sur le sous-programme \fort{navsto}, les parties implicites et explicites des termes sources utilisateurs sont calculées par appel au sous-programme \fort{ustsns}.\\
+{\tiny$\blacksquare$} La partie implicite ($T_s^{imp}$) est conservée dans le vecteur \var{XIMPA} pour les itérations suivantes en cas d'utilisation du point-fixe sur le système en vitesse-pression, et la contribution issue des m\^emes termes implicites ($T_s^{imp}\,\underline{u}^n$) ajoutée à \var{TRAVA} ou à \var{TRAV}.\\
+{\tiny$\blacksquare$} La partie explicite ($T_s^{exp}$) est ajoutée à \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapolés, ou que l'on itère sur \fort{navsto}.\\
+
+\item Le terme d'accumulation de masse ($\dive(\rho \underline {u})$) est
+calculé en appelant le sous-programme \fort{divmas} avec en argument le flux de
+masse. Lors de la première itération faite sur le sous-programme \fort{navsto},
+le terme correspondant à la contribution explicite de l'accumulation de masse
+($\underline{u}^{n}\ \dive(\rho \underline{u})$) est ajouté \`a \var{TRAVA} ou à
+\var{TRAV}. Le vecteur \var{ROVSDT} est initialisé par $\theta\,\dive(\rho
+\underline{u})$ (par cohérence avec ce qui est fait dans le sous-programme
+\fort{bilsc2}) puis la contribution du terme instationnaire ($\displaystyle
+\frac{\rho}{\Delta t}$) ajoutée à ce dernier.\\ 
+
+\item Le vecteur \var{ROVSDT} est ensuite complété avec la contribution des termes sources implicites utilisateur (stockée dans \var{XIMPA}) et avec celle des perte de charge ($\rho\,\tens{K}_{\,d}$) si $\var{NCEPDP}>0$.\\
+{\tiny$\blacksquare$} Dans le cas ou les termes sources ne sont pas extrapolés, la partie implicite des termes sources utilisateur n'est ajoutée à \var{ROVSDT} que si elle est négative de fa\c con à ne pas affaiblir la diagonale du sytème.\\
+{\tiny$\blacksquare$} Dans le cas ou ils sont extrapolés par contre, elle est prise en compte quel que soit son signe.\\
+
+\item Les termes sources implicite et explicite de masse, s'ils existent
+(~$\var{NCESMP}>0$~), sont calculés à la première itération sur \fort{navsto}
+par le sous-programme \fort{catsma}. $\Gamma\,\underline{u}_i$ est ajouté à
+\var{TRAV}, \var{TRAVA} ou \var{PROPCE} pour être éventuellement
+extrapolé. $\Gamma\,\underline{u}^n$ est rajouté à \var{TRAV} ou \var{TRAVA} et
+$-\Gamma$ à \var{ROVSDT}.
+\\
+\item Le second membre est enfin assemblé en tenant compte de toutes les
+contributions stockées dans les tableaux \var{PROPCE}, \var{TRAVA} et
+\var{TRAV}.\\ 
+{\tiny$\blacksquare$} Si les termes sources sont extrapolés alors :
+$$\var{SMBR}=(1-\theta_S)\,\var{PROPCE}+\var{TRAVA}+\var{TRAV}$$
+{\tiny$\blacksquare$} Sinon on a directement :
+$$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
+
+\item Prise en compte des physiques particulières (lagrangien, arc électrique,
+...) ajoutés directement à \var{SMBR}. 
+\\
+\item La resolution du système linéaire est faite par le sous-programme
+\fort{codits} avec pour argument \var{ROVSDT} et \var{SMBR}.\\ 
+   
+\item Si on utilise le couplage instationnaire renforcé vitesse-pression ($\ \var{IPUCOU} = 1\ $) (uniquement disponible avec l'ordre 1, sans extrapolation des termes sources et sans itération sur \fort{navsto}) on résout, en utilisant pour \fort{codits} :
+\begin{equation}\label{Base_Preduv_Eq_Tdir}
+\tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}} =
+\tens{\Omega}\,.\,\vect{1} 
+\end{equation}
+avec $\tens{RHO}^n$ le tenseur diagonal d'\'el\'ement $\rho^{n}_{IEL}$,
+$\tens{\Omega}$ le tenseur diagonal d'\'el\'ement $|\Omega_{IEL}|$, $\vect{1}$ le
+vecteur de composantes toutes \'egales \`a 1.\\ 
+ L'inversion du système par \fort{codits} fournit 
+$(\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}}$, qui est ensuite multiplié par $\tens{RHO}^{\,n}$
+pour obtenir $\underline{T}_{\,\var{DIR}}$. 
+Ceci est r\'ealis\'e pour chaque composante \var{DIR} de la vitesse. $\underline{T}_{\,\var{DIR}}$ 
+est alors une approximation de type matrice diagonale de
+$\tens{RHO}^{\,n}\,.\,\tens{EM}_{\,\var{DIR}}^{-1}$, avec
+$\tens{EM}_{\,\var{DIR}}$ représentant toujours la partie implicite de l'équation de quantité de mouvement
+(\emph{i.e.} \var{ROVSDT} + contribution des
+termes de convection-diffusion pris en compte dans le sous-programme
+\fort{matrix}). $\underline{T}_{\,\var{DIR}}$
+intervient dans l'étape corrective (cf. sous-programme \fort{resolp}).\\
+\end{itemize}
+Fin de la boucle sur les composantes de la vitesse.\\
+
+\etape{Fin du calcul du r\'esidu de normalisation pour l'\'etape de pression}
+
+Comme indiqu\'e pr\'ec\'edemment, on peut maintenant compl\'eter le calcul du
+r\'esidu de normalisation pour l'\'etape de pression de \fort{resolp}. 
+
+Le tableau \var{XNORMP} contient d\'ej\`a
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ . On
+lui ajoute donc
+$\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u^{n+1}}})d\Omega}$. 
+
+Pour
+cela, on proc\`ede comme pr\'ec\'edemment pour le calcul de
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$. Un appel \`a
+\fort{inimas} permet d'obtenir
+$\rho\,S\,\widetilde{\vect{u}}^{n+1}\cdot\widetilde{\vect{n}}$ aux faces \`a partir de
+$\widetilde{\vect{u}}^{n+1}$ connu aux cellules (tableau \var{RTP}). Les conditions
+aux limites pour \fort{inimas} sont naturellement celles de la vitesse. Comme
+pr\'ec\'edemment, on se contente pour gagner du temps calcul lors du passage par
+\fort{inimas}, d'une \'evaluation des valeurs aux faces \`a l'ordre 1 en espace
+sur les maillages non orthogonaux (pas de
+reconstruction~: \var{NSWRP=1}). On utilise ensuite \fort{divmas} pour calculer
+aux cellules la divergence
+$\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ et
+l'ajouter directement \`a \var{XNORMP}.
+
+Pour finir, le r\'esidu de normalisation est d\'etermin\'e et stock\'e dans \var{RNORMP(IIPHAS)} par un appel \`a \fort{prodsc}  (qui r\'ealise le calcul de la somme sur les cellules du
+carr\'e des valeurs de \var{XNORMP} et en prend la racine carr\'ee).\\
+
+
+\newpage
+
+On résume dans les tableaux (\ref{Base_Preduv_tab_ext0}), (\ref{Base_Preduv_tab_ext1}), (\ref{Base_Preduv_tab_exp0})
+et (\ref{Base_Preduv_tab_exp1}) les différentes contributions (hors convection-diffusion)
+affectées à chacun des vecteurs \var{TRAV}, \var{TRAVA}, \var{PROPCE} et
+\var{ROVSDT} à l'itération $n$. On différencie pour chacun des schémas en temps
+appliqués aux les termes sources, deux cas suivant qu'un point fixe sur le
+système en vitesse-pression est utilisé ou non (itération sur \fort{navsto} pour
+\var{NTERUP}$>1$). En l'absence d'indication les propriétés physiques $\Phi$
+($\rho$,$\mu$,etc...) sont supposées prises au temps $n+\theta_\Phi$, et le flux
+de masse $(\,\rho \underline{u})$ pris au temps $n+\theta_F$, où $\theta_\Phi$
+et $\theta_F$ dépendent des schémas en temps spécifiquement utilisés pour ces
+grandeurs (cf. \fort{introd}). 
+\\\\
+Les termes figurant dans ces tableaux sont écrits tels qu'ils ont été implantés
+dans le code, d'où l'origine de certaines différences par rapport à l'écriture
+adoptée dans l'équation (\ref{Base_Preduv_eq_di2}). 
+\\\\
+Par souci de simplification, on pose~:
+\begin{equation}\notag
+\mu_{\,tot}=
+\begin{cases}
+\mu+\mu_t & \text{pour les modèles à viscosité turbulente ou en LES}, \\
+\mu & \text{pour les modèles au second ordre ou en laminaire}\\
+\end{cases} \ 
+\end{equation}
+
+\minititre{Avec extrapolation des termes sources}
+\begin{equation}\notag
+\underline{turb}^{n}=
+\begin{cases}
+\displaystyle\frac {2}{3}\,\rho^{n}\,\grad (\,k^{n}) & 
+\text{pour les modèles à viscosité turbulente}, \\
+\dive(\rho^{n}\,\tens{R}^n) & \text{pour les modèles au second ordre},\\
+0 & \text{en laminaire ou en LE.}\\
+\end{cases}
+\end{equation} 
+$\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAV}^n$
+\begin{equation}\label{Base_Preduv_tab_ext0}
+\begin{array}{|l|c|}
+\hline
+\var{ROVSDT}^{n} 
+& \displaystyle
+\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
+\hline
+\var{PROPCE}^{n} 
+& \displaystyle
+\underline{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+& \displaystyle
+-\underline{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \underline {u})}{\rho^{n}}\,)\\
+\hline
+\var{TRAV}^{n} & \displaystyle
+- \grad p^{n-1+\theta} + (\rho -\rho_0) \underline {g} \\
+& \displaystyle
+-\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n} \\
+& \displaystyle
++ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
+\hline
+\end{array}
+\end{equation}
+\\\\
+$\bullet$ \var{NTERUP} $>$ 1 (sous-itération $k$) : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAVA}^n+\var{TRAV}^n$
+\begin{equation}\label{Base_Preduv_tab_ext1}
+\begin{array}{|l|c|}
+\hline
+\var{ROVSDT}^{n} 
+& \displaystyle
+\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
+\hline
+\var{PROPCE}^{n} 
+& \displaystyle
+\underline{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+& \displaystyle
+-\underline{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \underline {u})}{\rho^{n}}\,)\\
+\hline
+\var{TRAVA}^{n} & 
+\displaystyle
+-\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n} + T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
+\hline
+\var{TRAV}^{n} 
+& \displaystyle
+- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \underline {g} \\
+\hline
+\end{array}
+\end{equation}
+
+\minititre{Sans extrapolation des termes sources}
+
+\begin{equation}\notag
+\underline{turb}^{n}=
+\begin{cases}
+\displaystyle\frac {2}{3}\,\rho\,\grad (\,k^{n}) &
+\text{pour les modèles à viscosité turbulente}, \\
+\dive(\rho\,\tens{R}^n) & \text{pour les modèles au second ordre},\\
+0 & \text{en laminaire ou en LES.}\\
+\end{cases}
+\end{equation}  
+$\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
+\\\\
+\begin{equation}\label{Base_Preduv_tab_exp0}
+\begin{array}{|l|c|}
+\hline
+\var{ROVSDT}^{n} &
+\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
+\hline
+\var{TRAV}^{n} 
+& \displaystyle
+- \grad p^{n-1+\theta} + (\rho -\rho_0) \underline {g} \\
+& \displaystyle
++ \underline{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+& \displaystyle
+-\underline{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \underline {u})}{\rho}\,)\\
+& \displaystyle
+-\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n}+ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \,\Gamma^{n}\,\underline{u}^{n}\\
+\hline
+\end{array}
+\end{equation}
+\\\\
+$\bullet$ \var{NTERUP} $>$ 1 (sous-itération $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\var{TRAV}^n$
+\begin{equation}\label{Base_Preduv_tab_exp1}
+\begin{array}{|l|c|}
+\hline
+\var{ROVSDT}^{n} &
+\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
+\hline
+\var{TRAVA}^{n} & 
+\displaystyle
+\underline{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+& \displaystyle
+-\underline{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \underline {u})}{\rho}\,)\\
+& \displaystyle
+-\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n}+ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
+\hline
+\var{TRAV}^{n} & 
+\displaystyle
+- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \underline {g} \\
+\hline
+\end{array}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}\label{Base_Preduv_section4}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\etape{Prise en compte du terme $\grad(\rho k)$ pour les modèles à viscosité turbulente}
+Pour les modèles à viscosité turbulente, on calcule $\rho\ \grad k$ au lieu de $\grad(\rho k)$. Cette
+approximation, historique, provient du fait que les conditions aux limites de
+$\rho k$ ne sont pas directement accessibles, contrairement \`a celles de
+$k$.\\
+
+\etape{Prise en compte de la diagonale de $\tens{K}_{\,pdc}$}
+Actuellement, dans le sous-programme utilisateur \fort{uskpdc}, une mise en
+garde explicite est \'ecrite, mais en commentaire.
+% \footnote{Son contenu est : Veillez
+%\`a ce que les coefficients diagonaux  (du tenseur de pertes de charge consid\'er\'e) soient positifs. Vous risquez un PLANTAGE
+%si ce n'est pas le cas. AUCUN contr\^ole ult\'erieur ne sera effectu\'e.}.
+ La partie diagonale $\tens{K}_{\,d}$ du tenseur de pertes de charge
+$\tens{K}_{\,pdc}$ peut donc intervenir syst\'ematiquement dans le calcul du
+coefficient $f_s^{\,imp}$, que sa contribution $K_{\,d}$ soit positive ou non, si
+l'utilisateur n'y prend garde. Un test de positivit\'e  sur les \'el\'ements de
+$\tens{K}_{\,d}$ assurant une prise en compte correcte (contribution renfor\c
+cant r\'eellement la diagonale de la matrice globale) devrait \^etre implant\'e.  
+ 
+\etape{\'Ecriture de $\tens{EM}$}
+Dans la r\'esolution proc\'edant par incr\'ements, il n'est pas indispensable
+\`a convergence 
+que la viscosit\'e utilis\'ee pour l'\'ecriture de l'op\'erateur $\mathcal{E}$  soit la m\^eme que celle prise en
+compte dans $\tens{EM}$, matrice du syst\`eme en incr\'ements. Ainsi, en $R_{ij}-\varepsilon$, la
+viscosit\'e totale utilis\'ee dans $\tens{EM}$ contient la viscosit\'e mol\'eculaire mais aussi la
+viscosit\'e turbulente si l'on choisit l'option \var{IRIJNU = 1 }, alors que
+dans $\mathcal{E}$ intervient seule la viscosit\'e mol\'eculaire. Cet ajout de
+la viscosit\'e turbulente qui n'a pas de raison d'appara\^\i tre en
+$R_{ij}-\varepsilon$, a \'et\'e h\'erit\'e des pratiques mises en \oe uvre dans
+ESTET et N3S-EF pour renforcer la stabilit\'e (lissage \'eventuel de l'incr\'ement). Mais, ce
+n'est peut \^etre pas le seul effet produit. En outre, cette pratique n'a pas aujourd'hui montr\'e son absolue
+n\'ecessit\'e dans \CS. Par cons\'equent, une \'etude approfondie serait int\'eressante.
+
+
+\etape{R\'esidu de normalisation de l'\'etape de pression} 
+On pourra v\'erifier le calcul du r\'esidu de normalisation et en
+particulier l'utilisation des conditions aux limites de vitesse.
+
+\etape{Calcul des pertes de charges}
+Avec extrapolation des termes sources on a :
+\begin{equation}\notag
+(\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n}\ \underline{u}^{n+\theta}
+\end{equation}
+Il serait aussi envisageable d'utiliser~:
+\begin{equation}\notag
+(\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n+\theta_S}\ \underline{u}^{n+\theta}
+\end{equation}

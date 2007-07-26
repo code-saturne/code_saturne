@@ -1,0 +1,639 @@
+
+\begin{center}\underline{\Huge \bf Introduction}\end{center}
+
+
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Objectifs du document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Ce chapitre constitue une introduction \`a la documentation th\'eorique et
+informatique des parties centrales du noyau de \CS~1.1\footnote{\`A 
+quelques modifications pr\`es, les algorithmes sont 
+\'egalement ceux de la version~1.0.}.
+On s'int\'eresse \`a la r\'esolution des \'equations de Navier-Stokes
+incompressible ou faiblement dilatable, avec mod\`ele de turbulence et scalaires
+passifs. Dans ce chapitre d'introduction, on pr\'ecise, avant de les examiner en
+d\'etail, les \'equations continues pour la masse, la
+quantit\'e de mouvement, la turbulence et les autres scalaires. 
+On donne \'egalement des informations sur la nature du sch\'ema en temps
+utilis\'e. On fournit enfin des \'el\'ements relatifs \`a la
+discr\'etisation spatiale, bas\'ee
+sur une m\'ethode de volumes finis colocalis\'ee\footnote{Toutes les
+variables sont localis\'ees au centre des cellules.} en maillage non
+structur\'e.
+
+Afin que la documentation soit directement utilisable par les 
+d\'eveloppeurs, elle a \'et\'e structur\'ee en sous-parties correspondant
+\`a la fois aux \'etapes majeures de l'algorithme et \`a certains
+sous-programmes cl\'es du code. 
+
+Pour chacune des sous-parties (ou sous-programmes), on donne une description
+de la {\bf fonction}, puis on d\'etaille la {\bf discr\'etisation}. \`A
+l'attention des d\'eveloppeurs, on pr\'ecise ensuite la {\bf mise en \oe
+uvre} informatique et on liste dans un dernier paragraphe les {\bf points \`a
+traiter} et les am\'eliorations \`a apporter au code. 
+
+Plusieurs niveaux d'accessibilit\'e ont \'et\'e d\'efinis, afin qu'il soit
+possible de choisir le niveau de d\'etail souhait\'e. 
+Pour l'heure, toute personne consultant la documentation (sous UNIX ou Linux) 
+a acc\`es \`a la totalit\'e des informations contenues dans le pr\'esent
+document, c'est-\`a-dire au niveau
+\texttt{Complet}. Le niveau le moins riche ne fournit que la fonction du
+sous-programme (\texttt{Fonction}). Le niveau interm\'ediaire reprend la
+fonction et pr\'esente la discr\'etisation des \'equations (\texttt{Discret}). 
+
+La pr\'esente version de la documentation contient les algorithmes de base du
+code (version de d\'eveloppement 1.1.0.m du noyau) 
+et il \'etait donc important de la formaliser par l'\'edition d'une note
+EDF. Il est important de la concevoir comme un point de d\'epart~: la
+documentation 
+devra \^etre enrichie au rythme de la r\'esorption de nouvelles potentialit\'es et
+compl\'et\'ee selon les retours des utilisateurs. Il sera en particulier
+n\'ecessaire de traiter certains aspects transverses
+(parall\'elisme, p\'eriodicit\'e, gestion m\'emoire) qui ont volontairement
+\'et\'e exclus de la version pr\'esente pour concentrer les efforts sur 
+les algorithmes et leur implantation.   
+
+Pour favoriser les mises \`a jour par les d\'eveloppeurs, la documentation est 
+attach\'ee \`a la version du code correspondante ({\it i.e.} les fichiers
+associ\'es sont plac\'es dans l'arborescence contenant les sources, les
+biblioth\`eques, etc.). En pratique, les
+utilisateurs de \CS\ (\`a partir de la version de d\'eveloppement 1.1.0.n)
+peuvent acc\'eder \`a la documentation sous
+\begin{center}
+\texttt{\$SC\_HOME% commentaire bidon pour ne pas avoir tout en vert sous emacs$
+/doc/NOYAU/Postscripts/Base},
+\end{center}
+(serveur Unix MFTT), information qui leur est rappel\'ee par la  
+commande d'information g\'en\'erale \texttt{info\_cs [noyau]} (voir \'egalement, 
+sous \texttt{Netscape}, toujours sur le serveur Unix MFTT, 
+la page
+\begin{center} 
+\texttt{/home/sc\_doc/saturne.html}
+\end{center}
+ qui renvoie
+vers des documents compl\'ementaires). Le pr\'esent rapport sera donc tir\'e \`a 
+un nombre d'exemplaires tr\`es limit\'e et on favorisera la consultation de la
+documentation en ligne. 
+
+%sous  
+% c'est pas facile de faire un joli tilde en milieu de ligne
+%\texttt{$_\text{\large{\tilde}}$sc\_doc} pour d'autres documentsrelatifs \`a \CS.).   
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Syst\`eme d'\'equations continues}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Ce paragraphe rappelle les \'equations continues consid\'er\'ees, sans pour autant se
+substituer aux sous-parties sp\'ecifiques de la documentation. Il a \'et\'e
+\'ecrit afin de fixer les id\'ees avant une lecture approfondie. 
+
+On note  $\rho$ la masse volumique, $\vect{u}$ le champ de vitesse, $\phi^i$ la
+valeur d'injection de la variable $\phi$ en cas de terme source de masse
+additionnel ($\Gamma\, \phi^i$) au second membre des \'equations.  
+
+
+\clearpage 
+
+{\bf Masse}\\
+\begin{equation}
+\dive(\rho \vect{u}) = 0
+\end{equation}
+
+En r\'ealit\'e, lors de la r\'esolution d'une variable $\phi$ donn\'ee (et en
+particulier lors de la pr\'ediction des vitesses), on
+utilise  
+l'\'equation  
+$\displaystyle \frac{\partial \rho}{\partial t} + \dive(\rho \vect{u}) = \Gamma$ 
+pour \'ecrire le terme $\displaystyle \frac{\partial \rho\,\phi}{\partial t}$
+sous la forme  
+\mbox{$\displaystyle \rho\frac{\partial  \phi}{\partial t} - \phi\,\dive(\rho \phi)
++ \Gamma\,\phi$}.
+Les variations temporelles
+\'eventuelles de la masse volumique ne 
+sont  cependant pas prises en compte lors de la r\'esolution de l'\'etape de pression. 
+
+{\bf Quantit\'e de mouvement}
+\begin{equation}
+\left\{\begin{array}{l}
+\displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) + \dive(\rho\, \vect{u} \otimes \vect{u})
+=\dive(\tens{\sigma}) + \vect{TS} - \tens{K}\,\vect{u}\\ 
+\dive(\rho \vect{u}) = 0
+\end{array}\right.
+\end{equation}
+
+$[\,\tens{TS}-\tens{K}\,\vect{u}\,]$ repr\'esente les termes sources
+additionnels, \'eventuellement sp\'ecifi\'es par l'utilisateur (termes sources
+de quantit\'e de mouvement,  $\Gamma \vect{u}^i$, d\^u au terme source de masse,
+pertes de charge...). 
+
+$\tens{K}$~est un 
+tenseur diagonal positif par d\'efinition (issu, par exemple, du terme
+diagonal du tenseur des pertes de charges). 
+
+
+En laminaire, $\tens{\sigma}$ est  le tenseur des contraintes, soit~:  
+\begin{equation}
+\tens{\sigma} = \tens{\tau} - P\tens{Id}  
+\end{equation}
+o\`u $\tens{\tau}$ est le tenseur des contraintes
+visqueuses (\`a trace nulle), d\'efini \`a partir de $\mu=\mu_l$ (viscosit\'e
+dynamique mol\'eculaire) et de $\tens{D}$ (tenseur des taux de d\'eformation)~:
+\begin{equation}
+\tens{\tau} = 2\,\mu\ \tens{D} - \frac{2}{3}\mu\  tr({\tens{D}})\ \tens{Id}  
+\text{ \hspace*{1cm}avec \hspace*{1cm} } \tens{D} = \frac{1}{2}(\ggrad\vect{u}+\,^{t}\ggrad\vect{u})
+\label{tau_eq}\end{equation}
+
+En turbulent, $\displaystyle \tens{\sigma}$ comprend en outre la contribution 
+des ``contraintes turbulentes'', r\'esultant des
+corr\'elations de fluctuations de vitesse issues du terme convectif. La mod\'elisation de ces
+derni\`eres d\'epend du mod\`ele de turbulence utilis\'e~: \\
+\hspace*{1cm} - en $k-\varepsilon$, la loi de fermeture introduit une viscosit\'e turbulente
+$\mu_t$. En conservant une d\'efinition formellement identique pour $\tens{\tau}$
+(\'equation (\ref{tau_eq})) mais avec $\mu=\mu_l+\mu_t$, on a~:
+\begin{equation}
+\tens{\sigma} = \tens{\tau} - (P+\frac{2}{3}\rho k)\tens{Id}  
+\end{equation}
+
+\hspace*{1cm} - en $R_{ij}-\varepsilon$, les tensions de Reynolds $\tens{R}$ sont des variables r\'esolues et 
+ l'on obtient alors, avec $\mu=\mu_l$ dans la d\'efinition de $\tens{\tau}$
+(\'equation (\ref{tau_eq}))~:  
+\begin{equation}
+\tens{\sigma} = \tens{\tau} - P\tens{Id} -\rho\tens{R}
+\end{equation}
+
+\clearpage
+ {\bf \'Equations sur les variables $k$ et $\varepsilon$}
+
+\begin{equation}
+\left\{\begin{array}{l}
+\displaystyle
+%\rho\frac{\partial k}{\partial t} + 
+\frac{\partial \rho k}{\partial t} + 
+\dive\left[\rho \vect{u}\,k-(\mu+\frac{\mu_t}{\sigma_k}\grad{k})\right] =
+\mathcal{P}+\mathcal{G}-\rho\varepsilon
+%+k\dive(\rho\vect{u})
+%+\Gamma(k_i-k)\\
++\Gamma k^i
+%\multicolumn{1}{c}{+\alpha_k k +\beta_k}\\
++TS_k\\
+\displaystyle
+%\rho\frac{\partial \varepsilon}{\partial t} + 
+\frac{\partial \rho\varepsilon}{\partial t} + 
+\dive\left[\rho \vect{u}\,\varepsilon-
+(\mu+\frac{\mu_t}{\sigma_\varepsilon}\grad{\varepsilon})\right] =
+C_{\varepsilon_1}\frac{\varepsilon}{k}\left[\mathcal{P}
++(1-C_{\varepsilon_3})\mathcal{G}\right]
+-\rho C_{\varepsilon_2}\frac{\varepsilon^2}{k}
+%\varepsilon\dive(\rho\vect{u})+\\
+%\multicolumn{1}{c}{+\Gamma(\varepsilon_i-\varepsilon)+\alpha_\varepsilon \varepsilon +\beta_\varepsilon}
+%\multicolumn{1}{c}{+\Gamma \varepsilon_i+TS_\varepsilon}
++\Gamma \varepsilon^i+TS_\varepsilon
+\end{array}\right.
+\end{equation}
+
+$\mathcal{P}$ est le terme de production par cisaillement moyen :
+\begin{displaymath}
+\begin{array}{rcl}
+\mathcal{P} & = & \displaystyle -\rho R_{ij}\frac{\partial u_i}{\partial x_j}
+= -\left[-\mu_t \left(\frac{\partial u_i}{\partial x_j} + 
+\frac{\partial u_j}{\partial x_i}\right)
++\frac{2}{3}\mu_t\frac{\partial u_k}{\partial x_k}\delta_{ij}
++\frac{2}{3}\rho k\delta_{ij}\right]
+\frac{\partial u_i}{\partial x_j}\\
+& = & \displaystyle \mu_t \left(\frac{\partial u_i}{\partial x_j} + 
+\frac{\partial u_j}{\partial x_i}\right)\frac{\partial u_i}{\partial x_j}
+-\frac{2}{3}\mu_t(\dive\vect{u})^2-\frac{2}{3}\rho k \dive(\vect{u})\\
+& = & \displaystyle \mu_t \left[
+2\left(\frac{\partial u}{\partial x}\right)^2+
+2\left(\frac{\partial v}{\partial y}\right)^2+
+2\left(\frac{\partial w}{\partial z}\right)^2+
+\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)^2+
+\left(\frac{\partial u}{\partial z}+\frac{\partial w}{\partial x}\right)^2+
+\left(\frac{\partial v}{\partial z}+\frac{\partial w}{\partial y}\right)^2
+\right]\\
+\multicolumn{3}{r}%
+{\displaystyle -\frac{2}{3}\mu_t(\dive\vect{u})^2-\frac{2}{3}\rho k \dive(\vect{u})}
+\end{array}
+\end{displaymath}
+
+$\mathcal{G}$ est le terme de production par gravit\'e :
+$\displaystyle
+\mathcal{G}=-\frac{1}{\rho}\frac{\mu_t}{\sigma_t}
+\frac{\partial\rho}{\partial x_i}g_i$
+
+La viscosit\'e turbulente est
+$\displaystyle \mu_t=\rho C_\mu\frac{k^2}{\varepsilon}$.
+
+
+$TS_\varphi$ ($\varphi=k$ ou $\varepsilon$) repr\'esentent les termes
+sources additionnels sp\'ecifi\'es (dans de tr\`es rares cas) par l'utilisateur. 
+
+Les constantes du mod\`ele sont les suivantes~:
+\begin{table}[htp]
+\begin{center}
+\begin{tabular}{|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|}
+\hline
+$C_\mu$ &  $C_{\varepsilon_1}$ &
+$C_{\varepsilon_2}$ & $\sigma_k$ & $\sigma_\varepsilon$ \\
+\hline
+$0,09$ & $1,44$ &
+$1,92$ & $1$ & $1,3$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+De plus, on a~:
+
+$C_{\varepsilon_3}=0$ si $\mathcal{G}\geqslant0$ (stratification instable) et 
+$C_{\varepsilon_3}=1$ si $\mathcal{G}\leqslant0$ (stratification stable).
+
+
+
+\clearpage
+ {\bf \'Equations sur les variables $R_{ij}$ et $\varepsilon$}
+
+\begin{equation}
+\left\{\begin{array}{lll}
+\displaystyle
+\frac{\partial \rho R_{ij}}{\partial t} + 
+\dive(\rho \vect{u}\,R_{ij} - \mu \grad{R_{ij}}) &  =
+\mathcal{P}_{ij} + \mathcal{G}_{ij}+\Phi_{ij} + \it{d}_{ij} - \varepsilon_{ij}  
+& \displaystyle + \Gamma R^{i}_{ij} + TS_{R_{ij}} \\
+\displaystyle \frac{\partial \rho\varepsilon}{\partial t} +
+\dive\left[\rho \vect{u}\,\varepsilon-
+(\mu \grad{\varepsilon})\right] & =
+\displaystyle \it{d}
++ C_{\varepsilon_1}\frac{\varepsilon}{k}\left[\mathcal{P}
++\mathcal{G}_{\varepsilon}\right]
+-\rho C_{\varepsilon_2}\frac{\varepsilon^2}{k}
+&
+\displaystyle
++\Gamma \varepsilon^{i}
++TS_\varepsilon 
+\end{array}\right.
+\end{equation}
+
+
+$\tens{\mathcal{P}}$ est le tenseur de production par cisaillement moyen et
+$\tens{\mathcal{G}}$ le tenseur de production par gravit\'e~: 
+\begin{equation}
+\displaystyle P_{ij} = \displaystyle -\rho \left[ R_{ik} \frac{\partial u_j}{\partial x_k} + R_{jk} \frac{\partial u_i}{\partial x_k} \right]\text{\hspace*{1cm}et\hspace*{1cm}}
+\mathcal{G}_{ij}= \left[ G_{ij} - C_3 (G_{ij}-\frac{1}{3} \delta_{ij} G_{kk}) \right]
+\end{equation}
+
+ \begin{equation}
+ \text{o\`u\hspace*{0,3cm}}
+\displaystyle G_{ij} = - \frac{3}{2} \frac{C_{\mu}}{\sigma_{t}} \frac{k}{\varepsilon} (r_i g_j + r_j g_i) \text{\hspace*{0,3cm}avec\hspace*{0,3cm}}
+\displaystyle k = \frac{1}{2} R_{ll} \text{\hspace*{0,3cm}et\hspace*{0,3cm}}
+\displaystyle r_i = R_{ik} \frac{\partial \rho}{\partial x_k} 
+\end{equation}
+
+de plus, on d\'efinit~:
+\begin{equation}
+\mathcal{P} =\frac{1}{2} \mathcal{P}_{kk}\text{\hspace*{1cm}et\hspace*{1cm}}
+\mathcal{G}_{\varepsilon} = max(0,\frac{1}{2}G_{kk})
+\end{equation}
+
+
+$\tens{\Phi}$ est le terme de corr\'elations pression-d\'eformation~:
+\begin{equation}
+\displaystyle
+\Phi_{ij} - \varepsilon_{ij} = \phi_{ij,1} + \phi_{ij,2} + \phi_{ij,w}  -\frac{2}{3} \rho \ \delta_{ij} \varepsilon
+\end{equation}
+\begin{equation}
+ \text{avec\hspace*{0,3cm}}
+\phi_{ij,1} = -\rho\,C_1 \frac{\varepsilon}{k} (R_{ij} - \frac{2}{3} k \delta_{ij})\text{\hspace*{1cm}et\hspace*{1cm}}
+\phi_{ij,2} = -\rho\,C_2 (\mathcal{P}_{ij} - \frac{2}{3} \mathcal{P}) \delta_{ij} 
+\end{equation}
+
+Le terme $\phi_{ij,w}$ est appel\'e "terme d'echo de paroi"
+(par d\'efaut, il n'est pas pris en compte~: voir \fort{turrij}).
+
+Les termes de diffusion turbulente sont~: 
+\begin{equation}
+\it{d}_{ij} = C_{S} \frac{\partial}{\partial x_k} (\rho \frac{k}{\varepsilon} R_{km} \frac{\partial R_{ij}}{\partial x_m})\text{\hspace*{1cm}et\hspace*{1cm}}
+\it{d} = C_{\varepsilon} \displaystyle \frac{\partial}{\partial x_k} \left( \rho \frac{k}{\varepsilon} R_{km} \frac{\partial \varepsilon}{\partial x_m} \right)
+\end{equation}
+
+$TS_\varphi$  repr\'esente les termes
+sources additionnels sp\'ecifi\'es par l'utilisateur (dans de tr\`es rares cas)
+pour la variable $\phi$ ($R_{ij}$ ou $\varepsilon$). 
+
+Les constantes du mod\`ele sont les suivantes~:
+\begin{table}[htp]
+\begin{center}
+\begin{tabular}{|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|}
+\hline
+$C_\mu$ & $C_{\varepsilon}$ & $C_{\varepsilon_1}$ &
+$C_{\varepsilon_2}$ & $C_1$ & $C_2$ & $C_3$& $C_S$ &
+$C'_1$ & $C'_2$\\
+\hline
+$0,09$ & $0,18$ & $1,44$ &
+$1,92$ & $1,8$ & $0,6$ & $0,55$& $0.22$ &
+$0,5$ & $0,3$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+\clearpage
+ {\bf \'Equations sur les scalaires}
+
+On résout : \\
+{\tiny$\bigstar$} soit l'équation de convection-diffusion d'un scalaire en présence de termes sources :
+\begin{equation}
+ \frac {\partial  (\rho a)}{\partial t} +
+\underbrace{\,\dive\,((\rho \underline{u})\,a)}_{\text{convection}}
+- \underbrace{\,\dive\,(K \grad a)}_{\text{diffusion}} = TS_a +\Gamma\,a^i
+\end{equation}
+{\tiny$\bigstar$} soit la variance de la fluctuation d'un scalaire en présence de termes sources~:
+\begin{equation}
+\begin{array}{lcl}
+&\displaystyle 
+ \frac {\partial  (\rho \widetilde{{a"}^2})}{\partial t} +
+\underbrace{\dive\,((\rho\,\underline{u})\ \widetilde{{a"}^2})}_{\text{convection}}
+- \underbrace{\dive\,(K\ \grad \widetilde{{a"}^2})}_{\text{diffusion}} = TS_{\widetilde{{a"}^2}}
+ +\ \Gamma\,\widetilde{{a"}^2}^i\\
+&\displaystyle \underbrace {+ 2\,\frac{\mu_t}{\sigma_t}(\grad a)^2 -
+\frac{\rho\,\varepsilon}{R_f k}\ \widetilde{{a"}^2}}_{\text{termes de production et
+de dissipation}}
+\end{array}
+\end{equation}
+On écrit les deux équations précédentes sous la forme
+d'une seule :
+\begin{equation}
+\frac {\partial  (\rho f)}{\partial t} + \dive\,((\rho\,\underline{u}) f)
+- \dive\,(K \grad f) = TS_f  + \Gamma\,f^i + T_s^{\,pd}
+\end{equation}
+avec~: 
+\begin{equation}
+\begin{array}{lll}
+&\displaystyle 
+T_s^{\,pd}=
+\begin{cases}
+0 & \text{pour $f=a$}, \\
+2\ \displaystyle \frac{\mu_t}{\sigma_t}(\grad a)^2 -
+\displaystyle \frac{\rho\,\varepsilon}{R_f k}\ \widetilde{{a"}^2} & \text{pour $f=\widetilde{{a"}^2}$ }
+\end{cases}
+\end{array}
+\end{equation}
+
+$TS_f$  repr\'esente les termes
+sources additionnels \'eventuels sp\'ecifi\'es par l'utilisateur. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discr\'etisation temporelle}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+La premi\`ere \'etape consiste \`a calculer les grandeurs physiques de
+l'\'ecoulement  (masse volumique, viscosit\'e chaleur sp\'ecifique...) 
+d\'ependant \'eventuellement de variables r\'esolues (telles que
+la temp\'erature par exemple). 
+
+Le sch\'ema en temps est un sch\'ema d'Euler implicite. Un algorithme de type
+pr\'edicteur correcteur (Chorin) est utilis\'e pour le syst\`eme constitu\'e des
+\'equations de conservation de la masse et de la quantit\'e de mouvement. Il
+conduit en particulier \`a l'inversion d'une \'equation de Poisson (Laplacien)
+pour la pression. Lors de la pr\'ediction des vitesses, les trois 
+composantes sont trait\'ees de mani\`ere s\'equentielle et sans couplage entre elles.
+\`A l'issue de cette \'etape, les flux de masse aux faces sont mis \`a jour. 
+
+Les \'equations (\'eventuelles) portant sur les variables repr\'esentant la
+turbulence (\'energie cin\'etique et dissipation, ou tensions de Reynolds et
+dissipation) sont ensuite r\'esolues, toujours par une m\'ethode d'Euler
+implicite. En $k-\varepsilon$, une \'etape de couplage sur les termes sources des
+deux variables est mise en oeuvre. En $R_{ij}-\varepsilon$, les variables sont
+r\'esolues s\'equentiellement, sans couplage. 
+
+On r\'esout ensuite les \'equations portant sur les ``scalaires'' (enthalpie,
+temp\'erature, traceurs, concentrations, fractions massiques...), 
+toujours avec une discr\'etisation
+de type Euler implicite. 
+
+Toutes les variables sont alors mises \`a jour et un nouveau pas de temps peut
+\^etre 
+effectu\'e. 
+
+
+\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discr\'etisation spatiale}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+Pour toute \'equation continue discr\'etis\'ee en espace en volumes finis, 
+on r\'ealise une int\'egration sur chaque cellule du maillage (ou volume de
+contr\^ole $\Omega_i$).
+On se limite ici \`a indiquer comment int\'egrer les termes des \'equations, en
+mettant l'accent sur le calcul des gradients, qui est une des caract\'eristiques majeures de la
+discr\'etisation spatiale choisie, bas\'ee sur une m\'ethode
+de volumes finis cell-center, toutes les variables r\'esolues \'etant
+localis\'ees au ``centre'' des cellules\footnote{Le centre des cellules est un 
+point g\'eom\'etrique situ\'e de
+pr\'ef\'erence \`a l'int\'erieur de la cellule, mais pour lequel la
+d\'enomination de ``centre'' est abusive, en particulier dans le cas de cellules 
+poly\'edriques quelconques.}.  
+
+Les termes {\bf d'ordre 0} (par rapport aux
+diff\'erentielles en espace) sont int\'egr\'es en faisant appara\^\i tre leur
+moyenne sur la cellule. Ainsi, $\rho g$ devient $|\Omega_i| \overline\rho_i
+g$. Dans cette expression,  $|\Omega_i|$ est le volume de $\Omega_i$, 
+$\overline\rho_i$ d\'esigne la moyenne de $\rho$ 
+sur le volume de contr\^ole (la cellule) 
+$\Omega_i$. Pour all\'eger les notations, on \'ecrit alors simplement 
+$|\Omega_i| \rho_i g$. Lorsque des ``reconstructions'' (ou d\'eveloppements
+limit\'es) sont n\'ecessaires pour monter en
+ordre en espace, la valeur moyenne $\rho_i$ est suppos\'ee localis\'ee au centre
+I de $\Omega_i$. 
+
+Les termes {\bf ``en divergence''} (ou ``de flux'', ou ``conservatifs'') sont
+int\'egr\'es en utilisant le th\'eor\`eme de
+Green pour faire appara\^\i tre des valeurs  aux
+faces des cellules (d'o\`u la notion de ``flux''). Ainsi, un terme de type $div(p)$ 
+devient\footnote{Si la cellule $i$ est
+au bord du domaine, la somme devient $\sum\limits_{j\in
+Vois(i)}\overline p_{ij}S_{ij}+\sum\limits_{k\in
+\gamma(i)}\overline p_{b_{ik}}S_{b_{ik}}$, les indices $b_{ik}$ renvoyant aux faces de la
+cellule $i$ qui sont \`a la fronti\`ere du domaine de calcul.} $\sum\limits_{j\in
+Vois(i)}\overline p_{ij}S_{ij}$. Dans cette expression,  $\overline p_{ij}$
+d\'esigne la moyenne de
+$p_{ij}$ sur la fronti\`ere entre les cellules $i$ et $j$. Pour all\'eger les
+notations, on \'ecrit alors simplement, comme pour les
+valeurs ``volumiques'', $\sum\limits_{j\in
+Vois(i)} p_{ij}S_{ij}$ . La valeur $p_{ij}$ est suppos\'ee localis\'ee au
+centre F de
+la face $ij$ lorsque des ``reconstructions'' sont n\'ecessaires pour monter en
+ordre en espace. 
+
+La pr\'ecision de la valeur $p_{ij}$ d\'etermine la pr\'ecision
+du calcul de  $div(p)$. On peut adopter pour $p_{ij}$ une valeur non
+interpol\'ee d\'ecentr\'ee (sch\'ema convectif upwind) ou une valeur
+interpol\'ee lin\'eairement entre les valeurs prises au centre I et J des cellules
+voisines. Ces m\'ethodes sont relativement directes, mais leur pr\'ecision est
+limit\'ee en maillage quelconque (non orthogonal en particulier). Pour
+monter en ordre en mettant en \oe uvre des techniques de reconstruction, on
+cherche \`a calculer $p_{ij}$ plus pr\'ecis\'ement, en interpolant $p$ en
+$F_{ij}$ (centre de la face) \`a partir des valeurs
+en I, en J et ... des gradients calcul\'es en I et J, qui sont pr\'ecis\'ement ce
+que l'on cherche \`a obtenir\footnote{Il faut garder \`a l'esprit que l'on cherche \`a calculer
+les valeurs des d\'eriv\'ees spatiales de $p$ pour obtenir $div(p)$ dans les cellules.}. On
+obtient donc un syst\`eme et il  est 
+r\'esolu de mani\`ere it\'erative.   
+Cette m\'ethode permet de calculer le {\bf gradient ``cellule''} 
+des variables. On retiendra cette notion qui est particuli\`erement importante~:
+le gradient cellule repr\'esente le gradient de la variable dans une cellule, il
+est calcul\'e \`a partir des valeurs de la variable interpol\'ees aux faces de
+la cellule. 
+
+De m\^eme, on int\`egre les termes {\bf en ``divergence de gradient''} 
+en faisant appara\^\i tre des valeurs aux faces. On doit
+alors calculer le gradient aux faces ou {\bf``gradient facette''} dans la
+direction normale \`a celles-ci. Ce concept de ``gradient facette'' est
+extr\^emement important. Le gradient facette normal aux faces peut \^etre
+simplement calcul\'e en utilisant
+uniquement les valeurs au centre des cellules situ\'ees de part et d'autre de la
+face courante (points I et J sur la figure \ref{fig_geom}), mais la pr\'ecision
+de cette m\'ethode est
+limit\'ee en maillage non orthogonal. Pour monter en
+ordre, on peut utiliser les valeurs des variables aux points I' et J'. Elles
+sont calcul\'ees par d\'eveloppement limit\'e en espace en utilisant la valeur en I
+et en J et la valeur du gradient ``cellule''. 
+
+
+\begin{figure}[h]
+\parbox{8cm}{%
+\centerline{\includegraphics[height=4.5cm]{Images/facette.eps}}}
+\parbox{8cm}{%
+\centerline{\includegraphics[height=4.5cm]{Images/facebord.eps}}}
+\caption{\label{fig_geom}D\'efinition des diff\'erentes entit\'es
+g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
+\end{figure}
+
+ 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Arborescence simplifi\'ee}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Chaque sous-partie de la documentation est rattach\'ee \`a un sous-programme. La
+liste exhaustive est la suivante : 
+  \fort{bilsc2}
+  \fort{clptur}
+  \fort{clsyvt}
+  \fort{codits}
+  \fort{condli}
+  \fort{covofi}
+  \fort{gradmc}
+  \fort{gradrc}
+  \fort{inimas}
+  \fort{itrmas}
+  \fort{matrix}
+  \fort{navsto}
+  \fort{preduv}
+  \fort{recvmc}
+  \fort{resolp}
+  \fort{turbke}
+  \fort{turrij}
+  \fort{viscfa}
+  \fort{visort}
+  \fort{vissec}. 
+
+Le tableau \ref{Arborescence_simplifiee} 
+pr\'esente leur encha\^\i nement \`a l'int\'erieur d'un pas de temps . 
+Cet arbre d'appel simplifi\'e  est symbolique et ne repr\'esente pas, en particulier, le
+nombre d'appels \`a chaque sous-programme. Par ailleurs, les sous-programmes de
+calcul de gradient (\fort{gradmc}, \fort{gradrc}) qui sont utilis\'es tr\`es
+souvent, ne sont pas cit\'es, par souci de
+clart\'e. De m\^eme, on n'a pas inclus les r\'ef\'erences \`a \fort{bilsc2}
+(prise en compte des flux de diffusion et de convection) et \`a
+\fort{matrix} (calcul de la matrice du syst\`eme) lorsqu'ils sont appel\'es par
+\fort{codits} (inversion d'une \'equation de convection-diffusion avec termes sources).
+
+De plus, on indique ci-dessous dans quelle sous-partie rechercher des
+informations relatives \`a certains th\`emes importants~:
+ 
+{\bf Calcul des gradients}\\
+\hspace*{1cm}\fort{gradrc}\\
+\hspace*{1cm}\fort{gradmc}\\
+{\bf Moindres carr\'es}\\
+\hspace*{1cm}\fort{recvmc}\\
+\hspace*{1cm}\fort{gradmc}\\
+{\bf Sch\'emas convectifs}\\
+\hspace*{1cm}\fort{bilsc2}\\
+{\bf Lois de paroi} (dynamique et thermique)\\
+\hspace*{1cm}\fort{clptur}\\
+\hspace*{1cm}\fort{condli}\\
+{\bf R\'esolution d'un syst\`eme} (en incr\'ements)\\
+\hspace*{1cm}\fort{codits}\\
+{\bf Calcul des valeurs aux faces} (non exhaustif)\\
+\hspace*{1cm}\fort{viscfa}\\
+\hspace*{1cm}\fort{visort}\\
+
+Enfin, pour les lecteurs souhaitant se familiariser avec les m\'ethodes de \CS,
+on conseille de commencer par \'etudier une \'equation de
+convection diffusion pour un scalaire (\fort{covofi}) avec sa r\'esolution en
+incr\'ements (\fort{codits}). Il sera ensuite utile de se pencher sur
+\fort{navsto} qui pr\'esente de mani\`ere concise la r\'esolution du syst\`eme
+constitu\'e par les \'equations de conservation de la masse et de la quantit\'e
+de mouvement. 
+
+\begin{table}[htp]
+\underline{\bf Calcul des grandeurs physiques}\\
+\underline{\bf Conditions aux limites}\\
+  \hspace*{1cm}\fort{condli} \\
+    \hspace*{1,5cm}\fort{clptur} \hspace*{1cm}sp\'ecifiques aux parois ``turbulentes''\\
+    \hspace*{1,5cm}\fort{clsyvt} \hspace*{1cm}sp\'ecifiques aux sym\'etries pour les vecteurs et les tenseurs\\
+\underline{\bf R\'esolution de Navier-Stokes}\\
+  \hspace*{1cm}\fort{navsto}\\
+    \hspace*{1,5cm}{\bf Pr\'ediction des vitesses}\\
+    \hspace*{2,0cm}\fort{preduv} \\
+      \hspace*{2,5cm}\fort{vissec} \hspace*{1cm}termes sources de quantit\'e de mouvement \\
+      \hspace*{4,5cm}              \hspace*{1cm}associ\'es au gradient de vitesse transpos\'e.\\
+      \hspace*{2,5cm}\fort{viscfa} \hspace*{1cm}calcul des viscosit\'es aux faces\\
+      \hspace*{2,5cm}\fort{codits} \hspace*{1cm}r\'esolution des syst\`emes en incr\'ements\\
+    \hspace*{1,5cm}{\bf R\'esolution de la pression}\\
+    \hspace*{2,0cm}\fort{resolp} \\
+      \hspace*{2,5cm}\fort{viscfa} \hspace*{1cm}calcul du pas de temps aux faces...\\
+      \hspace*{2,5cm}\fort{visort} \hspace*{1,5cm}  ...selon les options\\
+      \hspace*{2,5cm}\fort{matrix} \hspace*{1cm}calcul de la matrice de l'\'equation de Poisson\\
+      \hspace*{2,5cm}\fort{inimas} \hspace*{1cm}initialisation du flux de masse\\
+      \hspace*{2,5cm}\fort{itrmas} \hspace*{1cm}mise \`a jour du flux de masse \\
+    \hspace*{1,5cm} {\bf R\'eactualisation des vitesses}\\
+    \hspace*{3,2cm}              \hspace*{1cm}r\'eactualisation standard ou...\\
+    \hspace*{2,0cm}\fort{recvmc} \hspace*{1cm}r\'eactualisation par moindres carr\'es\\
+\underline{\bf R\'esolution des \'equations du $k-\varepsilon$}\\
+  \hspace*{1cm}\fort{turbke}\\
+    \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}prise en compte des \'etapes pr\'eliminaires...\\
+    \hspace*{1,5cm}\fort{bilsc2} \hspace*{1,5cm}...au couplage des termes sources\\
+    \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calcul des viscosit\'es aux faces\\
+    \hspace*{1,5cm}\fort{codits} \hspace*{1cm}r\'esolution des syst\`emes en incr\'ements\\
+\underline{\bf R\'esolution des \'equations du $R_{ij}-\epsilon$}\\
+  \hspace*{1cm}\fort{turrij}\\
+    \hspace*{1,5cm}\fort{visort} \hspace*{1cm}calcul des viscosit\'es aux faces\\
+    \hspace*{1,5cm}\fort{codits} \hspace*{1cm}r\'esolution des syst\`emes en incr\'ements\\
+\underline{\bf R\'esolution des scalaires}\\
+  \hspace*{1cm}\fort{covofi}\\
+    \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calcul des viscosit\'es aux faces\\
+    \hspace*{1,5cm}\fort{codits} \hspace*{1cm}r\'esolution des syst\`emes en incr\'ements\\
+\caption{Arborescence simplifi\'ee et partielle des \'etapes r\'ealis\'ees \`a
+l'int\'erieur d'un pas de temps}\label{Arborescence_simplifiee}
+\end{table}
+

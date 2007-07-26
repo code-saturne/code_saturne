@@ -1,0 +1,65 @@
+CODE_SATURNE VERSION 1.3
+========================
+
+This is version 1.3.0 of the Code_Saturne CFD tool. It is composed of
+the following elements :
+* Code_Saturne Kernel version 1.3.0
+* Code_Saturne Preprocessor version 1.3.0
+* Code_Saturne Graphical User Interface version 1.3.0
+Other versions of these elements might not be compatible.
+
+
+Compulsory libraries
+--------------------
+The BFT (Base Functions and Types) and FVM (Finite Volume Mesh) libraries
+are compulsory. They are distributed under the LGPL licence
+(copyright EDF S.A., France). Code_Saturne version 1.3.0 is compliant with
+the following versions:
+* BFT 1.0.4 or newer
+* FVM 0.8.0 or newer
+Older versions might yet be compatible, possibly with limited features.
+
+
+Optionnal libraries
+-------------------
+Here is given the list of optionnal libraries that can be linked to
+Code_Saturne. The version number is the one used for developping and
+testing version 1.3.e of Code_Saturne. Other versions (newer or older)
+might still be compatible.
+* python : 2.5     - (necessary for the Code_Saturne GUI)
+* tcl : 8.4        - (necessary for the Code_Saturne GUI)
+* tk : 8.4         - (necessary for the Code_Saturne GUI)
+* tix : 8.4        - (necessary for the Code_Saturne GUI)
+* libxml2 : 2.6.19 - (necessary for the Code_Saturne GUI)
+* Metis : 4.0      - (for optimised domain decomposition)
+* CGNS : 2.5.1
+* MED_fichier : 2.3.1
+* hdf5 : 1.6.5     - (necessary for MED_fichier library)
+* Zlib : 1.2.3
+
+MPI libraries
+-------------
+In case of parallel computing, it is necessary to use a MPI library.
+The following libraries have been used with success, but no specific
+command is used in the code so any other MPI library should work.
+* MPI-lam : 7.1.2
+* MPICH  : 1.2.7
+* MPICH2 : 1.0.5
+* Open-MPI : 1.2.3
+
+Specificities of the Matisse module of Code_Saturne
+---------------------------------------------------
+The Matisse module of Code_Saturne only works through the Graphical
+User Interface. Hence the libraries tcl/tk/tix, python and libxml2
+become compulsory.
+Also, the Matisse module requires usage of the Simail mesh generator,
+distributed by Distene SAS (France). For more information on this
+product:
+  Distene S.A.S.
+  Pôle Teratec - BARD-1
+  Domaine du Grand Rué
+  91680 Bruyères-le-Chatel
+  FRANCE
+  Telephone : +33 (0) 1 69 26 62 10
+  Email : info@distene.com
+

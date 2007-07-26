@@ -1,0 +1,49 @@
+#!/bin/ksh
+
+PREFIX=$CS_HOME
+RMBSH=$PREFIX/aux/rmb.sh
+echo 
+echo ' Passage de ' "$RMBSH" ' pour enlever blancs et tabs dans ' "$PREFIX" 
+echo 
+
+
+# test
+read reponse_lue?"Nettoyage ? [y/n]"
+ : ${reponse_lue:="n"}
+if [ "${reponse_lue}" != "y" ] ; then 
+  echo '  stop'
+  exit
+fi
+
+# delai de reflexion
+echo ' Delai de reflexion de 10 secondes '
+sleep 10
+
+# bon ben alors allons-y 
+echo ' Debut du nettoyage'
+
+echo '      '
+echo '   src'
+for var in $PREFIX/src/* ; do 
+  if [ -d $var ] ; then 
+    cd $var 
+    $RMBSH *
+  fi
+done 
+echo '        '
+echo '   users'
+for var in $PREFIX/users/* ; do 
+  if [ -d $var ] ; then 
+    cd $var 
+    $RMBSH *
+  fi
+done 
+echo '          '
+echo '   include'
+for var in $PREFIX/include/* ; do 
+  if [ -d $var ] ; then 
+    cd $var 
+    $RMBSH *
+  fi
+done 
+echo ' Fin normale du nettoyage'

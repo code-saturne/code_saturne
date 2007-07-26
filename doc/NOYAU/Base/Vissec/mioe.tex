@@ -1,0 +1,141 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Terme de gradient transposé}
+Avant de calculer l'intégration des deux termes, on calcule dans un premier
+temps la viscosité totale en fonction du modèle de turbulence considéré.\\
+Les termes calculés dans ce sous-programme, appelé par \fort{preduv}, interviennent dans le second membre
+de l'équation de quantité de mouvement, et sont donc directement stockés dans le
+tableau correspondant  \var{TRAV}.\\
+Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculé en
+opérant comme suit.\\
+On effectue une boucle sur les composantes $v_\alpha$ où $\alpha=x,y,z$ de la
+vitesse ($\alpha$ correspond à \var{ISOU} dans le code) :
+\begin{itemize} 
+\item on calcule le gradient cellule de $v_{\,\alpha}$ par un appel au
+sous-programme \fort{grdcel}.
+\item on initialise un tableau nommé $\var{W}_6$ à la valeur $1$ pour les cellules
+internes, et à la valeur $0$ pour les cellules de bord. Ce tableau sert par la suite à ne
+pas considérer la contribution du terme de gradient transposé sur les cellules
+de bord. En effet, on ne sait pas \'ecrire de conditions aux limites correctes
+pour le gradient transpos\'e. On pr\'ef\`ere donc tout simplement annuler son
+effet sur les cellules de bord (\emph{cf.} paragraphe \ref{Base_Vissec_paragraphe4}).
+\item pour chaque direction $l$ ($l=x,y,z$), $l$ correspondant à \var{IDIM}
+dans le code, on calcule pour chaque cellule $\Omega_i$ dont le centre
+correspond à la variable \var{II} ou
+\var{JJ} (pour les centres voisins) dans le code :\\
+\begin{equation}\notag
+\begin{array}{ll}
+&\var{TRAV}(i,l)=\var{TRAV}(i,l)\\
+&+\var{W}_6(i)\ \left[\displaystyle \sum\limits_{j \in 
+Vois(i)} \mu_{\,tot,\,ij}\,(\frac {\partial v_{\,\alpha}}{\partial l}
+)_{\,moy,ij}\,S_{\,ij}^{\,\alpha}\  +  \displaystyle \sum_{k \in
+\gamma_b(i)} \mu_{\,tot,\, {b_{\,ik}}}\,(\frac {\partial v_{\,\alpha}}{\partial
+l})_{\,moy,{b_{\,ik}}}\,S_{\,{b_{\,ik}}}^{\,\alpha}\ \right]\\
+&\displaystyle\text{avec }
+(\frac{\partial v_{\,\alpha}}{\partial l})_{\,moy,ij}=\frac{1}{2}\left[
+(\frac{\partial v_{\,\alpha}}{\partial l})_i
++(\frac{\partial v_{\,\alpha}}{\partial l})_j\right]
+\end{array}
+\end{equation}
+\end{itemize}
+Fin de la boucle sur les composantes de la vitesse.\\
+\\
+\subsection{Terme de viscosité secondaire}
+Le terme de seconde viscosité
+ $-\displaystyle \frac{2}{3}\grad (\mu_{\,tot} \dive\,(\underline{v}))$
+ est calculé de la façon suivante :
+\begin{itemize}
+\item on calcule la valeur de la vitesse sur la face $ij$ en divisant le flux
+masse connu à la face par la densité moyenne $\rho_{\,moy,\,ij}$ de la face
+($\rho_{\,moy,\,ij}=\displaystyle \frac{\rho_{\,i}+\rho_{\,j}}{2}$).
+\item on calcule ensuite l'intégrale volumique de la divergence de la vitesse sur chaque cellule en appelant le sous-programme
+\fort{divmas}. 
+\item on calcule alors pour chaque cellule $\Omega_i$ le terme $-\displaystyle
+\frac{2}{3}(\mu_{\,tot}\,\dive(\underline{v}))_{\,i}$ que l'on met dans le
+tableau de travail $\var{W}_4$. La valeur de ce terme sur la face interne $ij$
+ est obtenue en prenant la moyenne arithmétique des valeurs des deux cellules
+avoisinantes (tableau \var{VISCF}) et celle sur la face de bord est prise égale
+la valeur de la cellule avoisinante (tableau \var{VISCB}).
+\item on calcule alors pour chaque direction $l$ le terme final,
+\emph{i.e.} :\\
+\begin{equation}\notag
+\var{TRAV}(i,l)= \var{TRAV}(i,l)-\displaystyle \frac{2}{3}\left[\sum\limits_{j \in Vois(i)} (\mu_{\,tot}\,\dive(\underline{v}))_{\,moy,\,ij}\ S_{\,ij}^{\,l}
++\sum\limits_{k \in \gamma_b(i)} (\mu_{\,tot}
+\dive\,(\underline{v}))_{\,moy,{b_{\,ik}}}\  S_{\,b_{ik}}^{\,l}\right]
+\end{equation}
+\end{itemize}
+
+\vspace{0.5cm}
+Le traitement est similaire pour le terme de viscosité de volume dans le module compressible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter} \label{Base_Vissec_paragraphe4}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+L'intégration du terme de gradient transposé pose un problème de compatibilité.
+En effet, le gradient transposé provient de l'écriture de la divergence
+du tenseur des contraintes (\emph{cf.} \fort{preduv}), soit :
+\begin{equation}\notag
+\dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
+\end{equation}
+où : 
+\begin{equation}\notag
+\tens{\tau} = 2 \mu\ [\underbrace{\displaystyle \frac{1}{2}\,(\ggrad \underline
+{v}\ +\ ^t\ggrad \underline {v})}_{\text{partie 1}} -\underbrace{\displaystyle \frac{2}{3}\,tr(\,\frac{1}{2}\,(\ggrad \underline
+{v}\ +\ ^t\ggrad \underline {v}))\ \tens {Id}\ }_{\text{partie 2}}]
+\end{equation}
+Or, lorsque l'on intègre la première partie de la divergence de
+$\tens{\tau}$, on implicite le terme $\dive\,(\mu\,\ggrad \underline{v})$ et on
+explicite le gradient transposé $\dive\,(\mu ^t\ggrad \underline{v})$.
+ Ce traitement fait intervenir la vitesse au centre des cellules. Elle ne
+vérifie pas exactement la condition $\dive\,(\rho \underline{v})\,=\,0$. En
+effet, au cours de l'étape de correction, on utilise un filtre Rhie et Chow
+(\emph{cf.} \fort{resolp}) et la vitesse n'est mise à jour qu'à la fin de
+l'étape. Par contre, lorsque l'on intègre la deuxième partie de
+la divergence de $\tens{\tau}$ de façon explicite, on utilise
+la vitesse issue du flux masse aux faces qui vérifie la condition $\dive\,(\rho
+\underline{v})\,=\,0$ (du moins à $\rho$ constant, l'interpolation de $\rho$ à
+la face étant également un point à considérer). Ainsi, la discrétisation de ces
+deux parties n'est pas totalement cohérente. Il serait utile de baser la
+discrétisation de ces termes sur une vitesse vérifiant la contrainte
+$\dive\,(\rho \underline{v})\,=\,0$.\\
+Pour la même raison, il est difficile de connaître les conditions aux limites du
+terme en gradient transposé. Sur les cellules de bord, on sait uniquement que la
+contrainte totale normale doit équilibrer le frottement et toutes les autres
+forces. Or, le tenseur des contraintes est scindé en une partie explicite et une partie implicite, donc c'est un peu difficile d'utiliser cette condition physique.\\
+Actuellement, la contribution aux cellules de bord du terme de gradient transposé est
+annulée, ce qui élimine l'influence des conditions aux limites mais n'est naturellement pas satisfaisant. Quelques essais d'intégration des conditions aux limites pour ce terme n'ont pas été concluants jusqu'à présent. Cependant, des essais supplémentaires
+sont envisageables.

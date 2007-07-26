@@ -1,0 +1,156 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discr\'etisation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Afin d'expliquer la procédure utilisée pour traiter les difficultés dues aux 
+termes de reconstruction et de test de pente dans les termes de
+convection-diffusion, on note, de fa\c con analogue \`a ce qui est d\'efini dans
+\fort{navsto} mais sans discr\'etisation spatiale associ\'ee, $\mathcal{E}_{n}$ l'op\'erateur :
+\begin{equation}\label{Base_Codits_Eq_ref_small}
+\begin{array}{c}
+\mathcal{E}_{n}(a) = f_s^{\,imp}\,a + \theta\,\, \dive((\rho
+\underline{u})\,a) - \theta\,\, \dive(\mu_{\,tot}\,\grad a)\\
+- f_s^{\,exp} -  f_s^{\,imp}\,a^{n} +(1-\theta)\,\,\dive((\rho
+\underline{u})\, a^n) - (1-\theta)\,\, \dive(\mu_{\,tot}\,\grad a^n)
+\end{array}
+\end{equation}
+L'\'equation (\ref{Base_Codits_eq_ref}) s'\'ecrit donc :
+\begin{equation}
+\mathcal{E}_{n}(a^{n+1}) = 0  
+\end{equation} 
+La quantit\'e  $\mathcal{E}_{n}(a^{n+1})$ comprend donc :\\
+\hspace*{1.cm} $\rightsquigarrow$ $f_s^{\,imp}\,a^{n+1}$, contribution des
+termes diff\'erentiels d'ordre $0$ lin\'eaire en $a^{n+1}$,\\ 
+\hspace*{1.cm} $\rightsquigarrow$ $\theta\,\,
+\dive((\rho\underline{u})\,a^{n+1})
+- \theta\,\, \dive(\mu_{\,tot}\,\grad a^{n+1})$, termes de convection-diffusion
+implicites complets (termes non reconstruits + termes de reconstruction)
+lin\'eaires\footnote{Lors de la discrétisation en espace, le caractère linéaire
+de ces termes pourra cependant être perdu, notamment à cause du test de pente.}
+en $a^{n+1}$,\\ 
+\hspace*{1.cm} $\rightsquigarrow$ $f_s^{\,exp}- f_s^{\,imp}\,a^n$ et
+$(1-\theta)\,\,\dive((\rho 
+\underline{u})\,a^n) - (1-\theta)\,\, \dive(\mu_{\,tot}\,\grad a^n)$ l'ensemble
+des termes explicites (y compris la partie explicite provenant du sch\'ema en
+temps appliqu\'e \`a la convection diffusion).\\\\ 
+
+De m\^eme, on introduit un op\'erateur $\mathcal{EM}_{n}$ approch\'e de
+$\mathcal{E}_{n}$, lin\'eaire et simplement inversible, tel que son
+expression contient :\\
+\hspace*{1.cm}$\rightsquigarrow$ la prise en compte des termes lin\'eaires en $a$,\\
+\hspace*{1.cm}$\rightsquigarrow$ la convection intégrée par un schéma décentré amont
+(upwind) du premier ordre en espace,\\
+\hspace*{1.cm}$\rightsquigarrow$ les flux diffusifs non reconstruits.\\
+\begin{equation}
+\mathcal{EM}_{n}(a) = f_s^{\,imp}\,a + \theta\,\,[\dive((\rho
+\underline{u})\,a)]^{\textit{amont}} - \theta\,\, [\dive(\mu_{\,tot}\,\grad a)]^{\textit{N Rec}}
+\end{equation}
+Cet op\'erateur permet donc de contourner la difficult\'e induite par la pr\'esence d'\'eventuelles non lin\'earit\'es introduites par l'activation du test de pente lors du sch\'ema convectif, et par le remplissage important de la structure de la matrice d\'ecoulant de la pr\'esence des gradients propres \`a la reconstruction.\\   
+On a la relation\footnote{On pourra se reporter au sous-programme
+\fort{matrix} pour plus de d\'etails relativement \`a
+$\mathcal{EM_{\it{disc}}}$, op\'erateur discret agissant sur un scalaire $a$.}, pour toute cellule $\Omega_I$ de centre $I$  :
+\begin{equation}\notag
+\mathcal{EM_{\it{disc}}}(a,I) = \int_{\Omega_i}\mathcal{EM}_{n}(a)  \, d\Omega 
+\end{equation}
+On cherche à résoudre :
+\begin{equation}
+0 =\mathcal{E}_{n}(a^{n+1}) =  \mathcal{EM}_{n}(a^{n+1}) +  \mathcal{E}_{n}(a^{n+1}) - \mathcal{EM}_{n}(a^{n+1})
+\end{equation} 
+Soit :
+\begin{equation}
+\mathcal{EM}_{n}(a^{n+1}) =  \mathcal{EM}_{n}(a^{n+1}) -  \mathcal{E}_{n}(a^{n+1})
+\end{equation} 
+On va pour cela utiliser un algorithme de type point fixe en définissant la
+suite $(a^{n+1,\,k})_{k\in \grandN}$\footnote{Dans le cas ou le point fixe en
+vitesse-pression est utilisé (\var{NTERUP}$>$ 1) $a^{n+1,0}$ est initialisé par
+la dernière valeur obtenue de $a^{n+1}$.}: 
+\begin{equation}\notag
+\left\{\begin{array}{l}
+a^{n+1,\,0} = a^{n}\\
+a^{n+1,\,k+1} = a^{n+1,\,k} + \delta a^{n+1,\,k+1}
+\end{array}\right.
+\end{equation}
+où $\delta a^{n+1,\,k+1}$ est solution de :
+\begin{equation}
+\mathcal{EM}_{n}(a^{n+1,\,k} + \delta a^{n+1,\,k+1}) = \mathcal{EM}_{n}(a^{n+1,\,k}) - \mathcal{E}_{n}(a^{n+1,\,k})
+\end{equation}
+Soit encore, par linéarité de $\mathcal{EM}_{n}$ :
+\begin{equation}
+\mathcal{EM}_{n}(\delta a^{n+1,\,k+1}) = - \mathcal{E}_{n}(a^{n+1,\,k})
+\label{Base_Codits_Eq_Codits}
+\end{equation}
+
+Cette suite, coupl\'ee avec le choix de l'op\'erateur $\mathcal{E}_{n}$, permet donc de lever la difficulté induite par la
+pr\'esence de la convection (discr\'etis\'ee \`a l'aide de sch\'emas num\'eriques
+qui peuvent introduire des non lin\'earit\'es) et les termes de
+reconstruction. Le sch\'ema r\'eellement choisi par l'utilisateur pour la
+convection (donc \'eventuellement non lin\'eaire si le test de pente est activ\'e) ainsi que les termes de
+reconstruction vont \^etre pris \`a l'itération $k$ et trait\'es au second membre {\it via} le sous-programme \fort{bilsc2},  alors que les termes 
+non reconstruits sont pris à l'itération $k+1$ et repr\'esentent donc les
+inconnues du syst\`eme lin\'eaire r\'esolu par \fort{codits}\footnote{cf. le sous-programme
+\fort{navsto}.}.\\
+
+On suppose de plus que cette suite $(a^{n+1,\,k})_k$ converge vers la solution
+$a^{n+1}$ de l'\'equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
+$\lim\limits_{k\rightarrow\infty} \delta a^{n+1,\,k}\,=\,0$, ceci pour tout $n$ donn\'e.\\
+(\ref{Base_Codits_Eq_Codits}) correspond \`a l'\'equation r\'esolue par \fort{codits}. La
+matrice $\tens{EM}_{\,n}$, matrice associ\'ee \`a $\mathcal{EM}_{n}$  est
+ \`a inverser, les termes non lin\'eaires sont mis au second membre mais sous forme 
+ explicite (indice $k$ de $a^{n+1,\,k}$) et ne posent donc plus de probl\`eme. 
+
+\minititre{Remarque 1}   
+La viscosité $\mu_{\,tot}$ prise dans $\mathcal{EM}_{n}$ et dans
+$\mathcal{E}_{n}$  dépend du modèle de turbulence utilisé. Ainsi on a
+ $\mu_{\,tot}=\mu_{\,laminaire} + \mu_{\,turbulent}$
+dans $\mathcal{EM}_{n}$ et dans $\mathcal{E}_{n}$ sauf lorsque l'on
+utilise un modèle $R_{ij}-\varepsilon$, auquel cas on a
+$\mu_{\,tot}=\mu_{\,laminaire}$.\\
+Le choix de $\mathcal{EM}_{n}$ étant  {\it a
+priori} arbitraire ($\mathcal{EM}_{n}$ doit \^etre lin\'eaire et la suite
+ $(a^{n+1,\,k})_{k\in\grandN}$ doit converger pour tout $n$ donn\'e), une option des modèles 
+$R_{ij}-\varepsilon$ ($\var{IRIJNU}=1$) consiste \`a for\c cer  $\mu_{\,tot}^n$
+dans l'expression de $\mathcal{EM}_{n}$ \`a la
+valeur $\mu_{\,laminaire}^n + \mu_{\,turbulent}^n$ lors de l'appel \`a
+\fort{codits} dans le sous-programme \fort{navsto}, pour l'\'etape de
+pr\'ediction de la vitesse. Ceci n'a pas de sens
+physique (seul $\mu_{\,laminaire}^n$ étant censé intervenir), mais cela peut
+dans certains cas avoir un effet stabilisateur, sans que cela modifie pour
+autant les valeurs de la limite de la suite $(a^{n+1,\,k})_k$.\\
+
+\minititre{Remarque 2}  
+Quand \fort{codits} est utilis\'e pour le couplage instationnaire renforcé
+vitesse-pression (\var{IPUCOU}=1), on fait une seule itération $k$ en initialisant la suite $(a^{n+1,\,k})_{k\in\grandN}$ à zéro. Les conditions de type Dirichlet sont
+annulées (on a $\var{INC}\,=\,0$) et le second membre est égal à $\rho |\Omega_i|$.
+Ce qui permet d'obtenir une approximation de type diagonal de
+$\tens{EM}_{n}$ 
+n\'ecessaire lors de l'étape de correction de la vitesse\footnote{cf. le sous-programme \fort{resolp}.}.

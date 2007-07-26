@@ -1,0 +1,202 @@
+#!/bin/sh
+#============================================================================
+#
+#                    Code_Saturne version 1.3
+#                    ------------------------
+#
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2007 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+
+ usage() {
+    echo    
+    echo "   Script de determination du numero de version des compilateurs   "
+    echo    
+    echo " Usage : $0 [-cshome <CS_HOME>] [-nomarch <NOM_ARCH>] [-output <compil.log>]"
+    echo    
+    echo "      avec :                                                       "
+    echo "      <CS_HOME>    : variable CS_HOME de Code_Saturne              "
+    echo "                     peut etre fixee par defaut par l environnement"
+    echo "      <NOM_ARCH>   : nom de l architecture pour Code_Saturne       "
+    echo "                     peut etre fixee par defaut par l environnement"
+    echo "      <compil.log> : fichier d'output (donner le chemin complet)   "
+    echo "                     ./compil.log par defaut                       "
+    echo "                                                                   "
+    echo    
+    exit
+ }
+
+
+# Repertoire de travail
+
+ dirbase=`pwd`
+
+
+# Interpretation de la ligne de commande
+
+#   Arguments explicites
+
+ while [ "$#" != 0 ] ; do 
+   case $1 in 
+     -cshome)  shift ; CS_HOME="$1"    ; shift ;;
+     -nomarch) shift ; NOM_ARCH="$1"   ; shift ;;
+     -output)  shift ; compillog="$1"  ; shift ;;
+     *) usage ;;
+   esac
+ done
+
+#   Fichier trace par defaut
+
+ if [ -z "${compillog}" ] ; then 
+   compillog=${dirbase}/compil.log
+ fi
+
+echo $compillog
+
+#   Verification de CS_HOME
+
+ if [ -z ${CS_HOME} ] ; then 
+   usage
+   echo ' ' 
+   echo ' La variable CS_HOME n est pas renseignee. Verifier le .monprofile. ' 
+   echo ' ' 
+ fi
+
+#   Verification de NOM_ARCH
+
+ if [ -z ${NOM_ARCH} ] ; then 
+   usage
+   echo ' ' 
+   echo ' La variable NOM_ARCH n est pas renseignee. Verifier le .monprofile. ' 
+   echo ' ' 
+ fi
+
+# Debut des travaux
+
+ echo ' '                                       >> ${compillog}
+ echo ' Version des compilateurs utilises '     >> ${compillog}
+ echo ' '                                       >> ${compillog}
+
+# Version du compilateur FORTRAN
+ 
+ echo ' '                                       >> ${compillog}
+ echo ' ====================================== '>> ${compillog}
+ echo ' '                                       >> ${compillog}
+ echo ' Compilateur FORTRAN '                   >> ${compillog}
+ echo ' '                                       >> ${compillog}
+
+#   Repertoire de travail temporaire
+
+ dir_compiler_f_version=dir_compiler_f_version
+ mkdir ${dir_compiler_f_version} || exit 
+ cd ${dir_compiler_f_version}                   >> ${compillog} 2>&1
+
+#   Creation d'un fichier FORTRAN non vide 
+#     - pour eviter que les compilateurs ne se plaignent
+#     - pour pouvoir executer en cas de pb
+
+ foof=foo.F
+ echo '      program foo'                       >> ${foof}
+ echo '      print*,"Programme test FORTRAN execute avec succes "'   >> ${foof}
+ echo '      end'                               >> ${foof}
+
+#   Compilation 
+
+ ln -s ${CS_HOME}/bin/Makefile Makefile
+ make compversion CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
+
+#   Execution (si un executable a ete cree 
+#     sur hp, par exemple f90 +version n'en cree pas)
+
+ echo ' '                                       >> ${compillog}
+ if [ -f cs12.exe ] ; then 
+   ./cs12.exe                                   >> ${compillog} 2>&1
+ else
+   echo ' Pas d executable test FORTRAN '       >> ${compillog} 
+ fi
+ echo ' '                                       >> ${compillog}
+
+#   Retour au repertoire initial
+
+ cd ${dirbase}
+
+#   Menage
+
+ rm -rf ${dir_compiler_f_version}
+
+
+# Version du compilateur C
+
+ echo ' '                                       >> ${compillog}
+ echo ' ====================================== '>> ${compillog}
+ echo ' '                                       >> ${compillog}
+ echo ' Compilateur C '                         >> ${compillog}
+ echo ' '                                       >> ${compillog}
+
+#   Repertoire de travail temporaire
+
+dir_compiler_c_version=dir_compiler_c_version
+mkdir ${dir_compiler_c_version} || exit 
+cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
+
+#   Creation fichier C non vide 
+#     - pour eviter que les compilateurs ne se plaignent
+#     - pour pouvoir executer en cas de pb
+
+ fooc=foo.c
+ echo '     int main()'                         >> ${fooc}
+ echo '     {'                                  >> ${fooc}
+ echo '     printf("Programme test C execute avec succes");'>> ${fooc}
+ echo '     return 0;'                          >> ${fooc}
+ echo '     }'                                  >> ${fooc}
+ 
+#   Compilation 
+
+ ln -s ${CS_HOME}/bin/Makefile Makefile
+ make saturne CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
+
+#   Execution 
+
+ echo ' '                                       >> ${compillog}
+ if [ -f cs12.exe ] ; then 
+   ./cs12.exe                                   >> ${compillog} 2>&1
+ echo ' '                                       >> ${compillog}
+ else
+   echo ' Pas d executable test C '             >> ${compillog} 
+ fi
+ echo ' '                                       >> ${compillog}
+
+#   Retour au repertoire initial
+
+ cd ${dirbase}
+
+#   Menage
+
+ rm -rf ${dir_compiler_c_version}
+ 
+ echo ' ====================================== '>> ${compillog}
+ echo ' '                                       >> ${compillog}
+

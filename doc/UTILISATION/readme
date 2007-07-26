@@ -1,0 +1,12 @@
+latex : ancien repertoire (sauvegarde)
+
+pdflatex : nouveau repertoire : permet de generer du pdf avec 
+	liens hypertexte
+
+les fichiers 
+	monindex.ist, saturne1.tex, saturne2.tex et biblio.tex 
+	et le repertoire graphics
+  	peuvent etre recopies de pdflatex dans latex si on doit 
+	compiler sans pdflatex ou revenir a l'ancienne methode 
+	(par exemple pour generer un fichier postscript de bonne
+	qualite a l'ecran)

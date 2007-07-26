@@ -1,0 +1,62 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+La valeur de la viscosité au centre des cellules est entrée en argument {\it
+via} la variable \var{VISTOT}. On calcule sa valeur moyenne aux faces et on la
+multiplie par le rapport surface \var{SURFN} sur la distance alg\'ebrique
+\var{DIST} pour une face interne (\var{SURFBN} et \var{DISTBR} respectivement
+pour une face de bord). La valeur du terme de diffusion résultant est mise dans le vecteur \var{VISCF} pour une face interne et \var{VISCB} pour une face de bord.\\
+La variable \var{IMVISF} détermine quel type de moyenne est utilisé pour
+calculer la viscosité aux faces.\\
+Si \var{IMVISF}$=0$, la moyenne est arithmétique, sinon la moyenne est harmonique.\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+L'obtention des interpolations utilisées dans le code \CS\  du paragraphe \ref{Base_Viscfa_paragraphe2} est résumée dans le rapport de Davroux et
+al\footnote{Davroux A., Archambeau F. et Hérard J.M., Tests numériques sur
+quelques méthodes de résolution d'une équation de diffusion en volumes finis,
+HI-83/00/027/A.}.
+Les auteurs de ce rapport ont montré que, pour un maillage monodimensionnel irrégulier et avec une
+viscosité non constante, la convergence mesurée est d'ordre 2 en espace avec
+l'interpolation harmonique et d'ordre 1 en espace avec l'interpolation
+linéaire (pour des solution régulières).\\
+Par conséquent, il serait préférable d'utiliser l'interpolation harmonique pour
+calculer la valeur de la viscosité aux faces. Des tests de stabilité seront nécessaires au préalable.
+\\
+De même, on envisage d'extrapoler la viscosité sur les faces de bord plutôt que
+de prendre la valeur de la viscosité au centre de la cellule jouxtant cette face.\\
+Dans le cas de la moyenne arithm\'etique, l'utilisation de la valeur $0.5$ pour les coefficients $\alpha_{\,ij}$ serait \`a revoir.

@@ -1,0 +1,2918 @@
+[1m
+    Installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR RAYT MATI sous HP-UX
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.d
+       ==================================================================  
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Repertoire de base CS_HOME = /home/saturne/Noyau/ncs-1.3.d
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Protection prealable
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de BASE sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire BASE
+   Lien sur le Makefile
+   Lancement de make avec MOD=BASE OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+bilsc2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c bilsc2.F
+/var/tmp//fciBAAa15860.F
+   external subroutine BILSC2
+
+2006 Lines Compiled
+gradco.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c gradco.F
+/var/tmp//fciBAAa15869.F
+   external subroutine GRADCO
+
+353 Lines Compiled
+gradrc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c gradrc.F
+/var/tmp//fciBAAa15878.F
+   external subroutine GRADRC
+
+1414 Lines Compiled
+jacobi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c jacobi.F
+/var/tmp//fciBAAa15887.F
+   external subroutine JACOBI
+
+635 Lines Compiled
+prcpol.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c prcpol.F
+/var/tmp//fciBAAa15896.F
+   external subroutine PRCPOL
+
+223 Lines Compiled
+prodsc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c prodsc.F
+/var/tmp//fciBAAa15905.F
+   external subroutine PRODSC
+
+180 Lines Compiled
+prods2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c prods2.F
+/var/tmp//fciBAAa15914.F
+   external subroutine PRODS2
+
+214 Lines Compiled
+prods3.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c prods3.F
+/var/tmp//fciBAAa15923.F
+   external subroutine PRODS3
+
+220 Lines Compiled
+promav.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O2 -c promav.F
+/var/tmp//fciBAAa15932.F
+   external subroutine PROMAV
+
+514 Lines Compiled
+cs_ale.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_ale.c
+cs_base.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_base.c
+cs_comm.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_comm.c
+cs_couplage.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_couplage.c
+cs_gui.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_gui.c
+cs_gui_matisse.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_gui_matisse.c
+cs_gui_radiative_transfer.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_gui_radiative_transfer.c
+cs_gui_util.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_gui_util.c
+cs_maillage.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_maillage.c
+cs_maillage_connect.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_maillage_connect.c
+cs_maillage_grd.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_maillage_grd.c
+cs_maillage_select.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_maillage_select.c
+cs_maillage_solcom.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_maillage_solcom.c
+cs_main.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_main.c
+cs_mesh_quality.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_mesh_quality.c
+cs_messages_ecs.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_messages_ecs.c
+cs_msg.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_msg.c
+cs_opts.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_opts.c
+cs_parallel.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_parallel.c
+cs_perio.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_perio.c
+cs_post.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_post.c
+cs_suite.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_suite.c
+cs_syr_coupling.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_syr_coupling.c
+cs_syr_messages.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_syr_messages.c
+cs_tpar1d.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_tpar1d.c
+cs_ventil.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_ventil.c
+cs_voiset.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c cs_voiset.c
+tcpumx.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c tcpumx.c
+tremai.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -Ae +e +DA2.0W +O2 -c tremai.c
+alelap.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c alelap.F
+/var/tmp//fciBAAa16236.F
+   external subroutine ALELAP
+
+1922 Lines Compiled
+alemaj.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c alemaj.F
+/var/tmp//fciBAAa16245.F
+   external subroutine ALEMAJ
+
+1862 Lines Compiled
+altycl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c altycl.F
+/var/tmp//fciBAAa16254.F
+   external subroutine ALTYCL
+
+2093 Lines Compiled
+armtps.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c armtps.F
+/var/tmp//fciBAAa16263.F
+   external subroutine ARMTPS
+
+829 Lines Compiled
+calgeo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c calgeo.F
+/var/tmp//fciBAAa16272.F
+   external subroutine CALGEO
+
+1202 Lines Compiled
+calgrg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c calgrg.F
+/var/tmp//fciBAAa16281.F
+   external subroutine CALGRG
+
+607 Lines Compiled
+calhyd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c calhyd.F
+/var/tmp//fciBAAa16290.F
+   external subroutine CALHYD
+
+1826 Lines Compiled
+calmom.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c calmom.F
+/var/tmp//fciBAAa16299.F
+   external subroutine CALMOM
+
+1091 Lines Compiled
+caltri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c caltri.F
+/var/tmp//fciBAAa16308.F
+   external subroutine CALTRI
+
+4717 Lines Compiled
+catsma.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c catsma.F
+/var/tmp//fciBAAa16317.F
+   external subroutine CATSMA
+
+203 Lines Compiled
+causta.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c causta.F
+/var/tmp//fciBAAa16326.F
+   external subroutine CAUSTA
+
+706 Lines Compiled
+cgstab.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cgstab.F
+/var/tmp//fciBAAa16335.F
+   external subroutine CGSTAB
+
+400 Lines Compiled
+clca66.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clca66.F
+/var/tmp//fciBAAa16344.F
+   external subroutine CLCA66
+
+238 Lines Compiled
+cldijp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cldijp.F
+/var/tmp//fciBAAa16353.F
+   external subroutine CLDIJP
+
+295 Lines Compiled
+cldipo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cldipo.F
+/var/tmp//fciBAAa16362.F
+   external subroutine CLDIPO
+
+721 Lines Compiled
+clipke.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clipke.F
+/var/tmp//fciBAAa16371.F
+   external subroutine CLIPKE
+
+1700 Lines Compiled
+clmlga.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clmlga.F
+/var/tmp//fciBAAa16380.F
+   external subroutine CLMLGA
+
+623 Lines Compiled
+clprij.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clprij.F
+/var/tmp//fciBAAa16389.F
+   external subroutine CLPRIJ
+
+956 Lines Compiled
+clpsca.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clpsca.F
+/var/tmp//fciBAAa16398.F
+   external subroutine CLPSCA
+
+1662 Lines Compiled
+clptur.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clptur.F
+/var/tmp//fciBAAa16407.F
+   external subroutine CLPTUR
+
+3667 Lines Compiled
+clpv2f.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clpv2f.F
+/var/tmp//fciBAAa16416.F
+   external subroutine CLPV2F
+
+828 Lines Compiled
+clsurn.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clsurn.F
+/var/tmp//fciBAAa16425.F
+   external subroutine CLSURN
+
+180 Lines Compiled
+clsyvt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clsyvt.F
+/var/tmp//fciBAAa16434.F
+   external subroutine CLSYVT
+
+2074 Lines Compiled
+clvolc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c clvolc.F
+/var/tmp//fciBAAa16443.F
+   external subroutine CLVOLC
+
+1317 Lines Compiled
+codits.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c codits.F
+/var/tmp//fciBAAa16452.F
+   external subroutine CODITS
+
+1419 Lines Compiled
+condli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c condli.F
+/var/tmp//fciBAAa16461.F
+   external subroutine CONDLI
+
+4331 Lines Compiled
+cou1di.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cou1di.F
+/var/tmp//fciBAAa16470.F
+   external subroutine COU1DI
+
+1695 Lines Compiled
+cou1do.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cou1do.F
+/var/tmp//fciBAAa16479.F
+   external subroutine COU1DO
+
+1715 Lines Compiled
+coupbi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c coupbi.F
+/var/tmp//fciBAAa16488.F
+   external subroutine COUPBI
+
+2060 Lines Compiled
+coupbo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c coupbo.F
+/var/tmp//fciBAAa16497.F
+   external subroutine COUPBO
+
+1117 Lines Compiled
+covofi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c covofi.F
+/var/tmp//fciBAAa16506.F
+   external subroutine COVOFI
+
+4226 Lines Compiled
+cregeo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cregeo.F
+/var/tmp//fciBAAa16515.F
+   external subroutine CREGEO
+
+1367 Lines Compiled
+cs_post_util.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cs_post_util.F
+/var/tmp//fciBAAa16524.F
+   external subroutine PSTCWR
+   external subroutine PSTCMA
+   external subroutine PSTEVA
+
+358 Lines Compiled
+csclli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c csclli.F
+/var/tmp//fciBAAa16533.F
+   external subroutine CSCLLI
+
+619 Lines Compiled
+csflsh.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c csflsh.F
+/var/tmp//fciBAAa16542.F
+   external subroutine CSFLSH
+
+579 Lines Compiled
+csinit.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c csinit.F
+/var/tmp//fciBAAa16551.F
+   external subroutine CSINIT
+
+1273 Lines Compiled
+csprnt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c csprnt.F
+/var/tmp//fciBAAa16560.F
+   external subroutine CSPRNT
+
+606 Lines Compiled
+cycmgr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cycmgr.F
+/var/tmp//fciBAAa16569.F
+   external subroutine CYCMGR
+
+857 Lines Compiled
+distpr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c distpr.F
+/var/tmp//fciBAAa16578.F
+   external subroutine DISTPR
+
+2253 Lines Compiled
+distyp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c distyp.F
+/var/tmp//fciBAAa16587.F
+   external subroutine DISTYP
+
+2577 Lines Compiled
+divmas.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c divmas.F
+/var/tmp//fciBAAa16596.F
+   external subroutine DIVMAS
+
+251 Lines Compiled
+divrij.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c divrij.F
+/var/tmp//fciBAAa16605.F
+   external subroutine DIVRIJ
+
+1818 Lines Compiled
+dttvar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c dttvar.F
+/var/tmp//fciBAAa16614.F
+   external subroutine DTTVAR
+
+2951 Lines Compiled
+dvvpst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c dvvpst.F
+/var/tmp//fciBAAa16623.F
+   external subroutine DVVPST
+
+3752 Lines Compiled
+ecrava.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ecrava.F
+/var/tmp//fciBAAa16632.F
+   external subroutine ECRAVA
+
+4795 Lines Compiled
+ecrhis.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ecrhis.F
+/var/tmp//fciBAAa16642.F
+   external subroutine ECRHIS
+
+1670 Lines Compiled
+ecrlis.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ecrlis.F
+/var/tmp//fciBAAa16651.F
+   external subroutine ECRLIS
+
+2427 Lines Compiled
+filtre.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c filtre.F
+/var/tmp//fciBAAa16660.F
+   external subroutine FILTRE
+
+884 Lines Compiled
+findpt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c findpt.F
+/var/tmp//fciBAAa16669.F
+   external subroutine FINDPT
+
+374 Lines Compiled
+gradmc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c gradmc.F
+/var/tmp//fciBAAa16678.F
+   external subroutine GRADMC
+
+1876 Lines Compiled
+grdcel.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c grdcel.F
+/var/tmp//fciBAAa16687.F
+   external subroutine GRDCEL
+
+778 Lines Compiled
+hturbp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c hturbp.F
+/var/tmp//fciBAAa16696.F
+   external subroutine HTURBP
+
+200 Lines Compiled
+iasize.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c iasize.F
+/var/tmp//fciBAAa16705.F
+   external subroutine IASIZE
+
+657 Lines Compiled
+idrbla.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c idrbla.F
+/var/tmp//fciBAAa16714.F
+   external function IDRBLA
+
+144 Lines Compiled
+impini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c impini.F
+/var/tmp//fciBAAa16723.F
+   external subroutine IMPINI
+
+5077 Lines Compiled
+iniini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c iniini.F
+/var/tmp//fciBAAa16732.F
+   external subroutine INIINI
+
+3637 Lines Compiled
+inimas.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c inimas.F
+/var/tmp//fciBAAa16741.F
+   external subroutine INIMAS
+
+1035 Lines Compiled
+inipst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c inipst.F
+/var/tmp//fciBAAa16750.F
+   external subroutine INIPST
+
+632 Lines Compiled
+initi1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c initi1.F
+/var/tmp//fciBAAa16759.F
+   external subroutine INITI1
+
+2017 Lines Compiled
+initi2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c initi2.F
+/var/tmp//fciBAAa16768.F
+   external subroutine INITI2
+
+1450 Lines Compiled
+iniusi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c iniusi.F
+/var/tmp//fciBAAa16777.F
+   external subroutine INIUSI
+
+3035 Lines Compiled
+iniva0.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c iniva0.F
+/var/tmp//fciBAAa16786.F
+   external subroutine INIVA0
+
+2719 Lines Compiled
+inivar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c inivar.F
+/var/tmp//fciBAAa16795.F
+   external subroutine INIVAR
+
+3099 Lines Compiled
+invers.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c invers.F
+/var/tmp//fciBAAa16804.F
+   external subroutine INVERS
+
+589 Lines Compiled
+iprbla.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c iprbla.F
+/var/tmp//fciBAAa16813.F
+   external function IPRBLA
+
+144 Lines Compiled
+itrgrp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c itrgrp.F
+/var/tmp//fciBAAa16822.F
+   external subroutine ITRGRP
+
+900 Lines Compiled
+itrmas.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c itrmas.F
+/var/tmp//fciBAAa16831.F
+   external subroutine ITRMAS
+
+894 Lines Compiled
+lecamo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lecamo.F
+/var/tmp//fciBAAa16840.F
+   external subroutine LECAMO
+
+1744 Lines Compiled
+lecamp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lecamp.F
+/var/tmp//fciBAAa16849.F
+   external subroutine LECAMP
+
+3061 Lines Compiled
+lecamx.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lecamx.F
+/var/tmp//fciBAAa16858.F
+   external subroutine LECAMX
+
+5524 Lines Compiled
+ledgeo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ledgeo.F
+/var/tmp//fciBAAa16867.F
+   external subroutine LEDGEO
+
+858 Lines Compiled
+letgeo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c letgeo.F
+/var/tmp//fciBAAa16876.F
+   external subroutine LETGEO
+
+2096 Lines Compiled
+limgrd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c limgrd.F
+/var/tmp//fciBAAa16885.F
+   external subroutine LIMGRD
+
+902 Lines Compiled
+matrdt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c matrdt.F
+/var/tmp//fciBAAa16894.F
+   external subroutine MATRDT
+
+877 Lines Compiled
+matrix.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c matrix.F
+/var/tmp//fciBAAa16903.F
+   external subroutine MATRIX
+
+373 Lines Compiled
+memale.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memale.F
+/var/tmp//fciBAAa16912.F
+   external subroutine MEMALE
+
+1088 Lines Compiled
+memcbr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcbr.F
+/var/tmp//fciBAAa16921.F
+   external subroutine MEMCBR
+
+206 Lines Compiled
+memclg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memclg.F
+/var/tmp//fciBAAa16930.F
+   external subroutine MEMCLG
+
+476 Lines Compiled
+memcli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcli.F
+/var/tmp//fciBAAa16939.F
+   external subroutine MEMCLI
+
+1181 Lines Compiled
+memdis.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memdis.F
+/var/tmp//fciBAAa16948.F
+   external subroutine MEMDIS
+
+1076 Lines Compiled
+memdtv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memdtv.F
+/var/tmp//fciBAAa16957.F
+   external subroutine MEMDTV
+
+214 Lines Compiled
+memdyp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memdyp.F
+/var/tmp//fciBAAa16966.F
+   external subroutine MEMDYP
+
+1101 Lines Compiled
+memgrg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memgrg.F
+/var/tmp//fciBAAa16975.F
+   external subroutine MEMGRG
+
+179 Lines Compiled
+memini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memini.F
+/var/tmp//fciBAAa16984.F
+   external subroutine MEMINI
+
+185 Lines Compiled
+memkep.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memkep.F
+/var/tmp//fciBAAa16993.F
+   external subroutine MEMKEP
+
+1092 Lines Compiled
+memkom.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memkom.F
+/var/tmp//fciBAAa17002.F
+   external subroutine MEMKOM
+
+1092 Lines Compiled
+memnav.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memnav.F
+/var/tmp//fciBAAa17011.F
+   external subroutine MEMNAV
+
+1448 Lines Compiled
+memnvc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memnvc.F
+/var/tmp//fciBAAa17020.F
+   external subroutine MEMNVC
+
+206 Lines Compiled
+mempdc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mempdc.F
+/var/tmp//fciBAAa17029.F
+   external subroutine MEMPDC
+
+1573 Lines Compiled
+mempgr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mempgr.F
+/var/tmp//fciBAAa17038.F
+   external subroutine MEMPGR
+
+162 Lines Compiled
+memphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memphy.F
+/var/tmp//fciBAAa17047.F
+   external subroutine MEMPHY
+
+945 Lines Compiled
+memrij.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memrij.F
+/var/tmp//fciBAAa17056.F
+   external subroutine MEMRIJ
+
+1134 Lines Compiled
+memsca.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memsca.F
+/var/tmp//fciBAAa17065.F
+   external subroutine MEMSCA
+
+1086 Lines Compiled
+memt1d.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memt1d.F
+/var/tmp//fciBAAa17074.F
+   external subroutine MEMT1D
+
+1589 Lines Compiled
+memtri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memtri.F
+/var/tmp//fciBAAa17083.F
+   external subroutine MEMTRI
+
+2509 Lines Compiled
+memtsm.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memtsm.F
+/var/tmp//fciBAAa17092.F
+   external subroutine MEMTSM
+
+1540 Lines Compiled
+memv2f.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memv2f.F
+/var/tmp//fciBAAa17101.F
+   external subroutine MEMV2F
+
+1095 Lines Compiled
+memvor.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memvor.F
+/var/tmp//fciBAAa17110.F
+   external subroutine MEMVOR
+
+807 Lines Compiled
+modini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c modini.F
+/var/tmp//fciBAAa17119.F
+   external subroutine MODINI
+
+2929 Lines Compiled
+modpar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c modpar.F
+/var/tmp//fciBAAa17160.F
+   external subroutine MODPAR
+
+675 Lines Compiled
+navsto.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c navsto.F
+/var/tmp//fciBAAa17169.F
+   external subroutine NAVSTO
+
+3451 Lines Compiled
+newmrk.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c newmrk.F
+/var/tmp//fciBAAa17180.F
+   external subroutine NEWMRK
+
+227 Lines Compiled
+numvec.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c numvec.F
+/var/tmp//fciBAAa17189.F
+   external subroutine NUMVEC
+
+1567 Lines Compiled
+ordita.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ordita.F
+/var/tmp//fciBAAa17198.F
+   external subroutine ORDITA
+
+145 Lines Compiled
+parge1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c parge1.F
+/var/tmp//fciBAAa17207.F
+   external subroutine PARGE1
+
+278 Lines Compiled
+pergra.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pergra.F
+/var/tmp//fciBAAa17216.F
+   external subroutine PERGRA
+
+1033 Lines Compiled
+perinr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c perinr.F
+/var/tmp//fciBAAa17225.F
+   external subroutine PERINR
+
+1849 Lines Compiled
+perinu.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c perinu.F
+/var/tmp//fciBAAa17234.F
+   external subroutine PERINU
+
+1844 Lines Compiled
+phyvar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c phyvar.F
+/var/tmp//fciBAAa17243.F
+   external subroutine PHYVAR
+
+3457 Lines Compiled
+postlc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c postlc.F
+/var/tmp//fciBAAa17252.F
+   external subroutine POSTLC
+
+2256 Lines Compiled
+ppcabs.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppcabs.F
+/var/tmp//fciBAAa17261.F
+   external subroutine PPCABS
+
+2964 Lines Compiled
+ppclim.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppclim.F
+/var/tmp//fciBAAa17270.F
+   external subroutine PPCLIM
+
+2625 Lines Compiled
+ppcsca.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppcsca.F
+/var/tmp//fciBAAa17279.F
+   external subroutine PPCSCA
+
+2570 Lines Compiled
+ppini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppini1.F
+/var/tmp//fciBAAa17288.F
+   external subroutine PPINI1
+
+2316 Lines Compiled
+ppinii.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppinii.F
+/var/tmp//fciBAAa17297.F
+   external subroutine PPINII
+
+1773 Lines Compiled
+ppiniv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppiniv.F
+/var/tmp//fciBAAa17306.F
+   external subroutine PPINIV
+
+2565 Lines Compiled
+pplecd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pplecd.F
+/var/tmp//fciBAAa17315.F
+   external subroutine PPLECD
+
+1744 Lines Compiled
+ppphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppphyv.F
+/var/tmp//fciBAAa17324.F
+   external subroutine PPPHYV
+
+2717 Lines Compiled
+ppprcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppprcl.F
+/var/tmp//fciBAAa17333.F
+   external subroutine PPPRCL
+
+2694 Lines Compiled
+ppprop.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppprop.F
+/var/tmp//fciBAAa17342.F
+   external subroutine PPPROP
+
+2320 Lines Compiled
+ppray4.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppray4.F
+/var/tmp//fciBAAa17351.F
+   external subroutine PPRAY4
+
+2911 Lines Compiled
+pptbht.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pptbht.F
+/var/tmp//fciBAAa17360.F
+   external subroutine PPTBHT
+
+1713 Lines Compiled
+pptssc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pptssc.F
+/var/tmp//fciBAAa17369.F
+   external subroutine PPTSSC
+
+3363 Lines Compiled
+pptycl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pptycl.F
+/var/tmp//fciBAAa17378.F
+   external subroutine PPTYCL
+
+2691 Lines Compiled
+ppvarp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ppvarp.F
+/var/tmp//fciBAAa17387.F
+   external subroutine PPVARP
+
+2459 Lines Compiled
+precli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c precli.F
+/var/tmp//fciBAAa17396.F
+   external subroutine PRECLI
+
+1840 Lines Compiled
+preduv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c preduv.F
+/var/tmp//fciBAAa17405.F
+   external subroutine PREDUV
+
+4905 Lines Compiled
+premgr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c premgr.F
+/var/tmp//fciBAAa17414.F
+   external subroutine PREMGR
+
+728 Lines Compiled
+prmoy0.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c prmoy0.F
+/var/tmp//fciBAAa17423.F
+   external subroutine PRMOY0
+
+546 Lines Compiled
+projts.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c projts.F
+/var/tmp//fciBAAa17432.F
+   external subroutine PROJTS
+
+682 Lines Compiled
+prolon.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c prolon.F
+/var/tmp//fciBAAa17441.F
+   external subroutine PROLON
+
+172 Lines Compiled
+proxav.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c proxav.F
+/var/tmp//fciBAAa17450.F
+   external subroutine PROXAV
+
+508 Lines Compiled
+rasize.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rasize.F
+/var/tmp//fciBAAa17459.F
+   external subroutine RASIZE
+
+656 Lines Compiled
+recvmc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c recvmc.F
+/var/tmp//fciBAAa17468.F
+   external subroutine RECVMC
+
+550 Lines Compiled
+reseps.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c reseps.F
+/var/tmp//fciBAAa17477.F
+   external subroutine RESEPS
+
+3185 Lines Compiled
+resmgr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c resmgr.F
+/var/tmp//fciBAAa17486.F
+   external subroutine RESMGR
+
+447 Lines Compiled
+resolp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c resolp.F
+/var/tmp//fciBAAa17495.F
+   external subroutine RESOLP
+
+3824 Lines Compiled
+resrij.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c resrij.F
+/var/tmp//fciBAAa17504.F
+   external subroutine RESRIJ
+
+3226 Lines Compiled
+resssg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c resssg.F
+/var/tmp//fciBAAa17513.F
+   external subroutine RESSSG
+
+3030 Lines Compiled
+resv2f.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c resv2f.F
+/var/tmp//fciBAAa17522.F
+   external subroutine RESV2F
+
+2546 Lines Compiled
+rijech.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rijech.F
+/var/tmp//fciBAAa17531.F
+   external subroutine RIJECH
+
+2153 Lines Compiled
+rijthe.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rijthe.F
+/var/tmp//fciBAAa17540.F
+   external subroutine RIJTHE
+
+1804 Lines Compiled
+scalai.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c scalai.F
+/var/tmp//fciBAAa17549.F
+   external subroutine SCALAI
+
+3162 Lines Compiled
+schtmp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c schtmp.F
+/var/tmp//fciBAAa17558.F
+   external subroutine SCHTMP
+
+2217 Lines Compiled
+strdep.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c strdep.F
+/var/tmp//fciBAAa17567.F
+   external subroutine STRDEP
+
+1978 Lines Compiled
+strini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c strini.F
+/var/tmp//fciBAAa17576.F
+   external subroutine STRINI
+
+1670 Lines Compiled
+strpre.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c strpre.F
+/var/tmp//fciBAAa17585.F
+   external subroutine STRPRE
+
+1733 Lines Compiled
+tdesi1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c tdesi1.F
+/var/tmp//fciBAAa17594.F
+   external subroutine TDESI1
+
+187 Lines Compiled
+testel.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c testel.F
+/var/tmp//fciBAAa17603.F
+   external subroutine TESTEL
+
+1831 Lines Compiled
+tridim.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c tridim.F
+/var/tmp//fciBAAa17612.F
+   external subroutine TRIDIM
+
+5726 Lines Compiled
+tsepdc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c tsepdc.F
+/var/tmp//fciBAAa17621.F
+   external subroutine TSEPDC
+
+1177 Lines Compiled
+turbke.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c turbke.F
+/var/tmp//fciBAAa17630.F
+   external subroutine TURBKE
+
+3637 Lines Compiled
+turbkw.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c turbkw.F
+/var/tmp//fciBAAa17639.F
+   external subroutine TURBKW
+
+3578 Lines Compiled
+turent.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c turent.F
+/var/tmp//fciBAAa17648.F
+   external subroutine KEENDB
+   external subroutine KEENIN
+
+281 Lines Compiled
+turrij.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c turrij.F
+/var/tmp//fciBAAa17657.F
+   external subroutine TURRIJ
+
+2827 Lines Compiled
+typecl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c typecl.F
+/var/tmp//fciBAAa17666.F
+   external subroutine TYPECL
+
+3561 Lines Compiled
+undscr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c undscr.F
+/var/tmp//fciBAAa17675.F
+   external subroutine UNDSCR
+
+146 Lines Compiled
+usalcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usalcl.F
+/var/tmp//fciBAAa17684.F
+   external subroutine USALCL
+
+2230 Lines Compiled
+usalin.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usalin.F
+/var/tmp//fciBAAa17693.F
+   external subroutine USALIN
+
+955 Lines Compiled
+usclim.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usclim.F
+/var/tmp//fciBAAa17702.F
+   external subroutine USCLIM
+
+2554 Lines Compiled
+usdpst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usdpst.F
+/var/tmp//fciBAAa17711.F
+   external subroutine USDPST
+
+1682 Lines Compiled
+ushist.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ushist.F
+/var/tmp//fciBAAa17720.F
+   external subroutine USHIST
+
+1977 Lines Compiled
+usini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usini1.F
+/var/tmp//fciBAAa17729.F
+   external subroutine USIPPH
+   external subroutine USINSC
+   external subroutine USIPSC
+   external subroutine USIPGL
+   external subroutine USIPSU
+   external subroutine USIPES
+
+6583 Lines Compiled
+usiniv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usiniv.F
+/var/tmp//fciBAAa17738.F
+   external subroutine USINIV
+
+1853 Lines Compiled
+uskpdc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uskpdc.F
+/var/tmp//fciBAAa17747.F
+   external subroutine USKPDC
+
+1549 Lines Compiled
+usmodg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usmodg.F
+/var/tmp//fciBAAa17756.F
+   external subroutine USMODG
+
+864 Lines Compiled
+usmpst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usmpst.F
+/var/tmp//fciBAAa17765.F
+   external subroutine USMPST
+
+1770 Lines Compiled
+usnpst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usnpst.F
+/var/tmp//fciBAAa17774.F
+   external subroutine USNPST
+
+1563 Lines Compiled
+usphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usphyv.F
+/var/tmp//fciBAAa17783.F
+   external subroutine USPHYV
+
+2430 Lines Compiled
+usppmo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usppmo.F
+/var/tmp//fciBAAa17792.F
+   external subroutine USPPMO
+
+2549 Lines Compiled
+usproj.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usproj.F
+/var/tmp//fciBAAa17801.F
+   external subroutine USPROJ
+
+4265 Lines Compiled
+uspt1d.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uspt1d.F
+/var/tmp//fciBAAa17810.F
+   external subroutine USPT1D
+
+1737 Lines Compiled
+usrubm.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usrubm.F
+/var/tmp//fciBAAa17819.F
+   external subroutine USRUBM
+
+2001 Lines Compiled
+usruet.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usruet.F
+/var/tmp//fciBAAa17828.F
+   external subroutine USRUET
+
+1824 Lines Compiled
+ussmag.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ussmag.F
+/var/tmp//fciBAAa17837.F
+   external subroutine USSMAG
+
+1684 Lines Compiled
+usstru.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usstru.F
+/var/tmp//fciBAAa17846.F
+   external subroutine USSTR1
+   external subroutine USSTR2
+
+2621 Lines Compiled
+usthht.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usthht.F
+/var/tmp//fciBAAa17855.F
+   external subroutine USTHHT
+
+801 Lines Compiled
+ustske.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustske.F
+/var/tmp//fciBAAa17864.F
+   external subroutine USTSKE
+
+1899 Lines Compiled
+ustskw.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustskw.F
+/var/tmp//fciBAAa17873.F
+   external subroutine USTSKW
+
+1911 Lines Compiled
+ustsma.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustsma.F
+/var/tmp//fciBAAa17882.F
+   external subroutine USTSMA
+
+2156 Lines Compiled
+ustsns.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustsns.F
+/var/tmp//fciBAAa17891.F
+   external subroutine USTSNS
+
+1900 Lines Compiled
+ustsri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustsri.F
+/var/tmp//fciBAAa17900.F
+   external subroutine USTSRI
+
+1929 Lines Compiled
+ustssc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustssc.F
+/var/tmp//fciBAAa17909.F
+   external subroutine USTSSC
+
+2012 Lines Compiled
+ustsv2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ustsv2.F
+/var/tmp//fciBAAa17918.F
+   external subroutine USTSV2
+
+1932 Lines Compiled
+usvima.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usvima.F
+/var/tmp//fciBAAa17927.F
+   external subroutine USVIMA
+
+1807 Lines Compiled
+usvist.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usvist.F
+/var/tmp//fciBAAa17936.F
+   external subroutine USVIST
+
+1914 Lines Compiled
+usvort.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usvort.F
+/var/tmp//fciBAAa17945.F
+   external subroutine USVORT
+   external function PHIDAT
+
+1817 Lines Compiled
+usvpst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usvpst.F
+/var/tmp//fciBAAa17954.F
+   external subroutine USVPST
+
+2537 Lines Compiled
+v2nutp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c v2nutp.F
+/var/tmp//fciBAAa17963.F
+   external subroutine V2NUTP
+
+1688 Lines Compiled
+vandri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vandri.F
+/var/tmp//fciBAAa17972.F
+   external subroutine VANDRI
+
+1610 Lines Compiled
+varpos.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c varpos.F
+/var/tmp//fciBAAa17981.F
+   external subroutine VARPOS
+
+6379 Lines Compiled
+vectds.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vectds.F
+/var/tmp//fciBAAa17990.F
+   external subroutine VECTDS
+
+563 Lines Compiled
+vericl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vericl.F
+/var/tmp//fciBAAa17999.F
+   external subroutine VERICL
+
+2399 Lines Compiled
+verini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c verini.F
+/var/tmp//fciBAAa18008.F
+   external subroutine VERINI
+
+7227 Lines Compiled
+verlon.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c verlon.F
+/var/tmp//fciBAAa18017.F
+   external subroutine VERLON
+
+136 Lines Compiled
+vert1d.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vert1d.F
+/var/tmp//fciBAAa18026.F
+   external subroutine VERT1D
+
+1546 Lines Compiled
+viscfa.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c viscfa.F
+/var/tmp//fciBAAa18035.F
+   external subroutine VISCFA
+
+641 Lines Compiled
+visdyn.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c visdyn.F
+/var/tmp//fciBAAa18044.F
+   external subroutine VISDYN
+
+2241 Lines Compiled
+vislmg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vislmg.F
+/var/tmp//fciBAAa18053.F
+   external subroutine VISLMG
+
+1758 Lines Compiled
+visort.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c visort.F
+/var/tmp//fciBAAa18062.F
+   external subroutine VISORT
+
+694 Lines Compiled
+vissec.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vissec.F
+/var/tmp//fciBAAa18071.F
+   external subroutine VISSEC
+
+2612 Lines Compiled
+vissma.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vissma.F
+/var/tmp//fciBAAa18080.F
+   external subroutine VISSMA
+
+1766 Lines Compiled
+vissst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vissst.F
+/var/tmp//fciBAAa18089.F
+   external subroutine VISSST
+
+1959 Lines Compiled
+vor2cl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vor2cl.F
+/var/tmp//fciBAAa18098.F
+   external subroutine VOR2CL
+
+2024 Lines Compiled
+vordep.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vordep.F
+/var/tmp//fciBAAa18139.F
+   external subroutine VORDEP
+
+1183 Lines Compiled
+vorimp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorimp.F
+/var/tmp//fciBAAa18148.F
+   external subroutine VORIMP
+
+1447 Lines Compiled
+vorin0.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorin0.F
+/var/tmp//fciBAAa18157.F
+   external subroutine VORIN0
+
+357 Lines Compiled
+vorini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorini.F
+/var/tmp//fciBAAa18166.F
+   external subroutine VORINI
+
+1946 Lines Compiled
+vorlgv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorlgv.F
+/var/tmp//fciBAAa18175.F
+   external subroutine VORLGV
+
+819 Lines Compiled
+vorpre.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorpre.F
+/var/tmp//fciBAAa18184.F
+   external subroutine VORPRE
+
+2113 Lines Compiled
+vortex.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vortex.F
+/var/tmp//fciBAAa18193.F
+   external subroutine VORTEX
+
+1465 Lines Compiled
+vorver.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorver.F
+/var/tmp//fciBAAa18202.F
+   external subroutine VORVER
+
+2020 Lines Compiled
+vorvit.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c vorvit.F
+/var/tmp//fciBAAa18211.F
+   external subroutine VORVIT
+
+1301 Lines Compiled
+zufall.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c zufall.F
+/var/tmp//fciBAAa18220.F
+   external subroutine ZUFALL
+Warning 4012 : At line 144 "+O3" has not been set on command line; directive "reduction" is being ignored.
+Warning 4012 : At line 184 "+O3" has not been set on command line; directive "_loopinfo" is being ignored.
+Warning 4012 : At line 203 "+O3" has not been set on command line; directive "reduction" is being ignored.
+Warning 4012 : At line 230 "+O3" has not been set on command line; directive "_loopinfo" is being ignored.
+   external subroutine ZUFALLI
+   external subroutine NORMALEN
+   external subroutine NORMAL00
+   external subroutine FISCHE
+Warning 4012 : At line 393 "+O3" has not been set on command line; directive "_loopinfo" is being ignored.
+   block data 
+
+505 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/BASE/.readmeBASE
+   Nettoyage avec MOD=BASE OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de BASE
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de CFBL sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire CFBL
+   Lien sur le Makefile
+   Lancement de make avec MOD=CFBL OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cfbsc2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfbsc2.F
+/var/tmp//fciBAAa19178.F
+   external subroutine CFBSC2
+
+2077 Lines Compiled
+cfbsc3.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfbsc3.F
+/var/tmp//fciBAAa19187.F
+   external subroutine CFBSC3
+
+1239 Lines Compiled
+cfcdts.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfcdts.F
+/var/tmp//fciBAAa19197.F
+   external subroutine CFCDTS
+
+1360 Lines Compiled
+cfdivs.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfdivs.F
+/var/tmp//fciBAAa19206.F
+   external subroutine CFDIVS
+
+2378 Lines Compiled
+cfdttv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfdttv.F
+/var/tmp//fciBAAa19215.F
+   external subroutine CFDTTV
+
+2140 Lines Compiled
+cfener.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfener.F
+/var/tmp//fciBAAa19224.F
+   external subroutine CFENER
+
+3124 Lines Compiled
+cfini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfini1.F
+/var/tmp//fciBAAa19233.F
+   external subroutine CFINI1
+
+2273 Lines Compiled
+cfiniv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfiniv.F
+/var/tmp//fciBAAa19242.F
+   external subroutine CFINIV
+
+2261 Lines Compiled
+cfmsfl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfmsfl.F
+/var/tmp//fciBAAa19251.F
+   external subroutine CFMSFL
+
+2801 Lines Compiled
+cfmsgs.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfmsgs.F
+/var/tmp//fciBAAa19260.F
+   external subroutine CFMSGS
+
+2807 Lines Compiled
+cfmsvl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfmsvl.F
+/var/tmp//fciBAAa19269.F
+   external subroutine CFMSVL
+
+2789 Lines Compiled
+cfmsvs.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfmsvs.F
+/var/tmp//fciBAAa19278.F
+   external subroutine CFMSVS
+
+2255 Lines Compiled
+cfphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfphyv.F
+/var/tmp//fciBAAa19287.F
+   external subroutine CFPHYV
+
+2191 Lines Compiled
+cfprop.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfprop.F
+/var/tmp//fciBAAa19296.F
+   external subroutine CFPROP
+
+2084 Lines Compiled
+cfqdmv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfqdmv.F
+/var/tmp//fciBAAa19305.F
+   external subroutine CFQDMV
+
+2984 Lines Compiled
+cfrusb.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfrusb.F
+/var/tmp//fciBAAa19314.F
+   external subroutine CFRUSB
+
+2285 Lines Compiled
+cfvarp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfvarp.F
+/var/tmp//fciBAAa19323.F
+   external subroutine CFVARP
+
+2084 Lines Compiled
+cfxtcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cfxtcl.F
+/var/tmp//fciBAAa19332.F
+   external subroutine CFXTCL
+
+3244 Lines Compiled
+memcfe.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcfe.F
+/var/tmp//fciBAAa19341.F
+   external subroutine MEMCFE
+
+176 Lines Compiled
+memcfm.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcfm.F
+/var/tmp//fciBAAa19350.F
+   external subroutine MEMCFM
+
+1409 Lines Compiled
+memcft.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcft.F
+/var/tmp//fciBAAa19359.F
+   external subroutine MEMCFT
+
+197 Lines Compiled
+memcfv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcfv.F
+/var/tmp//fciBAAa19368.F
+   external subroutine MEMCFV
+
+180 Lines Compiled
+uscfcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfcl.F
+/var/tmp//fciBAAa19377.F
+   external subroutine USCFCL
+
+2733 Lines Compiled
+uscfpv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfpv.F
+/var/tmp//fciBAAa19386.F
+   external subroutine USCFPV
+
+2801 Lines Compiled
+uscfth.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfth.F
+/var/tmp//fciBAAa19395.F
+   external subroutine USCFTH
+
+3982 Lines Compiled
+uscfx1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfx1.F
+/var/tmp//fciBAAa19404.F
+   external subroutine USCFX1
+
+2009 Lines Compiled
+uscfx2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfx2.F
+/var/tmp//fciBAAa19413.F
+   external subroutine USCFX2
+
+1985 Lines Compiled
+uscfxi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscfxi.F
+/var/tmp//fciBAAa19422.F
+   external subroutine USCFXI
+
+2346 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/CFBL/.readmeCFBL
+   Nettoyage avec MOD=CFBL OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de CFBL
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de COGZ sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire COGZ
+   Lien sur le Makefile
+   Lancement de make avec MOD=COGZ OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+coini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c coini1.F
+/var/tmp//fciBAAa20549.F
+   external subroutine COINI1
+
+2956 Lines Compiled
+colecd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c colecd.F
+/var/tmp//fciBAAa20558.F
+   external subroutine COLECD
+
+2351 Lines Compiled
+copdfr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c copdfr.F
+/var/tmp//fciBAAa20567.F
+   external subroutine COPDFR
+
+2618 Lines Compiled
+coprop.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c coprop.F
+/var/tmp//fciBAAa20576.F
+   external subroutine COPROP
+
+2719 Lines Compiled
+cothht.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cothht.F
+/var/tmp//fciBAAa20585.F
+   external subroutine COTHHT
+
+1608 Lines Compiled
+covarp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c covarp.F
+/var/tmp//fciBAAa20594.F
+   external subroutine COVARP
+
+2388 Lines Compiled
+d3phst.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3phst.F
+/var/tmp//fciBAAa20603.F
+   external subroutine D3PHST
+
+2406 Lines Compiled
+d3pini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3pini.F
+/var/tmp//fciBAAa20612.F
+   external subroutine D3PINI
+
+2656 Lines Compiled
+d3pint.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3pint.F
+/var/tmp//fciBAAa20621.F
+   external subroutine D3PINT
+
+2633 Lines Compiled
+d3pphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3pphy.F
+/var/tmp//fciBAAa20630.F
+   external subroutine D3PPHY
+
+2628 Lines Compiled
+d3ptcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3ptcl.F
+/var/tmp//fciBAAa20639.F
+   external subroutine D3PTCL
+
+2782 Lines Compiled
+d3pver.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c d3pver.F
+/var/tmp//fciBAAa20648.F
+   external subroutine D3PVER
+
+2686 Lines Compiled
+ebuini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ebuini.F
+/var/tmp//fciBAAa20657.F
+   external subroutine EBUINI
+
+2739 Lines Compiled
+ebuphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ebuphy.F
+/var/tmp//fciBAAa20666.F
+   external subroutine EBUPHY
+
+2673 Lines Compiled
+ebutcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ebutcl.F
+/var/tmp//fciBAAa20675.F
+   external subroutine EBUTCL
+
+2824 Lines Compiled
+ebutss.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ebutss.F
+/var/tmp//fciBAAa20684.F
+   external subroutine EBUTSS
+
+2516 Lines Compiled
+ebuver.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ebuver.F
+/var/tmp//fciBAAa20693.F
+   external subroutine EBUVER
+
+2711 Lines Compiled
+lwcgfu.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwcgfu.F
+/var/tmp//fciBAAa20702.F
+   external subroutine LWCGFU
+
+159 Lines Compiled
+lwcini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwcini.F
+/var/tmp//fciBAAa20711.F
+   external subroutine LWCINI
+
+2770 Lines Compiled
+lwcphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwcphy.F
+/var/tmp//fciBAAa20720.F
+   external subroutine LWCPHY
+
+2495 Lines Compiled
+lwctcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwctcl.F
+/var/tmp//fciBAAa20729.F
+   external subroutine LWCTCL
+
+2865 Lines Compiled
+lwctss.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwctss.F
+/var/tmp//fciBAAa20738.F
+   external subroutine LWCTSS
+
+2763 Lines Compiled
+lwcurl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwcurl.F
+/var/tmp//fciBAAa20747.F
+   external subroutine LWCURL
+
+1813 Lines Compiled
+lwcver.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lwcver.F
+/var/tmp//fciBAAa20756.F
+   external subroutine LWCVER
+
+2727 Lines Compiled
+pdflwc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pdflwc.F
+/var/tmp//fciBAAa20765.F
+   external subroutine PDFLWC
+
+3063 Lines Compiled
+pdfpp3.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pdfpp3.F
+/var/tmp//fciBAAa20774.F
+   external subroutine PDFPP3
+
+2675 Lines Compiled
+pdfpp4.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c pdfpp4.F
+/var/tmp//fciBAAa20783.F
+   external subroutine PDFPP4
+
+3029 Lines Compiled
+usd3p1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usd3p1.F
+/var/tmp//fciBAAa20792.F
+   external subroutine USD3P1
+
+2473 Lines Compiled
+usd3pc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usd3pc.F
+/var/tmp//fciBAAa20801.F
+   external subroutine USD3PC
+
+3202 Lines Compiled
+usd3pi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usd3pi.F
+/var/tmp//fciBAAa20810.F
+   external subroutine USD3PI
+
+2628 Lines Compiled
+usebu1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usebu1.F
+/var/tmp//fciBAAa20819.F
+   external subroutine USEBU1
+
+2484 Lines Compiled
+usebuc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usebuc.F
+/var/tmp//fciBAAa20828.F
+   external subroutine USEBUC
+
+3255 Lines Compiled
+usebui.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usebui.F
+/var/tmp//fciBAAa20837.F
+   external subroutine USEBUI
+
+2662 Lines Compiled
+uslwc1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslwc1.F
+/var/tmp//fciBAAa20846.F
+   external subroutine USLWC1
+
+2558 Lines Compiled
+uslwcc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslwcc.F
+/var/tmp//fciBAAa20855.F
+   external subroutine USLWCC
+
+3255 Lines Compiled
+uslwci.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslwci.F
+/var/tmp//fciBAAa20864.F
+   external subroutine USLWCI
+
+2720 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/COGZ/.readmeCOGZ
+   Nettoyage avec MOD=COGZ OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de COGZ
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de CPLV sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire CPLV
+   Lien sur le Makefile
+   Lancement de make avec MOD=CPLV OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cpcym1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpcym1.F
+/var/tmp//fciBAAa21677.F
+   external subroutine CPCYM1
+
+3259 Lines Compiled
+cpflux.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpflux.F
+/var/tmp//fciBAAa21686.F
+   external subroutine CPFLUX
+
+2549 Lines Compiled
+cpini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpini1.F
+/var/tmp//fciBAAa21695.F
+   external subroutine CPINI1
+
+2810 Lines Compiled
+cpiniv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpiniv.F
+/var/tmp//fciBAAa21704.F
+   external subroutine CPINIV
+
+2555 Lines Compiled
+cplecd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplecd.F
+/var/tmp//fciBAAa21713.F
+   external subroutine CPLECD
+
+2533 Lines Compiled
+cplin1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplin1.F
+/var/tmp//fciBAAa21722.F
+   external subroutine CPLIN1
+
+2681 Lines Compiled
+cplini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplini.F
+/var/tmp//fciBAAa21731.F
+   external subroutine CPLINI
+
+2515 Lines Compiled
+cplph1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplph1.F
+/var/tmp//fciBAAa21740.F
+   external subroutine CPLPH1
+
+2527 Lines Compiled
+cplphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplphy.F
+/var/tmp//fciBAAa21749.F
+   external subroutine CPLPHY
+
+2652 Lines Compiled
+cplpro.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplpro.F
+/var/tmp//fciBAAa21758.F
+   external subroutine CPLPRO
+
+2375 Lines Compiled
+cpltcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpltcl.F
+/var/tmp//fciBAAa21767.F
+   external subroutine CPLTCL
+
+2768 Lines Compiled
+cpltss.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpltss.F
+/var/tmp//fciBAAa21776.F
+   external subroutine CPLTSS
+
+3303 Lines Compiled
+cpltsv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpltsv.F
+/var/tmp//fciBAAa21785.F
+   external subroutine CPLTSV
+
+2646 Lines Compiled
+cplvar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplvar.F
+/var/tmp//fciBAAa21794.F
+   external subroutine CPLVAR
+
+2342 Lines Compiled
+cplver.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplver.F
+/var/tmp//fciBAAa21803.F
+   external subroutine CPLVER
+
+2634 Lines Compiled
+cplym1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cplym1.F
+/var/tmp//fciBAAa21812.F
+   external subroutine CPLYM1
+
+3246 Lines Compiled
+cppdf4.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cppdf4.F
+/var/tmp//fciBAAa21821.F
+   external subroutine CPPDF4
+
+2319 Lines Compiled
+cppdf5.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cppdf5.F
+/var/tmp//fciBAAa21830.F
+   external subroutine CPPDF5
+
+2507 Lines Compiled
+cppdfr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cppdfr.F
+/var/tmp//fciBAAa21839.F
+   external subroutine CPPDFR
+
+2617 Lines Compiled
+cpphy1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpphy1.F
+/var/tmp//fciBAAa21848.F
+   external subroutine CPPHY1
+
+2554 Lines Compiled
+cpphy2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpphy2.F
+/var/tmp//fciBAAa21857.F
+   external subroutine CPPHY2
+
+2532 Lines Compiled
+cpphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpphyv.F
+/var/tmp//fciBAAa21866.F
+   external subroutine CPPHYV
+
+2760 Lines Compiled
+cpprop.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpprop.F
+/var/tmp//fciBAAa21875.F
+   external subroutine CPPROP
+
+2494 Lines Compiled
+cpptcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpptcl.F
+/var/tmp//fciBAAa21884.F
+   external subroutine CPPTCL
+
+2891 Lines Compiled
+cprays.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cprays.F
+/var/tmp//fciBAAa21893.F
+   external subroutine CPRAYS
+
+1928 Lines Compiled
+cpteh1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpteh1.F
+/var/tmp//fciBAAa21902.F
+   external subroutine CPTEH1
+
+2481 Lines Compiled
+cpteh2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpteh2.F
+/var/tmp//fciBAAa21911.F
+   external subroutine CPTEH2
+
+2380 Lines Compiled
+cptehm.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cptehm.F
+/var/tmp//fciBAAa21920.F
+   external subroutine CPTEHM
+
+2570 Lines Compiled
+cpthp1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpthp1.F
+/var/tmp//fciBAAa21929.F
+   external subroutine CPTHP1
+
+2693 Lines Compiled
+cpthp2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpthp2.F
+/var/tmp//fciBAAa21938.F
+   external subroutine CPTHP2
+
+1875 Lines Compiled
+cptssc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cptssc.F
+/var/tmp//fciBAAa21947.F
+   external subroutine CPTSSC
+
+3174 Lines Compiled
+cptsvc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cptsvc.F
+/var/tmp//fciBAAa21956.F
+   external subroutine CPTSVC
+
+2658 Lines Compiled
+cptsvi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cptsvi.F
+/var/tmp//fciBAAa21965.F
+   external subroutine CPTSVI
+
+2441 Lines Compiled
+cpvarp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpvarp.F
+/var/tmp//fciBAAa21974.F
+   external subroutine CPVARP
+
+2388 Lines Compiled
+cpveri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c cpveri.F
+/var/tmp//fciBAAa21983.F
+   external subroutine CPVERI
+
+2869 Lines Compiled
+memcp1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memcp1.F
+/var/tmp//fciBAAa21992.F
+   external subroutine MEMCP1
+
+943 Lines Compiled
+uscpcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscpcl.F
+/var/tmp//fciBAAa22001.F
+   external subroutine USCPCL
+
+3251 Lines Compiled
+uscpi1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscpi1.F
+/var/tmp//fciBAAa22019.F
+   external subroutine USCPI1
+
+2611 Lines Compiled
+uscpiv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscpiv.F
+/var/tmp//fciBAAa22051.F
+   external subroutine USCPIV
+
+2717 Lines Compiled
+uscpl1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscpl1.F
+/var/tmp//fciBAAa22060.F
+   external subroutine USCPL1
+
+2526 Lines Compiled
+uscplc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uscplc.F
+/var/tmp//fciBAAa22069.F
+   external subroutine USCPLC
+
+3162 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/CPLV/.readmeCPLV
+   Nettoyage avec MOD=CPLV OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de CPLV
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de ELEC sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire ELEC
+   Lien sur le Makefile
+   Lancement de make avec MOD=ELEC OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+elflux.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elflux.F
+/var/tmp//fciBAAa22774.F
+   external subroutine ELFLUX
+
+3050 Lines Compiled
+elini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elini1.F
+/var/tmp//fciBAAa22783.F
+   external subroutine ELINI1
+
+2501 Lines Compiled
+eliniv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c eliniv.F
+/var/tmp//fciBAAa22792.F
+   external subroutine ELINIV
+
+2198 Lines Compiled
+ellecd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ellecd.F
+/var/tmp//fciBAAa22801.F
+   external subroutine ELLECD
+
+1781 Lines Compiled
+elphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elphyv.F
+/var/tmp//fciBAAa22810.F
+   external subroutine ELPHYV
+
+3002 Lines Compiled
+elprop.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elprop.F
+/var/tmp//fciBAAa22819.F
+   external subroutine ELPROP
+
+2244 Lines Compiled
+elthht.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elthht.F
+/var/tmp//fciBAAa22828.F
+   external subroutine ELTHHT
+
+1827 Lines Compiled
+eltssc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c eltssc.F
+/var/tmp//fciBAAa22837.F
+   external subroutine ELTSSC
+
+2381 Lines Compiled
+elvarp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elvarp.F
+/var/tmp//fciBAAa22846.F
+   external subroutine ELVARP
+
+2151 Lines Compiled
+elveri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c elveri.F
+/var/tmp//fciBAAa22855.F
+   external subroutine ELVERI
+
+2714 Lines Compiled
+uselcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uselcl.F
+/var/tmp//fciBAAa22864.F
+   external subroutine USELCL
+
+2969 Lines Compiled
+uselen.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uselen.F
+/var/tmp//fciBAAa22873.F
+   external subroutine USELEN
+
+2836 Lines Compiled
+useli1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c useli1.F
+/var/tmp//fciBAAa22882.F
+   external subroutine USELI1
+
+2239 Lines Compiled
+useliv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c useliv.F
+/var/tmp//fciBAAa22891.F
+   external subroutine USELIV
+
+2487 Lines Compiled
+uselph.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uselph.F
+/var/tmp//fciBAAa22900.F
+   external subroutine USELPH
+
+2695 Lines Compiled
+uselrc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uselrc.F
+/var/tmp//fciBAAa22909.F
+   external subroutine USELRC
+
+2782 Lines Compiled
+usetcl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usetcl.F
+/var/tmp//fciBAAa22918.F
+   external subroutine USETCL
+
+2761 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/ELEC/.readmeELEC
+   Nettoyage avec MOD=ELEC OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de ELEC
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de LAGR sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire LAGR
+   Lien sur le Makefile
+   Lancement de make avec MOD=LAGR OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cs_lagrang.c
+	/opt/ansic/bin/cc   -I/home/saturne/opt/bft-1.0.2/arch/HP-UX/include -I/home/saturne/opt/fvm-0.6.1/arch/HP-UX/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    		     	         -DNDEBUG  -Ae +e +DA2.0W +O3 +Oinline=Orient3D_split,Orient3D_normalize,Orient3D_set_maxvalue -c cs_lagrang.c
+diverv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c diverv.F
+/var/tmp//fciBAAa23766.F
+   external subroutine DIVERV
+
+2482 Lines Compiled
+enslag.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c enslag.F
+/var/tmp//fciBAAa23775.F
+   external subroutine ENSLAG
+
+1954 Lines Compiled
+enswaf.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c enswaf.F
+/var/tmp//fciBAAa23784.F
+   external subroutine ENSWAF
+
+2003 Lines Compiled
+lagcar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagcar.F
+/var/tmp//fciBAAa23793.F
+   external subroutine LAGCAR
+
+3410 Lines Compiled
+lagcel.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagcel.F
+/var/tmp//fciBAAa23802.F
+   external subroutine LAGCEL
+
+3016 Lines Compiled
+lagcou.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagcou.F
+/var/tmp//fciBAAa23811.F
+   external subroutine LAGCOU
+
+3650 Lines Compiled
+lagdeb.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagdeb.F
+/var/tmp//fciBAAa23820.F
+   external subroutine LAGDEB
+
+2488 Lines Compiled
+lageli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lageli.F
+/var/tmp//fciBAAa23829.F
+   external subroutine LAGELI
+
+2082 Lines Compiled
+lagent.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagent.F
+/var/tmp//fciBAAa23840.F
+   external subroutine LAGENT
+
+4794 Lines Compiled
+lageqp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lageqp.F
+/var/tmp//fciBAAa23849.F
+   external subroutine LAGEQP
+
+3672 Lines Compiled
+lagerr.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagerr.F
+/var/tmp//fciBAAa23858.F
+   external subroutine LAGERR
+
+1221 Lines Compiled
+lages1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lages1.F
+/var/tmp//fciBAAa23867.F
+   external subroutine LAGES1
+
+3126 Lines Compiled
+lages2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lages2.F
+/var/tmp//fciBAAa23876.F
+   external subroutine LAGES2
+
+3230 Lines Compiled
+lagesp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagesp.F
+/var/tmp//fciBAAa23885.F
+   external subroutine LAGESP
+
+2714 Lines Compiled
+laggra.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c laggra.F
+/var/tmp//fciBAAa23894.F
+   external subroutine LAGGRA
+
+3100 Lines Compiled
+lagich.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagich.F
+/var/tmp//fciBAAa23903.F
+   external subroutine LAGICH
+
+3644 Lines Compiled
+lagidp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagidp.F
+/var/tmp//fciBAAa24016.F
+   external subroutine LAGIDP
+
+2269 Lines Compiled
+lagimp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagimp.F
+/var/tmp//fciBAAa24025.F
+   external subroutine LAGIMP
+
+2268 Lines Compiled
+lagini.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagini.F
+/var/tmp//fciBAAa24034.F
+   external subroutine LAGINI
+
+1386 Lines Compiled
+lagipn.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagipn.F
+/var/tmp//fciBAAa24043.F
+   external subroutine LAGIPN
+
+2490 Lines Compiled
+lagitf.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagitf.F
+/var/tmp//fciBAAa24052.F
+   external subroutine LAGITF
+
+3048 Lines Compiled
+lagitg.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagitg.F
+/var/tmp//fciBAAa24061.F
+   external subroutine LAGITG
+
+2296 Lines Compiled
+lagitp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagitp.F
+/var/tmp//fciBAAa24070.F
+   external subroutine LAGITP
+
+2517 Lines Compiled
+laglec.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c laglec.F
+/var/tmp//fciBAAa24079.F
+   external subroutine LAGLEC
+
+4999 Lines Compiled
+laglis.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c laglis.F
+/var/tmp//fciBAAa24120.F
+   external subroutine LAGLIS
+
+2479 Lines Compiled
+lagnew.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagnew.F
+/var/tmp//fciBAAa24129.F
+   external subroutine LAGNEW
+
+2355 Lines Compiled
+lagnwc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagnwc.F
+/var/tmp//fciBAAa24138.F
+   external subroutine LAGNWC
+
+2292 Lines Compiled
+lagopt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagopt.F
+/var/tmp//fciBAAa24147.F
+   external subroutine LAGOPT
+
+6365 Lines Compiled
+lagout.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagout.F
+/var/tmp//fciBAAa24156.F
+   external subroutine LAGOUT
+
+4331 Lines Compiled
+lagphy.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagphy.F
+/var/tmp//fciBAAa24165.F
+   external subroutine LAGPHY
+
+2431 Lines Compiled
+lagpoi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagpoi.F
+/var/tmp//fciBAAa24174.F
+   external subroutine LAGPOI
+
+3557 Lines Compiled
+lagraf.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagraf.F
+/var/tmp//fciBAAa24183.F
+   external subroutine LAGRAF
+
+2953 Lines Compiled
+lagrus.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagrus.F
+/var/tmp//fciBAAa24192.F
+   external subroutine LAGRUS
+
+2212 Lines Compiled
+lagsta.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagsta.F
+/var/tmp//fciBAAa24201.F
+   external subroutine LAGSTA
+
+2772 Lines Compiled
+lagstf.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagstf.F
+/var/tmp//fciBAAa24210.F
+   external subroutine LAGSTF
+
+1468 Lines Compiled
+lagtri.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagtri.F
+/var/tmp//fciBAAa24219.F
+   external subroutine LAGTRI
+
+1050 Lines Compiled
+lagune.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c lagune.F
+/var/tmp//fciBAAa24228.F
+   external subroutine LAGUNE
+
+4104 Lines Compiled
+memla1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memla1.F
+/var/tmp//fciBAAa24237.F
+   external subroutine MEMLA1
+
+1377 Lines Compiled
+memla2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memla2.F
+/var/tmp//fciBAAa24246.F
+   external subroutine MEMLA2
+
+1428 Lines Compiled
+ouestu.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c ouestu.F
+/var/tmp//fciBAAa24255.F
+   external subroutine OUESTU
+
+542 Lines Compiled
+uslabo.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslabo.F
+/var/tmp//fciBAAa24264.F
+   external subroutine USLABO
+
+3581 Lines Compiled
+uslaed.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslaed.F
+/var/tmp//fciBAAa24274.F
+   external subroutine USLAED
+
+2600 Lines Compiled
+uslaen.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslaen.F
+/var/tmp//fciBAAa24283.F
+   external subroutine USLAEN
+
+2924 Lines Compiled
+uslag1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslag1.F
+/var/tmp//fciBAAa24292.F
+   external subroutine USLAG1
+
+2178 Lines Compiled
+uslag2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslag2.F
+/var/tmp//fciBAAa24301.F
+   external subroutine USLAG2
+
+3091 Lines Compiled
+uslain.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslain.F
+/var/tmp//fciBAAa24310.F
+   external subroutine USLAIN
+
+2823 Lines Compiled
+uslaru.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslaru.F
+/var/tmp//fciBAAa24319.F
+   external subroutine USLARU
+
+2533 Lines Compiled
+uslast.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslast.F
+/var/tmp//fciBAAa24328.F
+   external subroutine USLAST
+
+3307 Lines Compiled
+uslatc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslatc.F
+/var/tmp//fciBAAa24337.F
+   external subroutine USLATC
+
+3008 Lines Compiled
+uslatp.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c uslatp.F
+/var/tmp//fciBAAa24346.F
+   external subroutine USLATP
+
+3032 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/LAGR/.readmeLAGR
+   Nettoyage avec MOD=LAGR OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de LAGR
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de RAYT sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire RAYT
+   Lien sur le Makefile
+   Lancement de make avec MOD=RAYT OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+memra1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memra1.F
+/var/tmp//fciBAAa25101.F
+   external subroutine MEMRA1
+
+1559 Lines Compiled
+memra2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memra2.F
+/var/tmp//fciBAAa25110.F
+   external subroutine MEMRA2
+
+1624 Lines Compiled
+memra3.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memra3.F
+/var/tmp//fciBAAa25119.F
+   external subroutine MEMRA3
+
+1564 Lines Compiled
+raybrd.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raybrd.F
+/var/tmp//fciBAAa25128.F
+   external subroutine RAYBRD
+
+2512 Lines Compiled
+raycli.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raycli.F
+/var/tmp//fciBAAa25137.F
+   external subroutine RAYCLI
+
+3113 Lines Compiled
+raydak.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raydak.F
+/var/tmp//fciBAAa25146.F
+   external subroutine RAYDAK
+
+716 Lines Compiled
+raydir.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raydir.F
+/var/tmp//fciBAAa25155.F
+   external subroutine RAYDIR
+
+182 Lines Compiled
+raydom.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raydom.F
+/var/tmp//fciBAAa25164.F
+   external subroutine RAYDOM
+
+4736 Lines Compiled
+rayens.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rayens.F
+/var/tmp//fciBAAa25173.F
+   external subroutine RAYENS
+
+1926 Lines Compiled
+raylec.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raylec.F
+/var/tmp//fciBAAa25182.F
+   external subroutine RAYLEC
+
+1995 Lines Compiled
+rayopt.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rayopt.F
+/var/tmp//fciBAAa25191.F
+   external subroutine RAYOPT
+
+2991 Lines Compiled
+rayout.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rayout.F
+/var/tmp//fciBAAa25200.F
+   external subroutine RAYOUT
+
+2332 Lines Compiled
+raypar.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raypar.F
+/var/tmp//fciBAAa25209.F
+   external subroutine RAYPAR
+
+2764 Lines Compiled
+raypun.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raypun.F
+/var/tmp//fciBAAa25218.F
+   external subroutine RAYPUN
+
+2293 Lines Compiled
+raysca.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raysca.F
+/var/tmp//fciBAAa25227.F
+   external subroutine RAYSCA
+
+1074 Lines Compiled
+raysol.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c raysol.F
+/var/tmp//fciBAAa25236.F
+   external subroutine RAYSOL
+
+2312 Lines Compiled
+rmodak.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c rmodak.F
+/var/tmp//fciBAAa25245.F
+   external subroutine ABSORB
+   external subroutine CHEBYC
+   external subroutine ASYMPT
+   external subroutine TASOOT
+   external subroutine PENTAG
+   external function FDLECK
+   external function EMIGAS
+   external subroutine SCRTCH
+
+1612 Lines Compiled
+usray1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usray1.F
+/var/tmp//fciBAAa25254.F
+   external subroutine USRAY1
+
+1797 Lines Compiled
+usray2.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usray2.F
+/var/tmp//fciBAAa25263.F
+   external subroutine USRAY2
+
+2581 Lines Compiled
+usray3.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usray3.F
+/var/tmp//fciBAAa25272.F
+   external subroutine USRAY3
+
+3325 Lines Compiled
+usray4.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c usray4.F
+/var/tmp//fciBAAa25281.F
+   external subroutine USRAY4
+
+2841 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/RAYT/.readmeRAYT
+   Nettoyage avec MOD=RAYT OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de RAYT
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Construction de MATI sous HP-UX
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+   Generation du repertoire MATI
+   Lien sur le Makefile
+   Lancement de make avec MOD=MATI OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système HP-UX
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+memmat.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c memmat.F
+/var/tmp//fciBAAa25970.F
+   external subroutine MEMMAT
+
+990 Lines Compiled
+mtimpi.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mtimpi.F
+/var/tmp//fciBAAa25979.F
+   external subroutine MTIMPI
+
+2171 Lines Compiled
+mtini1.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mtini1.F
+/var/tmp//fciBAAa25988.F
+   external subroutine MTINI1
+
+2454 Lines Compiled
+mtkpdc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mtkpdc.F
+/var/tmp//fciBAAa25997.F
+   external subroutine MTKPDC
+
+2172 Lines Compiled
+mtphyv.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mtphyv.F
+/var/tmp//fciBAAa26006.F
+   external subroutine MTPHYV
+
+2413 Lines Compiled
+mtproj.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mtproj.F
+/var/tmp//fciBAAa26015.F
+   external subroutine MTPROJ
+
+3386 Lines Compiled
+mttsns.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mttsns.F
+/var/tmp//fciBAAa26024.F
+   external subroutine MTTSNS
+
+3062 Lines Compiled
+mttssc.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mttssc.F
+/var/tmp//fciBAAa26033.F
+   external subroutine MTTSSC
+
+3255 Lines Compiled
+mttycl.F
+	f90 -D_CS_HAVE_XML    			              +fp_exception +FPVZOUD +U77 +DA2.0W +noppu +O1 -c mttycl.F
+/var/tmp//fciBAAa26042.F
+   external subroutine MTTYCL
+
+2671 Lines Compiled
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/HP-UX/MATI/.readmeMATI
+   Nettoyage avec MOD=MATI OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de MATI
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[7m
+ *** Verification des acces
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+chmod: can't access bin/compil_stat.exe
+[7m *** Fin de la verification des acces
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+
+[1m    Fin de l'installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR RAYT MATI
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.d
+
+[m[m
+[3g        H        H        H        H        H        H        H        H        H
+

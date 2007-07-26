@@ -1,0 +1,95 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+\programme{matrix}
+
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Le but de ce sous-programme, appel\'e par \fort{codits} et \fort{covofi}, est de construire la
+matrice de convection/diffusion, incluant les contributions ad\'equates des termes sources,
+intervenant dans le membre de gauche d'\'equations discr\'etis\'ees telles que
+celle de la
+quantit\'e de mouvement, d'une \'equation de convection diffusion d'un scalaire
+ou de mod\`ele de turbulence.\\
+Le type d'\'equation consid\'er\'ee est, pour la variable scalaire $a$ :
+\begin{equation}\notag
+\displaystyle \frac{\partial a}{\partial t} + \dive (\,(\rho \vect{u})\, a) -
+\displaystyle \frac{\partial }{\partial x}\left(\beta\,\frac{\partial a}{\partial x}\right) = 0
+\end{equation}
+La matrice ne s'applique qu'aux termes non reconstruits, les autres \'etant pris en compte au second membre et
+trait\'es dans le sous-programme \fort{bilsc2}. La partie
+convective, lorsqu'elle existe, est issue du sch\'ema upwind pur, quelque soit
+le type de sch\'ema convectif choisi par l'utilisateur. En effet, c'est, \`a
+l'heure actuelle, la seule fa\c con d'obtenir un op\'erateur lin\'eaire à
+diagonale dominante.\\\\ 
+La matrice est donc associ\'ee \`a $\mathcal{EM_{\it{scal}}}$, op\'erateur
+agissant sur un scalaire $a$ (inspir\'e de celui vectoriel $\mathcal{EM}$
+d\'efini dans \fort{navsto}) d'expression actuelle, pour tout cellule $\Omega_i$ de
+centre $I$  :
+\begin{equation}\notag
+\begin{array}{lll}
+\mathcal{EM_{\it{scal}}}(a,I) &=  f_s^{imp}\ a_I\ \\ 
+&+\sum\limits_{j\in Vois(i)}{F^{\,amont}_{\,ij}((\rho\vect{u})^n,a)}  
++\sum\limits_{k\in {\gamma_b(i)}} {F^{\,amont}_{\,{b}_{ik}}((\rho
+\vect{u})^n,a)}\\
+&-\sum\limits_{j\in Vois(i)}{D^{NRec}_{\,ij}(\beta,a)}
+-\sum\limits_{k\in {\gamma_b(i)}} {D^{NRec}_{\,{b}_{ik}}(\beta,a)}\\ 
+\end{array}
+\end{equation}
+avec~:\\
+$\bullet$ $f_s^{imp}$ le coefficient issu du terme instationnaire
+$\displaystyle\frac{\rho \ |\Omega_i|}{\Delta t}$, s'il y a lieu, et de
+l'implicitation de certains termes sources (contribution d\'ecoulant de la prise
+en compte de la
+variation $\displaystyle\frac{\partial \rho }{\partial t}$ de
+la masse volumique $\rho$ au cours du temps, diagonale du tenseur de pertes de
+charges par exemple...): cette initialisation est en fait effectu\'ee en amont
+de ce sous-programme, \\
+$\bullet$ $F^{\,amont}_{\,ij}$ le flux num\'erique convectif scalaire
+d\'ecentr\'e amont calcul\'e \`a la face interne $ij$ de la cellule $\Omega_i$,\\
+$\bullet$ $F^{\,amont}_{\,b_{ik}}$ le flux num\'erique convectif scalaire
+d\'ecentr\'e amont associ\'e calcul\'e \`a la face de bord $ik$ de la cellule $\Omega_i$
+jouxtant le bord du domaine $\Omega$,\\
+$\bullet$ $D^{\,NRec}_{\,ij}$ le flux num\'erique diffusif scalaire non
+reconstruit associ\'e calcul\'e \`a la face interne $ij$ de la cellule $\Omega_i$,\\
+$\bullet$ $D^{\,NRec}_{\,{b}_{ik}}$ le flux num\'erique diffusif scalaire non
+reconstruit associ\'e calcul\'e \`a la face de bord $ik$ de la cellule $\Omega_i$ jouxtant le bord du domaine $\Omega$,\\
+$\bullet$ $Vois(i)$ repr\'esente toujours l'ensemble des cellules
+voisines de ${\Omega_i}$ et $\gamma_b(i)$ l'ensemble des faces de
+bord de ${\Omega_i}$.\\
+Du fait de la r\'esolution en incr\'ements, $a$ est un incr\'ement et ses
+conditions aux limites associ\'ees sont donc de type Dirichlet homog\`ene ou de
+type 
+Neumann homog\`ene.
+

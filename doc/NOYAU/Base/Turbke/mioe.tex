@@ -1,0 +1,205 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\etape{Calcul du terme de production}
+On appelle trois fois \fort{grdcel} pour calculer les gradients de $u$, $v$ et
+$w$. Au final, on a \\
+$\displaystyle \var{TINSTK}=
+2\left(\frac{\partial u}{\partial x}\right)^2+
+2\left(\frac{\partial v}{\partial y}\right)^2+
+2\left(\frac{\partial w}{\partial z}\right)^2+
+\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)^2+
+\left(\frac{\partial u}{\partial z}+\frac{\partial w}{\partial x}\right)^2+
+\left(\frac{\partial v}{\partial z}+\frac{\partial w}{\partial y}\right)^2$\\
+et\\
+$\displaystyle \var{DIVU}=
+\frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}
++\frac{\partial w}{\partial z}$
+
+(le terme $div(\vect{u})$ n'est pas calcul\'e par \fort{divmas}, pour
+correspondre exactement \`a la trace du tenseur des d\'eformations qui est
+calcul\'e pour la production)
+
+
+\etape{Lecture des termes sources utilisateur}
+Appel de \fort{ustske} pour charger les termes sources utilisateurs. Ils sont
+stock\'es dans les tableaux suivants :\\
+$\var{W7}=\Omega\beta_k$\\
+$\var{W8}=\Omega\beta_\varepsilon$\\
+$\var{DAM}=\Omega\alpha_k$\\
+$\var{W9}=\Omega\alpha_\varepsilon$
+
+Puis on ajoute le terme en $(div\vect{u})^2$ \`a \var{TINSTK}. On a donc \\
+$\var{TINSTK}=\tilde{\mathcal{P}}$
+
+\etape{Calcul du terme de gravit\'e}
+Calcul uniquement si $\var{IGRAKE}=1$.\\
+On appelle \fort{grdcel} pour \var{ROM}, avec comme conditions aux limites 
+$\var{COEFA}=\var{ROMB}$ et \mbox{$\var{COEFB}=\var{VISCB}=0$}.\\
+$\var{PRDTUR}=\sigma_t$ est mis \`a 1 si on n'a pas de scalaire temp\'erature.
+
+$\tilde{\mathcal{G}}$ est calcul\'e et les termes sources sont mis \`a jour :\\
+$\var{TINSTK}=\tilde{\mathcal{P}}+\tilde{\mathcal{G}}$\\
+$\var{TINSTE}=\tilde{\mathcal{P}}+\Max\left[\tilde{\mathcal{G}},0\right]
+=\tilde{\mathcal{P}}+(1-C_{\varepsilon_3})\tilde{\mathcal{G}}$
+
+Si $\var{IGRAKE}=0$, on a simplement\\
+$\var{TINSTK}=\var{TINSTE}=\tilde{\mathcal{P}}$
+
+\etape{Calcul du terme d'accumulation de masse}
+On stocke
+$\displaystyle \var{W1}=\Omega\dive(\rho\vect{u})$
+calcul\'e par \fort{divmas} (pour correspondre aux termes de convection de la
+matrice).
+
+\etape{Calcul des termes sources explicites}
+On affecte les termes sources explicites de $k$ et $\varepsilon$ pour la
+premi\`ere \'etape.\\
+$\displaystyle\var{SMBRK}=\Omega\left(\mu_t(\tilde{\mathcal{P}}+\tilde{\mathcal{G}})
+-\frac{2}{3}\rho^{(n)} k^{(n)}\dive{\vect{u}}
+-\rho^{(n)} \varepsilon^{(n)}\right)+\Omega k^{(n)}\dive(\rho\vect{u})$\\
+$\displaystyle\var{SMBRE}=\Omega\frac{\varepsilon^{(n)}}{k^{(n)}}
+\left(C_{\varepsilon_1}\left(
+\mu_t(\tilde{\mathcal{P}}+(1-C_{\varepsilon_3})\tilde{\mathcal{G}})
+-\frac{2}{3}\rho^{(n)} k^{(n)}\dive{\vect{u}}\right)
+-C_{\varepsilon_2}\rho^{(n)}\varepsilon^{(n)}\right)
++\Omega\varepsilon^{(n)}\dive(\rho\vect{u})$
+
+soit $\var{SMBRK}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})$
+et $\var{SMBRE}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})$.
+
+
+\etape{Calcul des termes sources utilisateur}
+On ajoute les termes sources utilisateur explicites \`a \var{SMBRK} et
+\var{SMBRE}, soit :\\
+$\var{SMBRK}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})+\Omega\alpha_k k^{(n)} +\Omega\beta_k$\\
+$\var{SMBRE}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})
++\Omega\alpha_\varepsilon \varepsilon^{(n)} +\Omega\beta_\varepsilon$
+
+Les tableaux \var{W7} et \var{W8} sont lib\'er\'es, \var{DAM} et \var{W9} sont
+conserv\'es pour \^etre utilis\'es dans la troisi\`eme phase de r\'esolution.
+
+\etape{Calcul des termes de convection/diffusion explicites}
+\fort{bilsc2} est appel\'e deux fois, pour $k$ et pour $\varepsilon$, afin
+d'ajouter \`a \var{SMBRK} et \var{SMBRE} les termes de convection/diffusion
+explicites $D(k^{(n)})$ et $D(\varepsilon^{(n)})$. Ces termes sont d'abord
+stock\'es dans \var{W7} et \var{W8}, pour \^etre conserv\'es et r\'eutilis\'es
+dans la troisi\`eme phase de r\'esolution.
+
+
+\etape{Termes source de masse}
+Dans le cas d'une injection forc\'ee de mati\`ere, on passe deux fois dans
+\fort{catsma} pour ajouter les termes en
+$\Omega \Gamma (k_i-k^{(n)})$ et 
+$\Omega \Gamma (\varepsilon_i-\varepsilon^{(n)})$ \`a \var{SMBRK} et
+\var{SMBRE}. La partie implicite ($\Omega\Gamma$) est stock\'ee dans les
+variables \var{W2} et \var{W3}, qui seront utilis\'ees lors de la troisi\`eme
+phase (les deux variables sont bien n\'ecessaires, au cas o\`u on aurait une
+injection forc\'ee sur $k$ et pas sur $\varepsilon$, par exemple).
+
+\etape{Fin de la premi\`ere phase}
+Ceci termine la premi\`ere phase. On a \\
+$\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_e-k^{(n)}}{\Delta t}$\\
+$\displaystyle \var{SMBRE}=\Omega \rho^{(n)}\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}$
+
+\etape{Phase de couplage}
+(uniquement si $\var{IKECOU}=1$)
+
+On renormalise \var{SMBRK} et \var{SMBRE} qui deviennent les seconds membres du
+syst\`eme de couplage.\\
+$\displaystyle \var{SMBRK}=\frac{1}{\Omega\rho^{(n)}}\var{SMBRK}
+=\frac{k_e-k^{(n)}}{\Delta t}$\\
+$\displaystyle \var{SMBRE}=\frac{1}{\Omega\rho^{(n)}}\var{SMBRE}
+=\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}$\\
+et $\displaystyle \var{DIVP23}=\frac{2}{3}\Max\left[\dive(\vect{u}),0\right]$.
+
+On remplit la matrice de couplage\\
+$\displaystyle \var{A11}=\frac{1}{\Delta t}
+-2 C_\mu\frac{k^{(n)}}{\varepsilon^{(n)}}
+\Min\left[\left(\tilde{\mathcal{P}}+\tilde{\mathcal{G}}\right),0\right]
++\frac{2}{3}\Max\left[\dive(\vect{u}),0\right]$\\
+$\displaystyle \var{A12}= 1$\\
+$\displaystyle \var{A21}=
+- C_{\varepsilon_1} C_\mu \left(\tilde{\mathcal{P}}
++(1-C_{\varepsilon_3})\tilde{\mathcal{G}}\right)
+- C_{\varepsilon_2}\left(\frac{\varepsilon^{(n)}}{k^{(n)}}\right)^2$\\
+$\displaystyle \var{A22}=\frac{1}{\Delta t}
++\frac{2}{3}C_{\varepsilon_1}\Max\left[\dive(\vect{u}),0\right]
++2 C_{\varepsilon_2}\frac{\varepsilon^{(n)}}{k^{(n)}}$
+
+On inverse le syst\`eme $2\times 2$, et on r\'ecup\`ere :\\
+$\displaystyle \var{DELTK}=k_{ts}-k^{(n)}$\\
+$\displaystyle \var{DELTE}=\varepsilon_{ts}-\varepsilon^{(n)}$
+
+\etape{Fin de la deuxi\`eme phase}
+On met \`a jour les variables \var{SMBRK} et \var{SMBRE}.\\
+$\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_{ts}-k^{(n)}}{\Delta t}$\\
+$\displaystyle \var{SMBRE}=
+\Omega \rho^{(n)}\frac{\varepsilon_{ts}-\varepsilon^{(n)}}{\Delta t}$
+
+Dans le cas o\`u on ne couple pas ($\var{IKECOU}=0$), ces deux variables gardent 
+la m\^eme valeur qu'\`a la fin de la premi\`ere \'etape.
+
+\etape{Calcul des termes implicites}
+On retire \`a \var{SMBRK} et \var{SMBRE} la partie en convection diffusion au
+temps $n$, qui \'etait stock\'ee dans \var{W7} et \var{W8}.\\
+$\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_{ts}-k^{(n)}}{\Delta t}
+-\Omega D(k^{(n)})$\\
+$\displaystyle \var{SMBRE}=
+\Omega \rho^{(n)}\frac{\varepsilon_{ts}-\varepsilon^{(n)}}{\Delta t}
+-\Omega D(\varepsilon^{(n)})$
+
+
+On calcule les termes implicites, hors convection/diffusion, qui correspondent
+\`a la diagonale de la matrice.\\
+$\displaystyle \var{TINSTK}=\frac{\Omega \rho^{(n)}}{\Delta t}
+-\Omega\dive(\rho\vect{u})+\Omega\Gamma+\Omega\Max[-\alpha_k,0]$\\
+$\displaystyle \var{TINSTE}=\frac{\Omega \rho^{(n)}}{\Delta t}
+-\Omega\dive(\rho\vect{u})+\Omega\Gamma+\Omega\Max[-\alpha_\varepsilon,0]$\\
+($\Gamma$ n'est pris en compte qu'en injection forc\'ee, c'est-\`a-dire qu'il
+est forc\'ement positif et ne risque pas d'affaiblir la diagonale de la matrice).
+
+\etape{R\'esolution finale}
+On passe alors deux fois dans \fort{codits}, pour $k$ et $\varepsilon$,
+pour r\'esoudre les \'equations du type :
+
+$\var{TINST}\times(\varphi^{(n+1)}-\varphi^{(n)}) = D(\varphi^{(n+1)})+\var{SMBR}$.
+
+\etape{clipping final}
+On passe enfin dans la routine \fort{clipke} pour faire un clipping \'eventuel
+de $k^{(n+1)}$ et $\varepsilon^{(n+1)}$.
+
+
+

@@ -1,0 +1,287 @@
+'NoTitle'
+'GEOM'
+     2                                   $ IMPRE
+                                         $ NOM DU FICHIER RESTAURE                                         
+emm.geom 
+'DIME'
+     2     3                             $ IMPRE NDIM
+'QC25'
+     2      1      0      RTOP           $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    11                                   $ NOLO 
+    12                                   $ NOLO 
+    13                                   $ NOLO 
+    14                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      2      0      RBOT           $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+     1                                   $ NOLO 
+     2                                   $ NOLO 
+     3                                   $ NOLO 
+     4                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      14      0      RTOP          $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+     91                                  $ NOLO 
+     92                                  $ NOLO 
+     83                                  $ NOLO 
+     94                                  $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2     12      0      RBOT           $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+     5                                   $ NOLO 
+    73                                   $ NOLO 
+     6                                   $ NOLO 
+     9                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2     13      0      RTOP           $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    15                                   $ NOLO 
+    71                                   $ NOLO 
+    16                                   $ NOLO 
+    10                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      25      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     6     -1                            $ NBRELI NS1L
+    32                                   $ NOLO 
+    51                                   $ NOLO 
+    29                                   $ NOLO 
+    52                                   $ NOLO 
+    34                                   $ NOLO 
+    10                                   $ NOLO 
+    -2     1                             $ IMAX NQUAD
+'QC25'
+     2      24      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     6     -1                            $ NBRELI NS1L
+    59                                   $ NOLO 
+    31                                   $ NOLO 
+    39                                   $ NOLO 
+    33                                   $ NOLO 
+    60                                   $ NOLO 
+     9                                   $ NOLO 
+    -2     1                             $ IMAX NQUAD
+'QC25'
+     2      26      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4     -1                            $ NBRELI NS1L
+    46                                   $ NOLO 
+    45                                   $ NOLO 
+    48                                   $ NOLO 
+    47                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      4      0      0              $ IMPRE NIVEAU NSURF NDSDE
+     4     -1                            $ NBRELI NS1L
+    86                                   $ NOLO 
+    85                                   $ NOLO 
+    88                                   $ NOLO 
+    87                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      27      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4     -1                            $ NBRELI NS1L
+    51                                   $ NOLO 
+    29                                   $ NOLO 
+    52                                   $ NOLO 
+    55                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      23      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    53                                   $ NOLO 
+    13                                   $ NOLO 
+    54                                   $ NOLO 
+    30                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      28      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    35                                   $ NOLO 
+     3                                   $ NOLO 
+    37                                   $ NOLO 
+    40                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      29      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4     -1                            $ NBRELI NS1L
+    41                                   $ NOLO 
+    44                                   $ NOLO 
+    43                                   $ NOLO 
+    42                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      3      0      0              $ IMPRE NIVEAU NSURF NDSDE
+     4     -1                            $ NBRELI NS1L
+    81                                   $ NOLO 
+    84                                   $ NOLO 
+    83                                   $ NOLO 
+    82                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      30      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    30                                   $ NOLO 
+    54                                   $ NOLO 
+    13                                   $ NOLO 
+    53                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      31      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    73                                   $ NOLO 
+    68                                   $ NOLO 
+     1                                   $ NOLO 
+    67                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD
+'QC25'
+     2      15      0      0             $ IMPRE NIVEAU NSURF NDSDE
+     4      1                            $ NBRELI NS1L
+    71                                   $ NOLO 
+    64                                   $ NOLO 
+    11                                   $ NOLO 
+    63                                   $ NOLO 
+    -1     1                             $ IMAX NQUAD    
+'INB3'
+      2                                  $ IMPRE
+ 1                                       $ NIVEAI
+ 2                                       $ NIVEAI
+      0                                  $ FIN DE LISTE
+     17                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     RTOP                                $ NREF1
+     RSTO   NHIG   RBOT    -1            $ NDSD NBSEC NREF2 NREFF
+      1   ARIT      1                    $ RAISON TYPRAI TYPREP
+      
+'INB3'
+      2                                  $ IMPRE
+ 13                                      $ NIVEAI
+ 12                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+     18                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+    RTOP                                 $ NREF1
+    RAMO   NHIG   RBOT   -1              $ NDSD NBSEC NREF2 NREFF
+      1    ARIT      1                   $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 14                                      $ NIVEAI
+ 1                                       $ NIVEAI
+      0                                  $ FIN DE LISTE
+      6                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     RTOP                                $ NREF1
+     RBOT     NCIEL     0    -1          $ NDSD NBSEC NREF2 NREFF
+     1.    ARIT      1                   $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 25                                      $ NIVEAI
+ 24                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+      1                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+    RTOP                                 $ NREF1
+    RALI  NHIG   RBOT    -1              $ NDSD NBSEC NREF2 NREFF
+     1.   ARIT      1                    $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 26                                      $ NIVEAI
+ 4                                       $ NIVEAI
+      0                                  $ FIN DE LISTE
+      2                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+    RIN                                  $ NREF1
+    RCAL   NALIM    0    -1              $ NDSD NBSEC NREF2 NREFF
+    0.25   ARIT      1                   $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 4                                       $ NIVEAI
+ 27                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+      7                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+    RTOP                                 $ NREF1
+    RALI   NCONV     0    -1             $ NDSD NBSEC NREF2 NREFF
+    1.   ARIT      1                     $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 23                                      $ NIVEAI
+ 28                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+     4                                   $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     RTOP                                $ NREF1
+     REVA    NHIG      RBOT    -1        $ NDSD NBSEC NREF2 NREFF
+     1.   ARIT      1                    $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 29                                      $ NIVEAI
+ 3                                       $ NIVEAI
+      0                                  $ FIN DE LISTE
+      8                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     ROUT                                $ NREF1
+     RCEV     NEVAC     0    -1          $ NDSD NBSEC NREF2 NREFF
+     0.1    ARIT      1                  $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 3                                       $ NIVEAI
+ 30                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+      5                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     RTOP                                $ NREF1
+     RBOT     NCIEL     0    -1          $ NDSD NBSEC NREF2 NREFF
+     1.    ARIT      1                   $ RAISON TYPRAI TYPREP
+'INB3'
+      2                                  $ IMPRE
+ 15                                      $ NIVEAI
+ 31                                      $ NIVEAI
+      0                                  $ FIN DE LISTE
+      3                                  $ RESULTAT
+      1      0     -7                    $ TYPELE TYPREF NFFRON
+     RTOP                                $ NREF1
+      0     NHIG     RBOT    -1          $ NDSD NBSEC NREF2 NREFF
+     1.   ARIT      1                    $ RAISON TYPRAI TYPREP
+'RECM'
+     2         1.e-3      2              $ IMPRE EPS IOPT
+                                         $ LISTE     
+18     
+17     
+1
+2
+3
+7
+8
+4
+5
+6
+    -1                                   $ FIN DE LISTE
+    20                                   $ NIVEAU RESULTAT
+'VEMA'
+     2     20  1.e-2                     $ IMPRE NIVEAU EPS
+'EXTR'
+     2     20      0     21              $ IMPRE NIVEA1 ICHOIX NIVEA2
+     
+'RECM'
+     2         1.e-3      2              $ IMPRE EPS IOPT
+                                         $ LISTE
+20     
+21     
+    -1                                   $ FIN DE LISTE
+    22                                   $ NIVEAU RESULTAT
+    
+'SAUV'
+     2     22                            $ IMPRE NIVEAU
+                                         $ NOM DU FICHIER DE SAUVEGARDE  
+emm.des 
+    
+
+'VEMA'
+     2     22  1.e-2                     $ IMPRE NIVEAU EPS
+
+
+

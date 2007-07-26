@@ -1,0 +1,1288 @@
+[1m
+    Installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR RAYT MATI sous IRIX64
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.d
+       ==================================================================  
+[m[m
+[7m
+ *** Repertoire de base CS_HOME = /home/saturne/Noyau/ncs-1.3.d
+[m[m
+[7m
+ *** Protection prealable
+[m[m
+[7m
+ *** Construction de BASE sous IRIX64
+[m[m
+   Generation du repertoire BASE
+   Lien sur le Makefile
+   Lancement de make avec MOD=BASE OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cs_ale.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_ale.c
+cs_base.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_base.c
+cs_comm.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_comm.c
+cc-1196 cc: WARNING File = cs_comm.c, Line = 1196
+  The indicated function is declared implicitly.
+
+    if (gethostname(chaine, CS_LOC_COMM_LNG_HOSTNAME) < 0)
+        ^
+
+cs_couplage.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_couplage.c
+cs_gui.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_gui.c
+cc-1185 cc: WARNING File = cs_gui.c, Line = 2943
+  An enumerated type is mixed with another type.
+
+              cs_gui_boundary_dirichlet(INLET, vars->name2[n], i);
+                                               ^
+
+cc-1185 cc: WARNING File = cs_gui.c, Line = 2985
+  An enumerated type is mixed with another type.
+
+              cs_gui_boundary_dirichlet(WALL, vars->name2[n], i);
+                                              ^
+
+cc-1185 cc: WARNING File = cs_gui.c, Line = 3639
+  An enumerated type is mixed with another type.
+
+          cs_gui_boundary_dirichlet(WALL, vars->name2[n], i);
+                                          ^
+
+cc-1174 cc: WARNING File = cs_gui.c, Line = 225
+  The variable "cs_coal_combustion_models_name" was declared but never
+          referenced.
+
+  static const char *const cs_coal_combustion_models_name[nb_coal_combustion_models] =
+                           ^
+
+cc-1174 cc: WARNING File = cs_gui.c, Line = 311
+  The variable "cs_physical_properties_name" was declared but never referenced.
+
+  static const char *const cs_physical_properties_name[nb_physical_properties]=
+                           ^
+
+cc-1174 cc: WARNING File = cs_gui.c, Line = 331
+  The variable "cs_analysis_control_name" was declared but never referenced.
+
+  static const char *const cs_analysis_control_name[nb_analysis_control]=
+                           ^
+
+cc-1174 cc: WARNING File = cs_gui.c, Line = 334
+  The variable "cs_output_name" was declared but never referenced.
+
+  static const char *const cs_output_name[nb_output]=
+                           ^
+
+cs_gui_matisse.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_gui_matisse.c
+cs_gui_radiative_transfer.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_gui_radiative_transfer.c
+cs_gui_util.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_gui_util.c
+cs_maillage.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_maillage.c
+cs_maillage_connect.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_maillage_connect.c
+cs_maillage_grd.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_maillage_grd.c
+cs_maillage_select.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_maillage_select.c
+cs_maillage_solcom.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_maillage_solcom.c
+cs_main.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_main.c
+cc-1174 cc: WARNING File = cs_main.c, Line = 158
+  The variable "rang_deb" was declared but never referenced.
+
+    int     rang_deb = -1;
+            ^
+
+cs_mesh_quality.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_mesh_quality.c
+cs_messages_ecs.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_messages_ecs.c
+cs_msg.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_msg.c
+cs_opts.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_opts.c
+cs_parallel.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_parallel.c
+cs_perio.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_perio.c
+cs_post.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_post.c
+cs_suite.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_suite.c
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1166
+  The variable "nbr_ent_glob" was declared but never referenced.
+
+    cs_int_t     nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
+                              ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1166
+  The variable "nbr_ent_loc" was declared but never referenced.
+
+    cs_int_t     nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
+                                            ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1167
+  The variable "num_glob_ent" was declared but never referenced.
+
+    fvm_gnum_t  *num_glob_ent;
+                 ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1384
+  The variable "nbr_ent_glob" was declared but never referenced.
+
+    cs_int_t         nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
+                                  ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1384
+  The variable "nbr_ent_loc" was declared but never referenced.
+
+    cs_int_t         nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
+                                                ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 1385
+  The variable "num_glob_ent" was declared but never referenced.
+
+    fvm_gnum_t      *num_glob_ent;
+                     ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 3351
+  The variable "ind_rec" was declared but never referenced.
+
+    cs_int_t  ind_rec;
+              ^
+
+cc-1174 cc: WARNING File = cs_suite.c, Line = 141
+  The variable "cs_suite_taille_buf_def" was declared but never referenced.
+
+  static int cs_suite_taille_buf_def = 1024*1024*8;
+             ^
+
+cs_syr_coupling.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_syr_coupling.c
+cs_syr_messages.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_syr_messages.c
+cs_tpar1d.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_tpar1d.c
+cs_ventil.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_ventil.c
+cs_voiset.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c cs_voiset.c
+tcpumx.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c tcpumx.c
+tremai.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    			    -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2   -c tremai.c
+alelap.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c alelap.F
+alemaj.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c alemaj.F
+altycl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c altycl.F
+armtps.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c armtps.F
+bilsc2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c bilsc2.F
+calgeo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c calgeo.F
+calgrg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c calgrg.F
+calhyd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c calhyd.F
+calmom.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c calmom.F
+caltri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c caltri.F
+catsma.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c catsma.F
+causta.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c causta.F
+cgstab.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cgstab.F
+clca66.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clca66.F
+cldijp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cldijp.F
+cldipo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cldipo.F
+clipke.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clipke.F
+clmlga.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clmlga.F
+clprij.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clprij.F
+clpsca.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clpsca.F
+clptur.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clptur.F
+clpv2f.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clpv2f.F
+clsurn.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clsurn.F
+clsyvt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clsyvt.F
+clvolc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c clvolc.F
+codits.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c codits.F
+condli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c condli.F
+cou1di.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cou1di.F
+cou1do.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cou1do.F
+coupbi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c coupbi.F
+coupbo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c coupbo.F
+covofi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c covofi.F
+cregeo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cregeo.F
+cs_post_util.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cs_post_util.F
+csclli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c csclli.F
+csflsh.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c csflsh.F
+csinit.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c csinit.F
+csprnt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c csprnt.F
+cycmgr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cycmgr.F
+distpr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c distpr.F
+distyp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c distyp.F
+divmas.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c divmas.F
+divrij.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c divrij.F
+dttvar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c dttvar.F
+dvvpst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c dvvpst.F
+ecrava.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ecrava.F
+ecrhis.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ecrhis.F
+ecrlis.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ecrlis.F
+filtre.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c filtre.F
+findpt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c findpt.F
+gradco.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c gradco.F
+gradmc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c gradmc.F
+gradrc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c gradrc.F
+grdcel.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c grdcel.F
+hturbp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c hturbp.F
+iasize.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c iasize.F
+idrbla.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c idrbla.F
+impini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c impini.F
+iniini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c iniini.F
+inimas.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c inimas.F
+inipst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c inipst.F
+initi1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c initi1.F
+initi2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c initi2.F
+iniusi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c iniusi.F
+iniva0.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c iniva0.F
+inivar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c inivar.F
+invers.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c invers.F
+iprbla.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c iprbla.F
+itrgrp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c itrgrp.F
+itrmas.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c itrmas.F
+jacobi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c jacobi.F
+lecamo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lecamo.F
+lecamp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lecamp.F
+lecamx.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lecamx.F
+ledgeo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ledgeo.F
+letgeo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c letgeo.F
+limgrd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c limgrd.F
+matrdt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c matrdt.F
+matrix.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c matrix.F
+memale.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memale.F
+memcbr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcbr.F
+memclg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memclg.F
+memcli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcli.F
+memdis.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memdis.F
+memdtv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memdtv.F
+memdyp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memdyp.F
+memgrg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memgrg.F
+memini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memini.F
+memkep.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memkep.F
+memkom.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memkom.F
+memnav.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memnav.F
+memnvc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memnvc.F
+mempdc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mempdc.F
+mempgr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mempgr.F
+memphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memphy.F
+memrij.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memrij.F
+memsca.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memsca.F
+memt1d.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memt1d.F
+memtri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memtri.F
+memtsm.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memtsm.F
+memv2f.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memv2f.F
+memvor.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memvor.F
+modini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c modini.F
+modpar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c modpar.F
+navsto.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c navsto.F
+newmrk.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c newmrk.F
+numvec.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c numvec.F
+ordita.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ordita.F
+parge1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c parge1.F
+pergra.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pergra.F
+perinr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c perinr.F
+perinu.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c perinu.F
+phyvar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c phyvar.F
+postlc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c postlc.F
+ppcabs.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppcabs.F
+ppclim.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppclim.F
+ppcsca.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppcsca.F
+ppini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppini1.F
+ppinii.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppinii.F
+ppiniv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppiniv.F
+pplecd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pplecd.F
+ppphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppphyv.F
+ppprcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppprcl.F
+ppprop.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppprop.F
+ppray4.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppray4.F
+pptbht.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pptbht.F
+pptssc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pptssc.F
+pptycl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pptycl.F
+ppvarp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ppvarp.F
+prcpol.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prcpol.F
+precli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c precli.F
+preduv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c preduv.F
+premgr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c premgr.F
+prmoy0.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prmoy0.F
+prods2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prods2.F
+prods3.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prods3.F
+prodsc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prodsc.F
+projts.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c projts.F
+prolon.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c prolon.F
+promav.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c promav.F
+proxav.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c proxav.F
+rasize.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rasize.F
+recvmc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c recvmc.F
+reseps.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c reseps.F
+resmgr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c resmgr.F
+resolp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c resolp.F
+resrij.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c resrij.F
+resssg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c resssg.F
+resv2f.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c resv2f.F
+rijech.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rijech.F
+rijthe.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rijthe.F
+scalai.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c scalai.F
+schtmp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c schtmp.F
+strdep.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c strdep.F
+strini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c strini.F
+strpre.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c strpre.F
+tdesi1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c tdesi1.F
+testel.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c testel.F
+tridim.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c tridim.F
+tsepdc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c tsepdc.F
+turbke.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c turbke.F
+turbkw.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c turbkw.F
+turent.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c turent.F
+turrij.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c turrij.F
+typecl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c typecl.F
+undscr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c undscr.F
+usalcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usalcl.F
+usalin.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usalin.F
+usclim.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usclim.F
+usdpst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usdpst.F
+ushist.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ushist.F
+usini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usini1.F
+usiniv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usiniv.F
+uskpdc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uskpdc.F
+usmodg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usmodg.F
+usmpst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usmpst.F
+usnpst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usnpst.F
+usphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usphyv.F
+usppmo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usppmo.F
+usproj.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usproj.F
+uspt1d.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uspt1d.F
+usrubm.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usrubm.F
+usruet.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usruet.F
+ussmag.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ussmag.F
+usstru.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usstru.F
+usthht.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usthht.F
+ustske.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustske.F
+ustskw.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustskw.F
+ustsma.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustsma.F
+ustsns.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustsns.F
+ustsri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustsri.F
+ustssc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustssc.F
+ustsv2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ustsv2.F
+usvima.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usvima.F
+usvist.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usvist.F
+usvort.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usvort.F
+usvpst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usvpst.F
+v2nutp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c v2nutp.F
+vandri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vandri.F
+varpos.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c varpos.F
+vectds.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vectds.F
+vericl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vericl.F
+verini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c verini.F
+verlon.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c verlon.F
+vert1d.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vert1d.F
+viscfa.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c viscfa.F
+visdyn.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c visdyn.F
+vislmg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vislmg.F
+visort.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c visort.F
+vissec.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vissec.F
+vissma.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vissma.F
+vissst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vissst.F
+vor2cl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vor2cl.F
+vordep.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vordep.F
+vorimp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorimp.F
+vorin0.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorin0.F
+vorini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorini.F
+vorlgv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorlgv.F
+vorpre.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorpre.F
+vortex.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vortex.F
+vorver.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorver.F
+vorvit.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c vorvit.F
+zufall.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c zufall.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/BASE/.readmeBASE
+   Nettoyage avec MOD=BASE OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de BASE
+[m[m
+[7m
+ *** Construction de CFBL sous IRIX64
+[m[m
+   Generation du repertoire CFBL
+   Lien sur le Makefile
+   Lancement de make avec MOD=CFBL OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cfbsc2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfbsc2.F
+cfbsc3.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfbsc3.F
+cfcdts.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfcdts.F
+cfdivs.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfdivs.F
+cfdttv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfdttv.F
+cfener.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfener.F
+cfini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfini1.F
+cfiniv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfiniv.F
+cfmsfl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfmsfl.F
+cfmsgs.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfmsgs.F
+cfmsvl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfmsvl.F
+cfmsvs.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfmsvs.F
+cfphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfphyv.F
+cfprop.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfprop.F
+cfqdmv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfqdmv.F
+cfrusb.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfrusb.F
+cfvarp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfvarp.F
+cfxtcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cfxtcl.F
+memcfe.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcfe.F
+memcfm.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcfm.F
+memcft.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcft.F
+memcfv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcfv.F
+uscfcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfcl.F
+uscfpv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfpv.F
+uscfth.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfth.F
+uscfx1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfx1.F
+uscfx2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfx2.F
+uscfxi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscfxi.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/CFBL/.readmeCFBL
+   Nettoyage avec MOD=CFBL OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de CFBL
+[m[m
+[7m
+ *** Construction de COGZ sous IRIX64
+[m[m
+   Generation du repertoire COGZ
+   Lien sur le Makefile
+   Lancement de make avec MOD=COGZ OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+coini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c coini1.F
+colecd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c colecd.F
+copdfr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c copdfr.F
+coprop.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c coprop.F
+cothht.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cothht.F
+covarp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c covarp.F
+d3phst.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3phst.F
+d3pini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3pini.F
+d3pint.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3pint.F
+d3pphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3pphy.F
+d3ptcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3ptcl.F
+d3pver.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c d3pver.F
+ebuini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ebuini.F
+ebuphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ebuphy.F
+ebutcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ebutcl.F
+ebutss.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ebutss.F
+ebuver.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ebuver.F
+lwcgfu.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwcgfu.F
+lwcini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwcini.F
+lwcphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwcphy.F
+lwctcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwctcl.F
+lwctss.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwctss.F
+lwcurl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwcurl.F
+lwcver.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lwcver.F
+pdflwc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pdflwc.F
+pdfpp3.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pdfpp3.F
+pdfpp4.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c pdfpp4.F
+usd3p1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usd3p1.F
+usd3pc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usd3pc.F
+usd3pi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usd3pi.F
+usebu1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usebu1.F
+usebuc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usebuc.F
+usebui.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usebui.F
+uslwc1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslwc1.F
+uslwcc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslwcc.F
+uslwci.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslwci.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/COGZ/.readmeCOGZ
+   Nettoyage avec MOD=COGZ OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de COGZ
+[m[m
+[7m
+ *** Construction de CPLV sous IRIX64
+[m[m
+   Generation du repertoire CPLV
+   Lien sur le Makefile
+   Lancement de make avec MOD=CPLV OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cpcym1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpcym1.F
+cpflux.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpflux.F
+cpini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpini1.F
+cpiniv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpiniv.F
+cplecd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplecd.F
+cplin1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplin1.F
+cplini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplini.F
+cplph1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplph1.F
+cplphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplphy.F
+cplpro.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplpro.F
+cpltcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpltcl.F
+cpltss.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpltss.F
+cpltsv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpltsv.F
+cplvar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplvar.F
+cplver.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplver.F
+cplym1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cplym1.F
+cppdf4.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cppdf4.F
+cppdf5.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cppdf5.F
+cppdfr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cppdfr.F
+cpphy1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpphy1.F
+cpphy2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpphy2.F
+cpphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpphyv.F
+cpprop.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpprop.F
+cpptcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpptcl.F
+cprays.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cprays.F
+cpteh1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpteh1.F
+cpteh2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpteh2.F
+cptehm.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cptehm.F
+cpthp1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpthp1.F
+cpthp2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpthp2.F
+cptssc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cptssc.F
+cptsvc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cptsvc.F
+cptsvi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cptsvi.F
+cpvarp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpvarp.F
+cpveri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c cpveri.F
+memcp1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memcp1.F
+uscpcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscpcl.F
+uscpi1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscpi1.F
+uscpiv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscpiv.F
+uscpl1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscpl1.F
+uscplc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uscplc.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/CPLV/.readmeCPLV
+   Nettoyage avec MOD=CPLV OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de CPLV
+[m[m
+[7m
+ *** Construction de ELEC sous IRIX64
+[m[m
+   Generation du repertoire ELEC
+   Lien sur le Makefile
+   Lancement de make avec MOD=ELEC OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+elflux.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elflux.F
+elini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elini1.F
+eliniv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c eliniv.F
+ellecd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ellecd.F
+elphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elphyv.F
+elprop.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elprop.F
+elthht.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elthht.F
+eltssc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c eltssc.F
+elvarp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elvarp.F
+elveri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c elveri.F
+uselcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uselcl.F
+uselen.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uselen.F
+useli1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c useli1.F
+useliv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c useliv.F
+uselph.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uselph.F
+uselrc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uselrc.F
+usetcl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usetcl.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/ELEC/.readmeELEC
+   Nettoyage avec MOD=ELEC OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de ELEC
+[m[m
+[7m
+ *** Construction de LAGR sous IRIX64
+[m[m
+   Generation du repertoire LAGR
+   Lien sur le Makefile
+   Lancement de make avec MOD=LAGR OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+cs_lagrang.c
+	cc   -I/home/saturne/opt/bft-1.0.2/arch/IRIX64/include -I/home/saturne/opt/fvm-0.6.1/arch/IRIX64/include  -I/home/saturne/opt/libxml2-2.6.19/include/libxml2 -D_POSIX_SOURCE -D_CS_HAVE_SOCKET  -D_CS_HAVE_XML    		     	         -DNDEBUG  -64 -ansi -woff 1521,1552,1096 -c99 -O2 -INLINE:list=ON:must=Orient3D_split,Orient3D_normalize,Orient3D_set_maxvalue -c cs_lagrang.c
+cs_loc_lagrang__ieee not inlined into csieee_: function is preemptible and has not been set to mustinline    (edge# 0) 
+Orientation3D not inlined into coturn_: function is preemptible and has not been set to mustinline    (edge# 21) 
+Inlining Orient3D_split into Orientation3D (edge# 36)
+Inlining Orient3D_split into Orientation3D (edge# 35)
+Inlining Orient3D_split into Orientation3D (edge# 34)
+Inlining Orient3D_split into Orientation3D (edge# 33)
+Inlining Orient3D_split into Orientation3D (edge# 32)
+Inlining Orient3D_split into Orientation3D (edge# 31)
+Inlining Orient3D_split into Orientation3D (edge# 30)
+Inlining Orient3D_split into Orientation3D (edge# 29)
+Inlining Orient3D_split into Orientation3D (edge# 28)
+Inlining Orient3D_split into Orientation3D (edge# 27)
+Inlining Orient3D_split into Orientation3D (edge# 26)
+Inlining Orient3D_split into Orientation3D (edge# 25)
+Inlining Orient3D_split into Orientation3D (edge# 24)
+Inlining Orient3D_split into Orientation3D (edge# 23)
+Inlining Orient3D_split into Orientation3D (edge# 22)
+Inlining Orient3D_normalize into coturn_ (edge# 20)
+Inlining Orient3D_normalize into coturn_ (edge# 19)
+Inlining Orient3D_normalize into coturn_ (edge# 18)
+Inlining Orient3D_normalize into coturn_ (edge# 17)
+Inlining Orient3D_normalize into coturn_ (edge# 16)
+Inlining Orient3D_normalize into coturn_ (edge# 15)
+Inlining Orient3D_normalize into coturn_ (edge# 14)
+Inlining Orient3D_normalize into coturn_ (edge# 13)
+Inlining Orient3D_normalize into coturn_ (edge# 12)
+Inlining Orient3D_normalize into coturn_ (edge# 11)
+Inlining Orient3D_normalize into coturn_ (edge# 10)
+Inlining Orient3D_normalize into coturn_ (edge# 9)
+Inlining Orient3D_set_maxvalue into coturn_ (edge# 8)
+Inlining Orient3D_normalize into coloca_ (edge# 7)
+Inlining Orient3D_normalize into coloca_ (edge# 6)
+Inlining Orient3D_normalize into coloca_ (edge# 5)
+Inlining Orient3D_normalize into coloca_ (edge# 4)
+Inlining Orient3D_normalize into coloca_ (edge# 3)
+Inlining Orient3D_normalize into coloca_ (edge# 2)
+Inlining Orient3D_set_maxvalue into coloca_ (edge# 1)
+Total number of edges = 37
+diverv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c diverv.F
+enslag.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c enslag.F
+enswaf.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c enswaf.F
+lagcar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagcar.F
+lagcel.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagcel.F
+lagcou.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagcou.F
+lagdeb.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagdeb.F
+lageli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lageli.F
+lagent.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagent.F
+lageqp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lageqp.F
+lagerr.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagerr.F
+lages1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lages1.F
+lages2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lages2.F
+lagesp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagesp.F
+laggra.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c laggra.F
+lagich.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagich.F
+lagidp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagidp.F
+lagimp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagimp.F
+lagini.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagini.F
+lagipn.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagipn.F
+lagitf.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagitf.F
+lagitg.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagitg.F
+lagitp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagitp.F
+laglec.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c laglec.F
+laglis.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c laglis.F
+lagnew.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagnew.F
+lagnwc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagnwc.F
+lagopt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagopt.F
+lagout.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagout.F
+lagphy.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagphy.F
+lagpoi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagpoi.F
+lagraf.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagraf.F
+lagrus.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagrus.F
+lagsta.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagsta.F
+lagstf.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagstf.F
+lagtri.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagtri.F
+lagune.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c lagune.F
+memla1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memla1.F
+memla2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memla2.F
+ouestu.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c ouestu.F
+uslabo.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslabo.F
+uslaed.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslaed.F
+uslaen.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslaen.F
+uslag1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslag1.F
+uslag2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslag2.F
+uslain.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslain.F
+uslaru.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslaru.F
+uslast.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslast.F
+uslatc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslatc.F
+uslatp.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c uslatp.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/LAGR/.readmeLAGR
+   Nettoyage avec MOD=LAGR OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de LAGR
+[m[m
+[7m
+ *** Construction de RAYT sous IRIX64
+[m[m
+   Generation du repertoire RAYT
+   Lien sur le Makefile
+   Lancement de make avec MOD=RAYT OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+memra1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memra1.F
+memra2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memra2.F
+memra3.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memra3.F
+raybrd.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raybrd.F
+raycli.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raycli.F
+raydak.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raydak.F
+raydir.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raydir.F
+raydom.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raydom.F
+rayens.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rayens.F
+raylec.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raylec.F
+rayopt.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rayopt.F
+rayout.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rayout.F
+raypar.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raypar.F
+raypun.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raypun.F
+raysca.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raysca.F
+raysol.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c raysol.F
+rmodak.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c rmodak.F
+usray1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usray1.F
+usray2.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usray2.F
+usray3.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usray3.F
+usray4.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c usray4.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/RAYT/.readmeRAYT
+   Nettoyage avec MOD=RAYT OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de RAYT
+[m[m
+[7m
+ *** Construction de MATI sous IRIX64
+[m[m
+   Generation du repertoire MATI
+   Lien sur le Makefile
+   Lancement de make avec MOD=MATI OPT=
+
+***  Compilation/lien Code_Saturne  version 1.3.d
+***  Système IRIX64
+
+***  "make" dans un répertoire de génération de la librairie
+***  Compilation
+memmat.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c memmat.F
+mtimpi.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mtimpi.F
+mtini1.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mtini1.F
+mtkpdc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mtkpdc.F
+mtphyv.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mtphyv.F
+mtproj.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mtproj.F
+mttsns.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mttsns.F
+mttssc.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mttssc.F
+mttycl.F
+	f77  -D_CS_HAVE_XML    			              -64 -O2 -c mttycl.F
+***  Compilation terminée
+
+***  Création de la librairie
+***  Création de la librairie terminée
+
+***  Installation de la librairie
+***  Installation de la librairie terminée
+
+
+   Generation du fichier resume
+/home/saturne/Noyau/ncs-1.3.d/build/IRIX64/MATI/.readmeMATI
+   Nettoyage avec MOD=MATI OPT=
+***  "make" dans un répertoire de génération de la librairie
+[7m *** Fin de la construction de MATI
+[m[m
+[7m
+ *** Verification des acces
+[m[m
+Cannot access bin/compil_stat.exe: No such file or directory
+[7m *** Fin de la verification des acces
+[m[m
+[1m    Fin de l'installation des bibliotheques BASE CFBL COGZ CPLV ELEC LAGR RAYT MATI
+    Version de Code_Saturne /home/saturne/Noyau/ncs-1.3.d
+
+[m[m

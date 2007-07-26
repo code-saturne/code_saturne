@@ -1,0 +1,6935 @@
+/*============================================================================
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2007 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
+
+/*============================================================================
+ * Reader of the parameters file: main parameters, boundary conditions
+ *============================================================================*/
+
+#if defined(_CS_HAVE_XML)
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <assert.h>
+
+/*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
+
+#include <bft_mem.h>
+#include <bft_error.h>
+#include <bft_printf.h>
+
+/*----------------------------------------------------------------------------
+ * libxml2 library headers
+ *----------------------------------------------------------------------------*/
+
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_base.h"
+#include "cs_gui_util.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "fvm_selector.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_gui.h"
+
+/*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
+
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+/* debugging switch */
+#define _XML_DEBUG_ 0
+
+/*============================================================================
+ * Local Structure Definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Structures associated to boundary conditions definition
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  double val1;                     /* fortran array RCODCL(.,.,1) mapping     */
+  double val2;                     /* fortran array RCODCL(.,.,2) mapping     */
+  double val3;                     /* fortran array RCODCL(.,.,3) mapping     */
+} cs_val_t ;
+
+
+typedef struct {
+  double *ratio;                   /* ratio for each coal                     */
+} cs_coal_ashes_ratio_t ;
+
+
+typedef struct {
+  char     **label;                /* label for each boundary zone            */
+  char     **nature;               /* nature for each boundary zone           */
+  int       *iqimp;                /* 1 if a flow rate is applied             */
+  int       *ientat;               /* 1 if boundary is an inlet for air (coal)*/
+  int       *ientcp;               /* 1 if boundary is an inlet for coal      */
+  int       *icalke;               /* automatic boundaries for turbulent var  */
+  double    *qimp;                 /* inlet flow rate                         */
+  double    *qimpat;               /* inlet flow rate (coal combustion)       */
+  double    *timpat;               /* inlet air temperature (coal combustion) */
+  double   **qimpcp;               /* inlet coal flow rate (coal combustion)  */
+  double   **timpcp;               /* inlet coal temperature (coal)           */
+  double    *dh;                   /* inlet hydraulic diameter                */
+  double    *xintur;               /* inlet turbulent intensity               */
+  int      **type_code;            /* type of boundary for each variables     */
+  cs_val_t **values;               /* fortran array RCODCL mapping            */
+  cs_coal_ashes_ratio_t **distch;  /* ratio for each coal                     */
+} cs_boundary_t ;
+
+/*----------------------------------------------------------------------------
+ * Variables and scalars management structure
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  char     **char2;                /* variables label                         */
+  char     **label;                /* user scalar label                       */
+  int       *rtp_nbr;              /* variables position in fortran array RTP */
+  int        nvar;                 /* total number of variables and scalars   */
+  int        nscaus;               /* user scalar number                      */
+  int        nscapp;               /* predifined physics scalar number        */
+  int        nprop;                /* nombre total de proprietes              */
+  int        ntimaver;             /* nombre total de time averages           */
+  char    ** properties_name;      /* label of properties                     */
+  int      * properties_ipp;       /* properties position in fortran array PROPCE */
+  int        nsalpp;               /* nombre de proprietes pour la physique particuliere active */
+  int       *XMLnumsca;         /* Pour chaque scalaire model (numérotation du noyau),
+                                contient le numéro du scalaire dans le XML    */
+  int       *XMLnumpp;         /* Pour chaque propriete physique de la physique
+                                particuliere active (numérotation du noyau),
+                                contient le numéro du scalaire dans le XML    */
+} cs_var_t ;
+
+/*============================================================================
+ *  External global variables
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Gestion du document xml
+ *----------------------------------------------------------------------------*/
+
+extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Contexte      */
+extern xmlNodePtr node;               /* Pointer on the root node     */
+
+/*============================================================================
+ * Private global variables
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Private global variables for the treatment of NOMVAR.
+ * NOMVAR is a characters fortran array
+ *----------------------------------------------------------------------------*/
+
+static int      _cs_gui_max_vars = 0;
+static int      _cs_gui_last_var = 0;
+static char  ** _cs_gui_var_name = NULL;
+
+/*----------------------------------------------------------------------------
+ * Private global variables for boundaru conditions
+ *----------------------------------------------------------------------------*/
+
+static cs_boundary_t *boundaries = NULL;
+static cs_var_t *vars = NULL;
+
+/*============================================================================
+ * Prototypes de fonctions privées
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Turbulence model parameters.
+ *
+ * parameters:
+ *   param          -->  name of the parameters
+ *   keyword       <--   turbulence model parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_advanced_options_turbulence(const char *const param,
+                                               int *const keyword);
+
+/*-----------------------------------------------------------------------------
+ * Return user scalar number.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_number_user_scalar(void);
+
+/*-----------------------------------------------------------------------------
+ * Return the activated particular physics scalar number
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_model_scalar_number(const char* model);
+
+/*-----------------------------------------------------------------------------
+ * Return the name of the related scalar if the scalar "num_sca" is a variance
+ *
+ * parameter:
+ *   num_sca           -->  scalar number
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_scalar_variance(const int num_sca);
+
+/*-----------------------------------------------------------------------------
+ * Return the user thermal scalar indicator.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_thermal_scalar(void);
+
+
+/*-----------------------------------------------------------------------------
+ * Return the user thermal scalar indicator.
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_get_thermal_scalar_label(void);
+
+/*----------------------------------------------------------------------------
+ * Get user thermal scalar number if it is exist.
+ *
+ * parameters:
+ *   iscalt               <--  thermal scalar number order
+ *   iscsth               <--  nature of the thermal scalar (C, K, J/kg)
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_thermal_scalar_number(int *const iscalt,
+                                  int *const iscsth);
+
+int cs_gui_scalar_properties_choice(const int         scalar_num,
+                                    const char *const property_name,
+                                          int  *const choice);
+
+void cs_gui_scalar_diffusion_value(const int           scalar_num,
+                                         double *const value);
+
+/*-----------------------------------------------------------------------------
+ * Get time parameters.
+ *
+ * parameters:
+ *   param               -->  time parameter
+ *   keyword            <--   new value of the time parameter
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_iale_parameter(const char   *const param,
+                             double *const keyword);
+
+void cs_gui_get_steady_status(int  *const keyword);
+
+void cs_gui_steady_parameters(const char   *const param,
+                                    double *const keyword);
+
+void cs_gui_time_parameters(const char   *const param,
+                                  double *const keyword);
+
+/*-----------------------------------------------------------------------------
+ * Get restart files format.
+ *
+ * parameters:
+ *   param               -->  restart file name
+ *   keyword            <--   new value of the restart file format
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_restart_parameters_file_format(const char *const param,
+                                                  int *const format);
+
+/*-----------------------------------------------------------------------------
+ * Get restart parameters.
+ *
+ * parameters:
+ *   param               -->  restart parameter
+ *   keyword            <--   new value of the restart parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_restart_parameters_status(const char *const param,
+                                            int  *const keyword);
+
+void cs_gui_variable_value(const char   *const variable_type,
+                           const char   *const value_type,
+                                 double *const value);
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a variable.
+ *
+ * parameters:
+ *   label                -->  label of the variable markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of attribute node contained in the
+ *                             child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_variable_attribute(const char *const variable,
+                               const char *const value,
+                                      int *const keyword);
+
+
+/*----------------------------------------------------------------------------
+ * Get the text value associated to a child markup from a scalar.
+ *
+ * parameters:
+ *   label                -->  label of the scalar markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of text node contained in the child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_scalar_value(const char   *const label,
+                         const char   *const child,
+                               double *const value);
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a scalar.
+ *
+ * parameters:
+ *   label                -->  label of the scalar markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of attribute node contained in the
+ *                             child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_scalar_attribute(const char *const label,
+                             const char *const child,
+                                   int  *const keyword);
+
+void cs_gui_model_scalar_value(
+ const char* const   model,
+ const int           num_sca,
+ const char   *const keyword,
+       double *const value
+);
+
+void cs_gui_model_scalar_output_status(
+ const char* const        model,
+ const int                              num_sca,
+ const char *const                      value,
+       int                        *const keyword
+);
+
+/*-----------------------------------------------------------------------------
+ * Modify double numerical parameters.
+ *
+ * parameters:
+ *   param               -->  label of the numerical parameter
+ *   keyword            <--   value of the numerical parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_numerical_double_parameters(const char   *const param,
+                                              double *const keyword);
+
+/*-----------------------------------------------------------------------------
+ * Modify integer numerical parameters.
+ *
+ * parameters:
+ *   param               -->  label of the numerical parameter
+ *   keyword            <--   value of the numerical parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_numerical_int_parameters(const char *const param,
+                                           int  *const keyword);
+
+/*-----------------------------------------------------------------------------
+ * Get gravity parameters.
+ *
+ * parameters:
+ *   param               -->  gravity parameter (GX, GY, GZ)
+ *   keyword            <--   new value of the gravity parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_gravity_value(const char   *const param,
+                                double *const value);
+
+/*-----------------------------------------------------------------------------
+ * Get initial value from property markup.
+ *
+ * parameters:
+ *   property_name       -->  name of the property
+ *   value              <--   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void  cs_gui_properties_value(const char   *const property_name,
+                                    double *const value);
+
+/*----------------------------------------------------------------------------
+ * Get the value of the choice attribute from a property markup.
+ * Return 1 if the xpath request has succeeded, 0 otherwise.
+ *
+ * parameters:
+ *   property_name        -->  name of the property
+ *   choice              <--   value of the attribute choice
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_properties_choice(const char *const property_name,
+                                   int  *      choice);
+
+
+void cs_gui_reference_pressure(double *const p0);
+
+void cs_gui_reference_temperature(char *const model, double *const t0);
+
+void cs_gui_reference_mass_molar(char *const model, double *const m0);
+
+/*----------------------------------------------------------------------------
+ * Initialization choice of the turbulente variables parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   value               <--   initialization choice
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_turbulence_initialization(const char   *const param,
+                                            double *const value);
+
+/*----------------------------------------------------------------------------
+ * Return the initialization choice of the turbulente variables.
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_turbulence_initialization_choice(void);
+
+/*----------------------------------------------------------------------------
+ * Get output control value parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   keyword             <--   output control parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_output_value(const char *const param,
+                               int  *const keyword);
+
+/*----------------------------------------------------------------------------
+ * Return the output format and options for postprocessing.
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   keyword             <--   output control parameter
+ *   size_key             -->  keyword string size
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_output_choice(const char *const param,
+                                char *const keyword,
+                          const int  *const size_key);
+
+/*-----------------------------------------------------------------------------
+ * Return values necessary for traitment of means
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_means_number(void);
+
+int cs_gui_get_mean_names_number( int   const id);
+
+void cs_gui_get_mean_value(      int   const id,
+                           const char *const param,
+                                 int  *const keyword);
+
+char* cs_gui_get_mean_prop( int const id,
+                            int const nb);
+
+char* cs_gui_get_mean_label( int const nb);
+
+/*-----------------------------------------------------------------------------
+ * Return the number of the <probe> markups.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_probes_number(void);
+
+/*-----------------------------------------------------------------------------
+ * Return a single coordinate of a monitoring probe
+ *
+ * parameters
+ *   num_probe            -->  number aka name of the monitoring probe
+ *   probe_coord          -->  one coordinate of the monitoring probe
+ *----------------------------------------------------------------------------*/
+
+double cs_gui_probe_coordinate(const int         num_probe,
+                               const char *const probe_coor);
+
+
+void cs_gui_thermophysical_post(const char *const variable,
+                                const int         ipp,
+                                      int  *const ihisvr,
+                                      int  *const ilisvr,
+                                      int  *const ichrvr,
+                                const int  *const nvppmx);
+
+void cs_gui_scalar_post(const  int        num_sca,
+                               int *const ihisvr,
+                               int *const ilisvr,
+                               int *const ichrvr,
+                        const  int *const ipprtp,
+                        const  int *const isca,
+                        const  int *const nvppmx);
+
+void cs_gui_model_scalar_post
+(
+ const char                       *const model,
+ const int                               num_sca,
+       int                        *const ihisvr,
+       int                        *const ilisvr,
+       int                        *const ichrvr,
+ const int                        *const ipprtp,
+ const int                        *const isca,
+ const int                        *const nvppmx);
+
+void cs_gui_model_property_post(
+ const char                       *const model,
+ const int                               num_prop,
+       int                        *const ihisvr,
+       int                        *const ilisvr,
+       int                        *const ichrvr,
+ const int                        *const ipppro,
+ const int                        *const ipproc,
+ const int                        *const nvppmx);
+
+void cs_gui_properties_post(
+ const char *const property_name,
+ const int         ipp,
+       int  *const ichrvr,
+       int  *const ilisvr,
+       int  *const ihisvr,
+ const int  *const nvppmx);
+
+void cs_gui_time_average_post(
+ const char *const property_name,
+ const int         ipp,
+       int  *const ichrvr,
+       int  *const ilisvr,
+       int  *const ihisvr,
+ const int  *const nvppmx);
+
+
+int cs_gui_variable_number_probes(const char*const variable);
+
+int cs_gui_scalar_number_probes(const int scalar_num);
+
+int cs_gui_model_scalar_number_probes(const char* const model,
+                                      const int         num_sca);
+
+int cs_gui_model_property_number_probes(const char* const model,
+                                        const int         num_pro);
+
+int cs_gui_properties_number_probes(const char *const property_name);
+
+int cs_gui_time_average_number_probes(const char *const property_name);
+
+int cs_gui_variable_probe_name(const char *const variable,
+                               const int         num_probe);
+
+int cs_gui_scalar_probe_name(const int scalar_num,
+                             const int num_probe);
+
+int cs_gui_model_scalar_probe_name(const char* const model,
+                                   const int         num_sca,
+                                   const int         num_probe);
+
+int cs_gui_model_property_probe_name(const char* const model,
+                                     const int         num_prop,
+                                     const int         num_probe);
+
+int cs_gui_properties_probe_name(const char *const property_name,
+                                 const int         num_probe);
+
+
+int cs_gui_time_average_probe_name(const char *const property_name,
+                                   const int         num_probe);
+
+
+char *cs_gui_variable_label(const char *const variable);
+
+/*-----------------------------------------------------------------------------
+ * Return the label attribute of scalars.
+ *
+ * parameters:
+ *   markup               -->  parent markup of the scalar
+ *   scalar_num          <--   number of the searching scalar
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_scalar_label(const char *const markup,
+                          const int         scalar_num);
+
+
+char *cs_gui_get_model_property_label(const char * const model,
+                                      const int num_prop);
+
+/*-----------------------------------------------------------------------------
+ * Get the label attribute of a property markup.
+ *
+ * parameters:
+ *   property_name        -->  name of the property
+ *   keyword             <--   output control parameter
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_properties_label(const char *const property_name);
+
+
+void cs_gui_properties_status(const char *const property_name,
+                              const char *const value_type,
+                                    int  *const keyword);
+
+
+void cs_gui_time_average_status(const char *const property_name,
+                                const char *const value_type,
+                                      int  *const keyword);
+
+
+void cs_gui_model_property_output_status(const char* const model,
+                                         const int         num_prop,
+                                         const char *const value_type,
+                                               int  *const keyword);
+
+/*-----------------------------------------------------------------------------
+ * Copy a variable name to private variable names array
+ *
+ * parameters:
+ *   varname        -->  name or label of the variable/scalar/property
+ *   ipp            -->  index from the fortran array associated to varname
+ *----------------------------------------------------------------------------*/
+
+static void _cs_gui_copy_varname(const char *varname, int ipp);
+
+
+
+int cs_gui_volumic_zones_number(void);
+
+char *cs_gui_volumic_zone_name(const int ith_zone);
+
+char *cs_gui_volumic_zone_localization(const char *const name);
+
+
+void cs_gui_variable_initial_value(const char   *const variable_name,
+                                   const char   *const zone_name,
+                                         double *const initial_value);
+
+void cs_gui_scalar_initial_value(const char   *const parent,
+                                 const char   *const label,
+                                 const char   *const zone_name,
+                                       double *const initial_value);
+
+
+
+
+/*----------------------------------------------------------------------------
+ * Conditions limites
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_boundary_zone_localization(const char *const nature,
+                                        const char *const label);
+
+char *cs_gui_boundary_choice(const char *const nature,
+                             const char *const label,
+                             const char *const var_sca);
+
+void cs_gui_boundary_dirichlet(const char *const nature,
+                               const char *const label,
+                               const int         izone,
+                               const int         ivar);
+
+void cs_gui_boundary_flow(const char   *const label,
+                          const int           izone);
+
+void cs_gui_boundary_turbulence(const char *const choice,
+                                const  int        izone);
+
+void cs_gui_boundary_value_scalar(const char *const nature,
+                                  const int         izone,
+                                  const int         isca);
+
+void cs_gui_coal_boundary_coalflow(const int         izone,
+                                   const int  *const ncharb,
+                                   const int  *const nclpch);
+
+
+/*----------------------------------------------------------------------------
+ * Fonctions pour les physiques particulieres
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_get_number_model_properties(const char* model);
+
+int cs_gui_get_model_scalar_number
+(
+ const  char * const model,
+ const  char * const name
+);
+
+int cs_gui_get_model_property_number(
+const  char * const model,
+const  char * const name
+);
+
+
+char* cs_gui_get_model_scalar_name
+(
+ const char * const model,
+ const int scalar_num
+ );
+
+
+char* cs_gui_get_model_property_name
+(
+ const char * const model,
+ const int scalar_num
+ );
+
+
+/*----------------------------------------------------------------------------
+ * Fonction concerantn la methode ALE
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_get_ale_status(int  *const keyword);
+
+void cs_gui_get_ale_viscosity_type(int  *keyword);
+
+
+/*============================================================================
+ * C API public functions
+ *============================================================================*/
+
+
+/*-----------------------------------------------------------------------------
+ * Free memory: clean global private variables and libxml2 variables
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_clean_memory(void)
+{
+  int i;
+  int ivar;
+  int izone;
+  int zones;
+  /* int icharb; */
+
+  if (boundaries != NULL) {
+
+  /* clean memory for global private structure boundaries */
+
+    zones = cs_gui_boundary_zones_number();
+    for (izone=0 ; izone < zones ; izone++) {
+      BFT_FREE(boundaries->label[izone]);
+      BFT_FREE(boundaries->nature[izone]);
+    }
+/*
+    if (boundaries->qimpcp != NULL) {
+      for (izone=0 ; izone < zones ; izone++) {
+        for (icharb=0; icharb < *ncharb; icharb++) BFT_FREE(boundaries->distch[izone][icharb]);
+        BFT_FREE(boundaries->qimpcp[izone]);
+        BFT_FREE(boundaries->timpcp[izone]);
+        BFT_FREE(boundaries->distch[izone]);
+      }
+    }
+*/
+
+    for (i=0; i < vars->nvar; i++) {
+      ivar = vars->rtp_nbr[i];
+      BFT_FREE(boundaries->type_code[ivar]);
+      BFT_FREE(boundaries->values[ivar]);
+    }
+/*
+    if (boundaries->qimpcp != NULL) {
+      BFT_FREE(boundaries->ientat);
+      BFT_FREE(boundaries->ientcp);
+      BFT_FREE(boundaries->qimpat);
+      BFT_FREE(boundaries->timpat);
+      BFT_FREE(boundaries->qimpcp);
+      BFT_FREE(boundaries->timpcp);
+      BFT_FREE(boundaries->distch);
+    }
+*/
+    BFT_FREE(boundaries->label);
+    BFT_FREE(boundaries->nature);
+    BFT_FREE(boundaries->iqimp);
+    BFT_FREE(boundaries->icalke);
+    BFT_FREE(boundaries->qimp);
+    BFT_FREE(boundaries->dh);
+    BFT_FREE(boundaries->xintur);
+    BFT_FREE(boundaries->type_code);
+    BFT_FREE(boundaries->values);
+    BFT_FREE(boundaries);
+  }
+
+  if (vars != NULL) {
+
+  /* clean memory for global private structure vars */
+
+    for (i=0; i < vars->nscaus+vars->nscapp; i++) BFT_FREE(vars->label[i]);
+    for (i=0; i < vars->nvar -vars->nscaus -vars->nscapp; i++) BFT_FREE(vars->char2[i]);
+    for (i=0; i < vars->nprop; i++) BFT_FREE(vars->properties_name[i]);
+    BFT_FREE(vars->label);
+    BFT_FREE(vars->rtp_nbr);
+    BFT_FREE(vars->char2);
+    BFT_FREE(vars->properties_name);
+    BFT_FREE(vars->properties_ipp);
+ /*   BFT_FREE(vars->XMLnumsca);
+    BFT_FREE(vars->XMLnumpp);*/
+    BFT_FREE(vars);
+  }
+
+  /* clean memory for fortran name of variables */
+
+  for (i = 0; i < _cs_gui_max_vars; i++)
+    BFT_FREE(_cs_gui_var_name[i]);
+  BFT_FREE(_cs_gui_var_name);
+
+  /* clean memory for xml document */
+
+  if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
+  if (node != NULL) xmlFreeNode(node);
+
+  /* Shutdown libxml */
+
+  xmlCleanupParser();
+  xmlMemoryDump();
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return the name of a thermophysical model.
+ *
+ * parameter:
+ *   model_thermo          -->  thermophysical model
+ *----------------------------------------------------------------------------*/
+
+
+char *cs_gui_get_thermophysical_model(const char *const model_thermo)
+{
+  char *model = NULL;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", model_thermo);
+  cs_xpath_add_attribute(&path, "model");
+
+  model = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return model;
+}
+
+/*-----------------------------------------------------------------------------
+ * TODO
+ * Return if a particular physics model is activated.
+ *
+ * parameters:
+ *   model               <--  thermophysical model
+ *   value               <--  model name associated
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_activ_thermophysical_model (char **model, char **value)
+{
+  int isactiv = 0;
+
+  *value = cs_gui_get_thermophysical_model("pulverized_coal");
+
+  if (!cs_gui_strcmp(*value, "off")) {
+    BFT_MALLOC(*model, strlen("pulverized_coal")+1, char);
+    strcpy(*model, "pulverized_coal");
+    isactiv = 1;
+  }
+
+/* modeltmp = cs_gui_get_thermophysical_model(JOULE_EFFECT); */
+/* modeltmp = cs_gui_get_thermophysical_model(GAS_COMBUSTION); */
+/* modeltmp = cs_gui_get_thermophysical_model(RADIATIVE_TRANSFER); */
+
+  return isactiv;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return number of boundary regions definition
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_boundary_zones_number(void)
+{
+  int zones = 0;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
+  cs_xpath_add_all_elements(&path);
+  cs_xpath_add_attribute(&path, "label");
+
+  zones = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return zones;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the nature of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_boundary_zone_nature(const int ith_zone)
+{
+  char *path = NULL;
+  char *nature = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
+  cs_xpath_add_element_num(&path, "*", ith_zone);
+
+  nature = cs_gui_get_node_name(path);
+
+  BFT_FREE(path);
+
+  return nature;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return the label of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_boundary_zone_label(const int ith_zone)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
+  cs_xpath_add_element_num(&path, "*", ith_zone);
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return the zone number of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_boundary_zone_number(const int ith_zone)
+{
+  char *path = NULL;
+  char *czone = NULL;
+  int zone;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
+  cs_xpath_add_element_num(&path, "*", ith_zone);
+  cs_xpath_add_attribute(&path, "zone");
+
+  czone = cs_gui_get_attribute_value(path);
+  zone = atoi(czone);
+
+  BFT_FREE(path);
+  BFT_FREE(czone);
+
+  return zone;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the description of a boundary zone
+ *
+ * parameters:
+ *   nature                -->  nature of boundary zone (inlet, wall,...)
+ *   label                 -->  label of boundary zone
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_boundary_zone_localization(const char *const nature,
+                                        const char *const label)
+{
+  char *path = NULL;
+  char *localization = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "boundary_conditions",
+                                  "boundary_definition",
+                                   nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_function_text(&path);
+
+  localization = cs_gui_get_text_value(path);
+
+  BFT_FREE(path);
+
+  return localization;
+}
+
+/*============================================================================
+ * Fortran API public functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Turbulence model parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameters
+ *   keyword             <--   turbulence model parameter
+ *----------------------------------------------------------------------------*/
+
+static void _option_turbulence_double(const char *const param,
+                                          double *const keyword)
+{
+  char *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
+
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result)) *keyword = result;
+
+  BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
+ * Turbulence model.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSTURB (ITURB, IDEUCH, IGRAKE, IGRAKI, XLOMLG)
+ * *****************
+ *
+ * INTEGER          ITURB   <--   turbulence model
+ * INTEGER          IDEUCH  <--   wall law treatment
+ * INTEGER          IGRAKE  <--   k-eps gravity effects
+ * INTEGER          IGRAKI  <--   Rij-eps gravity effects
+ * DOUBLE PRECISION XLOMLG  <--   mixing_length_scale
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF (csturb, CSTURB) (int    *const iturb,
+                                int    *const ideuch,
+                                int    *const igrake,
+                                int    *const igrari,
+                                double *const xlomlg)
+{
+  char *model = NULL;
+  int iphas = 0;
+
+  model = cs_gui_get_thermophysical_model("turbulence");
+  if (model == NULL) return;
+
+  if (cs_gui_strcmp(model, "off"))
+     iturb[iphas] = 0;
+  else if (cs_gui_strcmp(model, "mixing_length")){
+     iturb[iphas] = 10;
+     _option_turbulence_double("mixing_length_scale", &xlomlg[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "k-epsilon")){
+     iturb[iphas] = 20;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrake[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "k-epsilon-PL")){
+     iturb[iphas] = 21;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrake[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "Rij-epsilon")){
+     iturb[iphas] = 30;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrari[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "Rij-SSG")){
+     iturb[iphas] = 31;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrari[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "LES_Smagorinsky")){
+     iturb[iphas] = 40;
+   }
+  else if (cs_gui_strcmp(model, "LES_dynamique")){
+     iturb[iphas] = 41;
+   }
+  else if (cs_gui_strcmp(model, "v2f-phi")){
+     iturb[iphas] = 50;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrake[iphas]);
+   }
+  else if (cs_gui_strcmp(model, "k-omega-SST")){
+     iturb[iphas] = 60;
+     cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
+     cs_gui_advanced_options_turbulence("gravity_terms", &igrake[iphas]);
+   }
+  else
+     bft_error(__FILE__, __LINE__, 0,
+               _("Invalid turbulence model: %s.\n"), model);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSTURB\n"));
+  bft_printf(_("--model: %s\n"), model);
+  bft_printf(_("--iturb = %i\n"), iturb[iphas]);
+  bft_printf(_("--igrake = %i\n"), igrake[iphas]);
+  bft_printf(_("--igrari = %i\n"), igrari[iphas]);
+  bft_printf(_("--ideuch = %i\n"), ideuch[iphas]);
+  bft_printf(_("--xlomlg = %f\n"), xlomlg[iphas]);
+#endif
+
+  BFT_FREE(model);
+}
+
+/*----------------------------------------------------------------------------
+ * Specific heat variable or constant indicator.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSCPVA (ICP)
+ * *****************
+ *
+ * INTEGER          ICP     <--   specific heat variable or constant indicator
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cscpva, CSCPVA) (int *const icp)
+{
+  int choice;
+  int iphas = 0;
+
+  if (cs_gui_properties_choice("specific_heat", &choice)) icp[iphas] = choice;
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSCPVA\n"));
+  bft_printf(_("--icp = %i\n"), icp[iphas]);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * User scalars number.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSNSCA (NSCAUS)
+ * *****************
+ *
+ * INTEGER          NSCAUS     <--   user scalars number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
+{
+  int   i   = 0;
+  char *label = NULL;
+
+  *nscaus = cs_gui_get_number_user_scalar();
+
+  if (vars == NULL)
+    BFT_MALLOC(vars, 1, cs_var_t);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Trouble with the allocated memory for the global variable 'vars'.\n"));
+
+  vars->nscaus = *nscaus;
+
+  BFT_MALLOC(vars->label, *nscaus, char*);
+
+  for (i=0; i<vars->nscaus; i++) {
+    label = cs_gui_scalar_label("additional_scalars", i+1);
+    BFT_MALLOC(vars->label[i], strlen(label)+1, char);
+    strcpy(vars->label[i], label);
+    BFT_FREE(label);
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSNSCA\n"));
+  bft_printf(_("--user scalars number: %i\n"), vars->nscaus);
+  for (i=0; i<*nscaus; i++)
+    bft_printf(_("--label of scalar[%i]: %s\n"), i, vars->label[i]);
+#endif
+}
+
+/*-----------------------------------------------------------------------------
+ * Predefined physics indicator.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIPPMO
+ * *****************
+ *
+ * INTEGER          IPPMOD <--  predefined physics indicator array
+ * INTEGER          ICOD3P  --> diffusion flame en chimie complete rapide
+ * INTEGER          ICODEQ  --> diffusion flame en chimie rapide vers l'equilibre
+ * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
+ * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
+ * INTEGER          ICOLWC  --> Libby Williams premixing flame
+ * INTEGER          ICP3PL  --> Coal combustion. Combustible moyen local
+ * INTEGER          ICPL3C  --> Coal combustion coupled with lagrangien approach
+ * INTEGER          ICFUEL  --> Fuel combustion
+ * INTEGER          IELJOU  --> Joule effect
+ * INTEGER          IELARC  --> electrical arc
+ * INTEGER          IELION  --> ionique mobility
+ * INTEGER          ICOMPF  --> compressible sans choc
+ * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
+ *                              tabulation is used. INDJON=1: users tabulation
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
+                               int *const icod3p,
+                               int *const icodeq,
+                               int *const icoebu,
+                               int *const icobml,
+                               int *const icolwc,
+                               int *const icp3pl,
+                               int *const icpl3c,
+                               int *const icfuel,
+                               int *const ieljou,
+                               int *const ielarc,
+                               int *const ielion,
+                               int *const icompf,
+                               int *const indjon)
+{
+  int isactiv = 0;
+  int nscapp = 0;
+  char *model = NULL;
+  char *value = NULL;
+  char *label = NULL;
+  int n;
+
+  assert(vars != NULL);
+
+  /* init */
+  ippmod[*icod3p - 1] = -1;
+  ippmod[*icodeq - 1] = -1;
+  ippmod[*icoebu - 1] = -1;
+  ippmod[*icobml - 1] = -1;
+  ippmod[*icolwc - 1] = -1;
+  ippmod[*icp3pl - 1] = -1;
+  ippmod[*icpl3c - 1] = -1;
+  ippmod[*icfuel - 1] = -1;
+  ippmod[*ieljou - 1] = -1;
+  ippmod[*ielarc - 1] = -1;
+  ippmod[*ielion - 1] = -1;
+  ippmod[*icompf - 1] = -1;
+
+  *indjon = 1;
+
+  /* cherche la physique particuliere active et donne la valeur de l'attricut model associe */
+  isactiv = cs_gui_get_activ_thermophysical_model(&model, &value);
+
+  if (isactiv) {
+
+    if (cs_gui_strcmp(model, "pulverized_coal")) {
+
+      if (cs_gui_strcmp(value, "coal_homo")) {
+        ippmod[*icp3pl - 1] = 0;
+      } else if (cs_gui_strcmp(value, "coal_homo_humidity")) {
+        ippmod[*icp3pl - 1] = 1;
+      } else if (cs_gui_strcmp(value, "coal_lagr")) {
+        ippmod[*icpl3c - 1] = 1;
+      } else {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid coal model: %s.\n"), value);
+      }
+    }
+    /* si le model est actif on prend les scalaires physique particuliere */
+    nscapp = cs_gui_model_scalar_number(model);
+  }
+
+  vars->nscapp = nscapp;
+
+  if (vars->nscapp != 0) {
+
+    if (vars->nscaus > 0) {
+      BFT_REALLOC(vars->label, vars->nscapp+vars->nscaus + 1, char*);
+    } else {
+      BFT_MALLOC(vars->label, vars->nscapp+vars->nscaus + 1, char*);
+    }
+
+    for (n=vars->nscaus; n< vars->nscaus+vars->nscapp; n++) {
+      label = cs_gui_scalar_label(model, n - vars->nscaus + 1);
+      BFT_MALLOC(vars->label[n], strlen(label)+1, char);
+      strcpy(vars->label[n], label);
+      BFT_FREE(label);
+    }
+  }
+
+  BFT_FREE(model);
+  BFT_FREE(value);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UIPPMO\n"));
+  bft_printf(_("--model scalars number: %i\n"), vars->nscapp);
+  for (n=vars->nscaus; n< vars->nscaus+vars->nscapp; n++)
+    bft_printf(_("--label of scalar[%i]: %s\n"), n, vars->label[n]);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * User scalars which are variance.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSISCA (ISCAVR)
+ * *****************
+ *
+ * INTEGER          ISCAVR     <--   user scalars variance array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csisca, CSISCA)(int *const iscavr)
+{
+  int i;
+  int j;
+  char *variance = NULL;
+
+  /* if no users scalar; nothing to do */
+  if (vars->nscaus == 0) return;
+
+  for (i=0; i < vars->nscaus; i++) {
+    variance = cs_gui_scalar_variance(i+1);
+
+    if (variance != NULL) {
+      for (j=0 ; j < vars->nscaus ; j++) {
+        if (cs_gui_strcmp(variance, vars->label[j])) {
+          if ( i == j ) {
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Scalar: %i and its variance: %i are the same.\n"), i, j);
+          }
+          iscavr[i] = j + 1;
+        }
+      }
+      BFT_FREE(variance);
+    }
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSISCA\n"));
+  for (i = 0 ; i < vars->nscaus ; i++)
+    bft_printf(_("--iscavr[%i] = %i \n"), i, iscavr[i]);
+#endif
+
+  return;
+}
+
+/*----------------------------------------------------------------------------
+ * Constant or variable indicator for the user scalar laminar viscosity.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSIVIS (ISCAVR, IVISLS, ISCALT, ISCSTH)
+ * *****************
+ *
+ * INTEGER          ISCAVR  <-->  number of the related variance if any
+ * INTEGER          IVISLS  <--   indicator for the user scalar viscosity
+ * INTEGER          ISCALT  <-->  number of the user thermal scalar if any
+ * INTEGER          ISCSTH  <-->  type of the user thermal scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
+                                int *const ivisls,
+                                int *const iscalt,
+                                int *const iscsth)
+{
+  int iphas = 0;
+  int i;
+  int choice1, choice2;
+  int test1, test2;
+
+  if (vars->nscaus > 0) {
+
+    if (cs_gui_thermal_scalar()) {
+      test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
+      test2 = cs_gui_properties_choice("specific_heat", &choice2);
+
+      if (test1 && test2) {
+        cs_gui_thermal_scalar_number(iscalt, iscsth);
+
+        if (choice1 || choice2)
+          ivisls[iscalt[iphas]-1] = 1;
+        else
+          ivisls[iscalt[iphas]-1] = 0;
+      }
+    }
+
+    for (i=0 ; i < vars->nscaus; i++) {
+      if (iscavr[i] <= 0 ) {
+        if (cs_gui_scalar_properties_choice(i+1,
+                                            "diffusion_coefficient",
+                                            &choice1))
+        if (iscalt[iphas] != i+1) ivisls[i] = choice1;
+      }
+    }
+
+#if _XML_DEBUG_
+    bft_printf(_("==>CSIVIS\n"));
+    for (i=0 ; i < vars->nscaus ; i++)
+      bft_printf(_("--ivisls[%i] = %i\n"), i, ivisls[i]);
+#endif
+    }
+}
+
+/*----------------------------------------------------------------------------
+ * Time passing parameter.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSIDTV (IDTVAR)
+ * *****************
+ *
+ * INTEGER          IDTVAR  <--   fixed or variable time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
+{
+  double param;
+  int steady = 0;
+
+  cs_gui_get_steady_status(&steady);
+  if (steady){
+    *idtvar = -1;
+  }
+  else{
+    param = (double) *idtvar;
+    cs_gui_time_parameters("time_passing", &param);
+    *idtvar = (int) param;
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSIDTV\n"));
+  bft_printf(_("--idtvar = %i\n"), *idtvar);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Hydrostatic pressure parameter.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSIPHY (IPHYDR)
+ * *****************
+ *
+ * INTEGER          IPHYDR  <--   hydrostatic pressure
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "hydrostatic_pressure");
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result)) *iphydr = result;
+
+  BFT_FREE(path);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSIPHY\n"));
+  bft_printf(_("--iphydr = %i\n"), *iphydr);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Est appele juste avant le 3eme appel a VARPOS
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIALIN()
+ * *****************
+ *
+ * INTEGER          IALE    <--   iale method activation
+ * INTEGER          NALINF  <--   number of sub iteration of initialization of fluid
+ * INTEGER          NALIMX  <--   max number of iterations of implicitation of
+ *                                the displacement of the structures
+ * DOUBLE           EPALIM  <--   realtive precision of implicitation of
+ *                                the displacement of the structures
+ * INTEGER          IORTVM  <--   type of viscosity of mesh
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uialin, UIALIN) (int    *const iale,
+                                int    *const nalinf,
+                                int    *const nalimx,
+                                double *const epalim,
+                                int    *const iortvm)
+{
+  double value;
+
+  cs_gui_get_ale_status(iale);
+  if (*iale){
+    value =(double) *nalinf;
+    cs_gui_iale_parameter("fluid_initialization_sub_iterations", &value);
+    *nalinf = (int) value;
+    value =(double) *nalimx;
+    cs_gui_iale_parameter("max_iterations_implicitation", &value);
+    *nalimx = (int) value;
+    cs_gui_iale_parameter("implicitation_precision", epalim);
+    value =(double) *iortvm;
+    cs_gui_iale_parameter("mesh_viscosity", &value);
+    *iortvm = (int) value;
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UIALIN\n"));
+  bft_printf(_("--iale = %i\n"), *iale);
+  if (iale){
+    bft_printf(_("-nalinf- = %i\n"), *nalinf);
+    bft_printf(_("-nalimx- = %i\n"), *nalimx);
+    bft_printf(_("-epalim- = %f\n"), *epalim);
+    bft_printf(_("-iortvm- = %i\n"), *iortvm);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * TODO.
+ * Est appele juste apres le 3eme appel a VARPOS
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSVNUM
+ * *****************
+ *
+ * INTEGER          IPHYDR  <--   hydrostatic pressure
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
+                                const int *const iu,
+                                const int *const iv,
+                                const int *const iw,
+                                const int *const ipr,
+                                const int *const iturb,
+                                const int *const ik,
+                                const int *const iep,
+                                const int *const ir11,
+                                const int *const ir22,
+                                const int *const ir33,
+                                const int *const ir12,
+                                const int *const ir13,
+                                const int *const ir23,
+                                const int *const iomg,
+                                const int *const iphi,
+                                const int *const ifb,
+                                const int *const iale,
+                                const int *const iuma,
+                                const int *const ivma,
+                                const int *const iwma,
+                                const int *const isca)
+{
+  int iphas = 0;
+  int nbr = 0;
+  int nm = 0;
+  int i;
+
+  BFT_MALLOC(vars->rtp_nbr, *nvar, int);
+  BFT_MALLOC(vars->char2,   *nvar, char*);
+
+  /* Warning!!  vars->nscaus is fill in CSNSCA */
+  /*            vars->label  is fill in CSNSCA */
+  /*            vars->nscapp is already fill in UIPPMO */
+
+  vars->nvar   = *nvar;
+
+  vars->rtp_nbr[nbr++]        = ipr[iphas]  -1;
+  vars->rtp_nbr[nbr++]        = iu[iphas]   -1;
+  vars->rtp_nbr[nbr++]        = iv[iphas]   -1;
+  vars->rtp_nbr[nbr++]        = iw[iphas]   -1;
+
+  BFT_MALLOC(vars->char2[nm], strlen("pressure")+1, char);
+  strcpy(vars->char2[nm], "pressure");
+  nm++;
+  BFT_MALLOC(vars->char2[nm], strlen("velocity_U")+1, char);
+  strcpy(vars->char2[nm], "velocity_U");
+  nm++;
+  BFT_MALLOC(vars->char2[nm], strlen("velocity_V")+1, char);
+  strcpy(vars->char2[nm], "velocity_V");
+
+  nm++;
+  BFT_MALLOC(vars->char2[nm], strlen("velocity_W")+1, char);
+  strcpy(vars->char2[nm], "velocity_W");
+  nm++;
+
+  if (iturb[iphas] == 20 || iturb[iphas] == 21) {
+
+    vars->rtp_nbr[nbr++]      = ik[iphas]   -1;
+    vars->rtp_nbr[nbr++]      = iep[iphas]  -1;
+
+    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
+    strcpy(vars->char2[nm], "turb_k");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
+    strcpy(vars->char2[nm], "turb_eps");
+    nm++;
+
+  } else if (iturb[iphas] == 30 || iturb[iphas] == 31) {
+
+    vars->rtp_nbr[nbr++]      = ir11[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ir22[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ir33[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ir12[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ir13[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ir23[iphas] -1;
+    vars->rtp_nbr[nbr++]      = iep[iphas]  -1;
+
+    BFT_MALLOC(vars->char2[nm], strlen("component_R11")+1, char);
+    strcpy(vars->char2[nm], "component_R11");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("component_R22")+1, char);
+    strcpy(vars->char2[nm], "component_R22");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("component_R33")+1, char);
+    strcpy(vars->char2[nm], "component_R33");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("component_R12")+1, char);
+    strcpy(vars->char2[nm], "component_R12");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("component_R13")+1, char);
+    strcpy(vars->char2[nm], "component_R13");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("component_R23")+1, char);
+    strcpy(vars->char2[nm], "component_R23");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
+    strcpy(vars->char2[nm], "turb_eps");
+    nm++;
+
+  } else if (iturb[iphas] == 50) {
+
+    vars->rtp_nbr[nbr++]      = ik[iphas] -1;
+    vars->rtp_nbr[nbr++]      = iep[iphas] -1;
+    vars->rtp_nbr[nbr++]      = iphi[iphas] -1;
+    vars->rtp_nbr[nbr++]      = ifb[iphas] -1;
+
+    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
+    strcpy(vars->char2[nm], "turb_k");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
+    strcpy(vars->char2[nm], "turb_eps");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_phi")+1, char);
+    strcpy(vars->char2[nm], "turb_phi");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_fb")+1, char);
+    strcpy(vars->char2[nm], "turb_fb");
+    nm++;
+  } else if (iturb[iphas] == 60) {
+
+    vars->rtp_nbr[nbr++]      = ik[iphas] -1;
+    vars->rtp_nbr[nbr++]      = iomg[iphas] -1;
+
+    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
+    strcpy(vars->char2[nm], "turb_k");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("turb_omega")+1, char);
+    strcpy(vars->char2[nm], "turb_omega");
+    nm++;
+  }
+
+  if (*iale){
+    vars->rtp_nbr[nbr++]      = *iuma -1;
+    vars->rtp_nbr[nbr++]      = *ivma -1;
+    vars->rtp_nbr[nbr++]      = *iwma -1;
+
+    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_U")+1, char);
+    strcpy(vars->char2[nm], "mesh_velocity_U");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_V")+1, char);
+    strcpy(vars->char2[nm], "mesh_velocity_V");
+    nm++;
+    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_W")+1, char);
+    strcpy(vars->char2[nm], "mesh_velocity_W");
+    nm++;
+
+  }
+
+  for (i=0 ; i<(vars->nscaus + vars->nscapp) ; i++)
+    vars->rtp_nbr[nbr++] = isca[i] -1;
+
+  if (nbr != *nvar)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The kernel variables number %i and the "
+                "calculated one by the reader %i are not the same.\n"),
+                *nvar, nbr);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSVNUM\n"));
+  for (i=0 ; i<(vars->nvar - vars->nscapp - vars->nscaus) ; i++)
+    bft_printf(_("--variables: %s\n"), vars->char2[i]);
+  for (i=0 ; i<(vars->nscapp + vars->nscaus) ; i++)
+    bft_printf(_("--scalars: %s\n"), vars->label[i]);
+#endif
+
+}
+
+/*----------------------------------------------------------------------------
+ * Restart files format.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSIFOA (IFOAVA, IFOAVX)
+ * *****************
+ *
+ * INTEGER          IFOAVA  <--   main restart file format
+ * INTEGER          IFOAVX  <--   auxiliary restart file format
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF (csifoa, CSIFOA) (int *const ifoava,
+                                int *const ifoavx)
+{
+  cs_gui_restart_parameters_file_format("main_restart",      ifoava);
+  cs_gui_restart_parameters_file_format("auxiliary_restart", ifoavx);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSIFOA\n"));
+  bft_printf(_("--ifoava = %i\n"), *ifoava);
+  bft_printf(_("--ifoavx = %i\n"), *ifoavx);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Restart parameters.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSISUI (ISUITE, ILEAUX, ICCVFG)
+ * *****************
+ *
+ * INTEGER          ISUITE  <--   restart
+ * INTEGER          ILEAUX  <--   restart with auxiliary
+ * INTEGER          ICCFVG  <--   restart with frozen field
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csisui, CSISUI) (int *const isuite,
+                                int *const ileaux,
+                                int *const iccvfg)
+{
+  cs_gui_restart_parameters_status("restart",                isuite);
+  cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
+  cs_gui_restart_parameters_status("frozen_field",           iccvfg);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSISUI\n"));
+  bft_printf(_("--isuite = %i\n"), *isuite);
+  bft_printf(_("--ileaux = %i\n"), *ileaux);
+  bft_printf(_("--iccvfg = %i\n"), *iccvfg);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Time passing parameters.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSTIME (INPDT0, IPTLTO, NTMABS, DTREF,
+ * *****************  DTMIN,  DTMAX,  COUMAX, FOUMAX, VARRDT)
+ *
+ * INTEGER          INPDT0  <--   zero time step
+ * INTEGER          IPTLTO  <--   thermal time step control
+ * INTEGER          NTMABS  <--   iterations numbers
+ * INTEGER          IDTVAR  <--   time steps'options
+ * DOUBLE PRECISION DTREF   <--   time step
+ * DOUBLE PRECISION DTMIN   <--   minimal time step
+ * DOUBLE PRECISION DTMAX   <--   maximal time step
+ * DOUBLE PRECISION COUMAX  <--   maximal courant number
+ * DOUBLE PRECISION FOUMAX  <--   maximal fournier number
+ * DOUBLE PRECISION VARRDT  <--   max time step variation between 2 iterations
+ * DOUBLE PRECISION RELXST  <--   relaxation coefficient id idtvar = -1
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
+                                int    *const iptlro,
+                                int    *const ntmabs,
+                                int    *const idtvar,
+                                double *const dtref,
+                                double *const dtmin,
+                                double *const dtmax,
+                                double *const coumax,
+                                double *const foumax,
+                                double *const varrdt,
+                                double *const relxst)
+{
+  double value;
+
+  if (*idtvar == -1){
+    cs_gui_steady_parameters("relaxation_coefficient", relxst);
+
+    value =(double) *inpdt0;
+    cs_gui_steady_parameters("zero_iteration", &value);
+    *inpdt0 = (int) value;
+
+    value =(double) *ntmabs;
+    cs_gui_steady_parameters("iterations", &value);
+    *ntmabs = (int) value;
+  }
+  else{
+    cs_gui_time_parameters("time_step_ref", dtref);
+    cs_gui_time_parameters("time_step_min", dtmin);
+    cs_gui_time_parameters("time_step_max", dtmax);
+    cs_gui_time_parameters("max_courant_num", coumax);
+    cs_gui_time_parameters("max_fourier_num", foumax);
+    cs_gui_time_parameters("time_step_var", varrdt);
+
+    value =(double) *ntmabs;
+    cs_gui_time_parameters("iterations", &value);
+    *ntmabs = (int) value;
+
+    value =(double) *inpdt0;
+    cs_gui_time_parameters("zero_time_step", &value);
+    *inpdt0 = (int) value;
+
+    value =(double) *iptlro;
+    cs_gui_time_parameters("thermal_time_step", &value);
+    *iptlro = (int) value;
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSTIME\n"));
+  bft_printf(_("--idtvar = %i\n"), *idtvar);
+  if (*idtvar == -1){
+    bft_printf(_("--inpdt0 = %i\n"), *inpdt0);
+    bft_printf(_("--relxst = %i\n"), *relxst);
+  }
+  else{
+    bft_printf(_("--inpdt0 = %i\n"), *inpdt0);
+    bft_printf(_("--iptlro = %i\n"), *iptlro);
+    bft_printf(_("--ntmabs = %i\n"), *ntmabs);
+    bft_printf(_("--dtref = %f\n"),  *dtref);
+    bft_printf(_("--dtmin = %f\n"),  *dtmin);
+    bft_printf(_("--dtmax = %f\n"),  *dtmax);
+    bft_printf(_("--coumax = %f\n"), *coumax);
+    bft_printf(_("--foumax = %f\n"), *foumax);
+    bft_printf(_("--varrdt = %f\n"), *varrdt);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Check if a users thermal scalar is defined.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSSCA1 (ISCALT, ISCSTH)
+ * *****************
+ *
+ * INTEGER          ISCALT  <--   number of the user thermal scalar if any
+ * INTEGER          ISCSTH  <--   type of the user thermal scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
+                                int *const iscsth)
+{
+#if _XML_DEBUG_
+  int i;
+  int iphas = 0;
+#endif
+
+  cs_gui_thermal_scalar_number(iscalt, iscsth);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSSCA1\n"));
+  bft_printf(_("--iscalt[0]=%i \n"), iscalt[iphas]);
+  for (i = 0 ; i < vars->nscaus ; i++)
+    bft_printf(_("--iscsth[%i]=%i \n"), i, iscsth[i]);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Traitement des aspects numeriques locaux :
+ *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uinum1, UINUM1)
+(
+ const    int *const isca,
+       double *const blencv,
+          int *const ischcv,
+          int *const isstpc,
+          int *const ircflu,
+       double *const cdtvar,
+          int *const nitmax,
+       double *const epsilo
+)
+{
+  int i, j;
+  double tmp;
+  char *model = NULL;
+  char *modelvalue = NULL;
+
+  /* Variables de velocity pressure  et de la turbulence */
+  for (i=1; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
+     j = vars->rtp_nbr[i];
+     cs_gui_variable_value(vars->char2[i], "blending_factor", &blencv[j]);
+     cs_gui_variable_value(vars->char2[i], "solveur_precision", &epsilo[j]);
+     tmp = (double) nitmax[j];
+     cs_gui_variable_value(vars->char2[i], "max_iter_number", &tmp);
+     nitmax[j] = (int) tmp;
+     cs_gui_variable_attribute(vars->char2[i], "order_scheme", &ischcv[j]);
+     cs_gui_variable_attribute(vars->char2[i], "slope_test", &isstpc[j]);
+     cs_gui_variable_attribute(vars->char2[i], "flux_reconstruction", &ircflu[j]);
+  }
+
+  /* User Scalar */
+  if (vars->nscaus > 0 ) {
+    for (i=0 ; i < vars->nscaus; i++) {
+      j = isca[i]-1;
+      cs_gui_scalar_value(vars->label[i], "blending_factor", &blencv[j]);
+      cs_gui_scalar_value(vars->label[i], "solveur_precision", &epsilo[j]);
+      cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
+      tmp = (double) nitmax[j];
+      cs_gui_scalar_value(vars->label[i], "max_iter_number", &tmp);
+      nitmax[j] = (int) tmp;
+      cs_gui_scalar_attribute(vars->label[i], "order_scheme", &ischcv[j]);
+      cs_gui_scalar_attribute(vars->label[i], "slope_test", &isstpc[j]);
+      cs_gui_scalar_attribute(vars->label[i], "flux_reconstruction", &ircflu[j]);
+    }
+  }
+
+  if (cs_gui_get_activ_thermophysical_model(&model, &modelvalue)) {
+  /* Model Scalar */
+    if (vars->nscapp > 0 ) {
+
+      for (i=vars->nscaus ; i < vars->nscaus + vars->nscapp ; i++) {
+        j = isca[i]-1;
+
+        cs_gui_model_scalar_value(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                 "blending_factor", &blencv[j]);
+
+        cs_gui_model_scalar_value(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "solveur_precision", &epsilo[j]);
+
+        cs_gui_model_scalar_value(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "time_step_factor", &cdtvar[j]);
+
+        tmp = (double) nitmax[j];
+        cs_gui_model_scalar_value(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "max_iter_number", &tmp);
+        nitmax[j] = (int) tmp;
+
+        cs_gui_model_scalar_output_status(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "order_scheme", &ischcv[j]);
+
+        cs_gui_model_scalar_output_status(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "slope_test", &isstpc[j]);
+
+        cs_gui_model_scalar_output_status(model, vars->XMLnumsca[i] - vars->nscaus + 1,
+                                  "flux_reconstruction", &ircflu[j]);
+      }
+    }
+  }
+  BFT_FREE(model);
+  BFT_FREE(modelvalue);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UINUM1\n"));
+  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
+    bft_printf(_("-->variable[%i] = %s\n"), i, vars->char2[i]);
+    bft_printf(_("--blencv = %f\n"), blencv[vars->rtp_nbr[i]]);
+    bft_printf(_("--epsilo = %g\n"), epsilo[vars->rtp_nbr[i]]);
+    bft_printf(_("--cdtvar = %g\n"), cdtvar[vars->rtp_nbr[i]]);
+    bft_printf(_("--nitmax = %i\n"), nitmax[vars->rtp_nbr[i]]);
+    bft_printf(_("--ischcv = %i\n"), ischcv[vars->rtp_nbr[i]]);
+    bft_printf(_("--isstpc = %i\n"), isstpc[vars->rtp_nbr[i]]);
+    bft_printf(_("--ircflu = %i\n"), ircflu[vars->rtp_nbr[i]]);
+  }
+  for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
+    bft_printf(_("-->scalar[%i]: %s\n"), isca[i]-1, vars->label[i]);
+    bft_printf(_("--blencv = %f\n"), blencv[isca[i]-1]);
+    bft_printf(_("--epsilo = %g\n"), epsilo[isca[i]-1]);
+    bft_printf(_("--cdtvar = %g\n"), cdtvar[isca[i]-1]);
+    bft_printf(_("--nitmax = %i\n"), nitmax[isca[i]-1]);
+    bft_printf(_("--ischcv = %i\n"), ischcv[isca[i]-1]);
+    bft_printf(_("--isstpc = %i\n"), isstpc[isca[i]-1]);
+    bft_printf(_("--ircflu = %i\n"), ircflu[isca[i]-1]);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Global numerical parameters.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA)
+ * *****************
+ * INTEGER          IVISSE  <--   gradient transpose
+ * DOUBLE PRECISION RELAXP  <--   pressure relaxation
+ * INTEGER          IPUCOU  <--   velocity pressure coupling
+ * DOUBLE PRECISION EXTRAG  <--   wall pressure extrapolation
+ * INTEGER          IMRGRA  <--   gradient reconstruction
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
+                               double *const relaxp,
+                                  int *const ipucou,
+                               double *const extrag,
+                                  int *const imrgra)
+{
+  cs_gui_numerical_int_parameters("gradient_transpose", ivisse);
+  cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
+  cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
+  cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
+  cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSNUM2\n"));
+  bft_printf(_("--ivisse = %i\n"), *ivisse);
+  bft_printf(_("--ipucou = %i\n"), *ipucou);
+  bft_printf(_("--imrgra = %i\n"), *imrgra);
+  bft_printf(_("--extrag = %f\n"), *extrag);
+  bft_printf(_("--relaxp = %f\n"), *relaxp);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Traitement de la gravite et des proprietes physiques du fluide
+ * Initialisation de la pression de reference et de la temperature si thermique
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csphys, CSPHYS)
+(
+ const    int *const nmodpp,
+          int *const irovar,
+          int *const ivivar,
+       double *const gx,
+       double *const gy,
+       double *const gz,
+       double *const ro0,
+       double *const viscl0,
+       double *const cp0,
+       double *const t0,
+       double *const p0
+)
+{
+  int iphas = 0;
+  int choice;
+
+  char *model = NULL;
+  char *pphys = NULL;
+
+  cs_gui_gravity_value("gravity_x", gx);
+  cs_gui_gravity_value("gravity_y", gy);
+  cs_gui_gravity_value("gravity_z", gz);
+
+  cs_gui_properties_value("density", &ro0[iphas]);
+  cs_gui_properties_value("molecular_viscosity", &viscl0[iphas]);
+  cs_gui_properties_value("specific_heat", &cp0[iphas]);
+
+  cs_gui_reference_pressure(p0);
+
+  /* rho et viscl variables */
+  if (*nmodpp == 0) {
+    if (cs_gui_properties_choice("density", &choice))
+      irovar[iphas] = choice;
+
+    if (cs_gui_properties_choice("molecular_viscosity", &choice))
+      ivivar[iphas] = choice;
+  }
+
+  /* T0 si nécessaire */
+
+/*  if (cs_gui_thermal_scalar)
+    cs_gui_reference_temperature(t0);*/
+
+  if (cs_gui_get_activ_thermophysical_model(&model, &pphys))
+    cs_gui_reference_temperature(model, t0);
+    /* if (cs_gui_get_combustion_initial_value(model, COMBTEMPERATURE, &value)) *t0 = value; */
+
+  BFT_FREE(model);
+  BFT_FREE(pphys);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSPHYS\n"));
+  bft_printf(_("--gx = %f \n"),*gx);
+  bft_printf(_("--gy = %f \n"),*gy);
+  bft_printf(_("--gz = %f \n"),*gz);
+  bft_printf(_("--rho = %g , variable %i\n"), ro0[iphas], irovar[iphas]);
+  bft_printf(_("--mu = %g , variable %i \n"), viscl0[iphas], ivivar[iphas]);
+  bft_printf(_("--Cp = %g \n"), cp0[0]);
+  bft_printf(_("--T0 = %f \n"), *t0);
+  bft_printf(_("--P0 = %f \n"), *p0);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * User scalar min and max values for clipping.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSSCA2 (ISCAVR, SCAMIN, SCAMAX)
+ * *****************
+ *
+ * INTEGER          ISCAVR   -->  number of the related variance if any
+ * DOUBLE PRECISION SCAMIN  <--   user scalar min array
+ * DOUBLE PRECISION SCAMAX  <--   user scalar max array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
+                                      double *const scamin,
+                                      double *const scamax)
+{
+  /* Coal combustion: the min max of the model scalar are not given */
+
+  int i;
+
+  if (vars->nscaus > 0 ) {
+    for (i=0 ; i < vars->nscaus; i++) {
+      if (iscavr[i] <= 0 ) {
+        cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
+        cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
+      }
+    }
+
+#if _XML_DEBUG_
+    bft_printf(_("==>CSSCA2\n"));
+    for (i=0 ; i < vars->nscaus ; i++) {
+      bft_printf(_("--scamin[%i] = %f\n"), i, scamin[i]);
+      bft_printf(_("--scamax[%i] = %f\n"), i, scamax[i]);
+    }
+#endif
+  }
+}
+
+
+/*----------------------------------------------------------------------------
+ * Lecture de la viscosite dynamique de reference des scalaires utilisateurs
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
+                                const    int *const iscavr,
+                                      double *const visls0,
+                                      double *const t0,
+                                      double *const p0)
+{
+  int i, iphas = 0;
+  double result, coeff, density;
+  char *model = NULL;
+  char *pphys = NULL;
+
+  if (vars->nscaus > 0) {
+
+    if (cs_gui_thermal_scalar()) {
+      result = 0;
+      cs_gui_properties_value("specific_heat", &result);
+      if (!result) {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Specific heat value is zero or not found in the xml file.\n"));
+      }
+      i = iscalt[iphas]-1;
+      cs_gui_properties_value("thermal_conductivity", &visls0[i]);
+      visls0[i] = visls0[i]/result;
+    }
+
+  /* Scalaires utilisateurs */
+  /* Dans l'interface, l'utilisateur donne le coefficient de diffusion, alors */
+  /* que dans Saturne on parle de la diffusivite, donc il faut multiplier */
+  /* ce coefficient par la masse volumique pour etre cohérent */
+
+    for (i=0 ; i < vars->nscaus; i++) {
+      if (iscavr[i] <= 0 && i != iscalt[iphas]-1) {
+
+        if (cs_gui_get_activ_thermophysical_model(&model, &pphys)) {
+          result = 0.028966;
+          cs_gui_reference_mass_molar(model, &result);
+          if (!result)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("mass molar value is zero or not found in the xml file.\n"));
+          /*density = *p0 / (result * 8.31434 *(*t0));*/
+          density = *p0 * result / (8.31434 *(*t0));
+        }
+        else
+          cs_gui_properties_value("density", &density);
+
+        if (!density)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Density value is zero or not found in the xml file.\n"));
+
+        coeff = visls0[i] / density ;
+        cs_gui_scalar_diffusion_value(i+1, &coeff);
+        visls0[i] = coeff * density;
+      }
+    }
+#if _XML_DEBUG_
+    bft_printf(_("==>CSSCA3\n"));
+    for (i=0 ; i < vars->nscaus; i++)
+      bft_printf(_("--visls0[%i] = %f\n"), i, visls0[i]);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Turbulence initialization parameters.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSTINI (UREF, ALMAX)
+ * *****************
+ *
+ * INTEGER          UREF   <--   reference velocity
+ * INTEGER          ALMAX  <--   reference length
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cstini, CSTINI) (double *const uref,
+                                double *const almax)
+{
+  int iphas = 0;
+  char* turb_ini_choice = NULL;
+
+  cs_gui_turbulence_initialization("reference_velocity", &uref[iphas]);
+
+  turb_ini_choice = cs_gui_turbulence_initialization_choice();
+
+  if (cs_gui_strcmp(turb_ini_choice, "reference_velocity_length"))
+    cs_gui_turbulence_initialization("reference_length", &almax[iphas]);
+
+  BFT_FREE(turb_ini_choice);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSTINI\n"));
+  bft_printf(_("--almax = %f\n"), almax[iphas]);
+  bft_printf(_("--uref  = %f\n"), uref[iphas]);
+#endif
+}
+
+
+/*----------------------------------------------------------------------------
+ * Tableau des propriétés utilisées dans le calcul
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uiprop, UIPROP) (const int *const irom,
+                                const int *const iviscl,
+                                const int *const ivisct,
+                                const int *const icour,
+                                const int *const ifour,
+                                const int *const ismago,
+                                const int *const iale,
+                                const int *const icp,
+                                const int *const iprtot,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const icmome,
+                                const int *const ipptx,
+                                const int *const ippty,
+                                const int *const ipptz,
+                                const int *const ippdt,
+                                const int *const ivisma,
+                                const int *const iappel)
+{
+  int iphas = 0;
+  int itype = 0;
+  int np = 0;
+  int i = 0;
+  int nbp = 6;
+  int nbmomt = 0;
+  char *name;
+
+  if (ismago[iphas] != -1 ) nbp++;
+  if (icp[iphas]>0) nbp++;
+  if (*iale){
+    cs_gui_get_ale_viscosity_type(&itype);
+    if (itype == 1) {
+      nbp = nbp + 3;
+    }
+    else {
+      nbp++;
+    }
+  }
+  vars->nprop = nbp;
+
+  nbmomt = cs_gui_get_means_number();
+  vars->ntimaver = cs_gui_get_means_number();
+
+  if (*iappel == 0){
+    BFT_MALLOC(vars->properties_ipp,  vars->nprop, int);
+    BFT_MALLOC(vars->properties_name, vars->nprop, char*);
+
+    vars->properties_ipp[0]=ipppro[ ipproc[ irom[iphas]-1 ]-1 ];
+    vars->properties_ipp[1]=ipppro[ ipproc[ iviscl[iphas]-1 ]-1 ];
+    vars->properties_ipp[2]=ipppro[ ipproc[ ivisct[iphas]-1 ]-1 ];
+    vars->properties_ipp[3]=ipppro[ ipproc[ icour[iphas]-1 ]-1 ];
+    vars->properties_ipp[4]=ipppro[ ipproc[ ifour[iphas]-1 ]-1 ];
+
+    BFT_MALLOC(vars->properties_name[np], strlen("density")+1, char);
+    strcpy(vars->properties_name[np], "density");
+    np++;
+    BFT_MALLOC(vars->properties_name[np], strlen("molecular_viscosity")+1, char);
+    strcpy(vars->properties_name[np], "molecular_viscosity");
+    np++;
+    BFT_MALLOC(vars->properties_name[np], strlen("turb_viscosity")+1, char);
+    strcpy(vars->properties_name[np], "turb_viscosity");
+    np++;
+    BFT_MALLOC(vars->properties_name[np], strlen("courant_number")+1, char);
+    strcpy(vars->properties_name[np], "courant_number");
+    np++;
+    BFT_MALLOC(vars->properties_name[np], strlen("fourier_number")+1, char);
+    strcpy(vars->properties_name[np], "fourier_number");
+    np++;
+    if (ismago[iphas] != -1 ){
+      vars->properties_ipp[np]=ipppro[ ipproc[ ismago[iphas]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[np], strlen("smagorinsky_constant")+1, char);
+      strcpy(vars->properties_name[np], "smagorinsky_constant");
+      np++;
+    }
+    if (icp[iphas]>0){
+      vars->properties_ipp[np]=ipppro[ ipproc[ icp[iphas]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[np], strlen("specific_heat")+1, char);
+      strcpy(vars->properties_name[np], "specific_heat");
+      np++;
+    }
+    vars->properties_ipp[np]=ipppro[ ipproc[ iprtot[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[np], strlen("total_pressure")+1, char);
+    strcpy(vars->properties_name[np], "total_pressure");
+    np++;
+
+    /* test sur ale_method */
+    if (*iale){
+      vars->properties_ipp[np]=ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_1")+1, char);
+      strcpy(vars->properties_name[np], "mesh_viscosity_1");
+      np++;
+      if (itype == 1){
+        vars->properties_ipp[np]=ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
+        BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_2")+1, char);
+        strcpy(vars->properties_name[np], "mesh_viscosity_2");
+        np++;
+        vars->properties_ipp[np]=ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
+        BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_3")+1, char);
+        strcpy(vars->properties_name[np], "mesh_viscosity_3");
+        np++;
+      }
+    }
+  }
+  else{
+/* au premier passage dans UIPROP, nbmomt = 0, donc la boucle ci-dessous n'est pas parcourue
+ * au second passage, apres le quatrieme appel a VARPOS, nbmomt et icmome sont initialise */
+    np = vars->nprop;
+    vars->nprop = vars->nprop +4 + vars->ntimaver;
+    BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+    BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+
+    vars->properties_ipp[np]=*ippdt;
+    BFT_MALLOC(vars->properties_name[np], strlen("local_time_step")+1, char);
+    strcpy(vars->properties_name[np], "local_time_step");
+    np++;
+
+    vars->properties_ipp[np]=*ipptx;
+    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_X")+1, char);
+    strcpy(vars->properties_name[np], "weight_matrix_X");
+    np++;
+    vars->properties_ipp[np]=*ippty;
+    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Y")+1, char);
+    strcpy(vars->properties_name[np], "weight_matrix_Y");
+    np++;
+    vars->properties_ipp[np]=*ipptz;
+    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Z")+1, char);
+    strcpy(vars->properties_name[np], "weight_matrix_Z");
+    np++;
+
+    for (i=0; i<vars->ntimaver; i++){
+      vars->properties_ipp[np]=ipppro[ ipproc[ icmome[i]-1 ]-1 ];
+      name = cs_gui_get_mean_label(i+1);
+      BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
+      strcpy(vars->properties_name[np], name);
+      np++;
+    }
+  }
+
+  if (np != vars->nprop) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("number of properties is not correct: %i instead of: %i\n"), np, vars->nprop);
+  }
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UIPROP %i\n"),*iappel);
+  bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
+  for (i=0 ; i<vars->nprop ; i++) {
+    bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
+                    i, vars->properties_ipp[i], i, vars->properties_name[i]);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Traitement des moyennes temporelles
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
+                                const int *const isca,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const icmome,
+                                      int *const ntdmom,
+                                      int *const imoold,
+                                      int *const idfmom)
+{
+  int means_number = 0;
+  int nmean = 0;
+  int imom = 0;
+  int np = 0;
+  int isuite = 0;
+  int ind_thermal = 0;
+  int i,j,n,nb;
+  char *label_moy;
+  char *name;
+
+  means_number = cs_gui_get_means_number();
+  vars->nprop = vars->nprop + means_number;
+  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+
+/*pour chaque moment :*/
+  for (i=0; i < means_number; i++) {
+    imom = i + 1;
+    np = vars->nprop - means_number + i;
+    vars->properties_ipp[np]=ipppro[ipproc[icmome[imom-1]-1 ]-1];
+    label_moy = cs_gui_get_mean_label(imom);
+    BFT_MALLOC(vars->properties_name[np], strlen(label_moy)+1, char);
+    strcpy(vars->properties_name[np], label_moy);
+    cs_gui_get_mean_value(imom, "time_step_start", &ntdmom[i]);
+    /* test sur isuite */
+    cs_gui_restart_parameters_status("restart", &isuite);
+    if (isuite != 0) {
+      cs_gui_get_mean_value(imom, "restart_from_time_average", &imoold[i]);
+        if (imoold[i] == imom) imoold[i] = -2;
+    }
+
+    nmean = cs_gui_get_mean_names_number(imom);
+    for (n=0; n<nmean; n++) {
+      nb = n + 1;
+      name = cs_gui_get_mean_prop(imom, nb);
+      for (j=0 ; j<(vars->nvar - vars->nscapp - vars->nscaus) ; j++){
+        if (cs_gui_strcmp(name,  vars->char2[j])) {
+          idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp_nbr[j] + 1;
+        }
+      }
+      if (vars->nscaus > 0 ) {
+   /*     for (i=0 ; i < vars->nscaus; i++) {*/
+        ind_thermal =  cs_gui_thermal_scalar();
+       /* if (ind_thermal)
+          name_th = cs_gui_get_thermal_scalar_label();*/
+        for (j=0 ; j<vars->nscaus ; j++){
+          /*if (cs_gui_strcmp(name,  vars->label[j]) || cs_gui_strcmp(name, name_th)) {*/
+          if (cs_gui_strcmp(name,  vars->label[j]) ) {
+            idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp_nbr[isca[j]-1] + 1;
+          }
+        }
+      }
+
+      for (j=0 ; j<vars->nprop-means_number; j++) {
+        if (cs_gui_strcmp(name, vars->properties_name[j]))
+          idfmom[(imom-1)*(*ndgmox) + n] = -(vars->properties_ipp[j]) - 1;
+      }
+    }
+  }
+#if _XML_DEBUG_
+  bft_printf(_("==>UIMOYT\n"));
+  for (i=0; i<means_number; i++) {
+    np = vars->nprop - means_number + i;
+    bft_printf(_("-->ntdmom =  %i\n"), ntdmom[i]);
+    bft_printf(_("--> : vars->properties_ipp[%i]: %i\n"), np, vars->properties_ipp[np]);
+    bft_printf(_("--> : vars->properties_name[%i]: %s\n"), np, vars->properties_name[np]);
+    /*for (n=0; n<nmean; n++) {
+      np = vars_nprop - means_number + n;
+      bft_printf(_("-->name : vars->properties_name[%i]: %s\n"), n, vars->properties_name[n]);
+      bft_printf(_("-->idfmom :  %s\n"), idfmom[(imom-1)*(*ndgmox) + n]);
+    }
+      */
+  }
+  for (i=0 ; i<vars->nprop ; i++) {
+    bft_printf(_("-->properties_name[%i]: %s\n"), i, vars->properties_name[i]);
+  }
+#endif
+}
+
+
+/*----------------------------------------------------------------------------
+ * Traitement des entrees-sorties
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csenso, CSENSO)
+(
+ const    int *const nvppmx,
+          int *const ncapt,
+          int *const nthist,
+          int *const ntlist,
+          int *const ichrvl,
+          int *const ichrbo,
+          int *const ichrsy,
+          int *const ichrmd,
+         char *const fmtchr,
+          int *const size_fmt,
+         char *const optchr,
+          int *const size_opt,
+          int *const ntchr,
+          int *const iecaux,
+          int *const ichrvr,
+          int *const ilisvr,
+          int *const ihisvr,
+ const    int *const isca,
+ const    int *const ipprtp,
+ const    int *const ipppro,
+ const    int *const ipproc,
+       double *const xyzcap)
+{
+  int i;
+  int ipp;
+  char *model = NULL;
+  char *modelvalue = NULL;
+
+#if _XML_DEBUG_
+  int j;
+#endif
+
+  cs_gui_output_value("fluid_domain", ichrvl);
+  cs_gui_output_value("domain_boundary", ichrbo);
+  cs_gui_output_value("syrthes_boundary", ichrsy);
+  cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
+  cs_gui_output_value("listing_printing_frequency", ntlist);
+  cs_gui_output_value("postprocessing_frequency", ntchr);
+  cs_gui_output_value("probe_recording_frequency", nthist);
+  cs_gui_output_value("postprocessing_mesh_options", ichrmd);
+  cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
+  cs_gui_output_choice("postprocessing_options", optchr, size_opt);
+
+  *ncapt = cs_gui_probes_number();
+  for (i=0; i < *ncapt; i++) {
+    xyzcap[0 + i*3] = cs_gui_probe_coordinate(i+1, "probe_x");
+    xyzcap[1 + i*3] = cs_gui_probe_coordinate(i+1, "probe_y");
+    xyzcap[2 + i*3] = cs_gui_probe_coordinate(i+1, "probe_z");
+  }
+
+  /* Sorties des variables vitesses et turbulence */
+  for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp; i++) {
+     ipp = ipprtp[vars->rtp_nbr[i]];
+     cs_gui_thermophysical_post(vars->char2[i],
+                                ipp,
+                                ihisvr, ilisvr, ichrvr,
+                                nvppmx);
+  }
+
+  /* User scalar */
+  if (vars->nscaus > 0 ) {
+    for (i=0 ; i < vars->nscaus; i++) {
+      cs_gui_scalar_post(i, ihisvr, ilisvr, ichrvr,
+                         ipprtp, isca, nvppmx);
+    }
+  }
+
+  /* Physiques particulieres */
+
+  if (cs_gui_get_activ_thermophysical_model(&model, &modelvalue)) {
+    /* Scalaire model */
+    if (vars->nscapp > 0) {
+      for (i=vars->nscaus ; i < vars->nscaus+vars->nscapp; i++) {
+        cs_gui_model_scalar_post(model,
+                                 i + 1,
+                                 ihisvr, ilisvr, ichrvr,
+                                 ipprtp, isca, nvppmx);
+      }
+    }
+    /* Proprietes physiques */
+    if (vars->nsalpp > 0) {
+
+      for (i=vars->nprop ; i < vars->nprop + vars->nsalpp; i++) {
+        cs_gui_model_property_post(model,
+                                   i + 1,
+                                   ihisvr, ilisvr, ichrvr,
+                                   ipppro, ipproc, nvppmx);
+      }
+    }
+  }
+  BFT_FREE(model);
+  BFT_FREE(modelvalue);
+
+  for (i=0 ; i<vars->nprop ; i++) {
+    if (vars->ntimaver != 0 && i>=vars->nprop-vars->ntimaver){
+      cs_gui_time_average_post(vars->properties_name[i],
+                               vars->properties_ipp[i],
+                               ichrvr,
+                               ilisvr,
+                               ihisvr,
+                               nvppmx);
+    }
+    else
+      cs_gui_properties_post(vars->properties_name[i],
+                             vars->properties_ipp[i],
+                             ichrvr,
+                             ilisvr,
+                             ihisvr,
+                             nvppmx);
+  }
+
+/* TODO: ici a voir ce qu'il se passe avec la diffusivité des scalaires */
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSENSO\n"));
+  bft_printf(_("--iecaux = %i\n"), *iecaux);
+  bft_printf(_("--ichrvl = %i\n"), *ichrvl);
+  bft_printf(_("--ichrbo = %i\n"), *ichrbo);
+  bft_printf(_("--ichrsy = %i\n"), *ichrsy);
+  bft_printf(_("--fmtchr = %s\n"), "à vérifier en fortran");
+  bft_printf(_("--optchr = %s\n"), "à vérifier en fortran");
+  bft_printf(_("--ntlist = %i\n"), *ntlist);
+  bft_printf(_("--ntchr  = %i\n"), *ntchr);
+  bft_printf(_("--nthist = %i\n"), *nthist);
+  bft_printf(_("--ncapt  = %i\n"), *ncapt);
+  for (i = 0; i < *ncapt; i++) {
+    bft_printf(_("--xyzcap[%i][0] = %f\n"), i, xyzcap[0 +i*3]);
+    bft_printf(_("--xyzcap[%i][1] = %f\n"), i, xyzcap[1 +i*3]);
+    bft_printf(_("--xyzcap[%i][2] = %f\n"), i, xyzcap[2 +i*3]);
+  }
+  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
+    ipp = ipprtp[vars->rtp_nbr[i]];
+    bft_printf(_("-->variable ipprtp[%i] = %s\n"), ipp, vars->char2[i]);
+    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
+    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
+    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    if (ihisvr[0 + (ipp-1)]>0)
+      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
+        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+                      ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
+  }
+  for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
+    ipp = ipprtp[isca[i] -1];
+    bft_printf(_("-->scalar ipprtp[%i]: %s\n"), ipp, vars->label[i]);
+    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
+    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
+    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    if (ihisvr[0 + (ipp-1)]>0)
+      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
+        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+                      ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
+  }
+  for (i=0 ; i<vars->nprop ; i++) {
+    ipp = vars->properties_ipp[i];
+    bft_printf(_("-->properties_name[%i]: %s\n"), i, vars->properties_name[i]);
+    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
+    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
+    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    if (ihisvr[0 + (ipp-1)]>0)
+      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
+        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+                      ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Return integer value for calculation of size of user's arrays
+ *----------------------------------------------------------------------------*/
+
+static int _user_array(const char *const keyword1,
+                       const char *const keyword2)
+{
+  char *path = NULL;
+  int value = 0;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 2, keyword1, keyword2);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_int(path, &value);
+  BFT_FREE(path);
+  return value;
+}
+
+void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
+{
+  int icelet, ifac, ifabor, idimless;
+
+  icoftu[0] = _user_array("integer_user_array", "ncelet");
+  icoftu[1] = _user_array("integer_user_array", "nfac");
+  icoftu[2] = _user_array("integer_user_array", "nfabor");
+  icoftu[3] = _user_array("integer_user_array", "dimless");
+
+  icoftu[4] =_user_array("real_user_array", "ncelet");
+  icoftu[5] = _user_array("real_user_array", "nfac");
+  icoftu[6] = _user_array("real_user_array", "nfabor");
+  icoftu[7] = _user_array("real_user_array", "dimless");
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UIUSAR\n"));
+  bft_printf(_("--icoftu = %i %i %i %i\n"),
+                icoftu[0],icoftu[1],icoftu[2],icoftu[3]);
+  bft_printf(_("           %i %i %i %i\n"),
+                icoftu[4],icoftu[5],icoftu[6],icoftu[7]);
+#endif
+}
+
+
+/*----------------------------------------------------------------------------
+ * Copy variable name from Fortran to C
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(fcnmva, FCNMVA)
+(
+ const char          *const fstr,    /* --> Fortran string */
+ int                 *const len,     /* --> String Length  */
+ int                 *const var_id   /* --> Variable Id (1 to n) */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  int i, i1, i2, l;
+  char *cstr = NULL;
+
+  assert(*var_id > 0);
+
+  /* Resize array if necessary */
+
+  if (*var_id > _cs_gui_max_vars) {
+
+    if (_cs_gui_max_vars == 0)
+      _cs_gui_max_vars = 16;
+
+    while (_cs_gui_max_vars <= *var_id)
+      _cs_gui_max_vars *= 2;
+
+    BFT_REALLOC(_cs_gui_var_name, _cs_gui_max_vars, char *);
+    for (i = _cs_gui_last_var; i < _cs_gui_max_vars; i++)
+      _cs_gui_var_name[i] = NULL;
+  }
+
+  /* Compute string length (removing start or end blanks) */
+
+  for (i1 = 0;
+       i1 < *len && (fstr[i1] == ' ' || fstr[i1] == '\t');
+       i1++);
+
+  for (i2 = *len - 1;
+       i2 > i1 && (fstr[i2] == ' ' || fstr[i2] == '\t');
+       i2--);
+
+  l = i2 - i1 + 1;
+
+  /* Should be called once per variable only */
+  assert(_cs_gui_var_name[*var_id - 1] == NULL);
+
+  if (l > 0) {
+
+    /* Allocate and copy */
+    BFT_MALLOC(cstr, l + 1, char);
+
+  for (i = 0 ; i < l ; i++, i1++)
+    cstr[i] = fstr[i1];
+
+  cstr[l] = '\0';
+
+    _cs_gui_var_name[*var_id - 1] = cstr;
+
+  }
+
+  /* Update variable counter */
+  _cs_gui_last_var = *var_id;
+
+}
+
+
+/*----------------------------------------------------------------------------
+ * Copy variable name from C to Fortran
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF(cfnmva, CFNMVA)
+(
+ char          *const fstr,    /* --> Fortran string */
+ int           *const len,     /* --> String Length  */
+ int           *const var_id   /* --> Variable Id (1 to n) */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  int i;
+  int l = 0;
+  char *cstr = NULL;
+
+  /* Check that variable name was set */
+
+  if (*var_id < 1 || *var_id > _cs_gui_last_var)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Name of variable %d was never set.\n"), var_id);
+
+  /* Copy string */
+
+  cstr = _cs_gui_var_name[*var_id - 1];
+
+  if (cstr != NULL) {
+
+  /* Compute string length (removing start or end blanks) */
+
+  l = strlen(cstr);
+  if (l > *len)
+    l = *len;
+
+    for (i = 0; i < l; i++)
+      fstr[i] = cstr[i];
+
+  }
+
+  /* Pad with blanks if necessary */
+
+  for (i = l; i < *len; i++)
+    fstr[i] = ' ';
+}
+
+/*----------------------------------------------------------------------------
+ * Variables and user scalars initialization
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIINIV (NCELET, ISCA, RTP)
+ * *****************
+ *
+ * INTEGER          ISCAVR   -->  number of cells
+ * INTEGER          ISCA     -->  indirection array for scalar number
+ * DOUBLE PRECISION RTP     <--   variables and scalars array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
+                              const int    *const isca,
+                                    double *const rtp)
+{
+  /* Coal combustion: the initialization of the model scalar are not given */
+
+  int i, j, icel, iel;
+  int zones = 0;
+  int cells = 0;
+  int *cells_list = NULL;
+  double initial_value = 0;
+  char *choice = NULL;
+  char *name = NULL;
+  char *description = NULL;
+
+  /* number of volumic zone */
+
+  zones = cs_gui_volumic_zones_number();
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UIINIV\n"));
+  bft_printf(_("--initialization zones number: %i\n"), zones);
+#endif
+
+  for (i=1; i < zones+1; i++) {
+
+    /* name and description (color or group) of the ith initialization zone */
+    name = cs_gui_volumic_zone_name(i);
+    description = cs_gui_volumic_zone_localization(name);
+
+    /* list of cells building */
+    BFT_MALLOC(cells_list, *ncelet, int);
+
+    fvm_selector_get_list(cs_glob_mesh->select_cells,
+                          description,
+                          &cells,
+                          cells_list);
+
+    /* Velocity variables initialization */
+    for (j=1; j < 4; j++) {
+
+      cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+
+      for (icel = 0; icel < cells; icel++) {
+        iel = cells_list[icel]-1;
+        rtp[vars->rtp_nbr[j]*(*ncelet) + iel] = initial_value;
+      }
+    }
+
+    /* Turbulence variables initialization */
+    choice = cs_gui_turbulence_initialization_choice();
+
+    if (cs_gui_strcmp(choice, "values")) {
+      for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
+
+        cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+
+        for (icel = 0; icel < cells; icel++) {
+          iel = cells_list[icel]-1;
+          rtp[vars->rtp_nbr[j]*(*ncelet) + iel] = initial_value;
+        }
+      }
+    }
+    BFT_FREE(choice);
+
+    /* User Scalars initialization */
+    for (j=0; j < vars->nscaus; j++) {
+
+      cs_gui_scalar_initial_value("additional_scalars",
+                                  vars->label[j],
+                                  name,
+                                  &initial_value);
+
+      for (icel = 0; icel < cells; icel++) {
+        iel = cells_list[icel]-1;
+        rtp[(isca[j]-1)*(*ncelet) + iel] = initial_value;
+      }
+    }
+    BFT_FREE(cells_list);
+
+#if _XML_DEBUG_
+    bft_printf(_("--zone name and description: %s, %s\n"), name, description);
+    bft_printf(_("--zone's element number: %i\n"), cells);
+
+    for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++){
+      cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+      bft_printf(_("--initial value for %s: %f\n"),
+        vars->char2[j], initial_value);
+    }
+
+    for (j=0; j < vars->nscaus; j++) {
+      cs_gui_scalar_initial_value("additional_scalars",
+                                  vars->label[j],
+                                  name,
+                                  &initial_value);
+      bft_printf(_("--initial value for %s: %f\n"), vars->label[j], initial_value);
+    }
+#endif
+    BFT_FREE(name);
+    BFT_FREE(description);
+  } /* zones+1 */
+}
+
+
+void cs_gui_variable_initial_value(const char   *const variable_name,
+                                   const char   *const zone_name,
+                                         double *const initial_value)
+{
+  char *path = NULL;
+  double result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable_name);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_test_attribute(&path, "zone", zone_name);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *initial_value = result;
+  else
+    *initial_value = 0.0;
+
+  BFT_FREE(path);
+}
+
+
+void cs_gui_reference_pressure(double *const p0)
+{
+  char *path = NULL;
+  double value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "reference_pressure");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &value)) *p0 = value;
+  BFT_FREE(path);
+}
+
+
+void cs_gui_reference_temperature(char *const model, double *const t0)
+{
+  char *path = NULL;
+  double value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 2, model,"reference_temperature");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &value)) *t0 = value;
+  BFT_FREE(path);
+}
+
+
+void cs_gui_reference_mass_molar(char *const model, double *const m0)
+{
+  char *path = NULL;
+  double value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 2, model,"reference_mass_molar");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &value)) *m0 = value;
+  BFT_FREE(path);
+}
+
+
+void cs_gui_scalar_initial_value(const char   *const parent,
+                                 const char   *const label,
+                                 const char   *const zone_name,
+                                       double *const initial_value)
+{
+  char *path = NULL;
+  char *scalar_name = NULL;
+  double result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 2, parent, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_test_attribute(&path, "zone", zone_name);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *initial_value = result;
+  else
+    *initial_value = 0.0;
+
+  BFT_FREE(scalar_name);
+  BFT_FREE(path);
+}
+
+
+char *cs_gui_volumic_zone_name(const int ith_zone)
+{
+  char *path = NULL;
+  char *name = NULL;
+
+  /* 1) get the name of the ith initialization zone */
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+  cs_xpath_add_element_num(&path, "zone", ith_zone);
+  cs_xpath_add_attribute(&path, "name");
+
+  name = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return name;
+}
+
+
+char *cs_gui_volumic_zone_localization(const char *const name)
+{
+  char *path = NULL;
+  char *description = NULL;
+
+  /* 2) get the description (color and groups) of the ith initialization zone */
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "solution_domain",
+                                  "volumic_conditions",
+                                  "zone");
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_function_text(&path);
+
+  description = cs_gui_get_text_value(path);
+
+  BFT_FREE(path);
+
+  return description;
+}
+
+/*----------------------------------------------------------------------------
+ * Boundary conditions treatment
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICLIM
+ * *****************
+ *
+ * INTEGER          NOZPPM  --> max number of boundary conditions zone
+ * INTEGER          NFABOR  --> number of boundary faces
+ * INTEGER          IINDEF  --> type of boundary: not defined
+ * INTEGER          IENTRE  --> type of boundary: inlet
+ * INTEGER          IPAROI  --> type of boundary: wall
+ * INTEGER          ISYMET  --> type of boundary: symetry
+ * INTEGER          ISOLIB  --> type of boundary: outlet
+ * INTEGER          IQIMP   --> 1 if flow rate is applied
+ * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
+ * INTEGER          ITYPFB  --> type of boundary for each face
+ * INTEGER          IZFPPP  --> zone number
+ * INTEGER          ICODCL  --> boundary conditions array type
+ * DOUBLE PRECISION QIMP    --> flow rate value if applied
+ * DOUBLE PRECISION DH      --> hydraulic diameter
+ * DOUBLE PRECISION XINTUR  --> turbulent intensity
+ * DOUBLE PRECISION RCODCL  --> boundary conditions array value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
+                               const    int *const nfabor,
+                               const    int *const iindef,
+                               const    int *const ientre,
+                               const    int *const iparoi,
+                               const    int *const isymet,
+                               const    int *const isolib,
+                                        int *const iqimp,
+                                        int *const icalke,
+                                        int *const itypfb,
+                                        int *const izfppp,
+                                        int *const icodcl,
+                                     double *const qimp,
+                                     double *const dh,
+                                     double *const xintur,
+                                     double *const rcodcl)
+{
+  int iphas = 0;
+  int faces = 0;
+  int zones = 0;
+  int n, izone, ith_zone, zone_nbr;
+  int ifbr, i;
+  int ivar, isca;
+  char *choice = NULL;
+  char *nature = NULL;
+  char *label = NULL;
+  char *description = NULL;
+  int *faces_list = NULL;
+
+  zones   = cs_gui_boundary_zones_number();
+
+  /* First iteration only: memory allocation */
+
+  if (boundaries == NULL) {
+
+    BFT_MALLOC(boundaries,            1,          cs_boundary_t);
+    BFT_MALLOC(boundaries->label,     zones,      char*        );
+    BFT_MALLOC(boundaries->nature,    zones,      char*        );
+    BFT_MALLOC(boundaries->type_code, vars->nvar, int*         );
+    BFT_MALLOC(boundaries->values,    vars->nvar, cs_val_t*    );
+    BFT_MALLOC(boundaries->iqimp,     zones,      int          );
+    BFT_MALLOC(boundaries->qimp,      zones,      double       );
+    BFT_MALLOC(boundaries->icalke,    zones,      int          );
+    BFT_MALLOC(boundaries->dh,        zones,      double       );
+    BFT_MALLOC(boundaries->xintur,    zones,      double       );
+
+    for (ivar = 0; ivar < vars->nvar; ivar++) {
+      BFT_MALLOC(boundaries->type_code[vars->rtp_nbr[ivar]], zones, int);
+      BFT_MALLOC(boundaries->values[vars->rtp_nbr[ivar]], zones, cs_val_t);
+    }
+
+    for (izone = 0; izone < zones; izone++) {
+      boundaries->iqimp[izone]  = 0;
+      boundaries->qimp[izone]   = 0;
+      boundaries->icalke[izone] = 0;
+      boundaries->dh[izone]     = 0;
+      boundaries->xintur[izone] = 0;
+    }
+
+    /* Initialization of boundary->type_code and boundary->values */
+
+    for (i = 0; i < vars->nvar; i++) {
+      ivar = vars->rtp_nbr[i];
+      for (izone = 0; izone < zones; izone++) {
+        boundaries->type_code[ivar][izone] = -1;
+        boundaries->values[ivar][izone].val1 = 1.e30;
+        boundaries->values[ivar][izone].val2 = 1.e30;
+        boundaries->values[ivar][izone].val3 = 0.;
+      }
+    }
+
+   /* First iteration only : filling of the "boundaries" structure */
+
+    for (izone = 0; izone < zones; izone++) {
+
+     /* nature, label of the ith initialization zone */
+
+      ith_zone = izone + 1;
+      nature = cs_gui_boundary_zone_nature(ith_zone);
+      label = cs_gui_boundary_zone_label(ith_zone);
+
+      BFT_MALLOC(boundaries->label[izone], strlen(label)+1, char);
+      strcpy(boundaries->label[izone], label);
+
+      BFT_MALLOC(boundaries->nature[izone], strlen(nature)+1, char);
+      strcpy(boundaries->nature[izone], nature);
+
+      if (cs_gui_strcmp(nature, "inlet")) {
+
+        /* Inlet: VELOCITY */
+        choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
+
+        if (cs_gui_strcmp(choice, "dirichlet")) {
+
+          for (ivar = 1; ivar < 4; ivar++) {
+            boundaries->iqimp[izone] = 0;
+            cs_gui_boundary_dirichlet("inlet", label, izone, ivar);
+          }
+
+        } else if (cs_gui_strcmp(choice, "flow1")) {
+
+          boundaries->iqimp[izone] = 1;
+          cs_gui_boundary_flow(label, izone);
+          /* TODO : remplir la direction normale a la face */
+          /* boundaries->values[1][izone].val1 = directionU ; */
+          /* boundaries->values[2][izone].val1 = directionv ; */
+          /* boundaries->values[3][izone].val1 = directionw ; */
+        }
+
+        BFT_FREE(choice);
+
+        /* Inlet: TURBULENCE */
+        choice = cs_gui_boundary_choice("inlet", label, "turbulence");
+        cs_gui_boundary_turbulence(choice, izone);
+        BFT_FREE(choice);
+
+        /* Inlet: USER SCALARS */
+        for (isca = 0; isca < vars->nscaus; isca++) {
+          cs_gui_boundary_value_scalar("inlet", izone, isca);
+        }
+
+      } else if (cs_gui_strcmp(nature, "wall")) {
+
+        /* Wall: VELOCITY */
+        choice = cs_gui_boundary_choice("wall", label, "velocity_pressure");
+
+        if (cs_gui_strcmp(choice, "on")) {
+          for (ivar = 1; ivar < 4; ivar++)
+            cs_gui_boundary_dirichlet("wall", label, izone, ivar);
+        }
+        BFT_FREE(choice);
+
+        /* Wall: USER SCALARS */
+        for (isca = 0; isca < vars->nscaus; isca++) {
+          cs_gui_boundary_value_scalar("wall", izone, isca);
+        }
+
+      } else if (cs_gui_strcmp(nature, "outlet")) {
+
+        /* Outlet: USER SCALARS */
+        for (isca = 0; isca < vars->nscaus; isca++) {
+          cs_gui_boundary_value_scalar("outlet", izone, isca);
+        }
+
+      }  /* if (cs_gui_strcmp(nature, "outlet")) */
+
+      BFT_FREE(nature);
+      BFT_FREE(label);
+
+    }  /* for izones */
+
+  }  /* if (boundaries == NULL)*/
+
+ /* A chaque iteration, boucle sur les faces de bord :
+    on remplit itypfb, rcodcl et icodcl a partir des tableaux
+    de la structures conditions.limites definie
+    dans la premiere partie de la fonction.
+    Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    ith_zone = izone + 1;
+    zone_nbr = cs_gui_boundary_zone_number(ith_zone);
+    if (zone_nbr > *nozppm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("zone's label number %i is greater than %i the maximum allowed \n"),
+                zone_nbr, *nozppm);
+
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+    /* list of faces building */
+    BFT_MALLOC(faces_list, *nfabor, int);
+
+    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                          description,
+                          &faces,
+                          faces_list);
+    BFT_FREE(description);
+
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+
+      /* Update the depending zone arrays (iqimp, dh, xintur, icalke, qimp)
+         because they are initialized at each time step in PRECLI routine */
+
+      iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
+      dh[zone_nbr-1]     = boundaries->dh[izone];
+      xintur[zone_nbr-1] = boundaries->xintur[izone];
+      icalke[zone_nbr-1] = boundaries->icalke[izone];
+      qimp[zone_nbr-1]   = boundaries->qimp[izone];
+
+      for (n = 0; n < faces; n++) {
+        ifbr = faces_list[n]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *ientre;
+        for (i = 0; i < vars->nvar; i++) {
+          ivar = vars->rtp_nbr[i];
+          rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+          = boundaries->values[ivar][izone].val1;
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+
+      for (n = 0; n < faces; n++) {
+        ifbr = faces_list[n]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *iparoi;
+      }
+
+      for (i = 0; i < vars->nvar; i++) {
+        ivar = vars->rtp_nbr[i];
+
+        switch (boundaries->type_code[ivar][izone]) {
+
+          case NEUMANN :
+
+            for (n = 0; n < faces; n++) {
+              ifbr = faces_list[n]-1;
+              icodcl[ivar *(*nfabor) + ifbr] = 3;
+              rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val3;
+            }
+          break;
+
+          case DIRICHLET :
+
+            for (n = 0; n < faces; n++) {
+              ifbr = faces_list[n]-1;
+              icodcl[ivar *(*nfabor) + ifbr] = 5;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1;
+            }
+          break;
+
+          case COEF_ECHANGE :
+
+            for (n = 0; n < faces; n++) {
+              ifbr = faces_list[n]-1;
+              icodcl[ivar *(*nfabor) + ifbr] = 5;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1;
+              rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val2;
+            }
+          break;
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+
+      for (n = 0; n < faces; n++) {
+        ifbr = faces_list[n]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *isolib;
+      }
+
+      for (i = 0; i < vars->nvar; i++) {
+        ivar = vars->rtp_nbr[i];
+
+        switch (boundaries->type_code[ivar][izone]) {
+
+          case DIRICHLET :
+
+            for (n = 0; n < faces; n++) {
+              ifbr = faces_list[n]-1;
+              icodcl[ivar *(*nfabor) + ifbr] = 1;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1;
+            }
+          break;
+
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
+
+      for (n = 0; n < faces; n++) {
+        ifbr = faces_list[n]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *isymet;
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+
+      for (n = 0; n < faces; n++) {
+        ifbr = faces_list[n]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *iindef;
+      }
+
+    } else {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+    }
+    BFT_FREE(faces_list);
+  } /*  for izone */
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UICLIM\n"));
+  bft_printf(_("--boundary zones number: %i\n"), zones);
+  for (izone=0 ; izone < zones ; izone++) {
+    BFT_MALLOC(faces_list,*nfabor,int);
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                          description,
+                          &faces,
+                          faces_list);
+    zone_nbr = cs_gui_boundary_zone_number(izone+1);
+    bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
+    bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
+    bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
+    bft_printf(_("----localization: %s\n"), description);
+    BFT_FREE(description);
+
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+      bft_printf(_("-----iqimp=%i, qimp=%12.5e \n"), iqimp[zone_nbr-1], qimp[zone_nbr-1]);
+      bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
+                   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+    }
+
+    n = vars->nvar - vars->nscaus - vars->nscapp;
+    ifbr = faces_list[0]-1;
+    for (i=0; i<n ; i++) {
+      ivar = vars->rtp_nbr[i];
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+      vars->char2[ivar],
+      itypfb[iphas *(*nfabor) + ifbr],
+      icodcl[ivar *(*nfabor) + ifbr ],
+      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+    }
+    for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+      vars->label[ivar],
+      itypfb[iphas *(*nfabor) + ifbr],
+      icodcl[ivar *(*nfabor) + ifbr ],
+      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+    }
+    BFT_FREE(faces_list);
+  }
+#endif
+}
+
+
+char *cs_gui_boundary_choice(const char *const nature,
+                             const char *const label,
+                             const char *const var_sca)
+{
+  char *path = NULL;
+  char *choice = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, var_sca);
+  cs_xpath_add_attribute(&path, "choice");
+
+  choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return choice;
+}
+
+void cs_gui_boundary_dirichlet(const char *const nature,
+                               const char *const label,
+                               const int         izone,
+                               const int         ivar)
+{
+  char *path = NULL;
+  double result = 0.0;
+
+  path = cs_xpath_init_path();
+
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element(&path, nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, "velocity_pressure");
+
+  if (cs_gui_strcmp(nature, "wall")) {
+    cs_xpath_add_test_attribute(&path, "choice", "on");
+  } else if (cs_gui_strcmp(nature, "inlet")) {
+    cs_xpath_add_test_attribute(&path, "choice", "dirichlet");
+  } else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unknown conditions type in this context: %s.\nXpath: %s\n"),
+              nature, path);
+  }
+
+  cs_xpath_add_element(&path, "dirichlet");
+  cs_xpath_add_test_attribute(&path, "name", vars->char2[ivar]);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) {
+    boundaries->type_code[vars->rtp_nbr[ivar]][izone] = DIRICHLET;
+    boundaries->values[vars->rtp_nbr[ivar]][izone].val1 = result;
+  }
+  BFT_FREE(path);
+}
+
+
+void cs_gui_boundary_flow(const char *const label,
+                          const int         izone)
+{
+  char  *path1 = NULL;
+  char  *path2 = NULL;
+  double result;
+
+  path1 = cs_xpath_init_path();
+  cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path1, "label", label);
+  cs_xpath_add_element(&path1, "velocity_pressure");
+
+  BFT_MALLOC(path2, strlen(path1)+1, char);
+  strcpy(path2, path1);
+
+  /* flow rate */
+
+  cs_xpath_add_element(&path1, "flow1");
+  cs_xpath_add_function_text(&path1);
+
+  if (cs_gui_get_double(path1, &result)){
+    boundaries->qimp[izone] = result;
+  }
+  BFT_FREE(path1);
+
+  /* temperature */
+
+  cs_xpath_add_element(&path2, "temperature");
+  cs_xpath_add_function_text(&path2);
+
+  if (cs_gui_get_double(path2, &result)) {
+    boundaries->timpat[izone] = result;
+  }
+
+  BFT_FREE(path2);
+}
+
+
+void cs_gui_boundary_turbulence(const char *const choice,
+                                const  int        izone)
+{
+  char *path1 = NULL;
+  char *path2 = NULL;
+  double result;
+
+  if (cs_gui_strcmp(choice, "hydraulic_diameter")) {
+    boundaries->icalke[izone] = 1  ;
+  } else if(cs_gui_strcmp(choice, "turbulent_intensity")) {
+    boundaries->icalke[izone] = 2  ;
+  } else {
+    return;
+  }
+
+  path1 = cs_xpath_init_path();
+  cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path1, "label", boundaries->label[izone]);
+  cs_xpath_add_element(&path1, "turbulence");
+
+  BFT_MALLOC(path2, strlen(path1) + 1, char);
+  strcpy(path2, path1);
+
+  cs_xpath_add_element(&path1, "hydraulic_diameter");
+  cs_xpath_add_function_text(&path1);
+
+  if (cs_gui_get_double(path1, &result)) {
+    boundaries->dh[izone] = result;
+  }
+  BFT_FREE(path1);
+
+  if(cs_gui_strcmp(choice, "turbulent_intensity")) {
+
+    cs_xpath_add_element(&path2, "turbulent_intensity");
+    cs_xpath_add_function_text(&path2);
+
+    if (cs_gui_get_double(path2, &result)) {
+      boundaries->xintur[izone] = result * 0.01;
+    }
+  }
+  BFT_FREE(path2);
+}
+
+
+void cs_gui_boundary_value_scalar(const char *const nature,
+                                  const int         izone,
+                                  const int         isca)      /* n° scalaire */
+{
+  int numvar;
+  char *path = NULL;
+  char *path_commun = NULL;
+  char *path2 = NULL;
+  char *choice = NULL;
+  double result;
+
+  numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+  numvar = numvar + isca;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", vars->label[isca]);
+
+  BFT_MALLOC(path_commun, strlen(path)+1, char);
+  strcpy(path_commun, path);
+
+  BFT_MALLOC(path2, strlen(path)+1, char);
+  strcpy(path2, path);
+
+  cs_xpath_add_attribute(&path_commun, "choice");
+  choice = cs_gui_get_attribute_value(path_commun);
+
+  if (choice != NULL) {
+
+    if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "exchange_coefficient")) {
+      cs_xpath_add_element(&path, "dirichlet");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_double(path, &result)) {
+        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = DIRICHLET;
+        boundaries->values[vars->rtp_nbr[numvar]][izone].val1 = result;
+      }
+
+    } else if(cs_gui_strcmp(choice, "neumann")) {
+      cs_xpath_add_element(&path, "neumann");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_double(path, &result)) {
+        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = NEUMANN;
+        boundaries->values[vars->rtp_nbr[numvar]][izone].val3 = result;
+      }
+    }
+
+    if (cs_gui_strcmp(choice, "exchange_coefficient")) {
+      cs_xpath_add_element(&path2, "exchange_coefficient");
+      cs_xpath_add_function_text(&path2);
+      if (cs_gui_get_double(path2, &result)) {
+        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = COEF_ECHANGE;
+        boundaries->values[vars->rtp_nbr[numvar]][izone].val2 = result;
+      }
+    }
+
+    BFT_FREE(choice);
+  }
+
+  BFT_FREE(path);
+  BFT_FREE(path2);
+  BFT_FREE(path_commun);
+}
+
+
+/*----------------------------------------------------------------------------
+ * Density under relaxation
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICPI1 (SRROM)
+ * *****************
+ * DOUBLE PRECISION SRROM   <--   density relaxation
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
+{
+  cs_gui_numerical_double_parameters("density_relaxation", srrom);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UICPI1\n"));
+  bft_printf(_("--srrom  = %f\n"), *srrom);
+#endif
+}
+
+/*-----------------------------------------------------------------------------
+ *  Indirection entre la numérotation noyau et la numérotation XML des propriétés
+ *  physiques de la physique particulière active
+ *----------------------------------------------------------------------------*/
+
+  void CS_PROCF (cscppp, CSCPPP)
+(
+  int *const nclass,
+  int *const nsalpp,
+  int *const nsalto,
+  int *const itemp1,
+  int *const irom1,
+  int *const ym1,
+  int *const imel,
+  int *const itemp2,
+  int *const ix2,
+  int *const irom2,
+  int *const idiam2,
+  int *const igmdch,
+  int *const igmdv1,
+  int *const igmdv2,
+  int *const igmhet,
+  int *const ilumi
+)
+{
+  int i = 0;
+  char *name = NULL;
+  char *model = NULL;
+  char *modelvalue = NULL;
+  char *snumpp = NULL;
+  int nprop;
+
+
+  /* Récupération du model activé */
+  cs_gui_get_activ_thermophysical_model(&model, &modelvalue);
+
+  /* Allocation du tableau de redirection */
+  BFT_MALLOC(vars->XMLnumpp, *nsalpp, int);
+
+  /* Remplissage du tableau d'indirection en respectant la numérotation du noyau */
+  nprop = *nsalto - *nsalpp;
+
+  vars->nprop = nprop;
+  vars->nsalpp = *nsalpp;
+
+ /* ITEMP1 */
+  vars->XMLnumpp[*itemp1 - nprop - 1] = cs_gui_get_model_property_number(model, "Temp_GAZ");
+
+ /* IROM1 */
+  vars->XMLnumpp[*irom1 - nprop - 1] = cs_gui_get_model_property_number(model, "ROM_GAZ");
+
+ /*  YM_CHX1M */
+  vars->XMLnumpp[ym1[0] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_CHx1m");
+
+ /*  YM_CHX2M */
+  vars->XMLnumpp[ym1[1] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_CHx2m");
+
+ /*  YM_CO */
+  vars->XMLnumpp[ym1[2] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_CO");
+
+ /*  YM_O2 */
+  vars->XMLnumpp[ym1[3] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_O2");
+
+ /*  YM_CO2 */
+  vars->XMLnumpp[ym1[4] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_CO2");
+
+ /*  YM_H2O */
+  vars->XMLnumpp[ym1[5] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_H2O");
+
+ /*  YM_N2 */
+  vars->XMLnumpp[ym1[6] - nprop - 1] = cs_gui_get_model_property_number(model, "YM_N2");
+
+ /* IMEL */
+  vars->XMLnumpp[*imel - nprop - 1] = cs_gui_get_model_property_number(model, "XM");
+
+ /* ITEMP2 boucle sur les classes */
+  BFT_MALLOC(name, strlen("Temp_CP")+1 + 2, char);
+  BFT_MALLOC(snumpp, 1 + 2, char);
+  strcpy(name, "Temp_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[itemp2[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+    strcpy(name, "Temp_CP");
+  }
+
+ /* IX2 boucle sur les classes */
+  BFT_REALLOC(name, strlen("Frm_CP")+1 + 2, char);
+  strcpy(name, "Frm_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[ix2[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+    strcpy(name, "Frm_CP");
+  }
+
+ /* IROM2 boucle sur les classes */
+  BFT_REALLOC(name, strlen("Rho_CP")+1 + 2, char);
+  strcpy(name, "Rho_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[irom2[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+    strcpy(name, "Rho_CP");
+  }
+
+ /* IDIAM2 boucle sur les classes */
+  BFT_REALLOC(name, strlen("Dia_CK")+1 + 2, char);
+  strcpy(name, "Dia_CK");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[idiam2[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+    strcpy(name, "Dia_CK");
+  }
+
+ /* IGMDCH boucle sur les classes */
+  BFT_REALLOC(name, strlen("Ga_DCH")+1 + 2, char);
+  strcpy(name, "Ga_DCH");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[igmdch[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+  strcpy(name, "Ga_DCH");
+  }
+
+ /* IGMDV1 boucle sur les classes */
+  BFT_REALLOC(name, strlen("Ga_DV1")+1 + 2, char);
+  strcpy(name, "Ga_DV1");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[igmdv1[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+  strcpy(name, "Ga_DV1");
+  }
+
+ /* IGMDV2 boucle sur les classes */
+  BFT_REALLOC(name, strlen("Ga_DV2")+1 + 2, char);
+  strcpy(name, "Ga_DV2");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[igmdv2[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+  strcpy(name, "Ga_DV2");
+  }
+
+ /* IGMHET boucle sur les classes */
+  BFT_REALLOC(name, strlen("Ga_HET")+1 + 2, char);
+  strcpy(name, "Ga_HET");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumpp, "%2.2i", i+1);
+    strcat(name, snumpp);
+    vars->XMLnumpp[igmhet[i] - nprop - 1] = cs_gui_get_model_property_number(model, name);
+    strcpy(name, "Ga_HET");
+  }
+
+ /* ILUMI */
+  vars->XMLnumpp[*ilumi - nprop - 1] = cs_gui_get_model_property_number(model, "ntLuminance_4PI");
+
+  BFT_FREE(name);
+  BFT_FREE(snumpp);
+  BFT_FREE(model);
+  BFT_FREE(modelvalue);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSCPPP\n"));
+  for (i = 0; i < vars->nsalpp; i++)
+    bft_printf(_("--isca , iscaXML : %i, %i\n"), i ,vars->XMLnumpp[ i ]);
+#endif
+}
+
+/*------------------------------------------------------------------------------------
+ *  Indirection entre la numérotation noyau et la numérotation XML des scalaires model
+ *------------------------------------------------------------------------------------*/
+
+void CS_PROCF (cscpsc, CSCPSC)(int *const ncharb,
+                               int *const nclass,
+                               int *const ihm,
+                               int *const ih2,
+                               int *const inp,
+                               int *const ixch,
+                               int *const ixck,
+                               int *const if1m,
+                               int *const if2m,
+                               int *const if3m,
+                               int *const if4p2m)
+{
+  int i = 0;
+  char *name = NULL;
+  char *model = NULL;
+  char *modelvalue = NULL;
+  char *snumsca = NULL;
+
+  cs_gui_get_activ_thermophysical_model(&model, &modelvalue);
+
+  BFT_MALLOC(vars->XMLnumsca, vars->nscapp, int);
+
+  /* Remplissage du tableau d'indirection en respectant la numérotation du noyau */
+  /* IHM */
+  vars->XMLnumsca[*ihm - vars->nscaus - 1] = cs_gui_get_model_scalar_number(model, "Enthalpy");
+
+  /* Boucle sur les classes IH2, INP, IXCH, IXCK */
+  BFT_MALLOC(snumsca, 1 + 2, char);
+
+  /* IH2 */
+  BFT_MALLOC(name, strlen("ENT_CP")+1 + 2, char);
+  strcpy(name, "ENT_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumsca,"%2.2i", i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ ih2[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "ENT_CP");
+  }
+
+  /* INP */
+  BFT_REALLOC(name, strlen("NP_CP")+1 + 2, char);
+  strcpy(name, "NP_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumsca,"%2.2i", i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ inp[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "NP_CP");
+  }
+
+  /* IXCH */
+  BFT_REALLOC(name, strlen("XCH_CP")+1 + 2, char);
+  strcpy(name, "XCH_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumsca,"%2.2i", i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ ixch[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "XCH_CP");
+  }
+
+  /* IXCK */
+  BFT_REALLOC(name, strlen("XCK_CP")+1 + 2, char);
+  strcpy(name, "XCK_CP");
+  for (i = 0; i < *nclass; i++) {
+    sprintf(snumsca,"%2.2i", i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ ixck[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "XCK_CP");
+  }
+
+  /* Boucle sur les charbons  IFM1 IFM2 */
+
+  BFT_REALLOC(name, strlen("Fr_MV1")+1 + 2, char);
+  strcpy(name, "Fr_MV1");
+  for (i = 0; i < *ncharb; i++) {
+    sprintf(snumsca,"%2.2i",i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ if1m[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "Fr_MV1");
+  }
+
+  BFT_REALLOC(name, strlen("Fr_MV2")+1 + 2, char);
+  strcpy(name, "Fr_MV2");
+  for (i = 0; i < *ncharb; i++) {
+    sprintf(snumsca,"%2.2i",i+1);
+    strcat(name, snumsca);
+    vars->XMLnumsca[ if2m[i] - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, name);
+    strcpy(name, "Fr_MV2");
+  }
+
+ /* IF3M */
+  vars->XMLnumsca[ *if3m - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, "Fr_HET");
+
+ /* IF4P2M */
+  vars->XMLnumsca[ *if4p2m - vars->nscaus - 1 ] = cs_gui_get_model_scalar_number(model, "Var_AIR");
+
+  BFT_FREE(name);
+  BFT_FREE(snumsca);
+  BFT_FREE(model);
+  BFT_FREE(modelvalue);
+
+#if _XML_DEBUG_
+  bft_printf(_("==>CSCPPP\n"));
+  for (i=0; i<vars->nscapp; i++) {
+    bft_printf(_("--isca, iscaXML : %i, %i\n"),i ,vars->XMLnumsca[i]);
+  }
+#endif
+
+}
+
+/*----------------------------------------------------------------------------
+ * Traitement des conditions aux limites pour le charbon
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
+                               const    int *const ncharm,
+                               const    int *const ncharb,
+                               const    int *const nclpch,
+                               const    int *const nfabor,
+                               const    int *const iindef,
+                               const    int *const ientre,
+                               const    int *const iparoi,
+                               const    int *const isymet,
+                               const    int *const isolib,
+                                        int *const itypfb,
+                                        int *const icodcl,
+                                     double *const rcodcl,
+                                        int *const ientat,
+                                        int *const iqimp,
+                                     double *const qimpat,
+                                     double *const timpat,
+                                        int *const ientcp,
+                                     double *const qimpcp,
+                                     double *const timpcp,
+                                     double *const distch,
+                                        int *const icalke,
+                                     double *const dh,
+                                     double *const xintur,
+                                        int *const izfppp)
+{
+  int iphas =0;
+  int ifbr;
+  int ivar;
+  int izone, icharb, isca, ith_zone, zones, ifac, zone_nbr;
+  int k;
+  int n;
+  char *choice = NULL;
+  char *label = NULL;
+  char *nature = NULL;
+  char *description = NULL;
+  int *faces_list = NULL;
+  int faces = 0;
+
+  zones = cs_gui_boundary_zones_number();
+
+  /* First iteration only : memory allocation */
+
+  if (boundaries == NULL){
+
+    BFT_MALLOC(boundaries,            1,          cs_boundary_t);
+    BFT_MALLOC(boundaries->label,     zones,      char*        );
+    BFT_MALLOC(boundaries->nature,    zones,      char*        );
+    BFT_MALLOC(boundaries->type_code, vars->nvar, int*         );
+    BFT_MALLOC(boundaries->values,    vars->nvar, cs_val_t*    );
+    BFT_MALLOC(boundaries->ientat,    zones,      int          );
+    BFT_MALLOC(boundaries->iqimp,     zones,      int          );
+    BFT_MALLOC(boundaries->qimpat,    zones,      double       );
+    BFT_MALLOC(boundaries->timpat,    zones,      double       );
+    BFT_MALLOC(boundaries->ientcp,    zones,      int          );
+    BFT_MALLOC(boundaries->icalke,    zones,      int          );
+    BFT_MALLOC(boundaries->dh,        zones,      double       );
+    BFT_MALLOC(boundaries->xintur,    zones,      double       );
+
+    BFT_MALLOC(boundaries->qimpcp,    zones,      double*      );
+    BFT_MALLOC(boundaries->timpcp,    zones,      double*      );
+    BFT_MALLOC(boundaries->distch,    zones,      cs_coal_ashes_ratio_t*);
+
+    for (izone = 0; izone < zones; izone++) {
+      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double);
+      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double);
+      BFT_MALLOC(boundaries->distch[izone], *ncharb, cs_coal_ashes_ratio_t);
+
+      for (icharb = 0; icharb < *ncharb; icharb++) {
+        BFT_MALLOC((boundaries->distch[izone][icharb]).ratio,
+                   nclpch[icharb],
+                   double);
+      }
+    }
+
+    for (ivar = 0; ivar < vars->nvar; ivar++) {
+      n = vars->rtp_nbr[ivar];
+      BFT_MALLOC(boundaries->type_code[n], zones, int);
+      BFT_MALLOC(boundaries->values[n], zones, cs_val_t);
+    }
+
+    for (izone = 0; izone < zones; izone++) {
+      boundaries->iqimp[izone]  = 0;
+      boundaries->ientat[izone] = 0;
+      boundaries->ientcp[izone] = 0;
+      boundaries->dh[izone]     = 0;
+      boundaries->xintur[izone] = 0;
+      boundaries->icalke[izone] = 0;
+      boundaries->qimpat[izone] = 0;
+      boundaries->timpat[izone] = 0;
+
+      for (icharb = 0; icharb < *ncharb; icharb++) {
+        boundaries->qimpcp[izone][icharb] = 0;
+        boundaries->timpcp[izone][icharb] = 0;
+
+        for (k = 0; k < nclpch[icharb]; k++) {
+          (boundaries->distch[izone][icharb]).ratio[k] = 0;
+        }
+
+      }
+
+    }
+
+    /* Initialization of boundary->type_code and boundary->values */
+
+    for (ivar = 0; ivar < vars->nvar; ivar++) {
+      for (izone = 0; izone < zones; izone++) {
+        boundaries->type_code[ivar][izone] = -1;
+        boundaries->values[ivar][izone].val1 = 1.e30;
+        boundaries->values[ivar][izone].val2 = 1.e30;
+        boundaries->values[ivar][izone].val3 = 0.;
+      }
+    }
+
+    for (izone = 0; izone < zones; izone++) {
+
+   /* nature, label of the ith initialization zone */
+
+      ith_zone = izone + 1;
+      nature = cs_gui_boundary_zone_nature(ith_zone);
+      label = cs_gui_boundary_zone_label(ith_zone);
+
+      BFT_MALLOC(boundaries->label[izone], strlen(label)+1, char);
+      strcpy(boundaries->label[izone], label);
+
+      BFT_MALLOC(boundaries->nature[izone], strlen(nature)+1, char);
+      strcpy(boundaries->nature[izone], nature);
+
+      if (cs_gui_strcmp(nature, "inlet")) {
+
+        /* INLET: VELOCITY */
+        choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
+
+        if (cs_gui_strcmp(choice, "coal_flow")) {
+
+          boundaries->ientcp[izone] = 1;
+          boundaries->iqimp[izone]  = 1;
+          cs_gui_coal_boundary_coalflow(izone, ncharb, nclpch);
+          cs_gui_boundary_flow(label, izone);
+
+        } else if (cs_gui_strcmp(choice, "flow1")) {
+
+          boundaries->ientat[izone] = 1;
+          boundaries->iqimp[izone]  = 1;
+          cs_gui_boundary_flow(label, izone);
+          /* TODO : remplir la direction normale a la face */
+          /* boundaries->values[1][izone].val1 = directionU ; */
+          /* boundaries->values[2][izone].val1 = directionv ; */
+          /* boundaries->values[3][izone].val1 = directionw ; */
+        }
+
+        BFT_FREE(choice);
+
+        /* INLET: TURBULENCE */
+        choice = cs_gui_boundary_choice("inlet", label, "turbulence");
+        cs_gui_boundary_turbulence(choice, izone);
+        BFT_FREE(choice);
+
+        /* INLET: USER SCALARS */
+        for (isca=0 ; isca < vars->nscaus ; isca++) {
+          cs_gui_boundary_value_scalar("inlet", izone, isca);
+        }
+
+      } else if (cs_gui_strcmp(nature, "wall")) {
+
+        /* WALL: VELOCITY */
+        choice = cs_gui_boundary_choice("wall", label, "velocity_pressure");
+
+        if (cs_gui_strcmp(choice, "on")) {
+          for (ivar = 1; ivar < 4; ivar++)
+            cs_gui_boundary_dirichlet("wall", label, izone, ivar);
+        }
+        BFT_FREE(choice);
+
+        /* WALL: USER SCALARS */
+        for (isca = 0; isca < vars->nscaus; isca++) {
+          cs_gui_boundary_value_scalar("wall", izone, isca);
+        }
+
+      } else if (cs_gui_strcmp(nature, "outlet")) {
+
+        /* OUTLET: USER SCALARS */
+        for (isca=0; isca < vars->nscaus ; isca++) {
+          cs_gui_boundary_value_scalar("outlet", izone, isca);
+        }
+      } /* if (cs_gui_strcmp(nature, "outlet")) */
+
+      BFT_FREE(nature);
+      BFT_FREE(label);
+
+    } /* for izones */
+
+  }  /* if (boundaries == NULL)*/
+
+  /* A chaque iteration, boucle sur les faces de bord :
+     on remplit itypfb, rcodcl et icodcl a partir des tableaux
+     de la structures conditions.limites definie
+     dans la premiere partie de la fonction  */
+
+  /* rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    ith_zone = izone + 1;
+    zone_nbr = cs_gui_boundary_zone_number(ith_zone);
+    if (zone_nbr > *nozppm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("zone's label number %i is greater than %i the maximum allowed \n"),
+                 zone_nbr, *nozppm);
+
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+
+    /* list of faces building */
+    BFT_MALLOC(faces_list, *nfabor, int);
+    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                          description,
+                          &faces,
+                          faces_list);
+
+    BFT_FREE(description);
+
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+
+  /* Remettre a jour tous les tableaux dependant des zones (ICALKE, IQIMP ...)
+     des zones car ils sont écrasés à chaque pas de temps dans PPPRCL  */
+
+      iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
+      ientat[zone_nbr-1] = boundaries->ientat[izone];
+      ientcp[zone_nbr-1] = boundaries->ientcp[izone];
+      dh[zone_nbr-1]     = boundaries->dh[izone];
+      xintur[zone_nbr-1] = boundaries->xintur[izone];
+      icalke[zone_nbr-1] = boundaries->icalke[izone];
+      qimpat[zone_nbr-1] = boundaries->qimpat[izone];
+      timpat[zone_nbr-1] = boundaries->timpat[izone];
+
+      for (icharb = 0; icharb < *ncharb; icharb++) {
+        qimpcp[icharb * (*nozppm) +zone_nbr-1] = boundaries->qimpcp[izone][icharb];
+        timpcp[icharb * (*nozppm) +zone_nbr-1] = boundaries->timpcp[izone][icharb];
+
+        for (k = 0; k < nclpch[icharb]; k++) {
+          distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
+          = (boundaries->distch[izone][icharb]).ratio[k];
+        }
+      }
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *ientre;
+        for (ivar = 0; ivar < vars->nvar; ivar++) {
+          rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+          = boundaries->values[ivar][izone].val1 ;
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *iparoi;
+      }
+
+      for (ivar = 0; ivar < vars->nvar; ivar++) {
+
+        switch (boundaries->type_code[ivar][izone]) {
+
+          case NEUMANN :
+
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
+              icodcl[ivar *(*nfabor) + ifbr ] = 3 ;
+              rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val3 ;
+            }
+          break;
+
+          case DIRICHLET :
+
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
+              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1 ;
+            }
+          break;
+
+          case COEF_ECHANGE :
+
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
+              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1 ;
+              rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val2 ;
+            }
+          break;
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *isolib;
+      }
+
+      for (ivar = vars->nvar - vars->nscaus - vars->nscapp;
+           ivar < vars->nvar;
+           ivar++) {
+
+        switch (boundaries->type_code[ivar][izone]) {
+
+          case DIRICHLET :
+
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
+              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1 ;
+            }
+          break;
+
+        }
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *isymet;
+      }
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[iphas *(*nfabor) +ifbr] = *iindef;
+      }
+
+    } else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+
+    BFT_FREE(faces_list);
+  } /*  for izone */
+
+#if _XML_DEBUG_
+  bft_printf(_("==>UICPCL\n"));
+  bft_printf(_("--boundary zones number: %i\n"), zones);
+  for (izone=0 ; izone < zones ; izone++) {
+    bft_printf(_("---zone %i label: %s\n"), izone, boundaries->label[izone]);
+    bft_printf(_("---zone %i nature: %s\n"), izone, boundaries->nature[izone]);
+    bft_printf(_("---zone %i number of faces: %i\n"), izone, faces);
+
+    bft_printf(_("----localization: "));
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+    bft_printf(_("%s "), description);
+    BFT_FREE(description);
+    bft_printf(_("\n"));
+    bft_printf(_("---zone %i rate of flow: %i\n"), izone, boundaries->iqimp[izone]);
+    bft_printf(_("---zone %i air inlet: %i\n"), izone, boundaries->ientat[izone]);
+    bft_printf(_("---zone %i coal inlet: %i\n"), izone, boundaries->ientcp[izone]);
+    bft_printf(_("---zone %i turbulent choice: %i\n"), izone, boundaries->icalke[izone]);
+    bft_printf(_("---zone %i hydraulic diameter: %f\n"), izone, boundaries->dh[izone]);
+    bft_printf(_("---zone %i turbulent intensity: %f\n"), izone, boundaries->xintur[izone]);
+    bft_printf(_("---zone %i air rate of flow: %f\n"), izone, boundaries->qimpat[izone]);
+    bft_printf(_("---zone %i air temperature: %f\n"), izone, boundaries->timpat[izone]);
+
+    for (icharb = 0; icharb < *ncharb; icharb++) {
+      bft_printf(_("---zone %i coal %i rate of flow: %f\n"),
+                 izone, icharb, boundaries->qimpcp[izone][icharb]);
+      bft_printf(_("---zone %i coal %i temperature: %f\n"),
+                 izone, icharb, boundaries->timpcp[izone][icharb]);
+
+      for (k = 0; k < nclpch[icharb]; k++) {
+        bft_printf(_("---zone %i coal %i class %i ratio: %f\n"),
+                   izone, icharb, k,
+                   (boundaries->distch[izone][icharb]).ratio[k]);
+      }
+    }
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Boundary conditions input verification
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICLVE
+ * *****************
+ *
+ * INTEGER          NFABOR  --> number of boundary faces
+ * INTEGER          IINDEF  --> type of boundary: not defined
+ * INTEGER          IENTRE  --> type of boundary: inlet
+ * INTEGER          IPAROI  --> type of boundary: smooth wall
+ * INTEGER          IPARUG  --> type of boundary: rough wall
+ * INTEGER          ISYMET  --> type of boundary: symetry
+ * INTEGER          ISOLIB  --> type of boundary: outlet
+ * INTEGER          ITYPFB  --> type of boundary for each face
+ * INTEGER          IZFPPP  --> zone number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
+                               const int *const iindef,
+                               const int *const ientre,
+                               const int *const iparoi,
+                               const int *const iparug,
+                               const int *const isymet,
+                               const int *const isolib,
+                                     int *const itypfb,
+                                     int *const izfppp)
+{
+  int ifbr, ifac;
+  int izone, zones, zone_nbr;
+  int inature, inature2;
+  char *label = NULL;
+  int *faces_list = NULL;
+  int faces = 0, iphas = 0;
+  char *description = NULL;
+
+  zones   = cs_gui_boundary_zones_number();
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    zone_nbr =  cs_gui_boundary_zone_number(izone + 1);
+
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+
+    /* list of faces building */
+    BFT_MALLOC(faces_list, *nfabor, int);
+
+    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                          description,
+                          &faces,
+                          faces_list);
+
+    BFT_FREE(description);
+
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+
+      inature = *ientre;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+
+      inature = *iparoi;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+
+      inature = *isolib;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
+
+      inature = *isymet;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+
+      inature = *iindef;
+
+    } else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+
+    for (ifac = 0; ifac < faces; ifac++) {
+      ifbr = faces_list[ifac]-1;
+
+      if (izfppp[ifbr] != zone_nbr)
+        bft_error(__FILE__, __LINE__, 0,
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same id number            \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone number:             %i                         \n"
+          "@    USER SUBROUTINE zone number: %i                         \n"
+          "@                                                            \n"
+          "@    The id number given in the GUI cannot be modified       \n"
+          "@    in the user subroutine (fortran array IZFPPP).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          label, zone_nbr, izfppp[ifbr]);
+
+        /* modif temporaire tant que iparoi n'est pas defini dans l'IHM
+           if (itypfb[iphas *(*nfabor) +ifbr] != inature) */
+      inature2 = itypfb[iphas *(*nfabor) +ifbr];
+      if (inature2 == *iparug ) inature2 = *iparoi;
+      if (inature2 != inature)
+        bft_error(__FILE__, __LINE__, 0,
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same nature               \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone nature:             %s                         \n"
+          "@    USER SUBROUTINE ITYPFB:      %i                         \n"
+          "@                                                            \n"
+          "@    The nature given in the GUI cannot be modified          \n"
+          "@    in the user subroutine (fortran array ITYPFB).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          boundaries->label[izone], boundaries->nature[izone], inature2);
+    }
+
+    BFT_FREE(description);
+    BFT_FREE(faces_list);
+
+  } /*  for izone */
+
+}
+
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_coal_boundary_coalflow(const int         izone,
+                                   const int  *const ncharb,
+                                   const int  *const nclpch)
+{
+  int    icharb;
+  int    iratio;
+  char  *path1 = NULL;
+  char  *path2 = NULL;
+  char  *path3 = NULL;
+  char  *path4 = NULL;
+  char  *path5 = NULL;
+  char  *coalname = NULL;
+  char  *classname = NULL;
+  double value;
+
+  path1 = cs_xpath_init_path();
+  cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path1, "label", boundaries->label[izone]);
+  cs_xpath_add_elements(&path1, 2, "velocity_pressure", "coal_flow");
+
+  BFT_MALLOC(coalname,  4 + 2 + 1, char);
+  BFT_MALLOC(classname, 5 + 2 + 1, char);
+
+  for (icharb = 0; icharb < *ncharb; icharb++) {
+
+    BFT_MALLOC(path2, strlen(path1) + 1, char);
+    strcpy(path2, path1);
+
+    sprintf(coalname, "%.4s%2.2i", "coal", icharb+1);
+    cs_xpath_add_test_attribute(&path2, "name", coalname);
+
+    BFT_MALLOC(path3, strlen(path2) + 1, char);
+    strcpy(path3, path2);
+
+    BFT_MALLOC(path4, strlen(path2) + 1, char);
+    strcpy(path4, path2);
+
+    /* flow rate */
+
+    cs_xpath_add_element(&path3, "flow1");
+    cs_xpath_add_function_text(&path3);
+    if (cs_gui_get_double(path3, &value)) {
+      boundaries->qimpcp[izone][icharb] = value;
+    }
+
+    /* temperature */
+
+    cs_xpath_add_element(&path4, "temperature");
+    cs_xpath_add_function_text(&path4);
+    if (cs_gui_get_double(path4, &value)) {
+      boundaries->timpcp[izone][icharb] = value;
+    }
+
+    /* ratio */
+
+    for (iratio=0; iratio < nclpch[icharb]; iratio++) {
+
+      BFT_MALLOC(path5, strlen(path2) + 1, char);
+      strcpy(path5, path2);
+
+      cs_xpath_add_element(&path5, "ratio");
+      sprintf(classname, "%.5s%2.2i", "class", iratio+1);
+      cs_xpath_add_test_attribute(&path5, "name", classname);
+      cs_xpath_add_function_text(&path5);
+
+      if (cs_gui_get_double(path5, &value)) {
+        (boundaries->distch[izone][icharb]).ratio[iratio] = value;
+      }
+
+      BFT_FREE(path5);
+
+    }
+    BFT_FREE(path2);
+    BFT_FREE(path3);
+    BFT_FREE(path4);
+  }
+
+  BFT_FREE(path1);
+  BFT_FREE(coalname);
+  BFT_FREE(classname);
+}
+
+
+/*============================================================================
+ * Private functions
+ *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Copy a variable name to private variable names array
+ *
+ * parameters:
+ *   varname        -->  name or label of the variable/scalar/property
+ *   ipp            -->  index from the fortran array associated to varname
+ *----------------------------------------------------------------------------*/
+
+
+static void _cs_gui_copy_varname(const char *varname, int ipp)
+{
+  size_t  l;
+
+  if (ipp < 1 || ipp > _cs_gui_last_var)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Variable index %d out of bounds (1 to %d)"),
+              ipp, _cs_gui_last_var);
+
+  l = strlen(varname);
+
+  if (_cs_gui_var_name[ipp-1] == NULL)
+    BFT_MALLOC(_cs_gui_var_name[ipp-1], l + 1, char);
+
+  else if (strlen(_cs_gui_var_name[ipp-1]) != l)
+    BFT_REALLOC(_cs_gui_var_name[ipp-1], l + 1, char);
+
+  strcpy(_cs_gui_var_name[ipp-1], varname);
+}
+
+/*----------------------------------------------------------------------------
+ * Turbulence model parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameters
+ *   keyword             <--   turbulence model parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_advanced_options_turbulence(const char *const param,
+                                               int *const keyword)
+{
+  char *path = NULL;
+  int  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
+
+  if (cs_gui_strcmp("gravity_terms", param)) {
+
+    cs_xpath_add_attribute(&path, "status");
+    if (cs_gui_get_status(path, &result)) *keyword = result;
+
+  } else if (cs_gui_strcmp("scale_model", param)) {
+
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_int(path, &result)) *keyword = result;
+
+  } else
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s \n"), path);
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the user thermal scalar indicator.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_thermal_scalar(void)
+{
+  char *model_name = NULL;
+  int   test;
+
+  model_name = cs_gui_get_thermophysical_model("thermal_scalar");
+
+  if (cs_gui_strcmp(model_name, "off"))
+    test = 0;
+  else {
+    if (cs_gui_strcmp(model_name, "enthalpy"))
+      test =  2 ;
+    else if (cs_gui_strcmp(model_name, "temperature_kelvin"))
+      test =  1 ;
+    else if (cs_gui_strcmp(model_name, "temperature_celsius"))
+      test = -1 ;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid thermal model: %s\n"), model_name);
+    }
+
+  BFT_FREE(model_name);
+
+  return test;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the label of user thermal scalar indicator.
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_get_thermal_scalar_label(void)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_test_attribute(&path, "type", "thermal");
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne  le nombre de zones d'initialisation
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_volumic_zones_number(void)
+{
+  int zones = 0;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "solution_domain",
+                        "volumic_conditions",
+                        "zone");
+  zones = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return zones;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le label des variables situees dans
+ *  les sous-balises de THERMOPHYSICAL
+ *----------------------------------------------------------------------------*/
+
+
+char *cs_gui_variable_label
+(
+  const char *const variable
+)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable);
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * La fonction retourne 1 si la valeur numero i  de la variable existe
+ *                      0 sinon
+ * La valeur est stockee dans value
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_variable_value(const char   *const variable_type,
+                           const char   *const value_type,
+                                 double *const value)
+{
+  char  *path = NULL;
+  double result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable_type);
+  cs_xpath_add_element(&path, value_type);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * La fonction retourne le numero de la sonde situe dans
+ *  la balise "probe_recording"
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_variable_probe_name ( const char *const variable,
+                                       int         num_probe)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   intvalue;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s \n"), path);
+
+  intvalue = atoi(strvalue);
+
+  BFT_FREE(strvalue);
+  BFT_FREE(path);
+
+  return intvalue;
+}
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a variable.
+ *
+ * parameters:
+ *   label                -->  label of the variable markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of attribute node contained in the
+ *                             child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_variable_attribute(const char *const variable,
+                               const char *const value,
+                                     int  *const keyword)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   result;
+
+  path = cs_xpath_short_path ();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable);
+  cs_xpath_add_element(&path, value);
+
+  if (cs_gui_strcmp(value, "order_scheme")) {
+
+    *keyword = 1;
+    cs_xpath_add_attribute(&path, "choice");
+    choice = cs_gui_get_attribute_value(path);
+
+    if (cs_gui_strcmp(choice, "centered"))
+      *keyword = 1;
+    else if (cs_gui_strcmp(choice, "solu"))
+      *keyword = 0;
+/*    else if (cs_gui_strcmp(choice, "upwind"))
+      *keyword = 0;*/
+    BFT_FREE(choice);
+
+  } else {
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &result)) {
+      *keyword = result;
+
+      if (cs_gui_strcmp(value, "slope_test")) {
+        if (result == 1) *keyword = 0;
+        if (result == 0) *keyword = 1;
+      }
+    }
+  }
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le nombre de sous-balises "probe recording" situees dans la balise
+ * <variable>
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_variable_number_probes ( const char *const variable)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(choice);
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialization choice of the turbulence variables parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameters
+ *   value               <--   initialization choice
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_turbulence_initialization(const char   *const param,
+                                            double *const value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 4,
+                        "thermophysical_models",
+                        "turbulence",
+                        "initialization",
+                        param);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+  BFT_FREE(path);
+}
+
+
+/*----------------------------------------------------------------------------
+ * Return the initialization choice of the turbulence variables.
+ *----------------------------------------------------------------------------*/
+
+
+char *cs_gui_turbulence_initialization_choice(void)
+{
+  char *path = NULL;
+  char *initialization_choice;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "turbulence",
+                        "initialization");
+  cs_xpath_add_attribute(&path, "choice");
+
+  initialization_choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return initialization_choice;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return user scalar number.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_number_user_scalar(void)
+{
+  char *path = NULL;
+  int   nb;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "additional_scalars", "scalar");
+  nb = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return nb;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the activated particular physics scalar number
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_model_scalar_number(const char* model)
+{
+  char *path = NULL;
+  int   nb;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element(&path, "scalar");
+
+  nb = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return nb;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne le nombre de proprietes model pour les physiques particulieres
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_number_model_properties(const char* model)
+{
+  char *path = NULL;
+  int   nb;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element(&path, "property");
+
+  nb = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return nb;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the name of the related scalar if the scalar "num_sca" is a variance
+ *
+ * parameter:
+ *   num_sca           -->  scalar number
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_scalar_variance(const int num_sca)
+{
+  char *path = NULL;
+  char *variance = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, "variance");
+  cs_xpath_add_function_text(&path);
+
+  variance = cs_gui_get_text_value(path);
+
+  BFT_FREE(path);
+
+  return variance;
+}
+
+/*----------------------------------------------------------------------------
+ * Get the text value associated to a child markup from a scalar.
+ *
+ * parameters:
+ *   label                -->  label of the scalar markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of text node contained in the child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_scalar_value(const char   *const label,
+                         const char   *const child,
+                               double *const value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, child);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Donne le coefficient de diffusion  liees aux scalaire utilisateurs :
+ *       La fonction retourne 1 si la valeur existe
+ *                            0 sinon
+ * le resultat est stocke dans value
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_scalar_diffusion_value(const int           num_sca,
+                                         double *const value)
+{
+  char  *path = NULL;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", "diffusion_coefficient");
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *value = result;
+
+  BFT_FREE(path);
+}
+
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a scalar.
+ *
+ * parameters:
+ *   label                -->  label of the scalar markup
+ *   child                -->  name of the child markup
+ *   value               <--   value of attribute node contained in the
+ *                             child markup
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_scalar_attribute(const char *const label,
+                             const char *const child,
+                                   int  *const keyword)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, child);
+
+  if (cs_gui_strcmp(child, "order_scheme")) {
+
+    cs_xpath_add_attribute(&path, "choice");
+    choice = cs_gui_get_attribute_value(path);
+
+    if (cs_gui_strcmp(choice, "centered"))
+      *keyword = 1;
+    else if (cs_gui_strcmp(choice, "solu"))
+      *keyword = 0;
+ /*   else if (cs_gui_strcmp(choice, "upwind"))
+      *keyword = 0;*/
+    BFT_FREE(choice);
+
+  } else {
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &result)) {
+      *keyword = result;
+
+      if (cs_gui_strcmp(child, "slope_test")) {
+        if (result == 1) *keyword = 0;
+        if (result == 0) *keyword = 1;
+      }
+    }
+  }
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Nombre de sous-balise "probe_recording" pour les scalaires utilisateurs
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_scalar_number_probes(const int scalar_num)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_element_num(&path, "scalar", scalar_num);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne le numero de la sonde situe dans la sous-balise "probe_recording"
+ *  numero num_probe
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_scalar_probe_name(const int scalar_num,
+                             const int num_probe)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_element_num(&path, "scalar", scalar_num);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return the label attribute of scalars.
+ *
+ * parameters:
+ *   markup               -->  parent markup of the scalar
+ *   scalar_num          <--   number of the searching scalar
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_scalar_label(const char *const markup,
+                          const int         scalar_num)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, markup);
+  cs_xpath_add_element_num(&path, "scalar", scalar_num);
+  cs_xpath_add_attribute(&path, "label");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return strvalue;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Donne les valeurs liees aux scalaire model : min, max ...
+ *       La fonction retourne 1 si la valeur existe
+ *                            0 sinon
+ * le resultat est stocke dans value
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_model_scalar_value
+(
+ const char *const              model ,       /* modele */
+ const int                      num_sca,       /* numero du scalaire */
+ const char *const              keyword,
+ double  *const                 value         /* valeur de la variable */
+)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, keyword);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path,&result))
+    *value = result;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Nombre de sous-balise "probe_recording" pour les scalaires model
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_model_scalar_number_probes
+(
+ const char* const model,                /* Type de modele */
+ const int num_sca                      /* numero du scalaire */
+)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Nombre de sous-balise "probe_recording" pour les scalaires model
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_model_property_number_probes
+(
+ const char* const model,                /* Type de modele */
+ const int num_sca                      /* numero du scalaire */
+)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "property", num_sca);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne l'attribut status des sous-balises des scalaires model
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_model_scalar_output_status
+(
+ const char *const                       model,        /*  modele */
+ const int                               num_sca,        /* numero du scalaire */
+ const char *const                       value_type,        /* Type de valeur */
+       int                        *const keyword
+)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, value_type);
+
+  if (cs_gui_strcmp(value_type, "order_scheme")) {
+
+    cs_xpath_add_attribute(&path, "choice");
+    choice = cs_gui_get_attribute_value(path);
+
+    if (cs_gui_strcmp(choice, "centered"))
+      *keyword = 1;
+    else if (cs_gui_strcmp(choice, "solu"))
+      *keyword = 0;
+/*    else if (cs_gui_strcmp(choice, "upwind"))
+      *keyword = 0;*/
+    BFT_FREE(choice);
+
+  } else {
+
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &result)) {
+      *keyword = result;
+
+      if (cs_gui_strcmp(value_type, "slope_test")) {
+        if (result == 1) *keyword = 0;
+        if (result == 0) *keyword = 1;
+      }
+    }
+  }
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne l'attribut status des sous-balises des proprietes physiques model
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_model_property_output_status
+(
+ const char* const                        model,        /*  modele */
+ const int                               num_pro,        /* numero du scalaire */
+ const char *const                       value_type,        /* Type de valeur */
+       int                        *const keyword
+)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "property", num_pro);
+  cs_xpath_add_element(&path, value_type);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *keyword = result;
+  else
+    *keyword = 1;
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le numero de la sonde situe dans la sous-balise "probe_recording"
+ *  numero num_probe pour les scalaires model
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_model_scalar_probe_name
+(
+ const char *  model,               /* Type de modele */
+ const int    num_sca,
+ const int    num_probe
+)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+/* Construction de la requete */
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "scalar", num_sca);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+/* Evaluation de la requete */
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne le numero de la sonde situe dans la sous-balise "probe_recording"
+ *  numero num_probe pour les proprietes physiques model
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_model_property_probe_name
+(
+ const char *  model,               /* Type de modele */
+ const int    num_prop,
+ const int    num_probe
+)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+/* Construction de la requete */
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "property", num_prop);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+/* Evaluation de la requete */
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le label des propriétés model
+ *----------------------------------------------------------------------------*/
+
+
+char *cs_gui_get_model_property_label
+(
+ const char * const model,                /* modele */
+ const int num_prop                        /* numero du scalaire */
+)
+{
+  char *path = NULL;
+  char *label_name = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "property",num_prop);
+  cs_xpath_add_attribute(&path, "label");
+
+/* Evaluation de la requete */
+  label_name = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label_name;
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify integer numerical parameters.
+ *
+ * parameters:
+ *   param               -->  label of the numerical parameter
+ *   keyword            <-->  value of the numerical parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_numerical_int_parameters(const char *const param,
+                                           int  *const keyword)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "numerical_parameters");
+  cs_xpath_add_element(&path, param);
+
+  if (cs_gui_strcmp(param, "gradient_reconstruction")){
+
+    cs_xpath_add_attribute(&path, "choice");
+    choice = cs_gui_get_attribute_value(path);
+    if (choice) *keyword = atoi(choice);
+    BFT_FREE(choice);
+
+  } else {
+
+    cs_xpath_add_attribute(&path, "status");
+    if (cs_gui_get_status(path, &result)) *keyword = result;
+
+  }
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify double numerical parameters.
+ *
+ * parameters:
+ *   param               -->  label of the numerical parameter
+ *   keyword            <-->  value of the numerical parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_numerical_double_parameters(const char   *const param,
+                                              double *const keyword)
+{
+  char  *path = NULL;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "numerical_parameters");
+  cs_xpath_add_element(&path, param);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *keyword = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the status of steady management.
+ *
+ * parameter:
+ *   keyword         <-->  thermophysical model
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_get_steady_status(int  *const keyword)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "steady_management");
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *keyword = result;
+  else
+    *keyword = 1;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return marameters for iale method
+ *
+ * parameters:
+ *   param               -->  iale parameter
+ *   keyword            <-->  new value of the iale parameter
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_iale_parameter(const char   *const param,
+                             double *const keyword)
+{
+  char   *path   = NULL;
+  char   *type = NULL;
+  double  result = 0.0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "ale_method", param);
+
+  if (cs_gui_strcmp(param,"mesh_viscosity") ){
+
+    cs_xpath_add_attribute(&path, "type");
+    type = cs_gui_get_attribute_value(path);
+    if(cs_gui_strcmp(type, "isotrop"))
+      *keyword = 0;
+    else if (cs_gui_strcmp(type, "orthotrop"))
+      *keyword = 1;
+    else
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  } else {
+
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_double(path, &result)) *keyword = result;
+
+  }
+  BFT_FREE(type);
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return  parameters for steady management.
+ *
+ * parameter:
+ *   param            -->  steady parameter
+ *   keyword         <-->  new value for the steady parameter
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_steady_parameters(const char   *const param,
+                               double *const keyword)
+{
+  char   *path   = NULL;
+  double  result = 0.0;
+  int     status = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "steady_management", param);
+
+  if (cs_gui_strcmp(param,"zero_iteration")){
+
+    cs_xpath_add_attribute(&path, "status");
+    if(cs_gui_get_status(path, &status)) *keyword = status;
+
+  } else {
+
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_double(path, &result)) *keyword = result;
+
+  }
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify time parameters.
+ *
+ * parameters:
+ *   param               -->  time parameter
+ *   keyword            <-->  new value of the time parameter
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_time_parameters(const char   *const param,
+                             double *const keyword)
+{
+  char   *path   = NULL;
+  double  result = 0.0;
+  int     status = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "time_parameters", param);
+
+  if (cs_gui_strcmp(param,"zero_time_step") ||
+      cs_gui_strcmp(param,"thermal_time_step")) {
+
+    cs_xpath_add_attribute(&path, "status");
+    if(cs_gui_get_status(path, &status)) *keyword = status;
+
+  } else {
+
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_double(path, &result)) *keyword = result;
+
+  }
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify restart parameters.
+ *
+ * parameters:
+ *   param               -->  restart parameter
+ *   keyword            <-->  new value of the restart parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_restart_parameters_status(const char *const param,
+                                             int *const keyword)
+{
+  int   result;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "calcul_management", "start_restart", param);
+  cs_xpath_add_attribute(&path, "status");
+
+  if(cs_gui_get_status(path, &result))
+    *keyword = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify restart files format.
+ *
+ * parameters:
+ *   param               -->  restart file name
+ *   keyword            <-->  new value of the restart file format
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_restart_parameters_file_format (const char *const param,
+                                                   int *const format)
+{
+  char *path = NULL;
+  char *result = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "calcul_management", "start_restart", param);
+  cs_xpath_add_attribute(&path, "format");
+
+  result = cs_gui_get_attribute_value(path);
+
+  if (result != NULL) {
+    if (cs_gui_strcmp(result, "binary"))
+      *format = 0;
+    else if (cs_gui_strcmp(result, "ascii"))
+      *format = 1;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Restart file format unknown: %s.\nXpath: %s\n"),
+                result, path);
+
+  }
+
+  BFT_FREE(result);
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Modify gravity parameters.
+ *
+ * parameters:
+ *   param               -->  gravity parameter (GX, GY, GZ)
+ *   keyword            <-->  new value of the gravity parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_gravity_value(const char   *const param,
+                                double *const value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "physical_properties", "gravity", param);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Get initial value from property markup.
+ *
+ * parameters:
+ *   property_name       -->  name of the property
+ *   value              <--   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void  cs_gui_properties_value(const char   *const property_name,
+                                    double *const value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Nombre de sous-balise "probe_recording" pour les proprietes physiques
+ *  Retourne le nombre de sondes pour la proprietes property_name
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_properties_number_probes(const char *const property_name)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+/*-----------------------------------------------------------------------------
+ * Nombre de sous-balise "probe_recording" pour les moyennes temporelles
+ *  Retourne le nombre de sondes pour la moyenne property_name
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_time_average_number_probes(const char *const property_name)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes ;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "time_average");
+  cs_xpath_add_test_attribute(&path, "label", property_name);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  } else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne les status des sous-balises de proprietes physiques
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_properties_status(const char *const property_name,
+                              const char *const value_type,
+                                    int  *const keyword)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_element(&path, value_type);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *keyword = result;
+  else
+    *keyword = 1;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne les status des sous-balises de moyennes temporelles
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_time_average_status(const char *const property_name,
+                                const char *const value_type,
+                                      int  *const keyword)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "time_average");
+  cs_xpath_add_test_attribute(&path, "label", property_name);
+  cs_xpath_add_element(&path, value_type);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *keyword = result;
+  else
+    *keyword = 1;
+
+  BFT_FREE(path);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le numero de la sonde situe dans la sous-balise "probe_recording"
+ *  numero num_probe pour les scalaires model
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_properties_probe_name(const char *const property_name,
+                                 const int         num_probe)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le numero de la sonde situe dans la sous-balise "probe_recording"
+ *  numero num_probe pour les scalaires model pour les moyenes temporelles
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_time_average_probe_name(const char *const property_name,
+                                 const int         num_probe)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "time_average");
+  cs_xpath_add_test_attribute(&path, "label", property_name);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the label attribute of a property markup.
+ *
+ * parameters:
+ *   property_name        -->  name of the property
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_properties_label(const char *const property_name)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Get the value of the choice attribute from a property markup.
+ * Return 1 if the xpath request has succeeded, 0 otherwise.
+ *
+ * parameters:
+ *   property_name        -->  name of the property
+ *   choice              <--   value of the attribute choice
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_properties_choice(const char *const property_name,
+                                   int  *      choice)
+{
+  char *path = NULL;
+  char *buff = NULL;
+  int   iok;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_attribute(&path, "choice");
+
+  buff = cs_gui_get_attribute_value(path);
+
+  if (buff == NULL)
+    iok = 0;
+
+  else {
+    iok = 1;
+
+    if (cs_gui_strcmp(buff, "variable"))
+      *choice = 1;
+    else if (cs_gui_strcmp(buff, "constant"))
+      *choice = 0;
+    else
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+  }
+
+  BFT_FREE(buff);
+  BFT_FREE(path);
+
+  return iok;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne la valeur de l'attribut choice liee aux proprietes
+ *   des scalaires utilisateurs
+ *----------------------------------------------------------------------------*/
+
+
+int cs_gui_scalar_properties_choice(const int         scalar_num,
+                                    const char *const property_name,
+                                          int  *const choice)
+{
+  char *path = NULL;
+  char *buff = NULL;
+  int   ichoice;
+
+/* Construction de la requete */
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "additional_scalars");
+  cs_xpath_add_element_num(&path, "scalar", scalar_num);
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_attribute(&path, "choice");
+
+/* Evaluation de la requete */
+  buff = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  /* Tests sur le statut */
+  if (buff == NULL)
+    ichoice = 0;
+
+  else {
+    ichoice = 1;
+
+    if (cs_gui_strcmp(buff, "variable"))
+      *choice = 1;
+    else if (cs_gui_strcmp(buff, "constant"))
+      *choice = 0;
+    else
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+  }
+
+  BFT_FREE(buff);
+
+  return ichoice;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne le status de la balise ALE_method
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_get_ale_status(int  *const keyword)
+{
+  char *path = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "ale_method");
+  cs_xpath_add_attribute(&path, "status");
+
+  if(cs_gui_get_status(path, &result))
+    *keyword = result;
+  else
+    *keyword = 0;
+
+
+  BFT_FREE(path);
+}
+
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne le type de la viscosité de la méthode ALE
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_get_ale_viscosity_type(int  * type)
+{
+  char *path = NULL;
+  char *buff = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "ale_method", "mesh_viscosity");
+  cs_xpath_add_attribute(&path, "type");
+
+  buff = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(buff, "orthotrop"))
+    *type = 1;
+  else if (cs_gui_strcmp(buff, "isotrop"))
+    *type = 0;
+  else
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(buff);
+  BFT_FREE(path);
+}
+
+
+/*============================================================================
+ * Entrees-sorties
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get the output format and options for postprocessing.
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   keyword             <--   output control parameter
+ *   size_key             -->  keyword string size
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_output_choice(const char *const param,
+                                char *const keyword,
+                          const int  *const size_key)
+{
+  char *path = NULL;
+  char *choice = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice != NULL) cs_gui_strcpy_c2f(keyword, choice, *size_key);
+
+  BFT_FREE(choice);
+  BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
+ * Get output control value parameters.
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   keyword             <--   output control parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_output_value(const char *const param,
+                               int  *const keyword)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
+
+  if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
+      cs_gui_strcmp(param, "fluid_domain") ||
+      cs_gui_strcmp(param, "domain_boundary") ||
+      cs_gui_strcmp(param, "syrthes_boundary") ) {
+
+    cs_xpath_add_attribute(&path, "status");
+    if(cs_gui_get_status(path, &result)) *keyword = result;
+
+  }else if (cs_gui_strcmp(param, "postprocessing_mesh_options")){
+    cs_xpath_add_attribute(&path, "choice");
+    choice = cs_gui_get_attribute_value(path);
+    if (choice) *keyword = atoi(choice);
+  } else {
+
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_int(path, &result)) *keyword = result;
+
+  }
+
+  BFT_FREE(choice);
+  BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
+ * Get list of variables or properties or scalar's names for calculation mean
+ *
+ * parameters:
+ *   id           -->  number of mean (imom)
+ *   list         <--  output control parameter
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_mean_names_number( int   const id)
+{
+  char *path = NULL;
+  char *str_id = NULL;
+  int   number = 0;
+
+  BFT_MALLOC(str_id,
+             cs_gui_characters_number(id)+1,
+             char);
+  sprintf(str_id, "%i", id);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
+  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_element(&path, "var_prop");
+  number = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return number;
+
+}
+
+/*----------------------------------------------------------------------------
+ * Get variable or properties or scalar's name for one mean
+ *
+ * parameters:
+ *   id           -->  number of mean (imom)
+ *   nb           -->  number of order in list of var_prop of the mean
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_get_mean_prop( int const id,
+                            int const nb)
+{
+  char *path = NULL;
+  char *name = NULL;
+  char *str_id = NULL;
+
+  BFT_MALLOC(str_id,
+             cs_gui_characters_number(id)+1,
+             char);
+  sprintf(str_id, "%i", id);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
+  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_element_num(&path, "var_prop", nb);
+  cs_xpath_add_attribute(&path, "name");
+
+  name = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+  BFT_FREE(str_id);
+
+  return name;
+}
+
+
+/*----------------------------------------------------------------------------
+ * Get label of mean
+ *
+ * parameters:
+ *   nb           -->  number of order in list of mean
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_get_mean_label( int const nb)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", nb);
+  cs_xpath_add_attribute(&path,"label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Get mean value parameters.
+ *
+ * parameters:
+ *   id              -->  number of mean (imom)
+ *   param           -->  name of the parameter
+ *   keyword         <--   output control parameter
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_get_mean_value(      int   const id,
+                           const char *const param,
+                                 int  *const keyword)
+{
+  char *path = NULL;
+  char *str_id = NULL;
+  int   result = 0;
+
+  BFT_MALLOC(str_id,
+             cs_gui_characters_number(id)+1,
+             char);
+  sprintf(str_id, "%i", id);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
+  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_element(&path, param);
+
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_int(path, &result)) *keyword = result;
+
+  BFT_FREE(path);
+  BFT_FREE(str_id);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the number of time_averages
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_means_number(void)
+{
+  char *path = NULL;
+  int   number = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
+  number = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return number ;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the number of the <probe> markups.
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_probes_number(void)
+{
+  char *path = NULL;
+  int   number = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", "probe");
+  number = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return number ;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return a single coordinate of a monitoring probe
+ *
+ * parameters
+ *   num_probe            -->  number aka name of the monitoring probe
+ *   probe_coord          -->  one coordinate of the monitoring probe
+ *----------------------------------------------------------------------------*/
+
+double cs_gui_probe_coordinate(const int         num_probe,
+                               const char *const probe_coord)
+{
+  char  *path = NULL;
+  char  *str_num_probe = NULL;
+  double result = 0.0;
+
+  assert(num_probe>0);
+
+  BFT_MALLOC(str_num_probe,
+             cs_gui_characters_number(num_probe)+1,
+             char);
+  sprintf(str_num_probe, "%i", num_probe);
+
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", "probe");
+  cs_xpath_add_test_attribute(&path, "name", str_num_probe);
+  cs_xpath_add_element(&path, probe_coord);
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Coordinate %s of the monitoring probe number %i "
+                "not found.\nXpath: %s\n"), probe_coord, num_probe, path);
+
+  BFT_FREE(str_num_probe);
+  BFT_FREE(path);
+
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour les varaibles
+ *  (Vitesse, Pression...)
+ *    le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                  sont desactivees
+ *                  dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_thermophysical_post(const char *const variable,
+                                const int         ipp,
+                                      int  *const ihisvr,
+                                      int  *const ilisvr,
+                                      int  *const ichrvr,
+                                const int  *const nvppmx)
+{
+  int   nb_probes;
+  int   iprob;
+  char *varname = NULL;
+  int   num_probe;
+
+  if (ipp == 1) return;
+
+  cs_gui_variable_attribute(variable,
+                            "postprocessing_recording",
+                            &ichrvr[ipp-1]);
+
+  cs_gui_variable_attribute(variable,
+                            "listing_printing",
+                            &ilisvr[ipp-1]);
+
+  nb_probes = cs_gui_variable_number_probes(variable);
+
+  /* ihisvr[0][ipp - 1] = nb_probes; */
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob =0; iprob < nb_probes; iprob++) {
+      num_probe = cs_gui_variable_probe_name(variable, iprob+1);
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+
+  varname = cs_gui_variable_label(variable);
+  _cs_gui_copy_varname(varname, ipp);
+
+  BFT_FREE(varname);
+}
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour
+ *   les scalaires thermiques et model
+ *    le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                 sont desactivees dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_model_scalar_post
+(
+ const char                       *const model,
+ const int                               num_sca,
+       int                        *const ihisvr,
+       int                        *const ilisvr,
+       int                        *const ichrvr,
+ const int                        *const ipprtp,
+ const int                        *const isca,
+ const int                        *const nvppmx)
+{
+  int ipp;
+  int nb_probes;
+  int iprob;
+  int num_probe;
+
+  ipp = ipprtp[isca[num_sca - 1] -1 ];
+
+  if (ipp == 1) return;
+
+  /* frequence des sorties ensight */
+  cs_gui_model_scalar_output_status(model, vars->XMLnumsca[num_sca - vars->nscaus - 1] + 1,
+                                    "postprocessing_recording",
+                                    &ichrvr[ipp - 1]);
+
+  /* frequence des sorties listing */
+  cs_gui_model_scalar_output_status(model, vars->XMLnumsca[num_sca - vars->nscaus - 1] + 1,
+                                    "listing_printing",
+                                    &ilisvr[ipp - 1]);
+
+
+  /* sondes actives */
+  nb_probes = cs_gui_model_scalar_number_probes(model, vars->XMLnumsca[num_sca - vars->nscaus - 1] + 1);
+
+
+  /*ihisvr[0][ipp - 1] = nb_probes;*/
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob =0; iprob < nb_probes; iprob++) {
+      num_probe = cs_gui_model_scalar_probe_name(model, vars->XMLnumsca[num_sca - vars->nscaus - 1] + 1,  iprob+1);
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+
+  _cs_gui_copy_varname(vars->label[vars->XMLnumsca[num_sca - vars->nscaus - 1] + vars->nscaus],
+                       ipp);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour
+ *   les scalaires thermiques et model
+ *    le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                 sont desactivees dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_model_property_post
+(
+ const char                       *const model,
+ const int                               num_prop,
+       int                        *const ihisvr,
+       int                        *const ilisvr,
+       int                        *const ichrvr,
+ const int                        *const ipppro,
+ const int                        *const ipproc,
+ const int                        *const nvppmx)
+{
+  int ipp;
+  int nb_probes;
+  int iprob;
+  int num_probe;
+  char *varname = NULL;
+
+  ipp = ipppro[ipproc[num_prop - 1] -1 ];
+
+  if (ipp == 1) return;
+
+  /* frequence des sorties ensight */
+  cs_gui_model_property_output_status(model,
+                                      vars->XMLnumpp[num_prop - vars->nprop - 1] + 1,
+                                      "postprocessing_recording",
+                                      &ichrvr[ipp - 1]);
+
+  /* frequence des sorties listing */
+  cs_gui_model_property_output_status(model,
+                                      vars->XMLnumpp[num_prop - vars->nprop - 1] + 1,
+                                      "listing_printing",
+                                      &ilisvr[ipp - 1]);
+
+
+  /* sondes actives */
+  nb_probes = cs_gui_model_property_number_probes(model,
+                                                  vars->XMLnumpp[num_prop - vars->nprop - 1] + 1);
+
+  /*ihisvr[0][ipp - 1] = nb_probes;*/
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob =0; iprob < nb_probes; iprob++){
+      num_probe = cs_gui_model_property_probe_name(model,
+                                                   vars->XMLnumpp[num_prop - vars->nprop - 1] + 1,
+                                                   iprob+1);
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+
+  /* prise en compte du label */
+
+  varname = cs_gui_get_model_property_label(model,
+                                            vars->XMLnumpp[num_prop - vars->nprop - 1] + 1);
+  _cs_gui_copy_varname(varname, ipp);
+
+  BFT_FREE(varname);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour les scalaires
+ *    utilisateurs, le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                 sont desactivees dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_scalar_post(const  int        num_sca,
+                               int *const ihisvr,
+                               int *const ilisvr,
+                               int *const ichrvr,
+                        const  int *const ipprtp,
+                        const  int *const isca,
+                        const  int *const nvppmx)
+{
+  int ipp;
+  int nb_probes;
+  int iprob;
+  int num_probe;
+
+  ipp = ipprtp[isca[num_sca] -1 ];
+
+  if (ipp == 1) return;
+
+  /* frequence des sorties ensight */
+  cs_gui_scalar_attribute(vars->label[num_sca],
+                          "postprocessing_recording",
+                          &ichrvr[ipp - 1]);
+
+  /* frequence des sorties listing */
+  cs_gui_scalar_attribute(vars->label[num_sca],
+                          "listing_printing",
+                          &ilisvr[ipp - 1]);
+
+  /* sondes actives */
+  nb_probes = cs_gui_scalar_number_probes(num_sca+1);
+  /*ihisvr[0][ipp - 1] = nb_probes;*/
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob=0; iprob < nb_probes; iprob++){
+      num_probe = cs_gui_scalar_probe_name(num_sca+1, iprob+1);
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+
+  _cs_gui_copy_varname(vars->label[num_sca], ipp);
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour les proprietes physiques
+ *    le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                 sont desactivees dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_properties_post
+(
+ const char *const property_name,
+ const int         ipp,
+       int  *const ichrvr,
+       int  *const ilisvr,
+       int  *const ihisvr,
+ const int  *const nvppmx)
+{
+  int nb_probes;
+  int iprob;
+  char *varname = NULL;
+  int num_probe;
+
+  if (ipp == 1) return;
+
+  varname = cs_gui_properties_label(property_name);
+  if (varname == NULL) return;
+
+  _cs_gui_copy_varname(varname, ipp);
+  BFT_FREE(varname);
+
+  cs_gui_properties_status(property_name,
+                           "postprocessing_recording",
+                           &ichrvr[ipp - 1]);
+
+  cs_gui_properties_status(property_name,
+                           "listing_printing",
+                           &ilisvr[ipp - 1]);
+
+  nb_probes = cs_gui_properties_number_probes(property_name);
+
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob =0; iprob < nb_probes; iprob++){
+      num_probe = cs_gui_properties_probe_name(property_name,
+                                               iprob+1);
+
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Prise en compte des options de post-traitement pour les moyennes temporelles
+ *    le tableau "globale" est construit dans CSENSO
+ *          globale[num_probe] = num_saturne_probe
+ *                 ou num_saturne_probe est le numero de la sonde dans le code
+ *                 num_probe et num_saturne_probe different lorsque des sondes
+ *                 sont desactivees dans le fichier XML
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_time_average_post
+(
+ const char *const property_name,
+ const int         ipp,
+       int  *const ichrvr,
+       int  *const ilisvr,
+       int  *const ihisvr,
+ const int  *const nvppmx)
+{
+  int nb_probes;
+  int iprob;
+  int num_probe;
+
+  if (ipp == 1) return;
+
+  cs_gui_time_average_status(property_name,
+                             "postprocessing_recording",
+                             &ichrvr[ipp - 1]);
+
+  cs_gui_time_average_status(property_name,
+                             "listing_printing",
+                             &ilisvr[ipp - 1]);
+
+  nb_probes = cs_gui_time_average_number_probes(property_name);
+
+  /*ihisvr[0][ipp - 1] = nb_probes;*/
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob =0; iprob < nb_probes; iprob++){
+      num_probe = cs_gui_time_average_probe_name(property_name,
+                                               iprob+1);
+
+      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+    }
+  }
+  _cs_gui_copy_varname(property_name, ipp);
+
+}
+
+/*-----------------------------------------------------------------------------
+ *  Retourne le numero du scalaire de nom name pour la physique particuliere model
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_model_scalar_number(const  char * const model,
+                                   const  char * const name)
+{
+  int i;
+  int nbsca = 0;
+  char * nametmp = NULL;
+  int numsca;
+
+  nbsca = cs_gui_model_scalar_number(model);
+  numsca = 0;
+
+  for (i = 0; i < nbsca; i++){
+    nametmp = cs_gui_get_model_scalar_name(model, i+1);
+    if (cs_gui_strcmp(name, nametmp)) {
+      numsca = i;
+      BFT_FREE(nametmp);
+      break;
+    }
+    BFT_FREE(nametmp);
+  }
+
+  if (i == nbsca)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid scalar name: %s.\n"), name);
+
+  return numsca;
+}
+
+/*-----------------------------------------------------------------------------
+ *  Retourne le numero de la propriété de nom name pour la physique
+ *  particuliere model
+ *----------------------------------------------------------------------------*/
+
+int cs_gui_get_model_property_number
+(
+ const  char * const model,
+ const  char * const name
+)
+{
+  int i;
+  int nbpp = 0;
+  char * nametmp = NULL;
+  int numpp;
+
+  nbpp = cs_gui_get_number_model_properties(model);
+  numpp = 0;
+
+  for (i = 0; i < nbpp; i++){
+    nametmp = cs_gui_get_model_property_name(model, i + 1);
+    if (cs_gui_strcmp(name, nametmp)) {
+      numpp = i;
+      BFT_FREE(nametmp);
+      break;
+    }
+    BFT_FREE(nametmp);
+  }
+
+  if (i == nbpp)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid property name: %s.\n"), name);
+
+  return numpp;
+}
+
+
+
+/*-----------------------------------------------------------------------------
+ *  Indique la valeur de l'attribut name pour un numero de scalaire et une
+ *  physique particuliere donnee
+ *----------------------------------------------------------------------------*/
+
+char* cs_gui_get_model_scalar_name
+(
+ const char * const model,
+ const int scalar_num
+)
+
+{
+  char * path = NULL;
+  char * name_scalar = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "scalar", scalar_num);
+  cs_xpath_add_attribute(&path, "name");
+
+  name_scalar = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return name_scalar;
+}
+
+
+/*-----------------------------------------------------------------------------
+ *  Indique la valeur de l'attribut name pour un numero de proriété et une
+ *  physique particuliere donnee
+ *----------------------------------------------------------------------------*/
+
+char* cs_gui_get_model_property_name
+(
+ const char * const model,
+ const int pp_num
+)
+{
+  char * path = NULL;
+  char * name_pp = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, model);
+  cs_xpath_add_element_num(&path, "property", pp_num);
+  cs_xpath_add_attribute(&path, "name");
+
+  name_pp = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return name_pp;
+}
+
+
+/*----------------------------------------------------------------------------
+ * Get thermal user scalar number if it is exist.
+ *
+ * parameters:
+ *   iscalt               <--  thermal scalar number order
+ *   iscsth               <--  nature of the thermal scalar (C, K, J/kg)
+ *----------------------------------------------------------------------------*/
+
+
+void cs_gui_thermal_scalar_number(int *const iscalt,
+                                  int *const iscsth)
+{
+  int ind_thermal;
+  int i, index, size;
+  int iphas = 0;
+  char *path = NULL;
+  char **name = NULL;
+
+  ind_thermal = cs_gui_thermal_scalar();
+
+  if (ind_thermal) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "additional_scalars", "/@type");
+    name = cs_gui_get_attribute_values(path, &size);
+
+    index = -1;
+    for (i=0; i < size; i++) {
+      if (cs_gui_strcmp(name[i], "thermal")) index = i;
+    }
+    iscalt[iphas] = index+1;
+    iscsth[index] = ind_thermal;
+
+    BFT_FREE(path);
+    for (i=0; i < size; i++) BFT_FREE(name[i]);
+    BFT_FREE(name);
+  }
+}
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* _CS_HAVE_XML */

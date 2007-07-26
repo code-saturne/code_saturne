@@ -1,0 +1,62 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+\programme{codits}
+%
+
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Ce sous-programme, appelé entre autre par \fort{preduv}, \fort{turbke}, \fort{covofi},
+\fort{resrij}, \fort{reseps}, ..., résout les équations de convection-diffusion
+d'un scalaire $a$ avec termes sources du type : 
+\begin{equation}\label{Base_Codits_eq_ref}
+\begin{array}{c}
+\displaystyle f_s^{\,imp} (a^{n+1} - a^{n}) +
+\theta \ \underbrace{\dive((\rho \underline{u})\,a^{n+1})}_{\text{convection implicite}}
+-\theta \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n+1})}_{\text{diffusion implicite}}
+\\\\
+= f_s^{\,exp}-(1-\theta) \ \underbrace{\dive((\rho \underline{u})\,a^{n})}_{\text{convection explicite}}
+ + (1-\theta) \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n})}_{\text{diffusion explicite}}
+\end{array}
+\end{equation}
+où $\rho \underline{u}$, $f_s^{exp}$ et $f_s^{imp}$ désignent respectivement le flux de masse, les termes sources explicites et les termes linéarisés en $a^{n+1}$.
+$a$ est un scalaire défini sur toutes les cellules\footnote{$a$, sous forme discr\`ete en espace, correspond \`a un vecteur dimensionn\'e \`a \var{NCELET} de composante $a_I$, I d\'ecrivant l'ensemble des cellules.}.
+Par souci de clarté on suppose, en l'absence d'indication, les propriétes
+physiques $\Phi$ (viscosité totale $\mu_{tot}$,...) et le flux de masse $(\rho
+\underline{u})$ pris respectivement aux instants $n+\theta_\Phi$ et
+$n+\theta_F$, où $\theta_\Phi$ et $\theta_F$ dépendent des schémas en temps
+spécifiquement utilisés pour ces grandeurs\footnote{cf. \fort{introd}}.  
+\\
+L'écriture des termes de convection et diffusion en maillage non orthogonal
+engendre des difficultés (termes de reconstruction et test de pente) qui sont
+contournées en utilisant une m\'ethode it\'erative dont la limite, si elle
+existe, est la solution de l'équation précédente. 

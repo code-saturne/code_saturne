@@ -1,0 +1,455 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Le module compressible est une ``physique particuli\`ere'' activ\'ee lorsque le
+mot-cl\'e \var{IPPMOD(ICOMPF)} est positif ou nul.
+ 
+Dans ce qui suit, on pr\'ecise les inconnues et les propri\'et\'es
+principales utilis\'ees dans le module. 
+On fournit \'egalement un arbre d'appel simplifi\'e des sous-programmes du
+module~: initialisation avec \fort{initi1} puis (\fort{iniva0} et) \fort{inivar} et
+enfin, boucle en temps avec \fort{tridim}.  
+
+
+\subsection{Inconnues et propri\'et\'es} 
+
+Les \var{NSCAPP} inconnues scalaires associ\'ees \`a la physique
+particuli\`ere sont d\'efinies dans \fort{cfvarp} dans l'ordre
+suivant~:
+\begin{itemize} 
+\item la masse volumique \var{RTP(*,ISCA(IRHO(IPHAS)))}, 
+\item l'énergie totale   \var{RTP(*,ISCA(IENERG(IPHAS)))}, 
+\item la température     \var{RTP(*,ISCA(ITEMPK(IPHAS)))} 
+\end{itemize}
+
+On souligne que la temp\'erature est d\'efinie en tant que variable ``\var{RTP}'' et
+non pas en tant que propri\'et\'e physique ``\var{PROPCE}''. Ce choix a \'et\'e
+motiv\'e par la volont\'e de simplifier la gestion des conditions aux limites,
+au prix cependant d'un encombrement m\'emoire l\'eg\`erement sup\'erieur (une
+grandeur \var{RTP} consomme plus qu'une grandeur \var{PROPCE}). 
+
+La pression et la vitesse sont classiquement associ\'ees aux tableaux suivants~: 
+\begin{itemize} 
+\item pression~: \var{RTP(*,IPR(IPHAS))} 
+\item vitesse~: \var{RTP(*,IU(IPHAS))}, \var{RTP(*,IV(IPHAS))}, \var{RTP(*,IW(IPHAS))}. 
+\end{itemize}
+
+
+\bigskip
+Outre les propri\'et\'es associ\'ees en standard aux variables 
+identifi\'ees ci-dessus, le
+tableau \var{PROPCE} contient \'egalement~:
+ \begin{itemize} 
+\item la chaleur massique à volume constant $C_v$, stock\'ee dans
+\var{PROPCE(*,IPPROC(ICV(IPHAS)))},  
+      si  l'utilisateur a indiqué dans \fort{uscfth} qu'elle \'etait variable.  
+\item la viscosité en volume \var{PROPCE(*,IPPROC(IVISCV(IPHAS)))}
+      si  l'utilisateur a indiqué dans \fort{uscfx2} qu'elle \'etait variable.
+\end{itemize}
+
+
+\bigskip
+Pour la gestion des conditions aux limites et en particulier pour le calcul du 
+flux convectif par le sch\'ema de Rusanov 
+aux entr\'ees et sorties (hormis en sortie supersonique), on
+dispose des tableaux suivants dans  \var{PROPFB}~:
+\begin{itemize} 
+\item flux convectif de quantit\'e de mouvement au bord pour les trois
+composantes dans les tableaux 
+\var{PROPFB(*,IPPROB(IFBRHU(IPHAS)))} (composante $x$), 
+\var{PROPFB(*,IPPROB(IFBRHV(IPHAS)))} (composante $y$) et 
+\var{PROPFB(*,IPPROB(IFBRHW(IPHAS)))} (composante $z$)
+\item flux convectif d'\'energie au bord 
+\var{PROPFB(*,IPPROB(IFBENE(IPHAS)))}
+\end{itemize}
+et on dispose \'egalement dans \var{IA}~: 
+\begin{itemize} 
+\item d'un tableau d'entiers dont la premi\`ere ``case'' est \var{IA(IIFBRU)}, dimensionn\'e au nombre de faces de bord 
+et permettant de rep\'erer les faces de bord pour lesquelles on calcule 
+le flux convectif par le sch\'ema de Rusanov,
+\item d'un tableau  d'entiers dont la premi\`ere ``case'' est \var{IA(IIFBET)}, dimensionn\'e au nombre de faces de bord 
+et permettant de rep\'erer les faces de paroi \`a temp\'erature ou \`a flux 
+thermique impos\'e.
+\end{itemize}
+
+
+ 
+\newpage
+
+\subsection{Arbre d'appel simplifi\'e} 
+\nopagebreak
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lllllp{8cm}} 
+\fort{usini1} 	& 		&		&		&
+	& Initialisation des mots-cl\'es utilisateur g\'en\'eraux et positionnement des variables\\
+		&\fort{usppmo} 	&		&		&
+	& D\'efinition du module ``physique particuli\`ere'' employ\'e\\
+		&\fort{varpos} 	&		&		&
+	& Positionnement des variables \\
+		&	 	& \fort{pplecd} &		&
+	& Branchement des physiques particuli\`eres pour la lecture du fichier de donn\'ees \'eventuel \\
+		&	 	& \fort{ppvarp} &		&
+	& Branchement des physiques particuli\`eres pour le positionnement des inconnues \\
+		&	 	& 		& \fort{cfvarp} &
+	& Positionnement des inconnues sp\'ecifiques au module compressible \\
+		&	 	& 		&               & \fort{uscfth}
+	& Appelé avec ICCFTH=-1, pour indiquer que $C_p$ et $C_v$ sont constants ou variables\\
+		&	 	& 		&               & \fort{uscfx2}
+	& Conductivité thermique mol\'eculaire constante ou variable et viscosité en volume
+           constante ou variable (ainsi que leur valeur, si elles sont constantes)\\
+		&	 	& \fort{ppprop} &		&
+	& Branchement des physiques particuli\`eres pour le positionnement des propri\'et\'es\\
+		&	 	& 		& \fort{cfprop} &
+	& Positionnement des propri\'et\'es sp\'ecifiques au module compressible \\
+%
+\fort{ppini1} 	&		&		&		&
+	& Branchement des physiques particuli\`eres pour l'initialisation des
+mots-cl\'es sp\'ecifiques \\
+		&\fort{cfini1} 	&		&		&
+	& Initialisation des mots-cl\'es sp\'ecifiques au module compressible\\
+		&\fort{uscfi1} 	&		&		&
+	& Initialisation des mots-cl\'es utilisateur sp\'ecifiques au module compressible\\
+\end{tabular}
+\caption{Sous-programme \fort{initi1}~: initialisation des mots-cl\'es et
+positionnement des variables}
+\end{center}
+\end{table}
+
+\newpage
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llllp{10cm}} 
+\fort{ppiniv} 	&		&		&
+	& Branchement des physiques particuli\`eres pour l'initialisation des variables \\
+		& \fort{cfiniv} &		&
+	& Initialisation des variables sp\'ecifiques au module compressible \\
+	 	& 		& \fort{memcfv} &
+	& R\'eservation de tableaux de travail locaux   \\
+	 	& 		& \fort{uscfth} &
+	& Initialisation des variables par défaut (en calcul suite~: seulement
+$C_v$~; si le calcul n'est pas une suite~: $C_v$, la masse volumique et l'\'energie) \\
+	 	& 		& \fort{uscfxi} &
+	& Initialisation des variables par l'utilisateur (seulement si le calcul
+n'est pas une suite)  \\
+\end{tabular}
+\caption{Sous-programme \fort{inivar}~: initialisation des variables}
+\end{center}
+\end{table}
+
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llllp{10cm}} 
+\fort{phyvar} 	&		&		&
+	& Calcul des propri\'et\'es physiques variables \\
+		& \fort{ppphyv} &		&
+	& Branchement des physiques particuli\`eres pour le calcul des 
+		propri\'et\'es physiques variables \\
+		&               & \fort{cfphyv} &
+	& Calcul des propri\'et\'es physiques variables pour le module
+		compressible \\
+	 	& 		&               & \fort{uscfpv}
+	& Calcul par l'utilisateur des propri\'et\'es physiques variables pour
+		le module
+		compressible ($C_v$ est calcul\'e dans \fort{uscfth} qui est
+		appel\'e par \fort{uscfpv}) \\
+\end{tabular}
+\caption{Sous-programme \fort{tridim}~: partie 1 (propri\'et\'es physiques)}
+\end{center}
+\end{table}
+
+\newpage
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llllp{10cm}} 
+\fort{dttvar} 	&		&		&
+	& Calcul du pas de temps variable  \\
+		& \fort{cfdttv} &		&
+	& Calcul de la contrainte liée au CFL en compressible \\
+		&    		&\fort{memcft} 	&
+	& Gestion de la m\'emoire pour le calcul de la contrainte en CFL \\
+		&    		&\fort{cfmsfl} 	&
+	& Calcul du flux associ\'e \`a la contrainte en CFL \\
+
+\fort{precli} 	& 		 &		&
+	& Initialisation des tableaux avant calcul des conditions aux 
+		limites (\var{IITYPF}, \var{ICODCL}, \var{RCODCL})\\
+		& \fort{ppprcl} &		&
+	& Initialisations sp\'ecifiques aux diff\'erentes physiques 
+		particuli\`eres avant calcul des conditions aux limites 
+		(pour le module compressible~: \var{IZFPPP}, \var{IA(IIFBRU)}, 
+		\var{IA(IIFBET)}, \var{RCODCL}, flux convectifs pour la 
+		quantit\'e de mouvement et l'\'energie)\\
+
+\fort{ppclim} 	& 		 &		&
+	& Branchement des physiques particuli\`eres pour les conditions aux limites (en lieu et place de \fort{usclim})\\
+		& \fort{uscfcl} &		&
+	& Intervention de l'utilisateur pour les conditions aux limites (en lieu
+		et place de \fort{usclim}, m\^eme pour les variables qui ne sont
+		pas sp\'ecifiques au module compressible) \\
+
+\fort{condli} 	& 		 &		&
+	& Traitement des conditions aux limites\\
+		& \fort{pptycl} &		&
+	& Branchement des physiques particuli\`eres pour le traitement des conditions aux limites \\
+		& 		&\fort{cfxtcl} 	&
+	& Traitement des conditions aux limites pour le compressible \\
+		& 		&		&\fort{uscfth} 
+	& Calculs de thermodynamique pour le calcul des conditions aux limites \\
+		& 		&		&\fort{cfrusb} 
+	& Flux de Rusanov (entr\'ees ou sorties sauf sortie supersonique) \\
+\end{tabular}
+\caption{Sous-programme \fort{tridim}~: partie 2 (pas de temps variable et conditions 
+                                                  aux limites)}
+\end{center}
+\end{table}
+
+\newpage
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llllp{10cm}} 
+\fort{memcfm}	& 		 &		&
+	& Gestion de la m\'emoire pour la r\'esolution de l'\'etape ``acoustique'' \\
+\fort{cfmsvl} 	& 		 &		&
+	& R\'esolution de l'étape ``acoustique'' \\
+ 	        & \fort{cfmsfl}  &		&
+	& Calcul du "flux de masse" aux faces 
+		(not\'e $\rho\,\vect{w}\cdot\vect{n}\,S$ dans la documentation
+		du sous-programme \fort{cfmsvl}) \\
+ 	        & 		 & \fort{cfdivs}&
+	& Calcul du terme en divergence du tenseur des contraintes visqueuses
+          	(trois appels), éventuellement \\
+ 	        & 		 &		&
+	& Apr\`es \fort{cfmsfl}, on impose le flux de masse aux faces de bord  
+		\`a partir des conditions aux limites \\
+ 	        & \fort{cfmsvs}  &		&
+	& Calcul de la "viscosité" aux faces 
+		(not\'ee $\Delta\,t\,c^2\frac{S}{d}$ dans la documentation
+		du sous-programme \fort{cfmsvl}) \\
+ 	        & 		 &		&
+	& Apr\`es \fort{cfmsvs}, on annule la viscosit\'e aux faces de bord  
+		pour que le flux de masse soit bien celui souhait\'e \\
+ 	        & \fort{codits}  &		&
+	& R\'esolution du syst\`eme portant sur la masse volumique \\
+ 	        & \fort{clpsca}  &		&
+	& Impression des bornes et clipping \'eventuel (pas de clipping en standard)  \\
+ 	        & \fort{uscfth}  &		&
+	& Gestion  \'eventuelle des bornes par l'utilisateur  \\
+ 	        & \fort{cfbsc3}  &		&
+	& Calcul du flux de masse acoustique aux faces 
+		(not\'e $\vect{Q}_{ac}\cdot\vect{n}$ dans la documentation
+		du sous-programme \fort{cfmsvl}) \\
+ 	        & \fort{uscfth}  &		&
+	& Actualisation de la pression, éventuellement  \\
+\fort{cfqdmv} 	& 		 &		&
+	& R\'esolution de la quantité de mouvement\\
+		& \fort{cfcdts}	 &		&
+	& Résolution du syst\`eme\\
+		& 		 & \fort{cfbsc2}&
+	& Calcul des termes de convection et de diffusion au second membre\\
+\end{tabular}
+\caption{Sous-programme \fort{tridim}~: partie 3 (Navier-Stokes)}
+\end{center}
+\end{table}
+
+\newpage
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llllp{10cm}} 
+\fort{scalai}  	& 		 &		&
+	& R\'esolution des \'equations sur les scalaires  \\
+		& \fort{cfener}	 &		& 
+	& R\'esolution de l'équation sur l'énergie totale\\
+		& 		 & \fort{memcfe}& 
+	& Gestion de la m\'emoire locale\\
+		& 		 & \fort{cfdivs}& 
+	& Calcul du terme en divergence du produit 
+ 	  ``tenseur des contraintes par vitesse''\\
+		& 		 & \fort{uscfth}& 
+	& Calcul de l'\'ecart  ``\'energie interne - $C_v\,T$'' 
+		($\varepsilon_{sup}$)\\
+		& 		 & \fort{cfcdts}&
+	& Résolution du syst\`eme\\
+		& 		 &  		&\fort{cfbsc2}
+	& Calcul des termes de convection et de diffusion au second membre\\
+ 	        & 		 & \fort{clpsca}&
+	& Impression des bornes et clipping \'eventuel (pas de clipping en standard)  \\
+ 	        & 		 & \fort{uscfth}&
+	& Gestion \'eventuelle des bornes par l'utilisateur  \\
+ 	        & 		 & \fort{uscfth}&
+	& Mise \`a jour de la pression  \\
+\end{tabular}
+\caption{Sous-programme \fort{tridim}~: partie 4 (scalaires)}
+\end{center}
+\end{table}
+
+%\newpage
+
+Le sous-programme \fort{cfbsc3} est similaire \`a \fort{bilsc2}, mais il produit
+des flux aux faces et n'est \'ecrit que pour un sch\'ema upwind, \`a l'ordre 1
+en temps (ce qui est coh\'erent avec les choix faits dans l'algorithme compressible). 
+
+Le sous-programme \fort{cfbsc2} est similaire \`a \fort{bilsc2}, mais 
+n'est \'ecrit que pour un sch\'ema d'ordre 1 en
+temps.
+%et fait encore appara\^itre la variable IITURB au lieu de IITYTU (il
+%faudrait corriger ce dernier point). 
+Le sous-programme \fort{cfbsc2} permet d'effectuer un traitement 
+sp\'ecifique aux faces de bord pour lesquelles on a appliqu\'e 
+un sch\'ema de Rusanov pour calculer le flux convectif total. 
+Ce sous-programme est appel\'e pour la r\'esolution de l'\'equation de 
+la quantit\'e de mouvement et de l'\'equation de l'\'energie. 
+On pourra se reporter \`a la documentation du sous-programme \fort{cfxtcl}.
+
+Le sous-programme \fort{cfcdts} est similaire \`a \fort{codits} mais fait appel
+\`a \fort{cfbsc2} et non pas \`a \fort{bilsc2}. 
+Il diff\`ere de \fort{codits} par quelques autres d\'etails qui ne sont pas
+g\^enants dans l'imm\'ediat~:
+initialisation de PVARA et de SMBINI, 
+%nombre d'it\'erations pour le second membre (NSWRSM-1 au lieu de NSWRSM), 
+%mode de d\'etermination du solveur (IRESLP), 
+%test de convergence sur RNORM (compar\'e \`a 0.D0 au lieu de EPZERO), 
+ordre en temps (ordre 2 non pris en compte).
+%Mis \`a part pour l'ordre en temps (l'algorithme
+%compressible est \`a l'ordre 1), il serait bon de modifier \fort{cfcdts} pour
+%qu'il soit conforme \`a  \fort{codits}. 
+
+\newpage 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Des actions compl\'ementaires sont identifi\'ees ci-apr\`es, dans l'ordre
+d'urgence d\'ecroissante (on se reportera 
+\'egalement \`a la section "Points \`a traiter" de la documentation 
+des autres sous-programmes du module compressible). 
+
+\begin{itemize}
+\item Assurer la coh\'erence des sous-programmes suivants (ou, \'eventuellement,
+les fusionner pour \'eviter qu'ils ne divergent)~:
+	\begin{itemize}
+	\item \fort{cfcdts} et \fort{codits}, 
+%(actuellement pour PVARA et
+%		SMBINI, mais \`a plus long terme pour \'eviter que les 
+%		deux sous-programmes ne divergent),
+% propose en patch 1.2.1		
+%	\item \fort{cfcdts} et \fort{codits} 
+%		(au moins pour PVARA, SMBINI, NSWRSM,
+%		IRESLP, RNORM),
+	\item \fort{cfbsc2} et \fort{bilsc2}, 
+	\item \fort{cfbsc3} et \fort{bilsc2}.
+	\end{itemize} 
+% propose en patch 1.2.1	
+%	\item Remplacer la valeur 100 par 90 pour ICCFTH dans \fort{uscfth}
+%		(plus grande coh\'erence avec les choix faits dans le reste de ce
+%		sous-programme). 
+% propose en patch 1.2.1	
+%	\item \'Eliminer \fort{memcff} qui ne sert plus. 
+\item Permettre les suites de calcul incompressible/compressible et 
+	compressible/incompressible.  
+\item Apporter un compl\'ement de validation (exemple~: IPHYDR). 
+\item Assurer la compatibilit\'e avec certaines physiques particuli\`eres, selon
+	les besoins. Par exemple~: arc \'electrique, rayonnement, combustion.
+\item Identifier les causes des difficult\'es rencontr\'ees sur certains cas
+acad\'emiques, en particulier~:
+	\begin{itemize}
+	\item canal subsonique (comment s'affranchir des effets ind\'esirables
+	associ\'es aux conditions d'entr\'ee et de sortie, comment r\'ealiser un
+	calcul p\'eriodique, en particulier pour la temp\'erature dont le
+	gradient dans la direction de l'\'ecoulement n'est pas nul, si
+	les parois sont adiabatiques),
+	\item cavit\'e ferm\'ee sans vitesse ni effets de gravit\'e, 
+	avec temp\'erature ou flux thermique impos\'e en paroi (il pourrait
+	\^etre utile d'extrapoler le gradient de pression au bord~: 
+	la pression d\'epend de la temp\'erature et une simple condition de 
+	Neumann homog\`ene est susceptible de cr\'eer un terme source de 
+	quantit\'e de mouvement parasite),
+	\item maillage non conforme (non conformit\'e dans la direction
+	transverse d'un canal),
+      \item ``tube à choc'' avec terme source d'énergie.
+	\end{itemize} 
+\item Compl\'eter certains points de documentation, en particulier les 
+	conditions aux limites thermiques pour le couplage avec Syrthes.
+\item Am\'eliorer la rapidit\'e \`a faible nombre de Mach (est-il 
+possible de lever la limite
+actuelle sur la valeur du pas de temps~?). 
+\item Enrichir, au besoin~:
+	\begin{itemize}
+	\item les thermodynamiques prises en compte (multiconstituant,
+	gamma variable, Van der Waals...), 
+	\item la gamme des conditions aux limites d'entr\'ee
+	disponibles (condition \`a d\'ebit massique et d\'ebit enthalpique
+	impos\'es par exemple). 
+	\end{itemize}
+\item Tester des variantes de l'algorithme~:
+	\begin{itemize}
+	\item prise en compte des termes sources de l'\'equation de la
+	quantit\'e de mouvement autres que la gravit\'e dans l'\'equation de la
+	masse r\'esolue lors de l'\'etape ``acoustique'' (les tests r\'ealis\'es
+	avec cette variante de l'algorithme devront \^etre repris dans la 
+	mesure o\`u, dans \fort{cfmsfl}, IIROM et IIROMB n'\'etaient pas 
+	initialis\'es),  
+	\item implicitation du terme de convection dans
+	l'\'equation de la masse (\'eliminer cette possibilit\'e si 
+	elle n'apporte rien),
+	\item \'etape de pr\'ediction de la pression, 
+	\item non reconstruction de la masse volumique pour le terme convectif 
+	(actuellement, les termes convectifs sont trait\'es avec 
+	d\'ecentrement amont, d'ordre 1 en espace~; 
+	pour l'\'equation de la quantit\'e de mouvement et l'\'equation de 
+	l'\'energie, on utilise les valeurs prises au centre des cellules 
+	sans reconstruction~: c'est l'approche standard de \CS, traduite 
+	dans \fort{cfbsc2}~; par contre, dans \fort{cfmsvl}, on reconstruit 
+	les valeurs de la masse volumique utilis\'ees pour le terme 
+	convectif~; il n'y a pas de raison d'adopter des strat\'egies 
+	diff\'erentes, d'autant plus que la reconstruction de la masse 
+	volumique ne permet pas de monter en ordre et augmente le risque 
+	de d\'epassement des bornes physiques),
+	\item mont\'ee en ordre en espace (en v\'erifier l'utilit\'e et 
+	la robustesse, en particulier relativement au principe du 
+	maximum pour la masse volumique), 
+	\item mont\'ee en ordre en temps (en v\'erifier l'utilit\'e et 
+	la robustesse).
+	\end{itemize}
+\item Optimiser l'encombrement m\'emoire. 
+\end{itemize} 
+

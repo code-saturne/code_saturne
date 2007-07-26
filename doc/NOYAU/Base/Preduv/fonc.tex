@@ -1,0 +1,146 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+\programme{preduv}
+%
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Dans ce sous-programme, on effectue l'\'etape de pr\'ediction de la vitesse
+$\vect{u}$. Ceci consiste à r\'esoudre l'équation de quantit\'e de
+mouvement (Q.D.M.) en traitant la pression $p$ de manière explicite. La solution en vitesse-pression est obtenue après une étape de correction sur la pression
+effectuée dans le sous-programme \fort{resolp}, en utilisant la loi de conservation de la masse :
+\begin{equation}
+\frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma, 
+\end{equation}
+o\`u $\Gamma$ est le terme source de masse\footnote{ en $kg.m^{-3}.s^{-1}$ }.\\  
+L'équation de conservation de la quantité de mouvement moyenne obtenue par application 
+du théorème fondamental de la dynamique est :
+\begin{equation}
+\frac {\partial (\rho \underline {u})} {\partial t }+
+\dive(\rho \underline{u} \otimes \underline{u}) =
+\dive(\underline{\underline{\sigma}}) + \underline{S} - \dive{(\rho\,\tens{R})}\end{equation}
+où : 
+\begin{equation}
+\underline{\underline{\sigma}} = - p \underline{\underline{Id}} + \underline{\underline{\tau }}
+\end{equation}
+avec pour les écoulements newtoniens, la relation linéaire suivante :
+\begin{equation}
+\begin{array}{lcl}
+&\displaystyle \underline{\underline{\tau}} = 2\ \mu\ \underline{\underline{D}}
++\, 
+ \lambda\ tr(\underline{\underline{D }})\ \underline{\underline{Id}} &\\
+&\displaystyle \underline{\underline{D}}=\frac{1}{2}\ (\ggrad \underline
+{u} +\ ^t\ggrad \underline {u})
+\end{array}
+\end{equation}
+
+
+$\tens{\sigma}$ repr\'esente le tenseur de contraintes, $\tens{\tau}$ le tenseur
+des contraintes visqueuses, $\mu$ la viscosit\'e dynamique (mol\'eculaire et
+\'eventuellement turbulente), $\tens{D}$
+ le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$, avec les flux
+diffusifs d\'ecrits dans le sous-programme \fort{navsto}},
+$\tens{R}$ le tenseur de Reynolds qui appara\^\i t lors de l'application de
+l'op\'erateur moyenne \`a l'\'equation instantan\'ee, $\underline{S}$ les termes
+sources.\\
+$\lambda$ est le second coefficient de viscosité. Il est relié à la viscosité de
+volume $\kappa$ par la relation
+\begin{equation}
+\lambda=\kappa-\frac{2}{3}\mu
+\end{equation}
+Quand l'hypothèse de Stokes est vérifiée, la viscosité de volume $\kappa$ est
+nulle, soit $3\lambda+2\mu=0$. Cette hypothèse est implicite dans le code et
+dans le reste du doument, sauf en compressible.\\
+
+
+L'\'equation de conservation de la quantité de mouvement s'\'ecrit finalement
+ :
+\begin{equation}
+\begin{array}{lcl}
+&\displaystyle \rho\,
+\frac{\partial \underline {u} } {\partial t} = -\ 
+\underbrace {\dive(\rho \underline{u} \otimes \underline{u})}_{\text{
+convection}} +\ \underbrace {\dive (\mu\ \ggrad \underline {u})}_{\text{
+diffusion}} &\\
+&\displaystyle \underbrace { +\ \dive (\mu \,^t\ggrad \underline {u}) }_{\text{
+terme en gradient transpos\'e}}
+\underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \underline {u})}_{\text{
+viscosité secondaire}}\ \ - \dive{(\rho \tens{R})}
+ -\ \grad(p) + (\rho -\rho_0)\,\underline {g} + 
+\underline{u}\,\dive (\rho\,\underline {u})&\\
+&\displaystyle +\underbrace {\Gamma
+(\underline{u}_{\,i}-\underline{u})}_{\text{terme source de Q.D.M. dû à la source
+de masse}}- \underbrace {\rho\ 
+\tens{K}_{\,pdc} \underline {u}}_{\text{perte
+de charge}} + \underbrace { \underline{T}_{\,s}^{\,exp}+
+T_{s}^{\,imp}\ \underline{u}}_{\text{autres termes sources de
+Q.D.M.}}
+\label{Base_Preduv_eqqdm}
+
+\end{array}
+\end{equation}
+avec $p$ définissant l'écart à la pression hydrostatique de r\'ef\'erence (la
+pression hydrostatique r\'eelle \'etant calcul\'ee avec la masse volumique $\rho$
+et non $\rho_{\,0}$) :
+\begin{equation}
+p=p^*-\rho_{\,0}\ \underline{g}\,.\,\underline{X}
+\end{equation}
+(\underline{X} \'etant le vecteur de composantes $x$, $y$ et $z$).\\
+$\mu_t$, $\tens{K}_{\,pdc}$, $\underline{u}_{\,i}$ repr\'esentent respectivement
+la viscosité dynamique turbulente, le tenseur des pertes de charge et la valeur de la variable associée à la source de
+masse.\\
+La divergence du tenseur des contraintes de Reynolds s'\'ecrit :
+\begin{equation}
+-\dive{(\rho\,\tens{R})}=
+\begin{cases}
+\vect{0} & \text{en laminaire}, \\
+ -\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u}))-\frac {2}{3}\,\grad (\rho\, k) & \text{pour les modèles}\\
+ & \text{à viscosité turbulente}, \\
+ -\dive(\rho\,\tens{R})& \text{pour les modèles}\\
+ & \text{au second ordre},\\
+-\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u})) & \text{en  LES}\\
+\end{cases}
+\end{equation}
+Le terme source de masse fait intervenir la vitesse locale $\underline {u}$ et
+aussi une vitesse $\underline {u}_{\,i}$ associ\'ee \`a la masse inject\'ee (ou retir\'ee). 
+Lorsque $\Gamma<0$, on \^ote de la masse au syst\`eme et on a donc 
+$\underline{u}_{\,i} = \underline{u}$. Le terme est nul (\emph{i.e.} $\Gamma
+(\underline{u}_{\,i}-\underline{u})= \underline{0} $). Quand $\Gamma>0$, on a un
+terme non nul si $\underline{u}_{\,i} \ne \underline{u}$.
+Dans ce sous-programme, tous les termes intervenant dans
+l'équation de conservation de la
+quantité de mouvement, excepté les termes de convection et diffusion, sont
+calculés et transmis au sous-programme \fort{codits} qui résout l'équation complète
+(convection-diffusion avec termes sources).
+
+

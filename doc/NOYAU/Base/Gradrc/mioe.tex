@@ -1,0 +1,216 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+La variable dont il faut calculer le gradient est contenue dans le tableau
+\var{PVAR}. Les conditions aux limites associ\'ees sont disponibles au travers
+des tableaux \var{COEFAP} et \var{COEFBP} qui repr\'esentent respectivement les
+grandeurs $A$ et $B$ utilis\'ees ci-dessus. Les trois composantes du gradient 
+sont contenues, en sortie du sous-programme, dans les tableaux \var{DPDX},
+\var{DPDY} et \var{DPDZ}.\\
+  
+\etape{Initialisations}
+Le tableau (\var{BX}, \var{BY}, \var{BZ}) du second membre $\vect{R}_{\,i}$ est initialis\'e \`a
+z\'ero.\\
+Le calcul du gradient cellule non reconstruit $\vect{G}^{NRec}_{\,c,i}$ est
+r\'ealis\'e et stock\'e dans les tableaux \var{DPDX}, \var{DPDY} et \var{DPDZ}. Si
+aucune reconstruction n'est \`a faire, on a fini.\\
+\hspace*{1cm}\subsection{\bf  Reconstruction}
+Sinon, on cherche \`a r\'esoudre le syst\`eme (\ref{Base_Gradrc_eq_reconstruction_increment}) en incr\'ements de
+gradient ${\delta\,\vect{G}}^{\,k+1}_{\,i}$. Le gradient non reconstruit
+constitue alors une premi\`ere estimation du gradient \`a calculer par
+incr\'ements.\\
+On effectue les op\'erations suivantes~:
+\hspace*{1cm}\subsubsection{\bf Phase pr\'eliminaire}
+\hspace*{1,5cm}{\bf Calcul de la matrice, hors boucle en $k$}\\
+Les \var{NCEL} matrices $\tens{C}_{\,i}$ (matrices non sym\'etriques $3\times 3$) sont 
+stock\'ees dans le tableau \var{COCG}, 
+(de dimension $\text{\var{NCELET}}\times 3\times 3$). Ce dernier est initialis\'e \`a z\'ero,
+puis son remplissage est r\'ealis\'e dans des boucles sur les faces internes et 
+les faces de bord. Pour \'eviter de r\'ealiser plusieurs fois les m\^emes
+calculs g\'eom\'etriques, on conserve, en sortie de sous-programme, dans le
+tableau \var{COCG}, l'inverse des \var{NCEL} matrices $\tens{C}_{\,i}$.
+
+
+\hspace*{2cm}{\bf Cellule ne poss\'edant pas de face de bord }\\
+Lorsque, pour une cellule, aucune des faces n'est une face de bord du domaine,
+l'expression de la matrice $\tens{C}_{\,i}$ ne fait intervenir que des grandeurs
+g\'eom\'etriques. Son inverse peut \^etre donc calcul\'e une seule fois, stock\'e dans
+\var{COCG} et r\'eutilis\'e si l'on rappelle \fort{gradrc} s\'equentiellement et
+si on est sur un maillage fixe (indicateur \var{ICCOCG} positionn\'e \`a 0). 
+
+\hspace*{2cm}{\bf Cellule poss\'edant au moins une face de bord }\\
+Lorsque l'ensemble des faces d'une cellule contient au moins une face de bord
+du domaine, un terme contributeur aux matrices  $\tens{C}_{\,i}$ est 
+sp\'ecifique \`a la variable dont on cherche 
+\`a calculer le gradient, au travers du coefficient $B_{\,b,ik}$   
+issu des conditions aux limites. Il s'agit de~:
+
+\begin{equation}\notag
+- \displaystyle\sum\limits_{k\in\gamma_b(i)} 
+B_{\,b,ik}\,(\vect{II'})_{\,\beta} \,S_{\,{b}_{ik},\,\eta}
+\end{equation} 
+         
+Si, lors de l'appel pr\'ec\'edent\footnote{donc, \`a partir du second appel au
+moins}  \`a \fort{gradrc},  
+les conditions aux limites relatives \`a la           
+variable $P$ trait\'ee conduisaient \`a des valeurs identiques de $B_{\,b,ik}$, les    
+matrices $\tens{C}_{\,i}$ sont donc inchang\'ees et l'inverse  est encore  
+disponible  dans \var{COCG}. Pour \'eviter de refaire les calculs associ\'es, 
+l'indicateur \var{ICCOCG}, pass\'e en argument, est alors positionn\'e \`a 0. 
+
+Si, au contraire, les valeurs de $B_{\,b,ik}$  sont diff\'erentes de celles de
+l'appel pr\'ec\'edent, il est alors  
+indispensable de recalculer le terme et l'indicateur \var{ICCOCG} doit \^etre 
+positionn\'e \`a 1.\\\\
+Toutefois compte-tenu du co\^ut total de l'inversion de ces matrices relativement
+au co\^ut global du sous-programme, cette d\'emarche de stockage et donc
+d'\'economie de temps C.P.U. est un peu
+superflue et risque d'engendrer des erreurs (indicateur \var{ICCOCG}
+positionn\'e \`a 0 au lieu de 1) beaucoup plus p\'enalisantes que l'\'eventuel
+gain escompt\'e.\\\\
+\hspace*{1,5cm}{\bf Inversion de la matrice}\\
+%\hspace*{1,5cm}\etape{Inversion de la matrice}
+On calcule les coefficients de la comatrice, puis l'inverse.
+Pour des questions de vectorisation, la boucle sur les \var{NCEL} \'el\'ements
+est remplac\'ee par une
+s\'erie de boucles en vectorisation forc\'ee sur des blocs de \var{NBLOC=1024}
+\'el\'ements. Le reliquat ($\var{NCEL}-E(\var{NCEL}/1024)\times 1024$) est
+trait\'e apr\`es les boucles.
+La matrice inverse est ensuite stock\'ee dans \var{COCG}.\\
+\hspace*{1cm}\subsubsection{\bf Phase it\'erative $k$, $k\in \grandN$}
+On suppose  $\delta\,\vect{G}^{\,k}_{\,i}$ connu et donc  $\vect{G}^{k}_{\,c,i}$ pour $k$ donn\'e et sur
+toute cellule $\Omega_{i}$ et on veut calculer
+$\delta\,\vect{G}^{\,k+1}_{\,i}$ et $\vect{G}^{k+1}_{\,c,i}$ .\\ 
+    
+\hspace*{1,5cm}{\bf Calcul du second membre ${\vect{R}^{\,k+1}_{\,i}}$ et
+r\'esolution}\\
+Le calcul proprement dit du second membre ${\vect{R}^{\,k+1}_{\,i}} $
+correspondant au syst\`eme (\ref{Base_Gradrc_eq_second_membre}) est effectu\'e et stock\'e
+dans le tableau (\var{BX}, \var{BY}, \var{BZ}). Il est initialis\'e, \`a chaque
+pas $k$, par la 
+valeur du gradient $\vect{G}^{k}_{\,c,i}$ multipli\'e par le
+volume de la cellule $|\Omega_i|$, avec $\vect{G}^{0}_{\,c,i} = \vect{G}^{Nrec}_{\,c,i}$ . L'incr\'ement $(\delta\,\vect{G}^{\,k+1}_{\,i})$
+de gradient est obtenu par $ {\tens{C}_{\,i}}^{-1}{\vect{R}^{\,k+1}_{\,i}}$ et
+ajout\'e dans les tableaux \var{DPDX},
+\var{DPDY} et \var{DPDZ} pour obtenir $\vect{G}^{k+1}_{\,c,i}$.\\
+
+En ce qui concerne les conditions aux limites en pression, elles sont
+trait\'ees comme suit dans \CS\ :
+\begin{equation}\notag
+\left\{\begin{array}{llll}
+P_{I'}&=P_{I}+\vect{II'}.\vect{G}_{c,i}\\
+P_{b,ik}& =\var{INC}\,A_{\,b,ik} + B_{\,b,ik}\,P_{I'} = \var{INC}\,A_{\,b,ik} + B_{\,b,ik}(P_{I}+\vect{II'}.\,\vect{G}_{\,c,i}) \\
+P_{b_{1},ik}&= P_{I}+\vect{I{F_{\,ij}}}.\,\vect{G}_{\,c,i}\\
+P_{f,\,b_{\,ik}}&= B_{\,b,ik}(\var{EXTRAP}\,P_{b_{1},ik} + (1 -\var{EXTRAP})\,P_{b,ik}) + (1 -
+B_{\,b,ik})P_{b,ik}  
+\end{array}\right.
+\end{equation}
+ce qui correspond \`a :\\\\
+\hspace*{1cm}{\tiny$\blacksquare$}\, lorsqu'on veut imposer des conditions de Dirichlet ($A_{\,b,ik} =
+P_{F_{\,b_{\,ik}}}$, $B_{\,b,ik} = 0$),
+\begin{equation}
+P_{F_{\,b_{\,ik}}}  = P_{IMPOSE}	
+\end{equation}
+pour toute valeur de \var{EXTRAP}.\\\\ 
+\hspace*{1cm}{\tiny$\blacksquare$}\, lorsqu'on veut imposer des conditions de
+flux ($A_{\,b,ik} = 0$, $B_{\,b,ik} = 1$) (condition de type Neumann)  
+\begin{equation}
+P_{F_{\,b_{\,ik}}}  = \,\var{EXTRAP}\,\ (P_{I} + (\vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I})  + (1 -\,\var{EXTRAP}) P_{I'}  
+\end{equation}
+seules trois valeurs de \var{EXTRAP} sont licites.\\\\
+\hspace*{2cm}$\bullet $ avec un maillage non orthogonal \\\\
+L'ordre obtenu est \'egal \`a 1 dans tous les cas.
+\begin{equation}\notag
+\begin{array}{llll}
+\var{EXTRAP}&= 0 &\text{Neumann homog\`ene}&\ \  P_{F_{\,b_{\,ik}}} = P_{I'} + \mathcal{O}(h^2)\\
+\var{EXTRAP}&= \displaystyle\frac{1}{2} &\text{Neumann homog\`ene am\'elior\'e}&\ \ 
+P_{F_{\,b_{\,ik}}} = P_{I'} + \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I} 
++ \mathcal{O}(h^2)\\
+\var{EXTRAP} &= 1&\text{extrapolation du gradient}&\ \ 
+P_{F_{\,b_{\,ik}}} = P_{I'} + \vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I} + \mathcal{O}(h^2)\\
+\end{array}
+\end{equation}\\\\
+\hspace*{2cm}$\bullet $ avec un maillage orthogonal \\\\
+On peut atteindre l'ordre deux.\\
+\begin{equation}\notag
+\begin{array}{lllll}
+\var{EXTRAP} &= 0 &\text{Neumann homog\`ene}& 
+P_{F_{\,b_{\,ik}}}  = P_{I'} + \mathcal{O}(h^2)\\
+&\ &\text{on est \`a l'ordre 1}\\
+\var{EXTRAP} &=  \displaystyle\frac{1}{2} &\text{Neumann homog\`ene am\'elior\'e}&\ \ 
+P_{F_{\,b_{\,ik}}}  = P_{I} + \displaystyle\frac{1}{2}\,\vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I} 
++ \mathcal{O}(h^3)\\
+&\ &\text{on est \`a l'ordre 2}\\
+\var{EXTRAP} &= 1 &\text{extrapolation du gradient}&\ \ 
+P_{F_{\,b_{\,ik}}}  = P_{I} + \vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I} +
+\mathcal{O}(h^3)\\
+&\ &\text{on est \`a l'ordre 2}\\
+\end{array}
+\end{equation}
+
+\hspace*{1,5cm}{\bf Test de convergence de la m\'ethode it\'erative de r\'esolution}\\
+On calcule la norme euclidienne $\var {RESIDU}$ du second membre (\var{BX},
+\var{BY}, \var{BZ}).\\
+On arr\^ete les it\'erations sur $k$ si le test de
+convergence pour cette norme ou le nombre de
+sweeps maximal \var{NSWRGP} est atteint. La valeur par d\'efaut de \var{NSWRGP}  est fix\'ee \`a 100, ce
+qui permet un calcul suffisamment pr\'ecis pour l'ordre d'espace
+consid\'er\'e.\\
+Sinon, on continue d'it\'erer sur $k$.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\etape{Vectorisation forc\'ee}
+Il est peut-\^etre possible de s'affranchir du d\'ecoupage en boucles de 1024 si 
+les compilateurs sont capables
+d'effectuer la vectorisation sans cette aide. On note cependant que ce
+d\'ecoupage en boucles de 1024 n'a pas de co\^ut CPU suppl\'ementaire, et que
+le co\^ut m\'emoire associ\'e est n\'egligeable. 
+Le seul inconv\'enient r\'eside dans la relative complexit\'e  de l'\'ecriture.
+
+\etape{Traitement des conditions aux limites de pression}
+Actuellement, l'ordre deux d\'ecrit dans le cas $\var{EXTRAP} = \displaystyle \frac{1}{2}$ relativement
+aux conditions aux limites de pression n'existe pas dans \CS \ en non
+orthogonal. Mais en a-t-on vraiment besoin ?
+
+\etape{M\'ethode it\'erative de r\'esolution}
+La m\'ethode it\'erative de r\'esolution adopt\'ee dans ce sous-programme  marche, {\it
+i.e.} converge, mais ne rentre dans aucun cadre th\'eorique pr\'ecis. Des
+r\'eflexions sur le sujet pourraient \'eventuellement permettre d'exhiber certaines propri\'et\'es
+des matrices consid\'er\'ees, cerner les limites d'application ou expliquer
+certains comportements. 

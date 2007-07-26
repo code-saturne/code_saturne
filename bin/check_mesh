@@ -1,0 +1,197 @@
+#!/bin/sh
+#============================================================================
+#
+#                    Code_Saturne version 1.3
+#                    ------------------------
+#
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2007 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+# Usage
+  usage() {
+    echo
+    echo "USAGE :  $0 [<options>] -m <file>"
+    echo
+    echo " Runs the Preprocessor followed by the Kernel in mesh"
+    echo " quality check mode, building a check_mesh.ensight"
+    echo " directory with PREPROCESSOR.case and QUALITY.case"
+    echo " corresponding to each step."
+    echo
+    echo
+    echo "general options:"
+    echo
+    echo "  -h                            : this help message"
+    echo
+    echo "  -i           [<file>]         : command line completed by a file"
+    echo "                                  (default file: standard input)"
+    echo
+    echo "  -int-face    [<sub-options>]  : count and display interior faces"
+    echo "                                  these faces may be selected with"
+    echo "                                  face-selection sub-options"
+    echo
+    echo "  -j           [<sub-options>]  : join non-conforming faces;"
+    echo "                                  select faces to join with"
+    echo "                                  face-selection sub-options"
+    echo
+    echo "  -o           [<file>]         : redirect terminal output to a file"
+    echo "                                  (default file: \"output.ecs\")"
+    echo
+    echo "  -perio       <sub-options>    : mesh periodicity defined by argument;"
+    echo "                                  joining sub-options for tolerances"
+    echo "                                  and selection of periodic faces with"
+    echo "                                  face-selection sub-options"
+    echo "  -periodic    <sub-options>    : same"
+    echo
+    echo "  -reorient                     : if necessary, correct orientation of"
+    echo "                                  cells and faces"
+    echo
+    echo
+    echo "mesh selection sub-options"
+    echo " (-m, -mesh):"
+    echo
+    echo "  -num         <n>              : selection of mesh number in file"
+    echo "                                  (if the format allows it)"
+    echo "  -grp-cel     <keyword>        : add groups of cells"
+    echo "                                   * based on sections: keyword \"section\""
+    echo "                                   * based on zones:    keyword \"zone\""
+    echo "                                  (based on format features/conventions)"
+    echo "  -grp-fac     <keyword>        : add groups of faces"
+    echo "                                   * based on sections: keyword \"section\""
+    echo "                                   * based on zones:    keyword \"zone\""
+    echo "                                  (based on format features/conventions)"
+    echo
+    echo "available mesh formats:"
+    echo "                                  extension:"
+    echo "   CGNS                          .cgns"
+    echo "   pro-STAR/STAR4                .ngeom"
+    echo "   EnSight (6 or Gold)           .case"
+    echo "   GAMBIT Neutral                .neu"
+    echo "   GMSH                          .msh"
+    echo "   NUMECA Hex                    .hex"
+    echo "   I-deas universal              .unv"
+    echo "   MED                           .med"
+    echo "   Simail (NOPO)                 .des"
+    echo "   Meta-mesh file                .mesh"
+    echo
+    echo
+    echo "periodicity sub-options"
+    echo " (-perio, -periodic):"
+    echo
+    echo "  -trans       <3 real numbers> : translation vector"
+    echo "  -rota        [<sub-options>]  : rotation defined"
+    echo "                                  - either by an angle (in degrees) and"
+    echo "               [-angle, -dir]       a direction vector, and eventually"
+    echo "               [-invpt]             by an invariant point (origin by default)"
+    echo "                                  - either by the rotation matrix (given"
+    echo "               [-matrix]            line by line), and eventually"
+    echo "               [-invpt]             by an invariant point (origin by default)"
+    echo
+    echo
+    echo "non-conformal face joining sub-options"
+    echo " (-j, -perio):"
+    echo
+    echo "  -fraction    <real number>    : fraction of the length of the smallest"
+    echo "                                  edge under which we consider that"
+    echo "                                  vertices may be fused"
+    echo "                                  (default value: 0.1)"
+    echo "  -plane       <real number>    : minimal cosine of the normals of 2"
+    echo "                                  coplanar faces (default value: 0.8)"
+    echo "  -semi-conf                    : fast joining algorithm (allowed if"
+    echo "                                  faces already share vertices)"
+    echo
+    echo "face selection sub-options"
+    echo " (for joining, selection, and periodicity):"
+    echo
+    echo "  -color       <number(s)>      : color numbers of faces to select"
+    echo
+    echo "  -group       <name(s)>        : group names of faces to select"
+    echo
+    echo "  -invsel                       : invert selection"
+    echo
+    echo
+    echo " usage: $0 -m <mesh_files> [preprocessor_options]"
+    echo
+    echo " <mesh_file>  Read a single mesh file (unv, des...) with no joining"
+    echo "              of conforming/non conforming faces and generate an"
+    echo "              EnSight case allowing visualization of eventual"
+    echo "              colors or groups."
+    echo "              Preprocessing messages are output to the screen."
+    echo
+    echo " -h           This message"
+    echo 
+    exit
+  }
+
+# Check arguments
+  if [ $# = 0 ] ; then 
+    usage
+    exit
+  fi
+  if [ $1 = "-h" ] ; then 
+    usage
+    exit
+  fi
+
+# Run Preprocessor
+  $ECS_HOME/bin/ecs $* -ens -case check_mesh
+
+  if [ -d check_mesh.ensight ] ; then
+    for file in check_mesh.ensight/* ; do
+      new_name=`echo $file | sed -e 's/chr/preprocessor/' -e 's/CHR/PREPROCESSOR/' `
+      mv -f $file $new_name
+    done
+    sed "s/chr\./preprocessor\./g" check_mesh.ensight/PREPROCESSOR.case > check_mesh.ensight/PREPROCESSOR.case.mod \
+         && mv -f check_mesh.ensight/PREPROCESSOR.case.mod check_mesh.ensight/PREPROCESSOR.case
+  fi
+
+# Run Kernel
+  $CS_HOME/arch/$NOM_ARCH/bin/cs13.exe -q --log 0
+
+  if [ -d chr.ensight ] ; then
+    mv chr.ensight/* check_mesh.ensight
+    for file in check_mesh.ensight/CHR.* ; do
+      new_name=`echo $file | sed -e 's/CHR/QUALITY/' `
+      mv $file $new_name
+    done
+    for file in check_mesh.ensight/chr.* ; do
+      new_name=`echo $file | sed -e 's/chr/quality/' `
+      mv $file $new_name
+    done
+    sed "s/chr\./quality\./g" check_mesh.ensight/QUALITY.case > check_mesh.ensight/QUALITY.case.mod \
+           && mv -f check_mesh.ensight/QUALITY.case.mod check_mesh.ensight/QUALITY.case
+  fi
+
+# Cleanup
+
+  \rm -f enveloppe_vers_solveur
+  rmdir chr.ensight
+
+  echo
+  echo " Finished execution of"
+  echo "$0 $*"
+
+# Finish
+  exit
