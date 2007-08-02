@@ -1,3 +1,11 @@
+===========================================================================
+
+* 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.0
+  
+* 26/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor correction of fvm_selector in cs_mesh.c
+  
 * 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
   Change in the location of the definition of
   NIDEVE, NRDEVE, NITUSE and NRTUSE
