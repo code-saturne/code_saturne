@@ -30,7 +30,7 @@
 #
 #============================================================================
 #
-if [ "$1" = "-h" -o "$1" = "-h" -o "$1" = "-h" ] ; then 
+if [ "$1" = "-h" ] ; then 
 echo ' ' 
 echo ' gracehst: appel de grace -nxy sur un fichier historique  '
 echo '       de Code_Saturne en eliminant la premiere colonne.  '

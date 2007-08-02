@@ -698,6 +698,12 @@ cs_mesh_create(void)
   mesh->cell_family = NULL;
   mesh->b_face_family = NULL;
 
+  mesh->class_defs = NULL;
+
+  mesh->select_cells = NULL;
+  mesh->select_i_faces = NULL;
+  mesh->select_b_faces = NULL;
+
   return (mesh);
 }
 
@@ -734,6 +740,8 @@ cs_mesh_builder_create(void)
 cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh)
 {
+  int i;
+
   BFT_FREE(mesh->vtx_coord);
   BFT_FREE(mesh->i_face_cells);
   BFT_FREE(mesh->b_face_cells);
@@ -774,6 +782,26 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   /* Free halo structure */
 
   mesh->halo = cs_halo_destroy(mesh->halo);
+
+  /* Free selection structures */
+
+  if (mesh->n_groups > 0) {
+    BFT_FREE(mesh->group_idx);
+    BFT_FREE(mesh->group_lst);
+  }
+
+  if (mesh->select_cells != NULL)
+    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
+  if (mesh->select_i_faces != NULL)
+    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
+  if (mesh->select_b_faces != NULL)
+    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
+
+  /* Destroy group class set after selectors, who reference it */
+
+  if (cs_glob_mesh->class_defs != NULL)
+    cs_glob_mesh->class_defs
+      = fvm_group_class_set_destroy(cs_glob_mesh->class_defs);
 
   BFT_FREE(mesh);
 
