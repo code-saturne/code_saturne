@@ -37,7 +37,7 @@
 
 SHELL           =/bin/sh
 
-VERSION         ="1.3.0"
+VERSION         ="1.3.1_dvp"
 
 TERM            =xterm
 

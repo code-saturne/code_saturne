@@ -106,14 +106,13 @@ CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1            
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64
 CCOMPFLAGSPROF         = -p
 CCOMPFLAGSVERS         = -V
 
 # Compilateur FORTRAN
 #--------------------
 #  Profiling gprof : -p
-#  Attention, par defaut on a -Mbounds avec mpif77 (l'inverse de mpicc)
 
 FTNCOMP                = ifort
 
@@ -124,7 +123,7 @@ FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O1
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0
 FTNCOMPFLAGSPROF       = -p
 FTNCOMPFLAGSVERS       = -V
 
