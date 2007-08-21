@@ -1,3 +1,91 @@
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of character chain length in inipst.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction in DEPALE and CSMAGO initialisation
+  modified routines:
+    caltri.F
+    iniva0.F
+    memtri.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Optimised debug options for IA64 architecture
+  modified script:
+    macros_Linux_IA64.mk
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of index error in mobile structures initialisation
+  modified routine:
+    iniini.F
+
+* 17/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of intermediate version 1.3.1-dvp
+
+* 16/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of coherency test in REDVSE in cs_ext_neighborhood.c
+  to allow the use of IMRGRA=3 when the extended neighborhood has
+  been calculated but is empty (1D meshes!!!).
+
+* 16/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Forgotten RELAXP argument in the CODITS call in cfmsvl.F
+
+
+* 14/08/2007 - Nicole Picard <nicole-n.picard@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Correction in pulverised coal data entry through GUI
+  modified routines:
+    cpini1.F
+    cpprop.F
+    cpvarp.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_matisse.c
+    cs_gui_radiative_transfer.c
+    cs_gui_util.c
+    iniusi.F
+
+
+* 13/08/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Erroneous dynamic allocation of work array in stdtcl.F
+  modified routines:
+    stdtcl.F
+    tridim.F
+
+* 08/08/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Bug correction in cptssc.F (test to avoid a 0/0 division)
+
+* 08/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Adaptation of lance.help to new english syntax of preprocessor
+  and kernel options
+
+* 07/08/2007 - Yannick Lecocq <yannick.lecocq@edf.fr>
+  Missing assignment of IDIMTE and ITENSO before PERCOM
+  in reseps.F
+
+* 06/08/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of erroneous assert in cs_pp_io.c
+
+* 03/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of unwanted ALE initialisation iteration when
+  IALE = 0
+  modified routines:
+    modini.F
+
+* 03/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Missing update of fortran commons after cutting of warped faces.
+  modified routines:
+    cs_main.c
+    iniini.F
+    majgeo.F
+
+
+* 03/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Missing arguments to ustbus.F
+  modified routines:
+    caltri.F
+    ustbus.F
+
+
 ===========================================================================
 
 * 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
