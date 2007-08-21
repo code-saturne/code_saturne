@@ -556,7 +556,7 @@ C On met SRROM et DIFTL0 a -GRAND pour forcer l'utilisateur a les
 C definir dans cpini1
 C ---> Coefficient de relaxation de la masse volumique
 C      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-      SRROM = 0.95D0
+      SRROM = -GRAND
 C
 C ---> Viscosite laminaire associee au scalaire enthalpie
 C       DIFTL0 (diffusivite dynamique en kg/(m s))
@@ -565,7 +565,7 @@ C       calculs charbon (un peu etonnant de ne pas prendre en
 C       compte les variations de ce parametre physique si on
 C       recherche des informations sur les flux thermiques aux parois)
 C
-      DIFTL0      =-GRAND
+      DIFTL0 =-GRAND
 C
 C ---> Masse volumique variable et viscosite constante (pour les suites)
       IROVAR(IPHAS) = 1
@@ -584,6 +584,8 @@ C
 C
       CALL UICPI1(SRROM)
 C     ===========
+C
+      DIFTL0 = 4.25D-5
 C
       ENDIF
 #endif

@@ -165,21 +165,6 @@ C ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
 C         etre numerotees ensuite
 C
       IPROPP = IPROP
-
-#if defined(_CS_HAVE_XML)
-C
-C   - Interface Code_Saturne
-C     ======================
-C     Construction de l'indirection entre la numerotation du noyau et XML
-      IF(IIHMPR.EQ.1) THEN
-        CALL CSCPPP (NCLACP, NSALPP, NSALTO, ITEMP1, IROM1, IYM1, IMMEL,
-     &               ITEMP2, IX2, IROM2, IDIAM2, IGMDCH, IGMDV1,
-     &               IGMDV2, IGMHET, ILUMI)
-
-      ENDIF
-
-#endif
-
 C
 C ---> Positionnement dans le tableau PROPCE
 C      et reperage du rang pour le post-traitement
@@ -285,6 +270,22 @@ C      Au centre des faces internes (flux de masse)
 C
       IPROP = NPROFA
       NPROFA = IPROP
+C
+C
+#if defined(_CS_HAVE_XML)
+C
+C   - Interface Code_Saturne
+C     ======================
+C     Construction de l'indirection entre la numerotation du noyau et XML
+      IF (IIHMPR.EQ.1) THEN
+        CALL UICPPR (NCLACP, NSALPP, NSALTO, IPPMOD, ICP3PL, IPPPRO,
+     &               IPPROC, ITEMP1, IROM1, IYM1, IMMEL,
+     &               ITEMP2, IX2, IROM2, IDIAM2, IGMDCH, IGMDV1,
+     &               IGMDV2, IGMHET, IGMSEC, ILUMI)
+
+      ENDIF
+
+#endif
 C
       RETURN
       END

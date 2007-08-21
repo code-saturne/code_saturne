@@ -530,17 +530,17 @@ C ------ Contribution aux bilans explicite et implicite de
 C        des echanges par diffusion moleculaire
 C
         DO IEL = 1, NCEL
-          AUX = ZERO
-          IF ( W11(IEL).GT.EPSICP )
-     &      AUX         = 6.D0 * W1(IEL) * XNUSS / W2(IEL)**2
+          IF ( W11(IEL).GT.EPSICP ) THEN
+            AUX         = 6.D0 * W1(IEL) * XNUSS / W2(IEL)**2
      &                  / PROPCE(IEL,IPCRO2) * PROPCE(IEL,IPCROM)
      &                  * W11(IEL)
      &                  * VOLUME(IEL)
-          RHOVST      = AUX / CP2CH(NUMCHA) /W11(IEL)
+            RHOVST      = AUX / CP2CH(NUMCHA) /W11(IEL)
 C
-          SMBRS(IEL)  = SMBRS(IEL) - AUX *
-     &                ( PROPCE(IEL,IPCTE2) - PROPCE(IEL,IPCTE1) )
-          ROVSDT(IEL) = ROVSDT(IEL) + MAX(ZERO,RHOVST)
+            SMBRS(IEL)  = SMBRS(IEL) - AUX *
+     &                  ( PROPCE(IEL,IPCTE2) - PROPCE(IEL,IPCTE1) )
+            ROVSDT(IEL) = ROVSDT(IEL) + MAX(ZERO,RHOVST)
+          ENDIF
 C
         ENDDO
 C
