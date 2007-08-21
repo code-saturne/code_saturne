@@ -610,7 +610,7 @@ C     ===========
      &   IMRGRA , NSWRSP , NSWRGP , IMLIGP , IRCFLP ,
      &   ISCHCP , ISSTPP , IESCAP ,
      &   IMGRP  , NCYMXP , NITMFP , IPP    , IWARNP ,
-     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , THETV ,
+     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETV  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IFACLG , IRESPR ,
