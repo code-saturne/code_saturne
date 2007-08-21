@@ -508,7 +508,7 @@ C     ===========
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) , RA(IDEPAL) ,
+     &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
 C=======================================================================

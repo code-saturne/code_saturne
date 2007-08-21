@@ -360,6 +360,11 @@ C
         IXYZN0 = IFINRA
         IDEPAL = IXYZN0 + NDIM*NNOD
         IFINRA = IDEPAL + NDIM*NNOD
+      ELSE
+        IIMPAL = 0
+        IIALTY = 0
+        IXYZN0 = 0
+        IDEPAL = 0
       ENDIF
 C
 C --> Verification

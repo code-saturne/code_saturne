@@ -239,7 +239,7 @@ C
 C       ============
      & ( IPPMOD, ICOD3P, ICODEQ, ICOEBU, ICOBML,
      &   ICOLWC, ICP3PL, ICPL3C, ICFUEL,
-     &   IELJOU, IELARC, IELION, ICOMPF, INDJON )
+     &   IELJOU, IELARC, IELION, ICOMPF, INDJON, IEQCO2)
 C
       ENDIF
 C
@@ -464,6 +464,8 @@ C       ===========
      &         CDTVAR, NITMAX, EPSILO)
 C
 C     Options numériques globales
+        RELAXP = -999.D0
+        EXTRAP = 0.D0
         CALL CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAP, IMRGRA)
 C       ===========
         IPHAS = 1
@@ -498,8 +500,8 @@ C
 C
         CALL UIPROP
 C       ===========
-     &            (IROM, IVISCL, IVISCT, ICOUR, IFOUR,
-     &             ISMAGO, IALE, ICP,
+     &            (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
+     &             ISMAGO, IALE, ICP, ISCALT, ISCAVR,
      &             IPRTOT, IPPPRO, IPPROC, ICMOME,
      &             IPPTX, IPPTY, IPPTZ, IPPDT,
      &             IVISMA, IAPPEL)
@@ -548,8 +550,8 @@ C
 C
           CALL UIPROP
 C         ===========
-     &              (IROM, IVISCL, IVISCT, ICOUR, IFOUR,
-     &               ISMAGO, IALE, ICP,
+     &              (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
+     &               ISMAGO, IALE, ICP, ISCALT, ISCAVR,
      &               IPRTOT, IPPPRO, IPPROC, ICMOME,
      &               IPPTX, IPPTY, IPPTZ, IPPDT,
      &               IVISMA, IAPPEL)

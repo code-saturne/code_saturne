@@ -953,6 +953,7 @@ cs_gui_strcmp(const char *const s1,
               const char *const s2)
 {
   if (s1 == NULL || s2 == NULL) return 0;
+  if ( strlen(s1) != strlen(s2)) return 0;
   if (!strncmp(s1, s2, strlen(s1))) return 1;
   return 0;
 }

@@ -1552,7 +1552,7 @@ C --- Tableaux des structures
           FORSTA(II,ISTR) = 0.D0
           FORSTP(II,ISTR) = 0.D0
           XSTREQ(II,ISTR) = 0.D0
-          DO JJ = 1, NSTRMX
+          DO JJ = 1, 3
             XMSTRU(II,JJ,ISTR) = 0.D0
             XCSTRU(II,JJ,ISTR) = 0.D0
             XKSTRU(II,JJ,ISTR) = 0.D0

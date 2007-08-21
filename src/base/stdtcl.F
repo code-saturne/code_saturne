@@ -35,8 +35,8 @@ C                       *****************
 C     --------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NOZFMX , NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NBZFMX ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  , NBZFMX , NOZFMX ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
@@ -46,7 +46,8 @@ C     --------------------------------------------------------------
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  , RCODCL ,
-     &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
+     &   W1     , W2     , W3     , W4     , W5     , W6     ,
+     &   COEFU  , QCALC  ,
      &   RDEVEL , RTUSER , RA     )
 C     --------------------------------------------------------------
 C***********************************************************************
@@ -84,6 +85,7 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NBZFMX       ! E  !  -> ! NB MAX DE ZONES DE FACES DE BORD     !
+CARGU ! NOZFMX       ! E  !  -> ! NUMERO MAX DE ZONES DE FACES DE BORD !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
 CARGU ! IFACEL       ! TE !  -> ! ELEMENTS VOISINS D'UNE FACE INTERNE  !
@@ -164,6 +166,7 @@ CARGU ! W1,2,3,4,5,6 ! TR !  -  ! TABLEAUX DE TRAVAIL                  !
 CARGU !  (NCELET     !    !     !  (CALCUL DU GRADIENT DE PRESSION)    !
 CARGU ! COEFU        ! TR !  -  ! TAB DE TRAV                          !
 CARGU !  (NFABOR,3)  !    !     !  (CALCUL DU GRADIENT DE PRESSION)    !
+CARGU ! QCALC(NOZFMX)! TR !  -  ! TAB DE TRAVAIL (DEBIT PAR ZONE)      !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -234,6 +237,7 @@ C
       DOUBLE PRECISION W1(NCELET),W2(NCELET),W3(NCELET)
       DOUBLE PRECISION W4(NCELET),W5(NCELET),W6(NCELET)
       DOUBLE PRECISION COEFU(NFABOR,NDIM)
+      DOUBLE PRECISION QCALC(NOZFMX)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -244,7 +248,6 @@ C
       INTEGER          IPBROM, ICKE, IPCVIS, II, IEL, IOK
       DOUBLE PRECISION QISQC, VISCLA, D2S3, UREF2, RHOMOY, DHY, XITURB
       DOUBLE PRECISION USTAR2, XKENT, XEENT
-      DOUBLE PRECISION QCALC(NOZFMX)
 C
       INTEGER          IPASS
       DATA             IPASS /0/

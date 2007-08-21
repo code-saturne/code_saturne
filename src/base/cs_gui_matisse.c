@@ -116,28 +116,109 @@ static const char *const cs_matisse_map_axis[3]=
  * Private functions prototypes
  *============================================================================*/
 
+/*-----------------------------------------------------------------------------
+ * Retourne une donnee matisse de type double
+ *----------------------------------------------------------------------------*/
 
-double cs_gui_data_matisse_double(const char *const markup1,
-                                  const char *const markup2,
-                                  const char *const data);
+static double cs_gui_data_matisse_double(const char *const markup1,
+                                         const char *const markup2,
+                                         const char *const data)
+{
+  char   *path;
+  double  result;
 
-int cs_gui_data_matisse_int(const char *const markup,
-                            const char *const data);
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 4, "matisse", markup1, markup2, data);
+  cs_xpath_add_function_text(&path);
 
-int cs_gui_data_matisse_att_status(const char *const data);
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
-int cs_gui_warehousing_type(void);
+  BFT_FREE(path);
+  return result;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Retourne une donnee matisse de type entier
+ *----------------------------------------------------------------------------*/
+
+static int cs_gui_data_matisse_int(const char *const markup,
+                                   const char *const data)
+{
+  char *path;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 4, "matisse", markup, "geometry", data);
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_int(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne une donnee matisse de type entier (attribut status XML)
+ *----------------------------------------------------------------------------*/
+
+static int cs_gui_data_matisse_att_status(const char *const data)
+{
+  char *path;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 4, "matisse", "compute", "physical_model", data);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (!cs_gui_get_status(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Retourne Le type d'entreposage (1 pour Emm, 0 pour Vault)
+ *----------------------------------------------------------------------------*/
+
+static int cs_gui_warehousing_type(void)
+{
+  char *path;
+  char *value;
+  int   intval;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 4, "matisse", "compute", "geometry", "typent");
+  cs_xpath_add_attribute(&path, "label");
+
+  value = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(value, "vault"))
+    intval = 0;
+
+  else if (cs_gui_strcmp(value,"emm"))
+    intval = 1;
+
+  else
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  BFT_FREE(value);
+
+  return intval;
+}
 
 
 /*============================================================================
  * Public functions API Fortran
  *============================================================================*/
 
-
 /*----------------------------------------------------------------------------
  * Traitement des parametres geometriques de type entier de Matisse
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csgein, CSGEIN) (int *const nptran,
                                 int *const nplgrs,
@@ -512,111 +593,7 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
 #endif
 }
 
-
-/*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type double
- *----------------------------------------------------------------------------*/
-
-
-double cs_gui_data_matisse_double(const char *const markup1,
-                                  const char *const markup2,
-                                  const char *const data)
-{
-  char   *path;
-  double  result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4, "matisse", markup1, markup2, data);
-  cs_xpath_add_function_text(&path);
-
-  if (!cs_gui_get_double(path, &result))
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-  return result;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type entier
- *----------------------------------------------------------------------------*/
-
-
-int cs_gui_data_matisse_int(const char *const markup,
-                            const char *const data)
-{
-  char *path;
-  int   result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4, "matisse", markup, "geometry", data);
-  cs_xpath_add_function_text(&path);
-
-  if (!cs_gui_get_int(path, &result))
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-  return result;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type entier (attribut status XML)
- *----------------------------------------------------------------------------*/
-
-
-int cs_gui_data_matisse_att_status(const char *const data)
-{
-  char *path;
-  int   result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4, "matisse", "compute", "physical_model", data);
-  cs_xpath_add_attribute(&path, "status");
-
-  if (!cs_gui_get_status(path, &result))
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-  return result;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Retourne Le type d'entreposage (1 pour Emm, 0 pour Vault)
- *----------------------------------------------------------------------------*/
-
-
-int cs_gui_warehousing_type(void)
-{
-  char *path;
-  char *value;
-  int   intval;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4, "matisse", "compute", "geometry", "typent");
-  cs_xpath_add_attribute(&path, "label");
-
-  value = cs_gui_get_attribute_value(path);
-
-  if (cs_gui_strcmp(value, "vault"))
-    intval = 0;
-
-  else if (cs_gui_strcmp(value,"emm"))
-    intval = 1;
-
-  else
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-  BFT_FREE(value);
-
-  return intval;
-}
-
-
 /*----------------------------------------------------------------------------*/
-
 
 #ifdef __cplusplus
 }

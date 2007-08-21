@@ -709,6 +709,9 @@ C
 C -->   TRAITEMENT DE LA PERIODICITE
           IF(IPERIO.EQ.1) THEN
 C
+            IDIMTE = 0
+            ITENSO = 0
+C
             CALL PERCOM
 C           ===========
      &    ( IDIMTE , ITENSO ,

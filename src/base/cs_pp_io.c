@@ -997,7 +997,7 @@ static void _cs_pp_io_convert_read
             for (ii = 0; ii < n_elts; ii++)
               _dest[ii] = _buffer[ii];
           }
-          assert(sizeof(unsigned long) == 4 || sizeof(unsigned long long) == 4);
+          assert(sizeof(unsigned long) == 8 || sizeof(unsigned long long) == 8);
           break;
 
         default:

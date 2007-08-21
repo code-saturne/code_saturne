@@ -43,7 +43,7 @@ C     -------------------------------------------------------------
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , FRCXT  , DEPALE ,
+     &   COEFA  , COEFB  , FRCXT  ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -132,7 +132,6 @@ CARGU ! COEFA COEFB  ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
 CARGU ! FRCXT(NCELET,! TR ! <-> ! FORCE EXTERIEURE GENERANT LA PRESSION!
 CARGU !   3,NPHAS)   !    !     !  HYDROSTATIQUE                       !
-CARGU ! DEPALE(NNOD,3! TR !  -> ! DEPLACEMENT AUX NOEUDS               !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -198,7 +197,7 @@ C
       DOUBLE PRECISION DT(NCELET), RTP(NCELET,*), PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,NCOFAB), COEFB(NFABOR,NCOFAB)
-      DOUBLE PRECISION FRCXT(NCELET,3,NPHAS), DEPALE(NNOD,3)
+      DOUBLE PRECISION FRCXT(NCELET,3,NPHAS)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -682,13 +681,13 @@ C=======================================================================
 C 10.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
 C=======================================================================
 C
-      IF(ITURB(IPHAS).EQ.41) THEN
-        DO IPHAS = 1, NPHAS
+      DO IPHAS = 1, NPHAS
+        IF(ITURB(IPHAS).EQ.41) THEN
           DO IEL = 1, NCEL
             PROPCE(IEL,IPPROC(ISMAGO(IPHAS))) = 0.D0
           ENDDO
-        ENDDO
-      ENDIF
+        ENDIF
+      ENDDO
 C
 C=======================================================================
 C 11.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE

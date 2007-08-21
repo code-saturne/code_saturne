@@ -956,7 +956,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   const cs_real_t  cos_ij_fn_min = cos((*anomax));
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
-  /* Currecntly lmited to 1 call, but the algorithm would work just the same
+  /* Currently limited to 1 call, but the algorithm would work just the same
      with multiple calls (as we re-build a new cell -> cells connectivity
      instead of just filtering the one we already have) */
 
@@ -977,15 +977,20 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     _first_call = 1;
 
-    /* Stop if there is no extended neighborhood */
+    /* Warn if there is no extended neighborhood */
 
     if (   mesh->cell_cells_lst == NULL
         || mesh->cell_cells_idx == NULL
-        || mesh->halo_type == CS_MESH_HALO_STANDARD)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Lorsque la méthode de calcul des gradients par moindres\n"
-                  "carrés sur support étendu est activée il est indispensable\n"
-                  "de générer un voisinage étendu."));
+	  || mesh->halo_type == CS_MESH_HALO_STANDARD) {
+	bft_printf(_("\nATTENTION\n"
+		"Le voisinage étendu est nul alors que la méthode de calcul\n"
+                 "des gradients par moindres carrés sur support étendu est\n"
+                 "activée. Ceci peut arriver dans certains cas spécifiques\n"
+                 "(maillage 1D). Vérifiez que c'est bien votre cas, sinon\n"
+                 "contactez le support.\n"));
+    }
+    else {
+
 
     /*
       For each internal face, we select in the extended neighborhood
@@ -1138,6 +1143,8 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
         bft_printf("\n");
       }
 #endif
+
+    } /* If there is extended neighborhood */
 
   } /* If _first_call == 0 */
 

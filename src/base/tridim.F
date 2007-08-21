@@ -223,7 +223,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IDBIA1, IDBRA1
-      INTEGER          IFINIA, IFINRA, IFNIA1
+      INTEGER          IFINIA, IFINRA, IFNIA1, IFNRA1
       INTEGER          IEL   , IFAC  , IVAR  , ISCAL , IAPPEL
       INTEGER          NCP   , NCV   , IOK
       INTEGER          IICODC, IRCODC
@@ -264,7 +264,7 @@ C
       INTEGER          IWCF  , IPH   , IFLMAS, IFLMAB
       INTEGER          ITALIM, ITRFIN, INEEFL
       INTEGER          IFLALF, IFLALB, IPRALE, ICOALE
-      INTEGER          MAXELT, ILS, IILZFB, NBZFMX, NOZFMX
+      INTEGER          MAXELT, ILS, IILZFB, NBZFMX, NOZFMX, IQCALC
 
       DOUBLE PRECISION CPCST , TDITOT, TDIST2, TDIST1, CVCST
       DOUBLE PRECISION RO0IPH, P0IPH, PR0IPH, XXP0, XYP0, XZP0
@@ -976,14 +976,17 @@ C
         NOZFMX = NOZPPM
         IILZFB = IFINIA
         IFNIA1 = IILZFB + NBZFMX
+        IQCALC = IFINRA
+        IFNRA1 = IQCALC + NOZFMX
         CALL IASIZE('TRIDIM',IFNIA1)
+        CALL RASIZE('TRIDIM',IFNRA1)
 C
           CALL STDTCL
 C         ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFNIA1 , IFNRA1 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NOZFMX , NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NBZFMX ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  , NBZFMX , NOZFMX ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
@@ -994,7 +997,7 @@ C         ===========
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  , RA(IRCODC)      ,
      &   RA(IW1), RA(IW2), RA(IW3), RA(IW4), RA(IW5), RA(IW6),
-     &   RA(ICOEFU)      ,
+     &   RA(ICOEFU)      , RA(IQCALC)      ,
      &   RDEVEL , RTUSER , RA     )
 C
         ENDIF

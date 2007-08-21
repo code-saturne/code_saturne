@@ -1277,7 +1277,11 @@ C=======================================================================
 C 5. ELEMENTS DE albase.h
 C=======================================================================
 C
-      IF (ISUITE.EQ.0 .AND. ITALIN.EQ.-999) ITALIN = 1
+      IF (IALE.EQ.1) THEN
+        IF (ISUITE.EQ.0 .AND. ITALIN.EQ.-999 ) ITALIN = 1
+      ELSE
+        ITALIN = 0
+      ENDIF
 C
 C=======================================================================
 C 6. COEFFICIENTS DE alstru.h
