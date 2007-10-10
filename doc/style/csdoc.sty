@@ -1,0 +1,344 @@
+%
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+% 
+%     Copyright (C) 1998-2007 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+% 
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+% 
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+% Classe Note EDF, variante de la classe standard report
+%
+% Etienne DECOSSIN 2000 (Classe Note EDF, variante de la classe standard report)
+% Alexandre Douce 2003 --> feuille de style LateX
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IDENTIFICATION DE noteEDF.sty
+\NeedsTeXFormat {LaTeX2e}[2003/05/01]
+\def \filename {csdoc.sty}
+\def \filedate {2003/05/01}
+\def \fileversion {0.4}
+\ProvidesPackage {csdoc}[\filedate\space\fileversion\space
+  EDF R&D report format package]
+\typeout {Package: `csdoc' \fileversion\space <\filedate>}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEFINITION DES OPTIONS DU STYLE noteEDF
+%%%\newif\if@EDFenglish
+%%%\@EDFenglishfalse
+%%%\newif\if@EDFpdftex
+%%%\@EDFpdftexfalse
+%%%\newif\if@EDFlatexfont
+%%%\@EDFlatexfontfalse
+%%%\newif\if@EDFedfdoc
+%%%\@EDFedfdoctrue
+%%%\newif\if@EDFrddoc
+%%%\@EDFrddocfalse
+%%%\newif\if@EDFconfidentiel
+%%%\@EDFconfidentielfalse
+%%%%
+%%%\DeclareOption{english}{\@EDFenglishtrue}
+%%%\DeclareOption{pdftex}{\@EDFpdftextrue}
+%%%\DeclareOption{latexfont}{\@EDFlatexfonttrue}
+%%%\DeclareOption{confidentiel}{\@EDFconfidentieltrue\@EDFedfdocfalse\@EDFrddocfalse}
+%%%\DeclareOption{rddoc}{\@EDFconfidentielfalse\@EDFedfdocfalse\@EDFrddoctrue}
+%%%\DeclareOption{edfdoc}{\@EDFconfidentielfalse\@EDFedfdoctrue\@EDFrddocfalse}
+%%%\ProcessOptions
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% UTILISATION DE PDFLATEX ?
+\newif\ifpdf
+\ifx\pdfoutput\undefined
+  \pdffalse    % we are not running PDFLaTeX
+\else
+  \pdfoutput=1 % we are running PDFLaTeX
+  \pdftrue
+\fi
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chargement des Packages utiles
+\ifpdf
+  \RequirePackage[pdftex]{graphicx}
+  \pdfcompresslevel=9
+\else
+  \RequirePackage{graphicx}
+\fi
+
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{setspace}
+
+\RequirePackage{tabularx}
+\RequirePackage{wasysym}
+\RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
+\RequirePackage{ifthen}
+
+\RequirePackage[latin1]{inputenc}
+\RequirePackage[OT1]{fontenc} % \RequirePackage[T1]{fontenc} Attention: Liste des symboles
+%\RequirePackage[francais]{babel}
+
+%\if@EDFlatexfont
+%   \RequirePackage[T1]{fontenc}
+%\else
+%   \RequirePackage{pslatex}
+%   \RequirePackage[T1]{fontenc}
+%\fi
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mise en page : Définitions des MACROS
+\newcommand{\titreCS}[1]{\def\titre{#1}}
+\newcommand{\docassociesCS}[1]{\def\docassocies{#1}}
+\newcommand{\resumeCS}[1]{\def\resume{#1}}
+
+\newcommand{\pdfgraphics}{\ifpdf\DeclareGraphicsExtensions{.pdf,.jpg}\else\fi}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Marges horizontales (du haut vers le bas)
+%------------------------------------------
+\setlength{\voffset}{0pt}
+\setlength{\topmargin}{0pt} % définit la marge a 1 pouce
+\addtolength{\topmargin}{-13mm} % redéfinit la marge en retrait par rapport a 1 pouce
+\setlength{\headheight}{15mm} % épaisseur de la boîte contenant le haut de page (cartouche)
+\setlength{\headsep}{6mm} % redefinit la séparation en l'entête et le corps du document
+\setlength{\textheight}{233mm} % redéfinit la hauteur de la page
+\setlength{\footskip}{15mm} % espace entre la fin du texte et le début du pieds de page
+
+% Marges verticales
+%------------------
+\setlength{\hoffset}{0pt}
+\setlength{\evensidemargin}{7mm} % redefinit la marge impaire
+\setlength{\oddsidemargin}{7mm} % redefinit la marge paire
+\setlength{\textwidth}{156mm} % largeur du texte
+\setlength{\parindent}{0mm}
+\setlength{\parskip}{6pt}
+\setlength{\tabcolsep}{1mm}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Pour choisir à la main les style des titres et sections :
+\DeclareFixedFont{\polsec}{OT1}{phv}{b}{n}{16}
+\DeclareFixedFont{\polssec}{OT1}{phv}{b}{n}{14}
+\DeclareFixedFont{\polsssec}{OT1}{phv}{b}{n}{12}
+\renewcommand{\section}{\@startsection {section}{1}{-5mm}
+                        {12pt plus2pt minus1pt}
+                        {6pt}
+                        {\bfseries\fontsize{16}{18}\selectfont\polsec}}
+\renewcommand{\subsection}{\@startsection {subsection}{2}{-5mm}
+                           {12pt plus2pt minus1pt}
+                           {6pt}
+                           {\bfseries\fontsize{14}{16}\polssec}}
+\renewcommand{\subsubsection}{\@startsection {subsubsection}{3}{-5mm}
+                           {12pt plus2pt minus1pt}
+                           {6pt}
+                           {\bfseries\fontsize{12}{14}\polsssec}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SOMMAIRE
+%
+\renewcommand*\l@section{\upshape\bfseries \@dottedtocline{1}{0mm}{1.5em}}
+\renewcommand*\l@subsection{\mdseries\scshape \@dottedtocline{2}{0mm}{2.4em}}
+\renewcommand*\l@subsubsection{\itshape \@dottedtocline{3}{3mm}{3.6em}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MACROS RACCOURCIS
+\newcommand{\verscs}{1.3.1-dvp}
+\newcommand{\CS}{%
+{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}}
+\newcommand{\syrthes}{Syrthes}
+%
+\newcommand{\tildeunix}{%
+{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
+%
+%(Attention : \passepage ne fonctionne pas devant un \chapter (classe 'report'))
+\newcommand{\passepage}{%
+\ifthenelse{\isodd{\arabic{page}}}
+{\newpage\hspace*{6.cm}\newpage}{\newpage}}
+\newcommand{\passepart}{%
+\hspace*{6.cm}\ifthenelse{\isodd{\value{page}}}
+{\newpage}{\hspace*{-6.cm}}}
+%
+\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
+\newcommand{\vect}[1]{\underline{#1}}
+\newcommand{\tens}[1]{\underline{\underline{#1}}}
+\newcommand{\grad}{\text{g}\underline{\text{rad}}\ }
+\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\ }
+\newcommand{\dive}{\text{div}}
+\newcommand{\rot}{\underline{\text{rot}}\ }
+\newcommand{\ind}[1]{\text{$_{#1}$}}
+\newcommand{\degresC}{$^\circ$C}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%BIBLIOGRAPHIE
+%-------------
+% Suppression du titre References
+
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EN-TETE ET PIED DE PAGE
+% =======================
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[LE,LO]{\cartouche}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% CARTOUCHE1
+% ==========
+\newcommand{\cartouche}{%
+\hspace*{-5mm}
+\begin{tabularx}{162mm}
+{|>{\small\centering\arraybackslash}p{2.7cm}|>{\small\centering\arraybackslash}X|>
+{\small\centering\arraybackslash}p{3.5cm}|}
+\hline
+\vspace{2mm}\textbf{EDF R\&D}
+&
+\vspace{2mm}\textbf{\large\titre}
+&
+\CS \par
+documentation \par
+Page \thepage/\pageref{LastPage} \\
+\hline
+\end{tabularx}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PAGE DE TITRE
+\newcount\hour \newcount\minute
+\hour=\time  \divide \hour by 60
+\minute=\time
+\loop \ifnum \minute > 59 \advance \minute by -60 \repeat
+\newcommand\now{\number\hour\ h
+         \ifnum \minute<10 0\fi
+         \number\minute}
+
+\def\moisannee{\ifcase\month
+    \or JANVIER\or FÉVRIER\or MARS\or AVRIL\or MAI\or JUIN\or
+    JUILLET\or AOÛT\or SEPTEMBRE\or OCTOBRE\or NOVEMBRE\or
+    DÉCEMBRE\fi
+    \space \number\year}
+
+\def\monthyear{\ifcase\month
+    \or JANUARY\or FEBRUARY\or MARCH\or APRIL\or MAY\or JUNE\or
+    JULY\or AUGUST\or SEPTEMBER\or OCTOBER\or NOVEMBER\or
+    DECEMBER\fi
+    \space \number\year}
+
+\newcommand{\makepdgCS}
+{%
+
+\begin{titlepage}
+
+\thispagestyle{empty}
+
+\enlargethispage{4.5cm} % Enlarge the \textheight for the current page
+\unitlength=1cm
+
+\begin{center}
+\vspace*{-32mm}
+
+\begin{picture}(16,8.5)
+  \put(7,5.7){\includegraphics*[width=1.95cm]{../input/logoedf}}
+  \put(0,7.1){\textsf{\textbf{EDF R\&D}}}
+  \put(0,4.6){\scriptsize\textsc{\textsf{Fluid Dynamics, Power Generation and Environment Department}}}
+  \put(0,4.3){\scriptsize\textsc{\textsf{Single Phase Thermal-Hydraulics Group}}}
+  \put(0,3.6){\scriptsize\textsc{\textsf{6, quai Watier}}}
+  \put(0,3.3){\scriptsize\textsc{\textsf{F-78401 Chatou Cedex}}}
+  \put(0,2.5){\scriptsize\textsc{\textsf{Tel: 33 1 30 87 75 40}}}
+  \put(0,2.2){\scriptsize\textsc{\textsf{\parbox[t]{16cm}{Fax: 33 1 30 87 79 16 \hfill \monthyear}}}}
+\end{picture}
+\begin{picture}(16,4.4)
+  \put(2.5,0){\framebox(11,4.4){\ }}
+  \put(2.75,3.8){\CS\ documentation}
+  \put(2.75,2.5){\parbox[t]{10.5cm}{\centering\textbf{{\titre}}}}
+  \put(2.75,0.4){contact: saturne-support@edf.fr}
+\end{picture}
+\begin{picture}(16,13)
+\put(1,3){\includegraphics*[width=14cm]{../input/logocs.png}}
+\end{picture}
+%%%
+%%\begin{picture}(16,13)
+%%  \put(2,6.2){\parbox[t]{12cm}{\includegraphics*[width=12cm]{../input/logocs.png}}}
+%%%  \put(2,11.2){\parbox[t]{12cm}{\small\remauteurs}}
+%%%  \put(1,10.1){\small\textbf{Related Documents:} \parbox[t]{12cm}{\docassocies}}
+%%%  \put(1,7.4){\small\textbf{Abstract:}}
+%%%  \put(0,6.7){\small\parbox[t]{16cm}{\resume}}
+%%  \put(0,0.1){\small\parbox[t]{16cm}{http://rd.edf.com/code\_saturne\hfill\copyright{} EDF \number\year}}
+%%\end{picture}
+\end{center}
+
+{ http://rd.edf.com/code\_saturne\hfill\copyright{} EDF \number\year}
+
+\passepart
+
+\end{titlepage}
+\normalsize
+}
+%
+%
+
+%%% EOF.
