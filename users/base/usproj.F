@@ -45,7 +45,7 @@ C     -------------------------------------------------------------
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
-     &   ETTP   , ETTPA  , TEPA   , STATIS , TSLAGR , PARBOR ,
+     &   ETTP   , ETTPA  , TEPA   , STATIS , STATIV , TSLAGR , PARBOR ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -177,6 +177,9 @@ CARGU ! TEPA         ! TR !  -> ! INFO PARTICULAIRES (REELS)           !
 CARGU ! (NBPMAX,NVEP)!    !     !   (POIDS STATISTIQUES,...)           !
 CARGU ! STATIS       ! TR !  -> ! MOYENNES STATISTIQUES                !
 CARGU !(NCELET,NVLSTA!    !     !                                      !
+CARGU ! STATIV       ! TR !  -> ! CUMUL POUR LES VARIANCES DES         !
+CARGU !(NCELET,      !    !     !    STATISTIQUES VOLUMIQUES           !
+CARGU !   NVLSTA-1)  !    !     !                                      !
 CARGU ! TSLAGR       ! TR !  -> ! TERME DE COUPLAGE RETOUR DU          !
 CARGU !(NCELET,NTERSL!    !     !   LAGRANGIEN SUR LA PHASE PORTEUSE   !
 CARGU ! PARBOR       ! TR !  -> ! INFOS SUR INTERACTION DES PARTICULES !
@@ -256,7 +259,8 @@ C
       DOUBLE PRECISION COEFA(NDIMFB,*), COEFB(NDIMFB,*)
       DOUBLE PRECISION ETTP(NBPMAX,NVP) , ETTPA(NBPMAX,NVP)
       DOUBLE PRECISION TEPA(NBPMAX,NVEP)
-      DOUBLE PRECISION STATIS(NCELET,NVLSTA) , TSLAGR(NCELET,NTERSL)
+      DOUBLE PRECISION STATIS(NCELET,NVLSTA), STATIV(NCELET,NVLSTA-1)
+      DOUBLE PRECISION TSLAGR(NCELET,NTERSL)
       DOUBLE PRECISION PARBOR(NFABOR,NVISBR)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C

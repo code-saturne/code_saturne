@@ -300,9 +300,9 @@ C
         ELSE IF (ICAS .EQ. 4) THEN
 C
           NOMCAS = 'CHR'
-          NOMREP = ''
+          NOMREP = ' '
           NOMFMT = 'text'
-          OPTFMT = ''
+          OPTFMT = ' '
           INDMOD = 1
           NTCHRL = NTCHR
 C
