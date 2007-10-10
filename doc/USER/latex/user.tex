@@ -30,7 +30,7 @@
 %                                                                    %
 %                                                                    %
 %                                                                    %
-% Titre :           Manuel Utilisateur de Code_Saturne               %
+% Titre :           Code_Saturne user manual                         %
 %                                                                    %
 %                                                                    %
 %                                                                    %
@@ -40,15 +40,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES OBLIGATOIRES
-\usepackage[rddoc]{noteEDF}
-%
-% Les options de la classe noteEDF.sty disponibles sont :
-% - english (page de garde supplementaire en anglais)
-% - pdftex
-% Les 3 options suivantes sont exclusives mutuellement :
-% - confidentiel (orientation dans le fonds documentaire et accesibilité)
-% - rddoc (orientation dans le fonds documentaire)
-% - edfdoc (orientation dans le fonds documentaire)
+\usepackage{../../style/csdoc}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -71,19 +63,6 @@
 %
 % Pour avoir les Thumbnails a l'ouverture du document sous ACROREAD :
 % pdfpagemode = UseThumbs
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES ET COMMANDES POUR LA BIBLIOGRAPHIE SI BIBTEX EST CHOISI
-% SI L'ENVIRONNEMENT thebibliography EST CHOISI COMMENTER CES 3 LIGNES
-% (ET MODIFIER LE MAKEFILE)
-%\usepackage{natbib}
-%\bibliographystyle{noteEDF_natbib}
-%\bibpunct{[}{]}{;}{a}{,}{,}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RÉALISATION D'UN INDEX
@@ -91,35 +70,8 @@
 \makeindex
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ALLTT D'ENVIRONNEMENT VERBATIM AMELIORE
 \usepackage{alltt}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES POUR LA RÉALISATION D'UNE LISTE DES SYMBOLES UTILISES
-%\usepackage[article,french]{symlisteEDF}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES SUPPLEMENTAIRES
-% \usepackage[...]{.....}
-%
-% Packages chargés par noteEDF.sty :
-% graphicx, tabularx, amsmath, amssymb, wasysym,
-% fancyhdr, lastpage, ifthen, setspace,
-% [latin1]{inputenc}, [OT1]{fontenc}, [francais]{babel}
-%
-%\usepackage{times} % plus joli en pdf (fortement recommandé)
-%\usepackage{here} % option [H] pour que les objets flottant ne flottent plus
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MACROS SUPPLEMENTAIRES
@@ -129,27 +81,6 @@
 \newcommand{\repgraphics}{../graphics}
 \newcommand{\extgraphics}{pdf}
 %
-\newcommand{\verscs}{1.3.1-dvp}
-\newcommand{\CS}{%
-{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}}
-\newcommand{\syrthes}{Syrthes}
-%
-\newcommand{\tildeunix}{%
-{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
-%
-%(Attention : \passepage ne fonctionne pas devant un \chapter (classe 'report'))
-\newcommand{\passepage}{%
-\ifthenelse{\isodd{\arabic{page}}}
-{\newpage\hspace*{6.cm}\newpage}{\newpage}}
-%
-\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
-\newcommand{\vect}[1]{\underline{#1}}
-\newcommand{\tens}[1]{\underline{\underline{#1}}}
-\newcommand{\grad}{\text{g}\underline{\text{rad}}\ }
-\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\ }
-\newcommand{\dive}{\text{div}}
-\newcommand{\ind}[1]{\text{$_{#1}$}}
-\newcommand{\degresC}{$^\circ$C}
 \newbox\tempbox
 \newcommand{\motcle}[7]{%
    \noindent
@@ -178,29 +109,10 @@
 %       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] :\quad}\ignorespaces#4.}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreEDFfr{Guide pratique d'utilisation de \CS\ version~\verscs}
-\titreEDFang{\CS\ version~\verscs\ practical user's guide}
-\numeroEDF{contact: saturne-support@edf.fr}
-\indiceEDF{}
-
-\authorEDFfr{\'Equipe de développement de \CS}
-\authorEDFang{\CS\ development team}
-%\rqauteursEDF{* Sigle de la structure du coauteur EDF, si différente de l'auteur principal.}
-%\remauteursEDF{** Nom de la société (en clair) si le coauteur est extérieur.}
-\rqauteursEDF{}
-\remauteursEDF{}
-
-%\groupeEDFfr{Expertise en bidules et trucs}
-%\groupeEDFang{Very strong in something}
-
-\docassociesEDFfr{}
-\docassociesEDFang{}
-\resumeEDFfr{}
-\resumeEDFang{This document presents all the necessary elements to run a calculation
+\titreCS{\CS\ version~\verscs\ practical user's guide}
+\docassociesCS{}
+\resumeCS{This document presents all the necessary elements to run a calculation
 with \CS\ version \verscs. It then lists all the variables of the code
 which may be useful for more advanced utilisation.
 The user subroutines of all the modules within the code are also documented.
@@ -209,16 +121,6 @@ their definition, allowed values, default values and conditions for use are give
 These key words and parameters are grouped under headings
 based on their function. An alphabetical index list is also given at the end of
 the document for easier consultation.}
-\accessibiliteEDFfr{LIBRE} % LIBRE, EDF-GDF ou RESTREINTE
-\accessibiliteEDFang{FREE} % FREE, EDF-GDF or RESTRICTED
-
-\actionEDF{Projet JUPITER}
-\classementEDF{}
-\typerapportEDF{Note technique} % Note d'étude, Note technique
-\motsclesEDF{\CS, CFD, thermohydraulique}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
@@ -230,20 +132,16 @@ contents}{contents}}
 
 \pdfbookmark[1]{Flyleaf}{pdg}
 \large
-\makepdgEDF
+\makepdgCS
 \normalsize
 
-\input synthese
+\input summary
 
 \passepage
 
 \begin{center}\begin{singlespace}
 \tableofcontents
 \end{singlespace}\end{center}
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CORPS DU DOCUMENT
@@ -253,23 +151,14 @@ contents}{contents}}
 \include{saturne2}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % REFERENCES
 \include{biblio}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ANNEXES
 %\passepage
 \include{a1_autovalid}
 \printindex
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FIN DU DOCUMENT
