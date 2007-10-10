@@ -422,7 +422,7 @@ C
 C
             CALL USRAY2
 C           ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IDBIA1 , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , IPHAS  ,
@@ -447,8 +447,14 @@ C
 C
 C Tparoi en Kelvin et QINCID en W/m2
             DO IFAC = 1,NFABOR
-              TPAROI(IFAC,IPH) = TINT(IFAC,IPH)
-              QINCID(IFAC,IPH) = STEPHN*TINT(IFAC,IPH)**4
+              IF ( ITYPFB(IFAC,IPHAS).EQ.IPAROI .OR.
+     &             ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN 
+                TPAROI(IFAC,IPH) = TINT(IFAC,IPH)
+                QINCID(IFAC,IPH) = STEPHN*TINT(IFAC,IPH)**4
+              ELSE
+                TPAROI(IFAC,IPH) = 0.D0
+                QINCID(IFAC,IPH) = 0.D0
+              ENDIF
             ENDDO
 C
 C Fin de la boucle sur NPHAST
@@ -511,7 +517,7 @@ C
 C
         CALL USRAY2
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IDBIA1 , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , IPHAS  ,
