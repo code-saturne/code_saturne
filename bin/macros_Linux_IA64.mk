@@ -35,7 +35,7 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.4/arch/Linux_IA64
+BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.5/arch/Linux_IA64
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 

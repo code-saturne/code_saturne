@@ -35,7 +35,7 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.4/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.0.5/arch/Linux
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.3/arch/Linux
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.4/arch/Linux
 MPI_INC         =-isystem$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 

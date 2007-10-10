@@ -86,6 +86,7 @@
     echo "        ${SO}<topic>${NO} : ${BO}version${NO}   : Code_Saturne version"
     echo "                  ${BO}user${NO}       : user manual (pdf)"
     echo "                  ${BO}theory${NO}     : theory and programmer's guide (pdf)"
+    echo "                  ${BO}tutorial${NO}   : Code_Saturne tutorial (pdf)"
     echo "                  ${BO}ecs${NO}        : usage for the Preprocessor module"
     echo "                  ${BO}ecsmu${NO}      : user manual for the Preprocessor module (pdf)"
     echo "                  ${BO}ecsmi${NO}      : theory and programmer's guide for the Preprocessor module (pdf)"
@@ -145,7 +146,7 @@ fi
      tput init 
   fi
  elif [ "$topic" = "user" ] ; then
-   saturnepdf=$CS_HOME/doc/UTILISATION/saturne.pdf 
+   saturnepdf=$CS_HOME/doc/USER/user.pdf 
    echo
    echo " ${BO}user manual${NO} : $saturnepdf"
    echo
@@ -153,9 +154,15 @@ fi
    $acroread $saturnepdf  || sortie "The ${SO}$acroread $saturnepdf${NO} command failed"
    tput init 
  elif [ "$topic" = "theory" ] ; then
-   noyaupdf=$CS_HOME/doc/NOYAU/noyau.pdf 
+   noyaupdf=$CS_HOME/doc/THEORY/theory.pdf 
    echo
    echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
+   echo
+   $acroread $noyaupdf 
+ elif [ "$topic" = "tutorial" ] ; then
+   noyaupdf=$CS_HOME/doc/TUTORIAL/tutorial.pdf 
+   echo
+   echo " ${BO}Code_Saturne tutorial${NO} : $noyaupdf"
    echo
    $acroread $noyaupdf 
  elif [ "$topic" = "ecs" ] ; then 

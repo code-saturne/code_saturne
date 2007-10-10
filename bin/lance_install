@@ -72,7 +72,8 @@
     echo
     echo " Cas particuliers :                                                "
     echo "   lance_install DOC                                               "
-    echo "          compilation de la documentation (utilisation et theorie) "
+    echo "          compilation de la documentation (utilisation, theorie    "
+    echo "                                                      et tutorial) "
     echo "   lance_install -nc                                               "
     echo "          n enleve pas les objets du repertoire build              "
     echo
@@ -261,14 +262,19 @@ Macro_readme_comp=$2
 #
  if [ "$1" = "DOC" ] ; then
   titre "Compilation de la documentation theorique"
-  cd ../doc/NOYAU/LaTeX
-  pdflatex noyau && mv noyau.pdf ..
+  cd ../doc/THEORY
+  make
   titrefin "Fin de compilation de la documentation theorique"
   echo
   titre "Compilation de la documentation utilisateur"
-  cd ../../UTILISATION
+  cd ../USER
   make
   titrefin "Fin de compilation de la documentation utilisateur"
+  echo
+  titre "Compilation du tutorial"
+  cd ../TUTORIAL
+  make
+  titrefin "Fin de compilation du tutorial"
   local_exit
  fi
 #

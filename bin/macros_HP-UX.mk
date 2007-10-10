@@ -35,7 +35,7 @@
 # Macros pour BFT
 #----------------
 
-BFT_HOME       = /home/saturne/opt/bft-1.0.4/arch/HP-UX
+BFT_HOME       = /home/saturne/opt/bft-1.0.5/arch/HP-UX
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft -L/home/saturne/opt/zlib-1.2.1/arch/HP-UX/lib -lz
 
