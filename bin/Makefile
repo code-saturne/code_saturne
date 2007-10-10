@@ -602,7 +602,7 @@ privmodpurify:
 	 done ;\
 	$(PURIFY) $(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS) $${objinstr} \
 	           $${librariesloc} $${librariesloc} $(LIBRARY) $(MYLIBS)
-	@echo "***  Linking finished; echo
+	@echo "***  Linking finished"; echo
 	@make privmodexe
 
 
