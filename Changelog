@@ -1,3 +1,87 @@
+* 09/10/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Use of bft-1.0.5 
+  modified scripts : macros*.mk
+
+* 09/10/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+               Matthieu Guillaud <matthieu.guillaud@edf.fr>
+  Code_Saturne tutorial
+
+* 09/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Correction of error in argument passing of NDIRCP
+  in covofi.F
+
+* 09/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+               Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Various modifications:
+  - synchronization with Syrthes only if ITRALE>0 in caltri.F
+  - change in the syntax of a test in covofi.F to avoid a warning
+    on IA64 architecture with intel compilers
+  - creation of erreur_n*** files only for processor 0 and the
+    processors receiving a segmentation fault or floating point
+    exception message
+  - correction fo benchmark mode with info on elapsed time
+  - correction in test on extended neighborhood detection
+  - correction of a problem depending on the order of exchange
+    of MPI messages for dimension calculation
+  - minor corrections in cs_mesh.c and cs_mesh_coherency.c
+    (unused variables, comments)
+  - change of kernel options "couleur" and "groupe" to "color"
+    and "group" for Syrthes options
+  - assert error in debug mode due to wrong initialization
+    on 64bits machine
+  - modification of residue test to detect when conjugate
+    gradient diverges
+  - memory management error when calling usray2.F in raycli.F
+  - global detection of boundary conditions errors in typecl.F
+  - example character strings in usdpst.F initialized to ' ' and
+    not '' (Fortran norm)
+  modified routines:
+    caltri.F
+    covofi.F
+    cs_base.c
+    cs_benchmark.c
+    cs_ext_neighborhood.c
+    cs_halo.c
+    cs_mesh.c
+    cs_mesh_coherency.c
+    cs_opts.c
+    cs_pp_io.c
+    cs_sles.c
+    raycli.F
+    typecl.F
+    usdpst.F
+
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Missing access to STATIV array in usproj.F
+  modified routines:
+    caltri.F
+    usproj.F
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Problem with pointer IIFRLA defined as real instead of
+  integer in memla1.F
+
+* 08/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Error in the example uselrc.F. Use of RTP(.,ISCALT(1))
+  instaed of RTP(.,ISCA(ISCALT(1)))
+
+
+* 08/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Initialization error on the incident flux QINCID for
+  non-wall boundaries
+  modified routines:
+    raycli.F
+
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  No coherency between lagout and lagent on the rubrique name
+  for NBCLST + uninitialized argument in IASIZE in laglec.F
+  modified routines:
+    lagent.F
+    laglec.F
+
 * 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Correction of character chain length in inipst.F
 
@@ -17,6 +101,13 @@
   Correction of index error in mobile structures initialisation
   modified routine:
     iniini.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Missing update of fortran commons after cutting of warped faces.
+  modified routines:
+    cs_main.c
+    iniini.F
+    majgeo.F
 
 * 17/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
   Tagging of intermediate version 1.3.1-dvp
@@ -70,14 +161,6 @@
   IALE = 0
   modified routines:
     modini.F
-
-* 03/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
-  Missing update of fortran commons after cutting of warped faces.
-  modified routines:
-    cs_main.c
-    iniini.F
-    majgeo.F
-
 
 * 03/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
   Missing arguments to ustbus.F

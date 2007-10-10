@@ -1,11 +1,11 @@
 CODE_SATURNE VERSION 1.3
 ========================
 
-This is version 1.3.0 of the Code_Saturne CFD tool. It is composed of
+This is version 1.3.1 of the Code_Saturne CFD tool. It is composed of
 the following elements :
-* Code_Saturne Kernel version 1.3.0
-* Code_Saturne Preprocessor version 1.3.0
-* Code_Saturne Graphical User Interface version 1.3.0
+* Code_Saturne Kernel version 1.3.1
+* Code_Saturne Preprocessor version 1.3.1
+* Code_Saturne Graphical User Interface version 1.3.1
 Other versions of these elements might not be compatible.
 
 
@@ -13,9 +13,9 @@ Compulsory libraries
 --------------------
 The BFT (Base Functions and Types) and FVM (Finite Volume Mesh) libraries
 are compulsory. They are distributed under the LGPL licence
-(copyright EDF S.A., France). Code_Saturne version 1.3.0 is compliant with
+(copyright EDF S.A., France). Code_Saturne version 1.3.1 is compliant with
 the following versions:
-* BFT 1.0.4 or newer
+* BFT 1.0.5 or newer
 * FVM 0.8.0 or newer
 Older versions might yet be compatible, possibly with limited features.
 
@@ -45,7 +45,7 @@ command is used in the code so any other MPI library should work.
 * MPI-lam : 7.1.2
 * MPICH  : 1.2.7
 * MPICH2 : 1.0.5
-* Open-MPI : 1.2.3
+* Open-MPI : 1.2.4
 
 Specificities of the Matisse module of Code_Saturne
 ---------------------------------------------------
