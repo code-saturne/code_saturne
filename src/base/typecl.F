@@ -287,6 +287,7 @@ C
         ENDDO
       ENDDO
 C
+      IF (IRANGP.GE.0) CALL PARCMX(IOK)
       IF(IOK.NE.0) THEN
         WRITE(NFECRA,1099) NTYPMX
         CALL CSEXIT (1)
@@ -351,18 +352,28 @@ C
 C
 C ---> On verifie sommairement
 C
+      IOK = 0
       DO IPHAS = 1, NPHAS
         DO II = 1, NTYPMX-1
           IF(IFINTY(II,IPHAS).GE.IDEBTY(II+1,IPHAS)) THEN
-            WRITE(NFECRA,2010) IPHAS
+            IF (IOK.EQ.0) IOK = II
+          ENDIF
+        ENDDO
+        IF (IRANGP.GE.0) CALL PARCMX(IOK)
+        IF (IOK.GT.0) THEN
+          II = IOK
+          WRITE(NFECRA,2010) IPHAS
+          IF(IFINTY(II,IPHAS).GE.IDEBTY(II+1,IPHAS)) THEN
             WRITE(NFECRA,2020) (IFINTY(JJ,IPHAS),JJ=1,NTYPMX)
             WRITE(NFECRA,2030) (IDEBTY(JJ,IPHAS),JJ=1,NTYPMX)
             WRITE(NFECRA,2040) (ITYPFB(JJ,IPHAS),JJ=1,NFABOR)
-            WRITE(NFECRA,2099)
+            WRITE(NFECRA,2098)
      &                       II,IFINTY(II,IPHAS),II+1,IDEBTY(II+1,IPHAS)
-            CALL CSEXIT (1)
+          ELSE
+            WRITE(NFECRA,2099) II,II+1
           ENDIF
-        ENDDO
+          CALL CSEXIT (1)
+        ENDIF
       ENDDO
 C
       IOK = 0
@@ -371,8 +382,9 @@ C
         DO II = 1, NTYPMX
           ISUM = ISUM + IFINTY(II,IPHAS) - IDEBTY(II,IPHAS) + 1
         ENDDO
-        IF(ISUM.NE.NFABOR) THEN
-          WRITE(NFECRA,3099)IPHAS,ISUM, NFABOR
+        IF (IRANGP.GE.0) CALL PARCPT (ISUM)
+        IF(ISUM.NE.NFBRGB) THEN
+          WRITE(NFECRA,3099) IPHAS, ISUM, NFBRGB
           IOK = IOK + 1
         ENDIF
       ENDDO
@@ -1169,6 +1181,7 @@ C
         IDEB = IDEBTY(IENTRE,IPHAS)
         IFIN = IFINTY(IENTRE,IPHAS)
 C
+        IOK = 0
         DO IVAR = 1, NVAR
           DO II = IDEB, IFIN
             IFAC = ITRIFB(II,IPHAS)
@@ -1177,9 +1190,11 @@ C
               IF (IVAR.EQ.IUIPH.OR.IVAR.EQ.IVIPH.OR.IVAR.EQ.IWIPH)
      &             THEN
                 IF (RCODCL(IFAC,IVAR,1).GT.RINFIN*0.5D0) THEN
-                  CHAINE = NOMVAR(IPPRTP(IVAR))
-                  WRITE(NFECRA,6040)IFAC,CHAINE(1:8)
-                  CALL CSEXIT (1)
+                  IF (IOK.EQ.0) THEN
+                    IOK = 1
+                    CHAINE = NOMVAR(IPPRTP(IVAR))
+                    WRITE(NFECRA,6040)IFAC,CHAINE(1:8)
+                  ENDIF
                 ELSE
                   ICODCL(IFAC,IVAR) = 1
 C                 RCODCL(IFAC,IVAR,1) = Utilisateur
@@ -1196,9 +1211,11 @@ C
                   RCODCL(IFAC,IVAR,2) = RINFIN
                   RCODCL(IFAC,IVAR,3) = 0.D0
                 ELSE
-                  CHAINE = NOMVAR(IPPRTP(IVAR))
-                  WRITE(NFECRA,6050)IFAC,CHAINE(1:8)
-                  CALL CSEXIT (1)
+                  IF (IOK.LT.2) THEN
+                    IOK = IOK + 2
+                    CHAINE = NOMVAR(IPPRTP(IVAR))
+                    WRITE(NFECRA,6050)IFAC,CHAINE(1:8)
+                  ENDIF
                 ENDIF
               ELSE
                 ICODCL(IFAC,IVAR) = 1
@@ -1210,6 +1227,14 @@ C
             ENDIF
           ENDDO
         ENDDO
+C
+        IF (IRANGP.GE.0) CALL PARCMX(IOK)
+        IF (IOK.GT.0) THEN
+          IF (IOK.EQ.1 .OR. IOK.EQ.3) WRITE(NFECRA,6060)
+          IF (IOK.EQ.2 .OR. IOK.EQ.3) WRITE(NFECRA,6070)
+          CALL CSEXIT (1)
+        ENDIF
+
 C
 C
 C 6.2 SORTIE (entree sortie libre)
@@ -1589,7 +1614,7 @@ C
  2020 FORMAT(/,'   IFINTY : ',I10)
  2030 FORMAT(/,'   IDEBTY : ',I10)
  2040 FORMAT(/,'   ITYPFB : ',I10)
- 2099 FORMAT(/,
+ 2098 FORMAT(/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/,
@@ -1600,6 +1625,24 @@ C
      &'@    IFINTY(',I10   ,') = ',I10                               ,/,
      &'@      est superieur a                                       ',/,
      &'@    IDEBTY(',I10   ,') = ',I10                               ,/,
+     &'@                                                            ',/,
+     &'@    Le calcul ne sera pas execute.                          ',/,
+     &'@                                                            ',/,
+     &'@    Contacter l''assistance.                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2099 FORMAT(/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    PROBLEME DE TRI DES FACES DE BORD SUR UN RANG DISTANT   ',/,
+     &'@                                                            ',/,
+     &'@    IFINTY(',I10   ,')                                      ',/,
+     &'@      est superieur a                                       ',/,
+     &'@    IDEBTY(',I10   ,')                                      ',/,
      &'@                                                            ',/,
      &'@    Le calcul ne sera pas execute.                          ',/,
      &'@                                                            ',/,
@@ -1661,6 +1704,10 @@ C
      &'@    Face declaree en entree (ou sortie) a vitesse imposee,  ',/,
      &'@      mais la valeur de la vitesse n''a pas ete fournie pour',/,
      &'@      la composante ',A8                                     ,/,
+     &'@    (ce message ne s''affiche que pour la premiere face ou  ',/,
+     &'@      le probleme est detecte, mais d''autres faces peuvent ',/,
+     &'@      etre concernees)                                      ',/,
+     &'@                                                            ',/,
      &'@    Le calcul ne sera pas execute.                          ',/,
      &'@                                                            ',/,
      &'@    Verifier les conditions aux limites dans l''Interface   ',/,
@@ -1684,6 +1731,54 @@ C
      &'@      avec un flux rentrant.                                ',/,
      &'@    La valeur de la variable ',A8  ,' n''a pas ete specifiee',/,
      &'@      (condition de Dirichlet).                             ',/,
+     &'@    (ce message ne s''affiche que pour la premiere face ou  ',/,
+     &'@      le probleme est detecte, mais d''autres faces peuvent ',/,
+     &'@      etre concernees)                                      ',/,
+     &'@                                                            ',/,
+     &'@    Le calcul ne sera pas execute                           ',/,
+     &'@                                                            ',/,
+     &'@    Verifier les conditions aux limites dans l''Interface   ',/,
+     &'@    ou dans le sous-programme utilisateur correspondant.    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6060 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,
+     &'@                                                            ',/,
+     &'@    Au moins une face de bord declaree en entree            ',/,
+     &'@      (ou sortie) a vitesse imposee pour laquelle la valeur ',/,
+     &'@      de la vitesse n''a pas ete fournie pour toutes les    ',/,
+     &'@      composantes.                                          ',/,
+     &'@    Le calcul ne sera pas execute.                          ',/,
+     &'@                                                            ',/,
+     &'@    Verifier les conditions aux limites dans l''Interface   ',/,
+     &'@    ou dans le sous-programme utilisateur correspondant.    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6070 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,
+     &'@                                                            ',/,
+     &'@    Au moins une face de bord declaree en entree            ',/,
+     &'@      (ou sortie) a vitesse imposee avec un flux rentrant   ',/,
+     &'@      pour laquelle la valeur d''une variable n''a pas ete  ',/,
+     &'@      specifiee (condition de Dirichlet).                   ',/,
      &'@    Le calcul ne sera pas execute                           ',/,
      &'@                                                            ',/,
      &'@    Verifier les conditions aux limites dans l''Interface   ',/,

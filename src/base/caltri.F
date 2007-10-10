@@ -214,8 +214,10 @@ C
       NRTUSE = ICOFTU(5)*NCELET + ICOFTU(6)*NFAC + ICOFTU(7)*NFABOR
      &       + ICOFTU(8)
 C
-      CALL USTBUS(NIDEVE, NITUSE, NRDEVE, NRTUSE)
+      CALL USTBUS
 C     ===========
+     &   (NCEL  , NCELET, NFAC  , NFABOR, NNOD  ,
+     &    NIDEVE, NITUSE, NRDEVE, NRTUSE)
 C
       IOK = 0
       IF(NIDEVE.LT.0) THEN
@@ -1130,9 +1132,11 @@ C
       CALL DMTMPS(TITER1)
 C     ===========
 C
-C     Synchronisation Syrthes
-      CALL ITDSYR(NTCABS,NTMABS)
-C     ===========
+C     Synchronisation Syrthes, si ITRALE>0
+      IF (ITRALE.GT.0) THEN
+        CALL ITDSYR(NTCABS,NTMABS)
+C       ===========
+      ENDIF
 C
       CALL TRIDIM
 C     ===========
@@ -1275,8 +1279,8 @@ C       ===========
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ITSLAG),
-     &   RA(ISTATF) ,
+     &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ISTATV),
+     &   RA(ITSLAG) , RA(ISTATF) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
       ENDIF

@@ -1403,13 +1403,14 @@ _fill_out_halo(cs_mesh_t  *mesh)
 {
   cs_int_t  rank_id, i, j, k;
   cs_int_t  n_cells_to_recv, n_cells_to_send;
+  cs_int_t  shift;
 
 #if defined(_CS_HAVE_MPI)
   MPI_Status  status;
 #endif
   int request_count = 0;
 
-  cs_int_t  count[2] = {0,0};
+  cs_int_t  *count = NULL;
   cs_int_t  *send_buffer = NULL, *recv_buffer = NULL;
 
   cs_mesh_halo_t  *halo = mesh->halo;
@@ -1445,17 +1446,20 @@ _fill_out_halo(cs_mesh_t  *mesh)
     MPI_Barrier(cs_glob_base_mpi_comm);
 #endif
 
+  BFT_MALLOC(count, 2*n_c_domains, cs_int_t);
+
   /* Send data to distant ranks */
 
   for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
 
-    count[0] = halo->index_in[2*rank_id+1] - halo->index_in[2*rank_id];
-    count[1] = halo->index_in[2*rank_id+2] - halo->index_in[2*rank_id+1];
+    shift = 2*rank_id;
+    count[shift] = halo->index_in[2*rank_id+1] - halo->index_in[2*rank_id];
+    count[shift+1] = halo->index_in[2*rank_id+2] - halo->index_in[2*rank_id+1];
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
 #if defined(_CS_HAVE_MPI)
-      MPI_Isend(count, 2, CS_MPI_INT,
+      MPI_Isend(&(count[shift]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
                 cs_glob_base_mpi_comm,
@@ -1465,8 +1469,8 @@ _fill_out_halo(cs_mesh_t  *mesh)
     }
     else {
 
-      halo->index_out[2*rank_id+1] = count[0];
-      halo->index_out[2*rank_id+2] = count[1];
+      halo->index_out[shift+1] = count[shift];
+      halo->index_out[shift+2] = count[shift+1];
 
     }
 
@@ -1479,6 +1483,8 @@ _fill_out_halo(cs_mesh_t  *mesh)
     MPI_Waitall(request_count, halo->mpi_request, halo->mpi_status);
 #endif
   request_count = 0;
+
+  BFT_FREE(count);
 
   /* Build index */
 

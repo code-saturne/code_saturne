@@ -337,7 +337,7 @@ _syr_mpi_rank(int   *arg_id,
       /* Check if the current args define face selection options;
          otherwise, we have reached the end of the Syrthes options */
 
-      if (strcmp(s,"-couleur") == 0 || strcmp(s,"-groupe") == 0) {
+      if (strcmp(s,"-color") == 0 || strcmp(s,"-group") == 0) {
         while (ii + 1 < argc && strncmp(argv[ii + 1], "-", 1))
           ii++;
       }

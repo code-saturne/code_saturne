@@ -278,7 +278,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
         already_seen = CS_FALSE;
         idx = vtx_cells_idx[vtx_id] - 1;
 
-        while ((already_seen = CS_FALSE) && (idx < vtx_cells_connect_size)) {
+        while ((already_seen == CS_FALSE) && (idx < vtx_cells_connect_size)) {
           if (cell_num == vtx_cells_lst[idx])
             already_seen = CS_TRUE;
           idx++;

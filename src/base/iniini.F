@@ -549,10 +549,9 @@ C
 C
 C --- DIMENSIONS GLOBALES
 C     (seront recalculees plus loin en cas de parallelisme)
+C     (pour les faces internes et de bord -> MAJGEO)
 C
       NCELGB = NCEL
-      NFACGB = NFAC
-      NFBRGB = NFABOR
       NCBRGB = 0
       NSOMGB = NNOD
 C
@@ -593,16 +592,6 @@ C
       DO II = 1, 8
         ICOFTU(II) = 0
       ENDDO
-C
-C --- A partir d'ici toutes les dimensions de dimens
-C       ont ete initialisees
-C
-C     On remplit maintenant NDIMFB
-      IF (NFABOR.EQ.0) THEN
-        NDIMFB = 1
-      ELSE
-        NDIMFB = NFABOR
-      ENDIF
 C
 C
 C=======================================================================

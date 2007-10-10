@@ -444,7 +444,7 @@ _convergence_test(const char             *solver_name,
 
     if (n_iter < convergence->n_iterations_max) {
       int diverges = 0;
-      if (residue > convergence->initial_residue * 10000.0)
+      if (residue > convergence->initial_residue * 10000.0 && residue > 100.)
         diverges = 1;
 #if (_CS_STDC_VERSION >= 199901L)
       else if (isnan(residue) || isinf(residue))
@@ -602,7 +602,7 @@ _y_aypx(cs_int_t          n,
    cs_int_t ii;
 
 #if defined(__xlc__)
-#pragma disjoint {alpha, *x, *y}
+#pragma disjoint(alpha, *x, *y)
 #endif
 
    for (ii = 0; ii < n; ii++)
@@ -630,7 +630,7 @@ _y_aypx(cs_int_t          n,
  *   rotation_mode -->  Halo update option for rotational periodicity
  *   ad_inv        -->  Inverse of matrix diagonal
  *   ax            -->  Non-diagonal part of linear equation matrix
- *   rk            <--  Residue vector
+ *   rk            -->  Residue vector
  *   gk            <--  Result vector
  *   wk            ---  Working array
  *----------------------------------------------------------------------------*/
@@ -649,7 +649,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
   cs_int_t ii;
 
 #if defined(__xlc__)
-#pragma disjoint {*face_cell, *ad_inv, *ax, *rk, *gk, *wk}
+#pragma disjoint(*ad_inv, *ax, *rk, *gk, *wk)
 #endif
 
   /* Polynomial of degree 0 (diagonal)
@@ -726,7 +726,7 @@ _conjugate_gradient_sp(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -832,16 +832,6 @@ _conjugate_gradient_sp(const char             *var_name,
 
     n_iter += 1;
 
-    residue = sqrt(_dot_product(n_rows, rk, rk));
-
-    /* Convergence test */
-
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
     _polynomial_preconditionning(n_rows,
                                  poly_degree,
                                  rotation_mode,
@@ -870,6 +860,13 @@ _conjugate_gradient_sp(const char             *var_name,
 
     cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
     cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+
+    /* Convergence test */
+
+    residue = sqrt(_dot_product(n_rows, rk, rk));
+
+    cvg = _convergence_test(sles_name, var_name,
+                            n_iter, residue, convergence);
 
   }
 
@@ -926,7 +923,7 @@ _conjugate_gradient_mp(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -1030,8 +1027,6 @@ _conjugate_gradient_mp(const char             *var_name,
 
   while (cvg == 0) {
 
-    n_iter += 1;
-
     _polynomial_preconditionning(n_rows,
                                  poly_degree,
                                  rotation_mode,
@@ -1047,13 +1042,16 @@ _conjugate_gradient_mp(const char             *var_name,
 
     residue = sqrt(residue);
 
-    /* Convergence test */
+    /* Convergence test for end of previous iteration */
 
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
+    if (n_iter > 1)
+      cvg = _convergence_test(sles_name, var_name,
+                              n_iter, residue, convergence);
 
     if (cvg != 0)
       break;
+
+    n_iter += 1;
 
     /* Complete descent parameter computation and matrix.vector product */
 
@@ -1121,7 +1119,7 @@ _jacobi(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *ad, *ad_inv}
+#pragma disjoint(*rhs, *vx, *ad, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -1255,7 +1253,7 @@ _bi_cgstab(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *res0, *rk, *pk, *zk, *uk, *vk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *res0, *rk, *pk, *zk, *uk, *vk, *ad_inv)
 #endif
 
   /* Preliminary calculations */

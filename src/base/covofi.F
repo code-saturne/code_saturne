@@ -489,15 +489,16 @@ C
 C     Charbon pulverise
 C     Ordre 2 non pris en compte
 C
-      IF ( IRAYON(IPHAS).GE.1 .AND.
-     &     ( IPPMOD(ICP3PL) .GT. 0 ) .AND.
-     &     ( ISCA(ISCAL).GE.ISCA(IH2(1)) .AND.
-     &       ISCA(ISCAL).LE.ISCA(IH2(NCLACP)) )        ) THEN
+      IF ( IRAYON(IPHAS).GE.1 ) THEN
+        IF (   IPPMOD(ICP3PL) .GT. 0 .AND.
+     &       ( ISCA(ISCAL).GE.ISCA(IH2(1)) .AND.
+     &         ISCA(ISCAL).LE.ISCA(IH2(NCLACP)) ) ) THEN
 C
-        CALL CPRAYS
-C       ===========
+          CALL CPRAYS
+C         ===========
      &  ( IVAR  ,NCELET, NCEL  ,
      &    VOLUME,PROPCE,RA(ITSRE),RA(ITSRI),SMBRS,ROVSDT)
+        ENDIF
       ENDIF
 C
 C --> Fuel
@@ -782,7 +783,7 @@ C
       ICONVP = ICONV (IVAR)
       IDIFFP = IDIFF (IVAR)
       IRESLP = IRESOL(IVAR)
-      NDIRCP = IDIRCL(IVAR)
+      NDIRCP = NDIRCL(IVAR)
       NITMAP = NITMAX(IVAR)
       NSWRSP = NSWRSM(IVAR)
       NSWRGP = NSWRGR(IVAR)

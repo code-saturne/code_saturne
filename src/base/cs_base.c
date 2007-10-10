@@ -523,16 +523,21 @@ void cs_base_erreur_init
   bft_backtrace_print_set(_cs_base_backtrace_print);
 
 #if defined(SIGHUP)
-  cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0)
+    cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
 
-  cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
-  cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0) {
+    cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
+    cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
+  }
+
   cs_glob_base_sigfpe_sauve  = signal(SIGFPE, _cs_base_sig_fatal);
   cs_glob_base_sigsegv_sauve = signal(SIGSEGV, _cs_base_sig_fatal);
 
 #if defined(SIGXCPU)
-  cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0)
+    cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
 }
 

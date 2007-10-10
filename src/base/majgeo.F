@@ -33,14 +33,21 @@ c@verse
                         SUBROUTINE MAJGEO
 C                       *****************
 C     -------------------------------------------------------------
-     & ( NCELE2 )
+     & ( NCELE2 , NFAC2  , NFABO2 , NFACG2 , NFBRG2 )
 C     -------------------------------------------------------------
 C***********************************************************************
 C FONCTION :
 C ---------
 c@foncb
 CFONC
-CFONC PASSAGE DE NCELET DU C AU FORTRAN
+CFONC PASSAGE DE NCELET DU C AU FORTRAN.
+CFONC
+CFONC PASSAGE DE NFAC ET NFABOR DU C AU FORTRAN AU CAS OU CES
+CFONC VALEURS SONT MODIFIEES PAR LE DECOUPAGE DES FACES GAUCHES.
+CFONC
+CFONC PASSAGE DES DIMENSIONS GLOBALES DES FACES DE BORD ET INTERNES
+CFONC POUR ASSURER LA COHERENCE DES VALEURS EN MONOPROC CAR EN CAS
+CFONC DE PARALLELISME CETTE TACHE EST ASSUREE PAR PARGEO.
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -51,6 +58,10 @@ CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
 CARGU ! NCELE2       ! E  !  -> ! NOUVEAU NOMBRE D'ELEMENTS            !
 CARGU !              !    !     ! HALO COMPRIS                         !
+CARGU ! NFAC2        ! E  !  -> ! NOUVEAU NOMBRE DE FACES INTERNES     !
+CARGU ! NFABO2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES DE BORD      !
+CARGU ! NFACG2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES INTERNES GLB.!
+CARGU ! NFBRG2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES DE BORD GLOB.!
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
@@ -75,10 +86,12 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "dimens.h"
+      INCLUDE "dimfbr.h"
+      INCLUDE "parall.h"
 C
 C ARGUMENTS
 C
-      INTEGER          NCELE2
+      INTEGER          NCELE2, NFAC2  , NFABO2 , NFACG2 , NFBRG2
 C
 C
 C***********************************************************************
@@ -88,6 +101,27 @@ C 1. MISE A JOUR DU NOMBRE DE CELLULES ETENDUES
 C=======================================================================
 C
       NCELET = NCELE2
+C
+C=======================================================================
+C 2. MISE A JOUR DU NOMBRE DES FACES
+C=======================================================================
+C
+      NFAC = NFAC2
+      NFABOR = NFABO2
+C
+C     On remplit maintenant NDIMFB
+      IF (NFABOR.EQ.0) THEN
+        NDIMFB = 1
+      ELSE
+        NDIMFB = NFABOR
+      ENDIF
+C
+C=======================================================================
+C 3. MISE A JOUR DU NOMBRE DES FACES GLOBALES
+C=======================================================================
+C
+      NFACGB = NFACG2
+      NFBRGB = NFBRG2
 C
       RETURN
       END

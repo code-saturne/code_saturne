@@ -194,11 +194,11 @@ void CS_PROCF (usmodg, USMODG)
 );
 
 /*----------------------------------------------------------------------------
- * Update NCELET value for FORTRAN common.
+ * Update dimension of the mesh for FORTRAN common.
  *
  * Interface Fortran :
  *
- * SUBROUTINE MAJGEO (NCELET)
+ * SUBROUTINE MAJGEO (NCELET, NFAC, NFABOR, NFACGB, NFBRGB)
  * *****************
  *
  * INTEGER          NCELET      : --> : New value to assign
@@ -206,7 +206,11 @@ void CS_PROCF (usmodg, USMODG)
 
 extern void CS_PROCF (majgeo, MAJGEO)
 (
- const cs_int_t   *const ncelet   /* --> New value for halo cells             */
+ const cs_int_t   *const ncelet,  /* --> New number of halo cells             */
+ const cs_int_t   *const nfac,    /* --> New number of internal faces         */
+ const cs_int_t   *const nfabor,  /* --> New number of border faces           */
+ const cs_int_t   *const nfacgb,  /* --> New number of global internal faces  */
+ const cs_int_t   *const nfbrgb   /* --> New number of global border faces    */
 );
 
 /*============================================================================
@@ -223,6 +227,7 @@ int main
  char  *argv[]      /* Tableau des arguments de la ligne de commandes */
 )
 {
+  cs_int_t  n_g_i_faces, n_g_b_faces;
   double  t1, t2;
   cs_int_t  idebia, idebra;
   cs_opts_t  opts;
@@ -355,10 +360,6 @@ int main
 
   cs_mesh_init_parall(cs_glob_mesh);
 
-  /* Mise à jour du nombre de cellules fantômes */
-
-  CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells_with_ghosts));
-
   /* Renumérotation en fonction des options du code */
 
   bft_printf("\n Renumerotation du maillage:\n");
@@ -400,6 +401,17 @@ int main
     bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
 
   }
+
+  /* Mise à jour de certaines dimensions du maillage */
+
+  n_g_i_faces = (cs_int_t)cs_glob_mesh->n_g_i_faces;
+  n_g_b_faces = (cs_int_t)cs_glob_mesh->n_g_b_faces;
+
+  CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells_with_ghosts),
+                            &(cs_glob_mesh->n_i_faces),
+                            &(cs_glob_mesh->n_b_faces),
+                            &n_g_i_faces,
+                            &n_g_b_faces);
 
   /* Destruction du la structure temporaire servant à la construction du
      maillage principal */

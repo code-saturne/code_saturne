@@ -429,7 +429,7 @@ void cs_pp_io_read_header
 
     else if (strcmp(nom_typ_elt, cs_pp_io_nom_typ_elt_char) == 0) {
       entete->typ_elt = CS_TYPE_char;
-      entete->typ_elt = FVM_DATATYPE_NULL;
+      entete->typ_lu = FVM_DATATYPE_NULL;
     }
 
     else
