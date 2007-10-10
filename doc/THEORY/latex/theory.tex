@@ -30,25 +30,16 @@
 %                                                                    %
 %                                                                    %
 %                                                                    %
-% Titre :           Manuel Utilisateur de Code_Saturne               %
+% Titre :           Code_Saturne theory and programmer's guide       %
 %                                                                    %
 %                                                                    %
 %                                                                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\documentclass[a4paper,10pt,twoside]{article}
 \documentclass[a4paper,10pt,twoside]{report}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES OBLIGATOIRES
-\usepackage[rddoc]{noteEDF}
-%
-% Les options de la classe noteEDF.sty disponibles sont :
-% - english (page de garde supplementaire en anglais)
-% - pdftex
-% Les 3 options suivantes sont exclusives mutuellement :
-% - confidentiel (orientation dans le fonds documentaire et accesibilité)
-% - rddoc (orientation dans le fonds documentaire)
-% - edfdoc (orientation dans le fonds documentaire)
+\usepackage{../../style/csdoc}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,51 +55,13 @@
             citecolor=blue]{hyperref}
 \hypersetup{%
   pdftitle = {Code_Saturne version 1.3 Theory and Programmer's Guide},
-  pdfauthor = {MFTT},
+  pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
 \pdfinfo{/CreationDate (D:20030429000000-01 00 )}
 %
 % Pour avoir les Thumbnails a l'ouverture du document sous ACROREAD :
 % pdfpagemode = UseThumbs
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES ET COMMANDES POUR LA BIBLIOGRAPHIE SI BIBTEX EST CHOISI
-% SI L'ENVIRONNEMENT thebibliography EST CHOISI COMMENTER CES 3 LIGNES
-% (ET MODIFIER LE MAKEFILE)
-%\usepackage{natbib}
-%\bibliographystyle{noteEDF_natbib}
-%\bibpunct{[}{]}{;}{a}{,}{,}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES POUR LA RÉALISATION D'UNE LISTE DES SYMBOLES UTILISES
-%\usepackage[article,french]{symlisteEDF}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES SUPPLEMENTAIRES
-% \usepackage[...]{.....}
-%
-% Packages chargés par noteEDF.sty :
-% graphicx, tabularx, amsmath, amssymb, wasysym,
-% fancyhdr, lastpage, ifthen, setspace,
-% [latin1]{inputenc}, [OT1]{fontenc}, [francais]{babel}
-%
-%\usepackage{times} % plus joli en pdf (fortement recommandé)
-%\usepackage{here} % option [H] pour que les objets flottant ne flottent plus
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MACROS SUPPLEMENTAIRES
@@ -136,32 +89,7 @@
 \newcommand{\repgraphics}{../graphics}
 \newcommand{\extgraphics}{pdf}
 %
-\newcommand{\CS}{%
-{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}}
-\newcommand{\verscs}{1.3.1-dvp}
-%
-\newcommand{\tildeunix}{%
-{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
-%
-%(Attention : \passepage ne fonctionne pas devant un \chapter (classe 'report'))
-%\newcommand{\passepage}{%
-%\ifthenelse{\isodd{\arabic{page}}}
-%{\newpage\hspace*{6.cm}\newpage}{\newpage}}
-\newcommand{\passepage}{%
-\newpage\hspace*{6.cm}\ifthenelse{\isodd{\value{page}}}
-{\hspace*{-6.cm}}{\newpage}}
-\newcommand{\passepart}{%
-\hspace*{6.cm}\ifthenelse{\isodd{\value{page}}}
-{\newpage}{\hspace*{-6.cm}}}
-%
-\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
 \newcommand{\bm}[1]{\text{\boldmath $#1$ \unboldmath} \! \!} 
-\newcommand{\vect}[1]{\underline{#1}}
-\newcommand{\tens}[1]{\underline{\underline{#1}}}
-\newcommand{\grad}{\text{g}\underline{\text{rad}}\ }
-\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\ }
-\newcommand{\rot}{\underline{\text{rot}}\ }
-\newcommand{\dive}{\text{div}}
 \newcommand{\Min}{\text{Min}}
 \newcommand{\Max}{\text{Max}}
 \newcommand{\nl}{\vspace{1ex}}
@@ -174,35 +102,15 @@
 \newcommand{\gradt}{\text{g}\underline{\underline{\text{rad}}}\ }
 \newcommand{\divs}{\text{div}}
 \newcommand{\divv}{\underline{\text{div}}}
-\newcommand{\ind}[1]{\text{$_{#1}$}}
 \newcommand{\etape}[1]{\vspace{0.3cm}$\bullet\ ${\bf #1}\\}
 \newcommand{\fort}[1]{\texttt{#1}}
 \newcommand{\var}[1]{\ensuremath{\text{\texttt{#1}}}}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreEDFfr{Documentation théorique et informatique du noyau de \CS\ \verscs}
-\titreEDFang{\CS\ \verscs\ Theory and Programmer's Guide}
-\numeroEDF{contact: saturne-support@edf.fr}
-\indiceEDF{}
-
-%\author{SAKIZ M., ARCHAMBEAU F., {\em ET AL.}}
-\author{\'Equipe de développement de \CS}
-%\rqauteursEDF{* Sigle de la structure du coauteur EDF, si différente de l'auteur principal.}
-%\remauteursEDF{** Nom de la société (en clair) si le coauteur est extérieur.}
-\rqauteursEDF{}
-\remauteursEDF{}
-
-%\groupeEDFfr{Expertise en bidules et trucs}
-%\groupeEDFang{Very strong in something}
-
-\docassociesEDFfr{}
-\docassociesEDFang{}
-\resumeEDFfr{}
-\resumeEDFang{Ce document constitue la documentation th\'eorique et
+\titreCS{\CS\ \verscs\ Theory and Programmer's Guide}
+\docassociesCS{}
+\resumeCS{Ce document constitue la documentation th\'eorique et
 informatique des parties centrales du noyau de \CS~\verscs.
 La documentation est attach\'ee \`a la version du code
 correspondante pour favoriser les mises \`a jour. En pratique, les
@@ -210,13 +118,6 @@ utilisateurs de \CS\
 peuvent acc\'eder \`a la documentation sous
 \texttt{\$CS\_HOME/doc/NOYAU/}, information qui leur est rappel\'ee par la  
 commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
-\accessibiliteEDFfr{LIBRE} % LIBRE, EDF-GDF ou RESTREINTE
-\accessibiliteEDFang{FREE} % FREE, EDF-GDF or RESTRICTED
-
-\actionEDF{Projet JUPITER}
-\classementEDF{}
-\typerapportEDF{Note technique} % Note d'étude, Note technique
-\motsclesEDF{\CS, CFD, thermohydraulique}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -231,11 +132,11 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 
 \pdfbookmark[1]{Pages de garde}{pdg}
 \large
-\makepdgEDF
+\makepdgCS
 \normalsize
 
 \passepage
-\input synthese
+\input summary
 
 \passepart
 \begin{center}\begin{singlespace}
@@ -247,19 +148,14 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 %\printsymliste\
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CORPS DU DOCUMENT
 %
-\passepart
+\passepage
 \part{Introduction}
 \stepcounter{prog}
-\passepage
 \input{../Base/Introd/fonc.tex}
 \input{../Base/Introd/disc.tex}
 \input{../Base/Introd/mioe.tex}
-\passepage
 \part{Module de base}
 \input{../Base/Bilsc2/fonc.tex}
 \input{../Base/Bilsc2/disc.tex}
@@ -324,7 +220,6 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \input{../Base/Vortex/fonc.tex}
 \input{../Base/Vortex/disc.tex}
 \input{../Base/Vortex/mioe.tex}
-\passepage
 \part{Module compressible}
 \input{../Cfbl/Cfbase/fonc.tex}
 \input{../Cfbl/Cfbase/disc.tex}
@@ -341,21 +236,12 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 \input{../Cfbl/Cfxtcl/fonc.tex}
 \input{../Cfbl/Cfxtcl/disc.tex}
 \input{../Cfbl/Cfxtcl/mioe.tex}
-\passepage
 \part{Module électrique}
 \input{../Elec/Elbase/fonc.tex}
 \input{../Elec/Elbase/disc.tex}
 \input{../Elec/Elbase/mioe.tex}
-\passepage
 \part{Module combustion}
 \input{../Combustion/fonc.tex}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FIN DU DOCUMENT
