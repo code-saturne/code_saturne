@@ -373,7 +373,7 @@ C
       MAXELT = MAX(NCELET,NFAC,NFABOR)
       ILS    = IDEBIA
       IDBIA1 = ILS + MAXELT
-      CALL IASIZE('LAGENT',IFINIA)
+      CALL IASIZE('LAGENT',IDBIA1)
 
       CALL USLAG2
 C     ===========

@@ -161,7 +161,8 @@ C
         IIITEP =       IDEBIA
         IICOCE =       IIITEP
         IITYCE =       IICOCE
-        IFINIA =       IITYCE
+        IIFRLA =       IITYCE
+        IFINIA =       IIFRLA
 C
         IETTPA =       IDEBRA
         IETTP  =       IETTPA
@@ -170,15 +171,15 @@ C
         ISTATV =       ISTATC
         ITSLAG =       ISTATV
         ISTATF =       ITSLAG
-        IIFRLA =       ISTATF
-        IFINRA =       IIFRLA
+        IFINRA =       ISTATF
 C
       ELSE
 C
         IIITEP =       IDEBIA
         IICOCE =       IIITEP + NBPMAX * NIVEP
         IITYCE =       IICOCE + LNDNOD
-        IFINIA =       IITYCE + NCELET + 1
+        IIFRLA =       IITYCE + NCELET + 1
+        IFINIA =       IIFRLA + NFABOR
 C
         IETTPA =       IDEBRA
         IETTP  =       IETTPA
@@ -189,8 +190,7 @@ C
         ITSLAG =       ISTATV + NCELET * MAX((NVLSTA-1),0)
      &                        + NCELET * MAX((NVLSTA-1),0) * NBCLST
         ISTATF =       ITSLAG + NTERSL * NCELET
-        IIFRLA =       ISTATF + NFABOR * NVISBR
-        IFINRA =       IIFRLA + NFABOR
+        IFINRA =       ISTATF + NFABOR * NVISBR
 C
       ENDIF
 C

@@ -769,13 +769,13 @@ C
      &      'TSTAT',TSTAT
           ENDIF
 C
-          RUBRIQ = 'nombre_groupes_statistiques_particules'
+          RUBRIQ = 'classe_statistique_particules'
           IRTYP  = 1
           CALL LECSUI(IMPMLS,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &                NCLSTO,IERROR)
           IF(IERROR.NE.0) THEN
             WRITE(NFECRA,9061) FICMLS,
-     &  'groupes_statistiques                                        ',
+     &  'classes_statistiques                                        ',
      &      'NBCLST',NCLSTO
           ENDIF
 C
@@ -1731,7 +1731,7 @@ C
      &'@      ON ETE MODIFIEES.                                     ',/,
      &'@                                                            ',/,
      &'@    Pour eviter les incoherences dans le calcul             ',/,
-     &'@      IBCLST ne devrait pas etre modifies entre             ',/,
+     &'@      NBCLST ne devrait pas etre modifies entre             ',/,
      &'@      deux calculs de statistiques volumiques.              ',/,
      &'@                                                            ',/,
      &'@    Le calcul ne peut pas etre execute.                     ',/,
