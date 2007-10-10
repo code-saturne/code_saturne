@@ -389,8 +389,7 @@ C
      &           /PROPCE(IEL,IPPROC(IROM(1)))
 C
             IF(DELHSH.NE.0.D0) THEN
-              DTJM= RTP(IEL,ISCALT(1))/DELHSH
-C             DTJM= RTPA(IEL,ISCALT(1))/DELHSH
+              DTJM= RTP(IEL,ISCA(ISCALT(1)))/DELHSH
             ELSE
               DTJM= DTJ
             ENDIF
@@ -618,7 +617,7 @@ C
      &           /PROPCE(IEL,IPPROC(IROM(1)))
 C
             IF(DELHSH.NE.0.D0) THEN
-              DTJM= RTP(IEL,ISCALT(1))/DELHSH
+              DTJM= RTP(IEL,ISCA(ISCALT(1)))/DELHSH
             ELSE
               DTJM= DTJ
             ENDIF
