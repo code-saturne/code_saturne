@@ -18,7 +18,7 @@ TEX             =$(HOME)/latex
 # DEFINITION DES OBJETS A CREER
 #==============================
 
-DOC             =saturne
+DOC             =user
 
 
 # DEFINITIONS DES CIBLES
