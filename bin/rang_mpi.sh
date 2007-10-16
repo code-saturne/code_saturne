@@ -60,8 +60,8 @@ elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
   MPI_RANK=`echo $SCAMPI_PROCESS_PARAM | cut -f4 -d' '`
 
 # Pour MPICH2 (qui fournit aussi la commande mpiexec)
-elif [ "$MPD_JRANK" != "" ] ; then
-  MPI_RANK="$MPD_JRANK"                # PMI_RANK existe aussi
+elif [ "$PMI_RANK" != "" ] ; then
+  MPI_RANK="$PMI_RANK" 
 
 # Pour Open MPI 1.0 (qui fournit aussi la commande mpiexec)
 elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then

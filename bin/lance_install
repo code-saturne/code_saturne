@@ -406,11 +406,6 @@ Macro_readme_comp=$2
   umask 007            || sortie "Il est impossible de positionner umask"
 #
 #
-# Chmod sur le repertoire de base par securite
-#
-  chmod g-rwx,o-rwx $repbase
-#
-#
 #=========================================================================
 #                        Installation 
 #=========================================================================
@@ -428,6 +423,10 @@ Macro_readme_comp=$2
  if [ ! -d $build/${NOM_ARCH} ] ; then 
    mkdir $build/${NOM_ARCH}
  fi
+#
+# Chmod sur le repertoire des librairies a remplacer par securite
+#
+  chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #
 #
 # Boucle generale
@@ -559,9 +558,9 @@ rmb.sh_lance"
    chmod    u+x aux/$fich
  done
 #Fichiers executables dans arch
-find arch -name "*.exe" -exec chmod +x {} \;
-# Acces au repertoire de base
-  chmod u=rwx,g=rx,o=rx $repbase
+find arch -name "*.exe" -exec chmod uog+x {} \;
+# Acces au repertoire lib
+  chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #
  titrefin "Fin de la verification des acces"
 

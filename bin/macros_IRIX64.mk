@@ -42,7 +42,7 @@ BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 # Macros pour FVM
 #----------------
 
-FVM_HOME       = /home/saturne/opt/fvm-0.8.0/arch/IRIX64
+FVM_HOME       = /home/saturne/opt/fvm-0.9.0/arch/IRIX64
 FVM_INC        = -I$(FVM_HOME)/include
 FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 
