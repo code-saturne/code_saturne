@@ -1561,7 +1561,7 @@ _fill_out_halo(cs_mesh_t  *mesh)
 
   if (mesh->n_init_perio > 0) {
 
-    cs_int_t  shift, n_elts;
+    cs_int_t  n_elts;
     cs_int_t  *exchange_buffer = NULL;
 
     /* n_transforms periodicities to deal with and for each sub-periodicity

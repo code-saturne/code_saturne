@@ -1113,7 +1113,7 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
 
   shift[0] = 0;
   for (i = 1; i < n_domains; i++)
-    shift[i] = shift[i-1] + shift[i-1];
+    shift[i] = shift[i-1] + count[i-1];
 
   assert(*n_g_elts == (shift[n_domains - 1] + count[n_domains - 1]));
 

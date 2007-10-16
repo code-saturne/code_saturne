@@ -1546,12 +1546,14 @@ C
 C     On verifie que le scalaire associe a une fluctuation n'est
 C     pas une fluctuation
         DO II = 1, NSCAL
-          IF (ISCAVR(II).GT.0.AND.ISCAVR(ISCAVR(II)).GT.0) THEN
-            CHAINE=NOMVAR(IPPRTP(ISCA(II)))
-            CHAIN2=NOMVAR(IPPRTP(ISCA(ISCAVR(II))))
-            WRITE(NFECRA,4321)CHAINE(1:8),CHAIN2(1:8),II,ISCAVR(II),
-     &           ISCAVR(II),ISCAVR(ISCAVR(II))
-            IOK = IOK + 1
+          IF (ISCAVR(II).GT.0) THEN
+            IF (ISCAVR(ISCAVR(II)).GT.0) THEN
+              CHAINE=NOMVAR(IPPRTP(ISCA(II)))
+              CHAIN2=NOMVAR(IPPRTP(ISCA(ISCAVR(II))))
+              WRITE(NFECRA,4321)CHAINE(1:8),CHAIN2(1:8),II,ISCAVR(II),
+     &             ISCAVR(II),ISCAVR(ISCAVR(II))
+              IOK = IOK + 1
+            ENDIF
           ENDIF
         ENDDO
 C

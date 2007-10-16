@@ -1199,7 +1199,7 @@ static void cs_gui_output_value(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-			
+                        
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
       cs_gui_strcmp(param, "fluid_domain") ||
       cs_gui_strcmp(param, "domain_boundary") ||
@@ -1313,7 +1313,7 @@ static int cs_gui_get_mean_names_number( int   const id)
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_get_mean_value(      int   const id,
-		           const char *const param,
+                           const char *const param,
                                  int  *const keyword)
 {
   char *path = NULL;
@@ -1346,7 +1346,7 @@ static void cs_gui_get_mean_value(      int   const id,
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_get_mean_prop( int const id,
-  		            int const nb)
+                            int const nb)
 {
   char *path = NULL;
   char *name = NULL;
@@ -3086,7 +3086,7 @@ static void cs_gui_get_ale_viscosity_type(int  * type)
  *----------------------------------------------------------------------------*/
 
 static int _user_array(const char *const keyword1,
-		       const char *const keyword2)
+                       const char *const keyword2)
 {
   char *path = NULL;
   int value = 0;
@@ -3354,7 +3354,7 @@ int cs_gui_boundary_zone_number(const int ith_zone)
  *
  * parameters:
  *   nature                -->  nature of boundary zone (inlet, wall,...)
- *   label	           -->  label of boundary zone
+ *   label                 -->  label of boundary zone
  *----------------------------------------------------------------------------*/
 
 char *cs_gui_boundary_zone_localization(const char *const nature,
@@ -3401,7 +3401,7 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
                                 int    *const ideuch,
                                 int    *const igrake,
                                 int    *const igrari,
-				double *const xlomlg)
+                                double *const xlomlg)
 {
   char *model = NULL;
   int iphas = 0;
@@ -3584,7 +3584,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const icolwc,
                                int *const icp3pl,
                                int *const icpl3c,
-			       int *const icfuel,
+                               int *const icfuel,
                                int *const ieljou,
                                int *const ielarc,
                                int *const ielion,
@@ -3616,7 +3616,8 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   *indjon = 1;
   *ieqco2 = 0;
 
-  /* cherche la physique particuliere active et donne la valeur de l'attricut model associe */
+  /* cherche la physique particuliere active et donne la valeur
+     de l'attribut model associe */
   isactiv = cs_gui_get_activ_thermophysical_model();
 
   if (isactiv) {
@@ -3679,7 +3680,8 @@ void CS_PROCF (csisca, CSISCA)(int *const iscavr)
         if (cs_gui_strcmp(variance, vars->label[j])) {
           if ( i == j ) {
             bft_error(__FILE__, __LINE__, 0,
-                      _("Scalar: %i and its variance: %i are the same.\n"), i, j);
+                      _("Scalar: %i and its variance: %i are the same.\n"),
+                      i, j);
           }
           iscavr[i] = j + 1;
         }
@@ -3835,10 +3837,10 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uialin, UIALIN) (int    *const iale,
-		                int    *const nalinf,
-				int    *const nalimx,
-				double *const epalim,
-				int    *const iortvm)
+                                int    *const nalinf,
+                                int    *const nalimx,
+                                double *const epalim,
+                                int    *const iortvm)
 {
   double value;
 
@@ -3867,7 +3869,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
   }
 #endif
 }
-		                  
+                                  
 /*----------------------------------------------------------------------------
  * TODO.
  * Est appele juste apres le 3eme appel a VARPOS
@@ -4134,7 +4136,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
                                 double *const coumax,
                                 double *const foumax,
                                 double *const varrdt,
-				double *const relxst)
+                                double *const relxst)
 {
   double value;
 
@@ -4504,7 +4506,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
             bft_error(__FILE__, __LINE__, 0,
                       _("mass molar value is zero or not found in the xml file.\n"));
           density = *p0 * result / (8.31434 *(*t0));
-	}
+        }
         else
           cs_gui_properties_value("density", &density);
 
@@ -4582,8 +4584,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const ippty,
                                 const int *const ipptz,
                                 const int *const ippdt,
-				const int *const ivisma,
-				const int *const iappel)
+                                const int *const ivisma,
+                                const int *const iappel)
 {
   int iphas = 0;
   int itype = 0;
@@ -4694,25 +4696,25 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
       /* search lenght of first character of scalar property's suffixe : '_' */
       for (i=0; i < vars->nscaus; i++) {
 
-	if (iscavr[i] <= 0 && iscalt[iphas] != i+1 && ivisls[i] > 0) {
+        if (iscavr[i] <= 0 && iscalt[iphas] != i+1 && ivisls[i] > 0) {
 
           vars->properties_ipp[np] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
           /* search lenght of second character scalar property's suffixe: number i */
-	  ncar = cs_gui_characters_number(i+1);
-	  
+          ncar = cs_gui_characters_number(i+1);
+          
           BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
           BFT_MALLOC(suf, 1 + ncar, char);
           sprintf(suf, "%i", i+1);
-	  strcpy(name, "diffusion_coefficient");
-	  strcat(name, "_");
-	  strcat(name, suf);
+          strcpy(name, "diffusion_coefficient");
+          strcat(name, "_");
+          strcat(name, suf);
 
           BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
           strcpy(vars->properties_name[np], name);
           np++;
 
-	  BFT_FREE(suf);
-	}
+          BFT_FREE(suf);
+        }
       }
     }
 
@@ -4755,7 +4757,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
   if (np != vars->nprop) {
     bft_error(__FILE__, __LINE__, 0,
-	      _("number of properties is not correct: %i instead of: %i\n"), np, vars->nprop);
+              _("number of properties is not correct: %i instead of: %i\n"), np, vars->nprop);
   }
 
 #if _XML_DEBUG_
@@ -4763,7 +4765,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
   for (i=0 ; i<vars->nprop ; i++) {
     bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
-		    i, vars->properties_ipp[i], i, vars->properties_name[i]);
+                    i, vars->properties_ipp[i], i, vars->properties_name[i]);
   }
 #endif
 }
@@ -4816,7 +4818,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
         for (j=0 ; j<vars->nscaus ; j++){
           if (cs_gui_strcmp(name,  vars->label[j]) ) {
             idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp_nbr[isca[j]-1] +1;
-	  }
+          }
         }
       }
 
@@ -5119,7 +5121,7 @@ void CS_PROCF(cfnmva, CFNMVA)
 
   if (*var_id < 1 || *var_id > _cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
-	      _("Name of variable %d was never set.\n"), var_id);
+              _("Name of variable %d was never set.\n"), var_id);
 
   /* Copy string */
 
@@ -5163,7 +5165,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
 {
   /* Coal combustion: the initialization of the model scalar are not given */
 
-  int i, j, icel, iel;
+  int i, j, icel, iel, c_id;
   int zones = 0;
   int cells = 0;
   int *cells_list = NULL;
@@ -5187,13 +5189,23 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
     name = cs_gui_volumic_zone_name(i);
     description = cs_gui_volumic_zone_localization(name);
 
-    /* list of cells building */
+    /* build list of cells */
     BFT_MALLOC(cells_list, *ncelet, int);
 
-    fvm_selector_get_list(cs_glob_mesh->select_cells,
-                          description,
-                          &cells,
-                          cells_list);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                                 description,
+                                 &cells,
+                                 cells_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune cellule."),
+                missing, description);
+    }
 
     /* Velocity variables initialization */
     for (j=1; j < 4; j++) {
@@ -5228,7 +5240,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       cs_gui_scalar_initial_value("additional_scalars",
                                   vars->label[j],
                                   name,
-			          &initial_value);
+                                  &initial_value);
 
       for (icel = 0; icel < cells; icel++) {
         iel = cells_list[icel]-1;
@@ -5307,7 +5319,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
   int faces = 0;
   int zones = 0;
   int n, izone, ith_zone, zone_nbr;
-  int ifbr, i;
+  int ifbr, i, c_id;
   int ivar, isca;
   char *choice = NULL;
   char *nature = NULL;
@@ -5390,9 +5402,9 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
           boundaries->iqimp[izone] = 1;
           cs_gui_boundary_flow(label, izone);
           /* TODO : remplir la direction normale a la face */
-	  /* boundaries->values[1][izone].val1 = directionU ; */
-          /* boundaries->values[2][izone].val1 = directionv ; */
-          /* boundaries->values[3][izone].val1 = directionw ; */
+          /* boundaries->values[1][izone].val1 = directionU ; */
+          /* boundaries->values[2][izone].val1 = directionV ; */
+          /* boundaries->values[3][izone].val1 = directionW ; */
         }
 
         BFT_FREE(choice);
@@ -5451,7 +5463,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
     if (zone_nbr > *nozppm) 
       bft_error(__FILE__, __LINE__, 0,
-                _("zone's label number %i is greater than %i the maximum allowed \n"),
+                _("zone's label number %i is greater than %i,"
+                  " the maximum allowed \n"),
                 zone_nbr, *nozppm);
 
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
@@ -5459,10 +5472,21 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     /* list of faces building */
     BFT_MALLOC(faces_list, *nfabor, int);
 
-    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                          description,
-                          &faces,
-                          faces_list);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune face de bord."),
+                missing, description);
+    }
+
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
@@ -5481,7 +5505,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *ientre;
         for (i = 0; i < vars->nvar; i++) {
-	  ivar = vars->rtp_nbr[i];
+          ivar = vars->rtp_nbr[i];
           rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->values[ivar][izone].val1;
         }
@@ -5496,7 +5520,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       }
 
       for (i = 0; i < vars->nvar; i++) {
-	ivar = vars->rtp_nbr[i];
+        ivar = vars->rtp_nbr[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
@@ -5543,7 +5567,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       }
 
       for (i = 0; i < vars->nvar; i++) {
-	ivar = vars->rtp_nbr[i];
+        ivar = vars->rtp_nbr[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
@@ -5590,10 +5614,21 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     BFT_MALLOC(faces_list,*nfabor,int);
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
-    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                          description,
-                          &faces,
-                          faces_list);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune face de bord."),
+                missing, description);
+    }
+
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
     bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
     bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
@@ -5602,31 +5637,34 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-      bft_printf(_("-----iqimp=%i, qimp=%12.5e \n"), iqimp[zone_nbr-1], qimp[zone_nbr-1]);
+      bft_printf(_("-----iqimp=%i, qimp=%12.5e \n"),
+                 iqimp[zone_nbr-1], qimp[zone_nbr-1]);
       bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
-		   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+                 icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
     }
 
     n = vars->nvar - vars->nscaus - vars->nscapp;
     ifbr = faces_list[0]-1;
     for (i=0; i<n ; i++) {
       ivar = vars->rtp_nbr[i];
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-      vars->char2[ivar],
-      itypfb[iphas *(*nfabor) + ifbr],
-      icodcl[ivar *(*nfabor) + ifbr ],
-      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
+                   "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                 vars->char2[ivar],
+                 itypfb[iphas *(*nfabor) + ifbr],
+                 icodcl[ivar *(*nfabor) + ifbr ],
+                 rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                 rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                 rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
     }
     for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-      vars->label[ivar],
-      itypfb[iphas *(*nfabor) + ifbr],
-      icodcl[ivar *(*nfabor) + ifbr ],
-      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
+                   "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                 vars->label[ivar],
+                 itypfb[iphas *(*nfabor) + ifbr],
+                 icodcl[ivar *(*nfabor) + ifbr ],
+                 rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                 rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                 rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
     }
     BFT_FREE(faces_list);
   }
@@ -5653,9 +5691,9 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
 #endif
 }
 
-/*-----------------------------------------------------------------------------
- *  Indirection entre la numérotation noyau et la numérotation XML des propriétés
- *  physiques de la physique particulière active
+/*----------------------------------------------------------------------------
+ *  Indirection entre la numérotation noyau et la numérotation XML des
+ *  propriétés physiques de la physique particulière active
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
@@ -5901,7 +5939,8 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 
   if (np != vars->nsalpp) {
     bft_error(__FILE__, __LINE__, 0,
-	      _("number of properties is not correct: %i instead of: %i\n"), np, vars->nsalpp);
+              _("number of properties is not correct: %i instead of: %i\n"),
+              np, vars->nsalpp);
   }
 
 #if _XML_DEBUG_
@@ -5909,14 +5948,15 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
   for (i=0 ; i<vars->nprop ; i++) {
     bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
-		    i, vars->properties_ipp[i], i, vars->properties_name[i]);
+               i, vars->properties_ipp[i], i, vars->properties_name[i]);
   }
 #endif
 }
 
-/*------------------------------------------------------------------------------------
- *  Indirection entre la numérotation noyau et la numérotation XML des scalaires model
- *------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ *  Indirection entre la numérotation noyau et
+ *  la numérotation XML des scalaires model
+ *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpsc, UICPSC)(const int *const ncharb,
                                const int *const nclass,
@@ -6109,8 +6149,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
   int ifbr;
   int ivar;
   int izone, icharb, isca, ith_zone, zones, ifac, zone_nbr;
-  int k;
-  int n;
+  int k, n, c_id;
   char *choice = NULL;
   char *label = NULL;
   char *nature = NULL;
@@ -6224,8 +6263,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
           boundaries->ientat[izone] = 1;
           boundaries->iqimp[izone]  = 1;
           cs_gui_boundary_flow(label, izone);
-	  /* TODO : remplir la direction normale a la face */
-	  /* boundaries->values[1][izone].val1 = directionU ; */
+          /* TODO : remplir la direction normale a la face */
+          /* boundaries->values[1][izone].val1 = directionU ; */
           /* boundaries->values[2][izone].val1 = directionv ; */
           /* boundaries->values[3][izone].val1 = directionw ; */
         }
@@ -6292,12 +6331,23 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
 
-    /* list of faces building */
+    /* build list of faces */
     BFT_MALLOC(faces_list, *nfabor, int);
-    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                          description,
-                          &faces,
-                          faces_list);
+
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune face de bord."),
+                missing, description);
+    }
 
     BFT_FREE(description);
 
@@ -6499,7 +6549,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
                                      int *const itypfb,
                                      int *const izfppp)
 {
-  int ifbr, ifac;
+  int ifbr, ifac, c_id;
   int izone, zones, zone_nbr;
   int inature, inature2;
   char *label = NULL;
@@ -6516,13 +6566,23 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
 
-    /* list of faces building */
+    /* build list of faces */
     BFT_MALLOC(faces_list, *nfabor, int);
 
-    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                          description,
-                          &faces,
-                          faces_list);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune face de bord."),
+                missing, description);
+    }
 
     BFT_FREE(description);
 
@@ -6555,52 +6615,52 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
 
       if (izfppp[ifbr] != zone_nbr)
         bft_error(__FILE__, __LINE__, 0,
-	_("@                                                            \n"
-	  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-	  "@                                                            \n"
-	  "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-	  "@    *******                                                 \n"
-	  "@                                                            \n"
-	  "@    The zone %s does not have the same id number            \n"
-	  "@    in the GUI and in the user subroutine.                  \n"
-	  "@                                                            \n"
-	  "@    GUI zone number:             %i                         \n"
-	  "@    USER SUBROUTINE zone number: %i                         \n"
-	  "@                                                            \n"
-	  "@    The id number given in the GUI cannot be modified       \n"
-	  "@    in the user subroutine (fortran array IZFPPP).          \n"
-	  "@                                                            \n"
-	  "@    The calculation will stop.                              \n"
-	  "@                                                            \n"
-	  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-	  "@                                                            \n"),
-	  label, zone_nbr, izfppp[ifbr]);
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same id number            \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone number:             %i                         \n"
+          "@    USER SUBROUTINE zone number: %i                         \n"
+          "@                                                            \n"
+          "@    The id number given in the GUI cannot be modified       \n"
+          "@    in the user subroutine (fortran array IZFPPP).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          label, zone_nbr, izfppp[ifbr]);
 
-	/* modif temporaire tant que iparoi n'est pas defini dans l'IHM
-	   if (itypfb[iphas *(*nfabor) +ifbr] != inature) */
+        /* modif temporaire tant que iparoi n'est pas defini dans l'IHM
+           if (itypfb[iphas *(*nfabor) +ifbr] != inature) */
       inature2 = itypfb[iphas *(*nfabor) +ifbr];
       if (inature2 == *iparug ) inature2 = *iparoi;
       if (inature2 != inature)
         bft_error(__FILE__, __LINE__, 0,
-	_("@                                                            \n"
-	  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-	  "@                                                            \n"
-	  "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-	  "@    *******                                                 \n"
-	  "@                                                            \n"
-	  "@    The zone %s does not have the same nature               \n"
-	  "@    in the GUI and in the user subroutine.                  \n"
-	  "@                                                            \n"
-	  "@    GUI zone nature:             %s                         \n"
-	  "@    USER SUBROUTINE ITYPFB:      %i                         \n"
-	  "@                                                            \n"
-	  "@    The nature given in the GUI cannot be modified          \n"
-	  "@    in the user subroutine (fortran array ITYPFB).          \n"
-	  "@                                                            \n"
-	  "@    The calculation will stop.                              \n"
-	  "@                                                            \n"
-	  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-	  "@                                                            \n"),
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same nature               \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone nature:             %s                         \n"
+          "@    USER SUBROUTINE ITYPFB:      %i                         \n"
+          "@                                                            \n"
+          "@    The nature given in the GUI cannot be modified          \n"
+          "@    in the user subroutine (fortran array ITYPFB).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
           boundaries->label[izone], boundaries->nature[izone], inature2);
     }
 

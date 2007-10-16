@@ -981,13 +981,14 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     if (   mesh->cell_cells_lst == NULL
         || mesh->cell_cells_idx == NULL
-	  || mesh->halo_type == CS_MESH_HALO_STANDARD) {
-	bft_printf(_("\nATTENTION\n"
-		"Le voisinage étendu est nul alors que la méthode de calcul\n"
-                 "des gradients par moindres carrés sur support étendu est\n"
-                 "activée. Ceci peut arriver dans certains cas spécifiques\n"
-                 "(maillage 1D). Vérifiez que c'est bien votre cas, sinon\n"
-                 "contactez le support.\n"));
+        || mesh->halo_type == CS_MESH_HALO_STANDARD) {
+      bft_printf
+        (_("\nATTENTION\n"
+           "Le voisinage étendu est nul alors que la méthode de calcul\n"
+           "des gradients par moindres carrés sur support étendu est\n"
+           "activée. Ceci peut arriver dans certains cas spécifiques\n"
+           "(maillage 1D). Vérifiez que c'est bien votre cas, sinon\n"
+           "contactez le support.\n"));
     }
     else {
 

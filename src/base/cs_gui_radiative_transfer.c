@@ -391,7 +391,7 @@ static int cs_gui_radiative_boundary_type(const char *const label,
  *  Return maximum value of output zone
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_radiative_boundary_output_zone_max()
+static int cs_gui_radiative_boundary_output_zone_max(void)
 {
   char *path;
   int nb_zone, zone_max = 0;

@@ -1570,10 +1570,12 @@ C --- Verification de IDFMOM
               ELSEIF(IDFMJI.GT.NVAR) THEN
                 IOK = IOK + 1
                 WRITE(NFECRA,8211)JJ,IMOM,IDFMJI,NVAR
-              ELSEIF(IDFMJI.LT.0 .AND. IPPROC(-IDFMJI).LE.0) THEN
-                IOK = IOK + 1
-                WRITE(NFECRA,8212)JJ,IMOM,IDFMJI,-IDFMJI,
-     &               IPPROC(-IDFMJI)
+              ELSEIF(IDFMJI.LT.0) THEN
+                IF (IPPROC(-IDFMJI).LE.0) THEN
+                  IOK = IOK + 1
+                  WRITE(NFECRA,8212)JJ,IMOM,IDFMJI,-IDFMJI,
+     &                 IPPROC(-IDFMJI)
+                ENDIF
               ELSEIF(IDFMJI.EQ.0) THEN
                 IDFFIN = 1
               ENDIF

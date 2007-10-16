@@ -192,7 +192,7 @@ _print_overhead(double  wt,
         glob_min[i] = loc_count[i];
         glob_max[i] = loc_count[i];
       }
-      cput_tot = cpu;
+      cpu_tot = cpu;
     }
 #endif
 
@@ -263,7 +263,7 @@ _print_stats(long    n_ops,
         glob_min[i] = loc_count[i];
         glob_max[i] = loc_count[i];
       }
-      cput_tot = cpu;
+      cpu_tot = cpu;
     }
 #endif
 

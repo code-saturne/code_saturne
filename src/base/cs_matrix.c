@@ -686,7 +686,7 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *xa1, *xa2}
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
 #endif
 
   /* Diagonal part of matrix.vector product */
@@ -765,7 +765,7 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *xa1, *xa2}
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
 #endif
 
   /* Diagonal part of matrix.vector product */
@@ -1409,7 +1409,7 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
+#pragma disjoint(*x, *y, *m_row, *col_id)
 #endif
 
     for (jj = 0; jj < n_cols; jj++)
@@ -1435,12 +1435,20 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
                      const cs_real_t     *restrict x,
                      cs_real_t           *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
   cs_int_t sym_jj_start = 0;
+
+    /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -1461,15 +1469,11 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
 
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     cs_real_t  sii = 0.0;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -1497,7 +1501,10 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
                     const cs_real_t    *restrict x,
                     cs_real_t          *restrict y)
 {
-  cs_int_t  start_row, ii, jj;
+  cs_int_t  start_row, ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1510,6 +1517,12 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
 
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *y, *m_row)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#endif
+
     if (end_row > n_rows)
       end_row = n_rows;
 
@@ -1517,13 +1530,8 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         *prefetch_p++ = x[col_id[jj]];
@@ -1536,14 +1544,10 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *m_row, *col_id}
-#endif
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += *m_row++ * *prefetch_p++;
@@ -1592,7 +1596,7 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
+#pragma disjoint(*x, *y, *m_row, *col_id)
 #endif
 
     for (jj = 0; jj < n_cols; jj++)
@@ -1623,10 +1627,18 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
                             const cs_real_t    *restrict x,
                             cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
+
+    /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -1640,15 +1652,11 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
 
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     cs_real_t  sii = 0.0;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -1681,7 +1689,10 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
                            const cs_real_t    *restrict x,
                            cs_real_t          *restrict y)
 {
-  cs_int_t  start_row, ii, jj;
+  cs_int_t  start_row, ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1691,8 +1702,13 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
   for (start_row = 0; start_row < n_rows; start_row += mc->n_prefetch_rows) {
 
     cs_int_t end_row = start_row + mc->n_prefetch_rows;
-
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
+#endif
 
     if (end_row > n_rows)
       end_row = n_rows;
@@ -1701,13 +1717,8 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         *prefetch_p++ = x[col_id[jj]];
@@ -1720,14 +1731,10 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *m_row, *col_id}
-#endif
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += *m_row++ * *prefetch_p++;
@@ -2191,11 +2198,19 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
                  const cs_real_t    *restrict x,
                  cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == false);
 
@@ -2217,15 +2232,11 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj] * x[col_id[jj]]);
@@ -2252,11 +2263,19 @@ _mat_vec_p_l_msr_sym(const cs_matrix_t  *matrix,
                      const cs_real_t    *restrict x,
                      cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -2284,15 +2303,11 @@ _mat_vec_p_l_msr_sym(const cs_matrix_t  *matrix,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj]*x[col_id[jj]]);
@@ -2322,11 +2337,20 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
                     const cs_real_t     *restrict x,
                     cs_real_t           *restrict y)
 {
-  cs_int_t  ii;
+  cs_int_t  ii, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row, *restrict prefetch_p;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *da, *m_row, *col_id)
+#endif
 
   /* Diagonal contribution */
 
@@ -2355,7 +2379,7 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       cs_int_t end_row = start_row + mc->n_prefetch_rows;
 
-      cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+      prefetch_p = mc->x_prefetch;
 
       if (end_row > n_rows)
         end_row = n_rows;
@@ -2364,13 +2388,8 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+	col_id = ms->col_id + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           *prefetch_p++ = x[col_id[jj]];
@@ -2383,14 +2402,10 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
         cs_real_t  sii = 0.0;
 
-        /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *da, *m_row, *col_id}
-#endif
+        m_row = mc->val + ms->row_index[ii];
+	n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           sii += *m_row++ * *prefetch_p++;
@@ -2423,11 +2438,19 @@ _alpha_a_x_p_beta_y_msr(cs_real_t           alpha,
                         const cs_real_t    *restrict x,
                         cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == false);
 
@@ -2450,15 +2473,11 @@ _alpha_a_x_p_beta_y_msr(cs_real_t           alpha,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj] * x[col_id[jj]]);
@@ -2490,11 +2509,19 @@ _alpha_a_x_p_beta_y_msr_sym(cs_real_t           alpha,
                             const cs_real_t    *restrict x,
                             cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -2523,15 +2550,11 @@ _alpha_a_x_p_beta_y_msr_sym(cs_real_t           alpha,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj]*x[col_id[jj]]);
@@ -2566,11 +2589,20 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
                            const cs_real_t    *restrict x,
                            cs_real_t          *restrict y)
 {
-  cs_int_t  ii;
+  cs_int_t  ii, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row, *restrict prefetch_p;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *da, *m_row, *col_id)
+#endif
 
   /* Diagonal contribution */
 
@@ -2595,7 +2627,7 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       cs_int_t end_row = start_row + mc->n_prefetch_rows;
 
-      cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+      prefetch_p = mc->x_prefetch;
 
       if (end_row > n_rows)
         end_row = n_rows;
@@ -2604,13 +2636,8 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+	col_id = ms->col_id + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           *prefetch_p++ = x[col_id[jj]];
@@ -2623,14 +2650,10 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
         cs_real_t  sii = 0.0;
 
-        /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *da, *m_row, *col_id}
-#endif
+        m_row = mc->val + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           sii += *m_row++ * *prefetch_p++;
