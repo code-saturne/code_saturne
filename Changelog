@@ -1,3 +1,59 @@
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in the CPU time calculation
+  in cs_benchmark.c when compiling without
+  MPI
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor indentation modifications
+  modified routines:
+    covofi.F
+    cs_ext_neighborhood.c
+    cs_mesh.h
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Change in the syntax of tests to avoid a warning
+  on IA64 architecture with intel compilers
+  modified routines:
+    varpos.F
+    verini.F
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use of MPI_RANK variable for MPICH2 in rang_mpi.sh
+  + minor change in file permissions in lance_install
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in index shift in paragv routine
+  in cs_parall.c
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of pragma commands for xlc compiler in
+  cs_matrix.c
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move of obsolete macros_OSF1.mk and macros_HU-UX.mk
+  files in new aux/macros_old archive directory
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Plugging of fvm-0.9.0 with extra argument in selector
+  routines
+  modified routines:
+    cs_gui.c
+    cs_mesh.c
+    cs_selector.c
+  modified scripts:
+    macros*.mk
+
+* 15/10/2007 - David Monfort <david.monfort@edf.fr>
+  Correction of compilation warnings
+  modified routines:
+    cs_gui_radiative_transfer.c
+    cs_halo.c
+
+* 11/10/2007 - David Monfort <david.monfort@edf.fr>
+  Correction fof IDIMTE coefficient in reseps.F for
+  rotation periodicity synchronization in standard Rij-eps
+  model
+
 * 09/10/2008 - Marc Sakiz <marc.sakiz@edf.fr>
   Use of bft-1.0.5 
   modified scripts : macros*.mk
