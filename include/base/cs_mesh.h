@@ -281,12 +281,10 @@ typedef struct {
 
   fvm_group_class_set_t *class_defs;
 
-  fvm_selector_t *select_cells;           /* Structure to allow cell extraction
-                                           with fvm_selector */
-  fvm_selector_t *select_i_faces;           /* Structure to allow internal faces
-                                           extraction with fvm_selector */
-  fvm_selector_t *select_b_faces;           /* Structure to allow border faces
-                                           extraction with fvm_selector */
+  fvm_selector_t *select_cells;       /* Cell selection object */
+  fvm_selector_t *select_i_faces;     /* Internal faces selection object */
+  fvm_selector_t *select_b_faces;     /* Border faces selection object */
+
 } cs_mesh_t ;
 
 /* Structure used for building mesh structure */
