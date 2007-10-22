@@ -154,7 +154,7 @@ C   - Interface Code_Saturne
 C     ======================
 C     Construction de l'indirection entre la numerotation du noyau et XML
       IF(IIHMPR.EQ.1) THEN
-        CALL UICPSC (NCHARB, NCLACP, IPPMOD, ICP3PL, IEQCO2, 
+        CALL UICPSC (NCHARB, NCLACP, IPPMOD, ICP3PL, IEQCO2,
      &               IHM, INP, IXCH, IXCK, IXWT, IH2,
      &               IF1M, IF2M, IF3M, IF4P2M, IF5M, IYCO2)
       ENDIF
