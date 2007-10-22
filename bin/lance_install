@@ -531,6 +531,7 @@ Macro_readme_comp=$2
 check_mesh \
 compiler_version \
 cree_sat \
+cs.exe \
 gracehst \
 grp \
 info_cs \
@@ -544,6 +545,7 @@ rang_mpi.sh"
 compiler_version \
 check_mesh \
 cree_sat \
+cs.exe \
 gracehst \
 grp \
 info_cs \

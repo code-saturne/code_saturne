@@ -83,10 +83,11 @@ XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
 #----------------
 
 # Option BLAS
-BLAS            =0
-BLAS_INC        =
-BLAS_CFLAGS     =
-BLAS_LDFLAGS    =
+BLAS            =1
+
+BLAS_INC        =-I/applications/atlas/include
+BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
+BLAS_LDFLAGS    =-L/applications/atlas/lib -lcblas -latlas -lg2c
 
 # Preprocesseur
 #--------------
@@ -102,8 +103,8 @@ CCOMP                  = mpicc
 #CCOMPFLAGSDEF          = -Xa -Ktrap=fp   Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 CCOMPFLAGSDEF          = -Xa
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O1 
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O1          
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O1
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse  
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O1
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -Mbounds
@@ -121,8 +122,8 @@ FTNCOMP                = mpif77
 #FTNCOMPFLAGSDEF        = -Ktrap=fp -fastsse     Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 FTNCOMPFLAGSDEF        = -fastsse
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O -Mnobounds
-FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
+FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O -Mnobounds
 FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0

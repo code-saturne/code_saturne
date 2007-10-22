@@ -75,7 +75,7 @@ XML             =1
 XML_HOME = /home/saturne/Saturne/opt/libxml2-2.6.19
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/arch/Linux_IA64/lib -lxml2
 
 # Macro pour BLAS
 #----------------
@@ -106,7 +106,7 @@ CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1            
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
 CCOMPFLAGSPROF         = -p
 CCOMPFLAGSVERS         = -V
 
@@ -123,7 +123,7 @@ FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O1
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0 -ftrapuv
 FTNCOMPFLAGSPROF       = -p
 FTNCOMPFLAGSVERS       = -V
 
