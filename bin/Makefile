@@ -687,16 +687,16 @@ privmodlink:
 	 then librariesloc="" ;\
 	 fi ;\
 	 fvm_config="$(FVM_HOME)/bin/fvm-config" ;\
-	 librariessup="" ;\
-	 librariessup="$${librariessup} `$${fvm_config} --ldflags hdf5`" ;\
-	 librariessup="$${librariessup} `$${fvm_config} --libs hdf5`" ;\
+	 librariessup="$(FVM_LDFLAGS) $(BFT_LDFLAGS)" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags med`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs med`" ;\
+	 librariessup="$${librariessup} `$${fvm_config} --ldflags hdf5`" ;\
+	 librariessup="$${librariessup} `$${fvm_config} --libs hdf5`" ;\
 	 if [ "$(LDEDLRPATH)" != "" ] ;\
 	 then libpath="" ;\
-	     for str in $(LIBRARY) $${librariessup} ;\
+	     for str in $${librariessup} $(LIBRARY);\
 	     do  libdir="" ;\
 	         if [ "`echo $${str} | cut -c1-2`" = "-L" ] ;\
 	         then libdir=`echo $${str} | cut -c3-` ;\
@@ -719,7 +719,7 @@ privmodlink:
           fi ;\
 	 make privcmdlink \
 	        ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
-                LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $(LIBRARY) $${librariessup}"
+                LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)"
 	@echo "***  Linking finished" ; echo
 	@make privmodexe NOM_EXE=" $(NOM_EXE) "
 
@@ -743,19 +743,20 @@ privlink:
 	 then library="$${library} $(LIBRARYOPT) " ;\
 	 fi ; \
 	 if [ ${MPI} -eq 1 ] ;\
-	 then library="$${library} ${MPI_LIB} " ;\
+	 then \
 	   if [ ${MPE} -eq 1 ] ;\
-	     then library="$${library} ${MPE_LIB} " ;\
+	     then library="${MPE_LIB} $${library} " ;\
 	   fi ; \
+           library="${MPI_LIB} $${library} " ;\
 	 fi ; \
 	 if [ ${SOCKET} -eq 1 ] ;\
 	 then library="$${library} ${SOCKET_LIB} " ;\
 	 fi ; \
 	 if [ ${BLAS} -eq 1 ] ;\
-	 then library="$${library} ${BLAS_LDFLAGS} " ;\
+	 then library="${BLAS_LDFLAGS} $${library} " ;\
 	 fi ; \
 	 if [ ${XML} -eq 1 ] ;\
-	 then library="$${library} ${XML_LIB} " ;\
+	 then library="${XML_LIB} $${library} " ;\
 	 fi ; \
 	 if   [ "$(MYOPT)" = "LO" ] ;\
 	 then make privmodlink \

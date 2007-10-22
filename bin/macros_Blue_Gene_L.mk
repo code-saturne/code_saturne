@@ -78,12 +78,12 @@ SOCKET_LIB      =
 #---------------
 
 # Option XML
-XML             =0
+XML             =1
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME = /gpfs2/home/saturne/opt/libxml2-2.6.19
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/arch/bgl/lib -lxml2
 
 # Macro pour BLAS
 #----------------
@@ -169,6 +169,10 @@ VARDEF          = -D_POSIX_SOURCE
 # Librairies a "linker"
 #----------------------
 
+# Zlib utilisee par HDF5
+ZLIB     = -L/gpfs2/home/saturne/opt/zlib-1.2.1/arch/bgl/lib -lz
+
+# Librairies IBM
 MASS     = -L/opt/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -lmass -lmassv
 LIBMAT   = /bgl/local/lib/libmpitrace.a
 ESSL     = /opt/ibmmath/essl/4.2/lib/libesslbg.a
@@ -176,7 +180,7 @@ EXIT     = /bgl/local/lib/libexit.a
 
 # Librairies de base toujours prises en compte
 
-LIBBASIC = $(FVM_LDFLAGS) $(BFT_LDFLAGS) \
+LIBBASIC = $(ZLIB)\
 -Wl,-allow-multiple-definition $(MASS) $(ESSL) $(LIBMAT) -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv
 
 # Librairies en mode sans option
