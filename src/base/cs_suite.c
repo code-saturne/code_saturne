@@ -1345,6 +1345,8 @@ cs_int_t cs_suite_lit_rub
                 / cs_suite_taille_buf_def) + 1;
     if (nbr_bloc > cs_glob_base_nbr)
       nbr_bloc = cs_glob_base_nbr;
+    if (nbr_bloc == 0 )
+      nbr_bloc = 1;
 
     cs_loc_suite_lit_val_ent(suite,
                              fic,
@@ -1617,6 +1619,8 @@ void cs_suite_ecr_rub
                 / cs_suite_taille_buf_def) + 1;
     if (nbr_bloc > cs_glob_base_nbr)
       nbr_bloc = cs_glob_base_nbr;
+    if (nbr_bloc == 0 )
+      nbr_bloc = 1;
 
     cs_loc_suite_ecr_val_ent
       (suite,

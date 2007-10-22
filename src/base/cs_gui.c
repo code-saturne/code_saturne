@@ -199,7 +199,7 @@ static cs_var_t *vars = NULL;
  *   ipp            -->  index from the fortran array associated to varname
  *----------------------------------------------------------------------------*/
 
- 
+
 static void _cs_gui_copy_varname(const char *varname, int ipp)
 {
   size_t  l;
@@ -236,7 +236,7 @@ static void cs_gui_advanced_options_turbulence(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
- 
+
   if (cs_gui_strcmp("gravity_terms", param)) {
 
     cs_xpath_add_attribute(&path, "status");
@@ -378,7 +378,7 @@ static void cs_gui_thermal_scalar_number(int *const iscalt,
     }
     iscalt[iphas] = index+1;
     iscsth[index] = ind_thermal;
-    
+
     BFT_FREE(path);
     for (i=0; i < size; i++) BFT_FREE(name[i]);
     BFT_FREE(name);
@@ -444,7 +444,7 @@ static int cs_gui_scalar_properties_choice(const int         scalar_num,
  *   value   <--  value of diffusion coefficient
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_diffusion_value(const int           num_sca, 
+static void cs_gui_scalar_diffusion_value(const int           num_sca,
                                                 double *const value)
 {
   char  *path = NULL;
@@ -596,7 +596,7 @@ static void cs_gui_time_parameters(const char   *const param,
  * Modify restart files format.
  *
  * parameters:
- *   param               -->  restart file name 
+ *   param               -->  restart file name
  *   keyword            <-->  new value of the restart file format
  *----------------------------------------------------------------------------*/
 
@@ -689,7 +689,7 @@ static void cs_gui_variable_value(const char   *const variable_type,
  * Get the attribute value associated to a child markup from a variable.
  *
  * parameters:
- *   variable      -->  name of the variable markup 
+ *   variable      -->  name of the variable markup
  *   value         -->  value of markup
  *   keyword       <--  value of attribute node contained in the
  *                             child markup
@@ -719,7 +719,7 @@ static void cs_gui_variable_attribute(const char *const variable,
     else if (cs_gui_strcmp(choice, "solu"))
       *keyword = 0;
     BFT_FREE(choice);
-     
+
   } else {
 
     cs_xpath_add_attribute(&path, "status");
@@ -740,7 +740,7 @@ static void cs_gui_variable_attribute(const char *const variable,
  * Get the text value associated to a child markup from a scalar.
  *
  * parameters:
- *   label                -->  label of the scalar markup 
+ *   label                -->  label of the scalar markup
  *   child                -->  name of the child markup
  *   value               <--   value of text node contained in the child markup
  *----------------------------------------------------------------------------*/
@@ -767,7 +767,7 @@ static void cs_gui_scalar_value(const char   *const label,
  * Get the attribute value associated to a child markup from a scalar.
  *
  * parameters:
- *   label                -->  label of the scalar markup 
+ *   label                -->  label of the scalar markup
  *   child                -->  name of the child markup
  *   value               <--   value of attribute node contained in the
  *                             child markup
@@ -1006,7 +1006,7 @@ static void  cs_gui_properties_value(const char   *const property_name,
  * Return 1 if the xpath request has succeeded, 0 otherwise.
  *
  * parameters:
- *   property_name        -->  name of the property 
+ *   property_name        -->  name of the property
  *   choice              <--   value of the attribute choice
  *----------------------------------------------------------------------------*/
 
@@ -1122,7 +1122,7 @@ static void _option_turbulence_double(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", param);
- 
+
   cs_xpath_add_function_text(&path);
   if (cs_gui_get_double(path, &result)) *keyword = result;
 
@@ -1199,7 +1199,7 @@ static void cs_gui_output_value(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-                        
+
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
       cs_gui_strcmp(param, "fluid_domain") ||
       cs_gui_strcmp(param, "domain_boundary") ||
@@ -1300,7 +1300,7 @@ static int cs_gui_get_mean_names_number( int   const id)
   BFT_FREE(path);
 
   return number;
-   
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1421,7 +1421,7 @@ static int cs_gui_probes_number(void)
  * Return a single coordinate of a monitoring probe
  *
  * parameters
- *   num_probe            -->  number aka name of the monitoring probe 
+ *   num_probe            -->  number aka name of the monitoring probe
  *   probe_coord          -->  one coordinate of the monitoring probe
  *----------------------------------------------------------------------------*/
 
@@ -1431,7 +1431,7 @@ static double cs_gui_probe_coordinate(const int         num_probe,
   char  *path = NULL;
   char  *str_num_probe = NULL;
   double result = 0.0;
-  
+
   assert(num_probe>0);
 
   BFT_MALLOC(str_num_probe,
@@ -1603,7 +1603,7 @@ static int cs_gui_scalar_number_probes(const int scalar_num)
   char *path = NULL;
   char *choice = NULL;
   int   nb_probes ;
-  
+
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element_num(&path, "scalar", scalar_num);
@@ -1623,7 +1623,7 @@ static int cs_gui_scalar_number_probes(const int scalar_num)
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for number of balise  "probe_recording" 
+ * Return probe number for number of balise  "probe_recording"
  *
  * parameters:
  *   scalar_num  --> number of scalar
@@ -1704,7 +1704,7 @@ static void cs_gui_scalar_post(const  int        num_sca,
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
-  
+
   _cs_gui_copy_varname(vars->label[num_sca], ipp);
 }
 
@@ -1716,7 +1716,7 @@ static void cs_gui_scalar_post(const  int        num_sca,
  *   name       -->  scalar name
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_scalar_number_probes(const char* const model,        
+static int cs_gui_model_scalar_number_probes(const char* const model,
                                              const char *const name)
 {
   char *path = NULL;
@@ -1884,7 +1884,7 @@ static int cs_gui_model_property_number_probes(const char *const model,
  *   num_probe  --> number of balise "probe_recording"
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_property_probe_name(const char *const model, 
+static int cs_gui_model_property_probe_name(const char *const model,
                                             const char *const name,
                                             const int   num_probe)
 {
@@ -1921,10 +1921,10 @@ static int cs_gui_model_property_probe_name(const char *const model,
  *
  * parameters:
  *   model             -->  modele
- *   num_prop          <--  property's number 
+ *   num_prop          <--  property's number
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_model_property_label(const char *const model,   
+static char *cs_gui_get_model_property_label(const char *const model,
                                              const char *const name)
 {
   char *path = NULL;
@@ -1949,14 +1949,14 @@ static char *cs_gui_get_model_property_label(const char *const model,
  * Return status of the property for physical model
  *
  * parameters:
- *   model          --> type of model   
+ *   model          --> type of model
  *   num_pro        --> property name
  *   value_type     --> type of value (listing_printing, postprocessing ..)
  *   keyword       <--  value for the Fortran array
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_model_property_output_status (const char *const model,
-                                                 const char *const name,   
+                                                 const char *const name,
                                                  const char *const value_type,
                                                        int  *const keyword)
 {
@@ -2045,7 +2045,7 @@ static void cs_gui_model_property_post (const char  *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of probes for property 
+ * Return number of probes for property
  *
  * parameters:
  *   property_name  --> name of property
@@ -2114,7 +2114,7 @@ static int cs_gui_properties_probe_name(const char *const property_name,
  * Return the label attribute of a property markup.
  *
  * parameters:
- *   property_name        -->  name of the property 
+ *   property_name        -->  name of the property
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_properties_label(const char *const property_name)
@@ -2250,7 +2250,7 @@ static int cs_gui_time_average_number_probes(const char *const property_name)
 
 /*-----------------------------------------------------------------------------
  * Return probe number for sub balise "probe_recording" for time average of
- * properties    
+ * properties
  *
  * parameters:
  *   property_name    --> label of property
@@ -2460,7 +2460,7 @@ static char *cs_gui_volumic_zone_localization(const char *const name)
   description = cs_gui_get_text_value(path);
 
   BFT_FREE(path);
-  
+
   return description;
 }
 
@@ -2491,7 +2491,7 @@ static void cs_gui_variable_initial_value(const char   *const variable_name,
     *initial_value = result;
   else
     *initial_value = 0.0;
-  
+
   BFT_FREE(path);
 }
 
@@ -2525,7 +2525,7 @@ static void cs_gui_scalar_initial_value(const char   *const parent,
     *initial_value = result;
   else
     *initial_value = 0.0;
-  
+
   BFT_FREE(scalar_name);
   BFT_FREE(path);
 }
@@ -2603,7 +2603,7 @@ static void cs_gui_boundary_dirichlet(const char *const nature,
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result)) {
-    boundaries->type_code[vars->rtp_nbr[ivar]][izone] = DIRICHLET; 
+    boundaries->type_code[vars->rtp_nbr[ivar]][izone] = DIRICHLET;
     boundaries->values[vars->rtp_nbr[ivar]][izone].val1 = result;
   }
   BFT_FREE(path);
@@ -2716,7 +2716,7 @@ static void cs_gui_boundary_turbulence(const char *const choice,
 
 static void cs_gui_boundary_value_scalar(const char *const nature,
                                          const int         izone,
-                                         const int         isca) 
+                                         const int         isca)
 {
   int numvar;
   char *path = NULL;
@@ -2724,7 +2724,7 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
   char *path2 = NULL;
   char *choice = NULL;
   double result;
-  
+
   numvar  = vars->nvar - vars->nscaus - vars->nscapp;
   numvar = numvar + isca;
 
@@ -2736,7 +2736,7 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
 
   BFT_MALLOC(path_commun, strlen(path)+1, char);
   strcpy(path_commun, path);
-  
+
   BFT_MALLOC(path2, strlen(path)+1, char);
   strcpy(path2, path);
 
@@ -2784,8 +2784,8 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
  *
  * parameters:
  *   izone       -->  number of zone
- *   ncharb      -->  
- *   nclpch      --> 
+ *   ncharb      -->
+ *   nclpch      -->
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_coal_boundary_coalflow(const int         izone,
@@ -2856,7 +2856,7 @@ static void cs_gui_coal_boundary_coalflow(const int         izone,
       if (cs_gui_get_double(path5, &value)) {
         (boundaries->distch[izone][icharb]).ratio[iratio] = value;
       }
-  
+
       BFT_FREE(path5);
 
     }
@@ -3031,7 +3031,7 @@ static int cs_gui_get_model_property_number (const  char * const model,
  * Return the status of ALE method
  *
  * parameters:
- *   keyword        <--  status of ale balise 
+ *   keyword        <--  status of ale balise
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_get_ale_status(int  *const keyword)
@@ -3100,7 +3100,7 @@ static int _user_array(const char *const keyword1,
 }
 
 /*============================================================================
- * C API public functions 
+ * C API public functions
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
@@ -3114,17 +3114,17 @@ void cs_gui_clean_memory(void)
   int ivar;
   int izone;
   int zones;
-  int icharb; 
-  int ncharb = 3; 
+  int icharb;
+  int ncharb = 3;
 
   return;
 
   if (boundaries != NULL) {
 
   /* clean memory for global private structure boundaries */
-  
+
     zones = cs_gui_boundary_zones_number();
-    for (izone=0 ; izone < zones ; izone++) { 
+    for (izone=0 ; izone < zones ; izone++) {
       BFT_FREE(boundaries->label[izone]);
       BFT_FREE(boundaries->nature[izone]);
     }
@@ -3136,7 +3136,7 @@ void cs_gui_clean_memory(void)
     }
 
     if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
-      for (izone=0 ; izone < zones ; izone++) { 
+      for (izone=0 ; izone < zones ; izone++) {
         /*for (icharb=0; icharb < ncharb; icharb++) BFT_FREE(boundaries->distch[izone][icharb]);*/
         BFT_FREE(boundaries->qimpcp[izone]);
         BFT_FREE(boundaries->timpcp[izone]);
@@ -3378,7 +3378,7 @@ char *cs_gui_boundary_zone_localization(const char *const nature,
 }
 
 /*============================================================================
- * Fortran API public functions 
+ * Fortran API public functions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -3393,7 +3393,7 @@ char *cs_gui_boundary_zone_localization(const char *const nature,
  * INTEGER          IDEUCH  <--   wall law treatment
  * INTEGER          IGRAKE  <--   k-eps gravity effects
  * INTEGER          IGRAKI  <--   Rij-eps gravity effects
- * DOUBLE PRECISION XLOMLG  <--   mixing_length_scale    
+ * DOUBLE PRECISION XLOMLG  <--   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
 
@@ -3728,7 +3728,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     if (cs_gui_thermal_scalar()) {
       test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
       test2 = cs_gui_properties_choice("specific_heat", &choice2);
-   
+
       if (test1 && test2) {
         cs_gui_thermal_scalar_number(iscalt, iscsth);
 
@@ -3744,7 +3744,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
         if (cs_gui_scalar_properties_choice(i+1,
                                             "diffusion_coefficient",
                                             &choice1))
-        if (iscalt[iphas] != i+1) ivisls[i] = choice1;                                
+        if (iscalt[iphas] != i+1) ivisls[i] = choice1;
       }
     }
 
@@ -3826,11 +3826,11 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
  * SUBROUTINE UIALIN()
  * *****************
  *
- * INTEGER          IALE    <--   iale method activation             
+ * INTEGER          IALE    <--   iale method activation
  * INTEGER          NALINF  <--   number of sub iteration of initialization of fluid
  * INTEGER          NALIMX  <--   max number of iterations of implicitation of
  *                                the displacement of the structures
- * DOUBLE           EPALIM  <--   realtive precision of implicitation of 
+ * DOUBLE           EPALIM  <--   realtive precision of implicitation of
  *                                the displacement of the structures
  * INTEGER          IORTVM  <--   type of viscosity of mesh
  *
@@ -3869,7 +3869,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
   }
 #endif
 }
-                                  
+
 /*----------------------------------------------------------------------------
  * TODO.
  * Est appele juste apres le 3eme appel a VARPOS
@@ -4123,7 +4123,7 @@ void CS_PROCF (csisui, CSISUI) (int *const isuite,
  * DOUBLE PRECISION COUMAX  <--   maximal courant number
  * DOUBLE PRECISION FOUMAX  <--   maximal fournier number
  * DOUBLE PRECISION VARRDT  <--   max time step variation between 2 iterations
- * DOUBLE PRECISION RELXST  <--   relaxation coefficient id idtvar = -1        
+ * DOUBLE PRECISION RELXST  <--   relaxation coefficient id idtvar = -1
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
@@ -4407,9 +4407,9 @@ void CS_PROCF (csphys, CSPHYS)
 
   /* T0 si nécessaire */
 
-  if (vars->model != NULL) 
+  if (vars->model != NULL)
     cs_gui_reference_temperature(vars->model, t0);
-  
+
 #if _XML_DEBUG_
   bft_printf(_("==>CSPHYS\n"));
   bft_printf(_("--gx = %f \n"),*gx);
@@ -4502,7 +4502,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
         if (vars->model != NULL) {
           result = 0.028966;
           cs_gui_reference_mass_molar(vars->model, &result);
-          if (!result) 
+          if (!result)
             bft_error(__FILE__, __LINE__, 0,
                       _("mass molar value is zero or not found in the xml file.\n"));
           density = *p0 * result / (8.31434 *(*t0));
@@ -4510,7 +4510,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
         else
           cs_gui_properties_value("density", &density);
 
-        if (!density) 
+        if (!density)
           bft_error(__FILE__, __LINE__, 0,
                     _("Density value is zero or not found in the xml file.\n"));
 
@@ -4600,7 +4600,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
   if (ismago[iphas] != -1 ) nbp++;
   if (icp[iphas]>0) nbp++;
-  if (vars->nscaus >0) { 
+  if (vars->nscaus >0) {
     for (i=0; i<vars->nscaus; i++) {
       if (ivisls[i] > 0) nbp++;
     }
@@ -4633,7 +4633,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     vars->properties_ipp[np] = ipppro[ ipproc[ iviscl[iphas]-1 ]-1 ];
     BFT_MALLOC(vars->properties_name[np], strlen("molecular_viscosity")+1, char);
     strcpy(vars->properties_name[np], "molecular_viscosity");
-    np++;  
+    np++;
 
     vars->properties_ipp[np] = ipppro[ ipproc[ ivisct[iphas]-1 ]-1 ];
     BFT_MALLOC(vars->properties_name[np], strlen("turb_viscosity")+1, char);
@@ -4701,7 +4701,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
           vars->properties_ipp[np] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
           /* search lenght of second character scalar property's suffixe: number i */
           ncar = cs_gui_characters_number(i+1);
-          
+
           BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
           BFT_MALLOC(suf, 1 + ncar, char);
           sprintf(suf, "%i", i+1);
@@ -4739,7 +4739,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     vars->properties_ipp[np] = *ippty;
     BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Y")+1, char);
     strcpy(vars->properties_name[np], "weight_matrix_Y");
-    np++;  
+    np++;
 
     vars->properties_ipp[np] = *ipptz;
     BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Z")+1, char);
@@ -4802,7 +4802,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
     if (isuite != 0) {
       cs_gui_get_mean_value(imom, "restart_from_time_average", &imoold[i]);
-      if (imoold[i] == imom) imoold[i] = -2;     
+      if (imoold[i] == imom) imoold[i] = -2;
     }
 
     nmean = cs_gui_get_mean_names_number(imom);
@@ -4823,7 +4823,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
       }
 
       for (j=0 ; j<vars->nprop; j++) {
-        if (cs_gui_strcmp(name, vars->properties_name[j])) 
+        if (cs_gui_strcmp(name, vars->properties_name[j]))
           idfmom[(imom-1)*(*ndgmox) + n] = -(vars->properties_ipp[j]) -1;
       }
     }
@@ -5280,7 +5280,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
  * SUBROUTINE UICLIM
  * *****************
  *
- * INTEGER          NOZPPM  --> max number of boundary conditions zone 
+ * INTEGER          NOZPPM  --> max number of boundary conditions zone
  * INTEGER          NFABOR  --> number of boundary faces
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
@@ -5371,7 +5371,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
    /* First iteration only : filling of the "boundaries" structure */
 
-    for (izone = 0; izone < zones; izone++) { 
+    for (izone = 0; izone < zones; izone++) {
 
      /* nature, label of the ith initialization zone */
 
@@ -5391,12 +5391,12 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
 
         if (cs_gui_strcmp(choice, "dirichlet")) {
-          
+
           for (ivar = 1; ivar < 4; ivar++) {
             boundaries->iqimp[izone] = 0;
             cs_gui_boundary_dirichlet("inlet", label, izone, ivar);
           }
-        
+
         } else if (cs_gui_strcmp(choice, "flow1")) {
 
           boundaries->iqimp[izone] = 1;
@@ -5443,7 +5443,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         }
 
       }  /* if (cs_gui_strcmp(nature, "outlet")) */
-      
+
       BFT_FREE(nature);
       BFT_FREE(label);
 
@@ -5457,11 +5457,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     dans la premiere partie de la fonction.
     Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
 
-  for (izone=0 ; izone < zones ; izone++) { 
+  for (izone=0 ; izone < zones ; izone++) {
 
     ith_zone = izone + 1;
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
-    if (zone_nbr > *nozppm) 
+    if (zone_nbr > *nozppm)
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"),
@@ -5606,11 +5606,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     }
     BFT_FREE(faces_list);
   } /*  for izone */
-  
+
 #if _XML_DEBUG_
   bft_printf(_("==>UICLIM\n"));
   bft_printf(_("--boundary zones number: %i\n"), zones);
-  for (izone=0 ; izone < zones ; izone++) { 
+  for (izone=0 ; izone < zones ; izone++) {
     BFT_MALLOC(faces_list,*nfabor,int);
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
@@ -6109,7 +6109,7 @@ void CS_PROCF (uicpsc, UICPSC)(const int *const ncharb,
 #if _XML_DEBUG_
   bft_printf(_("==>UICPSC\n"));
   for (i=0; i< vars->nscaus+vars->nscapp; i++) {
-    bft_printf(_("--label of scalar[%i]: %s\n"), i, vars->label[i]); 
+    bft_printf(_("--label of scalar[%i]: %s\n"), i, vars->label[i]);
   }
 #endif
 
@@ -6295,7 +6295,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         /* WALL: USER SCALARS */
         for (isca = 0; isca < vars->nscaus; isca++) {
           cs_gui_boundary_value_scalar("wall", izone, isca);
-        } 
+        }
 
       } else if (cs_gui_strcmp(nature, "outlet")) {
 
@@ -6304,7 +6304,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
           cs_gui_boundary_value_scalar("outlet", izone, isca);
         }
       } /* if (cs_gui_strcmp(nature, "outlet")) */
-      
+
       BFT_FREE(nature);
       BFT_FREE(label);
 
@@ -6323,7 +6323,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
     ith_zone = izone + 1;
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
-    if (zone_nbr > *nozppm) 
+    if (zone_nbr > *nozppm)
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i the maximum allowed \n"),
                  zone_nbr, *nozppm);

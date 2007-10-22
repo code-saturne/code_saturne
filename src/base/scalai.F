@@ -236,6 +236,12 @@ C
       INTEGER          II, IISC, ITSPDV, ICALC, IAPPEL
       INTEGER          ISPECF
 C
+C NOMBRE DE PASSAGES DANS LA ROUTINE
+C
+      INTEGER          IPASS
+      DATA             IPASS /0/
+      SAVE             IPASS
+C
 C***********************************************************************
 C
 C=======================================================================
@@ -244,6 +250,8 @@ C=======================================================================
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
+C
+      IPASS = IPASS + 1
 C
 C=======================================================================
 C 2. TRAITEMENT DES SCALAIRES A PHYSIQUE PARTICULIERE
@@ -274,9 +282,9 @@ C       ===========
      &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
      &   RDEVEL , RTUSER , RA     )
 C
-C     On pourra eviter les bugs en initilalisant aussi RTPA (sur NCELET)
+C     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 C     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
-        IF(NTCABS.EQ.1.AND.ISUITE.EQ.0) THEN
+        IF(IPASS.EQ.1.AND.ISUITE.EQ.0) THEN
           IF(NSCAPP.GT.0) THEN
             DO II = 1, NSCAPP
               ISCAL = ISCAPP(II)

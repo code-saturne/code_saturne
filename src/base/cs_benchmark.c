@@ -1206,7 +1206,7 @@ cs_benchmark(int  mpi_trace_mode)
   /* Dot product test */
   /*------------------*/
 
-  n_runs = (mpi_trace_mode) ? 1 : 8000;
+  n_runs = (mpi_trace_mode) ? 1 : 10000;
 
   _dot_product_1(0, n_runs, n_cells, x1, x1);
   _dot_product_1(0, n_runs, n_cells, x1, x2);
@@ -1220,7 +1220,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   if (cs_glob_base_nbr > 1) {
 
-    n_runs = (mpi_trace_mode) ? 1 : 3000;
+    n_runs = (mpi_trace_mode) ? 1 : 10000;
 
     _dot_product_1(1, n_runs, n_cells, x1, x1);
     _dot_product_1(1, n_runs, n_cells, x1, x2);

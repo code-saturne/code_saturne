@@ -127,7 +127,7 @@ _apply_vector_transfo(cs_real_t    matrix[3][4],
     xyz_b[i] = 0.;
 
   for (i = 0; i < 3; i++)
-    for (j = 0; j < 3 + 1; j++)
+    for (j = 0; j < 4; j++)
       xyz_b[i] += matrix[i][j]*xyz_a[j];
 
   /* Store updated cell center */

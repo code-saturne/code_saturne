@@ -425,7 +425,7 @@ static int cs_gui_radiative_boundary_output_zone_max(void)
 
 
 static void _cs_gui_copy_varname(const char *varname,
-		                       int   ipp)
+                                       int   ipp)
 {
   size_t  l;
 

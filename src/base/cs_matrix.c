@@ -2388,7 +2388,7 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-	col_id = ms->col_id + ms->row_index[ii];
+        col_id = ms->col_id + ms->row_index[ii];
         n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
@@ -2405,7 +2405,7 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
         cs_real_t  sii = 0.0;
 
         m_row = mc->val + ms->row_index[ii];
-	n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           sii += *m_row++ * *prefetch_p++;
@@ -2636,7 +2636,7 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-	col_id = ms->col_id + ms->row_index[ii];
+        col_id = ms->col_id + ms->row_index[ii];
         n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)

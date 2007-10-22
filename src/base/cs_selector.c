@@ -83,7 +83,7 @@ void CS_PROCF(csgfbr, CSGFBR)
                   "\"%s\"\ne correspond à aucune face de bord."),
                 missing, cpyfstr);
   }
-      
+
   BFT_FREE(cpyfstr);
 }
 
@@ -143,7 +143,7 @@ void CS_PROCF(csgfac, CSGFAC)
                   "\"%s\"\ne correspond à aucune face de interne."),
                 missing, cpyfstr);
   }
-      
+
   BFT_FREE(cpyfstr);
 }
 
@@ -202,7 +202,7 @@ void CS_PROCF(csgcel, CSGCEL)
                   "\"%s\"\ne correspond à aucune cellule."),
                 missing, cpyfstr);
   }
-      
+
   BFT_FREE(cpyfstr);
 }
 
