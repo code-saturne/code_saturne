@@ -240,14 +240,14 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   /* Allocation and definiton of "vtx -> faces" connectivity list */
 
-  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices] - 1, cs_int_t);
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
     for (i = face_vtx_idx[face_id] - 1; i < face_vtx_idx[face_id+1] - 1; i++) {
 
       vtx_id = face_vtx_lst[i] - 1;
-      vtx_faces_lst[vtx_faces_idx[vtx_id]-1] = face_id;
+      vtx_faces_lst[vtx_faces_idx[vtx_id]-1] = face_id + 1;
       vtx_faces_idx[vtx_id] += 1;
 
     }
@@ -559,7 +559,7 @@ _create_vtx_out_gcells_connect(cs_mesh_halo_t   *halo,
                             out_gcells_vtx_lst,
                             vtx_gcells_idx);
 
-  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices] - 1, cs_int_t);
 
   _reverse_connectivity_lst(halo,
                             n_vertices,
@@ -659,7 +659,7 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
   }
 
-  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices] - 1, cs_int_t);
 
   /* Fill list */
 
@@ -937,7 +937,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   cs_real_t  v_ij[3];
   cs_real_t  face_normal[3];
   cs_real_t  norm_ij, face_norm, cos_ij_fn;
-  cs_real_t  denum;
+  cs_real_t  dprod;
   double     ratio;
 
   cs_int_t  n_deleted_cells = 0;
@@ -1024,12 +1024,12 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
       cell_i = face_cells[2*face_id] - 1;
       cell_j = face_cells[2*face_id + 1] - 1;
-      denum = 0;
+      dprod = 0;
 
       for (i = 0; i < 3; i++) {
         v_ij[i] = cell_cen[3*cell_j + i] - cell_cen[3*cell_i + i];
         face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
-        denum += v_ij[i]*face_normal[i];
+        dprod += v_ij[i]*face_normal[i];
       }
 
       norm_ij = CS_LOC_MODULE(v_ij);
@@ -1040,7 +1040,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
       /* Dot product : norm_ij . face_norm */
 
-      cos_ij_fn = denum / (norm_ij * face_norm);
+      cos_ij_fn = dprod / (norm_ij * face_norm);
 
       /* Comparison to a predefined limit.
          This is non-orthogonal if we are below the limit and so we keep

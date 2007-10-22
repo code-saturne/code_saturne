@@ -372,7 +372,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
           for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
             i2 = cell_cells_lst[j] - 1;
@@ -426,13 +426,13 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
           for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
             i2 = cell_cells_lst[j] - 1;
 
-            for (j = 0; j < 3; j++)
-              dist[j] = cell_cen[3*i1 + j] - cell_cen[3*i2 + j];
+            for (k = 0; k < 3; k++)
+              dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
 
             dpdxf = 0.5 * (dpdx[i1] + dpdx[i2]);
             dpdyf = 0.5 * (dpdy[i1] + dpdy[i2]);
@@ -477,7 +477,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   }
   else if (*imligp == 1) {
 
-    for (i = 0; i < n_cells; i++)
+    for (i = 0; i < n_cells_wghosts; i++)
       clip_factor[i] = (cs_real_t)DBL_MAX;
 
     if (mesh->n_domains > 1) {
@@ -544,7 +544,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
 
           factor1 = 1.0;
 
@@ -641,7 +641,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED);
+                           CS_MESH_HALO_STANDARD);
 
   BFT_FREE(buf);
 
