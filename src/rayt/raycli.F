@@ -448,7 +448,7 @@ C
 C Tparoi en Kelvin et QINCID en W/m2
             DO IFAC = 1,NFABOR
               IF ( ITYPFB(IFAC,IPHAS).EQ.IPAROI .OR.
-     &             ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN 
+     &             ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN
                 TPAROI(IFAC,IPH) = TINT(IFAC,IPH)
                 QINCID(IFAC,IPH) = STEPHN*TINT(IFAC,IPH)**4
               ELSE
@@ -1125,8 +1125,7 @@ C
      &           3X,'   ------------------------------------------',/,
      &           3X,' Initialisation de la temperature de paroi   ',/,
      &           3X,' (TPAROI) avec le profil utilisateur (TINTP) ',/,
-     &           3X,' et du flux incident aux parois (QINCID)     ',/,
-     &           3X,' a zero.                                     ',/)
+     &           3X,' et du flux incident aux parois (QINCID).    ',/)
 C
  2000 FORMAT(
      &'@                                                            ',/,
