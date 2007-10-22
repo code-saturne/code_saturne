@@ -1,10 +1,23 @@
+* 22/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update of compilation commands for BlueGene
+  modified scripts:
+    macros_Blue_Gene_L.mk
+    Makefile
+
+* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Bug correction in extended neighborhood (index error
+  in connectivity list and shunted use of ext_neighborhood
+  in gradient calculation)
+  modified routines:
+    cs_ext_neighborhood.c
+    cs_gradient.c
+
 * 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Correction of bug in rotation periodicity with lagrangian
   module + minor comments and syntax modifications +
   compilation options for CCRT machines
   modified routines:
     cs_benchmark.c
-    cs_ext_neighborhood.c
     cs_lagr_perio.c
     cs_perio.c
     lagcel.F
