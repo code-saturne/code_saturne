@@ -48,6 +48,12 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+#include <fvm_periodicity.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -151,7 +157,7 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
 }
 
 /*----------------------------------------------------------------------------
- * Apply rotation to the location of a particle.
+ * Apply transformation to the location of a particle.
  *
  * Fortran Interface :
  *
@@ -170,9 +176,9 @@ CS_PROCF (lagper, LAGPER)(const cs_int_t   *itrans,
                           const cs_real_t   vtx_a[],
                                 cs_real_t   vtx_b[])
 {
-  cs_int_t  i, j;
+  cs_int_t  i, j, rev_id;
 
-  cs_real_t  vect[CS_DIM_3+1];
+  cs_real_t  vect[4];
   cs_real_t  matrix[3][4];
 
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -180,20 +186,21 @@ CS_PROCF (lagper, LAGPER)(const cs_int_t   *itrans,
 
   /* Get the matrix for this transformation */
 
-  fvm_periodicity_get_matrix(periodicity, *itrans, matrix);
+  rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, *itrans);
+  fvm_periodicity_get_matrix(periodicity, rev_id, matrix);
 
   /* Initialize vectors */
 
-  for (i = 0; i < CS_DIM_3; i++) {
+  for (i = 0; i < 3; i++) {
     vtx_b[i] = 0.;
     vect[i] = vtx_a[i];
   }
-  vect[CS_DIM_3] = 1;
+  vect[3] = 1;
 
   /* Compute transformation */
 
-  for (i = 0; i < CS_DIM_3; i++)
-    for (j = 0; j < CS_DIM_3 + 1; j++)
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 4; j++)
       vtx_b[i] += matrix[i][j]*vect[j];
 
 }
@@ -219,21 +226,39 @@ CS_PROCF (lagvec, LAGVEC)(const cs_int_t   *itrans,
                           const cs_real_t  vecti[],
                                 cs_real_t  vectf[])
 {
-  cs_int_t  i, j;
+  cs_int_t  i, j, rev_id;
 
   cs_real_t  matrix[3][4];
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   fvm_periodicity_t  *periodicity = mesh->periodicity;
 
-  /* Get the matrix for this transformation */
+  /* test if the transformation is a rotation */
 
-  fvm_periodicity_get_matrix(periodicity, *itrans, matrix);
+  if (FVM_PERIODICITY_ROTATION ==
+      fvm_periodicity_get_type(periodicity, *itrans)) {
 
-  for (i = 0; i < CS_DIM_3; i++)
-    vectf[i] = 0;
-    for (j = 0; j < CS_DIM_3; j++)
-      vectf[i] += matrix[i][j]*vecti[j];
+    /* Get the matrix for this transformation */
+
+    rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, *itrans);
+    fvm_periodicity_get_matrix(periodicity, rev_id, matrix);
+
+    for (i = 0; i < 3; i++) {
+      vectf[i] = 0;
+      for (j = 0; j < 3; j++)
+        vectf[i] += matrix[i][j]*vecti[j];
+    }
+
+  } /* If the periodicity is a rotation */
+
+  else {
+
+    /* There is no rotation. Copy the input vector */
+
+    for (i = 0; i < 3; i++)
+      vectf[i] = vecti[i];
+
+  }
 
 }
 

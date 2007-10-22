@@ -390,7 +390,8 @@ C
           IFANEW = 0
           ICECPT = 0
 C
-C--> Ouverture du fichier SCRATCH qui a permettra l'ecriture de DEBUG
+C--> Ouverture du fichier SCRATCH qui permettra l'ecriture des infos
+C    en mode DEBUG
 C
 #if DEBUG_LAGCEL
           OPEN (IMPLA4,FILE='SCRATCH4.lag',
