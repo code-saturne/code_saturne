@@ -1,3 +1,30 @@
+* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of bug in rotation periodicity with lagrangian
+  module + minor comments and syntax modifications +
+  compilation options for CCRT machines
+  modified routines:
+    cs_benchmark.c
+    cs_ext_neighborhood.c
+    cs_lagr_perio.c
+    cs_perio.c
+    lagcel.F
+  modified cripts:
+    macros_Linux_CCRT.mk
+    macros_Linux_IA64.mk
+
+
+* 19/10/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Robustness modification in scalai.F: initialisation
+  of RTPA not done if NTCABS.EQ.1 but in IPASS.EQ.1
+  (in case a first iteration with NTCABS=0 is done).
+
+* 19/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in cs_suite.c : floating point
+  exception on certain architectures in parallel
+  when a number of entities (cells, internal faces
+  or boundary faces) is zero
+  (e.g. triple periodicity box)
+
 * 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
   Bug correction in the CPU time calculation
   in cs_benchmark.c when compiling without
