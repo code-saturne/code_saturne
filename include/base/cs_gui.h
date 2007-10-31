@@ -65,6 +65,7 @@ typedef enum {
   NEUMANN,
   COEF_ECHANGE,
   COALFLOW,
+  WALL_FUNCTION
 } cs_boundary_value_t;
 
 
@@ -314,6 +315,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  * SUBROUTINE CSVNUM()
  * *****************
  *----------------------------------------------------------------------------*/
+
 void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iu,
                                 const int *const iv,
@@ -335,7 +337,8 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iuma,
                                 const int *const ivma,
                                 const int *const iwma,
-                                const int *const isca);
+                                const int *const isca,
+                                const int *const iscapp);
 
 /*----------------------------------------------------------------------------
  * Restart files format.
@@ -421,6 +424,7 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
 
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
+                                const    int *const iscapp,
                                       double *const blencv,
                                          int *const ischcv,
                                          int *const isstpc,
@@ -489,11 +493,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 /*----------------------------------------------------------------------------
  * Tableau des propriétés utilisées dans le calcul
  *----------------------------------------------------------------------------*/
-/*void CS_PROCF (uimomt, UIMOMT) (const int *const nbmomt);*/
 
-/*----------------------------------------------------------------------------
- * Tableau des propriétés utilisées dans le calcul
- *----------------------------------------------------------------------------*/
 void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const iviscl,
                                 const int *const ivisct,
@@ -563,6 +563,7 @@ void CS_PROCF (csenso, CSENSO) (const    int *const nvppmx,
                                          int *const ilisvr,
                                          int *const ihisvr,
                                 const    int *const isca,
+                                const    int *const iscapp,
                                 const    int *const ipprtp,
                                 const    int *const ipppro,
                                 const    int *const ipproc,
@@ -626,8 +627,9 @@ void CS_PROCF(uiiniv, UIINIV) (const int    *const ncelet,
  * INTEGER          NFABOR  --> number of boundary faces
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: wall
- * INTEGER          ISYMET  --> type of boundary: symetry
+ * INTEGER          IPAROI  --> type of boundary: smooth wall
+ * INTEGER          IPARUG  --> type of boundary: rough wall
+ * INTEGER          ISYMET  --> type of boundary: symmetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          IQIMP   --> 1 if flow rate is applied
  * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
@@ -645,6 +647,7 @@ void CS_PROCF (uiclim, UICLIM) (const    int *const nozppm,
                                 const    int *const iindef,
                                 const    int *const ientre,
                                 const    int *const iparoi,
+                                const    int *const iparug,
                                 const    int *const isymet,
                                 const    int *const isolib,
                                          int *const iqimp,
@@ -666,6 +669,7 @@ void CS_PROCF (uicpcl, UICPCL) (const    int *const nozppm,
                                 const    int *const iindef,
                                 const    int *const ientre,
                                 const    int *const iparoi,
+                                const    int *const iparug,
                                 const    int *const isymet,
                                 const    int *const isolib,
                                          int *const itypfb,
@@ -698,7 +702,7 @@ void CS_PROCF (uicpcl, UICPCL) (const    int *const nozppm,
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IPAROI  --> type of boundary: wall
  * INTEGER          IPARUG  --> type of boundary: wall with rugosity
- * INTEGER          ISYMET  --> type of boundary: symetry
+ * INTEGER          ISYMET  --> type of boundary: symmetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          ITYPFB  --> type of boundary for each face
  * INTEGER          IZFPPP  --> zone number
@@ -774,8 +778,20 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmsec,
                                 const int *const ilumi);
 
+/*----------------------------------------------------------------------------
+ * Free memory: clean global private variables and libxml2 variables.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE MEMUI1
+ * *****************
+ *
+ * INTEGER          NCHARB  --> number of coal
+ *----------------------------------------------------------------------------*/
 
-/*-----------------------------------------------------------------------------*/
+void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }

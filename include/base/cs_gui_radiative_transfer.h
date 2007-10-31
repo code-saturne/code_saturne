@@ -57,12 +57,6 @@ extern "C" {
  * C API public functions
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
- *----------------------------------------------------------------------------*/
-
-void cs_gui_clean_memory_rayt(void);
-
 /*============================================================================
  * Fortran API public functions
  *============================================================================*/
@@ -126,11 +120,22 @@ void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
                                       double *const rcodcl);
 
 
-void CS_PROCF (uiray3, UIRAY3)
-(      double *const ck,
- const    int *const iph,
- const    int *const ncelet,
- const    int *const ncel);
+void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
+                                const    int *const iph,
+                                const    int *const ncelet,
+                                const    int *const ncel);
+
+/*-----------------------------------------------------------------------------
+ * Free memory: clean global private variables.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE MEMUI2
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (memui2, MEMUI2) (void);
 
 /*----------------------------------------------------------------------------*/
 
