@@ -85,6 +85,35 @@ CFONC   - CALCUL D'UNE SOMME SUR LES PROCESSEURS LORS D'UN CALCUL
 CFONC     PARALLELE (PARSOM)
 CFONC
 CFONC
+CFONC IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
+CFONC ========================================================
+CFONC
+CFONC   Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
+CFONC   respectivement les cellules, faces ou faces de bord en fonction
+CFONC   de differents criteres.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
+CFONC
+CFONC   La syntaxe des commandes GETFBR et GETFAC est identique.
+CFONC
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
