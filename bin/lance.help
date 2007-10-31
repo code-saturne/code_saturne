@@ -21,8 +21,11 @@ Le nombre d'entiers LONGIA et le nombre de reels LONGRA
                -------------------------------
 
 L'utilisateur peut souhaiter ne pas utiliser le preprocesseur
-  (maillages *tlc *slc) : positionner IFOENV=0
-dans les autres cas positionner IFOENV=1 en standard
+  (uniquement pour les maillages *tlc *slc) : positionner
+   SOLCOM=1
+dans les autres cas positionner SOLCOM=0 en standard
+ATTENTION : la lecture des maillages .slc et .tlc n'est
+plus maintenue et est deconseillee.
 
                -------------------------------
 
@@ -256,14 +259,18 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     Dans le cas ou valgrind n'est pas trouve automatiquement dans 
     le PATH, specifier le chemin d'acces complet.
 
-  ARG_CS_VERIF permet d'activer des tests elementaires sur le
-    maillage.
-    ="0" : criteres de qualite du maillage
-    ="1" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=0
-    ="2" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=1
-    ="3" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=2
-    ="4" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=3
-    ="5" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=4
+  ARG_CS_VERIF permet d'activer des tests elementaires sur la
+    qualite du maillage et sur les performances de la machine.
+    ="-q 0" : criteres de qualite du maillage
+    ="-q 1" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=0
+    ="-q 2" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=1
+    ="-q 3" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=2
+    ="-q 4" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=3
+    ="-q 5" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=4
+    ="--benchmark" : performances des operations elementaires
+    ="--benchmark --mpitrace" : idem que benchmark avec operations
+                                effectuees une seule fois pour traces
+                                MPI legeres
     En mode de verification, le code ne necessite aucun fichier
     parametrique ni aucun sous-programme utilisateur.
 

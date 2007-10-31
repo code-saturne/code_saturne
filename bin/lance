@@ -57,8 +57,8 @@
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 ########################################################################
 #
-#                  CARTES BATCH POUR LE CCRT (Argent/Chrome/Tantale sous LSF)
-#                  ==========================================================
+#                  CARTES BATCH POUR LE CCRT (Tantale/Platine sous LSF)
+#                  ====================================================
 #
 #BSUB -n 2
 #BSUB -W 00:05  
@@ -141,7 +141,7 @@
 #
 #                    -------------------------------
 #
-IFOENV=1
+SOLCOM=0
 LONGIA=1000000
 LONGRA=5000000
 #
@@ -272,12 +272,6 @@ if [ ! -z  "${PILOTAGE_ADAPTATION}" ] ; then
 fi
 #
 #########################################################################
-#
-#
-# Determination automatique de IFOENV : on aura 
-#   IFOENV = 1 si couplage Syrthes
-#   on rajoute alors automatiquement l'option de communication
-#   (via MPI, sockets, ou pipes selon la valeur de MODE_COUPLAGE)
 #  
 #
 N_COUPLAGE_SYRTHES=0
@@ -294,7 +288,11 @@ else
 fi
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then 
-  IFOENV=1
+  if [ $SOLCOM -eq 1 ] ; then
+   echo "Le couplage avec Syrthes n est pas compatible avec les"
+   echo "maillages de type SOLCOM"
+   exit 1
+  fi
 else
   MODE_COUPLAGE=
 fi
@@ -491,11 +489,11 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
 fi
 if [ $nproc_noy -gt 1 ] ; then
   echo "Calcul Code_Saturne parallele avec decomposition en $nproc_noy sous-domaines"
-  if [ $IFOENV = 0 ] ; then 
+  if [ $SOLCOM = 1 ] ; then 
     echo
     echo
-    echo " Calcul en parallele impossible avec IFOENV = $IFOENV "
-    echo " Utiliser IFOENV = 1 "
+    echo " Calcul en parallele impossible avec SOLCOM = $SOLCOM "
+    echo " Utiliser SOLCOM = 0 "
     echo
     exit 1
   fi
@@ -603,13 +601,6 @@ else
   ECHOCOMMECS=""
   ECHOCOMMSYR=""
   ECHOCOMMNOY=""
-fi
-########################################################################
-#
-# Mode verification
-#
-if [ ! -z "$ARG_CS_VERIF" ] ; then
-  ARG_CS_VERIF="-q $ARG_CS_VERIF"
 fi
 ########################################################################
 # Message d'accueil 
@@ -978,7 +969,7 @@ echo  "  ********************************************"
 echo  "             Preparation du calcul            "
 echo  "  ********************************************"
 echo 
-if [ $IFOENV = 0 ]
+if [ $SOLCOM = 1 ]
 then
   ln -s $REPMAIL/$MAILLAGE geomet || exit 1
 elif [ $MODE_EXEC != calcul ]
@@ -1278,7 +1269,7 @@ fi
 #
 # Lancement du Preprocesseur
 #
-if [ $IFOENV = 1 -a $MODE_EXEC != calcul ] ; then
+if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   #
   ${ECS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MAILLAGE -case $CAS \
                       $ECHOCOMMECS \
@@ -1367,7 +1358,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     #
     $MPIHALT
     #
-  elif [ $IFOENV = 1 ] ; then
+  elif [ $SOLCOM = 0 ] ; then
     #
     if [ ! -f $ERROR ] ; then 
       localexec=$RUN/localexec
@@ -1384,7 +1375,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       $MPIHALT
     fi
     #
-  else # cas IFOENV = 0
+  else # cas SOLCOM = 1
     #
     $VALGRIND $RUN/$EXE -solcom \
           -iasize $LONGIA -rasize $LONGRA $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \

@@ -562,7 +562,7 @@ rmb.sh_lance"
 #Fichiers executables dans arch
 find arch -name "*.exe" -exec chmod uog+x {} \;
 # Acces au repertoire lib
-  chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
+  chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #
  titrefin "Fin de la verification des acces"
 
