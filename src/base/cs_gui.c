@@ -101,50 +101,17 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Structures associated to boundary conditions definition
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  double val1;                     /* fortran array RCODCL(.,.,1) mapping     */
-  double val2;                     /* fortran array RCODCL(.,.,2) mapping     */
-  double val3;                     /* fortran array RCODCL(.,.,3) mapping     */
-} cs_val_t ;
-
-
-typedef struct {
-  double *ratio;                   /* ratio for each coal                     */
-} cs_coal_ashes_ratio_t ;
-
-
-typedef struct {
-  char     **label;                /* label for each boundary zone            */
-  char     **nature;               /* nature for each boundary zone           */
-  int       *iqimp;                /* 1 if a flow rate is applied             */
-  int       *ientat;               /* 1 if boundary is an inlet for air (coal)*/
-  int       *ientcp;               /* 1 if boundary is an inlet for coal      */
-  int       *icalke;               /* automatic boundaries for turbulent var  */
-  double    *qimp;                 /* inlet flow rate                         */
-  double    *qimpat;               /* inlet flow rate (coal combustion)       */
-  double    *timpat;               /* inlet air temperature (coal combustion) */
-  double   **qimpcp;               /* inlet coal flow rate (coal combustion)  */
-  double   **timpcp;               /* inlet coal temperature (coal)           */
-  double    *dh;                   /* inlet hydraulic diameter                */
-  double    *xintur;               /* inlet turbulent intensity               */
-  int      **type_code;            /* type of boundary for each variables     */
-  cs_val_t **values;               /* fortran array RCODCL mapping            */
-  cs_coal_ashes_ratio_t **distch;  /* ratio for each coal                     */
-} cs_boundary_t ;
-
-/*----------------------------------------------------------------------------
  * Variables and scalars management structure
  *----------------------------------------------------------------------------*/
 
 typedef struct {
   char  *model;            /* particular physical model                       */
   char  *model_value;      /* particular physical model value                 */
-  char **char2;            /* variables label                                 */
-  char **label;            /* user scalar label                               */
-  int   *rtp_nbr;          /* variables position in fortran array RTP         */
+  char **head;             /* name of the head                                */
+  char **type;             /* type of markup: 'variable' or 'scalar'          */
+  char **name;             /* variables and scalars label                     */
+  char **label;            /* scalars label                                   */
+  int   *rtp;              /* variables position in fortran array RTP         */
   int    nvar;             /* total number of variables and scalars           */
   int    nscaus;           /* user scalar number                              */
   int    nscapp;           /* predifined physics scalar number                */
@@ -153,7 +120,37 @@ typedef struct {
   int    ntimaver;         /* time averages number                            */
   char **properties_name;  /* label of properties                             */
   int   *properties_ipp;   /* properties position in fortran array PROPCE     */
-} cs_var_t ;
+} cs_var_t;
+
+/*----------------------------------------------------------------------------
+ * Structures associated to boundary conditions definition
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  double val1;             /* fortran array RCODCL(.,.,1) mapping             */
+  double val2;             /* fortran array RCODCL(.,.,2) mapping             */
+  double val3;             /* fortran array RCODCL(.,.,3) mapping             */
+} cs_val_t;
+
+typedef struct {
+  char      **label;       /* label for each boundary zone                    */
+  char      **nature;      /* nature for each boundary zone                   */
+  int        *iqimp;       /* 1 if a flow rate is applied                     */
+  int        *ientat;      /* 1 if boundary is an inlet for air (coal)        */
+  int        *ientcp;      /* 1 if boundary is an inlet for coal              */
+  int        *icalke;      /* automatic boundaries for turbulent variables    */
+  double     *qimp;        /* inlet flow rate                                 */
+  double     *qimpat;      /* inlet flow rate (coal combustion)               */
+  double     *timpat;      /* inlet air temperature (coal combustion)         */
+  double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
+  double    **timpcp;      /* inlet coal temperature (coal)                   */
+  double     *dh;          /* inlet hydraulic diameter                        */
+  double     *xintur;      /* inlet turbulent intensity                       */
+  int       **type_code;   /* type of boundary for each variables             */
+  cs_val_t  **values;      /* fortran array RCODCL mapping                    */
+  double   ***distch;      /* ratio for each coal                             */
+  double     *rough;       /* roughness size                                  */
+} cs_boundary_t;
 
 /*============================================================================
  *  External global variables
@@ -163,7 +160,7 @@ typedef struct {
  * Gestion du document xml
  *----------------------------------------------------------------------------*/
 
-extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Contexte      */
+extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Context       */
 extern xmlNodePtr node;               /* Pointer on the root node     */
 
 /*============================================================================
@@ -186,7 +183,6 @@ static char  ** _cs_gui_var_name = NULL;
 static cs_boundary_t *boundaries = NULL;
 static cs_var_t *vars = NULL;
 
-
 /*============================================================================
  * Private functions
  *============================================================================*/
@@ -199,15 +195,14 @@ static cs_var_t *vars = NULL;
  *   ipp            -->  index from the fortran array associated to varname
  *----------------------------------------------------------------------------*/
 
-
-static void _cs_gui_copy_varname(const char *varname, int ipp)
+static void _gui_copy_varname(const char *varname, int ipp)
 {
-  size_t  l;
+  size_t l;
 
   if (ipp < 1 || ipp > _cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
               _("Variable index %d out of bounds (1 to %d)"),
-              ipp, _cs_gui_last_var);
+                 ipp, _cs_gui_last_var);
 
   l = strlen(varname);
 
@@ -355,7 +350,6 @@ static int cs_gui_thermal_scalar(void)
  *   iscsth               <--  nature of the thermal scalar (C, K, J/kg)
  *----------------------------------------------------------------------------*/
 
-
 static void cs_gui_thermal_scalar_number(int *const iscalt,
                                          int *const iscsth)
 {
@@ -402,23 +396,18 @@ static int cs_gui_scalar_properties_choice(const int         scalar_num,
   char *buff = NULL;
   int   ichoice;
 
-/* Construction de la requete */
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element_num(&path, "scalar", scalar_num);
   cs_xpath_add_element(&path, "property");
   cs_xpath_add_attribute(&path, "choice");
 
-/* Evaluation de la requete */
   buff = cs_gui_get_attribute_value(path);
 
-  BFT_FREE(path);
-
-  /* Tests sur le statut */
-  if (buff == NULL)
+  if (buff == NULL) {
     ichoice = 0;
 
-  else {
+  } else {
     ichoice = 1;
 
     if (cs_gui_strcmp(buff, "variable"))
@@ -429,6 +418,7 @@ static int cs_gui_scalar_properties_choice(const int         scalar_num,
       bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
   }
 
+  BFT_FREE(path);
   BFT_FREE(buff);
 
   return ichoice;
@@ -503,14 +493,13 @@ static void cs_gui_iale_parameter(const char   *const param,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the status of steady management.
+ * Get the status of steady management.
  *
  * parameter:
- *   keyword         <--  if 1 : unsteady management
- *                        else : steady management
+ *   keyword         <--  if 1 unsteady management else steady management
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_get_steady_status(int  *const keyword)
+static void cs_gui_get_steady_status(int *const keyword)
 {
   char *path = NULL;
   int   result;
@@ -653,11 +642,6 @@ static void cs_gui_restart_parameters_status(const char *const param,
 }
 
 /*-----------------------------------------------------------------------------
- * La fonction retourne 1 si la valeur numero i  de la variable existe
- *                      0 sinon
- * La valeur est stockee dans value
- *----------------------------------------------------------------------------*/
-/*-----------------------------------------------------------------------------
  * Return value of numerical parameter markup
  *
  * parameters:
@@ -665,7 +649,6 @@ static void cs_gui_restart_parameters_status(const char *const param,
  *   value_type     --> name of numerical parameter parkup
  *   value          <-- value of numerical parameter
  *----------------------------------------------------------------------------*/
-
 
 static void cs_gui_variable_value(const char   *const variable_type,
                                   const char   *const value_type,
@@ -686,31 +669,27 @@ static void cs_gui_variable_value(const char   *const variable_type,
 }
 
 /*----------------------------------------------------------------------------
- * Get the attribute value associated to a child markup from a variable.
+ * Get the attribute value from the xpath query.
  *
  * parameters:
- *   variable      -->  name of the variable markup
- *   value         -->  value of markup
- *   keyword       <--  value of attribute node contained in the
- *                             child markup
+ *   path          --> path for xpath query
+ *   child         --> child markup
+ *   keyword      <--  value of attribute node
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_variable_attribute(const char *const variable,
-                                      const char *const value,
-                                            int  *const keyword)
+static void _attribute_value(      char *      path,
+                             const char *const child,
+                                   int  *const keyword)
 {
-  char *path = NULL;
   char *choice = NULL;
   int   result;
 
-  path = cs_xpath_short_path ();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", variable);
-  cs_xpath_add_element(&path, value);
+  assert(path != NULL);
+  assert(child != NULL);
 
-  if (cs_gui_strcmp(value, "order_scheme")) {
+  if (cs_gui_strcmp(child, "order_scheme")) {
 
-    *keyword = 1;
+    /* *keyword = 1; */
     cs_xpath_add_attribute(&path, "choice");
     choice = cs_gui_get_attribute_value(path);
 
@@ -727,13 +706,41 @@ static void cs_gui_variable_attribute(const char *const variable,
     if (cs_gui_get_status(path, &result)) {
       *keyword = result;
 
-      if (cs_gui_strcmp(value, "slope_test")) {
+      if (cs_gui_strcmp(child, "slope_test")) {
         if (result == 1) *keyword = 0;
         if (result == 0) *keyword = 1;
       }
+    } else {
+
+      if (cs_gui_strcmp(child, "postprocessing_recording") ||
+          cs_gui_strcmp(child, "listing_printing")) *keyword = 1;
+
     }
   }
   BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a variable.
+ *
+ * parameters:
+ *   name          -->  name of the variable markup
+ *   child         -->  child markup
+ *   keyword      <--   value of attribute node contained in the child markup
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_variable_attribute(const char *const name,
+                                      const char *const child,
+                                            int  *const keyword)
+{
+  char *path = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_element(&path, child);
+
+  _attribute_value(path, child, keyword);
 }
 
 /*----------------------------------------------------------------------------
@@ -747,7 +754,7 @@ static void cs_gui_variable_attribute(const char *const variable,
 
 static void cs_gui_scalar_value(const char   *const label,
                                 const char   *const child,
-                               double *const value)
+                                      double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -767,52 +774,23 @@ static void cs_gui_scalar_value(const char   *const label,
  * Get the attribute value associated to a child markup from a scalar.
  *
  * parameters:
- *   label                -->  label of the scalar markup
- *   child                -->  name of the child markup
- *   value               <--   value of attribute node contained in the
- *                             child markup
+ *   label         -->  name of the scalar markup
+ *   child         -->  child markup
+ *   keyword      <--   value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_scalar_attribute(const char *const label,
-                             const char *const child,
-                                   int  *const keyword)
+                                    const char *const child,
+                                          int  *const keyword)
 {
   char *path = NULL;
-  char *choice = NULL;
-  int   result;
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "scalar");
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, child);
 
-  if (cs_gui_strcmp(child, "order_scheme")) {
-
-    cs_xpath_add_attribute(&path, "choice");
-    choice = cs_gui_get_attribute_value(path);
-
-    if (cs_gui_strcmp(choice, "centered"))
-      *keyword = 1;
-    else if (cs_gui_strcmp(choice, "solu"))
-      *keyword = 0;
- /*   else if (cs_gui_strcmp(choice, "upwind"))
-      *keyword = 0;*/
-    BFT_FREE(choice);
-
-  } else {
-
-    cs_xpath_add_attribute(&path, "status");
-
-    if (cs_gui_get_status(path, &result)) {
-      *keyword = result;
-
-      if (cs_gui_strcmp(child, "slope_test")) {
-        if (result == 1) *keyword = 0;
-        if (result == 0) *keyword = 1;
-      }
-    }
-  }
-  BFT_FREE(path);
+  _attribute_value(path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
@@ -845,52 +823,31 @@ static void cs_gui_model_scalar_value(const   char *const model,
   BFT_FREE(path);
 }
 
-/*-----------------------------------------------------------------------------
- * Retourne l'attribut status des sous-balises des scalaires model
+/*----------------------------------------------------------------------------
+ * Get the attribute value associated to a child markup from a scalar.
+ *
+ * parameters:
+ *   model         -->  model markup
+ *   name          -->  name of the scalar markup
+ *   child         -->  child markup
+ *   keyword      <--   value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_model_scalar_output_status(const char *const model,
                                               const char *const name,
-                                              const char *const value_type,
+                                              const char *const child,
                                                     int  *const keyword)
 {
   char *path = NULL;
-  char *choice = NULL;
-  int   result;
 
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
   cs_xpath_add_element(&path, "scalar");
   cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, value_type);
+  cs_xpath_add_element(&path, child);
 
-  if (cs_gui_strcmp(value_type, "order_scheme")) {
-
-    cs_xpath_add_attribute(&path, "choice");
-    choice = cs_gui_get_attribute_value(path);
-
-    if (cs_gui_strcmp(choice, "centered"))
-      *keyword = 1;
-    else if (cs_gui_strcmp(choice, "solu"))
-      *keyword = 0;
-    BFT_FREE(choice);
-
-  } else {
-
-    cs_xpath_add_attribute(&path, "status");
-
-    if (cs_gui_get_status(path, &result)) {
-      *keyword = result;
-
-      if (cs_gui_strcmp(value_type, "slope_test")) {
-        if (result == 1) *keyword = 0;
-        if (result == 0) *keyword = 1;
-      }
-    }
-  }
-
-  BFT_FREE(path);
+  _attribute_value(path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
@@ -962,7 +919,7 @@ static void cs_gui_numerical_int_parameters(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_gravity_value(const char   *const param,
-                                double *const value)
+                                       double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -985,7 +942,7 @@ static void cs_gui_gravity_value(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void  cs_gui_properties_value(const char   *const property_name,
-                                    double *const value)
+                                           double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -1011,7 +968,7 @@ static void  cs_gui_properties_value(const char   *const property_name,
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_properties_choice(const char *const property_name,
-                                   int  *      choice)
+                                          int  *      choice)
 {
   char *path = NULL;
   char *buff = NULL;
@@ -1199,7 +1156,7 @@ static void cs_gui_output_value(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-
+                        
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
       cs_gui_strcmp(param, "fluid_domain") ||
       cs_gui_strcmp(param, "domain_boundary") ||
@@ -1313,8 +1270,8 @@ static int cs_gui_get_mean_names_number( int   const id)
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_get_mean_value(      int   const id,
-                           const char *const param,
-                                 int  *const keyword)
+                                  const char *const param,
+                                        int  *const keyword)
 {
   char *path = NULL;
   char *str_id = NULL;
@@ -1345,8 +1302,7 @@ static void cs_gui_get_mean_value(      int   const id,
  *   nb           -->  number of order in list of var_prop of the mean
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_mean_prop( int const id,
-                            int const nb)
+static char *cs_gui_get_mean_prop( int const id, int const nb)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1426,7 +1382,7 @@ static int cs_gui_probes_number(void)
  *----------------------------------------------------------------------------*/
 
 static double cs_gui_probe_coordinate(const int         num_probe,
-                               const char *const probe_coord)
+                                      const char *const probe_coord)
 {
   char  *path = NULL;
   char  *str_num_probe = NULL;
@@ -1556,11 +1512,11 @@ static char *cs_gui_variable_label (const char *const variable)
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_thermophysical_post(const char *const variable,
-                                const int         ipp,
-                                      int  *const ihisvr,
-                                      int  *const ilisvr,
-                                      int  *const ichrvr,
-                                const int  *const nvppmx)
+                                       const int         ipp,
+                                             int  *const ihisvr,
+                                             int  *const ilisvr,
+                                             int  *const ichrvr,
+                                       const int  *const nvppmx)
 {
   int   nb_probes;
   int   iprob;
@@ -1589,7 +1545,7 @@ static void cs_gui_thermophysical_post(const char *const variable,
   }
 
   varname = cs_gui_variable_label(variable);
-  _cs_gui_copy_varname(varname, ipp);
+  _gui_copy_varname(varname, ipp);
 
   BFT_FREE(varname);
 }
@@ -1679,6 +1635,8 @@ static void cs_gui_scalar_post(const  int        num_sca,
   int iprob;
   int num_probe;
 
+  assert(vars != NULL);
+
   ipp = ipprtp[isca[num_sca] -1 ];
 
   if (ipp == 1) return;
@@ -1705,7 +1663,7 @@ static void cs_gui_scalar_post(const  int        num_sca,
     }
   }
 
-  _cs_gui_copy_varname(vars->label[num_sca], ipp);
+  _gui_copy_varname(vars->label[num_sca], ipp);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1809,6 +1767,8 @@ static void cs_gui_model_scalar_post(const char  *const model,
   int iprob;
   int num_probe;
 
+  assert(vars != NULL);
+
   ipp = ipprtp[isca[num_sca] -1];
 
   if (ipp == 1) return;
@@ -1836,7 +1796,7 @@ static void cs_gui_model_scalar_post(const char  *const model,
     }
   }
 
-  _cs_gui_copy_varname(vars->label[num_sca], ipp);
+  _gui_copy_varname(vars->label[num_sca], ipp);
 }
 
 /*-----------------------------------------------------------------------------
@@ -2004,6 +1964,8 @@ static void cs_gui_model_property_post (const char  *const model,
   int num_probe;
   char *varname = NULL;
 
+  assert(vars != NULL);
+
   ipp = vars->properties_ipp[num_prop];
 
   if (ipp == 1) return;
@@ -2039,7 +2001,7 @@ static void cs_gui_model_property_post (const char  *const model,
   /* prise en compte du label */
 
   varname = cs_gui_get_model_property_label(model, vars->properties_name[num_prop]);
-  _cs_gui_copy_varname(varname, ipp);
+  _gui_copy_varname(varname, ipp);
 
   BFT_FREE(varname);
 }
@@ -2174,12 +2136,12 @@ static void cs_gui_properties_status(const char *const property_name,
  *----------------------------------------------------------------------------*/
 
 
-static void cs_gui_properties_post (const char *const property_name,
-                             const int         ipp,
-                                   int  *const ichrvr,
-                                   int  *const ilisvr,
-                                   int  *const ihisvr,
-                             const int  *const nvppmx)
+static void cs_gui_properties_post(const char *const property_name,
+                                   const int         ipp,
+                                         int  *const ichrvr,
+                                         int  *const ilisvr,
+                                         int  *const ihisvr,
+                                   const int  *const nvppmx)
 {
   int nb_probes;
   int iprob;
@@ -2191,7 +2153,7 @@ static void cs_gui_properties_post (const char *const property_name,
   varname = cs_gui_properties_label(property_name);
   if (varname == NULL) return;
 
-  _cs_gui_copy_varname(varname, ipp);
+  _gui_copy_varname(varname, ipp);
   BFT_FREE(varname);
 
   cs_gui_properties_status(property_name,
@@ -2357,7 +2319,7 @@ static void cs_gui_time_average_post (const char *const property_name,
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
-  _cs_gui_copy_varname(property_name, ipp);
+  _gui_copy_varname(property_name, ipp);
 
 }
 
@@ -2544,8 +2506,8 @@ static void cs_gui_scalar_initial_value(const char   *const parent,
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_boundary_choice(const char *const nature,
-                             const char *const label,
-                             const char *const var_sca)
+                                    const char *const label,
+                                    const char *const var_sca)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -2581,6 +2543,8 @@ static void cs_gui_boundary_dirichlet(const char *const nature,
   char *path = NULL;
   double result = 0.0;
 
+  assert(vars != NULL);
+
   path = cs_xpath_init_path();
 
   cs_xpath_add_element(&path, "boundary_conditions");
@@ -2599,13 +2563,36 @@ static void cs_gui_boundary_dirichlet(const char *const nature,
   }
 
   cs_xpath_add_element(&path, "dirichlet");
-  cs_xpath_add_test_attribute(&path, "name", vars->char2[ivar]);
+  cs_xpath_add_test_attribute(&path, "name", vars->name[ivar]);
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result)) {
-    boundaries->type_code[vars->rtp_nbr[ivar]][izone] = DIRICHLET;
-    boundaries->values[vars->rtp_nbr[ivar]][izone].val1 = result;
+    boundaries->type_code[vars->rtp[ivar]][izone] = DIRICHLET;
+    boundaries->values[vars->rtp[ivar]][izone].val1 = result;
   }
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Put value of roughness for wall
+ *
+ * parameters:
+ *   label       -->  label of boundary condition
+ *   izone       -->  number of zone
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_boundary_rough(const char *const label,
+                                  const int         izone)
+{
+  char *path = NULL;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "wall");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, "rough_wall");
+
+  if (cs_gui_get_double(path, &result)) boundaries->rough[izone] = result;
   BFT_FREE(path);
 }
 
@@ -2711,12 +2698,12 @@ static void cs_gui_boundary_turbulence(const char *const choice,
  * parameters:
  *   nature      -->  nature of boundary condition
  *   izone       -->  number of zone
- *   isca        -->  number of scalar
+ *   nsca        -->  number of user scalar
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_boundary_value_scalar(const char *const nature,
                                          const int         izone,
-                                         const int         isca)
+                                         const int         nsca)
 {
   int numvar;
   char *path = NULL;
@@ -2725,14 +2712,16 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
   char *choice = NULL;
   double result;
 
+  assert(vars != NULL);
+
   numvar  = vars->nvar - vars->nscaus - vars->nscapp;
-  numvar = numvar + isca;
+  numvar = numvar + nsca;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
   cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
   cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "label", vars->label[isca]);
+  cs_xpath_add_test_attribute(&path, "label", vars->label[nsca]);
 
   BFT_MALLOC(path_commun, strlen(path)+1, char);
   strcpy(path_commun, path);
@@ -2745,20 +2734,24 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
 
   if (choice != NULL) {
 
-    if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "exchange_coefficient")) {
+    if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "exchange_coefficient") || cs_gui_strcmp(choice, "wall_function")) {
       cs_xpath_add_element(&path, "dirichlet");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_double(path, &result)) {
-        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = DIRICHLET;
-        boundaries->values[vars->rtp_nbr[numvar]][izone].val1 = result;
+        if (cs_gui_strcmp(choice, "wall_function")) {
+          boundaries->type_code[vars->rtp[numvar]][izone] = WALL_FUNCTION;
+        } else {
+          boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET;
+        }
+        boundaries->values[vars->rtp[numvar]][izone].val1 = result;
       }
 
     } else if(cs_gui_strcmp(choice, "neumann")) {
       cs_xpath_add_element(&path, "neumann");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_double(path, &result)) {
-        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = NEUMANN;
-        boundaries->values[vars->rtp_nbr[numvar]][izone].val3 = result;
+        boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN;
+        boundaries->values[vars->rtp[numvar]][izone].val3 = result;
       }
     }
 
@@ -2766,8 +2759,8 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
       cs_xpath_add_element(&path2, "exchange_coefficient");
       cs_xpath_add_function_text(&path2);
       if (cs_gui_get_double(path2, &result)) {
-        boundaries->type_code[vars->rtp_nbr[numvar]][izone] = COEF_ECHANGE;
-        boundaries->values[vars->rtp_nbr[numvar]][izone].val2 = result;
+        boundaries->type_code[vars->rtp[numvar]][izone] = COEF_ECHANGE;
+        boundaries->values[vars->rtp[numvar]][izone].val2 = result;
       }
     }
 
@@ -2853,9 +2846,8 @@ static void cs_gui_coal_boundary_coalflow(const int         izone,
       cs_xpath_add_test_attribute(&path5, "name", classname);
       cs_xpath_add_function_text(&path5);
 
-      if (cs_gui_get_double(path5, &value)) {
-        (boundaries->distch[izone][icharb]).ratio[iratio] = value;
-      }
+      if (cs_gui_get_double(path5, &value))
+        boundaries->distch[izone][icharb][iratio] = value;
 
       BFT_FREE(path5);
 
@@ -3082,7 +3074,7 @@ static void cs_gui_get_ale_viscosity_type(int  * type)
 }
 
 /*----------------------------------------------------------------------------
- * Return integer value for calculation of size of user's arrays
+ * Return integer value for calculation of size of user arrays
  *----------------------------------------------------------------------------*/
 
 static int _user_array(const char *const keyword1,
@@ -3102,101 +3094,6 @@ static int _user_array(const char *const keyword1,
 /*============================================================================
  * C API public functions
  *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
- *----------------------------------------------------------------------------*/
-
-
-void cs_gui_clean_memory(void)
-{
-  int i;
-  int ivar;
-  int izone;
-  int zones;
-  int icharb;
-  int ncharb = 3;
-
-  return;
-
-  if (boundaries != NULL) {
-
-  /* clean memory for global private structure boundaries */
-
-    zones = cs_gui_boundary_zones_number();
-    for (izone=0 ; izone < zones ; izone++) {
-      BFT_FREE(boundaries->label[izone]);
-      BFT_FREE(boundaries->nature[izone]);
-    }
-
-    for (i=0; i < vars->nvar; i++) {
-      ivar = vars->rtp_nbr[i];
-      BFT_FREE(boundaries->type_code[ivar]);
-      BFT_FREE(boundaries->values[ivar]);
-    }
-
-    if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
-      for (izone=0 ; izone < zones ; izone++) {
-        /*for (icharb=0; icharb < ncharb; icharb++) BFT_FREE(boundaries->distch[izone][icharb]);*/
-        BFT_FREE(boundaries->qimpcp[izone]);
-        BFT_FREE(boundaries->timpcp[izone]);
-       /* BFT_FREE(boundaries->distch[izone]);*/
-      }
-      BFT_FREE(boundaries->ientat);
-      BFT_FREE(boundaries->ientcp);
-      BFT_FREE(boundaries->qimpat);
-      BFT_FREE(boundaries->timpat);
-      BFT_FREE(boundaries->qimpcp);
-      BFT_FREE(boundaries->timpcp);
-      /* BFT_FREE(boundaries->distch);*/
-    }
-
-    BFT_FREE(boundaries->label);
-    BFT_FREE(boundaries->nature);
-    BFT_FREE(boundaries->iqimp);
-    BFT_FREE(boundaries->icalke);
-    BFT_FREE(boundaries->qimp);
-    BFT_FREE(boundaries->dh);
-    BFT_FREE(boundaries->xintur);
-    BFT_FREE(boundaries->type_code);
-    BFT_FREE(boundaries->values);
-  /*  BFT_FREE(boundaries);*/
-  }
-
-  if (vars != NULL) {
-
-  /* clean memory for global private structure vars */
-
-    for (i=0; i < vars->nscaus+vars->nscapp; i++) BFT_FREE(vars->label[i]);
-    for (i=0; i < vars->nvar -vars->nscaus -vars->nscapp; i++) BFT_FREE(vars->char2[i]);
-    for (i=0; i < vars->nprop; i++) BFT_FREE(vars->properties_name[i]);
-    BFT_FREE(vars->label);
-    BFT_FREE(vars->model);
-    BFT_FREE(vars->model_value);
-    BFT_FREE(vars->rtp_nbr);
-    BFT_FREE(vars->char2);
-    BFT_FREE(vars->properties_name);
-    BFT_FREE(vars->properties_ipp);
-    BFT_FREE(vars);
-  }
-
-  /* clean memory for fortran name of variables */
-
-  for (i = 0; i < _cs_gui_max_vars; i++)
-    BFT_FREE(_cs_gui_var_name[i]);
-  BFT_FREE(_cs_gui_var_name);
-
-  /* clean memory for xml document */
-
-  if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
-  if (node != NULL) xmlFreeNode(node);
-
-  /* Shutdown libxml */
-
-  xmlCleanupParser();
-  xmlMemoryDump();
-}
-
 
 /*-----------------------------------------------------------------------------
  * Return the name of a thermophysical model.
@@ -3223,18 +3120,23 @@ char *cs_gui_get_thermophysical_model(const char *const model_thermo)
 }
 
 /*-----------------------------------------------------------------------------
- * TODO
- * Return if a particular physics model is activated.
- *
- * parameters:
- *   model               <--  thermophysical model
- *   value               <--  model name associated
+ * Return 1 if a particular physics model is activated. Store in the global
+ * structure vars:
+ *   vars->model         <= thermophysical model
+ *   vars->model_value   <= related model name
  *----------------------------------------------------------------------------*/
 
 int cs_gui_get_activ_thermophysical_model(void)
 {
   int isactiv = 0;
   char *value = NULL;
+
+  assert(vars != NULL);
+
+  if (vars->model != NULL && vars->model_value != NULL) {
+    isactiv = 1;
+    return isactiv;
+  }
 
   value = cs_gui_get_thermophysical_model("pulverized_coal");
 
@@ -3354,7 +3256,7 @@ int cs_gui_boundary_zone_number(const int ith_zone)
  *
  * parameters:
  *   nature                -->  nature of boundary zone (inlet, wall,...)
- *   label                 -->  label of boundary zone
+ *   label                   -->  label of boundary zone
  *----------------------------------------------------------------------------*/
 
 char *cs_gui_boundary_zone_localization(const char *const nature,
@@ -3514,9 +3416,11 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
     BFT_MALLOC(vars, 1, cs_var_t);
     vars->model = NULL;
     vars->model_value = NULL;
-    vars->char2 = NULL;
+    vars->head = NULL;
+    vars->type = NULL;
+    vars->name = NULL;
     vars->label = NULL;
-    vars->rtp_nbr = NULL;
+    vars->rtp = NULL;
     vars->nvar = 0;
     vars->nscaus = 0;
     vars->nscapp = 0;
@@ -3527,7 +3431,7 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
     vars->properties_ipp = NULL;
   }  else  {
     bft_error(__FILE__, __LINE__, 0,
-              _("Trouble with the allocated memory for the global variable 'vars'.\n"));
+     _("Trouble with the allocated memory for the global variable 'vars'.\n"));
   }
 
   vars->nscaus = *nscaus;
@@ -3616,8 +3520,8 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   *indjon = 1;
   *ieqco2 = 0;
 
-  /* cherche la physique particuliere active et donne la valeur
-     de l'attribut model associe */
+  /* cherche la physique particuliere active et donne la valeur de
+     l'attribut model associe */
   isactiv = cs_gui_get_activ_thermophysical_model();
 
   if (isactiv) {
@@ -3663,39 +3567,42 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
  * INTEGER          ISCAVR     <--   user scalars variance array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisca, CSISCA)(int *const iscavr)
+void CS_PROCF (csisca, CSISCA) (int *const iscavr)
 {
   int i;
   int j;
   char *variance = NULL;
 
-  /* if no users scalar; nothing to do */
-  if (vars->nscaus == 0) return;
+  assert(vars != NULL);
 
-  for (i=0; i < vars->nscaus; i++) {
-    variance = cs_gui_scalar_variance(i+1);
+  if (vars->nscaus > 0) {
 
-    if (variance != NULL) {
-      for (j=0 ; j < vars->nscaus ; j++) {
-        if (cs_gui_strcmp(variance, vars->label[j])) {
-          if ( i == j ) {
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Scalar: %i and its variance: %i are the same.\n"),
-                      i, j);
+    for (i=0; i < vars->nscaus; i++) {
+      variance = cs_gui_scalar_variance(i+1);
+
+      if (variance != NULL) {
+
+        for (j=0 ; j < vars->nscaus ; j++) {
+
+          if (cs_gui_strcmp(variance, vars->label[j])) {
+
+            if ( i == j )
+              bft_error(__FILE__, __LINE__, 0,
+                 _("Scalar: %i and its variance: %i are the same.\n"),
+                 i, j);
+            iscavr[i] = j + 1;
           }
-          iscavr[i] = j + 1;
         }
+        BFT_FREE(variance);
       }
-      BFT_FREE(variance);
     }
-  }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSISCA\n"));
-  for (i = 0 ; i < vars->nscaus ; i++)
-    bft_printf(_("--iscavr[%i] = %i \n"), i, iscavr[i]);
+    bft_printf(_("==>CSISCA\n"));
+    for (i = 0 ; i < vars->nscaus ; i++)
+      bft_printf(_("--iscavr[%i] = %i \n"), i, iscavr[i]);
 #endif
-
+  }
   return;
 }
 
@@ -3722,6 +3629,8 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
   int i;
   int choice1, choice2;
   int test1, test2;
+
+  assert(vars != NULL);
 
   if (vars->nscaus > 0) {
 
@@ -3819,20 +3728,21 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
 }
 
 /*----------------------------------------------------------------------------
- * Est appele juste avant le 3eme appel a VARPOS
+ * ALE related keywords
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIALIN()
+ * SUBROUTINE UIALIN
  * *****************
  *
- * INTEGER          IALE    <--   iale method activation
- * INTEGER          NALINF  <--   number of sub iteration of initialization of fluid
- * INTEGER          NALIMX  <--   max number of iterations of implicitation of
- *                                the displacement of the structures
- * DOUBLE           EPALIM  <--   realtive precision of implicitation of
- *                                the displacement of the structures
- * INTEGER          IORTVM  <--   type of viscosity of mesh
+ * INTEGER          IALE    <--  iale method activation
+ * INTEGER          NALINF  <--  number of sub iteration of initialization
+ *                               of fluid
+ * INTEGER          NALIMX  <--  max number of iterations of implicitation of
+ *                               the displacement of the structures
+ * DOUBLE           EPALIM  <--  realtive precision of implicitation of
+ *                               the displacement of the structures
+ * INTEGER          IORTVM  <--  type of viscosity of mesh
  *
  *----------------------------------------------------------------------------*/
 
@@ -3845,14 +3755,18 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
   double value;
 
   cs_gui_get_ale_status(iale);
-  if (*iale){
+
+  if (*iale) {
     value =(double) *nalinf;
     cs_gui_iale_parameter("fluid_initialization_sub_iterations", &value);
     *nalinf = (int) value;
+
     value =(double) *nalimx;
     cs_gui_iale_parameter("max_iterations_implicitation", &value);
     *nalimx = (int) value;
+
     cs_gui_iale_parameter("implicitation_precision", epalim);
+
     value =(double) *iortvm;
     cs_gui_iale_parameter("mesh_viscosity", &value);
     *iortvm = (int) value;
@@ -3861,18 +3775,21 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
 #if _XML_DEBUG_
   bft_printf(_("==>UIALIN\n"));
   bft_printf(_("--iale = %i\n"), *iale);
-  if (iale){
-    bft_printf(_("-nalinf- = %i\n"), *nalinf);
-    bft_printf(_("-nalimx- = %i\n"), *nalimx);
-    bft_printf(_("-epalim- = %f\n"), *epalim);
-    bft_printf(_("-iortvm- = %i\n"), *iortvm);
+  if (*iale) {
+    bft_printf(_("--nalinf = %i\n"), *nalinf);
+    bft_printf(_("--nalimx = %i\n"), *nalimx);
+    bft_printf(_("--epalim = %g\n"), *epalim);
+    bft_printf(_("--iortvm = %i\n"), *iortvm);
   }
 #endif
 }
-
+                
 /*----------------------------------------------------------------------------
- * TODO.
- * Est appele juste apres le 3eme appel a VARPOS
+ * Constructs an indirection between an internal index vars->rtp and
+ * the fortran array RTP.
+ * This function is called after the third call to VARPOS routine.
+ * Warning: in vars->rtp, variables are stored first and then
+ * scalars (not like VARPOS because of ALE variables).
  *
  * Fortran Interface:
  *
@@ -3903,149 +3820,206 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iuma,
                                 const int *const ivma,
                                 const int *const iwma,
-                                const int *const isca)
+                                const int *const isca,
+                                const int *const iscapp)
 {
   int iphas = 0;
-  int nbr = 0;
-  int nm = 0;
-  int i;
+  int n = 0;
+  int i, j, k;
 
-  BFT_MALLOC(vars->rtp_nbr, *nvar, int);
-  BFT_MALLOC(vars->char2,   *nvar, char*);
+  assert(vars != NULL);
 
-  /* Warning!!  vars->nscaus is fill in CSNSCA */
-  /*            vars->label  is fill in CSNSCA */
+  BFT_MALLOC(vars->rtp,  *nvar, int);
+  BFT_MALLOC(vars->head, *nvar, char*);
+  BFT_MALLOC(vars->type, *nvar, char*);
+  BFT_MALLOC(vars->name, *nvar, char*);
+
+  /* Warning!!  vars->nscaus is already fill in CSNSCA */
+  /*            vars->label  is already fill in CSNSCA */
   /*            vars->nscapp is already fill in UIPPMO */
 
   vars->nvar   = *nvar;
 
-  vars->rtp_nbr[nbr++]        = ipr[iphas]  -1;
-  vars->rtp_nbr[nbr++]        = iu[iphas]   -1;
-  vars->rtp_nbr[nbr++]        = iv[iphas]   -1;
-  vars->rtp_nbr[nbr++]        = iw[iphas]   -1;
+  /* 1) pressure and velocity variables */
 
-  BFT_MALLOC(vars->char2[nm], strlen("pressure")+1, char);
-  strcpy(vars->char2[nm], "pressure");
-  nm++;
-  BFT_MALLOC(vars->char2[nm], strlen("velocity_U")+1, char);
-  strcpy(vars->char2[nm], "velocity_U");
-  nm++;
-  BFT_MALLOC(vars->char2[nm], strlen("velocity_V")+1, char);
-  strcpy(vars->char2[nm], "velocity_V");
+  k = n;
+  vars->rtp[n] = ipr[iphas] -1;
+  BFT_MALLOC(vars->name[n], strlen("pressure")+1, char);
+  strcpy(vars->name[n++], "pressure");
 
-  nm++;
-  BFT_MALLOC(vars->char2[nm], strlen("velocity_W")+1, char);
-  strcpy(vars->char2[nm], "velocity_W");
-  nm++;
+  vars->rtp[n] = iu[iphas]  -1;
+  BFT_MALLOC(vars->name[n], strlen("velocity_U")+1, char);
+  strcpy(vars->name[n++], "velocity_U");
+
+  vars->rtp[n] = iv[iphas]  -1;
+  BFT_MALLOC(vars->name[n], strlen("velocity_V")+1, char);
+  strcpy(vars->name[n++], "velocity_V");
+
+  vars->rtp[n] = iw[iphas]  -1;
+  BFT_MALLOC(vars->name[n], strlen("velocity_W")+1, char);
+  strcpy(vars->name[n++], "velocity_W");
+
+  for (i=k; i < n; i++) {
+    BFT_MALLOC(vars->head[i], strlen("velocity_pressure")+1, char);
+    strcpy(vars->head[i], "velocity_pressure");
+  }
+
+  /* 2) turbulence variables */
+
+  k = n;
 
   if (iturb[iphas] == 20 || iturb[iphas] == 21) {
 
-    vars->rtp_nbr[nbr++]      = ik[iphas]   -1;
-    vars->rtp_nbr[nbr++]      = iep[iphas]  -1;
+    vars->rtp[n] = ik[iphas]  -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_k")+1, char);
+    strcpy(vars->name[n++], "turb_k");
 
-    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
-    strcpy(vars->char2[nm], "turb_k");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
-    strcpy(vars->char2[nm], "turb_eps");
-    nm++;
+    vars->rtp[n] = iep[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_eps")+1, char);
+    strcpy(vars->name[n++], "turb_eps");
 
   } else if (iturb[iphas] == 30 || iturb[iphas] == 31) {
 
-    vars->rtp_nbr[nbr++]      = ir11[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ir22[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ir33[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ir12[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ir13[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ir23[iphas] -1;
-    vars->rtp_nbr[nbr++]      = iep[iphas]  -1;
+    vars->rtp[n] = ir11[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R11")+1, char);
+    strcpy(vars->name[n++], "component_R11");
 
-    BFT_MALLOC(vars->char2[nm], strlen("component_R11")+1, char);
-    strcpy(vars->char2[nm], "component_R11");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("component_R22")+1, char);
-    strcpy(vars->char2[nm], "component_R22");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("component_R33")+1, char);
-    strcpy(vars->char2[nm], "component_R33");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("component_R12")+1, char);
-    strcpy(vars->char2[nm], "component_R12");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("component_R13")+1, char);
-    strcpy(vars->char2[nm], "component_R13");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("component_R23")+1, char);
-    strcpy(vars->char2[nm], "component_R23");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
-    strcpy(vars->char2[nm], "turb_eps");
-    nm++;
+    vars->rtp[n] = ir22[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R22")+1, char);
+    strcpy(vars->name[n++], "component_R22");
+
+    vars->rtp[n] = ir33[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R33")+1, char);
+    strcpy(vars->name[n++], "component_R33");
+
+    vars->rtp[n] = ir12[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R12")+1, char);
+    strcpy(vars->name[n++], "component_R12");
+
+    vars->rtp[n] = ir13[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R13")+1, char);
+    strcpy(vars->name[n++], "component_R13");
+
+    vars->rtp[n] = ir23[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("component_R23")+1, char);
+    strcpy(vars->name[n++], "component_R23");
+
+    vars->rtp[n] = iep[iphas]  -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_eps")+1, char);
+    strcpy(vars->name[n++], "turb_eps");
 
   } else if (iturb[iphas] == 50) {
 
-    vars->rtp_nbr[nbr++]      = ik[iphas] -1;
-    vars->rtp_nbr[nbr++]      = iep[iphas] -1;
-    vars->rtp_nbr[nbr++]      = iphi[iphas] -1;
-    vars->rtp_nbr[nbr++]      = ifb[iphas] -1;
+    vars->rtp[n] = ik[iphas]   -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_k")+1, char);
+    strcpy(vars->name[n++], "turb_k");
 
-    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
-    strcpy(vars->char2[nm], "turb_k");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_eps")+1, char);
-    strcpy(vars->char2[nm], "turb_eps");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_phi")+1, char);
-    strcpy(vars->char2[nm], "turb_phi");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_fb")+1, char);
-    strcpy(vars->char2[nm], "turb_fb");
-    nm++;
+    vars->rtp[n] = iep[iphas]  -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_eps")+1, char);
+    strcpy(vars->name[n++], "turb_eps");
+
+    vars->rtp[n] = iphi[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_phi")+1, char);
+    strcpy(vars->name[n++], "turb_phi");
+
+    vars->rtp[n] = ifb[iphas]  -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_fb")+1, char);
+    strcpy(vars->name[n++], "turb_fb");
+
   } else if (iturb[iphas] == 60) {
 
-    vars->rtp_nbr[nbr++]      = ik[iphas] -1;
-    vars->rtp_nbr[nbr++]      = iomg[iphas] -1;
+    vars->rtp[n] = ik[iphas]   -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_k")+1, char);
+    strcpy(vars->name[n++], "turb_k");
 
-    BFT_MALLOC(vars->char2[nm], strlen("turb_k")+1, char);
-    strcpy(vars->char2[nm], "turb_k");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("turb_omega")+1, char);
-    strcpy(vars->char2[nm], "turb_omega");
-    nm++;
+    vars->rtp[n] = iomg[iphas] -1;
+    BFT_MALLOC(vars->name[n], strlen("turb_omega")+1, char);
+    strcpy(vars->name[n++], "turb_omega");
   }
 
-  if (*iale){
-    vars->rtp_nbr[nbr++]      = *iuma -1;
-    vars->rtp_nbr[nbr++]      = *ivma -1;
-    vars->rtp_nbr[nbr++]      = *iwma -1;
-
-    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_U")+1, char);
-    strcpy(vars->char2[nm], "mesh_velocity_U");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_V")+1, char);
-    strcpy(vars->char2[nm], "mesh_velocity_V");
-    nm++;
-    BFT_MALLOC(vars->char2[nm], strlen("mesh_velocity_W")+1, char);
-    strcpy(vars->char2[nm], "mesh_velocity_W");
-    nm++;
-
+  for (i=k; i < n; i++) {
+    BFT_MALLOC(vars->head[i], strlen("turbulence")+1, char);
+    strcpy(vars->head[i], "turbulence");
   }
 
-  for (i=0 ; i<(vars->nscaus + vars->nscapp) ; i++)
-    vars->rtp_nbr[nbr++] = isca[i] -1;
+  /* 3) ALE variables */
 
-  if (nbr != *nvar)
+  if (*iale) {
+    k = n;
+
+    vars->rtp[n] = *iuma -1;
+    BFT_MALLOC(vars->name[n], strlen("mesh_velocity_U")+1, char);
+    strcpy(vars->name[n++], "mesh_velocity_U");
+
+    vars->rtp[n] = *ivma -1;
+    BFT_MALLOC(vars->name[n], strlen("mesh_velocity_V")+1, char);
+    strcpy(vars->name[n++], "mesh_velocity_V");
+
+    vars->rtp[n] = *iwma -1;
+    BFT_MALLOC(vars->name[n], strlen("mesh_velocity_W")+1, char);
+    strcpy(vars->name[n++], "mesh_velocity_W");
+
+    for (i=k; i < n; i++) {
+      BFT_MALLOC(vars->head[i], strlen("ale_method")+1, char);
+      strcpy(vars->head[i], "ale_method");
+    }
+  }
+
+  /* 4) update vars->type for variables */
+  k = vars->nvar -vars->nscapp -vars->nscaus;
+  for (i=0; i < k; i++) {
+    BFT_MALLOC(vars->type[i], strlen("variable")+1, char);
+    strcpy(vars->type[i], "variable");
+  }
+
+  /* 5) user scalars */
+
+  for (i=0; i < vars->nscaus; i++) {
+    vars->rtp[n++] = isca[i] -1;
+
+    BFT_MALLOC(vars->name[k+i], strlen(vars->label[i]) +1, char);
+    strcpy(vars->name[k+i], vars->label[i]);
+
+    BFT_MALLOC(vars->type[k+i], strlen("scalar")+1, char);
+    strcpy(vars->type[k+i], "scalar");
+
+    BFT_MALLOC(vars->head[k+i], strlen("additional_scalar")+1, char);
+    strcpy(vars->head[k+i], "additional_scalar");
+  }
+
+  /* 6) model scalars */
+
+  k = vars->nvar -vars->nscapp;
+  for (i=0; i < vars->nscapp; i++) {
+    j = iscapp[i] -1;
+    vars->rtp[n++] = isca[j] -1;
+
+    BFT_MALLOC(vars->name[k+j], strlen(vars->label[j]) +1, char);
+    strcpy(vars->name[k+j], vars->label[j]);
+
+    BFT_MALLOC(vars->type[k+j], strlen("scalar")+1, char);
+    strcpy(vars->type[k+j], "scalar");
+
+    BFT_MALLOC(vars->head[k+j], strlen(vars->model)+1, char);
+    strcpy(vars->head[k+j], vars->model);
+  }
+
+
+  /* 6) check for errors */
+
+  if (n != *nvar)
     bft_error(__FILE__, __LINE__, 0,
               _("The kernel variables number %i and the "
-                "calculated one by the reader %i are not the same.\n"),
-                *nvar, nbr);
+                "calculated one by the GUI %i are not the same.\n"),
+                *nvar, n);
 
 #if _XML_DEBUG_
   bft_printf(_("==>CSVNUM\n"));
-  for (i=0 ; i<(vars->nvar - vars->nscapp - vars->nscaus) ; i++)
-    bft_printf(_("--variables: %s\n"), vars->char2[i]);
-  for (i=0 ; i<(vars->nscapp + vars->nscaus) ; i++)
-    bft_printf(_("--scalars: %s\n"), vars->label[i]);
+  bft_printf(_("--variables and scalars name: \n"));
+  for (i=0; i < vars->nvar; i++)
+    bft_printf(_("---name: %s\n"), vars->name[i]);
+  /* for (i=0; i < vars->nscapp+vars->nscaus; i++)
+    bft_printf(_("--scalars: %s\n"), vars->label[i]); */
 #endif
 
 }
@@ -4061,7 +4035,6 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  * INTEGER          IFOAVA  <--   main restart file format
  * INTEGER          IFOAVX  <--   auxiliary restart file format
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csifoa, CSIFOA) (int *const ifoava,
                                 int *const ifoavx)
@@ -4213,6 +4186,8 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
   int iphas = 0;
 #endif
 
+  assert(vars != NULL);
+
   cs_gui_thermal_scalar_number(iscalt, iscsth);
 
 #if _XML_DEBUG_
@@ -4229,6 +4204,7 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
+                                const    int *const iscapp,
                                       double *const blencv,
                                          int *const ischcv,
                                          int *const isstpc,
@@ -4237,23 +4213,29 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                          int *const nitmax,
                                       double *const epsilo)
 {
-  int i, j;
+  int i, j, jj, k;
   double tmp;
 
-  /* Variables de velocity pressure  et de la turbulence */
-  for (i=1; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
-     j = vars->rtp_nbr[i];
-     cs_gui_variable_value(vars->char2[i], "blending_factor", &blencv[j]);
-     cs_gui_variable_value(vars->char2[i], "solveur_precision", &epsilo[j]);
+  assert(vars != NULL);
+
+  k = vars->nvar - vars->nscaus - vars->nscapp;
+
+  /* 1) variables from velocity_pressure (but not pressure) and turbulence */
+
+  for (i=1; i < k; i++) {
+     j = vars->rtp[i];
+     cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
+     cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
      tmp = (double) nitmax[j];
-     cs_gui_variable_value(vars->char2[i], "max_iter_number", &tmp);
+     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
      nitmax[j] = (int) tmp;
-     cs_gui_variable_attribute(vars->char2[i], "order_scheme", &ischcv[j]);
-     cs_gui_variable_attribute(vars->char2[i], "slope_test", &isstpc[j]);
-     cs_gui_variable_attribute(vars->char2[i], "flux_reconstruction", &ircflu[j]);
+     cs_gui_variable_attribute(vars->name[i], "order_scheme", &ischcv[j]);
+     cs_gui_variable_attribute(vars->name[i], "slope_test", &isstpc[j]);
+     cs_gui_variable_attribute(vars->name[i], "flux_reconstruction", &ircflu[j]);
   }
 
-  /* User Scalar */
+  /* 2) user scalars */
+
   if (vars->nscaus > 0 ) {
     for (i=0 ; i < vars->nscaus; i++) {
       j = isca[i]-1;
@@ -4269,50 +4251,35 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     }
   }
 
-  if (vars->model != NULL) {
-  /* Model Scalar */
-    if (vars->nscapp > 0 ) {
+  /* 3) model scalars */
 
-      for (i=vars->nscaus ; i < vars->nscaus + vars->nscapp ; i++) {
-        j = isca[i]-1;
-
-        cs_gui_model_scalar_value(vars->model, vars->label[i],
-                                 "blending_factor", &blencv[j]);
-
-        cs_gui_model_scalar_value(vars->model, vars->label[i],
-                                  "solveur_precision", &epsilo[j]);
-
-        cs_gui_model_scalar_value(vars->model, vars->label[i],
-                                  "time_step_factor", &cdtvar[j]);
-
-        tmp = (double) nitmax[j];
-        cs_gui_model_scalar_value(vars->model, vars->label[i],
-                                  "max_iter_number", &tmp);
-        nitmax[j] = (int) tmp;
-
-        cs_gui_model_scalar_output_status(vars->model, vars->label[i],
-                                          "order_scheme", &ischcv[j]);
-
-        cs_gui_model_scalar_output_status(vars->model, vars->label[i],
-                                          "slope_test", &isstpc[j]);
-
-        cs_gui_model_scalar_output_status(vars->model, vars->label[i],
-                                          "flux_reconstruction", &ircflu[j]);
-      }
+  if (vars->nscapp > 0 ) {
+    for (i=0 ; i < vars->nscapp ; i++) {
+      j = iscapp[i] -1;
+      jj = isca[j]-1;
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "blending_factor", &blencv[jj]);
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "solveur_precision", &epsilo[jj]);
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
+      tmp = (double) nitmax[jj];
+      cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
+      nitmax[jj] = (int) tmp;
+      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "order_scheme", &ischcv[jj]);
+      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "slope_test", &isstpc[jj]);
+      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "flux_reconstruction", &ircflu[jj]);
     }
   }
 
 #if _XML_DEBUG_
   bft_printf(_("==>UINUM1\n"));
-  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
-    bft_printf(_("-->variable[%i] = %s\n"), i, vars->char2[i]);
-    bft_printf(_("--blencv = %f\n"), blencv[vars->rtp_nbr[i]]);
-    bft_printf(_("--epsilo = %g\n"), epsilo[vars->rtp_nbr[i]]);
-    bft_printf(_("--cdtvar = %g\n"), cdtvar[vars->rtp_nbr[i]]);
-    bft_printf(_("--nitmax = %i\n"), nitmax[vars->rtp_nbr[i]]);
-    bft_printf(_("--ischcv = %i\n"), ischcv[vars->rtp_nbr[i]]);
-    bft_printf(_("--isstpc = %i\n"), isstpc[vars->rtp_nbr[i]]);
-    bft_printf(_("--ircflu = %i\n"), ircflu[vars->rtp_nbr[i]]);
+  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
+    bft_printf(_("-->variable[%i] = %s\n"), i, vars->name[i]);
+    bft_printf(_("--blencv = %f\n"), blencv[vars->rtp[i]]);
+    bft_printf(_("--epsilo = %g\n"), epsilo[vars->rtp[i]]);
+    bft_printf(_("--cdtvar = %g\n"), cdtvar[vars->rtp[i]]);
+    bft_printf(_("--nitmax = %i\n"), nitmax[vars->rtp[i]]);
+    bft_printf(_("--ischcv = %i\n"), ischcv[vars->rtp[i]]);
+    bft_printf(_("--isstpc = %i\n"), isstpc[vars->rtp[i]]);
+    bft_printf(_("--ircflu = %i\n"), ircflu[vars->rtp[i]]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
     bft_printf(_("-->scalar[%i]: %s\n"), isca[i]-1, vars->label[i]);
@@ -4386,6 +4353,8 @@ void CS_PROCF (csphys, CSPHYS)
   int iphas = 0;
   int choice;
 
+  assert(vars != NULL);
+
   cs_gui_gravity_value("gravity_x", gx);
   cs_gui_gravity_value("gravity_y", gy);
   cs_gui_gravity_value("gravity_z", gz);
@@ -4444,6 +4413,8 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
 
   int i;
 
+  assert(vars != NULL);
+
   if (vars->nscaus > 0 ) {
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 ) {
@@ -4476,6 +4447,8 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 {
   int i, iphas = 0;
   double result, coeff, density;
+
+  assert(vars != NULL);
 
   if (vars->nscaus > 0) {
 
@@ -4561,10 +4534,10 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
  * Tableau des propriétés utilisées dans le calcul
  *----------------------------------------------------------------------------*/
+
 void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const iviscl,
                                 const int *const ivisct,
@@ -4589,12 +4562,14 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 {
   int iphas = 0;
   int itype = 0;
-  int np;
+  int n;
   int i = 0;
   int nbp = 6;
   int ncar = 0;
   char *name;
   char *suf = NULL;
+
+  assert(vars != NULL);
 
   /* Compute the new size of vars->properties_ipp and vars->properties_name */
 
@@ -4614,7 +4589,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     }
   }
 
-  np = vars->nprop;
+  n = vars->nprop;
 
   if (*iappel == 0) {
 
@@ -4625,66 +4600,55 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
     BFT_REALLOC(vars->properties_name, vars->nprop, char*);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ irom[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("density")+1, char);
-    strcpy(vars->properties_name[np], "density");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ irom[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("density")+1, char);
+    strcpy(vars->properties_name[n++], "density");
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ iviscl[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("molecular_viscosity")+1, char);
-    strcpy(vars->properties_name[np], "molecular_viscosity");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ iviscl[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("molecular_viscosity")+1, char);
+    strcpy(vars->properties_name[n++], "molecular_viscosity");
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ ivisct[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("turb_viscosity")+1, char);
-    strcpy(vars->properties_name[np], "turb_viscosity");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ ivisct[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("turb_viscosity")+1, char);
+    strcpy(vars->properties_name[n++], "turb_viscosity");
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ icour[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("courant_number")+1, char);
-    strcpy(vars->properties_name[np], "courant_number");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ icour[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("courant_number")+1, char);
+    strcpy(vars->properties_name[n++], "courant_number");
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ ifour[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("fourier_number")+1, char);
-    strcpy(vars->properties_name[np], "fourier_number");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ ifour[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("fourier_number")+1, char);
+    strcpy(vars->properties_name[n++], "fourier_number");
 
-    if (ismago[iphas] != -1 ){
-      vars->properties_ipp[np] = ipppro[ ipproc[ ismago[iphas]-1 ]-1 ];
-      BFT_MALLOC(vars->properties_name[np], strlen("smagorinsky_constant")+1, char);
-      strcpy(vars->properties_name[np], "smagorinsky_constant");
-      np++;
+    if (ismago[iphas] != -1 ) {
+      vars->properties_ipp[n] = ipppro[ ipproc[ ismago[iphas]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[n], strlen("smagorinsky_constant")+1, char);
+      strcpy(vars->properties_name[n++], "smagorinsky_constant");
     }
 
-    if (icp[iphas]>0){
-      vars->properties_ipp[np] = ipppro[ ipproc[ icp[iphas]-1 ]-1 ];
-      BFT_MALLOC(vars->properties_name[np], strlen("specific_heat")+1, char);
-      strcpy(vars->properties_name[np], "specific_heat");
-      np++;
+    if (icp[iphas]>0) {
+      vars->properties_ipp[n] = ipppro[ ipproc[ icp[iphas]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[n], strlen("specific_heat")+1, char);
+      strcpy(vars->properties_name[n++], "specific_heat");
     }
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ iprtot[iphas]-1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen("total_pressure")+1, char);
-    strcpy(vars->properties_name[np], "total_pressure");
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ iprtot[iphas]-1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen("total_pressure")+1, char);
+    strcpy(vars->properties_name[n++], "total_pressure");
 
     if (*iale) {
-      vars->properties_ipp[np] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
-      BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_1")+1, char);
-      strcpy(vars->properties_name[np], "mesh_viscosity_1");
-      np++;
+      vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_1")+1, char);
+      strcpy(vars->properties_name[n++], "mesh_viscosity_1");
 
-      if (itype == 1){
-        vars->properties_ipp[np] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
-        BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_2")+1, char);
-        strcpy(vars->properties_name[np], "mesh_viscosity_2");
-        np++;
+      if (itype == 1) {
+        vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
+        BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_2")+1, char);
+        strcpy(vars->properties_name[n++], "mesh_viscosity_2");
 
-        vars->properties_ipp[np] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
-        BFT_MALLOC(vars->properties_name[np], strlen("mesh_viscosity_3")+1, char);
-        strcpy(vars->properties_name[np], "mesh_viscosity_3");
-        np++;
+        vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
+        BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_3")+1, char);
+        strcpy(vars->properties_name[n++], "mesh_viscosity_3");
       }
 
     }
@@ -4698,7 +4662,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
         if (iscavr[i] <= 0 && iscalt[iphas] != i+1 && ivisls[i] > 0) {
 
-          vars->properties_ipp[np] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
+          vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
           /* search lenght of second character scalar property's suffixe: number i */
           ncar = cs_gui_characters_number(i+1);
 
@@ -4709,9 +4673,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
           strcat(name, "_");
           strcat(name, suf);
 
-          BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-          strcpy(vars->properties_name[np], name);
-          np++;
+          BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+          strcpy(vars->properties_name[n++], name);
 
           BFT_FREE(suf);
         }
@@ -4726,39 +4689,34 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
     BFT_REALLOC(vars->properties_name, vars->nprop, char*);
 
-    vars->properties_ipp[np] = *ippdt;
-    BFT_MALLOC(vars->properties_name[np], strlen("local_time_step")+1, char);
-    strcpy(vars->properties_name[np], "local_time_step");
-    np++;
+    vars->properties_ipp[n] = *ippdt;
+    BFT_MALLOC(vars->properties_name[n], strlen("local_time_step")+1, char);
+    strcpy(vars->properties_name[n++], "local_time_step");
 
-    vars->properties_ipp[np] = *ipptx;
-    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_X")+1, char);
-    strcpy(vars->properties_name[np], "weight_matrix_X");
-    np++;
+    vars->properties_ipp[n] = *ipptx;
+    BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_X")+1, char);
+    strcpy(vars->properties_name[n++], "weight_matrix_X");
 
-    vars->properties_ipp[np] = *ippty;
-    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Y")+1, char);
-    strcpy(vars->properties_name[np], "weight_matrix_Y");
-    np++;
+    vars->properties_ipp[n] = *ippty;
+    BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_Y")+1, char);
+    strcpy(vars->properties_name[n++], "weight_matrix_Y");
 
-    vars->properties_ipp[np] = *ipptz;
-    BFT_MALLOC(vars->properties_name[np], strlen("weight_matrix_Z")+1, char);
-    strcpy(vars->properties_name[np], "weight_matrix_Z");
-    np++;
+    vars->properties_ipp[n] = *ipptz;
+    BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_Z")+1, char);
+    strcpy(vars->properties_name[n++], "weight_matrix_Z");
 
-    for (i=0; i<vars->ntimaver; i++){
-      vars->properties_ipp[np] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
+    for (i=0; i<vars->ntimaver; i++) {
+      vars->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
       name = cs_gui_get_mean_label(i+1);
-      BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-      strcpy(vars->properties_name[np], name);
-      np++;
+      BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+      strcpy(vars->properties_name[n++], name);
     }
   }
 
-  if (np != vars->nprop) {
+  if (n != vars->nprop)
     bft_error(__FILE__, __LINE__, 0,
-              _("number of properties is not correct: %i instead of: %i\n"), np, vars->nprop);
-  }
+              _("number of properties is not correct: %i instead of: %i\n"),
+              n, vars->nprop);
 
 #if _XML_DEBUG_
   bft_printf(_("==>UIPROP %i\n"),*iappel);
@@ -4773,6 +4731,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 /*----------------------------------------------------------------------------
  * Traitement des moyennes temporelles
  *----------------------------------------------------------------------------*/
+
 void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
                                 const int *const isca,
                                 const int *const ipppro,
@@ -4789,15 +4748,17 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
   char *label_moy;
   char *name;
 
+  assert(vars != NULL);
+
   vars->ntimaver = cs_gui_get_means_number();
 
-  /*pour chaque moment :*/
+  /* for each average */
   for (i=0; i < vars->ntimaver; i++) {
 
     imom = i + 1;
     cs_gui_get_mean_value(imom, "time_step_start", &ntdmom[i]);
 
-    /* test sur isuite */
+    /* test on isuite */
     cs_gui_restart_parameters_status("restart", &isuite);
 
     if (isuite != 0) {
@@ -4810,21 +4771,21 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
       nb = n + 1;
       name = cs_gui_get_mean_prop(imom, nb);
       for (j=0 ; j<(vars->nvar - vars->nscapp - vars->nscaus) ; j++){
-        if (cs_gui_strcmp(name,  vars->char2[j])) {
-          idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp_nbr[j] +1;
+        if (cs_gui_strcmp(name,  vars->name[j])) {
+          idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp[j] +1;
         }
       }
       if (vars->nscaus > 0 ) {
-        for (j=0 ; j<vars->nscaus ; j++){
+        for (j=0 ; j<vars->nscaus ; j++) {
           if (cs_gui_strcmp(name,  vars->label[j]) ) {
-            idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp_nbr[isca[j]-1] +1;
+            idfmom[(imom-1)*(*ndgmox) + n] = isca[j];
           }
         }
       }
 
       for (j=0 ; j<vars->nprop; j++) {
         if (cs_gui_strcmp(name, vars->properties_name[j]))
-          idfmom[(imom-1)*(*ndgmox) + n] = -(vars->properties_ipp[j]) -1;
+          idfmom[(imom-1)*(*ndgmox) + n] = -(vars->properties_ipp[j]);
       }
     }
   }
@@ -4860,19 +4821,18 @@ void CS_PROCF (csenso, CSENSO)
           int *const ilisvr,
           int *const ihisvr,
  const    int *const isca,
+ const    int *const iscapp,
  const    int *const ipprtp,
  const    int *const ipppro,
  const    int *const ipproc,
        double *const xyzcap)
 {
-  int i;
+  int i, j;
   int ipp;
 
-#if _XML_DEBUG_
-  int j;
-#endif
+  assert(vars != NULL);
 
-  cs_gui_output_value("fuild_domain", ichrvl);
+  cs_gui_output_value("fluid_domain", ichrvl);
   cs_gui_output_value("domain_boundary", ichrbo);
   cs_gui_output_value("syrthes_boundary", ichrsy);
   cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
@@ -4892,8 +4852,8 @@ void CS_PROCF (csenso, CSENSO)
 
   /* Sorties des variables vitesses et turbulence */
   for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp; i++) {
-     ipp = ipprtp[vars->rtp_nbr[i]];
-     cs_gui_thermophysical_post(vars->char2[i],
+     ipp = ipprtp[vars->rtp[i]];
+     cs_gui_thermophysical_post(vars->name[i],
                                 ipp,
                                 ihisvr, ilisvr, ichrvr,
                                 nvppmx);
@@ -4909,8 +4869,9 @@ void CS_PROCF (csenso, CSENSO)
 
   /* Scalaire model */
   if (vars->nscapp > 0) {
-    for (i=vars->nscaus ; i < vars->nscaus+vars->nscapp; i++) {
-      cs_gui_model_scalar_post(vars->model, i,
+    for (i=0 ; i < vars->nscapp; i++) {
+      j = iscapp[i]-1 ;
+      cs_gui_model_scalar_post(vars->model, j,
                                ihisvr, ilisvr, ichrvr,
                                ipprtp, isca, nvppmx);
     }
@@ -4962,8 +4923,8 @@ void CS_PROCF (csenso, CSENSO)
     bft_printf(_("--xyzcap[%i][2] = %f\n"), i, xyzcap[2 +i*3]);
   }
   for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
-    ipp = ipprtp[vars->rtp_nbr[i]];
-    bft_printf(_("-->variable ipprtp[%i] = %s\n"), ipp, vars->char2[i]);
+    ipp = ipprtp[vars->rtp[i]];
+    bft_printf(_("-->variable ipprtp[%i] = %s\n"), ipp, vars->name[i]);
     bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
     bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
     bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
@@ -5174,6 +5135,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
   char *name = NULL;
   char *description = NULL;
 
+  assert(vars != NULL);
+
   /* number of volumic zone */
 
   zones = cs_gui_volumic_zones_number();
@@ -5207,14 +5170,15 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
                 missing, description);
     }
 
+
     /* Velocity variables initialization */
     for (j=1; j < 4; j++) {
 
-      cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+      cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
 
       for (icel = 0; icel < cells; icel++) {
         iel = cells_list[icel]-1;
-        rtp[vars->rtp_nbr[j]*(*ncelet) + iel] = initial_value;
+        rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
       }
     }
 
@@ -5224,11 +5188,11 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
     if (cs_gui_strcmp(choice, "values")) {
       for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
 
-        cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+        cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
 
         for (icel = 0; icel < cells; icel++) {
           iel = cells_list[icel]-1;
-          rtp[vars->rtp_nbr[j]*(*ncelet) + iel] = initial_value;
+          rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
         }
       }
     }
@@ -5254,9 +5218,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
     bft_printf(_("--zone's element number: %i\n"), cells);
 
     for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++){
-      cs_gui_variable_initial_value(vars->char2[j], name, &initial_value);
+      cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
       bft_printf(_("--initial value for %s: %f\n"),
-        vars->char2[j], initial_value);
+        vars->name[j], initial_value);
     }
 
     for (j=0; j < vars->nscaus; j++) {
@@ -5284,7 +5248,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
  * INTEGER          NFABOR  --> number of boundary faces
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: wall
+ * INTEGER          IPAROI  --> type of boundary: smooth wall
+ * INTEGER          IPARUG  --> type of boundary: rough wall
  * INTEGER          ISYMET  --> type of boundary: symetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          IQIMP   --> 1 if flow rate is applied
@@ -5303,6 +5268,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
                                const    int *const iindef,
                                const    int *const ientre,
                                const    int *const iparoi,
+                               const    int *const iparug,
                                const    int *const isymet,
                                const    int *const isolib,
                                         int *const iqimp,
@@ -5318,14 +5284,16 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
   int iphas = 0;
   int faces = 0;
   int zones = 0;
-  int n, izone, ith_zone, zone_nbr;
-  int ifbr, i, c_id;
+  int ifac, izone, ith_zone, zone_nbr;
+  int ifbr, i, iwall, c_id;
   int ivar, isca;
   char *choice = NULL;
   char *nature = NULL;
   char *label = NULL;
   char *description = NULL;
   int *faces_list = NULL;
+
+  assert(vars != NULL);
 
   zones   = cs_gui_boundary_zones_number();
 
@@ -5343,10 +5311,20 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     BFT_MALLOC(boundaries->icalke,    zones,      int          );
     BFT_MALLOC(boundaries->dh,        zones,      double       );
     BFT_MALLOC(boundaries->xintur,    zones,      double       );
+    BFT_MALLOC(boundaries->rough,     zones,      double       );
+
+    boundaries->ientat = NULL;
+    boundaries->qimpat = NULL;
+    boundaries->timpat = NULL;
+    boundaries->ientcp = NULL;
+    boundaries->qimpcp = NULL;
+    boundaries->timpcp = NULL;
+    boundaries->distch = NULL;
 
     for (ivar = 0; ivar < vars->nvar; ivar++) {
-      BFT_MALLOC(boundaries->type_code[vars->rtp_nbr[ivar]], zones, int);
-      BFT_MALLOC(boundaries->values[vars->rtp_nbr[ivar]], zones, cs_val_t);
+      i = vars->rtp[ivar];
+      BFT_MALLOC(boundaries->type_code[i], zones, int);
+      BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
     }
 
     for (izone = 0; izone < zones; izone++) {
@@ -5355,17 +5333,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       boundaries->icalke[izone] = 0;
       boundaries->dh[izone]     = 0;
       boundaries->xintur[izone] = 0;
+      boundaries->rough[izone]  = -999;
     }
 
     /* Initialization of boundary->type_code and boundary->values */
 
-    for (i = 0; i < vars->nvar; i++) {
-      ivar = vars->rtp_nbr[i];
+    for (ivar = 0; ivar < vars->nvar; ivar++) {
+      i = vars->rtp[ivar];
       for (izone = 0; izone < zones; izone++) {
-        boundaries->type_code[ivar][izone] = -1;
-        boundaries->values[ivar][izone].val1 = 1.e30;
-        boundaries->values[ivar][izone].val2 = 1.e30;
-        boundaries->values[ivar][izone].val3 = 0.;
+        boundaries->type_code[i][izone] = -1;
+        boundaries->values[i][izone].val1 = 1.e30;
+        boundaries->values[i][izone].val2 = 1.e30;
+        boundaries->values[i][izone].val3 = 0.;
       }
     }
 
@@ -5430,6 +5409,9 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         }
         BFT_FREE(choice);
 
+        /* Wall: ROUGH */
+        cs_gui_boundary_rough(label, izone);
+
         /* Wall: USER SCALARS */
         for (isca = 0; isca < vars->nscaus; isca++) {
           cs_gui_boundary_value_scalar("wall", izone, isca);
@@ -5465,7 +5447,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"),
-                zone_nbr, *nozppm);
+           zone_nbr, *nozppm);
 
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
@@ -5500,12 +5482,12 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       icalke[zone_nbr-1] = boundaries->icalke[izone];
       qimp[zone_nbr-1]   = boundaries->qimp[izone];
 
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *ientre;
         for (i = 0; i < vars->nvar; i++) {
-          ivar = vars->rtp_nbr[i];
+          ivar = vars->rtp[i];
           rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->values[ivar][izone].val1;
         }
@@ -5513,21 +5495,35 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+      if (boundaries->rough[izone] != -999) {
+        iwall = *iparug;
+        /* roughness value is only stored in Velocity_U */
+        ivar = 1;
+        for (ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac]-1;
+          icodcl[ivar *(*nfabor) + ifbr] = 6;
+          rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+          = boundaries->rough[izone];
+        }
+      } else {
+        iwall = *iparoi;
+      }
+
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *iparoi;
+        itypfb[iphas *(*nfabor) +ifbr] = iwall;
       }
 
       for (i = 0; i < vars->nvar; i++) {
-        ivar = vars->rtp_nbr[i];
+        ivar = vars->rtp[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
           case NEUMANN :
 
-            for (n = 0; n < faces; n++) {
-              ifbr = faces_list[n]-1;
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
               icodcl[ivar *(*nfabor) + ifbr] = 3;
               rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = boundaries->values[ivar][izone].val3;
@@ -5536,8 +5532,19 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
           case DIRICHLET :
 
-            for (n = 0; n < faces; n++) {
-              ifbr = faces_list[n]-1;
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
+              icodcl[ivar *(*nfabor) + ifbr] = 5;
+              /* si wall_function icodcl[ivar *(*nfabor) + ifbr] = 1; */
+              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+              = boundaries->values[ivar][izone].val1;
+            }
+          break;
+
+          case WALL_FUNCTION :
+
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
               icodcl[ivar *(*nfabor) + ifbr] = 5;
               rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = boundaries->values[ivar][izone].val1;
@@ -5546,8 +5553,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
           case COEF_ECHANGE :
 
-            for (n = 0; n < faces; n++) {
-              ifbr = faces_list[n]-1;
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
               icodcl[ivar *(*nfabor) + ifbr] = 5;
               rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = boundaries->values[ivar][izone].val1;
@@ -5560,21 +5567,21 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
 
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *isolib;
       }
 
       for (i = 0; i < vars->nvar; i++) {
-        ivar = vars->rtp_nbr[i];
+        ivar = vars->rtp[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
           case DIRICHLET :
 
-            for (n = 0; n < faces; n++) {
-              ifbr = faces_list[n]-1;
+            for (ifac = 0; ifac < faces; ifac++) {
+              ifbr = faces_list[ifac]-1;
               icodcl[ivar *(*nfabor) + ifbr] = 1;
               rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = boundaries->values[ivar][izone].val1;
@@ -5586,16 +5593,16 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
 
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *isymet;
       }
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
 
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+      for (ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *iindef;
       }
@@ -5610,10 +5617,13 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 #if _XML_DEBUG_
   bft_printf(_("==>UICLIM\n"));
   bft_printf(_("--boundary zones number: %i\n"), zones);
+
   for (izone=0 ; izone < zones ; izone++) {
-    BFT_MALLOC(faces_list,*nfabor,int);
+
+    BFT_MALLOC(faces_list, *nfabor, int);
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
+
     c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
                                  description,
                                  &faces,
@@ -5630,6 +5640,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     }
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
+
     bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
     bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
     bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
@@ -5638,15 +5649,14 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
       bft_printf(_("-----iqimp=%i, qimp=%12.5e \n"),
-                 iqimp[zone_nbr-1], qimp[zone_nbr-1]);
+                   iqimp[zone_nbr-1], qimp[zone_nbr-1]);
       bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
-                 icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+                   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
     }
 
-    n = vars->nvar - vars->nscaus - vars->nscapp;
     ifbr = faces_list[0]-1;
-    for (i=0; i<n ; i++) {
-      ivar = vars->rtp_nbr[i];
+    for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
+      ivar = vars->rtp[i];
       bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
                    "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
                  vars->char2[ivar],
@@ -5656,6 +5666,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
                  rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
                  rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
     }
+
     for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
       bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
                    "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
@@ -5691,9 +5702,9 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
 #endif
 }
 
-/*----------------------------------------------------------------------------
- *  Indirection entre la numérotation noyau et la numérotation XML des
- *  propriétés physiques de la physique particulière active
+/*-----------------------------------------------------------------------------
+ *  Indirection entre la numérotation noyau et la numérotation XML
+ *  des propriétés physiques de la physique particulière active
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
@@ -5719,11 +5730,13 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const ilumi)
 {
   int i = 0;
-  int np;
+  int n;
   char *name = NULL;
   char *snumpp = NULL;
 
-  np = vars->nprop;
+  assert(vars != NULL);
+
+  n = vars->nprop;
   vars->nprop  = *nsalpp;
   vars->nsalpp = *nsalpp;
 
@@ -5731,64 +5744,54 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   BFT_MALLOC(vars->properties_name, vars->nsalpp, char*);
 
  /* ITEMP1 */
-  vars->properties_ipp[np] = ipppro[ ipproc[ *itemp1 -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("Temp_GAZ")+1, char);
-  strcpy(vars->properties_name[np], "Temp_GAZ");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ *itemp1 -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("Temp_GAZ")+1, char);
+  strcpy(vars->properties_name[n++], "Temp_GAZ");
 
  /* IROM1 */
-  vars->properties_ipp[np] = ipppro[ ipproc[ *irom1 -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("ROM_GAZ")+1, char);
-  strcpy(vars->properties_name[np], "ROM_GAZ");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ *irom1 -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("ROM_GAZ")+1, char);
+  strcpy(vars->properties_name[n++], "ROM_GAZ");
 
  /*  YM_CHX1M */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[0] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_CHx1m")+1, char);
-  strcpy(vars->properties_name[np], "YM_CHx1m");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[0] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx1m")+1, char);
+  strcpy(vars->properties_name[n++], "YM_CHx1m");
 
  /*  YM_CHX2M */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[1] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_CHx2m")+1, char);
-  strcpy(vars->properties_name[np], "YM_CHx2m");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[1] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx2m")+1, char);
+  strcpy(vars->properties_name[n++], "YM_CHx2m");
 
  /*  YM_CO */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[2] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_CO")+1, char);
-  strcpy(vars->properties_name[np], "YM_CO");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[2] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_CO")+1, char);
+  strcpy(vars->properties_name[n++], "YM_CO");
 
  /*  YM_O2 */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[3] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_O2")+1, char);
-  strcpy(vars->properties_name[np], "YM_O2");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[3] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_O2")+1, char);
+  strcpy(vars->properties_name[n++], "YM_O2");
 
  /*  YM_CO2 */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[4] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_CO2")+1, char);
-  strcpy(vars->properties_name[np], "YM_CO2");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[4] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_CO2")+1, char);
+  strcpy(vars->properties_name[n++], "YM_CO2");
 
  /*  YM_H2O */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[5] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_H2O")+1, char);
-  strcpy(vars->properties_name[np], "YM_H2O");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[5] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_H2O")+1, char);
+  strcpy(vars->properties_name[n++], "YM_H2O");
 
  /*  YM_N2 */
-  vars->properties_ipp[np] = ipppro[ ipproc[ ym1[6] -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("YM_N2")+1, char);
-  strcpy(vars->properties_name[np], "YM_N2");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ ym1[6] -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("YM_N2")+1, char);
+  strcpy(vars->properties_name[n++], "YM_N2");
 
  /* IMEL */
-  vars->properties_ipp[np] = ipppro[ ipproc[ *imel -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("XM")+1, char);
-  strcpy(vars->properties_name[np], "XM");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ *imel -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("XM")+1, char);
+  strcpy(vars->properties_name[n++], "XM");
 
  /* ITEMP2 boucle sur les classes */
   BFT_MALLOC(name, strlen("Temp_CP")+1 + 2, char);
@@ -5798,10 +5801,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ itemp2[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ itemp2[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Temp_CP");
   }
@@ -5813,10 +5815,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ ix2[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ ix2[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Frm_CP");
   }
@@ -5828,10 +5829,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ irom2[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ irom2[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Rho_CP");
   }
@@ -5843,10 +5843,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ idiam2[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ idiam2[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Dia_CK");
   }
@@ -5858,10 +5857,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ igmdch[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ igmdch[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Ga_DCH");
   }
@@ -5873,10 +5871,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ igmdv1[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ igmdv1[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Ga_DV1");
   }
@@ -5888,10 +5885,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ igmdv2[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ igmdv2[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Ga_DV2");
   }
@@ -5903,10 +5899,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     sprintf(snumpp, "%2.2i", i+1);
     strcat(name, snumpp);
 
-    vars->properties_ipp[np] = ipppro[ ipproc[ igmhet[i] -1 ]-1 ];
-    BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-    strcpy(vars->properties_name[np], name);
-    np++;
+    vars->properties_ipp[n] = ipppro[ ipproc[ igmhet[i] -1 ]-1 ];
+    BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+    strcpy(vars->properties_name[n++], name);
 
     strcpy(name, "Ga_HET");
   }
@@ -5919,72 +5914,69 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       sprintf(snumpp, "%2.2i", i+1);
       strcat(name, snumpp);
 
-      vars->properties_ipp[np] = ipppro[ ipproc[ igmsec[i] -1 ]-1 ];
-      BFT_MALLOC(vars->properties_name[np], strlen(name)+1, char);
-      strcpy(vars->properties_name[np], name);
-      np++;
+      vars->properties_ipp[n] = ipppro[ ipproc[ igmsec[i] -1 ]-1 ];
+      BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+      strcpy(vars->properties_name[n++], name);
 
       strcpy(name, "Ga_SEC");
     }
   }
 
  /* ILUMI */
-  vars->properties_ipp[np] = ipppro[ ipproc[ *ilumi -1 ]-1 ];
-  BFT_MALLOC(vars->properties_name[np], strlen("ntLuminance_4PI")+1, char);
-  strcpy(vars->properties_name[np], "ntLuminance_4PI");
-  np++;
+  vars->properties_ipp[n] = ipppro[ ipproc[ *ilumi -1 ]-1 ];
+  BFT_MALLOC(vars->properties_name[n], strlen("ntLuminance_4PI")+1, char);
+  strcpy(vars->properties_name[n++], "ntLuminance_4PI");
 
   BFT_FREE(name);
   BFT_FREE(snumpp);
 
-  if (np != vars->nsalpp) {
+  if (n != vars->nsalpp)
     bft_error(__FILE__, __LINE__, 0,
               _("number of properties is not correct: %i instead of: %i\n"),
-              np, vars->nsalpp);
-  }
+                n, vars->nsalpp);
 
 #if _XML_DEBUG_
   bft_printf(_("==>UICPPR\n"));
   bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
-  for (i=0 ; i<vars->nprop ; i++) {
+  for (i=0 ; i<vars->nprop ; i++)
     bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
-               i, vars->properties_ipp[i], i, vars->properties_name[i]);
-  }
+                    i, vars->properties_ipp[i], i, vars->properties_name[i]);
 #endif
 }
 
-/*----------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
  *  Indirection entre la numérotation noyau et
  *  la numérotation XML des scalaires model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicpsc, UICPSC)(const int *const ncharb,
-                               const int *const nclass,
-                               const int *const ippmod,
-                               const int *const icp3pl,
-                               const int *const ieqco2,
-                               const int *const ihm,
-                               const int *const inp,
-                               const int *const ixch,
-                               const int *const ixck,
-                               const int *const ixwt,
-                               const int *const ih2,
-                               const int *const if1m,
-                               const int *const if2m,
-                               const int *const if3m,
-                               const int *const if4p2m,
-                               const int *const if5m,
-                               const int *const iyco2)
+void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
+                                const int *const nclass,
+                                const int *const ippmod,
+                                const int *const icp3pl,
+                                const int *const ieqco2,
+                                const int *const ihm,
+                                const int *const inp,
+                                const int *const ixch,
+                                const int *const ixck,
+                                const int *const ixwt,
+                                const int *const ih2,
+                                const int *const if1m,
+                                const int *const if2m,
+                                const int *const if3m,
+                                const int *const if4p2m,
+                                const int *const if5m,
+                                const int *const iyco2)
 {
-  int i = 0;
+  int i;
   char *name = NULL;
   char *snumsca = NULL;
 
-  i = vars->nscapp + vars->nscaus;
+  assert(vars != NULL);
+
   if (vars->nscaus > 0) {
-    BFT_REALLOC(vars->label, i, char*);
+    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
   } else {
-    BFT_MALLOC(vars->label, i, char*);
+    BFT_MALLOC(vars->label, vars->nscapp, char*);
   }
 
   /* IHM */
@@ -6127,6 +6119,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
                                const    int *const iindef,
                                const    int *const ientre,
                                const    int *const iparoi,
+                               const    int *const iparug,
                                const    int *const isymet,
                                const    int *const isolib,
                                         int *const itypfb,
@@ -6146,16 +6139,17 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
                                         int *const izfppp)
 {
   int iphas =0;
-  int ifbr;
-  int ivar;
+  int ivar, ifbr, iwall, c_id;
   int izone, icharb, isca, ith_zone, zones, ifac, zone_nbr;
-  int k, n, c_id;
+  int i, k, n;
   char *choice = NULL;
   char *label = NULL;
   char *nature = NULL;
   char *description = NULL;
   int *faces_list = NULL;
   int faces = 0;
+
+  assert(vars != NULL);
 
   zones = cs_gui_boundary_zones_number();
 
@@ -6176,27 +6170,29 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
     BFT_MALLOC(boundaries->icalke,    zones,      int          );
     BFT_MALLOC(boundaries->dh,        zones,      double       );
     BFT_MALLOC(boundaries->xintur,    zones,      double       );
-
     BFT_MALLOC(boundaries->qimpcp,    zones,      double*      );
     BFT_MALLOC(boundaries->timpcp,    zones,      double*      );
-    BFT_MALLOC(boundaries->distch,    zones,      cs_coal_ashes_ratio_t*);
+    BFT_MALLOC(boundaries->distch,    zones,      double**     );
+    BFT_MALLOC(boundaries->rough,     zones,      double       );
+
+    boundaries->qimp = NULL;
 
     for (izone = 0; izone < zones; izone++) {
-      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double);
-      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double);
-      BFT_MALLOC(boundaries->distch[izone], *ncharb, cs_coal_ashes_ratio_t);
+      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double );
+      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double );
+      BFT_MALLOC(boundaries->distch[izone], *ncharb, double*);
 
       for (icharb = 0; icharb < *ncharb; icharb++) {
-        BFT_MALLOC((boundaries->distch[izone][icharb]).ratio,
+        BFT_MALLOC(boundaries->distch[izone][icharb],
                    nclpch[icharb],
                    double);
       }
     }
 
     for (ivar = 0; ivar < vars->nvar; ivar++) {
-      n = vars->rtp_nbr[ivar];
-      BFT_MALLOC(boundaries->type_code[n], zones, int);
-      BFT_MALLOC(boundaries->values[n], zones, cs_val_t);
+      i = vars->rtp[ivar];
+      BFT_MALLOC(boundaries->type_code[i], zones, int);
+      BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
     }
 
     for (izone = 0; izone < zones; izone++) {
@@ -6208,27 +6204,26 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       boundaries->icalke[izone] = 0;
       boundaries->qimpat[izone] = 0;
       boundaries->timpat[izone] = 0;
+      boundaries->rough[izone]  = -999;
 
       for (icharb = 0; icharb < *ncharb; icharb++) {
         boundaries->qimpcp[izone][icharb] = 0;
         boundaries->timpcp[izone][icharb] = 0;
 
-        for (k = 0; k < nclpch[icharb]; k++) {
-          (boundaries->distch[izone][icharb]).ratio[k] = 0;
-        }
-
+        for (k = 0; k < nclpch[icharb]; k++)
+          boundaries->distch[izone][icharb][k] = 0;
       }
-
     }
 
     /* Initialization of boundary->type_code and boundary->values */
 
     for (ivar = 0; ivar < vars->nvar; ivar++) {
+      i = vars->rtp[ivar];
       for (izone = 0; izone < zones; izone++) {
-        boundaries->type_code[ivar][izone] = -1;
-        boundaries->values[ivar][izone].val1 = 1.e30;
-        boundaries->values[ivar][izone].val2 = 1.e30;
-        boundaries->values[ivar][izone].val3 = 0.;
+        boundaries->type_code[i][izone] = -1;
+        boundaries->values[i][izone].val1 = 1.e30;
+        boundaries->values[i][izone].val2 = 1.e30;
+        boundaries->values[i][izone].val3 = 0.;
       }
     }
 
@@ -6292,6 +6287,9 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         }
         BFT_FREE(choice);
 
+        /* Wall: ROUGH */
+        cs_gui_boundary_rough(label, izone);
+
         /* WALL: USER SCALARS */
         for (isca = 0; isca < vars->nscaus; isca++) {
           cs_gui_boundary_value_scalar("wall", izone, isca);
@@ -6312,12 +6310,11 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
   }  /* if (boundaries == NULL)*/
 
-  /* A chaque iteration, boucle sur les faces de bord :
-     on remplit itypfb, rcodcl et icodcl a partir des tableaux
-     de la structures conditions.limites definie
-     dans la premiere partie de la fonction  */
-
-  /* rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
+ /* A chaque iteration, boucle sur les faces de bord :
+    on remplit itypfb, rcodcl et icodcl a partir des tableaux
+    de la structures conditions.limites definie
+    dans la premiere partie de la fonction.
+    Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
 
   for (izone=0 ; izone < zones ; izone++) {
 
@@ -6353,8 +6350,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
 
-  /* Remettre a jour tous les tableaux dependant des zones (ICALKE, IQIMP ...)
-     des zones car ils sont écrasés à chaque pas de temps dans PPPRCL  */
+      /* Update the depending zone arrays (iqimp, dh, xintur, icalke,...)
+         because they are initialized at each time step in PPPRCL routine */
 
       iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
       ientat[zone_nbr-1] = boundaries->ientat[izone];
@@ -6366,12 +6363,12 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       timpat[zone_nbr-1] = boundaries->timpat[izone];
 
       for (icharb = 0; icharb < *ncharb; icharb++) {
-        qimpcp[icharb * (*nozppm) +zone_nbr-1] = boundaries->qimpcp[izone][icharb];
-        timpcp[icharb * (*nozppm) +zone_nbr-1] = boundaries->timpcp[izone][icharb];
+        qimpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->qimpcp[izone][icharb];
+        timpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->timpcp[izone][icharb];
 
         for (k = 0; k < nclpch[icharb]; k++) {
           distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
-          = (boundaries->distch[izone][icharb]).ratio[k];
+          = boundaries->distch[izone][icharb][k];
         }
       }
 
@@ -6379,7 +6376,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *ientre;
-        for (ivar = 0; ivar < vars->nvar; ivar++) {
+        for (i = 0; i < vars->nvar; i++) {
+          ivar = vars->rtp[i];
           rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->values[ivar][izone].val1 ;
         }
@@ -6387,13 +6385,28 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
+      if (boundaries->rough[izone] != -999) {
+        iwall = *iparug;
+        /* roughness value is only stored in Velocity_U */
+        ivar = 1;
+        for (ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac]-1;
+          icodcl[ivar *(*nfabor) + ifbr] = 6;
+          rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+          = boundaries->rough[izone];
+        }
+      } else {
+        iwall = *iparoi;
+      }
+
       for (ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *iparoi;
+        itypfb[iphas *(*nfabor) +ifbr] = iwall;
       }
 
-      for (ivar = 0; ivar < vars->nvar; ivar++) {
+      for (i = 0; i < vars->nvar; i++) {
+        ivar = vars->rtp[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
@@ -6439,9 +6452,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         itypfb[iphas *(*nfabor) +ifbr] = *isolib;
       }
 
-      for (ivar = vars->nvar - vars->nscaus - vars->nscapp;
-           ivar < vars->nvar;
-           ivar++) {
+      for (i = 0; i < vars->nvar; i++) {
+        ivar = vars->rtp[i];
 
         switch (boundaries->type_code[ivar][izone]) {
 
@@ -6476,7 +6488,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
     } else
         bft_error(__FILE__, __LINE__, 0,
-                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+                  _("boundary nature %s is unknown \n"),
+                    boundaries->nature[izone]);
 
     BFT_FREE(faces_list);
   } /*  for izone */
@@ -6484,38 +6497,79 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 #if _XML_DEBUG_
   bft_printf(_("==>UICPCL\n"));
   bft_printf(_("--boundary zones number: %i\n"), zones);
-  for (izone=0 ; izone < zones ; izone++) {
-    bft_printf(_("---zone %i label: %s\n"), izone, boundaries->label[izone]);
-    bft_printf(_("---zone %i nature: %s\n"), izone, boundaries->nature[izone]);
-    bft_printf(_("---zone %i number of faces: %i\n"), izone, faces);
 
-    bft_printf(_("----localization: "));
+  for (izone=0 ; izone < zones ; izone++) {
+
+    BFT_MALLOC(faces_list, *nfabor, int);
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
-    bft_printf(_("%s "), description);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\ne correspond à aucune face de bord."),
+                missing, description);
+    }
+
+    zone_nbr = cs_gui_boundary_zone_number(izone+1);
+
+    bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
+    bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
+    bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
+    bft_printf(_("----localization: %s\n"), description);
     BFT_FREE(description);
-    bft_printf(_("\n"));
-    bft_printf(_("---zone %i rate of flow: %i\n"), izone, boundaries->iqimp[izone]);
-    bft_printf(_("---zone %i air inlet: %i\n"), izone, boundaries->ientat[izone]);
-    bft_printf(_("---zone %i coal inlet: %i\n"), izone, boundaries->ientcp[izone]);
-    bft_printf(_("---zone %i turbulent choice: %i\n"), izone, boundaries->icalke[izone]);
-    bft_printf(_("---zone %i hydraulic diameter: %f\n"), izone, boundaries->dh[izone]);
-    bft_printf(_("---zone %i turbulent intensity: %f\n"), izone, boundaries->xintur[izone]);
-    bft_printf(_("---zone %i air rate of flow: %f\n"), izone, boundaries->qimpat[izone]);
-    bft_printf(_("---zone %i air temperature: %f\n"), izone, boundaries->timpat[izone]);
 
-    for (icharb = 0; icharb < *ncharb; icharb++) {
-      bft_printf(_("---zone %i coal %i rate of flow: %f\n"),
-                 izone, icharb, boundaries->qimpcp[izone][icharb]);
-      bft_printf(_("---zone %i coal %i temperature: %f\n"),
-                 izone, icharb, boundaries->timpcp[izone][icharb]);
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+      bft_printf(_("-----iqimp=%i, qimpat=%12.5e \n"),
+                   iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
+      bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
+                   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+      bft_printf(_("-----ientat=%i, ientcp=%i, timpat=%12.5e \n"),
+                   ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
-      for (k = 0; k < nclpch[icharb]; k++) {
-        bft_printf(_("---zone %i coal %i class %i ratio: %f\n"),
-                   izone, icharb, k,
-                   (boundaries->distch[izone][icharb]).ratio[k]);
+      for (icharb = 0; icharb < *ncharb; icharb++) {
+        bft_printf(_("-----coal=%i, qimpcp=%i, timpcp=%i \n"),
+                      icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
+                      timpcp[icharb *(*nozppm)+zone_nbr-1]);
+
+        for (k = 0; k < nclpch[icharb]; k++)
+          bft_printf(_("-----coal=%i, class=%i, distch=%i \n"),
+                       icharb, k,
+                       distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
       }
     }
+
+    ifbr = faces_list[0]-1;
+    for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
+      ivar = vars->rtp[i];
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+      vars->name[ivar],
+      itypfb[iphas *(*nfabor) + ifbr],
+      icodcl[ivar *(*nfabor) + ifbr ],
+      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+    }
+
+    for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
+      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+      vars->label[ivar],
+      itypfb[iphas *(*nfabor) + ifbr],
+      icodcl[ivar *(*nfabor) + ifbr ],
+      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+    }
+
+    BFT_FREE(faces_list);
+
   }
 #endif
 }
@@ -6592,7 +6646,10 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
-      inature = *iparoi;
+      inature = *iparug;
+      if (boundaries->rough[izone] == -999){
+        inature = *iparoi;
+      }
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
 
@@ -6608,7 +6665,8 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
 
     } else
         bft_error(__FILE__, __LINE__, 0,
-                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+                  _("boundary nature %s is unknown \n"),
+                     boundaries->nature[izone]);
 
     for (ifac = 0; ifac < faces; ifac++) {
       ifbr = faces_list[ifac]-1;
@@ -6636,10 +6694,13 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
           "@                                                            \n"),
           label, zone_nbr, izfppp[ifbr]);
 
-        /* modif temporaire tant que iparoi n'est pas defini dans l'IHM
-           if (itypfb[iphas *(*nfabor) +ifbr] != inature) */
       inature2 = itypfb[iphas *(*nfabor) +ifbr];
-      if (inature2 == *iparug ) inature2 = *iparoi;
+        
+        /* The nature of the boundary can be changed from smooth wall to
+           rough wall or vice-versa between the GUI and the FORTRAN */
+        if (inature2 == *iparug ) inature2 = *iparoi;
+        if (inature == *iparug ) inature = *iparoi;
+
       if (inature2 != inature)
         bft_error(__FILE__, __LINE__, 0,
         _("@                                                            \n"
@@ -6670,6 +6731,113 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
   } /*  for izone */
 
 }
+
+/*----------------------------------------------------------------------------
+ * Free memory: clean global private variables and libxml2 variables
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE MEMUI1
+ * *****************
+ *
+ * INTEGER          NCHARB  --> number of coal
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
+{
+  int i;
+  int ivar;
+  int izone;
+  int zones;
+  int icharb;
+
+  assert(vars != NULL);
+
+  if (boundaries != NULL) {
+
+  /* clean memory for global private structure boundaries */
+
+    zones = cs_gui_boundary_zones_number();
+    for (izone=0 ; izone < zones ; izone++) {
+      BFT_FREE(boundaries->label[izone]);
+      BFT_FREE(boundaries->nature[izone]);
+    }
+
+    for (i=0; i < vars->nvar; i++) {
+      ivar = vars->rtp[i];
+      BFT_FREE(boundaries->type_code[ivar]);
+      BFT_FREE(boundaries->values[ivar]);
+    }
+
+    if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+      for (izone=0 ; izone < zones ; izone++) {
+        BFT_FREE(boundaries->qimpcp[izone]);
+        BFT_FREE(boundaries->timpcp[izone]);
+        for (icharb=0; icharb < *ncharb; icharb++)
+          BFT_FREE(boundaries->distch[izone][icharb]);
+        BFT_FREE(boundaries->distch[izone]);
+      }
+      BFT_FREE(boundaries->ientat);
+      BFT_FREE(boundaries->ientcp);
+      BFT_FREE(boundaries->qimpat);
+      BFT_FREE(boundaries->timpat);
+      BFT_FREE(boundaries->qimpcp);
+      BFT_FREE(boundaries->timpcp);
+      BFT_FREE(boundaries->distch);
+    }
+
+    BFT_FREE(boundaries->label);
+    BFT_FREE(boundaries->nature);
+    BFT_FREE(boundaries->iqimp);
+    BFT_FREE(boundaries->icalke);
+    BFT_FREE(boundaries->qimp);
+    BFT_FREE(boundaries->dh);
+    BFT_FREE(boundaries->xintur);
+    BFT_FREE(boundaries->type_code);
+    BFT_FREE(boundaries->values);
+    BFT_FREE(boundaries);
+  }
+
+  if (vars != NULL) {
+
+  /* clean memory for global private structure vars */
+
+    for (i=0; i < vars->nvar; i++) {
+      BFT_FREE(vars->type[i]);
+      BFT_FREE(vars->name[i]);
+    }
+    for (i=0; i < vars->nscaus+vars->nscapp; i++)
+      BFT_FREE(vars->label[i]);
+    for (i=0; i < vars->nprop; i++)
+      BFT_FREE(vars->properties_name[i]);
+    BFT_FREE(vars->label);
+    BFT_FREE(vars->model);
+    BFT_FREE(vars->model_value);
+    BFT_FREE(vars->rtp);
+    BFT_FREE(vars->name);
+    BFT_FREE(vars->properties_name);
+    BFT_FREE(vars->properties_ipp);
+    BFT_FREE(vars);
+  }
+
+  /* clean memory for fortran name of variables */
+
+  for (i = 0; i < _cs_gui_max_vars; i++)
+    BFT_FREE(_cs_gui_var_name[i]);
+  BFT_FREE(_cs_gui_var_name);
+
+  /* clean memory for xml document */
+
+  if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
+  if (node != NULL) xmlFreeNode(node);
+
+  /* Shutdown libxml */
+
+  xmlCleanupParser();
+  xmlMemoryDump();
+}
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
