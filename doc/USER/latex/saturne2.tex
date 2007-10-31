@@ -252,15 +252,15 @@ useful if and only if ISUIRD = 1}
 
 \motcle{IMPAVR}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
 {unit of the radiation downstream restart file\\ 
-always useful in case of radiation modelling}
+always useful in case of radiation modeling}
 
 \motcle{FICAVR}{C}{string of 13 characters}{\tt rayava}{O}{L3}
 {name of the radiation downstream restart file \\
-always useful in case of radiation modelling}
+always useful in case of radiation modeling}
 
 \motcle{IFOAVR}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
 {indicator (1: formatted, 0:binary radiation downstream restart file)\\
-always useful in case of radiation modelling}
+always useful in case of radiation modeling}
 
 
 
@@ -291,72 +291,72 @@ useful in case of gas or pulverised coal combustion}
 \minititre{Lagrangian}
 
 \motcle{IMPAML}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the upstream restart file in case of Lagrangian modelling\\ 
+{unit of the upstream restart file in case of Lagrangian modeling\\ 
 useful if and only if ISUILA = 1}
 
 \motcle{FICAML}{C}{string of 6 characters}{\tt lagamo}{O}{L3}
-{name of the upstream restart file in case of Lagrangian modelling.
+{name of the upstream restart file in case of Lagrangian modeling.
 Its ``format'' (ASCII or
 binary) is automatically determined by the code.\\
 useful if and only if ISUILA = 1}
 
 \motcle{IMPMLS}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
 {unit of the upstream restart file for the statistics in case of
-Lagrangian modelling\\ 
+Lagrangian modeling\\ 
 useful if and only if ISUIST = 1}
 
 \motcle{FICMLS}{C}{string of 13 characters}{\tt lasamo}{O}{L3}
 {name of the upstream restart file for the statistics in case of
-Lagrangian modelling. Its ``format'' (ASCII or
+Lagrangian modeling. Its ``format'' (ASCII or
 binary) is automatically determined by the code.\\
 useful if and only if ISUIST = 1}
 
 \motcle{IMPAVL}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the downstream restart file in case of Lagrangian modelling\\
-always useful in case of Lagrangian modelling}
+{unit of the downstream restart file in case of Lagrangian modeling\\
+always useful in case of Lagrangian modeling}
 
 \motcle{FICAVL}{C}{string of 13 characters}{\tt lagava}{O}{L3}
-{name of the downstream restart file in case of Lagrangian modelling\\
-always useful in case of Lagrangian modelling}
+{name of the downstream restart file in case of Lagrangian modeling\\
+always useful in case of Lagrangian modeling}
 
 \motcle{IFOAVL}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
 {indicator (1: formatted, 0: binary Lagrangian downstream restart file)\\
-always useful in case of Lagrangian modelling}
+always useful in case of Lagrangian modeling}
 
 \motcle{IMPVLS}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
 {unit of the downstream restart file for the statistics in case of
-Lagrangian modelling\\
-useful in case of Lagrangian modelling with statistics}
+Lagrangian modeling\\
+useful in case of Lagrangian modeling with statistics}
 
 \motcle{FICVLS}{C}{string of 6 characters}{\tt lasava}{O}{L3}
 {name of the downstream restart file for the statistics in case of
-Lagrangian modelling\\
-useful in case of Lagrangian modelling with statistics}
+Lagrangian modeling\\
+useful in case of Lagrangian modeling with statistics}
 
 \motcle{IFOVLS}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
 {indicator (1: formatted, 0: binary downstream restart file for the
-statistics in case of Lagrangian modelling)\\ 
-useful in case of Lagrangian modelling with statistics}
+statistics in case of Lagrangian modeling)\\ 
+useful in case of Lagrangian modeling with statistics}
 
 \motcle{IMPLA1}{I}{strictly positive integer}{50}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
+{unit of a file specific to Lagrangian modeling\\
+useful in case of Lagrangian modeling}
 
 \motcle{IMPLA2}{I}{strictly positive integer}{51}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\ 
-useful in case of Lagrangian modelling}
+{unit of a file specific to Lagrangian modeling\\ 
+useful in case of Lagrangian modeling}
 
 \motcle{IMPLA3}{I}{strictly positive integer}{52}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
+{unit of a file specific to Lagrangian modeling\\
+useful in case of Lagrangian modeling}
 
 \motcle{IMPLA4}{I}{strictly positive integer}{53}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
+{unit of a file specific to Lagrangian modeling\\
+useful in case of Lagrangian modeling}
 
 \motcle{IMPLA5}{IA}{strictly positive integer}{54 to 68}{O}{L3}
-{units of files specific Lagrangian modelling, 15-dimension array\\
-useful in case of Lagrangian modelling}
+{units of files specific Lagrangian modeling, 15-dimension array\\
+useful in case of Lagrangian modeling}
 
 
 %==================================
@@ -437,7 +437,7 @@ always useful}
 
 
 \motcleb{ICHRVR}{IA}{-999, 0 or 1}{-999}{O}{L1}
-{for each quantity defined at the cell centres (physical or numerical
+{for each quantity defined at the cell centers (physical or numerical
 variable), indicator of whether it should be post-processed or not \\ 
 \hspace*{1.3cm}= -999: not initialised. By default, the post-processed
 quantities are the unknowns (pressure, velocity, $k$, $\varepsilon$,
@@ -445,7 +445,7 @@ $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, scalars), the density,
 the turbulent viscosity and the time step if is not uniform\\
 \hspace*{1.3cm}= 0: not post-processed\\
 \hspace*{1.3cm}= 1: post-processed\\
-useful if and only if the variable is defined at the cell centres: 
+useful if and only if the variable is defined at the cell centers: 
 calculation variable, physical property (time step, density,
 viscosity, specific heat) or turbulent viscosity if ITURB(IPHAS)
 $\geqslant$ 10} 
@@ -473,7 +473,7 @@ always useful if ICHRBO=1}
 For each quantity (problem unknown, preselected numerical variable or
 preselected physical parameter), the user indicates whether chronological records
 should be generated, the output period and the position of the
-probes. The code produces chronological records at the cell centres located
+probes. The code produces chronological records at the cell centers located
 closest to the geometric points defined by the user by means of their
 coordinates. For each quantity, the number of probes and their
 index-numbers must be specified (it is not mandatory to generate all
@@ -493,7 +493,7 @@ useful if and only if NCAPT $>$ 0}
 \motcleb{IHISVR}{IA}{-999, -1 or positive or null integer}{-999}{O}{L1}
 {number IHISVR(N, 1) and index-numbers IHISVR(N, J$>$1) of the record
 probes to be used for each variable, {\em i.e.} calculation variable
-or physical property defined at the cell centres.
+or physical property defined at the cell centers.
 With IHISVR(N, 1)=-999 or -1, IHISVR(N, J$>$1) is useless.\\
 \hspace*{.5cm} $\bullet$ IHISVR(N, 1): number of record probes to use
 for the variable N\\ 
@@ -597,7 +597,7 @@ useful if and only if the subroutine \texttt{ushist} is used}
 %==================================
 
 The code allows the calculation of time averages of the type
-$<f_1*f_2...*f_n>$. The variables $f_i$ (defined at the cell centres)
+$<f_1*f_2...*f_n>$. The variables $f_i$ (defined at the cell centers)
 which may be taken into account are the followings:
 \begin{list}{-}{}
 \item the solved calculation variables (velocity, pressure ...),
@@ -606,7 +606,7 @@ which may be taken into account are the followings:
 \end{list}
 
 The averages are treated like auxiliary variables defined at the cell
-centres and stored in the PROPCE array. The standard post-processing
+centers and stored in the PROPCE array. The standard post-processing
 actions may therefore be activated, like the writing in the listing or
 the output of result files (EnSight, MED, ...). However, if the user
 wants to manipulate the averages in a more advanced way, it is
@@ -894,9 +894,9 @@ useful if and only if NSCAL $\geqslant$ 1}
 \hspace*{1.3cm}= -10: not specified. By default, the code chooses
 ISCSTH(ISCAL)=0 for the scalars apart from ISCALT(IPHAS)\\
 \hspace*{1.3cm}= -1: temperature in degrees Celsius (use only in case of
-radiation modelling)\\
+radiation modeling)\\
 \hspace*{1.3cm}= 0: passive scalar\\
-\hspace*{1.3cm}= 1: temperature (in Kelvin if the radiation modelling is
+\hspace*{1.3cm}= 1: temperature (in Kelvin if the radiation modeling is
 activated)\\
 \hspace*{1.3cm}= 2: enthalpy\\
 \hspace*{1.3cm}= 3: total energy (this value is automatically chosen by the code
@@ -904,8 +904,8 @@ when using the compressible module, it must never be used otherwise and must
 never be specified by the user)\\
 useful if and only if NSCAL $\geqslant$ 1. The distinction between
 ISCSTH(ISCAL) = -1 or 1 (respectively degrees Celsius or Kelvin) is
-useful only in case of radiation modelling. For calculations without
-radiation modelling, use ISCSTH(ISCAL)=1 for the temperature. When a
+useful only in case of radiation modeling. For calculations without
+radiation modeling, use ISCSTH(ISCAL)=1 for the temperature. When a
 particular physics module is activated (gas combustion, pulverised coal,
 electricity or compressible), the user must not modify ISCSTH (the choice is made
 automatically: the solved variable is the enthalpy or the total energy).\\
@@ -964,7 +964,7 @@ useful in case of coupling with \syrthes}
 {for each unknown IVAR to calculate, indicates if
 non-stationary terms are present (ISTAT(IVAR)=1) or not (0) in the matrices.\\
 By default, ISTAT is set to 0 for the pressure (variable IVAR=IPR(IPHAS))
-or $\overline{f}$ in v2f modelling (variable IVAR=IFB(IPHAS)) and set to
+or $\overline{f}$ in v2f modeling (variable IVAR=IFB(IPHAS)) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
@@ -972,7 +972,7 @@ useful for all the unknowns}
 {for each unknown IVAR to calculate, indicates if the
 convection is taken into account (ICONV(IVAR)=1) or not (0).\\
 By default, ICONV is set to 0 for the pressure (variable IVAR=IPR(IPHAS))
-or $\overline{f}$ in v2f modelling (variable IVAR=IFB(IPHAS)) and set to
+or $\overline{f}$ in v2f modeling (variable IVAR=IFB(IPHAS)) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
@@ -994,7 +994,7 @@ is no Dirichlet boundary condition and if ISTAT=0. Indeed, in such a case,
 the matrix for the general advection/diffusion equation is singular. A slight
 shift in the diagonal will make it invertable again.\\
 By default, IDIRCL is set to 1 for all the unknowns, except $\overline{f}$ in
-v2f modelling, since its equation contains another diagonal term that ensures
+v2f modeling, since its equation contains another diagonal term that ensures
 the regularity of the matrix.\\
 useful for all the unknowns}
 
@@ -1126,7 +1126,7 @@ always useful}
 The $k-\varepsilon$ (standard and linear production) and $R_{ij}-\varepsilon$
 (LRR and SSG) turbulence
 models implemented in \CS\ are ``High-Reynolds'' models. It is therefore
-necessary to make sure that the thickness of the first cell neighbouring
+necessary to make sure that the thickness of the first cell neighboring
 the wall is larger than the thickness of the viscous sublayer (at the
 wall, $y^+>2.5$ is required as a minimum, and preferably between 30 and
 100)\footnote{While creating the mesh, $y^+=\frac{yu*}{\nu}$ is
@@ -1137,7 +1137,7 @@ $U$ is the characteristic velocity, $\nu$ is the kinematic viscosity of the flui
 (particularly if thermal processes are involved). Using scalable wall-functions
 (cf. key word IDEUCH) may help avoiding this problem.\\
 The v2-f model is a ``Low-Reynolds'' model, it is therefore necessary to
-make sure that the thickness of the first cell neighbouring the wall is
+make sure that the thickness of the first cell neighboring the wall is
 smaller than the thickness of the viscous sublayer ($y^+<1$).\\
 The $k-\omega$ SST model provides correct results whatever the thickness of the first cell.
 Yet, it requires the knowledge of the distance to the wall in every
@@ -1343,9 +1343,9 @@ useful if and only if ITURB(IPHAS) = 40}
 
 \motcle{SMAGMX}{RA}{real number $>$ 0}{10.D0*CSMAGO}{O}{L3}
 {for each phase IPHAS, SMAGMX(IPHAS)**2 is
-the maximum allowed value for the ``constant'' appearing in the LES dynamic
+the maximum allowed value for the variable $C$ appearing in the LES dynamic
 model (the ``square'' comes from the fact that the
-``constant'' of the dynamic model corresponds to the square of the
+variable of the dynamic model corresponds to the square of the
 constant of the Smagorinsky model). Any larger value yielded by the calculation
 procedure of the dynamic model will be clipped to SMAGMX(IPHAS)**2\\
 useful if and only if ITURB(IPHAS) = 41}
@@ -1382,13 +1382,13 @@ useful if and only if ITURB(IPHAS) = 41}
 %==================================
 
 By default, the standard time scheme is a first-order.
-A second-order scheme is activated automatically with LES modelling.
+A second-order scheme is activated automatically with LES modeling.
 On the other hand, when ``specific physics'' (gas combustion, pulverised coal,
 compressible module) are activated, the second-order scheme is not allowed.
 
 In the current version, the second-order time scheme is not compatible
 with the estimators (IESCAL), the velocity-pressure coupling (IPUCOU),
-the modelling of hydrostatic pressure (ICALHY and IPHYDR) and the time- or
+the modeling of hydrostatic pressure (ICALHY and IPHYDR) and the time- or
 space-variable time step (IDTVAR).
 
 Also, in the case of a rotation periodicity, a proper second-order is not
@@ -1712,16 +1712,16 @@ useful if NSCAL$>$1}
 {indicates the type of gradient reconstruction (one method for all the
 variables)\\ 
 \hspace*{1.3cm}= 0: iterative reconstruction of the non-orthogonalities\\
-\hspace*{1.3cm}= 1: least squares method based on the first neighbour cells
+\hspace*{1.3cm}= 1: least squares method based on the first neighbor cells
 (cells which share a face with the treated cell)\\
-\hspace*{1.3cm}= 2: least squares method based on the extended neighbourhood
+\hspace*{1.3cm}= 2: least squares method based on the extended neighborhood
 (cells which share a node with the treated cell)\\ 
 \hspace*{1.3cm}= 3: least squares method based on a partial extended
-neighbourhood (all first neighbours plus the extended neighbourhood cells that
+neighborhood (all first neighbors plus the extended neighborhood cells that
 are connected to a face where the non-orthogonality angle is larger than
 parameter ANOMAX)\\
 \hspace*{1.3cm}= 4: iterative reconstruction with initialisation using the least
-squares method (first neighbours)\\
+squares method (first neighbors)\\
 if IMRGRA fails due to probable mesh quality problems, it is usually effective
 to use IMRGRA=3. Moreover, IMRGRA=3 is usually faster than IMRGRA=0 (but with
 less feedback on its use).\\
@@ -1748,7 +1748,7 @@ useful for all the unknowns when IMRGRA = 0 or 4}
 {for each unknown IVAR, indicates the type of gradient limitation:
 IMLIGR(IVAR)\\
 \hspace*{1.3cm}=-1: no limitation\\
-\hspace*{1.3cm}= 0: based on the neighbours\\
+\hspace*{1.3cm}= 0: based on the neighbors\\
 \hspace*{1.3cm}= 1: superior order\\
 for all the unknowns, IMLIGR is initialised to -1 if IMRGRA=0 or 4 and to 1 if 
 \mbox{IMRGRA = 1, 2 or 3}\\ 
@@ -1767,7 +1767,7 @@ The only possible values of EXTRAG(IPR(IPHAS)) are:\\
 \hspace*{1.3cm}= 0.5D0: improved homogeneous Neumann, calculated at
 second-order in the case of an orthogonal mesh and at first-order otherwise\\
 \hspace*{1.3cm}= 1.D0: gradient extrapolation (gradient at the boundary face
-equal to the gradient in the neighbour cell), calculated at
+equal to the gradient in the neighbor cell), calculated at
 second-order in the case of an orthogonal mesh and at first-order otherwise\\
 EXTRAG often allows to correct the non-physical velocities that
 appear on horizontal walls when density is variable and there is gravity.
@@ -1779,11 +1779,11 @@ necessary, contact the development team).\\
 always useful}
 
 \motcle{ANOMAX}{R}{0.D0 $\leqslant$ real $\leqslant\pi/2$}{$\pi/4$}{O}{L3}
-{limit non-orthogonality angle used to restrict the extended neighbourhood for
+{limit non-orthogonality angle used to restrict the extended neighborhood for
 the gradient calculation with IMRGRA=3.\\
 ANOMAX=0 will yield the same result as IMRGRA=2 (full extended
-neighbourhood). ANOMAX=$\pi/2$ will yield the same result as IMRGRA=2 (first
-neighbours only)\footnote{except for pathological cases where the
+neighborhood). ANOMAX=$\pi/2$ will yield the same result as IMRGRA=2 (first
+neighbors only)\footnote{except for pathological cases where the
 non-orthogonality angle of a face would be larger than $\pi/2$}\\
 useful if and only if IMRGRA=3}
 
@@ -1863,7 +1863,7 @@ useful if and only if IMGR(IVAR) = 1}
 \minititre{Warning}
 The algebraic multigrid method does not work when the mesh contains
 subdivided faces (or more generally when two different faces have the
-same pair of neighbours). In addition, it has been validated up to now only for
+same pair of neighbors). In addition, it has been validated up to now only for
 the variable ``pressure'' (IMGR(IPR(IPHAS))=1) and with non-parallel computations.
 
 %==================================
@@ -2052,7 +2052,7 @@ from the mass flow calculated with the updated velocity field:
             \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})=
 |\Omega_i|^{\,\delta_{\,2,k}}\ |div (\rho^n \vect{u}^{n+1}) -\ \Gamma|                          
 \end{eqnarray*} 
-The velocities $\vect{u}^{n+1}$ are taken at the cell centres,
+The velocities $\vect{u}^{n+1}$ are taken at the cell centers,
 the divergence is calculated after projection on the faces.\\
             $ \,\delta_{\,2,k}$ represents the Kronecker symbol.\\
 \hspace*{0.5cm}$\bullet$ The first family, $k=1$, is the absolute raw
@@ -2061,7 +2061,7 @@ value of the divergence of the mass flow minus the mass source term.\\
 property and allows to evaluate the difference in $kg.s^{\,-1}$.\\
 Ideally, it is equal to zero when the Poisson equation is solved exactly and
 the projection from the mass flux at the faces to the velocity at the cell
-centres is made in a set of  functions with null divergence.
+centers is made in a set of  functions with null divergence.
                              
 {\bf IEST = IESTOT\index{IESTOT}: total} (default name: EsTot). 
 The estimator $ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})$, local variable
@@ -2082,7 +2082,7 @@ $$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\ma
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 
 The mass flux in the convective term is recalculated from $\vect{u}^{n+1}$
-expressed at the cell centres (and not taken from the updated mass flow at the
+expressed at the cell centers (and not taken from the updated mass flow at the
 faces).\\
 
 As for the prediction estimator:\\
@@ -2287,7 +2287,7 @@ useful if NFPT1D$>$0.}
 
 \motcle{IMVISF}{I}{0 or 1}{0}{O}{L3}
 {indicates the interpolation method used to project variables from the cell
-centres to the faces\\
+centers to the faces\\
 \hspace*{1.3cm}= 0: linear\\
 \hspace*{1.3cm}= 1: harmonic\\
 always useful}
@@ -2317,7 +2317,7 @@ useful for all the unknowns}
 
 
 %====================================================================================
-\subsection{Numerical, physical and modelling parameters}
+\subsection{Numerical, physical and modeling parameters}
 %=============================================================================
 \subsubsection{Numeric Parameters}
 %================================
@@ -2407,7 +2407,7 @@ always useful}
 \motcleb{RO0}{RA}{real number $\geqslant$ 0}{\tt -GRAND*10}{C}{L1}
 {for each phase IPHAS, RO0(IPHAS) is the reference density\\
 negative value: not initialised\\
-its value is not used in gas or coal combustion modelling (it
+its value is not used in gas or coal combustion modeling (it
 will be calculated following the perfect gas law, with P0 and T0). With the
 compressible module, it is also not used by the code, but it may be (and often
 is) referenced by the user in user subroutines; it is therefore better to
@@ -2611,7 +2611,7 @@ useful if and only if there is 1$\leqslant$ISCAL$\leqslant$ NSCAL such as
 
 
 %==================================
-\subsubsection{Modelling parameters}
+\subsubsection{Modeling parameters}
 %==================================
 
 \motcleb{XLOMLG}{RA}{real number $>$ 0}{\tt -GRAND*10}{O}{L1}
@@ -2652,7 +2652,7 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)$\geqslant$10
 
 \motcle{CMU}{R}{real number $>$ 0}{0.09D0}{O}{L3}
 {constant $C_\mu$ for all the RANS turbulence models except for the v2f model
-(see CV2FMU\index{CV2FMU} for the value of $C_\mu$ in case of v2f modelling)\\
+(see CV2FMU\index{CV2FMU} for the value of $C_\mu$ in case of v2f modeling)\\
 useful if and only if there is a phase IPHAS such as ITURB(IPHAS)= 20,
 21, 30, 31 or 60 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or $k-\omega$)}
 
@@ -2675,7 +2675,7 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)= 20, 21 or 30
 \motcle{CE4}{R}{real number $>$ 0}{1.2D0}{O}{L3}
 {constant $C_{\varepsilon 4}$ for the interfacial term (Lagrangian module) in
 case of two-way coupling\\
-useful in case of Lagrangian modelling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
+useful in case of Lagrangian modeling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
 with two-way coupling} 
 %c'est aussi implante en k-omega mais en ``imitant''le k-eps et sans aucune verif
 % ... et d'ailleurs ca ne marche pas !!
@@ -2888,7 +2888,7 @@ level L1.
 (=0) the radiation module\\ 
 if a specific physics is activated (in that case, NSCAPP$>$0), 
 IRAYON(IPHAS) must be kept to 0 (see IRAYPP)\\
-The different values correspond to the following modellings:\\
+The different values correspond to the following modelings:\\
 \hspace*{1.3cm} = 1 discrete ordinates 
 (standard option for radiation in semi-transparent media)\\
 \hspace*{1.3cm} = 2  ``P-1'' model\\
@@ -2991,7 +2991,7 @@ useful if and only if the radiation module is activated}
 
 \motcleb{NBRVAP}{CA}{string of less than 80 characters}{name\_IPHAS}{O}{L1}
 {name associated for the post-processing to each of the following variables,
-defined at the cell centres ({\it see}
+defined at the cell centers ({\it see}
 \cite{Douce02} for more details concerning their definitions):\\ 
 \hspace*{1.3cm} NBRVAP(ITSRAY,IPHAS): radiative source term ($W/m^3$)\\
 \hspace*{1.3cm} NBRVAP(IQRAYP,IPHAS): radiative flux density vector ($W/m^2$)\\
@@ -3011,7 +3011,7 @@ useful if and only if the radiation module is activated}
 
 \motcleb{IRAYVP}{IA}{-1 or 1}{-1}{O}{L1}
 {activates (=1) or deactivates (=-1) the post-processing for the each of the
-followiing variables defined at the cell centres:\\
+followiing variables defined at the cell centers:\\
 \hspace*{1.3cm} IRAYVP(ITSRAY,IPHAS): radiative source term ($W/m^3$)\\
 \hspace*{1.3cm} IRAYVP(IQRAYP,IPHAS): radiative flux density vector ($W/m^2$)\\
 \hspace*{1.3cm} IRAYVP(IABSP,IPHAS): absorption part in the source term
@@ -3237,7 +3237,7 @@ two-way coupling is not compatible with the $k-\omega$ SST model.
 
 \motcleb{IILAGR}{I}{0, 1, 2, 3}{0}{C}{L1}
 {activates ($>$0) or deactivates (=0) the Lagrangian module\\
-the different values correspond to the following modellings: \\ 
+the different values correspond to the following modelings: \\ 
 \hspace*{1.3cm} = 1 Lagrangian two-phase flow in one-way coupling (no influence of
 the particles on the continuous phase)\\
 \hspace*{1.3cm} = 2 Lagrangian two-phase flow with two-way coupling (influence of
@@ -3427,7 +3427,7 @@ on the eulerian variables related to pulverised coal combustion\\
 useful if IILAGR = 2}
 
 %==================================================
-\subsubsection{Numerical modelling}
+\subsubsection{Numerical modeling}
 %==================================================
 
 \motcle{NORDRE}{I}{1, 2}{2}{O}{L2}

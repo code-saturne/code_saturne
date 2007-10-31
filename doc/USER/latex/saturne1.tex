@@ -89,7 +89,7 @@ The aim of this document is to give practical information to the users of
 \CS. It is therefore strictly oriented towards the usage of the code.
 For more details about the algorithms and their numerical
 implementation, please refer to the reports \cite{mechitoua98} and
-\cite{boucker00}, and to the theoretical documentation \cite{gest02},
+\cite{boucker00}, and to the theoretical documentation \cite{theory},
 which is newer and more detailled
 (the latest updated version of this document
 is available on-line with the version of \CS\ and accessible through the command
@@ -201,7 +201,7 @@ In the standard cases, \texttt{RESU} contains a directory
 a directory \texttt{SUITE.mmddhhmm} for the calculation
       restart files,
 a directory  \texttt{HIST.mmddhhmm} for the files of chronological
-      record of the results at specific locations (probes),
+      record of the results at specific locations (probes),\\
 \texttt{listenv.mmddhhmm} and \texttt{listing.mmddhhmm} files reporting the
 Preprocessor and the Kernel execution. For an easier follow-up of the modifications
 in former calculations, the user-subroutines used in a calculation are stored in
@@ -253,7 +253,7 @@ directory \texttt{RESU}.
 \begin{table}[!t]
 \begin{tabular}{lll}
 \multicolumn{3}{l}{Below are typical contents of a case directory CASE1 in a study STUDY} \\
-\multicolumn{3}{r}{(\CS\ calculation coupled with \syrthes):}\\
+\multicolumn{3}{l}{(\CS\ calculation coupled with \syrthes):}\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA:}}&{\bf \CS\ data}\\
 &	\texttt{SaturneGUI}		&Graphical User Interface launch script\\ 
 &	\texttt{study.xml}		&Graphical User Interface parameter file\\ 
@@ -261,7 +261,7 @@ directory \texttt{RESU}.
                                          (used with the specific\\
 &                                   & physics modules for gas combustion,
                                       pulverised coal \\
-                                \multicolumn{3}{r}{or electric arcs)}\\
+&                                   & or electric arcs)\\
 
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA\_SYR:}}&{\bf \syrthes\ data}\\
 &	\texttt{syrthes.data}  		&\syrthes\ data file \\
@@ -299,7 +299,7 @@ directory \texttt{RESU}.
                                       ``\texttt{lance.*}'' in the
                                        \texttt{RESU} directory)\\
 &	\texttt{listenv.08211921}     &execution report for the Preprocessor module of
-                                    \CS\ (pre-processing)\\
+                                    \CS\\
 &	\texttt{listing.08211921}     &execution report for the Kernel module of \CS\\
 &	\texttt{listsyr.08211921}     &execution report for \syrthes\\
 &	\texttt{resume.08211921}      &general information (machine, user, version, ...)\\
@@ -336,28 +336,33 @@ necessary files and prepares the launch script without the user having to go
 directly into the \CS\ base directories (see \S\ref{prg_creesat}).
 The \texttt{info\_cs} gives direct
 access to the most needed information (especially the user and progammer's
-guides) without the user having to look for them in the \CS\ directories.
+guides and the tutorial) without the user having to look for them in the \CS\
+directories.
 
 
-The subdirectory \texttt{lib} contains the libraries. 
+The subdirectory \texttt{arch} contains the libraries and compiled executables. 
 
 \noindent
 The environment variable \texttt{NOM\_ARCH} allows to distinguish the different
 architectures:
 \begin{list}{$\bullet$}{}
+\item\texttt{Blue\_Gene\_L} for the EDF BlueGene machine
 \item\texttt{HP-UX} for HP-UX system
 \item\texttt{IRIX64} for SGI Irix system
 \item\texttt{Linux} for general PC machines under Linux
-\item\texttt{Linux\_CCRT} for the Tantale cluster at CCRT
+\item\texttt{Linux\_CCRT} Opteron cluster (Tantale cluster at CCRT)
 \item\texttt{Linux\_Ch} for the Chatou cluster
-\item\texttt{OSF1} for the Nickel/Chrome clusters at CCRT
+\item\texttt{Linux\_IA64} for Itanium clusters (Platine cluster at the CCRT)
 \item\texttt{SunOS} for Sun machines
 \end{list}
 
-
 For each architecture, a subdirectory (named after \texttt{NOM\_ARCH}) 
-stores the compilated libraries
-\texttt{libsaturne*.a}. The launch script automatically loads them for
+stores the compiled elements
+(\texttt{libsaturne*.a} libraries in \texttt{lib} and executable in
+\texttt{bin}\footnote{This executable is used only for standalone mesh
+analysis. In a standard \CS\ run, the executable is recompiled to allow for user
+routines to be taken into account.}).
+The launch script automatically loads them for
 the standard calculations. The different libraries correspond to the
 different modules of \CS\:
 \begin{list}{$\bullet$}{}
@@ -366,16 +371,11 @@ different modules of \CS\:
 \item\texttt{libsaturneCFBL.a} for the compressible module, 
 \item\texttt{libsaturneCPLV.a} for the pulverised coal combustion module, 
 \item\texttt{libsaturneELEC.a} for the electric module,
+\item\texttt{libsaturneFUEL.a} for the heavy fuel oil combustion module,
 \item\texttt{libsaturneLAGR.a} for the lagrangian module,
 \item\texttt{libsaturneMATI.a} for the Matisse module,
 \item\texttt{libsaturneRAYT.a} for the radiation module. 
 \end{list}
-
-\noindent 
-When a specific module is not available in the distribution of \CS,
-the corresponding file \texttt{libsaturne*.a} is replaced by an empty library
-which is marked out by \texttt{STUB}
-(\texttt{libsaturneCPLV\_STUB.a} for example) to allow the complilation. 
 
 \noindent Different compilation options are available for each module:
 \begin{list}{$\bullet$}{}
@@ -392,26 +392,27 @@ The data files (for instance thermochemical data) are located in the
 directory \texttt{data}. 
 
 The source files, when available, are stored in the directory \texttt{src},
-under subdirectories corresponding to each module: \texttt{base\_1} (general
-routines of moderate confidentiality), \texttt{base\_2} (general
-routines of high confidentiality), \texttt{cfbl} (compressible flows),
+under subdirectories corresponding to each module: \texttt{base} (general
+routines), \texttt{cfbl} (compressible flows),
 \texttt{cogz} (gas combustion),
 \texttt{cplv} (pulverised coal combustion), \texttt{elec} (electric module),
+\texttt{fuel} (heavy fuel oil combustion module),
+\texttt{lagr} (lagrangian module,
 \texttt{mati} (Matisse module),
 \texttt{pprt} (general specific physics routines) and \texttt{rayt} (radiative heat
 transfer).
 
 The user subroutines are available in the directory \texttt{users},
-under similar subdirectories corresponding to each module: \texttt{base} (general
-routines), \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
-\texttt{pprt} and \texttt{rayt}.
+under similar subdirectories corresponding to each module: \texttt{base},
+\texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
+\texttt{fuel}, \texttt{lagr}, \texttt{pprt} and \texttt{rayt}.
 The case preparer \texttt{cree\_sat} copies all these files in the
 user directory \texttt{FORT/USERS} during the case preparation.
 
 The ``include'' files are available in the directory
 \texttt{include}, under similar subdirectories corresponding to each module:
 \texttt{base}, \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
-\texttt{mati}, \texttt{pprt} and \texttt{rayt}.
+\texttt{fuel}, \texttt{lagr}, \texttt{mati}, \texttt{pprt} and \texttt{rayt}.
 
 The directory \texttt{bin} contains an example of the launch script, the
 compilation parameter files and various utility programs.
@@ -444,7 +445,7 @@ and \texttt{FORT\_SYR} which are required to accomodate the \syrthes\ files.
 in a format compliant with \CS\ (see \S\ref{prg_maillages}). There can be
 several meshes in case of mesh pasting or coupling with
 \syrthes\footnote{\syrthes\ uses meshes composed of 10-node tetrahedra (vertices
-and centres of edges)}.
+and centers of edges)}.
 
 \item Go to the directory \texttt{DATA} and launch the
       Graphical User Interface using the command \texttt{./SaturneGUI} (see
@@ -509,7 +510,6 @@ compulsory.
 
   \item{\bf For the specific physics ``coal combustion'':}
 
-(Lagrangian mode not compliant with the Graphical User Interface in version \verscs)
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
@@ -536,7 +536,7 @@ compulsory.
     \end{list}
 
      \item{\bf For the specific physics ``electric module''
-      (Joule effect and electric arc:)}
+      (Joule effect and electric arc):}
 
 (not compliant with the Graphical User Interface in version \verscs)
     \begin{list}{}{}
@@ -566,6 +566,34 @@ compulsory.
 		   variables corresponding to the electric module 
         \end{list}
     \end{list}
+
+     \item{\bf For the specific physics ``heavy fuel oil combustion module'':)}
+
+(not compliant with the Graphical User Interface in version \verscs)
+    \begin{list}{}{}
+        \item {\em compulsory:}
+        \begin{list}{-}{}
+            \item \texttt{usini1} to specify the calculation parameters
+
+            \item \texttt{usppmo} to select the specific physics module 
+
+            \item \texttt{usfucl} to manage the
+		  boundary conditions of {\em all variables} ({\em i.e.} not only
+              the ones related to the specific physics module)
+        \end{list}
+
+        \item {\em very useful:}
+        \begin{list}{-}{}
+            \item  \texttt{usfui1}
+               to specify the calculation options
+		   for the variables
+		   corresponding to the specific physics module
+
+            \item \texttt{usfuiv} to manage the initialisation of the
+		   variables corresponding to the specific physics module 
+        \end{list}
+    \end{list}
+
 
     \item{\bf For the Lagrangian module (dispersed phase):}
 
@@ -640,20 +668,15 @@ of the launch script. This variable is set top a default value in the non-user
 section of the launch script, depending on the architecture:\\
 \texttt{RUN=\$HOME/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm} for stand-alone
 workstations or for the Chatou cluster\\
-\texttt{RUN=\$TMPDIR} on Nickel/Chrome at the CCRT (\texttt{\$TMPDIR} is a
-directory created by the batch manager for the job and deleted after its
-completion)\\
-\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm} for Tantale at the
-CCRT\\
+\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm} for Tantale and
+Platine at the CCRT\\
 where \texttt{\$ETUDE} and \texttt{\$CAS} are the names of the study and the
 case. The usual suffix with the date and time is added so that successive
 calculations will not get mixed-up.
 
 This default value might not always be the optimal choice. Indeed, on a
 stand-alone machine, it might be useful to take advantage of large sized local
-disks on a machine when the \texttt{\$HOME} account is on an NFS disk. Or, on
-Nickel/Chrome, it might be useful to use an alternate \texttt{RUN} directory
-that will not be deleted at the end (for debugging purposes for instance).
+disks on a machine when the \texttt{\$HOME} account is on an NFS disk.
 
 For this matter, the variable \texttt{CS\_TMP\_PREFIX} of the launch script (see
 \S\ref{prg_lance}) allows  the user to change this directory.
@@ -760,18 +783,20 @@ for the Graphical User Interface:  \texttt{SaturneGUI}.
 
 In the directory \texttt{FORT}, \texttt{cree\_sat} creates a
 subdirectory \texttt{USERS} containing all the user subroutines,
-classified by module type:  \texttt{base} (general
-routines), \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
-\texttt{pprt} and \texttt{rayt}. Only the user subroutines placed directly under
+classified by module type:  \texttt{base}, 
+\texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec}, \texttt{fuel},
+\texttt{lagr}, \texttt{pprt} and \texttt{rayt}.
+Only the user subroutines placed directly under
 the directory \texttt{FORT} will be considered. The others will be ignored.
 
 In the directory \texttt{SCRIPTS}, \texttt{cree\_sat} copies and pre-fills an
-example of launch scripts: \texttt{lance}.
+example of the launch script: \texttt{lance}.
 The study, case and user name are filled
 automatically in the launch script, as are the paths leading to the
-different directories.  The name of the mesh file(s) must be specified
-(by default its name is \texttt{\$ETUDE.unv}). 
-If necessary, optional instructions may be added (see \S\ref{prg_lance}).
+different directories. Other parameters must be specified in the script
+(see \S\ref{prg_lance}),
+especially the mesh file(s) to use (by default a name \texttt{\$ETUDE.unv} is
+put), but everything can be specified throuhg the Graphical Interface.
 
 
 %==================================
@@ -801,7 +826,7 @@ corresponding user's guide \cite{ecsmu} (available on-line through the command
 {\footnotesize\it It should be noted, though, that NOPO files
 (\texttt{*.des}) created by SIMAIL are directly usable by \CS. It is therefore
 not necessary to convert them to the I-DEAS format. Moreover the conversion
-procedure is quite tedious if one wishes to keep the colour of the boundary
+procedure is quite tedious if one wishes to keep the color of the boundary
 faces. Indeed, once the mesh M is created and its boundary faces couloured, the
 boundary faces have to be extracted, and the resuting surface mesh has to be
 repasted with the original volume mesh M (using the option to paste all
@@ -815,8 +840,8 @@ can be very long for meshes of more than 100\,000 cells.}
 \item SIMAIL NOPO format: the \texttt{*.des} files may be read directly
       by \CS.
 
-\item Hexa NUMECA format (\texttt{*.hex}files): this format is seldom used. It
-is the product of {\em IggHexa} (which has since become {\em Hespress}. It is
+\item Hexa NUMECA format (\texttt{*.hex} files): this format is seldom used. It
+is the product of {\em IggHexa} (which has since become {\em Hexpress}). It is
 not maintained, since the corresponding mesh generator in not available at
 MFEE. The filter is based on specifications and some example meshes provided by
 the NUMECA company in 2001.
@@ -841,8 +866,8 @@ developped for the early prototype versions of \CS\ to be read directly by the
 Kernel while the Preprocessor module was under development (extension \texttt{tlc})}
 is still possible but is not maintained anymore. The reading of the mesh
 is done directly from the Kernel, without the Preprocessor module.
-The variable IFOENV must
- be set to 0 in the launch scripts. Many potentialities of \CS\ are not
+The variable SOLCOM must
+ be set to 1 in the launch scripts. Many potentialities of \CS\ are not
 compliant with this file format (mesh pasting with hanging nodes, periodicity,
 parallel computing, ...).
 The \texttt{slc2ideas} utility can be used to convert the 
@@ -851,11 +876,11 @@ The \texttt{slc2ideas} utility can be used to convert the
 command \texttt{slc2ideas} directly) when the environment variables for \CS\
 have been set correctly. However, not all the files can be converted. In particular,
 they must comply with the initial choice (\texttt{tlc}) according to which 
-each internal face possesses two and only two neighbouring cells, and each
-boundary face only one neighbouring cell. For non-converted,
+each internal face possesses two and only two neighboring cells, and each
+boundary face only one neighboring cell. For non-converted,
 or non-convertale meshes of the 'Common Solver' type,
-the calculation must be done without using the Preprocessor (keyword IFOENV=0).
-For all the other formats, the Preprocessor must be used (IFOENV=1).
+the calculation must be done without using the Preprocessor (keyword SOLCOM=1).
+For all the other formats, the Preprocessor must be used (SOLCOM=0).
 
 The Preprocessor can also accept zipped mesh file (for the formats I-DEAS, SIMAIL and Hexa NUMECA).
 
@@ -876,7 +901,7 @@ determines the mesh format directly from the file suffix:
 {\em WARNING: }
 Some turbulence models ($k-\varepsilon$, $R_{ij}-\varepsilon$ SSG, ...) used in
 \CS\ are ``High-Reynolds'' models. Therefore the size of the cells
-neighbouring the wall needs to be greater than the thickness of the viscous
+neighboring the wall needs to be greater than the thickness of the viscous
 sublayer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
 preferable). If the mesh does not match this constraint, the results may
 be false (particularly if thermal phenomena are involved). For more details
@@ -912,10 +937,10 @@ processors used is specified in the \texttt{NOMBRE\_DE\_PROCESSEURS} variable,
 or through the batch headers. If necessary, the launch script then automatically
 passes the \texttt{-p} option to the Preprocessor command line (see \ref{prg_lance}).
 
-\item \texttt{-rc}: triggers the mesh pasting functions. If nothing more is
+\item \texttt{-join}: triggers the mesh pasting functions. If nothing more is
 specified, every area of contact between two meshes will be pasted together. The
 pasting can be limited to certain selected faces. For instance, to paste only
-the faces of colours 6 and 7, the full option will be \mbox{\texttt{-rc -couleur
+the faces of colors 6 and 7, the full option will be \mbox{\texttt{-rc -color
 6 7}}. These options are to be specified in the \texttt{COMMANDE\_RC} variable in
 the launch script, to be automatically passed to the command line.
 
@@ -928,9 +953,9 @@ translation vector. For the rotation, there are two possibilities. The
 transformation can be defined with a rotation angle (in degrees, between -180
 and 180), a direction  and an
 invariant point\\
-\texttt{-perio -rota -angle a -dir dx dy dz -ptinv px py pz}\\
+\texttt{-perio -rota -angle a -dir dx dy dz -invpt px py pz}\\
 (with obvious notations), or by giving the rotation matrix and an invariant point\\
-\texttt{-perio -rota -matrice m11 m12 m13 m21 m22 m23 m31 m32 m33 -ptinv px py
+\texttt{-perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py
 pz}\\
 A rotation and a translation can be combined, by giving both \texttt{-rota} and
 \texttt{-trans} specifications. The translation will always be applied first,
@@ -941,37 +966,16 @@ combining a translation and a rotation, the orientations given for both have to
 be consistent.\\
 It is possible (and usually recommended) to restrict the  search for periodic
 connections between faces to a certain group of faces, by adding selection
-arguments like \texttt{-couleur}. It is also possible to specify up to 3
+arguments like \texttt{-color}. It is also possible to specify up to 3
 independent periodicities, simply by repeating the \texttt{-perio} option. Below
 is given a example of the option line for a triple periodicity (the \verb+\+
 indicates the continuation of the command line):\\
-\texttt{-perio -trans -10.2 0 0 -couleur 2} \verb+\+\\
-\texttt{-perio -rota -angle 90 -dir 0 0 1 -ptinv 0 0 0 -couleur 3 4} \verb+\+\\
-\texttt{-perio -trans 0 1 0 -rota -matrice 1 0  0 0 0 -1 0 1 0 -ptinv 0 0 -0.2}\\
+\texttt{-perio -trans -10.2 0 0 -color 2} \verb+\+\\
+\texttt{-perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 -color 3 4} \verb+\+\\
+\texttt{-perio -trans 0 1 0 -rota -matrix 1 0  0 0 0 -1 0 1 0 -invpt 0 0 -0.2}\\
 This option is to be specified in the \texttt{COMMANDE\_PERIO} variable in
 the launch script, to be automatically passed to the command line.
 
-\item \texttt{-df}: triggers the division of boundary and internal faces which
-have a warp angle larger than a certain limit\footnote{the warp angle is an
-indicator of the non-coplanarity of the different vertices of the face}. The
-concerned faces are divided into triangles. This option is to handle with care,
-since the division of the faces increases the non-orthogonalities of the mesh,
-but it is sometimes required (for the Lagrangian modelling, for instance, where
-non-plane faces lead to noticeable particle loss). By default, the faces are
-divided if their warp angle is larger than 0.01 degrees. This default value can
-be changed by adding an optional angle value to the command. For instance, to
-devide faces with a warp angle larger than 0.02 degrees, the full option will
-be \mbox{\texttt{-df 0.02}}.\\
-This option is to be specified in the \texttt{COMMANDE\_DF} variable in
-the launch script, to be automatically passed to the command line.
-
-\item \texttt{-ve}: to trigger the determination of the ``extended
-neighbourhood''. Indeed, for certain gradient calculation methods (IMRGRA=2 or
-3) as well as for the dynamic LES model (ITURB=41), the code needs the list of
-the different cells sharing at least one vertex with a given cell. This
-``extended neighbourhood'' list is created by the Preprocessor when necessary and
-passed to the Kernel. The launch script automatically detects whether this list
-is needed and applies the \texttt{-ve} option, without any user intervention.
 \end{list}
 
 %==================================
@@ -999,41 +1003,33 @@ developpers. The value of \texttt{n} is to be placed in the \texttt{ECHOCOMM}
 variable of the launch script, the option \texttt{--echo-comm \$ECHOCOMM} is
 then automatically passed to the Kernel command line.
 
-\item \texttt{-ifoenv n}: specifies the use (\texttt{n}=1) or not (\texttt{n}=0)
-of the Preprocessor module. If the \texttt{-ifoenv 0} option is used, only the mehes
-of the ``Common Solver'' type can be used (see \S\ref{prg_maillages} for
+\item \texttt{-solcom}: this option indicates that the Kernel will read the
+mesh directly, not using the Preprocessor output files. This is only possible
+with ``Common Solver'' type of mesh files (see \S\ref{prg_maillages} for
 restrictions).\\
-The value of \texttt{n} is to be placed in the \texttt{IFOENV} variable in the launch
-script. The option \mbox{\texttt{-ifoenv \$IFOENV}} is automatically added to the
-Kernel command line.\\
-The value of \texttt{n} is accessible in the variable IFOENV\index{IFOENV} in
-the FORTRAN code.
+This option is triggered by the \texttt{SOLCOM} variable in the launch
+script. If \texttt{SOLCOM} is set to 1, the \texttt{-solcom} option is
+automatically added to the Kernel command line. The variable
+IFOENV\index{IFOENV} in the FORTRAN code will be set to 0 if the
+\texttt{-solcom} option has been used, otherwise it will be set to 1.
 
-\item \texttt{-longia n}: specifies the size \texttt{n} of the macro-array of
+\item \texttt{-iasize n}: specifies the size \texttt{n} of the macro-array of
 integers IA (number of integers in the array). If the size is not sufficient,
 \CS\ stops and indicates the additional size needed.\\
 The value of \texttt{n} is to be placed in the \texttt{LONGIA} variable in the launch
-script. The option \mbox{\texttt{-longia \$LONGIA}} is automatically added to the
+script. The option \mbox{\texttt{-iasize \$LONGIA}} is automatically added to the
 Kernel command line.\\
 The value of \texttt{n} is accessible in the variable LONGIA\index{LONGIA} in
 the FORTRAN code.
 
-\item \texttt{-longra n}: specifies the size \texttt{n} of the macro-array of
+\item \texttt{-rasize n}: specifies the size \texttt{n} of the macro-array of
 reals RA (number of reals in the array). If the size is not sufficient,
 \CS\ stops and indicates the additional size needed.\\
 The value of \texttt{n} is to be placed in the \texttt{LONGRA} variable in the launch
-script. The option \mbox{\texttt{-longra \$LONGRA}} is automatically added to the
+script. The option \mbox{\texttt{-rasize \$LONGRA}} is automatically added to the
 Kernel command line.\\
 The value of \texttt{n} is accessible in the variable LONGRA\index{LONGRA} in
 the FORTRAN code.
-
-\item \texttt{-mc xx} or \texttt{--mode-comm xx}: indicates the communication
-mode between the Preprocessor and the Kernel.\\
-\hspace*{0.5cm}\texttt{xx=bin}: binary files\\
-\hspace*{0.5cm}\texttt{xx=txt}: ASCII files\\
-The usage of this option is very limited, and generally restricted to
-developpers. Hence it does not appear in the launch script, which induces the
-default behaviour (binary files).
 
 \item \texttt{-p n} or \texttt{-parallel n}: specifies the number of processors
 (potentially virtual) on
@@ -1050,16 +1046,16 @@ development team for further information.
 diffusion and transparent radiation in a solid). It has to be combined with a
 selection sub-option, to specify the boundary faces that need to be coupled. The
 syntax for selecting the faces is similar to that in the Preprocessor command line,
-with keywords \texttt{couleur} (for colour selection), \texttt{groupe} (for
+with keywords \texttt{color} (for color selection), \texttt{group} (for
 group selection) and \texttt{invsel} (to invert the selection). See
 \cite{ecsmu} for further details. For instance, to couple all the boundary faces
-except the faces of colour 2 and 3, the command line option would be\\
-\texttt{-syrthes -couleur 2 3 -invsel}\\
+except the faces of color 2 and 3, the command line option would be\\
+\texttt{-syrthes -color 2 3 -invsel}\\
 It is possible to couple a \CS\ calculation with a 2D \syrthes\ calculation. To
 do so, the sub-option \texttt{-2d} must be added, potentially completed by the
 specification of the direction normal to the 2D mesh: \texttt{-X}, \texttt{-Y}
 or \texttt{-Z} (default). For instance:\\
-\texttt{-syrthes -groupe PAROI -2d -X}\\
+\texttt{-syrthes -group PAROI -2d -X}\\
 All these options are to be placed in the \texttt{COMMANDE\_SYRTHES} variable of
 the launch script to be passed automatically to the Kernel command line.\\
 {\footnotesize\it To be thourough, there are two other sub-options to the
@@ -1069,11 +1065,11 @@ specify that the communication between \CS\ and \syrthes\ is made through
 sockets. These options are not to be specified by the user. They are
 automatically set and passed to the command line by the launch script.}
 
-\item \texttt{-v n} or \texttt{--verif n}: triggers the verification mode.
+\item \texttt{-q n} or \texttt{--quality n}: triggers the verification mode.
 The code runs without
 any Interface parameter file nor any user subroutine. The mesh is read and
 elementary tests are performed.\\
-\hspace*{0.5cm}\texttt{n=-1}: no test (default value if no \texttt{-v} option is
+\hspace*{0.5cm}\texttt{n=-1}: no test (default value if no \texttt{-q} option is
 specified. The code runs normally\\
 \hspace*{0.5cm}\texttt{n=0}: the quality criteria of the mesh are calculated
 (non-orthogonality angles, internal faces off-set, ...) and corresponding
@@ -1098,11 +1094,33 @@ with option IMRGRA=3.\\
 $sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
 EnSight part for the corresponding error is created. The gradient is calculated
 with option IMRGRA=4.\\
-The value of \texttt{n} is to be placed in the \texttt{ARG\_CS\_VERIF} variable
-in the launch script. The option \mbox{\texttt{-v \$ARG\_CS\_VERIF}} is
-automatically added to the Kernel command line.\\
+The command \texttt{-q n} is to be placed in the \texttt{ARG\_CS\_VERIF} variable
+in the launch script to be added automatically to the Kernel command line.\\
 The value of \texttt{n} is accessible in the variable IVERIF\index{IVERIF} in
 the FORTRAN code.
+
+\item \texttt{-cwf}: triggers the cutting of boundary and internal faces which
+have a warp angle larger than a certain limit\footnote{the warp angle is an
+indicator of the non-coplanarity of the different vertices of the face}. The
+concerned faces are divided into triangles. This option is to handle with care,
+since the division of the faces increases the non-orthogonalities of the mesh,
+but it is sometimes required (for the Lagrangian modeling, for instance, where
+non-plane faces lead to noticeable particle loss). By default, the faces are
+divided if their warp angle is larger than 0.01 degrees. This default value can
+be changed by adding an optional angle value to the command. For instance, to
+devide faces with a warp angle larger than 0.02 degrees, the full option will
+be \mbox{\texttt{-cwf 0.02}}.\\
+This option is to be specified in the \texttt{COMMANDE\_DF} variable in
+the launch script, to be automatically passed to the command line.
+
+\item \texttt{--benchmark}: triggers the benchmark mode, for a timing
+of elementary operations on the machine. A secondary option 
+\texttt{--mpitrace} can be added. It is to be activated when the benchmark mode
+is used in association with a MPI trace utility. It restricts the elementary
+operations to those implying MPI communications and does only one of each
+elementary operation, to avoid overfilling the MPI trace report.\\
+This command is to be placed in the \texttt{ARG\_CS\_VERIF} variable
+in the launch script to be added automatically to the Kernel command line.
 
 \item \texttt{--log n}: specifies the destination of the output for a
 monoprocessor calculation or for the processor of rank 0 in a parallel
@@ -1138,7 +1156,6 @@ Kernel command line.
 command line options.
 \end{list}
 
-
 %==================================
 \subsection{Parameters in the launch script}
 %==================================
@@ -1158,7 +1175,7 @@ Below is a list of the different variables and parameters that might be modified
 for a calculation, in their order of apparition in the script:
 \begin{list}{$\bullet$}{}
 \item LSF headers: definition of the headers for an LSF batch system, as can be
-found on the machines of the CCRT (Nickel/Chrome/Tantale). The data expected are
+found on the machines of the CCRT (Tantale/Platine). The data expected are
 the number of processors reserved (\texttt{\#BSUB -n}), the CPU time limit
 (\texttt{\#BSUB -W}), the name of the standard output file (\texttt{\#BSUB -o}),
 the name of the standard error file (\texttt{\#BSUB -e}) and the name of
@@ -1173,18 +1190,19 @@ nodes reserved (\texttt{nodes}), the number of processors per node
 \item Manchester headers: definition of the headers for the batch system
 specific to the cluster of the University of Manchester
 
-\item \texttt{IFOENV}: value of the parameter IFOENV to be passed to the Kernel
-(see \ref{prg_optappelnoy})
+\item \texttt{SOLCOM}: a value of 1 will pass the \texttt{-solcom} option to the
+Kernel (see \ref{prg_optappelnoy})
 
 \item \texttt{LONGIA}: value of the parameter LONGIA to be passed to the Kernel
-(see \ref{prg_optappelnoy}).
+through the \texttt{-iasize} option (see \ref{prg_optappelnoy}).
 
 \item \texttt{LONGRA}: value of the parameter LONGIA to be passed to the Kernel
-(see \ref{prg_optappelnoy})
+through the \texttt{-rasize} option (see \ref{prg_optappelnoy})
 \end{list}
 
 {\it For parallel computations, LONGIA and LONGRA can theoretically
-be divided by the number of processors, since each execution only deals with a
+be divided by the number of processors with respect to their value in a
+single-processor calculation, since each execution only deals with a
 fraction of the domain. It is however advised to add a safety margin (10\%) to
 account for non-optimal distribution of the domain among the processors and for
 the presence of phantom cells (see \S\ref{prg_paralperio}).}
@@ -1206,8 +1224,8 @@ the directory \texttt{REPMAIL} (see below).
 \item \texttt{COMMANDE\_RC}: Preprocessor command line option for mesh pasting (see
 \ref{prg_optappelecs})
 
-\item \texttt{COMMANDE\_DF}: Preprocessor command line option for the division of
-faces with too large a warp angle (see \ref{prg_optappelecs})
+\item \texttt{COMMANDE\_DF}: Kernel command line option for the division of
+faces with too large a warp angle (see \ref{prg_optappelnoy})
 
 \item \texttt{COMMANDE\_PERIO}: Preprocessor command line option for the definition
 of periodic boundary conditions (see \ref{prg_optappelecs})
@@ -1223,7 +1241,7 @@ necessary (the file is looked for in the directory \texttt{DATA}, see
 to be used for the calculation.\\
 If the variable is left empty, the launch script
 will fill it automatically: on a batch system, \texttt{NOMBRE\_DE\_PROCESSEURS}
-will be equal to the number of processors reserved, and in case of an
+will be equal to the number of processors reserved; in case of an
 interactive calculation, it will be set to 1.\\
 When using a batch system,
 \texttt{NOMBRE\_DE\_PROCESSEURS} should ideally be equal to the number of
@@ -1255,7 +1273,7 @@ entry conditions, the corresponding data files have to be specified in
 \item \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}: list of user result files to be
 copied in the directory \texttt{RESU} at the end of the calculation. A directory
 \texttt{RES\_USERS.mmddhhmm} will be created in the directory \texttt{RESU} and
-all the files will be stored in. The files automatically created by the code
+all the files will be stored in it. The files automatically created by the code
 (listings, post-processing, automatic chronological records\footnote{when using
 \texttt{ushist} for user-defined chronological records, the files created need
 to be specified in \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}},
@@ -1267,24 +1285,26 @@ calculation (see \S\ref{prg_temporarydirectory})
 
 \item \texttt{OPTIMISATION}: optimisation level for compilation
  (LO, DBG, EF, PROF or PUR; see \S\ref{prg_library}). This optimisation
-level will be applied to all the modules of \CS\ (BASE, COGZ, CFBL, CPLV, ELEC,
-LAGR, MATI, RAYT).
+level will be applied to all the modules of \CS\ (BASE, CFBL, COGZ, CPLV, ELEC,
+FUEL, LAGR, MATI, RAYT).
 Leaving the variable empty stands for ``standard''
 optimisation.
 
 \item \texttt{LISTE\_LIB\_SAT}: list of \CS\ module libraries to use (see
 \S\ref{prg_library}). Specifying
-a list allows to use the ``STUB'' libraries (for modules that are not available)
-or to use different optimisation options for different modules. If a list is
+a list allows to use different optimisation options for different modules. If a
+list is 
 given, all modules must be referenced once (and only once). Leaving
-the variable empty implies taking the standard optimisation library for all the
-modules (BASE, COGZ, CFBL, CPLV, ELEC, LAGR, MATI, RAYT). An example of list
+the variable empty implies taking the same optimisation for all the
+modules (BASE, COGZ, CFBL, CPLV, ELEC, FUEL, LAGR, MATI, RAYT), corresponding to
+the value of the \texttt{OPTIMISATION} variable (see above). An example of list
 could be:\\ 
-\texttt{LISTE\_LIB\_SAT=``libsaturneBASEDBG.a libsaturneCOGZ\_STUB.a
-libsaturneCFBLDBG.a}\verb+ \+\\
-\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneCPLV\_STUB.a libsaturneELECDBG.a
-libsaturneLAGR\_STUB.a}\verb+ \+\\ 
-\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneMATI\_STUB.a libsaturneRAYT\_STUB.a''}
+\texttt{LISTE\_LIB\_SAT=``libsaturneBASEDBG.a libsaturneCFBL.a
+libsaturneCOGZDBG.a}\verb+ \+\\
+\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneCPLV.a libsaturneELECDBG.a
+libsaturneFUELDBG.a}\verb+ \+\\ 
+\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneLAGR.a libsaturneMATI.a
+libsaturneRAYT.a''}
 
 \item \texttt{OPTION\_LIB\_EXT}: additional commands for the link stage of the
 compilation. This can be especially useful if the user subroutines call routines
@@ -1380,7 +1400,8 @@ a specific \CS\ syntax which is then interpretated by the code.
 
 In version \verscs, the Graphical Interface manages calculation parameters,
 standard initialisation values and boundary
-conditions for standard physics and pulverised coal combustion. The other specific
+conditions for standard physics, pulverised coal combustion and radiative
+transfers. The other specific
 physics are not yet managed by the Graphical
 Interface. In these particular cases, user subroutines have to be completed.
 
@@ -1392,19 +1413,29 @@ Interface. However, it is no longer necessary to redefine everything in the
 user subroutines. Only what was not set or could not be set using the Graphical
 Interface should be specified.
 
+{\em WARNING: }
+There are some limitations to the changes that can be made between the Interface
+and the user routines. In particular, it is not possible to specify a certain
+number of solved variables in the Interface and change it in the user routines
+(for example, it is not possible to specify the use of a $k-\varepsilon$ model
+in the Interface and change it to $R_{ij}-\varepsilon$ in \texttt{usini1.F}, or
+to define additional scalars in \texttt{usini1} with respect to the
+Interface). Also, all boundaries should be referenced in the Interface, even if
+teh associated conditions are intended to be modified in \texttt{usclim}, and
+their nature (entry, outlet, wall\footnote{smooth and rough walls are considered
+of the same nature}, symmetry) should not be changed.
+
 For example, in order to set the boundary conditions of a calculation
 corresponding to a channel flow with a given inlet velocity profile, one
-possibility could be to:\\
+should:\\
 - set the boundary conditions corresponding to the wall and the output
 using the Graphical Interface\\
-- define in \texttt{usclim} the inlet area with its velocity
-profile. The wall and output areas do not need to appear in
-\texttt{usclim}. Moreover, if the inlet area has already been set in
-the interface (for example with a uniform velocity), it is the boundary
-conditions defined in the subroutine \texttt{usclim} which will be taken
-into account.
+- set a dummy boundary condition for the inlet (uniform velocity for instance)
+- set the proper velocity profile at inlet in \texttt{usclim}. The wall and
+output areas do not need to appear in \texttt{usclim}. The dummy velocity
+entered in the Interface will not be taken into account.
 
-The Graphical User Interface is launched with the \texttt{./SaturneGUI} commande
+The Graphical User Interface is launched with the \texttt{./SaturneGUI} command
 in the directory \texttt{DATA}. The first step is
 then to load an existing parameter file (in order to modify it) or to
 open a new one. The headings to be filled for a standard calculation are the
@@ -1414,26 +1445,28 @@ followings:
 \item Analysis environment: definition of the calculation directories
       (STUDY, CASE), mesh file(s), periodicity, coupling with \syrthes,
       stand-alone execution of the
-      Preprocessor module (used by the Interface to get the colours of the boundary
+      Preprocessor module (used by the Interface to get the colors of the boundary
       faces).
 
-\item Thermophysical models: physical model, turbulence model, thermal model,
+\item Thermophysical models: physical model, ALE mobile mesh features,
+      turbulence model, thermal model,
       initialisation of the variables.
 
-\item Physical properties: fluid characteristics, gravity.
+\item Physical properties: reference pressure, fluid characteristics, gravity.
 
 \item Additional scalars: definition, physical characteristics and
       initialisation of the scalars (apart from the temperature, which
-      is treated separately in the interface).
+      is treated separately in the Interface).
 
 \item Boundary conditions: definition of the boundary conditions for
-      each variable. The colours of the boundary faces may be read
+      each variable. The colors of the boundary faces may be read
       directly from a ``listing'' file created by the Preprocessor. This
       file can be generated directly by the Interface under the heading\\
       ``Analysis environment $\rightarrow$ Solution Domain $\rightarrow$
         Stand-alone running''.
 
-\item Analysis control: parameters concerning the time step, location of
+\item Analysis control: parameters concerning the time averages, time step,
+      location of 
       the probes where some variables will be monitored over time,
       definition of the periodicity of the outputs in the calculation
       listing and in the chronological records and of the EnSight outputs.
@@ -1444,9 +1477,12 @@ followings:
 \item Calculation management: management of the calculation restarts,
       updating of the launch script (temporary execution directory, parallel
       computing, user data or result files, ...), interactive launch of the
-      calculation.
+      calculation and user arrays definition.
 
 \end{list}
+
+The \CS\ tutorial \cite{tutorial} offers a step-by-step guidance to the setting
+up of some simple calculations with the \CS\ Interface.
 
 To launch \CS\ using an XML parameter file,
 the name of the file must
@@ -1483,7 +1519,7 @@ This section presents a non-exhaustive list of the main variables which
 may be encountered by the user. Most of them should not be modified by the
 user. They are calculated automatically from the data. However it may be
 useful to know what they represent.
-Developpers can also refer to \cite{boucker00} and \cite{gest02}.
+Developpers can also refer to \cite{boucker00} and \cite{theory}.
 
 These variables are listed in the alphabetical index at the end of this
 document.
@@ -1629,17 +1665,17 @@ When using periodicity and parallelism, extra ``ghost'' cells
 (on a given processor). 
 The total number of real and ghost cells is NCELET. \\
 \hspace*{1cm} Indeed, when periodicity is enabled, the cells with
-periodic faces do not have any real neighbouring cell across these
-particular faces. Their neighbouring cell is elsewhere in the calculation
+periodic faces do not have any real neighboring cell across these
+particular faces. Their neighboring cell is elsewhere in the calculation
 domain (its position is determined by the periodicity). In order to
-store temporarily the information coming from this ``distant''
-neighbouring cell, a ghost cell (``halo'') is created. \\
+temporarily store the information coming from this ``distant''
+neighboring cell, a ghost cell (``halo'') is created. \\
 \hspace*{1cm} The same kind of problem exists in the case of a
 calculation on parallel machines: due to the decomposition of the
 calculation domain, some cells no longer have access to all
-their neighbouring cells, some of them being treated by another processor. The
-creation of ghost cells allows to store temporarily the information
-coming from real neighbouring cells treated by other processors.\\
+their neighboring cells, some of them being treated by another processor. The
+creation of ghost cells allows to temporarily store the information
+coming from real neighboring cells treated by other processors.\\
 The variables are generally arrays of size NCELET (number of real and
 fictitious cells). The calculations (loops) are made on NCEL cells (only
 the real cells, the fictitious cells are only used to store information).
@@ -1647,7 +1683,7 @@ the real cells, the fictitious cells are only used to store information).
 \minititre{Note 2: internal faces}
 An internal face is an inferface shared by two cells (real or ghost
 ones) of the mesh. A boundary face is a face which has only one real
-neighbouring cell. In the case of periodic calculations, a periodic face
+neighboring cell. In the case of periodic calculations, a periodic face
 is an internal face. In the case of parallel running calculations, the
 faces situated at the boundary of a partition may be internal faces or
 boundary faces (of the whole mesh);
@@ -1671,17 +1707,6 @@ The composition of the arrays NODFBR and IPNFBR is similar.
 recompilation of the complete version, operation which is not allowed in
 standard use.
 
-%FIN DE TRADUCTION
-%=================
-%=================
-%=================
-%=================
-%=================
-%=================
-%=================
-
-
-
 %==================================
 \subsection{Geometric variables}
 %==================================
@@ -1690,31 +1715,31 @@ The main geometric variables are available in most of the
 subroutines and directly accessible through the following arrays.
 
 \variab{CDGFAC}{CDGFAC(NDIM,NFAC)}{RA}{Coordinates of the
-centres of the internal faces} 
+centers of the internal faces} 
 
-\variab{CDGFBO}{CDGFBO(NDIM,NFABOR)}{RA}{Coordinates of the centres of the
+\variab{CDGFBO}{CDGFBO(NDIM,NFABOR)}{RA}{Coordinates of the centers of the
 boundary face} 
 
 
-\variab{IFACEL}{IFACEL(2,NFAC)}{IA}{Index-numbers of the two (only) neighbouring
+\variab{IFACEL}{IFACEL(2,NFAC)}{IA}{Index-numbers of the two (only) neighboring
 cells for each internal face}
 
-\variab{IFABOR}{IFABOR(NFABOR)}{IA}{Index-number of the (unique) neighbouring
+\variab{IFABOR}{IFABOR(NFABOR)}{IA}{Index-number of the (unique) neighboring
 cell for each boundary face} 
 
 
 \variab{IPNFAC}{IPNFAC(NFAC+1)}{IA}{Position of the first node of the each internal
-face in the array NODFAC (see note 3 in paragraph \ref{prg_nnod}).}
+face in the array NODFAC (see note 3 in paragraph \ref{prg_dimensions}).}
 
 \variab{IPNFBR}{IPNFBR(NFABOR+1)}{IA}{Position of the first node of the each boundary
-face in the array NODFBR (see note 3 in paragraph \ref{prg_nnod}).}
+face in the array NODFBR (see note 3 in paragraph \ref{prg_dimensions}).}
 
 
 \variab{NODFAC}{NODFAC(LNDFAC)}{IA} {Index-numbers of the nodes of each
-internal face (see note 3 in paragraph \ref{prg_nnod}).}
+internal face (see note 3 in paragraph \ref{prg_dimensions}).}
 
 \variab{NODFBR}{NODFBR(LNDFBR)}{IA}{Index-numbers of the nodes of each
-boundary face (see note 3 in paragraph \ref{prg_nnod}).}
+boundary face (see note 3 in paragraph \ref{prg_dimensions}).}
 
 \variab{SURFAC}{SURFAC(NDIM,NFAC)}{RA}{Surface vector of the internal
 faces. Its norm is the surface of the face and it is oriented from IFACEL(1,.)
@@ -1725,75 +1750,71 @@ faces. Its norm is the surface of the face and it is oriented outwards}
 
 \variab{VOLUME}{VOLUME(NCELET)}{RA}{Volume of each cell}
 
-\variab{XYZCEN}{XYZCEN(NDIM,NCELET)}{RA}{Coordinates of the cell centres}
+\variab{XYZCEN}{XYZCEN(NDIM,NCELET)}{RA}{Coordinates of the cell centers}
 
 \variab{XYZNOD}{XYZNOD(NDIM,NNOD)}{RA}{Coordinates of the mesh vertices}
 
-In addition, additionnal geometric variables are accessible in sections of
-the unidimensional macro-arrays\footnote{in FORTRAN, a multidimensional
-array A(3,2) is in fact a unidimensional array containing the elements
-A(1,1), A(2,1), A(3,1), A(1,2), A(2,2) and A(3,2) in this order.} IA
-(for integers) and RA (for real numbers) which are passed as arguments
+In addition, other geometric variables are accessible in sections of
+the unidimensional macro-arrays IA (for integers) and RA (for real numbers)
+which are passed as arguments
 in every subroutine (apart from a few ones of very low level). The
-index-number of the first element of these sections in IA and RA is indicated by
-an integer stored in a ``common'' (in the file
-\texttt{pointe.h})\footnote{With this system, it is possible for example to
-reach the surface of an
-internal face IFAC with RA(ISRFAN+IFAC-1) in every subroutine where RA
-is known and \texttt{pointe.h} is present. \\
-In the same manner, DOFIJ(II,IFAC) can be obtained with
-RA(IDOFIJ+(IFAC-1)*NDIM+II-1).} By analogy, these integers will be referred here
-as ``pointers''. The main ones are listed below.
+index-number of the first element of these sections is stored in a ``common'' 
+(in the file \texttt{pointe.h}), passed to most of the routines. Hence, the
+surface of an internal face IFAC is stored in RA(ISRFAN+IFAC-1). Or, the
+coordinate of vector $\vect{OF}$ (see below for
+definition) in the II$^{th}$ direction for face IFAC is stored in
+RA(IDOFIJ+(IFAC-1)*NDIM+II-1)\footnote{in FORTRAN, a multidimensional
+array A(3,2) is in fact a unidimensional array containing the elements
+A(1,1), A(2,1), A(3,1), A(1,2), A(2,2) and A(3,2) in this order.}.
 
- 
+The main variables of this type are the following:
 
 \variab{IDIJPF}{IDIJPF}{I}{In RA, pointer to
 DIJPF(NDIM,NFAC), real array giving, for every internal face,
 the three components of the vector  $\vect{I'J'}$, where I' and J' are
-respectively the orthogonal projections on a straight line orthogonal to
-the face of the centres of the first and the second neighbouring cells}
+respectively the orthogonal projections of the neighboring cell centers I and J
+on a straight line orthogonal to the face and passing through its center.}
 
 \variab{IDIIPB}{IDIIPB}{I}{In RA, pointer to
 DIIPB(NDIM,NFABOR), real array giving, for every boundary
 face, the three components of the vector $\vect{II'}$. I' is the
-orthogonal projection of I, centre of the neighbouring cell, on the
-straight line perpendicular to the face and crossing its centre}
+orthogonal projection of I, center of the neighboring cell, on the
+straight line perpendicular to the face and passign through its center}
 
 \variab{IDIST}{IDIST}{I}{In RA, pointer to DIST(NFAC), real array
 giving, for every internal face, the scalar product between the
-vectors $\vect{IJ}$ and $\vect{n}$. I and J are respectively the centre
-of the first and the second neighbouring cell. The vector $\vect{n}$ is
+vectors $\vect{IJ}$ and $\vect{n}$. I and J are respectively the centers
+of the first and the second neighboring cell. The vector $\vect{n}$ is
 the unit vector normal to the face and oriented from the first to the
 second cell} 
 
 \variab{IDISTB}{IDISTB}{I}{In RA, pointer to DISTBR(NFABOR), real array
 giving, for every boundary face, the scalar product between
-the vectors $\vect{IF}$ and $\vect{n}$. I is the centre of the
-neighbouring cell. F is the face centre. The vector $\vect{n}$ is the
+the vectors $\vect{IF}$ and $\vect{n}$. I is the center of the
+neighboring cell. F is the face center. The vector $\vect{n}$ is the
 unit vector normal to the face and oriented to the exterior of the
 domain} 
 
 \variab{IDOFIJ}{IDOFIJ}{I}{In RA, pointer to DOFIJ(NDIM,NFAC), real
 array giving, for every internal face, the components of the
 vector $\vect{OF}$. O is the intersection point between the face and
-the straight line joining the centres of the two neighbouring cells. F
-is the face centre} 
+the straight line joining the centers of the two neighboring cells. F
+is the face center} 
 
-\variab{IICELB}{IICELB}{I}{In IA, pointer to ICELBR(NFABOR), integer array
-giving, for every boundary face, the index-number of the neighbouring cell}
+\variab{IICELB}{IICELB}{I}{In IA, pointer to ICELBR(NCELBR), integer array
+giving the list of cells havong at least one boundary face}
 
 \variab{IPOND}{IPOND}{I}{In RA, pointer to POND(NFAC), real array giving
 $\displaystyle\frac{\vect{FJ}.\vect{n}}{\vect{IJ}.\vect{n}}$, for every
 internal face. With regard to the mesh quality, its ideal value is 0.5} 
 
 \variab{ISRFAN}{ISRFAN}{I}{In RA, pointer to SURFAN(NFAC), real array
-giving the absolute value of the surface of the internal faces}
+giving the norm of the surface vector of the internal faces}
 
 \variab{ISRFBN}{ISRFBN}{I}{In RA, pointer to SURFBN(NFABOR), real array
-giving the absolute value of the surface of the boundary faces}
+giving the norm of the surface of the boundary faces}
 
 %==================================
-%\subsubsection{Variables physiques}
 \subsection{Physical variables}
 %==================================
 
@@ -1804,7 +1825,7 @@ some variables may be given a more explicit name, in order to ease the
 comprehension. 
 
 \variab{PROPCE}{PROPCE(NCELET,NPROCE)}{RA}{Properties defined at the
-cell centres. For instance: density, viscosity ...}
+cell centers. For instance: density, viscosity ...}
 
 \variab{PROPFA}{PROPFA(NFAC,NPROFA)}{RA}{Properties defined at the
 internal faces. For instance: mass flow across internal faces}
@@ -1813,11 +1834,11 @@ internal faces. For instance: mass flow across internal faces}
 boundary faces. For instance: mass flow across boundary faces, density
 at boundary faces ...} 
 
-\variab{RTP}{RTP(NCELET,NVAR)}{RA}{Array storing the variables,
-solved at the current time step} 
+\variab{RTP}{RTP(NCELET,NVAR)}{RA}{Array storing the values of the solved
+variables at the current time step} 
 
-\variab{RTPA}{RTPA(NCELET,NVAR)}{RA}{Array storing the variables,
-solved at the previous time step} 
+\variab{RTPA}{RTPA(NCELET,NVAR)}{RA}{Array storing the values of the solved
+variables at the previous time step} 
 
 \bigskip
 
@@ -1825,9 +1846,9 @@ solved at the previous time step}
 
 The indexes allowing to mark out the different variables (from 1 to
 NVAR) are integers available in a ``common'' file called
-\texttt{numvar.h}. Some solved variables (pressure, speed, turbulence)
+\texttt{numvar.h}. Some solved variables (pressure, velocity, turbulence)
 depend on the considered phase, and the index which refers to it is then a
-array whose size is the maximum number of phases NPHSMX.
+array of size NPHSMX, the maximum number of phases.
 
 For example, IPR(IPHAS) refers to the variable ``pressure'' of the phase
 IPHAS (with 1$\leqslant$IPHAS$\leqslant$NPHAS): the pressure of the
@@ -1835,35 +1856,36 @@ phase IPHAS in the cell IEL at the current time step is therefore
 RTP(IEL,IPR(IPHAS)). 
 
 The list of integers referring to solved variables is given below. These
-variable index-numbers do not only allow to access to the value of the
-variable at the cell centre (for instance RTP(IEL,IPR(IPHAS))) but are also
-used to access to arrays whose size is the number of variables, like
-some numerical options (for instance, BLENCV(IK(IPHAS)) is the
-percentage of second-order convective scheme for the turbulent energy of
-the phase IPHAS when the $k-\varepsilon$ model is used).
+variable index-numbers are not only used for the RTP and RTPA arrays, but also
+for some arrays of variable associated options (for instance, BLENCV(IK(IPHAS))
+is the percentage of second-order convective scheme for the turbulent energy of
+the phase IPHAS when a corresponding turbulent model is used).
 
 \begin{list}{$\bullet$}{}
-\item IPR(IPHAS)\index{IPR}: pressure.
+\item IPR(IPHAS)\index{IPR}: pressure\footnote{IPR(IPHAS) corresponds to a
+reduced pressure, from which the standard hydrostatic pressure has be
+deduced. The total pressure is stored in the PROPCE array}.
 \item IU(IPHAS)\index{IU}: velocity along the X axis.
 \item IV(IPHAS)\index{IV}: velocity along the Y axis.
 \item IW(IPHAS)\index{IW}: velocity along the Z axis.
-\item IK(IPHAS)\index{IK}: turbulent energy, in $k-\varepsilon$ modelling.
+\item IK(IPHAS)\index{IK}: turbulent energy, in $k-\varepsilon$,
+$k-\omega$ modeling or v2f ($\varphi$-model) modeling.
 \item IR11(IPHAS)\index{IR11}: Reynolds stress R11, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ or SSG modeling.
 \item IR22(IPHAS)\index{IR22}: Reynolds stress R22, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ or SSG modeling.
 \item IR33(IPHAS)\index{IR33}: Reynolds stress R33, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ modeling.
 \item IR12(IPHAS)\index{IR12}: Reynolds stress R12, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ modeling.
 \item IR13(IPHAS)\index{IR13}: Reynolds stress R13, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ modeling.
 \item IR23(IPHAS)\index{IR23}: Reynolds stress R23, in
-      $R_{ij}-\varepsilon$ modelling.
+      $R_{ij}-\varepsilon$ modeling.
 \item IEP(IPHAS)\index{IEP}: turbulent dissipation in $k-\varepsilon$,
-$R_{ij}-\varepsilon$ or v2f ($\varphi$-model) modelling.
+$R_{ij}-\varepsilon$ or v2f ($\varphi$-model) modeling.
 \item IOMG(IPHAS)\index{IOMG}: Specific dissipation rate $\omega$, in
-$k-\omega$ SST modelling.
+$k-\omega$ SST modeling.
 \item IPHI(IPHAS)\index{IPHI}: variable $\varphi=\overline{v^2}/k$ in v2f ($\varphi$-model).
 \item IFB(IPHAS)\index{IFB}: variable $\overline{f}$ in v2f ($\varphi$-model).
 \item ISCA(J)\index{ISCA}: scalar J (1$\leqslant$J$\leqslant$NSCAL). 
@@ -1884,28 +1906,29 @@ $\overline{f}$), the following are highly important:
       ``scalar'', too. The scalars may be divided into two groups:
       NSCAUS ``user'' scalars and NSCAPP ``specific physics'' scalars, with
       NSCAL=NSCAUS+NSCAPP. NSCAL must be inferior or equal to NSCAMX.
-\item The phase related to the scalar J is IPHSCA(J)\index{IPHSCA}. 
+\item The phase related to the scalar J is IPHSCA(J)\index{IPHSCA}.
+\item The J$^{\text{th}}$ user scalar is, in
+      the whole list of the NSCAL scalars, the scalar number
+      J. In the list of the NVAR solved variables, it
+      corresponds to the variable number ISCA(J),
+      its value in the cell IEL at the current time step is given by
+      RTP(IEL,ISCA(J)). 
 \item The J$^{\text{th}}$ scalar related to a specific physics is, in
       the whole list of the NSCAL scalars, the scalar number
       ISCAPP(J). In the list of the NVAR solved variables, it
       corresponds to the variable number ISCA(ISCAPP(J))\index{ISCAPP},
-      whose value in the cell IEL at the current time step is given by
+      its value in the cell IEL at the current time step is given by
       RTP(IEL,ISCA(ISCAPP(J))). 
-
-\item The J$^{\text{th}}$ ``user'' scalar
-      (0$\leqslant$J$\leqslant$NSCAUS$\leqslant$NSCAL) is,si $J>0$, the
- scalar number J in the thorough list of NSCAL scalars' In the list of 
-solved NVAR variables, it corresponds to the variable number cell IEL 
-and its value in the cell is RTP(IEL,ISCA(J)).
     
 \item The temperature (or the enthalpy) is the scalar number
       ISCALT(IPHAS)\index{ISCALT} in the list of the NSCAL scalars. It
       corresponds to the variable number ISCA(ISCALT(IPHAS)) and its
-      value in the cell IEL is RTP(IEL,ISCA(ISCALT(IPHAS))=1 if there is no thermal scalar.
-\item A ``user'' scalar number J may represent the mean value of the
-      square of the fluctuations ({\em i.e.}
-      $\overline{\varphi^\prime\varphi^\prime}$) of a ``user'' scalar K
-      (called $\varphi$). This can be made either {\em via} the
+      value in the cell IEL is RTP(IEL,ISCA(ISCALT(IPHAS))). If there is no
+      thermal scalar, ISCALT(IPHAS) is equal to -1.
+\item A ``user'' scalar number J may represent the average of the square of the
+      fluctuations of a scalar K ({\em i.e.} the average
+      $\overline{\varphi^\prime\varphi^\prime}$ for a fluctuating scalar
+      $\varphi$ ). This can be made either {\em via} the
       interface or by indicating ISCAVR(J)=K\index{ISCAVR} in
       \texttt{usini1} (if the scalar in question is not a ``user''
       scalar, the selection is made automatically). For instance, if J
@@ -1923,12 +1946,27 @@ The variable corresponding to the mean value of the square of the
 \bigskip
 
 \underline{Concerning PROPCE, PROPFA and PROPFB} 
+In \CS, the physical properties\footnote{other variables are stored in the
+arrays PROPCE, PROPFA and PROPFB. They are not ``physical properties'' strictly
+speaking, but it is convenient to have them in the same array as the proper
+physical properties} are stored in the arrays PROPCE, PROPFA and
+PROPFB. Some properties, like the density, are only stored for cells and boundary
+faces. Some, like the mass flux, are only stored at the internal and boundary
+faces. To avoid having different index numbers for a physical property,
+depending on the array it is used in, the following structure is used in \CS:
 
-The indexes referring  to the different properties stored in the generic
+\begin{list}{-}{}
+
+\item All the properties (used or not) have a unique and distinct index-number,
+given automatically by the code and stored in an integer or an integer array
+(its size may be the maximum number of phases, the maximum
+number of scalars or the maximum number of variables).
+
+\item The indexes referring  to the different properties stored in the PROPxx
 arrays are given respectively by the following integer arrays:
 
 \variab{IPPROC}{IPPROC(NPROMX)}{IA}{Rank I in PROPCE(.,I) of the
-properties defined at the cell centres} 
+properties defined at the cell centers}
 
 \variab{IPPROF}{IPPROF(NPROMX)}{IA}{Rank I in PROPFA(.,I) of the
 properties defined at the internal faces}
@@ -1936,16 +1974,13 @@ properties defined at the internal faces}
 \variab{IPPROB}{IPPROB(NPROMX)}{IA}{Rank I in PROPFB(.,I) of the
 properties defined at the boundary faces}
 
-All the properties (used or not) have a unique and distinct index-number, given
-automatically by the code and stored in an integer or an integer array
-(whose size may be the maximum number of phases, the maximum
-number of scalars or the maximum number of variables).
+\end{list}
 
-For instance, the number corresponding to the density of the phase
-IPHAS is IROM(IPHAS). \\
-In the list of the properties defined at the cell centre, the density of
+For instance, the index number corresponding to the density of the phase
+IPHAS is IROM(IPHAS).\\
+In the list of the properties defined at the cell center, the density of
 the phase IPHAS is therefore the IPPROC(IROM(IPHAS))$^{\text{th}}$
-property: its value at the centre of the cell IEL is given by \\
+property: its value at the center of the cell IEL is given by \\
 PROP{\bf CE}(IEL,IPPRO{\bf C}(IROM(IPHAS)))\\ 
 In the same way, in the list of the properties defined at the boundary
 faces, the density of the phase IPHAS is the
@@ -1953,103 +1988,152 @@ IPPROB(IROM(IPHAS)))$^{\text{th}}$ property: its value at the boundary
 face is given by \\
 PROP{\bf FB}(IEL,IPPRO{\bf B}(IROM(IPHAS)))
 
-The number of each foreseen property is given below:
+The list of properties accessible in the PROPxx arrays is given below (this does
+not include the properties linked to the specific physics modules):
 
 \variab{IROM}{IROM(NPHSMX)}{IA}{For each phase, property number
-corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$)} 
+corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$)\\
+stored at the cells and the boundary faces} 
 
 \variab{IROMA}{IROMA(NPHSMX)}{IA}{For each phase, property number
 corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$) at the
-previous time step, in the case of a second-order extrapolation in time}
+previous time step, in the case of a second-order extrapolation in time\\
+stored at the cells and the boundary faces}
 
 \variab{IVISCL}{IVISCL(NPHSMX)}{IA}{For each phase, property number
 corresponding to the fluid molecular dynamic viscosity ({\em i.e.} $\mu$ in
-$kg.m^{-1}.s^{-1}$)}
+$kg.m^{-1}.s^{-1}$)\\
+stored at the cells}
 
 \variab{IVISLA}{IVISLA(NPHSMX)}{IA}{For each phase, property number
 corresponding to the fluid molecular dynamic viscosity ({\em i.e.} $\mu$
 in $kg.m^{-1}.s^{-1}$) at the previous time step, in the case of a
-second-order extrapolation in time} 
+second-order extrapolation in time\\
+stored at the cells} 
 
 \variab{IVISCT}{IVISCT(NPHSMX)}{IA}{For each phase, property number
 corresponding to the fluid turbulent dynamic viscosity ({\em i.e.}
-$\mu_t$ in $kg.m^{-1}.s^{-1}$)} 
+$\mu_t$ in $kg.m^{-1}.s^{-1}$)\\
+stored at the cells} 
 
 \variab{IVISTA}{IVISTA(NPHSMX)}{IA}{For each phase, property number
 corresponding to the fluid turbulent dynamic viscosity ({\em i.e.}
 $\mu_t$ in $kg.m^{-1}.s^{-1}$) at the previous time step, in the case of a
-second-order extrapolation in time} 
+second-order extrapolation in time\\
+stored at the cells} 
 
 \variab{ICP}{ICP(NPHSMX)}{IA}{For each phase,  property number
-corresponding to the specific heat, in the case where it is variable
-({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$). See note below}
+corresponding to the specific heat, in case where it is variable
+({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$). See note below\\
+stored at the cells}
 
 \variab{ICPA}{ICPA(NPHSMX)}{IA}{For each phase,  property number
-corresponding to the specific heat, in the case where it is variable
+corresponding to the specific heat, in case where it is variable
 ({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$), at the previous time step,
-in the case of a second-order extrapolation in time. See note below}
+in the case of a second-order extrapolation in time. See note below\\
+stored at the cells}
 
 \variab{ITSNSA}{ITSNSA(NPHSMX)}{IA}{For each phase, in the case of a
 calculation run with a second-order discretisation in time with
 extrapolation of the source terms, property number corresponding to the
-source term of Navier-Stokes at the previous time step ($kg.m^{-1}.s^{-2}$)}
+source term of Navier-Stokes at the previous time step ($kg.m^{-1}.s^{-2}$)\\
+stored at the cells}
 
 \variab{ITSTUA}{ITSTUA(NPHSMX)}{IA}{For each phase, in the case of a
 calculation run with a second-order discretisation in time with
 extrapolation of the source terms, property number corresponding to the
-source terms of the turbulence at the previous time step}
+source terms of the turbulence at the previous time step\\
+stored at the cells}
 
 \variab{ITSSCA}{ITSSCA(NPHSMX)}{IA}{For each phase, in the case of a
 calculation run with a second-order discretisation in time with
 extrapolation of the source terms, property number corresponding to the
 source terms of the equations solved for the scalars at the previous
-time step ($kg.m^{-1}.s^{-2}$)} 
+time step ($kg.m^{-1}.s^{-2}$)\\
+stored at the cells} 
 
 \variab{IESTIM}{IESTIM(NESTMX,NPHSMX)}{IA}{For each phase, property
-number for the NESTMX error estimators of Navier-Stokes. These are
+number for the NESTMX error estimators for Navier-Stokes. These are
 currently IESTIM(IESPRE\index{IESPRE},IPHAS),
 IESTIM(IESDER\index{IESDER},IPHAS), IESTIM(IESCOR\index{IESCOR},IPHAS),
-IESTIM(IESTOT\index{IESTOT},IPHAS)}
+IESTIM(IESTOT\index{IESTOT},IPHAS)\\
+stored at the cells}
 
 \variab{IFLUMA}{IFLUMA(NVARMX)}{IA}{Property number corresponding to the
-convective flow associated with each variable ({\em i.e.} for each face
-with the surface $S$, $\rho \vect{u} \,.\,\vect{S}$ in $kg.s^{-1}$). It
-must be noticed that the convective flows are associated with the
+mass flow associated with each variable ({\em i.e.} for each face
+of surface $S$, $\rho \vect{u} \,.\,\vect{S}$ in $kg.s^{-1}$). It
+must be noticed that the mass flows are associated with the
 variables and not with the phases. This allows to have a distinct
-convective flow for each scalar}  
+convective flow for each scalar.\\
+stored at the internal faces and boundary faces}  
 
 \variab{IFLUAA}{IFLUAA(NVARMX)}{IA}{Property number corresponding to the
-convective flow associated with each variable ({\em i.e.} for each face
-with the surface $S$, $\rho \vect{u} \,.\,\vect{S}$ in $kg.s^{-1}$) at
-the previous time step, in the case of a second-order extrapolation in time}
+mass flow associated with each variable at
+the previous time step, in the case of a second-order extrapolation in time\\
+stored at the internal faces and boundary faces}
 
 \variab{IVISLS}{IVISLS(NSCAMX)}{IA}{Property number corresponding to the
 diffusivity of scalars for which it is variable ({\em i.e.}$\displaystyle
 \frac{\lambda}{C_p}$ for the temperature, in $kg.m^{-1}.s^{-1}$). It must
 be noticed that the diffusivity is associated with the scalars rather
-than with the variables. See note below}
+than with the variables. See note below\\
+stored at the cells}
 
 \variab{IVISSA}{IVISSA(NSCAMX)}{IA}{Property number corresponding to the
 diffusivity of scalars for which it is variable ({\em i.e.}$\displaystyle
 \frac{\lambda}{C_p}$ for the temperature, in $kg.m^{-1}.s^{-1}$) at the
-previous time step, in the case of a second-order extrapolation in time}
+previous time step, in the case of a second-order extrapolation in time\\
+stored at the cells}
 
 \variab{ISMAGO}{ISMAGO(NPHSMX)}{IA}{For each phase, property number
-corresponding to the ``constant'' $C$ of the dynamic model, {\em i.e}
+corresponding to the variable $C$ of the dynamic model, {\em i.e}
 so that $\mu_t=\rho C\overline{\Delta}^2\sqrt{2S_{ij}S_{ij}}$ (with the
 notations of \cite{benhamadouche01}). $C$ corresponds to $C_s^2$ in the
-classical model of Smagorinsky} 
+classical model of Smagorinsky\\
+stored at the cells} 
+
+\variab{ICOUR}{ICOUR(NPHSMX)}{IA}{For each phase, CFL number in each cell at the
+present time step\\
+stored at the cells}
+
+\variab{IFOUR}{IFOUR(NPHSMX)}{IA}{For each phase, Fourier number in each cell at
+the present time step\\
+stored at the cells}
+
+\variab{IPRTOT}{IPRTOT(NPHSMX)}{IA}{For each phase\footnote{Although the data
+structure of \CS\ allows multi-phase variables,  the algorithm does not allow
+more than one pressure}, total pressure in each cell\\
+stored at the cells}
+
+\variab{IVISMA}{IVISMA(1 or 3)}{IA}{When the ALE method for deformable meshes is
+activated, IVISMA corresponds to the ``mesh viscosity'', allowing to limit
+the deformation in certain areas. This mesh viscosity can be isotropic or be
+taken as a diagonal tensor (depending on the value of the parameter
+IORTVM\index{IORTVM}.\\
+stored at the cells}
+
+\variab{ICMOME}{ICMOME(NBMOMX)}{IA}{Property number corresponding to
+the time averages defined by the user. More precisely, it is not the time
+average that is stored, but a summation over time (the division by the cumulated
+duration is done just before the results are written)\\
+stored at the cells}
+
+\variab{ICDTMO}{ICDTMO(NBMOMX)}{IA}{Property number corresponding to the
+cumulated duration associated with each time average defined by the
+user, when this duration is not spatially uniform (see note below)\\
+stored at the cells} 
+
 
 \minititre{Note: Variable physical properties}\label{provar}
 Some physical properties such as specific heat or diffusivity are often
 constant (choice made by the user).
-In that case, in order to diminish the necessary memory, these
-properties are stored in a simple real number rather than in a real
-array whose size would be the number of cells.
+In that case, in order to limit the necessary memory, these
+properties are stored as a simple real number rather than in a domain-sized
+array of reals.
 \begin{list}{$\bullet$}{}
 \item It is the case for the specific heat $C_p$. 
 \begin{list}{-}{}
-\item If $C_p$ is constant in the phase IPHAS, it can be specified in 
+\item If $C_p$ is constant for the phase IPHAS, it can be specified in 
 	the interface or by indicating ICP(IPHAS)=0 in \texttt{usini1},
 	and the property will be stored in the real number CP0(IPHAS).
 \item If $C_p$ is variable, it can be specified in the interface or by
@@ -2076,71 +2160,51 @@ array whose size would be the number of cells.
 \end{list}  
 
 
-\bigskip
-
-\variab{ICMOME}{ICMOME(NBMOMX)}{IA}{Property number corresponding to
-every average defined by the user. In fact it is not really a
-time-average, but a cumulation over time (the division by the cumulated
-duration is done just before the results are written)}
-
-\variab{ICDTMO}{ICDTMO(NBMOMX)}{IA}{Property number corresponding to the
-cumulated duration associated with each time-average defined by the
-user, when this duration is not spatially uniform (see note below)} 
-
 \minititre{Note: cumulated duration associated with the averages
 defined by the user}\label{prg_moyennes}
-The cumulated duration associated with the calculation of a time-average
+The cumulated duration associated with the calculation of a time averages
 defined by the user is often a spatially uniform value. In this case, it
 is stored in a simple real number: for the mean value IMOM, it is the
-real number DTCMOM(-IDTMOM(IMOM)). \\
-When this cumulated duration can vary in space (for instance in the case of a
-spatially variable time step), it must be stored in a array whose size is
-the number of cells, which may be accessed to in PROPCE. It must be
-noticed that the cumulated duration associated with the calculation of 
+real number DTCMOM(-IDTMOM(IMOM))\index{DTCMOM}\index{IDTMOM} (IDTMOM(IMOM) is
+negative in this case).\\
+When this cumulated duration is not spatially uniform (for instance in the case
+of a spatially variable time step), it is stored in PROPCE. It must be
+noted that the cumulated duration associated with the calculation of 
 the average IMOM is variable in space if IDTMOM(IMOM) is strictly
 positive. The number of the associated property in PROPCE is then
-ICDTMO(IDTMOM(IMOM)). For instance, for the average IMOM, the
+ICDTMO(IDTMOM(IMOM))\index{ICDTMO}. For instance, for the average IMOM, the
 cumulated duration in the cell IEL will be
-PROPCE(IEL,ICDTMO(IDTMOM(IMOM))). \\ 
+PROPCE(IEL,ICDTMO(IDTMOM(IMOM))).\\ 
 The user may have a look to the example given in \texttt{usproj} to know
-how to calculate a time-average in a particular case (printing of extrem
-values, writing of the results).
+how to calculate a time averages in a particular cases (printing of extreme
+values, writing of results, ...).
 
 \bigskip
 
-The 2 variables, HBORD and TBORD should be noted as they are relatively local
-(in the treatment of boundary conditions) and are used only by developers.
+Two other variables, HBORD and TBORD, should be noted here, although they are
+relatively local (they appear only in the treatment of the boundary conditions)
+and are used only by developers.
 
-\variab{HBORD}{HBORD(NFABOR)}{RA}{Array of the coefficients of exchange of 
-temperature (or enthalpy) at the boundary faces (must set ISVHB=1\index{ISVHB}
- in \texttt{tridim}, or else the array could crash. Used in coupling with \syrthes.}
+\variab{HBORD}{HBORD(NFABOR)}{RA}{Array of the exchange coefficient for 
+temperature (or enthalpy) at the boundary faces. The table is allocated only if
+ISVHB\index{ISVHB} is set to 1 in \texttt{tridim}, which is done automatically
+but only if the coupling with \syrthes or the 1D thermal wall module are
+activated.}
 
-\variab{TBORD}{TBORD(NFABOR)}{RA}{Temperature (or enthalpy) array of the boundary
- faces (must set ISVTB=ISCAL\index{ISVTB} (number of the scalar representing temperature
- or enthalpy) in \texttt{tridim}, or else the array could crash).
- Used in coupling with \syrthes.}   
+\variab{TBORD}{TBORD(NFABOR)}{RA}{Temperature (or enthalpy) at the boundary
+ faces\footnote{It is the physical temeprature at the boundary faces, not the
+boundary condition for temperature. See \cite{theory} for more details on
+boundary conditions}. The table is allocated only if
+ISVTB\index{ISVTB} is set to 1 in \texttt{tridim}, which is done automatically
+but only if the coupling with \syrthes or the 1D thermal wall module are
+activated.}
+
+Tables HBORD and TBORD are of size NFABOR, although they concern only the wall
+boundary faces.
 
 
 
-%Les deux variables HBORD et TBORD peuvent \^etre not\'ees, 
-%bien qu'elles soient relativement locales (traitement des conditions aux
-%limites) et utiles aux d\'eveloppeurs uniquement.   
-
-%\variab{HBORD}{HBORD(NFABOR)}{RA}{Tableau du coefficient d'\'echange de la
-%temp\'erature  (ou de l'enthalpie) sur les faces de bord (n\'ecessite d'avoir
-%pos\'e ISVHB=1\index{ISVHB} dans \texttt{tridim}, sinon on risque des \'ecrasements de
-%tableaux). Utilis\'e pour 
-%le couplage avec \syrthes. Le tableau est de taille NFABOR bien que l'utilit\'e
-%de la variable soit limit\'ee aux faces de paroi}
-
-%\variab{TBORD}{TBORD(NFABOR)}{RA}{Tableau de la temp\'erature (ou de
-%l'enthalpie) sur les faces de bord (n\'ecessite d'avoir
-%pos\'e ISVTB=ISCAL\index{ISVTB} (num\'ero du scalaire repr\'esentant la temp\'erature ou
-%l'enthalpie) dans \texttt{tridim}, sinon on risque des \'ecrasements de 
-%tableaux). Utilis\'e pour le couplage avec \syrthes. 
-%Le tableau est de taille NFABOR bien que l'utilit\'e
-%de la variable soit limit\'ee aux faces de paroi}  
-
+%%%ICI%%%%%%%%%%%%%%%
 
 %==================================
 %\subsubsection{Variables des m\'ethodes num\'eriques}
@@ -2209,25 +2273,25 @@ Driest-wall damping}
 
 \variab{IIFAPA}{IIFAPA(NPHSMX)}{IA}{For each phase, the pointer in IA which
  marks out the number of the wall face(type ITYPFB=IPAROI) which is closest
- to the centre of a given volume when necessary ($R_{ij}-\varepsilon$ with
+ to the center of a given volume when necessary ($R_{ij}-\varepsilon$ with
  wall echo, LES with van Driest-wall damping,
 or SST $k-\omega$ turbulence model) and when ICDPAR=2. The number of the wall
-face (for the phase IPHAS) which is the closest to the centre of the
+face (for the phase IPHAS) which is the closest to the center of the
 cell IEL is therefore IA(IIFAPA(IPHAS)+IEL-1). This calculation method
 is not compatible with parallelism and periodicity}
 
 \variab{IDIPAR}{IDIPAR}{I}{For each phase, pointer in RA to the section
-allowing to mark out the distance between the centre of a given volume and the
+allowing to mark out the distance between the center of a given volume and the
 closest wall, when it is necessary ($R_{ij}-\varepsilon$ with wall echo,
 LES with van Driest-wall damping, or SST $k-\omega$ turbulence model)
-and when ICDPAR=1. The distance between the centre of the cell IEL and the
+and when ICDPAR=1. The distance between the center of the cell IEL and the
 closest wall is therefore  RA(IDIPAR+IEL-1)}
 
 \variab{IYPPAR}{IYPPAR}{I}{For each phase, pointer in RA to the section
 allowing to mark out the adimensional distance $y^+$ between a given
 volume and the closest wall, when it is necessary (LES with van
 Driest-wall damping) and when ICDPAR=1. The adimensional distance $y^+$
-between the centre of the cell IEL and the closest wall is therefore
+between the center of the cell IEL and the closest wall is therefore
 RA(IYPPAR+IEL-1)} 
 
 \minititre{Pressure drops}
@@ -2352,10 +2416,10 @@ according to the need (specification of boundary conditions, pressure
 drop zones ...). The references are generally of one of the two
 following types:
 \begin{list}{$\bullet$}{}
-\item colour.
+\item color.
 When the mesh is created using I-DEAS, boundary faces and volume
-      elements may be given colours. When it is created using SIMAIL, the
-      colours of boundary faces are called ``references'', and the colours
+      elements may be given colors. When it is created using SIMAIL, the
+      colors of boundary faces are called ``references'', and the colors
       of volume elements are called ``subdomains''.
 \item groups.
 For instance, in I-DEAS, mesh entities may be gathered in ``groups''
@@ -2363,21 +2427,21 @@ For instance, in I-DEAS, mesh entities may be gathered in ``groups''
       a group is then given a group number.
 \end{list}
 From \CS 's point of view, all the references to mesh entities (boundary faces
-and volume elements) correspond to a number (colour number or group
+and volume elements) correspond to a number (color number or group
 number) associated with the entity. An entity may have several
-references (for instance, one entity may have one colour and belong to
+references (for instance, one entity may have one color and belong to
 several groups). In \CS, these references may be designated as
 ``properties''. \\
 The mesh entities are gathered in equivalence classes on the base of
 their properties. These equivalence classes are called ``families''. All
 the entities of one family have the same properties. In order to know
-the properties (in particular the colour) of an entity (a boundary face
+the properties (in particular the color) of an entity (a boundary face
 for example), the user must first determine the family to which it
 belongs. \\
 For instance, let's consider a mesh whose boundary faces have all been
-given one colour (for example using SIMAIL). The family of the boundary
+given one color (for example using SIMAIL). The family of the boundary
 face IFAC is IFML=IFMFBR(IFAC). The first (and only) property of this
-family is the colour ICOUL, obtained for the face IFAC with
+family is the color ICOUL, obtained for the face IFAC with
 ICOUL=IPRFML(IFML,1). In order to know the property number corresponding
 to a group, the user may refer to the listing of the Preprocessor, or use
 the utility function \texttt{NUMGRP(NOMGRP, LNGNOM)} (with a name
@@ -2388,8 +2452,8 @@ the utility function \texttt{NUMGRP(NOMGRP, LNGNOM)} (with a name
 The boundary conditions in \CS\ boil down to determine a value for the
 current variable $\phi$ at the boundary faces, that is to say $\phi_f$,
 value expressed as a function of $\phi_{I'}$, value of $\phi$ in I',
-projection of the centre of the adjacent cell on the straight line
-perpendicular to the boundary face and crossing its centre:
+projection of the center of the adjacent cell on the straight line
+perpendicular to the boundary face and crossing its center:
 $\phi_f=A_{\phi,f}+B_{\phi,f}\phi_{I'}$.  \\ 
 For a face IFAC, the pair of coefficients $A_{\phi,f},B_{\phi,f}$ is
 stored in COEFA(IFAC,ICLVAR) and
@@ -2478,18 +2542,14 @@ in the standard cases:
       time (\texttt{\#BSUB -c}). The variable
       \texttt{NOMBRE\_DE\_PROCESSEURS} which stands for the number of
       virtual processors used for the calculation must be completed,
-      too. In the case of a communication by files between the Preprocessor
-      and the Kernel ((\texttt{IFOENV=1}), the number of used virtual
-      processors is the same as the number of reserved processors. In
-      the case of a communication by MPI (\texttt{IFOENV=2}), a
-      supplementary processor must be reserved to run the Preprocessor.
+      too.
 
 \item Concerning the periodicity, it is enough to complete the option
       \texttt{COMMANDE\_PERIO} of the launch scripts. The transformation
       allowing to pass from a boundary to the other one must be defined
       (the direction does not matter) and the set of periodical faces
       should be (optional but strongly advised) marked out (for instance
-      by means of a colour).
+      by means of a color).
 
 \item Periodicity is compatible with parallelism.
 
@@ -2530,16 +2590,16 @@ usually do not cause any problem, some kind of developments are more
 complicated. The most usual cases are dealt with below. \\ Examples are
 given in the subroutine \texttt{usproj}.
 \begin{list}{$\bullet$}{}
-\item {\bf Access to information related to neighbouring cells in
+\item {\bf Access to information related to neighboring cells in
       parallel and periodic cases}.\\
 When periodicity or parallelism are brought into use, some cells of the
-      mesh become physically distant from their neighbours. Concerning
+      mesh become physically distant from their neighbors. Concerning
       parallelism, the calculation domain is split and distributed
       between the processors: a cell located at the ``edge'' of a
-      given processor may have neighbours on different processors. \\
-In the same way, in case of periodicity, the neighbouring cells of cells
+      given processor may have neighbors on different processors. \\
+In the same way, in case of periodicity, the neighboring cells of cells
       adjacent to a periodic face are generally distant. \\
-When data concerning neighbouring cells are required for the
+When data concerning neighboring cells are required for the
       calculation, they must first be searched on the other processors
       or on the other edge of periodic frontiers. In order to ease the
       manipulation of these data, they are stored temporarily in virtual
@@ -2549,7 +2609,7 @@ It is in particular the case when the following operations are made on a
 \begin{list}{-}{}
 \item calculation of the gradient of $A$ (use of \texttt{grdcel});
 \item calculation of an internal face value from the values of $A$  in
-      the neighbouring cells (use of IFACEL).
+      the neighboring cells (use of IFACEL).
 \end{list}
 The variable $A$ needs to be exchanged before these operations can be
       made: to allow it, the subroutines \texttt{parcom} and
@@ -2562,7 +2622,7 @@ In parallel mode, the user must pay attention during the realisation of
 \item calculation of extreme values on the domain (for instance, minimum
       and maximum of some calculation values);
 \item test of the existence of a certain value (for instance, do faces
-      of a certain colour exist ?);
+      of a certain color exist ?);
 \item verification of a condition on the domain (for instance, is a
       given flow value reached somewhere ?);
 \item counting out of entities (for instance, how many cells have
@@ -2629,7 +2689,7 @@ Some particular points should be reminded:
 %{Tableaux g\'eom\'etriques et particulaires li\'ees \`a la
 %      mod\'elisation lagrangienne} 
 \subsection{Geometric and particulate arrays
-      related to lagrangian modelling}
+      related to lagrangian modeling}
 %==================================
 
 In this section is given a non-exhaustive list of the main variables
@@ -3085,14 +3145,14 @@ need to be defined. In the case of a calculation launched without the
 interface, all the boundary conditions must appear in \texttt{usclim}.\\
 \texttt{usclim} is essentially constituted of a loop on the boundary
 faces. A sequence of \texttt{IF ... ELSE IF ... ENDIF} allows to
-differentiate the boundary faces according to their colour (or, more
+differentiate the boundary faces according to their color (or, more
 generally, the properties IPRFML of the family IFMFBR to which the face
 belongs). If needed, disposal geometric and
 physical variables are also available to the user, these allow him to differentiate the boundary
 faces using other criterions.
 
 For more details about the treatment of boundary conditions, the user
-may refer to the theoretical and computer documentation \cite{gest02} of
+may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
 \mbox{\texttt{info\_cs noyau}}).
@@ -3349,7 +3409,7 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
 \item For the other scalars, the condition ICODCL=5 is similar to
       ICODCL=1, but with a wall exchange coefficient calculated from a
       theoretical law. The values of RCODCL(IFAC,IVAR,1) and
-      RCODCL(IFAC,IVAR,2) must therefore be specified: see \cite{gest02}.
+      RCODCL(IFAC,IVAR,2) must therefore be specified: see \cite{theory}.
 \end{list}
 
 \item If ICODCL(IFAC,IVAR)=9: free outlet condition for the
@@ -3460,7 +3520,7 @@ The subroutine \texttt{usvort} contains 3 seperate parts:
 method(NNENTT\index{NNENT}) and them number of vortex for each inlet (NVORT\index{NVORT}), 
 where IENT represents the number of inlets.
 \item The 2nd part (IAPPEL=1) defines the boundary faces at which the vortex method
- is applicable. The boundary faces can be represented as colours (ICOUL) or by the
+ is applicable. The boundary faces can be represented as colors (ICOUL) or by the
  geometric co-ordinates. The IREPVO\index{IREPVO} array is informed by IENT whic
 h defines the number of inlets concerned with the vortex (essentially the vortex
  method can be applied with many independant inlets).
@@ -3488,7 +3548,7 @@ In the first 3 cases, the 2 base vectors in the plane of each inlet must be defi
 (vectors DIR1 and DIR2). The 3rd vector is automatically calculated by the code, 
 defined as a product of DIR1 and DIR2. DIR1 and DIR2 must be chosen impreitavely to
  give (CEN, DIR1, DIR2) an orthoganol reference of the inlet plane and so DIR3 is
- orientated in the entry domain.If ICAS=2, the position CEN has to be the centre of
+ orientated in the entry domain.If ICAS=2, the position CEN has to be the center of
  gravity of the rectangle or disc.
 
 The reference points (CEN, DIR1, DIR2, DIR3) wihch define the values of the variable in the FIDCAT file.\\
@@ -3596,10 +3656,10 @@ nction with the co-ordinates XDAT and YDAT (given in the FIDCAT file). Note that
 $\displaystyle L_K= 200 (\frac{\nu^3}{\varepsilon})^{\frac{1}{4}}$).
 
 \item IDELPA gives the vortex displacement method in the 2D inlet plane (the vortex method 
-is a langrangian method in which the eddy centres are replaced by a set velocity). If IDELPA=1, 
+is a langrangian method in which the eddy centers are replaced by a set velocity). If IDELPA=1, 
 the velocity displacement referred to by UD which is the vortex following a random sampling 
 (a sample number r, is taken for each vortex, at each time step and for each direction and
- the centre of the vortex is replaced by the 2 principle directions, $r \mbox{UD} \Delta t$ where 
+ the center of the vortex is replaced by the 2 principle directions, $r \mbox{UD} \Delta t$ where 
 $\Delta t$ is the time step of the calcualtion). If IDEPLA=2, the vortex will be convected by itself 
 ( with the speed given by the time step before the vortex method)
 \end{list}
@@ -3770,7 +3830,7 @@ or 2) which is a restart (ISUITE=1) of a calculation in which IDTVAR had
 the same value, DTREF does not allow to modify the time step. The user
 subroutine \texttt{usiniv} allows to modify the array DT which contains
 the value of the time step read from the restart file (array whose size
-is NCELET, defined at the cell centres whatever the chosen time step type).
+is NCELET, defined at the cell centers whatever the chosen time step type).
 
 {\em WARNING: to initialise the variables in the framework of a
 specific physics module} (NSCAPP.GT.0) {\em one of the subroutines
@@ -3804,7 +3864,7 @@ directory works as follows:
 \item Positionning of the probes (only at the first passage): the index
       II varies between 1 and the number of probes. The coordinates XX,
       YY and ZZ of each probe are given. The subroutine \texttt{findpt}
-      gives then the number ICAPT(II)\index{ICAPT} of the cell centre
+      gives then the number ICAPT(II)\index{ICAPT} of the cell center
       which is the closest to the defined probe.
 
 \item Opening of the writing files (only at the first passage): in the
@@ -3903,7 +3963,7 @@ source terms\footnote{indicator \texttt{ISNO2T} for the velocity,
 \texttt{ISTO2T} for the turbulence and \texttt{ISSO2T} for the scalars}
 is activated, it is no longer possible to test the sign of $S_{impl,i}$,
 because of coherence reasons (for more details, the user may refer to
-the theoretical and computer documentation \cite{gest02} of the
+the theoretical and computer documentation \cite{theory} of the
 subroutine {texttt{preduv}}). The user must therefore make sure it is
 always positive.}
 
@@ -3985,7 +4045,7 @@ dissipation $\varepsilon$ (for each phase IPHAS).
 This subroutine is called 7 times every time step and for each phase
 (once for each Reynolds stress component and once for the
 dissipation). The user must provide the arrays CRVIMP and CRVEXP for the
-variable IVAR (refering successively to IR11(IPHAS), IR22(IPHAS),
+variable IVAR (referring successively to IR11(IPHAS), IR22(IPHAS),
 IR33(IPHAS), IR12(IPHAS), IR13(IPHAS), IR23(IPHAS) and
 IEP(IPHAS)). These arrays are similar to the arrays CRVIMP and CRVEXP
 given for the velocity in the user subroutine \texttt{ustsns}. The way
@@ -4007,7 +4067,7 @@ related to the variables $\varphi$ and $\overline{f}$ of the v2f
 $\varphi$-model (for each phase IPHAS). This subroutine is called twice
 every time step and for each phase (once for $\varphi$ and once for
 $\overline{f}$). The user is expected to provide the arrays CRVIMP and
-CRVEXP for IVAR refering successively to IPHI(IPHAS) and
+CRVEXP for IVAR referring successively to IPHI(IPHAS) and
 IFB(IPHAS). Concerning $\varphi$, these arrays are similar to the arrays
 CRVIMP and CRVEXP given for the velocity in the user subroutine
 \texttt{ustsns}. Concerning $\overline{f}$, the equation is slightly
@@ -4311,7 +4371,7 @@ The 3rd call, done at each time step, allows the imposition of boundary conditio
 
 This subroutine is used to modify the calculation of the turbulent
 viscosity of the phase IPHAS, {\em i.e.} $\mu_t$ in $kg.m^{-1}.s^{-1}$
-(this piece of information, at the mesh cell centres, is conveyed by the
+(this piece of information, at the mesh cell centers, is conveyed by the
 variable PROPCE(IEL,IPCVST), with IPCVST = IPPROC(IVISCT(IPHAS))). The
 subroutine is called at the beginning of every time step, after the
 calculation of the physical parameters of the flow and of the
@@ -4334,7 +4394,7 @@ This subroutine is used to modify the calculation of the friction
 velocity $u_*$ (variable UET\index{UET}) for each phase. For more
 precisions concerning the friction velocity and the wall boundary
 conditions, the user may refer to the report \cite{bouckermattei00} and
-to the theoretical and computer documentation \cite{gest02} of the
+to the theoretical and computer documentation \cite{theory} of the
 subroutine \texttt{clptur}. To access to this document from a
 workstation, use the command \texttt{info\_cs noyau}.
 % or refer to \mbox{$_\text{\Large\~~\hspace{-0.2cm}}$\texttt{sc\_doc/saturne.html}}
@@ -4345,7 +4405,7 @@ the wall.
 %==================================
 %\subsection[Modification de la ``constante'' du modèle LES dynamique: \texttt{ussmag}]
 %{Modification de la ``constante'' du modèle LES dynamique: \textmd{\texttt{ussmag}}}
-\subsection{Modification of the ``constant'' of the dynamic LES model:
+\subsection{Modification of the variable $C$ of the dynamic LES model:
   \textmd{\texttt{ussmag}}}  
 %==================================
 
@@ -4353,7 +4413,7 @@ the wall.
 \textit{Subroutine called every time step in the case of LES with the
 dynamic model.} 
 
-This subroutine is used to modify the calculation of the ``constant'' of
+This subroutine is used to modify the calculation of the variable $C$ of
 the LES sub-grid scale dynamic model.
 
 Let us first remind that the LES approach introduces the notion of
@@ -4361,7 +4421,7 @@ filtering between large eddies and small motions. The solved variables
 are said to be filtered in an ``implicit'' way. Sub-grid scale models
 (``dynamic'' models) introduce in addition an explicit filtering.
 
-The notations used for the definition of the ``constant'' used in the
+The notations used for the definition of the variable $C$ used in the
 dynamic models of \CS\ are specified below. These notations are the ones
 assumed in the document \cite{benhamadouche01}, to which the user may
 refer for more details.
@@ -4411,12 +4471,13 @@ constant which is worth $C_s^2$. $C_s^2$ is the so-called Smagorinsky
 constant and is stored the variable $CSMAGO$\index{CSMAGO}.
 
 In the case of the dynamic model (ITURB(IPHAS)=41), $C$ is variable in
-time and in space. It is determined by $\displaystyle C=\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}$.
+time and in space. It is determined by
+$\displaystyle C=\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}$.
 
 In practice, in order to increase the stability, the code does not use the
 value of $C$ obtained in each cell, but an average with the values
-obtained in the neighbouring cells (this average uses the extended
-neighbourhood and corresponds to the explicit filter). By default, the
+obtained in the neighboring cells (this average uses the extended
+neighborhood and corresponds to the explicit filter). By default, the
 value calculated by the code is
 \begin{displaymath}
 C=\frac{\widetilde{M_{ij}L{ij}}}{\widetilde{M_{kl}M_{kl}}}
@@ -4459,11 +4520,11 @@ This subroutine may be used to modify ``manually'' the mesh
 characteristics\footnote{The family properties must not be modified:
 they have already been used to define the periodic faces.In fact, a face 
 defined as periodic in the script cannot be changed at the inlet, even 
-if the colour of the inlet face is altered}:
+if the color of the inlet face is altered}:
 \begin{list}{$\bullet$}{}
-\item \mbox{XYZCEN(3,NCELET)} (cell centre coordinates),
-\item \mbox{CDGFAC(3,NFAC)} (internal face centre coordinates),
-\item \mbox{CDGFBO(3,NFABOR)} (boundary face centre coordinates),
+\item \mbox{XYZCEN(3,NCELET)} (cell center coordinates),
+\item \mbox{CDGFAC(3,NFAC)} (internal face center coordinates),
+\item \mbox{CDGFBO(3,NFABOR)} (boundary face center coordinates),
 \item \mbox{SURFAC(3,NFAC)} (internal face surface vector components) and
 \item \mbox{SURFBO(3,NFABOR)} (boundary face surface vector components).
 \end{list}
@@ -4549,9 +4610,9 @@ chronological outputs in {\em EnSight}, {\em MED} or {\em CGNS} format.
 
 The given example proposes to define two sections (\texttt{NBCOUP =
 2}). The first one is consituted of internal and boundary faces marked
-out by means of the coordinates of their centres. The second one is constituted
-of internal faces marked out by means of the colour of their neighbouring
-cells and of boundary faces marked out by means of their colour.
+out by means of the coordinates of their centers. The second one is constituted
+of internal faces marked out by means of the color of their neighboring
+cells and of boundary faces marked out by means of their color.
 
 It must be noticed that the lists of faces can not be modified during
 the calculation (they are set at the calculation beginning).
@@ -4804,7 +4865,7 @@ to a given criterion: \\
 value. \\
 - For a surface ``part'', internal faces which are between a cell in
 which the velocity exceeds a certain value and a cell in which the
-velocity is lower than this value (and boundary faces neighbouring a
+velocity is lower than this value (and boundary faces neighboring a
 cell in which the velocity exceeds this value). This surface
 post-processing mesh corresponds therefore to an approximation of a
 velocity isosurface.
@@ -4933,7 +4994,7 @@ The thermal balance example is particularly interesting.
 \item It shows the precautions to take before doing some operations in
       the framework of periodic or parallel calculations (in particular
       when we want to calculate the gradient of a variable or to have
-      access to values at the cells neighbouring a face). 
+      access to values at the cells neighboring a face). 
 \item Finally it must not be forgotten that the solving with
       temperature as a solved variable is questionable when the specific
       heat is not constant.
@@ -5208,7 +5269,7 @@ initialised at -1, which means that no specific physics is activated.
                 \item IPPMOD(ICP3PL) = 1 otherwise
                 \item IPPMOD(ICP3PL) =-1 module not activated
          \end{list}
-        \item Lagrangian modelling of multi-coals and
+        \item Lagrangian modeling of multi-coals and
 	     multi-classes pulverised coal combustion: 
  		indicator {\bf IPPMOD(ICPL3C\index{ICPL3C})}
               The number of different coals must be inferior or equal to
@@ -5250,7 +5311,7 @@ initialised at -1, which means that no specific physics is activated.
 {\em WARNING: Only one specific physics module can be activated at the
 same time.}
 
-In the framework of the gas combustion modelling, the user may impose
+In the framework of the gas combustion modeling, the user may impose
 his own enthalpy-temperature tabulation (conversion law). He needs then
 to give the 
 value zero to the indicator INDJON\index{INDJON} (the default value
@@ -5545,22 +5606,22 @@ to pulverised coal combustion.
 As are \texttt{usini1} and \texttt{usppmo}, the use of \texttt{usebuc}, 
 \texttt {usd3pc}, \texttt{uslwcc}, \texttt{uscpcl} or \texttt{uscplc} is
 obligatory to run a calculation concerning a specific physics
-modelling. The way of using them is the same as the way of using
+modeling. The way of using them is the same as the way of using
 \texttt{usclim} in the framework of standard calculations, that is to
-say a loop on the boundary faces marked out by their colour (or more
+say a loop on the boundary faces marked out by their color (or more
 generally by a property of their family), where are defined: the type of
 face, the type of boundary condition for each variable and eventually
 the value of each variable.
 
-{\em WARNING: In the case of a specific physics modelling, all the
+{\em WARNING: In the case of a specific physics modeling, all the
 boundary conditions for every variable must be defined here, even for
 the eventual user scalars: {\em \texttt{usclim}} is not used at all.}\\
 
-In the case of a specific physics modelling, a zone number IZONE
+In the case of a specific physics modeling, a zone number IZONE
 \footnote{IZONE must be less than the maximum number of boundary 
 zone allowable by the code, NOZPPM. This is fixed at 2000 in
  \texttt{pppvar.h};not to be modified} (for
-instance the colour ICOUL) is associated with every boundary face, in
+instance the color ICOUL) is associated with every boundary face, in
 order to gather together all the boundary faces of the same type. In
 comparison to \texttt{usclim}, the main change from the user point of
 view concerns the faces whose boundary conditions belong to the type
@@ -5696,7 +5757,7 @@ to the specific physics activated {\em via} \texttt{usppmo}. As usual,
 the user may have access to several geometric variables to discriminate
 between different initialisation zones if needed.
 
-{\em WARNING: in the case of a specific physics modelling, all the
+{\em WARNING: in the case of a specific physics modeling, all the
 variables will be initialised here, even the eventual user scalars: {\em
 \texttt{usiniv}} is no longer used.}
 
@@ -5783,7 +5844,7 @@ The variables which can be activated by the user for each specific
       at the cell IEL by RTP(IEL,IVAR)) and the properties IPROP (defined
       at the cell IEL by PROPCE(IEL,IPPROC(IPROP))) are listed now:
       \begin{list}{$\rightarrow$}{}
-       \item EBU pre-mixed flame modelling: 
+       \item EBU pre-mixed flame modeling: 
        \begin{list}{-}{}
 	\item Calculation variables RTP(IEL,IVAR)
 	      \begin{list}{IVAR = }{}
@@ -5798,20 +5859,20 @@ The variables which can be activated by the user for each specific
 	       \item IYM(2)\index{IYM(2)} oxidiser mass fraction
 	       \item IYM(3)\index{IYM(3)} product mass fraction
 	       \item ICKABS\index{ICKABS} absorption
-		     coefficient, when the radiation modelling is
+		     coefficient, when the radiation modeling is
 		     activated 
 	       \item IT3M\index{IT3M} and IT4M\index{IT4M}
 		     ``$T^3$'' and ``$T^4$'' terms, when the radiation
-		     modelling is activated
+		     modeling is activated
 	      \end{list}
        \end{list}
-       \item rapid complete chemistry diffusion flame modelling: 
+       \item rapid complete chemistry diffusion flame modeling: 
 	     \begin{list}{}{}
 	      \item  everything is identical to the ``EBU'' case, except from
 		     the fresh gas mass fraction which is replaced by the
 		     variance of the mixing rate IVAR=ISCA(IFP2M\index{IFP2M})
 	     \end{list}
-       \item pulverised coal modelling with 3 comustables: 
+       \item pulverised coal modeling with 3 comustables: 
 	     \begin{list}{}{}
 	      \item {\em variables shared by the two phases}:                
 		    \begin{list}{-}{}
@@ -5936,7 +5997,7 @@ $\rho^{n+1}=SRROM*\rho^{n}+(1-SRROM)\rho^{n+1}$\\
 As in the \texttt{usini1} and \texttt{usppmo}, the use of \texttt{usecl} 
 is required to run an electric calculation. The main use is the same as
  occurs in \texttt{usclim} for the standard \CS calculations, in that 
-a loop on the boundary face, referenced by their colour (or more genrally
+a loop on the boundary face, referenced by their color (or more genrally
  the properties of their familly), where it is defined ;the face type,
  the boundary conditions for each variable, and finally the value of 
 each variable or imposed flow. 
@@ -5949,7 +6010,7 @@ used at all.}
 For the electric module, each boundary face is associated with a number
  \texttt{IZONE} \footnote{\texttt{IZONE} must be less than the maximum
  value allowed by the code, NOZZPPM. This is fixed at 2000 in \texttt
-{ppvar.h} and cannot be modified.}( the colour ICOUL for example)in order
+{ppvar.h} and cannot be modified.}( the color ICOUL for example)in order
  to group together all the boundary faces of the same type. In the report
  \texttt{usclim}, the main change from the users point of view concerns the
  specification of the boundary conditions of the potential, which isn't
@@ -6227,7 +6288,7 @@ is obligatory to run a calculation using the compressible module just
 as it is in both \texttt{usini1} and \texttt{usppmo} . The
 way of using it is the same as the way of using
 \texttt{usclim} in the framework of standard calculations, that is to
-say a loop on the boundary faces marked out by their colour (or more
+say a loop on the boundary faces marked out by their color (or more
 generally by a property of their family), where the type of
 face, the type of boundary condition for each variable and eventually
 the value of each variable are defined.
@@ -6265,7 +6326,7 @@ specific physics activated {\em via} \texttt{usppmo}.  As usual,
 the user may have access to several geometric variables to discriminate
 between different initialisation zones if needed.
 
-{\em WARNING: in the case of a specific physics modelling, all the
+{\em WARNING: in the case of a specific physics modeling, all the
 variables are initialised here: {\em \texttt{usiniv}} is not used at
 all.} 
 
@@ -6311,7 +6372,7 @@ the whole variation range of the variables.
 %==================================
 %\subsection[Approche lagrangienne des \'ecoulements multiphasiques \`a inclusions dispers\'ees]
 %{Approche lagrangienne des \'ecoulements multiphasiques \`a inclusions dispers\'ees}
-\subsection{Lagrangian modelling of multiphasic flows with dipersed inclusions}
+\subsection{Lagrangian modeling of multiphasic flows with dipersed inclusions}
 %==================================
 
 
@@ -6319,7 +6380,7 @@ the whole variation range of the variables.
 %\subsubsection[Initialisation des principaux mots cl\'es de l'approche lagrangienne : \texttt{uslag1}]
 %{Initialisation des principaux mots cl\'es de l'approche lagrangienne : \textmd{\texttt{uslag1}}}
 \subsubsection{Initialisation of the main key words in the lagrangian
-   modelling: \textmd{\texttt{uslag1}}}
+   modeling: \textmd{\texttt{uslag1}}}
 %==================================
 
 \noindent
@@ -6327,7 +6388,7 @@ the whole variation range of the variables.
 
 \noindent
 This is one of the two subroutines which must be completed in
-the case of a calculation modelling a lagrangian multiphasic flow. This
+the case of a calculation modeling a lagrangian multiphasic flow. This
 subroutine gathers in different headings all the key word which are
 necessary to configure the lagrangian module. The different headings
 refer to:
@@ -6373,7 +6434,7 @@ in the whole calculation domain, it is imperative to have an established
 particle seeding and it is recommended (when it is possible) not to
 impose statistical weights different from the unity. \\
 Finally, when the complete model is used for the turbulent dispersion
-modelling, the user must make sure that the volumetric statistics are
+modeling, the user must make sure that the volumetric statistics are
 directly used for the calculation of the locally undisturbed fluid flow
 field. \\ 
 
@@ -6411,7 +6472,7 @@ lagrangian calculation by doing a restart on only one processor.}
 %==================================
 
 \noindent
-In the framework of the multiphasic lagrangrian modelling, the management
+In the framework of the multiphasic lagrangrian modeling, the management
 of the boundary conditions concerns the particle behaviour when there
 is an interaction between its trajectory and a boundary face. These
 boundary conditions may be imposed independently of those concerning the
@@ -6435,8 +6496,8 @@ lagrangian module. The main numerical variables and ``pointers'' are
 described below.
 
 \variab{IFRLAG}{IFRLAG(NFABOR)}{IA}{In the lagrangian module, the user
-defines NFRLAG\index{NFRLAG} boundary zones from the colour of the
-boundary faces, or more generally from their properties (colours, groups
+defines NFRLAG\index{NFRLAG} boundary zones from the color of the
+boundary faces, or more generally from their properties (colors, groups
 ...), from the boundary conditions defined in \texttt{usclim}, or even
 from their coordinates. To do so, the array IFRLAG(NFABOR) giving for
 each face IFAC the number IFRLAG(IFAC) corresponding to the zone to
@@ -6546,8 +6607,8 @@ particle injection zone IZONE. They are marked out by means of ``pointers'':
       RUSLAG(ICLAS,IZONE,IUNO). 
 
 \item if IUSLAG(ICLAS,IZONE,IJUVW) = -1, the particle injection velocity
-      is equal to the fluid velocity at the centre of the cell
-      neighbouring the injection boundary face.
+      is equal to the fluid velocity at the center of the cell
+      neighboring the injection boundary face.
 
 \end{list}
 
