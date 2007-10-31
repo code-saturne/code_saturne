@@ -213,7 +213,7 @@ void CS_PROCF(tstsyr, TSTSYR)
  * *****************
  *
  * INTEGER          NTMABS      : --> : Maximum iteration number
- * INTEGER          NTCABS      : --> : Current iteration numbern
+ * INTEGER          NTCABS      : --> : Current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(itdsyr, ITDSYR)

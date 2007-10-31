@@ -235,8 +235,8 @@ C     ======================
 C
       IF (IIHMPR.EQ.1) THEN
 C
-        CALL  UIPPMO
-C       ============
+        CALL UIPPMO
+C       ===========
      & ( IPPMOD, ICOD3P, ICODEQ, ICOEBU, ICOBML,
      &   ICOLWC, ICP3PL, ICPL3C, ICFUEL,
      &   IELJOU, IELARC, IELION, ICOMPF, INDJON, IEQCO2)
@@ -433,7 +433,7 @@ C       ===========
      &             IR12, IR13, IR23,
      &             IOMG, IPHI, IFB,
      &             IALE, IUMA, IVMA, IWMA,
-     &             ISCA)
+     &             ISCA, ISCAPP)
 C
 C     Format des fichiers aval
         CALL CSIFOA(IFOAVA, IFOAVX)
@@ -460,7 +460,7 @@ C      Options numériques locales
 C
         CALL UINUM1
 C       ===========
-     &        (ISCA, BLENCV, ISCHCV, ISSTPC, IRCFLU,
+     &        (ISCA, ISCAPP, BLENCV, ISCHCV, ISSTPC, IRCFLU,
      &         CDTVAR, NITMAX, EPSILO)
 C
 C     Options numériques globales
@@ -550,11 +550,11 @@ C
 C
           CALL UIPROP
 C         ===========
-     &              (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
-     &               ISMAGO, IALE, ICP, ISCALT, ISCAVR,
-     &               IPRTOT, IPPPRO, IPPROC, ICMOME,
-     &               IPPTX, IPPTY, IPPTZ, IPPDT,
-     &               IVISMA, IAPPEL)
+     &            (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
+     &             ISMAGO, IALE, ICP, ISCALT, ISCAVR,
+     &             IPRTOT, IPPPRO, IPPROC, ICMOME,
+     &             IPPTX, IPPTY, IPPTZ, IPPDT,
+     &             IVISMA, IAPPEL)
 C
         ENDIF
 C
@@ -569,7 +569,7 @@ C       ===========
      &       ICHRVL, ICHRBO, ICHRSY, ICHRMD,
      &       FMTCHR, LEN(FMTCHR), OPTCHR, LEN(OPTCHR),
      &       NTCHR,  IECAUX,
-     &       ICHRVR, ILISVR, IHISVR, ISCA,
+     &       ICHRVR, ILISVR, IHISVR, ISCA, ISCAPP,
      &       IPPRTP, IPPPRO, IPPROC,
      &       XYZCAP )
 C

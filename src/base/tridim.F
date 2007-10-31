@@ -968,8 +968,8 @@ C    -> sera modifie lors de la restructuration des zones de bord
 C
           CALL UICLIM
 C         ===========
-     & ( NOZPPM,  NFABOR, IINDEF, IENTRE, IPAROI, ISYMET, ISOLIB,
-     &   IQIMP,  ICALKE, IA(IITYPF), IA(IIZFPP), IA(IICODC),
+     & ( NOZPPM,  NFABOR, IINDEF, IENTRE, IPAROI, IPARUG, ISYMET,
+     &   ISOLIB,  IQIMP,  ICALKE, IA(IITYPF), IA(IIZFPP), IA(IICODC),
      &   QIMP,   DH,     XINTUR,     RA(IRCODC) )
 C
         NBZFMX = NBZPPM

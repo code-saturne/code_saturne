@@ -659,7 +659,7 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
   }
 
-  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices] - 1, cs_int_t);
+  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices], cs_int_t);
 
   /* Fill list */
 

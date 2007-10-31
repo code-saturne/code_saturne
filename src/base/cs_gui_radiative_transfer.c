@@ -101,10 +101,8 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  char     **label;             /* Pour chaque numéro de label
-                                   contient le nom du label        */
-  char     **nature;            /* Pour chaque numéro de label contient
-                                   la nature de la CL                         */
+  char     **label;                /* label for each boundary zone            */
+  char     **nature;               /* nature for each boundary zone           */
   int      *output_zone;
   int      *type;
   double   *emissivity;
@@ -127,11 +125,9 @@ static cs_radiative_boundary_t *boundary = NULL;
  * of NOMVAR. NOMVAR is a characters fortran array
  *----------------------------------------------------------------------------*/
 
-
 static int      _cs_gui_max_vars = 0;
 static int      _cs_gui_last_var = 0;
 static char  ** _cs_gui_var_rayt = NULL;
-
 
 /*============================================================================
  * C Private Functions
@@ -225,7 +221,7 @@ static void cs_gui_radiative_transfer_char(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_radiative_transfer_char_post(const char *const name,
-                                                int  *const value)
+                                                       int  *const value)
 {
   char *path = NULL;
   char *path1 = NULL;
@@ -269,7 +265,7 @@ static char *cs_gui_radiative_transfer_char_post(const char *const name,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_radiative_transfer_type(const char *const param,
-                                          int  *const keyword)
+                                                 int  *const keyword)
 {
   char *path;
   char *type;
@@ -309,8 +305,8 @@ static void cs_gui_radiative_transfer_type(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_radiative_boundary(const   char *const label,
-                               const   char *const param,
-                                     double *const value)
+                                      const   char *const param,
+                                            double *const value)
 {
   char *path = NULL;
   double res = 0.0;
@@ -448,18 +444,6 @@ static void _cs_gui_copy_varname(const char *varname,
 /*============================================================================
  * C API public functions
  *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
- *----------------------------------------------------------------------------*/
-
-void cs_gui_clean_memory_rayt(void)
-{
-  int i;
-  for (i = 0; i < _cs_gui_max_vars; i++)
-    BFT_FREE(_cs_gui_var_rayt[i]);
-  BFT_FREE(_cs_gui_var_rayt);
-}
 
 /*============================================================================
  * Fortran API public functions
@@ -890,7 +874,8 @@ void CS_PROCF (uiray2, UIRAY2)
   }
   if (iok == 1) {
     bft_printf(_("Warning: radiative boundary conditions in GUI are not totally defined \n"));
-    bft_printf(_("These are radiative boundary conditions defined in GUI: \n"));
+    if (zones)
+      bft_printf(_("These are radiative boundary conditions defined in GUI: \n"));
     for (izone = 0; izone < zones; izone++) {
        bft_printf(_("  nature: %s label: %s\n"), boundary->nature[izone], boundary->label[izone]);
        if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
@@ -953,6 +938,51 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
 #endif
 
   }
+}
+
+/*-----------------------------------------------------------------------------
+ * Free memory: clean global private variables.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE MEMUI2
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (memui2, MEMUI2) (void)
+{
+  int zones = 0;
+  int i;
+
+  if (boundary != NULL) {
+
+  /* clean memory for global private structure boundaries */
+
+    zones = cs_gui_boundary_zones_number();
+    for (i=0 ; i < zones ; i++) {
+      BFT_FREE(boundary->label[i]);
+      BFT_FREE(boundary->nature[i]);
+    }
+    BFT_FREE(boundary->label);
+    BFT_FREE(boundary->nature);
+    BFT_FREE(boundary->output_zone);
+    BFT_FREE(boundary->type);
+    BFT_FREE(boundary->emissivity);
+    BFT_FREE(boundary->thickness);
+    BFT_FREE(boundary->thermal_conductivity);
+    BFT_FREE(boundary->external_temp);
+    BFT_FREE(boundary->internal_temp);
+    BFT_FREE(boundary->conduction_flux);
+    BFT_FREE(boundary);
+  }
+
+  /* clean memory for fortran name of variables */
+
+  for (i = 0; i < _cs_gui_max_vars; i++)
+    BFT_FREE(_cs_gui_var_rayt[i]);
+  BFT_FREE(_cs_gui_var_rayt);
+
 }
 
 /*----------------------------------------------------------------------------*/

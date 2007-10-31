@@ -507,12 +507,6 @@ int main
   bft_printf("\n Destruction des structures et clôture du calcul\n");
   bft_printf_flush();
 
-#if defined(_CS_HAVE_XML)
-  /* Libération des structures liées à la lecture du fichier xml */
-  cs_gui_clean_memory();
-  cs_gui_clean_memory_rayt();
-#endif
-
   /* Libération de structures internes de l'API F77 pour fichiers suite */
 
   cs_suite_f77_api_finalize();

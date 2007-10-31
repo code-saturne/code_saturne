@@ -127,10 +127,15 @@ C
       INCLUDE "radiat.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "coincl.h"
+      INCLUDE "cpincl.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagdim.h"
       INCLUDE "lagran.h"
       INCLUDE "vortex.h"
+      INCLUDE "ihmpre.h"
       INCLUDE "matiss.h"
 C
 C***********************************************************************
@@ -1327,7 +1332,7 @@ C=======================================================================
 C 17. TEST D'ARRET ISSU DU MODULE DE RAYONNEMENT P-1
 C=======================================================================
       IF (ISTPP1.EQ.1) THEN
-        NTCABS = NTMABS
+        NTMABS = NTCABS
       ENDIF
 C
 C=======================================================================
@@ -1836,6 +1841,20 @@ C
 C=======================================================================
 C 26. MEMOIRE UTILISEE
 C=======================================================================
+C
+#if defined(_CS_HAVE_XML)
+C     Libération des structures liées à la lecture du fichier xml
+C
+      IF (IIHMPR.EQ.1) THEN
+C
+        CALL MEMUI2
+C       ===========
+C
+        CALL MEMUI1(NCHARB)
+C       ===========
+      ENDIF
+C
+#endif
 C
       IF(IWARN0.GT.0) THEN
         WRITE(NFECRA,5000)

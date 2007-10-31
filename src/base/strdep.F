@@ -263,6 +263,13 @@ C
 C     Si on est en phase d'initialisation du fluide, on ne deplace pas
 C       les structures sauf a l'initialisation
       IF (ITRALE.LE.NALINF) THEN
+        IF (ITRALE.EQ.0) THEN
+          DO ISTR = 1, NBSTRU
+            DO II = 1, NDIM
+              XSTR(II,ISTR) = XSTP(II,ISTR)
+            ENDDO
+          ENDDO
+        ENDIF
         ITRFIN = -1
         RETURN
       ENDIF

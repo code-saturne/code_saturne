@@ -802,6 +802,8 @@ C         ===========
      &      W2     , W2     , W2    ,
      &      W3     , W3     , W3    )
 C
+          IDIMTE = 21
+          ITENSO = 0
           CALL PERCOM
 C         ===========
      &    ( IDIMTE , ITENSO ,
