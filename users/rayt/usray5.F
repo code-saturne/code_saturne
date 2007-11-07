@@ -414,9 +414,9 @@ C      1.1.1 - SYMETRIE ET PAROI REFLECHISSANTE (EPS = 0) :
 C              CONDITION DE FLUX NUL
 C              ------------------------------------------
 C
-            IF (ITYPFB(IFAC).EQ.ISYMET .OR.
-     &         (ITYPFB(IFAC).EQ.IPAROI .OR.
-     &          ITYPFB(IFAC).EQ.IPARUG .AND. EPS(IFAC).EQ.0D0)) THEN
+            IF (ITYPFB(IFAC).EQ.ISYMET     .OR.
+     &         ((ITYPFB(IFAC).EQ.IPAROI.OR.
+     &           ITYPFB(IFAC).EQ.IPARUG).AND.EPS(IFAC).EQ.0D0)) THEN
 C
               COFRUA(IFAC) = 0.D0
               COFRUB(IFAC) = 1.D0
