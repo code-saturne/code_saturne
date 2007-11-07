@@ -680,6 +680,7 @@ void CS_PROCF (uiray2, UIRAY2)
 (
  const    int *const itypfb,
  const    int *const iparoi,
+ const    int *const iparug,
  const    int *const ivart,
  const    int *const iph,
  const    int *const nphast,
@@ -719,6 +720,8 @@ void CS_PROCF (uiray2, UIRAY2)
 
   k = (*iph -1) * (*nfabor);
 
+  BFT_MALLOC(faces_list, *nfabor, int);
+
   zones   = cs_gui_boundary_zones_number();
   output_zone_max = cs_gui_radiative_boundary_output_zone_max();
 
@@ -743,59 +746,59 @@ void CS_PROCF (uiray2, UIRAY2)
     /* nature, label and description (color or group)
        of the ith initialization zone */
 
-      ith_zone = izone + 1;
+        ith_zone = izone + 1;
 
-      nature = cs_gui_boundary_zone_nature(ith_zone);
+        nature = cs_gui_boundary_zone_nature(ith_zone);
 
-      label = cs_gui_boundary_zone_label(ith_zone);
+        label = cs_gui_boundary_zone_label(ith_zone);
 
-      BFT_MALLOC(boundary->label[izone], strlen(label)+1, char);
-      strcpy(boundary->label[izone], label);
+        BFT_MALLOC(boundary->label[izone], strlen(label)+1, char);
+        strcpy(boundary->label[izone], label);
 
-      BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
-      strcpy(boundary->nature[izone], nature);
+        BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
+        strcpy(boundary->nature[izone], nature);
 
-      description = cs_gui_boundary_zone_localization(nature, label);
+        description = cs_gui_boundary_zone_localization(nature, label);
 
-      BFT_MALLOC(faces_list, *nfabor, int);
 
-      fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                            description,
-                            &faces,
-                            faces_list);
+        fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                    description,
+                                    &faces,
+                                    faces_list);
 
-      BFT_FREE(description);
+        BFT_FREE(description);
 
-      ifbr = faces_list[0]-1;
+        /*Initialisation par defaut : ces valeurs sont les memes que
+        dans raycli, mais elles sont donnees par face dans raycli
+        et ici on n'a pas forcement de face de bord (parallele)
+          -> on duplique */
+        boundary->type[izone] = -1;
+        boundary->output_zone[izone] = -1;
+        boundary->emissivity[izone] = -1.e12;
+        boundary->thickness[izone] = -1.e12;
+        boundary->thermal_conductivity[izone] = -1.e12;
+        boundary->external_temp[izone] = -1.e12;
+        boundary->internal_temp[izone] = -1.e12;
+        boundary->conduction_flux[izone] = 1.e30;
 
-      boundary->type[izone] = isothp[k + ifbr];
-      boundary->output_zone[izone] = izfrdp[k + ifbr];
-      boundary->emissivity[izone] = epsp[k + ifbr];
-      boundary->thickness[izone] = epap[k + ifbr];
-      boundary->thermal_conductivity[izone] = xlamp[k + ifbr];
-      boundary->external_temp[izone] = textp[k + ifbr];
-      boundary->internal_temp[izone] = tintp[k + ifbr];
-      boundary->conduction_flux[izone] = rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr];
+        if (cs_gui_strcmp(nature, "wall")) {
+          boundary->type[izone] = cs_gui_radiative_boundary_type(label,
+                                                                                   *itpimp, *ipgrno, *iprefl,
+                                                                                   *ifgrno, *ifrefl);
+          tmp = (double) boundary->output_zone[izone];
+          cs_gui_radiative_boundary(label, "output_zone", &tmp);
+          boundary->output_zone[izone] = (int) tmp;
+          cs_gui_radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
+          cs_gui_radiative_boundary(label, "thickness", &boundary->thickness[izone]);
+          cs_gui_radiative_boundary(label, "thermal_conductivity", &boundary->thermal_conductivity[izone]);
+          cs_gui_radiative_boundary(label, "external_temperature_profile", &boundary->external_temp[izone]);
+          cs_gui_radiative_boundary(label, "internal_temperature_profile", &boundary->internal_temp[izone]);
+          cs_gui_radiative_boundary(label, "flux", &boundary->conduction_flux[izone]);
 
-      if (cs_gui_strcmp(nature, "wall")) {
-        boundary->type[izone] = cs_gui_radiative_boundary_type(label,
-                                                               *itpimp, *ipgrno, *iprefl,
-                                                               *ifgrno, *ifrefl);
-        tmp = (double) boundary->output_zone[izone];
-        cs_gui_radiative_boundary(label, "output_zone", &tmp);
-        boundary->output_zone[izone] = (int) tmp;
-        cs_gui_radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
-        cs_gui_radiative_boundary(label, "thickness", &boundary->thickness[izone]);
-        cs_gui_radiative_boundary(label, "thermal_conductivity", &boundary->thermal_conductivity[izone]);
-        cs_gui_radiative_boundary(label, "external_temperature_profile", &boundary->external_temp[izone]);
-        cs_gui_radiative_boundary(label, "internal_temperature_profile", &boundary->internal_temp[izone]);
-        cs_gui_radiative_boundary(label, "flux", &boundary->conduction_flux[izone]);
+        } /* if (cs_gui_strcmp(nature, "wall")) */
 
-      } /* if (cs_gui_strcmp(nature, "wall")) */
-
-      BFT_FREE(faces_list);
-      BFT_FREE(nature);
-      BFT_FREE(label);
+        BFT_FREE(nature);
+        BFT_FREE(label);
 
     }  /* for izones */
 
@@ -807,8 +810,6 @@ void CS_PROCF (uiray2, UIRAY2)
 
     description = cs_gui_boundary_zone_localization(boundary->nature[izone],
                                                     boundary->label[izone]);
-
-    BFT_MALLOC(faces_list, *nfabor, int);
 
     fvm_selector_get_list(cs_glob_mesh->select_b_faces,
                           description,
@@ -822,7 +823,7 @@ void CS_PROCF (uiray2, UIRAY2)
       for (n = 0; n < faces; n++) {
         ifbr = faces_list[n]-1;
 
-        if (itypfb[ifbr] != *iparoi)
+        if (itypfb[ifbr] != *iparoi && itypfb[ifbr] != *iparug)
           bft_error(__FILE__, __LINE__, 0,
                     _("One tries to define radiative boundary conditions on boundary which is not a wall.\n"
                       "The definition of the boundaries natures given in GUI (wall, inlet, outlet,...) \n"
@@ -864,9 +865,9 @@ void CS_PROCF (uiray2, UIRAY2)
       }
     } /* if nature == "wall" */
 
-    BFT_FREE(faces_list);
-
   } /* for izone */
+
+  BFT_FREE(faces_list);
 
   iok = 0;
   for (n = 0; n < *nfabor; n++) {

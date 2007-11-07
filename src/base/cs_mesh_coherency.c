@@ -303,7 +303,7 @@ cs_mesh_coherency_check(void)
   for (coord_id = 0; coord_id < 3; coord_id++) {
 
     bft_printf(_("    Vérification de cohérence sur coordonnées %d\n"),
-               coord_id);
+               coord_id+1);
 
     /* Test coherency on the standard neighborhood */
 

@@ -559,7 +559,7 @@ _create_vtx_out_gcells_connect(cs_mesh_halo_t   *halo,
                             out_gcells_vtx_lst,
                             vtx_gcells_idx);
 
-  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices] - 1, cs_int_t);
+  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_int_t);
 
   _reverse_connectivity_lst(halo,
                             n_vertices,

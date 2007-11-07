@@ -238,7 +238,19 @@ C        les a touchees (suite ou pas)
 C    - 0 si debut de calcul avec les structures
 C    - le deplacement utilise pour le calcul precedent si suite sans
 C        modification utilisateur
-      IF (ITRALE.GT.0) THEN
+C   Il faut cependant transferer sa valeur dans XSTR (qui est utilise
+C   par Newmark)
+C Lors des iterations suivantes (ITRALE>0) on utilise les schemas standard
+C   de calcul de XSTP
+C
+      IF (ITRALE.EQ.0) THEN
+C
+        DO ISTR = 1, NBSTRU
+          DO II = 1, NDIM
+            XSTR(II,ISTR) = XSTP(II,ISTR)
+          ENDDO
+        ENDDO
+      ELSE
 C
 C 2.1 : SCHEMA DE COUPLAGE EXPLICITE
 C-----------------------------------

@@ -2044,7 +2044,13 @@ _count_in_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
             if (n_added_vertices > 0) {
 
-              assert(n_added_vertices == 1);
+              if (n_added_vertices > 1)
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Incohérence repérée lors de la construction du halo.\n"
+                            "Plusieurs points locaux ont le même correspondant\n"
+                            "distant ; ceci est probablement dû à un effet de bord\n"
+                            "de la construction de périodicités multiples par le\n"
+                            "Préprocesseur."));
 
               /* Add this vertex if not already checked */
 

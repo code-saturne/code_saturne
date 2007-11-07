@@ -197,10 +197,8 @@ static void _cs_pp_io_convert_read
 
 cs_pp_io_t * cs_pp_io_initialize
 (
- const char          *const nom_emetteur,   /* --> partie "émetteur" du nom   */
- const char          *const nom_recepteur,  /* --> partie "recepteur du nom   */
+ const char          *const nom_rep,        /* --> nom du répertoire associé  */
  const char          *const chaine_magique, /* --> Chaîne de vérif. de type   */
- const cs_int_t             numero,         /* --> Complète le nom si non nul */
  const cs_pp_io_mode_t      mode,           /* --> Émission ou réception      */
  const cs_int_t             echo            /* --> Écho sur sortie principale
                                                     (< 0 si aucun, entête si 0,
@@ -209,24 +207,22 @@ cs_pp_io_t * cs_pp_io_initialize
 )
 {
   unsigned    int_endian;
+  int         numero;
 
-  char       *nom_fic = NULL;
   cs_pp_io_t  *pp_io = NULL;
-
 
   BFT_MALLOC(pp_io, 1, cs_pp_io_t);
 
   /* Construction du nom */
 
-  BFT_MALLOC(pp_io->nom,
-             strlen(nom_emetteur) + strlen("_vers_") + strlen(nom_recepteur) + 1
-             + (numero == 0 ? 0 : 4 + 1),
-             char);
+  if (cs_glob_base_rang < 0)
+    numero = 1;
+  else
+    numero = cs_glob_base_rang + 1;
 
-  sprintf(pp_io->nom, "%s_vers_%s", nom_emetteur, nom_recepteur);
+  BFT_MALLOC(pp_io->nom, strlen(nom_rep) + strlen("/n00001") + 1, char);
 
-  if (numero > 0)
-    sprintf(pp_io->nom + strlen(pp_io->nom), ".%04d", numero);
+  sprintf(pp_io->nom, "%s/n%05d", nom_rep, numero);
 
 
   /* Initialisation des autres champs */
@@ -259,47 +255,15 @@ cs_pp_io_t * cs_pp_io_initialize
 
   /* Info sur la création de l'interface */
 
-  bft_printf(_("\n  Lecture du pré traitement :  %s"), pp_io->nom);
+  bft_printf(_("\n  Lecture du pré traitement :  %s"), nom_rep);
   bft_printf_flush();
 
 
   /* Création du descripteur de fichier d'interface */
-  /*------------------------------------------------*/
 
-  if (cs_glob_base_nbr == 1) {
-
-    nom_fic = pp_io->nom;
-
-  }
-  else if (cs_glob_base_nbr > 1) {
-
-    BFT_MALLOC(nom_fic,
-               strlen(nom_emetteur) + strlen("_vers_") + strlen(nom_recepteur)
-               + 1 + (cs_glob_base_nbr == 1 ? 0 : 4 + 2) + (numero == 0 ? 0 : 4 + 1),
-               char);
-
-    if (mode == CS_PP_IO_MODE_WRITE)
-      sprintf(nom_fic, "%s_n%04d_vers_%s",
-              nom_emetteur, cs_glob_base_rang + 1, nom_recepteur);
-    else if (mode == CS_PP_IO_MODE_READ)
-      sprintf(nom_fic, "%s_vers_%s_n%04d",
-              nom_emetteur, nom_recepteur, cs_glob_base_rang + 1);
-    else
-      assert(   mode == CS_PP_IO_MODE_WRITE
-             || mode == CS_PP_IO_MODE_READ);
-
-    if (numero > 0)
-      sprintf(nom_fic + strlen(nom_fic), ".%04d", numero);
-
-  }
-
-  _cs_pp_io_fic_ouvre(pp_io, nom_fic, chaine_magique);
-
-  if (cs_glob_base_nbr > 1)
-    BFT_FREE(nom_fic);
+  _cs_pp_io_fic_ouvre(pp_io, pp_io->nom, chaine_magique);
 
   return pp_io;
-
 }
 
 

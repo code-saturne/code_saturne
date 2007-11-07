@@ -1156,7 +1156,7 @@ static void cs_gui_output_value(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-                        
+
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
       cs_gui_strcmp(param, "fluid_domain") ||
       cs_gui_strcmp(param, "domain_boundary") ||
@@ -2605,7 +2605,8 @@ static void cs_gui_boundary_rough(const char *const label,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_boundary_flow(const char *const label,
-                          const int         izone)
+                                           double *qimp,
+                                           double *timp)
 {
   char  *path1 = NULL;
   char  *path2 = NULL;
@@ -2625,7 +2626,7 @@ static void cs_gui_boundary_flow(const char *const label,
   cs_xpath_add_function_text(&path1);
 
   if (cs_gui_get_double(path1, &result)){
-    boundaries->qimp[izone] = result;
+    *qimp = result;
   }
   BFT_FREE(path1);
 
@@ -2635,7 +2636,7 @@ static void cs_gui_boundary_flow(const char *const label,
   cs_xpath_add_function_text(&path2);
 
   if (cs_gui_get_double(path2, &result)) {
-    boundaries->timpat[izone] = result;
+    *timp = result;
   }
 
   BFT_FREE(path2);
@@ -3498,8 +3499,6 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
 {
   int isactiv = 0;
   int nscapp = 0;
-  char *label = NULL;
-  int n;
 
   assert(vars != NULL);
 
@@ -3783,7 +3782,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
   }
 #endif
 }
-                
+
 /*----------------------------------------------------------------------------
  * Constructs an indirection between an internal index vars->rtp and
  * the fortran array RTP.
@@ -4745,7 +4744,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
   int imom = 0;
   int isuite = 0;
   int i,j,n,nb;
-  char *label_moy;
   char *name;
 
   assert(vars != NULL);
@@ -4971,8 +4969,6 @@ void CS_PROCF (csenso, CSENSO)
 
 void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
 {
-  int icelet, ifac, ifabor, idimless;
-
   icoftu[0] = _user_array("integer_user_array", "ncelet");
   icoftu[1] = _user_array("integer_user_array", "nfac");
   icoftu[2] = _user_array("integer_user_array", "nfabor");
@@ -5287,6 +5283,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
   int ifac, izone, ith_zone, zone_nbr;
   int ifbr, i, iwall, c_id;
   int ivar, isca;
+  double qimp2 = 0.;
+  double timp = 0.;
   char *choice = NULL;
   char *nature = NULL;
   char *label = NULL;
@@ -5379,7 +5377,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         } else if (cs_gui_strcmp(choice, "flow1")) {
 
           boundaries->iqimp[izone] = 1;
-          cs_gui_boundary_flow(label, izone);
+            cs_gui_boundary_flow(label,&qimp2,&timp);
+            boundaries->qimp[izone] = qimp2;
           /* TODO : remplir la direction normale a la face */
           /* boundaries->values[1][izone].val1 = directionU ; */
           /* boundaries->values[2][izone].val1 = directionV ; */
@@ -5654,28 +5653,30 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
                    icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
     }
 
-    ifbr = faces_list[0]-1;
-    for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
-      ivar = vars->rtp[i];
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
-                   "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-                 vars->char2[ivar],
-                 itypfb[iphas *(*nfabor) + ifbr],
-                 icodcl[ivar *(*nfabor) + ifbr ],
-                 rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                 rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                 rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-    }
+    if (faces>0) {
+        ifbr = faces_list[0]-1;
+        for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
+          ivar = vars->rtp[i];
+          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
+                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                         vars->char2[ivar],
+                         itypfb[iphas *(*nfabor) + ifbr],
+                         icodcl[ivar *(*nfabor) + ifbr ],
+                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        }
 
-    for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
-                   "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-                 vars->label[ivar],
-                 itypfb[iphas *(*nfabor) + ifbr],
-                 icodcl[ivar *(*nfabor) + ifbr ],
-                 rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                 rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                 rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
+          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
+                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                         vars->label[ivar],
+                         itypfb[iphas *(*nfabor) + ifbr],
+                         icodcl[ivar *(*nfabor) + ifbr ],
+                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        }
     }
     BFT_FREE(faces_list);
   }
@@ -6141,7 +6142,9 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
   int iphas =0;
   int ivar, ifbr, iwall, c_id;
   int izone, icharb, isca, ith_zone, zones, ifac, zone_nbr;
-  int i, k, n;
+  int i, k;
+  double qimp = 0.;
+  double timp = 0.;
   char *choice = NULL;
   char *label = NULL;
   char *nature = NULL;
@@ -6251,20 +6254,24 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
           boundaries->ientcp[izone] = 1;
           boundaries->iqimp[izone]  = 1;
           cs_gui_coal_boundary_coalflow(izone, ncharb, nclpch);
-          cs_gui_boundary_flow(label, izone);
+            cs_gui_boundary_flow(label,&qimp,&timp);
+            boundaries->qimpat[izone] = qimp;
+            boundaries->timpat[izone] = timp;
 
         } else if (cs_gui_strcmp(choice, "flow1")) {
 
           boundaries->ientat[izone] = 1;
           boundaries->iqimp[izone]  = 1;
-          cs_gui_boundary_flow(label, izone);
+            cs_gui_boundary_flow(label,&qimp,&timp);
+            boundaries->qimpat[izone] = qimp;
+            boundaries->timpat[izone] = timp;
           /* TODO : remplir la direction normale a la face */
           /* boundaries->values[1][izone].val1 = directionU ; */
           /* boundaries->values[2][izone].val1 = directionv ; */
           /* boundaries->values[3][izone].val1 = directionw ; */
         }
 
-        BFT_FREE(choice);
+          BFT_FREE(choice);
 
         /* INLET: TURBULENCE */
         choice = cs_gui_boundary_choice("inlet", label, "turbulence");
@@ -6546,28 +6553,29 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       }
     }
 
-    ifbr = faces_list[0]-1;
-    for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
-      ivar = vars->rtp[i];
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-      vars->name[ivar],
-      itypfb[iphas *(*nfabor) + ifbr],
-      icodcl[ivar *(*nfabor) + ifbr ],
-      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-    }
+    if (faces>0) {
+        ifbr = faces_list[0]-1;
+        for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
+          ivar = vars->rtp[i];
+          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                         vars->name[ivar],
+                         itypfb[iphas *(*nfabor) + ifbr],
+                         icodcl[ivar *(*nfabor) + ifbr ],
+                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        }
 
-    for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-      bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-      vars->label[ivar],
-      itypfb[iphas *(*nfabor) + ifbr],
-      icodcl[ivar *(*nfabor) + ifbr ],
-      rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-      rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
+          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+                         vars->label[ivar],
+                         itypfb[iphas *(*nfabor) + ifbr],
+                         icodcl[ivar *(*nfabor) + ifbr ],
+                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
+                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
+        }
     }
-
     BFT_FREE(faces_list);
 
   }
@@ -6695,7 +6703,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
           label, zone_nbr, izfppp[ifbr]);
 
       inature2 = itypfb[iphas *(*nfabor) +ifbr];
-        
+
         /* The nature of the boundary can be changed from smooth wall to
            rough wall or vice-versa between the GUI and the FORTRAN */
         if (inature2 == *iparug ) inature2 = *iparoi;

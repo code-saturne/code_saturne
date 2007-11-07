@@ -168,7 +168,8 @@ C     ICDPAR=+/-2 en parallele est bloque dans verini)
         ELSE
           WRITE(NFECRA,1000)
           DO IFAC = 1, NFABOR
-            IF(ITYPFB(IFAC,IPHAS).EQ.IPAROI) THEN
+            IF(ITYPFB(IFAC,IPHAS).EQ.IPAROI .OR.
+     &         ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN
               IEL = IFABOR(IFAC)
               VISCOS = PROPCE(IEL,IPCVIS)/PROPCE(IEL,IPCROM)
               YMINPA = SQRT((CDGFBO(1,IFAC)-XYZCEN(1,IEL))**2

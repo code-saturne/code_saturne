@@ -1190,8 +1190,6 @@ static void _cs_base_gestion_erreur
 
   bft_backtrace_print(3);
 
-  assert(0);   /* Use assert to avoit exiting under debugger */
-
 #if defined(_CS_HAVE_MPI)
   {
     int mpi_flag;
@@ -1319,8 +1317,6 @@ static void _cs_base_sig_fatal(int  signum)
 
   bft_backtrace_print(3);
 
-  assert(0);   /* Use assert to avoit exiting under debugger */
-
 #if defined(_CS_HAVE_MPI)
 
   {
@@ -1406,8 +1402,6 @@ void _cs_base_erreur_mpi
   _cs_base_err_printf("\n\n");
 
   bft_backtrace_print(3);
-
-  assert(0);   /* Use assert to avoit exiting under debugger */
 
   MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
 
