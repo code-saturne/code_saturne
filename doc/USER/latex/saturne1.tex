@@ -697,15 +697,14 @@ the machine.\\
 %==================================
 \label{prg_executionmodes}%
 As explained before, \CS\ is composed of two modules, the Preprocessor and the
-Kernel. The Preprocessor is in charge of the pre-processing. It reads the meshes and
+Kernel. The Preprocessor is in charge of the preprocessing. It reads the meshes and
 performs the necessary pastings and domain decompositions. The resulting data
 are transfered to the Kernel through specific files, one for each processor the
-Kernel will be running on. For a monoprocessor calculation, the file is named
-\texttt{enveloppe\_vers\_solveur}. For a parallel calculation on $N$ processors,
-the files are named \texttt{enveloppe\_vers\_solveur\_n0001} to
-\texttt{enveloppe\_vers\_solveur\_n$N$}. In a standard calculation, these files
-are created in the temporary execution directory and left there after
-calculation. They have no interest for data analysis and are too dependent on
+Kernel will be running on. These files are named \texttt{n00001} to
+\texttt{n$N$}, $N$ being the number of processors used for the calculation, and
+stored in a subdirectory \texttt{preprocessor\_output} of the temporary
+execution directory. In a standard calculation, the files are left there as they
+have no interest for data analysis and are too dependent on
 the number of processors or the machine to be kept.
 
 Yet, the Preprocessor module does not work in parallel and sometimes requires a
@@ -715,16 +714,16 @@ proper parallel calculation on another machine or in another batch
 queue. The launch scripts therefore defines three ``execution modes'', that can
 be specified in the variable \texttt{MODE\_EXEC} (see \S\ref{prg_lance}):\\
 \hspace*{0.5cm}\texttt{complet}: complete mode. The Preprocessor module is executed
-for pre-processing, followed by the Kernel for the calculation. The 
-\texttt{enveloppe\_vers\_solveur*} files are created and left in the
+for preprocessing, followed by the Kernel for the calculation. The 
+\texttt{preprocessor\_output/n*} files are created and left in the
 temporary execution directory.\\
 \hspace*{0.5cm}\texttt{pre-traitement}: only the Preprocessor module is
-executed. The \texttt{enveloppe\_vers\_solveur*} files are stored in a directory
+executed. The \texttt{preprocessor\_output/n*} files are stored in a directory
 \texttt{PRE\_TRAITEMENT.mmddhhmm} automatically created in the \texttt{RESU}
 directory, for later use.\\
 \hspace*{0.5cm}\texttt{calcul}: only the Kernel is executed. The
-\texttt{enveloppe\_vers\_solveur*} files are read from the directory specified
-in the variable \texttt{PRE\_TRAITEMENT\_AMONT} of the launch script
+\texttt{preprocessor\_output/n*} files are read from the directory specified
+in the variable \texttt{PRE\_TRAITEMENT\_AMONT} of the launch script.
 
 
 %==================================
@@ -800,9 +799,9 @@ put), but everything can be specified throuhg the Graphical Interface.
 
 
 %==================================
-\subsection{Pre-processing}
+\subsection{Preprocessing}
 %==================================
-The Preprocessor module of \CS\ is in charge of the pre-processing. It reads the
+The Preprocessor module of \CS\ is in charge of the preprocessing. It reads the
 mesh file(s) (under any supported format) and transfers the necessary
 information to the Kernel. Mesh pasting and domain decomposition for parallel
 calculations are made during this phase. In case of periodic boundary
@@ -1385,7 +1384,7 @@ such a coupling is valid only if all the processors are located on the same
 node)\\
 \hspace*{0.5cm}\texttt{sockets}: for a coupling based on sockets
 
-\item \texttt{MODE\_EXEC}: execution mode for \CS\ (\ref{prg_executionmodes})
+\item \texttt{MODE\_EXEC}: execution mode for \CS\ (see \ref{prg_executionmodes})
 
 \end{list}
 
