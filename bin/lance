@@ -1277,9 +1277,10 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   if [ $MODE_EXEC = pre_traitement ] ; then
     #
     PRE_TRAITEMENT_AVAL=$RESU/PRE_TRAITEMENT.$SUFFIXE
-    iok=1
-    mkdir ${PRE_TRAITEMENT_AVAL} || iok=0
-    if [ $iok = 1 ] ; then 
+    if [ -d ${PRE_TRAITEMENT_AVAL} ] ; then
+      echo "Le repertoire ${PRE_TRAITEMENT_AVAL} existe deja."
+      echo "Copie des fichiers preprocessor_output/n* impossible"
+    else
       cp -r preprocessor_output ${PRE_TRAITEMENT_AVAL}
     fi
   fi
