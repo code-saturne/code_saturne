@@ -1,3 +1,80 @@
+* 07/11/07 - Marc Sakiz <marc.sakiz@?df.fr>
+  Tagging of intermediate version 1.3.1-rc1 before
+  second phase of validation campaign
+
+* 05/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug correction for P1 radiative transfer in usray5.F
+
+* 31/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of an erroneous assert in cs_halo.c
+
+* 31/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Storage on preprocessor files in a subdirectory of
+  the temporary execution directory + change of
+  BLAS libraries on Linux
+  modified routines
+    cs_main.c
+    cs_pp_io.c
+    cs_pp_io.h
+  modified script:
+    lance
+    macros_Linux.mk
+
+
+* 31/10/2007 - Nicole Picard <nicole-n.picard@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Modification and correction of GUI reader
+  modified routines:
+    caltri.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_radiative_transfer.c
+    cs_gui_radiative_transfer.h
+    cs_gui_util.c
+    cs_main.c
+    iniusi.F
+    ppclim.F
+    tridim.F
+
+* 31/10/2007 - Fabien Huvelin <fabien.huvelin@edf.fr>
+               Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of strpre.F for correct handling of structure
+  initial displacement
+
+* 30/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Suppression of unused variables in cptssc.F
+
+* 30/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Correction of automatic stop of calculation when
+  P1 radiative transfer assumptions are not met
+  modified routine:
+    caltri.F
+
+* 23/10/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Update of comments on GETFBR/GETFAC/GETCEL in user
+  routines
+  modified routines:
+    usalcl.F
+    usclim.F
+    uskpdc.F
+    usproj.F
+    uspt1d.F
+    usstru.F
+    ustsma.F
+    ustssc.F
+    usvort.F
+    uscfcl.F
+    usd3pc.F
+    usebuc.F
+    uslwcc.F
+    uscpcl.F
+    uscplc.F
+    uselcl.F
+    usetcl.F
+    usfucl.F
+    uslag2.F
+    usray2.F
+
 * 22/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
   Update of compilation commands for BlueGene
   modified scripts:
