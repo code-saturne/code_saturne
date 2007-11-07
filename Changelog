@@ -1,6 +1,9 @@
-* 07/11/07 - Marc Sakiz <marc.sakiz@?df.fr>
+* 07/11/07 - Marc Sakiz <marc.sakiz@edf.fr>
   Tagging of intermediate version 1.3.1-rc1 before
   second phase of validation campaign
+
+* 07/11/07 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Minor modification in fuphy1.F
 
 * 05/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
   Bug correction for P1 radiative transfer in usray5.F
