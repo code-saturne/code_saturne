@@ -293,10 +293,8 @@ int main
 
   if (opts.ifoenv != 0) {
 
-    cs_glob_pp_io = cs_pp_io_initialize("enveloppe",
-                                        "solveur",
+    cs_glob_pp_io = cs_pp_io_initialize("preprocessor_output",
                                         "ECS_1.3",
-                                        0,
                                         CS_PP_IO_MODE_READ,
                                         opts.echo_comm);
 
