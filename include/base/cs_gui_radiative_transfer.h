@@ -97,6 +97,7 @@ void CS_PROCF(cfnmra, CFNMRA)
 
 void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
                                 const    int *const iparoi,
+                                const    int *const iparug,
                                 const    int *const ivart,
                                 const    int *const iph,
                                 const    int *const nphast,

@@ -117,10 +117,8 @@ extern cs_pp_io_t  *cs_glob_pp_io;
 
 cs_pp_io_t * cs_pp_io_initialize
 (
- const char          *const nom_emetteur,   /* --> partie "émetteur" du nom   */
- const char          *const nom_recepteur,  /* --> partie "recepteur du nom   */
+ const char          *const nom_rep,        /* --> nom du répertoire associé  */
  const char          *const chaine_magique, /* --> Chaîne de vérif. de type   */
- const cs_int_t             numero,         /* --> Complète le nom si non nul */
  const cs_pp_io_mode_t      mode,           /* --> Émission ou réception      */
  const cs_int_t             echo            /* --> Écho sur sortie principale
                                                     (< 0 si aucun, entête si 0,
