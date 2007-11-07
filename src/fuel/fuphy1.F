@@ -213,7 +213,11 @@ C       Calcul des caractéristiques du point correspondant au
 C       combustible moyen
 C       F3cl : fraction de masse provenant de F3max et non de F3
 C
-        F1CL = F1M*FF3MAX/(F3M+F1M*FF3MAX)
+        IF ( (F3M+F1M*FF3MAX) .GT. 0.D0 ) THEN
+          F1CL = F1M*FF3MAX/(F3M+F1M*FF3MAX)
+        ELSE
+          F1CL = 0.D0 
+        ENDIF
         F3CL = 1.D0-F1CL
         F4CL = (1.D0-FF3MAX)*F3CL
 C
