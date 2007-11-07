@@ -224,9 +224,9 @@ MODE_COUPLAGE=MPI
 #
 #  MODE_EXEC=complet        : choix par defaut (Preprocesseur puis calcul).
 #  MODE_EXEC=pre_traitement : lancement du Preprocesseur seul, pour generer
-#                             les fichiers enveloppe_vers_solveur*.
+#                             les fichiers preprocessor_output/*.
 #  MODE_EXEC=calcul         : lancement du calcul seul, en utilisant des
-#                             fichiers enveloppe_vers_solveur* deja generes et
+#                             fichiers preprocessor_output/* deja generes et
 #                             accessibles dans le repertoire $PRE_TRAITEMENT_AMONT.
 #
 MODE_EXEC=complet
@@ -986,9 +986,7 @@ then
   done
 elif [ $MODE_EXEC = calcul ]
 then
-  for var in ${PRE_TRAITEMENT_AMONT}/* ; do 
-    ln -s $var . || exit 1
-  done
+    ln -s ${PRE_TRAITEMENT_AMONT} preprocessor_output || exit 1
 fi
 #
 if [ $MODE_EXEC != pre_traitement ] ; then
@@ -1282,9 +1280,7 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
     iok=1
     mkdir ${PRE_TRAITEMENT_AVAL} || iok=0
     if [ $iok = 1 ] ; then 
-      for fich in enveloppe_vers_solveur* ; do 
-        cp $fich ${PRE_TRAITEMENT_AVAL}
-      done
+      cp -r preprocessor_output ${PRE_TRAITEMENT_AVAL}
     fi
   fi
 #

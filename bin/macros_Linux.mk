@@ -85,12 +85,10 @@ XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
 
 # Option BLAS
 BLAS            =1
-BLAS_INC        =-I/home/saturne/opt/atlas-3.6.0/include
+BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
+BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L/home/saturne/opt/atlas-3.6.0/lib/Linux_Xeon -lcblas -latlas
-#BLAS_HOME       =/home/saturne/opt/atlas-3.7.29/arch/Linux_Pentium_M
-#BLAS_INC        =-I$(BLAS_HOME)/include
-#BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 
 
 # Preprocesseur
@@ -103,7 +101,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -124,7 +122,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -144,13 +142,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gfortran
+LDEDL           = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gfortran
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.1/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.2/arch/Linux/lib:
 
 
 # Positionnement des variables pour le pre-processeur

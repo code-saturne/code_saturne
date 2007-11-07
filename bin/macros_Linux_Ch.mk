@@ -102,9 +102,9 @@ CCOMPFLAGSDEF          = -ansi -std=c99 -funsigned-char -pedantic -W -Wall -Wsha
                          -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O              
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O 
-CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O 
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2              
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 
+CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O2 
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3            
 CCOMPFLAGSPROF         = -pg
