@@ -406,7 +406,7 @@ C---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 C
               CALL UIRAY2
 C             ===========
-     &       ( ITYPFB, IPAROI, IVART, IPH, NPHAST,  IZFRAD,
+     &       ( ITYPFB, IPAROI, IPARUG, IVART, IPH, NPHAST,  IZFRAD,
      &         ISOTHM, ITPIMP, IPGRNO, IPREFL, IFGRNO, IFREFL,
      &         NFABOR, NFML, IFMFBR , IPRFML , NVAR,
      &         EPS, EPA, TINT, TEXT,
@@ -501,7 +501,7 @@ C
 C
           CALL UIRAY2
 C         ===========
-     &  ( ITYPFB, IPAROI, IVART, IPH, NPHAST, IZFRAD,
+     &  ( ITYPFB, IPAROI, IPARUG, IVART, IPH, NPHAST, IZFRAD,
      &    ISOTHM, ITPIMP, IPGRNO, IPREFL, IFGRNO, IFREFL,
      &    NFABOR, NFML, IFMFBR , IPRFML , NVAR,
      &    EPS, EPA, TINT, TEXT,
