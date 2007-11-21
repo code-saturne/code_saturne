@@ -675,6 +675,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       cp ${fich} .
     fi
   done
+  cd ..
   #
   # Recopie du fichier parametrique
   if [ ! -z "$PARAM" ] ; then 
