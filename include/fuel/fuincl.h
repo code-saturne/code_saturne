@@ -171,7 +171,7 @@ C
 C
 C--> DEFINITION DES COMMONS
 C
-      COMMON / IFUCOM / IFOL ,
+      COMMON / IFUCOM / IFOL, IKF,
      &                  IENTFL,
      &                  IOFHET
 C
