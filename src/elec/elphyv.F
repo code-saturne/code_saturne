@@ -267,12 +267,13 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IEL   , IPHAS
       INTEGER          IPCROM, IPCVIS, IPCCP , IPCRAY
       INTEGER          IPCVSL, ITH   , ISCAL , II
       INTEGER          IIII  , IPCSIG, IT
       INTEGER          IESP  , IESP1 , IESP2 , MODE , ISRROM
+      INTEGER          MAXELT, ILS
 C
       DOUBLE PRECISION TP    , DELT  , SOMPHI, VAL
       DOUBLE PRECISION ALPRO , ALPVIS, ALPCP , ALPSIG, ALPLAB , ALPKAB
@@ -819,14 +820,19 @@ C=======================================================================
 C 4 - ON PASSE LA MAIN A L'UTILISATEUR (joule en particulier)
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('ELPHYV',IFINIA)
+C
       CALL USELPH
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IZFPPP ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
