@@ -202,10 +202,11 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IPHAS , IEL
-      INTEGER          IFAC  , IUSCFP
+      INTEGER          IFAC
       INTEGER          IIROM , IIROMB
+      INTEGER          MAXELT, ILS
 C
       INTEGER          IPASS
       DATA             IPASS /0/
@@ -226,16 +227,21 @@ C=======================================================================
 C 2. ON DONNE LA MAIN A L'UTILISATEUR
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('CFPHYV',IFINIA)
+C
       IUSCFP = 1
       CALL USCFPV
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  , IUSCFP ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,

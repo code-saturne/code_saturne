@@ -277,7 +277,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IEL   , IELPDC, IFAC  , IVAR  , ISOU  , III
       INTEGER          ICCOCG, INC   , INIT  , IPHYDP, II
       INTEGER          IRESLP, NSWRGP, IMLIGP, IWARNP, IPP
@@ -290,6 +290,7 @@ C
       INTEGER          IDIMTE, ITENSO
       INTEGER          IDIAEX, ITERNS
       INTEGER          IIFRU
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION RNORM , VITNOR
       DOUBLE PRECISION ROMVOM, RTPROM
       DOUBLE PRECISION EPSRGP, CLIMGP, EXTRAP, BLENCP, EPSILP
@@ -798,7 +799,6 @@ C
 C 2.2  RESOLUTION IMPLICITE NON COUPLEE DES 3 COMPO. DE VITESSES
 C ==============================================================
 C
-C
 C ---> BOUCLE SUR LES DIRECTIONS DE L'ESPACE (U, V, W)
 C
 C
@@ -829,15 +829,20 @@ C
           DRTP  (IEL) = 0.D0
         ENDDO
 C
+        MAXELT = MAX(NCELET, NFAC, NFABOR)
+        ILS    = IDEBIA
+        IFINIA = ILS + MAXELT
+        CALL IASIZE('CFQDMV',IFINIA)
+C
         CALL USTSNS
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IVAR   , IPHAS  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,
