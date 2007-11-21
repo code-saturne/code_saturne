@@ -112,7 +112,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IEL
       INTEGER          N1     , N2     , IPCDIA
-      DOUBLE PRECISION DIAM3  , XNG    ,  D1S3
+      DOUBLE PRECISION XNG    ,  D1S3
       DOUBLE PRECISION RHOFOL , DIAM3M , DIAM3X
 C
 C***********************************************************************

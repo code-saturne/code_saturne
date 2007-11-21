@@ -122,9 +122,6 @@ C VARIABLES LOCALES
 C
       INTEGER          II, ICEL
 C
-      DOUBLE PRECISION YFOV0 , EH2OV, EH2OV1
-      DOUBLE PRECISION DEN1 , EHCHX1
-C
 C***********************************************************************
 C
       II = NPO-1

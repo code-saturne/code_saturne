@@ -105,8 +105,6 @@ C VARIABLES LOCALES
 C
       INTEGER          II
 C
-      DOUBLE PRECISION YFOV0 ,  EHFOV , EHFOV0
-      DOUBLE PRECISION DEN1
       DOUBLE PRECISION EH0 , EH1
 C
 C***********************************************************************

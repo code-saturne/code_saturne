@@ -234,7 +234,6 @@ C
       INTEGER          IPCROM , IPCVST
       INTEGER          IKIPH  , IEIPH , IOMGIP , IPHYDP
       INTEGER          IR11IP , IR22IP, IR33IP
-      INTEGER          IXCHCL , IXKFCL , IXNG
       INTEGER          INC    , ICCOCG , NSWRGP , IMLIGP , IWARNP
       INTEGER          IFINRA , ICOEFA , ICOEFB
       INTEGER          IDIMTE , ITENSO

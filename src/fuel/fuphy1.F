@@ -180,7 +180,7 @@ C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          IEL    , IPHAS  , ICE
       INTEGER          IPCTE1
-      INTEGER          IPCYF1 , IPCYF2 , IPCYF3 , IPCYOX
+      INTEGER          IPCYF1 , IPCYF3 , IPCYOX
       INTEGER          IPCYP1 , IPCYP2 , IPCYIN , IPCYCE
       INTEGER          IPCY2S , IPCYSO
       DOUBLE PRECISION WMOLME
@@ -216,7 +216,7 @@ C
         IF ( (F3M+F1M*FF3MAX) .GT. 0.D0 ) THEN
           F1CL = F1M*FF3MAX/(F3M+F1M*FF3MAX)
         ELSE
-          F1CL = 0.D0 
+          F1CL = 0.D0
         ENDIF
         F3CL = 1.D0-F1CL
         F4CL = (1.D0-FF3MAX)*F3CL
