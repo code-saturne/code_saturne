@@ -5162,7 +5162,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune cellule."),
+                  "\"%s\"\n ne correspond à aucune cellule."),
                 missing, description);
     }
 
@@ -5464,7 +5464,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune face de bord."),
+                  "\"%s\"\n ne correspond à aucune face de bord."),
                 missing, description);
     }
 
@@ -5494,7 +5494,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
-      if (boundaries->rough[izone] != -999) {
+      if (boundaries->rough[izone] >= 0.) {
         iwall = *iparug;
         /* roughness value is only stored in Velocity_U */
         ivar = 1;
@@ -5634,7 +5634,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune face de bord."),
+                  "\"%s\"\n ne correspond à aucune face de bord."),
                 missing, description);
     }
 
@@ -6126,6 +6126,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
                                         int *const itypfb,
                                         int *const icodcl,
                                      double *const rcodcl,
+                                     double *const surfbo,
                                         int *const ientat,
                                         int *const iqimp,
                                      double *const qimpat,
@@ -6145,6 +6146,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
   int i, k;
   double qimp = 0.;
   double timp = 0.;
+  double norm = 0.;
   char *choice = NULL;
   char *label = NULL;
   char *nature = NULL;
@@ -6254,24 +6256,24 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
           boundaries->ientcp[izone] = 1;
           boundaries->iqimp[izone]  = 1;
           cs_gui_coal_boundary_coalflow(izone, ncharb, nclpch);
-            cs_gui_boundary_flow(label,&qimp,&timp);
-            boundaries->qimpat[izone] = qimp;
-            boundaries->timpat[izone] = timp;
+          cs_gui_boundary_flow(label,&qimp,&timp);
+          boundaries->qimpat[izone] = qimp;
+          boundaries->timpat[izone] = timp;
 
         } else if (cs_gui_strcmp(choice, "flow1")) {
 
           boundaries->ientat[izone] = 1;
           boundaries->iqimp[izone]  = 1;
-            cs_gui_boundary_flow(label,&qimp,&timp);
-            boundaries->qimpat[izone] = qimp;
-            boundaries->timpat[izone] = timp;
+          cs_gui_boundary_flow(label,&qimp,&timp);
+          boundaries->qimpat[izone] = qimp;
+          boundaries->timpat[izone] = timp;
           /* TODO : remplir la direction normale a la face */
           /* boundaries->values[1][izone].val1 = directionU ; */
           /* boundaries->values[2][izone].val1 = directionv ; */
           /* boundaries->values[3][izone].val1 = directionw ; */
         }
 
-          BFT_FREE(choice);
+        BFT_FREE(choice);
 
         /* INLET: TURBULENCE */
         choice = cs_gui_boundary_choice("inlet", label, "turbulence");
@@ -6349,7 +6351,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune face de bord."),
+                  "\"%s\"\n ne correspond à aucune face de bord."),
                 missing, description);
     }
 
@@ -6388,11 +6390,17 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
           rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->values[ivar][izone].val1 ;
         }
+        norm = 1.0 / ( sqrt( surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                           + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                           + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2] ) );
+        rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 0]*norm;
+        rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 1]*norm;
+        rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 2]*norm;
       }
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
-      if (boundaries->rough[izone] != -999) {
+      if (boundaries->rough[izone] >= 0.) {
         iwall = *iparug;
         /* roughness value is only stored in Velocity_U */
         ivar = 1;
@@ -6521,7 +6529,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune face de bord."),
+                  "\"%s\"\n ne correspond à aucune face de bord."),
                 missing, description);
     }
 
@@ -6542,12 +6550,12 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
                    ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
       for (icharb = 0; icharb < *ncharb; icharb++) {
-        bft_printf(_("-----coal=%i, qimpcp=%i, timpcp=%i \n"),
+        bft_printf(_("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n"),
                       icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
                       timpcp[icharb *(*nozppm)+zone_nbr-1]);
 
         for (k = 0; k < nclpch[icharb]; k++)
-          bft_printf(_("-----coal=%i, class=%i, distch=%i \n"),
+          bft_printf(_("-----coal=%i, class=%i, distch=%f \n"),
                        icharb, k,
                        distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
       }
@@ -6614,7 +6622,6 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
   int ifbr, ifac, c_id;
   int izone, zones, zone_nbr;
   int inature, inature2;
-  char *label = NULL;
   int *faces_list = NULL;
   int faces = 0, iphas = 0;
   char *description = NULL;
@@ -6642,7 +6649,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
       bft_error(__FILE__, __LINE__, 0,
                 _("Le groupe ou attribut \"%s\" figurant dans le\n"
                   "critère de sélection:\n"
-                  "\"%s\"\ne correspond à aucune face de bord."),
+                  "\"%s\"\n ne correspond à aucune face de bord."),
                 missing, description);
     }
 
@@ -6655,7 +6662,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
 
       inature = *iparug;
-      if (boundaries->rough[izone] == -999){
+      if (boundaries->rough[izone] <0.){
         inature = *iparoi;
       }
 
@@ -6700,7 +6707,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
           "@                                                            \n"
           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
           "@                                                            \n"),
-          label, zone_nbr, izfppp[ifbr]);
+          boundaries->label[izone], zone_nbr, izfppp[ifbr]);
 
       inature2 = itypfb[iphas *(*nfabor) +ifbr];
 

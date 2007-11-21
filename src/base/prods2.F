@@ -96,13 +96,15 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER IEL, NVAVB
+      INTEGER NVAVB
       DOUBLE PRECISION VAVB(2)
 C
 #if defined(_CS_HAVE_BLAS)
       INTEGER INCX, INCY
       DOUBLE PRECISION DDOT
       EXTERNAL         DDOT
+#else
+      INTEGER IEL
 #endif
 C
 C***********************************************************************

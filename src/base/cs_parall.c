@@ -74,7 +74,7 @@ extern "C" {
  * Local structure and type definitions
  *============================================================================*/
 
-#define CS_PARALL_DEBUG_COMPTE  0
+#define CS_PARALL_DEBUG_COUNT  0
 #define CS_PARALL_ARRAY_SIZE  500
 
 

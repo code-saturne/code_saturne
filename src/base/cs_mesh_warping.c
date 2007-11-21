@@ -971,8 +971,6 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
                      double          i_face_warping[],
                      double          b_face_warping[])
 {
-  size_t  ptr_shift;
-
   int  n_parent_lists = 2;
   fvm_lnum_t  parent_num_shift[2]  = {0, cs_glob_mesh->n_b_faces};
   fvm_nodal_t  *fvm_mesh = NULL;
@@ -1004,10 +1002,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
 
   /* Write the warping field */
 
-  ptr_shift = sizeof(double) * cs_glob_mesh->n_b_faces;
   var_ptr[0] = ((const char *)b_face_warping);
-
-  ptr_shift = sizeof(double) * cs_glob_mesh->n_i_faces;
   var_ptr[1] = ((const char *)i_face_warping);
 
   fvm_writer_export_field(writer,

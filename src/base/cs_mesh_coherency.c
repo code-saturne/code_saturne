@@ -96,33 +96,6 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check the coherency of the cell centers.
- *----------------------------------------------------------------------------*/
-
-static void
-_check_cell_cen(void)
-{
-  cs_int_t  i;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
-  const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
-
-  bft_printf(_("    Test de cohérence des centres des cellules\n"));
-
-  for (i = 0; i < mesh->n_cells_with_ghosts; i++) {
-
-    if (cell_cen[i] == DBL_MAX)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Cell center value not initialized for cell number %d\n"
-                  "n_cells = %d and n_cells_with_ghosts = %d\n"),
-                i+1, mesh->n_cells, mesh->n_cells_with_ghosts);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Check the coherency of the internal face -> cells connectivity.
  *----------------------------------------------------------------------------*/
 
@@ -175,10 +148,6 @@ cs_mesh_coherency_check(void)
   const cs_real_t  *vtx_coord = mesh->vtx_coord;
 
   bft_printf(_("\n Tests de cohérence de la structure de maillage :\n"));
-
-  /* Check if there is no unintialized values */
-
-  _check_cell_cen();
 
   /* Check internal face -> cells connectivity coherency */
 

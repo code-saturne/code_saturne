@@ -1209,7 +1209,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
         if (ms->symmetric == true)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Affectation de coefficients matriciels non symmétriques\n"
+                    _("Affectation de coefficients matriciels non symétriques\n"
                       "à une matrice en stockage CSR symmétrique."));
 
         for (face_id = 0; face_id < n_faces; face_id++) {

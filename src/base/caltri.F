@@ -175,10 +175,9 @@ C
       INTEGER          IFNIA1 , IFNRA1 , IFNIA2 , IFNIA3, IFNRA2
       INTEGER          JCELBR
       INTEGER          IIII
-      INTEGER          IIPOST
 C
       INTEGER          MODHIS, IAPPEL, MODNTL, IISUIT, IWARN0
-      INTEGER          NTSDEF, NTHDEF, NTCREL, ISAVHI
+      INTEGER          NTSDEF, NTHDEF, NTCREL
       INTEGER          IMSFIN, IPHAS , IVAR
 C
       INTEGER          IICOCE , IITYCE
@@ -493,7 +492,6 @@ C       ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
-        IIPOST = 0
         GOTO 200
 C
       ENDIF
@@ -1448,10 +1446,6 @@ C=======================================================================
 C 20. TEST POUR SAVOIR SI ON SORT UN FICHIER POST OU NON
 C=======================================================================
 C
-      IIPOST = 0
-C     (IIPOST sert uniquement pour les sorties avec le sous-programme
-C      obsolete usrubm.F)
-C
       CALL USNPST
 C     ===========
      & ( IFINIA , IFINRA ,
@@ -1459,7 +1453,6 @@ C     ===========
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIPOST ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIDEVE) , IA(IITUSE) , IA         ,
@@ -1471,10 +1464,8 @@ C     ===========
      &   RA(IRDEVE) , RA(IRTUSE) ,
      &   RA     )
 C
-      IF (NTCABS.EQ.NTMABS) IIPOST = 0
-C
 C=======================================================================
-C 21. SORTIE DES FICHIERS POST STANDARDS + POST TYPE USRUBM
+C 21. SORTIE DES FICHIERS POST STANDARDS
 C=======================================================================
 C
 C     Si ITRALE=0 on desactive tous les writers (car la geometrie n'a pas ete
@@ -1504,26 +1495,6 @@ C     ===========
      &   RA(ISTATC) , RA(ISTATV) , RA(ISTATF) ,
      &   RA(IRDEVE) , RA(IRTUSE) ,
      &   RA     )
-C
-      IF (IIPOST.EQ.1) THEN
-        CALL POSTLC
-C       ===========
-     & ( IFINIA , IFINRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
-     &   XYZNOD , VOLUME ,
-     &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
-     &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(ISTATC) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
-      ENDIF
 C
 C=======================================================================
 C 22. HISTORIQUES
@@ -1680,7 +1651,7 @@ C
 C
 C
 C=======================================================================
-C 25. ECRITURE DES SUITES + FINALISATION HISTORIQUES + POST USRUBM
+C 25. ECRITURE DES SUITES + FINALISATION HISTORIQUES
 C=======================================================================
 C
       CALL DMTMPS(TECRF1)
@@ -1792,26 +1763,6 @@ C       ===========
      &  MODHIS ,
      &  IA(IIDEVE) , IA(IITUSE) , IA      ,
      &  RA(IRDEVE) , RA(IRTUSE) , RA      )
-      ENDIF
-C
-      IF(IIPOST.EQ.0) THEN
-        CALL POSTLC
-C       ===========
-     & ( IFINIA , IFINRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
-     &   XYZNOD , VOLUME ,
-     &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
-     &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(ISTATC) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
       ENDIF
 C
 C     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D

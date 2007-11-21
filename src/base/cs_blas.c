@@ -493,10 +493,10 @@ cs_int_t cblas_idamax(cs_int_t       n,
 
   cs_int_t   index_max = 0;
 
-  if (n < 1 || inc_x < 0 ) return index_max;
+  if (n < 1 || inc_x < 0) return index_max;
 
   index_max = 1;
-  dmax = CS_ABS(x[i]);
+  dmax = CS_ABS(x[0]);
 
   if (inc_x == 1) {
     for (i = 0; i < n; i++) {
@@ -515,6 +515,8 @@ cs_int_t cblas_idamax(cs_int_t       n,
       }
     }
   }
+
+  return index_max;
 }
 
 #endif /* !defined(_CS_HAVE_CBLAS) && !defined(_CS_HAVE_F77BLAS) */

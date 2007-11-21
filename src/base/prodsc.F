@@ -89,13 +89,12 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER IEL
-C
-C
 #if defined(_CS_HAVE_BLAS)
       INTEGER INCX, INCY
       DOUBLE PRECISION DDOT
       EXTERNAL         DDOT
+#else
+      INTEGER IEL
 #endif
 C
 C***********************************************************************

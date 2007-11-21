@@ -260,7 +260,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          INIT  , IFAC  , IEL   , INC   , ICCOCG
       INTEGER          II    ,JJ     , IIUN
       INTEGER          IR11IP, IR22IP, IR33IP, IR12IP, IR13IP, IR23IP
@@ -273,6 +273,7 @@ C
       INTEGER          IMGRP , NCYMXP, NITMFP
       INTEGER          IDIMTE, ITENSO
       INTEGER          IPTSTA
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION BLENCP, EPSILP, EPSRGP, CLIMGP, EXTRAP, RELAXP
       DOUBLE PRECISION TRPROD , TRRIJ ,CSTEPS, RCTSE
       DOUBLE PRECISION GRDPX,GRDPY,GRDPZ,GRDSN
@@ -343,15 +344,20 @@ C=======================================================================
 C 2. TERMES SOURCES  UTILISATEURS
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('RESEPS',IFINIA)
+C
       CALL USTSRI
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITPSMP ,
      &   IDEVEL , ITUSER , IA     ,

@@ -569,7 +569,7 @@ C           ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IFACLG , IRESPR , INDHYD ,
-     &   IDEVEL , ISOSTD , ITUSER , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   FRCHY (1,1) , FRCHY (1,2) , FRCHY (1,3) ,
      &   DFRCHY(1,1) , DFRCHY(1,2) , DFRCHY(1,3) ,
