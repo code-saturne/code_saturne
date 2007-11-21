@@ -305,7 +305,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA , IDEBRA , IEL, IFAC, IOK
-      DOUBLE PRECISION UNSPI, VV, SF, XLC, XIT, XKMIN, DISTBF, PP
+      DOUBLE PRECISION UNSPI, XIT, DISTBF
 C
 C***********************************************************************
 C
