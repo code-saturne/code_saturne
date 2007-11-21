@@ -32,8 +32,8 @@ might still be compatible.
 * tix : 8.4        - (necessary for the Code_Saturne GUI)
 * libxml2 : 2.6.19 - (necessary for the Code_Saturne GUI)
 * Metis : 4.0      - (for optimised domain decomposition)
-* CGNS : 2.5.1
-* MED_fichier : 2.3.1
+* CGNS : 2.5.2
+* MED_fichier : 2.3.2
 * hdf5 : 1.6.5     - (necessary for MED_fichier library)
 * Zlib : 1.2.3
 
@@ -42,7 +42,7 @@ MPI libraries
 In case of parallel computing, it is necessary to use a MPI library.
 The following libraries have been used with success, but no specific
 command is used in the code so any other MPI library should work.
-* MPI-lam : 7.1.2
+* MPI-lam : 7.1.1
 * MPICH  : 1.2.7
 * MPICH2 : 1.0.5
 * Open-MPI : 1.2.4

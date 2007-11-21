@@ -1,3 +1,163 @@
+* 19/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Syntax and unused variables correction
+  deleted routines:
+    usrubm.F
+    postlc.F
+  modified routines:
+    calhyd.F
+    caltri.F
+    cfphyv.F
+    clptrg.F
+    cpcym2.F
+    cpflux.F
+    cplph1.F
+    cpphy1.F
+    cpphyv.F
+    cpteh1.F
+    cptssc.F
+    cptsvc.F
+    cregeo.F
+    cs_gui.c
+    cs_mesh.c
+    cs_mesh_warping.c
+    cs_parall.c
+    ebuphy.F
+    ebuver.F
+    enslag.F
+    fucym1.F
+    fuflux.F
+    fuincl.h
+    fuiniv.F
+    fulecd.F
+    fuphy1.F
+    fuphy2.F
+    fuphyv.F
+    fuptcl.F
+    futeh1.F
+    futeh2.F
+    futhp1.F
+    futssc.F
+    futsvc.F
+    futsvi.F
+    fuveri.F
+    iniusi.F
+    lagaff.F
+    lagcel.F
+    lagent.F
+    lagesp.F
+    lagfch.F
+    laghis.F
+    laglis.F
+    lagnpr.F
+    lagnwc.F
+    lagout.F
+    lagune.F
+    lwcver.F
+    optcal.h
+    pdflwc.F
+    pdfpp4.F
+    prods2.F
+    prods3.F
+    prodsc.F
+    resolp.F
+    strhis.F
+    usalcl.F
+    uscfcl.F
+    uscfpv.F
+    uscpcl.F
+    uscplc.F
+    usd3pc.F
+    usebuc.F
+    uselcl.F
+    usfucl.F
+    usfuiv.F
+    uslabo.F
+    usladp.F
+    uslafe.F
+    uslag2.F
+    uslwcc.F
+    usnpst.F
+    usray5.F
+
+* 15/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Correction of inlet conditions in coal combustion
+  with GUI
+  modified routines:
+    cs_gui.c
+    cs_gui.h
+    ppclim.F
+
+
+* 15/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Passing of missing MAXELT/LSTELT arguments
+  for GETCEL selection in user routines
+  modified routines:
+    cfiniv.F
+    cfmsfl.F
+    cfmsgs.F
+    cfphyv.F
+    cfqdmv.F
+    cpiniv.F
+    cplini.F
+    d3pini.F
+    ebuini.F
+    eliniv.F
+    elphyv.F
+    fuiniv.F
+    inivar.F
+    lwcini.F
+    preduv.F
+    reseps.F
+    resrij.F
+    resssg.F
+    scalai.F
+    turbke.F
+    turbkw.F
+    uscfpv.F
+    uscfxi.F
+    uscpiv.F
+    usd3pi.F
+    usebui.F
+    useliv.F
+    uselph.F
+    usfuiv.F
+    usiniv.F
+    uslwci.F
+    ustske.F
+    ustskw.F
+    ustsns.F
+    ustsri.F
+    ustsv2.F
+
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Bug correction in typecl.F on the setting
+  of the reference face for pressure when
+  some outlet boundary conditions are changed
+  from standard values (+ bug correction in 
+  parallel when IPHYDR=1)
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Misspelling of SRROM in info message
+  modified routines:
+    d3pver.F
+    ebuver.F
+    lwcver.F
+    cplver.F
+    elveri.F
+    fuveri.F
+
+
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of the launch script lance for
+  a correct copy of thermochemical files with
+  the pulverized coal module + correction of
+  error in the protecting test of uscpcl.F
+
+* 12/11/2007 - David Monfort <david.monfort@edf.fr>
+  Bug correction in an (unused!) function fo cs_blas.c
+
 * 07/11/07 - Marc Sakiz <marc.sakiz@edf.fr>
   Tagging of intermediate version 1.3.1-rc1 before
   second phase of validation campaign
