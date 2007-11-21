@@ -521,9 +521,6 @@ C
       FCOR = 1.2
       DO ICHA = 1, NCHARB
 C
-        write(NFECRA,*) ' PCI CHARBON INITIAL = ',
-     &                    ICHA,PCICH(ICHA)
-C
         IF (IPCI(ICHA).EQ.1) THEN
 C    On donne directement le PCI sur sec J/kg ---> kcal/kg
           PCISEC = PCICH(ICHA)/1000.D0/XCAL2J
@@ -535,9 +532,6 @@ C    Conversion de PCI sur pur de kcal/kg ----> J/kg
 C    On ecrase PCICH sur sec par PCIPUR
           PCICH(ICHA) = PCIPUR
         ENDIF
-C
-        write(NFECRA,*) ' PCI CHARBON FINAL = ',
-     &                    ICHA,PCICH(ICHA)
 C
       ENDDO
 C
@@ -554,9 +548,6 @@ C
      &     / WMOLS(ICH(ICHA))
 C
         EH0SOL(ICH(ICHA)) = H02CH(ICHA)
-C
-        write(NFECRA,*) ' Enthalpie formation CH = ',
-     &                    ICHA,EH0SOL(ICH(ICHA))
 C
       ENDDO
 C
@@ -575,9 +566,6 @@ C                   CP = 4181.35
 C
       DO ICHA = 1, NCHARB
         EH0SOL(IWAT(ICHA)) = -15871802.2D0
-C
-        write(NFECRA,*) ' Enthalpie formation WAT = ',
-     &                    ICHA,EH0SOL(IWAT(ICHA))
 C
       ENDDO
 C
@@ -686,13 +674,6 @@ C
           EHSOLI(IWAT(ICHA),IT) = EH0SOL(IWAT(ICHA))
      &                           +CP2WAT(ICHA)*(THC(IT)-TREFTH)
         ENDDO
-      ENDDO
-C
-      DO IT = 1, NPOC
-        WRITE(NFECRA,*) IT,THC(IT),(EHSOLI(ICHA,IT),ICHA=1,4)
-      ENDDO
-      DO IT = 1, NPOC
-        WRITE(NFECRA,*) IT,THC(IT),(EHSOLI(ICHA,IT),ICHA=5,8)
       ENDDO
 C
 C --> Calcul relatifs aux matieres volatiles
