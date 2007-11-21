@@ -39,7 +39,7 @@ C     -------------------------------------------------------------
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITPSMP ,
      &   IDEVEL , ITUSER , IA     ,
@@ -96,6 +96,28 @@ CFONC ATTENTION : PRODUC n'est defini que pour ITURB=30 et GRDVIT n'est
 CFONC             defini que pour ITURB=31.
 CFONC RISQUE D'ECRASEMENT DE TABLEAUX !!!
 CFONC
+CFONC L'identification des cellules concernees peut s'appuyer sur la
+CFONC commande GETCEL.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
 c@fonce
 C-----------------------------------------------------------------------
 c@argub
@@ -139,6 +161,8 @@ CARGU ! IFMCEL       ! TE !  -> ! NUMERO DE FAMILLE D'UNE CELLULE      !
 CARGU ! (NCELET)     !    !     !                                      !
 CARGU ! IPRFML       ! TE !  -> ! PROPRIETES D'UNE FAMILLE             !
 CARGU ! NFML  ,NPRFML!    !     !                                      !
+CARGU ! MAXELT       !  E !  -> ! NB MAX D'ELEMENTS (CELL,FAC,FBR)     !
+CARGU ! LSTELT(MAXELT) TE !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFAC)   !    !     !  FACE INTERNE DANS NODFAC (OPTIONNEL)!
 CARGU ! NODFAC       ! TE !  -> ! CONNECTIVITE FACES INTERNES/NOEUDS   !
@@ -245,7 +269,7 @@ C
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
       INTEGER          IFMFBR(NFABOR) , IFMCEL(NCELET)
-      INTEGER          IPRFML(NFML,NPRFML)
+      INTEGER          IPRFML(NFML,NPRFML), MAXELT, LSTELT(MAXELT)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          ICEPDC(NCEPDP)
