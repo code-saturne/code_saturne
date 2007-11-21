@@ -250,7 +250,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA, IFINIA, IFINRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
 C
       INTEGER          IEL, IFAC, KFAC, NBP, ICECPT
       INTEGER          II, JJ, IN, IP
@@ -258,7 +258,7 @@ C
       INTEGER          ISUIVI, IERROR, IERRIE
       INTEGER          ITYPFO, ICONFO(100)
 C
-      INTEGER          ICELCR , IPERCR, ITEPAS, ISENS, IPER
+      INTEGER          ICELCR , IPERCR, ITEPAS, IPER
       DOUBLE PRECISION PTA(3), PTB(3), VECT(3), VECTN(3)
 C
 C=======================================================================

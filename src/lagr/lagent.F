@@ -264,7 +264,6 @@ C
       INTEGER          IEL , IFAC , IPHAS , IP , NB , NC, II, IFVU
       INTEGER          IIWORK , IOK , N1 , ND , ICHA
       INTEGER          NPT , NFIN , NPAR1  , NPAR2 , MODE , IDVAR
-      INTEGER          IPROFIL
       INTEGER          MAXELT, IDBIA1, ILS
 C
       DOUBLE PRECISION VN1 , VN2 , VN3 , PIS6 , D3

@@ -300,7 +300,6 @@ C
       INTEGER          NFIN   , NPARS  , IEL    , IVF
       INTEGER          NPAR1  , NPAR2
       INTEGER          IFORCE , IITSLG
-      INTEGER          II     , NB
       INTEGER          MODNTL
 C
       DOUBLE PRECISION DNPARS

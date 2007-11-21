@@ -261,7 +261,7 @@ C
       INTEGER          IERROR , IRTYP  , ITYSUP , NBVAL
       INTEGER          IVERS  , ILECEC , IPHAS
       INTEGER          NFIN   , IFORCE , ICHA   , II
-      INTEGER          ITRAV1 , IITRV1 , IITRV2
+      INTEGER          ITRAV1
       INTEGER          IPAS   , JJ
 C
 C***********************************************************************

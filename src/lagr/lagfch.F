@@ -240,7 +240,7 @@ C
       INTEGER          IDPPAR, INXPAR, INYPAR, INZPAR
       INTEGER          IP , IEL , IPHAS , MODE
 C
-      DOUBLE PRECISION VAL , RAP , TEMPF , DNORM , KSIDC
+      DOUBLE PRECISION VAL , TEMPF , DNORM
       DOUBLE PRECISION DEBYE, AA
 C
 C***********************************************************************

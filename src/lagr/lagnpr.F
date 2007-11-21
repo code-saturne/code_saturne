@@ -210,7 +210,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          NNN , NNNN , IFAC , NP , II
+      INTEGER          NNN , NNNN , IFAC , II
       INTEGER          IFRBR , MINFAC , MAXFAC
       INTEGER          ICONFO(100)
 C

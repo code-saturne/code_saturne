@@ -128,7 +128,7 @@ _check_ieee_standard(void)
 
 /*----------------------------------------------------------------------------
  * The argument is an upperbound on the coordinates.
- * Chande the data conditionning.
+ * Change the data conditioning.
  *
  * d       --> upper bound on data values.
  *

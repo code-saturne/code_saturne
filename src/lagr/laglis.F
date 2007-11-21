@@ -231,7 +231,6 @@ C
       INTEGER          IFAC , IEL , IVF , ITABVR , NBRCEL
       INTEGER          IVFF , IFLU , ICLA , II , NB
       DOUBLE PRECISION AA , BB , GMAX , GMIN , GMOY
-      CHARACTER        NENVAR*80
       CHARACTER        CHCOND*16
 C
 C***********************************************************************
