@@ -355,7 +355,7 @@ C    En entrant dans ce sous-programme, les tableaux :
 C         ETTP(IP,JUF)
 C         ETTP(IP,JVF)
 C         ETTP(IP,JWF)
-C      contiennent les composantes de la vitesse instantannee
+C      contiennent les composantes de la vitesse instantanee
 C      (partie fluctuante + partie moyenne) du fluide vu
 C      par les particules.
 C

@@ -328,7 +328,7 @@ C
       DOUBLE PRECISION XNN , YNN , ZNN
       DOUBLE PRECISION VNORL(1)  , ENC3 , VISCP , MASSE
       DOUBLE PRECISION DPINIT , DP03 , MP0 , TRAP , VNORM , ANG
-      DOUBLE PRECISION ENERG , ENERGT , VV1
+      DOUBLE PRECISION ENERG , ENERGT
       DOUBLE PRECISION UXN   , VYN    , WZN
 C
 C***********************************************************************
