@@ -308,7 +308,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IFAC  , IEL   , II    , IPHAS
-      INTEGER          ICOUL , IZONE , IFML  , IUTILE
+      INTEGER          IZONE , IUTILE
       INTEGER          ILELT, NLELT
 C
       DOUBLE PRECISION UREF2 , DHYD  , RHOMOY
@@ -364,28 +364,6 @@ C
 C          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
 C
 C=======================================================================
-C
-C      FAMILLE ET PREMIERE PROPRIETE
-C
-C        En general, la couleur des faces est la premiere propriete :
-C          ICOUL = IPRFML(IFML,1).
-C
-C        Dans le cas plus specifique de maillages contenant des groupes
-C          (ensembles dont l'intersection peut ne pas etre vide),
-C          il est possible que l'on obtienne plusieurs proprietes par
-C          famille. Ainsi, une face appartenant aux groupes 3 et 5 et
-C          portant la couleur 8 sera dans une famille dont les
-C          proprietes seront -3, -5 et 8 (ordre arbitraire).
-C          Il faut donc, si l'on veut savoir si la face IFAC porte
-C          la couleur 8, balayer toutes les proprietes de la
-C          famille :
-C            IFML  = IFMFBR(IFAC   )
-C            DO IPROP = 1, NPRFML
-C              IF(IPRFML(IFML,IPROP).EQ.8) THEN
-C                La face porte la couleur 8 ...
-C              ENDIF
-C            ENDDO
-C
 C
       IPHAS = 1
 C
