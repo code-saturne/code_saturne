@@ -95,8 +95,8 @@ C
 C
 C VARIABLES LOCALES
 C
+      INTEGER          IPHAS
       CHARACTER        CHAINE*80
-      INTEGER          IPP, ISC, JJ, IPHAS, IGG
 C
 C***********************************************************************
 C
@@ -107,7 +107,7 @@ C
 C --> Coefficient de relaxation de la masse volumique
 C
       IF( SRROM.LT.0D0 .OR. SRROM.GE.1D0) THEN
-        WRITE(NFECRA,2000)'SSROM ', SRROM
+        WRITE(NFECRA,2000)'SRROM ', SRROM
         IOK = IOK + 1
       ENDIF
 C
