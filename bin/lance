@@ -663,19 +663,6 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
   cur_dir=`pwd`
 
-  # Determination de la version des compilateurs 
-  ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
-
-  # Recopie des sources utilisateur 
-  #  (pas de liens : on recopie le repertoire ensuite)
-  mkdir fort_saturne
-  cd fort_saturne
-  for fich in ${source_cas}/*.[F,c,h] ; do 
-    if [ -f $fich ] ; then
-      cp ${fich} .
-    fi
-  done
-  cd ..
   #
   # Recopie du fichier parametrique
   if [ ! -z "$PARAM" ] ; then 
@@ -691,6 +678,19 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       exit 1
     fi
   fi
+
+  # Determination de la version des compilateurs 
+  ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
+
+  # Recopie des sources utilisateur 
+  #  (pas de liens : on recopie le repertoire ensuite)
+  mkdir fort_saturne
+  cd fort_saturne
+  for fich in ${source_cas}/*.[F,c,h] ; do 
+    if [ -f $fich ] ; then
+      cp ${fich} .
+    fi
+  done
 #
 # Detection de la presence de modules
 
@@ -703,8 +703,8 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 # Rayonnement
   USRAY2_PRESENT=`presence "usray2.F"`
   if [ ! -z "$PARAM" ] ; then 
-    NCHARB=`grep "radiative_transfer\ model" $PARAM | grep -v "off" |wc -l`
-    if [ $NCHARB -eq 1 ] ; then
+    NRAYT=`grep "radiative_transfer\ model" ${cur_dir}/$PARAM | grep -v "off" |wc -l`
+    if [ $NRAYT -eq 1 ] ; then
       USRAY2_PRESENT="oui"
     fi
   fi
@@ -712,7 +712,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 # Charbon pulverise
   USCPCL_PRESENT=`presence "uscpcl.F"`
   if [ ! -z "$PARAM" ] ; then 
-    NCHARB=`grep "pulverized_coal\ model" $PARAM | grep -v "off" |wc -l`
+    NCHARB=`grep "pulverized_coal\ model" ${cur_dir}/$PARAM | grep -v "off" |wc -l`
     if [ $NCHARB -eq 1 ] ; then
       USCPCL_PRESENT="oui"
     fi
@@ -912,10 +912,6 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi
   fi
 #
-fi # MODE_EXEC != pre_traitement
-#
-if [ $MODE_EXEC != pre_traitement ] ; then
-
   # Extraction du main sur HP (link avec f90) sauf s'il existe deja
   # (devrait etre migre vers le Makefile si possible)
   if [ "${NOM_ARCH}" = "HP-UX" ] ; then 
