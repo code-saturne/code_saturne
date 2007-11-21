@@ -675,7 +675,22 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       cp ${fich} .
     fi
   done
-
+  #
+  # Recopie du fichier parametrique
+  if [ ! -z "$PARAM" ] ; then 
+    var=$DATA/$PARAM
+    if [ -f $var ] ; then 
+      COMMANDE_PARAM="-param $PARAM"
+      cp $var .
+    else
+      echo ' ' 
+      echo ' -- ERREUR -- ' 
+      echo ' Le fichier de donnees parametrique ' $var
+      echo '   n est pas accessible ' 
+      exit 1
+    fi
+  fi
+#
 # Detection de la presence de modules
 
 # Standard
@@ -686,9 +701,21 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
 # Rayonnement
   USRAY2_PRESENT=`presence "usray2.F"`
+  if [ ! -z "$PARAM" ] ; then 
+    NCHARB=`grep "radiative_transfer\ model" $PARAM | grep -v "off" |wc -l`
+    if [ $NCHARB -eq 1 ] ; then
+      USRAY2_PRESENT="oui"
+    fi
+  fi
 
 # Charbon pulverise
   USCPCL_PRESENT=`presence "uscpcl.F"`
+  if [ ! -z "$PARAM" ] ; then 
+    NCHARB=`grep "pulverized_coal\ model" $PARAM | grep -v "off" |wc -l`
+    if [ $NCHARB -eq 1 ] ; then
+      USCPCL_PRESENT="oui"
+    fi
+  fi
 
 # Combustion gaz chimie 3 points
   USD3PC_PRESENT=`presence "usd3pc.F"`
@@ -713,9 +740,10 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     if [ "${USCLIM_PRESENT}" = "oui" ] ; then
       echo ' '
       echo ' -- ERREUR -- '
-      echo ' Lorsque uscpcl est complete, usclim ne doit pas l etre'
-      echo '  (modele combustion charbon pulverise)                '
-      echo '  Les conditions aux limites sont fournies dans uscpcl.'
+      echo ' Lorsque le modele de combustion du charbon pulverise'
+      echo '  est active, usclim ne doit pas etre utilise'
+      echo '  Les conditions aux limites sont fournies dans'
+      echo '  l interface graphique ou dans uscpcl.'
       echo ' '
 	exit 1
     fi
@@ -1133,20 +1161,6 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     for fich in $FICHIERS_DONNEES_UTILISATEUR ; do 
       cp $DATA/$fich .
     done
-  fi
-  #
-  if [ ! -z "$PARAM" ] ; then 
-    var=$DATA/$PARAM
-    if [ -f $var ] ; then 
-      COMMANDE_PARAM="-param $PARAM"
-      cp $var .
-    else
-      echo ' ' 
-      echo ' -- ERREUR -- ' 
-      echo ' Le fichier de donnees parametrique ' $var
-      echo '   n est pas accessible ' 
-      exit 1
-    fi
   fi
   #
 fi # MODE_EXEC != pre_traitement
