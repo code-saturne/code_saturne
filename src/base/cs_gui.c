@@ -4576,7 +4576,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   if (icp[iphas]>0) nbp++;
   if (vars->nscaus >0) {
     for (i=0; i<vars->nscaus; i++) {
-      if (ivisls[i] > 0) nbp++;
+	if (ivisls[i] > 0 && iscavr[i] <= 0 )nbp++;
     }
   }
   if (*iale) {
@@ -4659,23 +4659,27 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
       /* search lenght of first character of scalar property's suffixe : '_' */
       for (i=0; i < vars->nscaus; i++) {
 
-        if (iscavr[i] <= 0 && iscalt[iphas] != i+1 && ivisls[i] > 0) {
+        if (iscavr[i] <= 0 && ivisls[i] > 0) {
 
-          vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-          /* search lenght of second character scalar property's suffixe: number i */
-          ncar = cs_gui_characters_number(i+1);
-
-          BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
-          BFT_MALLOC(suf, 1 + ncar, char);
-          sprintf(suf, "%i", i+1);
-          strcpy(name, "diffusion_coefficient");
-          strcat(name, "_");
-          strcat(name, suf);
-
-          BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
-          strcpy(vars->properties_name[n++], name);
-
-          BFT_FREE(suf);
+	    if (iscalt[iphas] == i+1){
+		vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
+		BFT_MALLOC(vars->properties_name[n], strlen("thermal_conductivity")+1, char);
+		strcpy(vars->properties_name[n++], "thermal_conductivity");
+	    } else {
+		vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
+		/* search lenght of second character scalar property's suffixe: number i */
+		ncar = cs_gui_characters_number(i+1);
+		
+		BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
+		BFT_MALLOC(suf, 1 + ncar, char);
+		sprintf(suf, "%i", i+1);
+		strcpy(name, "diffusion_coefficient");
+		strcat(name, "_");
+		strcat(name, suf);
+		BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+		strcpy(vars->properties_name[n++], name);
+		BFT_FREE(suf);
+	    }
         }
       }
     }
