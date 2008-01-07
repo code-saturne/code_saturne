@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -35,11 +35,11 @@ The mesh files should be copied in the directory MAILLAGE.
 
 The \CS\ Graphical Interface is launched by typing the command
 {\itshape ./SaturneGUI} in the DATA subdirectory of the CAS1 directory.
-The following graphic window opens (fig \ref{fig1_e1}).  
+The following graphic window opens (fig \ref{fig1_e1}).
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture01.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture01.jpg}
 \caption{User interface}
 \label{fig1_e1}
 \end{center}
@@ -49,11 +49,11 @@ The following graphic window opens (fig \ref{fig1_e1}).
 \clearpage
 Go to the {\itshape File} menu and click on {\itshape New file} to open a new
 calculation data file, as shown in the figure
-\ref{fig2_e1}. 
+\ref{fig2_e1}.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture02.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture02.jpg}
 \caption{Opening a new file}
 \label{fig2_e1}
 \end{center}
@@ -61,17 +61,17 @@ calculation data file, as shown in the figure
 
 
 \clearpage
-The interface automatically updates the following information: 
+The interface automatically updates the following information:
 \begin{itemize}
-	\item Study name
-	\item Case name
-	\item Directory of the case
-	\item Associated sub-directories of the case
+        \item Study name
+        \item Case name
+        \item Directory of the case
+        \item Associated sub-directories of the case
 \end{itemize}
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture03.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture03.jpg}
 \caption{Identity and paths}
 \label{fig3_e1}
 \end{center}
@@ -88,7 +88,7 @@ Remember to save the case regularly throughout the preparation of the calculatio
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture04.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture04.jpg}
 \caption{Saving the {\itshape XML} file}
 \label{fig4_e1}
 \end{center}
@@ -97,38 +97,38 @@ Remember to save the case regularly throughout the preparation of the calculatio
 
 \clearpage
 The next step is to specify the mesh(es) to be used for the calculation.
-Click on the item {\itshape Solution Domain} 
+Click on the item {\itshape Solution Domain}
 under the heading {\itshape Analysis environment}. The list of all
 meshes available in the folder {\itshape MAILLAGE} appears in the
 window {\itshape List of meshes}. Delete the mesh(es) you will not
 use\footnote{this operation only deletes the selected entries from the list, it
 does not delete the mesh file in the MAILLAGE directory}. In this case only the
-mesh {\itshape downcomer.des} is needed. 
+mesh {\itshape downcomer.des} is needed.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture05.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture05.jpg}
 \caption{Meshes: list of meshes}
 \label{fig5_e1}
 \end{center}
 \end{figure}
 
-On this item ({\itshape Solution Domain}) there are three other tabs: 
+On this item ({\itshape Solution Domain}) there are three other tabs:
 \begin{itemize}
-	\item PERIODIC BOUNDARIES
-	\item SYRTHES COUPLING
-	\item STAND-ALONES RUNNING
+        \item PERIODIC BOUNDARIES
+        \item SYRTHES COUPLING
+        \item STAND-ALONES RUNNING
 \end{itemize}
 They are not used in this case. Keep the default values.
 
 \clearpage
 The item {\itshape Analysis features} under the heading {\itshape Thermophysical
 environment} allows to define the type of flow to be simulated. In this case, a
-steady flow will be chosen.  
+steady flow will be chosen.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture07.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture07.jpg}
 \caption{Flow type}
 \label{fig7_e1}
 \end{center}
@@ -150,7 +150,7 @@ The turbulence model is selected in the following list:\\
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture09.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture09.jpg}
 \caption{Turbulence model: list of models}
 \label{fig9_e1}
 \end{center}
@@ -162,7 +162,7 @@ In this case, the k-$\varepsilon$ model is used.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture10.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture10.jpg}
 \caption{Turbulence model: choice of a model}
 \label{fig10_e1}
 \end{center}
@@ -180,7 +180,7 @@ choose between:\\
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture11.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture11.jpg}
 \caption{Thermal scalar conservation: list of models}
 \label{fig11_e1}
 \end{center}
@@ -191,7 +191,7 @@ choose between:\\
 In the present case, select {\itshape Temperature (Celsius degrees)}.
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture12.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture12.jpg}
 \caption{Thermal scalar conservation: choice of a model}
 \label{fig12_e1}
 \end{center}
@@ -200,7 +200,7 @@ In the present case, select {\itshape Temperature (Celsius degrees)}.
 There are no radiative transfers in our case, so the item is ignored.
 
 \clearpage
-To initialize variables at the instant $t=0\ s$, go to the item {\itshape Initialization}. 
+To initialize variables at the instant $t=0\ s$, go to the item {\itshape Initialization}.
 Here the velocity, the thermal scalar and the turbulence can be initialized. In
 this case, the default values can be kept: zero velocity, an initial temperature
 of 20\degresC\ and a turbulence level based on a reference velocity of $1\
@@ -209,7 +209,7 @@ case, only the default ``all cells'' is used.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture14.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture14.jpg}
 \caption{Initialization of dynamic variables}
 \label{fig14_e1}
 \end{center}
@@ -227,7 +227,7 @@ Additional scalars} page.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture15.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture15.jpg}
 \caption{Initialization of the scalar}
 \label{fig15_e1}
 \end{center}
@@ -235,12 +235,12 @@ Additional scalars} page.
 
 
 \clearpage
-Click on the thermal scalar in the list, to change: 
+Click on the thermal scalar in the list, to change:
 \begin{itemize}
-	\item its name
-	\item its initial value
-	\item its minimal value
-	\item its maximal value
+        \item its name
+        \item its initial value
+        \item its minimal value
+        \item its maximal value
 \end{itemize}
 In this case the temperature can vary between 0\degresC\ and 400\degresC.
 After entering the new values, click on {\itshape Modify} in order to validate
@@ -248,7 +248,7 @@ these changes.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture16.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture16.jpg}
 \caption{Initialization of the scalar}
 \label{fig16_e1}
 \end{center}
@@ -264,11 +264,11 @@ this case there are no additional scalars, the item is therefore unused.
 \clearpage
 Under the heading {\itshape Physical properties} in the main list,
 the item {\itshape Reference values} allows to set the reference pressure.
-Use the default value of $101\,300\ Pa$. 
+Use the default value of $101\,300\ Pa$.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture17.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture17.jpg}
 \caption{Physical properties: reference pressure}
 \label{fig17_e1}
 \end{center}
@@ -277,25 +277,25 @@ Use the default value of $101\,300\ Pa$.
 
 \clearpage
 Specify the fluid physical characteristics in the item {\itshape Fluid
-properties}: 
+properties}:
 \begin{itemize}
-	\item Density
-	\item Viscosity
-	\item Specific Heat
-	\item Thermal Conductivity
+        \item Density
+        \item Viscosity
+        \item Specific Heat
+        \item Thermal Conductivity
 \end{itemize}
 
 In this case they are all constant.
 \begin{itemize}
-	\item Density $ = 725.735\ kg.m^{-3}$ 
-	\item Viscosity $ = 0.895\times 10^{-4}\ kg.m^{-1}.s^{-1}$
-	\item Specific Heat $  = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$ 
-	\item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
+        \item Density $ = 725.735\ kg.m^{-3}$
+        \item Viscosity $ = 0.895\times 10^{-4}\ kg.m^{-1}.s^{-1}$
+        \item Specific Heat $  = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
+        \item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
 \end{itemize}
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture18.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture18.jpg}
 \caption{Physical properties: fluid properties}
 \label{fig18_e1}
 \end{center}
@@ -304,15 +304,15 @@ In this case they are all constant.
 
 \clearpage
 Set the three components of gravity in the
-{\itshape Gravity, hydrostatic pressure} item. 
+{\itshape Gravity, hydrostatic pressure} item.
 In this case, since the gravity doesn't have
 any influence on the flow, gravity can be set to 0.
 As for the pressure interpolation interpolation method, keep the standard
-default value. 
+default value.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture19.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture19.jpg}
 \caption{Physical properties: gravity, hydrostatic pressure}
 \label{fig19_e1}
 \end{center}
@@ -322,11 +322,11 @@ default value.
 \clearpage
 Boundary conditions now need to be defined. Go to the item {\itshape Define
 boundary regions} under the heading {\itshape Boundary conditions}.
-The following window opens (fig \ref{fig20_e1}).  
+The following window opens (fig \ref{fig20_e1}).
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture20.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture20.jpg}
 \caption{Creation of a boundary region}
 \label{fig20_e1}
 \end{center}
@@ -356,7 +356,7 @@ combination of them, related by ``or'' or ``and'' keywords.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture21.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture21.jpg}
 \caption{Creation of a boundary region}
 \label{fig21_e1}
 \end{center}
@@ -373,7 +373,7 @@ pages. The settings will be as follows:\\
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture22.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture22.jpg}
 \caption{Creation of a boundary region: inlet region}
 \label{fig22_e1}
 \end{center}
@@ -388,7 +388,7 @@ create the boundary zone. It appears in the
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture23.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture23.jpg}
 \caption{Creation of a boundary region: inlet region}
 \label{fig23_e1}
 \end{center}
@@ -417,7 +417,7 @@ the string ``8 or 9''.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture24.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture24.jpg}
 \caption{Creation of boundary regions: symmetry region}
 \label{fig24_e1}
 \end{center}
@@ -433,7 +433,7 @@ figure \ref{fig25_e1}.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture25.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture25.jpg}
 \caption{Creation of boundary regions}
 \label{fig25_e1}
 \end{center}
@@ -450,7 +450,7 @@ do not need any user-defined data.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture26.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture26.jpg}
 \caption{Dynamic variables boundary conditions}
 \label{fig26_e1}
 \end{center}
@@ -468,7 +468,7 @@ diameter and specify it.\\
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture27.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture27.jpg}
 \caption{Dynamic variables boundary: inlet}
 \label{fig27_e1}
 \end{center}
@@ -485,11 +485,11 @@ isolate the corresponding boundary faces in a specific boundary region.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture28.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture28.jpg}
 \caption{Dynamic variables boundary: walls}
 \label{fig28_e1}
 \end{center}
-\end{figure} 
+\end{figure}
 
 
 \clearpage
@@ -509,19 +509,19 @@ For the inlets, only a Dirichlet condition is available.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture29.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture29.jpg}
 \caption{Scalars boundaries}
 \label{fig29_e1}
 \end{center}
 \end{figure}
 
 
-\clearpage 
+\clearpage
 In this case all walls are adiabatic. So the boundary condition for the
-temperature will be a {\itshape Neumann} condition with 0 for the value. 
+temperature will be a {\itshape Neumann} condition with 0 for the value.
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture30.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture30.jpg}
 \caption{Scalars boundaries: walls}
 \label{fig30_e1}
 \end{center}
@@ -530,12 +530,12 @@ temperature will be a {\itshape Neumann} condition with 0 for the value.
 
 \clearpage
 Click on {\itshape inlet} to choose the temperature inlet
-value. Here this value is 300\degresC. 
+value. Here this value is 300\degresC.
 The default value is left for the outlet.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture31.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture31.jpg}
 \caption{Scalars boundaries: inlet}
 \label{fig31_e1}
 \end{center}
@@ -549,11 +549,11 @@ Analysis control}.
 Go to the item {\itshape Steady management} to specify the number of iterations,
 30 in this case. The default value of the relaxation
 coefficient will be kept and  the
-{\itshape Option zero iteration} will not be activated. 
+{\itshape Option zero iteration} will not be activated.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture32.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture32.jpg}
 \caption{Steady flow management}
 \label{fig32_e1}
 \end{center}
@@ -562,7 +562,7 @@ coefficient will be kept and  the
 
 \clearpage
 Click on the item {\itshape Output control} to change the frequency for the
-printing of information in the output listing. 
+printing of information in the output listing.
 The options are:\\
 \hspace*{1cm}$\bullet\ ${\itshape No output}\\
 \hspace*{1cm}$\bullet\ ${\itshape Output listing at each time step}\\
@@ -572,7 +572,7 @@ Here and in most cases, the second option should be chosen.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture33.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture33.jpg}
 \caption{Output control: output listing}
 \label{fig33_e1}
 \end{center}
@@ -589,7 +589,7 @@ calculation, so the second option is chosen with a value of 1 for 'n'.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture34.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture34.jpg}
 \caption{Output control: post-processing}
 \label{fig34_e1}
 \end{center}
@@ -601,12 +601,12 @@ The other options are kept to their default value.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture35.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture35.jpg}
 \caption{Output control}
 \label{fig35_e1}
 \end{center}
 \end{figure}
- 
+
 The {\itshape Monitoring points management} tab allows to define specific points
 in the domain (monitoring probes) where the time evolution of the different
 variables will be stored in historic files. In this case no monitoring points
@@ -617,12 +617,12 @@ are defined.
 The item {\itshape Solution control} allows to specify which variable will
 appear in the output listing, in the post-processing files or on the
 monitoring probes. In this case, the default value is kept, where every variable
-is activated. 
+is activated.
 
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture36.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture36.jpg}
 \caption{Solution control}
 \label{fig36_e1}
 \end{center}
@@ -638,7 +638,7 @@ their default value.
 \begin{center}
 \begin{tabular}{c}
 \includegraphics[width=9cm]{\repgraphics/c1_capture37.jpg}\\
-\includegraphics[width=9cm]{\repgraphics/c1_capture38.jpg} 
+\includegraphics[width=9cm]{\repgraphics/c1_capture38.jpg}
 \end{tabular}
 \caption{Numerical parameters}
 \label{fig3738_e1}
@@ -654,7 +654,7 @@ heading. It is not the case in the present calculation.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture39.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture39.jpg}
 \caption{User arrays}
 \label{fig39_e1}
 \end{center}
@@ -668,7 +668,7 @@ nothing has to be modified.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture40.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture40.jpg}
 \caption{Start/Restart}
 \label{fig40_e1}
 \end{center}
@@ -685,7 +685,7 @@ PBS}). In this simple case, choose the Workstation.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture41.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture41.jpg}
 \caption{Prepare batch analysis: Computer selection}
 \label{fig41_e1}
 \end{center}
@@ -701,7 +701,7 @@ Remember to save the Xml file before opening the launch script.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture42.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture42.jpg}
 \caption{Prepare batch analysis: Batch script file selection}
 \label{fig42_e1}
 \end{center}
@@ -736,7 +736,7 @@ directory.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c1_capture43.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c1_capture43.jpg}
 \caption{Prepare batch analysis: Execution}
 \label{fig43_e1}
 \end{center}

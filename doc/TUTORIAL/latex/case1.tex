@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -29,12 +29,12 @@
 %----------------
 
 
-	\subsection{Objective}
+        \subsection{Objective}
 %-----------------------------
 The aim of this case is to train the user of \CS\ on an oversimplified 2D junction
 including an inlet, an outlet, walls and symmetries.
 
-	\subsection{Description of the configuration}
+        \subsection{Description of the configuration}
 %-----------------------------------------------
 
 The configuration is two-dimensional.\\
@@ -47,13 +47,13 @@ the fluid density is not taken into account in this first example.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=8cm]{\repgraphics/fig01.jpg} 
+\includegraphics[width=9cm,height=8cm]{\repgraphics/fig01.jpg}
 \caption{Geometry of the downcomer}
 \label{figante11}
 \end{center}
 \end{figure}
 
-	\subsection{Characteristics}
+        \subsection{Characteristics}
 %----------------------------------
 
 Characteristics of the geometry and the flow:
@@ -75,39 +75,39 @@ Physical characteristics of fluid:\\
 The initial water temperature in the domain is equal to 20\degresC.
 The inlet temperature of water in the cold branch is 300\degresC.
 Water characteristics are considered constant and their values taken at
-300\degresC\ and $150\times 10^{5}\ Pa$: 
+300\degresC\ and $150\times 10^{5}\ Pa$:
 \begin{itemize}
-	\item density: $\rho = 725.735\ kg.m^{-3}$ 
-	\item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
-	\item specific heat: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
-	\item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
+        \item density: $\rho = 725.735\ kg.m^{-3}$
+        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
+        \item specific heat: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
+        \item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
 \end{itemize}
 
 
-	\subsection{Mesh characteristics}
+        \subsection{Mesh characteristics}
 %---------------------------------------
 
 Figure \ref{figante12} shows a global view of the downcomer mesh. This
-two-dimensional mesh is composed 
+two-dimensional mesh is composed
 of 700 cells, which is very small compared to those used in real
-studies. This is  
+studies. This is
 a deliberate choice so that tutorial calculations run fast.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=8cm,height=7cm]{\repgraphics/fig02.jpg} 
+\includegraphics[width=8cm,height=7cm]{\repgraphics/fig02.jpg}
 \caption{Geometry of the downcomer}
 \label{figante12}
 \end{center}
 \end{figure}
 
-Note that here the case is two-dimensional but \CS\ always operates on three-dimensional 
+Note that here the case is two-dimensional but \CS\ always operates on three-dimensional
 mesh elements (cells). The present mesh is composed of a layer of hexahedrons
 created from the 2D mesh shown on figure \ref{figante12} by
-extrusion (elevation) in the $Z$ direction. The virtual planes 
+extrusion (elevation) in the $Z$ direction. The virtual planes
 parallel to $Oxy$ will have ``sliding'' (``symmetry'') conditions to account for
-the two-dimensional character of the configuration.\\ 
- 
+the two-dimensional character of the configuration.\\
+
 {\bfseries Type}: structured mesh
 
 {\bfseries Coordinates system}: cartesian, origin on the edge of the main
@@ -120,10 +120,10 @@ conditions on the boundary faces of the mesh, the latter have to be
 identified. It is commonly done by assigning an integer to each of them,
 characteristic of the boundary region they belong to. This integer is refered to
 as "color" or "reference".
-  
+
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=2.5cm,height=6cm]{\repgraphics/fig03.jpg} 
+\includegraphics[width=2.5cm,height=6cm]{\repgraphics/fig03.jpg}
 \caption{Colors of the boundary faces}
 \label{figante13}
 \end{center}
@@ -134,38 +134,38 @@ as "color" or "reference".
 \section{CASE 1: Basic calculation}
 %-----------------------------------
 
-	\subsection{Calculation options}
+        \subsection{Calculation options}
 %-----------------------------------------
 
 Most of the options used in this calculation are default options of \CS.
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Flow type: steady flow
-	\item Turbulence model: $k-\epsilon$
-	\item Scalar(s): 1 - temperature
-	\item Physical properties: uniform and constant
+        \item Flow type: steady flow
+        \item Turbulence model: $k-\epsilon$
+        \item Scalar(s): 1 - temperature
+        \item Physical properties: uniform and constant
 \end{itemize}
 
 
-	\subsection{Initial and boundary conditions}
+        \subsection{Initial and boundary conditions}
 %---------------------------------------------------
 
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Initialization: none (default values)
+        \item Initialization: none (default values)
 \end{itemize}
 
 
 The boundary conditions are defined as follows:
 \begin{itemize}
-	\item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
+        \item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
 $1\ m.s^{-1}$ and an inlet temperature of 300\degresC\ are imposed
-	\item {\bfseries Outlet}: default values
-	\item {\bfseries Walls}: default values
+        \item {\bfseries Outlet}: default values
+        \item {\bfseries Walls}: default values
 \end{itemize}
 
-Figure \ref{figante13} shows the colors used for boundary conditions and 
-table \ref{tabante11} defines the correspondance between the colors and  
+Figure \ref{figante13} shows the colors used for boundary conditions and
+table \ref{tabante11} defines the correspondance between the colors and
 the type of boundary condition to use.
 
 Do not forget to enter the value of the hydraulic diameter, adapted to the
@@ -190,7 +190,7 @@ Colors & Conditions \\
 \end{center}
 \end{table}
 
-	\subsection{Parameters and User routines}
+        \subsection{Parameters and User routines}
 %------------------------------------------------
 
 All parameters necessary to this study can be defined through the Graphical
@@ -212,7 +212,7 @@ Output period for post-processing files& $1$ \\
 
 
 
-	\subsection{Results}
+        \subsection{Results}
 %---------------------------
 
 Figure \ref{fige1_e1} presents the results obtained at different iterations in the

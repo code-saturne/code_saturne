@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -37,8 +37,8 @@ L'équation discr\`ete de quantité de mouvement s'écrit, à un instant de r\'esolu
 
 \begin{equation}
 \displaystyle
-\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) + 
-\tens{A_\alpha}^n\ \widetilde{\vect{V_\alpha}} = 
+\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) +
+\tens{A_\alpha}^n\ \widetilde{\vect{V_\alpha}} =
 -\ \tens{G_\alpha}\ \vect{P}^n + \vect{S_\alpha}^n + \tens{I}_{\,s,\alpha}\ \widetilde{\vect{V_\alpha}}
 \label{Base_Resolp_QDM}
 \end{equation}
@@ -62,12 +62,12 @@ L'\'etape de correction consiste \`a imposer :
 \begin{equation}\label{Base_Resolp_Eq_Cont}
 \dive(\,{\rho\,\vect{u}}\,) = \Gamma
 \end{equation}
-o\`u $\Gamma$ est un terme source de masse \'eventuel. 
+o\`u $\Gamma$ est un terme source de masse \'eventuel.
 %($\Gamma = 0$ pour un \'ecoulement incompressible et non dilatable).
 
-Soit $\vect W$ le tableau de dimension $3 \times \var{NCEL}$ qui contient toutes les composantes de la quantité de mouvement ($\vect{V}$ d\'esigne $\vect{V}^n$, $\vect{V}^{n+1}$ ou $\widetilde{\vect{V}}$). 
+Soit $\vect W$ le tableau de dimension $3 \times \var{NCEL}$ qui contient toutes les composantes de la quantité de mouvement ($\vect{V}$ d\'esigne $\vect{V}^n$, $\vect{V}^{n+1}$ ou $\widetilde{\vect{V}}$).
 $$ \vect{W} = \tens{R}^n\ \vect{V} = \left(
-                    \begin{array} {c} 
+                    \begin{array} {c}
                     \rho^n\ \vect{V_1} \\
                     \rho^n\ \vect{V_2} \\
                     \rho^n\ \vect{V_3}
@@ -89,10 +89,10 @@ D'après l'équation discr\`ete (\ref{Base_Resolp_QDM}), on écrit pour tout $\alph
 \label{Base_Resolp_eqn2}
 \end{equation}
 
-On pose :  
+On pose :
 $$ \tens{B_{\,\alpha}} =  \tens{M}_{\,\alpha}^n + \tens{A_{\,\alpha}}^n\ {(\tens{R}^n)}^{-1} - \tens{I}_{\,s,\alpha}\ {(\tens{R}^n)}^{-1}$$
 $$ \tens{B} = \left(
-                    \begin{array} {ccc} 
+                    \begin{array} {ccc}
                     \tens{B_1} & 0 & 0 \\
                     0 & \tens{B_2} & 0 \\
                     0 & 0 & \tens{B_3}
@@ -100,7 +100,7 @@ $$ \tens{B} = \left(
               \right)
 $$
 $$ \tens{G} = \left(
-                    \begin{array} {c} 
+                    \begin{array} {c}
                     \tens{G_1} \\
                     \tens{G_2} \\
                     \tens{G_3}
@@ -108,7 +108,7 @@ $$ \tens{G} = \left(
               \right)
 $$
 $$ \vect{S}^{\,n} = \left(
-                      \begin{array} {c} 
+                      \begin{array} {c}
                       \vect{S_1}^n+\ \tens{M}_{\,1}\ \tens{R}^n\ \vect{V_1}^n\\
                       \vect{S_2}^n+\ \tens{M}_{\,2}\ \tens{R}^n\ \vect{V_2}^n\\
                       \vect{S_3}^n+\ \tens{M}_{\,3}\ \tens{R}^n\ \vect{V_3}^n
@@ -127,22 +127,22 @@ La m\'ethode des pas fractionnaires se d\'ecompose en deux \'etapes :
 \item r\'esolution de l'\'equation (\ref{Base_Resolp_QDM}) (cette \'equation nous donne l'\'equation(\ref{Base_Resolp_eqn3})), soit :
 \begin{equation}
 \displaystyle
-\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) + 
+\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) +
 \tens{A_{\,\alpha}}^n\ \widetilde{\vect{V_\alpha}} - \tens{I}_{\,s,\alpha}\ \widetilde{\vect{V_\alpha}}
- = 
+ =
 -\ \tens{G_\alpha}\ \vect{P}^{\,n} + \vect{S_\alpha}^n
 \label{Base_Resolp_QDM2}
 \end{equation}
 
 \item soustraction\footnote{On néglige la variation des termes sources explicites $\vect{S_\alpha}^n$ qui sont toujours estim\'es en $n$.} de l'\'equation de quantit\'e de mouvement prise \`a l'instant $(n+1)$ de (\ref{Base_Resolp_QDM2}) :
-\begin{equation} 
+\begin{equation}
 \displaystyle
-\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}}) + 
+\tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}}) +
 \tens{A_{\,\alpha}}^n\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}}) - \tens{I}_{\,s,\alpha}\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}})
- = 
+ =
 -\ \tens{G_{\,\alpha}}\ (\vect{P}^{\,n+1}- \vect{P}^{\,n})
 \label{Base_Resolp_frac2}
-\end{equation} 
+\end{equation}
 \end{enumerate}
 
 L'\'equation (\ref{Base_Resolp_frac2}) nous donne :
@@ -197,7 +197,7 @@ $\gamma_b(i)$ l'ensemble des centres \'eventuels des faces de bord de ${\Omega_i
 \begin{array}{ll}
 &(\tens{L}\ \delta \vect{P})_I = \sum\limits_{j\in Vois(i)}[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}
 + \sum\limits_{k\in {\gamma_b(i)}}[\ \tens{T}^{\,n}_{\,b_{\,ik}}\ (\grad{\delta p})_{\,f_{\,b_{\,ik}}}]\,.\,\vect{S}_{\,b_{\,ik}}
-\end{array} 
+\end{array}
 \end{equation}
 $\tens{T}^n$ un tenseur diagonal d'ordre 2 contenant les pas de temps dans les trois directions d'espace et $\vect{S}_{\,ij}$ (respectivement $\vect{S}_{\,b_{\,ik}}$) le vecteur surface de la face purement interne $ij$ (resp. de la face de bord $ik$). Le gradient $(\grad{ \delta p})_{\,f_{  }}$  présent dans l'équation (\ref{Base_Resolp_eqn7}) est un gradient facette\footnote{Sur maillage orthogonal, $\displaystyle (\grad{p})_{\,f_{\,ij}} \ . \ \vect{S}_{\,ij} = \frac{ p_J - p_I }{\overline{IJ}} S_{\,ij}$. $I$ (resp. $J$) et $I'$ (resp. $J'$) sont en effet superpos\'es.}.
 
@@ -208,7 +208,7 @@ L'opérateur $\tens{L}$ ne pose pas de problème de découplage pair/impair sur les
 
 Avec l'algorithme "couplage faible vitesse-pression" :
 $ \tens{T}_{\,I}^{\,n} = \left(
-                      \begin{array} {ccc} 
+                      \begin{array} {ccc}
                       \Delta t_I^{\,n} & 0 & 0 \\
                       0 & \Delta t_I^{\,n} & 0 \\
                       0 & 0 & \Delta t_I^{\,n}
@@ -216,24 +216,24 @@ $ \tens{T}_{\,I}^{\,n} = \left(
                 \right) $\\
 et avec l'algorithme "couplage vitesse-pression renforc\'e" :
 $ \tens{T}_{\,I}^{\,n} = \left(
-                      \begin{array} {ccc} 
+                      \begin{array} {ccc}
                       T_{\,11,\,I}^{\,n} & 0 & 0 \\
                       0 &  T_{\,22,\,I}^{\,n}&0 \\
                       0 & 0 & T_{\,33,\,I}^{\,n}
                       \end{array}
                 \right) $
 
-La matrice du syst\`eme de pression, dans le cas de l'utilisation du "couplage vitesse-pression renforc\'e", n'est pas facilement calculable \`a cause du terme : 
+La matrice du syst\`eme de pression, dans le cas de l'utilisation du "couplage vitesse-pression renforc\'e", n'est pas facilement calculable \`a cause du terme :
 $$[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta
 p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}$$ pour une face interne $ij$ et du terme : $$[\ \tens{T}^{\,n}_{\,b_{\,ik}}\ (\grad{\delta p})_{\,f_{\,b_{\,ik}}}]\,.
 \,\vect{S}_{\,b_{\,ik}}$$ pour une face de bord.\\
 En effet, \`a cause du changement de la viscosit\'e suivant la direction de l'espace du fait de l'anisotropie de $\tens{T}^n$, il faudrait calculer les gradients directionnels en fonction du gradient normal.
-%(\delta p) = \tens{T}^{\,n}\ (\grad{(\delta p)})_{\,f } = 
-             
+%(\delta p) = \tens{T}^{\,n}\ (\grad{(\delta p)})_{\,f } =
+
 On pose pour tout scalaire $a$, sans pr\'eciser pour le moment la nature du gradient $\grad$ :
-$$ \vect{\widetilde{G}}\ a = \tens{T}^{\,n}\ \grad{a} = 
+$$ \vect{\widetilde{G}}\ a = \tens{T}^{\,n}\ \grad{a} =
               \left(
-                    \begin{array} {c} 
+                    \begin{array} {c}
                     \displaystyle T_{11}^{\,n}\ \frac{\partial a}{\partial x}\\
                     \displaystyle T_{22}^{\,n}\ \frac{\partial a}{\partial y}\\
                     \displaystyle T_{33}^{\,n}\ \frac{\partial a}{\partial z}
@@ -241,13 +241,13 @@ $$ \vect{\widetilde{G}}\ a = \tens{T}^{\,n}\ \grad{a} =
               \right)
 $$
 On peut \'egalement d\'efinir :\\
-$$ \left[(\vect{\widetilde{G}}\ a )_{\,cell}\right]_{\,ij}\,.\,\vect{S}_{\,ij} \overset{\text{\it\small d\'ef}}{=} \left[\tens{T}^{\,n}\ (\grad{a})\right]_{\,ij}\,.\,\vect{S}_{\,ij} $$  o\`u 
+$$ \left[(\vect{\widetilde{G}}\ a )_{\,cell}\right]_{\,ij}\,.\,\vect{S}_{\,ij} \overset{\text{\it\small d\'ef}}{=} \left[\tens{T}^{\,n}\ (\grad{a})\right]_{\,ij}\,.\,\vect{S}_{\,ij} $$  o\`u
 $\grad{a}$ est le gradient cellule classique de $a$.\\
 
 De m\^eme , on pose :
 $$ \left[(\vect{\widetilde{G}}\ a )_{\,f}\right]_{\,ij}\,.\,\vect{S}_{\,ij} \overset{\text{\it\small d\'ef}}{=} \left[\tens{T}^{\,n}\ ((\grad{a}))_{\,f}\right]_{\,ij}\,.\,\vect{S}_{\,ij} $$
-o\`u $(\grad{a})_{\,f}$ est le gradient facette de $a$.\\ 
-  
+o\`u $(\grad{a})_{\,f}$ est le gradient facette de $a$.\\
+
 On doit calculer $\vect{\widetilde{G}}\ (\delta p)\,.\,\vect{S}$ \`a la face.\\
 S'il s'agit d'un gradient cellule, cela n'engendre aucune difficult\'e, les composantes du gradient cellule \'etant  toutes parfaitement calculables.\\
 Par contre, s'il s'agit d'un gradient facette, seule la d\'ecomposition sur la normale \`a la face est exploitable\footnote{D'apr\`es la formule $ \displaystyle\frac { p_{\,J'} - p_{\,I'}}{\overline{I'J'}} S_{\,ij}$.}. On a  besoin, explicitement et s\'epar\'ement, des quantit\'es $\displaystyle \frac{\partial (\delta p)}{\partial x}$, $\displaystyle \frac{\partial (\delta p)}{\partial y}$ et $\displaystyle \frac{\partial (\delta p)}{\partial z}$ ce qui rend difficile l'utilisation du gradient normal de l'incr\'ement de la pression.\\
@@ -293,21 +293,21 @@ En pratique, on le discr\'etise, pour une face interne $ij$, par\footnote{Le coe
 \end{equation}
 au lieu de (\ref{Base_Resolp_Eq_Exacte}).
 On proc\`ede de m\^eme pour les termes de bord.\\
-Par la suite, on notera quand m\^eme cette expression $\widetilde{T}^n_{\,ij} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{S}_{\,ij})$.\\ 
+Par la suite, on notera quand m\^eme cette expression $\widetilde{T}^n_{\,ij} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{S}_{\,ij})$.\\
 Il reste le terme $\tens{D}\ \widetilde{\vect{W}}$, qui \textit{via} les gradients cellule de la pression présents dans l'équation de quantité de mouvement, découple les cellules paires et impaires sur une grille cartésienne.
 On utilise pour éviter ce problème un filtre de type Rhie \& Chow qui permet de lisser la contribution de la pression de l'équation de quantité de mouvement.
 On écrit :
 \begin{equation}\label{Base_Resolp_eqn8}
 \begin{array}{lll}
 (\tens{D}\ \widetilde{\vect{W}})_I = &\sum\limits_{j\in Vois(i)}[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} - \alpha_{\,Arak}\sum\limits_{j\in Vois(i)}\ \widetilde{T}^n_{\,ij}\ (\grad{p^{n}})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} \\
-&+ \sum\limits_{k\in {\gamma_b(i)}}[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} - \alpha_{\,Arak}\sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{p^{n}})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}\\   
+&+ \sum\limits_{k\in {\gamma_b(i)}}[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} - \alpha_{\,Arak}\sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{p^{n}})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}\\
 &= \sum\limits_{j\in Vois(i)} \widetilde{m}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{m}_{\,b_{\,ik}}
 \end{array}
 \end{equation}
 $\widetilde{m}_{\,ij}$ (resp. $\widetilde{m}_{\,b_{\,ik}}$) est le flux de masse à la face purement interne $ij$ (resp.\`a la face de bord $ik$) modifié par le filtre Rhie \& Chow.\\
 $(\grad{p^{n}})_{f_{\,ij}}$ est un gradient facette alors que $[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,ij}}$ est une valeur \`a la face interpol\'ee \`a partir des valeurs estim\'ees aux cellules (le gradient de pression dans ce terme est un gradient cellule). Cette pr\'ecision s'applique \'egalement aux termes de bord.\\
 Dans \CS, $ \alpha_{\,Arak} $ est appelé pour des raisons historiques "le coefficient d'Arakawa". Il est noté \var{ARAK}.
- 
+
 Il faut remarquer, encore une fois, que pour le filtre Rhie \& Chow, le tenseur $\tens{T}^n$ est utilis\'e dans le terme volumique $\widetilde{\vect{G}}$ alors que l'approximation (\ref{Base_Resolp_approx2}) est appliqu\'ee lors du calcul du gradient facette.
 
 Finalement, d'apr\`es (\ref{Base_Resolp_eqn5bis}) et (\ref{Base_Resolp_eqn7}), on résout :
@@ -320,7 +320,7 @@ Pour la prise en compte des non orthogonalités, on résout ce système linéaire pa
 \begin{array}{lcl}
 &\sum\limits_{j\in Vois(i)}\ \widetilde{T}^n_{\,ij}\ \displaystyle \frac{(\delta(\delta p))_I^{\,k+1}-(\delta(\delta p))_J^{\,k+1}}{\overline{I'J'}}\ S_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ \displaystyle\frac{(\delta(\delta p))_I^{\,k+1}-(\delta(\delta p))_{\,b_{ik}}^{\,k+1}}{\overline{I'F}}\ S_{\,b_{\,ik}} \\
 &= \sum\limits_{j\in Vois(i)} \widetilde{m}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{m}_{\,b_{\,ik}}\\
-& - \sum\limits_{j\in Vois(i)}\,\widetilde{T}^n_{\,ij}\ (\grad{(\delta{p})^k})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} - \sum\limits_{k\in {\gamma_b(i)}}\,\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta{p})^k})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} 
+& - \sum\limits_{j\in Vois(i)}\,\widetilde{T}^n_{\,ij}\ (\grad{(\delta{p})^k})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} - \sum\limits_{k\in {\gamma_b(i)}}\,\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta{p})^k})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}
 - \ \Gamma_I\\
 &= \sum\limits_{j\in Vois(i)} m^{\,k}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}m^{\,k}_{\,b_{\,ik}} - \ \Gamma_I
 \end{array}
@@ -329,11 +329,11 @@ Pour la prise en compte des non orthogonalités, on résout ce système linéaire pa
 avec :
 \begin{equation}\label{Base_Resolp_increment}
 \left\{\begin{array}{lll}
-(\delta(\delta p))^{0} &= 0\\ 
+(\delta(\delta p))^{0} &= 0\\
 (\delta(\delta p))^{k+1} &= (\delta p)^{k+1}-(\delta p)^k &\text {$\forall k \in \grandN$}\\
 \end{array}\right.
 \end{equation}
-Ce sont les gradients facette $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ et $(\grad{(\delta{p})^k})_{\,f_{b_{\,ik}}}$ qui seront reconstruits. 
+Ce sont les gradients facette $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ et $(\grad{(\delta{p})^k})_{\,f_{b_{\,ik}}}$ qui seront reconstruits.
 
 
 

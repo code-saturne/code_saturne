@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -49,7 +49,7 @@ g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 
 
 \subsection{Faces internes}
-On ne conna\^\i t pas la masse volumique \`a la face, cette derni\`ere doit donc 
+On ne conna\^\i t pas la masse volumique \`a la face, cette derni\`ere doit donc
 aussi \^etre interpol\'ee. On utilise la discr\'etisation suivante :
 
 \begin{equation}
@@ -58,7 +58,7 @@ aussi \^etre interpol\'ee. On utilise la discr\'etisation suivante :
 +\ggrad\!(\rho\vect{u})_O.\vect{OF}
 \end{equation}
 La partie en $\alpha(\rho_I \vect{u}_I)
-+(1-\alpha)(\rho_J \vect{u}_J)$ correspondant en fait \`a 
++(1-\alpha)(\rho_J \vect{u}_J)$ correspondant en fait \`a
 $(\rho\vect{u})_O$. Le gradient en $O$ est calcul\'e par interpolation :
 $\displaystyle\ggrad\!(\rho\vect{u})_O=
 \frac{1}{2}\left[\ggrad\!(\rho\vect{u})_I+\ggrad\!(\rho\vect{u})_J\right]$. La
@@ -78,7 +78,7 @@ Pour les faces de bord, on conna\^\i t la valeur de $\rho_F$, qui est stock\'ee
 dans la variable \var{ROMB}. De plus, les conditions aux limites pour $\vect{u}$
 sont donn\'ees par des coefficients $A$ et $B$ tels que :
 \begin{equation}
-u_{k,F} = A_k + B_ku_{k,I^\prime} = 
+u_{k,F} = A_k + B_ku_{k,I^\prime} =
 A_k + B_k\left(u_{k,I} + \grad\!(u_k)_I.\vect{II^\prime}\right)
 \end{equation}
 ($k\in\{1,2,3\}$ est la composante de la vitesse, l'erreur est en $O(B_kh)$)
@@ -89,7 +89,7 @@ On a donc \`a l'ordre 1 :
 \grad\!(u_k)_I.\vect{II^\prime}\right)\right]
 \end{equation}
 
-Mais pour utiliser cette formule, il faudrait calculer $\ggrad\!(\vect{u})$ (trois 
+Mais pour utiliser cette formule, il faudrait calculer $\ggrad\!(\vect{u})$ (trois
 appels \`a \fort{GRDCEL}), alors qu'on a d\'ej\`a calcul\'e
 $\ggrad\!(\rho\vect{u})$ pour les faces internes. Le surco\^ut en temps serait alors
 important. On r\'e\'ecrit donc :
@@ -109,9 +109,9 @@ $\displaystyle \tilde{B}_k = B_k\frac{\rho_F}{\rho_{I^\prime}}$
 
 Ceci para\^\i t d\'elicat, \`a cause du terme en
 $\displaystyle \frac{\rho_F}{\rho_{I^\prime}}$, et en particulier \`a l'erreur
-que l'on peut commettre sur $\rho_{I^\prime}$ si la reconstruction des gradients 
+que l'on peut commettre sur $\rho_{I^\prime}$ si la reconstruction des gradients
 est imparfaite (sur des maillages fortement non orthogonaux par exemple).
-On r\'e\'ecrit donc l'\'equation 
+On r\'e\'ecrit donc l'\'equation
 (\ref{Base_Inimas_eq_rhoufaceb}) sous la forme suivante :
 \begin{equation}
 (\rho u_k)_F=\rho_F A_k + B_k\frac{\rho_I\rho_F}{\rho_{I^\prime}}u_{k,I}
@@ -124,7 +124,7 @@ le deuxi\`eme terme, on va supposer $\rho_{I^\prime}\approx\rho_I$ (ce qui
 conduit \`a une erreur en $O(B_kh)$ sur $\rho\vect{u}$ si
 $\rho_{I^\prime}\ne \rho_I$). Pour le
 troisi\`eme terme, on va supposer $\rho_{I^\prime}\approx\rho_F$. Cette
-derni\`ere approximation est plus forte, mais elle n'intervient que dans la 
+derni\`ere approximation est plus forte, mais elle n'intervient que dans la
 reconstruction des non-orthogonalit\'es ; l'erreur finale reste donc faible
 (erreur en $O(B_kh^2)$ sur $\rho\vect{u}$ si
 $\rho_{I^\prime}\ne \rho_F$).
@@ -134,7 +134,7 @@ Et au final, le flux de masse au bord est calcul\'e par :
 +B_k\grad\!(\rho u_k)_I.\vect{II^\prime}\right]S_k
 \end{equation}
 
-Pour le calcul des gradients, on repart de l'\'equation (\ref{Base_Inimas_eq_rhoufacea}), sur 
+Pour le calcul des gradients, on repart de l'\'equation (\ref{Base_Inimas_eq_rhoufacea}), sur
 laquelle on fait l'hypoth\`ese que $\rho_{I^\prime}\approx\rho_F$. Encore une
 fois, cette hypoth\`ese peut \^etre assez forte, mais les gradients obtenus ne
 sont utilis\'es que pour des reconstructions de non-orthogonalit\'es ; l'erreur

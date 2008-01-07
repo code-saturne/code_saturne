@@ -4,21 +4,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -55,7 +55,7 @@ the following data are given:
 \item \textbf{Default}: value defined by the code before any user
       modification (every key word has one). In some cases, a
       non-allowed value is given (generally -999 or -1.D12), to force the
-      user to specify a value. If he does not do it, the code may: 
+      user to specify a value. If he does not do it, the code may:
 \begin{list}{-}{}
 \item automatically use a recommended value (for instance, automatical
       choice of the variables for which chronological records will be
@@ -86,7 +86,7 @@ the following data are given:
 \end{list}
 
 \item \textbf{Description}:  key word description, with its potential
-      dependences. 
+      dependences.
 
 \end{list}
 
@@ -102,7 +102,7 @@ this report.
 
 \minititre{Notes}
 $\bullet\ $The notation ``D'' refers to a double precision real. For
-	   instance, 1.8D-2 means 0.018. \\
+           instance, 1.8D-2 means 0.018. \\
 $\bullet\ $The notation ``GRAND'' (which can be used in the code)
 corresponds to 1.D12.
 
@@ -117,7 +117,7 @@ corresponds to 1.D12.
 \item  ASCII files (also called ``formatted'' files, in opposition to
       ``binary'' files) are bigger, longer to write and to read, but can
       be used on every architecture (in particular, it is an asset for
-      calculation restart files). However, \CS\ can automatically recognise and 
+      calculation restart files). However, \CS\ can automatically recognise and
       convert Big Endian/Little Endian files. It is therefore usually possible on
       a given architecture to use binary restart files generated on another
       architecture.
@@ -139,7 +139,7 @@ useful if and only if IFOENV = 0}
 useful if and only if IFOENV = 0}
 
 \motcle{IMPAMO}{I}{strictly positive integer}{11}{O}{L3}
-{unit of the upstream restart file\\ 
+{unit of the upstream restart file\\
 useful if and only if ISUITE = 1}
 
 \motcle{FICAMO}{C}{string of 13 characters}{\tt suiamo}{O}{L3}
@@ -235,7 +235,7 @@ useful if and only if IVRTEX=1}
 format. Their number and names are specified by the user in the \texttt{usvort} subroutine.\\
 (Although it corresponds to an ``upstream'' data file, IMPDVO is initialised to
 IMPAVA because, in case of multiple vortex entries, it is opened at the same time
-as the FICMVO upstream restart file, which already uses the IMPAMO unit)\\ 
+as the FICMVO upstream restart file, which already uses the IMPAMO unit)\\
 useful if and only if IVRTEX=1}
 
 
@@ -247,11 +247,11 @@ useful if and only if ISUIRD = 1}
 
 \motcle{FICAMR}{C}{string of 13 characters}{\tt rayamo}{O}{L3}
 {name of the radiation upstream restart file. Its ``format'' (ASCII or
-binary) is automatically determined by the code.\\ 
+binary) is automatically determined by the code.\\
 useful if and only if ISUIRD = 1}
 
 \motcle{IMPAVR}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the radiation downstream restart file\\ 
+{unit of the radiation downstream restart file\\
 always useful in case of radiation modeling}
 
 \motcle{FICAVR}{C}{string of 13 characters}{\tt rayava}{O}{L3}
@@ -267,7 +267,7 @@ always useful in case of radiation modeling}
 \minititre{Thermochemistry}
 
 \motcle{IMPFPP}{I}{strictly positive integer}{25}{O}{L3}
-{unit of the thermochemical data file\\ 
+{unit of the thermochemical data file\\
 useful in case of gas or pulverised coal combustion or electric arc}
 
 \motcle{FICFPP}{C}{string of 6 characters}{\tt dp\_tch}{O}{L3}
@@ -278,7 +278,7 @@ of FICFPP be changed, the launch script would have to be adapted.\\
 useful in case of gas or pulverised coal combustion}
 
 \motcle{IMPJNF}{I}{strictly positive integer}{\tt IMPFPP}{O}{L3}
-{unit of the JANAF data file\\ 
+{unit of the JANAF data file\\
 useful in case of gas or pulverised coal combustion}
 
 \motcle{FICJNF}{C}{string of 5 characters}{\tt JANAF}{O}{L3}
@@ -291,7 +291,7 @@ useful in case of gas or pulverised coal combustion}
 \minititre{Lagrangian}
 
 \motcle{IMPAML}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the upstream restart file in case of Lagrangian modeling\\ 
+{unit of the upstream restart file in case of Lagrangian modeling\\
 useful if and only if ISUILA = 1}
 
 \motcle{FICAML}{C}{string of 6 characters}{\tt lagamo}{O}{L3}
@@ -302,7 +302,7 @@ useful if and only if ISUILA = 1}
 
 \motcle{IMPMLS}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
 {unit of the upstream restart file for the statistics in case of
-Lagrangian modeling\\ 
+Lagrangian modeling\\
 useful if and only if ISUIST = 1}
 
 \motcle{FICMLS}{C}{string of 13 characters}{\tt lasamo}{O}{L3}
@@ -335,7 +335,7 @@ useful in case of Lagrangian modeling with statistics}
 
 \motcle{IFOVLS}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
 {indicator (1: formatted, 0: binary downstream restart file for the
-statistics in case of Lagrangian modeling)\\ 
+statistics in case of Lagrangian modeling)\\
 useful in case of Lagrangian modeling with statistics}
 
 \motcle{IMPLA1}{I}{strictly positive integer}{50}{O}{L3}
@@ -343,7 +343,7 @@ useful in case of Lagrangian modeling with statistics}
 useful in case of Lagrangian modeling}
 
 \motcle{IMPLA2}{I}{strictly positive integer}{51}{O}{L3}
-{unit of a file specific to Lagrangian modeling\\ 
+{unit of a file specific to Lagrangian modeling\\
 useful in case of Lagrangian modeling}
 
 \motcle{IMPLA3}{I}{strictly positive integer}{52}{O}{L3}
@@ -364,7 +364,7 @@ useful in case of Lagrangian modeling}
 %==================================
 
 \minititre{Notes}
-$\bullet\quad$The format depends on the user choices.\\ 
+$\bullet\quad$The format depends on the user choices.\\
 $\bullet\quad$The post-processing files, directly generated by the Kernel
 through the FVM library, can be of the following formats: {\em Ensight Gold},
 {\em MED\_fichier} or {\em CGNS}. The use of the two latter formats depends on
@@ -375,21 +375,21 @@ post-processing output is wanted. The output frequency can be set.\\
 
 
 \motcle{ICHRVL}{I}{0 or 1}{1}{O}{L3}
-{indicates whether post-processing outputs are wanted (=1) or not (=0) 
+{indicates whether post-processing outputs are wanted (=1) or not (=0)
 on the 3D volume mesh\\
 always useful}
 
 \motcle{ICHRBO}{I}{0 or 1}{0}{O}{L2}
-{indicates whether post-processing outputs are wanted (=1) or not (=0) 
+{indicates whether post-processing outputs are wanted (=1) or not (=0)
 on the 2D boundary mesh\\
 always useful}
 
  \motcle{ICHRSY}{I}{0 or 1}{0}{O}{L2}
- {indicates whether post-processing outputs are wanted (=1) or not (=0) 
+ {indicates whether post-processing outputs are wanted (=1) or not (=0)
  on the 2D boundary mesh patches coupled with the Syrthes conjugate
  heat trabsfer code\\
  always useful}
- 
+
  \motcle{ICHRMD}{I}{0, 1, 2, 10, 11 or 12}{0}{O}{L2}
  {indicates whether the post-processing geometry varies with time:\\
  \hspace*{1.3cm}= 0: time independent\\
@@ -398,13 +398,13 @@ always useful}
  \hspace*{1.3cm}= 10: time independent base, with time dependent nodal displacement field\\
  \hspace*{1.3cm}= 11: deforming or moving mesh, plus nodal displacement field\\
  \hspace*{1.3cm}= 12: changing vertex coordinates and topology, plus nodal displacement field}
- 
+
  \motcleb{FMTCHR}{C}{string of less than 32 characters}{Ensight Gold}{O}{L1}
  {name of the output format, among the following:\\
  \hspace*{1.3cm}$\bullet\quad$ ``Ensight Gold''\\
  \hspace*{1.3cm}$\bullet\quad$ ``MED\_fichier'' (if available)\\
  \hspace*{1.3cm}$\bullet\quad$ ``CGNS'' (if available)}
- 
+
  \motcle{OPTCHR}{C}{string of less than 96 characters}{binary}{O}{L2}
  {options associated to the selected output format. The string is given as a
  series of key words, separated by a comma (and optional spaces). The key words
@@ -438,17 +438,17 @@ always useful}
 
 \motcleb{ICHRVR}{IA}{-999, 0 or 1}{-999}{O}{L1}
 {for each quantity defined at the cell centers (physical or numerical
-variable), indicator of whether it should be post-processed or not \\ 
+variable), indicator of whether it should be post-processed or not \\
 \hspace*{1.3cm}= -999: not initialised. By default, the post-processed
 quantities are the unknowns (pressure, velocity, $k$, $\varepsilon$,
 $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, scalars), the density,
 the turbulent viscosity and the time step if is not uniform\\
 \hspace*{1.3cm}= 0: not post-processed\\
 \hspace*{1.3cm}= 1: post-processed\\
-useful if and only if the variable is defined at the cell centers: 
+useful if and only if the variable is defined at the cell centers:
 calculation variable, physical property (time step, density,
 viscosity, specific heat) or turbulent viscosity if ITURB(IPHAS)
-$\geqslant$ 10} 
+$\geqslant$ 10}
 
 \motcleb{IPSTDV}{I}{integer $\geqslant 1$: see below}{IPSTYP*IPSTCL*IPSTFT}{O}{L1}
 {indicates the data to post-process on the boundary mesh (the boundary mesh must
@@ -457,9 +457,9 @@ the product of the following integers, depending on the variables that should be
 post-processed:\\
 \hspace*{1.3cm}IPSTYP\index{IPSTYP}: $y^+$ at the boundary\\
 \hspace*{1.3cm}IPSTCL\index{IPSTCL}: value of the variables at the
-boundary (using the boundary conditions but without reconstruction)\\ 
+boundary (using the boundary conditions but without reconstruction)\\
 \hspace*{1.3cm}IPSTFT\index{IPSTFT}: thermal flux at the boundary
-($W\,m^{-2}$), if a thermal scalar has been defined (ISCALT)\\ 
+($W\,m^{-2}$), if a thermal scalar has been defined (ISCALT)\\
 For instance, with IPSTDV=IPSTYP*IPSTCL, $y^+$ and the variables will be
 post-processed at the boundaries.\\
 With IPSTDV=1, none of these data are post-processed at the boundaries.\\
@@ -477,7 +477,7 @@ probes. The code produces chronological records at the cell centers located
 closest to the geometric points defined by the user by means of their
 coordinates. For each quantity, the number of probes and their
 index-numbers must be specified (it is not mandatory to generate all
-the variables at all the probes). 
+the variables at all the probes).
 
 
 \motcleb{NCAPT}{I}{positive or null integer}{0}{O}{L1}
@@ -487,7 +487,7 @@ always useful }
 \motcleb{XYZCAP}{RA}{real numbers}{0.D0}{O}{L1}
 {3D-coordinates of the probes\\
 the coordinates are written: XYZCAP(I,J), with I = 1, 2 or 3 and J
-$\leqslant$ NCAPT\\ 
+$\leqslant$ NCAPT\\
 useful if and only if NCAPT $>$ 0}
 
 \motcleb{IHISVR}{IA}{-999, -1 or positive or null integer}{-999}{O}{L1}
@@ -496,7 +496,7 @@ probes to be used for each variable, {\em i.e.} calculation variable
 or physical property defined at the cell centers.
 With IHISVR(N, 1)=-999 or -1, IHISVR(N, J$>$1) is useless.\\
 \hspace*{.5cm} $\bullet$ IHISVR(N, 1): number of record probes to use
-for the variable N\\ 
+for the variable N\\
 \hspace*{1.3cm}= -999: by default: chronogical records are generated on
 all the probes if N is one of the main variables (pressure, velocity,
 turbulence, scalars), the local time step or the turbulent
@@ -507,11 +507,11 @@ viscosity. For the other quantities, no chronological record is generated.\\
 with  IHISVR(N, J$>$1)\\
 always useful, must be inferior or equal to NCAPT\\
 \hspace*{.5cm} $\bullet$ IHISVR(N, J$>$1): index-numbers of the probes
-used for the variable N\\ 
+used for the variable N\\
 (with J$\leqslant$IHISVR(N,1)+1)\\
 \hspace*{1.3cm}= -999: by default: if IHISVR(N, 1) $\ne$
 -999, the  code stops. Otherwise, refer to the description of the case
-IHISVR(N, 1)=-999\\ 
+IHISVR(N, 1)=-999\\
 useful if and only if IHISVR(N, 1) $>$ 0 \\
 The condition IHISVR(N, J) $\leqslant$NCAPT must be respected.\\
 For an easier use, it is recommended to simply specify IHISVR(N,1)=-1 for
@@ -576,11 +576,11 @@ $\ne$ 0)}
 useful if and only if the subroutine \texttt{ushist} is used}
 
 \motcle{FICUSH}{CA}{strings of 13 characters}{\texttt{ush*} or
-\texttt{ush*.n\_*}}{O}{L2} 
+\texttt{ush*.n\_*}}{O}{L2}
 {names of the user chronological record files.
 In the case of a non-parallel calculation, the suffix applied the file
 name is a three digit number: \texttt{ush001}, \texttt{ush002},
-\texttt{ush003}...  
+\texttt{ush003}...
 In the case of a parallel-running calculation, the processor
 index-number is added to the suffix. For instance, for a calculation
 running on two processors:  \texttt{ush001.n\_0001},
@@ -611,11 +611,11 @@ actions may therefore be activated, like the writing in the listing or
 the output of result files (EnSight, MED, ...). However, if the user
 wants to manipulate the averages in a more advanced way, it is
 recommended to refer first to the user subroutines \texttt{usproj} and
-\texttt{usvpst} which provide examples. Indeed, the PROPCE array 
-does not contain the time averages directly, but only the cumulated value 
+\texttt{usvpst} which provide examples. Indeed, the PROPCE array
+does not contain the time averages directly, but only the cumulated value
 of the product $f_1*f_2...*f_n$ of the selected
 variables $f_i$. The division by the cumulated duration is done only
-before the writing of the results. See also page \pageref{prg_moyennes}. 
+before the writing of the results. See also page \pageref{prg_moyennes}.
 
 To calculate $p$ time averages of the type $<f_1*f_2...*f_{n(IMOM)}>$,
 the user must:
@@ -628,7 +628,7 @@ the user must:
 \item define every average IMOM (1$\leqslant$IMOM$\leqslant p$, without
       skipping any index-number) by marking out the $n(IMOM)$ variables
       which form it by means of the array IDFMOM(II,IMOM) (with
-      1$\leqslant$II$\leqslant$n(IMOM)), 
+      1$\leqslant$II$\leqslant$n(IMOM)),
 \item define for each average IMOM the time step number at which the
       calculation of the cumulated value must begin, by means of the
       array NTDMOM(IMOM).
@@ -641,14 +641,14 @@ the code from the values of IDTMOM. The user must not specify specify it.
 {Index-number of the variables composing a time average of the type
 $<f_1*f_2...*f_n>$. For every time average IMOM to calculate:\\
 \hspace*{1.3cm} - if IDFMOM(II,IMOM) is positive, it refers to the
-		  index-number of a solved variable (stored in the array
-		  RTP), like for instance a velocity component
-		  (IU(IPHAS), IV(IPHAS), IW(IPHAS)) or the pressure
-		  (IPR(IPHAS))\\
+                  index-number of a solved variable (stored in the array
+                  RTP), like for instance a velocity component
+                  (IU(IPHAS), IV(IPHAS), IW(IPHAS)) or the pressure
+                  (IPR(IPHAS))\\
 \hspace*{1.3cm} - if IDFMOM(II,IMOM) is negative, it refers to the
-		  index-number of an auxiliary variable (stored in
-		  PROPCE), like for instance the density
-		  (IDFMOM(II,IMOM)=-IROM(IPHAS))\\ 
+                  index-number of an auxiliary variable (stored in
+                  PROPCE), like for instance the density
+                  (IDFMOM(II,IMOM)=-IROM(IPHAS))\\
 useful if and only if the user wants to calculate time averages}
 
 \motcleb{NTDMOM}{IA}{integer}{-1}{O}{L1}
@@ -667,18 +667,18 @@ index-number of the corresponding average in the previous calculation
 (in which JBMOMT averages were calculated). \\
 \hspace*{1.3cm} - if IMOOLD(IMOM) = -2, the user lets the code automatically
             determine the
-		correspondence. By default, the average II in the
-		current calculation will correspond to the average II in
-		the previous calculation, if it existed.
-		Otherwise, II will be a new average.\\
+                correspondence. By default, the average II in the
+                current calculation will correspond to the average II in
+                the previous calculation, if it existed.
+                Otherwise, II will be a new average.\\
 \hspace*{1.3cm} - if IMOOLD(IMOM) = -1, the average is reset to zero.\\
 \hspace*{1.3cm} - if IMOOLD(IMOM) = KK, the average IMOM will correspond
 to the average KK=IMOOLD(IMOM) in the previous calculation.\\
-useful if and only if the user wants to calculate averages. 
+useful if and only if the user wants to calculate averages.
 Allows to add or suppress some averages, to reset them, to change their
 order, ...\\
 {\em Warning : if the calculation is not a restart, IMOOLD must not be
-specified (its value must remain -2)}} 
+specified (its value must remain -2)}}
 
 %==================================
 \subsubsection{Others}
@@ -705,18 +705,18 @@ indicator concerning the writing in the execution report file \\
 \hspace*{1.3cm}= -999: automatically converted into 1 if the concerned
 quantity is one of the main variables (pressure, velocity, turbulence,
 scalar), the density, the time step if IDTVAR $\ne$ 0 or the turbulent
-viscosity. Otherwise converted into 0.\\ 
+viscosity. Otherwise converted into 0.\\
 \hspace*{1.3cm}= 1: writing in the execution listing.\\
 \hspace*{1.3cm}= 0: no writing.\\
 always useful}
 
-\motcleb{IWARNI}{IA}{integer}{0}{O}{L1} 
+\motcleb{IWARNI}{IA}{integer}{0}{O}{L1}
 {IWARNI(IVAR) characterises the level of detail of the outputs for the
 variable IVAR (from 1 to NVAR). The quantity of information increases with
-its value.\\ 
+its value.\\
 Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
 to get a maximum quantity of information, in case of problem during the
-execution.\\ 
+execution.\\
 always useful}
 
 \motcleb{NOMVAR}{CA}{string of less than 80 characters}{``''}{O}{L1}
@@ -756,7 +756,7 @@ always useful}
 
 \motcle{IECAUX}{I}{0 or 1}{1}{O}{L2}
 {indicates the writing (=1) or not (=0) of the auxiliary calculation
-restart file\\   
+restart file\\
 always useful}
 
 \motcle{ILEAUX}{I}{0 or 1}{1}{O}{L2}
@@ -858,7 +858,7 @@ the particular physics scalar JJ of the previous calculation if this
 scalar existed already (otherwise, JJ is a new scalar).\\
 \hspace*{1.3cm} ISCOLD(ISCAL) = KK: the scalar ISCAL (user or particular
 physics scalar) is initialised by the scalar KK=ISCOLD(ISCAL) of the
-previous calculation.\\ 
+previous calculation.\\
 always useful. Allows to add or remove some scalars, to change the
 solving order, to change the physics, ...}
 
@@ -869,7 +869,7 @@ always useful}
 \motcleb{ISCAVR}{IA}{0, 1 $\leqslant$ integer $\leqslant$ NSCAL}{0}{O}{L1}
 {if the scalar ISCAL is the average of the square of the fluctuations of a
 scalar KK, then \mbox{ISCAVR(ISCAL)=KK}.
-Otherwise ISCAVR(ISCAL)=0. For ISCAL and KK, the user can only use index-numbers 
+Otherwise ISCAVR(ISCAL)=0. For ISCAL and KK, the user can only use index-numbers
 refering to user scalars ($\leqslant$ NSCAUS). \\
 always useful}
 
@@ -912,14 +912,14 @@ automatically: the solved variable is the enthalpy or the total energy).\\
 It is also reminded that, in the case of a coupling with
 \syrthes, the solved thermal variable should be the temperature
 (ISCSTH(ISCALT(IPHAS))=1 or -1).
-More precisely, everything is designed in the code to allow for the 
+More precisely, everything is designed in the code to allow for the
 running of a calcualtion coupled with \syrthes\ with the enthalpy as thermal
 variable (the correspondence and conversion is then specified by the user in
 the subroutine \texttt{usthht}).
-However this case has never been used in practice and has therefore not been 
+However this case has never been used in practice and has therefore not been
 tested. With the compressible model, it is possible to carry out calculations
 coupled with \syrthes, although the thermal scalar represents the total
-energy and not the temperature.} 
+energy and not the temperature.}
 
 \motcle{ICLVFL}{IA}{-1, 0, 1 or 2}{-1}{O}{L3}
 {for every scalar ISCAL representing the average of the square of the
@@ -1003,7 +1003,7 @@ useful for all the unknowns}
 and velocity divergence should be taken into account in the momentum
 equation. In the compressible module, these terms also account for the volume
 viscosity (cf. VISCV0 et IVISCV):\\
-$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]  
+$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
  +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]$ \\
 \hspace*{1.3cm}= 0: not taken into account\\
 \hspace*{1.3cm}= 1: taken into account\\
@@ -1016,11 +1016,11 @@ always useful}
 
 \motcleb{IDTVAR}{I}{0, 1, 2}{0}{O}{L1}
 {type of time step\\
-\hspace*{1.3cm}= 0: constant in time and spatially uniform\\ 
+\hspace*{1.3cm}= 0: constant in time and spatially uniform\\
 \hspace*{1.3cm}= 1: variable in time and spatially uniform\\
 \hspace*{1.3cm}= 2: variable in time and in space\\
 If the numerical scheme is a second-order in time, only the option 0 is
-allowed.\\ 
+allowed.\\
 always useful}
 
 \motcle{IPTLRO}{I}{0 or 1}{0}{O}{L2}
@@ -1034,7 +1034,7 @@ when IPTLRO=1, the listing shows the number of cells where the time step has
 been clipped due to the thermal criterium, as well as the maximum ratio between
 the time step and the maximum thermal time step. If IDTVAR=0, since the time
 step is fixed and cannot be clipped, this ratio can be larger than
-1\footnote{it is then the user's 
+1\footnote{it is then the user's
 choice to decide whether he should diminish DTREF or not}. When IDTVAR$>$0, this
 ratio will be smaller than 1, except if the constraint DTMIN has prevented the
 code from reaching a sufficiently low value for DT\\
@@ -1043,12 +1043,12 @@ useful when density gradients and gravity are present}
 \motcleb{CDTVAR}{RA}{strictly positive real number}{1.D0}{O}{L1}
 {multiplicative factor applied to the time step for each scalar\\
 Hence, the time step used when solving the evolution equation for the
-variable is the time step used for the dynamic equations (velocity/pressure) 
+variable is the time step used for the dynamic equations (velocity/pressure)
 multiplied by CDTVAR.\\
 The size of the array CDTVAR is NVAR. For instance, the multiplicative
 coefficient applied to the scalar 2 is CDTVAR(ISCA(2))). Yet, the value of CDTVAR
 for the velocity components and the pressure is not used. Also, although it is
-possible to change the value of CDTVAR for the turbulent variables, it is 
+possible to change the value of CDTVAR for the turbulent variables, it is
 highly unrecommended\\
 useful if and only if NSCAL $\geqslant$ 1}
 
@@ -1072,7 +1072,7 @@ an initial calculation (ISUITE=0) run with a non-constant time step
 in the case of a restart calculation (ISUITE=1) in which the type of
 time step has been changed (for instance, IDTVAR=1 in the new
 calculation and IDTVAR=0 or 2 in the previous calculation): see
-\texttt{usiniv}} 
+\texttt{usiniv}}
 
 \motcle{DTMIN}{R}{positive or null real number}{\tt 0.1D0*DTREF}{O}{L2}
 {lower limit for the calculated time step when non-constant time step is activated\\
@@ -1097,7 +1097,7 @@ the following order: \\
 \hspace*{1.cm}$\bullet$ COUMAX, FOUMAX: the more restrictive limit between
 both is used (in the compressible module, the acoustic limitation is added),\\
 \hspace*{1.cm}$\bullet$ VARRDT:  progressive increase and immediate
-decrease in the time step,\\ 
+decrease in the time step,\\
 \hspace*{1.cm}$\bullet$ IPTLRO: limitation by the thermal time step,\\
 \hspace*{1.cm}$\bullet$ DTMAX and DTMIN: clipping of the time step to
 the maximum, then to the minimum limit.\\
@@ -1110,7 +1110,7 @@ the maximum, then to the minimum limit.\\
 \motcleb{ITURB}{IA}{0, 10, 20, 21, 30, 31, 40, 41, 50 or 60}{-999}{O}{L1}
 {for each phase IPHAS, indicator of the turbulence model ITURB(IPHAS)\\
 \hspace*{1.3cm}= -999: not initalised. This value is not allowed and
-must be modified by the user\\ 
+must be modified by the user\\
 \hspace*{1.3cm}= 0: laminar\\
 \hspace*{1.3cm}= 10: mixing length (not valided)\\
 \hspace*{1.3cm}= 20: $k-\varepsilon$\\
@@ -1130,7 +1130,7 @@ necessary to make sure that the thickness of the first cell neighboring
 the wall is larger than the thickness of the viscous sublayer (at the
 wall, $y^+>2.5$ is required as a minimum, and preferably between 30 and
 100)\footnote{While creating the mesh, $y^+=\frac{yu*}{\nu}$ is
-generally unknown. It can be roughly estimated as $\frac{yU}{10\nu}$, where 
+generally unknown. It can be roughly estimated as $\frac{yU}{10\nu}$, where
 $U$ is the characteristic velocity, $\nu$ is the kinematic viscosity of the fluid
  and $y$ is the mid-height of the first cell near the wall.}. If the mesh does
  not respect this condition, the results may be biased
@@ -1219,15 +1219,15 @@ equation of $k$ in made implicit\\
 IKECOU(IPHAS) is initialised to 0 if ITURB(IPHAS) = 21 or 60, and to 1 if\\
 ITURB(IPHAS)= 20\\
 IKECOU(IPHAS)=1 is forbidden when using the v2f model
-(ITURB(IPHAS)=50)\\ 
+(ITURB(IPHAS)=50)\\
 useful if and only if ITURB(IPHAS) = 20, 21 or 60 ($k-\varepsilon$ and
 $k-\omega$ models)}
 
-\motcle{RELAXK}{RA}{0.D0 $\leqslant$ real $\leqslant$ 1.D0}{0.7D0}{O}{L3} 
+\motcle{RELAXK}{RA}{0.D0 $\leqslant$ real $\leqslant$ 1.D0}{0.7D0}{O}{L3}
 {for each phase IPHAS, relaxation coefficient of the turbulent
 variables ($k$ and $\varepsilon$ or $\omega$) when IKECOU(IPHAS) = 0. If
 IKECOU(IPHAS)=1, RELAXK is not used, whatever its value may be.\\
-useful if and only if ITURB(IPHAS) = 20, 21, 50 or 60 and IKECOU(IPHAS)=0 
+useful if and only if ITURB(IPHAS) = 20, 21, 50 or 60 and IKECOU(IPHAS)=0
 ($k-\varepsilon$, v2f or $k-\omega$ models without coupling)}
 
 \motcle{ICLKEP}{IA}{0 or 1}{0}{O}{L3}
@@ -1240,7 +1240,7 @@ v2f models). The results obtained with the method corresponding to
 ICLKEP(IPHAS)=1 showed in some cases a substantial sensitivity to the
 values of the length scale ALMAX(IPHAS).\\
 The option ICLKEP(IPHAS)=1 is therefore not recommended, and,
-if chosen, must be used cautiously.} 
+if chosen, must be used cautiously.}
 
 \minititre{ $R_{ij}-\varepsilon$ (LRR and SSG)}
 
@@ -1311,7 +1311,7 @@ this key word requires the completion of the routine
 
 \motcle{ISUIVO}{I}{0 or 1}{ISUITE}{O}{L1}
 {for the vortex method, indicates whether the synthetic vortices at the inlet
-should be initialised (=0) or read form the restart file FICMVO.\\ 
+should be initialised (=0) or read form the restart file FICMVO.\\
 useful if ITURB(IPHAS)=40 or 41 and IVRTEX=1}
 
 
@@ -1329,7 +1329,7 @@ useful if and only if ITURB(IPHAS) = 40 or 41}
 
 \motcle{CDRIES}{RA}{real number $>$ 0}{26.D0}{O}{L3}
 {for each phase IPHAS, CDRIES(IPHAS) is the constant appearing in the van Driest
-damping function applied to the Smagorinsky constant: $1-e^{-y^+/CDRIES(IPHAS)}$\\ 
+damping function applied to the Smagorinsky constant: $1-e^{-y^+/CDRIES(IPHAS)}$\\
 useful if and only if ITURB(IPHAS) = 40 or 41}
 
 \motcle{CSMAGO}{RA}{real number $>$ 0}{0.065D0}{O}{L2}
@@ -1359,7 +1359,7 @@ useful if and only if ITURB(IPHAS) = 40 or 41}
 \motcle{ALES}{RA}{real number $>$ 0}{1.D0}{O}{L3}
 {for each phase IPHAS, ALES(IPHAS) is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=XLESFL(IPHAS)(ALES(IPHAS)*|\Omega_i|)^{BLES(IPHAS)}$\\ 
+$\overline{\Delta}=XLESFL(IPHAS)(ALES(IPHAS)*|\Omega_i|)^{BLES(IPHAS)}$\\
 useful if and only if ITURB(IPHAS) = 40 or 41}
 
 \motcle{BLES}{RA}{real number $>$ 0}{1.D0/3.D0}{O}{L3}
@@ -1372,7 +1372,7 @@ useful if and only if ITURB(IPHAS) = 40 or 41}
 {for each phase IPHAS, XLESFD(IPHAS) is the constant used to define, for
 each cell $\Omega_i$, the width of the explicit filter used in the framework of
 the LES dynamic model:\\
-$\widetilde{\overline{\Delta}}=XLESFD(IPHAS)\overline{\Delta}$\\ 
+$\widetilde{\overline{\Delta}}=XLESFD(IPHAS)\overline{\Delta}$\\
 useful if and only if ITURB(IPHAS) = 41}
 
 
@@ -1421,11 +1421,11 @@ for the mass flow. The chosen value for ISTMPF(IPHAS) will automatically
 determine the value given to the variable THETFL(IPHAS)\\
 \hspace*{1.3cm}= 0: ''explicit'' first-order: the mass flow calculated
 at the previous time step (``n'') is used in the convective terms of all
-the equations (momentum, turbulence and scalars\\ 
+the equations (momentum, turbulence and scalars\\
 \hspace*{1.3cm}= 1: ``standard'' first-order: the mass flow calculated
 at the previous time step (``n'') is used in the convective terms of the
 momentum equation, and the updated mass flow (time ``n+1'') is used in the
-equations of turbulence and scalars\\  
+equations of turbulence and scalars\\
 \hspace*{1.3cm}= 2: second-order: the mass flow used in the momentum equations
 is extrapolated at ``n+THETFL'' (=n+1/2) from the values at the two former time
 steps (Adams Bashforth); the mass flow used in the equations for turbulence and
@@ -1442,7 +1442,7 @@ diffusion (for instance: head loss, transposed gradient, ...).\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the terms which are linear
 functions of the solved variable are implicit and the others are explicit\\
 \hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable 
+linear functions of the solved variable
 $\phi$ are expressed as second-order terms by interpolation (according
 to the formula
 $(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
@@ -1450,7 +1450,7 @@ being given by the value of THETAV associated with the variable $\phi$)
 ; the other terms $S_e$ are expressed as second-order terms by
 extrapolation (according to the formula
 $(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of THETSN(IPHAS)=0.5D0)\\ 
+given by the value of THETSN(IPHAS)=0.5D0)\\
 \hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
 way as when ISNO2T=1;
 the other terms $S_e$ are extrapolated according to the same formula
@@ -1467,7 +1467,7 @@ from convection and diffusion.\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the terms which are linear
 functions of the solved variable are implicit and the others are explicit\\
 \hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable 
+linear functions of the solved variable
 $\phi$ are expressed as second-order terms by interpolation (according
 to the formula
 $(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
@@ -1475,7 +1475,7 @@ being given by the value of THETAV associated with the variable $\phi$)
 ; the other terms $S_e$ are expressed as second-order terms by
 extrapolation (according to the formula
 $(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of THETST(IPHAS)=0.5D0)\\ 
+given by the value of THETST(IPHAS)=0.5D0)\\
 \hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
 way as when ISTO2T=1;
 the other terms $S_e$ are extrapolated according to the same formula
@@ -1493,7 +1493,7 @@ diffusion (for instance: variance production, user-specified terms, ...).\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the terms which are linear
 functions of the solved variable are implicit and the others are explicit\\
 \hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable 
+linear functions of the solved variable
 $\phi$ are expressed as second-order terms by interpolation (according
 to the formula
 $(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
@@ -1501,7 +1501,7 @@ being given by the value of THETAV associated with the variable $\phi$)
 ; the other terms $S_e$ are expressed as second-order terms by
 extrapolation (according to the formula
 $(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of THETSS(ISCAL)=0.5D0)\\ 
+given by the value of THETSS(ISCAL)=0.5D0)\\
 \hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
 way as when ISSO2T=1;
 the other terms $S_e$ are extrapolated according to the same formula
@@ -1595,7 +1595,7 @@ scheme has been activated for the mass flow (see ISTMPF)\\
 generally, only the value 0.5D0 is used. The user is not allowed to
 modify this variable.\\
 \hspace*{1.3cm}= 0.0D0: ``explicit'' first-order (corresponds to
-ISTMPF(IPHAS)=0 or 1)\\ 
+ISTMPF(IPHAS)=0 or 1)\\
 \hspace*{1.3cm}= 0.5D0: second-order (corresponds to ISTMPF(IPHAS)=2). The mass
 flux will be interpolated according to the formula
 $Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}$).\\
@@ -1656,7 +1656,7 @@ the value of $\theta$=THETRO(IPHAS) is deduced from the value chosen for
 IROEXT(IPHAS). Generally, only the value 0.5D0 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0.0D0: first-order (unused, corresponds to
-IROEXT(IPHAS)=0)\\ 
+IROEXT(IPHAS)=0)\\
 \hspace*{1.3cm}= 0.5D0: second-order (corresponds to IROEXT(IPHAS)=1) \\
 \hspace*{1.3cm}= 1.0D0: first-order (corresponds to IROEXT(IPHAS)=2) \\
 always useful}
@@ -1670,7 +1670,7 @@ the value of $\theta$=THETVI(IPHAS) is deduced from the value chosen for
 IVIEXT(IPHAS). Generally, only the value 0.5D0 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0.0D0: first-order (unused, corresponds to
-IVIEXT(IPHAS)=0)\\ 
+IVIEXT(IPHAS)=0)\\
 \hspace*{1.3cm}= 0.5D0: second-order (corresponds to IVIEXT(IPHAS)=1) \\
 \hspace*{1.3cm}= 1.0D0: first-order (corresponds to IVIEXT(IPHAS)=2) \\
 always useful}
@@ -1684,7 +1684,7 @@ the value of $\theta$=THETCP(IPHAS) is deduced from the value chosen for
 ICPEXT(IPHAS). Generally, only the value 0.5D0 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0.0D0: first-order (unused, corresponds to
-ICPEXT(IPHAS)=0)\\ 
+ICPEXT(IPHAS)=0)\\
 \hspace*{1.3cm}= 0.5D0: second-order (corresponds to ICPEXT(IPHAS)=1) \\
 \hspace*{1.3cm}= 1.0D0: first-order (corresponds to ICPEXT(IPHAS)=2) \\
 always useful}
@@ -1698,7 +1698,7 @@ the value of $\theta$=THETVS(ISCAL) is deduced from the value chosen for
 IVSEXT(ISCAL). Generally, only the value 0.5D0 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0.0D0: first-order (unused, corresponds to
-IVSEXT(ISCAL)=0)\\ 
+IVSEXT(ISCAL)=0)\\
 \hspace*{1.3cm}= 0.5D0: second-order (corresponds to IVSEXT(ISCAL)=1) \\
 \hspace*{1.3cm}= 1.0D0: first-order (corresponds to IVSEXT(ISCAL)=2) \\
 useful if NSCAL$>$1}
@@ -1710,12 +1710,12 @@ useful if NSCAL$>$1}
 
 \motcle{IMRGRA}{I}{0, 1, 2, 3 or 4}{0}{O}{L2}
 {indicates the type of gradient reconstruction (one method for all the
-variables)\\ 
+variables)\\
 \hspace*{1.3cm}= 0: iterative reconstruction of the non-orthogonalities\\
 \hspace*{1.3cm}= 1: least squares method based on the first neighbor cells
 (cells which share a face with the treated cell)\\
 \hspace*{1.3cm}= 2: least squares method based on the extended neighborhood
-(cells which share a node with the treated cell)\\ 
+(cells which share a node with the treated cell)\\
 \hspace*{1.3cm}= 3: least squares method based on a partial extended
 neighborhood (all first neighbors plus the extended neighborhood cells that
 are connected to a face where the non-orthogonality angle is larger than
@@ -1731,12 +1731,12 @@ useful if and only if there is N so that NSWRGR(N) $>$ 1}
 
 \motcle{NSWRGR}{IA}{positive integer}{100}{O}{L3}
 {for each unknown IVAR, NSWRGR(IVAR) $\leqslant$ 1 indicates that the
-gradients are not reconstructed\\ 
+gradients are not reconstructed\\
 \hspace*{1.3cm}if IMRGRA = 0 or 4, NSWRGR(IVAR) is the number of
 iterations for the gradient reconstruction\\
 \hspace*{1.3cm}if IMRGRA = 1, 2 or 3, NSWRGR(IVAR) $>$ 1 indicates that
 the gradients are reconstructed (but the method is not iterative, so any value
-larger than 1 for NSWRGR yields the same result)\\ 
+larger than 1 for NSWRGR yields the same result)\\
 useful for all the unknowns}
 
 \motcle{EPSRGR}{RA}{real number $>$ 0}{1.D-5}{O}{L3}
@@ -1750,8 +1750,8 @@ IMLIGR(IVAR)\\
 \hspace*{1.3cm}=-1: no limitation\\
 \hspace*{1.3cm}= 0: based on the neighbors\\
 \hspace*{1.3cm}= 1: superior order\\
-for all the unknowns, IMLIGR is initialised to -1 if IMRGRA=0 or 4 and to 1 if 
-\mbox{IMRGRA = 1, 2 or 3}\\ 
+for all the unknowns, IMLIGR is initialised to -1 if IMRGRA=0 or 4 and to 1 if
+\mbox{IMRGRA = 1, 2 or 3}\\
 useful for all the unknowns}
 
 \motcle{CLIMGR}{RA}{real number $>$ 0}{1.5D0}{O}{L3}
@@ -1772,8 +1772,8 @@ second-order in the case of an orthogonal mesh and at first-order otherwise\\
 EXTRAG often allows to correct the non-physical velocities that
 appear on horizontal walls when density is variable and there is gravity.
 It is strongly advised to keep EXTRAG=0 for the variables apart from
-pressure. See also IPHYDR.\\  
-In practice, only the values 0.D0 and 1.D0 are allowed. The 
+pressure. See also IPHYDR.\\
+In practice, only the values 0.D0 and 1.D0 are allowed. The
 value 0.5D0 isn't allowed by default (but the lock can be overridden if
 necessary, contact the development team).\\
 always useful}
@@ -1793,11 +1793,11 @@ useful if and only if IMRGRA=3}
 
 \motcle{IRESOL}{IA}{-1, 1000*IPOL+J}{-1}{O}{L3}
 {for each unknown IVAR, IRESOL(IVAR) indicates the method used for the solution of
-the linear system\\ 
+the linear system\\
 \hspace*{1.3cm}= -1: automatically managed by the code (conjugate
 gradient for the pressure IVAR=IPR(IPHAS) or any variable which is not
 convected, Jacobi for the others. Diagonal preconditioning with
-conjugate gradient).\\ 
+conjugate gradient).\\
 \hspace*{1.3cm}= IPOL*1000+J with           J= 0: conjugate gradient\\
 \hspace*{1.3cm}\phantom{= IPOL*1000+J with} J= 1: Jacobi\\
 \hspace*{1.3cm}\phantom{= IPOL*1000+J with} J= 2: stabilised bi-conjugate
@@ -1814,7 +1814,7 @@ case. If a preconditioning method different from
 the diagonal preconditioning is to be used, it seems to be better to restrict
 to a first-order preconditioning (IPOL=1). This preconditioning may save up to 10\%
 of time in some cases but in the others it may also increase the computational
-time by a few percents\\ 
+time by a few percents\\
 always useful}
 
 \motcle{NITMAX}{IA}{integer $>$ 0}{10000}{O}{L3}
@@ -1831,11 +1831,11 @@ system. The default value is EPSILO(IVAR)=1.D-8. This value is set low
 on purpose. When there are enough iterations on the reconstruction of the
 right-hand side of the equation,
 the value may be increased (by default, in case of second-order in time,
-with NSWRSM = 5 or 10, EPSILO is increased to 1.D-5).\\ 
+with NSWRSM = 5 or 10, EPSILO is increased to 1.D-5).\\
 always useful}
 
 \motcle{IMGR}{IA}{0 or 1}{0}{O}{L3}
-{for each unknown IVAR, indicates the use (IMGR(IVAR)=1) or not (=0) of the 
+{for each unknown IVAR, indicates the use (IMGR(IVAR)=1) or not (=0) of the
 algebraic multigrid method for the solution of the linear systems\\
 IMGR(IVAR) can be set independently for every variable\\
 always useful. Generally, its use is designed for the variable ``pressure'' in
@@ -1848,7 +1848,7 @@ useful if and only if IMGR(IVAR) = 1 for at least one variable IVAR}
 
 \motcle{NCYMAX}{IA}{integer $>$ 0}{100}{O}{L3}
 {for each unknown IVAR, NCYMAX(IVAR) is the maximum number of cycles when using
-the multigrid method.\\ 
+the multigrid method.\\
 useful if and only if IMGR(IVAR) = 1}
 
 \motcle{NGRMAX}{I}{1$\leqslant$ integer $\leqslant$NGRMMX }{NGRMMX}{O}{L3}
@@ -1871,7 +1871,7 @@ the variable ``pressure'' (IMGR(IPR(IPHAS))=1) and with non-parallel computation
 %==================================
 
 \motcleb{BLENCV}{RA}{0 $\leqslant$ real $\leqslant$ 1}{0.D0 or 1.D0}{O}{L1}
-{for each unknown IVAR to calculate, BLENCV(IVAR) indicates the proportion of 
+{for each unknown IVAR to calculate, BLENCV(IVAR) indicates the proportion of
 second-order convective scheme (0.D0 corresponds to an
 ``upwind'' first-order scheme) ; in case of LES calculation, a
 second-order scheme is recommended and activated by default (BLENCV=1.D0)\\
@@ -1886,10 +1886,10 @@ useful for all the unknowns IVAR which are convected (ICONV(IVAR)=1) and
 for which a second-order scheme is used (BLENCV(IVAR) $>$ 0)}
 
 \motcle{ISSTPC}{IA}{0 or 1}{0}{O}{L2}
-{for each unknown IVAR to calculate, ISSTPC(IVAR) 
+{for each unknown IVAR to calculate, ISSTPC(IVAR)
 indicates whether a ``slope test'' should
 be used to switch from a second-order to an ``upwind'' convective
-scheme under certain conditions, to ensure stability.\\ 
+scheme under certain conditions, to ensure stability.\\
 \hspace*{1.3cm}= 0: ``slope test'' activated for the considered unknown\\
 \hspace*{1.3cm}= 1: ``slope test'' deactivated for the considered unknown\\
 useful for all the unknowns IVAR  which are convected (ICONV(IVAR)=1) and
@@ -1909,19 +1909,19 @@ always useful}
 
 \motcle{ARAK}{RA}{0 $<$ real $\leqslant$ 1}{1.D0}{O}{L3}
 {for each phase IPHAS, ARAK(IPHAS) is the Arakawa coefficient before the
-Rhie\& Chow filter\\   
+Rhie\& Chow filter\\
 always useful}
 
 \motcle{RELAXP}{RA}{0 $<$ real $\leqslant$ 1}{1.D0}{O}{L2}
 {for each phase IPHAS, relaxation of the pressure increment during the
-solution of the system (RELAXP(IPHAS)=1: no relaxation)\\ 
+solution of the system (RELAXP(IPHAS)=1: no relaxation)\\
 can improve the convergence in case of
 meshes of insufficient quality\\
 always useful}
 
 \motcle{IREVMC}{IA}{0, 1 or 2}{0}{O}{L3}
 {for each phase IPHAS, method used to update the velocity after the pressure
-correction:\\ 
+correction:\\
 \hspace*{0,5cm}- standard gradient of pressure increment
 (IREVMC(IPHAS)=0)\\
 \hspace*{0,5cm}- least squares on the pressure increment
@@ -1943,7 +1943,7 @@ IPHYDR=1 allows to improve the interpolation of the pressure and correct the
 non-physical velocities which may appear in highly
 stratified areas or near horizontal walls (thus
 avoiding the use of EXTRAG if the non-physical velocities are due only to
-gravity effects).\\ 
+gravity effects).\\
 The improved algorithm also allows to eradicate the velocity oscillations
 which tend to appear at the frontiers of areas with high head losses.\\
 In the case of a stratified flow, the calculation cost is higher when the
@@ -1989,8 +1989,8 @@ maximum values in the listing and generates post-processing outputs along with
 the other variables.
 
 The additional memory cost is about one real number per cell and per
-estimator. The additional calculation cost is variable. For instance, on a 
-simple test case, the total estimator IESTOT generates an additional cost 
+estimator. The additional calculation cost is variable. For instance, on a
+simple test case, the total estimator IESTOT generates an additional cost
 of 15 to 20 $\%$ on the CPU time\footnote{indeed, all the first-order in
 space differential terms have to be recalculated at the time $t^{\,n+1}$} ;
 the cost of the three others may be neglected. If the user wants to
@@ -2002,56 +2002,56 @@ It is recommended to use the estimators only for visual and qualitative
 analysis. Also, their use is compatible neither with a second-order time scheme
 nor with a calculation with a frozen velocity field.
 
-{\bf IEST = IESPRE\index{IESPRE}: prediction} (default name: EsPre). 
+{\bf IEST = IESPRE\index{IESPRE}: prediction} (default name: EsPre).
 After the velocity prediction step (yielding $\vect{u}^*$), the
 estimator $\eta^{\,pred}_{\,i,k}(\vect{u}^*)$, local variable calculated
 at every cell $\Omega_i$, is created from $\vect{\mathcal
 R}^{\,pred}(\vect{u}^*)$, which represents the residual of the equation
 solved during this step:
 \begin{eqnarray*}
-\vect{\mathcal R}^{\,pred}(\vect{u}^*)&= & \rho^n \frac{\vect{u}^*-\vect{u}^n}{\Delta t} 
-              + \rho^n \vect{u}^n \cdot \tens{grad}(\vect{u}^*)        
+\vect{\mathcal R}^{\,pred}(\vect{u}^*)&= & \rho^n \frac{\vect{u}^*-\vect{u}^n}{\Delta t}
+              + \rho^n \vect{u}^n \cdot \tens{grad}(\vect{u}^*)
               - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^*) \right)
               + \grad(P^n)     \\
-              &- &\text{rest of the right-hand member} 
+              &- &\text{rest of the right-hand member}
                         \,(\vect{u}^n, P^n, \text{other variables}^n)
 \end{eqnarray*}
-By definition: 
+By definition:
 $$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{u}^*)||
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 \hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
 volume $|\Omega_i|$ which intrinsicly appears  with the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\ 
+${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
 \hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
 appears in its calculation and induces a weighting effect.\\
 $ \eta^{\,pred}_{\,i,k}(\vect{u}^*)$  is ideally equal to zero when the
 reconstruction methods are perfect and the associated system is
-solved exactly. 
+solved exactly.
 
-{\bf IEST = IESDER\index{IESDER}: drift}  (default name: EsDer).            
+{\bf IEST = IESDER\index{IESDER}: drift}  (default name: EsDer).
 The estimator $\eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})$ is based on the
-following quantity (intrinsic to the code):   
+following quantity (intrinsic to the code):
 \begin{equation}
 \begin{array}{lll}
- \eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1}) 
-&=& {|\Omega_i|}^{\,(k-2)/2} 
+ \eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})
+&=& {|\Omega_i|}^{\,(k-2)/2}
 ||div (\text{corrected mass flow after the pressure step})
                                               -\ \Gamma||_{{L}^{2}(\Omega_i)} \\
-&=& {|\Omega_i|}^{\,(1-k)/2} 
-|div (\text{corrected mass flow after the pressure step})-\ \Gamma|  
+&=& {|\Omega_i|}^{\,(1-k)/2}
+|div (\text{corrected mass flow after the pressure step})-\ \Gamma|
 \end{array}
-\end{equation} 
+\end{equation}
 Ideally, it is equal to zero when the Poisson equation related to the pressure is
 solved exactly.
-                             
-{\bf IEST = IESCOR\index{IESCOR}: correction}  (default name: EsCor).      
+
+{\bf IEST = IESCOR\index{IESCOR}: correction}  (default name: EsCor).
 The estimator $ \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})$ comes directly
-from the mass flow calculated with the updated velocity field:          
+from the mass flow calculated with the updated velocity field:
 \begin{eqnarray*}
             \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})=
-|\Omega_i|^{\,\delta_{\,2,k}}\ |div (\rho^n \vect{u}^{n+1}) -\ \Gamma|                          
-\end{eqnarray*} 
+|\Omega_i|^{\,\delta_{\,2,k}}\ |div (\rho^n \vect{u}^{n+1}) -\ \Gamma|
+\end{eqnarray*}
 The velocities $\vect{u}^{n+1}$ are taken at the cell centers,
 the divergence is calculated after projection on the faces.\\
             $ \,\delta_{\,2,k}$ represents the Kronecker symbol.\\
@@ -2062,22 +2062,22 @@ property and allows to evaluate the difference in $kg.s^{\,-1}$.\\
 Ideally, it is equal to zero when the Poisson equation is solved exactly and
 the projection from the mass flux at the faces to the velocity at the cell
 centers is made in a set of  functions with null divergence.
-                             
-{\bf IEST = IESTOT\index{IESTOT}: total} (default name: EsTot). 
+
+{\bf IEST = IESTOT\index{IESTOT}: total} (default name: EsTot).
 The estimator $ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})$, local variable
 calculated at every cell $\Omega_i$, is based on the quantity
 $\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})$, which represents the
 residual of the equation using the updated values of
-$\vect{u}$ and $P$:  
+$\vect{u}$ and $P$:
 \begin{eqnarray*}
-\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})&= & \rho^n \frac{\vect{u}^{\,n+1}-\vect{u}^n}{\Delta t} 
-              + \rho^n \vect{u}^{\,n+1} \cdot \tens{grad}(\vect{u}^{\,n+1})        
+\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})&= & \rho^n \frac{\vect{u}^{\,n+1}-\vect{u}^n}{\Delta t}
+              + \rho^n \vect{u}^{\,n+1} \cdot \tens{grad}(\vect{u}^{\,n+1})
               - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^{\,n+1}) \right)
               + \grad(P^{\,n+1})     \\
-              &- &\text{rest of the right-hand member} 
+              &- &\text{rest of the right-hand member}
                         \,(\vect{u}^{\,n+1}, P^{\,n+1}, \text{other variables}^n)
 \end{eqnarray*}
-By definition: 
+By definition:
 $$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})||
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 
@@ -2088,28 +2088,28 @@ faces).\\
 As for the prediction estimator:\\
 \hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
 volume $|\Omega_i|$ which intrinsicly appears  with the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\ 
+${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
 \hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
 appears in its calculation and induces a weighting effect.\\
 
 
 The estimators are evaluated depending on the values of IESCAL.
-                                       
+
 
 \motcleb{IESCAL}{IA}{0, 1 or 2}{0}{O}{L1}
-{for each phase IPHAS, IESCAL(IEST,IPHAS) indicates the calculation mode 
+{for each phase IPHAS, IESCAL(IEST,IPHAS) indicates the calculation mode
 for the error estimator IEST (IESPRE, IESDER, IESCOR or IESTOT), for
-the Navier-Stokes equation:\\ 
- IESCAL = 0: estimator not calculated, \\       
- IESCAL = 1: the estimator $ \eta^{\,* }_{\,i,1}$ is calculated,         
-               without contribution of the volume, \\ 
- IESCAL = 2: the estimator $ \eta^{\,* }_{\,i,2}$ is calculated,              
-               with contribution of the volume ("norm $L^2$"),              
+the Navier-Stokes equation:\\
+ IESCAL = 0: estimator not calculated, \\
+ IESCAL = 1: the estimator $ \eta^{\,* }_{\,i,1}$ is calculated,
+               without contribution of the volume, \\
+ IESCAL = 2: the estimator $ \eta^{\,* }_{\,i,2}$ is calculated,
+               with contribution of the volume ("norm $L^2$"),
                except for IESCOR, for which
                $|\Omega_i|\ \eta^{\,corr}_{\,i,1}\ $
                is calculated.
- 
+
 The name of the estimators appearing in the listing and the post-processing is
 made up of the default name (given before), followed first by the value of
 IESCAL, then by the phase number. For
@@ -2126,17 +2126,17 @@ always useful}
 \motcle{ICDPAR}{I}{-1, 1, -2 or 2}{-1}{O}{L2}
 {specifies the method used to calculate the distance to the wall $y$ and the
 adimensional distance $y^+$ for all the
-cells of the calculation domain (when necessary):\\ 
+cells of the calculation domain (when necessary):\\
 \hspace*{1.3cm}= 1: standard algorithm (based on a Poisson equation for $y$ and
-convection equation for $y^+$), 
+convection equation for $y^+$),
 with reading of the distance to the wall from the restart file
-if possible\\ 
+if possible\\
 \hspace*{1.3cm}=-1: standard algorithm (based on a Poisson equation for $y$ and
 convection equation for $y^+$),
 with systematic recalculation of the distance to the wall in case of
-calculation restart\\ 
+calculation restart\\
 \hspace*{1.3cm}= 2: former algorithm (based on geometrical
-considerations), 
+considerations),
 with reading of the distance to the wall from the restart file
 if possible\\
 \hspace*{1.3cm}=-2: former algorithm (based on geometrical
@@ -2243,7 +2243,7 @@ useful when ICDPAR=1 or -1}
 
 \motcle{COUMXY}{R}{strictly positive real number}{5000.D0}{O}{L3}
 {Target Courant number for the calculation of the adimensional distance
-to the wall\\ 
+to the wall\\
 useful when ICDPAR=1 or -1 for the calculation of $y^+$}
 
 \motcle{EPSCVY}{R}{strictly positive real number}{1.D-8}{O}{L3}
@@ -2276,12 +2276,12 @@ useful if and only if NSCAL $>$ 0 and ISUITE=1}
 {indicates the algorithm for velocity/pressure coupling\\
 \hspace*{1.3cm}= 0: standard algorithm\\
 \hspace*{1.3cm}= 1: reinforced coupling in case calculation with long
-time steps\\ 
+time steps\\
 always useful (it is seldom advised, but it can prove very useful, for instance,
 in case of flows with weak convection effects and highly variable viscosity)}
 
 \motcleb{ISUIT1}{I}{0 or 1}{0}{O}{L1}
-{for the  1D wall thermal module, activation (1) or not(0) of the reading  
+{for the  1D wall thermal module, activation (1) or not(0) of the reading
 of the mesh and of the wall temperature from the FICMT1 restart file\\
 useful if NFPT1D$>$0.}
 
@@ -2308,7 +2308,7 @@ always useful}
 
 \motcle{NSWRSM}{IA}{positive integer}{1, 2, 5 or 10}{O}{L3}
 {for each unknown IVAR, NSWRSM(IVAR) indicates the number of iterations for the
-reconstruction of the right-hand members of the equations\\ 
+reconstruction of the right-hand members of the equations\\
 with a first-order scheme in time
 (standard case), the default values are 2 for pressure and 1 for the
 other variables. With a second-order scheme in time (ISCHTP=2) or LES, the
@@ -2334,7 +2334,7 @@ value of the difference lower than EPZERO)}
 
 \motcle{PI}{R}{3.141592653589793D0}{3.141592653589793D0}{O}{L3}
 {Parameter containing the value of $\pi$}
- 
+
 \motcle{GRAND}{R}{1.D12}{1.D12}{O}{L3}
 {``Large'' real parameter, generally used by default as a non physical value for
 the initialisations of variables which have to be modified by the user}
@@ -2392,17 +2392,17 @@ constant. Its value is the reference density RO0(IPHAS).\\
 IROVAR(IPHAS)=1 indicates that the density is variable: its variation
 law must be given in the user subroutine \texttt{usphyv}\\
 negative value: not initialised\\
-always useful} 
+always useful}
 
 \motcleb{IVIVAR}{IA}{0 or 1}{\tt -1}{C}{L1}
 {for each phase IPHAS, IVIVAR(IPHAS)=0 indicates that the molecular
 dynamic viscosity is constant. Its value is the reference molecular
-dynamic viscosity VISCL0(IPHAS).\\ 
+dynamic viscosity VISCL0(IPHAS).\\
 IVIVAR(IPHAS)=1 indicates that the molecular dynamic viscosity is
 variable: its variation law must be given in the user subroutine
-\texttt{usphyv}\\ 
+\texttt{usphyv}\\
 negative value: not initialised\\
-always useful} 
+always useful}
 
 \motcleb{RO0}{RA}{real number $\geqslant$ 0}{\tt -GRAND*10}{C}{L1}
 {for each phase IPHAS, RO0(IPHAS) is the reference density\\
@@ -2422,7 +2422,7 @@ $P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+P^*_0-P_0$\\
 where
 $\vect{x_0}$ is a reference point (see XYZP0) and $P^*_0$ and $P_0$ are
 reference values (see PRED0 and P0). Hence, the term
-$-\grad{P}+\rho\vect{g}$ in the equation is treated as 
+$-\grad{P}+\rho\vect{g}$ in the equation is treated as
 $-\grad{P^*}+(\rho-\rho_0)\vect{g}$. The closer RO0 is to the value of $\rho$,
 the more $P^*$ will tend to represent only the dynamic part of the pressure and
 the faster and more precise its solution will be. Whatever the value of RO0,
@@ -2432,7 +2432,7 @@ pressure}
 
 \motcleb{VISCL0}{RA}{real number $>$ 0}{\tt -GRAND*00}{C}{L1}
 {for each phase IPHAS,  VISCL0(IPHAS) is the reference molecular dynamic
-viscosity\\ 
+viscosity\\
 negative value: not initialised\\
 always useful, it is the used value unless the user specifies the
 viscosity in the subroutine \texttt{usphyv}}
@@ -2442,15 +2442,15 @@ viscosity in the subroutine \texttt{usphyv}}
  is the sub-relaxation coefficient for the density, following the formula:\\
 $\rho^{n+1}$\,=\,SRROM\,$\rho^n$+(1-SRROM)\,$\rho^{n+1}$\\
 hence, with a zero value, there is no sub-relaxation.
-With combustion and pulversied coal, SRROM is initialised to -GRAND 
+With combustion and pulversied coal, SRROM is initialised to -GRAND
 and the user must specify a proper value through the Interface or the
 initialisation subroutines (\texttt{usd3p1},
  \texttt{usebu1}, \texttt{uslwc1}, \texttt{uscpi1} or
-\texttt{uscpl1}).With the electric module, SRROM is initialised in to 0 
+\texttt{uscpl1}).With the electric module, SRROM is initialised in to 0
 and may be modified by the user in \texttt{useli1}.\\
 With gas combustion, pulverised coal or electric arc, SSROM is
 automatically used after the second time-step. With Joule effect,
-the user decides whether or not it will be used in \texttt{uselph}  
+the user decides whether or not it will be used in \texttt{uselph}
 from the coding law giving the density.}\\
 always useful with gas combustion, pulversized coal or the electric module.
 
@@ -2478,7 +2478,7 @@ always useful, except with the compressible module}
 \motcleb{XYZP0}{RA}{3 real numbers}{0.D0,0.D0,0.D0}{O}{L1}
 {for each phase IPHAS, XYZP0(II,IPHAS) is the II coordinate
 (1$\leqslant$II$\leqslant$3) of the reference point $\vect{x}_0$ for the
-total pressure\\ 
+total pressure\\
 when there are no Dirichlet conditions for the pressure (closed domain), XYZP0
 does not need to be specified (unless the total pressure has a clear physical
 meaning in the configuration treated)\\
@@ -2486,7 +2486,7 @@ when Dirichlet conditions on the pressure are specified but only through stantar
 outlet conditions (as it is in most configurations),
 XYZP0 does not need to be specified by the user, since it will be set to the
 coordinates of the reference outlet face ({\em i.e.} the code will automatically
-select a 
+select a
 reference outlet boundary face and set XYZP0 so that $P$ equals P0 at this
 face). Nontheless, if XYZP0 is pecified by the user, the calculation will remain
 correct\\
@@ -2501,7 +2501,7 @@ equations directly represents the total pressure. XYZP0 is therefore not used.\\
 always useful, except with the compressible module}
 
 \motcleb{T0}{RA}{real number}{0.D0}{O}{L1}
-{for each phase IPHAS, T0(IPHAS) is the reference temperature \\ 
+{for each phase IPHAS, T0(IPHAS) is the reference temperature \\
 useful for the specific physics gas or coal combustion (initialisation
 of the density), for the electricity modules to initialise the domain
 temperature and for the comperssible module (initialisations). It must be given
@@ -2530,7 +2530,7 @@ make ICP(IPHAS) designate the effective index-number of the property
 ``specific heat of the phase IPHAS''. For each cell IEL, the value of
 $C_p$ is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
-PROPCE(IEL,IPPROC(ICP(IPHAS)))  
+PROPCE(IEL,IPPROC(ICP(IPHAS)))
 ({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
 useful if there is 1$\leqslant$N$\leqslant$NSCAL so that ISCSTH(N)=1
 (there is a scalar ``temperature'') or with the compressible module for non
@@ -2549,12 +2549,12 @@ conductivity and specific heat. When using the Graphical Inteface, $\lambda$ and
 $C_p$ are specified separately, and VISLS0 is calculated automatically\\
 With the compressible module, VISLS0 (given in \texttt{uscfxi2}) is directly the
 thermal conductivity $W.m^{-1}.K^{-1}$\\
-With gas or coal combustion, the molecular diffusivity of the enthalpy 
+With gas or coal combustion, the molecular diffusivity of the enthalpy
 ($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable DIFTL0 (\texttt{usebu1},
 \texttt{usd3p1}, \texttt{uslwc1}, \texttt{uscpi1}, \texttt{uscpl1})\\
 With the electric module, for the Joule effect, the diffusivity is specified by
 the user in \texttt{uselph} (even if it is constant). For the electric arc, it
-is calculated from the thermochemical data file}} 
+is calculated from the thermochemical data file}}
 
 \motcleb{IVISLS}{IA}{positive or zero integer}{0}{O}{L1}
 {indicates if the viscosity related to the scalar ISCAL is variable
@@ -2562,10 +2562,10 @@ is calculated from the thermochemical data file}}
 user scalars (ISCAL $\leqslant$ NSCAUS).\\
 When IVISLS(ISCAL)=1 is specified, the code automatically modifies this value to
 make IVISLS(ISCAL) designate the effective index-number of the property
-``diffusivity of the scalar ISCAL''. For each cell IEL, the value 
+``diffusivity of the scalar ISCAL''. For each cell IEL, the value
 is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
-PROPCE(IEL,IPPROC(IVISLS(IPHAS)))  
+PROPCE(IEL,IPPROC(IVISLS(IPHAS)))
 ({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
 useful if 1$\leqslant$N$\leqslant$NSCAL}
 
@@ -2607,7 +2607,7 @@ of the equation concerning the scalar ISCAL,
 which represents the root mean square of the
 fluctuations of the scalar ISCAVR(ISCAL)\\
 useful if and only if there is 1$\leqslant$ISCAL$\leqslant$ NSCAL such as
- ISCAVR(ISCAL)$>$0} 
+ ISCAVR(ISCAL)$>$0}
 
 
 %==================================
@@ -2616,16 +2616,16 @@ useful if and only if there is 1$\leqslant$ISCAL$\leqslant$ NSCAL such as
 
 \motcleb{XLOMLG}{RA}{real number $>$ 0}{\tt -GRAND*10}{O}{L1}
 {for each phase IPHAS, XLOMLG(IPHAS) is the mixing length\\
-useful if and only if there is a phase IPHAS so that ITURB(IPHAS)= 10 
+useful if and only if there is a phase IPHAS so that ITURB(IPHAS)= 10
 (mixing length)}
 
 \motcle{ALMAX}{RA}{\texttt{-GRAND}, real number $>$ 0}{\tt -GRAND*10}{O}{L2}
 {for each phase IPHAS, ALMAX(IPHAS) is a characteristic macroscopic
 length of the domain, used for the initialisation of the turbulence and
-the potential clipping (with ICLKEP(IPHAS)=1)\\ 
+the potential clipping (with ICLKEP(IPHAS)=1)\\
 negative value: not initialised (the code then uses the cubic root of
 the domain volume)\\
-useful if and only if there is a phase IPHAS such as 
+useful if and only if there is a phase IPHAS such as
 TURB(IPHAS)= 20, 21, 30, 31, 50 or 60 (RANS models)}
 
 \motcleb{UREF}{RA}{real number $>$ 0}{\tt -GRAND*10}{C}{L1}
@@ -2642,12 +2642,12 @@ else (restart file or subroutine \texttt{usiniv})}
 
 \motcle{XKAPPA}{R}{real number $>$ 0}{0.42D0}{O}{L3}
 {K\'arm\'an constant\\
-useful if and only if there is a phase IPHAS such as ITURB(IPHAS)$\geqslant$10 
+useful if and only if there is a phase IPHAS such as ITURB(IPHAS)$\geqslant$10
 (mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
 
 \motcle{CSTLOG}{R}{real number $>$ 0}{5.2D0}{O}{L3}
-{constant of the logarithmic wall function\\ 
-useful if and only if there is a phase IPHAS such as ITURB(IPHAS)$\geqslant$10 
+{constant of the logarithmic wall function\\
+useful if and only if there is a phase IPHAS such as ITURB(IPHAS)$\geqslant$10
 (mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
 
 \motcle{CMU}{R}{real number $>$ 0}{0.09D0}{O}{L3}
@@ -2676,7 +2676,7 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)= 20, 21 or 30
 {constant $C_{\varepsilon 4}$ for the interfacial term (Lagrangian module) in
 case of two-way coupling\\
 useful in case of Lagrangian modeling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
-with two-way coupling} 
+with two-way coupling}
 %c'est aussi implante en k-omega mais en ``imitant''le k-eps et sans aucune verif
 % ... et d'ailleurs ca ne marche pas !!
 
@@ -2851,7 +2851,7 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)=60
 useful if and only if there is a phase IPHAS such as ITURB(IPHAS)=60
 ($k-\omega$ SST)\\
 {\em Warning: $\gamma_1$ is calculated before the call to
-\texttt{usini1}. Hence, if $\beta_1$, $C_\mu$, $\kappa$ or $\sigma_{\omega 1}$ 
+\texttt{usini1}. Hence, if $\beta_1$, $C_\mu$, $\kappa$ or $\sigma_{\omega 1}$
 is modified in \texttt{usini1}, CKWGM1 must also be modified in accordance}}
 
 \motcle{CKWGM2}{R}{real number $>$ 0}
@@ -2860,7 +2860,7 @@ is modified in \texttt{usini1}, CKWGM1 must also be modified in accordance}}
 useful if and only if there is a phase IPHAS such as ITURB(IPHAS)=60
 ($k-\omega$ SST)\\
 {\em Warning: $\gamma_2$ is calculated before the call to
-\texttt{usini1}. Hence, if $\beta_2$, $C_\mu$, $\kappa$ or $\sigma_{\omega 2}$ 
+\texttt{usini1}. Hence, if $\beta_2$, $C_\mu$, $\kappa$ or $\sigma_{\omega 2}$
 is modified in \texttt{usini1}, CKWGM2 must also be modified in accordance}}
 
 \motcle{CKWA1}{R}{real number $>$ 0}{0.31D0}{O}{L3}
@@ -2880,19 +2880,19 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)=60
 
 All the following key words may be modified in the user subroutines
 \texttt{usray*} (or, for some of them, by through the thermochemical data files).
-It is however not recommended to modify those which do not belong to 
+It is however not recommended to modify those which do not belong to
 level L1.
 
 \motcleb{IRAYON}{IA}{0, 1, 2}{0}{O}{L1}
 {for each phase IPHAS, IRAYON(IPHAS) activates ($>0$) or deactivates
-(=0) the radiation module\\ 
-if a specific physics is activated (in that case, NSCAPP$>$0), 
+(=0) the radiation module\\
+if a specific physics is activated (in that case, NSCAPP$>$0),
 IRAYON(IPHAS) must be kept to 0 (see IRAYPP)\\
 The different values correspond to the following modelings:\\
-\hspace*{1.3cm} = 1 discrete ordinates 
+\hspace*{1.3cm} = 1 discrete ordinates
 (standard option for radiation in semi-transparent media)\\
 \hspace*{1.3cm} = 2  ``P-1'' model\\
-{\em Warning: the P-1 model allows faster computations, but it 
+{\em Warning: the P-1 model allows faster computations, but it
 may only be applied to media with uniform large optical thickness, such as
 some cases of pulverised coal combustion}}
 
@@ -2904,7 +2904,7 @@ indicates if thermal radiative transfers are calculated ($>0$) or not
 (=0).\\
 The value of IRAYPP is given {\em via} a data file (gas combustion:
 {\em dp\_C3P}, {\em dp\_C3PSJ}, or {\em dp\_C4P};
-pulverised coal combustion: {\em dp\_FCP}; electric module: {\em dp\_ELE})\\ 
+pulverised coal combustion: {\em dp\_FCP}; electric module: {\em dp\_ELE})\\
 IRAYPP allows to choose between the discrete ordinates method and the
 P-1 method (see IRAYON) and to choose the method used to calculate the
 absorption coefficient. The absorption coefficient may be set by the
@@ -2926,7 +2926,7 @@ deduced from the type of XKABEL specified in the file (given by IXKABE).
 In that case, IRAYPP can only be equal to 0 (IXKABE=0 or 2) or 1 (IXKABE=1)}
 
 \motcle{IMODAK}{I}{0 or 1}{0}{O}{L3}
-{when gas or coal combustion is activated, IMODAK indicates whether the 
+{when gas or coal combustion is activated, IMODAK indicates whether the
 absorption coefficient shall be calculated ``automatically'' (=1) or read from
 the data file (=0) (see IRAYPP)\\
 useful if the radiation module is activated; IMODAK is then automatically set
@@ -2936,19 +2936,19 @@ from the value of IRAYPP, without intervention of the user}
 {indicates whether the radiation variables should be initialised (=0) or read
 from a restart file (=1)\\
 useful if and only if the radiation module is activated (in this case, a
-restart file {\em rayamo} must be available)} 
+restart file {\em rayamo} must be available)}
 
 \motcleb{NFREQR}{I}{strictly positive integer}{1}{O}{L1}
 {period of the radiation module\\
 the radiation module is called every NFREQR time steps (more precisely, every
 time NTCABS is a multiple of NFREQR). Also, in order to have proper
-initialisation of the variables, whatever the value of NFREQR, the radiation 
+initialisation of the variables, whatever the value of NFREQR, the radiation
 module is called at the first time step of a calculation (restart or not)\\
 useful if and only if the radiation module is activated}
 
 \motcleb{NDIREC}{I}{32 ou 128}{32}{O}{L1}
 {number of directions for the angular discretisation of the radiation
-propagation with the DOM model (IRAYON=1)\\ 
+propagation with the DOM model (IRAYON=1)\\
 no other possible value, because of the way the directions are calculated\\
 the calculation with 32 directions may break the symmetry of
 physically axisymmetric cases (but the cost in CPU time is much lower
@@ -2966,7 +2966,7 @@ useful if and only if the radiation module is activated with the P-1 method}
 \motcleb{IDIVER}{I}{0, 1 or 2}{2}{C}{L1}
 {indicates the method used to calculate the radiative source term:\\
 \hspace*{1.3cm}= 0: semi-analytic calculation (compulsory with transparent
-media)\\ 
+media)\\
 \hspace*{1.3cm}= 1: conservative calculation\\
 \hspace*{1.3cm}= 2: semi-analytic calculation corrected in order to be
 globally consevative\\
@@ -2992,15 +2992,15 @@ useful if and only if the radiation module is activated}
 \motcleb{NBRVAP}{CA}{string of less than 80 characters}{name\_IPHAS}{O}{L1}
 {name associated for the post-processing to each of the following variables,
 defined at the cell centers ({\it see}
-\cite{Douce02} for more details concerning their definitions):\\ 
+\cite{Douce02} for more details concerning their definitions):\\
 \hspace*{1.3cm} NBRVAP(ITSRAY,IPHAS): radiative source term ($W/m^3$)\\
 \hspace*{1.3cm} NBRVAP(IQRAYP,IPHAS): radiative flux density vector ($W/m^2$)\\
 \hspace*{1.3cm} NBRVAP( IABSP,IPHAS): absorption part in the source term
-($W/m^3$)\\ 
+($W/m^3$)\\
 \hspace*{1.3cm} NBRVAP( IEMIP,IPHAS): emission part in the source term
-($W/m^3$)\\ 
+($W/m^3$)\\
 \hspace*{1.3cm} NBRVAP( ICAKP,IPHAS): absorption coefficient of the
-medium ($m^{-1}$)\\ 
+medium ($m^{-1}$)\\
 the default values are: \\
 \hspace*{1.3cm} NBRVAP(ITSRAY,IPHAS) = Srad\_IPHAS \\
 \hspace*{1.3cm} NBRVAP(IQRAYP,IPHAS) = Qrad\_IPHAS \\
@@ -3015,11 +3015,11 @@ followiing variables defined at the cell centers:\\
 \hspace*{1.3cm} IRAYVP(ITSRAY,IPHAS): radiative source term ($W/m^3$)\\
 \hspace*{1.3cm} IRAYVP(IQRAYP,IPHAS): radiative flux density vector ($W/m^2$)\\
 \hspace*{1.3cm} IRAYVP(IABSP,IPHAS): absorption part in the source term
-($W/m^3$)\\ 
+($W/m^3$)\\
 \hspace*{1.3cm} IRAYVP(IEMIP,IPHAS): emission part in the source term
-($W/m^3$)\\ 
+($W/m^3$)\\
 \hspace*{1.3cm} IRAYVP(ICAKP,IPHAS): absorption coefficient of the
-medium ($m^{-1}$)\\ 
+medium ($m^{-1}$)\\
 useful if and only if the radiation module is activated}
 
 \motcleb{NBRVAF}{CA}{string of less than 80 characters}{name\_IPHAS}{O}{L1}
@@ -3027,9 +3027,9 @@ useful if and only if the radiation module is activated}
 defined at the boundary faces ({\it see}
 \cite{Douce02} for more details concerning their definitions):\\
 \hspace*{1.3cm} NBRVAF(ITPARP,IPHAS): wall temperature at the boundary
-faces ($K$)\\ 
+faces ($K$)\\
 \hspace*{1.3cm} NBRVAF(IQINCP,IPHAS): radiative incident flux density
-($W/m^2$)\\ 
+($W/m^2$)\\
 \hspace*{1.3cm} NBRVAF(IXLAMP,IPHAS): thermal conductivity of the
 boundary faces ($W/m/K$)\\
 \hspace*{1.3cm} NBRVAF(IEPAP,IPHAS): wall thickness ($m$)\\
@@ -3037,7 +3037,7 @@ boundary faces ($W/m/K$)\\
 \hspace*{1.3cm} NBRVAF(IFNETP,IPHAS): net radiative flux density ($W/m^2$)\\
 \hspace*{1.3cm} NBRVAF(IFCONP,IPHAS): convective flux density ($W/m^2$)\\
 \hspace*{1.3cm} NBRVAF(IHCONP,IPHAS): convective exchange coefficient
-($W/m^2/K$)\\ 
+($W/m^2/K$)\\
 The default values are: \\
 \hspace*{1.3cm} NBRVAF(ITPARP,IPHAS) = Temp\_paroi\_IPHAS \\
 \hspace*{1.3cm} NBRVAF(IQINCP,IPHAS) = Flux\_incident\_IPHAS \\
@@ -3053,9 +3053,9 @@ useful if and only if the radiation module is activated}
 {activates (=1) or deactivates (=-1) the post-processing for each of the
 followiing variables defined at the boundary faces:\\
 \hspace*{1.3cm} IRAYVF(ITPARP,IPHAS): wall temperature at the boundary
-faces ($K$)\\ 
+faces ($K$)\\
 \hspace*{1.3cm} IRAYVF(IQINCP,IPHAS): radiative incident flux density
-($W/m^2$)\\ 
+($W/m^2$)\\
 \hspace*{1.3cm} IRAYVF(IXLAMP,IPHAS): thermal conductivity of the
 boundary faces ($W/m/K$)\\
 \hspace*{1.3cm} IRAYVF( IEPAP,IPHAS): wall thickness ($m$)\\
@@ -3063,7 +3063,7 @@ boundary faces ($W/m/K$)\\
 \hspace*{1.3cm} IRAYVF(IFNETP,IPHAS): net radiative flux density ($W/m^2$)\\
 \hspace*{1.3cm} IRAYVF(IFCONP,IPHAS): convective flux density ($W/m^2$)\\
 \hspace*{1.3cm} IRAYVF(IHCONP,IPHAS): convective exchange coefficient
-($W/m^2/K$)\\ 
+($W/m^2/K$)\\
 useful if and only if the radiation module is activated}
 
 \motcle{TMIN}{R}{real number positif}{0.D0}{O}{L3}
@@ -3080,7 +3080,7 @@ useful if and only if the radiation module is activated}
 
 The electric module is composed of a Joule effect module
 (IPPMOD(IELJOU)\index{IELJOU}) and an electric arc module
-(IPPMOD(IELARC)\index{IELARC}).  
+(IPPMOD(IELARC)\index{IELARC}).
 
 The Joule effect module is designed to take into account the Joule effect
 (for instance in glass furnaces) with real or complex potential in the
@@ -3121,7 +3121,7 @@ the variable COEJOU\\
 useful with the Joule effect module if IELCOR=1}
 
 \motcleb{DPOT}{R}{real number $\geqslant 0$}{0}{O}{L1}
-{DPOT is the potential difference ($V$) which generates the current (and the Joule effect) for the 
+{DPOT is the potential difference ($V$) which generates the current (and the Joule effect) for the
 calculations with boundary conditions tuning for the potential. This value is
 initialised set by the user (\texttt{useli1}). It is then automatically tuned
 depending on the value of dissipated power (Joule effect module) or the
@@ -3132,10 +3132,10 @@ tuning can be controlled in \texttt{uselrc}\\
 useful if IELCOR=1}
 
 \motcle{COEJOU}{R}{real number $\geqslant 0$}{1}{O}{L2}
-{only with the Joule effect, COEJOU can be used if the user does not 
+{only with the Joule effect, COEJOU can be used if the user does not
 wish to use DPOT. COEJOU is the coefficient to be applied to the initial
 potential difference to reach the target dissipated power. Its value is
-automatically initialised to 1 and is updated during the calculation. 
+automatically initialised to 1 and is updated during the calculation.
 In order for the correct power to be reached, the boundary
 conditions for the potential must be expressed with COEJOU (\texttt{uselcl}). The
 tuning can be controlled in \texttt{uselrc}\\
@@ -3160,7 +3160,7 @@ horizontal walls when the flow is little convective.\\
 Otherwise, when ICFGRP=0, the pressure condition is calculated
 from the solution of the unidimensional Euler equations for a perfect
 gas near a wall, for the variables ``normal velocity'', ``density'' and
-``pressure'': 
+``pressure'':
 \vspace{0.2cm}
 \begin{list}{}{}
 \item Case of an expansion ($M \leqslant 0$):\\
@@ -3192,14 +3192,14 @@ with $M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$, internal
 \motcleb{IVISCV}{IA}{0 or 1}{\tt 0}{C}{L1}
 {for each phase IPHAS, IVISCV(IPHAS)=0 indicates that the volume
 viscosity is constant and equal to the reference volume viscosity
-VISCV0(IPHAS).\\ 
+VISCV0(IPHAS).\\
 IVISCV(IPHAS)=1 indicates that the volume viscosity is variable: its
 variation law must be specified in the user subroutine \texttt{uscfpv}.\\
 always useful\\
 The volume viscosity $\kappa$ is defined by the formula expressing the stress:
 \begin{equation}
    \tens{\sigma} = -P\,\tens{Id} + \mu (\grad\,\vect{u} +  \ ^{t}\ggrad\,\vect{u})
-	   +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id}
+           +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id}
 \end{equation}
 }
 
@@ -3237,14 +3237,14 @@ two-way coupling is not compatible with the $k-\omega$ SST model.
 
 \motcleb{IILAGR}{I}{0, 1, 2, 3}{0}{C}{L1}
 {activates ($>$0) or deactivates (=0) the Lagrangian module\\
-the different values correspond to the following modelings: \\ 
+the different values correspond to the following modelings: \\
 \hspace*{1.3cm} = 1 Lagrangian two-phase flow in one-way coupling (no influence of
 the particles on the continuous phase)\\
 \hspace*{1.3cm} = 2 Lagrangian two-phase flow with two-way coupling (influence of
 the particles on the dynamics of the continuous phase).
 It must be noted that the two-way coupling is taken
 into account only for the first eulerian phase. Dynamics,
-temperature and mass may be coupled independently\\ 
+temperature and mass may be coupled independently\\
 \hspace*{1.3cm} = 3 Lagrangian two-phase flow on frozen continuous phase. This option can
 only be used in case of a calculation restart (ISUITE = 1). All the eulerian
 fields are frozen (including the scalar fields). This option automatically
@@ -3252,7 +3252,7 @@ implies ICCVFG = 1\\
 always useful}
 
 \motcleb{ISUILA}{I}{0, 1}{0}{C}{L1}
-{activation (=1) or not (=0) of a Lagrangian calculation restart. 
+{activation (=1) or not (=0) of a Lagrangian calculation restart.
 The calculation restart file read when this option is activated (FICAML)
 only contains the data related to the particles (see also ISUIST)\\
 the global calculation must also be a restart calculation (ISUITE=1)\\
@@ -3261,7 +3261,7 @@ always useful}
 \motcleb{ISUIST}{I}{0, 1}{0}{C}{L1}
 {during a Lagrangian calculation restart, indicates whether the particle
 statistics (volume and boundary) and two-way coupling terms are to be read from
-a restart file (=1) or reinitialised (=0). The file to be read is FICMLS\\ 
+a restart file (=1) or reinitialised (=0). The file to be read is FICMLS\\
 useful if ISUILA = 1}
 
 \motcleb{NBPMAX}{I}{positive or null integer}{1000}{C}{L1}
@@ -3288,7 +3288,7 @@ in particular, ISTTIO = 1 is needed in order to: \\
 (starting respectively from the Lagrangian iterations NSTIST and NSTBOR) \\
 \hspace*{1cm}calculate time-averaged two-way coupling source terms (from the
 Lagrangian iteration NSTITS) \\
-useful if IILAGR=1 or IILAGR=2 (if IILAGR=3, then ISTTIO=1 automatically)} 
+useful if IILAGR=1 or IILAGR=2 (if IILAGR=3, then ISTTIO=1 automatically)}
 
 \motcleb{INJCON}{I}{0, 1}{0}{O}{L1}
 {activates (=1) or not (=0) the continuous injection of particles\\
@@ -3335,7 +3335,7 @@ always useful}
 
 \motcleb{IPHYLA}{I}{0, 1, 2}{0}{C}{L1}
 {activates ($>$0) or deactivates (=0) the physical models associated to the
-particles:\\ 
+particles:\\
 \hspace*{1.3cm} = 1: allows to associate with the particles evolution
 equations on their temperature (in degrees Celsius), their diameter and
 their mass\\
@@ -3348,7 +3348,7 @@ always useful}
 
 \motcleb{IDPVAR}{I}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of an evolution equation on the particle
-diameter\\ 
+diameter\\
 useful if IPHYLA = 1}
 
 \motcleb{ITPVAR}{I}{0, 1}{0}{O}{L1}
@@ -3359,7 +3359,7 @@ the continuous phase}
 
 \motcleb{IMPVAR}{I}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of an evolution equation on the
-particle mass\\ 
+particle mass\\
 useful if si IPHYLA = 1}
 
 \motcleb{TPART}{R}{real number $>$ TKELVN}{700.D0}{O}{L1}
@@ -3379,7 +3379,7 @@ useful if ISUILA = 1 and ITPVAR = 0 in the previous calculation}
 \motcleb{IENCRA}{I}{0, 1}{0}{O}{L1}
 {activates (=1) or not (=0) the option of coal particle
 fouling. It then is necessary to specify the domain boundaries
-on which fouling may take place.\\ 
+on which fouling may take place.\\
 useful if IPHYLA = 2}
 
 \motcleb{TPRENC}{R}{real number $>$ TKELVN}{600.D0}{O}{L1}
@@ -3389,8 +3389,8 @@ useful if IPHYLA = 2 and IENCRA = 1}
 
 \motcleb{VISREF}{R}{positive real number}{10000.D0}{O}{L1}
 {ash critical viscosity in $kg.m^{-1}.s^{-1}$, in the fouling model
-\footnote{J.D. Watt 
-et T. Fereday (\textit{J.Inst.Fuel}, Vol.42-p99)}\\ 
+\footnote{J.D. Watt
+et T. Fereday (\textit{J.Inst.Fuel}, Vol.42-p99)}\\
 useful if IPHYLA = 2 and IENCRA = 1}
 
 %==================================================
@@ -3459,7 +3459,7 @@ useful if IDISTU=1}
 {activates ($>$0) or not (=0) the complete turbulent dispersion model\\
 when MODCPL is strictly positive, its value is interpreted as the absolute
 Lagrangian time step number (including restarts) after which the complete model
-is applied\\ 
+is applied\\
 since the complete model uses volume statistics, MODCPL must either be 0 or be
 larger than IDSTNT\\
 useful if ISTALA = 1}
@@ -3492,7 +3492,7 @@ the limit statistical weight value, below which the contribution of the
 cell in term of statistical weight is not taken into account in the volume
 statistics (for the complete turbulent dispersion model, in the
 Poisson's equation used to correct the mean velocities or in the listing and
-post-processing outputs)\\ 
+post-processing outputs)\\
 useful if ISTALA = 1}
 
 \motcleb{IDSTNT}{I}{strictly positive integer}{1}{C}{L1}
@@ -3503,7 +3503,7 @@ useful if ISTALA = 1}
 \motcleb{NSTIST}{I}{integer $\geqslant$ IDSTNT}{IDSTNT}{O}{L1}
 {absolute Lagrangian iteration number (includings the restarts) after
 which the volume statistics are cumulated over time (they are then said to be
-stationary)\\ 
+stationary)\\
 if the absolute Lagrangian iteration number is lower than NSTIST, or if the flow
 is unsteady (ISTTIO=0), the statistics are reset to zero at every Lagrangian
 iteration (the volume statistics are then said to be non-stationary)\\
@@ -3575,7 +3575,7 @@ generate very large files}}
 
 \motcleb{NBVIS}{I}{positive integer}{NLISTE}{O}{L1}
 {number of particles selected for post-processing display in trajectory or
-movement mode\\ 
+movement mode\\
 NBVIS must be lower than NBPMAX and NLISTE (set to 500 in \texttt{lagpar.h} and
 not to be modified)\\
 useful if IENSI1 = 1 or IENSI2 = 1}
@@ -3583,18 +3583,18 @@ useful if IENSI1 = 1 or IENSI2 = 1}
 \motcleb{NVISLA}{I}{strictly positive integer}{1}{O}{L1}
 {output period for the post-processing in trajectory or
 movement mode\\
-may be useful to diminish the size of the post-processing files\\ 
+may be useful to diminish the size of the post-processing files\\
 useful if IENSI1 = 1 or IENSI2 = 1}
 
 \motcleb{LISTE}{IA}{positive integers}{between 1 and 500}{O}{L1}
 {contains the index-numbers of the particles selected for the display in
-trajectory or movement mode\\ 
+trajectory or movement mode\\
 useful if IENSI1 = 1 or IENSI2 = 1}
 
 \motcleb{IVISV1}{I}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``velocity of the locally
 undisturbed fluid flow field'' with the display in trajectory or
-movement mode\\ 
+movement mode\\
 useful if IENSI1 = 1 or IENSI2 = 1}
 
 \motcleb{IVISV2}{I}{0, 1}{0}{O}{L1}
@@ -3673,7 +3673,7 @@ interactions with particles, expressed in term of statistical weight
 interacted with the boundary face). SEUILF is
 the limit statistical weight value, below which the contribution of the
 face is not taken into account in the
-statistics at the boundaries for post-processing\\ 
+statistics at the boundaries for post-processing\\
 useful if IENSI3=1}
 
 \motcleb{INBRBD}{I}{0, 1}{1}{O}{L1}
@@ -3688,7 +3688,7 @@ useful if IENSI3=1}
 \motcleb{IFLMBD}{I}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of the recording of the particulate mass flow
 related to the particle/boundary interactions, and of the calculation of
-the associated boundary statistics\\ 
+the associated boundary statistics\\
 the selection of the type of interactions that are to be recorded is specified
 in the subroutine \texttt{uslabo}\\
 INBRD = 1 is a compulsory condition to use IFLMBD=1\\
@@ -3698,7 +3698,7 @@ useful if IENSI3=1 and INBRBD=1}
 \motcleb{IANGBD}{I}{0, 1}{0}{O}{L1}
 {activation (=1) or not (=0) of the recording of the angle between a
 particle trajectory and a boundary face involved in a particle/boundary
-interaction, and of the calculation of the associated boundary statistics\\ 
+interaction, and of the calculation of the associated boundary statistics\\
 the selection of the type of interactions that are to be recorded is specified
 in the subroutine \texttt{uslabo}\\
 useful if IENSI3=1}
@@ -3721,11 +3721,11 @@ type}
 
 \motcleb{NUSBOR}{I}{positive integer}{0}{O}{L1}
 {number additional user data to record for the calculation
-of additional boundary statistics in PARBOR\index{PARBOR}\\ 
+of additional boundary statistics in PARBOR\index{PARBOR}\\
 useful if IENSI3=1}
 
 \motcleb{NOMBRD}{CA}{string of less than 50 characters}{see
-\texttt{uslag1}}{O}{L1} 
+\texttt{uslag1}}{O}{L1}
 {name of the boundary statistics, displayed in the listing
 and the post-processing files\\
 useful if IENSI3=1\\
@@ -3757,7 +3757,7 @@ useful if IENSI3=1}
 
 \motcle{NPSTF}{I}{positive integer}{0}{O}{L3}
 {number of iterations during which stationary boundary statistics have
-been cumulated\\ 
+been cumulated\\
 useful if IENSI3=1, ISTTIO=1 and NSTBOR inferior or equal to the
 current Lagrangian iteration\\
 NPSTF is initialised and updated automatically by the code, its value is not to

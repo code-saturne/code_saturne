@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -38,7 +38,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Pour le traitement des conditions aux limites, on consid\`ere
-le syst\`eme (\ref{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl}) 
+le syst\`eme (\ref{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl})
 
 \begin{equation}\label{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl}
 \left\{\begin{array}{l}
@@ -56,7 +56,7 @@ le syst\`eme (\ref{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl})
 \end{array}\right.
 \end{equation}
 
-en tant que syst\`eme hyperbolique portant sur la variable vectorielle 
+en tant que syst\`eme hyperbolique portant sur la variable vectorielle
 $\vect{W}=\ ^t(\rho,\vect{Q},E)$.
 
 Le syst\`eme s'\'ecrit alors~:
@@ -73,18 +73,18 @@ et les $\vect{F}_i^D(\vect{W})$ sont les vecteurs flux diffusifs
 dans les trois directions d'espace,
 et $\vect{\mathcal{S}}$ est un terme source.
 
-La d\'emarche classique de \CS\ est adopt\'ee~: on impose les conditions 
-aux limites en d\'eterminant, pour chaque variable, des valeurs num\'eriques 
-de bord. Ces valeurs sont calcul\'ees de telle fa\c con que, lorsqu'on 
+La d\'emarche classique de \CS\ est adopt\'ee~: on impose les conditions
+aux limites en d\'eterminant, pour chaque variable, des valeurs num\'eriques
+de bord. Ces valeurs sont calcul\'ees de telle fa\c con que, lorsqu'on
 les utilise dans les formules standard donnant les flux discrets, on obtienne
-les contributions souhait\'ees au bord. 
+les contributions souhait\'ees au bord.
 
-Pour rendre compte des flux convectifs (aux entr\'ees et aux sorties en particulier), 
+Pour rendre compte des flux convectifs (aux entr\'ees et aux sorties en particulier),
 on fait abstraction des flux diffusifs et des termes
 sources pour r\'esoudre un probl\`eme de Riemann qui
-fournit un vecteur d'\'etat au bord. Celui-ci permet de calculer un flux, 
-soit directement (par les formules discr\`etes standard), 
-soit en appliquant un sch\'ema de Rusanov (sch\'ema de flux d\'ecentr\'e). 
+fournit un vecteur d'\'etat au bord. Celui-ci permet de calculer un flux,
+soit directement (par les formules discr\`etes standard),
+soit en appliquant un sch\'ema de Rusanov (sch\'ema de flux d\'ecentr\'e).
 
-En paroi, on r\'esout  \'egalement, dans certains cas, un probl\`eme de 
-Riemann pour d\'eterminer une pression au bord. 
+En paroi, on r\'esout  \'egalement, dans certains cas, un probl\`eme de
+Riemann pour d\'eterminer une pression au bord.

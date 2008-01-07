@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -33,7 +33,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-La figure \ref{Base_Clsyvt_fig_facesym} pr\'esente les notations utilis\'ees \`a la face. Le 
+La figure \ref{Base_Clsyvt_fig_facesym} pr\'esente les notations utilis\'ees \`a la face. Le
 rep\`ere local est d\'efini \`a partir de la normale \`a la face et la vitesse
 en $I'$ :\\
 $\bullet\ \displaystyle\vect{t}
@@ -41,7 +41,7 @@ $\bullet\ \displaystyle\vect{t}
 premier vecteur du rep\`ere local.\\
 $\bullet\ \vect{\tilde{n}}=-\vect{n}$ est le deuxi\`eme vecteur du rep\`ere
 local.\\
-$\bullet\ \vect{b}=\vect{t}\wedge\vect{\tilde{n}}=\vect{n}\wedge\vect{t}$ est le 
+$\bullet\ \vect{b}=\vect{t}\wedge\vect{\tilde{n}}=\vect{n}\wedge\vect{t}$ est le
 troisi\`eme vecteur du rep\`ere local.
 
 \begin{figure}[h]
@@ -51,9 +51,9 @@ troisi\`eme vecteur du rep\`ere local.
 
 Ici, $\vect{n}$ est la normale \`a la face de bord au sens de \CS\ ({\em i.e.}
 pointant vers l'ext\'erieur) et $\vect{u}_{I',\tau}$ est la projection de la
-vitesse en $I'$ dans le plan de la face : 
+vitesse en $I'$ dans le plan de la face :
 $\vect{u}_{I',\tau}=\vect{u}_{I'}-(\vect{u}_{I'}.\vect{n})\vect{n}$.\\
-Si $\vect{u}_{I',\tau}=\vect{0}$, l'orientation de $\vect{t}$ dans le plan 
+Si $\vect{u}_{I',\tau}=\vect{0}$, l'orientation de $\vect{t}$ dans le plan
 normal \`a $\vect{n}$ est sans importance. On le d\'efinit alors par :
 $\displaystyle\vect{t}=\frac{1}{\sqrt{n_y^2+n_z^2}}(n_z\vect{e}_y-n_y\vect{e}_z)$
 ou
@@ -68,15 +68,15 @@ $\mathcal{R}=(\vect{e}_x,\vect{e}_y,\vect{e}_z)$.\\
 $\bullet\ $Le rep\`ere local sera not\'e
 $\hat{\mathcal{R}}=(\vect{t},-\vect{n},\vect{b})=(\vect{t},\vect{\tilde{n}},\vect{b})$.\\
 $\bullet\ $Les matrices des composantes d'un vecteur $\vect{u}$ dans les rep\`eres
-$\mathcal{R}$ et $\hat{\mathcal{R}}$ seront not\'ees respectivement 
+$\mathcal{R}$ et $\hat{\mathcal{R}}$ seront not\'ees respectivement
 $\mat{U}$ et $\hat{\mat{U}}$.\\
 $\bullet\ $Les matrices des composantes d'un tenseur $\tens{R}$ (d'ordre 2) dans
 les rep\`eres $\mathcal{R}$ et $\hat{\mathcal{R}}$ seront not\'ees
 respectivement $\matt{R}$ et $\hat{\matt{R}}$.\\
-$\bullet\ $On note $\matt{P}$ la matrice (orthogonale) de passage de $\mathcal{R}$ \`a 
+$\bullet\ $On note $\matt{P}$ la matrice (orthogonale) de passage de $\mathcal{R}$ \`a
 $\hat{\mathcal{R}}$.
 \begin{equation}
-\matt{P}=\left[ 
+\matt{P}=\left[
 \begin{array}{ccc}
 t_x & -n_x & b_x\\
 t_y & -n_y & b_y\\
@@ -141,13 +141,13 @@ Les conditions aux limites pour $\vect{u}$ s'\'ecrivent donc :
 \mat{U}_F = \matt{A}\,.\,\mat{U}_{I'}
 \end{equation}
 
-La matrice $\matt{P}$ \'etant orthogonale, on montre que 
+La matrice $\matt{P}$ \'etant orthogonale, on montre que
 \begin{equation}
 \matt{A}=\left[
 \begin{array}{ccc}
 1-\tilde{n}_x^2 & -\tilde{n}_x\tilde{n}_y & -\tilde{n}_x\tilde{n}_z\\
 -\tilde{n}_x\tilde{n}_y & 1-\tilde{n}_y^2 & -\tilde{n}_y\tilde{n}_z\\
--\tilde{n}_x\tilde{n}_z & -\tilde{n}_y\tilde{n}_z & 1-\tilde{n}_z^2 
+-\tilde{n}_x\tilde{n}_z & -\tilde{n}_y\tilde{n}_z & 1-\tilde{n}_z^2
 \end{array}\right]
 \end{equation}
 
@@ -217,7 +217,7 @@ dans $\{1,2,3\}^2$, et on a :
 
 D'apr\`es l'\'equation \ref{Base_Clsyvt_eq_chgtrepR}, on a donc :
 \begin{eqnarray}
-\comp{S}_{F,i} & = & \comp{R}_{F,q(i)r(i)} = 
+\comp{S}_{F,i} & = & \comp{R}_{F,q(i)r(i)} =
 \sum_{(m,n)\in\{1,2,3\}^2}\comp{P}_{q(i)m}\hat{\comp{R}}_{F,mn}\comp{P}_{r(i)n}\nonumber\\
 &=&\sum_{j=1}^9\comp{P}_{q(i)q(j)}\hat{\comp{R}}_{F,q(j)r(j)}\comp{P}_{r(i)r(j)}
 \quad\text{(d'apr\`es la bijectivit\'e de $(q,r)$)}\nonumber\\
@@ -232,7 +232,7 @@ Soit
 
 On peut montrer que $\matt{A}$ est une matrice orthogonale (cf. Annexe A).
 
-Dans le rep\`ere local, les conditions aux limites de $\tens{R}$ s'\'ecrivent de 
+Dans le rep\`ere local, les conditions aux limites de $\tens{R}$ s'\'ecrivent de
 mani\`ere naturelle\footnote{cf. Davroux A., Archambeau F., {\em Le
 $R_{ij}-\varepsilon$ dans \CS\ (version $\beta$)}, HI-83/00/030/A}.
 \begin{equation}
@@ -250,7 +250,7 @@ $R_{ij}-\varepsilon$ dans \CS\ (version $\beta$)}, HI-83/00/030/A}.
 \end{array}\right.
 \end{equation}
 
-soit 
+soit
 \renewcommand{\arraystretch}{0.5}
 \begin{equation}
 \hat{\mat{S}}_F=\matt{B}\,.\,\hat{\mat{S}}_{I'}
@@ -319,7 +319,7 @@ limites, partiellement implicites ($\var{ICLSYR}=1$) ou totalement explicites
 $\bullet\ ${\sc Implicitation partielle}\\
 \begin{equation}
 \label{Base_Clsyvt_eq_clRimp}
-{\comp{S}_{F,i}^\prime}^{(n+1)} = 
+{\comp{S}_{F,i}^\prime}^{(n+1)} =
 \underbrace{\comp{D}_{ii}}_{\var{COEFB}}{\comp{S}_{I',i}^\prime}^{(n+1)}
 +\underbrace{\sum_{j\ne i}\comp{D}_{ij}{\comp{S}_{I',j}^\prime}^{(n)}}_{\var{COEFA}}
 \end{equation}
@@ -327,7 +327,7 @@ $\bullet\ ${\sc Implicitation partielle}\\
 $\bullet\ ${\sc Explicitation totale}\\
 \begin{equation}
 \label{Base_Clsyvt_eq_clRexp}
-{\comp{S}_{F,i}^\prime}^{(n+1)} = 
+{\comp{S}_{F,i}^\prime}^{(n+1)} =
 \underbrace{\sum_j\comp{D}_{ij}{\comp{S}_{I',j}^\prime}^{(n)}}_{\var{COEFA}}
 \qquad(\var{COEFB}=0)
 \end{equation}

@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -36,7 +36,7 @@
 L'indicateur de sym\'etrie \var{ISYM} de la matrice consid\'er\'ee est affect\'e comme suit :\\
 \hspace*{1cm}$\bullet$ $\var{ISYM}$ = 1 , si la matrice est sym\'etrique ;
 on travaille en diffusion pure , \var{ICONVP} = 0 et \var{IDIFFP} = 1,\\
-\hspace*{1cm}$\bullet$ $\var{ISYM}$ = 2 , si la matrice est non sym\'etrique ; 
+\hspace*{1cm}$\bullet$ $\var{ISYM}$ = 2 , si la matrice est non sym\'etrique ;
 on travaille soit en convection pure (~\var{ICONVP}~=~1, \var{IDIFFP}~=~0~), soit en
 convection/diffusion (~\var{ICONVP}~=~1,~\var{IDIFFP}~=~1~).\\
 Les termes diagonaux de la matrice sont stock\'es dans le tableau
@@ -46,12 +46,12 @@ matrice est sym\'etrique, dans $\var{XA(NFAC,2)}$ sinon.
 
 Le tableau $\var{DA}$ est initialis\'e \`a z\'ero pour un calcul avec
 $ \var{ISTATP} = 0 $ (en fait, ceci ne concerne que les calculs relatifs \`a la
-pression). Sinon, on lui affecte la valeur \var{ROVSDT} comprenant la partie instationnaire, la contribution du terme continu en $-\ a\ \dive(\rho \vect{u})^n$ 
+pression). Sinon, on lui affecte la valeur \var{ROVSDT} comprenant la partie instationnaire, la contribution du terme continu en $-\ a\ \dive(\rho \vect{u})^n$
 et la partie diagonale des termes sources implicit\'es. Le tableau
 $\var{XA(NFAC,*)}$ est initialis\'e \`a z\'ero.\\
 \subsection{\bf Calcul des termes extradiagonaux stock\'es dans \var{XA} }
 Ils ne se calculent que pour des faces purement internes \var{IFAC}, les faces
-de bord ne contribuant qu'\`a la diagonale.  
+de bord ne contribuant qu'\`a la diagonale.
 \subsubsection{matrice non sym\'etrique ( pr\'esence de convection ) }
 %\hspace*{1cm}{\tiny$\blacksquare$}\ \underline{pour une face purement interne
 %$ij\ ( \var{IFAC} )$} \\
@@ -63,14 +63,14 @@ On a les relations suivantes :\\
 \begin{equation}\label{Base_Matrix_eq_extra}
 \begin{array}{ll}
 \var{XA(IFAC,1)}& = \var{ICONVP}\,*\,\var{FLUI} - \var{IDIFFP}\,*\,\var{VISCF(IFAC)}\\
-\var{XA(IFAC,2)}& = \var{ICONVP}\,*\,\var{FLUJ} - \var{IDIFFP}\,*\,\var{VISCF(IFAC)}\\      
+\var{XA(IFAC,2)}& = \var{ICONVP}\,*\,\var{FLUJ} - \var{IDIFFP}\,*\,\var{VISCF(IFAC)}\\
 \end{array}
 \end{equation}
 avec $\var{FLUMAS(IFAC)}$  correspondant \`a $\ m_{\,ij}^n$, $\var{FLUI}$ \`a $ \displaystyle\frac{1}{2}\,(\ m_{\,ij}^n - |\
 m_{\,ij}^n|\ )$, $\var{VISCF(IFAC)} $ \`a $ \ \displaystyle \beta_{\,ij}\frac {
 S_{\,ij}}{\overline{I'J'}} $.\\\\
 $\var{XA(IFAC,1)}$ repr\'esente le facteur de $a_J$ dans la
-derni\`ere expression de (\ref{Base_Matrix_eq_face_int}).\\ 
+derni\`ere expression de (\ref{Base_Matrix_eq_face_int}).\\
 
 $\var{FLUJ}$ correspond \`a $\ -\displaystyle\frac{1}{2}\,(\ m_{\,ij}^n + |\
 m_{\,ij}^n|\ )$. En effet, $\var{XA(IFAC,2)}$ est le facteur de $a_I$ dans l'expression \'equivalente de
@@ -80,7 +80,7 @@ Ce qui donne :\\
 \sum\limits_{i\in
 Vois(j)}\left[\displaystyle\frac{1}{2}(\ m_{\,ji}^n + |\ m_{\,ji}^n|\ )\,a_J +
 \displaystyle\frac{1}{2}(\ m_{\,ji}^n - |\ m_{\,ji}^n|)\,a_I\right]
- - \sum\limits_{i\in Vois(j)}\displaystyle \beta_{\,ji}\frac{a_I - a_J}{\overline{J'I'}} S_{\,ji} 
+ - \sum\limits_{i\in Vois(j)}\displaystyle \beta_{\,ji}\frac{a_I - a_J}{\overline{J'I'}} S_{\,ji}
 \end{equation}\\
 Le terme recherch\'e est donc :
 $\ \displaystyle\frac{1}{2}(\ m_{\,ji}^n - |\ m_{\,ji}^n|\ )-\displaystyle
@@ -93,8 +93,8 @@ ${\overline{J'I'}^{\tiny {\,J}}}$. \\
 On a la relation :\\
 \begin{equation}\label{Base_Matrix_Eq_mesure_alg}
 \overline{J'I'}^{\tiny {\,J}}=\ \overline{I'J'}^{\tiny {\,I}} = (\ \overline{I'J'})
-\end{equation}  
-d'o\`u la deuxi\`eme \'egalit\'e dans (\ref{Base_Matrix_eq_extra}). 
+\end{equation}
+d'o\`u la deuxi\`eme \'egalit\'e dans (\ref{Base_Matrix_eq_extra}).
 \subsubsection{matrice sym\'etrique ( diffusion pure ) }
 Pour chaque face interne \var{IFAC}, la contribution extradiagonale relative au
 terme $a_I$ est calcul\'ee dans
@@ -124,7 +124,7 @@ pour toute face \var{IFAC} d'\'el\'ements voisins $\var{II} =
 \var{IFACEL(1,IFAC)}$ et $\var{JJ} = \var{IFACEL(2,IFAC)}$,\\
 on ajoute \`a
 $\var{DA(II)}$ la contribution crois\'ee $-\var{XA(IFAC,2)}$ ({\it cf.}
-(\ref{Base_Matrix_eq_diag_II}))  et    
+(\ref{Base_Matrix_eq_diag_II}))  et
 \`a
 $\var{DA(JJ)}$ la contribution $-\var{XA(IFAC,1)}$ ({\it cf.}
 (\ref{Base_Matrix_eq_diag_JJ})).
@@ -142,7 +142,7 @@ de centre $I$, jouxtant le bord, on s'int\'eresse \`a :
 \end{array}
 \end{equation}
 avec~:
-\begin{equation}\notag 
+\begin{equation}\notag
 a_{\,{b}_{ik}} =  B_{\,b,ik}\,a_I\\
 \end{equation}
 soit :
@@ -169,15 +169,15 @@ Lorsqu'il n'existe aucune condition \`a la limite de type Dirichlet et que
 $\var{ISTATP} = 0 $ (c'est-\`a-dire pour la pression uniquement), on
 d\'eplace le spectre de la matrice ${\tens{EM}}_{\,scal}$ de $\var{EPSI}$  ({\it i.e.} on multiplie chaque terme diagonal par $(1 + \var{EPSI})$ ) afin
 de la rendre inversible. \var{EPSI} est fix\'e en dur dans \fort{matrix} \`a
- ${10}^{-7}$.   
+ ${10}^{-7}$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Initialisation}
 Le tableau \var{XA} est initialis\'e \`a z\'ero lorsqu'on veut annuler la
-contribution du terme en 
+contribution du terme en
 $\displaystyle\frac{\rho \ |\Omega_i|}{\Delta t}$, {\it i.e.} $\var{ISTATP} = 0 $ . Ce qui ne permet donc pas la prise en
 compte effective des parties diagonales des termes sources \`a impliciter,
 d\'ecid\'ee par l'utilisateur. Actuellement, ceci ne sert que pour la variable
@@ -188,7 +188,7 @@ La contribution $\var{ICONVP}\ \var{FLUI}$, dans le calcul du terme
 \var{XA(IFAC,1)} lorsque la matrice est sym\'etrique est inutile, car
 $\var{ICONVP}\ = 0$. \\\\
 \etape{Prise en compte du type de sch\'ema de convection dans
-${\tens{EM}}_{\,scal}$} 
+${\tens{EM}}_{\,scal}$}
 Actuellement, les contributions des  flux convectifs non reconstruits sont
 trait\'ees par sch\'ema d\'ecentr\'e amont, quelque soit le sch\'ema choisi par
 l'utilisateur. Ceci peut \^etre handicapant. Par exemple, m\^eme sur
@@ -205,6 +205,6 @@ non convexes par exemple). Ceci peut engendrer des probl\`emes plus ou moins
 graves : perte de l'existence et l'unicit\'e de la solution (l'op\'erateur associ\'e n'ayant plus les bonnes propri\'et\'es de r\'egularit\'e
 ou de coercivit\'e), d\'egradation de la matrice (perte de la positivit\'e) et donc r\'esolution par solveur lin\'eaire
 associ\'e non appropri\'e (gradient conjugu\'e par exemple).\\
-Une impression permettant de signaler et de localiser le probl\`eme serait souhaitable. 
-   
+Une impression permettant de signaler et de localiser le probl\`eme serait souhaitable.
+
 

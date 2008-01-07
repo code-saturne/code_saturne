@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -42,7 +42,7 @@ Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculé en
 opérant comme suit.\\
 On effectue une boucle sur les composantes $v_\alpha$ où $\alpha=x,y,z$ de la
 vitesse ($\alpha$ correspond à \var{ISOU} dans le code) :
-\begin{itemize} 
+\begin{itemize}
 \item on calcule le gradient cellule de $v_{\,\alpha}$ par un appel au
 sous-programme \fort{grdcel}.
 \item on initialise un tableau nommé $\var{W}_6$ à la valeur $1$ pour les cellules
@@ -58,7 +58,7 @@ correspond à la variable \var{II} ou
 \begin{equation}\notag
 \begin{array}{ll}
 &\var{TRAV}(i,l)=\var{TRAV}(i,l)\\
-&+\var{W}_6(i)\ \left[\displaystyle \sum\limits_{j \in 
+&+\var{W}_6(i)\ \left[\displaystyle \sum\limits_{j \in
 Vois(i)} \mu_{\,tot,\,ij}\,(\frac {\partial v_{\,\alpha}}{\partial l}
 )_{\,moy,ij}\,S_{\,ij}^{\,\alpha}\  +  \displaystyle \sum_{k \in
 \gamma_b(i)} \mu_{\,tot,\, {b_{\,ik}}}\,(\frac {\partial v_{\,\alpha}}{\partial
@@ -81,7 +81,7 @@ Le terme de seconde viscosité
 masse connu à la face par la densité moyenne $\rho_{\,moy,\,ij}$ de la face
 ($\rho_{\,moy,\,ij}=\displaystyle \frac{\rho_{\,i}+\rho_{\,j}}{2}$).
 \item on calcule ensuite l'intégrale volumique de la divergence de la vitesse sur chaque cellule en appelant le sous-programme
-\fort{divmas}. 
+\fort{divmas}.
 \item on calcule alors pour chaque cellule $\Omega_i$ le terme $-\displaystyle
 \frac{2}{3}(\mu_{\,tot}\,\dive(\underline{v}))_{\,i}$ que l'on met dans le
 tableau de travail $\var{W}_4$. La valeur de ce terme sur la face interne $ij$
@@ -111,7 +111,7 @@ du tenseur des contraintes (\emph{cf.} \fort{preduv}), soit :
 \begin{equation}\notag
 \dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
 \end{equation}
-où : 
+où :
 \begin{equation}\notag
 \tens{\tau} = 2 \mu\ [\underbrace{\displaystyle \frac{1}{2}\,(\ggrad \underline
 {v}\ +\ ^t\ggrad \underline {v})}_{\text{partie 1}} -\underbrace{\displaystyle \frac{2}{3}\,tr(\,\frac{1}{2}\,(\ggrad \underline

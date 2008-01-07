@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -204,9 +204,9 @@ S_\varepsilon =
 \end{array}\right.
 \end{equation}
 
-en notant 
+en notant
 $\displaystyle\tilde{\mathcal{P}}
-= \left(\frac{\partial u_i}{\partial x_j} + 
+= \left(\frac{\partial u_i}{\partial x_j} +
 \frac{\partial u_j}{\partial x_i}\right)\frac{\partial u_i}{\partial x_j}
 -\frac{2}{3}(\dive\vect{u})^2$\\
 et
@@ -231,7 +231,7 @@ On a donc en th\'eorie
 \end{array}\right.
 \end{equation}
 
-En pratique, on va chercher \`a assurer $k_{ts}>0$ et $\varepsilon_{ts}>0$. En se 
+En pratique, on va chercher \`a assurer $k_{ts}>0$ et $\varepsilon_{ts}>0$. En se
 basant sur un calcul simplifi\'e, ainsi que sur le retour d'exp\'erience
 d'ESTET, on montre qu'il est pr\'ef\'erable de ne pas prendre en compte
 certains termes. Au final, on r\'ealise le couplage suivant :

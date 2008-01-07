@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -52,19 +52,19 @@ trait\'es dans le sous-programme \fort{bilsc2}. La partie
 convective, lorsqu'elle existe, est issue du sch\'ema upwind pur, quelque soit
 le type de sch\'ema convectif choisi par l'utilisateur. En effet, c'est, \`a
 l'heure actuelle, la seule fa\c con d'obtenir un op\'erateur lin\'eaire à
-diagonale dominante.\\\\ 
+diagonale dominante.\\\\
 La matrice est donc associ\'ee \`a $\mathcal{EM_{\it{scal}}}$, op\'erateur
 agissant sur un scalaire $a$ (inspir\'e de celui vectoriel $\mathcal{EM}$
 d\'efini dans \fort{navsto}) d'expression actuelle, pour tout cellule $\Omega_i$ de
 centre $I$  :
 \begin{equation}\notag
 \begin{array}{lll}
-\mathcal{EM_{\it{scal}}}(a,I) &=  f_s^{imp}\ a_I\ \\ 
-&+\sum\limits_{j\in Vois(i)}{F^{\,amont}_{\,ij}((\rho\vect{u})^n,a)}  
+\mathcal{EM_{\it{scal}}}(a,I) &=  f_s^{imp}\ a_I\ \\
+&+\sum\limits_{j\in Vois(i)}{F^{\,amont}_{\,ij}((\rho\vect{u})^n,a)}
 +\sum\limits_{k\in {\gamma_b(i)}} {F^{\,amont}_{\,{b}_{ik}}((\rho
 \vect{u})^n,a)}\\
 &-\sum\limits_{j\in Vois(i)}{D^{NRec}_{\,ij}(\beta,a)}
--\sum\limits_{k\in {\gamma_b(i)}} {D^{NRec}_{\,{b}_{ik}}(\beta,a)}\\ 
+-\sum\limits_{k\in {\gamma_b(i)}} {D^{NRec}_{\,{b}_{ik}}(\beta,a)}\\
 \end{array}
 \end{equation}
 avec~:\\
@@ -90,6 +90,6 @@ voisines de ${\Omega_i}$ et $\gamma_b(i)$ l'ensemble des faces de
 bord de ${\Omega_i}$.\\
 Du fait de la r\'esolution en incr\'ements, $a$ est un incr\'ement et ses
 conditions aux limites associ\'ees sont donc de type Dirichlet homog\`ene ou de
-type 
+type
 Neumann homog\`ene.
 

@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -40,153 +40,153 @@
 \subsubsection{Objectif}
 %---------------------------------
 
-On r\'esume ici les diff\'erentes conditions aux limites utilis\'ees pour l'algorithme 
-compressible afin de fournir une vue d'ensemble. Pour atteindre cet objectif, 
-il est n\'ecessaire de faire r\'ef\'erence \`a  des \'el\'ements relatifs 
-\`a la discr\'etisation et au mode d'implantation des conditions aux limites. 
+On r\'esume ici les diff\'erentes conditions aux limites utilis\'ees pour l'algorithme
+compressible afin de fournir une vue d'ensemble. Pour atteindre cet objectif,
+il est n\'ecessaire de faire r\'ef\'erence \`a  des \'el\'ements relatifs
+\`a la discr\'etisation et au mode d'implantation des conditions aux limites.
 
-Lors de l'implantation, on a cherch\'e \`a pr\'eserver la coh\'erence avec l'approche 
-utilis\'ee dans le cadre standard de l'algorithme incompressible de \CS.  
-Il est donc conseill\'e d'avoir pris connaissance du mode de traitement des conditions 
-aux limites incompressibles avant d'aborder les d\'etails de l'algorithme compressible. 
+Lors de l'implantation, on a cherch\'e \`a pr\'eserver la coh\'erence avec l'approche
+utilis\'ee dans le cadre standard de l'algorithme incompressible de \CS.
+Il est donc conseill\'e d'avoir pris connaissance du mode de traitement des conditions
+aux limites incompressibles avant d'aborder les d\'etails de l'algorithme compressible.
 
-Comme pour l'algorithme incompressible, les conditions aux limites sont impos\'ees 
-par le biais d'une valeur de bord associ\'ee \`a chaque variable. De plus, 
-pour certaines 
-fronti\`eres (parois \`a temp\'erature impos\'ee ou \`a flux thermique impos\'e), 
-on dispose de deux valeurs de bord pour la m\^eme variable, l'une d'elles \'etant d\'edi\'ee au calcul du 
-flux diffusif. 
-Enfin, sur certains types d'entr\'ee et de sortie, on d\'efinit \'egalement  
-une valeur du flux convectif au bord.  
+Comme pour l'algorithme incompressible, les conditions aux limites sont impos\'ees
+par le biais d'une valeur de bord associ\'ee \`a chaque variable. De plus,
+pour certaines
+fronti\`eres (parois \`a temp\'erature impos\'ee ou \`a flux thermique impos\'e),
+on dispose de deux valeurs de bord pour la m\^eme variable, l'une d'elles \'etant d\'edi\'ee au calcul du
+flux diffusif.
+Enfin, sur certains types d'entr\'ee et de sortie, on d\'efinit \'egalement
+une valeur du flux convectif au bord.
 
-Comme pour l'algorithme incompressible, l'utilisateur peut d\'efinir, 
-pour chaque face 
-de bord, des conditions aux limites pour chaque variable, mais on conseille cependant 
-d'utiliser uniquement les types pr\'ed\'efinis 
-d\'ecrits ci-apr\`es (entr\'ee, 
-sortie, paroi, sym\'etrie) qui ont l'avantage d'assurer la coh\'erence entre 
-les diff\'erentes variables et les diff\'erentes \'etapes de calcul.  
+Comme pour l'algorithme incompressible, l'utilisateur peut d\'efinir,
+pour chaque face
+de bord, des conditions aux limites pour chaque variable, mais on conseille cependant
+d'utiliser uniquement les types pr\'ed\'efinis
+d\'ecrits ci-apr\`es (entr\'ee,
+sortie, paroi, sym\'etrie) qui ont l'avantage d'assurer la coh\'erence entre
+les diff\'erentes variables et les diff\'erentes \'etapes de calcul.
 
 
 %---------------------------------
 \subsubsection{Parois}
 %---------------------------------
 
-{\bf Pression} : on doit disposer d'une condition pour le calcul du gradient 
-qui intervient dans l'\'etape de quantit\'e de mouvement. 
-On dispose de deux types de condition, au choix de l'utilisateur~: 
+{\bf Pression} : on doit disposer d'une condition pour le calcul du gradient
+qui intervient dans l'\'etape de quantit\'e de mouvement.
+On dispose de deux types de condition, au choix de l'utilisateur~:
 \begin{itemize}
-\item par d\'efaut, la pression impos\'ee au bord est proportionnelle 
-\`a la valeur interne (la pression au bord est obtenue comme solution 
-d'un probl\`eme de Riemann sur les \'equations d'Euler  
-avec un \'etat miroir~; on distingue les cas de choc et de 
-d\'etente et, dans le cas d'une d\'etente trop forte, une condition de 
-Dirichlet homog\`ene est utilis\'ee pour \'eviter de voir appara\^itre une 
-pression n\'egative), 
-\item si l'utilisateur le souhaite (\var{ICFGRP(IPHAS)=1}), le gradient de 
-pression est impos\'e \`a partir du profil de pression hydrostatique. 
+\item par d\'efaut, la pression impos\'ee au bord est proportionnelle
+\`a la valeur interne (la pression au bord est obtenue comme solution
+d'un probl\`eme de Riemann sur les \'equations d'Euler
+avec un \'etat miroir~; on distingue les cas de choc et de
+d\'etente et, dans le cas d'une d\'etente trop forte, une condition de
+Dirichlet homog\`ene est utilis\'ee pour \'eviter de voir appara\^itre une
+pression n\'egative),
+\item si l'utilisateur le souhaite (\var{ICFGRP(IPHAS)=1}), le gradient de
+pression est impos\'e \`a partir du profil de pression hydrostatique.
 \end{itemize}
 \bigskip
 
 {\bf Vitesse et turbulence}~: traitement standard (voir la documentation des
-sous-programmes \fort{condli} 
-et \fort{clptur}). 
+sous-programmes \fort{condli}
+et \fort{clptur}).
 
-{\bf Scalaires passifs}~: traitement standard    
-(flux nul par d\'efaut impos\'e dans \fort{typecl}). 
+{\bf Scalaires passifs}~: traitement standard
+(flux nul par d\'efaut impos\'e dans \fort{typecl}).
 
-{\bf Masse volumique}~: traitement standard des scalaires 
-(flux nul par d\'efaut impos\'e dans \fort{typecl}). 
+{\bf Masse volumique}~: traitement standard des scalaires
+(flux nul par d\'efaut impos\'e dans \fort{typecl}).
 
-{\bf \'Energie et temp\'erature\footnote{Le gradient de temp\'erature est 
-{\it a priori} inutile, mais peut \^etre requis par l'utilisateur.}}~: 
-traitement standard des scalaires 
-(flux nul par d\'efaut impos\'e dans \fort{typecl}), hormis pour le 
-calcul du flux diffusif dans le cas de parois \`a temp\'erature impos\'ee 
-ou \`a flux thermique impos\'e. 
+{\bf \'Energie et temp\'erature\footnote{Le gradient de temp\'erature est
+{\it a priori} inutile, mais peut \^etre requis par l'utilisateur.}}~:
+traitement standard des scalaires
+(flux nul par d\'efaut impos\'e dans \fort{typecl}), hormis pour le
+calcul du flux diffusif dans le cas de parois \`a temp\'erature impos\'ee
+ou \`a flux thermique impos\'e.
 
-{\bf Flux diffusif pour l'\'energie en paroi}~:  
+{\bf Flux diffusif pour l'\'energie en paroi}~:
 l'utilisateur peut choisir (dans \fort{uscfcl}) entre une temp\'erature de paroi impos\'ee
-et un flux thermique diffusif (ou "conductif") impos\'e. 
-S'il ne pr\'ecise rien, on consid\`ere que la paroi est adiabatique 
-(flux thermique diffusif impos\'e et de valeur nulle).  
+et un flux thermique diffusif (ou "conductif") impos\'e.
+S'il ne pr\'ecise rien, on consid\`ere que la paroi est adiabatique
+(flux thermique diffusif impos\'e et de valeur nulle).
 Dans tous les cas, il faut donc disposer d'un moyen d'imposer le flux diffusif
 souhait\'e. Pour cela, on d\'etermine une valeur de bord pour l'\'energie
-qui, introduite dans la formule donnant le flux discret, permettra 
-d'obtenir la contribution attendue 
-(voir le paragraphe~\ref{Cfbl_Cfxtcl_section_cl_flux_diffusif_energie_cfener}). 
-Conform\'ement \`a l'approche classique de \CS, cette valeur est 
-stock\'ee sous la forme d'un couple de coefficients 
-(de type \var{COEFAF}, \var{COEFBF}). 
-Il est important de souligner que cette valeur de bord 
-ne doit \^etre utilis\'ee que pour le calcul 
-du flux diffusif~: dans les autres situations pour lesquelles 
-une valeur de bord de l'\'energie ou de la temp\'erature est requise 
-(calcul de gradient par exemple), on utilise une condition de flux nul 
-(traitement standard des scalaires). Pour cela, on dispose d'une  
-seconde valeur de bord qui est stock\'ee au moyen d'un 
+qui, introduite dans la formule donnant le flux discret, permettra
+d'obtenir la contribution attendue
+(voir le paragraphe~\ref{Cfbl_Cfxtcl_section_cl_flux_diffusif_energie_cfener}).
+Conform\'ement \`a l'approche classique de \CS, cette valeur est
+stock\'ee sous la forme d'un couple de coefficients
+(de type \var{COEFAF}, \var{COEFBF}).
+Il est important de souligner que cette valeur de bord
+ne doit \^etre utilis\'ee que pour le calcul
+du flux diffusif~: dans les autres situations pour lesquelles
+une valeur de bord de l'\'energie ou de la temp\'erature est requise
+(calcul de gradient par exemple), on utilise une condition de flux nul
+(traitement standard des scalaires). Pour cela, on dispose d'une
+seconde valeur de bord qui est stock\'ee au moyen d'un
 couple de coefficients (\var{COEFA}, \var{COEFB}) distinct du pr\'ec\'edent.
-	
-{\bf Flux convectifs}~: le flux de masse dans la direction normale \`a la paroi est 
-pris nul. De ce fait, les flux convectifs seront nuls quelle que soit les valeurs 
+        
+{\bf Flux convectifs}~: le flux de masse dans la direction normale \`a la paroi est
+pris nul. De ce fait, les flux convectifs seront nuls quelle que soit les valeurs
 de bord impos\'ees pour les diff\'erentes variables transport\'ees.
 
 %---------------------------------
 \subsubsection{Sym\'etrie}
-%--------------------------------- 
+%---------------------------------
 
-Les conditions appliqu\'ees sont les conditions classiques de l'algorithme 
-incompressible (vitesse normale nulle, flux nul pour les autres variables). 
+Les conditions appliqu\'ees sont les conditions classiques de l'algorithme
+incompressible (vitesse normale nulle, flux nul pour les autres variables).
 
-Elles sont impos\'ees dans le sous-programme \fort{typecl} essentiellement. Pour 
-la pression, la condition de flux nul est impos\'ee dans \fort{cfxtcl} 
-(au d\'ebut des d\'eveloppements, on appliquait le m\^eme traitement qu'en paroi, 
-mais une condition de flux nul a \'et\'e pr\'ef\'er\'ee afin de s'affranchir des 
-probl\`emes potentiels dans les configurations 2D).  
+Elles sont impos\'ees dans le sous-programme \fort{typecl} essentiellement. Pour
+la pression, la condition de flux nul est impos\'ee dans \fort{cfxtcl}
+(au d\'ebut des d\'eveloppements, on appliquait le m\^eme traitement qu'en paroi,
+mais une condition de flux nul a \'et\'e pr\'ef\'er\'ee afin de s'affranchir des
+probl\`emes potentiels dans les configurations 2D).
 
 
 %---------------------------------
 \subsubsection{Entr\'ees et sorties}
-%--------------------------------- 
+%---------------------------------
 
-On obtient, par r\'esolution d'un probl\`eme de Riemann au bord, compl\'et\'e par 
-des relations de thermodynamique (\fort{uscfth}), des valeurs de bord pour toutes 
-les variables (on suppose qu'en entr\'ee, toutes les composantes de la vitesse 
+On obtient, par r\'esolution d'un probl\`eme de Riemann au bord, compl\'et\'e par
+des relations de thermodynamique (\fort{uscfth}), des valeurs de bord pour toutes
+les variables (on suppose qu'en entr\'ee, toutes les composantes de la vitesse
 sont fournies~; elles sont suppos\'ees nulles par d\'efaut, hormis pour les
 entrées à $(\rho,\vect{u})$ imposés, \var{IERUCF}, pour lesquelles il faut
 fournir la vitesse explicitement).
 
-Ces valeurs de bord sont utilis\'ees de deux fa\c cons~: 
+Ces valeurs de bord sont utilis\'ees de deux fa\c cons~:
 \begin{itemize}
-\item elles sont utilis\'ees pour calculer les flux convectifs, en faisant 
-appel au sch\'ema de Rusanov (sauf en sortie supersonique)~; ces flux sont 
-directement int\'egr\'es au second membre des \'equations \`a r\'esoudre. 
-\item elles servent de valeur de Dirichlet dans toutes les autres configurations 
-pour lesquelles une valeur de bord est requise (calcul de flux diffusif, 
-calcul de gradient...) 
+\item elles sont utilis\'ees pour calculer les flux convectifs, en faisant
+appel au sch\'ema de Rusanov (sauf en sortie supersonique)~; ces flux sont
+directement int\'egr\'es au second membre des \'equations \`a r\'esoudre.
+\item elles servent de valeur de Dirichlet dans toutes les autres configurations
+pour lesquelles une valeur de bord est requise (calcul de flux diffusif,
+calcul de gradient...)
 \end{itemize}
 
-Deux cas particuliers~: 
+Deux cas particuliers~:
 \begin{itemize}
 \item aux entr\'ees ou sorties pour lesquelles toutes les variables sont impos\'ees
-(\var{IESICF}), on utilise une condition de Neumann homog\`ene pour la pression 
-(hormis pour le calcul du gradient intervenant dans l'\'equation de la quantit\'e 
-de mouvement, qui est pris en compte par le flux convectif d\'etermin\'e par le 
+(\var{IESICF}), on utilise une condition de Neumann homog\`ene pour la pression
+(hormis pour le calcul du gradient intervenant dans l'\'equation de la quantit\'e
+de mouvement, qui est pris en compte par le flux convectif d\'etermin\'e par le
 sch\'ema de Rusanov). Ce choix est arbitraire (on n'a pas test\'e le comportement
-de l'algorithme si l'on conserve une condition de Dirichlet sur la pression), mais 
-a \'et\'e fait en supposant qu'une condition de Neumann homog\`ene serait {\it a 
-priori} moins d\'estabilisante, dans la mesure o\`u, pour ce type de fronti\`ere, 
-l'utilisateur peut imposer une valeur de pression tr\`es diff\'erente de 
+de l'algorithme si l'on conserve une condition de Dirichlet sur la pression), mais
+a \'et\'e fait en supposant qu'une condition de Neumann homog\`ene serait {\it a
+priori} moins d\'estabilisante, dans la mesure o\`u, pour ce type de fronti\`ere,
+l'utilisateur peut imposer une valeur de pression tr\`es diff\'erente de
 celle r\'egnant \`a l'int\'erieur du domaine (la valeur imposée est utilisée
-pour le flux convectif). 
-\item pour les grandeurs turbulentes et les scalaires utilisateur, si 
-le flux de masse est entrant et que l'on a fourni  
-une valeur de Dirichlet (\var{RCODCL(*,*,1)} dans \fort{uscfcl}), 
+pour le flux convectif).
+\item pour les grandeurs turbulentes et les scalaires utilisateur, si
+le flux de masse est entrant et que l'on a fourni
+une valeur de Dirichlet (\var{RCODCL(*,*,1)} dans \fort{uscfcl}),
 on l'utilise, pour le calcul du flux convectif et du flux diffusif~;
 sinon, on utilise une condition de Neumann homog\`ene (le concept
-de sortie de type 9 ou 10 est couvert par cette approche). 
+de sortie de type 9 ou 10 est couvert par cette approche).
 \end{itemize}
-			      
+                        
 
 
 %=================================
@@ -198,8 +198,8 @@ de sortie de type 9 ou 10 est couvert par cette approche).
 \subsubsection{Introduction}
 %---------------------------------
 
-On cherche \`a obtenir un \'etat au bord, 
-pour les entr\'ees, les sorties et les parois. 
+On cherche \`a obtenir un \'etat au bord,
+pour les entr\'ees, les sorties et les parois.
 
 Pour cela, on fait abstraction des flux diffusifs et des sources.
 Le syst\`eme r\'esultant est alors appel\'e syst\`eme
@@ -255,9 +255,9 @@ Pour r\'esoudre ce probl\`eme de Riemann, on utilisera les variables
 non-conservatives $\widetilde{\vect{W}}=\ ^t(\rho, \vect{u}, P)$
 et l'on retrouvera l'\'energie gr\^ace \`a l'\'equation d'\'etat.
 
-Pour all\'eger l'\'ecriture, dans le pr\'esent 
-paragraphe~\ref{Cfbl_Cfxtcl_section_pb_riemann_cfener},  
-on notera aussi $\vect{W}$ le vecteur 
+Pour all\'eger l'\'ecriture, dans le pr\'esent
+paragraphe~\ref{Cfbl_Cfxtcl_section_pb_riemann_cfener},
+on notera aussi $\vect{W}$ le vecteur
 $^t(\rho, \vect{u}, P)$ et $\vect{u} = \vect{u}_\tau + u\,\vect{n}$
 (en posant $u=\vect{u} \cdot \vect{n}$
 et $\vect{u}_\tau = \vect{u} - (\vect{u} \cdot \vect{n})\vect{n}$).
@@ -266,7 +266,7 @@ La solution est une suite d'\'etats constants, dont les valeurs
 d\'ependent de $\vect{W}_{\,i}$ et $\vect{W}_{\,\infty}$,
 s\'epar\'es par des ondes se d\'epla\c cant \`a des vitesses donn\'ees
 par les valeurs propres du syst\`eme $(\lambda_i)_{i=1\ldots 5}$.
-On repr\'esente les caract\'eristiques du syst\`eme sur le sch\'ema suivant~: 
+On repr\'esente les caract\'eristiques du syst\`eme sur le sch\'ema suivant~:
 
 \unitlength=1cm
 \begin{picture}(20,3.5)
@@ -294,11 +294,11 @@ Comme valeurs des variables au bord, on prendra les valeurs correspondant \`a
 l'\'etat constant qui contient le bord ($\vect{W}_1$ dans l'exemple
 pr\'ec\'edent).
 
-Il faut remarquer que la solution du probl\`eme de Riemann d\'epend de la 
-thermodynamique et devra donc \^etre calcul\'ee et cod\'ee 
-par l'utilisateur si la thermodynamique n'a pas \'et\'e pr\'evue 
-(en version 1.2, la seule 
-thermodynamique pr\'evue est celle des gaz parfaits). 
+Il faut remarquer que la solution du probl\`eme de Riemann d\'epend de la
+thermodynamique et devra donc \^etre calcul\'ee et cod\'ee
+par l'utilisateur si la thermodynamique n'a pas \'et\'e pr\'evue
+(en version 1.2, la seule
+thermodynamique pr\'evue est celle des gaz parfaits).
 
 
 
@@ -452,9 +452,9 @@ P_p=P_1
 \end{equation}
 
 \bigskip
-Pour les gaz parfaits, 
+Pour les gaz parfaits,
 avec $M_i = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$
-(Nombre de Mach de paroi), on a~: 
+(Nombre de Mach de paroi), on a~:
 
 \begin{itemize}
 
@@ -487,9 +487,9 @@ $$
 
 \end{enumerate}
 
-En pratique, le flux convectif normal \`a la paroi est nul et seule 
-la condition de pression d\'etermin\'ee ci-dessus est effectivement 
-utilis\'ee (pour le calcul du gradient sans effet de gravit\'e). 
+En pratique, le flux convectif normal \`a la paroi est nul et seule
+la condition de pression d\'etermin\'ee ci-dessus est effectivement
+utilis\'ee (pour le calcul du gradient sans effet de gravit\'e).
 
 %---------------------------------
 \subsubsection{En sortie}
@@ -501,7 +501,7 @@ selon le nombre de Mach normal \`a la face de bord
 $$M_i = \displaystyle\frac{u_i}{c_i}
 = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$$
 
-\paragraph{Sortie supersonique (condition ISSPCF de 
+\paragraph{Sortie supersonique (condition ISSPCF de
 \fort{uscfcl})~:}
 $M_i \geqslant 1 \Rightarrow u_i - c_i \geqslant 0$
 \nopagebreak
@@ -541,7 +541,7 @@ P_b = P_i
 \end{array}\right.
 \end{equation}
 
-\paragraph{Sortie subsonique (condition ISOPCF de 
+\paragraph{Sortie subsonique (condition ISOPCF de
 \fort{uscfcl})~:}
 $0 \leqslant M_i < 1 \Rightarrow (u_i \geqslant 0 \text{ et } u_i - c_i < 0)$
 
@@ -662,7 +662,7 @@ $$
 
 \end{enumerate}
 
-La valeur de la masse volumique au bord intervient en particulier  
+La valeur de la masse volumique au bord intervient en particulier
 dans le flux de masse.
 
 
@@ -688,7 +688,7 @@ pilot\'es par le nombre de Mach entrant, normalement \`a la face de bord
 $$M_{ext} = \displaystyle\frac{u_{ext}}{c_{ext}}
 = \displaystyle\frac{\vect{u}_{ext} \cdot \vect{n}}{c_{ext}}$$
 
-\paragraph{Entr\'ee supersonique (condition IESICF de 
+\paragraph{Entr\'ee supersonique (condition IESICF de
 \fort{uscfcl})~:}
 $M_{ext} \leqslant -1 \Rightarrow u_{ext} + c_{ext} \leqslant 0$
 
@@ -728,10 +728,10 @@ P_b = P_{ext}
 \end{equation}
 
 
-\paragraph{Entr\'ee subsonique (condition IERUCF de 
+\paragraph{Entr\'ee subsonique (condition IERUCF de
 \fort{uscfcl})~: }
 $$-1 < M_{ext} \leqslant 0
-\Rightarrow (u_{ext} \leqslant 0 \text{ et } u_{ext} + c_{ext} > 0)$$ 
+\Rightarrow (u_{ext} \leqslant 0 \text{ et } u_{ext} + c_{ext} > 0)$$
 
 
 \unitlength=1cm
@@ -845,7 +845,7 @@ P_b = P_2
 \end{equation}
 
 \bigskip
-Pour les gaz parfaits, on a~: 
+Pour les gaz parfaits, on a~:
 
 \begin{itemize}
 
@@ -883,10 +883,10 @@ $$
 %=================================
 
 Le probl\`eme de Riemann consid\'er\'e pr\'ec\'edemment
-ne prend pas en compte les effets de la gravit\'e. 
-Or, dans certains cas, si l'on ne prend pas en compte le gradient de 
-pression ``hydrostatique'',  on peut obtenir une solution erron\'ee  
-(en particulier, par exemple, 
+ne prend pas en compte les effets de la gravit\'e.
+Or, dans certains cas, si l'on ne prend pas en compte le gradient de
+pression ``hydrostatique'',  on peut obtenir une solution erron\'ee
+(en particulier, par exemple,
 on peut cr\'eer une source de quantit\'e de mouvement
 non physique dans un milieu initialement au repos).
 
@@ -895,9 +895,9 @@ non physique dans un milieu initialement au repos).
 \gradv{P} = \rho \vect{g}
 \end{equation}
 
-Pour simplifier la r\'esolution, on peut utiliser la formulation 
-de (\ref{Cfbl_Cfxtcl_eq_equilibre_local_cfxtcl}) en incompressible 
-(c'est cette approche qui a \'et\'e adopt\'ee dans \CS)~: 
+Pour simplifier la r\'esolution, on peut utiliser la formulation
+de (\ref{Cfbl_Cfxtcl_eq_equilibre_local_cfxtcl}) en incompressible
+(c'est cette approche qui a \'et\'e adopt\'ee dans \CS)~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_equilibre_incompressible_cfxtcl}
 \begin{array}{lll}
 \left(\gradv{P}\right)_i = \rho_i \vect{g}
@@ -926,12 +926,12 @@ Ce qui donne, pour un gaz parfait~:
 \right)^{\frac{\gamma}{\gamma -1}}
 \end{equation}
 
-\paragraph{Remarque~:} 
+\paragraph{Remarque~:}
 la formule issue de l'incompressible (\ref{Cfbl_Cfxtcl_eq_equilibre_incompressible_cfxtcl})
 est une lin\'earisation de la formule (\ref{Cfbl_Cfxtcl_eq_equilibre_compressible_cfxtcl}).
 Dans les cas courants elle s'\'eloigne tr\`es peu de la formule exacte.
-Dans des conditions extr\^emes, 
-si l'on consid\`ere par exemple 
+Dans des conditions extr\^emes,
+si l'on consid\`ere par exemple
 de l'air \`a $1000K$ et $10bar$, avec une acc\'el\'eration
 de la pesanteur $g=1000m/s^2$ et une diff\'erence de hauteur entre
 le centre de la cellule et le centre de la face de bord de $10m$,
@@ -954,95 +954,95 @@ Le sch\'ema de Rusanov est utilis\'e pour certains types de conditions aux
 limites afin de passer du vecteur d'\'etat calcul\'e au bord comme indiqu\'e
 pr\'ec\'edemment (solution du probl\`eme de Riemann) \`a un flux convectif de
 bord (pour la masse, la quantit\'e de
-mouvement et l'\'energie). L'utilisation de ce sch\'ema (d\'ecentr\'e amont) 
+mouvement et l'\'energie). L'utilisation de ce sch\'ema (d\'ecentr\'e amont)
 permet de gagner en  stabilit\'e.
 
 Le sch\'ema de Rusanov est appliqu\'e aux fronti\`eres auxquelles on consid\`ere
-qu'il est le plus probable de rencontrer des conditions en accord imparfait  
+qu'il est le plus probable de rencontrer des conditions en accord imparfait
 avec l'\'etat r\'egnant dans le domaine, conditions qui sont donc susceptibles de
 d\'estabiliser le calcul~: il s'agit des entr\'ees et des sorties (fronti\`eres
 de type IESICF, ISOPCF, IERUCF, IEQHCF). En sortie
-supersonique (ISSPCF) cependant, le sch\'ema de Rusanov est inutile et 
-n'est donc pas appliqu\'e~:  
+supersonique (ISSPCF) cependant, le sch\'ema de Rusanov est inutile et
+n'est donc pas appliqu\'e~:
 en effet, pour ce type de fronti\`ere, l'\'etat impos\'e au bord est exactement
 l'\'etat amont et le d\'ecentrement du sch\'ema de Rusanov n'apporterait donc
-rien.   
+rien.
 
 %---------------------------------
 \subsubsection{Principe}
 %---------------------------------
 
-Pour le calcul du flux d\'ecentr\'e de Rusanov, on consid\`ere 
-le syst\`eme hyperbolique 
-constitu\'e des seuls termes convectifs issus 
+Pour le calcul du flux d\'ecentr\'e de Rusanov, on consid\`ere
+le syst\`eme hyperbolique
+constitu\'e des seuls termes convectifs issus
 des \'equations de masse, quantit\'e de mouvement et \'energie. Ce
-syst\`eme est \'ecrit, par changement de variable, en non conservatif 
-(on utilise la relation 
-$\displaystyle P=\frac{\rho\varepsilon}{\gamma-1}$ et  
+syst\`eme est \'ecrit, par changement de variable, en non conservatif
+(on utilise la relation
+$\displaystyle P=\frac{\rho\varepsilon}{\gamma-1}$ et
 on note $u_\xi$ les composantes de $\vect{u}$)~:
 
 \begin{equation}
 \left\{\begin{array}{lllll}
-\displaystyle\frac{\partial\rho}{\partial t} 
+\displaystyle\frac{\partial\rho}{\partial t}
 &+&\rho\divv{\,\vect{u}} + \vect{u}\,\grad{\,\rho}&=& 0 \\
 \displaystyle\frac{\partial u_\xi}{\partial t}
 &+& \vect{u}\,\grad{u_\xi}+\displaystyle\frac{1}{\rho}\,\frac{\partial
 P}{\partial \xi} &=& 0 \\
 \displaystyle\frac{\partial P}{\partial t}
-&+&\gamma\,P\,\dive{\vect{u}}+\vect{u}\,\grad{P}&=& 0 
+&+&\gamma\,P\,\dive{\vect{u}}+\vect{u}\,\grad{P}&=& 0
 \end{array}\right.
 \end{equation}
 
-En notant le vecteur d'\'etat $\vect{W}= (\rho,\vect{u},P)^t$, 
-ce syst\`eme est not\'e~: 
+En notant le vecteur d'\'etat $\vect{W}= (\rho,\vect{u},P)^t$,
+ce syst\`eme est not\'e~:
 \begin{equation}
 \displaystyle\frac{\partial \vect{W}}{\partial t} +\dive{\,\vect{F}(\vect{W})} = 0
 \end{equation}
 
 Avec $\delta\,\vect{W}$ l'incr\'ement temporel du vecteur d'\'etat, $\vect{n}$ la
 normale \`a une face, $ij$ la face interne partag\'ee par les cellules $i$ et
-$j$ et $ik$ la face de bord $k$ associ\'ee \`a la cellule $i$,  
-la discr\'etisation spatiale conduit \`a~: 
+$j$ et $ik$ la face de bord $k$ associ\'ee \`a la cellule $i$,
+la discr\'etisation spatiale conduit \`a~:
 \begin{equation}
-\displaystyle\frac{|\Omega_i|}{\Delta t}\delta\,\vect{W}_i 
-+\sum\limits_{j\in\,Vois(i)}\int_{S_{ij}} \vect{F}(\vect{W})\,\vect{n}\,dS 
+\displaystyle\frac{|\Omega_i|}{\Delta t}\delta\,\vect{W}_i
++\sum\limits_{j\in\,Vois(i)}\int_{S_{ij}} \vect{F}(\vect{W})\,\vect{n}\,dS
 +\sum\limits_{k\in {\gamma_b(i)}}\int_{S_{\,{b}_{ik}}} \vect{F}(\vect{W})\,\vect{n}\,dS
 =0
 \end{equation}
 
-Sur une face de bord donn\'ee, 
+Sur une face de bord donn\'ee,
 on applique le sch\'ema de Rusanov pour calculer le flux
-comme suit~: 
+comme suit~:
 \begin{equation}
 \frac{1}{|S_{\,{b}_{ik}}|}\int_{S_{\,{b}_{ik}}} \vect{F}(\vect{W})\,\vect{n}\,dS
 =\frac{1}{2}\left(\vect{F}(\vect{W}_i)+\vect{F}(\vect{W}_{\,{b}_{ik}})\right)\cdot\vect{n}_{\,{b}_{ik}}
 -\frac{1}{2}\rho_{rus\,{b}_{ik}}\left(\vect{W}_{\,{b}_{ik}}-\vect{W}_i\right)=\vect{F}_{rus\,{b}_{ik}}(\vect{W})
 \end{equation}
 
-Dans cette relation, $\vect{W}_{\,{b}_{ik}}$ est  le vecteur d'\'etat 
+Dans cette relation, $\vect{W}_{\,{b}_{ik}}$ est  le vecteur d'\'etat
 $\vect{W}_{\infty}$, connu au bord (tel
 qu'il r\'esulte de la r\'esolution du probl\`eme de Riemann au bord
-pr\'esent\'ee plus haut pour chaque type de fronti\`ere consid\'er\'e). 
+pr\'esent\'ee plus haut pour chaque type de fronti\`ere consid\'er\'e).
 
 %---------------------------------
 \subsubsection{Param\`etre de d\'ecentrement $\rho_{rus\,{b}_{ik}}$}
 %---------------------------------
 
-Pour chaque face de bord, le scalaire $\rho_{rus\,{b}_{ik}}$ est la 
+Pour chaque face de bord, le scalaire $\rho_{rus\,{b}_{ik}}$ est la
 plus grande valeur du rayon spectral de la matrice jacobienne
-$\displaystyle\frac{\partial\,\vect{F}_n(\vect{W})}{\partial \vect{W}}$ 
-obtenu pour les vecteurs d'\'etat $\vect{W}_i$ et $\vect{W}_{\,{b}_{ik}}$. 
+$\displaystyle\frac{\partial\,\vect{F}_n(\vect{W})}{\partial \vect{W}}$
+obtenu pour les vecteurs d'\'etat $\vect{W}_i$ et $\vect{W}_{\,{b}_{ik}}$.
 
 $\vect{F}_n$ est la composante du
 flux $\vect{F}$ dans la direction de la normale \`a la face de bord,
-$\vect{n}_{\,{b}_{ik}}$. Utiliser $\vect{F}_n$ 
+$\vect{n}_{\,{b}_{ik}}$. Utiliser $\vect{F}_n$
 pour la d\'etermination du
 param\`etre de d\'ecentrement $\rho_{rus\,{b}_{ik}}$
-rel\`eve d'une approche classique qui consiste 
+rel\`eve d'une approche classique qui consiste
 \`a remplacer le syst\`eme tridimensionnel
-initial par le syst\`eme unidimensionnel projet\'e dans la direction 
-normale \`a la face, en n\'egligeant les variations du vecteur d'\'etat 
-$\vect{W}$ dans la direction tangeante \`a la face~: 
+initial par le syst\`eme unidimensionnel projet\'e dans la direction
+normale \`a la face, en n\'egligeant les variations du vecteur d'\'etat
+$\vect{W}$ dans la direction tangeante \`a la face~:
 \begin{equation}
 \displaystyle\frac{\partial \vect{W}}{\partial t} +\frac{\partial\,\vect{F}_n(\vect{W})}{\partial
 \vect{W}}\,\frac{\partial \vect{W}}{\partial n} = 0
@@ -1053,31 +1053,31 @@ $\vect{n}_{\,{b}_{ik}}$ comme  vecteur de base, et si l'on note $u$ la
 composante de vitesse associ\'ee, le syst\`eme est le suivant (les \'equations
 portant sur les composantes transverses de la vitesse sont d\'ecoupl\'ees,
 associ\'ees \`a la valeur propre $u$, comme le serait un scalaire simplement
-convect\'e et ne sont pas \'ecrites ci-apr\`es)~: 
+convect\'e et ne sont pas \'ecrites ci-apr\`es)~:
 \begin{equation}
 \left\{\begin{array}{lllll}
-\displaystyle\frac{\partial\rho}{\partial t} 
+\displaystyle\frac{\partial\rho}{\partial t}
 &+&\displaystyle\rho\frac{\partial\,u}{\partial\,n} + u\,\frac{\partial\,\rho}{\partial\,n}&=& 0 \\
 \displaystyle\frac{\partial u}{\partial t}
 &+&\displaystyle u\,\frac{\partial\,u}{\partial\,n}+\frac{1}{\rho}\,\frac{\partial
 P}{\partial n} &=& 0 \\
 \displaystyle\frac{\partial P}{\partial t}
-&+&\displaystyle\gamma\,P\,\frac{\partial\,u}{\partial\,n}+u\,\frac{\partial\,P}{\partial\,n}&=& 0 
+&+&\displaystyle\gamma\,P\,\frac{\partial\,u}{\partial\,n}+u\,\frac{\partial\,P}{\partial\,n}&=& 0
 \end{array}\right.
 \end{equation}
 
 La matrice jacobienne associ\'ee est donc~:
 \begin{equation}
 \left(\begin{array}{lll}
-\displaystyle u & \rho 		& 0				\\
-\displaystyle 0 & u    		& \displaystyle\frac{1}{\rho}	\\
-\displaystyle 0 & \gamma\, P	& 0 				\\
+\displaystyle u & \rho                 & 0                                \\
+\displaystyle 0 & u                    & \displaystyle\frac{1}{\rho}        \\
+\displaystyle 0 & \gamma\, P        & 0                                 \\
 \end{array}\right)
 \end{equation}
 
-Les valeurs propres sont $u$ et $\displaystyle\,u\pm c$ (avec 
-$c=\sqrt\frac{\gamma\,P}{\rho}$). Le rayon spectral est donc 
-$|u|+c$ et le param\`etre de d\'ecentrement s'en d\'eduit~: 
+Les valeurs propres sont $u$ et $\displaystyle\,u\pm c$ (avec
+$c=\sqrt\frac{\gamma\,P}{\rho}$). Le rayon spectral est donc
+$|u|+c$ et le param\`etre de d\'ecentrement s'en d\'eduit~:
 \begin{equation}
 \rho_{rus\,{b}_{ik}} = max\left(|u_i|+c_i,|u_{{b}_{ik}}|+c_{{b}_{ik}}\right)
 \end{equation}
@@ -1087,9 +1087,9 @@ $|u|+c$ et le param\`etre de d\'ecentrement s'en d\'eduit~:
 \subsubsection{Expression des flux convectifs}
 %---------------------------------
 
-Les flux convectifs calcul\'es par le sch\'ema de Rusanov 
+Les flux convectifs calcul\'es par le sch\'ema de Rusanov
 pour les variables masse, quantit\'e de mouvement
-et \'energie repr\'esentent donc la discr\'etisation des termes suivants~: 
+et \'energie repr\'esentent donc la discr\'etisation des termes suivants~:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle\dive(\vect{Q})\\
@@ -1098,7 +1098,7 @@ et \'energie repr\'esentent donc la discr\'etisation des termes suivants~:
 \end{array}\right.
 \end{equation}
 
-Pour une face de bord $ik$ adjacente \`a la cellule $i$ et 
+Pour une face de bord $ik$ adjacente \`a la cellule $i$ et
 avec la valeur pr\'ec\'edente de $\rho_{rus\,{b}_{ik}}$, on a~:
 \begin{equation}
 \left\{\begin{array}{lll}
@@ -1145,11 +1145,11 @@ avec la valeur pr\'ec\'edente de $\rho_{rus\,{b}_{ik}}$, on a~:
 %---------------------------------
 
 Pour le flux de diffusion d'\'energie, les conditions aux limites sont
-impos\'ees de mani\`ere similaire \`a ce qui est d\'ecrit dans 
-la documentation de \fort{clptur} et de 
+impos\'ees de mani\`ere similaire \`a ce qui est d\'ecrit dans
+la documentation de \fort{clptur} et de
 \fort{condli}. La figure~(\ref{Cfbl_Cfxtcl_fig_flux_cfxtcl}) rappelle quelques notations
 usuelles et l'\'equation~(\ref{Cfbl_Cfxtcl_eq_flux_cfxtcl}) traduit la conservation du flux
-normal au bord pour la variable $f$. 
+normal au bord pour la variable $f$.
 
 \begin{figure}[htp]
 \centerline{\includegraphics[height=7cm]{../Cfbl/Cfxtcl/Images/fluxbord.pdf}}
@@ -1171,28 +1171,28 @@ impos\'e}}} &\text{(condition de Dirichlet)}\\
 
 
 L'\'equation~(\ref{Cfbl_Cfxtcl_eq_fbint_cfxtcl}) rappelle la formulation des
-conditions aux limites pour une variable $f$. 
+conditions aux limites pour une variable $f$.
 \begin{equation}\label{Cfbl_Cfxtcl_eq_fbint_cfxtcl}
 f_{b,int}
   = \left\{\begin{array}{cccccl}
     \displaystyle\frac{h_{imp,ext}}{h_{int}+h_r h_{imp,ext} }&f_{imp,ext}&+&
-    \displaystyle\frac{h_{int}+h_{imp,ext}(h_r-1)}{h_{int}+h_r h_{imp,ext} }&f_{I'} 
+    \displaystyle\frac{h_{int}+h_{imp,ext}(h_r-1)}{h_{int}+h_r h_{imp,ext} }&f_{I'}
                          &\text{(condition de Dirichlet)}\\
     \displaystyle\frac{1}{h_{int}}&\phi_{\text{\it imp,ext}}&+&
-    \ &f_{I'} 
+    \ &f_{I'}
             &\text{(condition de Neumann)}
            \end{array}\right.
 \end{equation}
 
 Les coefficients d'\'echange sont d\'efinis comme suit\footnote{On rappelle que, comme
-dans \fort{condli}, $\alpha$ d\'esigne $\lambda+C_p\,\frac{\mu_t}{\sigma_t}$ 
+dans \fort{condli}, $\alpha$ d\'esigne $\lambda+C_p\,\frac{\mu_t}{\sigma_t}$
 si $f$ est la temp\'erature,
-$\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}$ si $f$ repr\'esente l'enthalpie. 
+$\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}$ si $f$ repr\'esente l'enthalpie.
 Le coefficient $C$ repr\'esente $C_p$ pour la temp\'erature et vaut
 $1$ pour l'enthalpie. La grandeur adimensionnelle $f^+$ est obtenue par
-application d'un principe de similitude en paroi~: pour la temp\'erature, 
+application d'un principe de similitude en paroi~: pour la temp\'erature,
 elle d\'epend du nombre de
-Prandlt mol\'eculaire, du nombre de Prandtl turbulent et de la distance adimensionnelle \`a la paroi $y^+$ dans la cellule de bord.}~: 
+Prandlt mol\'eculaire, du nombre de Prandtl turbulent et de la distance adimensionnelle \`a la paroi $y^+$ dans la cellule de bord.}~:
 \begin{equation}
 \left\{\begin{array}{lll}
 h_{int}&=&\displaystyle\frac{\alpha}{\overline{I'F}}\\
@@ -1202,7 +1202,7 @@ h_b&=&\displaystyle\frac{\phi_b}{f_{b,ext}-f_{I'}}=\frac{\rho\,C\,u_k}{f^+_{I'}}
 \end{equation}
 
 Dans \CS, on note les conditions aux limites de mani\`ere g\'en\'erale sous
-la forme suivante~: 
+la forme suivante~:
 \begin{equation}
 f_{b,int}=A_b + B_b\,f_{I'}
 \end{equation}
@@ -1212,7 +1212,7 @@ avec $A_b$ et $B_b$ d\'efinis selon le type des conditions~:
 \text{Dirichlet}\left\{\begin{array}{ll}
     A_b = &\displaystyle\frac{h_{imp,ext}}{h_{int}+h_r h_{imp,ext} } f_{imp,ext}\\
     B_b = &\displaystyle\frac{h_{int}+h_{imp,ext}(h_r-1)}{h_{int}+h_r h_{imp,ext} }
-                  \end{array}\right.                                         
+                  \end{array}\right.
 \text{\ \  Neumann}\left\{\begin{array}{ll}
     A_b = &\displaystyle\frac{1}{h_{int}}\phi_{\text{\it imp,ext}}\\
     B_b = &1
@@ -1226,7 +1226,7 @@ avec $A_b$ et $B_b$ d\'efinis selon le type des conditions~:
 
 Dans le module compressible, on r\'esout une \'equation sur l'\'energie, qui s'\'ecrit, si
 l'on excepte tous les termes hormis le flux de diffusion et le terme
-instationnaire, pour faciliter la pr\'esentation~: 
+instationnaire, pour faciliter la pr\'esentation~:
 
 \begin{equation}
 \begin{array}{lll}
@@ -1248,29 +1248,29 @@ flux de bord ou une temp\'erature de bord (ce qui revient au m\^eme puisque l'on
 impose toujours finalement la conservation du flux normal), on {\it choisit}
 de reporter la totalit\'e de la condition \`a la limite sur le terme
 $\displaystyle\frac{K}{C_v}\,\grad\,e$
-et donc d'annuler le flux associ\'e au terme 
-$\displaystyle\frac{K}{C_v}\,\grad{(\frac{1}{2}\,u^2+\varepsilon_{sup})}$ 
-(en pratique, pour l'annuler, on se contente de ne pas l'ajouter  
+et donc d'annuler le flux associ\'e au terme
+$\displaystyle\frac{K}{C_v}\,\grad{(\frac{1}{2}\,u^2+\varepsilon_{sup})}$
+(en pratique, pour l'annuler, on se contente de ne pas l'ajouter
 au second membre de l'\'equation). Conform\'ement \`a l'approche retenue dans \CS\ et
 rappel\'ee pr\'ec\'edemment, on d\'eterminera donc une valeur de bord {\it
-fictive} de l'\'energie qui permette de reconstruire le flux diffusif total 
+fictive} de l'\'energie qui permette de reconstruire le flux diffusif total
 attendu \`a partir
-de la discr\'etisation du seul terme $\displaystyle\frac{K}{C_v}\,\grad\,e$. 
+de la discr\'etisation du seul terme $\displaystyle\frac{K}{C_v}\,\grad\,e$.
 
-Remarque : dans la version 1.2.0, 
-on utilise $\displaystyle 
-\frac{K}{C_v}=\left(\frac{\lambda}{C_v}+\frac{\mu_t}{\sigma_t}\right)$, \`a 
-partir de 1.2.1, on utilise la valeur  $\displaystyle 
+Remarque : dans la version 1.2.0,
+on utilise $\displaystyle
+\frac{K}{C_v}=\left(\frac{\lambda}{C_v}+\frac{\mu_t}{\sigma_t}\right)$, \`a
+partir de 1.2.1, on utilise la valeur  $\displaystyle
 \frac{K}{C_v}=\left(\frac{\lambda}{C_v}+\frac{C_p}{C_v}\frac{\mu_t}{\sigma_t}\right)$.
 On notera que le nombre de Prandtl turbulent $\sigma_t$ est associ\'e \`a la variable
-r\'esolue et peut \^etre fix\'e par l'utilisateur. 
+r\'esolue et peut \^etre fix\'e par l'utilisateur.
 
 
 %---------------------------------
 \subsubsection{Condition de Neumann}
 %---------------------------------
 
-La conservation du flux s'\'ecrit~: 
+La conservation du flux s'\'ecrit~:
 
 \begin{equation}
     \underbrace{h_{int}(e_{b,int}-e_{I'})}_{\phi_{int}}
@@ -1293,13 +1293,13 @@ On a donc dans ce cas~:
 On suppose que la condition de Dirichlet porte sur la temp\'erature $T_{b,ext}$.
 
 
-La conservation du flux s'\'ecrit~: 
+La conservation du flux s'\'ecrit~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_conservation_flux_cfxtcl}
     \underbrace{h_{int}(e_{b,int}-e_{I'})}_{\phi_{int}\text{\ (forme num\'erique
 du flux)}}
   = \underbrace{h_{b}(T_{b,ext}-T_{I'})}_{\phi_{b}\text{ qui int\`egre l'effet
 de couche limite}}
-  = 
+  =
     \underbrace{h'_{imp,ext}(T_{imp,ext}-T_{b,ext})}_{\phi_{\text{\it r\'eel
 impos\'e}}}
 \end{equation}
@@ -1313,7 +1313,7 @@ h_b&=&\displaystyle\frac{\phi_b}{T_{b,ext}-T_{I'}}=\frac{\rho\,C_p\,u_k}{T^+_{I'
 \end{equation}
 
 On tire $T_{b,ext}$
-de la seconde partie de l'\'egalit\'e~(\ref{Cfbl_Cfxtcl_eq_conservation_flux_cfxtcl}) 
+de la seconde partie de l'\'egalit\'e~(\ref{Cfbl_Cfxtcl_eq_conservation_flux_cfxtcl})
 traduisant la conservation du flux~:
 \begin{equation}
 \displaystyle T_{b,ext} = \frac{h'_{imp,ext}\,T_{imp,ext}+h_b\,T_{I'}}{h_b+h'_{imp,ext}}
@@ -1329,7 +1329,7 @@ On utilise alors
 $\displaystyle T_{I'}=\frac{1}{C_v}\left(e_{I'}-\frac{1}{2}u^2_{i}-\varepsilon_{sup,i}\right)$ pour
 \'ecrire (sans reconstruction pour la vitesse et $\varepsilon_{sup}$)~:
 \begin{equation}
-\displaystyle e_{b,int} = 
+\displaystyle e_{b,int} =
 \frac{ -\frac{h_b\,h'_{imp,ext}}{C_v}+h_{int}\,(h_b+h'_{imp,ext}) }
      { h_{int}\,(h_b+h'_{imp,ext}) } \,e_{I'}
 +\frac{h_b\,h'_{imp,ext}}{h_{int}\,(h_b+h'_{imp,ext})}\,
@@ -1339,32 +1339,32 @@ $\displaystyle T_{I'}=\frac{1}{C_v}\left(e_{I'}-\frac{1}{2}u^2_{i}-\varepsilon_{
 
 Et on a donc, avec $\displaystyle h'_r=\frac{h_{int}}{\frac{h_b}{C_v}}$~:
 \begin{equation}
-\displaystyle e_{b,int} = 
+\displaystyle e_{b,int} =
 \underbrace{\frac{ h'_{imp,ext} }{ C_v\,h_{int}+h'_r\,h'_{imp,ext} }\,
   \left(C_v\,T_{imp,ext}+\frac{1}{2}u^2_{i}+\varepsilon_{sup,i}\right)}_{A_b}
 +\underbrace{\frac{ C_v\,h_{int}+h'_{imp,ext}(h'_r-1) }{ C_v\,h_{int}+h'_r\,h'_{imp,ext} }}_{B_b}\,e_{I'}
 \end{equation}
 
-Avec ces notations, $h_b$ est le coefficient habituellement calcul\'e pour la 
-temp\'erature. 
+Avec ces notations, $h_b$ est le coefficient habituellement calcul\'e pour la
+temp\'erature.
 
-Le coefficient $h'_{imp,ext}$ est le coefficient d'\'echange externe qui est 
-impos\'e pour la temp\'erature\footnote{Le coefficient $h'_{imp,ext}$  
-est utile pour les cas o\`u l'on 
-souhaite relaxer la condition \`a la limite~: 
-pour la temp\'erature, cela correspond \`a imposer une valeur sur la face 
-externe d'une paroi unidimensionnelle id\'eale, sans inertie, 
-caract\'eris\'ee par un simple coefficient d'\'echange.}. 
-Pour obtenir l'\'equivalent dimensionnel de $h'_{imp,ext}$ pour l'\'energie, 
-il faut diviser sa valeur par $C_v$ (ce qui ne fait pas de diff\'erence dans 
-la majorit\'e des cas, car il est habituellement pris infini).   
-
-
-
- 
- 
+Le coefficient $h'_{imp,ext}$ est le coefficient d'\'echange externe qui est
+impos\'e pour la temp\'erature\footnote{Le coefficient $h'_{imp,ext}$
+est utile pour les cas o\`u l'on
+souhaite relaxer la condition \`a la limite~:
+pour la temp\'erature, cela correspond \`a imposer une valeur sur la face
+externe d'une paroi unidimensionnelle id\'eale, sans inertie,
+caract\'eris\'ee par un simple coefficient d'\'echange.}.
+Pour obtenir l'\'equivalent dimensionnel de $h'_{imp,ext}$ pour l'\'energie,
+il faut diviser sa valeur par $C_v$ (ce qui ne fait pas de diff\'erence dans
+la majorit\'e des cas, car il est habituellement pris infini).
 
 
- 
+
+
+
+
+
+
 
 

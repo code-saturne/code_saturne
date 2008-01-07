@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -43,7 +43,7 @@ Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}) discr\'etis\'e en temps do
 + \divs{\vect{Q}_{ac}^{n+1}} = 0 \\
 \\
 \displaystyle\frac{\vect{Q}_{ac}^{n+1}-\vect{Q}^n}{\Delta t^n}+\gradv{P^*} =
-\rho^n \vect{f}^n\\ 
+\rho^n \vect{f}^n\\
 \\
 Q^*=Q^n\\
 \\
@@ -56,33 +56,33 @@ e^*=e^n\\
 \begin{array}{llll}
 \text{avec\ }&\vect{f}^n &=& \vect{0} \\
 \text{ou\ }&\vect{f}^n &=& \vect{g} \\
-\text{ou m\^eme\ }&\vect{f}^n &=& \vect{f}_v 
+\text{ou m\^eme\ }&\vect{f}^n &=& \vect{f}_v
  + \displaystyle\frac{1}{\rho^n}
 \left( - \divs(\vect{u} \otimes \vect{Q}) + \divv(\tens{\Sigma}^v)
  + \vect{j}\wedge\vect{B} \right)^n
 \end{array}
 \end{equation}
 
-Dans la pratique nous avons décidé de prendre $\vect{f}^n=\vect{g}$~: 
+Dans la pratique nous avons décidé de prendre $\vect{f}^n=\vect{g}$~:
 \begin{itemize}
-  \item le terme $\vect{j}\wedge\vect{B}$ n'a pas été testé, 
+  \item le terme $\vect{j}\wedge\vect{B}$ n'a pas été testé,
   \item le terme $\divv(\tens{\Sigma}^v)$ \'etait négligeable sur les tests
-	réalisés,  
+        réalisés,
   \item le terme $\divs(\vect{u} \otimes \vect{Q})$ a paru déstabiliser les
-	calculs (mais au moins une partie des tests a \'et\'e r\'ealis\'ee 
-	avec une erreur de programmation et il faudrait donc les reprendre).  
-\end{itemize} 
+        calculs (mais au moins une partie des tests a \'et\'e r\'ealis\'ee
+        avec une erreur de programmation et il faudrait donc les reprendre).
+\end{itemize}
 \bigskip
 
 Le terme $\vect{Q}^n$ dans la 2\textsuperscript{\`eme} \'equation
 de (\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl}) est le vecteur ``quantit\'e de mouvement''
 qui provient de l'\'etape de r\'esolution de la quantit\'e de mouvement du pas
 de temps pr\'ec\'edent, $\vect{Q}^n = \rho^n \vect{u}^n$.
-On pourrait théoriquement utiliser un vecteur quantit\'e de mouvement issu 
+On pourrait théoriquement utiliser un vecteur quantit\'e de mouvement issu
 de l'\'etape acoustique du pas de temps pr\'ec\'edent, mais il ne constitue
 qu'un ``pr\'edicteur'' plus ou moins satisfaisant (il n'a pas ``vu'' les termes
-sources qui ne sont pas dans  $\vect{f}^n$) et cette solution 
-n'a pas été testée. 
+sources qui ne sont pas dans  $\vect{f}^n$) et cette solution
+n'a pas été testée.
 
 \bigskip
 On \'ecrit alors la pression sous la forme~:
@@ -94,20 +94,20 @@ avec $c^2 = \left.\displaystyle\frac{\partial P}{\partial \rho}\right|_s$
 et $\beta = \left.\displaystyle\frac{\partial P}{\partial s}\right|_\rho$
 tabul\'es ou analytiques \`a partir de la loi d'\'etat.
 
-On discr\'etise l'expression pr\'ec\'edente en~:  
+On discr\'etise l'expression pr\'ec\'edente en~:
 \begin{equation}
 \gradv{P^*}=(c^2)^n\gradv(\rho^{n+1})+\beta^n\gradv(s^n)
 \end{equation}
 
 On obtient alors une \'equation
 portant sur $\rho^{n+1}$ en substituant l'expression de $\vect{Q}_{ac}^{n+1}$
-issue de la 2\textsuperscript{\`eme} \'equation 
+issue de la 2\textsuperscript{\`eme} \'equation
 de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})
-dans la 1\textsuperscript{\`ere} \'equation 
+dans la 1\textsuperscript{\`ere} \'equation
 de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_cfmsvl}
 \displaystyle\frac{\rho^{n+1}-\rho^n}{\Delta t^n}
-+\divs(\vect{w}^n \rho^n) 
++\divs(\vect{w}^n \rho^n)
 -\divs\left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right) = 0
 \end{equation}
 
@@ -119,11 +119,11 @@ o\`u~:
 \end{array}
 \end{equation}
 
-Formulation alternative (programm\'ee mais non test\'ee)  
+Formulation alternative (programm\'ee mais non test\'ee)
 avec le terme de convection implicite~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}
 \displaystyle\frac{\rho^{n+1}-\rho^n}{\Delta t^n}
-+\divs(\vect{w}^n \rho^{n+1}) 
++\divs(\vect{w}^n \rho^{n+1})
 -\divs\left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right) = 0
 \end{equation}
 
@@ -145,7 +145,7 @@ place sur une cellule $i$ dont aucune face n'est sur le bord du domaine.
 
 On obtient alors l'\'equation discr\`ete
 suivante\footnote{L'exposant $^{n+\frac{1}{2}}$ signifie que le terme
-peut \^etre implicite ou explicite. En pratique on a choisi  
+peut \^etre implicite ou explicite. En pratique on a choisi
 $\rho^{n+\frac{1}{2}} = \rho^{n}$.}~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_discrete_cfmsvl}
 \Omega_i \displaystyle\frac{\rho_i^{n+1}-\rho_i^n}{\Delta t^n}
@@ -159,7 +159,7 @@ $\rho^{n+\frac{1}{2}} = \rho^{n}$.}~:
 \subsubsection{Discr\'etisation de la partie ``convective''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~: 
+La valeur \`a la face s'\'ecrit~:
 \begin{equation}
 (\rho^{n+\frac{1}{2}} \vect{w}^n)_{ij} \cdot \vect{S}_{ij}
 = \rho^{n+\frac{1}{2}}_{ij} \vect{w}^n_{ij} \cdot \vect{S}_{ij}
@@ -196,7 +196,7 @@ avec
 \subsubsection{Discr\'etisation de la partie ``diffusive''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~: 
+La valeur \`a la face s'\'ecrit~:
 \begin{equation}
 \left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right)_{ij}\cdot \vect{S}_{ij}
 = \Delta t^n (c^2)^n_{ij}
@@ -207,7 +207,7 @@ une interpolation harmonique de $(c^2)^n$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_harmonique_cfmsvl}
 \displaystyle(c^2)_{ij}^n
 = \frac{(c^2)_{i}^n (c^2)_{j}^n}
-{\alpha_{ij}(c^2)_{i}^n+(1-\alpha_{ij})(c^2)_{j}^n} 
+{\alpha_{ij}(c^2)_{i}^n+(1-\alpha_{ij})(c^2)_{j}^n}
 \end{equation}
 et un sch\'ema centr\'e pour le gradient normal aux faces~:
 \begin{equation}
@@ -225,7 +225,7 @@ $(\rho_i^{n+1})_{i=1 \ldots N}$~:
 \displaystyle\frac{\Omega_i}{\Delta t^n} (\rho_i^{n+1}-\rho_i^n)
 +\sum\limits_{j\in Vois(i)}\rho_{ij}^{n+\frac{1}{2}}
 \vect{w}_{ij}^n \cdot \vect{S}_{ij}
--\sum\limits_{j\in Vois(i)} \Delta t^n (c^2)_{ij}^n 
+-\sum\limits_{j\in Vois(i)} \Delta t^n (c^2)_{ij}^n
 \displaystyle\frac{\rho_{J'}^{n+1}-\rho_{I'}^{n+1}}{\overline{I'J'}}\ S_{ij}
 = 0
 \end{equation}
@@ -235,9 +235,9 @@ $(\rho_i^{n+1})_{i=1 \ldots N}$~:
 %.................................
 \subsubsection{Remarque~: interpolation aux faces pour le terme de diffusion}
 %.................................
- 
+
 Le choix de la forme de la moyenne pour le cofacteur du flux
-normal n'est pas sans cons\'equence sur la vitesse de convergence, surtout 
+normal n'est pas sans cons\'equence sur la vitesse de convergence, surtout
 lorsque l'on est en pr\'esence de fortes inhomog\'en\'eit\'es.
 
 On utilise une interpolation harmonique pour $c^2$
@@ -247,8 +247,8 @@ $\Delta t (c^2) \displaystyle\frac{\partial \rho}{\partial n}$
 l'interface. Il doit donc y \^etre continu.\\
 %
 \'Ecrivons la continuit\'e du flux normal \`a l'interface,
-avec la discr\'etisation 
-suivante\footnote{On ne reconstruit pas les valeurs de $\Delta\,t\,c^2$ 
+avec la discr\'etisation
+suivante\footnote{On ne reconstruit pas les valeurs de $\Delta\,t\,c^2$
 aux points $I'$ et
 $J'$.}~:
 \begin{equation}

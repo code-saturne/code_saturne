@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -34,40 +34,40 @@ This case will be run in parallel on two processors. Head loss will be used to
 simulate the presence of an obstacle in the flow and the spatial average of the
 temperature will be calculated at each time step.
 
-	\subsection{Calculation options}
+        \subsection{Calculation options}
 %-----------------------------------------
 
 The options for this case are the same as in case 3:
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Flow type: unsteady flow
-	\item Time step: uniform and constant
-	\item Turbulence model: $k-\epsilon$
-	\item Scalar(s): 1 - temperature\\
+        \item Flow type: unsteady flow
+        \item Time step: uniform and constant
+        \item Turbulence model: $k-\epsilon$
+        \item Scalar(s): 1 - temperature\\
       \hspace*{1.6cm} 2 - passive scalar
-	\item Physical properties: uniform and constant (except density)
-	\item Management of monitoring points
+        \item Physical properties: uniform and constant (except density)
+        \item Management of monitoring points
 \end{itemize}
 
 
-	\subsection{Initial and boundary conditions}
+        \subsection{Initial and boundary conditions}
 %---------------------------------------------------
 
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Initialization: 20\degresC\ for temperature (default value) \\
-	\hspace*{2.1cm}        10 for the passive scalar
+        \item Initialization: 20\degresC\ for temperature (default value) \\
+        \hspace*{2.1cm}        10 for the passive scalar
 \end{itemize}
 
 The boundary conditions are defined in the user interface and depend on the
 boundary zone.
 
 \begin{itemize}
-	\item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
+        \item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
 $1\ m.s^{-1}$ and a time dependent inlet temperature are imposed
-	\item {\bfseries Outlet}: default value
-	\item {\bfseries Walls}: velocity, pressure and thermal scalar: default value \\
-	            \hspace*{1.25cm} passive scalar: different conditions
+        \item {\bfseries Outlet}: default value
+        \item {\bfseries Walls}: velocity, pressure and thermal scalar: default value \\
+                    \hspace*{1.25cm} passive scalar: different conditions
 depending on the color and geometric parameters
 \end{itemize}
 
@@ -78,20 +78,20 @@ as specified in the following table:
 \begin{tabular}{|c|c|c|}
 \hline
 Wall & Nature & Value \\
-\hline 
-wall\_1 & Dirichlet  & 0 \\ 
-\hline 
-wall\_2 & Dirichlet  & 5 \\ 
-\hline 
-wall\_3 & Dirichlet  & 0 \\ 
-\hline 
-wall\_4 & Dirichlet  & 25 \\ 
-\hline 
-wall\_5 & Dirichlet  & 320 \\ 
-\hline 
-wall\_6 & Dirichlet  & 40 \\ 
 \hline
-\end{tabular} 
+wall\_1 & Dirichlet  & 0 \\
+\hline
+wall\_2 & Dirichlet  & 5 \\
+\hline
+wall\_3 & Dirichlet  & 0 \\
+\hline
+wall\_4 & Dirichlet  & 25 \\
+\hline
+wall\_5 & Dirichlet  & 320 \\
+\hline
+wall\_6 & Dirichlet  & 40 \\
+\hline
+\end{tabular}
 \end{center}
 
 The ``wall\_1'' to ``wall\_6'' regions are defined as follows, through color
@@ -109,13 +109,13 @@ wall\_6 & 31 or 33 \\
 \end{tabular}
 \end{center}
 
-Figure \ref{figante23} shows the colors used for boundary conditions and 
-table \ref{tabante41} defines the correspondance between the colors and  
+Figure \ref{figante23} shows the colors used for boundary conditions and
+table \ref{tabante41} defines the correspondance between the colors and
 the type of boundary condition to use.
 
 \begin{table}[htp]
 \begin{center}
-\begin{tabular}{|c|c|} 
+\begin{tabular}{|c|c|}
 \hline
 Colors & Conditions \\
 \hline
@@ -137,18 +137,18 @@ Colors & Conditions \\
 
 
 
-	\subsection{Head loss}
+        \subsection{Head loss}
 %-----------------------------
 
 To simulate the presence of an obstacle $0.20\ m$ large and $0.5\ m$ high in the
 vessel, a zone of head loss will be created in the domain (fig \ref{figante41}).
-The head loss zone is situated between the coordinates $X=0.2\ m$ and $X=0.4\ m$, 
+The head loss zone is situated between the coordinates $X=0.2\ m$ and $X=0.4\ m$,
 and $Y=-0.75\ m$ and $Y=-0.25\ m$. The head loss coefficient to apply is $10^4$
 and is isotropic.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm,height=8cm]{\repgraphics/fig09.jpg} 
+\includegraphics[width=10cm,height=8cm]{\repgraphics/fig09.jpg}
 \caption{Full domain geometry with the obstacle}
 \label{figante41}
 \end{center}
@@ -156,7 +156,7 @@ and is isotropic.
 
 
 
-	\subsection{Parameters}
+        \subsection{Parameters}
 %------------------------------
 
 All the parameter necessary to this study can be defined through the Graphical
@@ -184,7 +184,7 @@ In order to paste the separate meshes into a single domain, colors 5, 24 and 32
 will have to be pasted through the Graphical Interface.
 
 
-	\subsection{User routines}
+        \subsection{User routines}
 %---------------------------------
 
 The following routines have to be copied from the folder FORT/USER/base into the
@@ -202,7 +202,7 @@ In this case, the temperature at entry is supposed variable in time, following
 the law:
 \begin{equation}
 \left\{\begin{array}{ll}
-T = 20 + 100t & \text{for }0\leqslant t \leqslant 3.8\\ 
+T = 20 + 100t & \text{for }0\leqslant t \leqslant 3.8\\
 T = 400 & \text{for } t > 3.8
 \end{array}\right.
 \end{equation}
@@ -211,7 +211,7 @@ where $T$ is the temperature in \degresC\ and $t$ is the time in $s$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6.4cm]{\repgraphics/probe9.png} 
+\includegraphics[width=9cm,height=6.4cm]{\repgraphics/probe9.png}
 \caption{Time evolution of the temperature at inlet}
 \label{figp9_e4}
 \end{center}
@@ -226,14 +226,14 @@ will be appropriate:
 \rho = T.(A.T + B) + C
 \end{equation}
 where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
-$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$ 
+$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
 
 \textbf{Note:} in the example routine, the example is protected by a test to prevent any
 undesired use. Do not forget to deactivate it.
 
 In order for the variable density to have an effect on the flow, gravity must be
 set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
-Graphical Interface.	
+Graphical Interface.
 
 
 $\bullet$ {\bfseries usproj.F}\\
@@ -255,7 +255,7 @@ example).
 running the case.
 
 
-$\bullet$ {\bfseries uskpdc.F}	
+$\bullet$ {\bfseries uskpdc.F}
 
 This routine allows to apply head loss on the fluid domain.
 
@@ -272,7 +272,7 @@ $CKUPDC(IELPDC,1) = K*ABS(RTPA(IEL,IU(IPHAS)))$ \\
 $CKUPDC(IELPDC,2) = K*ABS(RTPA(IEL,IV(IPHAS)))$ \\
 $CKUPDC(IELPDC,3) = K*ABS(RTPA(IEL,IW(IPHAS)))$
 
-	\subsection{Output management}
+        \subsection{Output management}
 %-------------------------------------
 
 The output management is the same as in case 3.
@@ -315,7 +315,7 @@ In this case, the {\itshape Pressure}, the {\itshape Tubulent energy} and the
 {\itshape Dissipation} will be removed from the listing file.
 
 The {\itshape Courant number} (CFL) and {\itshape Fourier number} will be
-removed from the 
+removed from the
 post-processing results\footnote{this can be very useful to save some disk space
 if some variables are of no interest, as post-processing files can be large}.
 
@@ -326,17 +326,17 @@ on probes  1, 2, 6, 7 and 8.
 
 
 In addition the domain boundary will be post-processed. This allows to check the
-boundary conditions, and especially that of the temperature and passive scalar. 
+boundary conditions, and especially that of the temperature and passive scalar.
 
 
 
-	\subsection{Results}
+        \subsection{Results}
 %---------------------------
 Figure \ref{fige2_e4} shows the evolution of the spatial average of the temperature.
 
 \begin{figure}[h]
 \begin{center}
-\includegraphics[width=9cm]{\repgraphics/moytemp.png} 
+\includegraphics[width=9cm]{\repgraphics/moytemp.png}
 \caption{Evolution of spatial average of the temperature as a function of time}
 \label{fige2_e4}
 \end{center}
@@ -348,11 +348,11 @@ of the head loss modeling the obstacle is clearly visible.
 \begin{figure}
 \begin{center}
 \begin{tabular}{cc}
-\includegraphics[height=6cm]{\repgraphics/case4_p1.jpg} & 
+\includegraphics[height=6cm]{\repgraphics/case4_p1.jpg} &
 \includegraphics[height=6cm]{\repgraphics/case4_p2.jpg} \\
-\includegraphics[height=6cm]{\repgraphics/case4_p3.jpg} & 
+\includegraphics[height=6cm]{\repgraphics/case4_p3.jpg} &
 \includegraphics[height=6cm]{\repgraphics/case4_p4.jpg} \\
-\includegraphics[height=6cm]{\repgraphics/case4_p5.jpg} & 
+\includegraphics[height=6cm]{\repgraphics/case4_p5.jpg} &
 \includegraphics[height=6cm]{\repgraphics/case4_p6.jpg} \\
 \end{tabular}
 \caption{Water velocity field colored by temperature}

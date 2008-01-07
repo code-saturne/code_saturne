@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -28,20 +28,20 @@
 \section{SOLUTION FOR CASE 5}
 The preparation of the calculation for case 5 is very similar to the other cases.
 \begin{itemize}
-	\item Open the \CS\ interface
-	\item Open a new case
-	\item Check the name of the mesh
-	\item Select a k-$\varepsilon$ model
-	\item Use a thermal scalar in Celsius degrees
+        \item Open the \CS\ interface
+        \item Open a new case
+        \item Check the name of the mesh
+        \item Select a k-$\varepsilon$ model
+        \item Use a thermal scalar in Celsius degrees
 \end{itemize}
 
 In the item {\itshape Initialization}, set the initial value of the temperature
 in the domain to 38.5\degresC. Initialize the turbulence with the reference
-velocity $0.03183\ m.s^{-1}$. 
+velocity $0.03183\ m.s^{-1}$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture01.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture01.jpg}
 \caption{Thermophysical models - Initialization}
 \label{fig1_e5}
 \end{center}
@@ -50,17 +50,17 @@ velocity $0.03183\ m.s^{-1}$.
 
 \newpage
 In the item {\itshape Fluid properties}, under the heading {\itshape Physical
-properties}, enter the following information: 
+properties}, enter the following information:
 
 \begin{center}
 \begin{tabular}{c|c|c}
 Variable & Type & Value \\
 \hline
 Density & Variable & $998.671\ kg.m^{-3} $ \\
-\hline 
+\hline
 Viscosity & Variable & $0.445\times 10^{-4}\ kg.m^{-1}.s^{-1} $ \\
 \hline
-Specific Heat & Constant & $4\,182.88\ J.kg^{-1}.\mbox{\degresC}^{-1} $ \\ 
+Specific Heat & Constant & $4\,182.88\ J.kg^{-1}.\mbox{\degresC}^{-1} $ \\
 \hline
 Thermal Conductivity & Constant & $0.601498\ W.m^{-1}.K^{-1}$
 \end{tabular}
@@ -71,7 +71,7 @@ value (see user manual for details).
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture02.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture02.jpg}
 \caption{Physical properties: fluid properties}
 \label{fig2_e5}
 \end{center}
@@ -82,12 +82,12 @@ value (see user manual for details).
 The aim of the calculation is to simulate a stratified flow. It is therefore
 necessary to have gravity. Set it to the right value in the item
 {\itshape Gravity, hydrostatic pressure}.  In order to have a sharper
-stratification, the pressure interpolation method will be set to 
-{\itshape improved}. 
+stratification, the pressure interpolation method will be set to
+{\itshape improved}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture03.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture03.jpg}
 \caption{Fluid properties - Gravity}
 \label{fig3_e5}
 \end{center}
@@ -100,10 +100,10 @@ Go to the item {\itshape Definition and initialization} under the heading
 {\itshape Additional scalars} to specify the minimal and maximal values for the
 temperature: 18.26\degresC\ and 38.5\degresC. Note that the initial value of
 38.5\degresC\ set earlier is properly taken into account.
- 
+
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture04.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture04.jpg}
 \caption{Scalar initialization}
 \label{fig4_e5}
 \end{center}
@@ -126,12 +126,12 @@ Colors & Conditions \\
 \hline
 5 & wall \\
 \hline
-\end{tabular} 
+\end{tabular}
 \end{center}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture05.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture05.jpg}
 \caption{Boundary regions}
 \label{fig5_e5}
 \end{center}
@@ -148,7 +148,7 @@ $z$ direction and the hydraulic diameter $0.4\ m$ for both inlets.
 \begin{tabular}{c}
 \includegraphics[width=8.5cm]{\repgraphics/c5_capture07.jpg} \\
 \\
-\includegraphics[width=8.5cm]{\repgraphics/c5_capture08.jpg} 
+\includegraphics[width=8.5cm]{\repgraphics/c5_capture08.jpg}
 \end{tabular}
 \caption{Dynamic boundary conditions}
 \label{fig6_e5}
@@ -158,14 +158,14 @@ $z$ direction and the hydraulic diameter $0.4\ m$ for both inlets.
 
 \newpage
 For the scalar boundary conditions, the temperature of the cold inlet is
-18.6\degresC\ and that of the hot inlet is 38.5\degresC. 
+18.6\degresC\ and that of the hot inlet is 38.5\degresC.
 
 \begin{figure}[h!]
 \begin{center}
 \begin{tabular}{c}
 \includegraphics[width=8.5cm]{\repgraphics/c5_capture09.jpg} \\
 \\
-\includegraphics[width=8.5cm]{\repgraphics/c5_capture10.jpg} 
+\includegraphics[width=8.5cm]{\repgraphics/c5_capture10.jpg}
 \end{tabular}
 \caption{Temperature boundary conditions}
 \label{fig8_e5}
@@ -193,17 +193,17 @@ Minimal time step & $0.01\ s$ \\
 \hline
 Maximal time step & $70\ s$ \\
 \hline
-Time step maximal variation & $0.1$ \\ 
+Time step maximal variation & $0.1$ \\
 \hline
 \end{tabular}\\
 \end{center}
 
 And activate the option
-{\itshape Time step limitation with the local thermal time step} 
+{\itshape Time step limitation with the local thermal time step}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c5_capture11.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c5_capture11.jpg}
 \caption{Time step}
 \label{fig11_e5}
 \end{center}
@@ -211,7 +211,7 @@ And activate the option
 
 
 \newpage
-Set the frequency of post-processing files to 10. 
+Set the frequency of post-processing files to 10.
 
 Create four monitoring probes at the following coordinates:
 \begin{center}
@@ -235,7 +235,7 @@ Points & X(m) & Y(m) & Z(m)\\
 \begin{tabular}{c}
 \includegraphics[width=7cm]{\repgraphics/c5_capture12.jpg} \\
 \\
-\includegraphics[width=7cm]{\repgraphics/c5_capture13.jpg} 
+\includegraphics[width=7cm]{\repgraphics/c5_capture13.jpg}
 \end{tabular}
 \caption{Outpput management and monitoring points}
 \label{fig12_e5}
@@ -249,7 +249,7 @@ variation of the density and the viscosity with the temperature. Refer to the
 other cases or the example in the TEST\_CASES directory for more
 information.
 
-For the advanced post-processing features, copy the three routines 
+For the advanced post-processing features, copy the three routines
 {\itshape usdpst.F}, {\itshape usmpst.F} and {\itshape usvpst.F} in the FORT
 directory. The general content of these routines is described in the user manual
 or in the examples available in the directory FORT/USERS/base. The modified

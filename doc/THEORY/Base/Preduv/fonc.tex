@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -40,16 +40,16 @@ $\vect{u}$. Ceci consiste à r\'esoudre l'équation de quantit\'e de
 mouvement (Q.D.M.) en traitant la pression $p$ de manière explicite. La solution en vitesse-pression est obtenue après une étape de correction sur la pression
 effectuée dans le sous-programme \fort{resolp}, en utilisant la loi de conservation de la masse :
 \begin{equation}
-\frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma, 
+\frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma,
 \end{equation}
-o\`u $\Gamma$ est le terme source de masse\footnote{ en $kg.m^{-3}.s^{-1}$ }.\\  
-L'équation de conservation de la quantité de mouvement moyenne obtenue par application 
+o\`u $\Gamma$ est le terme source de masse\footnote{ en $kg.m^{-3}.s^{-1}$ }.\\
+L'équation de conservation de la quantité de mouvement moyenne obtenue par application
 du théorème fondamental de la dynamique est :
 \begin{equation}
 \frac {\partial (\rho \underline {u})} {\partial t }+
 \dive(\rho \underline{u} \otimes \underline{u}) =
 \dive(\underline{\underline{\sigma}}) + \underline{S} - \dive{(\rho\,\tens{R})}\end{equation}
-où : 
+où :
 \begin{equation}
 \underline{\underline{\sigma}} = - p \underline{\underline{Id}} + \underline{\underline{\tau }}
 \end{equation}
@@ -57,7 +57,7 @@ avec pour les écoulements newtoniens, la relation linéaire suivante :
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle \underline{\underline{\tau}} = 2\ \mu\ \underline{\underline{D}}
-+\, 
++\,
  \lambda\ tr(\underline{\underline{D }})\ \underline{\underline{Id}} &\\
 &\displaystyle \underline{\underline{D}}=\frac{1}{2}\ (\ggrad \underline
 {u} +\ ^t\ggrad \underline {u})
@@ -88,7 +88,7 @@ L'\'equation de conservation de la quantité de mouvement s'\'ecrit finalement
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle \rho\,
-\frac{\partial \underline {u} } {\partial t} = -\ 
+\frac{\partial \underline {u} } {\partial t} = -\
 \underbrace {\dive(\rho \underline{u} \otimes \underline{u})}_{\text{
 convection}} +\ \underbrace {\dive (\mu\ \ggrad \underline {u})}_{\text{
 diffusion}} &\\
@@ -96,11 +96,11 @@ diffusion}} &\\
 terme en gradient transpos\'e}}
 \underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \underline {u})}_{\text{
 viscosité secondaire}}\ \ - \dive{(\rho \tens{R})}
- -\ \grad(p) + (\rho -\rho_0)\,\underline {g} + 
+ -\ \grad(p) + (\rho -\rho_0)\,\underline {g} +
 \underline{u}\,\dive (\rho\,\underline {u})&\\
 &\displaystyle +\underbrace {\Gamma
 (\underline{u}_{\,i}-\underline{u})}_{\text{terme source de Q.D.M. dû à la source
-de masse}}- \underbrace {\rho\ 
+de masse}}- \underbrace {\rho\
 \tens{K}_{\,pdc} \underline {u}}_{\text{perte
 de charge}} + \underbrace { \underline{T}_{\,s}^{\,exp}+
 T_{s}^{\,imp}\ \underline{u}}_{\text{autres termes sources de
@@ -132,8 +132,8 @@ La divergence du tenseur des contraintes de Reynolds s'\'ecrit :
 \end{cases}
 \end{equation}
 Le terme source de masse fait intervenir la vitesse locale $\underline {u}$ et
-aussi une vitesse $\underline {u}_{\,i}$ associ\'ee \`a la masse inject\'ee (ou retir\'ee). 
-Lorsque $\Gamma<0$, on \^ote de la masse au syst\`eme et on a donc 
+aussi une vitesse $\underline {u}_{\,i}$ associ\'ee \`a la masse inject\'ee (ou retir\'ee).
+Lorsque $\Gamma<0$, on \^ote de la masse au syst\`eme et on a donc
 $\underline{u}_{\,i} = \underline{u}$. Le terme est nul (\emph{i.e.} $\Gamma
 (\underline{u}_{\,i}-\underline{u})= \underline{0} $). Quand $\Gamma>0$, on a un
 terme non nul si $\underline{u}_{\,i} \ne \underline{u}$.

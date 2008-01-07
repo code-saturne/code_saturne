@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -40,7 +40,7 @@ le gradient de pression (suivant la valeur de \var{IGRDPP}, en utilisant la
 pression pr\'edite lors de l'\'etape acoustique) et le terme en gradient
 du tenseur des contraintes visqueuses.
 On explicite les autres termes du tenseur des contraintes visqueuses.
-On implicite les forces 
+On implicite les forces
 volumiques en utilisant $\rho^{n+1}$.
 
 On obtient alors l'\'equation discr\`ete suivante~:
@@ -60,13 +60,13 @@ avec $\widetilde{P}=P^n\text{ ou }P^{Pred}$ suivant la valeur de \var{IGRDPP}
 
 En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
 gauche l'\'ecart $\vect{u}^{n+1} - \vect{u}^n$. Pour cela, on \'ecrit la
-d\'eriv\'ee en temps discr\`ete sous la forme suivante~: 
+d\'eriv\'ee en temps discr\`ete sous la forme suivante~:
 
 \begin{equation}
 \begin{array}{ll}
 \displaystyle
 \frac{(\rho \vect{u})^{n+1} - (\rho \vect{u})^n}{\Delta t^n}
-& = 
+& =
 \displaystyle
 \frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^n}{\Delta t^n}\\
 & =
@@ -75,20 +75,20 @@ d\'eriv\'ee en temps discr\`ete sous la forme suivante~:
 \frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^{n+1}}{\Delta t^n}\\
 & =
 \displaystyle
-\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)+ 
+\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)+
 \vect{u}^{n+1}\frac{\rho^{n+1} - \rho^n}{\Delta t^n}
 \end{array}
 \end{equation}
 
-et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:  
+et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:
 \begin{equation}
 \displaystyle
 \frac{(\rho \vect{u})^{n+1} - (\rho \vect{u})^n}{\Delta t^n}
 =
-\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)- 
+\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)-
 \vect{u}^{n+1}\dive\,\vect{Q}_{ac}^{n+1}
 \end{equation}
- 
+
 
 
 %---------------------------------
@@ -100,7 +100,7 @@ et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:
 %.................................
 
 On int\`egre l'\'equation (\ref{Cfbl_Cfqdmv_eq_vitesse_cfqdmv})
-sur la cellule $i$ de volume $\Omega_i$ et 
+sur la cellule $i$ de volume $\Omega_i$ et
 on obtient l'\'equation discr\'etis\'ee en espace~:
 
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}
@@ -124,7 +124,7 @@ on obtient l'\'equation discr\'etis\'ee en espace~:
 \subsubsection{Discr\'etisation de la partie ``convective''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~: 
+La valeur \`a la face s'\'ecrit~:
 \begin{equation}
 (\vect{u}^{n+1} \otimes \vect{Q}_{ac}^{n+1})_{ij}\cdot \vect{S}_{ij}
 = \vect{u}_{ij}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
@@ -158,7 +158,7 @@ avec
 \subsubsection{Discr\'etisation de la partie ``diffusive''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~: 
+La valeur \`a la face s'\'ecrit~:
 \begin{equation}
 \left(\mu^n\gradt{\vect{u}^{n+1}}\right)_{ij}\vect{S}_{ij}
 = \mu_{ij}^n
@@ -188,7 +188,7 @@ cela correspond à une reconstruction itérative ou par moindres carrés.
 \subsubsection{Discr\'etisation du ``reste'' du tenseur des contraintes visqueuses}
 %.................................
 
-On calcule des gradients aux cellules et on utilise une 
+On calcule des gradients aux cellules et on utilise une
 interpolation lin\'eaire aux
 faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 \begin{equation}

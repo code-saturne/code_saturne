@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -35,12 +35,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Pour les notations et l'algorithme dans son ensemble, 
-on se reportera \`a \fort{cfbase}. 
+Pour les notations et l'algorithme dans son ensemble,
+on se reportera \`a \fort{cfbase}.
 
-Apr\`es masse (acoustique) et quantit\'e de mouvement, 
+Apr\`es masse (acoustique) et quantit\'e de mouvement,
 on consid\`ere un dernier pas fractionnaire (de $t^{**}$ \`a $t^{***}$)
-au cours duquel seule varie l'\'energie totale $E = \rho e$. 
+au cours duquel seule varie l'\'energie totale $E = \rho e$.
 
 \begin{equation}\label{Cfbl_Cfener_eq_energie_cfener}
 \left\{\begin{array}{l}
@@ -55,10 +55,10 @@ au cours duquel seule varie l'\'energie totale $E = \rho e$.
 - \divs{\,\vect{\Phi}_s} + \rho\Phi_v
 \end{array}\right.
 \end{equation}
- 
-Pour conserver la positivit\'e de l'\'energie, il est indispensable ici, 
-comme pour les scalaires, d'utiliser le flux de masse convectif acoustique 
-$\vect{Q}_{ac}^{n+1}$ compatible avec l'\'equation de la masse. 
+
+Pour conserver la positivit\'e de l'\'energie, il est indispensable ici,
+comme pour les scalaires, d'utiliser le flux de masse convectif acoustique
+$\vect{Q}_{ac}^{n+1}$ compatible avec l'\'equation de la masse.
 De plus, pour obtenir des propri\'et\'es de positivit\'e sur les scalaires,
 un sch\'ema upwind pour le terme convectif doit \^etre utilis\'e
 (mais les termes sources introduisent des contraintes suppl\'ementaires
@@ -66,7 +66,7 @@ qui peuvent \^etre pr\'epond\'erantes et g\^enantes).
 
 \vspace{0.5cm}
 
-\`A la fin de cette \'etape, on actualise éventuellement 
+\`A la fin de cette \'etape, on actualise éventuellement
 (mais par défaut non)
 une deuxi\`eme et derni\`ere fois la pression
 en utilisant la loi d'\'etat pour obtenir la pression finale~:

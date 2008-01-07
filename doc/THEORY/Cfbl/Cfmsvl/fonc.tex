@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -35,12 +35,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Pour les notations et l'algorithme dans son ensemble, 
-on se reportera \`a \fort{cfbase}. 
+Pour les notations et l'algorithme dans son ensemble,
+on se reportera \`a \fort{cfbase}.
 
 On consid\`ere un premier pas fractionnaire au cours duquel l'\'energie totale
 est fixe. Seules varient la masse volumique et le flux de masse acoustique
-normal aux faces (d\'efini et calcul\'e aux faces). 
+normal aux faces (d\'efini et calcul\'e aux faces).
 
 On a donc le syst\`eme suivant, entre $t^n$ et $t^*$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}
@@ -49,7 +49,7 @@ On a donc le syst\`eme suivant, entre $t^n$ et $t^*$~:
 \displaystyle\frac{\partial\rho}{\partial t}+\divs{\vect{Q}_{ac}} = 0 \\
 \\
 \displaystyle\frac{\partial\vect{Q}_{ac}}{\partial t}+\gradv{P} =
-\rho \vect{f}\\ 
+\rho \vect{f}\\
 \\
 \vect{Q}^*=\vect{Q}^n\\
 \\
@@ -59,20 +59,20 @@ e^*=e^n\\
 \end{equation}
 
 Une partie des termes sources de l'\'equation de la
-quantit\'e de mouvement peut \^etre prise en compte dans cette \'etape 
+quantit\'e de mouvement peut \^etre prise en compte dans cette \'etape
 (les termes les plus importants, en pr\^etant attention aux sous-\'equilibres).
 
 Il faut noter que si $\vect{f}$ est effectivement nul, on aura bien un
 syst\`eme ``acoustique'', mais que si l'on place des termes suppl\'ementaires
-dans $\vect{f}$, la d\'enomination est abusive (on la conservera cependant). 
+dans $\vect{f}$, la d\'enomination est abusive (on la conservera cependant).
 
 On obtient $\rho^* = \rho^{n+1}$ en r\'esolvant (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}),
 et l'on actualise alors le flux de masse acoustique $\vect{Q}_{ac}^{n+1}$,
 qui servira pour la convection (en particulier pour la convection de
 l'enthalpie totale et de tous les scalaires transport\'es).
- 
+
 Suivant la valeur de \var{IGRDPP}, on actualise éventuellement la pression, en
-utilisant la loi d'\'etat : 
+utilisant la loi d'\'etat :
 $$
 \displaystyle P^{Pred}=P(\rho^{n+1},\varepsilon^{n})
 $$

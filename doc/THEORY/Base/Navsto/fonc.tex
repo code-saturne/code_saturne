@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -35,7 +35,7 @@ On s'int\'eresse \`a la r\'esolution du syst\`eme d'\'equations de Navier-Stokes
 tridimensionnelles monophasiques, \`a une pression, instationnaires, en
 incompressible ou faiblement dilatable, bas\'ees sur une discr\'etisation
 temporelle de type Euler implicite d'ordre 1 ou Crank-Nicolson d'ordre 2 et sur
-une discr\'etisation spatiale  par volumes finis colocalis\'ee. 
+une discr\'etisation spatiale  par volumes finis colocalis\'ee.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,11 +53,11 @@ l'instant ${t^n}$ et on cherche \`a les d\'eterminer \`a l'instant\footnote{La p
 pr\'ediction de la vitesse en r\'esolvant l'\'equation de quantit\'e de
 mouvement avec une pression explicite. Suit l'\'etape de correction de la
 pression (ou projection de la vitesse) qui permet d'obtenir un champ de vitesse \`a divergence nulle.\\\\
-Les \'equations en continu sont donc :   
+Les \'equations en continu sont donc :
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) + \dive(\rho\, \vect{u} \otimes \vect{u})
-=\dive(\tens{\sigma}) + \vect{TS} - \tens{K}\,\vect{u}\\ 
+=\dive(\tens{\sigma}) + \vect{TS} - \tens{K}\,\vect{u}\\
 \dive(\rho \vect{u}) = \Gamma
 \end{array}\right.
 \end{equation}
@@ -66,12 +66,12 @@ Les \'equations en continu sont donc :
 
 
 
-avec $\rho$ la masse volumique, $\vect{u}$ le champ de vitesse, 
-$[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ les autres termes sources ($\tens{K}$~est un 
+avec $\rho$ la masse volumique, $\vect{u}$ le champ de vitesse,
+$[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ les autres termes sources ($\tens{K}$~est un
 tenseur diagonal positif par d\'efinition), $\tens{\sigma}$ le tenseur
 de contraintes, $\tens{\tau}$ le tenseur des contraintes visqueuses, $\mu$ la
 viscosit\'e dynamique (mol\'eculaire et \'eventuellement turbulente), $\kappa$
-la viscosité de 
+la viscosité de
 volume (usuellement nulle et négligée dans le code et dans la suite du document,
 sauf en compressible),
 $\tens{D}$ le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$,
@@ -102,7 +102,7 @@ et donc :
 \begin{array}{lll}
 \left[\dive(\vect{a}\otimes\vect{b})\right]_i &= &
 \partial_j (a_i\,b_j)
-\end{array} 
+\end{array}
 \end{equation}
 
 \minititre{Remarque}

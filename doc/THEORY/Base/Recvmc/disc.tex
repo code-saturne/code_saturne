@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -66,7 +66,7 @@ v_{i,x} \\ v_{i,y} \\ v_{i,z}
 \displaystyle
 \frac{1}{\rho_i}(\sum\limits_{j\in Vois(i)}\phi_{ij}S_{ij,y} +\sum\limits_{k\in {\gamma_b(i)}}\phi_{\,b_{ik}}S_{{\,b_{ik}},y})\\
 \displaystyle
-\frac{1}{\rho_i}(\sum\limits_{j\in Vois(i)}\phi_{ij}S_{ij,z} +\sum\limits_{k\in {\gamma_b(i)}}\phi_{\,b_{ik}}S_{{\,b_{ik}},z}) 
+\frac{1}{\rho_i}(\sum\limits_{j\in Vois(i)}\phi_{ij}S_{ij,z} +\sum\limits_{k\in {\gamma_b(i)}}\phi_{\,b_{ik}}S_{{\,b_{ik}},z})
 \end{array}\right]
 \end{array}
 \end{equation}
@@ -79,13 +79,13 @@ S^{\,i}_{\,ml} = \sum\limits_{j\in Vois(i)}S_{ij,\,l}\,S_{ij,\,m} + \sum\limits_
 %\begin{equation}
 %\left[\begin{array}{ccc}
 %\displaystyle
-%\sum\limits_jS_{ij,x}S_{ij,x} & \sum\limits_jS_{ij,x}S_{ij,y} 
+%\sum\limits_jS_{ij,x}S_{ij,x} & \sum\limits_jS_{ij,x}S_{ij,y}
 %& \sum\limits_jS_{ij,x}S_{ij,z}\\
 %\displaystyle
-%\sum\limits_jS_{ij,x}S_{ij,y} & \sum\limits_jS_{ij,y}S_{ij,y} 
+%\sum\limits_jS_{ij,x}S_{ij,y} & \sum\limits_jS_{ij,y}S_{ij,y}
 %& \sum\limits_jS_{ij,y}S_{ij,z}\\
 %\displaystyle
-%\sum\limits_jS_{ij,x}S_{ij,z} & \sum\limits_jS_{ij,y}S_{ij,z} 
+%\sum\limits_jS_{ij,x}S_{ij,z} & \sum\limits_jS_{ij,y}S_{ij,z}
 %& \sum\limits_jS_{ij,z}S_{ij,z}
 %\end{array}\right]
 %\left[\begin{array}{c}

@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -43,23 +43,23 @@ variable courante\footnote{En effet, aucune variable n'est actualis\'ee pour la 
 
 Les \'equations sont r\'esolues \`a l'instant $n+1$.
 \subsection{\bf Variables tensions de Reynolds}
-Pour chaque composante $R_{ij}$, on \'ecrit : 
+Pour chaque composante $R_{ij}$, on \'ecrit :
 \begin{equation}\label{Base_Turrij_Eq_Temp_Rij}
 \begin{array}{ll}
 \displaystyle
-\rho^n\ \frac {R_{ij}^{\,n+1}-R_{ij}^{\,n}}{\Delta t^n} 
+\rho^n\ \frac {R_{ij}^{\,n+1}-R_{ij}^{\,n}}{\Delta t^n}
 +\ \dive\left[ (\rho \underline{u})^{n} R_{ij}^{\,n+1}
 - \mu^n\ \grad{R}_{ij}^{\,n+1} \right]
 =  &
 \displaystyle
-\mathcal{P}^{\,n}_{ij} 
+\mathcal{P}^{\,n}_{ij}
 + \mathcal{G}^n_{ij} \\
-& 
+&
 \displaystyle
-+ \phi^{\,n,n+1}_{ij,1} + \phi^{\,n}_{ij,2} + \phi^{\,n}_{ij,w} \\ 
-& 
++ \phi^{\,n,n+1}_{ij,1} + \phi^{\,n}_{ij,2} + \phi^{\,n}_{ij,w} \\
+&
 \displaystyle
-+ \text{\it{d}}^{\,n,n+1}_{ij} 
++ \text{\it{d}}^{\,n,n+1}_{ij}
 - \displaystyle \frac{2}{3} \rho^n \varepsilon^n \delta_{ij}
 + R^{\,n+1}_{ij} \dive{(\rho \underline{u})^n} \\
 &
@@ -80,10 +80,10 @@ turbulente $k$). Ainsi :
 \begin{equation}
 \displaystyle
 \phi^{\,n,n+1}_{ij,1} = -\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[
-(1-\frac{\delta_{ij}}{3}) R^{\,n+1}_{ij}- \delta_{ij} \frac{2}{3} (k^n-\frac{1}{2} R^{\,n}_{ii}) \right] 
+(1-\frac{\delta_{ij}}{3}) R^{\,n+1}_{ij}- \delta_{ij} \frac{2}{3} (k^n-\frac{1}{2} R^{\,n}_{ii}) \right]
 \end{equation}
 
-Le terme de diffusion turbulente $\tens{\it{d}}$ s'\'ecrit : $\it{d}_{ij} = \dive{\left[ \tens{A}\,\grad{R}_{ij} \right]}$. 
+Le terme de diffusion turbulente $\tens{\it{d}}$ s'\'ecrit : $\it{d}_{ij} = \dive{\left[ \tens{A}\,\grad{R}_{ij} \right]}$.
 Le tenseur $\tens{A}$ est toujours explicite.
 En int\'egrant sur un volume de contr\^ole (cellule) $\Omega_l$, le terme $\tens{\it{d}}$ de diffusion turbulente de $R_{ij}$ s'\'ecrit :
 
@@ -91,7 +91,7 @@ En int\'egrant sur un volume de contr\^ole (cellule) $\Omega_l$, le terme $\tens
 \displaystyle\int_{\Omega_l} \it{d}^{\,n,n+1}_{ij}\ d\Omega =
 \sum\limits_{m\in
 Vois(l)} \left[
-\tens{A}^n\,\grad{R}^{\,n+1}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm} 
+\tens{A}^n\,\grad{R}^{\,n+1}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}
 \end{equation}
 
 $\vect{n}_{\,lm}$ est la normale unitaire \`a la face\footnote{La notion de
@@ -111,7 +111,7 @@ Ainsi,
 \sum\limits_{m\in
 Vois(l)} \underbrace{ \left[
 \tens{D}^n\,\grad{R}_{ij}\right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm} }
-_{\text {partie diagonale}}\\ 
+_{\text {partie diagonale}}\\
 + \displaystyle\sum\limits_{m\in
 Vois(l)} \underbrace{ \left[
 \tens{E}^n\,\grad{R}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}\ }
@@ -121,7 +121,7 @@ _{\text {partie extra-diagonale}}
 
 La partie extra-diagonale sera prise totalement explicite et interviendra donc
 dans l'expression regroupant les termes purement explicites $f_s^{\,exp}$ du
-second membre de \fort{codits}.\\ 
+second membre de \fort{codits}.\\
 Pour la partie diagonale, on introduit la composante normale du gradient de la
 variable principale $R_{ij}$. Cette  contribution normale sera trait\'ee en
 implicite pour la variable et interviendra \`a la fois dans l'expression de la matrice simplifi\'ee du syst\`eme r\'esolu par \fort{codits} et dans
@@ -142,7 +142,7 @@ $$\gamma^n_{\,lm} = (D^n_{11})\,n^2_{\,1,\,lm} + (D^n_{22})\,n^2_{\,2,\,lm} +
  on peut traiter ce terme $\gamma^n_{\,lm}$ comme une diffusion avec un
 coefficient de diffusion ind\'ependant de la direction.\\
 
-Finalement, on \'ecrit : 
+Finalement, on \'ecrit :
 \begin{equation}
 \begin{array} {lll}
 &\displaystyle\int_{\Omega_l} \it{d}_{ij}^{\,n,n+1}\ d\Omega =\\
@@ -162,9 +162,9 @@ $$\dive(\,\tens{E}^n\,\grad{R}^{\,n}_{ij}) + \dive(\,\tens{D}^n\,[\,\grad{R}^{\,
 )\,\vect{n}\,]\,)$$ en omettant la notion de face.\\
 Le dernier terme est implicite relativement \`a la variable $R_{ij}$ et correspond \`a l'op\'erateur continu :
  $$\dive(\,\tens{D}^n\,(\grad{R}^{\,n+1}_{ij}\,.\,\vect{n} )\,\vect{n})$$
-\subsection{\bf Variable $\varepsilon$ } 
+\subsection{\bf Variable $\varepsilon$ }
 On r\'esout l'\'equation de $\varepsilon$ de fa\c con analogue \`a celle de
-$R_{ij}$. 
+$R_{ij}$.
 \begin{equation}
 \begin{array}{ll}
 \displaystyle
@@ -176,7 +176,7 @@ $R_{ij}$.
 d_{\,\varepsilon}^{\,n,n+1} \\
 &
 \displaystyle
-+ C_{\varepsilon_1} \frac{k^n}{\varepsilon^n} \left[ \mathcal{P}^n + \mathcal{G}^n_{\varepsilon} \right] 
++ C_{\varepsilon_1} \frac{k^n}{\varepsilon^n} \left[ \mathcal{P}^n + \mathcal{G}^n_{\varepsilon} \right]
 - \rho^n C_{\varepsilon_2} \frac{(\varepsilon^n)^2}{k^n} \\
 &
 \displaystyle
@@ -190,21 +190,21 @@ d_{\,\varepsilon}^{\,n,n+1} \\
 
 Le terme de diffusion turbulente $\it{d}^{\,n,n+1}_{\,\varepsilon}$ est trait\'e comme celui des
 variables $R_{ij}$ et s'\'ecrit : $$\it{d}_{\,\varepsilon}^{\,n,n+1} = \dive{\left[
-\tens{A'}^{\,n}\,\grad {\varepsilon^{\,n+1}} \right]}$$ 
-Le tenseur $\tens{A'}$ est toujours explicite. 
-On le d\'ecompose en une partie diagonale $\tens{D'}^{\,n}$ et une partie 
+\tens{A'}^{\,n}\,\grad {\varepsilon^{\,n+1}} \right]}$$
+Le tenseur $\tens{A'}$ est toujours explicite.
+On le d\'ecompose en une partie diagonale $\tens{D'}^{\,n}$ et une partie
 extra-diagonale $\tens{E'}^{\,n}$ :\\
 $$\tens{A'}^{\,n} =\tens{D'}^{\,n} + \tens{E'}^{\,n}$$
 Ainsi :
 \begin{equation}
 \begin{array} {lcl}
-&\displaystyle \int_{\Omega_l} \it{d}_{\,\varepsilon}^{\,n,n+1}\ d\Omega = 
+&\displaystyle \int_{\Omega_l} \it{d}_{\,\varepsilon}^{\,n,n+1}\ d\Omega =
 \sum\limits_{m\in Vois(l)} \left[
 \tens{E'}^{\,n}\,\grad{\varepsilon}^n
 \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}\\
 & + \sum\limits_{m\in Vois(l)} \left[
 \tens{D'}^{\,n}\,\grad{\varepsilon}^n
-\right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}\  
+\right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}\
 - \sum\limits_{m\in Vois(l)}
  \eta^n_{\,lm} \left(\grad{\varepsilon}^{n}\,.\,\vect{n}_{\,lm} \right) S_{\,lm}\\
 &+  \sum\limits_{m\in Vois(l)} \eta^n_{\,lm} \left( \grad{\varepsilon}^{n+1}\,.\,\vect{n}_{\,lm} \right) S_{\,lm}

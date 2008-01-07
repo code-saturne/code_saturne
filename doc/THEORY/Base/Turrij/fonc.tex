@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -43,7 +43,7 @@ Pour chaque composante $R_{ij}$, on r\'esout :
 \begin{equation}
 \begin{array}{ll}
 \displaystyle
-\rho\frac{\partial R_{ij}}{\partial t} + 
+\rho\frac{\partial R_{ij}}{\partial t} +
 \dive(\rho \vect{u}\,R_{ij} - \mu\,\grad{R_{ij}}) = &
 \mathcal{P}_{ij} + \mathcal{G}_{ij}+\Phi_{ij} + \it{d}_{ij} - \varepsilon_{ij} +
 R_{ij}\,\dive{(\rho \vect{u})} \\
@@ -51,7 +51,7 @@ R_{ij}\,\dive{(\rho \vect{u})} \\
 \end{array}
 \end{equation}
 
-$\tens{\mathcal{P}}$ est le tenseur de production par cisaillement moyen : 
+$\tens{\mathcal{P}}$ est le tenseur de production par cisaillement moyen :
 
 \begin{equation}
 \displaystyle \mathcal{P}_{ij} = \displaystyle -\rho \left[ R_{ik} \frac{\partial u_j}{\partial x_k} + R_{jk} \frac{\partial u_i}{\partial x_k} \right]
@@ -72,7 +72,7 @@ avec
 \begin{array} {c}
 \displaystyle G_{ij} = - \frac{3}{2} \frac{C_{\mu}}{\sigma_{t}} \frac{k}{\varepsilon} (r_i g_j + r_j g_i) \\
 \displaystyle k = \frac{1}{2} R_{ll} \\
-\displaystyle r_i = R_{ik} \frac{\partial \rho}{\partial x_k} 
+\displaystyle r_i = R_{ik} \frac{\partial \rho}{\partial x_k}
 \end{array}\right.
 \end{equation}
 
@@ -96,17 +96,17 @@ Il en r\'esulte :
 \Phi_{ij} - \varepsilon_{ij} = \phi_{ij,1} + \phi_{ij,2} + \phi_{ij,w}  -\frac{2}{3} \rho \ \delta_{ij} \varepsilon
 \end{equation}
 
-Le terme $\phi_{ij,1}$ est un terme "lent" de retour \`a l'isotropie. Il est donn\'e par : 
+Le terme $\phi_{ij,1}$ est un terme "lent" de retour \`a l'isotropie. Il est donn\'e par :
 
 \begin{equation}
 \displaystyle
 \phi_{ij,1} = -\rho\,C_1 \frac{\varepsilon}{k} (R_{ij} - \frac{2}{3} k \delta_{ij})
 \end{equation}
 
-Le terme $\phi_{ij,2}$ est un terme "rapide" d'isotropisation de la production. Il est donn\'e par : 
+Le terme $\phi_{ij,2}$ est un terme "rapide" d'isotropisation de la production. Il est donn\'e par :
 \begin{equation}
 \displaystyle
-\phi_{ij,2} = -\rho\,C_2 (\mathcal{P}_{ij} - \frac{2}{3} \mathcal{P} \delta_{ij}) 
+\phi_{ij,2} = -\rho\,C_2 (\mathcal{P}_{ij} - \frac{2}{3} \mathcal{P} \delta_{ij})
 \end{equation}
 
 avec,
@@ -120,24 +120,24 @@ utilis\'e par d\'efaut dans \CS, mais peut \^etre activ\'e avec $\var{IRIJEC} = 
 \begin{array} {ll}
 \displaystyle
 \phi_{ij,w}  = &
-\displaystyle \rho\,C'_1 \frac{k}{\varepsilon} \left[ R_{km} n_k n_m \delta_{ij} - 
-\frac{3}{2} R_{ki} n_k n_j - 
+\displaystyle \rho\,C'_1 \frac{k}{\varepsilon} \left[ R_{km} n_k n_m \delta_{ij} -
+\frac{3}{2} R_{ki} n_k n_j -
 \frac{3}{2} R_{kj} n_k n_i \right] f(\frac{l}{y})  \\
 &
-+\displaystyle \rho\,C'_2 \left[ \phi_{km,2} n_k n_m \delta_{ij} - 
-\frac{3}{2} \phi_{ki,2} n_k n_j - 
++\displaystyle \rho\,C'_2 \left[ \phi_{km,2} n_k n_m \delta_{ij} -
+\frac{3}{2} \phi_{ki,2} n_k n_j -
 \frac{3}{2} \phi_{kj,2} n_k n_i \right] f(\frac{l}{y})
 \end{array}
 \end{equation}
 
 $f$ est une fonction d'amortissement construite pour valoir 1 en paroi et tendre
 vers 0 en s'\'eloignant des parois.\\
-La longueur $l$ repr\'esente 
+La longueur $l$ repr\'esente
 $\displaystyle\frac{k^{\,\frac{3}{2}}}{\varepsilon}$, caract\'eristique de la turbulence. On prend :
 
 \begin{equation}
 f(\frac{l}{y}) = min(1, \ C^{\,0,75}_{\mu} \
-\frac{k^{\,\frac{3}{2}}}{\varepsilon\ \kappa y}) 
+\frac{k^{\,\frac{3}{2}}}{\varepsilon\ \kappa y})
 \end{equation}
 
 
@@ -163,7 +163,7 @@ De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pou
 \begin{array} {ll}
 \displaystyle \rho\frac{\partial \varepsilon}{\partial t} +
 \dive\left[\rho \vect{u}\,\varepsilon-
-(\mu \grad{\varepsilon})\right] = & 
+(\mu \grad{\varepsilon})\right] = &
 \displaystyle \it{d}_{\,\varepsilon}
 + C_{\varepsilon_1}\frac{\varepsilon}{k}\left[\mathcal{P}
 +\mathcal{G}_{\varepsilon}\right]
@@ -177,7 +177,7 @@ De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pou
 \end{equation}
 
 
-$\it{d}_{\,\varepsilon}$ est le terme de diffusion turbulente : 
+$\it{d}_{\,\varepsilon}$ est le terme de diffusion turbulente :
 \begin{equation}
 \displaystyle
 \it{d}_{\,\varepsilon} = C_{\varepsilon} \displaystyle \frac{\partial}{\partial x_k} \left( \rho \frac{k}{\varepsilon} R_{km} \frac{\partial \varepsilon}{\partial x_m} \right)
@@ -206,12 +206,12 @@ $C_\mu$  & $C_{\varepsilon}$  & $C_{\varepsilon_1}$ &
 $C_{\varepsilon_2}$  & $C_1$ & $C_2$ & $C_3$ & $C_S$
 & $C'_1$ & $C'_2$ \\
 \hline
-$0,09$ & $ 0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0,22$ & $0,5$ & 
+$0,09$ & $ 0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0,22$ & $0,5$ &
 $0,3$ \\
 \hline
 \end{tabular}
 \end{center}
-}   
+}
 \caption{D\'efinition des constantes utilis\'ees.}\label{Base_Turrij_table_Cstes}
 \end{table}
 

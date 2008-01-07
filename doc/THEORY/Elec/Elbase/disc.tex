@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -34,68 +34,68 @@
 
 La discr\'etisation des \'equations ne pose pas de probl\`eme particulier
 (ajout de termes sources explicites pour l'effet Joule et les forces de Laplace,
-\'equations de Poisson pour la d\'etermination des potentiels). 
+\'equations de Poisson pour la d\'etermination des potentiels).
 
 Un point sur les conditions aux limites doit cependant \^etre fait ici, en
 particulier pour pr\'eciser la m\'ethode de recalage automatique des
-potentiels. 
+potentiels.
 
- 
+
 
 \subsection{Arcs \'electriques}
 
 \subsubsection{Conditions aux limites}
 
-Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser. 
+Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser.
 
 {\bf Les conditions aux limites sur le potentiel scalaire} sont des conditions de
 Neumann homog\`enes sur toutes les fronti\`eres hormis \`a la cathode et \`a
 l'anode. \`A la cathode, on impose une condition de Dirichlet homog\`ene (potentiel nul par convention). \`A l'anode, on impose une
 condition de Dirichlet permettant de fixer la diff\'erence de potentiel
-souhait\'ee entre l'anode et la cathode. 
+souhait\'ee entre l'anode et la cathode.
 L'utilisateur peut fixer le potentiel de l'anode directement ou
-demander qu'un recalage automatique du potentiel soit effectu\'e pour atteindre 
-une intensit\'e de courant pr\'ed\'etermin\'ee. 
+demander qu'un recalage automatique du potentiel soit effectu\'e pour atteindre
+une intensit\'e de courant pr\'ed\'etermin\'ee.
 
-Lorsque le recalage automatique est demand\'e (\var{IELCOR}=1), l'utilisateur doit fixer la 
-valeur cible de l'intensit\'e, \var{COUIMP}, ($A$) et une valeur \'elev\'ee 
-de d\'epart 
+Lorsque le recalage automatique est demand\'e (\var{IELCOR}=1), l'utilisateur doit fixer la
+valeur cible de l'intensit\'e, \var{COUIMP}, ($A$) et une valeur \'elev\'ee
+de d\'epart
 de la diff\'erence de potentiel entre l'anode et la cathode\footnote{Plus pr\'ecis\'ement, l'utilisateur doit imposer un potentiel nul
-en cathode et le potentiel \var{DPOT} \`a l'anode, en utilisant explicitement, 
+en cathode et le potentiel \var{DPOT} \`a l'anode, en utilisant explicitement,
 dans le sous-programme utilisateur \fort{uselcl}, la variable \var{DPOT} qui
-sera automatiquement recal\'ee au cours du calcul.}, \var{DPOT}, ($V$). 
+sera automatiquement recal\'ee au cours du calcul.}, \var{DPOT}, ($V$).
 Le recalage est effectu\'e en fin de pas temps et permet de disposer, pour le pas
 de temps suivant, de valeurs recal\'ees des forces de Laplace et de l'effet
-Joule. 
+Joule.
 \begin{itemize}
-\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule 
+\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule
 estim\'e sur le domaine (en $W$) et en compare la
 valeur au produit de l'intensit\'e \var{COUIMP} par la diff\'erence de
 potentiel\footnote{\var{DPOT} est la diff\'erence de
 potentiel impos\'ee entre l'anode et la cathode au
 pas de temps qui s'ach\`eve. \var{DPOT} a conditionn\'e le champ \'electrique et
-la densit\'e de courant utilis\'es pour le calcul de l'effet Joule.} \var{DPOT}. 
+la densit\'e de courant utilis\'es pour le calcul de l'effet Joule.} \var{DPOT}.
 Un coefficient multiplicatif de recalage \var{COEPOT} en
-est d\'eduit (pour \'eviter des variations trop brusques, 
-on s'assure qu'il reste born\'e). % entre 0,75 et 1,5). 
+est d\'eduit (pour \'eviter des variations trop brusques,
+on s'assure qu'il reste born\'e). % entre 0,75 et 1,5).
 \item On multiplie alors par \var{COEPOT} la
 diff\'erence de potentiel entre l'anode et la cathode, \var{DPOT}, et le vecteur $\vect{j}$. L'effet
 Joule, produit de $\vect{j}$ par $\vect{E}$, est multipli\'e par
 le carr\'e de \var{COEPOT}. Pour assurer la coh\'erence du post-traitement des
 variables, le potentiel vecteur et le potentiel scalaire sont \'egalement
-multipli\'es par \var{COEPOT}. 
+multipli\'es par \var{COEPOT}.
 \item Le champ \'electrique n'\'etant pas explicitement
 stock\'e, on ne le recale pas. Le potentiel vecteur et les forces de Laplace seront d\'eduits de la
-densit\'e de courant et int\'egreront donc naturellement le recalage.   
+densit\'e de courant et int\'egreront donc naturellement le recalage.
 \end{itemize}
 
 \bigskip
 {\bf Les conditions aux limites sur le potentiel vecteur} sont des conditions de
 Neumann homog\`ene sur toutes les fronti\`eres hormis sur une zone de bord
 arbitrairement choisie (paroi par exemple) pour laquelle une condition de
-Dirichlet est utilis\'ee afin que le syst\`eme soit inversible 
+Dirichlet est utilis\'ee afin que le syst\`eme soit inversible
 (la valeur impos\'ee est la valeur du potentiel vecteur
-calcul\'ee au pas de temps pr\'ec\'edent). 
+calcul\'ee au pas de temps pr\'ec\'edent).
 
 
 
@@ -103,45 +103,45 @@ calcul\'ee au pas de temps pr\'ec\'edent).
 
 \subsubsection{Conditions aux limites}
 
-Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser. 
+Seules les conditions aux limites pour les potentiels sont \`a pr\'eciser.
 
 {\bf Les conditions aux limites sur le potentiel scalaire} sont \`a pr\'eciser
 au cas par cas selon la configuration des \'electrodes. Ainsi, on dispose
 classiquement de conditions de Neumann homog\`enes ou de Dirichlet (potentiel
 impos\'e). On peut \'egalement avoir besoin d'imposer des conditions
-d'antisym\'etrie (en utilisant des conditions de Dirichlet homog\`enes par exemple). 
+d'antisym\'etrie (en utilisant des conditions de Dirichlet homog\`enes par exemple).
 L'utilisateur peut \'egalement souhaiter qu'un recalage automatique du potentiel
 soit effectu\'e pour atteindre une valeur pr\'ed\'etermin\'ee de la puissance
-dissip\'ee par effet Joule.  
+dissip\'ee par effet Joule.
 
-Lorsque le recalage automatique est demand\'e (\var{IELCOR}=1), l'utilisateur doit fixer la 
-valeur cible de la puissance dissip\'ee dans le domaine, \var{PUISIM}, ($V.A$). 
+Lorsque le recalage automatique est demand\'e (\var{IELCOR}=1), l'utilisateur doit fixer la
+valeur cible de la puissance dissip\'ee dans le domaine, \var{PUISIM}, ($V.A$).
 Il doit en outre, sur les fronti\`eres o\`u il
 souhaite que le potentiel (r\'eel ou complexe) s'adapte automatiquement, fournir en
 condition \`a la limite une valeur initiale du potentiel et la multiplier par
-la variable \var{COEJOU} qui sera automatiquement recal\'ee au cours du calcul 
-(\var{COEJOU} vaut 1 au premier pas de temps). 
+la variable \var{COEJOU} qui sera automatiquement recal\'ee au cours du calcul
+(\var{COEJOU} vaut 1 au premier pas de temps).
 Le recalage est effectu\'e en fin de pas temps et permet de disposer, pour le pas
 de temps suivant, d'une valeur recal\'ee de l'effet
-Joule. 
+Joule.
 \begin{itemize}
-\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule 
+\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule
 estim\'e sur le domaine (en $W$) et en compare la
 valeur \`a la puissance cible. Un coefficient multiplicatif de recalage \var{COEPOT} en
-est d\'eduit (pour \'eviter des variations trop brusques, 
-on s'assure qu'il reste born\'e entre 0,75 et 1,5). 
+est d\'eduit (pour \'eviter des variations trop brusques,
+on s'assure qu'il reste born\'e entre 0,75 et 1,5).
 \item On multiplie alors par
 \var{COEPOT} le facteur multiplicatif \var{COEJOU} utilis\'e pour les conditions aux
 limites. La puissance dissip\'ee par effet
 Joule est multipli\'ee par
 le carr\'e de \var{COEPOT}. Pour assurer la coh\'erence du post-traitement des
 variables, le potentiel est \'egalement
-multipli\'e par \var{COEPOT}. 
+multipli\'e par \var{COEPOT}.
 \item Le champ \'electrique n'\'etant pas explicitement
-stock\'e, on ne le recale pas.   
+stock\'e, on ne le recale pas.
 \end{itemize}
 
 \bigskip
-On notera que la variable \var{DPOT} est \'egalement recal\'ee et qu'elle 
-peut donc \^etre utilis\'ee si besoin pour imposer les conditions aux limites. 
+On notera que la variable \var{DPOT} est \'egalement recal\'ee et qu'elle
+peut donc \^etre utilis\'ee si besoin pour imposer les conditions aux limites.
 

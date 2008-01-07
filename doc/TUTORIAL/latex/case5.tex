@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -28,7 +28,7 @@
 \section{General}
 %----------------
 
-	\subsection{Objective}
+        \subsection{Objective}
 %-----------------------------
 
 The aim of this case is to train the user of \CS\ on a simplified but real 3D
@@ -36,7 +36,7 @@ computation. It corresponds to a stratified flow in a T-junction. The test case
 will be used to present some advanced post-processing techniques.
 
 
-	\subsection{Description of the configuration}
+        \subsection{Description of the configuration}
 %-----------------------------------------------
 
 The configuration is based on a real mock-up designed to characterize thermal
@@ -46,7 +46,7 @@ figure \ref{config}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=4.5cm]{\repgraphics/c5_config.jpg} 
+\includegraphics[width=9cm,height=4.5cm]{\repgraphics/c5_config.jpg}
 \caption{Geometry of the case}
 \label{config}
 \end{center}
@@ -56,10 +56,10 @@ There are two inlets, a hot one in the main pipe and a cold one in the vertical 
 The volumic flow rate is identical in both inlets. It is chosen small enough so that
 gravity effects are important with respect to inertia forces. Therefore
 cold water creeps backwards from the nozzle towards the elbow until the flow
-reaches a stable stratified state. 
+reaches a stable stratified state.
 
- 
-	\subsection{Characteristics}
+
+        \subsection{Characteristics}
 %----------------------------------
 
 Characteristics of the geometry: \\
@@ -91,17 +91,17 @@ Hot branch temperature & $T_{hb} = 38.5$\degresC \\
 The initial water temperature in the domain is equal to 38.5\degresC.
 
 Water specific heat and thermal conductivity are considered constant and
-calculated at 18.26\degresC\ and $10^{5}\ Pa$: 
+calculated at 18.26\degresC\ and $10^{5}\ Pa$:
 \begin{itemize}
-	\item heat capacity: $C_{p} = 4_,182.88\ J.kg^{-1}.\mbox{\degresC}^{-1}$ 
-	\item thermal conductivity: $\lambda = 0.601498\ W.m^{-1}.\mbox{\degresC}^{-1}$ 
+        \item heat capacity: $C_{p} = 4_,182.88\ J.kg^{-1}.\mbox{\degresC}^{-1}$
+        \item thermal conductivity: $\lambda = 0.601498\ W.m^{-1}.\mbox{\degresC}^{-1}$
 \end{itemize}
 
 The water density and dynamic viscosity are variable with the temperature. The
 functions are given below.
 
 
-	\subsection{Mesh characteristics}
+        \subsection{Mesh characteristics}
 %---------------------------------------
 The mesh used in the actual study had 125\,000 elements. It has been coarsened
 for this example in order for calculations to run faster. The mesh used here
@@ -114,10 +114,10 @@ contains 16\,320 elements.
 {\bfseries Mesh generator used}: SIMAIL
 
 {\bfseries Color definition}: see figure \ref{fige1_e5}.
-   
+
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{\repgraphics/color_Snimbus.jpg} 
+\includegraphics[width=10cm]{\repgraphics/color_Snimbus.jpg}
 \caption{Colors of the boundary faces}
 \label{fige1_e5}
 \end{center}
@@ -135,50 +135,50 @@ sub-mesh. A 2D clip plane will also be extracted along the symmetry plane of the
 domain and temperature will be written on it.
 
 
-	\subsection{Calculation options}
+        \subsection{Calculation options}
 %-----------------------------------------
 
-The following options are considered for the case: 
+The following options are considered for the case:
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Flow type: unsteady flow
-	\item Time step: variable in time and uniform in space
-	\item Turbulence model: $k-\epsilon$
-	\item Scalar(s): temperature
-	\item Physical properties: uniform and constant for specific heat and
+        \item Flow type: unsteady flow
+        \item Time step: variable in time and uniform in space
+        \item Turbulence model: $k-\epsilon$
+        \item Scalar(s): temperature
+        \item Physical properties: uniform and constant for specific heat and
 thermal conductivity and variable for density and dynamic viscosity
-	\item Specific treatment of hydrostatic pressure: activated
-	\item Time step limitation by gravity effects
+        \item Specific treatment of hydrostatic pressure: activated
+        \item Time step limitation by gravity effects
 \end{itemize}
 
 
-	\subsection{Initial and boundary conditions}
+        \subsection{Initial and boundary conditions}
 %---------------------------------------------------
 
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Initialization: temperature initialization at 38.5\degresC
+        \item Initialization: temperature initialization at 38.5\degresC
 \end{itemize}
 
 The boundary conditions are defined as follows:
 
 \begin{itemize}
-	\item {\bfseries Flow inlet}: Dirichlet condition 
-	\begin{itemize}
-		\item velocity of $0.03183\ m.s^{-1}$ for both inlets 
-	        \item temperature of 38.5\degresC\ for the hot inlet
-		\item temperature of 18.6\degresC\ for the cold inlet
-	\end{itemize}
-	\item {\bfseries Outlet}: default value
-	\item {\bfseries Walls}: default value 
+        \item {\bfseries Flow inlet}: Dirichlet condition
+        \begin{itemize}
+                \item velocity of $0.03183\ m.s^{-1}$ for both inlets
+                \item temperature of 38.5\degresC\ for the hot inlet
+                \item temperature of 18.6\degresC\ for the cold inlet
+        \end{itemize}
+        \item {\bfseries Outlet}: default value
+        \item {\bfseries Walls}: default value
 \end{itemize}
 
-Figure \ref{fige1_e5} shows the colors used for boundary conditions and 
-table \ref{tabante51} defines the correspondance between the colors and  
+Figure \ref{fige1_e5} shows the colors used for boundary conditions and
+table \ref{tabante51} defines the correspondance between the colors and
 the type of boundary condition to use.
 
 \begin{table}
-\begin{center} 
+\begin{center}
 \begin{tabular}{|c|c|}
 \hline
 Colors & Conditions \\
@@ -191,14 +191,14 @@ Colors & Conditions \\
 \hline
 5 & Wall \\
 \hline
-\end{tabular} 
+\end{tabular}
 \caption{Boundary faces colors and associated references}
 \label{tabante51}
 \end{center}
 \end{table}
 
 
-	\subsection{Parameters}
+        \subsection{Parameters}
 %------------------------------
 All the parameter necessary to this study can be defined through the Graphical
 Interface, except the variable fluid characteristics and the advanced
@@ -222,7 +222,7 @@ Minimal time step & $0.01\ s$ \\
 \hline
 Maximal time step & $70\ s$ \\
 \hline
-Time step maximal variation & $0.1$ \\ 
+Time step maximal variation & $0.1$ \\
 \hline
 Period of output chronological files & $10$ \\
 \hline
@@ -231,7 +231,7 @@ Period of output chronological files & $10$ \\
 
 
 
-	\subsection{Output management}
+        \subsection{Output management}
 %-------------------------------------
 The standard options for output management will be used. Four monitoring points
 will be created at the following coordinates:
@@ -254,14 +254,14 @@ Points & X(m) & Y(m) & Z(m)\\
 
 
 
-	\subsection{User routines}
+        \subsection{User routines}
 %---------------------------------
 
 The following routines have to be copied from the folder FORT/USER/base into the
 folder FORT\footnote{only when they appear in the FORT directory will they be
 taken into account by the code}: usphyv.F, usdpst.F, usvpst.F and usmpst.F
 
-	
+
 $\bullet$ {\bfseries usphyv.F}\\
 This routine allows to specify variable physical properties, density and
 viscosity in particular. In this case, the following variation laws are specified:
@@ -269,10 +269,10 @@ viscosity in particular. In this case, the following variation laws are specifie
 \rho = T.(A.T + B) + C
 \end{equation}
 where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
-$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$ 
+$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
 
 
-For the dynamic viscosity, the variation law is: 
+For the dynamic viscosity, the variation law is:
 
 \begin{equation}
 \mu = T.(T.(AM.T + BM) + CM) + DM
@@ -287,7 +287,7 @@ undesired use. Do not forget to deactivate them.
 
 In order for the variable density to have an effect on the flow, gravity must be
 set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
-Graphical Interface.	
+Graphical Interface.
 
 
 In this test case, advanced post-processing features will be used. A clip
@@ -302,7 +302,7 @@ written on this part. The interest of this part is that it is time dependent
 as for the cells it contains.
 
 Three Fortran routines will be used:
- 
+
 $\bullet$ {\bfseries usdpst.F}\\
 This routine is called only once, at the beginning of the calculation. It allows
 to define the different writers and parts.
@@ -316,7 +316,7 @@ This routine is called at each time step. It allows to specify which variable
 will be written on which part.
 
 
-	\subsection{Results}
+        \subsection{Results}
 %---------------------------
 
 Figure \ref{fige2_e5} shows the evolution of the temperature in the domain at
@@ -342,12 +342,12 @@ different time steps. The evolution of the stratification is clearly visible.
 Figure \ref{fige4_e5} shows the cells where the temperature
 is lower than 21\degresC. It is not an isosurface created from the full domain,
 but a visualization of the full sub-domain created through the post-processing
-routines. 
+routines.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{\repgraphics/case5_03.jpg} 
-\includegraphics[width=10cm]{\repgraphics/case5_04.jpg} 
+\includegraphics[width=10cm]{\repgraphics/case5_03.jpg}
+\includegraphics[width=10cm]{\repgraphics/case5_04.jpg}
 \caption{Sub-domain where the temperature is lower than 21\degresC\ (upper figure)
 and localization in the full domain (lower figure)}
 \label{fige4_e5}

@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -34,7 +34,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'algorithme de ce sous-programme est le suivant :\\
 - détermination des propriétés de la matrice $\tens{EM}_{n}$ (sym\'etrique
-si pas de convection, non sym\'etrique sinon)\\ 
+si pas de convection, non sym\'etrique sinon)\\
 - choix automatique de la méthode de résolution pour l'inverser si l'utilisateur
 ne l'a pas sp\'ecifi\'e pour la variable trait\'ee. La m\'ethode de Jacobi est utilis\'ee par d\'efaut pour toute variable scalaire $a$ convect\'ee. Les m\'ethodes
 disponibles sont la m\'ethode du gradient conjugu\'e, celle de Jacobi, et le
@@ -49,7 +49,7 @@ traitée, quelque soit le choix de l'utilisateur, avec un schéma décentré amont d
 pour la diffusion. Le choix de l'utilisateur quant au
 schéma numérique pour la convection intervient uniquement lors de l'intégration
 des termes de convection de $\mathcal{E}_{n}$, au second membre de
-(\ref{Base_Codits_Eq_Codits}) dans le sous-programme \fort{bilsc2}.}. Les termes implicites correspondant à 
+(\ref{Base_Codits_Eq_Codits}) dans le sous-programme \fort{bilsc2}.}. Les termes implicites correspondant à
 la partie diagonale de la matrice et donc aux contributions diff\'erentielles
 d'ordre $0$ lin\'eaires en $a^{n+1}$,({\it i.e} $f_s^{imp}$), sont stockés dans le tableau \var{ROVSDT} (r\'ealis\'e en amont du sous-programme appelant \fort{codits}).\\
 - création de la hiérarchie de maillage si on utilise le multigrille
@@ -57,23 +57,23 @@ d'ordre $0$ lin\'eaires en $a^{n+1}$,({\it i.e} $f_s^{imp}$), sont stockés dans 
 - appel à \fort{bilsc2} pour une éventuelle prise en compte de la
 convection-diffusion explicite lorsque $\theta \ne 0$.\\
 - boucle sur le nombre d'itérations de 1 \`a $\var{NSWRSM}$ (appelé $\var{NSWRSP}$ dans \fort{codits}).
- Les itérations sont représentées par $k$ appelé 
+ Les itérations sont représentées par $k$ appelé
 \var{ISWEEP} dans le code et d\'efinissent les indices de la suite $(a^{n+1,\,k})_k$
 et de $(\delta a^{n+1,\,k})_k$.\\
 Le second membre est scind\'e en deux parties :\\
 \hspace*{1cm}{\tiny$\blacksquare$}\ un terme, affine
 en  $a^{n+1,\,k-1}$, facile \`a mettre \`a jour dans le cadre de la r\'esolution
-par incr\'ement, et qui s'\'ecrit : 
+par incr\'ement, et qui s'\'ecrit :
 \begin{equation}\notag
- -f_s^{\,imp} \left(\,a^{n+1,\,k-1} - a^{n+1,0}\right) + f_s^{\,exp}- (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n+1,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,0})\,\right]\\ 
+ -f_s^{\,imp} \left(\,a^{n+1,\,k-1} - a^{n+1,0}\right) + f_s^{\,exp}- (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n+1,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,0})\,\right]\\
 \end{equation}
 \\
 \hspace*{1cm}{\tiny$\blacksquare$}\ les termes issus de la
-convection/diffusion (avec reconstruction) calculée par \fort{bilsc2}.\\ 
+convection/diffusion (avec reconstruction) calculée par \fort{bilsc2}.\\
 \begin{equation}\notag
 - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k-1}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k-1}\right)\right]
 \end{equation}
- 
+
 La boucle en $k$ est alors la suivante :
 \begin{itemize}
 \item Calcul du second membre, hors contribution des termes de
@@ -98,7 +98,7 @@ Avant de boucler sur $k$, le second membre $\var{SMBRP}^{\,0}$ est stock\'e dans
 \var{SMBINI}^{\,0} =\var{SMBRP}^{\,0}
 \end{equation}
 \\
-$\bullet$ pour $k = 1$,	
+$\bullet$ pour $k = 1$,        
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBINI}^{\,1}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,0} - a^n\,)\\
@@ -139,7 +139,7 @@ o\`u
 a^{n+1,\,1}=\var{PVAR}^{\,1}=\var{PVAR}^{\,0}+\var{DPVAR}^{\,1}=a^{n+1,\,0}+\delta a^{n+1,\,1}
 \end{equation}
 $\bullet$ pour l'it\'eration $k+1$,\\
-Le tableau $\var{SMBINI}^{\,k+1}$ initialise le second membre complet 
+Le tableau $\var{SMBINI}^{\,k+1}$ initialise le second membre complet
 $\var{SMBRP}^{\,k+1}$ auquel vont \^etre rajout\'ees les contributions
 convectives et diffusives {\it via} le sous-programme \fort{bilsc2}.\\
 on a la formule :
@@ -164,7 +164,7 @@ ajoutée dans le second membre  $\var{SMBRP}^{\,k+1}$ (initialis\'e par $\var{SMB
 &-\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,k}) - \dive(\mu_{\,tot}\,\grad a^{n+1,k})\,\right]\\
 \end{array}
 \end{equation}
- 
+
 \item R\'esolution du système linéaire en $\delta a^{n+1,\,k+1}$ correspondant
 \`a l'\'equation (\ref{Base_Codits_Eq_Codits}) par inversion de la matrice
 $\tens{EM}_{n}$, en appelant le sous programme \fort{invers}.
@@ -212,7 +212,7 @@ $\mathcal{E}_{n}$}
 D'autres approches visant soit \`a modifier la d\'efinition de l'approxim\'ee, prise en compte du sch\'ema centr\'e sans reconstruction par exemple,
 soit \`a abandonner cette voie seraient \`a \'etudier.\\
 
-\etape{Test de convergence} 
+\etape{Test de convergence}
 La quantit\'e d\'efinissant le  test de convergence est également à revoir, éventuellement à simplifier.
 
 \etape{Prise en compte de $T_s^{imp}$}

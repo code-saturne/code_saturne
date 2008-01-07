@@ -1,9 +1,9 @@
 %CVERS    CODE_SATURNE VERSION 1.3              COPYRIGHT EDF 1999-2006 *
 %---------------------------------------------------------------------
 %
-% Auteur  : 
-% Date    : 
-% Numéro  : 
+% Auteur  :
+% Date    :
+% Numéro  :
 % Version :
 %
 %---------------------------------------------------------------------
@@ -225,13 +225,13 @@ Below is a list of the different variables that might be modified :
 
 \minititre{Subroutine \texttt{usalcl}}
 The use of \texttt{usalcl}
-is obligatory to run a calculation using the ale module just 
-as it is in \texttt{usini1}  . The way of using it is the same as the 
+is obligatory to run a calculation using the ale module just
+as it is in \texttt{usini1}  . The way of using it is the same as the
 way of using \texttt{usclim} in the framework of standard calculations, that is to
 say a loop on the boundary faces marked out by their colour (or more
-generally by a property of their family), where the type of boundary 
+generally by a property of their family), where the type of boundary
 condition of velocity mesh for each variable are defined.
- 
+
 The main numerical variables are described below.
 
 \variab{IALTYB}{IALTYB(NFABOR)}{IA}{In the ale module, the user
@@ -247,14 +247,14 @@ marked out by the key words IVIMPO\index{IVIMPO}, IGLISS\index{IGLISS}, IBFIXE\i
 \item If IALTYB=IVIMPO : imposed velocity.
 
 \begin{list}{$\rightarrow$}{}
-\item In the case where all the nodes of a face have a imposed displacement, 
-it is not necessary to fill the tables with boundary conditions velocity mesh for this face, 
+\item In the case where all the nodes of a face have a imposed displacement,
+it is not necessary to fill the tables with boundary conditions velocity mesh for this face,
 they will be erased. In the other case, the value of the Dirichlet must be given in
 RCODCL(IFAC,IVAR,1) for every value of IVAR (IUMA, IVMA and IWMA)
 The other boxes of RCODCL and ICODCL are completed automatically.
- 
- The tangential velocity mesh is taken like a tape speed under the boundary conditions 
- of wall for the fluid, except if wall velocity was specified by the user in the interface or usclim 
+
+ The tangential velocity mesh is taken like a tape speed under the boundary conditions
+ of wall for the fluid, except if wall velocity was specified by the user in the interface or usclim
  (in which case it is this speed which is considered).
 \end{list}
 
@@ -267,7 +267,7 @@ The other boxes of RCODCL and ICODCL are completed automatically.
 \begin{list}{$\rightarrow$}{}
 \item the tangential velocity is not used.
 \end{list}
- 
+
 \end{list}
 
 }
@@ -289,14 +289,14 @@ For each structure, the system that will be solved is :
 
  \begin{equation}
 M.x^{''}+C.x^{''}+K.(x-x_{0} = 0
-\end{equation} 
+\end{equation}
 
 where
- 
+
 \begin{list}{-}{}
- \item $M$ is the mass stucture (XMSTRU). 
- \item $C$ is the dumping coefficient of the stucture (XCSTRU). 
- \item $K$ is the spring constant or force constant of the stucture (XKSTRU). 
+ \item $M$ is the mass stucture (XMSTRU).
+ \item $C$ is the dumping coefficient of the stucture (XCSTRU).
+ \item $K$ is the spring constant or force constant of the stucture (XKSTRU).
  \item $x_{0}$ is the initial position
 \end{list}
 
@@ -305,17 +305,17 @@ Below is a list of the different variables that might be modified :
 \begin{list}{$\bullet$}{}
 
 \item{XMSTRU(I,J,K)} \\
-{the mass stucture of the structure, where I,J is the array of mass structure 
+{the mass stucture of the structure, where I,J is the array of mass structure
 and K the index of the structure.
 }
 
 \item{XCSTRU(I,J,K)}\\
-{dumping coefficient of the stucture, where I,J is the array of dumping coefficient 
+{dumping coefficient of the stucture, where I,J is the array of dumping coefficient
 and K the index of the structure.
 }
 
 \item{XKSTRU(I,J,K)}\\
-{spring constant of the stucture, where I,J is the array of spring constant 
+{spring constant of the stucture, where I,J is the array of spring constant
 and K the index of the structure.
 }
 

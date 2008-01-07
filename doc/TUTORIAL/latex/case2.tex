@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -28,7 +28,7 @@
 \section{General description}
 %----------------
 
-	\subsection{Objective}
+        \subsection{Objective}
 %-----------------------------
 
 This aim of this case is to tackle the merging of initially separate meshes into
@@ -37,30 +37,30 @@ addressed. The test case will then be used to present more complex calculations,
 with time dependent variables and Fortran user routines.
 
 
-	\subsection{Description of the configuration}
+        \subsection{Description of the configuration}
 %-----------------------------------------------
 
 The fluid domain is composed of three separate meshes, very roughly representing
-elements of a nuclear pressurized water reactor vessel: 
+elements of a nuclear pressurized water reactor vessel:
 \begin{itemize}
-	\item the downcomer
-	\item the vessel's bottom
-	\item the lower core plate and core 
+        \item the downcomer
+        \item the vessel's bottom
+        \item the lower core plate and core
 \end{itemize}
 
 Figure \ref{figante21} represents the complete domain. The flow circulates from
-the top left horizontal junction to the right vertical outlet. 
+the top left horizontal junction to the right vertical outlet.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6cm]{\repgraphics/fig04.jpg} 
+\includegraphics[width=9cm,height=6cm]{\repgraphics/fig04.jpg}
 \caption{Geometry of the complete domain}
 \label{figante21}
 \end{center}
 \end{figure}
 
 
-	\subsection{Characteristics}
+        \subsection{Characteristics}
 %----------------------------------
 
 The characteristics of the geometry and the flow are:
@@ -68,21 +68,21 @@ The characteristics of the geometry and the flow are:
 \begin{tabular}{|l|c|}
 \hline
 Height of downcomer & $H = 3.00\ m$ \\
-\hline 
-Thickness of downcomer & $E_{d} = 0.10\ m$ \\ 
-\hline 
-Diameter of the inlet cold branch & $D_{b} = 0.50\ m$ \\ 
-\hline 
-Height of vessel's bottom & $H_{fc} = 1.00\ m$ \\ 
-\hline 
-Width of vessel's bottom & $l_{fc} = 1.00\ m$ \\ 
-\hline 
-Height of core above the lower core plate & $H_{pic} = 1.00\ m$ \\ 
-\hline 
-Width of core above the lower core plate & $l_{pic} = 0.50\ m$ \\ 
-\hline 
-Inlet velocity of fluid & $V = 1\ m.s^{-1}$ \\ 
-\hline 
+\hline
+Thickness of downcomer & $E_{d} = 0.10\ m$ \\
+\hline
+Diameter of the inlet cold branch & $D_{b} = 0.50\ m$ \\
+\hline
+Height of vessel's bottom & $H_{fc} = 1.00\ m$ \\
+\hline
+Width of vessel's bottom & $l_{fc} = 1.00\ m$ \\
+\hline
+Height of core above the lower core plate & $H_{pic} = 1.00\ m$ \\
+\hline
+Width of core above the lower core plate & $l_{pic} = 0.50\ m$ \\
+\hline
+Inlet velocity of fluid & $V = 1\ m.s^{-1}$ \\
+\hline
 \end{tabular}\\
 \end{center}
 
@@ -92,27 +92,27 @@ The inlet temperature of water in the cold branch is 300\degresC.
 Water characteristics are considered constant\footnote{which makes temperature a
 passive scalar ... but it is only for simplification purposes} and their values taken at
 300\degresC\ and $150\times 10^{5}\ Pa$, except density which is considered
-variable in cases 3 and 4: 
+variable in cases 3 and 4:
 \begin{itemize}
-	\item density: $\rho = 725.735\ kg.m^{-3}$ 
-	\item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
-	\item heat capacity: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$ 
-	\item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
+        \item density: $\rho = 725.735\ kg.m^{-3}$
+        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
+        \item heat capacity: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
+        \item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
 \end{itemize}
 
 
 
-	\subsection{Mesh characteristics}
+        \subsection{Mesh characteristics}
 %---------------------------------------
 
 Figure \ref{figante22} shows a global view of the mesh and some details of
 the pasting zones, to show that \CS\ can deal with hanging nodes.
 This mesh is composed of 1\,650 cells, which is very small compared to those used in real
 studies. This is a deliberate choice so that tutorial calculations run fast.
-	
+
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=8.65cm,height=7.4cm]{\repgraphics/fig05.jpg} 
+\includegraphics[width=8.65cm,height=7.4cm]{\repgraphics/fig05.jpg}
 \caption{View of the full domain mesh with zoom on the pasting regions}
 \label{figante22}
 \end{center}
@@ -126,18 +126,18 @@ pipe at the outlet level, on the nozzle side (figure \ref{figante22})
 {\bfseries Mesh generator used}: SIMAIL and mesh pasting with the Preprocessor
 of \CS\ (in order to deal with hanging nodes)
 
-{\bfseries Color definition}: see figure \ref{figante23} 
+{\bfseries Color definition}: see figure \ref{figante23}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=3.6cm,height=6.4cm]{\repgraphics/fig06.jpg} 
+\includegraphics[width=3.6cm,height=6.4cm]{\repgraphics/fig06.jpg}
 \caption{Colors of the boundary faces}
 \label{figante23}
 \end{center}
 \end{figure}
 
 
-	\subsection{Summary of the different calculations}
+        \subsection{Summary of the different calculations}
 %---------------------------------------------------------
 
 Three cases will be studied with this geometry. The following table gives a
@@ -149,7 +149,7 @@ CASE & characteristics \\
 \hline
 CASE 2 & unsteady flow, additionnal passive scalar, output management \\
 \hline
-CASE 3 & same as case 2 with time dependent boundary conditions, \\ 
+CASE 3 & same as case 2 with time dependent boundary conditions, \\
  &       fluid density depending on the temperature and calculation restart\\
 \hline
 CASE 4 & same as case 3 with head loss, parallelism and spatial average \\
@@ -162,35 +162,35 @@ CASE 4 & same as case 3 with head loss, parallelism and spatial average \\
 \section{CASE 2: Passive scalar with various boundary conditions and output management}
 %--------------------------------------------------------------------------------------
 
-	\subsection{Calculation options}
+        \subsection{Calculation options}
 %-----------------------------------------
 
 Some options are similar to case 1:
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Turbulence model: $k-\epsilon$
-	\item Scalar(s): 1 - temperature
-	\item Physical properties: uniform and constant
+        \item Turbulence model: $k-\epsilon$
+        \item Scalar(s): 1 - temperature
+        \item Physical properties: uniform and constant
 \end{itemize}
 
-The new options are: 
+The new options are:
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Flow type: unsteady flow
-	\item Time step: uniform and constant
-	\item Scalar(s): 2 - passive scalar\footnote{could correspond to a tracer
+        \item Flow type: unsteady flow
+        \item Time step: uniform and constant
+        \item Scalar(s): 2 - passive scalar\footnote{could correspond to a tracer
 concentration for instance}
-	\item Management of monitoring points
+        \item Management of monitoring points
 \end{itemize}
 
 
-	\subsection{Initial and boundary conditions}
+        \subsection{Initial and boundary conditions}
 %---------------------------------------------------
 
 \begin{itemize}
 \renewcommand{\labelitemi}{$\rightarrow$}
-	\item Initialization: 20\degresC\ for temperature (default value) \\
-	\hspace*{2.1cm}        10 for the passive scalar
+        \item Initialization: 20\degresC\ for temperature (default value) \\
+        \hspace*{2.1cm}        10 for the passive scalar
 \end{itemize}
 
 
@@ -198,12 +198,12 @@ The boundary conditions are defined in the user interface and depend on the
 boundary zone.
 
 \begin{itemize}
-	\item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
+        \item {\bfseries Flow inlet}: Dirichlet condition, an inlet velocity of
 $1\ m.s^{-1}$, an inlet temperature of 300\degresC\ and an inlet value of 200
 for the passive scalar are imposed
-	\item {\bfseries Outlet}: default value
-	\item {\bfseries Walls}: velocity, pressure and thermal scalar: default value \\
-	            \hspace*{1.25cm} passive scalar: different conditions
+        \item {\bfseries Outlet}: default value
+        \item {\bfseries Walls}: velocity, pressure and thermal scalar: default value \\
+                    \hspace*{1.25cm} passive scalar: different conditions
 depending on the color and geometric parameters
 \end{itemize}
 
@@ -215,20 +215,20 @@ as specified in the following table:
 \begin{tabular}{|c|c|c|}
 \hline
 Wall & Nature & Value \\
-\hline 
-wall\_1 & Dirichlet  & 0 \\ 
-\hline 
-wall\_2 & Dirichlet  & 5 \\ 
-\hline 
-wall\_3 & Dirichlet  & 0 \\ 
-\hline 
-wall\_4 & Dirichlet  & 25 \\ 
-\hline 
-wall\_5 & Dirichlet  & 320 \\ 
-\hline 
-wall\_6 & Dirichlet  & 40 \\ 
 \hline
-\end{tabular} 
+wall\_1 & Dirichlet  & 0 \\
+\hline
+wall\_2 & Dirichlet  & 5 \\
+\hline
+wall\_3 & Dirichlet  & 0 \\
+\hline
+wall\_4 & Dirichlet  & 25 \\
+\hline
+wall\_5 & Dirichlet  & 320 \\
+\hline
+wall\_6 & Dirichlet  & 40 \\
+\hline
+\end{tabular}
 \end{center}
 
 The ``wall\_1'' to ``wall\_6'' regions are defined as follows, through color
@@ -246,13 +246,13 @@ wall\_6 & 31 or 33 \\
 \end{tabular}
 \end{center}
 
-Figure \ref{figante23} shows the colors used for boundary conditions and 
-table \ref{tabante21} defines the correspondance between the colors and  
+Figure \ref{figante23} shows the colors used for boundary conditions and
+table \ref{tabante21} defines the correspondance between the colors and
 the type of boundary condition to use.
 
 \begin{table}[htp]
 \begin{center}
-\begin{tabular}{|c|c|} 
+\begin{tabular}{|c|c|}
 \hline
 Colors & Conditions \\
 \hline
@@ -271,7 +271,7 @@ Colors & Conditions \\
 \end{table}
 
 
-	\subsection{Parameters and User routines}
+        \subsection{Parameters and User routines}
 %------------------------------------------------
 
 All parameters necessary to this study can be defined through the Graphical
@@ -296,7 +296,7 @@ will have to be pasted through the Graphical Interface.
 
 
 
-	\subsection{Output management}
+        \subsection{Output management}
 %-------------------------------------
 
 In this case, different aspects of output management will be addressed.
@@ -309,7 +309,7 @@ In this case, the {\itshape Pressure}, the {\itshape Tubulent energy} and the
 {\itshape Dissipation} will be removed from the listing file.
 
 The {\itshape Courant number} (CFL) and {\itshape Fourier number} will be
-removed from the 
+removed from the
 post-processing results\footnote{this can be very useful to save some disk space
 if some variables are of no interest, as post-processing files can be large}.
 
@@ -351,19 +351,19 @@ Points & X(m) & Y(m) & Z(m)\\
 \end{figure}
 
 In addition the domain boundary will be post-processed. This allows to check the
-boundary conditions, and especially that of the passive scalar. 
+boundary conditions, and especially that of the passive scalar.
 
 
-	\subsection{Results}
+        \subsection{Results}
 %---------------------------
 
 Figure \ref{fige1_e2} shows the boundary domain colored by the passive
 scalar boundary conditions. The different regions of boundary
-conditions defined earlier can be checked. 
+conditions defined earlier can be checked.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=14cm,height=11cm]{\repgraphics/c2_p7.jpg} 
+\includegraphics[width=14cm,height=11cm]{\repgraphics/c2_p7.jpg}
 \caption{View of the boundary domain colored by the scalar\_2 variable - Case 2}
 \label{fige1_e2}
 \end{center}
@@ -375,11 +375,11 @@ calculation. They were plotted from the post-processing files, with EnSight.
 \begin{figure}
 \begin{center}
 \begin{tabular}{cc}
-\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p1.jpg} & 
+\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p1.jpg} &
 \includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p2.jpg} \\
-\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p3.jpg} & 
+\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p3.jpg} &
 \includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p4.jpg} \\
-\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p5.jpg} & 
+\includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p5.jpg} &
 \includegraphics[width=6cm,height=6cm]{\repgraphics/c2_p6.jpg} \\
 \end{tabular}
 \caption{Water velocity field colored by temperature at different time steps - Case 2}

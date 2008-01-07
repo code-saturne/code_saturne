@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -40,20 +40,20 @@ notion de tableau s'y rattachant.
 \begin{itemize}
 \item [$\star$] Initialisation \`a z\'ero du tableau \var{PRODUC} dimensionn\'e \`a $\var{NCEL}\times 6$.
 \item [$\star$] On appelle trois fois \fort{grdcel} pour calculer les gradients des composantes de la vitesse $u$, $v$ et
-$w$ prises au temps $n$. 
+$w$ prises au temps $n$.
 
 Au final, on a :\\
 $\displaystyle
 \begin{array} {ll}
-\var{PRODUC(1,IEL)} = & \displaystyle - 2 \left[ R_{11}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \text{	(production de $R_{11}^{\,n}$)}\\ 
-\var{PRODUC(2,IEL)} = & \displaystyle - 2 \left[ R_{12}^{\,n} \frac{\partial v^{\,n}} {\partial x} +R_{22}^{\,n} \frac{\partial v^{\,n}} {\partial y}+R_{23}^{\,n} \frac{\partial v^{\,n}} {\partial z} \right] \text{	(production de $R_{22}^{\,n}$)}\\
-\var{PRODUC(3,IEL)} = & \displaystyle - 2 \left[ R_{13}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{23}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{33}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right] \text{	(production de $R_{33}^{\,n}$)}\\
+\var{PRODUC(1,IEL)} = & \displaystyle - 2 \left[ R_{11}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \text{        (production de $R_{11}^{\,n}$)}\\
+\var{PRODUC(2,IEL)} = & \displaystyle - 2 \left[ R_{12}^{\,n} \frac{\partial v^{\,n}} {\partial x} +R_{22}^{\,n} \frac{\partial v^{\,n}} {\partial y}+R_{23}^{\,n} \frac{\partial v^{\,n}} {\partial z} \right] \text{        (production de $R_{22}^{\,n}$)}\\
+\var{PRODUC(3,IEL)} = & \displaystyle - 2 \left[ R_{13}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{23}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{33}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right] \text{        (production de $R_{33}^{\,n}$)}\\
 \var{PRODUC(4,IEL)} = & \displaystyle - \left[ R_{12}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{22}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{23}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \\
-& \displaystyle - \left[ R_{11}^{\,n} \frac{\partial v^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial v^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial v^{\,n}} {\partial z} \right] \text{	(production de $R_{12}^{\,n}$)} \\
-\var{PRODUC(5,IEL)} = & \displaystyle - \left[ R_{13}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{23}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{33}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \\ 
-& \displaystyle - \left[ R_{11}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right] \text{	(production de $R_{13}^{\,n}$)} \\
+& \displaystyle - \left[ R_{11}^{\,n} \frac{\partial v^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial v^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial v^{\,n}} {\partial z} \right] \text{        (production de $R_{12}^{\,n}$)} \\
+\var{PRODUC(5,IEL)} = & \displaystyle - \left[ R_{13}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{23}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{33}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \\
+& \displaystyle - \left[ R_{11}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right] \text{        (production de $R_{13}^{\,n}$)} \\
 \var{PRODUC(6,IEL)} = & \displaystyle - \left[ R_{13}^{\,n} \frac{\partial v^{\,n}} {\partial x} +R_{23}^{\,n} \frac{\partial v^{\,n}} {\partial y}+R_{33}^{\,n} \frac{\partial v^{\,n}} {\partial z} \right] \\
-& \displaystyle - \left[ R_{12}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{22}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{23}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right]  \text{	(production de $R_{23}^{\,n}$)}
+& \displaystyle - \left[ R_{12}^{\,n} \frac{\partial w^{\,n}} {\partial x} +R_{22}^{\,n} \frac{\partial w^{\,n}} {\partial y}+R_{23}^{\,n} \frac{\partial w^{\,n}} {\partial z} \right]  \text{        (production de $R_{23}^{\,n}$)}
 \end{array}
 $
 \end{itemize}
@@ -62,7 +62,7 @@ $
 de temps courant\footnote{{\it i.e.} calcul\'ee \`a partir des
 variables du pas de temps pr\'ec\'edent $n$ si n\'ecessaire.} $(n+1)$}
 Ce calcul n'a lieu que si les termes de gravit\'e doivent \^etre pris en compte
-($\var{IGRARI()} =1$). 
+($\var{IGRARI()} =1$).
 \begin{itemize}
 \item [$\star$] Appel de \fort{grdcel}  pour calculer le gradient de $\rho^n$
 dans les trois directions de l'espace. Les conditions aux limites sur $\rho^n$
@@ -96,7 +96,7 @@ On va r\'esoudre l'\'equation (\ref{Base_Turrij_Eq_Temp_Rij}) sous forme incr\'e
 utilisant \fort{codits}, soit :
 \begin{equation}\label{Base_Turrij_Eq_Temp_deltaRij}
 \begin{array}{ll}
-&\displaystyle \underbrace{\left(\frac {\rho^n_L}{\Delta t^n} 
+&\displaystyle \underbrace{\left(\frac {\rho^n_L}{\Delta t^n}
 + \rho^n_L \,C_1\,\frac{\varepsilon^n_L}{k^n_L}(1-\frac{\delta_{ij}}{3})
  - m^n_{\,lm} + \Gamma_L\,+ max(-\alpha^n_{R_{ij}},0)\right)\,|\Omega_l|}
 _{\text {$\var{ROVSDT}$ contribuant
@@ -106,18 +106,18 @@ _{\text {$\var{ROVSDT}$ contribuant
 - (\mu^n_{\,lm} + \gamma^n_{\,lm})\
 \frac{({\delta R}_{ij}^{\,n+1,p+1})_{M}-({\delta R}_{ij}^{\,n+1,p+1})_{L})}{\overline{L'M'}}\,
 S_{\,lm} \right]}_{\text { convection upwind pur et diffusion non reconstruite
-relatives \`a la matrice simplifi\'ee de \fort{matrix}\footnotemark}} \\ 
+relatives \`a la matrice simplifi\'ee de \fort{matrix}\footnotemark}} \\
 % voir le texte de la footmark plus bas
-&= - \displaystyle\frac {\rho^n_L}{\Delta t^n}\,\left(\,(R^{\,n+1,p}_{ij})_L - (R^{\,n}_{ij})_L\,\right)\\  
+&= - \displaystyle\frac {\rho^n_L}{\Delta t^n}\,\left(\,(R^{\,n+1,p}_{ij})_L - (R^{\,n}_{ij})_L\,\right)\\
 &-\,\underbrace{\displaystyle\int_{\Omega_l} \left(
 \dive\,[\,(\rho\,\vect{u})^n\,R^{\,n+1,p}_{ij} - (\mu^n\,+ \gamma^n\,)\,
 \grad{R^{\,n+1,p}_{ij}}\,]\right)\,d\Omega}_{\text {convection et diffusion
 trait\'ees par \fort{bilsc2}}}\\
 &+\displaystyle \int_{\Omega_l} \left[\,\mathcal{P}^{\,n+1,p}_{ij} + \mathcal{G}^{\,n+1,p}_{ij}
-- \displaystyle\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[R^{\,n+1,p}_{ij}- 
+- \displaystyle\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[R^{\,n+1,p}_{ij}-
 \frac{2}{3}\,k^n\,\delta_{ij}\right] + \phi^{\,n+1,p}_{ij,2} +
 \phi^{\,n+1,p}_{ij,w}\,\right]\, d\Omega \\
-& + \displaystyle\int_{\Omega_l} \left[- \frac{2}{3} \rho^n \varepsilon^n \delta_{ij} 
+& + \displaystyle\int_{\Omega_l} \left[- \frac{2}{3} \rho^n \varepsilon^n \delta_{ij}
  + \Gamma\,(\,R^{\,in}_{ij} - R^{\,n+1,p}_{ij}\,) +
 \alpha^n_{R_{ij}}\,R^{\,n+1,p}_{ij}+ \beta^n_{R_{ij}}\right]\, d\Omega\\
 &+ \sum\limits_{m\in
@@ -135,7 +135,7 @@ associ\'ee \`a la matrice simplifi\'ee de \fort{matrix} ($\mu_t$ d\'esigne la
 viscosit\'e turbulente calcul\'ee comme en $k-\varepsilon$).}
 
 o\`u on rappelle :\\
-pour $n$ donn\'e entier positif, on d\'efinit la suite 
+pour $n$ donn\'e entier positif, on d\'efinit la suite
  $({R}_{ij}^{\,n+1,p})_{p \in \grandN}$
  par :
 \begin{equation}\notag
@@ -145,11 +145,11 @@ pour $n$ donn\'e entier positif, on d\'efinit la suite
 \end{array}\right.
 \end{equation}
 $(\delta{R}_{ij}^{\,n+1,p+1})_{\,L}$ d\'esigne la valeur sur l'\'el\'ement
-$\Omega_l$ du $\text{$(\,p+1\,)$-i\`eme}$ incr\'ement de ${R}_{ij}^{\,n+1}$, 
-$ m^n_{\,lm}$ le flux de masse \`a l'instant $n$ \`a travers la face $lm$,  
+$\Omega_l$ du $\text{$(\,p+1\,)$-i\`eme}$ incr\'ement de ${R}_{ij}^{\,n+1}$,
+$ m^n_{\,lm}$ le flux de masse \`a l'instant $n$ \`a travers la face $lm$,
 $\delta R_{ij,\,f_{\,lm}}^{\,n+1,p+1}$ vaut $({\delta
 R}_{ij}^{\,n+1,p+1})_{L}$  si $ m^n_{\,lm} \geqslant 0$, $({\delta
-R}_{ij}^{\,n+1,p+1})_{M}$ sinon,  
+R}_{ij}^{\,n+1,p+1})_{M}$ sinon,
 $\mathcal{P}^{\,n+1,p}_{ij}$, $\phi^{\,n+1,p}_{ij,2}$, $\phi^{\,n+1,p}_{ij,w}$ les valeurs
 des quantit\'es associ\'ees correspondant \`a l'incr\'ement
 $(\delta{R}_{ij}^{\,n+1,p})$.\\
@@ -163,14 +163,14 @@ Dans \fort{resrij} est calcul\'ee la variable \var{ROVSDT}. Les autres
 termes sont compl\'et\'es par \fort{codits}, lors de la construction de la matrice simplifi\'ee , {\it via} un
 appel au sous-programme \fort{matrix}. La quantit\'e
  $(\mu^n_{\,lm} + \gamma^n_{\,lm})$ \`a la face $lm$ est calcul\'ee lors de l'appel \`a
-\fort{visort}.\\ 
+\fort{visort}.\\
 \item Second membre de l'\'equation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
 Le premier terme non d\'etaill\'e est calcul\'e par le sous-programme
 \fort{bilsc2}, qui applique le sch\'ema convectif choisi par l'utilisateur, qui
 reconstruit ou non selon le souhait de l'utilisateur les gradients intervenants
-dans la convection-diffusion.\\ 
+dans la convection-diffusion.\\
 Les termes sans accolade sont, eux, compl\`etement explicites et ajout\'es au fur et
-\`a mesure dans \var{SMBR} pour former 
+\`a mesure dans \var{SMBR} pour former
 l'expression $f^{\,exp}_s$ de \fort{codits}.
 \end{itemize}
 On d\'ecrit ci-dessous les \'etapes de \fort{resrij} :
@@ -186,7 +186,7 @@ diagonale des op\'erateurs de convection et de diffusion lin\'earis\'es
 \footnote{qui correspondent aux sch\'emas convectif upwind pur et diffusif sans
 reconstruction.}), tous deux de dimension $\var{NCEL}$.
 
-\item Lecture et prise en compte des termes sources utilisateur pour la variable $R_{ij}$ 
+\item Lecture et prise en compte des termes sources utilisateur pour la variable $R_{ij}$
 
 Appel \`a \fort{ustsri} pour charger les termes sources utilisateurs. Ils sont
 stock\'es comme suit. Pour la cellule $\Omega_l$ de centre $L$, repr\'esent\'ee par $\var{IEL}$, on a :\\
@@ -206,7 +206,7 @@ diagonale \var{ROVSDT} comme suit :
 \end{equation}
 La valeur de $ \var{ROVSDT}$ est ainsi calcul\'ee pour des raisons de stabilit\'e
 num\'erique. En effet, on ne rajoute sur la diagonale que les valeurs positives,
-ce qui correspond physiquement \`a impliciter les termes de rappel uniquement. 
+ce qui correspond physiquement \`a impliciter les termes de rappel uniquement.
 \item{Calcul du terme source de masse  si $\Gamma_L > 0$}
 
 Appel de \fort{catsma} et incr\'ementation si n\'ecessaire de \var{SMBR} et
@@ -218,10 +218,10 @@ Appel de \fort{catsma} et incr\'ementation si n\'ecessaire de \var{SMBR} et
 \displaystyle \var{ROVSDT(IEL)}=\var{ROVSDT(IEL)} + |\Omega_l| \ \Gamma_L
 \end{array}\right.
 \end{equation}
-\item Calcul du terme d'accumulation de masse et du terme instationnaire  
+\item Calcul du terme d'accumulation de masse et du terme instationnaire
 
 On stocke $\displaystyle \var{W1}= \int_{\Omega_l}\dive\,(\rho\,\vect{u})\,d\Omega$
-calcul\'e par \fort{divmas} \`a l'aide des flux de masse aux faces internes 
+calcul\'e par \fort{divmas} \`a l'aide des flux de masse aux faces internes
 $ m^n_{\,lm}=\sum\limits_{m\in Vois(l)}{(\rho \vect{u})_{\,lm}^n} \text{.}\,
 \vect{S}_{\,lm} $ (tableau \var{FLUMAS}) et des flux de masse aux bords  $ m^n_{\,b_{lk}} = \sum\limits_{k\in{\gamma_b(l)}}{(\rho \vect{u})_{\,{b}_{lk}}^n} \text{.}\,
 \vect{S}_{\,{b}_{lk}} $ (tableau \var{FLUMAB}).
@@ -241,7 +241,7 @@ On incr\'emente ensuite \var{SMBR} et \var{ROVSDT}.
 On effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$ de centre $L$ :
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRPROD}= \frac{1}{2} (\mathcal{P}^n_{ii})_L = \frac{1}{2} \left[ \var{PRODUC(1,IEL)} +  \var{PRODUC(2,IEL)} +  \var{PRODUC(3,IEL)} \right] $
-\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $ 
+\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{SMBR(IEL)} =\ \var{SMBR(IEL)}\ +$\\
 $\ \displaystyle\rho^n_L |\Omega_l| \left[ \displaystyle
 \frac{2}{3}\,\delta_{\,ij} \left( \ \displaystyle \frac{ C_2}{2}\,(\mathcal{P}^n_{ii})_L\ +
@@ -253,19 +253,19 @@ $ + \left.\ (1-C_2) \ \var{PRODUC(ISOU,IEL)} -
 \ \frac{2\ \varepsilon^n_L}{(R^n_{ii})_L}$
 \end{itemize}
 \item Appel de \fort{rijech} pour le calcul des termes d'\'echo de paroi
- $\phi^n_{ij,w}$ si $\var{IRIJEC()}=1$ et ajout dans \var{SMBR}.\\ 
+ $\phi^n_{ij,w}$ si $\var{IRIJEC()}=1$ et ajout dans \var{SMBR}.\\
 $\var{SMBR} = \var{SMBR} + \phi^n_{ij,w}$\\
-Suivant son mode de calcul (\var{ICDPAR}), la distance à la paroi est directement accessible 
-par \var{RA(IDIPAR+IEL-1)} (\var{|ICDPAR|} = 1) ou bien 
-est calcul\'ee \`a partir de $\var{IA(IIFAPA(IPHAS)+IEL - 1)}$, 
+Suivant son mode de calcul (\var{ICDPAR}), la distance à la paroi est directement accessible
+par \var{RA(IDIPAR+IEL-1)} (\var{|ICDPAR|} = 1) ou bien
+est calcul\'ee \`a partir de $\var{IA(IIFAPA(IPHAS)+IEL - 1)}$,
 qui donne pour l'\'el\'ement $\var{IEL}$ le num\'ero de la face de bord
 paroi la plus  proche (\var{|ICDPAR|} = 2). Ces tableaux ont \'et\'e renseign\'e une fois pour toutes au
 d\'ebut de calcul.
 
-\item  Appel de \fort{rijthe} pour le calcul des termes de gravit\'e $\mathcal{G}^n_{ij}$ et ajout dans \var{SMBR}. 
+\item  Appel de \fort{rijthe} pour le calcul des termes de gravit\'e $\mathcal{G}^n_{ij}$ et ajout dans \var{SMBR}.
 
 Ce calcul n'a lieu que si $\var{IGRARI()} = 1$.
-$ \var{SMBR} = \var{SMBR} + \mathcal{G}^n_{ij}$ 
+$ \var{SMBR} = \var{SMBR} + \mathcal{G}^n_{ij}$
 \item Calcul de la partie explicite du terme de diffusion
  $\dive{\,\left[\tens{A}\,\grad{R}^{\,n}_{ij}\right]}$, plus pr\'ecis\'ement
 des contributions du terme extradiagonal pris aux faces purement internes
@@ -280,7 +280,7 @@ stock\'es dans les tableaux de travail \var{W1}, \var{W2} et \var{W3}.
 $L$ pour le
 calcul de $\tens{E}^n\,\grad{R}^{\,n}_{ij}$ aux cellules dans un premier temps :\\
 \begin{itemize}
-\item [$\Rightarrow$] $\displaystyle \var{TRRIJ}= \frac{1}{2} (R^{\,n}_{ii})_L $ 
+\item [$\Rightarrow$] $\displaystyle \var{TRRIJ}= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{CSTRIJ} = \rho^n_L\ C_S \ \displaystyle\frac{(R^n_{ii})_L}{2\,\varepsilon^n_L}$
 \item [$\Rightarrow$] $\displaystyle \var{W4(IEL)} = \rho^n_L\ C_S\
 \displaystyle\frac{(R^n_{ii})_L}{2\,\varepsilon^n_L} \left[\,(R^{\,n}_{12})_L \ \var{W2(IEL)} +
@@ -314,13 +314,13 @@ Vois(l)}\left[\ \tens{E}^n\,\grad{R}^{\,n}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,l
 composante normale  du  gradient de $R_{ij}$ aux faces sera implicite.} :\\
 Comme on l'a d\'eja vu, une partie de cette contribution sera trait\'ee en
 implicite (celle relative \`a la composante normale du gradient) et donc
-ajout\'ee au second membre par \fort{bilsc2} ; l'autre 
+ajout\'ee au second membre par \fort{bilsc2} ; l'autre
 partie sera explicite et prise en compte dans $f_s^{\,exp}$.
 \begin{itemize}
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
 $\Omega_l$ de centre $L$ :
 \begin{itemize}
-\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $ 
+\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{CSTRIJ} = \rho^n_L \ C_S \ \frac{(R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}$
 \item [$\Rightarrow$] $\displaystyle \var{W4(IEL)} = \rho^n_L \ C_S \
 \frac{(R^{\,n}_{ii})_L}{2\,\varepsilon^n_L} \ (R^{\,n}_{11})_L$
@@ -362,7 +362,7 @@ $\var{SURFAC}$ est le vecteur surface de la face \var{IFAC}.
 R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\vect{n}_{\,lm}\right]$, les vecteurs \'etant
 calcul\'es \`a la face $lm$ :
 \begin{equation}\notag
-\left\{\begin{array}{lll} 
+\left\{\begin{array}{lll}
 &\displaystyle \var{GRDPX} &= \var{GRDPX} - \displaystyle\frac{\var{GRDSN}}{\var{SURFN2}} \ \var{SURFAC(1,IFAC)}\\
 &&\\
 &\displaystyle \var{GRDPY} &= \var{GRDPY} - \displaystyle\frac{\var{GRDSN}}{\var{SURFN2}} \ \var{SURFAC(2,IFAC)} \\
@@ -371,7 +371,7 @@ calcul\'es \`a la face $lm$ :
 \end{array}\right.
 \end{equation}
 \item [$\Rightarrow$] finalisation du calcul de l'expression totalement
-explicite 
+explicite
  $$\left[ \tens{D}^n\,\left( \grad{R^{\,n}_{ij}} - (\grad R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm}\right) \right]\,.\,\vect{n}_{\,lm}$$
 \begin{equation}\notag
 \begin{array} {ll}
@@ -397,7 +397,7 @@ Ajout au second membre \var{SMBR}.\\
 $\var{SMBR} = \var{SMBR} + \var{W1}$
 \end{itemize}
 \item Calcul de la viscosit\'e orthotrope $\gamma^n_{\,lm}$ \`a la face $lm$ de la variable principale
-$R^{\,n}_{ij}$\\ 
+$R^{\,n}_{ij}$\\
 Ce calcul permet au sous-programme \fort{codits} de compl\'eter le second membre
 \var{SMBR} par :
 \begin{equation}
@@ -407,7 +407,7 @@ Ce calcul permet au sous-programme \fort{codits} de compl\'eter le second membre
  + \sum\limits_{m\in Vois(l)} \left(\grad{R}^{\,n}_{ij}
 \,.\,\vect{n}_{\,lm}\right)\left[\tens{D}^{\,n}\,\vect{n}_{\,lm}\right]_{\,lm}\,.\,\vect{n}_{\,lm}\
 S_{\,lm}\\
-& = \sum\limits_{m\in Vois(l)}(\,\mu^n_{\,lm}\, + \,\gamma^n_{\,lm}\,)\,\left(\grad{R}^{\,n}_{ij}\,.\,\vect{n}_{\,lm}\right)S_{\,lm} 
+& = \sum\limits_{m\in Vois(l)}(\,\mu^n_{\,lm}\, + \,\gamma^n_{\,lm}\,)\,\left(\grad{R}^{\,n}_{ij}\,.\,\vect{n}_{\,lm}\right)S_{\,lm}
 \end{array}
 \end{equation}
 sans pr\'eciser la nature de la face $lm$, {\it via} l'appel \`a \fort{bilsc2}  et de disposer de la quantit\'e
@@ -417,8 +417,8 @@ matrice simplifi\'ee.\\
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
 $\Omega_l$ :
 \begin{itemize}
-\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $ 
-\item [$\Rightarrow$] $\displaystyle \var{RCSTE} = \rho^n_L \ C_S \ \frac{ (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L} $ 
+\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $
+\item [$\Rightarrow$] $\displaystyle \var{RCSTE} = \rho^n_L \ C_S \ \frac{ (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L} $
 \item [$\Rightarrow$] $\displaystyle \var{W1(IEL)} = \mu^n +\rho^n_L \ C_S \ \frac{
 (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}\ (R^n_{11})_L$
 \item [$\Rightarrow$] $\displaystyle \var{W2(IEL)} = \mu^n + \rho^n_L \ C_S \ \frac{ (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}\ (R^n_{22})_L$
@@ -503,7 +503,7 @@ pour cela, on effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$
 de centre $L$ :
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRPROD}= \frac{1}{2} (\mathcal{P}^n_{ii})_L = \frac{1}{2} \left[ \var{PRODUC(1,IEL)} +  \var{PRODUC(2,IEL)} +  \var{PRODUC(3,IEL)} \right] $
-\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $ 
+\item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{SMBR(IEL)} = \var{SMBR(IEL)} + \rho^n_L
 |\Omega_l| \left[ -C_{\varepsilon_2} \ \frac{2\,(\varepsilon^n_L)^2}{(R^n_{ii})_L} + C_{\varepsilon_1} \ \frac{\varepsilon^n_L}{(R^n_{ii})_L}\ (\mathcal{P}^n_{ii})_L \right] $
 \item [$\Rightarrow$] $\displaystyle \var{ROVSDT(IEL)} = \var{ROVSDT(IEL)} + C_{\varepsilon_2} \ \rho^n_L \ |\Omega_l| \ \frac{2\,\varepsilon^n_L}{(R^n_{ii})_L}$

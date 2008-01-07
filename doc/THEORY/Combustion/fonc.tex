@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -35,7 +35,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 From a CFD point of vue combustion is a (somestimes very) complicated way to determine $\rho$.
-Models needs few extra fields of scalar with regular transport equation, somes of them with a reactive or interfacial source term. 
+Models needs few extra fields of scalar with regular transport equation, somes of them with a reactive or interfacial source term.
 
 Modeling of combustion is able to deal with gaz phase combustion (diffusion, premix, partial premix), and with solid or liquid fuels.
 
@@ -49,15 +49,15 @@ IPPMOD(index model) =  0   simplest adiabatic version
 IPPMOD(index model) =  1   simplest permeatic version
 Eventually
 IPPMOD(index model) = 2.p   p° adiabatic version
-IPPMOD(index model) = 2.p+1  P° permeatic version  
+IPPMOD(index model) = 2.p+1  P° permeatic version
 
-Every permeatic version involves the transport of enthalpy (one more variable). 
+Every permeatic version involves the transport of enthalpy (one more variable).
 
 %=================================
 \subsection{Gaz combustion modelling}
 %=================================
 
-Combustion of gaz is limited by disponibility (in the same fluid particle) of both fuel and oxidant and by kinetic effects (a lot of chemical reactions involved can be described using an Arrhenius law with an high activation energy). The mixing of mass (atoms) incoming with fuel and oxydant is described by a mixture fraction (mass fraction of mass incoming with fuel), this variable is not affected by combustion. A progress variabl is used to describe the transformation of the mixture from fuel and oxydant to product (carbon dioxyde and so on). 
+Combustion of gaz is limited by disponibility (in the same fluid particle) of both fuel and oxidant and by kinetic effects (a lot of chemical reactions involved can be described using an Arrhenius law with an high activation energy). The mixing of mass (atoms) incoming with fuel and oxydant is described by a mixture fraction (mass fraction of mass incoming with fuel), this variable is not affected by combustion. A progress variabl is used to describe the transformation of the mixture from fuel and oxydant to product (carbon dioxyde and so on).
 
 Combsution of gaz is, traditionnaly, splitted in premix and diffusion.
 In premix combustion process a first stage of mixing have been realised (without blast ...) and the mixture is introduced in the boiler (or combustion can). In industrial common conditions the combustion is mainly limited by the mixing of fresh gaz (inert) and burnt ones resulting in the inflammation of the first and their conversion to burnt ones ; so an assumption of chemistry much faster than mixing induces an intermittent regime. The gaz flow is constituted of totally fresh and totally burnt gaz (the flamme containing the gaz during their transformation) is "extremuly" thin. With previous assumptions, Spalding \ref{Comb} have established the "Eddy Break Up" model, wich allows a complete descrition with only one progress variable (mixture fraction is homogeneous).
@@ -73,12 +73,12 @@ In the real world the chemistry is not so fast and, often, the mixing is not as 
 Combustion of coal is the main way to produce electricity in the world.
 The coal is a natural product with a very complex composition, during the industrial process of milling the raw coal is broken in tiny particles of different sizes. After its introduction in the boiler, the caol particles undergoes drying, devolatilisation (heating of coal turn it in a mixture of char and gases), heterogenous combustion (of char leaving to carbone monoxide) leaving an ash particle.
 Each of therse phenomena are taken in account for some class of particles : a class is caracterised by a coal (it is useful to burn mixture of coals with differents ranks or mixture of coal with biomasse ...) and an initla diameter. For each class, \CS computes the number and the mass of particles by unit mass of mixture.
-The main assumption is to solve only one speed (and pressure) field : it means the discrepancy of speed between coal particles and gases is supposed negligible.  
+The main assumption is to solve only one speed (and pressure) field : it means the discrepancy of speed between coal particles and gases is supposed negligible.
 Due to the radiation and heterogeneous combustion, temperature can be different for gas and different size particles : so the specific enthalpy of each particle class is solved.
 The description of coal pyrolisis proposed by Kobayashi \cite{Comb} and bhayakar \cite{Comb} is used, leaving at two source terms for light and heavy volatile matters (the moderate temperature reaction produces gases with low molecular mass, the high temperature reaction produces heavier gases and less char) represented by passive scalar : mixture fraction.
 The description of heterogeneous reaction (who produce carbon monoxide) leads to a source term for the carbon : a mixture fraction who can't be greater than the results of stoechiometric oxydation of char by air.
-The retained model for the gaz phase combusiton is diffusion flammelets surrounding each particle, so the previous gaseous fuels are mixed in a local mean fuel and the mixing with air is represented by a pdf between air and mean local fuel constructed with the variance of a passive scalar linked with air (interfacial mass flux produce a source term for this scalar).  
- 
+The retained model for the gaz phase combusiton is diffusion flammelets surrounding each particle, so the previous gaseous fuels are mixed in a local mean fuel and the mixing with air is represented by a pdf between air and mean local fuel constructed with the variance of a passive scalar linked with air (interfacial mass flux produce a source term for this scalar).
+
 
 
 
@@ -87,7 +87,7 @@ The retained model for the gaz phase combusiton is diffusion flammelets surround
 %=================================
 
 Combustion of heavy fuel oil have been hugely used to produced electrical energy. Environemental regulation turns it more difficult and less acceptable, a focus is needed on pollutant emission mainly soulphur oxide and particles (condensation of sulphuric acid can aggregate soot).
-The description of fuel evaporation is done with respect of its heaviness : after a minimum temperature is reached, the gain of enthalpy is distributed between heating and evaporation. This way the evaporation takes place on a range of temperature (which can be large). The "total" evaporation is common for light oil but impossible for heavy ones, so a particle similar to char is leaved ; the heterogeneous oxydation of this char particle is very similar to coal char ones. 
+The description of fuel evaporation is done with respect of its heaviness : after a minimum temperature is reached, the gain of enthalpy is distributed between heating and evaporation. This way the evaporation takes place on a range of temperature (which can be large). The "total" evaporation is common for light oil but impossible for heavy ones, so a particle similar to char is leaved ; the heterogeneous oxydation of this char particle is very similar to coal char ones.
 Injection of fuel is described (2006 version) with only one class of particle, the number and mass of particles is calculated eveywhere. And so the enthalpy. So three variables are used to describe the condensed pahse. Like for coal, only one speed field is solved.
 The model for gas combustion is very similar to coal ones but a special is paid to sulphur (assumed to leave the particle as H2S during evaporation and to be converted to SO2 during gas combustion).
 

@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -29,14 +29,14 @@
 
 Only a few elements are different from case 2.
 
-In this case the density becomes variable. Go to the item 
+In this case the density becomes variable. Go to the item
 {\itshape Fluid properties} under the heading
-{\itshape Physical properties} and change the nature of the density from 
-{\itshape constant} to {\itshape variable}. 
+{\itshape Physical properties} and change the nature of the density from
+{\itshape constant} to {\itshape variable}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture01.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture01.jpg}
 \caption{Fluid properties - Variable density}
 \label{fig1_e3}
 \end{center}
@@ -54,7 +54,7 @@ vector to 9.81.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture02.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture02.jpg}
 \caption{Fluid properties - Gravity}
 \label{fig2_e3}
 \end{center}
@@ -62,7 +62,7 @@ vector to 9.81.
 
 
 \newpage
-Add a monitoring point close to the entry boundary condition in the 
+Add a monitoring point close to the entry boundary condition in the
 {\itshape Output control} item.
 
 \begin{center}
@@ -77,7 +77,7 @@ Points & X(m) & Y(m) & Z(m)\\
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture03.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture03.jpg}
 \caption{New monitoring probe}
 \label{fig3_e3}
 \end{center}
@@ -86,7 +86,7 @@ Points & X(m) & Y(m) & Z(m)\\
 
 \newpage
 After completing the interface, before running the calculation,
-some Fortran user routines need to be modified. 
+some Fortran user routines need to be modified.
 
 Go to the folder FORT/USERS/base and copy {\itshape usclim.F} and
 {\itshape usphyv.F} in the FORT directory.
@@ -121,7 +121,7 @@ ENDIF
 \end{verbatim}
 ISCA(1) refers to the first scalar and TTCABS is the current physical time.
 
-See the example file in the directory TEST\_CASES for the complete 
+See the example file in the directory TEST\_CASES for the complete
 {\itshape usclim.F} file.
 
 Note that, although the inlet boundary conditions for temperature are specified
@@ -151,7 +151,7 @@ It is this array that has to be modified. The variable density in the cell IEL
 is calculated from the fluid temperature in this cell, stored in\\
 RTP(IEL,ISCA(1))
 
-See the example file in the directory TEST\_CASES for the complete 
+See the example file in the directory TEST\_CASES for the complete
 {\itshape usphyv.F} file.
 
 
@@ -176,7 +176,7 @@ the restart files to use.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture04.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture04.jpg}
 \caption{Start / Restart}
 \label{fig4_e3}
 \end{center}
@@ -190,7 +190,7 @@ to the reference of the first calculation). Then click on {\itshape Validate}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture05.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture05.jpg}
 \caption{Start / Restart - Selection of the restart directory}
 \label{fig5_e3}
 \end{center}
@@ -203,11 +203,11 @@ control} and change the number of iterations. It must be the total number of
 iterations, from the beginning of the first calculation.\\
 
 The first calculation was done with 300 iterations and another 400 iterations
-are needed for the present case. Therefore the value 700 must be entered. 
+are needed for the present case. Therefore the value 700 must be entered.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{\repgraphics/c3_capture06.jpg} 
+\includegraphics[width=12cm]{\repgraphics/c3_capture06.jpg}
 \caption{Time step}
 \label{fig6_e3}
 \end{center}

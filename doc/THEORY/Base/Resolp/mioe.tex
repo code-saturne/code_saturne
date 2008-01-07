@@ -3,21 +3,21 @@
 %
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
-% 
+%
 %     Copyright (C) 1998-2007 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
-% 
+%
 %     The Code_Saturne Kernel is free software; you can redistribute it
 %     and/or modify it under the terms of the GNU General Public License
 %     as published by the Free Software Foundation; either version 2 of
 %     the License, or (at your option) any later version.
-% 
+%
 %     The Code_Saturne Kernel is distributed in the hope that it will be
 %     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 %     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with the Code_Saturne Kernel; if not, write to the
 %     Free Software Foundation, Inc.,
@@ -34,7 +34,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On expose dans ce qui suit l'algorithme tel qu'il est écrit dans \fort{resolp}.
 
-$\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps locaux dans chaque direction (pour l'utilisation du "couplage vitesse-pression renforc\'e"). Dans le cas de l'algorithme "couplage faible vitesse-pression", on garde cette notation, les pas de temps étant égaux dans les trois directions de l'espace. 
+$\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps locaux dans chaque direction (pour l'utilisation du "couplage vitesse-pression renforc\'e"). Dans le cas de l'algorithme "couplage faible vitesse-pression", on garde cette notation, les pas de temps étant égaux dans les trois directions de l'espace.
 
 \etape {Calcul de la matrice du système à résoudre}
 \begin{itemize}
@@ -52,13 +52,13 @@ $\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps lo
 \etape{Calcul du résidu de normalisation \var{RNORMP}}
 Cette \'etape est r\'ealis\'ee directement dans \fort{preduv} \`a partir de la version
 1.1.0.s, et le r\'esidu de normalisation est transmis par l'interm\'ediaire de
-la variable RNORMP(IPHAS). 
+la variable RNORMP(IPHAS).
 
 Le tableau \var{TRAV} contient à ce niveau de \CS \ le second membre issu de \fort{preduv} sans les termes source utilisateur. Le calcul de \var{RNORMP} se fait de la façon suivante :
 
-\begin{enumerate}  
+\begin{enumerate}
 
-\item $\displaystyle \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} - \frac {\Delta t^n_I} {\rho_I \ |\Omega_i|} \var{TRAV}(I) + \frac{(\rho_I - \rho_0 ) \Delta t^n_I }{\rho_I} \vect{g}$, 
+\item $\displaystyle \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} - \frac {\Delta t^n_I} {\rho_I \ |\Omega_i|} \var{TRAV}(I) + \frac{(\rho_I - \rho_0 ) \Delta t^n_I }{\rho_I} \vect{g}$,
 \item Appel de \fort{inimas} pour calculer le flux de masse du vecteur $\var{TRAV}$ (on calcule à chaque face $\displaystyle \rho_{\,ij} \ \var{TRAV}_{\,ij}\,.\,\vect{S}_{\,ij}$, où $\vect{S}$ est le vecteur surface). On impose le nombre de \textit{sweeps} (ou d'it\'erations) total \`a $1$ (\var{NSWRP} = 1), ce qui signifie que l'on ne recontruit pas les gradients lors de ce passage dans \fort{inimas} (pour des raisons de gain de temps de calcul). Les tableaux des conditions aux limites qui sont passés dans \fort{inimas} sont ceux de la vitesse $\vect{u}^n$.
 \item Appel de \fort{divmas} pour calculer la divergence par cellule du flux de masse précédent. La divergence est stockée dans le tableau de travail \var{W1}.
 \item Les termes source de masse stockés dans le tableau \var{SMACEL} sont ajoutés \`a \var{W1}.
@@ -73,7 +73,7 @@ Le tableau \var{TRAV} contient à ce niveau de \CS \ le second membre issu de \fo
 \etape{préparation de la résolution du système}
 
 \begin{itemize}
- 
+
 \item Appel de \fort{grdcel} pour le calcul du gradient de la pression $p^n$. Le résultat est stocké dans \var{TRAV}. \var{TRAV} contient donc à ce niveau $\displaystyle \frac{\partial p^n}{\partial x}$, $\displaystyle \frac{\partial p^n}{\partial y}$, $\displaystyle \frac{\partial p^n}{\partial z}$.
 
 \item Introduction du gradient cellule de la pression explicite $p^n$ pour l'utilisation du filtre Rhie~\&~Chow.
@@ -121,15 +121,15 @@ modifiée par l'utilisateur dans \fort{usini1}, {\it via} le tableau \var{EPSILO}
 \item[$\Rightarrow$] réactualisation\footnote{$(\delta p)^k = \sum\limits_{l=1}^{l=k} (\delta(\delta p))^l $ est stockée dans \var{RTP(*,IPRIPH)}.} de la pression $p^{n+1} = p^{n} + \sum\limits_{l=1}^{l=k} (\delta(\delta p))^l$.
 \end{itemize}
 
-\item[$\star$] Sinon, 
+\item[$\star$] Sinon,
 \begin{itemize}
 \item[$\Rightarrow$] $(\delta(\delta p))^{k+1} = 0$,
 \item[$\Rightarrow$] Appel de \fort{invers} pour l'inversion du système (\ref{Base_Resolp_equation resolue}). Le test d'arrêt de l'algorithme d'inversion \var{RESIDU} est normalisé par \var{RNORMP} (voir \fort{gradco} pour l'inversion de la pression).
 \end{itemize}
-\item[$\star$] Si on atteint le nombre de \textit{sweeps} maximal, 
+\item[$\star$] Si on atteint le nombre de \textit{sweeps} maximal,
 \begin{itemize}
 \item[$\Rightarrow$] Appel de \fort{itrmas} pour l'incrémentation du flux de masse par le gradient de la pression $(\delta p)^{k}$.
-\item[$\Rightarrow$] Second appel de \fort{itrmas} pour l'incrémentation du flux de masse avec le gradient de $(\delta(\delta p))^{k+1}$ non reconstruit pour assurer une divergence finale nulle, ceci pour rester cohérent avec la matrice de pression qui ne prend pas en compte les non orthogonalités\footnote{On pourra se r\'ef\'erer au sous-programme \fort{navsto} pour plus de d\'etails.}. 
+\item[$\Rightarrow$] Second appel de \fort{itrmas} pour l'incrémentation du flux de masse avec le gradient de $(\delta(\delta p))^{k+1}$ non reconstruit pour assurer une divergence finale nulle, ceci pour rester cohérent avec la matrice de pression qui ne prend pas en compte les non orthogonalités\footnote{On pourra se r\'ef\'erer au sous-programme \fort{navsto} pour plus de d\'etails.}.
 \item[$\Rightarrow$] mise à jour de l'incrément de pression $(\delta p)^{k+1} = (\delta p)^{k} + (\delta(\delta p))^{k+1}$.
 \end{itemize}
 \item[$\star$]  Sinon,
