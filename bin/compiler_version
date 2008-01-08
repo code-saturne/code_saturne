@@ -132,8 +132,8 @@ echo $compillog
 #     sur hp, par exemple f90 +version n'en cree pas)
 
  echo ' '                                       >> ${compillog}
- if [ -f cs12.exe ] ; then 
-   ./cs12.exe                                   >> ${compillog} 2>&1
+ if [ -f cs13.exe ] ; then 
+   ./cs13.exe                                   >> ${compillog} 2>&1
  else
    echo ' Pas d executable test FORTRAN '       >> ${compillog} 
  fi
@@ -176,13 +176,13 @@ cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
 #   Compilation 
 
  ln -s ${CS_HOME}/bin/Makefile Makefile
- make saturne CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
+ make compversion CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
 
 #   Execution 
 
  echo ' '                                       >> ${compillog}
- if [ -f cs12.exe ] ; then 
-   ./cs12.exe                                   >> ${compillog} 2>&1
+ if [ -f cs13.exe ] ; then 
+   ./cs13.exe                                   >> ${compillog} 2>&1
  echo ' '                                       >> ${compillog}
  else
    echo ' Pas d executable test C '             >> ${compillog} 

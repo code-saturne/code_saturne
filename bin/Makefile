@@ -846,7 +846,7 @@ privconflib:
 	           echo "$(BO)or in one of its sub-directories$(NO)" ;\
 	           echo ;\
 	           tput init ;\
-	           exit -1 ;\
+	           exit 1 ;\
 	      fi ;\
 	 fi ;\
 	 dirprec=`dirname $${dirprec}` ;\
@@ -858,7 +858,7 @@ privconflib:
 	      echo "$(BO) You must be in the general directory: $(DIR_CS)$(NO)" ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if   [ ! "$${modtrav}" = "$${module}" ] ;\
 	 then echo ;\
@@ -867,7 +867,7 @@ privconflib:
 	      echo "$(BO)You must be in directory: $${module}$(NO)" ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if   [ ! "$${opttrav}" = "$(MYOPT)" ] ;\
 	 then echo ;\
@@ -881,7 +881,7 @@ privconflib:
 	      fi ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if [ "$${modtrav}" = "BASE" ] ;\
 	 then INC_CS="toto" ;\
