@@ -254,7 +254,9 @@ privcompil:
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
 	      src_cs_all="" ;\
 	 fi ;\
-	 make privcopie INC_CS="$${inc_cs_all}" SRC_CS="$${src_cs_all}" ;\
+	 if   [ "$${modtrav}" != "LINK" ] ;\
+	 then make privcopie INC_CS="$${inc_cs_all}" SRC_CS="$${src_cs_all}" ;\
+	 fi ;\
        make privdepend ;\
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
