@@ -426,7 +426,9 @@ Macro_readme_comp=$2
 #
 # Chmod sur le repertoire des librairies a remplacer par securite
 #
-  chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
+  if [ -d ${CS_HOME}/arch/${NOM_ARCH}/lib ] ; then
+    chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
+  fi
 #
 #
 # Boucle generale
