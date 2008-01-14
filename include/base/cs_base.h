@@ -145,8 +145,8 @@ extern "C" {
 #if (_CS_STDC_VERSION < 199901L)
 
 #  if defined(__GNUC__)
-#    define inline __inline
-#    define restrict __restrict
+#    define inline __inline__
+#    define restrict __restrict__
 #  else
 #    define inline
 #    define restrict

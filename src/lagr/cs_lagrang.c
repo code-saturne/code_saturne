@@ -207,15 +207,11 @@ _orient3D_normalize(float  *value)
  * Returns:
  *----------------------------------------------------------------------------*/
 
-#if defined(__GNUC__)
-__inline__ static void _orient3D_split(
-#else
-static void _orient3D_split(
-#endif
-                            cs_real_t    a,
-                            cs_real_t   *a1,
-                            cs_real_t   *a0,
-                            cs_real_t    format)
+inline static void
+_orient3D_split(cs_real_t    a,
+		cs_real_t   *a1,
+		cs_real_t   *a0,
+		cs_real_t    format)
 {
  *a1 = a + format;
  *a1 -= format;
