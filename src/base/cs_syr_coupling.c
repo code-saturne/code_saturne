@@ -281,9 +281,9 @@ _define_coupled_mesh(char               *coupled_mesh_name,
 static void
 _renum_faces_list(cs_syr_coupling_t *syr_coupling)
 {
-  cs_int_t  n_elts, i_elt, num;
+  cs_int_t  i, fac_id;
+  cs_int_t  elt_num, elt_num_prev, n_elts;
 
-  cs_int_t  idx = 0;
   cs_int_t  *parent_num = NULL;
   cs_int_t  *coupl_face_list = syr_coupling->coupl_face_list;
   fvm_nodal_t  *coupled_mesh = syr_coupling->coupled_mesh;
@@ -306,25 +306,23 @@ _renum_faces_list(cs_syr_coupling_t *syr_coupling)
 
   assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
 
-  /* Renumbering of border faces list */
+  /* Rebuild coupled faces list in same order as fvm_nodal_structure */
 
-  if (parent_num == NULL)
-    for (i_elt = 0; i_elt < n_elts; i_elt++)
-      coupl_face_list[i_elt] = i_elt + 1;
+  elt_num_prev = -1;
+  fac_id = 0;
 
-  else { /* parent_num != NULL */
+  for (i = 0; i < n_elts; i++) {
 
-    for (i_elt = 0; i_elt < n_elts; i_elt++) {
+    elt_num = parent_num[i];
 
-      num = parent_num[i_elt];
-      if (i_elt == 0 || num != parent_num[i_elt - 1]) {
-        coupl_face_list[idx] = num;
-        idx++;
-      }
-
+    if (elt_num != elt_num_prev) {
+      coupl_face_list[fac_id++] = elt_num;
+      elt_num_prev = elt_num;
     }
 
-  } /* parent_num != NULL */
+  }
+
+  assert(fac_id == syr_coupling->n_coupl_faces);
 
   BFT_FREE(parent_num);
 
@@ -714,62 +712,57 @@ _interpolate_vtx_to_elt(cs_syr_coupling_t  *syr_coupling,
                         cs_int_t           *parent_num,
                         cs_int_t           *connect)
 {
-  cs_int_t  i, i_vtx, i_fac, i_stride, i_elt;
-  cs_int_t  elt_num;
+  cs_int_t  i, j, vtx_id, fac_id;
+  cs_int_t  elt_num, elt_num_prev;
 
-  cs_int_t  i_elt_start = 0;
-  cs_int_t  *counter = NULL;
-  cs_real_t  numerator = 0;
+  cs_real_t  *down = NULL;
+  cs_real_t  up = 0;
+  cs_real_t  stride_inverse = 1./stride;
 
-  const cs_int_t   n_coupl_faces = syr_coupling->n_coupl_faces;
-  const cs_int_t  *coupl_face_list = syr_coupling->coupl_face_list;
+  const cs_int_t  n_coupl_faces = syr_coupling->n_coupl_faces;
+  const cs_real_t  *weighting = syr_coupling->weighting;
 
-  BFT_MALLOC(counter, n_coupl_faces, cs_int_t);
+  BFT_MALLOC(down, n_coupl_faces, cs_real_t);
 
   /* Initialize arrays */
 
   for (i = 0; i < n_coupl_faces; i++) {
     elt_values[i] = 0;
-    counter[i] = 0;
+    down[i] = 0;
   }
 
   /* Interpolate field */
 
-  for (i_fac = 0; i_fac < n_coupl_faces; i_fac++) {
+  elt_num_prev = -1;
+  fac_id = -1;
 
-    for (i_elt = i_elt_start; i_elt < n_elts; i_elt++) {
+  for (i = 0; i < n_elts; i++) {
 
-      if (parent_num != NULL)
-        elt_num = parent_num[i_elt];
-      else
-        elt_num = i_elt + 1;
+    elt_num = parent_num[i];
 
-      if (elt_num == coupl_face_list[i_fac]) {
-
-        i_elt_start++;
-        counter[i_fac]++;
-        numerator = 0;
-
-        for (i_stride = 0; i_stride < stride; i_stride++) {
-          i_vtx = connect[i_elt * stride + i_stride] - 1;
-          numerator += vtx_values[i_vtx];
-        }
-
-        numerator /= stride;
-        elt_values[i_fac] += numerator;
-
-      }
-      else
-        break;
-
+    if (elt_num != elt_num_prev) {
+      fac_id += 1;
+      elt_num_prev = elt_num;
     }
 
-  } /* End of loop on coupled border faces */
+    up = 0.;
 
-  for (i_fac = 0; i_fac < n_coupl_faces; i_fac++)
-    elt_values[i_fac] /= (cs_real_t)counter[i_fac];
+    for (j = 0; j < stride; j++) {
+      vtx_id = connect[i*stride + j] - 1;
+      up += vtx_values[vtx_id];
+    }
 
-  BFT_FREE(counter);
+    elt_values[fac_id] += up * stride_inverse * weighting[i];
+    down[fac_id] += weighting[i];
+
+  }
+
+  assert(fac_id+1 == n_coupl_faces);
+
+  for (i = 0; i < n_coupl_faces; i++)
+    elt_values[i] /= down[i];
+
+  BFT_FREE(down);
 
 }
 
@@ -801,67 +794,53 @@ _interpolate_elt_to_vtx(cs_syr_coupling_t  *syr_coupling,
                         cs_int_t           *parent_num,
                         cs_int_t           *connect)
 {
-  cs_int_t  i, i_fac, i_vtx, i_stride, i_elt;
-  cs_int_t  fac_num, elt_num;
+  cs_int_t  i, j, fac_id, vtx_id;
+  cs_int_t  fac_num, elt_num, elt_num_prev;
 
-  cs_int_t  i_elt_start = 0;
   cs_real_t *weighting = syr_coupling->weighting;
-  cs_real_t *denumerator = vtx_values + n_vertices;
+  cs_real_t *down = vtx_values + n_vertices;
 
   const  cs_int_t   n_coupl_faces = syr_coupling->n_coupl_faces;
-  const  cs_int_t  *coupl_face_list = syr_coupling->coupl_face_list;
 
-  /* Initialization */
+  /* Initialization of vtx_values and down => 2*n_vertices */
 
-  for (i = 0; i < n_vertices; i++) {
-    denumerator[i] = 0;
-    vtx_values[i] = 0;
-  }
+  for (i = 0; i < 2*n_vertices; i++)
+    vtx_values[i] = 0; 
 
   /* Compute contribution from each vertex */
 
-  for (i_fac = 0; i_fac < n_coupl_faces; i_fac++) {
+  elt_num_prev = -1;
+  fac_id = -1;
 
-    /* Get face numbering */
+  for (i = 0; i < n_elts; i++) {
 
-    fac_num = coupl_face_list[i_fac];
+    elt_num = parent_num[i];
 
-    for (i_elt = i_elt_start; i_elt < n_elts; i_elt++) {
+    if (elt_num != elt_num_prev) {
+      fac_id += 1;
+      elt_num_prev = elt_num;
+    }
 
-      if (parent_num != NULL)
-        elt_num = parent_num[i_elt];
-      else
-        elt_num = i_elt + 1;
+    for (j = 0; j < stride; j++) {
 
-      if (fac_num == elt_num) {
+      vtx_id = connect[i*stride + j] - 1;
+      vtx_values[vtx_id] += elt_values[fac_id] * weighting[i];
+      down[vtx_id] += weighting[i];
 
-        i_elt_start++;
+    }
 
-        for (i_stride = 0; i_stride < stride; i_stride++) {
+  }
 
-          i_vtx = connect[i_elt * stride + i_stride] - 1;
-          vtx_values[i_vtx] += elt_values[i_fac] * weighting[i_elt];
-          denumerator[i_vtx] += weighting[i_elt];
-
-        }
-
-      } /* elt_num == fac_num */
-
-      else
-        break;
-
-    } /* End of loop on elements sharing the same numbering */
-
-  } /* End of loop on coupled border faces */
+  assert(fac_id+1 == n_coupl_faces);
 
   /* Sum on parallel domain boundaries ;
-     Reminder: we need to have denumerator = vtx_values + n_vtx_values */
+     Reminder: we need to have down = vtx_values + n_vtx_values */
 
   if (syr_coupling->if_set != NULL)
     cs_parall_interface_sr(syr_coupling->if_set, n_vertices, 2, vtx_values);
 
-  for (i_vtx = 0; i_vtx < n_vertices; i_vtx++)
-    vtx_values[i_vtx] /= denumerator[i_vtx];
+  for (i = 0; i < n_vertices; i++)
+    vtx_values[i] /= down[i];
 
 }
 
@@ -1173,6 +1152,7 @@ void CS_PROCF(lfasyr, LFASYR)
 
   for (i = 0 ; i < coupling->n_coupl_faces ; i++)
     coupl_face_list[i] = coupling->coupl_face_list[i];
+
 }
 
 /*----------------------------------------------------------------------------
