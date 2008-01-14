@@ -202,7 +202,7 @@ a directory \texttt{SUITE.mmddhhmm} for the calculation
       restart files,
 a directory  \texttt{HIST.mmddhhmm} for the files of chronological
       record of the results at specific locations (probes),\\
-\texttt{listenv.mmddhhmm} and \texttt{listing.mmddhhmm} files reporting the
+\texttt{listpre.mmddhhmm} and \texttt{listing.mmddhhmm} files reporting the
 Preprocessor and the Kernel execution. For an easier follow-up of the modifications
 in former calculations, the user-subroutines used in a calculation are stored in
 a directory \texttt{FORT.mmddhhmm} in the directory \texttt{RESU}. The {\em Xml}
@@ -298,7 +298,7 @@ directory \texttt{RESU}.
 &                                   & the file will be referred as
                                       ``\texttt{lance.*}'' in the
                                        \texttt{RESU} directory)\\
-&        \texttt{listenv.08211921}     &execution report for the Preprocessor module of
+&        \texttt{listpre.08211921}     &execution report for the Preprocessor module of
                                     \CS\\
 &        \texttt{listing.08211921}     &execution report for the Kernel module of \CS\\
 &        \texttt{listsyr.08211921}     &execution report for \syrthes\\
@@ -3019,7 +3019,7 @@ line between two calculations.
 in which they appear in the launch script or in the Graphical Interface must not
 be modified in case of a calculation restart\footnote{when uncertain, the user
 can check the saved copy of the launch script in the \texttt{RESU} directory, or
-the head of the \texttt{listenv} file, which repeats the command line passed to
+the head of the \texttt{listpre} file, which repeats the command line passed to
 the Preprocessor module}.}
 
 {\em NOTE : when meshes are pasted by the Preprocessor module with potential hanging

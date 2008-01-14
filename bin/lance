@@ -1282,7 +1282,7 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   #
   ${ECS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MAILLAGE -case $CAS \
                       $ECHOCOMMECS \
-                      $COMMANDE_RC $COMMANDE_PERIO > listenv 2>&1 \
+                      $COMMANDE_RC $COMMANDE_PERIO > listpre 2>&1 \
                    || erreur " A L'EXECUTION DU PREPROCESSEUR"
   #
   if [ $MODE_EXEC = pre_traitement ] ; then
