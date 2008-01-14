@@ -339,7 +339,7 @@ void CS_PROCF (varsyi, VARSYI)
                 _("Message inatendu dans le couplage SYRTHES %d :\n"
                   " on attendait \"%s\" (%d éléments, type %d)\n"
                   " on a ici     \"%s\"(%d éléments, type %d)\n"),
-                section_name, n_vertices, (int)CS_TYPE_cs_real_t,
+                *numsyr, section_name, n_vertices, (int)CS_TYPE_cs_real_t,
                 header.nom_rub, header.nbr_elt, (int)(header.typ_elt));
 
     /* Receive data */
