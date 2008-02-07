@@ -2665,7 +2665,7 @@ void cs_post_init_pcp
                            optchr);
 
   fmtchr[32] = '\0';
-  optchr[64] = '\0';
+  optchr[96] = '\0';
 
   if (indic_vol == 0 && indic_brd == 0)
     return;
