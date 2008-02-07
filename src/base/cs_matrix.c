@@ -124,6 +124,17 @@ extern "C" {
  * Local Macro Definitions
  *============================================================================*/
 
+/* Variant for Intel compiler and on Itanium only (optimized by BULL)
+   (Use compile flag -DNO_BULL_OPTIM to switch back to general code) */
+
+#if (defined(__INTEL_COMPILER) && defined(__ia64__) && !defined(NO_BULL_OPTIM))
+
+#define IA64_OPTIM
+#define IA64_OPTIM_L1_CACHE_SIZE (508)
+#define IA64_OPTIM_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#endif
+
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -672,6 +683,8 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
  *   y      <-- Resulting vector
  *----------------------------------------------------------------------------*/
 
+#if !defined(IA64_OPTIM)  /* Standard variant */
+
 static void
 _mat_vec_p_l_native(const cs_matrix_t  *matrix,
                     const cs_real_t    *restrict x,
@@ -737,6 +750,139 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
   }
 
 }
+
+#else /* defined(IA64_OPTIM), IA64 optimized variant (optimization by BULL) */
+
+static void
+_mat_vec_p_l_native(const cs_matrix_t  *matrix,
+                    const cs_real_t    *restrict x,
+                    cs_real_t          *restrict y)
+{
+  cs_int_t  ii, ii_prev, kk, face_id, kk_max;
+  cs_real_t y_it, y_it_prev;
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict da = mc->da;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  /* Diagonal part of matrix.vector product */
+
+  /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
+
+  if (mc->da != NULL) {
+    for (ii = 0; ii < ms->n_cells; ii++)
+      y[ii] = da[ii] * x[ii];
+  }
+  else {
+    for (ii = 0; ii < ms->n_cells; y[ii++] = 0.0);
+  }
+
+  for (ii = ms->n_cells; ii < ms->n_cells_ext; y[ii++] = 0.0);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    /*
+     * 1/ Split y[ii] and y[jj] computation into 2 loops to remove compiler
+     *    data dependency assertion between y[ii] and y[jj].
+     * 2/ keep index (*face_cel_p) in L1 cache from y[ii] loop to y[jj] loop
+     *    and xa1 in L2 cache.
+     * 3/ break high frequency occurence of data dependency from one iteration
+     *    to another in y[ii] loop (nonzero matrix value on the same line ii).
+     */
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0;
+           face_id < ms->n_faces;
+           face_id += IA64_OPTIM_L1_CACHE_SIZE) {
+
+        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
+                                IA64_OPTIM_L1_CACHE_SIZE);
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        ii_prev = face_cel_p[0] - 1;
+        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+
+        for (kk = 1; kk < kk_max; ++kk) {
+          ii = face_cel_p[2*kk] - 1;
+          /* y[ii] += xa1[face_id+kk] * x[jj]; */
+          if(ii == ii_prev) {
+            y_it = y_it_prev;
+          }
+          else {
+            y_it = y[ii];
+            y[ii_prev] = y_it_prev;
+          }
+          ii_prev = ii;
+          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+        }
+        y[ii] = y_it_prev;
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        for (kk = 0; kk < kk_max; ++kk) {
+          y[face_cel_p[2*kk+1] - 1]
+            += xa1[face_id+kk] * x[face_cel_p[2*kk] - 1];
+        }
+        face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
+      }
+
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0;
+           face_id < ms->n_faces;
+           face_id+=IA64_OPTIM_L1_CACHE_SIZE) {
+
+        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
+                                IA64_OPTIM_L1_CACHE_SIZE);
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        ii_prev = face_cel_p[0] - 1;
+        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+
+        for (kk = 1; kk < kk_max; ++kk) {
+          ii = face_cel_p[2*kk] - 1;
+          /* y[ii] += xa1[face_id+i] * x[jj]; */
+          if(ii == ii_prev) {
+            y_it = y_it_prev;
+          }
+          else {
+            y_it = y[ii];
+            y[ii_prev] = y_it_prev;
+          }
+          ii_prev = ii;
+          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+        }
+        y[ii] = y_it_prev;
+
+        /* sub-loop to compute y[ii] += xa2[face_id] * x[jj] */
+
+        for (kk = 0; kk < kk_max; ++kk) {
+          y[face_cel_p[2*kk+1] - 1]
+            += xa2[face_id+kk] * x[face_cel_p[2*kk] - 1];
+        }
+        face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
+      }
+
+    }
+
+  }
+
+}
+
+#endif /* defined(IA64_OPTIM) */
 
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
