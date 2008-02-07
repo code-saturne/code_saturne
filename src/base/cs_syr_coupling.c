@@ -805,7 +805,7 @@ _interpolate_elt_to_vtx(cs_syr_coupling_t  *syr_coupling,
   /* Initialization of vtx_values and down => 2*n_vertices */
 
   for (i = 0; i < 2*n_vertices; i++)
-    vtx_values[i] = 0; 
+    vtx_values[i] = 0;
 
   /* Compute contribution from each vertex */
 
