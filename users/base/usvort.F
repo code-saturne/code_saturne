@@ -252,7 +252,6 @@ C 2. DEFINITION DES ZONES D'ENTREE (AU PREMIER PASSAGE)
 C=======================================================================
 C
         DO IFAC = 1, NFABOR
-          XX = CDGFBO(1,IFAC)
           IREPVO(IFAC) = 0
         ENDDO
 C
@@ -283,6 +282,7 @@ C
 C
           IENT = 2
           IREPVO(IFAC) = IENT
+C
         ENDDO
 C
       ELSEIF (IAPPEL.EQ.2) THEN
@@ -527,7 +527,7 @@ c@a
 C                        ***************
 C     -------------------------------------------------------------
      & ( NFECRA , ICAS   , NDAT   ,
-     &   ZZ     , YY     , ZDAT   , YDAT   ,
+     &   YY     , ZZ     , YDAT   , ZDAT   ,
      &   VARDAT , III    )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -549,11 +549,11 @@ CARGU !______________!____!_____!______________________________________!
 CARGU ! NFECRA       ! E  !  -> ! UNITE                                !
 CARGU ! ICAS         ! E  !  -> ! TYPE DE GEOMETRIE DU CAS             !
 CARGU ! NDAT         ! E  !  -> ! NBR DE LIGNES DU FICHIER DE DONNEES  !
-CARGU ! ZZ           ! E  !  -> ! COORDOONNES DANS LE REPERE LOCAL DU  !
-CARGU ! YY           ! E  !  -> ! POINT OU L'ON CHERCHE A CONNAITRE LA !
+CARGU ! YY           ! E  !  -> ! COORDOONNES DANS LE REPERE LOCAL DU  !
+CARGU ! ZZ           ! E  !  -> ! POINT OU L'ON CHERCHE A CONNAITRE LA !
 CARGU !              !    !     ! VARIABLE VARDAT                      !
-CARGU ! ZDAT         ! E  !  -> ! COORDOONNES OU EST CONNUE LA VARIABLE!
-CARGU ! YDAT         ! E  !  -> ! VARDAT DANS LE FICHIER DE DONNEES    !
+CARGU ! YDAT         ! E  !  -> ! COORDOONNES OU EST CONNUE LA VARIABLE!
+CARGU ! ZDAT         ! E  !  -> ! VARDAT DANS LE FICHIER DE DONNEES    !
 CARGU ! VARDAT       ! E  !  -> ! VALEUR DE LA VARIABLE VARDAT         !
 CARGU ! III          ! E  ! <-  ! LIGNE OU A ETE TROUVEE LA DONNEE LA  !
 CARGU !              !    !     ! PLUS PROCHE DU POINT (YY,ZZ)         !
