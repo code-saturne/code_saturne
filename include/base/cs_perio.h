@@ -58,7 +58,8 @@ extern "C" {
  * Macro Definition
  *============================================================================*/
 
-#define CS_NPHSMX  3  /* Max number of phases */
+#define CS_NPHSMX  1  /* Max number of phases */
+                      /* Keep it coherent with NPHSMX in paramx.h */
 
 /*============================================================================
  * Type definitions
