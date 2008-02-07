@@ -457,7 +457,7 @@ C
       NBVAL  = NBPART
       IRTYP  = 2
 C
-      DO II = JMP,JWP
+      DO II = JMP,JWF
         RUBRIQ = NOMNVL(II)
         CALL ECRSUI(IMPAVL,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &              ETTP(1,II),IERROR)

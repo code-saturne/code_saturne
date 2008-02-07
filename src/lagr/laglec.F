@@ -519,6 +519,11 @@ C
         NBERRO = NBERRO+IERROR
       ENDDO
 C
+      DNBPAR = 0.D0
+      DO IP  = 1, NBPART
+        DNBPAR = DNBPAR + TEPA(IP,JRPOI)
+      ENDDO
+C
 C --> Variables particulaires
 C
       NOMNVL(JXP) = 'variable_positionX_particule'
@@ -553,7 +558,7 @@ C
       NBVAL  = NBPART
       IRTYP  = 2
 C
-      DO IVAR = JMP,JWP
+      DO IVAR = JMP, JWF
         RUBRIQ = NOMNVL(IVAR)
         CALL LECSUI(IMPAML,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &              ETTP(1,IVAR),IERROR)
