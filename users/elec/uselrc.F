@@ -518,9 +518,9 @@ C
               ENDIF
             ENDDO
 C
-            WRITE(NFECRA,*) ''
+            WRITE(NFECRA,*)
             WRITE(NFECRA,*) ' NT min et max de E = ',NTCABS,AMEX,AiEX
-            WRITE(NFECRA,*) ''
+            WRITE(NFECRA,*)
             WRITE(NFECRA,*) XCLAQ,YCLAQ,ZCLAQ,NTDCLA
 C
           ENDIF
