@@ -119,7 +119,8 @@ typedef struct {
   int    nsalpp;           /* particular physical proprietes number           */
   int    ntimaver;         /* time averages number                            */
   char **properties_name;  /* label of properties                             */
-  int   *properties_ipp;   /* properties position in fortran array PROPCE     */
+  int   *properties_ipp;   /* properties position for post-processing         */
+  int   *propce;           /* properties position in fortran array PROPCE     */
 } cs_var_t;
 
 /*----------------------------------------------------------------------------
@@ -884,7 +885,7 @@ static void cs_gui_numerical_double_parameters(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_numerical_int_parameters(const char *const param,
-                                           int  *const keyword)
+                                                  int  *const keyword)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -1095,7 +1096,7 @@ static void _option_turbulence_double(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_turbulence_initialization(const char   *const param,
-                                            double *const value)
+                                                   double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -1190,8 +1191,8 @@ static void cs_gui_output_value(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_output_choice(const char *const param,
-                                char *const keyword,
-                          const int  *const size_key)
+                                       char *      keyword,
+                                 const int  *const size_key)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -1201,7 +1202,14 @@ static void cs_gui_output_choice(const char *const param,
   cs_xpath_add_attribute(&path, "choice");
   choice = cs_gui_get_attribute_value(path);
 
-  if (choice != NULL) cs_gui_strcpy_c2f(keyword, choice, *size_key);
+  if (choice != NULL) {
+    if (keyword == NULL && *size_key == 0) {
+      BFT_MALLOC(keyword, strlen(choice)+1 , char);
+      strcpy(keyword, choice);
+    } else {
+      cs_gui_strcpy_c2f(keyword, choice, *size_key);
+    }
+  }
 
   BFT_FREE(choice);
   BFT_FREE(path);
@@ -1250,10 +1258,11 @@ static int cs_gui_get_mean_names_number( int   const id)
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
-  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_test_attribute(&path, "id", str_id);
   cs_xpath_add_element(&path, "var_prop");
   number = cs_gui_get_nb_element(path);
 
+  BFT_FREE(str_id);
   BFT_FREE(path);
 
   return number;
@@ -1302,7 +1311,7 @@ static void cs_gui_get_mean_value(      int   const id,
  *   nb           -->  number of order in list of var_prop of the mean
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_mean_prop( int const id, int const nb)
+static char *cs_gui_get_mean_prop(const int id, const int nb)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1334,7 +1343,7 @@ static char *cs_gui_get_mean_prop( int const id, int const nb)
  *   nb           -->  number of order in list of mean
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_mean_label( int const nb)
+static char *cs_gui_get_mean_label(const int nb)
 {
   char *path = NULL;
   char *label = NULL;
@@ -2314,7 +2323,7 @@ static void cs_gui_time_average_post (const char *const property_name,
   if (nb_probes > 0) {
     for (iprob =0; iprob < nb_probes; iprob++){
       num_probe = cs_gui_time_average_probe_name(property_name,
-                                               iprob+1);
+                                                 iprob+1);
 
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
@@ -2863,158 +2872,6 @@ static void cs_gui_coal_boundary_coalflow(const int         izone,
   BFT_FREE(classname);
 }
 
-/*===========================================
- * Fonctions pour les physiques particulieres
- *===========================================*/
-
-/*-----------------------------------------------------------------------------
- * Return number of model's properties for particular physical
- *
- * parameters:
- *   model       -->  name of type of model
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_get_number_model_properties(const char* model)
-{
-  char *path = NULL;
-  int   nb;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "property");
-
-  nb = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return nb;
-}
-
-/*-----------------------------------------------------------------------------
- *  Return value of attribute name for the scalar number for particular physical
- *
- * parameters:
- *   model        -->  name of type of model
- *   scalar_num   -->  scalar number
- *----------------------------------------------------------------------------*/
-
-static char* cs_gui_get_model_scalar_name (const char * const model,
-                                           const int          scalar_num)
-{
-  char * path = NULL;
-  char * name_scalar = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element_num(&path, "scalar", scalar_num);
-  cs_xpath_add_attribute(&path, "name");
-
-  name_scalar = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return name_scalar;
-}
-
-/*-----------------------------------------------------------------------------
- *  Return scalar number for scalar named name for particular physical
- *
- * parameters:
- *   model       -->  name of type of model
- *   name        -->  name of scalar
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_get_model_scalar_number(const  char * const model,
-                                          const  char * const name)
-{
-  int i;
-  int nbsca = 0;
-  char * nametmp = NULL;
-  int numsca;
-
-  nbsca = cs_gui_model_scalar_number(model);
-  numsca = 0;
-
-  for (i = 0; i < nbsca; i++){
-    nametmp = cs_gui_get_model_scalar_name(model, i+1);
-    if (cs_gui_strcmp(name, nametmp)) {
-      numsca = i;
-      BFT_FREE(nametmp);
-      break;
-    }
-    BFT_FREE(nametmp);
-  }
-
-  if (i == nbsca)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid scalar name: %s.\n"), name);
-
-  return numsca;
-}
-
-/*-----------------------------------------------------------------------------
- * Return value of attribute name for the property number for particular physical
- *
- * parameters:
- *   model        -->  name of type of model
- *   pp_num       -->  number of property
- *----------------------------------------------------------------------------*/
-
-static char* cs_gui_get_model_property_name (const char * const model,
-                                             const int          pp_num)
-{
-  char * path = NULL;
-  char * name_pp = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element_num(&path, "property", pp_num);
-  cs_xpath_add_attribute(&path, "name");
-
-  name_pp = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return name_pp;
-}
-
-/*-----------------------------------------------------------------------------
- *  Return property number for particular physical
- *
- * parameters:
- *   model       -->  name of type of model
- *   name        -->  name of property
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_get_model_property_number (const  char * const model,
-                                      const  char * const name)
-{
-  int i;
-  int nbpp = 0;
-  char * nametmp = NULL;
-  int numpp;
-
-  nbpp = cs_gui_get_number_model_properties(model);
-  numpp = 0;
-
-  for (i = 0; i < nbpp; i++){
-    nametmp = cs_gui_get_model_property_name(model, i + 1);
-    if (cs_gui_strcmp(name, nametmp)) {
-      numpp = i;
-      BFT_FREE(nametmp);
-      break;
-    }
-    BFT_FREE(nametmp);
-  }
-
-  if (i == nbpp)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid property name: %s.\n"), name);
-
-  return numpp;
-}
-
 /*============================
  * Functions for ALE method
  *============================*/
@@ -3430,6 +3287,7 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
     vars->ntimaver = 0;
     vars->properties_name = NULL;
     vars->properties_ipp = NULL;
+    vars->propce = NULL;
   }  else  {
     bft_error(__FILE__, __LINE__, 0,
      _("Trouble with the allocated memory for the global variable 'vars'.\n"));
@@ -3965,6 +3823,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   }
 
   /* 4) update vars->type for variables */
+
   k = vars->nvar -vars->nscapp -vars->nscaus;
   for (i=0; i < k; i++) {
     BFT_MALLOC(vars->type[i], strlen("variable")+1, char);
@@ -3988,7 +3847,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 
   /* 6) model scalars */
 
-  k = vars->nvar -vars->nscapp;
+  k = vars->nvar - vars->nscapp;
   for (i=0; i < vars->nscapp; i++) {
     j = iscapp[i] -1;
     vars->rtp[n++] = isca[j] -1;
@@ -4003,8 +3862,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     strcpy(vars->head[k+j], vars->model);
   }
 
-
-  /* 6) check for errors */
+  /* 7) check for errors */
 
   if (n != *nvar)
     bft_error(__FILE__, __LINE__, 0,
@@ -4270,7 +4128,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
 #if _XML_DEBUG_
   bft_printf(_("==>UINUM1\n"));
-  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
+  for (i=0; i < vars->nvar; i++) {
     bft_printf(_("-->variable[%i] = %s\n"), i, vars->name[i]);
     bft_printf(_("--blencv = %f\n"), blencv[vars->rtp[i]]);
     bft_printf(_("--epsilo = %g\n"), epsilo[vars->rtp[i]]);
@@ -4565,19 +4423,19 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   int i = 0;
   int nbp = 6;
   int ncar = 0;
-  char *name;
+  char *name = NULL;
   char *suf = NULL;
 
   assert(vars != NULL);
 
-  /* Compute the new size of vars->properties_ipp and vars->properties_name */
+  /* Compute the new size of vars->properties_name,
+     vars->properties_ipp and vars->propce */
 
   if (ismago[iphas] != -1 ) nbp++;
   if (icp[iphas]>0) nbp++;
-  if (vars->nscaus >0) {
-    for (i=0; i<vars->nscaus; i++) {
-	if (ivisls[i] > 0 && iscavr[i] <= 0 )nbp++;
-    }
+  if (vars->nscaus > 0) {
+    for (i=0; i < vars->nscaus; i++)
+      if (ivisls[i] > 0 && iscavr[i] <= 0) nbp++;
   }
   if (*iale) {
     cs_gui_get_ale_viscosity_type(&itype);
@@ -4597,55 +4455,67 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     /* Fisrt step : before the third call of VARPOS in INIUSI */
 
     BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+    BFT_REALLOC(vars->propce,  vars->nprop, int);
     BFT_REALLOC(vars->properties_name, vars->nprop, char*);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ irom[iphas]-1 ]-1 ];
+    vars->propce[n] = irom[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("density")+1, char);
     strcpy(vars->properties_name[n++], "density");
 
     vars->properties_ipp[n] = ipppro[ ipproc[ iviscl[iphas]-1 ]-1 ];
+    vars->propce[n] = iviscl[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("molecular_viscosity")+1, char);
     strcpy(vars->properties_name[n++], "molecular_viscosity");
 
     vars->properties_ipp[n] = ipppro[ ipproc[ ivisct[iphas]-1 ]-1 ];
+    vars->propce[n] = ivisct[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("turb_viscosity")+1, char);
     strcpy(vars->properties_name[n++], "turb_viscosity");
 
     vars->properties_ipp[n] = ipppro[ ipproc[ icour[iphas]-1 ]-1 ];
+    vars->propce[n] = icour[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("courant_number")+1, char);
     strcpy(vars->properties_name[n++], "courant_number");
 
     vars->properties_ipp[n] = ipppro[ ipproc[ ifour[iphas]-1 ]-1 ];
+    vars->propce[n] = ifour[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("fourier_number")+1, char);
     strcpy(vars->properties_name[n++], "fourier_number");
 
     if (ismago[iphas] != -1 ) {
       vars->properties_ipp[n] = ipppro[ ipproc[ ismago[iphas]-1 ]-1 ];
+      vars->propce[n] = ismago[iphas];
       BFT_MALLOC(vars->properties_name[n], strlen("smagorinsky_constant")+1, char);
       strcpy(vars->properties_name[n++], "smagorinsky_constant");
     }
 
-    if (icp[iphas]>0) {
+    if (icp[iphas] > 0) {
       vars->properties_ipp[n] = ipppro[ ipproc[ icp[iphas]-1 ]-1 ];
+      vars->propce[n] = icp[iphas];
       BFT_MALLOC(vars->properties_name[n], strlen("specific_heat")+1, char);
       strcpy(vars->properties_name[n++], "specific_heat");
     }
 
     vars->properties_ipp[n] = ipppro[ ipproc[ iprtot[iphas]-1 ]-1 ];
+    vars->propce[n] = iprtot[iphas];
     BFT_MALLOC(vars->properties_name[n], strlen("total_pressure")+1, char);
     strcpy(vars->properties_name[n++], "total_pressure");
 
     if (*iale) {
       vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
+      vars->propce[n] = ivisma[0];
       BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_1")+1, char);
       strcpy(vars->properties_name[n++], "mesh_viscosity_1");
 
       if (itype == 1) {
         vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
+        vars->propce[n] = ivisma[1];
         BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_2")+1, char);
         strcpy(vars->properties_name[n++], "mesh_viscosity_2");
 
         vars->properties_ipp[n] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
+        vars->propce[n] = ivisma[2];
         BFT_MALLOC(vars->properties_name[n], strlen("mesh_viscosity_3")+1, char);
         strcpy(vars->properties_name[n++], "mesh_viscosity_3");
       }
@@ -4661,25 +4531,29 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
         if (iscavr[i] <= 0 && ivisls[i] > 0) {
 
-	    if (iscalt[iphas] == i+1){
-		vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-		BFT_MALLOC(vars->properties_name[n], strlen("thermal_conductivity")+1, char);
-		strcpy(vars->properties_name[n++], "thermal_conductivity");
-	    } else {
-		vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-		/* search lenght of second character scalar property's suffixe: number i */
-		ncar = cs_gui_characters_number(i+1);
-		
-		BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
-		BFT_MALLOC(suf, 1 + ncar, char);
-		sprintf(suf, "%i", i+1);
-		strcpy(name, "diffusion_coefficient");
-		strcat(name, "_");
-		strcat(name, suf);
-		BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
-		strcpy(vars->properties_name[n++], name);
-		BFT_FREE(suf);
-	    }
+          vars->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
+          vars->propce[n] = ivisls[iphas];
+
+          if (iscalt[iphas] == i+1) {
+            BFT_MALLOC(vars->properties_name[n], strlen("thermal_conductivity")+1, char);
+            strcpy(vars->properties_name[n++], "thermal_conductivity");
+          } else {
+            /* search lenght of second character scalar property's suffixe: number i */
+            ncar = cs_gui_characters_number(i+1);
+
+            BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
+            BFT_MALLOC(suf, 1 + ncar, char);
+            sprintf(suf, "%i", i+1);
+            strcpy(name, "diffusion_coefficient");
+            strcat(name, "_");
+            strcat(name, suf);
+
+            BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
+            strcpy(vars->properties_name[n++], name);
+
+            BFT_FREE(suf);
+            BFT_FREE(name);
+          }
         }
       }
     }
@@ -4690,29 +4564,36 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
     vars->nprop = vars->nprop + 4 + vars->ntimaver;
     BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+    BFT_REALLOC(vars->propce,  vars->nprop, int);
     BFT_REALLOC(vars->properties_name, vars->nprop, char*);
 
     vars->properties_ipp[n] = *ippdt;
+    vars->propce[n] = -1;
     BFT_MALLOC(vars->properties_name[n], strlen("local_time_step")+1, char);
     strcpy(vars->properties_name[n++], "local_time_step");
 
     vars->properties_ipp[n] = *ipptx;
+    vars->propce[n] = -1;
     BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_X")+1, char);
     strcpy(vars->properties_name[n++], "weight_matrix_X");
 
     vars->properties_ipp[n] = *ippty;
+    vars->propce[n] = -1;
     BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_Y")+1, char);
     strcpy(vars->properties_name[n++], "weight_matrix_Y");
 
     vars->properties_ipp[n] = *ipptz;
+    vars->propce[n] = -1;
     BFT_MALLOC(vars->properties_name[n], strlen("weight_matrix_Z")+1, char);
     strcpy(vars->properties_name[n++], "weight_matrix_Z");
 
-    for (i=0; i<vars->ntimaver; i++) {
+    for (i=0; i < vars->ntimaver; i++) {
       vars->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
+      vars->propce[n] = icmome[i];
       name = cs_gui_get_mean_label(i+1);
       BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
       strcpy(vars->properties_name[n++], name);
+      BFT_FREE(name);
     }
   }
 
@@ -4724,9 +4605,12 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 #if _XML_DEBUG_
   bft_printf(_("==>UIPROP %i\n"),*iappel);
   bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
-  for (i=0 ; i<vars->nprop ; i++) {
-    bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
-                    i, vars->properties_ipp[i], i, vars->properties_name[i]);
+  for (i=0; i < vars->nprop; i++) {
+    bft_printf(_("-->properties_ipp[%i]: %i propce[%i]: %i "
+                 "properties_name[%i]: %s\n"),
+                 i, vars->properties_ipp[i],
+                 i, vars->propce[i],
+                 i, vars->properties_name[i]);
   }
 #endif
 }
@@ -4747,8 +4631,8 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
   int nmean = 0;
   int imom = 0;
   int isuite = 0;
-  int i,j,n,nb;
-  char *name;
+  int i, j, n, nb;
+  char *name = NULL;
 
   assert(vars != NULL);
 
@@ -4769,31 +4653,29 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
     }
 
     nmean = cs_gui_get_mean_names_number(imom);
+
     for (n=0; n<nmean; n++) {
+
       nb = n + 1;
       name = cs_gui_get_mean_prop(imom, nb);
-      for (j=0 ; j<(vars->nvar - vars->nscapp - vars->nscaus) ; j++){
+
+      for (j=0; j < vars->nvar; j++){
         if (cs_gui_strcmp(name,  vars->name[j])) {
           idfmom[(imom-1)*(*ndgmox) + n] = vars->rtp[j] +1;
         }
       }
-      if (vars->nscaus > 0 ) {
-        for (j=0 ; j<vars->nscaus ; j++) {
-          if (cs_gui_strcmp(name,  vars->label[j]) ) {
-            idfmom[(imom-1)*(*ndgmox) + n] = isca[j];
-          }
-        }
+      for (j=0 ; j < vars->nprop; j++) {
+        if (cs_gui_strcmp(name, vars->properties_name[j]))
+          idfmom[(imom-1)*(*ndgmox) + n] = -(vars->propce[j]);
       }
 
-      for (j=0 ; j<vars->nprop; j++) {
-        if (cs_gui_strcmp(name, vars->properties_name[j]))
-          idfmom[(imom-1)*(*ndgmox) + n] = -(vars->properties_ipp[j]);
-      }
+      BFT_FREE(name);
     }
+
   }
 #if _XML_DEBUG_
   bft_printf(_("==>UIMOYT\n"));
-  for (i=0; i<vars->ntimaver; i++) {
+  for (i=0; i < vars->ntimaver; i++) {
     bft_printf(_("-->ntdmom =  %i\n"), ntdmom[i]);
   }
 #endif
@@ -4890,7 +4772,7 @@ void CS_PROCF (csenso, CSENSO)
   }
 
   for (i=vars->nsalpp ; i < vars->nprop ; i++) {
-    if (vars->ntimaver != 0 && i>=vars->nprop-vars->ntimaver){
+    if (vars->ntimaver != 0 && i >= vars->nprop - vars->ntimaver) {
       cs_gui_time_average_post(vars->properties_name[i],
                                vars->properties_ipp[i],
                                ichrvr,
@@ -4978,7 +4860,7 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
   icoftu[2] = _user_array("integer_user_array", "nfabor");
   icoftu[3] = _user_array("integer_user_array", "dimless");
 
-  icoftu[4] =_user_array("real_user_array", "ncelet");
+  icoftu[4] = _user_array("real_user_array", "ncelet");
   icoftu[5] = _user_array("real_user_array", "nfac");
   icoftu[6] = _user_array("real_user_array", "nfabor");
   icoftu[7] = _user_array("real_user_array", "dimless");
@@ -5238,6 +5120,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
+ *
+ * Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i]
  *
  * Fortran Interface:
  *
@@ -5538,7 +5422,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
             for (ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
               icodcl[ivar *(*nfabor) + ifbr] = 5;
-              /* si wall_function icodcl[ivar *(*nfabor) + ifbr] = 1; */
+              /* if wall_function --> icodcl[ivar *(*nfabor) + ifbr] = 1; */
               rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = boundaries->values[ivar][izone].val1;
             }
@@ -5612,7 +5496,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     } else {
         bft_error(__FILE__, __LINE__, 0,
-                  _("boundary nature %s is unknown \n"), boundaries->nature[izone]);
+                  _("boundary nature %s is unknown \n"),
+                  boundaries->nature[izone]);
     }
     BFT_FREE(faces_list);
   } /*  for izone */
@@ -5621,7 +5506,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
   bft_printf(_("==>UICLIM\n"));
   bft_printf(_("--boundary zones number: %i\n"), zones);
 
-  for (izone=0 ; izone < zones ; izone++) {
+  for (izone = 0 ; izone < zones ; izone++) {
 
     BFT_MALLOC(faces_list, *nfabor, int);
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
@@ -5648,6 +5533,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
     bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
     bft_printf(_("----localization: %s\n"), description);
+
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
@@ -5746,55 +5632,66 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   vars->nsalpp = *nsalpp;
 
   BFT_MALLOC(vars->properties_ipp,  vars->nsalpp, int);
+  BFT_MALLOC(vars->propce,  vars->nsalpp, int);
   BFT_MALLOC(vars->properties_name, vars->nsalpp, char*);
 
  /* ITEMP1 */
   vars->properties_ipp[n] = ipppro[ ipproc[ *itemp1 -1 ]-1 ];
+  vars->propce[n] = *itemp1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temp_GAZ")+1, char);
   strcpy(vars->properties_name[n++], "Temp_GAZ");
 
  /* IROM1 */
   vars->properties_ipp[n] = ipppro[ ipproc[ *irom1 -1 ]-1 ];
+  vars->propce[n] = *irom1;
   BFT_MALLOC(vars->properties_name[n], strlen("ROM_GAZ")+1, char);
   strcpy(vars->properties_name[n++], "ROM_GAZ");
 
  /*  YM_CHX1M */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[0] -1 ]-1 ];
+  vars->propce[n] = ym1[0];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx1m")+1, char);
   strcpy(vars->properties_name[n++], "YM_CHx1m");
 
  /*  YM_CHX2M */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[1] -1 ]-1 ];
+  vars->propce[n] = ym1[1];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx2m")+1, char);
   strcpy(vars->properties_name[n++], "YM_CHx2m");
 
  /*  YM_CO */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[2] -1 ]-1 ];
+  vars->propce[n] = ym1[2];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO")+1, char);
   strcpy(vars->properties_name[n++], "YM_CO");
 
  /*  YM_O2 */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[3] -1 ]-1 ];
+  vars->propce[n] = ym1[3];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_O2")+1, char);
   strcpy(vars->properties_name[n++], "YM_O2");
 
  /*  YM_CO2 */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[4] -1 ]-1 ];
+  vars->propce[n] = ym1[4];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO2")+1, char);
   strcpy(vars->properties_name[n++], "YM_CO2");
 
  /*  YM_H2O */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[5] -1 ]-1 ];
+  vars->propce[n] = ym1[5];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2O")+1, char);
   strcpy(vars->properties_name[n++], "YM_H2O");
 
  /*  YM_N2 */
   vars->properties_ipp[n] = ipppro[ ipproc[ ym1[6] -1 ]-1 ];
+  vars->propce[n] = ym1[6];
   BFT_MALLOC(vars->properties_name[n], strlen("YM_N2")+1, char);
   strcpy(vars->properties_name[n++], "YM_N2");
 
  /* IMEL */
   vars->properties_ipp[n] = ipppro[ ipproc[ *imel -1 ]-1 ];
+  vars->propce[n] = *imel;
   BFT_MALLOC(vars->properties_name[n], strlen("XM")+1, char);
   strcpy(vars->properties_name[n++], "XM");
 
@@ -5807,6 +5704,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ itemp2[i] -1 ]-1 ];
+    vars->propce[n] = itemp2[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5821,6 +5719,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ ix2[i] -1 ]-1 ];
+    vars->propce[n] = ix2[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5835,6 +5734,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ irom2[i] -1 ]-1 ];
+    vars->propce[n] = irom2[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5849,6 +5749,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ idiam2[i] -1 ]-1 ];
+    vars->propce[n] = idiam2[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5863,6 +5764,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ igmdch[i] -1 ]-1 ];
+    vars->propce[n] = igmdch[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5877,6 +5779,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ igmdv1[i] -1 ]-1 ];
+    vars->propce[n] = igmdv1[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5891,6 +5794,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ igmdv2[i] -1 ]-1 ];
+    vars->propce[n] = igmdv2[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5905,6 +5809,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ ipproc[ igmhet[i] -1 ]-1 ];
+    vars->propce[n] = igmhet[i];
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -5920,6 +5825,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ ipproc[ igmsec[i] -1 ]-1 ];
+      vars->propce[n] = igmsec[i];
       BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -5929,6 +5835,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 
  /* ILUMI */
   vars->properties_ipp[n] = ipppro[ ipproc[ *ilumi -1 ]-1 ];
+  vars->propce[n] = *ilumi;
   BFT_MALLOC(vars->properties_name[n], strlen("ntLuminance_4PI")+1, char);
   strcpy(vars->properties_name[n++], "ntLuminance_4PI");
 
@@ -5944,8 +5851,11 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   bft_printf(_("==>UICPPR\n"));
   bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf(_("-->properties_ipp[%i]: %i properties_name[%i]: %s\n"),
-                    i, vars->properties_ipp[i], i, vars->properties_name[i]);
+    bft_printf(_("-->properties_ipp[%i]: %i propce[%i]: %i "
+                 "properties_name[%i]: %s\n"),
+                 i, vars->properties_ipp[i],
+                 i, vars->propce[i],
+                 i, vars->properties_name[i]);
 #endif
 }
 

@@ -2068,6 +2068,8 @@ C     Autres variables
 C
       IPHAS = 1
 C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+C
 C     variable masse volumique (sortie en post uniquement si variable
 C                               ou si physique particuliere)
       IPP = IPPPRO(IPPROC(IROM  (IPHAS)))
@@ -2168,6 +2170,8 @@ C
       ICHRVR(IPP)   = 1
       ILISVR(IPP)   = 1
       IHISVR(IPP,1) = -1
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
 C
 C
 C----
