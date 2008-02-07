@@ -556,7 +556,7 @@ _dot_products_2(cs_int_t          n_elts,
       _s1 += x2[ii] * y2[ii];
     }
     s[0] = _s0; s[1] = _s1;
-    
+
 #else
 
     s[0] = 0.0; s[1] = 0.0;
