@@ -433,7 +433,7 @@ C
           ENDIF
 C
           FUEL1(IEL) = ZCHX13 * WMCHX1
-          FUEL2(IEL) = ZCHX23 * WMCHX1
+          FUEL2(IEL) = ZCHX23 * WMCHX2
           FUEL3(IEL) = ZCO3  * WMCO
           PROD1(IEL) = ZCO23 * WMCO2
           PROD2(IEL) = ZH2O3 * WMH2O
