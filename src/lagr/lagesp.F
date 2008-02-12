@@ -46,7 +46,7 @@ C     -------------------------------------------------------------
      &   ETTP   , ETTPA  , TEPA   , STATIS , STATIV ,
      &   TAUP   , TLAG   , PIIL   ,
      &   TSUF   , TSUP   , BX     , TSFEXT ,
-     &   VAGAUS , GRADPR , GRADVF , BRGAUS , TERBRU , ROMP   ,
+     &   VAGAUS , GRADPR , GRADVF , BRGAUS , TERBRU , ROMP   , AUXL2  ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -148,6 +148,8 @@ CARGU !(NBPMAX,NVGAUS!    !     !                                      !
 CARGU ! GRADPR(NCEL,3! TR !  -> ! GRADIENT DE PRESSION                 !
 CARGU ! GRADVF(NCEL,3! TR !  -> ! GRADIENT DE LA VITESSE DU FLUIDE     !
 CARGU ! ROMP         ! TR !  -  ! MASSE VOLUMIQUE DES PARTICULES       !
+CARGU ! AUXL2        ! TR !  -  ! TABLEAU DE TRAVAIL                   !
+CARGU !    (NBPMAX,7)!    !     !                                      !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -220,7 +222,7 @@ C
       DOUBLE PRECISION VAGAUS(NBPMAX,*)
       DOUBLE PRECISION GRADPR(NCELET,3) , GRADVF(NCELET,9)
       DOUBLE PRECISION BRGAUS(NBPMAX,*) , TERBRU(NBPMAX)
-      DOUBLE PRECISION ROMP(NBPMAX)
+      DOUBLE PRECISION ROMP(NBPMAX) , AUXL2(NBPMAX,7)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE)
       DOUBLE PRECISION RA(*)
 C
@@ -346,12 +348,6 @@ C=======================================================================
 C
       ELSE
 C
-        IFINIA = IFINIA
-        IAUXP  = IFINRA
-        IFINRA = IAUXP + 7*NBPMAX
-        CALL RASIZE ('LAGESP',IFINRA)
-C       ===========
-C
         CALL LAGES2
 C       ===========
      &   ( IFINIA , IFINRA ,
@@ -368,7 +364,7 @@ C       ===========
      &     ETTP   , ETTPA  , TEPA   ,
      &     STATIS , TAUP   , TLAG   , PIIL   ,
      &     TSUF   , TSUP   , BX     , TSFEXT , VAGAUS ,
-     &     RA(IAUXP)       , GRADPR , GRADVF ,
+     &     AUXL2  , GRADPR , GRADVF ,
      &     ROMP   , BRGAUS , TERBRU , RA(IFEXLA) ,
      &     RDEVEL , RTUSER , RA     )
 C

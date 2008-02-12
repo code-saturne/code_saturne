@@ -254,8 +254,6 @@ C
 C--> Si l'orientation precedente a echouee, on en essaie une autre,
 C    mais elle est dangereuse dans le cas des cellules convaves.
 C
-      ISENSF = 0
-C
       IF (ISENSF.EQ.0) THEN
 C
 C--> Orientation de GgS(1)S(2)

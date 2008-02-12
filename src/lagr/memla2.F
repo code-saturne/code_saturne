@@ -36,7 +36,7 @@ C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NFABOR , NCELET , NFAC   ,
      &   NBPMAX , NVP    , NVP1   , NVEP   , NIVEP  ,
-     &   IINDEP , IIBORD , IETTPA , IAUXL  ,
+     &   IINDEP , IIBORD , IETTPA , IAUXL  , IAUXL2 ,
      &   ITAUP  , IITLAG , IPIIL  ,
      &   IVAGAU , ITSUF  , ITSUP  , IBX    ,
      &   IGRADP , IGRADV , ICROUL ,
@@ -78,6 +78,7 @@ CARGU ! IINDEP       ! E  ! <-  ! POINTEUR SUR INDEP (NUM CEL DE DEPART!
 CARGU ! IIBORD       ! E  ! <-  ! POINTEUR SUR IBORD                   !
 CARGU ! IETTPA       ! E  ! <-  ! POINTEUR SUR ETTPA                   !
 CARGU ! IAUXL        ! E  ! <-  ! POINTEUR SUR AUXL                    !
+CARGU ! IAUXL2       ! E  ! <-  ! POINTEUR SUR AUXL2                   !
 CARGU ! ITAUP        ! E  ! <-  ! POINTEUR SUR TAUP                    !
 CARGU ! IITLAG       ! E  ! <-  ! POINTEUR SUR TLAG                    !
 CARGU ! IPIIL        ! E  ! <-  ! POINTEUR SUR PIIL                    !
@@ -138,7 +139,7 @@ C
       INTEGER          IDBIA0 , IDBRA0
       INTEGER          NFABOR , NCELET , NFAC
       INTEGER          NBPMAX , NVP    , NVP1   , NVEP  , NIVEP
-      INTEGER          IINDEP , IIBORD , IETTPA , IAUXL
+      INTEGER          IINDEP , IIBORD , IETTPA , IAUXL , IAUXL2
       INTEGER          ITAUP  , IITLAG , IPIIL
       INTEGER          IVAGAU , ITSUF  , ITSUP  , IBX
       INTEGER          IGRADP , IGRADV , ICROUL
@@ -231,6 +232,13 @@ C
         IFINRA = ITEBRU + NBPMAX
       ELSE
         IBRGAU = 1
+      ENDIF
+C
+      IF (NORDRE.EQ.2) THEN
+        IAUXL2 = IFINRA
+        IFINRA = IAUXL2 + NBPMAX*7
+      ELSE
+        IAUXL2 = 1
       ENDIF
 C
 C---> VERIFICATION

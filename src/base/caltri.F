@@ -184,7 +184,7 @@ C
       INTEGER          IIITEP , IITEPA , ISTATC , ISTATF
       INTEGER          IETTP  , IETTPA , IAUXL  , ITSLAG , ISTATV
       INTEGER          ITAUP  , IITLAG , IPIIL  , IINDEP , IIBORD
-      INTEGER          IVAGAU , ITSUF  , ITSUP  , IBX
+      INTEGER          IVAGAU , ITSUF  , ITSUP  , IBX    , IAUXL2
       INTEGER          IBRGAU , ITEBRU
       INTEGER          IGRADP , IGRADV , ICROUL
       INTEGER          ITEPCT , ITSFEX , ITSVAR
@@ -1186,7 +1186,7 @@ C       ===========
      & ( IFINIA , IFINRA ,
      &   NFABOR , NCELET , NFAC   ,
      &   NBPMAX , NVP    , NVP1   , NVEP   , NIVEP  ,
-     &   IINDEP , IIBORD , IETTPA , IAUXL  ,
+     &   IINDEP , IIBORD , IETTPA , IAUXL  , IAUXL2 ,
      &   ITAUP  , IITLAG , IPIIL  ,
      &   IVAGAU , ITSUF  , ITSUP  , IBX    ,
      &   IGRADP , IGRADV , ICROUL ,
@@ -1223,7 +1223,7 @@ C       ===========
      &   RA(ICPGD1) , RA(ICPGD2) , RA(ICPGHT) ,
      &   RA(IGRADP) , RA(IGRADV) , RA(ICROUL) ,
      &   RA(IBRGAU) , RA(ITEBRU) ,
-     &   RA(IW1   ) , RA(IW2   ) , RA(IW3   ) , RA(IAUXL)  ,
+     &   RA(IW1   ) , RA(IW2   ) , RA(IW3   ) , RA(IAUXL)  , RA(IAUXL2),
      &   RA(IRDEVE) , RA(IRTUSE) , RA         )
 C
 C--> Ici on libere la memoire reserve par MEMLA2

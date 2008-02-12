@@ -814,6 +814,7 @@ C
 C
 #if DEBUG_LAGCEL
           IF (IMPLTG.EQ.1) WRITE(NFECRA,9005) IP , ITEPA(IP,JISOR)
+          CLOSE(IMPLA4, STATUS='DELETE')
 #endif
 C
 C-->Fin de la boucle principale sur les particules
@@ -1207,14 +1208,14 @@ C
               ENDIF
             ENDDO
 C
-            DO IN = 1,3
+            DO IP = 1,3
               REWIND(IMPLA4)
               DO IPT = 1, NQUAD4 + NTRIA3 + NSIDED
                 READ(IMPLA4) NBP, IFAC, IEL, (ICONFO(II),II = 1,NBP)
                 IF (IFAC.GT.0) THEN
-                  WRITE(IMPLA1,'(E12.5)') CDGFAC(IN,IFAC)
+                  WRITE(IMPLA1,'(E12.5)') CDGFAC(IP,IFAC)
                 ELSE IF (IFAC.LT.0) THEN
-                  WRITE(IMPLA1,'(E12.5)') CDGFBO(IN,-IFAC)
+                  WRITE(IMPLA1,'(E12.5)') CDGFBO(IP,-IFAC)
                 ENDIF
               ENDDO
               IELOLD  = 0
@@ -1223,7 +1224,7 @@ C
                 READ(IMPLA4) NBP, IFAC, IEL, (ICONFO(II),II = 1,NBP)
                 IF (IEL.NE.IELOLD) THEN
                   IELOLD = IEL
-                  WRITE(IMPLA1,'(E12.5)') XYZCEN(IN,IEL)
+                  WRITE(IMPLA1,'(E12.5)') XYZCEN(IP,IEL)
                 ENDIF
               ENDDO
             ENDDO
@@ -1246,7 +1247,7 @@ C
 C
       ENDIF
 C
-      CLOSE(IMPLA4,STATUS='DELETE')
+      CLOSE(IMPLA4)
 C
       IF (IERR.EQ.1) THEN
         WRITE(NFECRA,9100)
