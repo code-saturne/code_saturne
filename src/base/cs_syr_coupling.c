@@ -795,7 +795,7 @@ _interpolate_elt_to_vtx(cs_syr_coupling_t  *syr_coupling,
                         cs_int_t           *connect)
 {
   cs_int_t  i, j, fac_id, vtx_id;
-  cs_int_t  fac_num, elt_num, elt_num_prev;
+  cs_int_t  elt_num, elt_num_prev;
 
   cs_real_t *weighting = syr_coupling->weighting;
   cs_real_t *down = vtx_values + n_vertices;
