@@ -56,8 +56,8 @@
 
 # Versions Code_saturne
 
-  if [ "$NOM_ARCH" = "OSF1" -o "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then 
-    PATHCS=/home/saturne/Saturne
+  if [ "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then 
+    PATHCS=/home/cont002/saturne
   elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then 
     PATHCS=/gpfs2/home/saturne
   else
