@@ -32,7 +32,7 @@ fig:
 	 $(MAKE)
 
 
-pdf:
+pdf: fig
 	@cd $(TEX) ;\
 	 $(MAKE) NOTE=$(DOC) pdf
 
@@ -40,12 +40,11 @@ pdf:
 clean:
 	@cd $(TEX) ;\
 	 $(MAKE) clean
-
-
-distclean:
-	@make clean
 	@cd $(FIG) ;\
 	 $(MAKE) clean
+
+
+distclean: clean
 	@\rm -f $(FIG)/*~
 	@\rm -f $(TEX)/*~
 	@\rm -f $(DOC).pdf
@@ -55,19 +54,16 @@ install:
 	@\mv $(TEX)/$(DOC).pdf .
 
 
-help info aide:
+help:
 	@echo
 	@echo "Usage : make"
-	@echo "   or : make <target>              (in  $(HOME)/)"
+	@echo "   or : make <target>"
 	@echo
-	@echo " avec :"
-	@echo "    <cible> : doc       : Compilation de la documentation"
-	@echo "                          utilisateur de Code_Saturne"
-	@echo "                          au format PDF"
-	@echo "              all       : idem doc"
-	@echo "              clean     : Suppression des fichiers temporaires"
-	@echo "              distclean : Nettoyage complet des répertoires"
-	@echo "              help      : ce message"
-	@echo "              info      : idem help"
-	@echo "              aide      : idem help"
+	@echo " with :"
+	@echo "    <target> : doc       : Compile the Code_Saturne theory manual"
+	@echo "                           in PDF format"
+	@echo "               all       : Same as doc"
+	@echo "               clean     : Remove temporary files"
+	@echo "               distclean : Clean directories completely"
+	@echo "               help      : This message"
 	@echo
