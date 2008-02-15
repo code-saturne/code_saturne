@@ -126,7 +126,7 @@
 \newcommand{\docassociesCS}[1]{\def\docassocies{#1}}
 \newcommand{\resumeCS}[1]{\def\resume{#1}}
 
-\newcommand{\pdfgraphics}{\ifpdf\DeclareGraphicsExtensions{.pdf,.jpg}\else\fi}
+\newcommand{\pdfgraphics}{\ifpdf\DeclareGraphicsExtensions{.pdf,.png,.jpg}\else\fi}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -302,7 +302,7 @@ Page \thepage/\pageref{LastPage} \\
 \vspace*{-32mm}
 
 \begin{picture}(16,8.5)
-  \put(7,5.7){\includegraphics*[width=1.95cm]{../input/logoedf}}
+  \put(7,5.7){\includegraphics*[width=1.95cm]{../../style/logoedf}}
   \put(0,7.1){\textsf{\textbf{EDF R\&D}}}
   \put(0,4.6){\scriptsize\textsc{\textsf{Fluid Dynamics, Power Generation and Environment Department}}}
   \put(0,4.3){\scriptsize\textsc{\textsf{Single Phase Thermal-Hydraulics Group}}}
@@ -318,11 +318,11 @@ Page \thepage/\pageref{LastPage} \\
   \put(2.75,0.4){contact: saturne-support@edf.fr}
 \end{picture}
 \begin{picture}(16,13)
-\put(1,3){\includegraphics*[width=14cm]{../input/logocs.png}}
+\put(1,3){\includegraphics*[width=14cm]{../../style/logocs}}
 \end{picture}
 %%%
 %%\begin{picture}(16,13)
-%%  \put(2,6.2){\parbox[t]{12cm}{\includegraphics*[width=12cm]{../input/logocs.png}}}
+%%  \put(2,6.2){\parbox[t]{12cm}{\includegraphics*[width=12cm]{logocs}}}
 %%%  \put(2,11.2){\parbox[t]{12cm}{\small\remauteurs}}
 %%%  \put(1,10.1){\small\textbf{Related Documents:} \parbox[t]{12cm}{\docassocies}}
 %%%  \put(1,7.4){\small\textbf{Abstract:}}
