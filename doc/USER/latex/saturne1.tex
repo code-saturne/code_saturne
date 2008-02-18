@@ -32,7 +32,7 @@
 %==================================
 %==================================
 
-\CS\ is a system designed to solve the Navier-Stokes
+\CS is a system designed to solve the Navier-Stokes
 equations in the cases of 2D, 2D axisymmetric or 3D flows. Its main module is
 designed for the simulation of flows which may be steady or
 unsteady, laminar or turbulent, incompressible or potentially dilatable,
@@ -44,11 +44,11 @@ electricity effects (Joule effect and electric arcs) and compressible flows.
 The code also includes an engineering module, Matisse, for the simulation of nuclear waste
 surface storage.
 
-\CS\ is free software; you can redistribute it
+\CS is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2 of
 the License, or (at your option) any later version.
-\CS\ is distributed in the hope that it will be
+\CS is distributed in the hope that it will be
 useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.\footnote{You should have
@@ -59,12 +59,12 @@ Free Software Foundation, Inc.,
 Boston, MA  02110-1301  USA}
 
 
-\CS\ relies on a finite volume discretisation and allows the use of
+\CS relies on a finite volume discretisation and allows the use of
 various mesh types which may be hybrid (containing several kinds of
 elements) and may have structural non-conformities (hanging nodes).
 
 
-\CS\ is composed of two main elements :
+\CS is composed of two main elements :
 \begin{itemize}
 \item the Kernel module is the numerical solver
 \item the Preprocessor module is in charge of mesh
@@ -73,7 +73,7 @@ domain decomposition for parallel computing and definition of periodicity
 boundary conditions (translation and/or rotation)\\
 \end{itemize}
 
-\indent\CS\ also relies on two compulsory libraries (under LGPL licence) :
+\indent\CS also relies on two compulsory libraries (under LGPL licence) :
 \begin{itemize}
 \item BFT (Base Functions and Types) for the management of memory and input/output
 as well as specific utilities (estimation of time and memory usage for instance)
@@ -81,7 +81,7 @@ as well as specific utilities (estimation of time and memory usage for instance)
 of code coupling
 \end{itemize}
 
-The present document is a practical user's guide for \CS\ version \verscs.
+The present document is a practical user's guide for \CS version \verscs.
 It is the result of the joint effort of
 all the members in the development team.
 
@@ -92,12 +92,12 @@ implementation, please refer to the reports \cite{mechitoua98} and
 \cite{boucker00}, and to the theoretical documentation \cite{theory},
 which is newer and more detailled
 (the latest updated version of this document
-is available on-line with the version of \CS\ and accessible through the command
+is available on-line with the version of \CS and accessible through the command
 \texttt{info\_cs noyau}).
 
 The present document first
 presents all the necessary elements to run a calculation
-with \CS\ version \verscs. It then lists all the variables of the code
+with \CS version \verscs. It then lists all the variables of the code
 which may be useful for more advanced utilisation.
 The user subroutines of all the modules within the code are then documented.
 Eventually, for each key word and user-modifiable parameter in the code,
@@ -130,7 +130,7 @@ subdirectory \texttt{/home/saturne/Saturne} (as it is the case on the CCRT
 machines). For installs outside EDF R\&D, please refer to the administrator who
 installed the code for the \texttt{PATHCS} location.
 
-The current version of \CS\ (\verscs) is located in the directory
+The current version of \CS (\verscs) is located in the directory
 \texttt{\$PATHCS/Noyau/ncs-\verscs}.
 
 In order to use \CS, every user must add the following line in their file
@@ -146,11 +146,11 @@ for the CCRT machines.
 
 \hspace*{2cm}\texttt{. }\texttt{xxxxxxx/Noyau/ncs-\verscs/bin/cs\_profile} for
 the other cases, where \texttt{xxxxxxx} represents the PATHCS directory where
-\CS\ and its components have been installed (refer to the administrator
+\CS and its components have been installed (refer to the administrator
 responsible for \CS).
 
 This command runs the environment file of \CS, which sets the different
-environment variables to their correct value. {\bf \CS\ will not work correctly
+environment variables to their correct value. {\bf \CS will not work correctly
 if those variables have not been set properly}.\\
 After adding this line to the \texttt{.profile}, it is
 necessary to logout of the session and relog in (simply reading the file by
@@ -158,7 +158,7 @@ typing ``\texttt{. \tildeunix/.profile}'' is usually not enough and might not
 set the \texttt{PATH} variable correctly for the whole session).
 
 {\em WARNING: Other pieces of information related
-to \CS\ must not be included in \texttt{.profile}. In particular,
+to \CS must not be included in \texttt{.profile}. In particular,
 lines referring to previous versions of the code must be suppressed}
 
 
@@ -220,32 +220,32 @@ names have to be given in the variable \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}
 of the launch script, see \S\ref{prg_lance}}.
 
 
-During calcualtions coupled with \syrthes\ (option specified in the launch
-script of \CS\ or {\em via} the Interface) the same organisation is used for the
+During calcualtions coupled with \syrthes (option specified in the launch
+script of \CS or {\em via} the Interface) the same organisation is used for the
 files related to \CS. For the files related
  to \syrthes, the localisation of the upstream files is specified in the
 \texttt{syrthes.env} file. Yet, the launch script is built presuming that the
 following organisation is applied:
 \begin{list}{$\bullet$}{}
-\item a directory \texttt{FORT\_SYR} for the potential \syrthes\ user subroutines
+\item a directory \texttt{FORT\_SYR} for the potential \syrthes user subroutines
 \item a directory \texttt{DATA\_SYR} containing the configuration file \texttt{syrthes.env}
-(localisation of files specific to \syrthes). The file defining the \syrthes\
+(localisation of files specific to \syrthes). The file defining the \syrthes
 calculation options (\texttt{syrthes.data}) and the potential restart files can
 also be placed in this directory.
 \end{list}
 
-The \syrthes\ result files (geometry file, chronological result files, calculation
+The \syrthes result files (geometry file, chronological result files, calculation
 restart files and the historic file) are placed in a sub-directory
 \texttt{RESU\_SYR.mmddhhmm} of the \texttt{RESU} directory, where
 \texttt{mmddhhmm} corresponds to the calculation identification suffix.
 
 \noindent
-The \syrthes\ execution report file is placed in the \texttt{RESU} directory (same as
-for the \CS\ review) under the name \texttt{listsyr.mmddhhmm}. The compilation
-report file is the same for \syrthes\ and \CS. It is placed in the \texttt{RESU}
+The \syrthes execution report file is placed in the \texttt{RESU} directory (same as
+for the \CS review) under the name \texttt{listsyr.mmddhhmm}. The compilation
+report file is the same for \syrthes and \CS. It is placed in the \texttt{RESU}
 directory under the name  \texttt{compil.log.mmddhhmm}.
 For an easier follow-up of the modifications
-in former calculations, the potential \syrthes\ user-subroutines used in a
+in former calculations, the potential \syrthes user-subroutines used in a
 calculation are stored in a directory \texttt{FORT\_SYR.mmddhhmm} in the
 directory \texttt{RESU}.
 
@@ -253,8 +253,8 @@ directory \texttt{RESU}.
 \begin{table}[!t]
 \begin{tabular}{lll}
 \multicolumn{3}{l}{Below are typical contents of a case directory CASE1 in a study STUDY} \\
-\multicolumn{3}{l}{(\CS\ calculation coupled with \syrthes):}\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA:}}&{\bf \CS\ data}\\
+\multicolumn{3}{l}{(\CS calculation coupled with \syrthes):}\\
+\multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA:}}&{\bf \CS data}\\
 &        \texttt{SaturneGUI}                &Graphical User Interface launch script\\
 &        \texttt{study.xml}                &Graphical User Interface parameter file\\
 &        \texttt{THCH}                        &example of thermochemical files
@@ -263,31 +263,31 @@ directory \texttt{RESU}.
                                       pulverised coal \\
 &                                   & or electric arcs)\\
 
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA\_SYR:}}&{\bf \syrthes\ data}\\
-&        \texttt{syrthes.data}                  &\syrthes\ data file \\
-&        \texttt{syrthes.env}                &\syrthes\ configuration file\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/FORT:}}&{\bf \CS\ user subroutines }\\
+\multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA\_SYR:}}&{\bf \syrthes data}\\
+&        \texttt{syrthes.data}                  &\syrthes data file \\
+&        \texttt{syrthes.env}                &\syrthes configuration file\\
+\multicolumn{2}{l}{\texttt{STUDY/CASE1/FORT:}}&{\bf \CS user subroutines }\\
 &        \texttt{USERS}                   &        examples of a user subroutines\\
 &        \texttt{usclim.F}                  &user subroutines used for the present the calculation\\
 &        \texttt{usini1.F}  &\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU:}}&{\bf results}\\
-&        \texttt{CHR.ENSIGHT.08211921}              &directory containing the \CS\
+&        \texttt{CHR.ENSIGHT.08211921}              &directory containing the \CS
                                            post-processing results\\
 &                                         &in the {\em EnSight} format for the
                                           calculation 08211921\\
 &                                        &(contains both volume and boundary results;\\
 &                                        &the contents of the directory are user
                                           modifiable)\\
-&        \texttt{FORT.08211921}              &\CS\ user subroutines
+&        \texttt{FORT.08211921}              &\CS user subroutines
                                         used for the\\
 &                                      &calculation 08211921\\
-&        \texttt{FORT\_SYR.08211921}   &\syrthes\ user subroutines
+&        \texttt{FORT\_SYR.08211921}   &\syrthes user subroutines
                                      used in the calculation 08211921\\
 &        \texttt{HIST.08211921}        &directory containing the chronological
                                       records for \CS\\
 &        \texttt{RES\_USERS.08211921}  &optional directroy containing the
                                      user results files\\
-&        \texttt{SUITE.08211921}       &directory containing the \CS\ restart files \\
+&        \texttt{SUITE.08211921}       &directory containing the \CS restart files \\
 &        \texttt{compil.log.08211921}  &compilation report\\
 &     \texttt{study.xml.08211921}   &Graphical User Interface parameter file
                                     used for the\\
@@ -303,22 +303,22 @@ directory \texttt{RESU}.
 &        \texttt{listing.08211921}     &execution report for the Kernel module of \CS\\
 &        \texttt{listsyr.08211921}     &execution report for \syrthes\\
 &        \texttt{resume.08211921}      &general information (machine, user, version, ...)\\
-&     \texttt{RESU\_SYR.08211921:}  &{\bf \syrthes\ results (file names given in
+&     \texttt{RESU\_SYR.08211921:}  &{\bf \syrthes results (file names given in
 the
                                       \texttt{syrthes.env} file)}\\
 &        \hspace*{0.3cm}\texttt{geoms} &\syrthes \ solid geometry file\\
-&        \hspace*{0.3cm}\texttt{histos1}&\syrthes\ chronological records at
+&        \hspace*{0.3cm}\texttt{histos1}&\syrthes chronological records at
                                       specified probes\\
-&        \hspace*{0.3cm}\texttt{resus1}&\syrthes\ calculation restart file (1
+&        \hspace*{0.3cm}\texttt{resus1}&\syrthes calculation restart file (1
                                                      time step)\\
-&        \hspace*{0.3cm}\texttt{resusc1}&\syrthes\ chronolgical solid
+&        \hspace*{0.3cm}\texttt{resusc1}&\syrthes chronolgical solid
                                       post-processing file (may be tranformed \\
 &                                    &into the {\em Ensight} format with the
                                      {\em syrthes2ensight} utility)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf launch script}\\
 &        \texttt{lance}                &launch script (compliant with all
                                      architectures on which \\
-&                                   & \CS\ has been ported)\\
+&                                   & \CS has been ported)\\
 \end{tabular}
 \end{table}
 
@@ -326,17 +326,17 @@ the
 
 
 %==================================
-\subsubsection{\CS\ Kernel library files}
+\subsubsection{\CS Kernel library files}
 %==================================
 \label{prg_library}%
-Below are given information about the content of the \CS\ base directories. They
+Below are given information about the content of the \CS base directories. They
 are not of vital interest for the user, but given only as general
 information. Indeed, the case preparer \texttt{cree\_sat} automatically extracts the
 necessary files and prepares the launch script without the user having to go
-directly into the \CS\ base directories (see \S\ref{prg_creesat}).
+directly into the \CS base directories (see \S\ref{prg_creesat}).
 The \texttt{info\_cs} gives direct
 access to the most needed information (especially the user and progammer's
-guides and the tutorial) without the user having to look for them in the \CS\
+guides and the tutorial) without the user having to look for them in the \CS
 directories.
 
 
@@ -360,11 +360,11 @@ For each architecture, a subdirectory (named after \texttt{NOM\_ARCH})
 stores the compiled elements
 (\texttt{libsaturne*.a} libraries in \texttt{lib} and executable in
 \texttt{bin}\footnote{This executable is used only for standalone mesh
-analysis. In a standard \CS\ run, the executable is recompiled to allow for user
+analysis. In a standard \CS run, the executable is recompiled to allow for user
 routines to be taken into account.}).
 The launch script automatically loads them for
 the standard calculations. The different libraries correspond to the
-different modules of \CS\:
+different modules of \CS:
 \begin{list}{$\bullet$}{}
 \item\texttt{libsaturneBASE.a} for the basic Kernel,
 \item\texttt{libsaturneCOGZ.a} for the gas combustion module,
@@ -430,7 +430,7 @@ prepare and run a standard case:
 
 \begin{list}{$\bullet$}{}
 
-\item Check the version of \CS\ set for use in the environment variables
+\item Check the version of \CS set for use in the environment variables
 (\texttt{info\_cs version}). If it does not correspond to the desired version,
 update the \texttt{.profile} file to set the environment
 variables correctly. Log out of the session and
@@ -439,12 +439,12 @@ log in again to take the modifications into account properly (cf
 
 \item Prepare the different directories using \texttt{cree\_sat}(see
 \S\ref{prg_creesat}) and, when needed, add the directories \texttt{DATA\_SYR}
-and \texttt{FORT\_SYR} which are required to accomodate the \syrthes\ files.
+and \texttt{FORT\_SYR} which are required to accomodate the \syrthes files.
 
 \item Place the mesh(es) in the directory \texttt{MAILLAGE}. Make sure they are
-in a format compliant with \CS\ (see \S\ref{prg_maillages}). There can be
+in a format compliant with \CS (see \S\ref{prg_maillages}). There can be
 several meshes in case of mesh pasting or coupling with
-\syrthes\footnote{\syrthes\ uses meshes composed of 10-node tetrahedra (vertices
+\syrthes\footnote{\syrthes uses meshes composed of 10-node tetrahedra (vertices
 and centers of edges)}.
 
 \item Go to the directory \texttt{DATA} and launch the
@@ -661,7 +661,7 @@ The comprehensive list of the user subroutines and their instructions
 \subsubsection{Temporary execution directory}
 %==================================
 \label{prg_temporarydirectory}%
-During a calculation, \CS\ uses a temporary directory for the compilation and
+During a calculation, \CS uses a temporary directory for the compilation and
 the execution, the result files being only copied at the end in the directory
 \texttt{RESU}. This temporary directory is defined in the variable \texttt{RUN}
 of the launch script. This variable is set top a default value in the non-user
@@ -696,7 +696,7 @@ the machine.\\
 \subsubsection{Execution modes}
 %==================================
 \label{prg_executionmodes}%
-As explained before, \CS\ is composed of two modules, the Preprocessor and the
+As explained before, \CS is composed of two modules, the Preprocessor and the
 Kernel. The Preprocessor is in charge of the preprocessing. It reads the meshes and
 performs the necessary pastings and domain decompositions. The resulting data
 are transfered to the Kernel through specific files, one for each processor the
@@ -736,7 +736,7 @@ named \texttt{ficstp} must be placed in the temporary execution
 directory (see \S\ref{prg_temporarydirectory}).
 This file must contain a blank first line and
 the second line indicating the value of the new limit number of time steps.\\
-If this new limit has already been passed in the calculation, \CS\ will stop
+If this new limit has already been passed in the calculation, \CS will stop
 properly at the end of the current time step (the results and restart files
 will be written correctly).\\
 This procedure allows the user to stop a calculation in a clean and interactive
@@ -765,7 +765,7 @@ created.
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
-An option \texttt{-noihm} is available for the use of \CS\
+An option \texttt{-noihm} is available for the use of \CS
 without Graphic Interface (see \S\ref{prg_ihm}). This option must
 be either the first or the last argument and appear only once.
 
@@ -801,7 +801,7 @@ put), but everything can be specified throuhg the Graphical Interface.
 %==================================
 \subsection{Preprocessing}
 %==================================
-The Preprocessor module of \CS\ is in charge of the preprocessing. It reads the
+The Preprocessor module of \CS is in charge of the preprocessing. It reads the
 mesh file(s) (under any supported format) and transfers the necessary
 information to the Kernel. Mesh pasting and domain decomposition for parallel
 calculations are made during this phase. In case of periodic boundary
@@ -817,7 +817,7 @@ corresponding user's guide \cite{ecsmu} (available on-line through the command
 \subsubsection{Usable meshes}
 %==================================
 \label{prg_maillages}%
-\CS\ allows to run calculations using meshes of different formats:
+\CS allows to run calculations using meshes of different formats:
 \begin{list}{-}{}
 
 \item Universal I-DEAS format (Master Series, versions 6 to 9) generated
@@ -861,18 +861,18 @@ but more largely used elsewhere.
 \end{list}
 
 The use of files of the ``Common Solver'' type\footnote{File type specifically
-developped for the early prototype versions of \CS\ to be read directly by the
+developped for the early prototype versions of \CS to be read directly by the
 Kernel while the Preprocessor module was under development (extension \texttt{tlc})}
 is still possible but is not maintained anymore. The reading of the mesh
 is done directly from the Kernel, without the Preprocessor module.
 The variable SOLCOM must
- be set to 1 in the launch scripts. Many potentialities of \CS\ are not
+ be set to 1 in the launch scripts. Many potentialities of \CS are not
 compliant with this file format (mesh pasting with hanging nodes, periodicity,
 parallel computing, ...).
 The \texttt{slc2ideas} utility can be used to convert the
 'Common Solver' files to the I-DEAS format. \texttt{slc2ideas}
  is automatically available in the user's PATH (who can therefore enter the
-command \texttt{slc2ideas} directly) when the environment variables for \CS\
+command \texttt{slc2ideas} directly) when the environment variables for \CS
 have been set correctly. However, not all the files can be converted. In particular,
 they must comply with the initial choice (\texttt{tlc}) according to which
 each internal face possesses two and only two neighboring cells, and each
@@ -899,7 +899,7 @@ determines the mesh format directly from the file suffix:
 
 {\em WARNING: }
 Some turbulence models ($k-\varepsilon$, $R_{ij}-\varepsilon$ SSG, ...) used in
-\CS\ are ``High-Reynolds'' models. Therefore the size of the cells
+\CS are ``High-Reynolds'' models. Therefore the size of the cells
 neighboring the wall needs to be greater than the thickness of the viscous
 sublayer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
 preferable). If the mesh does not match this constraint, the results may
@@ -913,7 +913,7 @@ on these constraints, see the keyword \texttt{ITURB} p.\pageref{prg_iturb}.
 A complete description of the Preprocessor command line options can be found in
 \cite{ecsmu}, accessible by the command \texttt{info\_cs ecsmu}. The executable
 of the Preprocessor module is \texttt{ecs}, accessible directly once the environment
-variables of \CS\ are set properly. A summary of the command line options is
+variables of \CS are set properly. A summary of the command line options is
 also given by the command \texttt{ecs -help}.
 
 For the main options, the launch script \texttt{lance} contains corresponding
@@ -981,7 +981,7 @@ the launch script, to be automatically passed to the command line.
 \subsection{Kernel command line options}
 %==================================
 \label{prg_optappelnoy}%
-In the standard cases, the compilation of \CS\ and its execution are entirely
+In the standard cases, the compilation of \CS and its execution are entirely
 controlled by the launch script. The potential command line options are passed
 through user modifiable variables at the beginning of the script. This way, the
 user only has to fill these variables and doesn't need
@@ -1014,7 +1014,7 @@ IFOENV\index{IFOENV} in the FORTRAN code will be set to 0 if the
 
 \item \texttt{-iasize n}: specifies the size \texttt{n} of the macro-array of
 integers IA (number of integers in the array). If the size is not sufficient,
-\CS\ stops and indicates the additional size needed.\\
+\CS stops and indicates the additional size needed.\\
 The value of \texttt{n} is to be placed in the \texttt{LONGIA} variable in the launch
 script. The option \mbox{\texttt{-iasize \$LONGIA}} is automatically added to the
 Kernel command line.\\
@@ -1023,7 +1023,7 @@ the FORTRAN code.
 
 \item \texttt{-rasize n}: specifies the size \texttt{n} of the macro-array of
 reals RA (number of reals in the array). If the size is not sufficient,
-\CS\ stops and indicates the additional size needed.\\
+\CS stops and indicates the additional size needed.\\
 The value of \texttt{n} is to be placed in the \texttt{LONGRA} variable in the launch
 script. The option \mbox{\texttt{-rasize \$LONGRA}} is automatically added to the
 Kernel command line.\\
@@ -1038,10 +1038,10 @@ or through the batch headers. If necessary, the launch script then automatically
 passes the \texttt{-p} option to the Kernel command line (see \ref{prg_lance}).
 
 \item \texttt{--coupl-cs}: this option concerns the coupling of different
-executions of \CS. It is still under development. Please refer to \CS\
+executions of \CS. It is still under development. Please refer to \CS
 development team for further information.
 
-\item \texttt{-syrthes}: triggers the coupling with the code \syrthes\ (thermal
+\item \texttt{-syrthes}: triggers the coupling with the code \syrthes (thermal
 diffusion and transparent radiation in a solid). It has to be combined with a
 selection sub-option, to specify the boundary faces that need to be coupled. The
 syntax for selecting the faces is similar to that in the Preprocessor command line,
@@ -1050,7 +1050,7 @@ group selection) and \texttt{invsel} (to invert the selection). See
 \cite{ecsmu} for further details. For instance, to couple all the boundary faces
 except the faces of color 2 and 3, the command line option would be\\
 \texttt{-syrthes -color 2 3 -invsel}\\
-It is possible to couple a \CS\ calculation with a 2D \syrthes\ calculation. To
+It is possible to couple a \CS calculation with a 2D \syrthes calculation. To
 do so, the sub-option \texttt{-2d} must be added, potentially completed by the
 specification of the direction normal to the 2D mesh: \texttt{-X}, \texttt{-Y}
 or \texttt{-Z} (default). For instance:\\
@@ -1058,9 +1058,9 @@ or \texttt{-Z} (default). For instance:\\
 All these options are to be placed in the \texttt{COMMANDE\_SYRTHES} variable of
 the launch script to be passed automatically to the Kernel command line.\\
 {\footnotesize\it To be thourough, there are two other sub-options to the
-\texttt{-syrthes} option: \texttt{-proc n} the specify that the \syrthes\
+\texttt{-syrthes} option: \texttt{-proc n} the specify that the \syrthes
 executable is running on the processor \texttt{n} and \texttt{-socket} in to
-specify that the communication between \CS\ and \syrthes\ is made through
+specify that the communication between \CS and \syrthes is made through
 sockets. These options are not to be specified by the user. They are
 automatically set and passed to the command line by the launch script.}
 
@@ -1162,7 +1162,7 @@ command line options.
 
 The case preparer \texttt{cree\_sat} places an example of launch script,
 \texttt{lance}, in the \texttt{SCRIPTS} directory. This script is quite general
-and known to work on every architecture \CS\ has been tested on. The beginning
+and known to work on every architecture \CS has been tested on. The beginning
 if the script contains the definition of certain parameters (environment
 variables) necessary to set the calculation. The second part of the script
 contains the commands for the preparation and execution of the calculation. No
@@ -1230,7 +1230,7 @@ faces with too large a warp angle (see \ref{prg_optappelnoy})
 of periodic boundary conditions (see \ref{prg_optappelecs})
 
 \item \texttt{COMMANDE\_SYRTHES}: Kernel command line option for coupling with
-\syrthes\ (see \ref{prg_optappelnoy})
+\syrthes (see \ref{prg_optappelnoy})
 
 \item \texttt{DONNEES\_THERMOCHIMIE}: name of the thermochemical data file, if
 necessary (the file is looked for in the directory \texttt{DATA}, see
@@ -1251,7 +1251,7 @@ available, although it is not recommended (loss of efficiency because several
 executables share the same processor).\\
 In case of
 coupling with \syrthes, one processor is reserved for \syrthes, and the Kernel
-of \CS\ will therefore automatically be set to run on
+of \CS will therefore automatically be set to run on
 \texttt{NOMBRE\_DE\_PROCESSEURS-1} processors.
 
 \item \texttt{LISTE\_PROCESSEURS}: list of nodes on which the calculation is to
@@ -1284,12 +1284,12 @@ calculation (see \S\ref{prg_temporarydirectory})
 
 \item \texttt{OPTIMISATION}: optimisation level for compilation
  (LO, DBG, EF, PROF or PUR; see \S\ref{prg_library}). This optimisation
-level will be applied to all the modules of \CS\ (BASE, CFBL, COGZ, CPLV, ELEC,
+level will be applied to all the modules of \CS (BASE, CFBL, COGZ, CPLV, ELEC,
 FUEL, LAGR, MATI, RAYT).
 Leaving the variable empty stands for ``standard''
 optimisation.
 
-\item \texttt{LISTE\_LIB\_SAT}: list of \CS\ module libraries to use (see
+\item \texttt{LISTE\_LIB\_SAT}: list of \CS module libraries to use (see
 \S\ref{prg_library}). Specifying
 a list allows to use different optimisation options for different modules. If a
 list is
@@ -1311,13 +1311,13 @@ provided by external libraries. To link with an external library ``foo'', the
 variable would be for instance\\
 \texttt{OPTION\_LIB\_EXT=``-L/opt/foo/lib -lfoo''}
 
-\item \texttt{VALGRIND}: command to be placed before the \CS\ executable name on
+\item \texttt{VALGRIND}: command to be placed before the \CS executable name on
 the execution command line ({\em i.e.} the launch script will execute the
 command \texttt{\$VALGRIND cs13.exe ...}). It is especially designed to use the
 valgrind debugging and profiling tool. The usual value to use valgrind is
 \texttt{VALGRIND=``valgrind --tool=memcheck''}
 
-\item \texttt{ARG\_CS\_VERIF}: verification mode to be used for \CS\ (see
+\item \texttt{ARG\_CS\_VERIF}: verification mode to be used for \CS (see
 \ref{prg_optappelnoy}). An empty variable implies standard calculation mode
 (IVERIF=-1).
 
@@ -1361,20 +1361,20 @@ mode (see \ref{prg_executionmodes})
 \ref{prg_architecture}). This variable is automatically set by
 \texttt{cree\_sat} and should generally not be changed.
 
-\item \texttt{DATA\_SYR}: directory for the \syrthes\ data. This directory has
+\item \texttt{DATA\_SYR}: directory for the \syrthes data. This directory has
 to be created by the user. It is advised to keep the location proposed in the
-launch script, which complies with the standard architecture of \CS\ (see
+launch script, which complies with the standard architecture of \CS (see
 \ref{prg_architecture}).
 
-\item \texttt{SYRTHES\_ENV}: name of the environment file for \syrthes\ (usually
+\item \texttt{SYRTHES\_ENV}: name of the environment file for \syrthes (usually
 \texttt{syrthes.env}, as proposed in the launch script).
 
-\item \texttt{FORT\_SYR}: directory for the \syrthes\ user subroutines.
+\item \texttt{FORT\_SYR}: directory for the \syrthes user subroutines.
 This directory has to be created by the user. It is advised to keep the location
 proposed in the launch script, which complies with the standard architecture
-of \CS\ (see \ref{prg_architecture}).
+of \CS (see \ref{prg_architecture}).
 
-\item \texttt{MODE\_COUPLAGE}: coupling mode between \CS\ and \syrthes, when
+\item \texttt{MODE\_COUPLAGE}: coupling mode between \CS and \syrthes, when
 such coupling is activated (see \texttt{COMMANDE\_SYRTHES}). Three options are
 available:\\
 \hspace*{0.5cm}\texttt{MPI}: for a coupling based on MPI messages (requires an
@@ -1384,7 +1384,7 @@ such a coupling is valid only if all the processors are located on the same
 node)\\
 \hspace*{0.5cm}\texttt{sockets}: for a coupling based on sockets
 
-\item \texttt{MODE\_EXEC}: execution mode for \CS\ (see \ref{prg_executionmodes})
+\item \texttt{MODE\_EXEC}: execution mode for \CS (see \ref{prg_executionmodes})
 
 \end{list}
 
@@ -1395,7 +1395,7 @@ node)\\
 \label{prg_ihm}%
 A Graphical User Interface is available with \CS.
 This Interface creates or reads an XML file according to
-a specific \CS\ syntax which is then interpretated by the code.
+a specific \CS syntax which is then interpretated by the code.
 
 In version \verscs, the Graphical Interface manages calculation parameters,
 standard initialisation values and boundary
@@ -1480,10 +1480,10 @@ followings:
 
 \end{list}
 
-The \CS\ tutorial \cite{tutorial} offers a step-by-step guidance to the setting
-up of some simple calculations with the \CS\ Interface.
+The \CS tutorial \cite{tutorial} offers a step-by-step guidance to the setting
+up of some simple calculations with the \CS Interface.
 
-To launch \CS\ using an XML parameter file,
+To launch \CS using an XML parameter file,
 the name of the file must
 be given to the variable \texttt{PARAM} in the launch script (see
 \S\ref{prg_lance}). When the launch
@@ -1571,7 +1571,7 @@ inferior or equal to NPHSMX. In the current version, NPHAS is forced to 1 and
 should not be changed.}
 
 \variab{NPHSMX}{NPHSMX}{I}{Maximum number of phases (default value:
-1)\footnote{the data structure of \CS\ is ready for a multiphase description,
+1)\footnote{the data structure of \CS is ready for a multiphase description,
 however no multiphase model has been implemented. Moreover, some options of the
 code are not compatible with NPHAS different from 1.}}
 
@@ -2100,7 +2100,7 @@ the present time step\\
 stored at the cells}
 
 \variab{IPRTOT}{IPRTOT(NPHSMX)}{IA}{For each phase\footnote{Although the data
-structure of \CS\ allows multi-phase variables,  the algorithm does not allow
+structure of \CS allows multi-phase variables,  the algorithm does not allow
 more than one pressure}, total pressure in each cell\\
 stored at the cells}
 
@@ -2448,7 +2448,7 @@ the utility function \texttt{NUMGRP(NOMGRP, LNGNOM)} (with a name
 \texttt{LNGNOM} of the type \texttt{INTEGER}).
 
 \minititre{Note 2: boundary conditions}
-The boundary conditions in \CS\ boil down to determine a value for the
+The boundary conditions in \CS boil down to determine a value for the
 current variable $\phi$ at the boundary faces, that is to say $\phi_f$,
 value expressed as a function of $\phi_{I'}$, value of $\phi$ in I',
 projection of the center of the adjacent cell on the straight line
@@ -4256,7 +4256,7 @@ $kg.m^{-3}.s^{-1}$.\\
 \minititre{Notes}
 $\bullet$ If ITYPSM(IELTSM,IVAR)=0, SMACEL(IELTSM,IVAR) is not used.\\
 $\bullet$ If $\Gamma$=SMACEL(IELTSM,IPR(IPHAS))$<$0, mass is removed from
-      the system, and \CS\ considers automatically a
+      the system, and \CS considers automatically a
       $\varphi_i=\varphi^{(n+1)}$ condition, whatever the values given
       to ITYPSM(IELTSM,IVAR) and SMACEL(IELTSM,IVAR) (the extraction of a
       variable is done at ambient value).
@@ -4421,7 +4421,7 @@ are said to be filtered in an ``implicit'' way. Sub-grid scale models
 (``dynamic'' models) introduce in addition an explicit filtering.
 
 The notations used for the definition of the variable $C$ used in the
-dynamic models of \CS\ are specified below. These notations are the ones
+dynamic models of \CS are specified below. These notations are the ones
 assumed in the document \cite{benhamadouche01}, to which the user may
 refer for more details.
 
@@ -5216,7 +5216,7 @@ modified by the user.}\\
 
 This is one of the three subroutines which must be obligatory completed
 by the user in order to use a specific physics module.
-At the moment, \CS\ allows to use two ``pulverised coal'' modules
+At the moment, \CS allows to use two ``pulverised coal'' modules
 (lagrangian coupling or not), two ``gas combustion'' modules, two
 ``electric'' modules and one ``compressible'' module. To activate one of
 these modules, the user needs to complete one (and only one) of the
@@ -6052,7 +6052,7 @@ current.
 $Pp_\text{max}\,sin\phi$.
 \item For the Joule studies in which one does not have access to the phases, the real
  potential (imaginary part =0) will suffice (IPPMOD(IELJOU)=1): this is obviously the case with
- continous current, but also with single phase alternative current. In \CS\
+ continous current, but also with single phase alternative current. In \CS
 there is only 1 varialbe for the potential,  called "real potential". Pay attention to
  the fact that in alternate current, the "real potential" represents a effective value
  of potential , $\frac{1}{\sqrt{2}}\,Pp_\text{max}$ (in continous current there is no

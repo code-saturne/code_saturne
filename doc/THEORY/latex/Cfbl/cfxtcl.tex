@@ -73,7 +73,7 @@ et les $\vect{F}_i^D(\vect{W})$ sont les vecteurs flux diffusifs
 dans les trois directions d'espace,
 et $\vect{\mathcal{S}}$ est un terme source.
 
-La d\'emarche classique de \CS\ est adopt\'ee~: on impose les conditions
+La d\'emarche classique de \CS est adopt\'ee~: on impose les conditions
 aux limites en d\'eterminant, pour chaque variable, des valeurs num\'eriques
 de bord. Ces valeurs sont calcul\'ees de telle fa\c con que, lorsqu'on
 les utilise dans les formules standard donnant les flux discrets, on obtienne
@@ -1314,7 +1314,7 @@ $\displaystyle\frac{K}{C_v}\,\grad\,e$
 et donc d'annuler le flux associ\'e au terme
 $\displaystyle\frac{K}{C_v}\,\grad{(\frac{1}{2}\,u^2+\varepsilon_{sup})}$
 (en pratique, pour l'annuler, on se contente de ne pas l'ajouter
-au second membre de l'\'equation). Conform\'ement \`a l'approche retenue dans \CS\ et
+au second membre de l'\'equation). Conform\'ement \`a l'approche retenue dans \CS et
 rappel\'ee pr\'ec\'edemment, on d\'eterminera donc une valeur de bord {\it
 fictive} de l'\'energie qui permette de reconstruire le flux diffusif total
 attendu \`a partir
@@ -1515,7 +1515,7 @@ et non pas une valeur de bord pour le {\it flux convectif} et une valeur de bord
 pour le {\it flux diffusif}.}. On dispose donc, {\it pour chaque variable},
 d'une valeur de bord dont devront \^etre d\'eduits les flux de
 convection, les flux de diffusion et les gradients\footnote{N\'eanmoins, pour
-certaines variables comme la vitesse par exemple, \CS\ dispose de deux valeurs
+certaines variables comme la vitesse par exemple, \CS dispose de deux valeurs
 de bord (et non pas d'une seule) afin de pouvoir imposer de mani\`ere
 ind\'ependante le gradient normal et le flux de diffusion.}.
 Ici, avec l'utilisation d'un sch\'ema de
@@ -1781,7 +1781,7 @@ lors des reconstructions sur maillage non orthogonal.
 %le rapport $\displaystyle\frac{C_p}{C_v}$, mais il serait
 %souhaitable de corriger en ce sens le calcul de \var{W1} pour \fort{viscfa} dans
 %le sous-programme \fort{cfener} et le calcul similaire de \var{HINT} dans
-%\fort{condli} et \fort{clptur} (RAS pour les conversions en couplage avec Syrthes).
+%\fort{condli} et \fort{clptur} (RAS pour les conversions en couplage avec \syrthes).
 
 Apporter un compl\'ement de test sur une cavit\'e ferm\'ee
 sans vitesse et sans gravit\'e, avec flux de bord ou temp\'erature de bord impos\'ee.
@@ -1805,7 +1805,7 @@ reconstruction pour la vitesse et $\varepsilon_{sup}$ dans la relation
 $\displaystyle T_{I'}=\frac{1}{C_v}\left(e_{I'}-\frac{1}{2}u^2_{i}-\varepsilon_{sup,i}\right)$
 utilis\'ee pour les parois \`a temp\'erature impos\'ee.
 
-Apporter un compl\'ement de documentation pour le couplage avec Syrthes (conversion
+Apporter un compl\'ement de documentation pour le couplage avec \syrthes (conversion
 \'energie temp\'erature). Ce n'est pas une priorit\'e.
 
 Pour les thermodynamiques \`a $\gamma$ variable, il sera n\'ecessaire de

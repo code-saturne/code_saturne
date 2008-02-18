@@ -51,6 +51,7 @@
 %
 %\usepackage{times} % plus joli en pdf (fortement recommandé)
 %\usepackage{here} % option [H] pour que les objets flottant ne flottent plus
+\usepackage{xspace}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,10 +64,10 @@
 \newcommand{\repgraphics}{../graphics}
 \newcommand{\extgraphics}{pdf}
 %
-\newcommand{\verscs}{1.3.d}
+\newcommand{\verscs}{1.3.1\xspace}
 \newcommand{\CS}{%
-{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}}
-\newcommand{\syrthes}{Syrthes}
+{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
+\newcommand{\syrthes}{SYRTHES\xspace}
 %
 \newcommand{\tildeunix}{%
 {\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
@@ -116,13 +117,13 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreEDFfr{Guide pratique d'utilisation de \CS\ version~\verscs}
-\titreEDFang{\CS\ version~\verscs\ practical user's guide}
+\titreEDFfr{Guide pratique d'utilisation de \CS version~\verscs}
+\titreEDFang{\CS version~\verscs\ practical user's guide}
 \numeroEDF{HI-83/--/---}
 \indiceEDF{A}
 
 \authorEDFfr{\'Equipe de développement de \CS}
-\authorEDFang{\CS\ development team}
+\authorEDFang{\CS development team}
 %\rqauteursEDF{* Sigle de la structure du coauteur EDF, si différente de l'auteur principal.}
 %\remauteursEDF{** Nom de la société (en clair) si le coauteur est extérieur.}
 \rqauteursEDF{}
@@ -135,7 +136,7 @@
 \docassociesEDFang{}
 \resumeEDFfr{}
 \resumeEDFang{This document presents all the necessary elements to run a calculation
-with \CS\ version \verscs. It then lists all the variables of the code
+with \CS version \verscs. It then lists all the variables of the code
 which may be useful for more advanced utilisation.
 The user subroutines of all the modules within the code are also documented.
 Eventually, for each key word and user-modifiable parameter in the code,

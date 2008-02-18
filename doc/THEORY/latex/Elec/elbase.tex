@@ -195,7 +195,7 @@ avec les relations suivantes~:
 {\bf \'Equation de la masse}
 \nopagebreak
 
-C'est l'\'equation r\'esolue en standard par \CS\ (contrainte
+C'est l'\'equation r\'esolue en standard par \CS (contrainte
 stationnaire).
 Elle n'a pas de traitement particulier dans
 le cadre du module pr\'esent. Un terme source de  masse peut \^etre pris en
@@ -252,7 +252,7 @@ et on peut donc \'ecrire l'\'equation de la quantit\'e de mouvement~:
 \nopagebreak
 
 Elle est obtenue \`a partir de l'équation de
-l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS\ et en
+l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS et en
 prenant en compte le terme d'effet Joule li\'e \`a l'\'energie
 \'electromagn\'etique.
 
@@ -402,7 +402,7 @@ une hypoth\`ese de gradient et inclut également la ``diffusion'' turbulente.}.
 \nopagebreak
 
 Pour obtenir une \'equation sur l'enthalpie, qui est la variable \'energ\'etique
-choisie dans \CS\ dans le module \'electrique, on
+choisie dans \CS dans le module \'electrique, on
 soustrait tout d'abord \`a l'\'equation de l'\'energie totale celle de l'\'energie
 cin\'etique pour obtenir une \'equation sur l'\'energie interne.
 
@@ -436,7 +436,7 @@ $\tens{\sigma}=-P\tens{Id}+\tens{\tau}$, on peut \'ecrire~:
 + \vect{j}\cdot\vect{E} + \frac{dP}{dt}
 \end{equation}
 
-Les approximations habituelles de \CS\ consistent alors
+Les approximations habituelles de \CS consistent alors
 \`a n\'egliger le terme ``d'\'echauffement'' issu du tenseur des contraintes
 $\tens{\tau}:\left(\ggrad(\vect{u})\right)^t$ et le terme en d\'eriv\'ee totale de la
 pression $\frac{dP}{dt}$, suppos\'es faibles en comparaison des autres termes
@@ -608,7 +608,7 @@ le produit scalaire $P_J=\vect{|j|}\cdot\vect{|E|}$.
 Le calcul de la puissance
 dissip\'ee par effet Joule ne pose donc pas de probl\`eme particulier
 car les variables densit\'e de courant et champ \'electrique r\'esolues
-par \CS\ sont pr\'ecis\'ement $\vect{|j|}$ et $\vect{|E|}$ (les variables sont r\'eelles).
+par \CS sont pr\'ecis\'ement $\vect{|j|}$ et $\vect{|E|}$ (les variables sont r\'eelles).
 
 \item {\bf En courant alternatif}, la periode du courant est beaucoup plus petite que
 les \'echelles de temps des ph\'enom\`enes thermohydrauliques pris en compte.
@@ -628,7 +628,7 @@ la formule donnant la puissance se simplifie sous la forme
 $P_J=\frac{1}{2}(\vect{|j|}\cdot\vect{|E|})$, ou encore~:
 $P_J=\frac{1}{\sqrt{2}}\vect{|j|}\cdot\frac{1}{\sqrt{2}}\vect{|E|}$.
 Il s'agit donc du produit des valeurs efficaces. Or, les variables r\'esolues
-par \CS\ en courant alternatif monophas\'e sont pr\'ecis\'ement les
+par \CS en courant alternatif monophas\'e sont pr\'ecis\'ement les
 valeurs efficaces (valeurs que l'on
 d\'enomme abusivement "valeurs r\'eelles" dans le code source).
 
@@ -734,7 +734,7 @@ et, en alternatif non monophas\'e (avec $i^2=-1$)~:
 {\bf \'Equation de la masse}
 \nopagebreak
 
-C'est l'\'equation r\'esolue en standard par \CS\ (contrainte
+C'est l'\'equation r\'esolue en standard par \CS (contrainte
 stationnaire d'incompressibilit\'e). Elle n'a pas de traitement particulier dans
 le cadre du module pr\'esent. Un terme source de  masse peut \^etre pris en
 compte au second membre si l'utilisateur le souhaite. Pour simplifier
@@ -746,7 +746,7 @@ sp\'ecifique au module \'electrique.
 {\bf \'Equation de la quantit\'e de mouvement}
 \nopagebreak
 
-C'est l'\'equation r\'esolue en standard par \CS\ (les forces de Laplace
+C'est l'\'equation r\'esolue en standard par \CS (les forces de Laplace
 ($\vect{j} \times \vect{B}$) sont suppos\'ees n\'egligeables).
 
 \vspace*{0,5cm}
@@ -758,7 +758,7 @@ que la puissance des
 forces de Laplace n'appara\^it pas du tout, au lieu de dispara\^itre lorsque
 l'on soustrait l'\'equation de l'\'energie cin\'etique \`a celle de l'\'energie
 totale.} \`a partir de l'équation de
-l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS\ et en
+l'\'energie apr\`es plusieurs approximations utilis\'ees en standard dans \CS et en
 prenant en compte le terme d'effet Joule li\'e \`a l'\'energie
 \'electromagn\'etique.
 
@@ -816,7 +816,7 @@ Le recalage est effectu\'e en fin de pas temps et permet de disposer, pour le pa
 de temps suivant, de valeurs recal\'ees des forces de Laplace et de l'effet
 Joule.
 \begin{itemize}
-\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule
+\item Pour effectuer le recalage, \CS d\'etermine l'int\'egrale de l'effet Joule
 estim\'e sur le domaine (en $W$) et en compare la
 valeur au produit de l'intensit\'e \var{COUIMP} par la diff\'erence de
 potentiel\footnote{\var{DPOT} est la diff\'erence de
@@ -873,7 +873,7 @@ Le recalage est effectu\'e en fin de pas temps et permet de disposer, pour le pa
 de temps suivant, d'une valeur recal\'ee de l'effet
 Joule.
 \begin{itemize}
-\item Pour effectuer le recalage, \CS\ d\'etermine l'int\'egrale de l'effet Joule
+\item Pour effectuer le recalage, \CS d\'etermine l'int\'egrale de l'effet Joule
 estim\'e sur le domaine (en $W$) et en compare la
 valeur \`a la puissance cible. Un coefficient multiplicatif de recalage \var{COEPOT} en
 est d\'eduit (pour \'eviter des variations trop brusques,
@@ -1349,4 +1349,4 @@ et \var{COEJOU}).
 limites coupl\'ees entre \'electrodes reste  \`a faire.
 
 \etape{Compressible en arc \'electrique} Les  d\'eveloppements du module
-compressible de \CS\ doivent \^etre rendus compatibles avec le module arc \'electrique.
+compressible de \CS doivent \^etre rendus compatibles avec le module arc \'electrique.

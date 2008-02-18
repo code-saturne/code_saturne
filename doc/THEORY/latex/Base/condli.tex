@@ -191,7 +191,7 @@ d\'efaut une condition de Neumann homog\`ene (flux nul). Si l'on souhaite
 imposer une valeur en paroi pour ces variables (par exemple, dans le cas d'une
 paroi \`a temp\'erature impos\'ee)  une loi de similitude est utilis\'ee
 pour d\'eterminer le flux au bord en tenant compte de la couche limite.
-Dans le cas des couplages avec SYRTHES, \CS\
+Dans le cas des couplages avec \syrthes, \CS
 re\c coit une temp\'erature de paroi et fournit un flux thermique. La condition
 de pression standard est une condition de Neumann homog\`ene\footnote{On pourra
 se reporter \`a \fort{gradrc} pour la condition conduisant \`a l'extrapolation de
@@ -1007,7 +1007,7 @@ de paroi la plus proche (cette information est stock\'ee dans
 \var{IA(IIFAPA(IPHAS)-1+IEL)})~; cette distance est inutile pour le traitement
 des conditions aux limites, mais \fort{condli} est le sous-programme dans lequel
 la r\'ealisation de ce calcul est la plus simple.
-\item[-] en cas de couplage avec SYRTHES, on d\'etermine, pour le scalaire
+\item[-] en cas de couplage avec \syrthes, on d\'etermine, pour le scalaire
 coupl\'e $f$ (habituellement la temp\'erature),
 les valeurs $f_{I'}$ dans les cellules de bord au moyen de la formule
 $f_{I'}=f_{I}+\vect{II'}\grad{f}_I$ (ou au moyen de $f_{I'}=f_{I}$ si on traite
@@ -1018,7 +1018,7 @@ reconstruction a \'et\'e desactiv\'ee par \var{ITBRRB}=0\footnote{ce qui est le
 cas par défaut}). Ces valeurs sont
 stock\'ees dans \var{TBORD} (tableau de dimension \var{NFABOR}) qui est
 utilis\'e en sortie de \fort{condli} pour transmission d'information \`a
-SYRTHES.
+\syrthes.
 \item[-] si des faces portent des conditions de sym\'etrie ou de paroi, on
 construit les composantes de la vitesse $u_{j,I'}$ dans les cellules de
 bord  (valeurs stock\'ees dans le tableau local \var{COEFU} de dimension

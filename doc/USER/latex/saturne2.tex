@@ -117,7 +117,7 @@ corresponds to 1.D12.
 \item  ASCII files (also called ``formatted'' files, in opposition to
       ``binary'' files) are bigger, longer to write and to read, but can
       be used on every architecture (in particular, it is an asset for
-      calculation restart files). However, \CS\ can automatically recognise and
+      calculation restart files). However, \CS can automatically recognise and
       convert Big Endian/Little Endian files. It is therefore usually possible on
       a given architecture to use binary restart files generated on another
       architecture.
@@ -273,7 +273,7 @@ useful in case of gas or pulverised coal combustion or electric arc}
 \motcle{FICFPP}{C}{string of 6 characters}{\tt dp\_tch}{O}{L3}
 {name of the thermochemical data file. The launch script is designed to copy the
 user specified thermochemical data file in the temporary execution directory
-under the name \texttt{dp\_tch}, for \CS\ to open it properly. Should the value
+under the name \texttt{dp\_tch}, for \CS to open it properly. Should the value
 of FICFPP be changed, the launch script would have to be adapted.\\
 useful in case of gas or pulverised coal combustion}
 
@@ -284,7 +284,7 @@ useful in case of gas or pulverised coal combustion}
 \motcle{FICJNF}{C}{string of 5 characters}{\tt JANAF}{O}{L3}
 {name of the JANAF data file. The launch script is designed to copy the
 user specified JANAF data file in the temporary execution directory
-under the name \texttt{JANAF}, for \CS\ to open it properly. Should the value
+under the name \texttt{JANAF}, for \CS to open it properly. Should the value
 of FICJNF be changed, the launch script would have to be adapted.\\
 useful in case of gas or pulverised coal combustion}
 
@@ -386,7 +386,7 @@ always useful}
 
  \motcle{ICHRSY}{I}{0 or 1}{0}{O}{L2}
  {indicates whether post-processing outputs are wanted (=1) or not (=0)
- on the 2D boundary mesh patches coupled with the Syrthes conjugate
+ on the 2D boundary mesh patches coupled with the \syrthes conjugate
  heat trabsfer code\\
  always useful}
 
@@ -913,7 +913,7 @@ It is also reminded that, in the case of a coupling with
 \syrthes, the solved thermal variable should be the temperature
 (ISCSTH(ISCALT(IPHAS))=1 or -1).
 More precisely, everything is designed in the code to allow for the
-running of a calcualtion coupled with \syrthes\ with the enthalpy as thermal
+running of a calcualtion coupled with \syrthes with the enthalpy as thermal
 variable (the correspondence and conversion is then specified by the user in
 the subroutine \texttt{usthht}).
 However this case has never been used in practice and has therefore not been
@@ -939,16 +939,16 @@ useful for the scalars ISCAL for which ISCAVR(ISCAL)$>$0.}
 
 \motcle{ITBRRB}{I}{0 or 1}{0}{O}{L3}
 {Reconstruction (=1) or not (=0) of the temperature, enthalpy or total energy
-value in the boundary cells. Useful in the case of coupling with \syrthes\
+value in the boundary cells. Useful in the case of coupling with \syrthes
 and with radiation.}
 
 \motcle {ICPSYR}{TI}{-999,0,1}{-999}{O}{L3}
 {For each scalar ISCAL, ICPSYR(ISCAL) indicates if it is
-coupled with \syrthes\ (=1) or not (=0).
+coupled with \syrthes (=1) or not (=0).
 There can be only one coupled scalar per calculation.\\
 \hspace*{1.3cm}=-999: by default\\
 \hspace*{2.cm} $\bullet$ ICPSYR(ISCAL)=1 for the thermal scalar
-ISCAL=(ISCALT(IPHAS)) when a coupling with \syrthes\ has been specified in the
+ISCAL=(ISCALT(IPHAS)) when a coupling with \syrthes has been specified in the
 Interface or the launch script\\
 \hspace*{2.cm} $\bullet$ ICPSYR(ISCAL)=0 otherwise\\
 \hspace*{1.3cm}= 0: the scalar ISCAL is not coupled with \syrthes\\
@@ -1125,7 +1125,7 @@ always useful}
 
 The $k-\varepsilon$ (standard and linear production) and $R_{ij}-\varepsilon$
 (LRR and SSG) turbulence
-models implemented in \CS\ are ``High-Reynolds'' models. It is therefore
+models implemented in \CS are ``High-Reynolds'' models. It is therefore
 necessary to make sure that the thickness of the first cell neighboring
 the wall is larger than the thickness of the viscous sublayer (at the
 wall, $y^+>2.5$ is required as a minimum, and preferably between 30 and
@@ -1275,7 +1275,7 @@ useful if and only if ITURB(IPHAS) = 30 ($R_{ij}-\varepsilon$ LRR).\\
 It is not recommended to take these terms into account:
 they have an influence only near the walls, their expression is hardly
 justifiable according to some authors and, in the configurations
-studied with \CS\, they did not bring any improvement in the results.\\
+studied with \CS, they did not bring any improvement in the results.\\
 In addition, their use induces an increase in the calculation
 time.\\
 The wall echo terms imply the calculation of the distance to the wall
@@ -2415,7 +2415,7 @@ specify its value.\\
 always useful otherwise, even if a law defining the density is given by
 the user subroutine \texttt{usphyv} or \texttt{uselph}\\
 indeed, except with the
-compressible module, \CS\ does not
+compressible module, \CS does not
 use the total pressure $P$ when solving the Navier-Stokes equation, but a
 reduced pressure \\
 $P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+P^*_0-P_0$\\
