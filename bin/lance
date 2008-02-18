@@ -347,7 +347,7 @@ else
 #  n'utilisera TMPDIR que s'il est defini
 #  (via un systeme batch en general)
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
-    RUN=$TMPDIR
+    RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
   else
     RUN=$HOME/tmp_Saturne/$ETUDE.$CAS.$DATE
   fi
