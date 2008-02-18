@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/sh
 
 for fich in listing_* ; do
   fich2=`basename $fich .last`
