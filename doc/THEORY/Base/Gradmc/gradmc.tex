@@ -57,9 +57,9 @@ sur des maillages non orthogonaux, le gradient produit \'etant moins r\'egulier.
 
 \begin{figure}[h]
 \parbox{8cm}{%
-\centerline{\includegraphics[height=4cm]{../Base/Gradmc/Images/facette.pdf}}}
+\centerline{\includegraphics[height=4cm]{\repgraphics/facette}}}
 \parbox{8cm}{%
-\centerline{\includegraphics[height=4cm]{../Base/Gradmc/Images/facebord.pdf}}}
+\centerline{\includegraphics[height=4cm]{\repgraphics/facebord}}}
 \caption{\label{Base_Gradmc_fig_geom_gradmc}D\'efinition des diff\'erentes entit\'es
 g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
@@ -309,7 +309,7 @@ sera disponible lors des appels ult\'erieurs. En effet, la
 contribution des faces internes est de nature purement g\'eom\'etrique et reste
 donc inchang\'ee tant que le maillage ne subit pas de d\'eformation. Elle s'\'ecrit~:
 \begin{equation}\notag
-\displaystyle\sum\limits_{j\in Vois(i)}\frac{1}{||\vect{IJ}||^2}(\vect{IJ})_l(\vect{IJ})_m        
+\displaystyle\sum\limits_{j\in Vois(i)}\frac{1}{||\vect{IJ}||^2}(\vect{IJ})_l(\vect{IJ})_m
 \end{equation}
 \`A tous les appels réalisés avec \var{ICCOCG=1}, les termes
 qui d\'ependent des faces de bord (\ref{Base_Gradmc_eq_termes_de_bord_de_C_gradmc}) sont ensuite
@@ -438,7 +438,7 @@ orthogonale possible \`a une face de la cellule $I$.
 
 
 \begin{figure}[htp]
-\centerline{\includegraphics[height=8cm]{../Base/Gradmc/Images/support.pdf}}
+\centerline{\includegraphics[height=8cm]{\repgraphics/support}}
 \caption{\label{Base_Gradmc_fig_support_gradmc}Diff\'erents supports pour le calcul du gradient.}
 \end{figure}
 
