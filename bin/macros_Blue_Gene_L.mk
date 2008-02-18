@@ -40,7 +40,7 @@ BGL_SYS  = /bgl/BlueLight/ppcfloor/bglsys
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.5/arch/bgl
+BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.6/arch/bgl
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -48,7 +48,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.9.0/arch/bgl
+FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.10.0/arch/bgl
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm

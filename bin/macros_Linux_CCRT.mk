@@ -35,14 +35,14 @@
 # Macros pour BFT
 #----------------
 
-BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.5/arch/Linux
+BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.6/arch/Linux
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 
 # Macros pour FVM
 #----------------
 
-FVM_HOME       = /home/saturne/Saturne/opt/fvm-0.9.0/arch/Linux
+FVM_HOME       = /home/saturne/Saturne/opt/fvm-0.10.0/arch/Linux
 FVM_INC        = -I$(FVM_HOME)/include
 FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 
@@ -52,7 +52,7 @@ FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 # Option MPI
 MPI             =1
 MPE             =0
-MPE_COMM        =1
+MPE_COMM        =0
 #
 #Les bibliothèques MPI sont directement appelées par mpicc et mpif77
 MPI_INC         =

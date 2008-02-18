@@ -35,7 +35,7 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.5/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.9.0/arch/Linux
+FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.4/arch/Linux
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux
 MPI_INC         =-isystem$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
@@ -101,7 +101,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -122,7 +122,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -142,13 +142,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.2/arch/Linux/bin/gfortran
+LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.2/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
 
 
 # Positionnement des variables pour le pre-processeur

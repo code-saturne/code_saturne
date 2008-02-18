@@ -292,6 +292,7 @@ void CS_PROCF (defcpl, DEFCPL)
 
   fvm_locator_set_nodal(coupl->localis_cel,
                         coupl->cells_sup,
+                        1,
                         3,
                         *ncecpl,
                         lcecpl,
@@ -304,6 +305,7 @@ void CS_PROCF (defcpl, DEFCPL)
 
   fvm_locator_set_nodal(coupl->localis_fbr,
                         support_fbr,
+                        1,
                         3,
                         *nfbcpl,
                         lfbcpl,
