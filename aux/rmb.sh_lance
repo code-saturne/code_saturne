@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 
 PREFIX=$CS_HOME
 RMBSH=$PREFIX/aux/rmb.sh
