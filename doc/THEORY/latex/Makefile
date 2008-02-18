@@ -9,4 +9,4 @@ pdf:
 
 clean:
 	@\rm -f .tex .log *.dvi *.out *.log *.aux *.toc *.lof *.lot \
-	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy */*.aux
