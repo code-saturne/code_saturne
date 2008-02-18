@@ -24,7 +24,7 @@ Optionnal libraries
 -------------------
 Here is given the list of optionnal libraries that can be linked to
 Code_Saturne. The version number is the one used for developping and
-testing version 1.3.e of Code_Saturne. Other versions (newer or older)
+testing version 1.3.2 of Code_Saturne. Other versions (newer or older)
 might still be compatible.
 * python : 2.5     - (necessary for the Code_Saturne GUI)
 * tcl : 8.4        - (necessary for the Code_Saturne GUI)
