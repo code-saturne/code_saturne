@@ -104,7 +104,7 @@ static void _add_periodicity(void)
   assert(sizeof(cs_real_t) == sizeof(double));
 
   for (i = 0; i < CS_DIM_3; i++)
-    if (mesh_builder->invariant_point[i] != 0)
+    if (CS_ABS(mesh_builder->invariant_point[i]) >= 1.e-12)
       inv_pt = CS_TRUE;
 
   if (mesh_builder->perio_type == FVM_PERIODICITY_TRANSLATION) {
