@@ -41,10 +41,10 @@ Pour recoller des maillages, on donne des options supplementaires
      des faces peut se faire par d'autres moyens que la couleur
      (voir l'aide du preprocesseur par ecs -h). 
   Dans l'exemple ci-dessous, on cherche a recoller 
-    les faces de couleur 3, 4 et 6 des maillages geomet.slc 
+    les faces de couleur 3, 4 et 6 des maillages titi.des 
     et toto.unv.
 
-    MAILLAGE="geomet.slc toto.unv"
+    MAILLAGE="titi.des toto.unv"
     COMMANDE_RC="-j -color 3 4 6"
 
   S'il n'y a rien a recoller, on peut laisser vide 
@@ -129,7 +129,7 @@ Pour traiter un cas periodique, il faut renseigner la variable
 
                -------------------------------
 
-Pour le couplage avec Syrthes (un seul calcul fluide 
+Pour le couplage avec SYRTHES (un seul calcul fluide 
     et un seul calcul solide) il suffit de renseigner
     la variable COMMANDE_SYRTHES. S'il n'y a pas de couplage
     il suffit de la laisser vide.
@@ -171,8 +171,8 @@ L'option NOMBRE_DE_PROCESSEURS donne le nombre de processeurs (virtuels)
     Dans le cas d'un calcul en interactif (type calcul sur PC Linux),
     NOMBRE_DE_PROCESSEURS peut depasser le nombre de processeurs disponibles
     sur la machine (mais perte d'efficacite).
-    Dans le cas d'un couplage avec Syrthes a travers un gestionnaire de queue, 
-    un processeur sera reserve pour Syrthes et le nombre de processeurs utilises
+    Dans le cas d'un couplage avec SYRTHES a travers un gestionnaire de queue, 
+    un processeur sera reserve pour SYRTHES et le nombre de processeurs utilises
     par le noyau sera donc egal a nproc_noy = NOMBRE_DE_PROCESSEURS-1.
     
 
@@ -295,7 +295,7 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     ou ensemble dans la variable ARG_CS_OUTPUT.
 
   ECHOCOMM permet de faire afficher les echanges preprocesseur noyau 
-    syrthes. Utile uniquement en cas de probleme de communication. 
+    SYRTHES. Utile uniquement en cas de probleme de communication. 
     Si on souhaite activer cette possibilite, on affecte 
     une valeur entiere strictement positive a ECHOCOMM. A chaque 
     communication, on affichera les ECHOCOMM premiers et derniers 

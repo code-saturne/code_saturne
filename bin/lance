@@ -78,8 +78,8 @@
 #            par la classe du calcul et pas par la machine qui a execute la commande
 #            "bsub". Attention aux disques WORKDIR non partages entre Nickel et
 #            Chrome.
-#ATTENTION : En cas de couplage avec Syrthes, 1 processeur
-#            sera reserve pour chacune des instances de Syrthes.
+#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
+#            sera reserve pour chacune des instances de SYRTHES.
 #            Le Noyau ne sera execute que sur les processeurs restants.
 #            Pensez  reserver un nombre suffisant de processeurs.
 #
@@ -97,8 +97,8 @@
 #  walltime = wall clock time (heures, minutes, secondes)
 #  mem  = memoire
 #
-#ATTENTION : En cas de couplage avec Syrthes, 1 processeur
-#            sera reserve pour chacune des instances de Syrthes.
+#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
+#            sera reserve pour chacune des instances de SYRTHES.
 #            Le Noyau ne sera execute que sur les processeurs restants.
 #            Pensez  reserver un nombre suffisant de processeurs.
 #
@@ -161,8 +161,8 @@ DONNEES_THERMOCHIMIE=
 #
 # Choix du nombre total de processeurs utilises (si vide, detection automatique
 # via le systeme de queue si possible, mise a 1 sinon).
-# En cas de couplage Syrthes avec MODE_COUPLAGE=MPI, le 1er processeur est
-# utilise pour Syrthes, donc le nombre effectif de processeurs dedies au noyau
+# En cas de couplage SYRTHES avec MODE_COUPLAGE=MPI, le 1er processeur est
+# utilise pour SYRTHES, donc le nombre effectif de processeurs dedies au noyau
 # est reduit de 1.
 # La liste des processeurs n'est utilisable qu'hors systeme de queue
 # (un tel systeme fournissant lui-meme une liste equivalente)
@@ -205,7 +205,7 @@ DATA_SYR=$REPBASE/DATA_SYR
 SYRTHES_ENV=syrthes.env 
 FORT_SYR=$REPBASE/FORT_SYR
 #
-# Le mode de couplage eventuel avec Syrthes peut etre choisi ici.
+# Le mode de couplage eventuel avec SYRTHES peut etre choisi ici.
 # (attention aux majuscules/minuscules).
 # Si l'on n'a pas de couplage, cette variable sera mise a zero par la suite.
 #
@@ -282,14 +282,14 @@ else
   COUPLAGE_SYRTHES=oui
   export SYRTHES
   if [ $N_COUPLAGE_SYRTHES -gt 1 ] ; then
-   echo "Ce script ne prend pas en charge plusieurs couplage Syrthes"
-   echo "Nombre de couplages Syrthes demande : $N_COUPLAGE_SYRTHES"
+   echo "Ce script ne prend pas en charge plusieurs couplage SYRTHES"
+   echo "Nombre de couplages SYRTHES demande : $N_COUPLAGE_SYRTHES"
   fi
 fi
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then 
   if [ $SOLCOM -eq 1 ] ; then
-   echo "Le couplage avec Syrthes n est pas compatible avec les"
+   echo "Le couplage avec SYRTHES n est pas compatible avec les"
    echo "maillages de type SOLCOM"
    exit 1
   fi
@@ -419,15 +419,15 @@ nproc_noy=${NOMBRE_DE_PROCESSEURS}
 echo
 echo
 if [ $COUPLAGE_SYRTHES = oui ] ; then
-  echo "Couplage de Code_Saturne avec Syrthes active"
+  echo "Couplage de Code_Saturne avec SYRTHES active"
   if [ ! -z "$MPIHOSTS" ] ; then
-  #  si on utilise Syrthes en batch par MPI, on lui reserve un processeur par instance
+  #  si on utilise SYRTHES en batch par MPI, on lui reserve un processeur par instance
     if [ "$MODE_COUPLAGE" = "MPI" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, Syrthes reserve un processeur."
+        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   est donc insuffisant."
         echo " Augmenter le nombre de processeurs reserves dans les cartes batch."
@@ -435,12 +435,12 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
         exit 1
       fi
     fi
-  #  si on utilise Syrthes en batch pipe, on verifie que tout tient sur un seul noeud
+  #  si on utilise SYRTHES en batch pipe, on verifie que tout tient sur un seul noeud
     if [ "$MODE_COUPLAGE" = "pipes" -a "$NOMBRE_DE_NOEUDS" != 1 ] ; then
       echo
       echo
       echo " Attention, avec MODE_COUPLAGE = pipes, les transmissions  "
-      echo "   Syrthes-noyau se font par tubes (pipes). "
+      echo "   SYRTHES-noyau se font par tubes (pipes). "
       echo " Ici, plusieurs machines ont ete selectionnees pour "
       echo "   realiser le calcul en parallele : "
       cat "$MPIHOSTS"
@@ -458,7 +458,7 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, Syrthes reserve un processeur"
+        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur"
         echo "   (eventuellement virtuel)."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   doit donc etre strictement superieur a 1."
@@ -469,14 +469,14 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
     fi
   #  si on n'est pas en batch et qu'on couple par pipes, on diminue aussi
   #  NOMBRE_DE_PROCESSEURS pour ne pas avoir besoin de MPI si
-  #  Code_Saturne et Syrthes tournent chacun sur 1 processeur
+  #  Code_Saturne et SYRTHES tournent chacun sur 1 processeur
     if [ "$MODE_COUPLAGE" = "pipes" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       (( NOMBRE_DE_PROCESSEURS = NOMBRE_DE_PROCESSEURS - 1 ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = pipes, Syrthes reserve un processeur"
+        echo " Attention, avec MODE_COUPLAGE = pipes, SYRTHES reserve un processeur"
         echo "   (eventuellement virtuel)."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   doit donc etre strictement superieur a 1."
@@ -1228,7 +1228,7 @@ erreur()
 echo ERREUR $1 >> $ERROR
 }
 #
-# Preparation supplementaire pour le couplage Syrthes
+# Preparation supplementaire pour le couplage SYRTHES
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then
   #
@@ -1359,7 +1359,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       SOCKETSYR="$SOCKETSYR $MACHPORT"
     fi
     #
-    # Lancement de syrthes
+    # Lancement de SYRTHES
     if [ $COUPLAGE_SYRTHES = oui ] ; then
       ./$EXE_SYR -nbr_sat $nproc_noy $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1 
     fi
