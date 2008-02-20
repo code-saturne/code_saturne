@@ -704,6 +704,12 @@ C --- Algorithme stationnaire
             IOK = IOK + 1
           ENDIF
         ENDDO
+C       A priori, l'algorithme stationnaire n'est pas compatible
+C         avec le module Lagrangien
+        IF (IILAGR.NE.0) THEN
+          WRITE(NFECRA,2150) IILAGR
+          IOK = IOK + 1
+        ENDIF
       ENDIF
 C
 C --- Reconstruction des gradients
@@ -2709,6 +2715,22 @@ C
      &'@  Le calcul ne sera pas execute.                            ',/,
      &'@                                                            ',/,
      &'@  Verifier les parametres donnes via l''interface ou usini1.',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2150  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC    ',/,
+     &'@    LE MODULE LAGRANGIEN DANS LA VERSION COURANTE           ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  L''indicateur IILAGR a ete positionne a ',I10              ,/,
+     &'@    dans uslag1 (module lagrangien active pour IILAGR>0).   ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
