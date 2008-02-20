@@ -1014,11 +1014,12 @@ always useful}
 \subsubsection{Definition of the time advancement}
 %==================================
 
-\motcleb{IDTVAR}{I}{0, 1, 2}{0}{O}{L1}
+\motcleb{IDTVAR}{I}{-1, 0, 1, 2}{0}{O}{L1}
 {type of time step\\
 \hspace*{1.3cm}= 0: constant in time and spatially uniform\\
 \hspace*{1.3cm}= 1: variable in time and spatially uniform\\
 \hspace*{1.3cm}= 2: variable in time and in space\\
+\hspace*{1.3cm}= -1: steady-state algorithm\\
 If the numerical scheme is a second-order in time, only the option 0 is
 allowed.\\
 always useful}

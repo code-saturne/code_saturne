@@ -819,7 +819,8 @@ C=======================================================================
 C
 C --- Pas de temps (0 : uniforme et constant
 C                   1 : variable en temps et uniforme en espace
-C                   2 : variable en espace et en temps)
+C                   2 : variable en espace et en temps
+C                  -1 : algorithme stationnaire)
 C
 C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
 C
