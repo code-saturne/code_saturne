@@ -35,14 +35,14 @@
 # Macros pour BFT
 #----------------
 
-BFT_HOME       = /home/saturne/opt/bft-1.0.6/arch/SunOS
+BFT_HOME       = /home/saturne/opt/bft-1.0.5/arch/SunOS
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/SunOS
+FVM_HOME        =/home/saturne/opt/fvm-0.9.0/arch/SunOS
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
