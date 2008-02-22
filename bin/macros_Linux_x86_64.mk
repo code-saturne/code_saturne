@@ -29,13 +29,13 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour Linux
-############################################
+# Macros du Makefile Code_Saturne pour Linux_x86_64
+###################################################
 #
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux_x86_64
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
+FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux_x86_64
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux_x86_64
 MPI_INC         =-isystem$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
@@ -78,7 +78,7 @@ XML             =1
 XML_HOME = /home/saturne/opt/libxml2-2.6.19
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/arch/Linux_x86_64/lib -lxml2
 
 # Macro pour BLAS
 #----------------
@@ -101,7 +101,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -122,7 +122,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -142,13 +142,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/lib:
 
 
 # Positionnement des variables pour le pre-processeur
@@ -180,7 +180,7 @@ LIBDBG   =
 
 # Librairie en mode ElectricFence (malloc debugger)
 
-LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
+LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux_x86_64/lib -lefence
 
 # Liste eventuelle des fichiers a compiler avec des options particulieres
 #------------------------------------------------------------------------

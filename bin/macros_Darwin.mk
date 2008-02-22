@@ -29,13 +29,13 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour Linux
-############################################
+# Macros du Makefile Code_Saturne pour Darwin
+#############################################
 #
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
+BFT_HOME = /Users/saturne/opt/bft-1.0.6/arch/Darwin
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
+FVM_HOME = /Users/saturne/opt/fvm-0.10.0/arch/Darwin
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -56,10 +56,10 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux
-MPI_INC         =-isystem$(MPI_HOME)/include
-MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
+# Pour MPICH sur saturne
+MPI_HOME                = /Users/saturne/opt/mpich-1.2.7p1
+MPI_INC         =
+MPI_LIB         =
 
 # Macro pour Sockets
 #-------------------
@@ -73,9 +73,9 @@ SOCKET_LIB      =
 #---------------
 
 # Option XML
-XML             =1
+XML                     =0
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME                =
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
 XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
@@ -84,11 +84,11 @@ XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
 #----------------
 
 # Option BLAS
-BLAS            =1
-BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
+BLAS            =0
+BLAS_HOME       =
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-L$(BLAS_HOME) -lcblas -latlas
 
 
 # Preprocesseur
@@ -101,7 +101,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
+CCOMP = /Users/saturne/opt/mpich-1.2.7p1/bin/mpicc 
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -122,7 +122,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+FTNCOMP = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77 
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -142,13 +142,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+LDEDL = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77 
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
 
 
 # Positionnement des variables pour le pre-processeur
@@ -164,7 +164,7 @@ VARDEF          = -D_POSIX_SOURCE
 
 # Librairies de base toujours prises en compte
 
-LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread
+LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread -lz
 
 # Librairies en mode sans option
 
@@ -180,7 +180,7 @@ LIBDBG   =
 
 # Librairie en mode ElectricFence (malloc debugger)
 
-LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
+LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 
 # Liste eventuelle des fichiers a compiler avec des options particulieres
 #------------------------------------------------------------------------
