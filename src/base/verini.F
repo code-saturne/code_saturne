@@ -704,12 +704,18 @@ C --- Algorithme stationnaire
             IOK = IOK + 1
           ENDIF
         ENDDO
-C       A priori, l'algorithme stationnaire n'est pas compatible
-C         avec le module Lagrangien
+C       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
         IF (IILAGR.NE.0) THEN
           WRITE(NFECRA,2150) IILAGR
           IOK = IOK + 1
         ENDIF
+C       L'algorithme stationnaire n'est pas compatible avec la LES
+        DO IPHAS = 1, NPHAS
+          IF (ITYTUR(IPHAS).EQ.4) THEN
+            WRITE(NFECRA,2151) ITURB(IPHAS)
+            IOK = IOK + 1
+          ENDIF
+        ENDDO
       ENDIF
 C
 C --- Reconstruction des gradients
@@ -2725,12 +2731,29 @@ C
      &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
      &'@    *********                                               ',/,
      &'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC    ',/,
-     &'@    LE MODULE LAGRANGIEN DANS LA VERSION COURANTE           ',/,
+     &'@    LE MODULE LAGRANGIEN QUI EST UNE APPROCHE INSTATIONNAIRE',/,
      &'@                                                            ',/,
      &'@  Le calcul ne sera pas execute.                            ',/,
      &'@                                                            ',/,
      &'@  L''indicateur IILAGR a ete positionne a ',I10              ,/,
      &'@    dans uslag1 (module lagrangien active pour IILAGR>0).   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2151  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC    ',/,
+     &'@    LA L.E.S. QUI EST UNE MODELISATION INSTATIONNAIRE DE    ',/,
+     &'@    LA TURBULENCE                                           ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  L''indicateur ITURB a ete positionne a ',I10               ,/,
+     &'@    dans usini1.                                            ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
