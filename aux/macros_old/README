@@ -4,5 +4,6 @@ but does not anymore. They are unmaintained and serve only as examples.
 FILE                     ARCHITECTURE                 LATEST VERSION USED
 -------------------------------------------------------------------------
 macros_HP-UX.mk          HP-UX 11                     1.3.f
-marcos_OSF1.mk           OSF1 (HP Alpha cluster)      1.3.0
-
+macros_OSF1.mk           OSF1 (HP Alpha cluster)      1.3.0
+macros_SunOS.mk          SunOS                        1.3.0
+macros_IRIX64.mk         IRIX64                       1.3.0
