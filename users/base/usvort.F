@@ -413,7 +413,7 @@ C                donne par l'utilisateur
 C                ( par exemple TLIMVO = 10*DTREF)
 C
 C          2...Chaque vortex a un temps d'exitence limite valant
-C                5.Cmu.k^(3/2).U/espsilon
+C                5.Cmu.k^(3/2).U/epsilon
 C               ( ou U est la vitesse principale suivant DIR3)
 C
         IENT = 1
@@ -469,7 +469,7 @@ C
 C --- Fichier de donnees utilisateur
 C
 C NDAT ...Nombre de lignes du fichier de donnees contenant les donnees :
-C          x | y | z | U | V | V | Grad[u.DIR3].n | k | epsilon
+C          x | y | z | U | V | W | Grad[u.DIR3].n | k | epsilon
 C
 C         dans le plan d'entree du calcul
 C
