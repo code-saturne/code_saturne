@@ -108,11 +108,11 @@ void CS_PROCF(csgfbr, CSGFBR)
   if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, cpyfstr);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                 "critère de sélection:\n"
+                 "\"%s\"\n ne correspond à aucune face de bord.\n"),
+               missing, cpyfstr);
   }
 
   BFT_FREE(cpyfstr);
@@ -168,11 +168,11 @@ void CS_PROCF(csgfac, CSGFAC)
   if (fvm_selector_n_missing(cs_glob_mesh->select_i_faces, c_id) > 0) {
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_i_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de interne."),
-                missing, cpyfstr);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                 "critère de sélection:\n"
+                 "\"%s\"\n ne correspond à aucune face de interne.\n"),
+               missing, cpyfstr);
   }
 
   BFT_FREE(cpyfstr);
@@ -227,11 +227,11 @@ void CS_PROCF(csgcel, CSGCEL)
   if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune cellule."),
-                missing, cpyfstr);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                 "critère de sélection:\n"
+                 "\"%s\"\n ne correspond à aucune cellule.\n"),
+               missing, cpyfstr);
   }
 
   BFT_FREE(cpyfstr);

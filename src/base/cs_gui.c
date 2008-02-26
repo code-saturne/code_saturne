@@ -5045,11 +5045,11 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
     if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune cellule."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune cellule.\n"),
+                 missing, description);
     }
 
 
@@ -5349,11 +5349,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+                 missing, description);
     }
 
     BFT_FREE(description);
@@ -5520,11 +5520,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+                 missing, description);
     }
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
@@ -6262,11 +6262,11 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+                 missing, description);
     }
 
     BFT_FREE(description);
@@ -6440,11 +6440,11 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+                 missing, description);
     }
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
@@ -6560,11 +6560,11 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
+                   "critère de sélection:\n"
+                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+                 missing, description);
     }
 
     BFT_FREE(description);
