@@ -5,6 +5,7 @@ all doc: pdf
 
 pdf:
 	@pdflatex $(NOTE)
+	@pdflatex $(NOTE)
 	@makeindex $(NOTE).idx -s monindex.ist
 	@pdflatex $(NOTE)
 	@pdflatex $(NOTE)
