@@ -35,14 +35,14 @@
 # Macros pour BFT
 #----------------
 
-BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.6/arch/Linux
+BFT_HOME       = /home/cont002/saturne/opt/bft-1.0.6/arch/Linux
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 
 # Macros pour FVM
 #----------------
 
-FVM_HOME       = /home/saturne/Saturne/opt/fvm-0.10.0/arch/Linux
+FVM_HOME       = /home/cont002/saturne/opt/fvm-0.10.0/arch/Linux
 FVM_INC        = -I$(FVM_HOME)/include
 FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 
@@ -74,10 +74,10 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/Saturne/opt/libxml2-2.6.19
+XML_HOME = /usr
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
 # Macro pour BLAS
 #----------------
