@@ -895,7 +895,6 @@ C   auxiliaire
         DO IPHAS = 1, NPHAS
           IF(ITYTUR(IPHAS).EQ.4) THEN
             WRITE(NFECRA,2420) IPHAS,ITURB(IPHAS),ILEAUX,IECAUX
-            IOK = IOK + 1
           ENDIF
         ENDDO
       ENDIF
