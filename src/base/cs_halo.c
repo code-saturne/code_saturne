@@ -3395,6 +3395,22 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
           }
         }
 
+        if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+          if (id1 >= 0 && id2 >= 0) {
+
+            if (cell_tag[id1] != fac_id) {
+              cell_tag[id1] = fac_id;
+              cell_faces_idx[id1 + 1] += 1;
+            }
+
+            if (cell_tag[id2] != fac_id) {
+              cell_tag[id2] = fac_id;
+              cell_faces_idx[id2 + 1] += 1;
+            }
+
+          }
+        }
+
       }
 
     } /* End of loop on vertices */
@@ -3441,6 +3457,26 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
             shift = cell_faces_idx[id1] - 1 + counter[id1];
             cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
             counter[id1] += 1;
+
+          }
+        }
+
+        if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+          if (id1 >= 0 && id2 >= 0) {
+
+            if (cell_tag[id1] != fac_id) {
+              cell_tag[id1] = fac_id;
+              shift = cell_faces_idx[id1] - 1 + counter[id1];
+              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              counter[id1] += 1;
+            }
+
+            if (cell_tag[id2] != fac_id) {
+              cell_tag[id2] = fac_id;
+              shift = cell_faces_idx[id2] - 1 + counter[id2];
+              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              counter[id2] += 1;
+            }
 
           }
         }
