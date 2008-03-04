@@ -194,7 +194,7 @@ void CS_PROCF (cgrdmc, CGRDMC)
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(pvar,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED, 1);
+                           CS_MESH_HALO_EXTENDED);
 
   if (*iphydp != 0) {
 
@@ -303,7 +303,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(var,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED, 1);
+                           CS_MESH_HALO_EXTENDED);
 
   /* Exchange for the gradients. Not useful for working array */
 
@@ -499,20 +499,20 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED, 1);
+                               CS_MESH_HALO_EXTENDED);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED, 1);
+                               CS_MESH_HALO_EXTENDED);
 
       }
       else {
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD, 1);
+                               CS_MESH_HALO_STANDARD);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD, 1);
+                               CS_MESH_HALO_STANDARD);
 
       }
 

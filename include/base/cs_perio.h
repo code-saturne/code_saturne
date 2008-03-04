@@ -167,25 +167,6 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
- * Update values for periodic cells (standard + extended) linked by
- * translation.
- *
- * Only called if periodicity is defined.
- *
- * FORTRAN Interface:
- *
- * SUBROUTINE PERCVE
- * *****************
- *
- *    & ( PVAR )
- *
- * PVAR         <->  variable to sync.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (percve, PERCVE)(cs_real_t       pvar[]);
-
-/*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
  *
  * If INIMAS is called by NAVSTO :
@@ -452,14 +433,12 @@ cs_perio_sync_geo(void);
  *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
  *                   COPY, IGNORE or RESET
  *   halo_mode   --> kind of halo treatment
- *   stride      --> stride of variable to sync
  *----------------------------------------------------------------------------*/
 
 void
 cs_perio_sync_var_scal(cs_real_t            var[],
                        cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode,
-                       cs_int_t             stride);
+                       cs_mesh_halo_type_t  halo_mode);
 
 /*----------------------------------------------------------------------------
  * Update values for a real vector between periodic cells.

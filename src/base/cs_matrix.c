@@ -3201,7 +3201,7 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
     /* Synchronize periodic values */
 
     if (matrix->periodic)
-      cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD, 1);
+      cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
 
     /* Now call local matrix.vector product */
 
@@ -3275,7 +3275,7 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
   /* Synchronize periodic values */
 
   if (matrix->periodic)
-    cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD, 1);
+    cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
 
   /* Now call local matrix.vector product */
 
