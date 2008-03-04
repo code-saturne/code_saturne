@@ -2006,7 +2006,6 @@ cs_perio_sync_geo(void)
  *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
  *                   COPY, IGNORE or RESET
  *   halo_mode   --> kind of halo treatment
- *   stride      --> stride of variable to sync
  *----------------------------------------------------------------------------*/
 
 void
