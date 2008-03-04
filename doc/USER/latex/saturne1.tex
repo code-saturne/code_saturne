@@ -4692,27 +4692,17 @@ radiation module.
 \noindent
 \textit{Subroutine called only during the calculation initialisation.}
 
-This subroutine may be used to modify ``manually'' the mesh
-characteristics\footnote{The family properties must not be modified:
-they have already been used to define the periodic faces.In fact, a face
-defined as periodic in the script cannot be changed at the inlet, even
-if the color of the inlet face is altered}:
+This subroutine may be used to modify ``manually'' the mesh vertices
+coordinates, \textit{i.e.} the array:
 \begin{list}{$\bullet$}{}
-\item \mbox{XYZCEN(3,NCELET)} (cell center coordinates),
-\item \mbox{CDGFAC(3,NFAC)} (internal face center coordinates),
-\item \mbox{CDGFBO(3,NFABOR)} (boundary face center coordinates),
-\item \mbox{SURFAC(3,NFAC)} (internal face surface vector components) and
-\item \mbox{SURFBO(3,NFABOR)} (boundary face surface vector components).
+\item \mbox{XYZNOD(3,NNOD)} (vertices coordinates)
 \end{list}
 
-This subroutine may also be used to test the mesh quality (which is done by
-default). But it must be reminded that the Preprocessor, when running in
-the ``verification'' mode, allows to get quality criterions which are
-more complete and easier to exploit (using EnSight or in the execution
-report). For instance, for a mesh ``\texttt{mesh}'' (in \texttt{des},
-\texttt{unv} or any other acceptable format), the command to execute is:
-\mbox{\texttt{verifmail mesh.unv}} (this command calls the Preprocessor
-with the necessary options).\\
+{\em WARNING: Caution must be exercised when using this subroutine
+along with periodicity. Indeed, the periodicity parameters are not
+updated accordingly, meaning that the periodicity may be unadapted
+after one changes the mesh vertices coordinates. It is particularly
+true when one rescales the mesh.}\\
 
 %==================================
 \subsection{Management of the post-processing intermediary outputs: \textmd{\texttt{usnpst}}}
@@ -4999,7 +4989,7 @@ argument \texttt{IMODIF} must be given the value 1.If this argument
  "part" to have been modified away from that call and it will offer
  to bring it upto date. It is in fact at the end of an optimisation
  so there is no need to modify these "parts" within the definate and
- modifiable assebmly (if in doubt, let IMODIF=1).
+ modifiable assembly (if in doubt, let IMODIF=1).
 
 It can be noticed that the indicator \texttt{ITYPPS} can be used to know
 whether the current post-processing mesh contains cells
