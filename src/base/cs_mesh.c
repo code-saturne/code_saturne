@@ -1098,7 +1098,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
         bft_printf(_(" Composition des périodicités\n"));
 
-        fvm_periodicity_combine(mesh->periodicity);
+        fvm_periodicity_combine(mesh->periodicity, 0);
 
       }
 
