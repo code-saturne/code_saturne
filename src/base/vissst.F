@@ -399,11 +399,15 @@ C
       IF(ABS(ICDPAR).EQ.2) THEN
         DO IEL = 1 , NCEL
           IFACPT = IA(IIFAPA(IPHAS)-1+IEL)
-          W1(IEL) =
-     &         (CDGFBO(1,IFACPT)-XYZCEN(1,IEL))**2
-     &         +(CDGFBO(2,IFACPT)-XYZCEN(2,IEL))**2
-     &         +(CDGFBO(3,IFACPT)-XYZCEN(3,IEL))**2
-          W1(IEL) = SQRT(W1(IEL))
+          IF (IFACPT.GT.0) THEN
+            W1(IEL) =
+     &            (CDGFBO(1,IFACPT)-XYZCEN(1,IEL))**2
+     &           +(CDGFBO(2,IFACPT)-XYZCEN(2,IEL))**2
+     &           +(CDGFBO(3,IFACPT)-XYZCEN(3,IEL))**2
+            W1(IEL) = SQRT(W1(IEL))
+          ELSE
+            W1(IEL) = GRAND
+          ENDIF
         ENDDO
       ELSE
         DO IEL = 1 , NCEL
