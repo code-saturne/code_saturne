@@ -734,7 +734,7 @@ C
           WRITE(NFECRA,2206) ANOMAX, IMRGRA
         ENDIF
       ENDIF
-
+C
 C Extrapolation : indetermination possible par mc,
 C     necessitant un traitement particulier dans gradmc,
 C     pour lequel on fait certaines hypotheses
@@ -1177,6 +1177,11 @@ C
           IF(IDRIES(IPHAS).NE.0.AND.ITURB(IPHAS).EQ.41) THEN
             WRITE(NFECRA,2630) IPHAS,IDRIES(IPHAS),ITURB(IPHAS)
             IOK = IOK + 1
+          ENDIF
+C         La reduction du voisinage etendu peut degrader
+C         les resultats du modele dynamique en LES
+          IF(ITURB(IPHAS).EQ.41.AND.IMRGRA.EQ.3) THEN
+            WRITE(NFECRA,2607) IPHAS, ITURB(IPHAS), IMRGRA
           ENDIF
         ENDIF
 C
@@ -3333,6 +3338,34 @@ C     &'@                                                            ',/)
      &'@                                                            ',/,
      &'@  Il est conseille de verifier les parametres donnes via    ',/,
      &'@  l''interface ou usini1.                                   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2607 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@    ON DEMANDE LA REDUCTION DU VOISINAGE ETENDU POUR LE     ',/,
+     &'@    CALCUL DES GRADIENTS PAR MOINDRE CARRES, POUR UN        ',/,
+     &'@    CALCUL EN L.E.S AVEC LE MODELE DYNAMIQUE.               ',/,
+     &'@    MODELE DYNAMIQUE.                                       ',/,
+     &'@      PHASE  ',I10                                           ,/,
+     &'@      ITURB =',I10                                           ,/,
+     &'@      IMRGRA=',I10                                           ,/,
+     &'@                                                            ',/,
+     &'@  Le calcul sera engage.                                    ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul de la moyenne locale de la constante de         ',/,
+     &'@    Smagorinsky dynamique peut etre degrade.                ',/,
+     &'@                                                            ',/,
+     &'@  Il est conseille :                                        ',/,
+     &'@    - soit d''utiliser une methode de calculs des gradients ',/,
+     &'@      par moindre carres sur voisinage etendu complet       ',/,
+     &'@      (IMRGRA = 2)                                          ',/,
+     &'@    - soit de calculer sa propre moyenne de la constante    ',/,
+     &'@      dynamique dans la subroutine USSMAG.                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)

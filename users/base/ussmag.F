@@ -253,6 +253,14 @@ C --- Memoire
 C
 C=======================================================================
 C 2.  MOYENNE SPATIALE SUR LE VOISINAGE ETENDU
+C
+C     Dans le cas ou l'utilisateur souhaite utilise le voisinage
+C       etendu, il est fortement conseille de passer le mode de
+C       calcul des gradients en IMRGRA = 2, afin de conserver
+C       la totalite du voisinage etendu. En effet, le calcul de
+C       moyenne locale est generalement degradee en voisinage reduit
+C       (IMRGRA = 3).
+C
 C=======================================================================
 C
 C     On calcule le rapport

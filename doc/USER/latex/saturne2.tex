@@ -1152,7 +1152,13 @@ With LES, the wall functions are usually not greatly adapted. It is generally mo
 viscous sublayer, where the boundary conditions are simple natural no-slip conditions.\\
 Concerning the LES model, the user may refer to the subroutine
 \texttt{ussmag} for complements about the dynamic model. Its usage
-and the interpretation of its results require particular attention.\\
+and the interpretation of its results require particular attention.
+In addition, the user must pay further attention when using the dynamic
+model with the least squares method based on a partial extended
+neighborhood (IMRGRA=3). Indeed, the results may be degraded if the user
+does not implement his own way of averaging the dynamic constant in
+\texttt{ussmag} (\textit{i.e.} if the user keeps the local average based
+on the extended neighborhood).\\
 
 \motcle{IDEUCH}{IA}{0, 1 or 2}{0 or 1}{O}{L2}
 {for each phase IPHAS, indicates the type of wall function is used for the velocity
