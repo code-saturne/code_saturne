@@ -771,12 +771,13 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
 
   if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
-
     BFT_FREE(mesh->vtx_gcells_idx);
     BFT_FREE(mesh->vtx_gcells_lst);
+  }
+
+  if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);
     BFT_FREE(mesh->cell_cells_lst);
-
   }
 
   /* Free halo structure */
@@ -1492,19 +1493,19 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
     } /* End if n_perio > 0 */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+  } /* End if mesh->halo != NULL */
 
-      bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
-      for (i = 0; i < mesh->n_cells; i++) {
-        bft_printf("< cell n°:%3d>        ", i+1);
-        for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
-          bft_printf("%d        ", mesh->cell_cells_lst[j]);
-        bft_printf("\n");
-      }
+  if (mesh->cell_cells_idx != NULL) {
 
+    bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
+    for (i = 0; i < mesh->n_cells; i++) {
+      bft_printf("< cell n°:%3d>        ", i+1);
+      for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
+        bft_printf("%d        ", mesh->cell_cells_lst[j]);
+      bft_printf("\n");
     }
 
-  } /* End if mesh->halo != NULL */
+  }
 
   bft_printf(_("\n\nEND OF DUMP OF MESH STRUCTURE\n\n"));
   bft_printf_flush();

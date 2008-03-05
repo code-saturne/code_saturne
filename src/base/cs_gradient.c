@@ -368,7 +368,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
@@ -422,7 +422,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
@@ -540,7 +540,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
@@ -554,7 +554,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
             factor2 = 1.0;
 
             if (denum[i2] > *climgp * denom[i2])
-              factor2 = *climgp * denom[i2]*denum[i2];
+              factor2 = *climgp * denom[i2]/denum[i2];
 
             factor1 = CS_MIN(factor1, factor2);
 

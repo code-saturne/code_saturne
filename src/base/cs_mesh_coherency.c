@@ -342,7 +342,7 @@ cs_mesh_coherency_check(void)
 
     } /* End of loop on internal faces */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (mesh->cell_cells_idx != NULL) {
 
       cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
 
@@ -364,22 +364,22 @@ cs_mesh_coherency_check(void)
 
           if (test < 0) {
 
-	    cs_real_t  *cell_cen = mesh_quantities->cell_cen;
+            cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
-	    bft_printf(_("\nInfo on cell1: %d\n"
-			 " cell center: %12.3g %12.3g %12.3g\n"
-			 " delta      : %12.3g\n"
-			 " mean       : %12.3g\n"),
-		       cell_id+1, cell_cen[3*cell_id], cell_cen[3*cell_id+1],
-		       cell_cen[3*cell_id+2], delta1, mean1);
+            bft_printf(_("\nInfo on cell1: %d\n"
+                         " cell center: %12.3g %12.3g %12.3g\n"
+                         " delta      : %12.3g\n"
+                         " mean       : %12.3g\n"),
+                       cell_id+1, cell_cen[3*cell_id], cell_cen[3*cell_id+1],
+                       cell_cen[3*cell_id+2], delta1, mean1);
 
-	    bft_printf(_("\nInfo on cell2: %d\n"
-			 " cell center: %12.3g %12.3g %12.3g\n"
-			 " delta      : %12.3g\n"
-			 " mean       : %12.3g\n"),
-		       cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
-		       cell_cen[3*cell_id2+2], delta2, mean2);
-	    bft_printf_flush();
+            bft_printf(_("\nInfo on cell2: %d\n"
+                         " cell center: %12.3g %12.3g %12.3g\n"
+                         " delta      : %12.3g\n"
+                         " mean       : %12.3g\n"),
+                       cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
+                       cell_cen[3*cell_id2+2], delta2, mean2);
+            bft_printf_flush();
 
             bft_error(__FILE__, __LINE__, 0,
                       _("\nCoherency error in mesh checking.\n"
@@ -387,9 +387,9 @@ cs_mesh_coherency_check(void)
                         "(delta = %g, delta_mean = %g)\n"),
                       cell_id+1, cell_id2+1, test, delta_neighbor, delta_mean);
 
-	  }
+          }
 
-	}
+        }
 
       } /* End of loop on cells */
 
