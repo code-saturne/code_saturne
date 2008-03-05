@@ -781,7 +781,7 @@ cs_opts_define(int         argc,
 
   /* Parse command line arguments */
 
-  while (++arg_id < argc) {
+  while (++arg_id < argc && argerr == 0) {
 
     s = argv[arg_id];
 
