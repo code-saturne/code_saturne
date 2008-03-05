@@ -1449,6 +1449,11 @@ C
               RTP(IEL,IPRIPH) = RTP(IEL,IPRIPH)
      &                        + RELAXV(IPRIPH)*DRTP(IEL)
             ENDDO
+          ELSE
+            DO IEL = 1, NCEL
+              RTP(IEL,IPRIPH) = RTP(IEL,IPRIPH)
+     &                        + DRTP(IEL)
+            ENDDO
           ENDIF
 C
           ICCOCG = 1
