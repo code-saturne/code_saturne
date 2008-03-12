@@ -1,3 +1,247 @@
+* 12/03/2008 - David Monfort <david.monfort@edf.fr>
+  Add a cleaning pass when installing the documentation
+  modified routines:
+    lance_install
+  
+* 05/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Tests on a specific array for the extended neighborhood instead of
+  halo_type, to avoid failing tests in sequential compuations.
+  Fix a bug in the gradient limitation when using the extended
+  neighborhood.
+  modified routines:
+    cs_gradient.c
+	cs_mesh.c
+	cs_mesh_coherency.c
+
+* 05/03/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Fixes a bug during the pressure sweeps while using the steady-state
+  algorithm.
+  modified routines:
+    resolp.F
+
+* 05/03/2008 - Yvan fournier <yvan.fournier@edf.fr> 
+  Fixes an error when parsing arguments that arise in some
+  configuration
+  modified routines:
+    cs_opts.c
+  
+* 05/03/2008 - David Monfort <david.monfort@edf.fr>
+  Adds a warning when using the dynamic model in LES along with a
+  least-squares method based on a reduced extended neighborhood for
+  the gradient computation
+  modified routine:
+    saturne2.tex
+	verini.F
+	ussmag.F
+  
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Update FVM API to take into account some particular cases
+  where two periodicities are not commutative
+  modified routines:
+    cs_mesh.c
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Add a warning when changing the mesh vertices coordinates along
+  with periodicity, which can break the periodicity parameters.
+  modified routines:
+    saturne1.tex
+	usmodg.F
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Remove no more used function _sync_var_scal_strided and update
+  consequently cs_perio_sync_var_scal. Remove prototype for PERCVE
+  as well.
+  modified routines:
+    cs_perio.h
+	cs_ext_neighborhood.c
+	cs_gradient.c
+	cs_matrix.c
+	cs_perio.c
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Fix a rotational periodicity issue in mesh coherency checks.
+  A variable was treated as a scalar instead as a vector.
+  modified routines:
+    cs_mesh_coherency.c
+
+* 04/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a bug in the definition of the extended halo when one needs to
+  use the extended neighborhood
+  modified routines:
+    cs_halo.c
+
+* 04/03/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correct distance use at the first time-step when using the k-w SST
+  model and the old algorithm to compute the wall distance
+  modified routines:
+    vissst.F
+
+* 27/02/2008 - David Monfort <david.monfort@edf.fr>
+  Remove abort when checking for auxilliary sequel file and LES model
+
+* 26/02/2008 - David Monfort <david.monfort@edf.fr>
+  Change the behaviour when trying to get a list of cells or faces
+  with the selector. Revert to the old behaviour when the selection
+  was done through the mesh properties. A warning is issued instead
+  of an error when the criteria returns an empty selection.
+  modified routines:
+    cs_gui.c
+    cs_selector.c
+
+* 22/02/2008 - David Monfort <david.monfort@edf.fr>
+  Move unmaintained macros files to aux/macros_old
+  moved files:
+    macros_IRIX64.mk
+    macros_sunOS.mk
+
+* 22/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add macros files for MacOSX and Linux x86_64 systems
+  Change wring optimisation -O6 to -O3 for GCC compilers
+  added routines:
+    macros_Darwin.mk
+    macros_Linux_x86_64.mk
+  modified routines:
+    macros_Linux.mk
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Make Code_Saturne stop when a Lagrangian calculation is run with the
+  steady-state algorithm
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Change the name Syrthes to SYRTHES following the deposit brand
+
+* 20/02/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Add documentation on faces/cells selection with GETxxx via fvm_selector
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add comments on steady-state algorithm IDTVAR=-1
+  modified routines:
+    saturne2.tex
+    usini1.F
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Set the version number of Code_Saturne Kernel to 1.3.2
+  modified routines:
+    COMPATIBILITY
+    compil.exe
+    Makefile
+    autovalid.xml
+    cs_profile
+    csdoc.sty
+    cs_ops.c
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add a temporary "tmp_Saturne/$ETUDE.$CAS.$DATE" directory when running
+  a case in $TMPDIR (when defined by the system) to avoid an issue
+  with the linux distribution CAELinux
+  modified routines:
+    lance
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Update the macros files to new version of BFT and FVM
+  modified routines:
+    cs_couplage.c
+    COMPATIBILITY
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Make use of the "xspace" package in the documentation for intelligent spaces
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Complete reorganisation of the theory documentation to follow the template
+  of the user and tutorial documents
+
+* 15/02/2008 - David Monfort <david.monfort@edf.fr>
+  Centralized EDF and Code_Saturne logos in the style directory
+
+* 12/02/2008 - David Monfort <david.monfort@edf.fr>
+  Correction of unitialized values in the vortex method when ICAS=4
+  modified routines:
+    vorini.F
+
+* 12/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Global allocation of an auxilliary array, instead of local
+  modified routines:
+    caltri.F
+    lagcel.F
+    lagopt.F
+    lagune.F
+    ouestu.F
+    uslag1.F
+
+* 12/02/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Bug fix in coal combustion
+  modified routines:
+    cpcym2.F
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Keep the consistancy between the maximum number of phases
+  in cs_perio.h and paramx.h (both being set at 1 for the moment)
+
+* 07/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug fixes for the computation of mean values of combustion
+  variables within the GUI
+  modified routines:
+    cs_gui.c
+    usini1.F
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Inversion of argument of the user function PHIDAT,
+  accordingly to how it called by the kernel
+  modified routines:
+    usvort.F
+
+* 07/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug fixes when reading a sequel file
+  modified routines:
+    laglec.F
+    lagout.F
+
+* 07/02/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Variant for Intel compiler on Itanium only, optimizations by BULL
+  modified routines:
+    cs_matrix.c
+    cs_sles.c
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Wrong affectation for last element in an array in cs_post.c
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Renaming the Preprocessor listing from listenv to listpre
+  modified routines:
+    lance
+    saturne1.tex
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Minor correction of the Makefile for the target LINK
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Correction in the macro definition of the keyword inline
+  modified routine:
+    cs_base.h
+    cs_lagrang.c
+
+* 14/01/2008 - Jérome Bônelle <jerome.bonelle@edf.fr>
+  Bug fix in face renumbering and ponderation algorithm
+  improvement
+  modified routines:
+    cs_syr_coupling.c
+
+* 14/01/2008 - Jérome Bônelle <jerome.bonelle@edf.fr>
+  Missing argument in printf function in cs_syr_mesages.c
+
+* 08/01/2008 - David Monfort <david.monfort@edf.fr>
+  Portability improvements in scripts
+  Thanks to Thierry Thomas for reporting the problems
+  modified routines:
+    Makefile
+    compiler_version
+    cree_sat
+    gracehst
+    grp
+
 * 28/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
   Tagging of version 1.3.1
 
