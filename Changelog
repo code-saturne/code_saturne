@@ -1,4 +1,8 @@
 * 12/03/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging of the Version1_3 branch
+  Trunk open for new commits.
+
+* 12/03/2008 - David Monfort <david.monfort@edf.fr>
   Add a cleaning pass when installing the documentation
   modified routines:
     lance_install
