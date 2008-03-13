@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -253,8 +253,6 @@ C     ===========
 C
 C--> Si l'orientation precedente a echouee, on en essaie une autre,
 C    mais elle est dangereuse dans le cas des cellules convaves.
-C
-      ISENSF = 0
 C
       IF (ISENSF.EQ.0) THEN
 C

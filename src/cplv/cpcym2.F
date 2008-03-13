@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -149,7 +149,7 @@ C
 C
       INTEGER          N1 , N2 , N3 , N4 , N5 , N6 , N7 , N8 , N9
       INTEGER          N10
-      INTEGER          ITBR , ITBI , ICLA
+      INTEGER          ITBR , ICLA
       INTEGER          NBRINT
       PARAMETER        (NBRINT = 11)
       INTEGER          INTTMP(NBRINT)
@@ -175,18 +175,17 @@ C
       DOUBLE PRECISION WMCHX1 , WMCHX2 , WMCO   , WMCO2 , WMH2O
       DOUBLE PRECISION WMO2   , WMN2   , WMC
       DOUBLE PRECISION ACHX1F1, ACOF1  , ACHX2F2, ACOF2
-      DOUBLE PRECISION ACOF3  , AO2F3  , AO2F4  , AN2F4 , AH2OF4
-      DOUBLE PRECISION YO2OX  , AN2F3  , AH2OF3 ,AH2OF5
+      DOUBLE PRECISION ACOF3  , AO2F3  , AO2F4  , AN2F4
+      DOUBLE PRECISION YO2OX  , AN2F3  , AH2OF5
 C
 C     Variables pour le support de la Pdf et sa description
 C
-      DOUBLE PRECISION F42m
       DOUBLE PRECISION ZZCL(7),ZZS1(7),ZZS2(7),ZZS3(7),ZZF4(7)
       DOUBLE PRECISION ZZ(7)
 C
       DOUBLE PRECISION F4S1 , F4S2 , F4S3
       DOUBLE PRECISION BB1  , BB2  , DEN1 , DEN2
-      DOUBLE PRECISION FP1 , FP2 , FP3 , FP4 , FP5 , ZCO2T
+      DOUBLE PRECISION ZCO2T
 C
       DOUBLE PRECISION SOMMIN,SOMMAX,AO2MIN,AO2MAX
       INTEGER          NCLO2,NCLCO
@@ -434,7 +433,7 @@ C
           ENDIF
 C
           FUEL1(IEL) = ZCHX13 * WMCHX1
-          FUEL2(IEL) = ZCHX23 * WMCHX1
+          FUEL2(IEL) = ZCHX23 * WMCHX2
           FUEL3(IEL) = ZCO3  * WMCO
           PROD1(IEL) = ZCO23 * WMCO2
           PROD2(IEL) = ZH2O3 * WMH2O

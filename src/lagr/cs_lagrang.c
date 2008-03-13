@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Utilitarian functions for the diphasic lagrangian module
@@ -128,7 +128,7 @@ _check_ieee_standard(void)
 
 /*----------------------------------------------------------------------------
  * The argument is an upperbound on the coordinates.
- * Chande the data conditionning.
+ * Change the data conditioning.
  *
  * d       --> upper bound on data values.
  *
@@ -207,15 +207,11 @@ _orient3D_normalize(float  *value)
  * Returns:
  *----------------------------------------------------------------------------*/
 
-#if defined(__GNUC__)
-__inline__ static void _orient3D_split(
-#else
-static void _orient3D_split(
-#endif
-                            cs_real_t    a,
-                            cs_real_t   *a1,
-                            cs_real_t   *a0,
-                            cs_real_t    format)
+inline static void
+_orient3D_split(cs_real_t    a,
+                cs_real_t   *a1,
+                cs_real_t   *a0,
+                cs_real_t    format)
 {
  *a1 = a + format;
  *a1 -= format;

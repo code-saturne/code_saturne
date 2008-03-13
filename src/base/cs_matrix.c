@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Sparse Matrix Representation and Operations.
@@ -123,6 +123,17 @@ extern "C" {
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
+
+/* Variant for Intel compiler and on Itanium only (optimized by BULL)
+   (Use compile flag -DNO_BULL_OPTIM to switch back to general code) */
+
+#if (defined(__INTEL_COMPILER) && defined(__ia64__) && !defined(NO_BULL_OPTIM))
+
+#define IA64_OPTIM
+#define IA64_OPTIM_L1_CACHE_SIZE (508)
+#define IA64_OPTIM_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#endif
 
 /*=============================================================================
  * Local Type Definitions
@@ -672,6 +683,8 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
  *   y      <-- Resulting vector
  *----------------------------------------------------------------------------*/
 
+#if !defined(IA64_OPTIM)  /* Standard variant */
+
 static void
 _mat_vec_p_l_native(const cs_matrix_t  *matrix,
                     const cs_real_t    *restrict x,
@@ -686,7 +699,7 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *xa1, *xa2}
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
 #endif
 
   /* Diagonal part of matrix.vector product */
@@ -738,6 +751,139 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
 }
 
+#else /* defined(IA64_OPTIM), IA64 optimized variant (optimization by BULL) */
+
+static void
+_mat_vec_p_l_native(const cs_matrix_t  *matrix,
+                    const cs_real_t    *restrict x,
+                    cs_real_t          *restrict y)
+{
+  cs_int_t  ii, ii_prev, kk, face_id, kk_max;
+  cs_real_t y_it, y_it_prev;
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict da = mc->da;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  /* Diagonal part of matrix.vector product */
+
+  /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
+
+  if (mc->da != NULL) {
+    for (ii = 0; ii < ms->n_cells; ii++)
+      y[ii] = da[ii] * x[ii];
+  }
+  else {
+    for (ii = 0; ii < ms->n_cells; y[ii++] = 0.0);
+  }
+
+  for (ii = ms->n_cells; ii < ms->n_cells_ext; y[ii++] = 0.0);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    /*
+     * 1/ Split y[ii] and y[jj] computation into 2 loops to remove compiler
+     *    data dependency assertion between y[ii] and y[jj].
+     * 2/ keep index (*face_cel_p) in L1 cache from y[ii] loop to y[jj] loop
+     *    and xa1 in L2 cache.
+     * 3/ break high frequency occurence of data dependency from one iteration
+     *    to another in y[ii] loop (nonzero matrix value on the same line ii).
+     */
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0;
+           face_id < ms->n_faces;
+           face_id += IA64_OPTIM_L1_CACHE_SIZE) {
+
+        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
+                                IA64_OPTIM_L1_CACHE_SIZE);
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        ii_prev = face_cel_p[0] - 1;
+        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+
+        for (kk = 1; kk < kk_max; ++kk) {
+          ii = face_cel_p[2*kk] - 1;
+          /* y[ii] += xa1[face_id+kk] * x[jj]; */
+          if(ii == ii_prev) {
+            y_it = y_it_prev;
+          }
+          else {
+            y_it = y[ii];
+            y[ii_prev] = y_it_prev;
+          }
+          ii_prev = ii;
+          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+        }
+        y[ii] = y_it_prev;
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        for (kk = 0; kk < kk_max; ++kk) {
+          y[face_cel_p[2*kk+1] - 1]
+            += xa1[face_id+kk] * x[face_cel_p[2*kk] - 1];
+        }
+        face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
+      }
+
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0;
+           face_id < ms->n_faces;
+           face_id+=IA64_OPTIM_L1_CACHE_SIZE) {
+
+        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
+                                IA64_OPTIM_L1_CACHE_SIZE);
+
+        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+
+        ii_prev = face_cel_p[0] - 1;
+        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+
+        for (kk = 1; kk < kk_max; ++kk) {
+          ii = face_cel_p[2*kk] - 1;
+          /* y[ii] += xa1[face_id+i] * x[jj]; */
+          if(ii == ii_prev) {
+            y_it = y_it_prev;
+          }
+          else {
+            y_it = y[ii];
+            y[ii_prev] = y_it_prev;
+          }
+          ii_prev = ii;
+          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+        }
+        y[ii] = y_it_prev;
+
+        /* sub-loop to compute y[ii] += xa2[face_id] * x[jj] */
+
+        for (kk = 0; kk < kk_max; ++kk) {
+          y[face_cel_p[2*kk+1] - 1]
+            += xa2[face_id+kk] * x[face_cel_p[2*kk] - 1];
+        }
+        face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
+      }
+
+    }
+
+  }
+
+}
+
+#endif /* defined(IA64_OPTIM) */
+
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
  *
@@ -765,7 +911,7 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *xa1, *xa2}
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
 #endif
 
   /* Diagonal part of matrix.vector product */
@@ -1209,7 +1355,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
         if (ms->symmetric == true)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Affectation de coefficients matriciels non symmétriques\n"
+                    _("Affectation de coefficients matriciels non symétriques\n"
                       "à une matrice en stockage CSR symmétrique."));
 
         for (face_id = 0; face_id < n_faces; face_id++) {
@@ -1409,7 +1555,7 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
+#pragma disjoint(*x, *y, *m_row, *col_id)
 #endif
 
     for (jj = 0; jj < n_cols; jj++)
@@ -1435,12 +1581,20 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
                      const cs_real_t     *restrict x,
                      cs_real_t           *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
   cs_int_t sym_jj_start = 0;
+
+    /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -1461,15 +1615,11 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
 
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     cs_real_t  sii = 0.0;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -1497,7 +1647,10 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
                     const cs_real_t    *restrict x,
                     cs_real_t          *restrict y)
 {
-  cs_int_t  start_row, ii, jj;
+  cs_int_t  start_row, ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1510,6 +1663,12 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
 
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *y, *m_row)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#endif
+
     if (end_row > n_rows)
       end_row = n_rows;
 
@@ -1517,13 +1676,8 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         *prefetch_p++ = x[col_id[jj]];
@@ -1536,14 +1690,10 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *m_row, *col_id}
-#endif
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += *m_row++ * *prefetch_p++;
@@ -1592,7 +1742,7 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
+#pragma disjoint(*x, *y, *m_row, *col_id)
 #endif
 
     for (jj = 0; jj < n_cols; jj++)
@@ -1623,10 +1773,18 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
                             const cs_real_t    *restrict x,
                             cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
+
+    /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -1640,15 +1798,11 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
 
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     cs_real_t  sii = 0.0;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -1681,7 +1835,10 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
                            const cs_real_t    *restrict x,
                            cs_real_t          *restrict y)
 {
-  cs_int_t  start_row, ii, jj;
+  cs_int_t  start_row, ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1691,8 +1848,13 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
   for (start_row = 0; start_row < n_rows; start_row += mc->n_prefetch_rows) {
 
     cs_int_t end_row = start_row + mc->n_prefetch_rows;
-
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
+#endif
 
     if (end_row > n_rows)
       end_row = n_rows;
@@ -1701,13 +1863,8 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         *prefetch_p++ = x[col_id[jj]];
@@ -1720,14 +1877,10 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
 
     for (ii = start_row; ii < end_row; ii++) {
 
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *m_row, *col_id}
-#endif
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += *m_row++ * *prefetch_p++;
@@ -2191,11 +2344,19 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
                  const cs_real_t    *restrict x,
                  cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == false);
 
@@ -2217,15 +2378,11 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj] * x[col_id[jj]]);
@@ -2252,11 +2409,19 @@ _mat_vec_p_l_msr_sym(const cs_matrix_t  *matrix,
                      const cs_real_t    *restrict x,
                      cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -2284,15 +2449,11 @@ _mat_vec_p_l_msr_sym(const cs_matrix_t  *matrix,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj]*x[col_id[jj]]);
@@ -2322,11 +2483,20 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
                     const cs_real_t     *restrict x,
                     cs_real_t           *restrict y)
 {
-  cs_int_t  ii;
+  cs_int_t  ii, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row, *restrict prefetch_p;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *da, *m_row, *col_id)
+#endif
 
   /* Diagonal contribution */
 
@@ -2355,7 +2525,7 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       cs_int_t end_row = start_row + mc->n_prefetch_rows;
 
-      cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+      prefetch_p = mc->x_prefetch;
 
       if (end_row > n_rows)
         end_row = n_rows;
@@ -2364,13 +2534,8 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+        col_id = ms->col_id + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           *prefetch_p++ = x[col_id[jj]];
@@ -2383,14 +2548,10 @@ _mat_vec_p_l_msr_pf(const cs_matrix_t   *matrix,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
         cs_real_t  sii = 0.0;
 
-        /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *da, *m_row, *col_id}
-#endif
+        m_row = mc->val + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           sii += *m_row++ * *prefetch_p++;
@@ -2423,11 +2584,19 @@ _alpha_a_x_p_beta_y_msr(cs_real_t           alpha,
                         const cs_real_t    *restrict x,
                         cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == false);
 
@@ -2450,15 +2619,11 @@ _alpha_a_x_p_beta_y_msr(cs_real_t           alpha,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj] * x[col_id[jj]]);
@@ -2490,11 +2655,19 @@ _alpha_a_x_p_beta_y_msr_sym(cs_real_t           alpha,
                             const cs_real_t    *restrict x,
                             cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *m_row, *col_id)
+#endif
 
   assert(ms->symmetric == true);
 
@@ -2523,15 +2696,11 @@ _alpha_a_x_p_beta_y_msr_sym(cs_real_t           alpha,
 
     for (ii = 0; ii < n_rows; ii++) {
 
-      const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t  sii = 0.0;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *y, *da, *m_row, *col_id}
-#endif
+      col_id = ms->col_id + ms->row_index[ii];
+      m_row = mc->val + ms->row_index[ii];
+      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
       for (jj = 0; jj < n_cols; jj++)
         sii += (m_row[jj]*x[col_id[jj]]);
@@ -2566,11 +2735,20 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
                            const cs_real_t    *restrict x,
                            cs_real_t          *restrict y)
 {
-  cs_int_t  ii;
+  cs_int_t  ii, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row, *restrict prefetch_p;
+
   const cs_matrix_struct_msr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_int_t  n_rows = ms->n_rows;
   const cs_real_t  *restrict da = mc->da;
+
+      /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*prefetch_p, *x, *col_id)
+#pragma disjoint(*prefetch_p, *y, *da, *m_row, *col_id)
+#endif
 
   /* Diagonal contribution */
 
@@ -2595,7 +2773,7 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       cs_int_t end_row = start_row + mc->n_prefetch_rows;
 
-      cs_real_t  *restrict prefetch_p = mc->x_prefetch;
+      prefetch_p = mc->x_prefetch;
 
       if (end_row > n_rows)
         end_row = n_rows;
@@ -2604,13 +2782,8 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*x, *col_id, *prefetch_p}
-#endif
+        col_id = ms->col_id + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           *prefetch_p++ = x[col_id[jj]];
@@ -2623,14 +2796,10 @@ _alpha_a_x_p_beta_y_msr_pf(cs_real_t           alpha,
 
       for (ii = start_row; ii < end_row; ii++) {
 
-        const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-        cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
         cs_real_t  sii = 0.0;
 
-        /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint {*prefetch_p, *y, *da, *m_row, *col_id}
-#endif
+        m_row = mc->val + ms->row_index[ii];
+        n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
         for (jj = 0; jj < n_cols; jj++)
           sii += *m_row++ * *prefetch_p++;
@@ -3032,7 +3201,7 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
     /* Synchronize periodic values */
 
     if (matrix->periodic)
-      cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD, 1);
+      cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
 
     /* Now call local matrix.vector product */
 
@@ -3106,7 +3275,7 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
   /* Synchronize periodic values */
 
   if (matrix->periodic)
-    cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD, 1);
+    cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
 
   /* Now call local matrix.vector product */
 

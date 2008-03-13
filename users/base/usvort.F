@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -56,6 +56,32 @@ CFONC METHODE DES VORTEX POUR LES CONDITIONS AUX LIMITES D'ENTREE
 CFONC   EN L.E.S. :
 CFONC   DEFINITION DES ENTREES AVEC VORTEX
 CFONC   DEFINITION DES CARACTERISTIQUES DES VORTEX
+CFONC
+CFONC
+CFONC IDENTIFICATION DES FACES DE BORD
+CFONC ================================
+CFONC L'identification des faces de bord concernees se fait grace
+CFONC a la commande GETFBR.
+CFONC
+CFONC   GETFBR(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de faces de bord trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des faces de bord trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les faces de bord de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -226,7 +252,6 @@ C 2. DEFINITION DES ZONES D'ENTREE (AU PREMIER PASSAGE)
 C=======================================================================
 C
         DO IFAC = 1, NFABOR
-          XX = CDGFBO(1,IFAC)
           IREPVO(IFAC) = 0
         ENDDO
 C
@@ -257,6 +282,7 @@ C
 C
           IENT = 2
           IREPVO(IFAC) = IENT
+C
         ENDDO
 C
       ELSEIF (IAPPEL.EQ.2) THEN
@@ -387,7 +413,7 @@ C                donne par l'utilisateur
 C                ( par exemple TLIMVO = 10*DTREF)
 C
 C          2...Chaque vortex a un temps d'exitence limite valant
-C                5.Cmu.k^(3/2).U/espsilon
+C                5.Cmu.k^(3/2).U/epsilon
 C               ( ou U est la vitesse principale suivant DIR3)
 C
         IENT = 1
@@ -443,7 +469,7 @@ C
 C --- Fichier de donnees utilisateur
 C
 C NDAT ...Nombre de lignes du fichier de donnees contenant les donnees :
-C          x | y | z | U | V | V | Grad[u.DIR3].n | k | epsilon
+C          x | y | z | U | V | W | Grad[u.DIR3].n | k | epsilon
 C
 C         dans le plan d'entree du calcul
 C
@@ -501,7 +527,7 @@ c@a
 C                        ***************
 C     -------------------------------------------------------------
      & ( NFECRA , ICAS   , NDAT   ,
-     &   ZZ     , YY     , ZDAT   , YDAT   ,
+     &   YY     , ZZ     , YDAT   , ZDAT   ,
      &   VARDAT , III    )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -523,11 +549,11 @@ CARGU !______________!____!_____!______________________________________!
 CARGU ! NFECRA       ! E  !  -> ! UNITE                                !
 CARGU ! ICAS         ! E  !  -> ! TYPE DE GEOMETRIE DU CAS             !
 CARGU ! NDAT         ! E  !  -> ! NBR DE LIGNES DU FICHIER DE DONNEES  !
-CARGU ! ZZ           ! E  !  -> ! COORDOONNES DANS LE REPERE LOCAL DU  !
-CARGU ! YY           ! E  !  -> ! POINT OU L'ON CHERCHE A CONNAITRE LA !
+CARGU ! YY           ! E  !  -> ! COORDOONNES DANS LE REPERE LOCAL DU  !
+CARGU ! ZZ           ! E  !  -> ! POINT OU L'ON CHERCHE A CONNAITRE LA !
 CARGU !              !    !     ! VARIABLE VARDAT                      !
-CARGU ! ZDAT         ! E  !  -> ! COORDOONNES OU EST CONNUE LA VARIABLE!
-CARGU ! YDAT         ! E  !  -> ! VARDAT DANS LE FICHIER DE DONNEES    !
+CARGU ! YDAT         ! E  !  -> ! COORDOONNES OU EST CONNUE LA VARIABLE!
+CARGU ! ZDAT         ! E  !  -> ! VARDAT DANS LE FICHIER DE DONNEES    !
 CARGU ! VARDAT       ! E  !  -> ! VALEUR DE LA VARIABLE VARDAT         !
 CARGU ! III          ! E  ! <-  ! LIGNE OU A ETE TROUVEE LA DONNEE LA  !
 CARGU !              !    !     ! PLUS PROCHE DU POINT (YY,ZZ)         !

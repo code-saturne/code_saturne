@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -399,11 +399,15 @@ C
       IF(ABS(ICDPAR).EQ.2) THEN
         DO IEL = 1 , NCEL
           IFACPT = IA(IIFAPA(IPHAS)-1+IEL)
-          W1(IEL) =
-     &         (CDGFBO(1,IFACPT)-XYZCEN(1,IEL))**2
-     &         +(CDGFBO(2,IFACPT)-XYZCEN(2,IEL))**2
-     &         +(CDGFBO(3,IFACPT)-XYZCEN(3,IEL))**2
-          W1(IEL) = SQRT(W1(IEL))
+          IF (IFACPT.GT.0) THEN
+            W1(IEL) =
+     &            (CDGFBO(1,IFACPT)-XYZCEN(1,IEL))**2
+     &           +(CDGFBO(2,IFACPT)-XYZCEN(2,IEL))**2
+     &           +(CDGFBO(3,IFACPT)-XYZCEN(3,IEL))**2
+            W1(IEL) = SQRT(W1(IEL))
+          ELSE
+            W1(IEL) = GRAND
+          ENDIF
         ENDDO
       ELSE
         DO IEL = 1 , NCEL

@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -519,6 +519,11 @@ C
         NBERRO = NBERRO+IERROR
       ENDDO
 C
+      DNBPAR = 0.D0
+      DO IP  = 1, NBPART
+        DNBPAR = DNBPAR + TEPA(IP,JRPOI)
+      ENDDO
+C
 C --> Variables particulaires
 C
       NOMNVL(JXP) = 'variable_positionX_particule'
@@ -553,7 +558,7 @@ C
       NBVAL  = NBPART
       IRTYP  = 2
 C
-      DO IVAR = JMP,JWP
+      DO IVAR = JMP, JWF
         RUBRIQ = NOMNVL(IVAR)
         CALL LECSUI(IMPAML,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &              ETTP(1,IVAR),IERROR)
@@ -769,13 +774,13 @@ C
      &      'TSTAT',TSTAT
           ENDIF
 C
-          RUBRIQ = 'nombre_groupes_statistiques_particules'
+          RUBRIQ = 'classe_statistique_particules'
           IRTYP  = 1
           CALL LECSUI(IMPMLS,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &                NCLSTO,IERROR)
           IF(IERROR.NE.0) THEN
             WRITE(NFECRA,9061) FICMLS,
-     &  'groupes_statistiques                                        ',
+     &  'classes_statistiques                                        ',
      &      'NBCLST',NCLSTO
           ENDIF
 C
@@ -1731,7 +1736,7 @@ C
      &'@      ON ETE MODIFIEES.                                     ',/,
      &'@                                                            ',/,
      &'@    Pour eviter les incoherences dans le calcul             ',/,
-     &'@      IBCLST ne devrait pas etre modifies entre             ',/,
+     &'@      NBCLST ne devrait pas etre modifies entre             ',/,
      &'@      deux calculs de statistiques volumiques.              ',/,
      &'@                                                            ',/,
      &'@    Le calcul ne peut pas etre execute.                     ',/,

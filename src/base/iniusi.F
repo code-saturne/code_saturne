@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -111,7 +111,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          II, JJ, IPHAS , ISCAL , NMODPP, IIIIII
+      INTEGER          II, IPHAS , ISCAL , NMODPP, IIIIII
       INTEGER          NPHMAX, NSCMAX, NESMAX, NPHUSI, NSCUSI
       INTEGER          IEEPRE, IEEDER, IEECOR, IEETOT, IIHMPU
       INTEGER          IALGCE
@@ -235,11 +235,11 @@ C     ======================
 C
       IF (IIHMPR.EQ.1) THEN
 C
-        CALL  UIPPMO
-C       ============
+        CALL UIPPMO
+C       ===========
      & ( IPPMOD, ICOD3P, ICODEQ, ICOEBU, ICOBML,
      &   ICOLWC, ICP3PL, ICPL3C, ICFUEL,
-     &   IELJOU, IELARC, IELION, ICOMPF, INDJON )
+     &   IELJOU, IELARC, IELION, ICOMPF, INDJON, IEQCO2)
 C
       ENDIF
 C
@@ -433,7 +433,7 @@ C       ===========
      &             IR12, IR13, IR23,
      &             IOMG, IPHI, IFB,
      &             IALE, IUMA, IVMA, IWMA,
-     &             ISCA)
+     &             ISCA, ISCAPP)
 C
 C     Format des fichiers aval
         CALL CSIFOA(IFOAVA, IFOAVX)
@@ -460,10 +460,12 @@ C      Options numériques locales
 C
         CALL UINUM1
 C       ===========
-     &        (ISCA, BLENCV, ISCHCV, ISSTPC, IRCFLU,
+     &        (ISCA, ISCAPP, BLENCV, ISCHCV, ISSTPC, IRCFLU,
      &         CDTVAR, NITMAX, EPSILO)
 C
 C     Options numériques globales
+        RELAXP = -999.D0
+        EXTRAP = 0.D0
         CALL CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAP, IMRGRA)
 C       ===========
         IPHAS = 1
@@ -498,8 +500,8 @@ C
 C
         CALL UIPROP
 C       ===========
-     &            (IROM, IVISCL, IVISCT, ICOUR, IFOUR,
-     &             ISMAGO, IALE, ICP,
+     &            (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
+     &             ISMAGO, IALE, ICP, ISCALT, ISCAVR,
      &             IPRTOT, IPPPRO, IPPROC, ICMOME,
      &             IPPTX, IPPTY, IPPTZ, IPPDT,
      &             IVISMA, IAPPEL)
@@ -548,11 +550,11 @@ C
 C
           CALL UIPROP
 C         ===========
-     &              (IROM, IVISCL, IVISCT, ICOUR, IFOUR,
-     &               ISMAGO, IALE, ICP,
-     &               IPRTOT, IPPPRO, IPPROC, ICMOME,
-     &               IPPTX, IPPTY, IPPTZ, IPPDT,
-     &               IVISMA, IAPPEL)
+     &            (IROM, IVISCL, IVISCT, IVISLS, ICOUR, IFOUR,
+     &             ISMAGO, IALE, ICP, ISCALT, ISCAVR,
+     &             IPRTOT, IPPPRO, IPPROC, ICMOME,
+     &             IPPTX, IPPTY, IPPTZ, IPPDT,
+     &             IVISMA, IAPPEL)
 C
         ENDIF
 C
@@ -567,7 +569,7 @@ C       ===========
      &       ICHRVL, ICHRBO, ICHRSY, ICHRMD,
      &       FMTCHR, LEN(FMTCHR), OPTCHR, LEN(OPTCHR),
      &       NTCHR,  IECAUX,
-     &       ICHRVR, ILISVR, IHISVR, ISCA,
+     &       ICHRVR, ILISVR, IHISVR, ISCA, ISCAPP,
      &       IPPRTP, IPPPRO, IPPROC,
      &       XYZCAP )
 C

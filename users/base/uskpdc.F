@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -92,6 +92,36 @@ CFONC     ON A CKUPDC = 0.5 KSIS/L ABS(U)
 CFONC
 CFONC     OU L DESIGNE LA LONGUEUR SUR LAQUELLE
 CFONC            ON A CHOISI DE REPRESENTER LA ZONE DE PDC SINGULIERE
+CFONC
+CFONC
+CFONC IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
+CFONC ========================================================
+CFONC
+CFONC   Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
+CFONC   respectivement les cellules, faces ou faces de bord en fonction
+CFONC   de differents criteres.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
+CFONC
+CFONC   La syntaxe des commandes GETFBR et GETFAC est identique.
 CFONC
 CFONC
 c@fonce

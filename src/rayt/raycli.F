@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -406,7 +406,7 @@ C---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 C
               CALL UIRAY2
 C             ===========
-     &       ( ITYPFB, IPAROI, IVART, IPH, NPHAST,  IZFRAD,
+     &       ( ITYPFB, IPAROI, IPARUG, IVART, IPH, NPHAST,  IZFRAD,
      &         ISOTHM, ITPIMP, IPGRNO, IPREFL, IFGRNO, IFREFL,
      &         NFABOR, NFML, IFMFBR , IPRFML , NVAR,
      &         EPS, EPA, TINT, TEXT,
@@ -422,7 +422,7 @@ C
 C
             CALL USRAY2
 C           ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IDBIA1 , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , IPHAS  ,
@@ -447,8 +447,14 @@ C
 C
 C Tparoi en Kelvin et QINCID en W/m2
             DO IFAC = 1,NFABOR
-              TPAROI(IFAC,IPH) = TINT(IFAC,IPH)
-              QINCID(IFAC,IPH) = STEPHN*TINT(IFAC,IPH)**4
+              IF ( ITYPFB(IFAC,IPHAS).EQ.IPAROI .OR.
+     &             ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN
+                TPAROI(IFAC,IPH) = TINT(IFAC,IPH)
+                QINCID(IFAC,IPH) = STEPHN*TINT(IFAC,IPH)**4
+              ELSE
+                TPAROI(IFAC,IPH) = 0.D0
+                QINCID(IFAC,IPH) = 0.D0
+              ENDIF
             ENDDO
 C
 C Fin de la boucle sur NPHAST
@@ -495,7 +501,7 @@ C
 C
           CALL UIRAY2
 C         ===========
-     &  ( ITYPFB, IPAROI, IVART, IPH, NPHAST, IZFRAD,
+     &  ( ITYPFB, IPAROI, IPARUG, IVART, IPH, NPHAST, IZFRAD,
      &    ISOTHM, ITPIMP, IPGRNO, IPREFL, IFGRNO, IFREFL,
      &    NFABOR, NFML, IFMFBR , IPRFML , NVAR,
      &    EPS, EPA, TINT, TEXT,
@@ -511,7 +517,7 @@ C
 C
         CALL USRAY2
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IDBIA1 , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , IPHAS  ,
@@ -1119,8 +1125,7 @@ C
      &           3X,'   ------------------------------------------',/,
      &           3X,' Initialisation de la temperature de paroi   ',/,
      &           3X,' (TPAROI) avec le profil utilisateur (TINTP) ',/,
-     &           3X,' et du flux incident aux parois (QINCID)     ',/,
-     &           3X,' a zero.                                     ',/)
+     &           3X,' et du flux incident aux parois (QINCID).    ',/)
 C
  2000 FORMAT(
      &'@                                                            ',/,

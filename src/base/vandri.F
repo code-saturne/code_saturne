@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -168,7 +168,8 @@ C     ICDPAR=+/-2 en parallele est bloque dans verini)
         ELSE
           WRITE(NFECRA,1000)
           DO IFAC = 1, NFABOR
-            IF(ITYPFB(IFAC,IPHAS).EQ.IPAROI) THEN
+            IF(ITYPFB(IFAC,IPHAS).EQ.IPAROI .OR.
+     &         ITYPFB(IFAC,IPHAS).EQ.IPARUG ) THEN
               IEL = IFABOR(IFAC)
               VISCOS = PROPCE(IEL,IPCVIS)/PROPCE(IEL,IPCROM)
               YMINPA = SQRT((CDGFBO(1,IFAC)-XYZCEN(1,IEL))**2

@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,14 +35,14 @@
 # Macros pour BFT
 #----------------
 
-BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.4/arch/Linux
+BFT_HOME       = /home/cont002/saturne/opt/bft-1.0.6/arch/Linux
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 
 # Macros pour FVM
 #----------------
 
-FVM_HOME       = /home/saturne/Saturne/opt/fvm-0.8.0/arch/Linux
+FVM_HOME       = /home/cont002/saturne/opt/fvm-0.10.0/arch/Linux
 FVM_INC        = -I$(FVM_HOME)/include
 FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 
@@ -52,7 +52,7 @@ FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 # Option MPI
 MPI             =1
 MPE             =0
-MPE_COMM        =1
+MPE_COMM        =0
 #
 #Les bibliothèques MPI sont directement appelées par mpicc et mpif77
 MPI_INC         =
@@ -74,19 +74,20 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/Saturne/opt/libxml2-2.6.19
+XML_HOME = /usr
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
 # Macro pour BLAS
 #----------------
 
 # Option BLAS
-BLAS            =0
-BLAS_INC        =
-BLAS_CFLAGS     =
-BLAS_LDFLAGS    =
+BLAS            =1
+
+BLAS_INC        =-I/applications/atlas/include
+BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
+BLAS_LDFLAGS    =-L/applications/atlas/lib -lcblas -latlas -lg2c
 
 # Preprocesseur
 #--------------
@@ -102,8 +103,8 @@ CCOMP                  = mpicc
 #CCOMPFLAGSDEF          = -Xa -Ktrap=fp   Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 CCOMPFLAGSDEF          = -Xa
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O1 
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O1          
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O1
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse  
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O1
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -Mbounds
@@ -121,8 +122,8 @@ FTNCOMP                = mpif77
 #FTNCOMPFLAGSDEF        = -Ktrap=fp -fastsse     Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 FTNCOMPFLAGSDEF        = -fastsse
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O -Mnobounds
-FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
+FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O -Mnobounds
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O -Mnobounds
 FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0

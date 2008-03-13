@@ -8,7 +8,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -86,9 +86,11 @@
     echo "        ${SO}<topic>${NO} : ${BO}version${NO}   : Code_Saturne version"
     echo "                  ${BO}user${NO}       : user manual (pdf)"
     echo "                  ${BO}theory${NO}     : theory and programmer's guide (pdf)"
-    echo "                  ${BO}ecs${NO}        : usage for the Preprocessor module"
+    echo "                  ${BO}tutorial${NO}   : Code_Saturne tutorial (pdf)"
     echo "                  ${BO}ecsmu${NO}      : user manual for the Preprocessor module (pdf)"
     echo "                  ${BO}ecsmi${NO}      : theory and programmer's guide for the Preprocessor module (pdf)"
+    echo "                  ${BO}cs${NO}         : usage for the Kernel module"
+    echo "                  ${BO}ecs${NO}        : usage for the Preprocessor module"
     echo "                  ${BO}check_mesh${NO} : usage of mesh checking script"
     echo "                  ${BO}gracehst${NO}   : usage of xmgrace launch script gracehst"
     echo 
@@ -145,7 +147,7 @@ fi
      tput init 
   fi
  elif [ "$topic" = "user" ] ; then
-   saturnepdf=$CS_HOME/doc/UTILISATION/saturne.pdf 
+   saturnepdf=$CS_HOME/doc/USER/user.pdf 
    echo
    echo " ${BO}user manual${NO} : $saturnepdf"
    echo
@@ -153,11 +155,28 @@ fi
    $acroread $saturnepdf  || sortie "The ${SO}$acroread $saturnepdf${NO} command failed"
    tput init 
  elif [ "$topic" = "theory" ] ; then
-   noyaupdf=$CS_HOME/doc/NOYAU/noyau.pdf 
+   noyaupdf=$CS_HOME/doc/THEORY/theory.pdf 
    echo
    echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
    echo
    $acroread $noyaupdf 
+ elif [ "$topic" = "tutorial" ] ; then
+   noyaupdf=$CS_HOME/doc/TUTORIAL/tutorial.pdf 
+   echo
+   echo " ${BO}Code_Saturne tutorial${NO} : $noyaupdf"
+   echo
+   $acroread $noyaupdf 
+ elif [ "$topic" = "cs" ] ; then 
+   cs=$CS_HOME/bin/cs.exe
+   echo
+   echo " ${BO}Kernel module usage${NO}"
+   echo
+   tput init 
+   eval $cs -h || sortie "The ${SO}$cs -h${NO} command failed."
+   echo
+   echo " ${BO}Kernel module usage${NO}"
+   echo
+   tput init 
  elif [ "$topic" = "ecs" ] ; then 
    ecs=$ECS_HOME/bin/ecs
    echo

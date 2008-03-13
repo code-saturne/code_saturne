@@ -1,41 +1,39 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 #ifndef __CS_PERIO_H__
 #define __CS_PERIO_H__
 
 /*============================================================================
  * Structure and function headers associated to periodicity
- *
- * Library : Code_Saturne 1.3                          Copyright EDF 1999-2006
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -58,7 +56,8 @@ extern "C" {
  * Macro Definition
  *============================================================================*/
 
-#define CS_NPHSMX  3  /* Max number of phases */
+#define CS_NPHSMX  1  /* Max number of phases */
+                      /* Keep it coherent with NPHSMX in paramx.h */
 
 /*============================================================================
  * Type definitions
@@ -166,25 +165,6 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var31[],
                            cs_real_t        var32[],
                            cs_real_t        var33[]);
-
-/*----------------------------------------------------------------------------
- * Update values for periodic cells (standard + extended) linked by
- * translation.
- *
- * Only called if periodicity is defined.
- *
- * FORTRAN Interface:
- *
- * SUBROUTINE PERCVE
- * *****************
- *
- *    & ( PVAR )
- *
- * PVAR         <->  variable to sync.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (percve, PERCVE)(cs_real_t       pvar[]);
 
 /*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
@@ -453,14 +433,12 @@ cs_perio_sync_geo(void);
  *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
  *                   COPY, IGNORE or RESET
  *   halo_mode   --> kind of halo treatment
- *   stride      --> stride of variable to sync
  *----------------------------------------------------------------------------*/
 
 void
 cs_perio_sync_var_scal(cs_real_t            var[],
                        cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode,
-                       cs_int_t             stride);
+                       cs_mesh_halo_type_t  halo_mode);
 
 /*----------------------------------------------------------------------------
  * Update values for a real vector between periodic cells.

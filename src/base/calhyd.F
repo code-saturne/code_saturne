@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -41,7 +41,7 @@ C     --------------------------------------------------------------
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IFACLG , IRESPR , INDHYD ,
-     &   IDEVEL , ISOSTD , ITUSER , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   FEXTX  , FEXTY  , FEXTZ  ,
      &   DFEXTX , DFEXTY , DFEXTZ ,
@@ -99,8 +99,6 @@ CARGU ! IFMCEL       ! TE !  -> ! NUMERO DE FAMILLE D'UNE CELLULE      !
 CARGU ! (NCELET)     !    !     !                                      !
 CARGU ! IPRFML       ! TE !  -> ! PROPRIETES D'UNE FAMILLE             !
 CARGU ! NFML  ,NPRFML!    !     !                                      !
-CARGU ! ISOSTD       ! TE !  -> ! INDICATEUR DE SORTIE STANDARD        !
-CARGU !    (NFABOR+1)!    !     !  +NUMERO DE LA FACE DE REFERENCE     !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFAC)   !    !     !  FACE INTERNE DANS NODFAC (OPTIONNEL)!
 CARGU ! NODFAC       ! TE !  -> ! CONNECTIVITE FACES INTERNES/NOEUDS   !
@@ -205,7 +203,6 @@ C
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          IFACLG(2,NFAC), IRESPR(NCELET), INDHYD
-      INTEGER          ISOSTD(NFABOR+1,NPHAS)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C

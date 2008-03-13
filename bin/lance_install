@@ -8,7 +8,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -72,7 +72,8 @@
     echo
     echo " Cas particuliers :                                                "
     echo "   lance_install DOC                                               "
-    echo "          compilation de la documentation (utilisation et theorie) "
+    echo "          compilation de la documentation (utilisation, theorie    "
+    echo "                                                      et tutorial) "
     echo "   lance_install -nc                                               "
     echo "          n enleve pas les objets du repertoire build              "
     echo
@@ -261,14 +262,22 @@ Macro_readme_comp=$2
 #
  if [ "$1" = "DOC" ] ; then
   titre "Compilation de la documentation theorique"
-  cd ../doc/NOYAU/LaTeX
-  pdflatex noyau && mv noyau.pdf ..
+  cd ../doc/THEORY
+  make
+  make clean
   titrefin "Fin de compilation de la documentation theorique"
   echo
   titre "Compilation de la documentation utilisateur"
-  cd ../../UTILISATION
+  cd ../USER
   make
+  make clean
   titrefin "Fin de compilation de la documentation utilisateur"
+  echo
+  titre "Compilation du tutorial"
+  cd ../TUTORIAL
+  make
+  make clean
+  titrefin "Fin de compilation du tutorial"
   local_exit
  fi
 #
@@ -400,11 +409,6 @@ Macro_readme_comp=$2
   umask 007            || sortie "Il est impossible de positionner umask"
 #
 #
-# Chmod sur le repertoire de base par securite
-#
-  chmod g-rwx,o-rwx $repbase
-#
-#
 #=========================================================================
 #                        Installation 
 #=========================================================================
@@ -422,6 +426,12 @@ Macro_readme_comp=$2
  if [ ! -d $build/${NOM_ARCH} ] ; then 
    mkdir $build/${NOM_ARCH}
  fi
+#
+# Chmod sur le repertoire des librairies a remplacer par securite
+#
+  if [ -d ${CS_HOME}/arch/${NOM_ARCH}/lib ] ; then
+    chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
+  fi
 #
 #
 # Boucle generale
@@ -526,6 +536,7 @@ Macro_readme_comp=$2
 check_mesh \
 compiler_version \
 cree_sat \
+cs.exe \
 gracehst \
 grp \
 info_cs \
@@ -539,6 +550,7 @@ rang_mpi.sh"
 compiler_version \
 check_mesh \
 cree_sat \
+cs.exe \
 gracehst \
 grp \
 info_cs \
@@ -553,9 +565,9 @@ rmb.sh_lance"
    chmod    u+x aux/$fich
  done
 #Fichiers executables dans arch
-find arch -name "*.exe" -exec chmod +x {} \;
-# Acces au repertoire de base
-  chmod u=rwx,g=rx,o=rx $repbase
+find arch -name "*.exe" -exec chmod uog+x {} \;
+# Acces au repertoire lib
+  chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #
  titrefin "Fin de la verification des acces"
 

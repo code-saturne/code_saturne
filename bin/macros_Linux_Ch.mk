@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,7 +35,7 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.4/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux_x86_64
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft -Wl,-rpath -Wl,$(BFT_HOME)/lib
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft -Wl,-rpath -Wl,$(BFT_HOME)/lib
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.8.0/arch/Linux
+FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux_x86_64
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm -Wl,-rpath -Wl,$(FVM_HOME)/lib
@@ -54,7 +54,7 @@ FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm -Wl,-rpath -Wl,$(FVM_HOME)/lib
 # Option MPI
 MPI             =1
 MPE             =0
-MPE_COMM        =1
+MPE_COMM        =0
 
 
 # Macro pour Sockets
@@ -102,9 +102,9 @@ CCOMPFLAGSDEF          = -ansi -std=c99 -funsigned-char -pedantic -W -Wall -Wsha
                          -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O              
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O 
-CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O 
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2              
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 
+CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O2 
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3            
 CCOMPFLAGSPROF         = -pg

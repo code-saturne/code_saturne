@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -231,10 +231,17 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          ISCAL, IVAR, IPHAS, IEL
       INTEGER          II, IISC, ITSPDV, ICALC, IAPPEL
       INTEGER          ISPECF
+      INTEGER          MAXELT, ILS
+C
+C NOMBRE DE PASSAGES DANS LA ROUTINE
+C
+      INTEGER          IPASS
+      DATA             IPASS /0/
+      SAVE             IPASS
 C
 C***********************************************************************
 C
@@ -244,6 +251,8 @@ C=======================================================================
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
+C
+      IPASS = IPASS + 1
 C
 C=======================================================================
 C 2. TRAITEMENT DES SCALAIRES A PHYSIQUE PARTICULIERE
@@ -259,24 +268,28 @@ C
 C   On initialise RTP (et pas RTPA) car RTPA ne sert pas
 C      dans codits.
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('SCALAI',IFINIA)
 C
         CALL PPINIV
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
      &   RDEVEL , RTUSER , RA     )
 C
-C     On pourra eviter les bugs en initilalisant aussi RTPA (sur NCELET)
+C     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 C     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
-        IF(NTCABS.EQ.1.AND.ISUITE.EQ.0) THEN
+        IF(IPASS.EQ.1.AND.ISUITE.EQ.0) THEN
           IF(NSCAPP.GT.0) THEN
             DO II = 1, NSCAPP
               ISCAL = ISCAPP(II)

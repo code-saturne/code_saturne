@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -120,13 +120,13 @@ C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          IEL    , IPHAS
       INTEGER          IPCROM , IPCTE1 , IPCTE2 , IPCRO2 , IPCDIA
-      INTEGER          IPCGEV , IPCGD2 , IPCGFL , IPCGHT , IPCYOX
+      INTEGER          IPCGEV , IPCGHT , IPCYOX
       INTEGER          IPCVST,IPCVSL,IPCCP,IPCHGL
 C
       DOUBLE PRECISION XNG,XNUSS
       DOUBLE PRECISION PPARO2 , XDFFLI , XDFEXT , XDFTOT0 , XDFTOT1
-      DOUBLE PRECISION DEVAO1, COXKF ,  DEN
-      DOUBLE PRECISION DIACKA, RHOFOL , XUASH , COXCK , XCOKE
+      DOUBLE PRECISION DIACKA, XUASH
+C      DOUBLE PRECISION COXCK
       DOUBLE PRECISION DCOKE , SURF
 C
 C=======================================================================

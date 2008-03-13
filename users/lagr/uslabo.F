@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -328,7 +328,7 @@ C
       DOUBLE PRECISION XNN , YNN , ZNN
       DOUBLE PRECISION VNORL(1)  , ENC3 , VISCP , MASSE
       DOUBLE PRECISION DPINIT , DP03 , MP0 , TRAP , VNORM , ANG
-      DOUBLE PRECISION ENERG , ENERGT , VV1
+      DOUBLE PRECISION ENERG , ENERGT
       DOUBLE PRECISION UXN   , VYN    , WZN
 C
 C***********************************************************************

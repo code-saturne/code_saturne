@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -549,10 +549,9 @@ C
 C
 C --- DIMENSIONS GLOBALES
 C     (seront recalculees plus loin en cas de parallelisme)
+C     (pour les faces internes et de bord -> MAJGEO)
 C
       NCELGB = NCEL
-      NFACGB = NFAC
-      NFBRGB = NFABOR
       NCBRGB = 0
       NSOMGB = NNOD
 C
@@ -593,16 +592,6 @@ C
       DO II = 1, 8
         ICOFTU(II) = 0
       ENDDO
-C
-C --- A partir d'ici toutes les dimensions de dimens
-C       ont ete initialisees
-C
-C     On remplit maintenant NDIMFB
-      IF (NFABOR.EQ.0) THEN
-        NDIMFB = 1
-      ELSE
-        NDIMFB = NFABOR
-      ENDIF
 C
 C
 C=======================================================================
@@ -1552,7 +1541,7 @@ C --- Tableaux des structures
           FORSTA(II,ISTR) = 0.D0
           FORSTP(II,ISTR) = 0.D0
           XSTREQ(II,ISTR) = 0.D0
-          DO JJ = 1, NSTRMX
+          DO JJ = 1, 3
             XMSTRU(II,JJ,ISTR) = 0.D0
             XCSTRU(II,JJ,ISTR) = 0.D0
             XKSTRU(II,JJ,ISTR) = 0.D0

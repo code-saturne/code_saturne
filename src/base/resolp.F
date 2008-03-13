@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -569,7 +569,7 @@ C           ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IFACLG , IRESPR , INDHYD ,
-     &   IDEVEL , ISOSTD , ITUSER , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   FRCHY (1,1) , FRCHY (1,2) , FRCHY (1,3) ,
      &   DFRCHY(1,1) , DFRCHY(1,2) , DFRCHY(1,3) ,
@@ -1448,6 +1448,11 @@ C
             DO IEL = 1, NCEL
               RTP(IEL,IPRIPH) = RTP(IEL,IPRIPH)
      &                        + RELAXV(IPRIPH)*DRTP(IEL)
+            ENDDO
+          ELSE
+            DO IEL = 1, NCEL
+              RTP(IEL,IPRIPH) = RTP(IEL,IPRIPH)
+     &                        + DRTP(IEL)
             ENDDO
           ENDIF
 C

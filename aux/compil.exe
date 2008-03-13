@@ -1,8 +1,8 @@
-#!/bin/ksh
+#!/bin/sh
 
 echo Compilation pour architecture $NOM_ARCH
 
-export CS_HOME=/home/saturne/Noyau/ncs-1.3.g
+export CS_HOME=/home/saturne/Noyau/ncs-1.3.2
 cd $CS_HOME/bin
 
 rm -f ../aux/listing_${NOM_ARCH} 

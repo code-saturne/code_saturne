@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Définitions, variables globales, et fonctions de base
@@ -523,16 +523,21 @@ void cs_base_erreur_init
   bft_backtrace_print_set(_cs_base_backtrace_print);
 
 #if defined(SIGHUP)
-  cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0)
+    cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
 
-  cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
-  cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0) {
+    cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
+    cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
+  }
+
   cs_glob_base_sigfpe_sauve  = signal(SIGFPE, _cs_base_sig_fatal);
   cs_glob_base_sigsegv_sauve = signal(SIGSEGV, _cs_base_sig_fatal);
 
 #if defined(SIGXCPU)
-  cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
+  if (cs_glob_base_rang <= 0)
+    cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
 }
 
@@ -1185,8 +1190,6 @@ static void _cs_base_gestion_erreur
 
   bft_backtrace_print(3);
 
-  assert(0);   /* Use assert to avoit exiting under debugger */
-
 #if defined(_CS_HAVE_MPI)
   {
     int mpi_flag;
@@ -1314,8 +1317,6 @@ static void _cs_base_sig_fatal(int  signum)
 
   bft_backtrace_print(3);
 
-  assert(0);   /* Use assert to avoit exiting under debugger */
-
 #if defined(_CS_HAVE_MPI)
 
   {
@@ -1401,8 +1402,6 @@ void _cs_base_erreur_mpi
   _cs_base_err_printf("\n\n");
 
   bft_backtrace_print(3);
-
-  assert(0);   /* Use assert to avoit exiting under debugger */
 
   MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
 

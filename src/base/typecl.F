@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -242,14 +242,14 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IFAC, IVAR, IEL
       INTEGER          IOK, INC, ICCOCG, IDEB, IFIN, INB, ISUM, IWRNP
-      INTEGER          INBSLB, ITBSLB
+      INTEGER          IFRSLB(NPHSMX), ITBSLB(NPHSMX)
       INTEGER          ITYP, II, JJ, IPHAS, IWARU, IFLMAB
       INTEGER          NSWRGP, IMLIGP, IWARNP
       INTEGER          IPRIPH, IUIPH, IVIPH, IWIPH
       INTEGER          IR11IP, IR22IP, IR33IP, IR12IP, IR13IP,IR23IP
       INTEGER          IKIPH , IEPIPH, IPHIPH, IFBIPH, IOMGIP
       INTEGER          IPRNEW, KPHAS, III
-      INTEGER          IRANGD, NSOSTD, ICLIPR, IIPTOT
+      INTEGER          IRANGD, ICLIPR, IIPTOT
       INTEGER          ITROIS, IFADIR, NFADIR
       DOUBLE PRECISION PREF, EPSRGP, CLIMGP, EXTRAP, COEFUP
       DOUBLE PRECISION DIIPBX, DIIPBY, DIIPBZ
@@ -287,6 +287,7 @@ C
         ENDDO
       ENDDO
 C
+      IF (IRANGP.GE.0) CALL PARCMX(IOK)
       IF(IOK.NE.0) THEN
         WRITE(NFECRA,1099) NTYPMX
         CALL CSEXIT (1)
@@ -351,18 +352,28 @@ C
 C
 C ---> On verifie sommairement
 C
+      IOK = 0
       DO IPHAS = 1, NPHAS
         DO II = 1, NTYPMX-1
           IF(IFINTY(II,IPHAS).GE.IDEBTY(II+1,IPHAS)) THEN
-            WRITE(NFECRA,2010) IPHAS
+            IF (IOK.EQ.0) IOK = II
+          ENDIF
+        ENDDO
+        IF (IRANGP.GE.0) CALL PARCMX(IOK)
+        IF (IOK.GT.0) THEN
+          II = IOK
+          WRITE(NFECRA,2010) IPHAS
+          IF(IFINTY(II,IPHAS).GE.IDEBTY(II+1,IPHAS)) THEN
             WRITE(NFECRA,2020) (IFINTY(JJ,IPHAS),JJ=1,NTYPMX)
             WRITE(NFECRA,2030) (IDEBTY(JJ,IPHAS),JJ=1,NTYPMX)
             WRITE(NFECRA,2040) (ITYPFB(JJ,IPHAS),JJ=1,NFABOR)
-            WRITE(NFECRA,2099)
+            WRITE(NFECRA,2098)
      &                       II,IFINTY(II,IPHAS),II+1,IDEBTY(II+1,IPHAS)
-            CALL CSEXIT (1)
+          ELSE
+            WRITE(NFECRA,2099) II,II+1
           ENDIF
-        ENDDO
+          CALL CSEXIT (1)
+        ENDIF
       ENDDO
 C
       IOK = 0
@@ -371,8 +382,9 @@ C
         DO II = 1, NTYPMX
           ISUM = ISUM + IFINTY(II,IPHAS) - IDEBTY(II,IPHAS) + 1
         ENDDO
-        IF(ISUM.NE.NFABOR) THEN
-          WRITE(NFECRA,3099)IPHAS,ISUM, NFABOR
+        IF (IRANGP.GE.0) CALL PARCPT (ISUM)
+        IF(ISUM.NE.NFBRGB) THEN
+          WRITE(NFECRA,3099) IPHAS, ISUM, NFBRGB
           IOK = IOK + 1
         ENDIF
       ENDDO
@@ -642,12 +654,21 @@ C
           ENDDO
         ENDIF
 C
-        INBSLB = IFINTY(ISOLIB,IPHAS) - IDEBTY(ISOLIB,IPHAS)
+C     IFRSLB = premiere face de sortie libre standard (ICODCL non modifie)
+C     ITBSLB = max de IFRSLB sur tous les processeurs, indique s'il y a des
+C              faces de sortie standard
+        IFRSLB(IPHAS) = 0
+        DO II = IFINTY(ISOLIB,IPHAS), IDEBTY(ISOLIB,IPHAS), -1
+          IFAC = ITRIFB(II,IPHAS)
+          IF (ICODCL(IFAC,IPRIPH).EQ.0)
+     &         IFRSLB(IPHAS) = IFAC
+        ENDDO
+        ITBSLB(IPHAS) = IFRSLB(IPHAS)
         IF (IRANGP.GE.0) THEN
-           CALL PARCMX (INBSLB)
+           CALL PARCMX (ITBSLB(IPHAS))
         ENDIF
 C
-        IF ((INBSLB.GE.0) .AND. (IPRNEW.EQ.1)) THEN
+        IF ((ITBSLB(IPHAS).GT.0) .AND. (IPRNEW.EQ.1)) THEN
 C
           INC = 1
           ICCOCG = 1
@@ -763,15 +784,12 @@ C                                                de pression modifiee)
 C     1 -> face de sortie libre avec CL de pression automatique.
 C     le numero de la face de reference est stocke dans ISOSTD(NFABOR+1,IPHAS)
 C     qui est d'abord initialise a -1 (i.e. pas de face de sortie std)
-C     NSOSTD = nb de faces de sortie standard (i.e. ICODCL non modifie)
-          NSOSTD = 0
           ISOSTD(NFABOR+1,IPHAS) = -1
           DO IFAC = 1,NFABOR
             ISOSTD(IFAC,IPHAS) = 0
             IF ((ITYPFB(IFAC,IPHAS).EQ.ISOLIB).AND.
      &           (ICODCL(IFAC,IPRIPH).EQ.0)) THEN
               ISOSTD(IFAC,IPHAS) = 1
-              NSOSTD = NSOSTD + 1
             ENDIF
           ENDDO
         ENDIF
@@ -780,44 +798,25 @@ C ---> Pression de recalage (unique, meme s'il y a plusieurs sorties)
 C     En cas de prise en compte de la pression hydrostatique, on cherche
 C     la face de reference
 C
-C   Nombre de faces de type sortie libre  sur le proc courant
-        INBSLB = IFINTY(ISOLIB,IPHAS) - IDEBTY(ISOLIB,IPHAS)
-
-C   Nombre de faces de type sortie libre
-        ITBSLB = INBSLB
-        IF (IRANGP.GE.0) THEN
-          CALL PARCMX (ITBSLB)
-        ENDIF
-C
 C   Determination de la pression P I' unique en parallele
 C     S'il y a des faces de sortie libre, on cherche le premier
 C     proc sur lequel il y en a.
 C
-C     Rq : probleme potentiel
-C     par defaut, on prend comme face de reference la face IDEB ou
-C     on mettra P=PRED0, sans prejuger du fait que peut-etre l'utilisateur
-C     a change le ICODCL de la face et mis par exemple un Dirichlet a autre
-C     chose que PRED0. On perd alors la coherence entre les faces de sortie.
-C     C'est aussi valable si IPHYDR = 1.
-C     Mais ce probleme est tres peu probable ....... !!!!!!!!!!!!
-C
 C     On recupere aussi les coordonnees du point de reference pour les
 C     sorties, pour calculer PREF ensuite
 C
-        IF    (ITBSLB.GE.0) THEN
+        IF    (ITBSLB(IPHAS).GT.0) THEN
 C
           IF (IRANGP.GE.0) THEN
 C
 C     Indicateur de sorties locales et pointeur sur la premiere face
-C       S'il y a des sorties libres quelque part
+C       S'il y a des sorties libres standards quelque part
 C         et s'il n'y en a pas en local, on affecte a IRANGD la valeur -1
-            IF(INBSLB.LT.0) THEN
+            IF(IFRSLB(IPHAS).LE.0) THEN
               IRANGD = -1
 C         et s'il y en a en local, on affecte a IRANGD la valeur IRANGP
-C                                  et on note le pointeur sur la premiere face
             ELSE
               IRANGD = IRANGP
-              IDEB = IDEBTY(ISOLIB,IPHAS)
             ENDIF
 C
 C     Valeur de P I'
@@ -825,9 +824,8 @@ C         on prend le numero du dernier proc sur lequel il y en a
             CALL PARCMX(IRANGD)
 C         si c'est le proc courant, on affecte P I' a COEFUP
             IF (IRANGP.EQ.IRANGD) THEN
-              COEFUP = COEFU(ITRIFB(IDEB,IPHAS),1)
-              IF ((IPHYDR.EQ.1).AND.(NSOSTD.GT.0))
-     &             ISOSTD(NFABOR+1,IPHAS) = IDEB
+              COEFUP = COEFU(IFRSLB(IPHAS),1)
+              IF (IPHYDR.EQ.1) ISOSTD(NFABOR+1,IPHAS) = IFRSLB(IPHAS)
 C         sinon on affecte 0 a COEFUP
             ELSE
               COEFUP = 0.D0
@@ -840,9 +838,9 @@ C            quel proc envoie).
 C
 C     Reference de pression pour les sorties
             IF (IRANGP.EQ.IRANGD) THEN
-              XYZREF(1) = CDGFBO(1,ITRIFB(IDEB,IPHAS))
-              XYZREF(2) = CDGFBO(2,ITRIFB(IDEB,IPHAS))
-              XYZREF(3) = CDGFBO(3,ITRIFB(IDEB,IPHAS))
+              XYZREF(1) = CDGFBO(1,IFRSLB(IPHAS))
+              XYZREF(2) = CDGFBO(2,IFRSLB(IPHAS))
+              XYZREF(3) = CDGFBO(3,IFRSLB(IPHAS))
             ELSE
               XYZREF(1) = 0.D0
               XYZREF(2) = 0.D0
@@ -852,21 +850,19 @@ C     Reference de pression pour les sorties
             CALL PARRSM(ITROIS,XYZREF)
 C
 C   Determination de la pression P I' unique en sequentiel
-C     on repere la premiere face de sortie libre
+C     on repere la premiere face de sortie libre standard
 C                       et on affecte PI' a COEFUP
 C
           ELSE
 C
-            IDEB = IDEBTY(ISOLIB,IPHAS)
-            COEFUP = COEFU(ITRIFB(IDEB,IPHAS),1)
-            IF ((IPHYDR.EQ.1).AND.(NSOSTD.GT.0))
-     &           ISOSTD(NFABOR+1,IPHAS) = ITRIFB(IDEB,IPHAS)
-            XYZREF(1) = CDGFBO(1,ITRIFB(IDEB,IPHAS))
-            XYZREF(2) = CDGFBO(2,ITRIFB(IDEB,IPHAS))
-            XYZREF(3) = CDGFBO(3,ITRIFB(IDEB,IPHAS))
+            COEFUP = COEFU(IFRSLB(IPHAS),1)
+            IF (IPHYDR.EQ.1) ISOSTD(NFABOR+1,IPHAS) = IFRSLB(IPHAS)
+            XYZREF(1) = CDGFBO(1,IFRSLB(IPHAS))
+            XYZREF(2) = CDGFBO(2,IFRSLB(IPHAS))
+            XYZREF(3) = CDGFBO(3,IFRSLB(IPHAS))
           ENDIF
 C
-C     Si l'utilisateur n'a rien sepcifie, on met IXYZP0 a 2 pour mettre
+C     Si l'utilisateur n'a rien specifie, on met IXYZP0 a 2 pour mettre
 C     a jour le point de reference
           IF (IXYZP0(IPHAS).EQ.-1) IXYZP0(IPHAS) = 2
 C
@@ -919,17 +915,17 @@ C
         IF (IXYZP0(IPHAS).EQ.2) THEN
           IXYZP0(IPHAS) = 1
           IIPTOT = IPPROC(IPRTOT(IPHAS))
+          XXP0 = XYZREF(1) - XYZP0(1,IPHAS)
+          XYP0 = XYZREF(2) - XYZP0(2,IPHAS)
+          XZP0 = XYZREF(3) - XYZP0(3,IPHAS)
           XYZP0(1,IPHAS) = XYZREF(1)
           XYZP0(2,IPHAS) = XYZREF(2)
           XYZP0(3,IPHAS) = XYZREF(3)
-          XXP0 = XYZP0(1,IPHAS)
-          XYP0 = XYZP0(2,IPHAS)
-          XZP0 = XYZP0(3,IPHAS)
           DO IEL = 1, NCELET
             PROPCE(IEL,IIPTOT) = PROPCE(IEL,IIPTOT)
      &           - RO0IPH*( GX*XXP0 + GY*XYP0 + GZ*XZP0 )
           ENDDO
-          IF (ITBSLB.GE.0) THEN
+          IF (ITBSLB(IPHAS).GT.0) THEN
             WRITE(NFECRA,8000)IPHAS,XXP0,XYP0,XZP0
             DO IFAC = 1, NFABOR
               COEFU(IFAC,1) = COEFU(IFAC,1)
@@ -948,7 +944,10 @@ C     en differenciant du cas =1 qui necessitera une ecriture en suite
 C
 C     La pression totale doit etre recalee en Xref a la valeur
 C     Po + rho_0*g.(Xref-X0)
-        IF (ITBSLB.GE.0) THEN
+        IF (ITBSLB(IPHAS).GT.0) THEN
+          XXP0 = XYZP0(1,IPHAS)
+          XYP0 = XYZP0(2,IPHAS)
+          XZP0 = XYZP0(3,IPHAS)
           PREF = P0(IPHAS)
      &         + RO0IPH*( GX*(XYZREF(1)-XXP0)
      &                  + GY*(XYZREF(2)-XYP0)
@@ -1169,6 +1168,7 @@ C
         IDEB = IDEBTY(IENTRE,IPHAS)
         IFIN = IFINTY(IENTRE,IPHAS)
 C
+        IOK = 0
         DO IVAR = 1, NVAR
           DO II = IDEB, IFIN
             IFAC = ITRIFB(II,IPHAS)
@@ -1177,9 +1177,11 @@ C
               IF (IVAR.EQ.IUIPH.OR.IVAR.EQ.IVIPH.OR.IVAR.EQ.IWIPH)
      &             THEN
                 IF (RCODCL(IFAC,IVAR,1).GT.RINFIN*0.5D0) THEN
-                  CHAINE = NOMVAR(IPPRTP(IVAR))
-                  WRITE(NFECRA,6040)IFAC,CHAINE(1:8)
-                  CALL CSEXIT (1)
+                  IF (IOK.EQ.0) THEN
+                    IOK = 1
+                    CHAINE = NOMVAR(IPPRTP(IVAR))
+                    WRITE(NFECRA,6040)IFAC,CHAINE(1:8)
+                  ENDIF
                 ELSE
                   ICODCL(IFAC,IVAR) = 1
 C                 RCODCL(IFAC,IVAR,1) = Utilisateur
@@ -1196,9 +1198,11 @@ C
                   RCODCL(IFAC,IVAR,2) = RINFIN
                   RCODCL(IFAC,IVAR,3) = 0.D0
                 ELSE
-                  CHAINE = NOMVAR(IPPRTP(IVAR))
-                  WRITE(NFECRA,6050)IFAC,CHAINE(1:8)
-                  CALL CSEXIT (1)
+                  IF (IOK.LT.2) THEN
+                    IOK = IOK + 2
+                    CHAINE = NOMVAR(IPPRTP(IVAR))
+                    WRITE(NFECRA,6050)IFAC,CHAINE(1:8)
+                  ENDIF
                 ENDIF
               ELSE
                 ICODCL(IFAC,IVAR) = 1
@@ -1210,6 +1214,14 @@ C
             ENDIF
           ENDDO
         ENDDO
+C
+        IF (IRANGP.GE.0) CALL PARCMX(IOK)
+        IF (IOK.GT.0) THEN
+          IF (IOK.EQ.1 .OR. IOK.EQ.3) WRITE(NFECRA,6060)
+          IF (IOK.EQ.2 .OR. IOK.EQ.3) WRITE(NFECRA,6070)
+          CALL CSEXIT (1)
+        ENDIF
+
 C
 C
 C 6.2 SORTIE (entree sortie libre)
@@ -1589,7 +1601,7 @@ C
  2020 FORMAT(/,'   IFINTY : ',I10)
  2030 FORMAT(/,'   IDEBTY : ',I10)
  2040 FORMAT(/,'   ITYPFB : ',I10)
- 2099 FORMAT(/,
+ 2098 FORMAT(/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/,
@@ -1600,6 +1612,24 @@ C
      &'@    IFINTY(',I10   ,') = ',I10                               ,/,
      &'@      est superieur a                                       ',/,
      &'@    IDEBTY(',I10   ,') = ',I10                               ,/,
+     &'@                                                            ',/,
+     &'@    Le calcul ne sera pas execute.                          ',/,
+     &'@                                                            ',/,
+     &'@    Contacter l''assistance.                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2099 FORMAT(/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    PROBLEME DE TRI DES FACES DE BORD SUR UN RANG DISTANT   ',/,
+     &'@                                                            ',/,
+     &'@    IFINTY(',I10   ,')                                      ',/,
+     &'@      est superieur a                                       ',/,
+     &'@    IDEBTY(',I10   ,')                                      ',/,
      &'@                                                            ',/,
      &'@    Le calcul ne sera pas execute.                          ',/,
      &'@                                                            ',/,
@@ -1661,6 +1691,10 @@ C
      &'@    Face declaree en entree (ou sortie) a vitesse imposee,  ',/,
      &'@      mais la valeur de la vitesse n''a pas ete fournie pour',/,
      &'@      la composante ',A8                                     ,/,
+     &'@    (ce message ne s''affiche que pour la premiere face ou  ',/,
+     &'@      le probleme est detecte, mais d''autres faces peuvent ',/,
+     &'@      etre concernees)                                      ',/,
+     &'@                                                            ',/,
      &'@    Le calcul ne sera pas execute.                          ',/,
      &'@                                                            ',/,
      &'@    Verifier les conditions aux limites dans l''Interface   ',/,
@@ -1684,6 +1718,54 @@ C
      &'@      avec un flux rentrant.                                ',/,
      &'@    La valeur de la variable ',A8  ,' n''a pas ete specifiee',/,
      &'@      (condition de Dirichlet).                             ',/,
+     &'@    (ce message ne s''affiche que pour la premiere face ou  ',/,
+     &'@      le probleme est detecte, mais d''autres faces peuvent ',/,
+     &'@      etre concernees)                                      ',/,
+     &'@                                                            ',/,
+     &'@    Le calcul ne sera pas execute                           ',/,
+     &'@                                                            ',/,
+     &'@    Verifier les conditions aux limites dans l''Interface   ',/,
+     &'@    ou dans le sous-programme utilisateur correspondant.    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6060 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,
+     &'@                                                            ',/,
+     &'@    Au moins une face de bord declaree en entree            ',/,
+     &'@      (ou sortie) a vitesse imposee pour laquelle la valeur ',/,
+     &'@      de la vitesse n''a pas ete fournie pour toutes les    ',/,
+     &'@      composantes.                                          ',/,
+     &'@    Le calcul ne sera pas execute.                          ',/,
+     &'@                                                            ',/,
+     &'@    Verifier les conditions aux limites dans l''Interface   ',/,
+     &'@    ou dans le sous-programme utilisateur correspondant.    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6070 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,
+     &'@    *********                                               ',/,
+     &'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,
+     &'@                                                            ',/,
+     &'@    Au moins une face de bord declaree en entree            ',/,
+     &'@      (ou sortie) a vitesse imposee avec un flux rentrant   ',/,
+     &'@      pour laquelle la valeur d''une variable n''a pas ete  ',/,
+     &'@      specifiee (condition de Dirichlet).                   ',/,
      &'@    Le calcul ne sera pas execute                           ',/,
      &'@                                                            ',/,
      &'@    Verifier les conditions aux limites dans l''Interface   ',/,

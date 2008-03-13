@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -238,7 +238,19 @@ C        les a touchees (suite ou pas)
 C    - 0 si debut de calcul avec les structures
 C    - le deplacement utilise pour le calcul precedent si suite sans
 C        modification utilisateur
-      IF (ITRALE.GT.0) THEN
+C   Il faut cependant transferer sa valeur dans XSTR (qui est utilise
+C   par Newmark)
+C Lors des iterations suivantes (ITRALE>0) on utilise les schemas standard
+C   de calcul de XSTP
+C
+      IF (ITRALE.EQ.0) THEN
+C
+        DO ISTR = 1, NBSTRU
+          DO II = 1, NDIM
+            XSTR(II,ISTR) = XSTP(II,ISTR)
+          ENDDO
+        ENDDO
+      ELSE
 C
 C 2.1 : SCHEMA DE COUPLAGE EXPLICITE
 C-----------------------------------

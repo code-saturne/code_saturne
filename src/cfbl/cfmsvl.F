@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -610,7 +610,7 @@ C     ===========
      &   IMRGRA , NSWRSP , NSWRGP , IMLIGP , IRCFLP ,
      &   ISCHCP , ISSTPP , IESCAP ,
      &   IMGRP  , NCYMXP , NITMFP , IPP    , IWARNP ,
-     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , THETV ,
+     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETV  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IFACLG , IRESPR ,

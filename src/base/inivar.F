@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -183,6 +183,7 @@ C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
       INTEGER          IFMFBR(NFABOR) , IFMCEL(NCELET)
       INTEGER          IPRFML(NFML,NPRFML)
+      INTEGER          MAXELT, ILS
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE), IA(*)
@@ -200,7 +201,7 @@ C
 C VARIABLES LOCALES
 C
       CHARACTER*80     CHAINE
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IVAR  , IPHAS , ISCAL , IPHASS, IMOM
       INTEGER          IEL
       INTEGER          ICLIP , IPP  , IOK   , II
@@ -253,14 +254,19 @@ C
 C   - Sous-programme utilisateur
 C     ==========================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('INIVAR',IFINIA)
+C
       CALL USINIV
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
@@ -290,7 +296,7 @@ C       ===========
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,

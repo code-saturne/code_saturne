@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -202,10 +202,11 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IPHAS , IEL
-      INTEGER          IFAC  , IUSCFP
+      INTEGER          IFAC
       INTEGER          IIROM , IIROMB
+      INTEGER          MAXELT, ILS
 C
       INTEGER          IPASS
       DATA             IPASS /0/
@@ -226,16 +227,21 @@ C=======================================================================
 C 2. ON DONNE LA MAIN A L'UTILISATEUR
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('CFPHYV',IFINIA)
+C
       IUSCFP = 1
       CALL USCFPV
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  , IUSCFP ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,

@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -250,7 +250,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA, IFINIA, IFINRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
 C
       INTEGER          IEL, IFAC, KFAC, NBP, ICECPT
       INTEGER          II, JJ, IN, IP
@@ -258,7 +258,7 @@ C
       INTEGER          ISUIVI, IERROR, IERRIE
       INTEGER          ITYPFO, ICONFO(100)
 C
-      INTEGER          ICELCR , IPERCR, ITEPAS, ISENS, IPER
+      INTEGER          ICELCR , IPERCR, ITEPAS, IPER
       DOUBLE PRECISION PTA(3), PTB(3), VECT(3), VECTN(3)
 C
 C=======================================================================
@@ -390,7 +390,8 @@ C
           IFANEW = 0
           ICECPT = 0
 C
-C--> Ouverture du fichier SCRATCH qui a permettra l'ecriture de DEBUG
+C--> Ouverture du fichier SCRATCH qui permettra l'ecriture des infos
+C    en mode DEBUG
 C
 #if DEBUG_LAGCEL
           OPEN (IMPLA4,FILE='SCRATCH4.lag',
@@ -813,6 +814,7 @@ C
 C
 #if DEBUG_LAGCEL
           IF (IMPLTG.EQ.1) WRITE(NFECRA,9005) IP , ITEPA(IP,JISOR)
+          CLOSE(IMPLA4, STATUS='DELETE')
 #endif
 C
 C-->Fin de la boucle principale sur les particules
@@ -1206,14 +1208,14 @@ C
               ENDIF
             ENDDO
 C
-            DO IN = 1,3
+            DO IP = 1,3
               REWIND(IMPLA4)
               DO IPT = 1, NQUAD4 + NTRIA3 + NSIDED
                 READ(IMPLA4) NBP, IFAC, IEL, (ICONFO(II),II = 1,NBP)
                 IF (IFAC.GT.0) THEN
-                  WRITE(IMPLA1,'(E12.5)') CDGFAC(IN,IFAC)
+                  WRITE(IMPLA1,'(E12.5)') CDGFAC(IP,IFAC)
                 ELSE IF (IFAC.LT.0) THEN
-                  WRITE(IMPLA1,'(E12.5)') CDGFBO(IN,-IFAC)
+                  WRITE(IMPLA1,'(E12.5)') CDGFBO(IP,-IFAC)
                 ENDIF
               ENDDO
               IELOLD  = 0
@@ -1222,7 +1224,7 @@ C
                 READ(IMPLA4) NBP, IFAC, IEL, (ICONFO(II),II = 1,NBP)
                 IF (IEL.NE.IELOLD) THEN
                   IELOLD = IEL
-                  WRITE(IMPLA1,'(E12.5)') XYZCEN(IN,IEL)
+                  WRITE(IMPLA1,'(E12.5)') XYZCEN(IP,IEL)
                 ENDIF
               ENDDO
             ENDDO
@@ -1245,7 +1247,7 @@ C
 C
       ENDIF
 C
-      CLOSE(IMPLA4,STATUS='DELETE')
+      CLOSE(IMPLA4)
 C
       IF (IERR.EQ.1) THEN
         WRITE(NFECRA,9100)

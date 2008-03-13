@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -196,7 +196,6 @@ C
       INTEGER          IPDF
 C
       DOUBLE PRECISION WMOLME , WMCHX1 , WMCHX2
-      DOUBLE PRECISION F1   , F2   , F3   , F4   , F5
       DOUBLE PRECISION F1CL , F2CL , F3CL , F4CL , F5CL
       DOUBLE PRECISION FP1  , FP2  , FP4  , FP5
       DOUBLE PRECISION XALPHA , XBETA , XGAM , AO2F4

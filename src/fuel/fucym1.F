@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -151,8 +151,6 @@ C
 C
       DOUBLE PRECISION ZFOV0 , ZCO0   , ZCO20
       DOUBLE PRECISION ZN20  , ZH2O0  , ZO20
-      DOUBLE PRECISION YFOV0 , YCO0   , YCO20
-      DOUBLE PRECISION YN20  , YH2O0  , YO20
       DOUBLE PRECISION ZFOV1 , ZCO1   , ZCO21
       DOUBLE PRECISION ZN21  , ZH2O1  , ZO21
       DOUBLE PRECISION ZFOV2 , ZCO2   , ZCO22
@@ -163,7 +161,6 @@ C
 C
 C     Variables pour le support de la Pdf et sa description
 C
-      DOUBLE PRECISION F42M
       DOUBLE PRECISION ZZCL(8),ZZS1(8),ZZS2(8),ZZS3(8),ZZF4(8)
       DOUBLE PRECISION ZZ(8)
 C

@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -260,7 +260,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          INIT  , IFAC  , IEL   , INC   , ICCOCG
       INTEGER          II    ,JJ     , IIUN
       INTEGER          IR11IP, IR22IP, IR33IP, IR12IP, IR13IP, IR23IP
@@ -273,6 +273,7 @@ C
       INTEGER          IMGRP , NCYMXP, NITMFP
       INTEGER          IDIMTE, ITENSO
       INTEGER          IPTSTA
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION BLENCP, EPSILP, EPSRGP, CLIMGP, EXTRAP, RELAXP
       DOUBLE PRECISION TRPROD , TRRIJ ,CSTEPS, RCTSE
       DOUBLE PRECISION GRDPX,GRDPY,GRDPZ,GRDSN
@@ -343,15 +344,20 @@ C=======================================================================
 C 2. TERMES SOURCES  UTILISATEURS
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('RESEPS',IFINIA)
+C
       CALL USTSRI
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITPSMP ,
      &   IDEVEL , ITUSER , IA     ,
@@ -708,6 +714,9 @@ C           ===========
 C
 C -->   TRAITEMENT DE LA PERIODICITE
           IF(IPERIO.EQ.1) THEN
+C
+            IDIMTE = 21
+            ITENSO = 0
 C
             CALL PERCOM
 C           ===========

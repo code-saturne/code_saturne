@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -127,10 +127,15 @@ C
       INCLUDE "radiat.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "coincl.h"
+      INCLUDE "cpincl.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagdim.h"
       INCLUDE "lagran.h"
       INCLUDE "vortex.h"
+      INCLUDE "ihmpre.h"
       INCLUDE "matiss.h"
 C
 C***********************************************************************
@@ -170,17 +175,16 @@ C
       INTEGER          IFNIA1 , IFNRA1 , IFNIA2 , IFNIA3, IFNRA2
       INTEGER          JCELBR
       INTEGER          IIII
-      INTEGER          IIPOST
 C
       INTEGER          MODHIS, IAPPEL, MODNTL, IISUIT, IWARN0
-      INTEGER          NTSDEF, NTHDEF, NTCREL, ISAVHI
+      INTEGER          NTSDEF, NTHDEF, NTCREL
       INTEGER          IMSFIN, IPHAS , IVAR
 C
       INTEGER          IICOCE , IITYCE
       INTEGER          IIITEP , IITEPA , ISTATC , ISTATF
       INTEGER          IETTP  , IETTPA , IAUXL  , ITSLAG , ISTATV
       INTEGER          ITAUP  , IITLAG , IPIIL  , IINDEP , IIBORD
-      INTEGER          IVAGAU , ITSUF  , ITSUP  , IBX
+      INTEGER          IVAGAU , ITSUF  , ITSUP  , IBX    , IAUXL2
       INTEGER          IBRGAU , ITEBRU
       INTEGER          IGRADP , IGRADV , ICROUL
       INTEGER          ITEPCT , ITSFEX , ITSVAR
@@ -214,8 +218,10 @@ C
       NRTUSE = ICOFTU(5)*NCELET + ICOFTU(6)*NFAC + ICOFTU(7)*NFABOR
      &       + ICOFTU(8)
 C
-      CALL USTBUS(NIDEVE, NITUSE, NRDEVE, NRTUSE)
+      CALL USTBUS
 C     ===========
+     &   (NCEL  , NCELET, NFAC  , NFABOR, NNOD  ,
+     &    NIDEVE, NITUSE, NRDEVE, NRTUSE)
 C
       IOK = 0
       IF(NIDEVE.LT.0) THEN
@@ -486,7 +492,6 @@ C       ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
-        IIPOST = 0
         GOTO 200
 C
       ENDIF
@@ -508,7 +513,7 @@ C     ===========
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) , RA(IDEPAL) ,
+     &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
 C=======================================================================
@@ -1130,9 +1135,11 @@ C
       CALL DMTMPS(TITER1)
 C     ===========
 C
-C     Synchronisation Syrthes
-      CALL ITDSYR(NTCABS,NTMABS)
-C     ===========
+C     Synchronisation Syrthes, si ITRALE>0
+      IF (ITRALE.GT.0) THEN
+        CALL ITDSYR(NTCABS,NTMABS)
+C       ===========
+      ENDIF
 C
       CALL TRIDIM
 C     ===========
@@ -1179,7 +1186,7 @@ C       ===========
      & ( IFINIA , IFINRA ,
      &   NFABOR , NCELET , NFAC   ,
      &   NBPMAX , NVP    , NVP1   , NVEP   , NIVEP  ,
-     &   IINDEP , IIBORD , IETTPA , IAUXL  ,
+     &   IINDEP , IIBORD , IETTPA , IAUXL  , IAUXL2 ,
      &   ITAUP  , IITLAG , IPIIL  ,
      &   IVAGAU , ITSUF  , ITSUP  , IBX    ,
      &   IGRADP , IGRADV , ICROUL ,
@@ -1216,7 +1223,7 @@ C       ===========
      &   RA(ICPGD1) , RA(ICPGD2) , RA(ICPGHT) ,
      &   RA(IGRADP) , RA(IGRADV) , RA(ICROUL) ,
      &   RA(IBRGAU) , RA(ITEBRU) ,
-     &   RA(IW1   ) , RA(IW2   ) , RA(IW3   ) , RA(IAUXL)  ,
+     &   RA(IW1   ) , RA(IW2   ) , RA(IW3   ) , RA(IAUXL)  , RA(IAUXL2),
      &   RA(IRDEVE) , RA(IRTUSE) , RA         )
 C
 C--> Ici on libere la memoire reserve par MEMLA2
@@ -1275,8 +1282,8 @@ C       ===========
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ITSLAG),
-     &   RA(ISTATF) ,
+     &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ISTATV),
+     &   RA(ITSLAG) , RA(ISTATF) ,
      &   RA(IRDEVE) , RA(IRTUSE) , RA     )
 C
       ENDIF
@@ -1323,7 +1330,7 @@ C=======================================================================
 C 17. TEST D'ARRET ISSU DU MODULE DE RAYONNEMENT P-1
 C=======================================================================
       IF (ISTPP1.EQ.1) THEN
-        NTCABS = NTMABS
+        NTMABS = NTCABS
       ENDIF
 C
 C=======================================================================
@@ -1439,10 +1446,6 @@ C=======================================================================
 C 20. TEST POUR SAVOIR SI ON SORT UN FICHIER POST OU NON
 C=======================================================================
 C
-      IIPOST = 0
-C     (IIPOST sert uniquement pour les sorties avec le sous-programme
-C      obsolete usrubm.F)
-C
       CALL USNPST
 C     ===========
      & ( IFINIA , IFINRA ,
@@ -1450,7 +1453,6 @@ C     ===========
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIPOST ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIDEVE) , IA(IITUSE) , IA         ,
@@ -1462,10 +1464,8 @@ C     ===========
      &   RA(IRDEVE) , RA(IRTUSE) ,
      &   RA     )
 C
-      IF (NTCABS.EQ.NTMABS) IIPOST = 0
-C
 C=======================================================================
-C 21. SORTIE DES FICHIERS POST STANDARDS + POST TYPE USRUBM
+C 21. SORTIE DES FICHIERS POST STANDARDS
 C=======================================================================
 C
 C     Si ITRALE=0 on desactive tous les writers (car la geometrie n'a pas ete
@@ -1495,26 +1495,6 @@ C     ===========
      &   RA(ISTATC) , RA(ISTATV) , RA(ISTATF) ,
      &   RA(IRDEVE) , RA(IRTUSE) ,
      &   RA     )
-C
-      IF (IIPOST.EQ.1) THEN
-        CALL POSTLC
-C       ===========
-     & ( IFINIA , IFINRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
-     &   XYZNOD , VOLUME ,
-     &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
-     &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(ISTATC) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
-      ENDIF
 C
 C=======================================================================
 C 22. HISTORIQUES
@@ -1671,7 +1651,7 @@ C
 C
 C
 C=======================================================================
-C 25. ECRITURE DES SUITES + FINALISATION HISTORIQUES + POST USRUBM
+C 25. ECRITURE DES SUITES + FINALISATION HISTORIQUES
 C=======================================================================
 C
       CALL DMTMPS(TECRF1)
@@ -1785,26 +1765,6 @@ C       ===========
      &  RA(IRDEVE) , RA(IRTUSE) , RA      )
       ENDIF
 C
-      IF(IIPOST.EQ.0) THEN
-        CALL POSTLC
-C       ===========
-     & ( IFINIA , IFINRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NVLSTA ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
-     &   XYZNOD , VOLUME ,
-     &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
-     &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
-     &   RA(ICOEFA) , RA(ICOEFB) , RA(ISTATC) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
-      ENDIF
-C
 C     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D
 C     ET/OU ON FERME LE LISTING LAGRANGIEN
 C
@@ -1832,6 +1792,20 @@ C
 C=======================================================================
 C 26. MEMOIRE UTILISEE
 C=======================================================================
+C
+#if defined(_CS_HAVE_XML)
+C     Libération des structures liées à la lecture du fichier xml
+C
+      IF (IIHMPR.EQ.1) THEN
+C
+        CALL MEMUI2
+C       ===========
+C
+        CALL MEMUI1(NCHARB)
+C       ===========
+      ENDIF
+C
+#endif
 C
       IF(IWARN0.GT.0) THEN
         WRITE(NFECRA,5000)

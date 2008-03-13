@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -269,23 +269,17 @@ C
       CHARACTER*80     CHAINE
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IVAR , IPCROM, IEL, IPHAS
-      INTEGER          IPCGFOL , IPCGD1 , IPCGHT
+      INTEGER          IPCGHT
       INTEGER          ISCALA
-      INTEGER          IPCRO2 , IPCTE1 , IPCTE2 , IPCVSL , IPCCP
+      INTEGER          IPCRO2 , IPCTE1 , IPCTE2
       INTEGER          IPCDIA , IPCVST
-      INTEGER          INC , ICCOCG , NSWRGP , IMLIGP , IWARNP
-      INTEGER          MODE, IGE, ISOL , III, IZONE, IDIMTE, ITENSO
-      INTEGER          IFAC , IFINRA , ICOEFA , ICOEFB
-      INTEGER          ICLH2, IPCX2C , IVAR0 , IPHYDP,IESP
+      INTEGER          IESP
       INTEGER          IMODE
 C
-      DOUBLE PRECISION EPSRGP , CLIMGP , EXTRAP , XNUSS
-      DOUBLE PRECISION AUX, RHOVST
-      DOUBLE PRECISION COEFE(NGAZEM)
-      DOUBLE PRECISION T1, H1, T2, H2
-      DOUBLE PRECISION XNG,RHOFOL , ROM
-      DOUBLE PRECISION GAMEVA,FDEV,FSD,FTRAC,HFOV
-      DOUBLE PRECISION HO2,HCO,XESP(NGAZEM),XCOKE,T2MT1
+      DOUBLE PRECISION RHOVST
+      DOUBLE PRECISION ROM
+      DOUBLE PRECISION HFOV
+      DOUBLE PRECISION HO2,HCO,XESP(NGAZEM),T2MT1
       DOUBLE PRECISION GMECH,GMVAP,GMHET
 C
 C***********************************************************************

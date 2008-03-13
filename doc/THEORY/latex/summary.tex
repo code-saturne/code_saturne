@@ -1,0 +1,109 @@
+%                      Code_Saturne version 1.3
+%                      ------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+%
+%     Copyright (C) 1998-2008 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+%
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+%
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SYNTHÈSE
+\vspace*{0.1cm}
+\begin{center}
+\medskip
+\textit{SYNTH\`ESE}
+\end{center}
+\vspace*{1cm}
+\pdfbookmark[1]{Synthèse}{synthese}
+
+\CS est un syst\`eme de r\'esolution des \'equations de Navier-Stokes
+pour des \'ecoulements 2D, 2D axisym\'etriques ou 3D,
+stationnaires ou instationnaires, laminaires ou turbulents,
+incompressibles ou dilatables, isothermes ou non, avec prise en compte de
+scalaires et de fluctuations de scalaires.  Le code comprend en outre
+un module lagrangien, un module de rayonnement
+semi-transparent, un module ``combustion
+gaz'',  un module ``charbon pulv\'eris\'e'', un module ``\'electrique''
+(effet Joule et arc \'electrique) et un module compressible.
+On d\'esignera dans le pr\'esent
+document les potentialit\'es ``combustion gaz'', ``charbon pulv\'eris\'e'',
+``\'electrique'' et ``compressible''
+sous la d\'enomination commune de ``physiques particuli\`eres''.
+La discr\'etisation est de type
+volume finis, et permet l'utilisation d'une large gamme de maillages non
+structur\'es, qu'ils soient hybrides (contenant des \'el\'ements
+de diff\'erents
+types) ou qu'ils pr\'esentent des non conformit\'es.
+
+Ce document constitue la documentation th\'eorique et
+informatique des parties centrales du noyau de \CS version \verscs.
+Les modules électrique
+et compressible sont aussi traités.
+
+Afin que la documentation soit directement utilisable par les
+d\'eveloppeurs, elle a \'et\'e structur\'ee en sous-parties correspondant
+\`a la fois aux \'etapes majeures de l'algorithme et \`a certains
+sous-programmes cl\'es du code.
+Pour chacune des sous-parties (ou sous-programmes), on donne une description
+de la {\bf fonction}, puis on d\'etaille la {\bf discr\'etisation}. \`A
+l'attention des d\'eveloppeurs, on pr\'ecise ensuite la {\bf mise en \oe
+uvre} informatique et, le cas échéant, on liste dans un dernier paragraphe
+les {\bf points \`a traiter} et les am\'eliorations \`a apporter au code.
+
+La documentation est attach\'ee \`a la version du code
+correspondante pour favoriser les mises \`a jour. En pratique, les
+utilisateurs de \CS
+peuvent acc\'eder \`a la documentation sous\\
+\texttt{\$CS\_HOME%$
+/doc/NOYAU/}, information qui leur est rappel\'ee par la
+commande d'information g\'en\'erale \texttt{info\_cs [theory]}.
+
+\CS is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2 of
+the License, or (at your option) any later version.
+\CS is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EXECUTIVE SUMMARY
+%\passepage
+%\vspace*{0.1cm}
+%\begin{center}
+%\textbf{\large \titreang}\\
+%\medskip
+%\textit{EXECUTIVE SUMMARY}
+%\end{center}
+%\vspace*{1cm}
+%\pdfbookmark[1]{Excutive summary}{executive summary}
+%
+%This is the executive summary of the report.
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

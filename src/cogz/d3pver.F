@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -95,8 +95,8 @@ C
 C
 C VARIABLES LOCALES
 C
+      INTEGER          IPHAS
       CHARACTER        CHAINE*80
-      INTEGER          IPP, ISC, JJ, IPHAS, IGG
 C
 C***********************************************************************
 C
@@ -107,7 +107,7 @@ C
 C --> Coefficient de relaxation de la masse volumique
 C
       IF( SRROM.LT.0D0 .OR. SRROM.GE.1D0) THEN
-        WRITE(NFECRA,2000)'SSROM ', SRROM
+        WRITE(NFECRA,2000)'SRROM ', SRROM
         IOK = IOK + 1
       ENDIF
 C

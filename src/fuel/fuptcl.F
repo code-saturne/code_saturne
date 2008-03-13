@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -242,11 +242,10 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          II, IPHAS, IFAC, IZONE, MODE, IEL, IGE, IOK
-      INTEGER          ISOL
       INTEGER          IPBROM, ICKE, IPCVIS
-      INTEGER          NBRVAL,IWZ(NZFPPP)
+      INTEGER          NBRVAL
       DOUBLE PRECISION QISQC, VISCLA, D2S3, UREF2, RHOMOY, DHY, XITURB
-      DOUBLE PRECISION XKENT, XEENT, T1, T2, TOTFOL, USTAR2
+      DOUBLE PRECISION XKENT, XEENT, T1, T2, USTAR2
       DOUBLE PRECISION H1(NOZPPM) , H3(NOZPPM)
       DOUBLE PRECISION X3H30(NOZPPM)
       DOUBLE PRECISION QIMPC(NOZPPM) , QCALC(NOZPPM)
@@ -389,46 +388,6 @@ C
      &'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,
      &'@      le nombre de faces de bord dans la zone est non nul)  ',/,
      &'@    - que la masse volumique n''est pas nulle               ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
-C
-C=======================================================================
-C 3. VERIFICATIONS
-C        Somme des DISTributions FUel = 100% pour les zones IENTFL =1
-C=======================================================================
-C
-C
-C
- 2010 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,
-     &'@    *********                       FUEL                    ',/,
-     &'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,
-     &'@                                                            ',/,
-     &'@        Zone    Fuel                                        '  )
- 2011 FORMAT(
-     &'@  ',I10   ,' ',I10   ,'                                     '  )
- 2012 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,
-     &'@    *********                        FUEL                   ',/,
-     &'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,
-     &'@                                                            ',/,
-     &'@  On impose une entree fuel en IZONE = ', I10                ,/,
-     &'@    puisque               IENTFL(IZONE) = ', I10            ,/,
-     &'@  Or, sur cette zone, la somme des distributions            ',/,
-     &'@    en pourcentage pour le fuel IFOL = ', I10                ,/,
-     &'@    est differente de 100% : elle vaut TOTFOL = ', E14.5     ,/,
-     &'@    avec                           TOTFOL-100 = ', E14.5     ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne sera pas execute.                            ',/,
-     &'@                                                            ',/,
-     &'@  Verifier usfucl.                                          ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)

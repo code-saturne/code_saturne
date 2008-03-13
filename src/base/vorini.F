@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -241,6 +241,9 @@ C
         CLOSE(IMPDVO)
         WRITE(NFECRA,3000)
       ELSEIF(ICAS(IENT).EQ.4) THEN
+        XDAT(1,IENT)   = CEN(1,IENT)
+        YDAT(1,IENT)   = CEN(2,IENT)
+        ZDAT(1,IENT)   = CEN(3,IENT)
         UDAT(1,IENT)   = UDEBIT(IENT)
         VDAT(1,IENT)   = 0.D0
         WDAT(1,IENT)   = 0.D0

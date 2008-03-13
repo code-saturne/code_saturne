@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Code_Saturne_GUI case="CASE1" study="SIMPLE_JUNCTION" version="0.0">
+	<solution_domain>
+		<volumic_conditions>
+			<zone label="all_cells" name="1">all[]</zone>
+		</volumic_conditions>
+		<meshes_list>
+			<mesh format="des" name="downcomer.des"/>
+		</meshes_list>
+		<paste_meshes status="off"/>
+		<faces_cutting status="off"/>
+		<syrthes_coupling status="off"/>
+		<periodic_boundary status="off"/>
+		<standalone>
+			<post-processing format="ensight7 gold" status="on"/>
+			<post-processing format="med" status="off"/>
+			<post-processing format="cgns" status="off"/>
+			<simulation_communication status="on"/>
+			<post_directory>preprocess</post_directory>
+		</standalone>
+	</solution_domain>
+	<thermophysical_models>
+		<velocity_pressure>
+			<variable label="Pressure" name="pressure">
+				<reference_pressure>101300</reference_pressure>
+			</variable>
+			<variable label="VelocitU" name="velocity_U"/>
+			<variable label="VelocitV" name="velocity_V"/>
+			<variable label="VelocitW" name="velocity_W"/>
+			<property label="total_pressure" name="total_pressure"/>
+		</velocity_pressure>
+		<ale_method status="off"/>
+		<turbulence model="k-epsilon">
+			<variable label="TurbEner" name="turb_k">
+				<blending_factor>0</blending_factor>
+				<order_scheme choice="upwind"/>
+			</variable>
+			<variable label="Dissip" name="turb_eps">
+				<blending_factor>0</blending_factor>
+				<order_scheme choice="upwind"/>
+			</variable>
+			<property label="turb. vi" name="turb_viscosity"/>
+			<initialization choice="reference_velocity" zone="1">
+				<reference_velocity>1</reference_velocity>
+			</initialization>
+		</turbulence>
+		<thermal_scalar model="temperature_celsius"/>
+		<gas_combustion model="off"/>
+		<pulverized_coal model="off"/>
+		<joule_effect model="off"/>
+		<radiative_transfer model="off">
+			<directions_number>128</directions_number>
+			<restart status="off"/>
+			<absorption_coefficient type="constant">0</absorption_coefficient>
+			<frequency>1</frequency>
+			<intensity_resolution_listing_printing>0</intensity_resolution_listing_printing>
+			<temperature_listing_printing>1</temperature_listing_printing>
+			<thermal_radiative_source_term>2</thermal_radiative_source_term>
+		</radiative_transfer>
+	</thermophysical_models>
+	<numerical_parameters>
+		<gradient_transpose/>
+		<pressure_relaxation/>
+		<density_relaxation/>
+		<wall_pressure_extrapolation/>
+		<velocity_pressure_coupling/>
+		<gradient_reconstruction/>
+	</numerical_parameters>
+	<physical_properties>
+		<fluid_properties>
+			<property choice="constant" label="Density" name="density">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>725.735</initial_value>
+			</property>
+			<property choice="constant" label="Lam. vis" name="molecular_viscosity">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>8.95e-05</initial_value>
+			</property>
+			<property choice="constant" label="Sp. heat" name="specific_heat">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>5483</initial_value>
+			</property>
+			<property choice="constant" label="Th. cond" name="thermal_conductivity">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>0.02495</initial_value>
+			</property>
+		</fluid_properties>
+		<gravity/>
+		<hydrostatic_pressure status="off"/>
+	</physical_properties>
+	<additional_scalars>
+		<scalar label="Temp.C" name="temperature_celsius" type="thermal">
+			<initial_value zone="1">20.0</initial_value>
+			<min_value>0</min_value>
+			<max_value>400</max_value>
+		</scalar>
+	</additional_scalars>
+	<lagrangian model="off"/>
+	<boundary_conditions>
+		<boundary_definition>
+			<inlet label="inlet" zone="1">1</inlet>
+			<symmetry label="symmetry" zone="3">8 or 9</symmetry>
+			<wall label="walls" zone="4">2 or 3 or 4 or 6 or 7</wall>
+			<outlet label="outlet" zone="2">5</outlet>
+		</boundary_definition>
+		<wall label="wall_1"/>
+		<wall label="wall_2"/>
+		<wall label="wall_3"/>
+		<wall label="wall_4"/>
+		<wall label="wall_5"/>
+		<wall label="wall_6"/>
+		<wall label="wall_7"/>
+		<wall label="wall_8"/>
+		<wall label="wall_9"/>
+		<inlet label="inlet">
+			<velocity_pressure choice="dirichlet">
+				<dirichlet name="velocity_U">1.0</dirichlet>
+				<dirichlet name="velocity_V">0.0</dirichlet>
+				<dirichlet name="velocity_W">0.0</dirichlet>
+			</velocity_pressure>
+			<turbulence choice="hydraulic_diameter">
+				<hydraulic_diameter>0.5</hydraulic_diameter>
+			</turbulence>
+			<scalar choice="dirichlet" label="Temp.C" type="thermal">
+				<dirichlet>300</dirichlet>
+			</scalar>
+		</inlet>
+		<outlet label="outlet">
+			<scalar choice="neumann" label="Temp.C" type="thermal">
+				<neumann>0</neumann>
+				<dirichlet>0</dirichlet>
+			</scalar>
+		</outlet>
+		<symmetry label="symmetry"/>
+		<wall label="walls">
+			<velocity_pressure choice="off"/>
+			<scalar choice="neumann" label="Temp.C" type="thermal">
+				<neumann>0</neumann>
+				<dirichlet>0</dirichlet>
+				<exchange_coefficient>0</exchange_coefficient>
+			</scalar>
+		</wall>
+	</boundary_conditions>
+	<analysis_control>
+		<output>
+			<postprocessing_mesh_options choice="0"/>
+			<listing_printing_frequency>1</listing_printing_frequency>
+			<postprocessing_frequency>1</postprocessing_frequency>
+			<fluid_domain status="on"/>
+			<domain_boundary status="off"/>
+			<postprocessing_format choice="EnSight"/>
+			<postprocessing_options choice="binary"/>
+			<probe_recording_frequency>1</probe_recording_frequency>
+		</output>
+		<time_parameters>
+			<property label="Courant nb" name="courant_number"/>
+			<property label="Fourier nb" name="fourier_number"/>
+			<time_step_ref>0.1</time_step_ref>
+			<iterations>10</iterations>
+			<time_passing>0</time_passing>
+		</time_parameters>
+		<steady_management status="on">
+			<zero_iteration status="off"/>
+			<iterations>30</iterations>
+			<relaxation_coefficient>0.9</relaxation_coefficient>
+		</steady_management>
+	</analysis_control>
+	<calcul_management/>
+</Code_Saturne_GUI>

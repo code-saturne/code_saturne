@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -112,7 +112,7 @@ C
       PARAMETER        (NBNAME=12)
       CHARACTER        NOMFIC*300, NENVAR*300
       CHARACTER*80     NAMEVR(NBNAME)
-      INTEGER          II, JJ, ISTR, II1, II2, LPOS, INAM1, INAM2, LNG
+      INTEGER          II, JJ, ISTR, II1, II2, LPOS, INAM1, INAM2
       INTEGER          NBPDTE, JTCABS
       INTEGER          IDEBIA, IDEBRA
       DOUBLE PRECISION XTCABS

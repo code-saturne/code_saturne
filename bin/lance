@@ -8,7 +8,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -57,8 +57,8 @@
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 ########################################################################
 #
-#                  CARTES BATCH POUR LE CCRT (Argent/Chrome/Tantale sous LSF)
-#                  ==========================================================
+#                  CARTES BATCH POUR LE CCRT (Tantale/Platine sous LSF)
+#                  ====================================================
 #
 #BSUB -n 2
 #BSUB -W 00:05  
@@ -78,8 +78,8 @@
 #            par la classe du calcul et pas par la machine qui a execute la commande
 #            "bsub". Attention aux disques WORKDIR non partages entre Nickel et
 #            Chrome.
-#ATTENTION : En cas de couplage avec Syrthes, 1 processeur
-#            sera reserve pour chacune des instances de Syrthes.
+#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
+#            sera reserve pour chacune des instances de SYRTHES.
 #            Le Noyau ne sera execute que sur les processeurs restants.
 #            Pensez  reserver un nombre suffisant de processeurs.
 #
@@ -97,8 +97,8 @@
 #  walltime = wall clock time (heures, minutes, secondes)
 #  mem  = memoire
 #
-#ATTENTION : En cas de couplage avec Syrthes, 1 processeur
-#            sera reserve pour chacune des instances de Syrthes.
+#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
+#            sera reserve pour chacune des instances de SYRTHES.
 #            Le Noyau ne sera execute que sur les processeurs restants.
 #            Pensez  reserver un nombre suffisant de processeurs.
 #
@@ -141,7 +141,7 @@
 #
 #                    -------------------------------
 #
-IFOENV=1
+SOLCOM=0
 LONGIA=1000000
 LONGRA=5000000
 #
@@ -161,8 +161,8 @@ DONNEES_THERMOCHIMIE=
 #
 # Choix du nombre total de processeurs utilises (si vide, detection automatique
 # via le systeme de queue si possible, mise a 1 sinon).
-# En cas de couplage Syrthes avec MODE_COUPLAGE=MPI, le 1er processeur est
-# utilise pour Syrthes, donc le nombre effectif de processeurs dedies au noyau
+# En cas de couplage SYRTHES avec MODE_COUPLAGE=MPI, le 1er processeur est
+# utilise pour SYRTHES, donc le nombre effectif de processeurs dedies au noyau
 # est reduit de 1.
 # La liste des processeurs n'est utilisable qu'hors systeme de queue
 # (un tel systeme fournissant lui-meme une liste equivalente)
@@ -205,7 +205,7 @@ DATA_SYR=$REPBASE/DATA_SYR
 SYRTHES_ENV=syrthes.env 
 FORT_SYR=$REPBASE/FORT_SYR
 #
-# Le mode de couplage eventuel avec Syrthes peut etre choisi ici.
+# Le mode de couplage eventuel avec SYRTHES peut etre choisi ici.
 # (attention aux majuscules/minuscules).
 # Si l'on n'a pas de couplage, cette variable sera mise a zero par la suite.
 #
@@ -224,9 +224,9 @@ MODE_COUPLAGE=MPI
 #
 #  MODE_EXEC=complet        : choix par defaut (Preprocesseur puis calcul).
 #  MODE_EXEC=pre_traitement : lancement du Preprocesseur seul, pour generer
-#                             les fichiers enveloppe_vers_solveur*.
+#                             les fichiers preprocessor_output/*.
 #  MODE_EXEC=calcul         : lancement du calcul seul, en utilisant des
-#                             fichiers enveloppe_vers_solveur* deja generes et
+#                             fichiers preprocessor_output/* deja generes et
 #                             accessibles dans le repertoire $PRE_TRAITEMENT_AMONT.
 #
 MODE_EXEC=complet
@@ -272,12 +272,6 @@ if [ ! -z  "${PILOTAGE_ADAPTATION}" ] ; then
 fi
 #
 #########################################################################
-#
-#
-# Determination automatique de IFOENV : on aura 
-#   IFOENV = 1 si couplage Syrthes
-#   on rajoute alors automatiquement l'option de communication
-#   (via MPI, sockets, ou pipes selon la valeur de MODE_COUPLAGE)
 #  
 #
 N_COUPLAGE_SYRTHES=0
@@ -288,13 +282,17 @@ else
   COUPLAGE_SYRTHES=oui
   export SYRTHES
   if [ $N_COUPLAGE_SYRTHES -gt 1 ] ; then
-   echo "Ce script ne prend pas en charge plusieurs couplage Syrthes"
-   echo "Nombre de couplages Syrthes demande : $N_COUPLAGE_SYRTHES"
+   echo "Ce script ne prend pas en charge plusieurs couplage SYRTHES"
+   echo "Nombre de couplages SYRTHES demande : $N_COUPLAGE_SYRTHES"
   fi
 fi
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then 
-  IFOENV=1
+  if [ $SOLCOM -eq 1 ] ; then
+   echo "Le couplage avec SYRTHES n est pas compatible avec les"
+   echo "maillages de type SOLCOM"
+   exit 1
+  fi
 else
   MODE_COUPLAGE=
 fi
@@ -349,7 +347,7 @@ else
 #  n'utilisera TMPDIR que s'il est defini
 #  (via un systeme batch en general)
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
-    RUN=$TMPDIR
+    RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
   else
     RUN=$HOME/tmp_Saturne/$ETUDE.$CAS.$DATE
   fi
@@ -421,15 +419,15 @@ nproc_noy=${NOMBRE_DE_PROCESSEURS}
 echo
 echo
 if [ $COUPLAGE_SYRTHES = oui ] ; then
-  echo "Couplage de Code_Saturne avec Syrthes active"
+  echo "Couplage de Code_Saturne avec SYRTHES active"
   if [ ! -z "$MPIHOSTS" ] ; then
-  #  si on utilise Syrthes en batch par MPI, on lui reserve un processeur par instance
+  #  si on utilise SYRTHES en batch par MPI, on lui reserve un processeur par instance
     if [ "$MODE_COUPLAGE" = "MPI" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, Syrthes reserve un processeur."
+        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   est donc insuffisant."
         echo " Augmenter le nombre de processeurs reserves dans les cartes batch."
@@ -437,12 +435,12 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
         exit 1
       fi
     fi
-  #  si on utilise Syrthes en batch pipe, on verifie que tout tient sur un seul noeud
+  #  si on utilise SYRTHES en batch pipe, on verifie que tout tient sur un seul noeud
     if [ "$MODE_COUPLAGE" = "pipes" -a "$NOMBRE_DE_NOEUDS" != 1 ] ; then
       echo
       echo
       echo " Attention, avec MODE_COUPLAGE = pipes, les transmissions  "
-      echo "   Syrthes-noyau se font par tubes (pipes). "
+      echo "   SYRTHES-noyau se font par tubes (pipes). "
       echo " Ici, plusieurs machines ont ete selectionnees pour "
       echo "   realiser le calcul en parallele : "
       cat "$MPIHOSTS"
@@ -460,7 +458,7 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, Syrthes reserve un processeur"
+        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur"
         echo "   (eventuellement virtuel)."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   doit donc etre strictement superieur a 1."
@@ -471,14 +469,14 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
     fi
   #  si on n'est pas en batch et qu'on couple par pipes, on diminue aussi
   #  NOMBRE_DE_PROCESSEURS pour ne pas avoir besoin de MPI si
-  #  Code_Saturne et Syrthes tournent chacun sur 1 processeur
+  #  Code_Saturne et SYRTHES tournent chacun sur 1 processeur
     if [ "$MODE_COUPLAGE" = "pipes" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       (( NOMBRE_DE_PROCESSEURS = NOMBRE_DE_PROCESSEURS - 1 ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = pipes, Syrthes reserve un processeur"
+        echo " Attention, avec MODE_COUPLAGE = pipes, SYRTHES reserve un processeur"
         echo "   (eventuellement virtuel)."
         echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
         echo "   doit donc etre strictement superieur a 1."
@@ -491,11 +489,11 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
 fi
 if [ $nproc_noy -gt 1 ] ; then
   echo "Calcul Code_Saturne parallele avec decomposition en $nproc_noy sous-domaines"
-  if [ $IFOENV = 0 ] ; then 
+  if [ $SOLCOM = 1 ] ; then 
     echo
     echo
-    echo " Calcul en parallele impossible avec IFOENV = $IFOENV "
-    echo " Utiliser IFOENV = 1 "
+    echo " Calcul en parallele impossible avec SOLCOM = $SOLCOM "
+    echo " Utiliser SOLCOM = 0 "
     echo
     exit 1
   fi
@@ -605,13 +603,6 @@ else
   ECHOCOMMNOY=""
 fi
 ########################################################################
-#
-# Mode verification
-#
-if [ ! -z "$ARG_CS_VERIF" ] ; then
-  ARG_CS_VERIF="-q $ARG_CS_VERIF"
-fi
-########################################################################
 # Message d'accueil 
 #
 echo ' '
@@ -672,6 +663,22 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
   cur_dir=`pwd`
 
+  #
+  # Recopie du fichier parametrique
+  if [ ! -z "$PARAM" ] ; then 
+    var=$DATA/$PARAM
+    if [ -f $var ] ; then 
+      COMMANDE_PARAM="-param $PARAM"
+      cp $var .
+    else
+      echo ' ' 
+      echo ' -- ERREUR -- ' 
+      echo ' Le fichier de donnees parametrique ' $var
+      echo '   n est pas accessible ' 
+      exit 1
+    fi
+  fi
+
   # Determination de la version des compilateurs 
   ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
 
@@ -684,7 +691,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       cp ${fich} .
     fi
   done
-
+#
 # Detection de la presence de modules
 
 # Standard
@@ -695,9 +702,21 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
 # Rayonnement
   USRAY2_PRESENT=`presence "usray2.F"`
+  if [ ! -z "$PARAM" ] ; then 
+    NRAYT=`grep "radiative_transfer\ model" ${cur_dir}/$PARAM | grep -v "off" |wc -l`
+    if [ $NRAYT -eq 1 ] ; then
+      USRAY2_PRESENT="oui"
+    fi
+  fi
 
 # Charbon pulverise
   USCPCL_PRESENT=`presence "uscpcl.F"`
+  if [ ! -z "$PARAM" ] ; then 
+    NCHARB=`grep "pulverized_coal\ model" ${cur_dir}/$PARAM | grep -v "off" |wc -l`
+    if [ $NCHARB -eq 1 ] ; then
+      USCPCL_PRESENT="oui"
+    fi
+  fi
 
 # Combustion gaz chimie 3 points
   USD3PC_PRESENT=`presence "usd3pc.F"`
@@ -722,9 +741,10 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     if [ "${USCLIM_PRESENT}" = "oui" ] ; then
       echo ' '
       echo ' -- ERREUR -- '
-      echo ' Lorsque uscpcl est complete, usclim ne doit pas l etre'
-      echo '  (modele combustion charbon pulverise)                '
-      echo '  Les conditions aux limites sont fournies dans uscpcl.'
+      echo ' Lorsque le modele de combustion du charbon pulverise'
+      echo '  est active, usclim ne doit pas etre utilise'
+      echo '  Les conditions aux limites sont fournies dans'
+      echo '  l interface graphique ou dans uscpcl.'
       echo ' '
 	exit 1
     fi
@@ -892,10 +912,6 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi
   fi
 #
-fi # MODE_EXEC != pre_traitement
-#
-if [ $MODE_EXEC != pre_traitement ] ; then
-
   # Extraction du main sur HP (link avec f90) sauf s'il existe deja
   # (devrait etre migre vers le Makefile si possible)
   if [ "${NOM_ARCH}" = "HP-UX" ] ; then 
@@ -978,7 +994,7 @@ echo  "  ********************************************"
 echo  "             Preparation du calcul            "
 echo  "  ********************************************"
 echo 
-if [ $IFOENV = 0 ]
+if [ $SOLCOM = 1 ]
 then
   ln -s $REPMAIL/$MAILLAGE geomet || exit 1
 elif [ $MODE_EXEC != calcul ]
@@ -995,9 +1011,7 @@ then
   done
 elif [ $MODE_EXEC = calcul ]
 then
-  for var in ${PRE_TRAITEMENT_AMONT}/* ; do 
-    ln -s $var . || exit 1
-  done
+    ln -s ${PRE_TRAITEMENT_AMONT} preprocessor_output || exit 1
 fi
 #
 if [ $MODE_EXEC != pre_traitement ] ; then
@@ -1146,20 +1160,6 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     done
   fi
   #
-  if [ ! -z "$PARAM" ] ; then 
-    var=$DATA/$PARAM
-    if [ -f $var ] ; then 
-      COMMANDE_PARAM="-param $PARAM"
-      cp $var .
-    else
-      echo ' ' 
-      echo ' -- ERREUR -- ' 
-      echo ' Le fichier de donnees parametrique ' $var
-      echo '   n est pas accessible ' 
-      exit 1
-    fi
-  fi
-  #
 fi # MODE_EXEC != pre_traitement
 
 ########################################################################
@@ -1228,7 +1228,7 @@ erreur()
 echo ERREUR $1 >> $ERROR
 }
 #
-# Preparation supplementaire pour le couplage Syrthes
+# Preparation supplementaire pour le couplage SYRTHES
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then
   #
@@ -1278,22 +1278,21 @@ fi
 #
 # Lancement du Preprocesseur
 #
-if [ $IFOENV = 1 -a $MODE_EXEC != calcul ] ; then
+if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   #
   ${ECS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MAILLAGE -case $CAS \
                       $ECHOCOMMECS \
-                      $COMMANDE_RC $COMMANDE_PERIO > listenv 2>&1 \
+                      $COMMANDE_RC $COMMANDE_PERIO > listpre 2>&1 \
                    || erreur " A L'EXECUTION DU PREPROCESSEUR"
   #
   if [ $MODE_EXEC = pre_traitement ] ; then
     #
     PRE_TRAITEMENT_AVAL=$RESU/PRE_TRAITEMENT.$SUFFIXE
-    iok=1
-    mkdir ${PRE_TRAITEMENT_AVAL} || iok=0
-    if [ $iok = 1 ] ; then 
-      for fich in enveloppe_vers_solveur* ; do 
-        cp $fich ${PRE_TRAITEMENT_AVAL}
-      done
+    if [ -d ${PRE_TRAITEMENT_AVAL} ] ; then
+      echo "Le repertoire ${PRE_TRAITEMENT_AVAL} existe deja."
+      echo "Copie des fichiers preprocessor_output/n* impossible"
+    else
+      cp -r preprocessor_output ${PRE_TRAITEMENT_AVAL}
     fi
   fi
 #
@@ -1360,14 +1359,14 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       SOCKETSYR="$SOCKETSYR $MACHPORT"
     fi
     #
-    # Lancement de syrthes
+    # Lancement de SYRTHES
     if [ $COUPLAGE_SYRTHES = oui ] ; then
       ./$EXE_SYR -nbr_sat $nproc_noy $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1 
     fi
     #
     $MPIHALT
     #
-  elif [ $IFOENV = 1 ] ; then
+  elif [ $SOLCOM = 0 ] ; then
     #
     if [ ! -f $ERROR ] ; then 
       localexec=$RUN/localexec
@@ -1384,7 +1383,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       $MPIHALT
     fi
     #
-  else # cas IFOENV = 0
+  else # cas SOLCOM = 1
     #
     $VALGRIND $RUN/$EXE -solcom \
           -iasize $LONGIA -rasize $LONGRA $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \

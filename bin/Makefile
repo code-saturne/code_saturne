@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -37,7 +37,7 @@
 
 SHELL           =/bin/sh
 
-VERSION         ="1.3.0"
+VERSION         ="1.3.2"
 
 TERM            =xterm
 
@@ -254,7 +254,9 @@ privcompil:
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
 	      src_cs_all="" ;\
 	 fi ;\
-	 make privcopie INC_CS="$${inc_cs_all}" SRC_CS="$${src_cs_all}" ;\
+	 if   [ "$${modtrav}" != "LINK" ] ;\
+	 then make privcopie INC_CS="$${inc_cs_all}" SRC_CS="$${src_cs_all}" ;\
+	 fi ;\
        make privdepend ;\
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
@@ -602,7 +604,7 @@ privmodpurify:
 	 done ;\
 	$(PURIFY) $(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS) $${objinstr} \
 	           $${librariesloc} $${librariesloc} $(LIBRARY) $(MYLIBS)
-	@echo "***  Linking finished; echo
+	@echo "***  Linking finished"; echo
 	@make privmodexe
 
 
@@ -687,16 +689,16 @@ privmodlink:
 	 then librariesloc="" ;\
 	 fi ;\
 	 fvm_config="$(FVM_HOME)/bin/fvm-config" ;\
-	 librariessup="" ;\
-	 librariessup="$${librariessup} `$${fvm_config} --ldflags hdf5`" ;\
-	 librariessup="$${librariessup} `$${fvm_config} --libs hdf5`" ;\
+	 librariessup="$(FVM_LDFLAGS) $(BFT_LDFLAGS)" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags med`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs med`" ;\
+	 librariessup="$${librariessup} `$${fvm_config} --ldflags hdf5`" ;\
+	 librariessup="$${librariessup} `$${fvm_config} --libs hdf5`" ;\
 	 if [ "$(LDEDLRPATH)" != "" ] ;\
 	 then libpath="" ;\
-	     for str in $(LIBRARY) $${librariessup} ;\
+	     for str in $${librariessup} $(LIBRARY);\
 	     do  libdir="" ;\
 	         if [ "`echo $${str} | cut -c1-2`" = "-L" ] ;\
 	         then libdir=`echo $${str} | cut -c3-` ;\
@@ -719,7 +721,7 @@ privmodlink:
           fi ;\
 	 make privcmdlink \
 	        ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
-                LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $(LIBRARY) $${librariessup}"
+                LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)"
 	@echo "***  Linking finished" ; echo
 	@make privmodexe NOM_EXE=" $(NOM_EXE) "
 
@@ -743,19 +745,20 @@ privlink:
 	 then library="$${library} $(LIBRARYOPT) " ;\
 	 fi ; \
 	 if [ ${MPI} -eq 1 ] ;\
-	 then library="$${library} ${MPI_LIB} " ;\
+	 then \
 	   if [ ${MPE} -eq 1 ] ;\
-	     then library="$${library} ${MPE_LIB} " ;\
+	     then library="${MPE_LIB} $${library} " ;\
 	   fi ; \
+           library="${MPI_LIB} $${library} " ;\
 	 fi ; \
 	 if [ ${SOCKET} -eq 1 ] ;\
 	 then library="$${library} ${SOCKET_LIB} " ;\
 	 fi ; \
 	 if [ ${BLAS} -eq 1 ] ;\
-	 then library="$${library} ${BLAS_LDFLAGS} " ;\
+	 then library="${BLAS_LDFLAGS} $${library} " ;\
 	 fi ; \
 	 if [ ${XML} -eq 1 ] ;\
-	 then library="$${library} ${XML_LIB} " ;\
+	 then library="${XML_LIB} $${library} " ;\
 	 fi ; \
 	 if   [ "$(MYOPT)" = "LO" ] ;\
 	 then make privmodlink \
@@ -845,7 +848,7 @@ privconflib:
 	           echo "$(BO)or in one of its sub-directories$(NO)" ;\
 	           echo ;\
 	           tput init ;\
-	           exit -1 ;\
+	           exit 1 ;\
 	      fi ;\
 	 fi ;\
 	 dirprec=`dirname $${dirprec}` ;\
@@ -857,7 +860,7 @@ privconflib:
 	      echo "$(BO) You must be in the general directory: $(DIR_CS)$(NO)" ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if   [ ! "$${modtrav}" = "$${module}" ] ;\
 	 then echo ;\
@@ -866,7 +869,7 @@ privconflib:
 	      echo "$(BO)You must be in directory: $${module}$(NO)" ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if   [ ! "$${opttrav}" = "$(MYOPT)" ] ;\
 	 then echo ;\
@@ -880,7 +883,7 @@ privconflib:
 	      fi ;\
 	      echo ;\
 	      tput init ;\
-	      exit -1 ;\
+	      exit 1 ;\
 	 fi ;\
 	 if [ "$${modtrav}" = "BASE" ] ;\
 	 then INC_CS="toto" ;\

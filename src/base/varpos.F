@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -1570,10 +1570,12 @@ C --- Verification de IDFMOM
               ELSEIF(IDFMJI.GT.NVAR) THEN
                 IOK = IOK + 1
                 WRITE(NFECRA,8211)JJ,IMOM,IDFMJI,NVAR
-              ELSEIF(IDFMJI.LT.0 .AND. IPPROC(-IDFMJI).LE.0) THEN
-                IOK = IOK + 1
-                WRITE(NFECRA,8212)JJ,IMOM,IDFMJI,-IDFMJI,
-     &               IPPROC(-IDFMJI)
+              ELSEIF(IDFMJI.LT.0) THEN
+                IF (IPPROC(-IDFMJI).LE.0) THEN
+                  IOK = IOK + 1
+                  WRITE(NFECRA,8212)JJ,IMOM,IDFMJI,-IDFMJI,
+     &                 IPPROC(-IDFMJI)
+                ENDIF
               ELSEIF(IDFMJI.EQ.0) THEN
                 IDFFIN = 1
               ENDIF

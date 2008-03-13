@@ -1,0 +1,361 @@
+%CVERS    CODE_SATURNE VERSION 1.3              COPYRIGHT EDF 1999-2006 *
+%---------------------------------------------------------------------
+%
+% Auteur  :
+% Date    :
+% Numéro  :
+% Version :
+%
+%---------------------------------------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                    %
+%                                                                    %
+%                                                                    %
+% Titre :           Manuel Utilisateur de Code_Saturne               %
+%                                                                    %
+%                                                                    %
+%                                                                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[a4paper,10pt,twoside]{article}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES OBLIGATOIRES
+\usepackage[rddoc]{noteEDF}
+%
+% Les options de la classe noteEDF.sty disponibles sont :
+% - english (page de garde supplementaire en anglais)
+% - pdftex
+% Les 3 options suivantes sont exclusives mutuellement :
+% - confidentiel (orientation dans le fonds documentaire et accesibilité)
+% - rddoc (orientation dans le fonds documentaire)
+% - edfdoc (orientation dans le fonds documentaire)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
+
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES SUPPLEMENTAIRES
+% \usepackage[...]{.....}
+%
+% Packages chargés par noteEDF.sty :
+% graphicx, tabularx, amsmath, amssymb, wasysym,
+% fancyhdr, lastpage, ifthen, setspace,
+% [latin1]{inputenc}, [OT1]{fontenc}, [francais]{babel}
+%
+%\usepackage{times} % plus joli en pdf (fortement recommandé)
+%\usepackage{here} % option [H] pour que les objets flottant ne flottent plus
+\usepackage{xspace}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MACROS SUPPLEMENTAIRES
+% \newcommand{/...}{...}
+%
+% repertoire et extension des images
+\newcommand{\repgraphics}{../graphics}
+\newcommand{\extgraphics}{pdf}
+%
+\newcommand{\verscs}{1.3.1\xspace}
+\newcommand{\CS}{%
+{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
+\newcommand{\syrthes}{SYRTHES\xspace}
+%
+\newcommand{\tildeunix}{%
+{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
+%
+%(Attention : \passepage ne fonctionne pas devant un \chapter (classe 'report'))
+\newcommand{\passepage}{%
+\ifthenelse{\isodd{\arabic{page}}}
+{\newpage\hspace*{6.cm}\newpage}{\newpage}}
+%
+\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
+\newcommand{\vect}[1]{\underline{#1}}
+\newcommand{\tens}[1]{\underline{\underline{#1}}}
+\newcommand{\grad}{\text{g}\underline{\text{rad}}\ }
+\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\ }
+\newcommand{\dive}{\text{div}}
+\newcommand{\ind}[1]{\text{$_{#1}$}}
+\newcommand{\degresC}{$^\circ$C}
+\newbox\tempbox
+\newcommand{\motcle}[7]{%
+   \noindent
+   \setbox\tempbox\hbox{\hspace*{2.5cm}}
+   \makebox[2.5cm][l]{#1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
+   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
+   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
+\newcommand{\motcleb}[7]{%
+   \noindent
+   \setbox\tempbox\hbox{\hspace*{2.5cm}}
+   \makebox[2.5cm][l]{\bf #1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
+   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
+   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
+%
+%\newcommand{\variab}[4]{%
+%       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] \quad\\}
+%       \hspace*{0.5cm}\ignorespaces#4.}
+\newcommand{\variab}[4]{%
+       \setbox\tempbox\hbox{IFACEL [E] : }
+       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] :\quad}\ignorespaces#4.}
+\newcommand{\variablist}[4]{%
+       \setbox\tempbox\hbox{IFACEL [E] : }
+       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] :\quad}\ignorespaces#4\quad}
+%\newcommand{\variab}[4]{%
+%       \setbox\tempbox\hbox{#2 [#3] :\quad}
+%       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] :\quad}\ignorespaces#4.}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INFO POUR PAGES DE GARDES
+\titreEDFfr{Guide pratique d'utilisation de \CS version~\verscs}
+\titreEDFang{\CS version~\verscs\ practical user's guide}
+\numeroEDF{HI-83/--/---}
+\indiceEDF{A}
+
+\authorEDFfr{\'Equipe de développement de \CS}
+\authorEDFang{\CS development team}
+%\rqauteursEDF{* Sigle de la structure du coauteur EDF, si différente de l'auteur principal.}
+%\remauteursEDF{** Nom de la société (en clair) si le coauteur est extérieur.}
+\rqauteursEDF{}
+\remauteursEDF{}
+
+%\groupeEDFfr{Expertise en bidules et trucs}
+%\groupeEDFang{Very strong in something}
+
+\docassociesEDFfr{}
+\docassociesEDFang{}
+\resumeEDFfr{}
+\resumeEDFang{This document presents all the necessary elements to run a calculation
+with \CS version \verscs. It then lists all the variables of the code
+which may be useful for more advanced utilisation.
+The user subroutines of all the modules within the code are also documented.
+Eventually, for each key word and user-modifiable parameter in the code,
+their definition, allowed values, default values and conditions for use are given.
+These key words and parameters are grouped under headings
+based on their function. An alphabetical index list is also given at the end of
+the document for easier consultation.}
+\accessibiliteEDFfr{RESTREINTE} % LIBRE, EDF-GDF ou RESTREINTE
+\accessibiliteEDFang{RESTRICTED} % FREE, EDF-GDF or RESTRICTED
+
+\actionEDF{Projet JUPITER}
+\classementEDF{}
+\typerapportEDF{Note technique} % Note d'étude, Note technique
+\motsclesEDF{\CS, CFD, thermohydraulique}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEBUT DU DOCUMENT
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%==================================
+\subsection{Ale module}
+%==================================
+The ale module can be used in two ways :
+\begin{list}{-}{}
+  \item pure ale
+  \item ale with a structure module
+\end{list}
+
+
+%==================================
+\subsubsection{ Initialization of the options of the variables related
+   to the ale module: \textmd{\texttt{usalin}} and \textmd{\texttt{usstr1}} }
+%==================================
+\label{prg_usalin}%
+\noindent
+\textit{Subroutine called at the start.}
+
+
+\minititre{Subroutine \texttt{usalin}}
+This subroutine completes \texttt{usini1}.
+
+\texttt{usalin} allows to set option for the ale module, and in particular to active the ale module
+
+\minititre{Subroutine \texttt{usstr1}}
+\texttt{usstr1} allows to specify for the structure module the following pieces of information:
+\begin{list}{-}{}
+  \item number of structure (NBSTRU).
+  \item initial value of deplacement, velocity and acceleration (XSTR0, XSTREQ and VSTR0).
+\end{list}
+
+Below is a list of the different variables that might be modified :
+
+\begin{list}{$\bullet$}{}
+
+\item{NBSTRU} \\
+{the number of structures}
+
+\item{IDFSTR(I)} \\
+{index of the structure, where I is the index of the face}
+
+\item{XSTR0(I,K)} \\
+{ initial position of a structure, where I is the dimension of space and K the index of the structure
+}
+
+\item{XSTREQ(I,K)} \\
+{position of balance of a structure, where I is the dimension of space and K the index of the structure
+}
+
+\item{VSTR0(I,K)} \\
+{initial velicity of a structure, where I is the dimension of space and K the index of the structure
+}
+\end{list}
+
+%==================================
+%\subsubsection[Gestion des conditions aux limites de vitesse de maillage ale compressible : \texttt{usalcl}]
+\subsubsection{Management of the boundary conditions of velocity mesh related to the
+   ale module: \textmd{\texttt{usalcl}}}
+%==================================
+
+
+\noindent
+\textit{Subroutine called every time step.}
+
+\minititre{Subroutine \texttt{usalcl}}
+The use of \texttt{usalcl}
+is obligatory to run a calculation using the ale module just
+as it is in \texttt{usini1}  . The way of using it is the same as the
+way of using \texttt{usclim} in the framework of standard calculations, that is to
+say a loop on the boundary faces marked out by their colour (or more
+generally by a property of their family), where the type of boundary
+condition of velocity mesh for each variable are defined.
+
+The main numerical variables are described below.
+
+\variab{IALTYB}{IALTYB(NFABOR)}{IA}{In the ale module, the user
+defines the velocity mesh from the colour of the
+boundary faces, or more generally from their properties (colours, groups
+...), from the boundary conditions defined in \texttt{usclim}, or even
+from their coordinates. To do so, the array IALTYB(NFABOR) gives for
+each face IFAC the velocity mesh boundary condition types
+marked out by the key words IVIMPO\index{IVIMPO}, IGLISS\index{IGLISS}, IBFIXE\index{IBFIXE}
+
+\begin{list}{$\bullet$}{}
+
+\item If IALTYB=IVIMPO : imposed velocity.
+
+\begin{list}{$\rightarrow$}{}
+\item In the case where all the nodes of a face have a imposed displacement,
+it is not necessary to fill the tables with boundary conditions velocity mesh for this face,
+they will be erased. In the other case, the value of the Dirichlet must be given in
+RCODCL(IFAC,IVAR,1) for every value of IVAR (IUMA, IVMA and IWMA)
+The other boxes of RCODCL and ICODCL are completed automatically.
+
+ The tangential velocity mesh is taken like a tape speed under the boundary conditions
+ of wall for the fluid, except if wall velocity was specified by the user in the interface or usclim
+ (in which case it is this speed which is considered).
+\end{list}
+
+ \item if IALTYB(NFAC) = IBFIXE : fixe wall
+\begin{list}{$\rightarrow$}{}
+ \item the velocity is null.
+\end{list}
+
+ \item if IALTYB(NFAC) = IGLISS :  slice wall
+\begin{list}{$\rightarrow$}{}
+\item the tangential velocity is not used.
+\end{list}
+
+\end{list}
+
+}
+
+
+
+
+\subsubsection{Management of the structure property: \textmd{\texttt{usstr2}}}
+%==================================
+
+
+\noindent
+\textit{Subroutine called every time step.}
+
+The use of \texttt{usstr2}
+is obligatory to run a calculation using the ale module with a structure module.
+
+For each structure, the system that will be solved is :
+
+ \begin{equation}
+M.x^{''}+C.x^{''}+K.(x-x_{0} = 0
+\end{equation}
+
+where
+
+\begin{list}{-}{}
+ \item $M$ is the mass stucture (XMSTRU).
+ \item $C$ is the dumping coefficient of the stucture (XCSTRU).
+ \item $K$ is the spring constant or force constant of the stucture (XKSTRU).
+ \item $x_{0}$ is the initial position
+\end{list}
+
+Below is a list of the different variables that might be modified :
+
+\begin{list}{$\bullet$}{}
+
+\item{XMSTRU(I,J,K)} \\
+{the mass stucture of the structure, where I,J is the array of mass structure
+and K the index of the structure.
+}
+
+\item{XCSTRU(I,J,K)}\\
+{dumping coefficient of the stucture, where I,J is the array of dumping coefficient
+and K the index of the structure.
+}
+
+\item{XKSTRU(I,J,K)}\\
+{spring constant of the stucture, where I,J is the array of spring constant
+and K the index of the structure.
+}
+
+\item{FORSTR(I,K)}\\
+{force vector of the stucture, where I is the force vector and K the index of the structure.
+}
+\end{list}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\minititre{ALE}
+
+\motcle{IALE}{I}{0 or 1}{C}{O}{L1}
+{activates (=1) or not (=0), activate the ALE module}
+
+\motcle{NALINF}{I}{0 or positive integer}{C}{0}{L2}
+{The number of under-iterations of initialization of the fluid}
+
+\motcle{NBSTR}{I}{0 or positive integer}{C}{0}{L1}
+{number of structure}
+
+\motcle{ALPNMK}{R}{real}{C}{0.D0}{L3}
+{$alpha$ newmark's method}
+
+\motcle{BETNMK}{R}{real}{C}{-GRAND}{L3}
+{$beta$ newmark's method}
+
+\motcle{GAMNMK}{R}{real}{C}{-GRAND}{L3}
+{$gamma$ newmark's method}
+
+\motcle{NALIMX}{I}{positive integer}{C}{15}{L2}
+{maximum number of iterations of implicitation of the structure displacement }
+
+\motcle{EPALIM}{R}{positive real}{C}{1.D-5}{L2}
+{Relative precision of implicitation of the structure displacement }
+
+
+
+\end{document}

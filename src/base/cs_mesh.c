@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Main structure associated to a mesh
@@ -698,6 +698,8 @@ cs_mesh_create(void)
   mesh->cell_family = NULL;
   mesh->b_face_family = NULL;
 
+  /* Selector features */
+
   mesh->class_defs = NULL;
 
   mesh->select_cells = NULL;
@@ -740,8 +742,6 @@ cs_mesh_builder_create(void)
 cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh)
 {
-  int i;
-
   BFT_FREE(mesh->vtx_coord);
   BFT_FREE(mesh->i_face_cells);
   BFT_FREE(mesh->b_face_cells);
@@ -771,12 +771,13 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
 
   if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
-
     BFT_FREE(mesh->vtx_gcells_idx);
     BFT_FREE(mesh->vtx_gcells_lst);
+  }
+
+  if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);
     BFT_FREE(mesh->cell_cells_lst);
-
   }
 
   /* Free halo structure */
@@ -1098,7 +1099,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
         bft_printf(_(" Composition des périodicités\n"));
 
-        fvm_periodicity_combine(mesh->periodicity);
+        fvm_periodicity_combine(mesh->periodicity, 0);
 
       }
 
@@ -1255,23 +1256,26 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 void
 cs_mesh_init_selectors(void)
 {
-  int i, j;
-  int *color;
-  char **group;
-  int color_nbr;
-  int grp_nbr;
-  int grp_num;
-  int grp_idx;
+  int  i, j;
+  int  grp_nbr, grp_num, grp_idx, color_nbr;
+
+  int  *color = NULL;
+  char **group = NULL;
 
   cs_glob_mesh->class_defs = fvm_group_class_set_create();
 
-  /* construction of the fvm_group_class structure */
+  /* Construction of the fvm_group_class structure */
+
   BFT_MALLOC(group, cs_glob_mesh->n_max_family_items, char*);
   BFT_MALLOC(color, cs_glob_mesh->n_max_family_items, int);
+
   for (i = 0; i < cs_glob_mesh->n_families; i++) {
+
     color_nbr = 0;
     grp_nbr  = 0;
+
     for (j = 0; j <  cs_glob_mesh->n_max_family_items; j++) {
+
       if (cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i] > 0){
         color[color_nbr++]
           = cs_glob_mesh->family_item[j *cs_glob_mesh->n_families + i];
@@ -1282,22 +1286,28 @@ cs_mesh_init_selectors(void)
         grp_idx = cs_glob_mesh->group_idx[grp_num];
         group[grp_nbr++] = cs_glob_mesh->group_lst + grp_idx -1;
       }
+
     }
+
     fvm_group_class_set_add(cs_glob_mesh->class_defs,
                             grp_nbr,
                             color_nbr,
                             (const char **)group,
                             color);
-  }
+
+  } /* End of loop on families */
+
   BFT_FREE(group);
   BFT_FREE(color);
 
   /* Construction of the selectors */
+
   cs_glob_mesh->select_cells
     = fvm_selector_create(cs_glob_mesh->dim,
                           cs_glob_mesh->n_cells,
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->cell_family,
+                          1,
                           cs_glob_mesh_quantities->cell_cen,
                           NULL);
 
@@ -1306,6 +1316,7 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh->n_b_faces,
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->b_face_family,
+                          1,
                           cs_glob_mesh_quantities->b_face_cog,
                           cs_glob_mesh_quantities->b_face_normal);
 
@@ -1314,6 +1325,7 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh->n_i_faces,
                           cs_glob_mesh->class_defs,
                           NULL,
+                          1,
                           cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
 
@@ -1481,19 +1493,19 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
     } /* End if n_perio > 0 */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+  } /* End if mesh->halo != NULL */
 
-      bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
-      for (i = 0; i < mesh->n_cells; i++) {
-        bft_printf("< cell n°:%3d>        ", i+1);
-        for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
-          bft_printf("%d        ", mesh->cell_cells_lst[j]);
-        bft_printf("\n");
-      }
+  if (mesh->cell_cells_idx != NULL) {
 
+    bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
+    for (i = 0; i < mesh->n_cells; i++) {
+      bft_printf("< cell n°:%3d>        ", i+1);
+      for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
+        bft_printf("%d        ", mesh->cell_cells_lst[j]);
+      bft_printf("\n");
     }
 
-  } /* End if mesh->halo != NULL */
+  }
 
   bft_printf(_("\n\nEND OF DUMP OF MESH STRUCTURE\n\n"));
   bft_printf_flush();

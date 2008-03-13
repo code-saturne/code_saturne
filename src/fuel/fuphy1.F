@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -180,7 +180,7 @@ C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          IEL    , IPHAS  , ICE
       INTEGER          IPCTE1
-      INTEGER          IPCYF1 , IPCYF2 , IPCYF3 , IPCYOX
+      INTEGER          IPCYF1 , IPCYF3 , IPCYOX
       INTEGER          IPCYP1 , IPCYP2 , IPCYIN , IPCYCE
       INTEGER          IPCY2S , IPCYSO
       DOUBLE PRECISION WMOLME
@@ -213,7 +213,11 @@ C       Calcul des caractéristiques du point correspondant au
 C       combustible moyen
 C       F3cl : fraction de masse provenant de F3max et non de F3
 C
-        F1CL = F1M*FF3MAX/(F3M+F1M*FF3MAX)
+        IF ( (F3M+F1M*FF3MAX) .GT. 0.D0 ) THEN
+          F1CL = F1M*FF3MAX/(F3M+F1M*FF3MAX)
+        ELSE
+          F1CL = 0.D0
+        ENDIF
         F3CL = 1.D0-F1CL
         F4CL = (1.D0-FF3MAX)*F3CL
 C

@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Functions checking the coherency of the mesh
@@ -96,33 +96,6 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check the coherency of the cell centers.
- *----------------------------------------------------------------------------*/
-
-static void
-_check_cell_cen(void)
-{
-  cs_int_t  i;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
-  const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
-
-  bft_printf(_("    Test de cohérence des centres des cellules\n"));
-
-  for (i = 0; i < mesh->n_cells_with_ghosts; i++) {
-
-    if (cell_cen[i] == DBL_MAX)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Cell center value not initialized for cell number %d\n"
-                  "n_cells = %d and n_cells_with_ghosts = %d\n"),
-                i+1, mesh->n_cells, mesh->n_cells_with_ghosts);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Check the coherency of the internal face -> cells connectivity.
  *----------------------------------------------------------------------------*/
 
@@ -175,10 +148,6 @@ cs_mesh_coherency_check(void)
   const cs_real_t  *vtx_coord = mesh->vtx_coord;
 
   bft_printf(_("\n Tests de cohérence de la structure de maillage :\n"));
-
-  /* Check if there is no unintialized values */
-
-  _check_cell_cen();
 
   /* Check internal face -> cells connectivity coherency */
 
@@ -295,15 +264,38 @@ cs_mesh_coherency_check(void)
 
   if (mesh->n_init_perio > 0) {
 
-    cs_perio_sync_var_scal(delta, CS_PERIO_ROTA_COPY, mesh->halo_type, 3);
+    cs_real_t *delta_buffer;
+
+    BFT_MALLOC(delta_buffer, 3*n_cells_with_ghosts, cs_real_t);
+
+    /* De-interlace delta arrays for periodicity exchange */
+
+    for (coord_id = 0; coord_id < 3; coord_id++)
+      for (cell_id = 0; cell_id < n_cells; cell_id++)
+        delta_buffer[coord_id*n_cells_with_ghosts + cell_id] =
+          delta[3*cell_id + coord_id];
+
+    cs_perio_sync_var_vect(delta_buffer,
+                           delta_buffer +   n_cells_with_ghosts,
+                           delta_buffer + 2*n_cells_with_ghosts,
+                           CS_PERIO_ROTA_COPY,
+                           mesh->halo_type);
+
+    for (coord_id = 0; coord_id < 3; coord_id++)
+      for (cell_id = n_cells; cell_id < n_cells_with_ghosts; cell_id++)
+          delta[3*cell_id + coord_id] =
+            delta_buffer[coord_id*n_cells_with_ghosts + cell_id];
+
+    BFT_FREE(delta_buffer);
+
     cs_perio_sync_coords(mean, mesh->halo_type);
 
   }
 
   for (coord_id = 0; coord_id < 3; coord_id++) {
 
-    bft_printf(_("    Vérification de cohérence sur coordonées %d\n"),
-               coord_id);
+    bft_printf(_("    Vérification de cohérence sur coordonnées %d\n"),
+               coord_id+1);
 
     /* Test coherency on the standard neighborhood */
 
@@ -311,8 +303,8 @@ cs_mesh_coherency_check(void)
 
       cs_int_t  cell_id1 = ifacel[2*face_id] - 1;
       cs_int_t  cell_id2 = ifacel[2*face_id + 1] - 1;
-      cs_real_t  delta1 = delta[3*cell_id1 + coord_id];
-      cs_real_t  delta2 = delta[3*cell_id2 + coord_id];
+      cs_real_t  delta1 = CS_ABS(delta[3*cell_id1 + coord_id]);
+      cs_real_t  delta2 = CS_ABS(delta[3*cell_id2 + coord_id]);
       cs_real_t  mean1 = mean[3*cell_id1 + coord_id];
       cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
 
@@ -341,7 +333,7 @@ cs_mesh_coherency_check(void)
         bft_printf_flush();
 
         bft_error(__FILE__, __LINE__, 0,
-                  _("\nCoherency error in mesh cheching.\n"
+                  _("\nCoherency error in mesh checking.\n"
                     "Between cell %d and cell %d : test = %g\n"
                     "(delta = %g, delta_mean = %g)\n"),
                   cell_id1+1, cell_id2+1, test, delta_neighbor, delta_mean);
@@ -350,7 +342,7 @@ cs_mesh_coherency_check(void)
 
     } /* End of loop on internal faces */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (mesh->cell_cells_idx != NULL) {
 
       cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
 
@@ -360,8 +352,8 @@ cs_mesh_coherency_check(void)
              i < cell_cells_idx[cell_id+1]-1; i++) {
 
           cs_int_t  cell_id2 = mesh->cell_cells_lst[i] - 1;
-          cs_real_t  delta1 = delta[3*cell_id + coord_id];
-          cs_real_t  delta2 = delta[3*cell_id2 + coord_id];
+          cs_real_t  delta1 = CS_ABS(delta[3*cell_id + coord_id]);
+          cs_real_t  delta2 = CS_ABS(delta[3*cell_id2 + coord_id]);
           cs_real_t  mean1 = mean[3*cell_id + coord_id];
           cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
 
@@ -370,12 +362,32 @@ cs_mesh_coherency_check(void)
 
           test = (1 + CS_MESH_COHERENCY_TOLERANCE)*delta_neighbor - delta_mean;
 
-          if (test < 0)
+          if (test < 0) {
+
+            cs_real_t  *cell_cen = mesh_quantities->cell_cen;
+
+            bft_printf(_("\nInfo on cell1: %d\n"
+                         " cell center: %12.3g %12.3g %12.3g\n"
+                         " delta      : %12.3g\n"
+                         " mean       : %12.3g\n"),
+                       cell_id+1, cell_cen[3*cell_id], cell_cen[3*cell_id+1],
+                       cell_cen[3*cell_id+2], delta1, mean1);
+
+            bft_printf(_("\nInfo on cell2: %d\n"
+                         " cell center: %12.3g %12.3g %12.3g\n"
+                         " delta      : %12.3g\n"
+                         " mean       : %12.3g\n"),
+                       cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
+                       cell_cen[3*cell_id2+2], delta2, mean2);
+            bft_printf_flush();
+
             bft_error(__FILE__, __LINE__, 0,
-                      _("\nCoherency error in mesh cheching.\n"
+                      _("\nCoherency error in mesh checking.\n"
                         "Between cell %d and cell %d : test = %g\n"
                         "(delta = %g, delta_mean = %g)\n"),
                       cell_id+1, cell_id2+1, test, delta_neighbor, delta_mean);
+
+          }
 
         }
 

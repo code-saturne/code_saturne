@@ -1,0 +1,8 @@
+#!/bin/sh
+EXE=cs13.exe
+BASEPATH=`dirname $0`
+EXECPATH=$BASEPATH/../arch/$NOM_ARCH/bin
+
+
+$EXECPATH/$EXE $*
+

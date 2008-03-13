@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Fortran interfaces of functions needing a synchronization of the extended
@@ -240,14 +240,14 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   /* Allocation and definiton of "vtx -> faces" connectivity list */
 
-  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices] - 1, cs_int_t);
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
     for (i = face_vtx_idx[face_id] - 1; i < face_vtx_idx[face_id+1] - 1; i++) {
 
       vtx_id = face_vtx_lst[i] - 1;
-      vtx_faces_lst[vtx_faces_idx[vtx_id]-1] = face_id;
+      vtx_faces_lst[vtx_faces_idx[vtx_id]-1] = face_id + 1;
       vtx_faces_idx[vtx_id] += 1;
 
     }
@@ -278,7 +278,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
         already_seen = CS_FALSE;
         idx = vtx_cells_idx[vtx_id] - 1;
 
-        while ((already_seen = CS_FALSE) && (idx < vtx_cells_connect_size)) {
+        while ((already_seen == CS_FALSE) && (idx < vtx_cells_connect_size)) {
           if (cell_num == vtx_cells_lst[idx])
             already_seen = CS_TRUE;
           idx++;
@@ -937,7 +937,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   cs_real_t  v_ij[3];
   cs_real_t  face_normal[3];
   cs_real_t  norm_ij, face_norm, cos_ij_fn;
-  cs_real_t  denum;
+  cs_real_t  dprod;
   double     ratio;
 
   cs_int_t  n_deleted_cells = 0;
@@ -956,7 +956,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   const cs_real_t  cos_ij_fn_min = cos((*anomax));
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
-  /* Currecntly lmited to 1 call, but the algorithm would work just the same
+  /* Currently limited to 1 call, but the algorithm would work just the same
      with multiple calls (as we re-build a new cell -> cells connectivity
      instead of just filtering the one we already have) */
 
@@ -977,15 +977,21 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     _first_call = 1;
 
-    /* Stop if there is no extended neighborhood */
+    /* Warn if there is no extended neighborhood */
 
     if (   mesh->cell_cells_lst == NULL
         || mesh->cell_cells_idx == NULL
-        || mesh->halo_type == CS_MESH_HALO_STANDARD)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Lorsque la méthode de calcul des gradients par moindres\n"
-                  "carrés sur support étendu est activée il est indispensable\n"
-                  "de générer un voisinage étendu."));
+        || mesh->halo_type == CS_MESH_HALO_STANDARD) {
+      bft_printf
+        (_("\nATTENTION\n"
+           "Le voisinage étendu est nul alors que la méthode de calcul\n"
+           "des gradients par moindres carrés sur support étendu est\n"
+           "activée. Ceci peut arriver dans certains cas spécifiques\n"
+           "(maillage 1D). Vérifiez que c'est bien votre cas, sinon\n"
+           "contactez le support.\n"));
+    }
+    else {
+
 
     /*
       For each internal face, we select in the extended neighborhood
@@ -1018,12 +1024,12 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
       cell_i = face_cells[2*face_id] - 1;
       cell_j = face_cells[2*face_id + 1] - 1;
-      denum = 0;
+      dprod = 0;
 
       for (i = 0; i < 3; i++) {
         v_ij[i] = cell_cen[3*cell_j + i] - cell_cen[3*cell_i + i];
         face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
-        denum += v_ij[i]*face_normal[i];
+        dprod += v_ij[i]*face_normal[i];
       }
 
       norm_ij = CS_LOC_MODULE(v_ij);
@@ -1034,7 +1040,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
       /* Dot product : norm_ij . face_norm */
 
-      cos_ij_fn = denum / (norm_ij * face_norm);
+      cos_ij_fn = dprod / (norm_ij * face_norm);
 
       /* Comparison to a predefined limit.
          This is non-orthogonal if we are below the limit and so we keep
@@ -1139,6 +1145,8 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
       }
 #endif
 
+    } /* If there is extended neighborhood */
+
   } /* If _first_call == 0 */
 
 }
@@ -1186,7 +1194,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(var,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED, 1);
+                           CS_MESH_HALO_EXTENDED);
 
   /* Allocate and initialize working buffers */
 
@@ -1235,7 +1243,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
   if(mesh->n_init_perio > 1)
     cs_perio_sync_var_scal(f_var,
                            CS_PERIO_ROTA_COPY,
-                           CS_MESH_HALO_STANDARD, 1);
+                           CS_MESH_HALO_STANDARD);
 
 }
 

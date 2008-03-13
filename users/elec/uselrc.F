@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -389,8 +389,7 @@ C
      &           /PROPCE(IEL,IPPROC(IROM(1)))
 C
             IF(DELHSH.NE.0.D0) THEN
-              DTJM= RTP(IEL,ISCALT(1))/DELHSH
-C             DTJM= RTPA(IEL,ISCALT(1))/DELHSH
+              DTJM= RTP(IEL,ISCA(ISCALT(1)))/DELHSH
             ELSE
               DTJM= DTJ
             ENDIF
@@ -519,9 +518,9 @@ C
               ENDIF
             ENDDO
 C
-            WRITE(NFECRA,*) ''
+            WRITE(NFECRA,*)
             WRITE(NFECRA,*) ' NT min et max de E = ',NTCABS,AMEX,AiEX
-            WRITE(NFECRA,*) ''
+            WRITE(NFECRA,*)
             WRITE(NFECRA,*) XCLAQ,YCLAQ,ZCLAQ,NTDCLA
 C
           ENDIF
@@ -618,7 +617,7 @@ C
      &           /PROPCE(IEL,IPPROC(IROM(1)))
 C
             IF(DELHSH.NE.0.D0) THEN
-              DTJM= RTP(IEL,ISCALT(1))/DELHSH
+              DTJM= RTP(IEL,ISCA(ISCALT(1)))/DELHSH
             ELSE
               DTJM= DTJ
             ENDIF

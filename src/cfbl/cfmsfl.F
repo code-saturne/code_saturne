@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -228,7 +228,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IVAR  , IPHAS
       INTEGER          IFAC  , IEL
       INTEGER          INIT  , INC   , ICCOCG, II, JJ
@@ -244,6 +244,7 @@ C
       INTEGER          IDIMTE, ITENSO
       INTEGER          IUIPH , IVIPH , IWIPH
       INTEGER          ITSQDM, IIUN  , IEXTTS
+      INTEGER          MAXELT, ILS
 C
       DOUBLE PRECISION EPSRGP, CLIMGP, EXTRAP, BLENCP
       DOUBLE PRECISION FLUI  , FLUJ  , PFAC  , THETV
@@ -334,16 +335,21 @@ C
 C
 C --- Terme source utilisateur
 C
+        MAXELT = MAX(NCELET, NFAC, NFABOR)
+        ILS    = IDEBIA
+        IFINIA = ILS + MAXELT
+        CALL IASIZE('CFMSFL',IFINIA)
+C
 C     Suivant X
         CALL USTSNS
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IUIPH  , IPHAS  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,
@@ -359,13 +365,13 @@ C
 C     Suivant Y
         CALL USTSNS
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IVIPH  , IPHAS  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,
@@ -381,13 +387,13 @@ C
 C     Suivant Z
         CALL USTSNS
 C       ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IWIPH  , IPHAS  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,

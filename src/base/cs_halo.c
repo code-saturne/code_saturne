@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Functions dealing with ghost cells
@@ -1403,13 +1403,14 @@ _fill_out_halo(cs_mesh_t  *mesh)
 {
   cs_int_t  rank_id, i, j, k;
   cs_int_t  n_cells_to_recv, n_cells_to_send;
+  cs_int_t  shift;
 
 #if defined(_CS_HAVE_MPI)
   MPI_Status  status;
 #endif
   int request_count = 0;
 
-  cs_int_t  count[2] = {0,0};
+  cs_int_t  *count = NULL;
   cs_int_t  *send_buffer = NULL, *recv_buffer = NULL;
 
   cs_mesh_halo_t  *halo = mesh->halo;
@@ -1445,17 +1446,20 @@ _fill_out_halo(cs_mesh_t  *mesh)
     MPI_Barrier(cs_glob_base_mpi_comm);
 #endif
 
+  BFT_MALLOC(count, 2*n_c_domains, cs_int_t);
+
   /* Send data to distant ranks */
 
   for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
 
-    count[0] = halo->index_in[2*rank_id+1] - halo->index_in[2*rank_id];
-    count[1] = halo->index_in[2*rank_id+2] - halo->index_in[2*rank_id+1];
+    shift = 2*rank_id;
+    count[shift] = halo->index_in[2*rank_id+1] - halo->index_in[2*rank_id];
+    count[shift+1] = halo->index_in[2*rank_id+2] - halo->index_in[2*rank_id+1];
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
 #if defined(_CS_HAVE_MPI)
-      MPI_Isend(count, 2, CS_MPI_INT,
+      MPI_Isend(&(count[shift]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
                 cs_glob_base_mpi_comm,
@@ -1465,8 +1469,8 @@ _fill_out_halo(cs_mesh_t  *mesh)
     }
     else {
 
-      halo->index_out[2*rank_id+1] = count[0];
-      halo->index_out[2*rank_id+2] = count[1];
+      halo->index_out[shift+1] = count[shift];
+      halo->index_out[shift+2] = count[shift+1];
 
     }
 
@@ -1479,6 +1483,8 @@ _fill_out_halo(cs_mesh_t  *mesh)
     MPI_Waitall(request_count, halo->mpi_request, halo->mpi_status);
 #endif
   request_count = 0;
+
+  BFT_FREE(count);
 
   /* Build index */
 
@@ -1555,7 +1561,7 @@ _fill_out_halo(cs_mesh_t  *mesh)
 
   if (mesh->n_init_perio > 0) {
 
-    cs_int_t  shift, n_elts;
+    cs_int_t  n_elts;
     cs_int_t  *exchange_buffer = NULL;
 
     /* n_transforms periodicities to deal with and for each sub-periodicity
@@ -2038,7 +2044,13 @@ _count_in_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
             if (n_added_vertices > 0) {
 
-              assert(n_added_vertices == 1);
+              if (n_added_vertices > 1)
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Incohérence repérée lors de la construction du halo.\n"
+                            "Plusieurs points locaux ont le même correspondant\n"
+                            "distant ; ceci est probablement dû à un effet de bord\n"
+                            "de la construction de périodicités multiples par le\n"
+                            "Préprocesseur."));
 
               /* Add this vertex if not already checked */
 
@@ -3383,6 +3395,22 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
           }
         }
 
+        if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+          if (id1 >= 0 && id2 >= 0) {
+
+            if (cell_tag[id1] != fac_id) {
+              cell_tag[id1] = fac_id;
+              cell_faces_idx[id1 + 1] += 1;
+            }
+
+            if (cell_tag[id2] != fac_id) {
+              cell_tag[id2] = fac_id;
+              cell_faces_idx[id2 + 1] += 1;
+            }
+
+          }
+        }
+
       }
 
     } /* End of loop on vertices */
@@ -3429,6 +3457,26 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
             shift = cell_faces_idx[id1] - 1 + counter[id1];
             cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
             counter[id1] += 1;
+
+          }
+        }
+
+        if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+          if (id1 >= 0 && id2 >= 0) {
+
+            if (cell_tag[id1] != fac_id) {
+              cell_tag[id1] = fac_id;
+              shift = cell_faces_idx[id1] - 1 + counter[id1];
+              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              counter[id1] += 1;
+            }
+
+            if (cell_tag[id2] != fac_id) {
+              cell_tag[id2] = fac_id;
+              shift = cell_faces_idx[id2] - 1 + counter[id2];
+              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              counter[id2] += 1;
+            }
 
           }
         }

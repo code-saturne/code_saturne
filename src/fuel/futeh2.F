@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -105,11 +105,11 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          ICEL
-      INTEGER          IPCTE1 , IPCTE2, IPCDIA
+      INTEGER          IPCTE1 , IPCTE2
       INTEGER          MODE
       DOUBLE PRECISION EH2, XSOLID(2)
-      DOUBLE PRECISION XNG   , XTES, MKFINI,DIAMGT
-      DOUBLE PRECISION MASGUT,MFGOUT,MKGOUT,TEBMOY,RHOFOL
+      DOUBLE PRECISION MKFINI,DIAMGT
+      DOUBLE PRECISION MASGUT,MFGOUT,MKGOUT,RHOFOL
 C
 C***********************************************************************
 C RQ IMPORTANTE : On suppose pour l'instant que H2 = H02 + CP2(T2-TREF)

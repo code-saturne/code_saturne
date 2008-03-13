@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -261,7 +261,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          INIT  , IFAC  , IEL
       INTEGER          II    , JJ    , KK    , IIUN  , III   , JJJ
       INTEGER          IR11IP, IR22IP, IR33IP, IR12IP, IR13IP, IR23IP
@@ -273,6 +273,7 @@ C
       INTEGER          NITMAP, NSWRSP, IRCFLP, ISCHCP, ISSTPP, IESCAP
       INTEGER          IMGRP , NCYMXP, NITMFP
       INTEGER          IPTSTA
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION BLENCP, EPSILP, EPSRGP, CLIMGP, EXTRAP, RELAXP
       DOUBLE PRECISION TRPROD, TRRIJ , RCTSE , DELTIJ
       DOUBLE PRECISION TUEXPR, THETS , THETV , THETP1
@@ -341,15 +342,20 @@ C=======================================================================
 C(le deuxieme argument GRDVIT est lu en PRODUC dans ustsri, mais ce
 C tableau n'est dimensionne et utilise qu'en modele Rij standard)
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('RESSSG',IFINIA)
+C
       CALL USTSRI
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITPSMP ,
      &   IDEVEL , ITUSER , IA     ,

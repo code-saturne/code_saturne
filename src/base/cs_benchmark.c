@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Low-level operator benchmarking
@@ -138,18 +138,12 @@ _timer_start(double  *wt,
  *   n_runs     --> Number of timing runs
  *   wt         <-> wall-clock time (start in, stop - start out)
  *   cpu        <-> CPU time (start in, stop - start out)
- *   cpu_min    <-- Total CPU time
- *   cpu_max    <-- Total CPU time
- *   cpu_tot    <-- Total CPU time
  *----------------------------------------------------------------------------*/
 
 static void
 _timer_stop(int      n_runs,
             double  *wt,
-            double  *cpu,
-            double  *cpu_min,
-            double  *cpu_max,
-            double  *cpu_tot)
+            double  *cpu)
 {
   double wt_s, cpu_s;
 
@@ -158,102 +152,74 @@ _timer_stop(int      n_runs,
 
   *wt = (wt_s - *wt) / (double)n_runs;
   *cpu = (cpu_s - *cpu) / (double)n_runs;
-
-  *cpu_min = *cpu; *cpu_max = *cpu; *cpu_tot = *cpu;
-
-#if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
-    MPI_Allreduce(cpu, cpu_min, 1, MPI_DOUBLE, MPI_MIN, cs_glob_base_mpi_comm);
-    MPI_Allreduce(cpu, cpu_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_base_mpi_comm);
-    MPI_Allreduce(cpu, cpu_tot, 1, MPI_DOUBLE, MPI_SUM, cs_glob_base_mpi_comm);
-  }
-#endif
-
- }
-
-/*----------------------------------------------------------------------------
- * Count number of operations.
- *
- * parameters:
- *   n_ops      --> Local number of operations
- *   n_ops_min  <-- Minimum local number of operations
- *   n_ops_max  <-- Maximum local number of operations
- *   n_ops_tot  <-- Total number of operations
- *----------------------------------------------------------------------------*/
-
-static void
-_ops_count(long     n_ops,
-           long    *n_ops_min,
-           long    *n_ops_max,
-           long    *n_ops_tot)
-{
-  *n_ops_min = n_ops; *n_ops_max = n_ops; *n_ops_tot = n_ops;
-
-#if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
-    MPI_Allreduce(&n_ops, n_ops_min, 1, MPI_LONG, MPI_MIN,
-                  cs_glob_base_mpi_comm);
-    MPI_Allreduce(&n_ops, n_ops_max, 1, MPI_LONG, MPI_MAX,
-                  cs_glob_base_mpi_comm);
-    MPI_Allreduce(&n_ops, n_ops_tot, 1, MPI_LONG, MPI_SUM,
-                  cs_glob_base_mpi_comm);
-  }
-#endif
-
  }
 
 /*----------------------------------------------------------------------------
  * Print overhead.
  *
  * parameters:
- *   wt           --> wall-clock time
- *   cpu_min      --> Total CPU time
- *   cpu_max      --> Total CPU time
- *   cpu_tot      --> Total CPU time
+ *   wt       --> wall-clock time
+ *   cpu      --> CPU time
  *----------------------------------------------------------------------------*/
 
 static void
 _print_overhead(double  wt,
-                double  cpu_min,
-                double  cpu_max,
-                double  cpu_tot)
+                double  cpu)
 {
   if (cs_glob_base_nbr == 1)
     bft_printf(_("  Wall clock : %12.5e\n"
                  "  CPU :        %12.5e\n"),
-               wt, cpu_tot);
+               wt);
 
-  else
+  else {
+
+    double loc_count[2], glob_min[2], glob_max[2], cpu_tot;
+
+    loc_count[0] = wt;
+    loc_count[1] = cpu;
+
+#if defined(_CS_HAVE_MPI)
+    MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_base_mpi_comm);
+#else
+    { /* We should never enter here unless we have an alternative to MPI */
+      int i;
+      for (i = 0; i < 3; i++) {
+        glob_min[i] = loc_count[i];
+        glob_max[i] = loc_count[i];
+      }
+      cpu_tot = cpu;
+    }
+#endif
+
     bft_printf(_("               Min          Max          Total\n"
-                 "  Wall clock :                           %12.5e\n"
+                 "  Wall clock : %12.5e %12.5e\n"
                  "  CPU :        %12.5e %12.5e %12.5e\n"),
-               wt, cpu_min, cpu_max, cpu_tot);
- }
+               glob_min[0], glob_max[0],
+               glob_min[1], glob_max[1], cpu_tot);
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Count number of operations.
  *
  * parameters:
- *   n_ops_min    --> Minimum local number of operations
- *   n_ops_max    --> Maximum local number of operations
- *   n_ops_tot    --> Total number of operations
+ *   n_ops        --> Local number of operations
  *   n_ops_single --> Single-processor equivalent number of operations
- *                    (without ghosts); ignored if >= n_opts_tot
+ *                    (without ghosts); ignored if 0
  *   wt           --> wall-clock time
- *   cpu_min      --> Total CPU time
- *   cpu_max      --> Total CPU time
- *   cpu_tot      --> Total CPU time
+ *   cpu          --> CPU time
  *----------------------------------------------------------------------------*/
 
 static void
-_print_stats(long    n_ops_min,
-             long    n_ops_max,
-             long    n_ops_tot,
+_print_stats(long    n_ops,
              long    n_ops_single,
              double  wt,
-             double  cpu_min,
-             double  cpu_max,
-             double  cpu_tot)
+             double  cpu)
 {
   double fm = 1.0 / (1.e9 * wt);
 
@@ -262,29 +228,72 @@ _print_stats(long    n_ops_min,
                  "  Wall clock : %12.5e\n"
                  "  CPU :        %12.5e\n"
                  "  GFLOPS :     %12.5e\n"),
-               n_ops_tot, wt, cpu_tot, n_ops_tot*fm);
+               n_ops, wt, cpu, n_ops*fm);
 
-  else if (n_ops_single >= n_ops_tot)
-    bft_printf(_("               Min          Max          Total\n"
-                 "  N ops :      %12ld %12ld %12ld\n"
-                 "  Wall clock :                           %12.5e\n"
-                 "  CPU :        %12.5e %12.5e %12.5e\n"
-                 "  GFLOPS :     %12.5e %12.5e %12.5e\n"),
-               n_ops_min, n_ops_max, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot,
-               n_ops_min*fm, n_ops_max*fm, n_ops_tot*fm);
+  else {
 
-  else
-    bft_printf(_("               Min          Max          Total        Single\n"
-                 "  N ops :      %12ld %12ld %12ld %12ld\n"
-                 "  Wall clock :                                        %12.5e\n"
-                 "  CPU :        %12.5e %12.5e %12.5e\n"
-                 "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"),
-               n_ops_min, n_ops_max, n_ops_tot, n_ops_single,
-               wt, cpu_min, cpu_max, cpu_tot,
-               n_ops_min*fm, n_ops_max*fm, n_ops_tot*fm, n_ops_single*fm);
+    long n_ops_min, n_ops_max, n_ops_tot;
+    double loc_count[3], glob_min[3], glob_max[3], cpu_tot, fmg;
 
- }
+    loc_count[0] = wt;
+    loc_count[1] = cpu;
+    loc_count[2] = n_ops*fm;
+
+#if defined(_CS_HAVE_MPI)
+
+    MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_max, 1, MPI_LONG, MPI_MAX,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_tot, 1, MPI_LONG, MPI_SUM,
+                  cs_glob_base_mpi_comm);
+
+    MPI_Allreduce(loc_count, glob_min, 3, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(loc_count, glob_max, 3, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_base_mpi_comm);
+
+#else
+    { /* We should never enter here unless we have an alternative to MPI */
+      int i;
+      n_ops_min = n_ops; n_ops_max = n_ops; n_ops_tot = n_ops;
+      for (i = 0; i < 3; i++) {
+        glob_min[i] = loc_count[i];
+        glob_max[i] = loc_count[i];
+      }
+      cpu_tot = cpu;
+    }
+#endif
+
+    fmg = 1.0 / (1.e9 * glob_max[0]); /* global flops multiplier */
+
+    if (n_ops_single == 0)
+      bft_printf
+        (_("               Min          Max          Total\n"
+           "  N ops :      %12ld %12ld %12ld\n"
+           "  Wall clock : %12.5e %12.5e\n"
+           "  CPU :        %12.5e %12.5e %12.5e\n"
+           "  GFLOPS :     %12.5e %12.5e %12.5e\n"),
+         n_ops_min, n_ops_max, n_ops_tot,
+         glob_min[0], glob_max[0],
+         glob_min[1], glob_max[1], cpu_tot,
+         glob_min[2], glob_max[2], n_ops_tot*fmg);
+
+    else
+      bft_printf
+        (_("               Min          Max          Total        Single\n"
+           "  N ops :      %12ld %12ld %12ld %12ld\n"
+           "  Wall clock : %12.5e %12.5e\n"
+           "  CPU :        %12.5e %12.5e %12.5e\n"
+           "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"),
+         n_ops_min, n_ops_max, n_ops_tot, n_ops_single,
+         glob_min[0], glob_max[0],
+         glob_min[1], glob_max[1], cpu_tot,
+         glob_min[2], glob_max[2], n_ops_tot*fmg, n_ops_single*fmg);
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Simple dot product.
@@ -303,9 +312,9 @@ _dot_product_1(int                  global,
                const cs_real_t     *x,
                const cs_real_t     *y)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot;
+  long   n_ops;
   size_t ii;
 
   double test_sum_mult = 1.0/n_runs;
@@ -324,8 +333,6 @@ _dot_product_1(int                  global,
     _global = 0;
 
   n_ops = n_cells;
-
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
 
   /* First simple local x.x version */
 
@@ -348,7 +355,7 @@ _dot_product_1(int                  global,
     test_sum += test_sum_mult*s1;
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   if (_global == 0)
     bft_printf(_("\n"
@@ -364,8 +371,7 @@ _dot_product_1(int                  global,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
 #endif /* defined(_CS_HAVE_BLAS) */
 
@@ -386,7 +392,7 @@ _dot_product_1(int                  global,
     test_sum += test_sum_mult*s1;
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   if (_global == 0)
     bft_printf(_("\n"
@@ -402,8 +408,7 @@ _dot_product_1(int                  global,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
  }
 
@@ -423,9 +428,9 @@ _dot_product_2(int                  n_runs,
                const cs_real_t     *x,
                const cs_real_t     *y)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot;
+  long   n_ops;
   size_t ii;
 
   double test_sum_mult = 1.0/n_runs;
@@ -435,8 +440,6 @@ _dot_product_2(int                  n_runs,
     return;
 
   n_ops = n_cells * 2;
-
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
 
   /* First simple local x.x version */
 
@@ -452,7 +455,7 @@ _dot_product_2(int                  n_runs,
     test_sum += test_sum_mult*(s1+s2);
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit scalaire local double X.X, X.Y avec BLAS\n"
@@ -460,8 +463,7 @@ _dot_product_2(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
 #endif /* defined(_CS_HAVE_BLAS) */
 
@@ -477,7 +479,7 @@ _dot_product_2(int                  n_runs,
     test_sum += test_sum_mult*(s1+s2);
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit scalaire local double X.X, X.Y\n"
@@ -486,8 +488,7 @@ _dot_product_2(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
  }
 
@@ -507,9 +508,9 @@ _axpy_(int                n_runs,
        const cs_real_t   *restrict x,
        cs_real_t         *restrict y)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot;
+  long   n_ops;
   size_t ii;
 
   double test_sum_mult = 1.0/n_runs;
@@ -519,8 +520,6 @@ _axpy_(int                n_runs,
     return;
 
   n_ops = n_cells * 2;
-
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
 
   /* First simple local x.x version */
 
@@ -541,7 +540,7 @@ _axpy_(int                n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Y <- aX + Y avec BLAS\n"
@@ -550,8 +549,7 @@ _axpy_(int                n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
 #endif /* defined(_CS_HAVE_BLAS) */
 
@@ -566,7 +564,7 @@ _axpy_(int                n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Y <- aX + Y\n"
@@ -575,8 +573,7 @@ _axpy_(int                n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
 }
 
@@ -592,9 +589,9 @@ static void
 _division_test(int     n_runs,
                size_t  n_cells)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot;
+  long   n_ops;
   size_t ii;
 
   cs_real_t  *x = NULL, *y = NULL, *z = NULL;
@@ -607,8 +604,6 @@ _division_test(int     n_runs,
   BFT_MALLOC(z, n_cells, cs_real_t);
 
   n_ops = n_cells;
-
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
 
   /* Division */
   /*----------*/
@@ -629,14 +624,13 @@ _division_test(int     n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Division z = x/y\n"
                "----------------\n"));
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
   BFT_FREE(z);
 
@@ -651,14 +645,13 @@ _division_test(int     n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Division y = 1/x\n"
                "----------------\n"));
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
   BFT_FREE(y);
 
@@ -673,14 +666,13 @@ _division_test(int     n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Division x <- 1/x\n"
                "-----------------\n"));
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
   BFT_FREE(x);
 
@@ -698,9 +690,9 @@ static void
 _sqrt_test(int     n_runs,
            size_t  n_cells)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot;
+  long   n_ops;
   size_t ii;
 
   cs_real_t  *x = NULL, *y = NULL;
@@ -712,8 +704,6 @@ _sqrt_test(int     n_runs,
   BFT_MALLOC(y, n_cells, cs_real_t);
 
   n_ops = n_cells;
-
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
 
   for (ii = 0; ii < n_cells; ii++)
     x[ii] = 2.0 + ii%3;
@@ -729,14 +719,13 @@ _sqrt_test(int     n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "y = sqrt(x)\n"
                "-----------\n"));
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
   BFT_FREE(y);
 
@@ -751,14 +740,13 @@ _sqrt_test(int     n_runs,
 
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "x = sqrt(x)\n"
                "-----------\n"));
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_tot,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, 0, wt, cpu);
 
   BFT_FREE(x);
 
@@ -790,7 +778,7 @@ _matrix_creation_test(int                  n_runs,
                       const fvm_gnum_t    *cell_num,
                       const cs_int_t      *face_cell)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
 
   cs_matrix_t  *m = NULL;
@@ -815,7 +803,7 @@ _matrix_creation_test(int                  n_runs,
     cs_matrix_destroy(&m);
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Construction / Destruction d'une matrice (%s)\n"
@@ -823,7 +811,7 @@ _matrix_creation_test(int                  n_runs,
 
   bft_printf(_("  (appels : %d)\n"), n_runs);
 
-  _print_overhead(wt, cpu_min, cpu_max, cpu_tot);
+  _print_overhead(wt, cpu);
 
 }
 
@@ -859,7 +847,7 @@ _matrix_assignment_test(int                  n_runs,
                         const cs_real_t     *restrict da,
                         const cs_real_t     *restrict xa)
 {
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
 
   cs_matrix_t *m = NULL;
@@ -888,7 +876,7 @@ _matrix_assignment_test(int                  n_runs,
                                xa);
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   cs_matrix_destroy(&m);
 
@@ -896,10 +884,9 @@ _matrix_assignment_test(int                  n_runs,
                "Affectation de valeurs à une matrice (%s)\n"
                "------------------------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d)\n"),
-             n_runs);
+  bft_printf(_("  (appels : %d)\n"), n_runs);
 
-  _print_overhead(wt, cpu_min, cpu_max, cpu_tot);
+  _print_overhead(wt, cpu);
 
 }
 
@@ -940,9 +927,9 @@ _matrix_vector_test(int                  n_runs,
                     cs_real_t           *restrict y)
 {
   cs_int_t ii;
-  double wt, cpu, cpu_min, cpu_max, cpu_tot;
+  double wt, cpu;
   int    run_id;
-  long   n_ops, n_ops_min, n_ops_max, n_ops_tot, n_ops_glob;
+  long   n_ops, n_ops_glob;
 
   double test_sum = 0.0;
   cs_matrix_t *m = NULL;
@@ -952,10 +939,8 @@ _matrix_vector_test(int                  n_runs,
 
   n_ops = n_cells + n_faces*2;
 
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
-
   if (cs_glob_base_nbr == 1)
-    n_ops_glob = n_ops_tot;
+    n_ops_glob = n_ops;
   else
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
@@ -991,7 +976,7 @@ _matrix_vector_test(int                  n_runs,
 #endif
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit matrice.vecteur (%s)\n"
@@ -1000,8 +985,7 @@ _matrix_vector_test(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_glob,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   /* Local timing in parallel mode */
 
@@ -1018,7 +1002,7 @@ _matrix_vector_test(int                  n_runs,
       test_sum += y[n_cells-1];
     }
 
-    _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+    _timer_stop(n_runs, &wt, &cpu);
 
     bft_printf(_("\n"
                  "Produit matrice.vecteur local (%s)\n"
@@ -1027,8 +1011,7 @@ _matrix_vector_test(int                  n_runs,
     bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
                n_runs, test_sum);
 
-    _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_glob,
-                 wt, cpu_min, cpu_max, cpu_tot);
+    _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   }
 
@@ -1049,7 +1032,7 @@ _matrix_vector_test(int                  n_runs,
     test_sum += y[n_cells-1];
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit matrice.vecteur alpha.A.x + beta.y (%s)\n"
@@ -1058,8 +1041,7 @@ _matrix_vector_test(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_glob,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   /* (Matrix - diagonal).vector product (with diagonal structure) */
 
@@ -1080,7 +1062,7 @@ _matrix_vector_test(int                  n_runs,
     test_sum += y[n_cells-1];
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit (matrice-diagonale).vecteur (%s)\n"
@@ -1089,8 +1071,7 @@ _matrix_vector_test(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_glob,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   /* (Matrix - diagonal).vector product */
 
@@ -1098,10 +1079,8 @@ _matrix_vector_test(int                  n_runs,
 
   n_ops = n_faces*2;
 
-  _ops_count(n_ops, &n_ops_min, &n_ops_max, &n_ops_tot);
-
   if (cs_glob_base_nbr == 1)
-    n_ops_glob = n_ops_tot;
+    n_ops_glob = n_ops;
   else
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
@@ -1133,7 +1112,7 @@ _matrix_vector_test(int                  n_runs,
     test_sum += y[n_cells-1];
   }
 
-  _timer_stop(n_runs, &wt, &cpu, &cpu_min, &cpu_max, &cpu_tot);
+  _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
                "Produit (matrice sans diagonale).vecteur (%s)\n"
@@ -1142,8 +1121,7 @@ _matrix_vector_test(int                  n_runs,
   bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
              n_runs, test_sum);
 
-  _print_stats(n_ops_min, n_ops_max, n_ops_tot, n_ops_glob,
-               wt, cpu_min, cpu_max, cpu_tot);
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   cs_matrix_destroy(&m);
 
@@ -1228,7 +1206,7 @@ cs_benchmark(int  mpi_trace_mode)
   /* Dot product test */
   /*------------------*/
 
-  n_runs = (mpi_trace_mode) ? 1 : 3000;
+  n_runs = (mpi_trace_mode) ? 1 : 10000;
 
   _dot_product_1(0, n_runs, n_cells, x1, x1);
   _dot_product_1(0, n_runs, n_cells, x1, x2);
@@ -1242,7 +1220,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   if (cs_glob_base_nbr > 1) {
 
-    n_runs = (mpi_trace_mode) ? 1 : 3000;
+    n_runs = (mpi_trace_mode) ? 1 : 10000;
 
     _dot_product_1(1, n_runs, n_cells, x1, x1);
     _dot_product_1(1, n_runs, n_cells, x1, x2);

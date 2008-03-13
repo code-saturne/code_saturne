@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -94,15 +94,10 @@ C
 C
       INTEGER          IT     , ICE    , IAT    , IOS
       INTEGER          NCOEL  , INICOE
-      INTEGER          IS
       INTEGER          IDEBCH , IFINCH , LONCH  , ICHAI  , ICHCOE
-      INTEGER          ATCOEL(NGAZEM,NATOM) , IZONE , INICHA
+      INTEGER          ATCOEL(NGAZEM,NATOM), INICHA
 C
-      DOUBLE PRECISION FCOR   , PCISEC , PCIPUR
-      DOUBLE PRECISION HCO20  , HO20   , HH2O0
-      DOUBLE PRECISION DEN1
       DOUBLE PRECISION TMIN   , TMAX
-      DOUBLE PRECISION IPCI
       DOUBLE PRECISION WMOLCE(NGAZEM), EHCOEL(NGAZEM,NPOT)
       DOUBLE PRECISION CPCOEL(NGAZEM,NPOT)
       DOUBLE PRECISION nCFOV,nHFOV,nOFOV,nSFOV
@@ -270,7 +265,7 @@ C         STOP
       WRITE (NFECRA,*) ' In= ',XINFOL
 C
 C
-C --> PCI suivant la valeur de IPCI
+C --> PCI
 C
       READ (IMPFPP,*,ERR=999,END=999 ) PCIFOL
 C

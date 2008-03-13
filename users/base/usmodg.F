@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -136,6 +136,16 @@ C
       DOUBLE PRECISION XXX1, XXX2, XXX3
       DOUBLE PRECISION UNSMIL
 C
+C***********************************************************************
+C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+C=======================================================================
+C
+      IF(1.EQ.1) RETURN
+C
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+C
 C
 C====================================================================
 C     MODIFICATION DES COORDONNES DES SOMMETS
@@ -149,6 +159,14 @@ C
 C
 C       exemple : division des dimensions par 1000
 C                 (passage de millimetres en metres)
+C
+C  ATTENTION :
+C
+C    LE CHANGEMENT D'ECHELLE DU MAILLAGE EST INCOMPTABILE
+C    AVEC LA PERIODICITE, QUELLE QU'ELLE SOIT
+C
+C    POUR UTILISER LA PERIODICITE, IL FAUT CHANGER D'ECHELLE
+C    EN DEHORS DE CODE_SATURNE
 C
         UNSMIL = 1.D0 / 1000.D0
 C

@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -355,7 +355,7 @@ C    En entrant dans ce sous-programme, les tableaux :
 C         ETTP(IP,JUF)
 C         ETTP(IP,JVF)
 C         ETTP(IP,JWF)
-C      contiennent les composantes de la vitesse instantannee
+C      contiennent les composantes de la vitesse instantanee
 C      (partie fluctuante + partie moyenne) du fluide vu
 C      par les particules.
 C

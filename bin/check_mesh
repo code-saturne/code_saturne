@@ -8,7 +8,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -156,37 +156,42 @@
   fi
 
 # Run Preprocessor
-  $ECS_HOME/bin/ecs $* -ens -case check_mesh
+  ERROR=0
+  $ECS_HOME/bin/ecs $* -ens -case check_mesh || ERROR=1
 
-  if [ -d check_mesh.ensight ] ; then
-    for file in check_mesh.ensight/* ; do
-      new_name=`echo $file | sed -e 's/chr/preprocessor/' -e 's/CHR/PREPROCESSOR/' `
-      mv -f $file $new_name
-    done
-    sed "s/chr\./preprocessor\./g" check_mesh.ensight/PREPROCESSOR.case > check_mesh.ensight/PREPROCESSOR.case.mod \
-         && mv -f check_mesh.ensight/PREPROCESSOR.case.mod check_mesh.ensight/PREPROCESSOR.case
-  fi
-
-# Run Kernel
-  $CS_HOME/arch/$NOM_ARCH/bin/cs13.exe -q --log 0
-
-  if [ -d chr.ensight ] ; then
-    mv chr.ensight/* check_mesh.ensight
-    for file in check_mesh.ensight/CHR.* ; do
-      new_name=`echo $file | sed -e 's/CHR/QUALITY/' `
-      mv $file $new_name
-    done
-    for file in check_mesh.ensight/chr.* ; do
-      new_name=`echo $file | sed -e 's/chr/quality/' `
-      mv $file $new_name
-    done
-    sed "s/chr\./quality\./g" check_mesh.ensight/QUALITY.case > check_mesh.ensight/QUALITY.case.mod \
-           && mv -f check_mesh.ensight/QUALITY.case.mod check_mesh.ensight/QUALITY.case
+  if [ $ERROR -eq 0 ] ; then
+    if [ -d check_mesh.ensight ] ; then
+      for file in check_mesh.ensight/* ; do
+        new_name=`echo $file | sed -e 's/chr/preprocessor/' -e 's/CHR/PREPROCESSOR/' `
+        mv -f $file $new_name
+      done
+      sed "s/chr\./preprocessor\./g" check_mesh.ensight/PREPROCESSOR.case > check_mesh.ensight/PREPROCESSOR.case.mod \
+           && mv -f check_mesh.ensight/PREPROCESSOR.case.mod check_mesh.ensight/PREPROCESSOR.case
+    fi
+  
+  # Run Kernel
+    $CS_HOME/bin/cs.exe -q --log 0 || ERROR=1
+  
+    if [ $ERROR -eq 0 ] ; then
+      if [ -d chr.ensight ] ; then
+        mv chr.ensight/* check_mesh.ensight
+        for file in check_mesh.ensight/CHR.* ; do
+          new_name=`echo $file | sed -e 's/CHR/QUALITY/' `
+          mv $file $new_name
+        done
+        for file in check_mesh.ensight/chr.* ; do
+          new_name=`echo $file | sed -e 's/chr/quality/' `
+          mv $file $new_name
+        done
+        sed "s/chr\./quality\./g" check_mesh.ensight/QUALITY.case > check_mesh.ensight/QUALITY.case.mod \
+               && mv -f check_mesh.ensight/QUALITY.case.mod check_mesh.ensight/QUALITY.case
+      fi
+    fi
   fi
 
 # Cleanup
 
-  \rm -f enveloppe_vers_solveur
+  \rm -rf preprocessor_output
   rmdir chr.ensight
 
   echo

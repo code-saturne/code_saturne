@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Code_Saturne_GUI case="CASE5" study="STRATIFIED_JUNCTION" version="0.0">
+	<solution_domain>
+		<volumic_conditions>
+			<zone label="all_cells" name="1">all[]</zone>
+		</volumic_conditions>
+		<meshes_list>
+			<mesh format="des" name="sn_total.des"/>
+		</meshes_list>
+		<paste_meshes status="off"/>
+		<faces_cutting status="off"/>
+		<syrthes_coupling status="off"/>
+		<periodic_boundary status="off"/>
+		<standalone>
+			<post-processing format="ensight7 gold" status="on"/>
+			<post-processing format="med" status="off"/>
+			<post-processing format="cgns" status="off"/>
+			<simulation_communication status="on"/>
+		</standalone>
+	</solution_domain>
+	<thermophysical_models>
+		<velocity_pressure>
+			<variable label="Pressure" name="pressure">
+				<reference_pressure>101300</reference_pressure>
+			</variable>
+			<variable label="VelocitU" name="velocity_U"/>
+			<variable label="VelocitV" name="velocity_V"/>
+			<variable label="VelocitW" name="velocity_W"/>
+			<property label="total_pressure" name="total_pressure"/>
+		</velocity_pressure>
+		<ale_method status="off"/>
+		<turbulence model="k-epsilon">
+			<variable label="TurbEner" name="turb_k">
+				<blending_factor>0</blending_factor>
+				<order_scheme choice="upwind"/>
+			</variable>
+			<variable label="Dissip" name="turb_eps">
+				<blending_factor>0</blending_factor>
+				<order_scheme choice="upwind"/>
+			</variable>
+			<property label="turb. vi" name="turb_viscosity"/>
+			<initialization choice="reference_velocity" zone="1">
+				<reference_velocity>0.03183</reference_velocity>
+			</initialization>
+		</turbulence>
+		<thermal_scalar model="temperature_celsius"/>
+		<gas_combustion model="off"/>
+		<pulverized_coal model="off"/>
+		<joule_effect model="off"/>
+		<radiative_transfer model="off"/>
+	</thermophysical_models>
+	<numerical_parameters>
+		<gradient_transpose/>
+		<pressure_relaxation/>
+		<density_relaxation/>
+		<wall_pressure_extrapolation/>
+		<velocity_pressure_coupling/>
+		<gradient_reconstruction/>
+	</numerical_parameters>
+	<physical_properties>
+		<fluid_properties>
+			<property choice="variable" label="Density" name="density">
+				<initial_value>998.671</initial_value>
+			</property>
+			<property choice="variable" label="Lam. vis" name="molecular_viscosity">
+				<initial_value>4.45e-05</initial_value>
+			</property>
+			<property choice="constant" label="Sp. heat" name="specific_heat">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>4182.88</initial_value>
+			</property>
+			<property choice="constant" label="Th. cond" name="thermal_conductivity">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>0.601498</initial_value>
+			</property>
+		</fluid_properties>
+		<gravity>
+			<gravity_z>-9.81</gravity_z>
+		</gravity>
+		<hydrostatic_pressure status="on"/>
+	</physical_properties>
+	<additional_scalars>
+		<scalar label="Temp.C" name="temperature_celsius" type="thermal">
+			<initial_value zone="1">38.5</initial_value>
+			<min_value>18.26</min_value>
+			<max_value>38.5</max_value>
+		</scalar>
+	</additional_scalars>
+	<lagrangian model="off"/>
+	<boundary_conditions>
+		<boundary_definition>
+			<inlet label="cold_inlet" zone="1">2</inlet>
+			<inlet label="hot_inlet" zone="2">6</inlet>
+			<outlet label="outlet" zone="5">7</outlet>
+			<wall label="wall" zone="3">5</wall>
+		</boundary_definition>
+		<inlet label="cold_inlet">
+			<velocity_pressure choice="dirichlet">
+				<dirichlet name="velocity_U">0.0</dirichlet>
+				<dirichlet name="velocity_V">0.0</dirichlet>
+				<dirichlet name="velocity_W">0.03183</dirichlet>
+			</velocity_pressure>
+			<turbulence choice="hydraulic_diameter">
+				<hydraulic_diameter>0.4</hydraulic_diameter>
+			</turbulence>
+			<scalar choice="dirichlet" label="Temp.C" type="thermal">
+				<dirichlet>18.6</dirichlet>
+			</scalar>
+		</inlet>
+		<inlet label="hot_inlet">
+			<velocity_pressure choice="dirichlet">
+				<dirichlet name="velocity_U">0.0</dirichlet>
+				<dirichlet name="velocity_V">0.0</dirichlet>
+				<dirichlet name="velocity_W">0.03183</dirichlet>
+			</velocity_pressure>
+			<turbulence choice="hydraulic_diameter">
+				<hydraulic_diameter>0.4</hydraulic_diameter>
+			</turbulence>
+			<scalar choice="dirichlet" label="Temp.C" type="thermal">
+				<dirichlet>38.5</dirichlet>
+			</scalar>
+		</inlet>
+		<outlet label="outlet">
+			<scalar choice="neumann" label="Temp.C" type="thermal">
+				<neumann>0</neumann>
+			</scalar>
+		</outlet>
+		<wall label="wall">
+			<velocity_pressure choice="off"/>
+			<scalar choice="neumann" label="Temp.C" type="thermal">
+				<neumann>0</neumann>
+			</scalar>
+		</wall>
+	</boundary_conditions>
+	<analysis_control>
+		<output>
+			<postprocessing_mesh_options choice="0"/>
+			<listing_printing_frequency>1</listing_printing_frequency>
+			<postprocessing_frequency>10</postprocessing_frequency>
+			<fluid_domain status="on"/>
+			<domain_boundary status="off"/>
+			<postprocessing_format choice="EnSight"/>
+			<postprocessing_options choice="binary"/>
+			<probe_recording_frequency>1</probe_recording_frequency>
+			<probe name="1" status="on">
+				<probe_x>0.010025</probe_x>
+				<probe_y>0.01534</probe_y>
+				<probe_z>-0.011765</probe_z>
+			</probe>
+			<probe name="2" status="on">
+				<probe_x>1.625</probe_x>
+				<probe_y>0.01534</probe_y>
+				<probe_z>-0.031652</probe_z>
+			</probe>
+			<probe name="3" status="on">
+				<probe_x>3.225</probe_x>
+				<probe_y>0.01534</probe_y>
+				<probe_z>-0.031652</probe_z>
+			</probe>
+			<probe name="4" status="on">
+				<probe_x>3.8726</probe_x>
+				<probe_y>0.047481</probe_y>
+				<probe_z>7.25</probe_z>
+			</probe>
+		</output>
+		<time_parameters>
+			<property label="Courant nb" name="courant_number"/>
+			<property label="Fourier nb" name="fourier_number"/>
+			<time_step_ref>1</time_step_ref>
+			<iterations>100</iterations>
+			<time_passing>1</time_passing>
+			<max_courant_num>20</max_courant_num>
+			<max_fourier_num>60</max_fourier_num>
+			<time_step_min>0.01</time_step_min>
+			<time_step_max>70</time_step_max>
+			<time_step_var>0.1</time_step_var>
+			<thermal_time_step status="on"/>
+			<zero_time_step status="off"/>
+			<property label="loc.time" name="local_time_step"/>
+		</time_parameters>
+		<steady_management status="off"/>
+		<time_averages/>
+	</analysis_control>
+	<calcul_management/>
+</Code_Saturne_GUI>

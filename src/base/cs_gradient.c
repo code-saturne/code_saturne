@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Gradient reconstruction.
@@ -194,7 +194,7 @@ void CS_PROCF (cgrdmc, CGRDMC)
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(pvar,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED, 1);
+                           CS_MESH_HALO_EXTENDED);
 
   if (*iphydp != 0) {
 
@@ -303,7 +303,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(var,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED, 1);
+                           CS_MESH_HALO_EXTENDED);
 
   /* Exchange for the gradients. Not useful for working array */
 
@@ -368,11 +368,11 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
           for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
             i2 = cell_cells_lst[j] - 1;
@@ -422,17 +422,17 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
           for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
             i2 = cell_cells_lst[j] - 1;
 
-            for (j = 0; j < 3; j++)
-              dist[j] = cell_cen[3*i1 + j] - cell_cen[3*i2 + j];
+            for (k = 0; k < 3; k++)
+              dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
 
             dpdxf = 0.5 * (dpdx[i1] + dpdx[i2]);
             dpdyf = 0.5 * (dpdy[i1] + dpdy[i2]);
@@ -477,7 +477,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   }
   else if (*imligp == 1) {
 
-    for (i = 0; i < n_cells; i++)
+    for (i = 0; i < n_cells_wghosts; i++)
       clip_factor[i] = (cs_real_t)DBL_MAX;
 
     if (mesh->n_domains > 1) {
@@ -499,20 +499,20 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED, 1);
+                               CS_MESH_HALO_EXTENDED);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED, 1);
+                               CS_MESH_HALO_EXTENDED);
 
       }
       else {
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD, 1);
+                               CS_MESH_HALO_STANDARD);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD, 1);
+                               CS_MESH_HALO_STANDARD);
 
       }
 
@@ -540,11 +540,11 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+    if (cell_cells_idx != NULL) {
 
       if ( (*imrgra == 2) || (*imrgra == 3) ) {
 
-        for (i1 = 0; i < n_cells; i++) {
+        for (i1 = 0; i1 < n_cells; i1++) {
 
           factor1 = 1.0;
 
@@ -554,7 +554,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
             factor2 = 1.0;
 
             if (denum[i2] > *climgp * denom[i2])
-              factor2 = *climgp * denom[i2]*denum[i2];
+              factor2 = *climgp * denom[i2]/denum[i2];
 
             factor1 = CS_MIN(factor1, factor2);
 
@@ -641,7 +641,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED);
+                           CS_MESH_HALO_STANDARD);
 
   BFT_FREE(buf);
 

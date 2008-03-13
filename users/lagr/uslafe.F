@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -239,13 +239,8 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
-      INTEGER          IP , IEL
-      DOUBLE PRECISION FDR
+      INTEGER          IP
 C
-C VARIABLES LOCALES UTILISATEUR
-C
-      DOUBLE PRECISION CD1 , CD2 , D2
-      DOUBLE PRECISION REC1, REC2, REC3, REC4
 C
 C***********************************************************************
 C

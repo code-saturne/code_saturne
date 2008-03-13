@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -819,7 +819,8 @@ C=======================================================================
 C
 C --- Pas de temps (0 : uniforme et constant
 C                   1 : variable en temps et uniforme en espace
-C                   2 : variable en espace et en temps)
+C                   2 : variable en espace et en temps
+C                  -1 : algorithme stationnaire)
 C
 C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
 C
@@ -2068,6 +2069,8 @@ C     Autres variables
 C
       IPHAS = 1
 C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+C
 C     variable masse volumique (sortie en post uniquement si variable
 C                               ou si physique particuliere)
       IPP = IPPPRO(IPPROC(IROM  (IPHAS)))
@@ -2168,6 +2171,8 @@ C
       ICHRVR(IPP)   = 1
       ILISVR(IPP)   = 1
       IHISVR(IPP,1) = -1
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
 C
 C
 C----

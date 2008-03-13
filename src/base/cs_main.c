@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Main program
@@ -194,11 +194,11 @@ void CS_PROCF (usmodg, USMODG)
 );
 
 /*----------------------------------------------------------------------------
- * Update NCELET value for FORTRAN common.
+ * Update dimension of the mesh for FORTRAN common.
  *
  * Interface Fortran :
  *
- * SUBROUTINE MAJGEO (NCELET)
+ * SUBROUTINE MAJGEO (NCELET, NFAC, NFABOR, NFACGB, NFBRGB)
  * *****************
  *
  * INTEGER          NCELET      : --> : New value to assign
@@ -206,7 +206,11 @@ void CS_PROCF (usmodg, USMODG)
 
 extern void CS_PROCF (majgeo, MAJGEO)
 (
- const cs_int_t   *const ncelet   /* --> New value for halo cells             */
+ const cs_int_t   *const ncelet,  /* --> New number of halo cells             */
+ const cs_int_t   *const nfac,    /* --> New number of internal faces         */
+ const cs_int_t   *const nfabor,  /* --> New number of border faces           */
+ const cs_int_t   *const nfacgb,  /* --> New number of global internal faces  */
+ const cs_int_t   *const nfbrgb   /* --> New number of global border faces    */
 );
 
 /*============================================================================
@@ -223,6 +227,7 @@ int main
  char  *argv[]      /* Tableau des arguments de la ligne de commandes */
 )
 {
+  cs_int_t  n_g_i_faces, n_g_b_faces;
   double  t1, t2;
   cs_int_t  idebia, idebra;
   cs_opts_t  opts;
@@ -288,10 +293,8 @@ int main
 
   if (opts.ifoenv != 0) {
 
-    cs_glob_pp_io = cs_pp_io_initialize("enveloppe",
-                                        "solveur",
+    cs_glob_pp_io = cs_pp_io_initialize("preprocessor_output",
                                         "ECS_1.3",
-                                        0,
                                         CS_PP_IO_MODE_READ,
                                         opts.echo_comm);
 
@@ -355,10 +358,6 @@ int main
 
   cs_mesh_init_parall(cs_glob_mesh);
 
-  /* Mise à jour du nombre de cellules fantômes */
-
-  CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells_with_ghosts));
-
   /* Renumérotation en fonction des options du code */
 
   bft_printf("\n Renumerotation du maillage:\n");
@@ -400,6 +399,17 @@ int main
     bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
 
   }
+
+  /* Mise à jour de certaines dimensions du maillage */
+
+  n_g_i_faces = (cs_int_t)cs_glob_mesh->n_g_i_faces;
+  n_g_b_faces = (cs_int_t)cs_glob_mesh->n_g_b_faces;
+
+  CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells_with_ghosts),
+                            &(cs_glob_mesh->n_i_faces),
+                            &(cs_glob_mesh->n_b_faces),
+                            &n_g_i_faces,
+                            &n_g_b_faces);
 
   /* Destruction du la structure temporaire servant à la construction du
      maillage principal */
@@ -494,12 +504,6 @@ int main
 
   bft_printf("\n Destruction des structures et clôture du calcul\n");
   bft_printf_flush();
-
-#if defined(_CS_HAVE_XML)
-  /* Libération des structures liées à la lecture du fichier xml */
-  cs_gui_clean_memory();
-  cs_gui_clean_memory_rayt();
-#endif
 
   /* Libération de structures internes de l'API F77 pour fichiers suite */
 

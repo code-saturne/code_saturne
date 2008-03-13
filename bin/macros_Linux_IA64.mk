@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,14 +35,14 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME       = /home/saturne/Saturne/opt/bft-1.0.4/arch/Linux_IA64
+BFT_HOME       = /home/cont002/saturne/opt/bft-1.0.6/arch/Linux_IA64
 BFT_INC        = -I$(BFT_HOME)/include
 BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
 
 # Macro pour FVM
 #---------------
 
-FVM_HOME       = /home/saturne/Saturne/opt/fvm-0.8.0/arch/Linux_IA64
+FVM_HOME       = /home/cont002/saturne/opt/fvm-0.10.0/arch/Linux_IA64
 FVM_INC        = -I$(FVM_HOME)/include
 FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
 
@@ -56,7 +56,7 @@ MPE_COMM        =0
 #
 #Les bibliothèques MPI sont directement appelées par mpicc et mpif77
 MPI_INC         =
-MPI_LIB         =-lmpi -lrt -ldl -lpmi -lcpuset
+MPI_LIB         =
 
 # Macro pour Sockets
 #-------------------
@@ -72,10 +72,10 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/Saturne/opt/libxml2-2.6.19
+XML_HOME = /usr
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
 # Macro pour BLAS
 #----------------
@@ -95,7 +95,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = icc
+CCOMP                  = mpicc
 
 CCOMPFLAGSDEF          = -fpic -std=c99 -strict-ansi -Wall -Wcheck -Wmissing-prototypes \
 			 -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith \
@@ -106,16 +106,15 @@ CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1            
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
 CCOMPFLAGSPROF         = -p
 CCOMPFLAGSVERS         = -V
 
 # Compilateur FORTRAN
 #--------------------
 #  Profiling gprof : -p
-#  Attention, par defaut on a -Mbounds avec mpif77 (l'inverse de mpicc)
 
-FTNCOMP                = ifort
+FTNCOMP                = mpif77
 
 FTNCOMPFLAGSDEF        = -fpic -mtune=itanium2-p9000 -warn
 
@@ -124,7 +123,7 @@ FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O1
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0 -ftrapuv
 FTNCOMPFLAGSPROF       = -p
 FTNCOMPFLAGSVERS       = -V
 
@@ -135,7 +134,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = ifort
+LDEDL           = mpif77
 LDEDLFLAGS      = -O -nofor_main
 LDEDLFLAGSLO    = -O0 -nofor_main
 LDEDLFLAGSDBG   = -g -nofor_main

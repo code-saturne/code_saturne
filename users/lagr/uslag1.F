@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -425,6 +425,14 @@ C     (DEFAUT : SEUIL = 0.D0)
 C
         SEUIL = 0.D0
 C
+C     CALCUL DES STATISTIQUES VOLUMIQUES A PARTIR DE L'ITERATION
+C     LAGRANGIENNE ABSOLUE
+C     * IDSTNT est un nombre d'iterations Lagrangiennes absolues
+C       (i.e. suites comprises).
+C     (DEFAUT : IDSTNT = 1)
+C
+        IDSTNT = 1
+C
 C     CALCUL STATIONNAIRE DES STATISTIQUES VOLUMIQUES A PARTIR DE
 C     L'ITERATION LAGRANGIENNE ABSOLUE NSTIST
 C     * NSTIST est un nombre d'iterations Lagrangiennes absolues
@@ -435,9 +443,9 @@ C     * Si le nombre d'iterations Lagrangiennes absolues est strictement
 C       inferieur a NSTIST, les statistiques sont instationnaires
 C       (i.e. elles sont REMISES A ZERO a chaque iteration
 C       Lagrangienne).
-C     (DEFAUT : NSTIST = 1)
+C     (DEFAUT : NSTIST = IDSTNT)
 C
-        NSTIST = 1
+        NSTIST = IDSTNT
 C
 C
 C   5.4.2 NOMBRE DE VARIABLES STATISTIQUES VOLUMIQUES,

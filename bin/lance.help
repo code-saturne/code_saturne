@@ -21,8 +21,11 @@ Le nombre d'entiers LONGIA et le nombre de reels LONGRA
                -------------------------------
 
 L'utilisateur peut souhaiter ne pas utiliser le preprocesseur
-  (maillages *tlc *slc) : positionner IFOENV=0
-dans les autres cas positionner IFOENV=1 en standard
+  (uniquement pour les maillages *tlc *slc) : positionner
+   SOLCOM=1
+dans les autres cas positionner SOLCOM=0 en standard
+ATTENTION : la lecture des maillages .slc et .tlc n'est
+plus maintenue et est deconseillee.
 
                -------------------------------
 
@@ -33,16 +36,16 @@ Pour recoller des maillages, on donne des options supplementaires
    - preciser les options de recollement dans la variable 
      COMMANDE_RC. Il est preferable de preciser la couleur 
      des faces a recoller. Si c'est impossible, 
-     il faut omettre l'option -couleur (mais le cout sera 
+     il faut omettre l'option -color (mais le cout sera 
      superieur et la robustesse parfois moindre).La selection
      des faces peut se faire par d'autres moyens que la couleur
      (voir l'aide du preprocesseur par ecs -h). 
   Dans l'exemple ci-dessous, on cherche a recoller 
-    les faces de couleur 3, 4 et 6 des maillages geomet.slc 
+    les faces de couleur 3, 4 et 6 des maillages titi.des 
     et toto.unv.
 
-    MAILLAGE="geomet.slc toto.unv"
-    COMMANDE_RC="-rc -couleur 3 4 6"
+    MAILLAGE="titi.des toto.unv"
+    COMMANDE_RC="-j -color 3 4 6"
 
   S'il n'y a rien a recoller, on peut laisser vide 
     la variable COMMANDE_RC, soit COMMANDE_RC=.
@@ -61,7 +64,7 @@ Pour decouper en triangles les faces dont la distorsion (warp) est
   COMMANDE_DF. Par exemple, pour decouper au dela d'un angle de 0.01
   degres (c'est la valeur par defaut) : 
 
-    COMMANDE_DF="-df 0.01"
+    COMMANDE_DF="-cwf 0.01"
 
   Si l'on ne souhaite rien decouper (par defaut), c'est-a-dire si 
     l'on souhaite utiliser le maillage tel qu'il a ete fourni par le 
@@ -77,23 +80,23 @@ Pour traiter un cas periodique, il faut renseigner la variable
       (tx,ty,tz): composantes du vecteur translation
     Rotation    : deux possibilites 
       - donnee de angle, direction et point invariant :
-        -perio -rota -angle a -dir dx dy dz -ptinv px py pz  
+        -perio -rota -angle a -dir dx dy dz -invpt px py pz  
           a         : angle en degres (entre -180 et + 180)
           (dx,dy,dz): composantes d'un vecteur directeur 
                         de l'axe de rotation  
           (px,py,pz): composantes du point invariant de la rotation
       - donnee de matrice et point invariant :
-        -perio -rota -matrice m11 m12 m13 m21 m22 m23 m31 m32 m33 -ptinv px py pz  
+        -perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py pz  
           mij       : elements de la matrice de rotation par ligne
           (px,py,pz): composantes du point invariant de la rotation
 
   On peut composer translation et rotation : 
         -perio -trans tx ty tz -rota -angle a 
-                                     -dir dx dy dz -ptinv px py pz  
-     ou -perio -trans tx ty tz -rota -matrice m11 m12 m13 
-                                              m21 m22 m23 
-                                              m31 m32 m33 
-                                     -ptinv   px py pz   
+                                     -dir dx dy dz -invpt px py pz  
+     ou -perio -trans tx ty tz -rota -matrix m11 m12 m13 
+                                             m21 m22 m23 
+                                             m31 m32 m33 
+                                     -invpt   px py pz   
     La transformation composite est alors RoT (quel que soit l'ordre 
       dans lequel apparaissent rotation et translation dans la ligne 
       de commande).
@@ -106,7 +109,7 @@ Pour traiter un cas periodique, il faut renseigner la variable
     les proprietes des faces, par exemple avec l'option -couleur (la 
     selection des faces peut se faire par d'autres moyens que la 
     couleur : voir l'aide du preprocesseur par ecs -h) : par exemple
-      -perio -trans 10 0 0 -couleur 1 2
+      -perio -trans 10 0 0 -color 1 2
 
   On peut imposer jusqu'a trois periodicites (une par direction 
     d'espace) : on repete pour cela l'option -perio. par exemple 
@@ -116,24 +119,24 @@ Pour traiter un cas periodique, il faut renseigner la variable
     la variable COMMANDE_PERIO, c'est-a-dire : COMMANDE_PERIO=
 
   Exemple (le \ marque la continuation de la ligne de commande)
-    COMMANDE_PERIO="-perio -trans -10.2 0 0 -couleur 2             \
-                    -perio -rota -angle 90 -dir 0 0 1 -ptinv 0 0 0 \
-                           -couleur 3 4                            \
+    COMMANDE_PERIO="-perio -trans -10.2 0 0 -color 2               \
+                    -perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 \
+                           -color 3 4                              \
                     -perio -trans 0 1 0                            \ 
-                           -rota -matrice 1 0  0                   \
-                                          0 0 -1                   \
-                                          0 1  0 -ptinv 0 0 -0.2   "
+                           -rota -matrix 1 0  0                    \
+                                         0 0 -1                    \
+                                         0 1  0 -invpt 0 0 -0.2    "
 
                -------------------------------
 
-Pour le couplage avec Syrthes (un seul calcul fluide 
+Pour le couplage avec SYRTHES (un seul calcul fluide 
     et un seul calcul solide) il suffit de renseigner
     la variable COMMANDE_SYRTHES. S'il n'y a pas de couplage
     il suffit de la laisser vide.
   Dans l'exemple ci-dessous, on cherche a coupler les faces 
     de bord fluide de couleur 2 et 3
 
-    COMMANDE_SYRTHES="-syrthes -couleur 2 3"
+    COMMANDE_SYRTHES="-syrthes -color 2 3"
 
   Pour des couplages plus complexes, le script devra etre adapte. 
 
@@ -168,8 +171,8 @@ L'option NOMBRE_DE_PROCESSEURS donne le nombre de processeurs (virtuels)
     Dans le cas d'un calcul en interactif (type calcul sur PC Linux),
     NOMBRE_DE_PROCESSEURS peut depasser le nombre de processeurs disponibles
     sur la machine (mais perte d'efficacite).
-    Dans le cas d'un couplage avec Syrthes a travers un gestionnaire de queue, 
-    un processeur sera reserve pour Syrthes et le nombre de processeurs utilises
+    Dans le cas d'un couplage avec SYRTHES a travers un gestionnaire de queue, 
+    un processeur sera reserve pour SYRTHES et le nombre de processeurs utilises
     par le noyau sera donc egal a nproc_noy = NOMBRE_DE_PROCESSEURS-1.
     
 
@@ -236,7 +239,7 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     developpement. Il est donc conseille de conserver la valeur 
     par defaut (chaine vide). Exemple : 
       LISTE_LIB_SAT="libsaturneBASE.a libsaturneCFBL.a libsaturneCOGZ.a \
-                     libsaturneCPLV.a libsaturneELECDBG.a \
+                     libsaturneCPLV.a libsaturneELECDBG.a libsaturneFUEL.a \
                      libsaturneLAGR.a libsaturneRAYT.a libsaturneMATI.a"
     Ce mot cle est prioritaire sur OPTIMISATION.
     Une explication est fournie par makehelp (voir MOD=).
@@ -256,14 +259,18 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     Dans le cas ou valgrind n'est pas trouve automatiquement dans 
     le PATH, specifier le chemin d'acces complet.
 
-  ARG_CS_VERIF permet d'activer des tests elementaires sur le
-    maillage.
-    ="0" : criteres de qualite du maillage
-    ="1" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=0
-    ="2" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=1
-    ="3" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=2
-    ="4" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=3
-    ="5" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=4
+  ARG_CS_VERIF permet d'activer des tests elementaires sur la
+    qualite du maillage et sur les performances de la machine.
+    ="-q 0" : criteres de qualite du maillage
+    ="-q 1" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=0
+    ="-q 2" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=1
+    ="-q 3" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=2
+    ="-q 4" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=3
+    ="-q 5" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=4
+    ="--benchmark" : performances des operations elementaires
+    ="--benchmark --mpitrace" : idem que benchmark avec operations
+                                effectuees une seule fois pour traces
+                                MPI legeres
     En mode de verification, le code ne necessite aucun fichier
     parametrique ni aucun sous-programme utilisateur.
 
@@ -288,7 +295,7 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     ou ensemble dans la variable ARG_CS_OUTPUT.
 
   ECHOCOMM permet de faire afficher les echanges preprocesseur noyau 
-    syrthes. Utile uniquement en cas de probleme de communication. 
+    SYRTHES. Utile uniquement en cas de probleme de communication. 
     Si on souhaite activer cette possibilite, on affecte 
     une valeur entiere strictement positive a ECHOCOMM. A chaque 
     communication, on affichera les ECHOCOMM premiers et derniers 

@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Sparse Linear Equation Solvers
@@ -444,7 +444,7 @@ _convergence_test(const char             *solver_name,
 
     if (n_iter < convergence->n_iterations_max) {
       int diverges = 0;
-      if (residue > convergence->initial_residue * 10000.0)
+      if (residue > convergence->initial_residue * 10000.0 && residue > 100.)
         diverges = 1;
 #if (_CS_STDC_VERSION >= 199901L)
       else if (isnan(residue) || isinf(residue))
@@ -547,11 +547,25 @@ _dot_products_2(cs_int_t          n_elts,
 
   if (x1 == x2 || x1 == y2 || y1 == x2 || y1 == y2) {
 
+#if (defined(__INTEL_COMPILER) && defined(__ia64__))
+
+    /* Use temporary variables to help compiler optimize */
+    double _s0 = 0.0, _s1 = 0.0;
+    for (ii = 0; ii < n_elts; ii++) {
+      _s0 += x1[ii] * y1[ii];
+      _s1 += x2[ii] * y2[ii];
+    }
+    s[0] = _s0; s[1] = _s1;
+
+#else
+
     s[0] = 0.0; s[1] = 0.0;
     for (ii = 0; ii < n_elts; ii++) {
       s[0] += x1[ii] * y1[ii];
       s[1] += x2[ii] * y2[ii];
     }
+
+#endif
 
   }
   else {
@@ -602,7 +616,7 @@ _y_aypx(cs_int_t          n,
    cs_int_t ii;
 
 #if defined(__xlc__)
-#pragma disjoint {alpha, *x, *y}
+#pragma disjoint(alpha, *x, *y)
 #endif
 
    for (ii = 0; ii < n; ii++)
@@ -630,7 +644,7 @@ _y_aypx(cs_int_t          n,
  *   rotation_mode -->  Halo update option for rotational periodicity
  *   ad_inv        -->  Inverse of matrix diagonal
  *   ax            -->  Non-diagonal part of linear equation matrix
- *   rk            <--  Residue vector
+ *   rk            -->  Residue vector
  *   gk            <--  Result vector
  *   wk            ---  Working array
  *----------------------------------------------------------------------------*/
@@ -649,7 +663,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
   cs_int_t ii;
 
 #if defined(__xlc__)
-#pragma disjoint {*face_cell, *ad_inv, *ax, *rk, *gk, *wk}
+#pragma disjoint(*ad_inv, *ax, *rk, *gk, *wk)
 #endif
 
   /* Polynomial of degree 0 (diagonal)
@@ -726,7 +740,7 @@ _conjugate_gradient_sp(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -832,16 +846,6 @@ _conjugate_gradient_sp(const char             *var_name,
 
     n_iter += 1;
 
-    residue = sqrt(_dot_product(n_rows, rk, rk));
-
-    /* Convergence test */
-
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
     _polynomial_preconditionning(n_rows,
                                  poly_degree,
                                  rotation_mode,
@@ -870,6 +874,13 @@ _conjugate_gradient_sp(const char             *var_name,
 
     cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
     cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
+
+    /* Convergence test */
+
+    residue = sqrt(_dot_product(n_rows, rk, rk));
+
+    cvg = _convergence_test(sles_name, var_name,
+                            n_iter, residue, convergence);
 
   }
 
@@ -926,7 +937,7 @@ _conjugate_gradient_mp(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -1030,8 +1041,6 @@ _conjugate_gradient_mp(const char             *var_name,
 
   while (cvg == 0) {
 
-    n_iter += 1;
-
     _polynomial_preconditionning(n_rows,
                                  poly_degree,
                                  rotation_mode,
@@ -1047,13 +1056,16 @@ _conjugate_gradient_mp(const char             *var_name,
 
     residue = sqrt(residue);
 
-    /* Convergence test */
+    /* Convergence test for end of previous iteration */
 
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
+    if (n_iter > 1)
+      cvg = _convergence_test(sles_name, var_name,
+                              n_iter, residue, convergence);
 
     if (cvg != 0)
       break;
+
+    n_iter += 1;
 
     /* Complete descent parameter computation and matrix.vector product */
 
@@ -1121,7 +1133,7 @@ _jacobi(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *ad, *ad_inv}
+#pragma disjoint(*rhs, *vx, *ad, *ad_inv)
 #endif
 
   /* Preliminary calculations */
@@ -1255,7 +1267,7 @@ _bi_cgstab(const char             *var_name,
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
-#pragma disjoint {*rhs, *vx, *res0, *rk, *pk, *zk, *uk, *vk, *ad_inv}
+#pragma disjoint(*rhs, *vx, *res0, *rk, *pk, *zk, *uk, *vk, *ad_inv)
 #endif
 
   /* Preliminary calculations */

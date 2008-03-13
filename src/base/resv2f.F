@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -246,7 +246,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          INIT  , IFAC  , IEL   , INC   , ICCOCG
       INTEGER          IIUN
       INTEGER          IPRIPH,IUIPH
@@ -260,6 +260,7 @@ C
       INTEGER          NITMAP, NSWRSP, IRCFLP, ISCHCP, ISSTPP, IESCAP
       INTEGER          IMGRP , NCYMXP, NITMFP
       INTEGER          IPTSTA
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION BLENCP, EPSILP, EPSRGP, CLIMGP, EXTRAP, RELAXP
       DOUBLE PRECISION TUEXPE, THETS , THETV , THETAP, THETP1
       DOUBLE PRECISION D2S3, D1S4, D3S2
@@ -415,15 +416,20 @@ C=======================================================================
 C 3.1 TERMES SOURCES  UTILISATEURS
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('RESV2F',IFINIA)
+C
       CALL USTSV2
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,
@@ -689,15 +695,20 @@ C=======================================================================
 C 4.1 TERMES SOURCES  UTILISATEURS
 C=======================================================================
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('RESV2F',IFINIA)
+C
       CALL USTSV2
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,

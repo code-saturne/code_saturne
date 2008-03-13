@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -45,7 +45,7 @@ C     -------------------------------------------------------------
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
-     &   ETTP   , ETTPA  , TEPA   , STATIS , TSLAGR , PARBOR ,
+     &   ETTP   , ETTPA  , TEPA   , STATIS , STATIV , TSLAGR , PARBOR ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -84,6 +84,35 @@ CFONC     PERIODIQUE : VOIR L'ECHANGE DE DT ET DE CP)
 CFONC   - CALCUL D'UNE SOMME SUR LES PROCESSEURS LORS D'UN CALCUL
 CFONC     PARALLELE (PARSOM)
 CFONC
+CFONC
+CFONC IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
+CFONC ========================================================
+CFONC
+CFONC   Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
+CFONC   respectivement les cellules, faces ou faces de bord en fonction
+CFONC   de differents criteres.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
+CFONC
+CFONC   La syntaxe des commandes GETFBR et GETFAC est identique.
 CFONC
 CFONC
 c@fonce
@@ -177,6 +206,9 @@ CARGU ! TEPA         ! TR !  -> ! INFO PARTICULAIRES (REELS)           !
 CARGU ! (NBPMAX,NVEP)!    !     !   (POIDS STATISTIQUES,...)           !
 CARGU ! STATIS       ! TR !  -> ! MOYENNES STATISTIQUES                !
 CARGU !(NCELET,NVLSTA!    !     !                                      !
+CARGU ! STATIV       ! TR !  -> ! CUMUL POUR LES VARIANCES DES         !
+CARGU !(NCELET,      !    !     !    STATISTIQUES VOLUMIQUES           !
+CARGU !   NVLSTA-1)  !    !     !                                      !
 CARGU ! TSLAGR       ! TR !  -> ! TERME DE COUPLAGE RETOUR DU          !
 CARGU !(NCELET,NTERSL!    !     !   LAGRANGIEN SUR LA PHASE PORTEUSE   !
 CARGU ! PARBOR       ! TR !  -> ! INFOS SUR INTERACTION DES PARTICULES !
@@ -256,7 +288,8 @@ C
       DOUBLE PRECISION COEFA(NDIMFB,*), COEFB(NDIMFB,*)
       DOUBLE PRECISION ETTP(NBPMAX,NVP) , ETTPA(NBPMAX,NVP)
       DOUBLE PRECISION TEPA(NBPMAX,NVEP)
-      DOUBLE PRECISION STATIS(NCELET,NVLSTA) , TSLAGR(NCELET,NTERSL)
+      DOUBLE PRECISION STATIS(NCELET,NVLSTA), STATIV(NCELET,NVLSTA-1)
+      DOUBLE PRECISION TSLAGR(NCELET,NTERSL)
       DOUBLE PRECISION PARBOR(NFABOR,NVISBR)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C

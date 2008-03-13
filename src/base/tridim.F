@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -223,7 +223,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IDBIA1, IDBRA1
-      INTEGER          IFINIA, IFINRA, IFNIA1
+      INTEGER          IFINIA, IFINRA, IFNIA1, IFNRA1
       INTEGER          IEL   , IFAC  , IVAR  , ISCAL , IAPPEL
       INTEGER          NCP   , NCV   , IOK
       INTEGER          IICODC, IRCODC
@@ -264,7 +264,7 @@ C
       INTEGER          IWCF  , IPH   , IFLMAS, IFLMAB
       INTEGER          ITALIM, ITRFIN, INEEFL
       INTEGER          IFLALF, IFLALB, IPRALE, ICOALE
-      INTEGER          MAXELT, ILS, IILZFB, NBZFMX, NOZFMX
+      INTEGER          MAXELT, ILS, IILZFB, NBZFMX, NOZFMX, IQCALC
 
       DOUBLE PRECISION CPCST , TDITOT, TDIST2, TDIST1, CVCST
       DOUBLE PRECISION RO0IPH, P0IPH, PR0IPH, XXP0, XYP0, XZP0
@@ -968,22 +968,25 @@ C    -> sera modifie lors de la restructuration des zones de bord
 C
           CALL UICLIM
 C         ===========
-     & ( NOZPPM,  NFABOR, IINDEF, IENTRE, IPAROI, ISYMET, ISOLIB,
-     &   IQIMP,  ICALKE, IA(IITYPF), IA(IIZFPP), IA(IICODC),
+     & ( NOZPPM,  NFABOR, IINDEF, IENTRE, IPAROI, IPARUG, ISYMET,
+     &   ISOLIB,  IQIMP,  ICALKE, IA(IITYPF), IA(IIZFPP), IA(IICODC),
      &   QIMP,   DH,     XINTUR,     RA(IRCODC) )
 C
         NBZFMX = NBZPPM
         NOZFMX = NOZPPM
         IILZFB = IFINIA
         IFNIA1 = IILZFB + NBZFMX
+        IQCALC = IFINRA
+        IFNRA1 = IQCALC + NOZFMX
         CALL IASIZE('TRIDIM',IFNIA1)
+        CALL RASIZE('TRIDIM',IFNRA1)
 C
           CALL STDTCL
 C         ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFNIA1 , IFNRA1 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NOZFMX , NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NBZFMX ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  , NBZFMX , NOZFMX ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
@@ -994,7 +997,7 @@ C         ===========
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  , RA(IRCODC)      ,
      &   RA(IW1), RA(IW2), RA(IW3), RA(IW4), RA(IW5), RA(IW6),
-     &   RA(ICOEFU)      ,
+     &   RA(ICOEFU)      , RA(IQCALC)      ,
      &   RDEVEL , RTUSER , RA     )
 C
         ENDIF

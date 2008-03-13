@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -305,7 +305,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA , IDEBRA , IEL, IFAC, IOK
-      DOUBLE PRECISION UNSPI, VV, SF, XLC, XIT, XKMIN, DISTBF, PP
+      DOUBLE PRECISION UNSPI, XIT, DISTBF
 C
 C***********************************************************************
 C
@@ -414,9 +414,9 @@ C      1.1.1 - SYMETRIE ET PAROI REFLECHISSANTE (EPS = 0) :
 C              CONDITION DE FLUX NUL
 C              ------------------------------------------
 C
-            IF (ITYPFB(IFAC).EQ.ISYMET .OR.
-     &         (ITYPFB(IFAC).EQ.IPAROI .OR.
-     &          ITYPFB(IFAC).EQ.IPARUG .AND. EPS(IFAC).EQ.0D0)) THEN
+            IF (ITYPFB(IFAC).EQ.ISYMET     .OR.
+     &         ((ITYPFB(IFAC).EQ.IPAROI.OR.
+     &           ITYPFB(IFAC).EQ.IPARUG).AND.EPS(IFAC).EQ.0D0)) THEN
 C
               COFRUA(IFAC) = 0.D0
               COFRUB(IFAC) = 1.D0

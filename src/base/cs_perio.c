@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Functions handling with periodicity.
@@ -127,7 +127,7 @@ _apply_vector_transfo(cs_real_t    matrix[3][4],
     xyz_b[i] = 0.;
 
   for (i = 0; i < 3; i++)
-    for (j = 0; j < 3 + 1; j++)
+    for (j = 0; j < 4; j++)
       xyz_b[i] += matrix[i][j]*xyz_a[j];
 
   /* Store updated cell center */
@@ -480,158 +480,6 @@ _peinur1(cs_int_t      strid_c,
     } /* End of loop on ranks */
 
   } /* End of loop on transformations */
-
-}
-
-/*----------------------------------------------------------------------------
- * Sync values for a real scalar between periodic cells.
- *
- * parameters:
- *   var       <-> scalar to sync
- *   mode_rota --> Kind of treatment to do on periodic cells of the halo.
- *                 COPY, IGNORE or RESET
- *   halo_mode --> kind of halo treatment
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_var_scal(cs_real_t            var[],
-               cs_perio_rota_t      rota_mode,
-               cs_mesh_halo_type_t  halo_mode)
-{
-  cs_int_t  i, rank_id, shift, t_id, cell_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_halo_t  *halo = mesh->halo;
-  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
-
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const fvm_periodicity_t *periodicity = mesh->periodicity;
-
-  if (halo_mode == CS_MESH_HALO_N_TYPES)
-    return;
-
-  assert(halo != NULL);
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    shift = 4 * halo->n_c_domains * t_id;
-
-    perio_type = fvm_periodicity_get_type(periodicity, t_id);
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      start_std = halo->perio_lst_out[shift + 4*rank_id];
-      length = halo->perio_lst_out[shift + 4*rank_id + 1];
-      end_std = start_std + length;
-
-      if (halo_mode == CS_MESH_HALO_EXTENDED) {
-
-        start_ext = halo->perio_lst_out[shift + 4*rank_id + 2];
-        length = halo->perio_lst_out[shift + 4*rank_id + 3];
-        end_ext = start_ext + length;
-
-      }
-
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync. */
-
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
-
-        /* Si la variable est un scalaire ou que l'on est en translation,
-           tout va bien : on echange tout */
-
-        if (   rota_mode == CS_PERIO_ROTA_COPY
-            || perio_type == FVM_PERIODICITY_TRANSLATION) {
-
-          for (i = start_std; i < end_std; i++) {
-            cell_id = halo->list_out[i];
-            var[n_cells + i] = var[cell_id];
-          }
-
-          if (halo_mode == CS_MESH_HALO_EXTENDED) {
-
-            for (i = start_ext; i < end_ext; i++) {
-              cell_id = halo->list_out[i];
-              var[n_cells + i] = var[cell_id];
-            }
-
-          }
-
-        }
-        else if (   rota_mode == CS_PERIO_ROTA_RESET
-                 && perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++)
-            var[n_cells + i] = 0.;
-
-          if (halo_mode == CS_MESH_HALO_EXTENDED)
-            for (i = start_ext; i < end_ext; i++)
-              var[n_cells + i] = 0.;
-
-        }
-
-      } /* If we are on the local rank */
-
-      /* For parallel and periodic cells, reset values if
-         mode is CS_PERIO_ROTA_RESET */
-
-      else if (   rota_mode == CS_PERIO_ROTA_RESET
-               && perio_type >= FVM_PERIODICITY_ROTATION) {
-
-        for (i = start_std; i < end_std; i++)
-          var[n_cells + i] = 0.;
-
-        if (halo_mode == CS_MESH_HALO_EXTENDED)
-          for (i = start_ext; i < end_ext; i++)
-            var[n_cells + i] = 0.;
-
-      }
-
-    } /* End of loop on ranks */
-
-  } /* End of loop on transformations for the local rank */
-
-}
-
-/*----------------------------------------------------------------------------
- * Sync values for a real scalar between periodic cells.
- *
- * parameters:
- *   var       <-> scalar to sync
- *   mode_rota --> Kind of treatment to do on periodic cells of the halo.
- *                 COPY, IGNORE or RESET
- *   halo_mode --> kind of halo treatment
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_var_scal_strided(cs_real_t            var[],
-                       cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode,
-                       cs_int_t             stride)
-{
-  cs_int_t  i, j;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_halo_t  *halo = mesh->halo;
-
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-
-  for (i = 0; i < stride; i++) {
-
-    for (j = 0; j < n_cells_with_ghosts; j++)
-      halo->tmp_buffer[j] = var[j*stride + i];
-
-    _sync_var_scal(halo->tmp_buffer, rota_mode, halo_mode);
-
-    for (j = n_cells ; j < n_cells_with_ghosts ; j++)
-      var[j*stride + i] = halo->tmp_buffer[j];
-
-  } /* End of loop on stride */
 
 }
 
@@ -1003,7 +851,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
     if (*itenso == 0)
       cs_perio_sync_var_scal(var11,
                              CS_PERIO_ROTA_COPY,
-                             CS_MESH_HALO_STANDARD, 1);
+                             CS_MESH_HALO_STANDARD);
 
     /* Input parameter is a scalar. Sync values on periodic cells for
        translation. We ignore the rotation tranformations. */
@@ -1011,7 +859,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
     else if (*itenso == 1)
       cs_perio_sync_var_scal(var11,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_MESH_HALO_STANDARD, 1);
+                             CS_MESH_HALO_STANDARD);
 
     /* Reset elements generated by a rotation. (used in Jacobi for Reynolds
        stresses or to solve velocity )*/
@@ -1019,7 +867,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
     else if (*itenso == 11)
       cs_perio_sync_var_scal(var11,
                              CS_PERIO_ROTA_RESET,
-                             CS_MESH_HALO_STANDARD, 1);
+                             CS_MESH_HALO_STANDARD);
 
     /* Variable is part of a tensor, so exchange is possible only in
        translation; 3 components are exchanged (we may guess that for
@@ -2146,7 +1994,7 @@ cs_perio_sync_geo(void)
 
   cs_perio_sync_var_scal(cell_volume,
                          CS_PERIO_ROTA_COPY,
-                         CS_MESH_HALO_EXTENDED, 1);
+                         CS_MESH_HALO_EXTENDED);
 
 }
 
@@ -2158,22 +2006,109 @@ cs_perio_sync_geo(void)
  *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
  *                   COPY, IGNORE or RESET
  *   halo_mode   --> kind of halo treatment
- *   stride      --> stride of variable to sync
  *----------------------------------------------------------------------------*/
 
 void
 cs_perio_sync_var_scal(cs_real_t            var[],
                        cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode,
-                       cs_int_t             stride)
+                       cs_mesh_halo_type_t  halo_mode)
 {
+  cs_int_t  i, rank_id, shift, t_id, cell_id;
+  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+
+  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_halo_t  *halo = mesh->halo;
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const cs_int_t  n_transforms = mesh->n_transforms;
+  const cs_int_t  n_cells   = mesh->n_cells ;
+  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const fvm_periodicity_t *periodicity = mesh->periodicity;
+
   if (halo_mode == CS_MESH_HALO_N_TYPES)
     return;
 
-  if (stride == 1)
-    _sync_var_scal(var, rota_mode, halo_mode);
-  else
-    _sync_var_scal_strided(var, rota_mode, halo_mode, stride);
+  assert(halo != NULL);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start_std = halo->perio_lst_out[shift + 4*rank_id];
+      length = halo->perio_lst_out[shift + 4*rank_id + 1];
+      end_std = start_std + length;
+
+      if (halo_mode == CS_MESH_HALO_EXTENDED) {
+
+        start_ext = halo->perio_lst_out[shift + 4*rank_id + 2];
+        length = halo->perio_lst_out[shift + 4*rank_id + 3];
+        end_ext = start_ext + length;
+
+      }
+
+      /* Treatment for local periodic cells (copy periodic and parallel
+         cells already done with the parallel sync. */
+
+      if (   mesh->n_domains == 1
+          || halo->c_domain_rank[rank_id] == local_rank) {
+
+        /* Si la variable est un scalaire ou que l'on est en translation,
+           tout va bien : on echange tout */
+
+        if (   rota_mode == CS_PERIO_ROTA_COPY
+            || perio_type == FVM_PERIODICITY_TRANSLATION) {
+
+          for (i = start_std; i < end_std; i++) {
+            cell_id = halo->list_out[i];
+            var[n_cells + i] = var[cell_id];
+          }
+
+          if (halo_mode == CS_MESH_HALO_EXTENDED) {
+
+            for (i = start_ext; i < end_ext; i++) {
+              cell_id = halo->list_out[i];
+              var[n_cells + i] = var[cell_id];
+            }
+
+          }
+
+        }
+        else if (   rota_mode == CS_PERIO_ROTA_RESET
+                 && perio_type >= FVM_PERIODICITY_ROTATION) {
+
+          for (i = start_std; i < end_std; i++)
+            var[n_cells + i] = 0.;
+
+          if (halo_mode == CS_MESH_HALO_EXTENDED)
+            for (i = start_ext; i < end_ext; i++)
+              var[n_cells + i] = 0.;
+
+        }
+
+      } /* If we are on the local rank */
+
+      /* For parallel and periodic cells, reset values if
+         mode is CS_PERIO_ROTA_RESET */
+
+      else if (   rota_mode == CS_PERIO_ROTA_RESET
+               && perio_type >= FVM_PERIODICITY_ROTATION) {
+
+        for (i = start_std; i < end_std; i++)
+          var[n_cells + i] = 0.;
+
+        if (halo_mode == CS_MESH_HALO_EXTENDED)
+          for (i = start_ext; i < end_ext; i++)
+            var[n_cells + i] = 0.;
+
+      }
+
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformations for the local rank */
 
 }
 

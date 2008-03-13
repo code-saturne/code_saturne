@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -253,7 +253,7 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IFAC, IEL, IVAR, ISOU, II, JJ, KK, LL, ISVHBL
       INTEGER          IHCP, ISCAL
-      INTEGER          IMPRIM, MODNTL
+      INTEGER          MODNTL
       INTEGER          IUIPTN
       INTEGER          IUIPH , IVIPH , IWIPH
       INTEGER          IKIPH , IEPIPH, IPHIPH, IFBIPH, IOMGIP
@@ -269,7 +269,7 @@ C
       DOUBLE PRECISION UTAU, UPX, UPY, UPZ, USN
       DOUBLE PRECISION UIPTN, UIPTNF, UIPTMN, UIPTMX
       DOUBLE PRECISION UETMAX, UETMIN, UKMAX, UKMIN, YPLUMX, YPLUMN
-      DOUBLE PRECISION UK, UET, NUSURY, YPLUS, UNTURB, DPLUS
+      DOUBLE PRECISION UK, UET, YPLUS, DPLUS
       DOUBLE PRECISION SQRCMU, CLSYME, EK
       DOUBLE PRECISION XNUII, XMUTLM
       DOUBLE PRECISION RCPROD, RCFLUX
@@ -280,10 +280,6 @@ C
       DOUBLE PRECISION RCODCX, RCODCY, RCODCZ, RCODSN
       DOUBLE PRECISION VISCLC, VISCTC, ROMC  , DISTBF, SRFBNF, CPSCV
       DOUBLE PRECISION DISTBF0,RUGD,RUGT,YDEP,ACT,UIPTFN,UIPTFX
-C
-      INTEGER          NTLAST , IAFF
-      DATA             NTLAST , IAFF /-1 , 0/
-      SAVE             NTLAST , IAFF
 C
 C***********************************************************************
 C

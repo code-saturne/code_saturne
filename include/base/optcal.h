@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -546,9 +546,11 @@ C   INDICATEUR DE PASSAGE DANS L'INITIALISATION DES
 C                         VARIABLES PAR L'UTILISATEUR
 C          IUSINI = 1 PASSAGE DANS USINIV OU PPINIV
 C                   0 PAS DE PASSAGE (NI IUSINI NI PPINIV)
+C          IUSCFP = 1 PASSAGE DANS USCFPV
+C                   0 PAS DE PASSAGE
 C
-      INTEGER           IUSINI
-      COMMON / IUSSPG / IUSINI
+      INTEGER           IUSINI, IUSCFP
+      COMMON / IUSSPG / IUSINI, IUSCFP
 C
 C PARAMETRES NUMERIQUES POUR LE CALCUL DE LA DISTANCE A LA PAROI
 C

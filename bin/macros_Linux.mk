@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,7 +35,7 @@
 # Macro pour BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.4/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macro pour FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.8.0/arch/Linux
+FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.3/arch/Linux
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux
 MPI_INC         =-isystem$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
@@ -85,12 +85,10 @@ XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
 
 # Option BLAS
 BLAS            =1
-BLAS_INC        =-I/home/saturne/opt/atlas-3.6.0/include
+BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
+BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L/home/saturne/opt/atlas-3.6.0/lib/Linux_Xeon -lcblas -latlas
-#BLAS_HOME       =/home/saturne/opt/atlas-3.7.29/arch/Linux_Pentium_M
-#BLAS_INC        =-I$(BLAS_HOME)/include
-#BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 
 
 # Preprocesseur
@@ -103,7 +101,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -124,13 +122,13 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O6
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O0
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O0
 FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g
@@ -144,13 +142,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.1/arch/Linux/bin/gfortran
+LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.1/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
 
 
 # Positionnement des variables pour le pre-processeur
@@ -194,7 +192,7 @@ LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
 #
 # paquet 70% cpu promav gradrc gradco prodsc
 # paquet 10% cpu jacobi prcpol bilsc2 ;
-#    prodsc est 4 fois plus rapide en O6 qu'en O2
+#    prodsc est 4 fois plus rapide en O3 qu'en O2
 #    bilsc2 plus rapide en O1
 #    pour les autres, on privilegie l'O2, qui est suppose plus fiable
 #      mais fait perdre un  peu de temps (2% de perte par rapport a 

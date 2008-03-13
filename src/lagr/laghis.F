@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -121,7 +121,7 @@ C
       CHARACTER        NOMFIC*300, NENVAR*300
       INTEGER          II, II1, II2, LPOS, INAM1, INAM2, LNG
       INTEGER          ICAP,NCAP,IPP,IRA,IPP2,NBPDTE, JTCABS
-      INTEGER          IDIVDT, IDMOYD, IDEBIA, IDEBRA, IFINIA ,IFINRA
+      INTEGER          IDMOYD, IDEBIA, IDEBRA, IFINIA ,IFINRA
       INTEGER          IEL   , IVARL
       INTEGER          NBCAP(NVPPMX)
       INTEGER          IPAS  , ILPD1 , IL , ILFV1 , ICLA , ILTS1

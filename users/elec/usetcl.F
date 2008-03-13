@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -72,12 +72,29 @@ CFONC ============
 CFONC
 CFONC On donne ici les conditions aux limites par face de bord.
 CFONC
-CFONC On balaye les faces de bord et selon un critere on affecte tel
-CFONC     ou tel type de conditions aux limites. Dans l'exemple donne
-CFONC     ci dessous, c'est la couleur (propriete 1 de la famille)
-CFONC     qui permet de distinguer les differents types de bord. On
-CFONC     aurait pu aussi travailler avec les coordonnees du centre
-CFONC     des faces, mais "c'eut ete moins pratique".
+CFONC L'identification des faces de bord concernees se fait grace
+CFONC a la commande GETFBR.
+CFONC
+CFONC   GETFBR(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de faces de bord trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des faces de bord trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les faces de bord de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
+CFONC
 CFONC
 CFONC
 CFONC TYPE DE CONDITIONS AUX LIMITES

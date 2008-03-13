@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -489,15 +489,16 @@ C
 C     Charbon pulverise
 C     Ordre 2 non pris en compte
 C
-      IF ( IRAYON(IPHAS).GE.1 .AND.
-     &     ( IPPMOD(ICP3PL) .GT. 0 ) .AND.
+      IF ( IRAYON(IPHAS).GE.1 ) THEN
+        IF ( IPPMOD(ICP3PL) .GT. 0 .AND.
      &     ( ISCA(ISCAL).GE.ISCA(IH2(1)) .AND.
-     &       ISCA(ISCAL).LE.ISCA(IH2(NCLACP)) )        ) THEN
+     &       ISCA(ISCAL).LE.ISCA(IH2(NCLACP)) ) ) THEN
 C
-        CALL CPRAYS
-C       ===========
-     &  ( IVAR  ,NCELET, NCEL  ,
-     &    VOLUME,PROPCE,RA(ITSRE),RA(ITSRI),SMBRS,ROVSDT)
+          CALL CPRAYS
+C         ===========
+     &    ( IVAR  ,NCELET, NCEL  ,
+     &      VOLUME,PROPCE,RA(ITSRE),RA(ITSRI),SMBRS,ROVSDT)
+        ENDIF
       ENDIF
 C
 C --> Fuel
@@ -782,7 +783,7 @@ C
       ICONVP = ICONV (IVAR)
       IDIFFP = IDIFF (IVAR)
       IRESLP = IRESOL(IVAR)
-      NDIRCP = IDIRCL(IVAR)
+      NDIRCP = NDIRCL(IVAR)
       NITMAP = NITMAX(IVAR)
       NSWRSP = NSWRSM(IVAR)
       NSWRGP = NSWRGR(IVAR)

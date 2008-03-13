@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Parsing of program arguments and associated initializations
@@ -337,7 +337,7 @@ _syr_mpi_rank(int   *arg_id,
       /* Check if the current args define face selection options;
          otherwise, we have reached the end of the Syrthes options */
 
-      if (strcmp(s,"-couleur") == 0 || strcmp(s,"-groupe") == 0) {
+      if (strcmp(s,"-color") == 0 || strcmp(s,"-group") == 0) {
         while (ii + 1 < argc && strncmp(argv[ii + 1], "-", 1))
           ii++;
       }
@@ -579,9 +579,9 @@ cs_opts_logfile_head(int    argc,
                    "***************************\n\n"));
   bft_printf(_("                                  (R)\n"
                    "                      Code_Saturne\n\n"
-                   "                      Version 1.3.0\n\n"));
+                   "                      Version 1.3.2\n\n"));
 
-  bft_printf(_("\n  Copyright (C) 1998-2007 EDF S.A., France\n\n"));
+  bft_printf(_("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n"));
 
 
   bft_printf(_("  build %s\n"), str);
@@ -781,7 +781,7 @@ cs_opts_define(int         argc,
 
   /* Parse command line arguments */
 
-  while (++arg_id < argc) {
+  while (++arg_id < argc && argerr == 0) {
 
     s = argv[arg_id];
 

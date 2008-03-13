@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -270,7 +270,6 @@ C
       INTEGER          IEL, ICHA, ICLA, IPHAS, IPCROM, IPCRO2
       INTEGER          IZONE, IFAC
       INTEGER          IPBROM, IPCX2C, IROMF
-      DOUBLE PRECISION X2 , H2
       DOUBLE PRECISION X1SRO1, X2SRO2, SRROM1, UNS1PW
       DOUBLE PRECISION X2TOT, WMOLME, UNSRO1
 C

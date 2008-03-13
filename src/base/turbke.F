@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -246,7 +246,7 @@ C
 C VARIABLES LOCALES
 C
       CHARACTER*80     CHAINE
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINIA
       INTEGER          IEL   , IFAC  , INIT  , INC   , ICCOCG, IVAR
       INTEGER          IIVAR , IIUN
       INTEGER          ICLIP , ISQRT
@@ -262,6 +262,7 @@ C
       INTEGER          IWARNP, IPP
       INTEGER          IPTSTA
       INTEGER          IPCROO, IPBROO, IPCVTO, IPCVLO
+      INTEGER          MAXELT, ILS
       DOUBLE PRECISION RNORM , D2S3, DIVP23
       DOUBLE PRECISION DELTK , DELTE, A11, A12, A22, A21
       DOUBLE PRECISION GRAVKE, EPSSUK, UNSDET, ROMVSD
@@ -501,14 +502,19 @@ C viscf viscb xam drtp smbrk smbre tinste
         W8 (IEL) = 0.D0
       ENDDO
 C
+      MAXELT = MAX(NCELET, NFAC, NFABOR)
+      ILS    = IDEBIA
+      IFINIA = ILS + MAXELT
+      CALL IASIZE('TURBKE',IFINIA)
+C
       CALL USTSKE
 C     ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   ICEPDC , ICETSM , ITYPSM ,
      &   IDEVEL , ITUSER , IA     ,

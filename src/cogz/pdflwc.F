@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -174,7 +174,7 @@ C
       INTEGER IPMAML(NDRACM)
       INTEGER IPRHOL(NDRACM), IPTSCL(NDRACM)
       INTEGER IPCFUE, IPCOXY, IPCPRO, IPCTSC
-      INTEGER IPCKAB, IPT4 , IPT3
+C      INTEGER IPCKAB, IPT4 , IPT3
       DOUBLE PRECISION NBMOL,  TEMSMM
       DOUBLE PRECISION SUM1, SUM2, SUM3, SUM4,  SUM5,  SUM6 , SUM16
       DOUBLE PRECISION SUM7, SUM8, SUM9, SUM10, SUM11, SUM12, SUM15

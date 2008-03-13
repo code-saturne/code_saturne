@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -131,13 +131,11 @@ C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          NL , NP
 C
-      INTEGER          I , J
       INTEGER          NUML
       INTEGER          NUME(NLISTE)
       INTEGER          II1 , II2 , LPOS , NLMAX , IOS
       INTEGER          NPT , IPT , LMAX
-      INTEGER          IX,IY,IZ,IUP,IVP,IWP,ITSJ,II
-      INTEGER          IXPL , IYPL  , IZPL
+      INTEGER          IX,IY,IZ,II
       INTEGER          IU1L , IV1L  , IW1L
       INTEGER          IU2L , IV2L  , IW2L
       INTEGER          ITPL , IDML  , ITEL  , IMPL
@@ -617,189 +615,192 @@ C
 C
           NP = LISTE(NL)
 C
-          REWIND(IMPLA3)
-C
-          IPT = 0
-          DO I=1,NPT
-C
-            READ(IMPLA3) NUML
-            READ(IMPLA3) XPL,YPL,ZPL
-            IF (IVISV1.EQ.1) READ(IMPLA3) U1L,V1L,W1L
-            IF (IVISV2.EQ.1) READ(IMPLA3) U2L,V2L,W2L
-            IF (IVISTP.EQ.1) READ(IMPLA3) TPL
-            IF (IVISDM.EQ.1) READ(IMPLA3) DML
-            IF (IVISMP.EQ.1) READ(IMPLA3) MPL
-            IF (IVISTE.EQ.1) READ(IMPLA3) TEL
-            IF (IVISHP.EQ.1) READ(IMPLA3) HPL
-            IF (IVISDK.EQ.1) READ(IMPLA3) DCKL
-            IF (IVISCH.EQ.1) READ(IMPLA3) MCHL
-            IF (IVISCK.EQ.1) READ(IMPLA3) MCKL
-C
-            IF (NUML .EQ. NL ) THEN
-C
-              IPT = IPT+1
+          IF (ITEPA(NP,JISOR).GT.0) THEN
 
-              RA(IX+IPT-1) = XPL
-              RA(IY+IPT-1) = YPL
-              RA(IZ+IPT-1) = ZPL
-              IF (IVISV1.EQ.1) THEN
-                RA(IU1L+IPT-1) = U1L
-                RA(IV1L+IPT-1) = V1L
-                RA(IW1L+IPT-1) = W1L
-              ENDIF
-              IF (IVISV2.EQ.1) THEN
-                RA(IU2L+IPT-1) = U2L
-                RA(IV2L+IPT-1) = V2L
-                RA(IW2L+IPT-1) = W2L
-              ENDIF
-              IF (IVISTP.EQ.1) THEN
-                RA(ITPL+IPT-1) = TPL
-              ENDIF
-              IF (IVISDM.EQ.1) THEN
-                RA(IDML+IPT-1) = DML
-              ENDIF
-              IF (IVISMP.EQ.1) THEN
-                RA(IMPL+IPT-1) = MPL
-              ENDIF
-              IF (IVISTE.EQ.1) THEN
-                RA(ITEL+IPT-1) = TEL
-              ENDIF
-              IF (IVISHP.EQ.1) THEN
-                RA(IHPL+IPT-1) = HPL
-              ENDIF
-              IF (IVISDK.EQ.1) THEN
-                RA(IDCKL+IPT-1) = DCKL
-              ENDIF
-              IF (IVISCH.EQ.1) THEN
-                RA(IMCHL+IPT-1) = MCHL
-              ENDIF
-              IF (IVISCK.EQ.1) THEN
-                RA(IMCKL+IPT-1) = MCKL
-              ENDIF
+            REWIND(IMPLA3)
 C
-            ENDIF
-          ENDDO
+            IPT = 0
+            DO II=1,NPT
+C
+              READ(IMPLA3) NUML
+              READ(IMPLA3) XPL,YPL,ZPL
+              IF (IVISV1.EQ.1) READ(IMPLA3) U1L,V1L,W1L
+              IF (IVISV2.EQ.1) READ(IMPLA3) U2L,V2L,W2L
+              IF (IVISTP.EQ.1) READ(IMPLA3) TPL
+              IF (IVISDM.EQ.1) READ(IMPLA3) DML
+              IF (IVISMP.EQ.1) READ(IMPLA3) MPL
+              IF (IVISTE.EQ.1) READ(IMPLA3) TEL
+              IF (IVISHP.EQ.1) READ(IMPLA3) HPL
+              IF (IVISDK.EQ.1) READ(IMPLA3) DCKL
+              IF (IVISCH.EQ.1) READ(IMPLA3) MCHL
+              IF (IVISCK.EQ.1) READ(IMPLA3) MCKL
+C
+              IF (NUML .EQ. NL ) THEN
+C
+                IPT = IPT+1
+
+                RA(IX+IPT-1) = XPL
+                RA(IY+IPT-1) = YPL
+                RA(IZ+IPT-1) = ZPL
+                IF (IVISV1.EQ.1) THEN
+                  RA(IU1L+IPT-1) = U1L
+                  RA(IV1L+IPT-1) = V1L
+                  RA(IW1L+IPT-1) = W1L
+                ENDIF
+                IF (IVISV2.EQ.1) THEN
+                  RA(IU2L+IPT-1) = U2L
+                  RA(IV2L+IPT-1) = V2L
+                  RA(IW2L+IPT-1) = W2L
+                ENDIF
+                IF (IVISTP.EQ.1) THEN
+                  RA(ITPL+IPT-1) = TPL
+                ENDIF
+                IF (IVISDM.EQ.1) THEN
+                  RA(IDML+IPT-1) = DML
+                ENDIF
+                IF (IVISMP.EQ.1) THEN
+                  RA(IMPL+IPT-1) = MPL
+                ENDIF
+                IF (IVISTE.EQ.1) THEN
+                  RA(ITEL+IPT-1) = TEL
+                ENDIF
+                IF (IVISHP.EQ.1) THEN
+                  RA(IHPL+IPT-1) = HPL
+                ENDIF
+                IF (IVISDK.EQ.1) THEN
+                  RA(IDCKL+IPT-1) = DCKL
+                ENDIF
+                IF (IVISCH.EQ.1) THEN
+                  RA(IMCHL+IPT-1) = MCHL
+                ENDIF
+                IF (IVISCK.EQ.1) THEN
+                  RA(IMCKL+IPT-1) = MCKL
+                ENDIF
+C
+              ENDIF
+            ENDDO
 C
 C  Ecriture Fichier Geometrie
 C
-          WRITE(IMPLA1,3010)
-          WRITE(IMPLA1,1010) NL
-          WRITE(IMPLA1,3004) LIST0(NL)
-          WRITE(IMPLA1,3005)
-          WRITE(IMPLA1,1010) IPT
-          DO II=1,IPT
-            WRITE(IMPLA1,1030) RA(IX+II-1)
-          ENDDO
-          DO II=1,IPT
-            WRITE(IMPLA1,1030) RA(IY+II-1)
-          ENDDO
-          DO II=1,IPT
-            WRITE(IMPLA1,1030) RA(IZ+II-1)
-          ENDDO
-          WRITE(IMPLA1,3006)
-          WRITE(IMPLA1,1010) IPT-1
-          DO II=1,IPT-1
-            WRITE(IMPLA1,1020) II,II+1
-          ENDDO
+            WRITE(IMPLA1,3010)
+            WRITE(IMPLA1,1010) NL
+            WRITE(IMPLA1,3004) LIST0(NL)
+            WRITE(IMPLA1,3005)
+            WRITE(IMPLA1,1010) IPT
+            DO II=1,IPT
+              WRITE(IMPLA1,1030) RA(IX+II-1)
+            ENDDO
+            DO II=1,IPT
+              WRITE(IMPLA1,1030) RA(IY+II-1)
+            ENDDO
+            DO II=1,IPT
+              WRITE(IMPLA1,1030) RA(IZ+II-1)
+            ENDDO
+            WRITE(IMPLA1,3006)
+            WRITE(IMPLA1,1010) IPT-1
+            DO II=1,IPT-1
+              WRITE(IMPLA1,1020) II,II+1
+            ENDDO
 C
 C  Ecriture Fichiers Variables
 C
-          IF (IVISV1.EQ.1) THEN
+            IF (IVISV1.EQ.1) THEN
 C
-            WRITE(IMPLA5(1),3010)
-            WRITE(IMPLA5(1),1010) NL
-            WRITE(IMPLA5(1),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(1),1030) RA(IU1L+II-1)
-            ENDDO
-            DO II=1,IPT
-              WRITE(IMPLA5(1),1030) RA(IV1L+II-1)
-            ENDDO
-            DO II=1,IPT
-              WRITE(IMPLA5(1),1030) RA(IW1L+II-1)
-            ENDDO
-          ENDIF
+              WRITE(IMPLA5(1),3010)
+              WRITE(IMPLA5(1),1010) NL
+              WRITE(IMPLA5(1),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(1),1030) RA(IU1L+II-1)
+              ENDDO
+              DO II=1,IPT
+                WRITE(IMPLA5(1),1030) RA(IV1L+II-1)
+              ENDDO
+              DO II=1,IPT
+                WRITE(IMPLA5(1),1030) RA(IW1L+II-1)
+              ENDDO
+            ENDIF
 C
-          IF (IVISV2.EQ.1) THEN
-            WRITE(IMPLA5(2),3010)
-            WRITE(IMPLA5(2),1010) NL
-            WRITE(IMPLA5(2),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(2),1030) RA(IU2L+II-1)
-            ENDDO
-            DO II=1,IPT
-              WRITE(IMPLA5(2),1030) RA(IV2L+II-1)
-            ENDDO
-            DO II=1,IPT
-              WRITE(IMPLA5(2),1030) RA(IW2L+II-1)
-            ENDDO
-          ENDIF
+            IF (IVISV2.EQ.1) THEN
+              WRITE(IMPLA5(2),3010)
+              WRITE(IMPLA5(2),1010) NL
+              WRITE(IMPLA5(2),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(2),1030) RA(IU2L+II-1)
+              ENDDO
+              DO II=1,IPT
+                WRITE(IMPLA5(2),1030) RA(IV2L+II-1)
+              ENDDO
+              DO II=1,IPT
+                WRITE(IMPLA5(2),1030) RA(IW2L+II-1)
+              ENDDO
+            ENDIF
 C
-          IF (IVISTP.EQ.1) THEN
-            WRITE(IMPLA5(3),3010)
-            WRITE(IMPLA5(3),1010) NL
-            WRITE(IMPLA5(3),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(3),1030) RA(ITPL+II-1)
-            ENDDO
+            IF (IVISTP.EQ.1) THEN
+              WRITE(IMPLA5(3),3010)
+              WRITE(IMPLA5(3),1010) NL
+              WRITE(IMPLA5(3),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(3),1030) RA(ITPL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISDM.EQ.1) THEN
+              WRITE(IMPLA5(4),3010)
+              WRITE(IMPLA5(4),1010) NL
+              WRITE(IMPLA5(4),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(4) ,1030) RA(IDML+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISMP.EQ.1) THEN
+              WRITE(IMPLA5(5),3010)
+              WRITE(IMPLA5(5),1010) NL
+              WRITE(IMPLA5(5),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(5),1030) RA(IMPL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISTE.EQ.1) THEN
+              WRITE(IMPLA5(6),3010)
+              WRITE(IMPLA5(6),1010) NL
+              WRITE(IMPLA5(6),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(6),1030) RA(ITEL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISHP.EQ.1) THEN
+              WRITE(IMPLA5(7),3010)
+              WRITE(IMPLA5(7),1010) NL
+              WRITE(IMPLA5(7),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(7),1030) RA(IHPL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISDK.EQ.1) THEN
+              WRITE(IMPLA5(8),3010)
+              WRITE(IMPLA5(8),1010) NL
+              WRITE(IMPLA5(8),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(8),1030) RA(IDCKL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISCH.EQ.1) THEN
+              WRITE(IMPLA5(9),3010)
+              WRITE(IMPLA5(9),1010) NL
+              WRITE(IMPLA5(9),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(9),1030) RA(IMCHL+II-1)
+              ENDDO
+            ENDIF
+            IF (IVISCK.EQ.1) THEN
+              WRITE(IMPLA5(10),3010)
+              WRITE(IMPLA5(10),1010) NL
+              WRITE(IMPLA5(10),3005)
+              DO II=1,IPT
+                WRITE(IMPLA5(10),1030) RA(IMCKL+II-1)
+              ENDDO
+            ENDIF
+C
           ENDIF
-          IF (IVISDM.EQ.1) THEN
-            WRITE(IMPLA5(4),3010)
-            WRITE(IMPLA5(4),1010) NL
-            WRITE(IMPLA5(4),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(4) ,1030) RA(IDML+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISMP.EQ.1) THEN
-            WRITE(IMPLA5(5),3010)
-            WRITE(IMPLA5(5),1010) NL
-            WRITE(IMPLA5(5),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(5),1030) RA(IMPL+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISTE.EQ.1) THEN
-            WRITE(IMPLA5(6),3010)
-            WRITE(IMPLA5(6),1010) NL
-            WRITE(IMPLA5(6),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(6),1030) RA(ITEL+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISHP.EQ.1) THEN
-            WRITE(IMPLA5(7),3010)
-            WRITE(IMPLA5(7),1010) NL
-            WRITE(IMPLA5(7),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(7),1030) RA(IHPL+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISDK.EQ.1) THEN
-            WRITE(IMPLA5(8),3010)
-            WRITE(IMPLA5(8),1010) NL
-            WRITE(IMPLA5(8),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(8),1030) RA(IDCKL+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISCH.EQ.1) THEN
-            WRITE(IMPLA5(9),3010)
-            WRITE(IMPLA5(9),1010) NL
-            WRITE(IMPLA5(9),3005)
-            DO II=1,IPT
-             WRITE(IMPLA5(9),1030) RA(IMCHL+II-1)
-            ENDDO
-          ENDIF
-          IF (IVISCK.EQ.1) THEN
-            WRITE(IMPLA5(10),3010)
-            WRITE(IMPLA5(10),1010) NL
-            WRITE(IMPLA5(10),3005)
-            DO II=1,IPT
-              WRITE(IMPLA5(10),1030) RA(IMCKL+II-1)
-            ENDDO
-          ENDIF
-
 C
         ENDDO
 C

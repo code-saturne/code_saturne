@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -34,7 +34,8 @@ c@verse
 C                       *****************
 C                       *****************
 C     -------------------------------------------------------------
-     & ( NIDEVE , NITUSE , NRDEVE , NRTUSE )
+     & ( NCEL   , NCELET , NFAC   , NFABOR , NNOD   ,
+     &   NIDEVE , NITUSE , NRDEVE , NRTUSE )
 C     -------------------------------------------------------------
 C***********************************************************************
 C  FONCTION  :
@@ -52,10 +53,15 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! NIDEVE       ! E  !  -> ! DIMENSION DU TABLEAU IDEVEL          !
-CARGU ! NITUSE       ! E  !  -> ! DIMENSION DU TABLEAU ITUSER          !
-CARGU ! NRDEVE       ! E  !  -> ! DIMENSION DU TABLEAU RDEVEL          !
-CARGU ! NRTUSE       ! E  !  -> ! DIMENSION DU TABLEAU RTUSER          !
+CARGU ! NCEL         ! E  !  -> ! NOMBRE DE CELLULES HORS HALO         !
+CARGU ! NCELET       ! E  !  -> ! NOMBRE DE CELLULES HALO INCLUS       !
+CARGU ! NFAC         ! E  !  -> ! NOMBRE DE FACES INTERNES             !
+CARGU ! NFABOR       ! E  !  -> ! NOMBRE DE FACES DE BORD              !
+CARGU ! NNOD         ! E  !  -> ! NOMBRE DE NOEUDS                     !
+CARGU ! NIDEVE       ! E  ! <-  ! DIMENSION DU TABLEAU IDEVEL          !
+CARGU ! NITUSE       ! E  ! <-  ! DIMENSION DU TABLEAU ITUSER          !
+CARGU ! NRDEVE       ! E  ! <-  ! DIMENSION DU TABLEAU RDEVEL          !
+CARGU ! NRTUSE       ! E  ! <-  ! DIMENSION DU TABLEAU RTUSER          !
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
@@ -83,6 +89,7 @@ C***********************************************************************
 C
 C ARGUMENTS
 C
+      INTEGER          NCEL  , NCELET, NFAC  , NFABOR, NNOD
       INTEGER          NIDEVE, NITUSE, NRDEVE, NRTUSE
 C
 C***********************************************************************

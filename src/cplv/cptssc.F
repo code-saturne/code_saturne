@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -271,26 +271,17 @@ C
       INTEGER          IXCHCL , IXCKCL , ISCALA
       INTEGER          IPCRO2 , IPCTE1 , IPCTE2 , IPCVSL , IPCCP
       INTEGER          IPCDIA , IPCVST
-      INTEGER          INC , ICCOCG , NSWRGP , IMLIGP , IWARNP
-      INTEGER          MODE, IGE, ISOL , III, IZONE, IDIMTE, ITENSO
-      INTEGER          IFAC , IFINRA , ICOEFA , ICOEFB
-      INTEGER          ICLH2, IPCX2C , ICHA , IVAR0 , IPHYDP
+      INTEGER          MODE, IGE
+      INTEGER          IPCX2C , ICHA
       INTEGER          IPCSEC
-      INTEGER          IMODE, II
 C
       DOUBLE PRECISION EPSRGP , CLIMGP , EXTRAP , XNUSS
       DOUBLE PRECISION AUX, RHOVST
-      DOUBLE PRECISION XSOLID(NSOLIM), COEFE(NGAZEM)
-      DOUBLE PRECISION T1, H1, T2, H2 , HLV , HH2OV
+      DOUBLE PRECISION COEFE(NGAZEM)
+      DOUBLE PRECISION T1, T2, HLV , HH2OV
       DOUBLE PRECISION F1MC(NCHARM), F2MC(NCHARM)
       DOUBLE PRECISION XHDEV1 , XHDEV2 , XHCO , XHO2 , GAMDV1 , GAMDV2
 C
-      DOUBLE PRECISION TSMIN,TSMAX,TS,HEMIN,HEMAX
-      DOUBLE PRECISION DHMIN,DHMAX
-C
-      DOUBLE PRECISION ZAAH,ZBBH,ZCCH,ZDDH,ZEEH,ZFFH
-C
-      DOUBLE PRECISION H2CHT2 , H2CKT2 , AUX1 , AUX2
       DOUBLE PRECISION GAMHET
 C
       DOUBLE PRECISION XXCO,XXO2,XXCO2,XXH2O,XCO2MX
@@ -530,17 +521,17 @@ C ------ Contribution aux bilans explicite et implicite de
 C        des echanges par diffusion moleculaire
 C
         DO IEL = 1, NCEL
-          AUX = ZERO
-          IF ( W11(IEL).GT.EPSICP )
-     &      AUX         = 6.D0 * W1(IEL) * XNUSS / W2(IEL)**2
+          IF ( W11(IEL).GT.EPSICP ) THEN
+            AUX         = 6.D0 * W1(IEL) * XNUSS / W2(IEL)**2
      &                  / PROPCE(IEL,IPCRO2) * PROPCE(IEL,IPCROM)
      &                  * W11(IEL)
      &                  * VOLUME(IEL)
-          RHOVST      = AUX / CP2CH(NUMCHA) /W11(IEL)
+            RHOVST      = AUX / CP2CH(NUMCHA) /W11(IEL)
 C
-          SMBRS(IEL)  = SMBRS(IEL) - AUX *
-     &                ( PROPCE(IEL,IPCTE2) - PROPCE(IEL,IPCTE1) )
-          ROVSDT(IEL) = ROVSDT(IEL) + MAX(ZERO,RHOVST)
+            SMBRS(IEL)  = SMBRS(IEL) - AUX *
+     &                  ( PROPCE(IEL,IPCTE2) - PROPCE(IEL,IPCTE1) )
+            ROVSDT(IEL) = ROVSDT(IEL) + MAX(ZERO,RHOVST)
+          ENDIF
 C
         ENDDO
 C
@@ -705,8 +696,6 @@ C
 C           ===========
      &      ( MODE  , HH2OV    , COEFE  , F1MC   , F2MC   ,
      &        T2    )
-             HEMIN=MIN(HEMIN,HH2OV)
-             HEMAX=MAX(HEMAX,HH2OV)
 C
             HLV = 2.263D+6
 C

@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -269,11 +269,11 @@ C
       INTEGER          IFINIA, IFINRA
       INTEGER          IEL, IPHAS, IPCROM, IPCRO2, IPCRO1
       INTEGER          IZONE, IFAC
-      INTEGER          IPBROM, IPCX2C, IROMF
-      DOUBLE PRECISION X3 , H2, QTOTZ
+      INTEGER          IPBROM, IROMF
+      DOUBLE PRECISION QTOTZ
       DOUBLE PRECISION X1SRO1, X2SRO2, SRROM1, UNS1PW
-      DOUBLE PRECISION X2TOT, WMOLME, UNSRO1,EH2,TEBMOY
-      INTEGER          IPCTE1
+      DOUBLE PRECISION X2TOT, WMOLME, UNSRO1
+C      DOUBLE PRECISION EH2, TEBMOY
 C
       INTEGER       IPASS
       DATA          IPASS /0/

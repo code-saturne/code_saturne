@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -51,7 +51,7 @@ C     -------------------------------------------------------------
      &   TAUP   , TLAG   , PIIL   , BX     , VAGAUS , TSUF   , TSUP   ,
      &   TSVAR  , TEMPCT , TSFEXT , CPGD1  , CPGD2  , CPGHT  ,
      &   GRADPR , GRADVF , CROULE , BRGAUS , TERBRU ,
-     &   W1     , W2     , W3     , AUXL   ,
+     &   W1     , W2     , W3     , AUXL   , AUXL2  ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -196,6 +196,8 @@ CARGU ! CROULE       ! TR ! <-  ! FONCTION D'IMPORTANCE POUR ROULETTE  !
 CARGU !   (NCELET)   !    !     !   RUSSE                              !
 CARGU ! W1..W3(NCELET! TR !  -  ! TABLEAUX DE TRAVAIL                  !
 CARGU ! AUXL(NBPMAX,3! TR !  -  ! TABLEAU DE TRAVAIL                   !
+CARGU ! AUXL2        ! TR !  -  ! TABLEAU DE TRAVAIL                   !
+CARGU !    (NBPMAX,7)!    !     !                                      !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -287,7 +289,7 @@ C
       DOUBLE PRECISION GRADPR(NCELET,3) , GRADVF(NCELET,9)
       DOUBLE PRECISION CROULE(NCELET)
       DOUBLE PRECISION W1(NCELET) ,  W2(NCELET) ,  W3(NCELET)
-      DOUBLE PRECISION AUXL(NBPMAX,3)
+      DOUBLE PRECISION AUXL(NBPMAX,3) , AUXL2(NBPMAX,7)
       DOUBLE PRECISION RDEVEL(NRDEVE) , RTUSER(NRTUSE)
       DOUBLE PRECISION RA(*)
 C
@@ -300,7 +302,6 @@ C
       INTEGER          NFIN   , NPARS  , IEL    , IVF
       INTEGER          NPAR1  , NPAR2
       INTEGER          IFORCE , IITSLG
-      INTEGER          II     , NB
       INTEGER          MODNTL
 C
       DOUBLE PRECISION DNPARS
@@ -676,7 +677,7 @@ C     ===========
      &     STATIS , STATIV , TAUP   , TLAG   , PIIL   ,
      &     TSUF   , TSUP   , BX     , TSFEXT ,
      &     VAGAUS , GRADPR , GRADVF , BRGAUS , TERBRU ,
-     &     AUXL(1,1) , RDEVEL , RTUSER , RA     )
+     &     AUXL(1,1) , AUXL2 , RDEVEL , RTUSER , RA     )
 C
 C---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 C     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES

@@ -1,33 +1,33 @@
 /*============================================================================
-*
-*                    Code_Saturne version 1.3
-*                    ------------------------
-*
-*
-*     This file is part of the Code_Saturne Kernel, element of the
-*     Code_Saturne CFD tool.
-*
-*     Copyright (C) 1998-2007 EDF S.A., France
-*
-*     contact: saturne-support@edf.fr
-*
-*     The Code_Saturne Kernel is free software; you can redistribute it
-*     and/or modify it under the terms of the GNU General Public License
-*     as published by the Free Software Foundation; either version 2 of
-*     the License, or (at your option) any later version.
-*
-*     The Code_Saturne Kernel is distributed in the hope that it will be
-*     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-*     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*     GNU General Public License for more details.
-*
-*     You should have received a copy of the GNU General Public License
-*     along with the Code_Saturne Kernel; if not, write to the
-*     Free Software Foundation, Inc.,
-*     51 Franklin St, Fifth Floor,
-*     Boston, MA  02110-1301  USA
-*
-*============================================================================*/
+ *
+ *                    Code_Saturne version 1.3
+ *                    ------------------------
+ *
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
 
 /*============================================================================
  * Reader of the parameters file: xpath request and utilities
@@ -142,7 +142,7 @@ void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Load the xml file in memory. Return an error code for the main programme.
+ * Load the xml file in memory. Return an error code for the main program.
  *
  * parameter:
  *   filename            -->  xml file containing the parameters
@@ -155,6 +155,8 @@ cs_gui_file_loading(const char *const filename)
   int argerr = 0;
 
   assert(filename);
+
+  /* printf("numero rang proc = %i\n", (int)cs_glob_base_rang); */
 
   /* Vérification de l'existence du fichier par son ouverture */
   file_descriptor = open(filename, O_RDONLY);
@@ -318,12 +320,15 @@ cs_xpath_add_element(      char **      path,
 {
   assert(path);
 
-  BFT_REALLOC(*path,
-              strlen(*path)+ strlen(element)+ strlen("/") +1,
-              char);
+  if (element != NULL) {
 
-  strcat(*path, "/");
-  strcat(*path, element);
+    BFT_REALLOC(*path,
+                strlen(*path)+ strlen(element)+ strlen("/") +1,
+                char);
+
+    strcat(*path, "/");
+    strcat(*path, element);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -350,12 +355,16 @@ cs_xpath_add_elements(      char **path,
   for(i=0; i<nbr; i++) {
 
     elt = va_arg(list, char *);
-    BFT_REALLOC(*path,
-                strlen(*path)+ strlen(elt)+ strlen("/") +1,
-                char);
 
-    strcat(*path, "/");
-    strcat(*path, elt);
+    if (elt != NULL) {
+
+      BFT_REALLOC(*path,
+                  strlen(*path)+ strlen(elt)+ strlen("/") +1,
+                  char);
+
+      strcat(*path, "/");
+      strcat(*path, elt);
+    }
   }
   va_end(list);
 }
@@ -750,8 +759,6 @@ cs_gui_get_double(char   *const path,
   char *text_name = NULL;
   int   test;
 
-  assert(path);
-
   text_name = cs_gui_get_text_value(path);
 
   if (text_name == NULL)
@@ -780,8 +787,6 @@ cs_gui_get_int(char *const path,
   char *text_name = NULL;
   int   test;
 
-  assert(path);
-
   text_name = cs_gui_get_text_value(path);
 
   if (text_name == NULL)
@@ -809,18 +814,15 @@ cs_gui_get_nb_element(char *const path)
   xmlXPathObjectPtr xpathObj;
   int nb;
 
- /* Evaluation de la requete */
+  assert(path);
+
   xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
 
   if (xpathObj == NULL)
     bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
-  /* if (xpathObj == NULL) return 0; */
-
- /* Determine l'occurence de l'element defini dans la requete path */
   nb = (xpathObj->nodesetval) ? xpathObj->nodesetval->nodeNr : 0;
 
- /* Liberation de la memoire */
   xmlXPathFreeObject(xpathObj);
 
   return nb;
@@ -845,7 +847,6 @@ int cs_gui_get_max_value(char *const path)
 
   assert(path);
 
- /* Evaluation de la requete */
   xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
 
   if (xpathObj == NULL)
@@ -892,10 +893,8 @@ cs_gui_get_status(char *const path,
   char *status;
   int   istatus;
 
-  /* Evaluation de la requete */
   status = cs_gui_get_attribute_value(path);
 
-  /* Tests sur le statut */
   if (status == NULL)
     istatus = 0;
   else {
@@ -953,6 +952,7 @@ cs_gui_strcmp(const char *const s1,
               const char *const s2)
 {
   if (s1 == NULL || s2 == NULL) return 0;
+  if ( strlen(s1) != strlen(s2)) return 0;
   if (!strncmp(s1, s2, strlen(s1))) return 1;
   return 0;
 }

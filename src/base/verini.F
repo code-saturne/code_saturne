@@ -8,7 +8,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2007 EDF S.A., France
+C     Copyright (C) 1998-2008 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -704,6 +704,18 @@ C --- Algorithme stationnaire
             IOK = IOK + 1
           ENDIF
         ENDDO
+C       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
+        IF (IILAGR.NE.0) THEN
+          WRITE(NFECRA,2150) IILAGR
+          IOK = IOK + 1
+        ENDIF
+C       L'algorithme stationnaire n'est pas compatible avec la LES
+        DO IPHAS = 1, NPHAS
+          IF (ITYTUR(IPHAS).EQ.4) THEN
+            WRITE(NFECRA,2151) ITURB(IPHAS)
+            IOK = IOK + 1
+          ENDIF
+        ENDDO
       ENDIF
 C
 C --- Reconstruction des gradients
@@ -722,7 +734,7 @@ C
           WRITE(NFECRA,2206) ANOMAX, IMRGRA
         ENDIF
       ENDIF
-
+C
 C Extrapolation : indetermination possible par mc,
 C     necessitant un traitement particulier dans gradmc,
 C     pour lequel on fait certaines hypotheses
@@ -883,7 +895,6 @@ C   auxiliaire
         DO IPHAS = 1, NPHAS
           IF(ITYTUR(IPHAS).EQ.4) THEN
             WRITE(NFECRA,2420) IPHAS,ITURB(IPHAS),ILEAUX,IECAUX
-            IOK = IOK + 1
           ENDIF
         ENDDO
       ENDIF
@@ -1166,6 +1177,11 @@ C
           IF(IDRIES(IPHAS).NE.0.AND.ITURB(IPHAS).EQ.41) THEN
             WRITE(NFECRA,2630) IPHAS,IDRIES(IPHAS),ITURB(IPHAS)
             IOK = IOK + 1
+          ENDIF
+C         La reduction du voisinage etendu peut degrader
+C         les resultats du modele dynamique en LES
+          IF(ITURB(IPHAS).EQ.41.AND.IMRGRA.EQ.3) THEN
+            WRITE(NFECRA,2607) IPHAS, ITURB(IPHAS), IMRGRA
           ENDIF
         ENDIF
 C
@@ -1546,12 +1562,14 @@ C
 C     On verifie que le scalaire associe a une fluctuation n'est
 C     pas une fluctuation
         DO II = 1, NSCAL
-          IF (ISCAVR(II).GT.0.AND.ISCAVR(ISCAVR(II)).GT.0) THEN
-            CHAINE=NOMVAR(IPPRTP(ISCA(II)))
-            CHAIN2=NOMVAR(IPPRTP(ISCA(ISCAVR(II))))
-            WRITE(NFECRA,4321)CHAINE(1:8),CHAIN2(1:8),II,ISCAVR(II),
-     &           ISCAVR(II),ISCAVR(ISCAVR(II))
-            IOK = IOK + 1
+          IF (ISCAVR(II).GT.0) THEN
+            IF (ISCAVR(ISCAVR(II)).GT.0) THEN
+              CHAINE=NOMVAR(IPPRTP(ISCA(II)))
+              CHAIN2=NOMVAR(IPPRTP(ISCA(ISCAVR(II))))
+              WRITE(NFECRA,4321)CHAINE(1:8),CHAIN2(1:8),II,ISCAVR(II),
+     &             ISCAVR(II),ISCAVR(ISCAVR(II))
+              IOK = IOK + 1
+            ENDIF
           ENDIF
         ENDDO
 C
@@ -2710,6 +2728,39 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+ 2150  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC    ',/,
+     &'@    LE MODULE LAGRANGIEN QUI EST UNE APPROCHE INSTATIONNAIRE',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  L''indicateur IILAGR a ete positionne a ',I10              ,/,
+     &'@    dans uslag1 (module lagrangien active pour IILAGR>0).   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2151  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC    ',/,
+     &'@    LA L.E.S. QUI EST UNE MODELISATION INSTATIONNAIRE DE    ',/,
+     &'@    LA TURBULENCE                                           ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  L''indicateur ITURB a ete positionne a ',I10               ,/,
+     &'@    dans usini1.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
 C
  2200 FORMAT(
      &'@                                                            ',/,
@@ -3287,6 +3338,34 @@ C     &'@                                                            ',/)
      &'@                                                            ',/,
      &'@  Il est conseille de verifier les parametres donnes via    ',/,
      &'@  l''interface ou usini1.                                   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2607 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@    ON DEMANDE LA REDUCTION DU VOISINAGE ETENDU POUR LE     ',/,
+     &'@    CALCUL DES GRADIENTS PAR MOINDRE CARRES, POUR UN        ',/,
+     &'@    CALCUL EN L.E.S AVEC LE MODELE DYNAMIQUE.               ',/,
+     &'@    MODELE DYNAMIQUE.                                       ',/,
+     &'@      PHASE  ',I10                                           ,/,
+     &'@      ITURB =',I10                                           ,/,
+     &'@      IMRGRA=',I10                                           ,/,
+     &'@                                                            ',/,
+     &'@  Le calcul sera engage.                                    ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul de la moyenne locale de la constante de         ',/,
+     &'@    Smagorinsky dynamique peut etre degrade.                ',/,
+     &'@                                                            ',/,
+     &'@  Il est conseille :                                        ',/,
+     &'@    - soit d''utiliser une methode de calculs des gradients ',/,
+     &'@      par moindre carres sur voisinage etendu complet       ',/,
+     &'@      (IMRGRA = 2)                                          ',/,
+     &'@    - soit de calculer sa propre moyenne de la constante    ',/,
+     &'@      dynamique dans la subroutine USSMAG.                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
