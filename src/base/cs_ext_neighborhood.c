@@ -336,7 +336,7 @@ _tag_cells(cs_int_t    face_id,
            cs_int_t    vtx_cells_lst[])
 {
   cs_int_t  i, j, k;
-  cs_int_t  vtx_id, en_cell_num, cell_num;
+  cs_int_t  vtx_id, ext_cell_num, cell_num;
 
   cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
   cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
@@ -350,11 +350,11 @@ _tag_cells(cs_int_t    face_id,
     for (i = cell_cells_idx[cell_id] - 1;
          i < cell_cells_idx[cell_id+1] - 1; i++) {
 
-      en_cell_num = cell_cells_lst[i];
+      ext_cell_num = cell_cells_lst[i];
 
       /* Extended neighborhood not kept yet */
 
-      if (en_cell_num > 0) {
+      if (ext_cell_num > 0) {
 
         /* Cells sharing a vertex with the face */
 
@@ -370,7 +370,7 @@ _tag_cells(cs_int_t    face_id,
 
             /* Comparison and selection */
 
-            if (cell_num == en_cell_num)
+            if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
               cell_cells_lst[i] = - cell_cells_lst[i];
 
           } /* End of loop on cells sharing this vertex */
@@ -1048,7 +1048,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
          the face. (The cell is tagged (<0) then we will change the sign
          and eliminate all cells < 0 */
 
-      if (cos_ij_fn < cos_ij_fn_min) {
+      if (cos_ij_fn <= cos_ij_fn_min) {
 
         /* For each cell sharing the face : intersection between
            cells in the extended neighborhood and cells sharing a
