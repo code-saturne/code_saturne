@@ -1,9 +1,5 @@
 #============================================================================
 #
-#                    Code_Saturne version 1.3
-#                    ------------------------
-#
-#
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
