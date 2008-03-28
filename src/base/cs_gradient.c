@@ -641,7 +641,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* If the gradient is not treated as a "true" vector */
 
-    if (itenso == 2)
+    if (*itenso == 2)
       cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                              CS_PERIO_ROTA_IGNORE,
                              CS_MESH_HALO_STANDARD);
