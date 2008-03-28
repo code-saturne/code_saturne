@@ -160,6 +160,7 @@ void CS_PROCF (cgrdmc, CGRDMC)
  *                      0: scalar, 1: vector, 2: tensor
  *   itenso         --> only for periodicity when there is a rotation
  *   iwarnp         --> output level
+ *   itenso         --> for rotational periodicity
  *   climgp         --> clipping coefficient for the computation of the gradient
  *   var            --> variable
  *   dpdx           --> X component of the pressure gradient
@@ -171,6 +172,7 @@ void
 CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
                           const cs_int_t   *imligp,
                           const cs_int_t   *iwarnp,
+                          const cs_int_t   *itenso,
                           const cs_real_t  *climgp,
                           cs_real_t         var[],
                           cs_real_t         dpdx[],

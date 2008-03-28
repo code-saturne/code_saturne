@@ -248,10 +248,8 @@ void CS_PROCF (cgrdmc, CGRDMC)
  * parameters:
  *   imrgra         --> type of computation for the gradient
  *   imligp         --> type of clipping for the computation of the gradient
- *   idimte         --> dimension of the variable
- *                      0: scalar, 1: vector, 2: tensor
- *   itenso         --> only for periodicity when there is a rotation
  *   iwarnp         --> output level
+ *   itenso         --> for rotational periodicity
  *   climgp         --> clipping coefficient for the computation of the gradient
  *   var            --> variable
  *   dpdx           --> X component of the pressure gradient
@@ -263,6 +261,7 @@ void
 CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
                           const cs_int_t   *imligp,
                           const cs_int_t   *iwarnp,
+                          const cs_int_t   *itenso,
                           const cs_real_t  *climgp,
                           cs_real_t         var[],
                           cs_real_t         dpdx[],
@@ -638,10 +637,20 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
   }
 
-  if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
-                           CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_STANDARD);
+  if (mesh->n_init_perio > 0) {
+
+    /* If the gradient is not treated as a "true" vector */
+
+    if (itenso == 2)
+      cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
+                             CS_PERIO_ROTA_IGNORE,
+                             CS_MESH_HALO_STANDARD);
+    else
+      cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
+                             CS_PERIO_ROTA_COPY,
+                             CS_MESH_HALO_STANDARD);
+
+  }
 
   BFT_FREE(buf);
 
