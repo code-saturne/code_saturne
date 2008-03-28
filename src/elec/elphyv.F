@@ -670,14 +670,14 @@ C
         DO II = 1, NSCAPP
 C
 C --- Numero du scalaire
-          ISCAL = II
+          ISCAL = ISCAPP(II)
 C
 C --- Si il s'agit de l'enthalpie son cas a deja ete traite plus haut
           ITH = 0
           IF (ISCAL.EQ.ISCALT(IPHAS)) ITH = 1
 C
 C --- Si il s'agit de Potentiel (IPOTR), son cas a deja ete traite
-          IF (ISCAPP(ISCAL).EQ.IPOTR) ITH = 1
+          IF (ISCAL.EQ.IPOTR) ITH = 1
 C
 C --- Si la variable est une fluctuation, sa diffusivite est
 C       la meme que celle du scalaire auquel elle est rattachee :
@@ -778,7 +778,7 @@ C
         DO II = 1, NSCAPP
 C
 C --- Numero du scalaire
-          ISCAL = II
+          ISCAL = ISCAPP(II)
 C
 C --- Si il s'agit de l'enthqlpie son cas a deja ete traite plus haut
           ITH = 0
