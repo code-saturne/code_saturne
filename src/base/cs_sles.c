@@ -601,10 +601,10 @@ _dot_products_2(cs_int_t          n_elts,
  *----------------------------------------------------------------------------*/
 
 inline static void
-_y_aypx(cs_int_t          n,
-        cs_real_t         alpha,
-        const cs_real_t  *x,
-        cs_real_t        *restrict y)
+_y_aypx(cs_int_t    n,
+        cs_real_t   alpha,
+        cs_real_t  *restrict x,
+        cs_real_t  *restrict y)
 {
 #if defined(_CS_HAVE_ESSL)
 
@@ -663,7 +663,7 @@ _polynomial_preconditionning(cs_int_t            n_cells,
   cs_int_t ii;
 
 #if defined(__xlc__)
-#pragma disjoint(*ad_inv, *ax, *rk, *gk, *wk)
+#pragma disjoint(*ad_inv, *rk, *gk, *wk)
 #endif
 
   /* Polynomial of degree 0 (diagonal)

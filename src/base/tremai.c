@@ -81,7 +81,9 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
 
   *tps = 3600.0 * 24.0 * 7; /* valeur "illimitée" par défaut */
 
-#if !defined(__blrts__) /* IBM Blue Gene/L */
+/* Architectures hors IBM Blue Gene ou Cray XT */
+#if   !defined(__blrts__) && !defined(__bgp__) \
+   && !defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   if ((*ret = getrusage(RUSAGE_SELF, &buf_time)) < 0)
     fprintf(stderr, "getrusage(RUSAGE_SELF) error:\n%s\n", strerror(errno));
@@ -103,7 +105,7 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
     *ret = 1;
   }
 
-#else /* defined(__blrts__) */
+#else /* IBM Blue Gene ou Cray XT */
 
   *ret = -1; /* getrusage(RUSAGE_SELF, ...) et getrlimit(RLIMIT_CPU, ...)
                 non disponibles sur cette architecture */

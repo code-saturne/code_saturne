@@ -60,6 +60,11 @@
 #include <bft_sys_info.h>
 #include <bft_timer.h>
 
+#include <fvm_config.h>
+#if !defined(_CS_HAVE_MPI) && defined(FVM_HAVE_MPI)
+#error "Either both or neither Code_Saturne and FVM must be configured with MPI"
+#endif
+
 #include <fvm_parall.h>
 
 /* Includes librairie */
@@ -429,7 +434,9 @@ void cs_base_mpi_init
 
 #if defined(FVM_HAVE_MPI)
   fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
-#if defined(__blrts__) /* IBM Blue Gene/L */
+  /* IBM Blue Gene ou Cray XT */
+#if   defined(__blrts__) || defined(__bgp__) \
+   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   fvm_parall_set_safe_gather_mode(1);
 #endif
 #endif
@@ -841,10 +848,12 @@ void cs_base_info_systeme
 
   /* Utilisateur */
 
-#if !defined(__blrts__)
-  pwd_user = getpwuid(geteuid());
+  /* Fonctions non disponibles sur IBM Blue Gene ou Cray XT */
+#if   defined(__blrts__) || defined(__bgp__) \
+   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+  pwd_user = NULL;
 #else
-  pwd_user = NULL; /* fonctions non disponibles sur IBM Blue Gene/L */
+  pwd_user = getpwuid(geteuid());
 #endif
 
   if (pwd_user != NULL) {
