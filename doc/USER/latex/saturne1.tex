@@ -124,10 +124,8 @@ the document for easier consultation.
 \label{prg_environnementCS}
 At the install procedure of \CS, a directory is dedicated to the code and
 its components. It is stored in the environment variable \texttt{PATHCS}.
-It is usually the root of a specific account \texttt{/home/saturne} (as it
-is the case on the servers of the MFEE department or on the Chatou cluster) or a
-subdirectory \texttt{/home/saturne/Saturne} (as it is the case on the CCRT
-machines). For installs outside EDF R\&D, please refer to the administrator who
+It is usually the root of a specific account \texttt{/home/saturne}.
+For installs outside EDF R\&D, please refer to the administrator who
 installed the code for the \texttt{PATHCS} location.
 
 The current version of \CS (\verscs) is located in the directory
@@ -136,16 +134,10 @@ The current version of \CS (\verscs) is located in the directory
 In order to use \CS, every user must add the following line in their file
 ``\texttt{.profile}''\footnote{or \texttt{.monprofile} if the
  modifications of the \texttt{.profile} file are reserved for the
- administators, as is the case in the MFEE departement}:
+ administators, as is the case in the MFEE departement of EDF}:
 
-\hspace*{2cm}\texttt{. }\tildeunix\texttt{saturne/Noyau/ncs-\verscs/bin/cs\_profile} for the MFEE
-server and Chatou cluster.
-
-\hspace*{2cm}\texttt{. }\tildeunix\texttt{saturne/Saturne/Noyau/ncs-\verscs/bin/cs\_profile}
-for the CCRT machines.
-
-\hspace*{2cm}\texttt{. }\texttt{xxxxxxx/Noyau/ncs-\verscs/bin/cs\_profile} for
-the other cases, where \texttt{xxxxxxx} represents the PATHCS directory where
+\hspace*{2cm}\texttt{. }\texttt{xxxxxxx/Noyau/ncs-\verscs/bin/cs\_profile},
+where \texttt{xxxxxxx} represents the PATHCS directory where
 \CS and its components have been installed (refer to the administrator
 responsible for \CS).
 
@@ -829,7 +821,8 @@ corresponding user's guide \cite{ecsmu} (available on-line through the command
 \item NUMECA Hex format (\texttt{*.hex} files): this format is seldom used. It
 is the product of {\em IggHexa} (which has since become {\em Hexpress}). It is
 not maintained, since the corresponding mesh generator in not available at
-MFEE. The filter is based on specifications and some example meshes provided by
+EDF R\&D/MFEE.
+The filter is based on specifications and some example meshes provided by
 the NUMECA company in 2001.
 
 \item MED 2.3. format: this format used by the SALOME platform and
@@ -2659,26 +2652,51 @@ Parallelism and periodicity are activated by means of the launch script
 in the standard cases:
 \begin{list}{$\bullet$}{}
 
-\item On the MFEE cluster, the launching of a parallel run
-      requires to complete the batch cards \texttt{PBS} located in the
-      beginning of \texttt{cntl}, and particularly to set the number of
+\item On clusters with PBS batch systems (like the EDF R\&D Chatou cluster),
+      the launching of a parallel run
+      requires to complete the \texttt{PBS} batch cards located in the
+      beginning of \texttt{lance}, and particularly to set the number of
       physical nodes (\texttt{nodes}) and the number of physical
-      processors per node (\texttt{ppn}) wanted. Generally, the number of
-      used virtual processors is the same as the number of reserved physical
-      processors, that is to say:
-\texttt{NOMBRE\_DE\_PROCESSEURS}=\texttt{nodes}$\times$\texttt{ppn}.
+      processors per node (\texttt{ppn}) wanted. This can be done through
+      the Graphical Interface or by editing the \texttt{lance} file directly.
+      The number of processors used for the calculation will then be set
+      automatically to the number of processors reserved and the 
+      variable \texttt{NOMBRE\_DE\_PROCESSEURS} can be left empty
+      (see also \S\ref{prg_lance}).
 
-\item On the CCRT, the launching of a parallel run
-      requires to complete the batch cards \texttt{LSF} located in the
-      beginning of \texttt{lance\_ccrt}, and particularly to set the
+\item On clusters with LSF batch systems (like the CCRT machines),
+      the launching of a parallel run
+      requires to complete the \texttt{LSF} batch cards located in the
+      beginning of \texttt{lance}, and particularly to set the
       number of processors (\texttt{\#BSUB -n}) wanted and the limit CPU
-      time (\texttt{\#BSUB -c}). The variable
-      \texttt{NOMBRE\_DE\_PROCESSEURS} which stands for the number of
-      virtual processors used for the calculation must be completed,
-      too.
+      time (\texttt{\#BSUB -W}). As for now, this can only be done
+      by editing the \texttt{lance} file directly.
+      The number of processors used for the calculation will then be set
+      automatically to the number of processors reserved and the 
+      variable \texttt{NOMBRE\_DE\_PROCESSEURS} can be left empty
+      (see also \S\ref{prg_lance}).
 
-\item Concerning periodicity, it is enough to complete the option
-      \texttt{COMMANDE\_PERIO} of the launch scripts. The transformation
+\item On clusters with other batch systems, \texttt{lance} file may have to
+      be modified manually. Please do not hesitate to contact the \CS support
+      (saturne-support@edf.fr) so that these modifications can be added to
+      the standard launch script to make it more general.
+
+\item Although on batch systems the \texttt{NOMBRE\_DE\_PROCESSEURS} variable
+      in the script (indicating the number of processors used for the
+      calculation) is filled automatically to the number of processors
+      reserved, the user can still choose to specify another value for it.
+      This might only happen in very specific conditions and is not advised,
+      as it will probably not be compatible with the batch system. Indeed,
+      batch systems forbid to launch a calculation on more processors than the
+      number of processors reserved, and some batch systems also forbid to
+      launch a calculation on less processors than the number of processors
+      reserved (automatic timeout on the idle processors that will stop the
+      whole calculation).
+
+
+\item Periodicity is activated through the Graphical Interface or by completing
+      the \texttt{COMMANDE\_PERIO} of the launch script \texttt{lance}.
+      The transformation
       allowing to pass from a boundary to the other one must be defined
       (the direction does not matter) and the set of periodical faces
       should be (optional but strongly advised) marked out (for instance
@@ -2689,7 +2707,7 @@ in the standard cases:
 \item Periodicity can also work when the periodic boundaries are meshed
       differently (periodicity of non-conforming faces), {\it apart} from
       the case of a 180 degree rotation periodicity with faces couples
-      by the rotation axis.
+      on the rotation axis.
 
 \item A parallel calculation may be stopped in the same manner as a
       sequential one using a \texttt{ficstp} file (see praragraph
@@ -2708,11 +2726,11 @@ in the standard cases:
 
 The user can notice in a subroutine
 \begin{list}{-}{}
-\item that the periodicity is activated by testing the variable IPERIO
-      (=1 if the periodicity is activated);
-\item that rotation periodicities are present by testing the variable
+\item that the presence of periodicity is tested with the variable IPERIO
+      (=1 if periodicity is activated);
+\item that the presence of rotation periodicities is tested with the variable
       IPEROT (number of rotation periodicities);
-\item that the calculation is run in parallel mode by testing the
+\item that the parallel running of a calculation is tested with the
       variable IRANGP (IRANGP is worth -1 in the case of a non-parallel
       calculation and N-1 in the case of a parallel calculation, N being
       the number of the current processor)
@@ -2804,18 +2822,18 @@ Some particular points should be reminded:
 \item periodicity is incompatible with
   \begin{list}{-}{}
    \item  multigrid algorithm,
-   \item  Lagrangian module,
    \end{list}
 \item rotation periodicity is incompatible with
   \begin{list}{-}{}
   \item semi-transparent radiation,
   \item reinforced velocity-pressure coupling (IPUCOU=1).
   \end{list}
-\item although it has not been the case so far, eventual problemes might be met
-      in the case of rotation periodicity with the $R_{ij}-\varepsilon$
+\item although it has not been the case so far, potential problemes might be met
+      in the case of rotation periodicity with the LRR $R_{ij}-\varepsilon$
       model. They would come from the way of taking into account the
       orthotrope viscosity (however, this term has usually a low influence).
 \end{list}
+
 %==================================
 \subsection{Geometric and particulate arrays
       related to lagrangian modeling}
