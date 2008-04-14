@@ -163,13 +163,9 @@ do
     chmod +x $CAS/DATA/$gui
   fi
 
-# recopie des src  utilisateur et masquage des repertoires CVS
+# recopie des src  utilisateur
   users=USERS
   cp -Rf $CS_HOME/users $CAS/FORT/$users
-  listedircvs=`find $CAS/FORT/$users -name CVS -print`
-  for dir in $listedircvs ; do
-    mv $dir `dirname ${dir}`/.CVS
-  done
 
 # sur cluster, le nom est limite a 15 caracteres
   NOMETCAS=`echo ${etude}${cas}|cut -c1-15`
