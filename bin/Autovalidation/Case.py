@@ -103,7 +103,7 @@ class Case :
                 print "Error : opening "+refScriptsPath+'/lance'
                 print sys.exit(1)           
             
-            keywordsLance = ["IFOENV","LONGIA","LONGRA","PARAM","MAILLAGE",
+            keywordsLance = ["SOLCOM","LONGIA","LONGRA","PARAM","MAILLAGE",
                              "COMMANDE_RC","COMMANDE_DF","COMMANDE_PERIO",
                              "COMMANDE_SYRTHES","DONNEES_THERMOCHIMIE",
                              "NOMBRE_DE_PROCESSEURS","LISTE_PROCESSEURS",
