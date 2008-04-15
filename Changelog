@@ -1,3 +1,48 @@
+
+* 10/04/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Several corrections on the user guide
+  modified routine:
+    saturne1.tex
+
+* 08/04/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Port to BlueGene/P and Cray XT
+  modified routines:
+    cs_base.c
+    cs_sles.c
+    cs_suite.c
+    tremai.c
+   
+* 08/04/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Wrong index when setting the last character of a string
+  when parsing the groups name when coupling with SYRTHES
+  modified routines:
+    cs_mesh_select.c
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on the gradient limitation when a rotational
+  periodicity is present
+  modified routines:
+    cs_gradient.h
+    cs_gradient.c
+    grdcel.F
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on the gradient computation with IMRGRA = 4
+  modified routine:
+    grdcel.F
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  The indirection between a scalar of the electric module and
+  the whole scalars array was mis-used in the physical properties
+  initialisation of this module.
+  modified routines:
+    elphyv.F
+
+* 21/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Corrected extended neighborhood reduction bug
+  modified routines:
+    cs_ext_neighborhood.c
+
 * 12/03/2008 - David Monfort <david.monfort@edf.fr>
   Tagging of the Version1_3 branch
   Trunk open for new commits.
@@ -227,13 +272,13 @@
     cs_base.h
     cs_lagrang.c
 
-* 14/01/2008 - Jérome Bônelle <jerome.bonelle@edf.fr>
+* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Bug fix in face renumbering and ponderation algorithm
   improvement
   modified routines:
     cs_syr_coupling.c
 
-* 14/01/2008 - Jérome Bônelle <jerome.bonelle@edf.fr>
+* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Missing argument in printf function in cs_syr_mesages.c
 
 * 08/01/2008 - David Monfort <david.monfort@edf.fr>
