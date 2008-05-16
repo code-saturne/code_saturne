@@ -1047,7 +1047,7 @@ C
           IPV = IPV + 1
           IFLM = IPV
           NOMBRD(IFLM) = 'fluxDeMasse'
-          IMOYBR(IFLM) = 2
+          IMOYBR(IFLM) = 1
         ENDIF
 C
         IF (IANGBD.EQ.1) THEN
