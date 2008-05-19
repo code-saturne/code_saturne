@@ -195,7 +195,9 @@ static cs_suite_t **cs_glob_suite_ptr_tab = NULL;
 
 /* Mode de rapatriement sûr (légèrement plus lent) */
 
-#if defined(__blrts__) /* Blue Gene/L */
+/* IBM Blue Gene ou Cray XT */
+#if   defined(__blrts__) || defined(__bgp__) \
+   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 static cs_bool_t cs_glob_suite_sync_gather = CS_TRUE;
 #else
 static cs_bool_t cs_glob_suite_sync_gather = CS_FALSE;

@@ -342,7 +342,7 @@ C
 C
         CALL CLMGRD
 C       ===========
-     & ( IMRGRA , IMLIGP , IWARNP , CLIMGP ,
+     & ( IMRGRA , IMLINI , IWARNP , ITENSO , CLIMIN ,
      &   PVAR   , DPDX   , DPDY   , DPDZ   )
 C
         CALL GRADRC
@@ -367,7 +367,7 @@ C=======================================================================
 C
       CALL CLMGRD
 C     ===========
-     & ( IMRGRA , IMLIGP , IWARNP , CLIMGP ,
+     & ( IMRGRA , IMLIGP , IWARNP , ITENSO , CLIMGP ,
      &   PVAR   , DPDX   , DPDY   , DPDZ   )
 C
 C

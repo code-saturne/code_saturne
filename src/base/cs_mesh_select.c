@@ -134,7 +134,7 @@ cs_mesh_select_create(cs_int_t     n_colors,
     length = strlen(groups[grp_id]);
     BFT_MALLOC(selection->groups[grp_id], length + 1, char);
     strncpy(selection->groups[grp_id], groups[grp_id], length);
-    (selection->groups[grp_id])[length + 1] = '\0';
+    (selection->groups[grp_id])[length] = '\0';
 
   }
 
