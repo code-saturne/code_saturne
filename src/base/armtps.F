@@ -105,7 +105,7 @@ C
 C     La variable IMETHO indique si l'on a utilise avec succes
 C     TREMAIN (1), TCPUMX (2) pour determiner le temps CPU limite,
 C     ou s'il ne semble  avoir aucune limite ou que les deux methodes
-C     on echouÃ© (0). Avant le premier passage, elle vaut -1.
+C     on echoué (0). Avant le premier passage, elle vaut -1.
 C
       IF (IMETHO.NE.0) THEN
 C
