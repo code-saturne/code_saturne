@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<autovalid name="Validation Saturne V1.3">
-  <referencepath>/home/vit/SATURNE/BASEREF</referencepath>
-  <referenceversion>SaturneV1.3</referenceversion>
+<autovalid name="Validation Code_Saturne V1.4">
+  <referencepath>/home/saturne/BASEREF</referencepath>
+  <referenceversion>SaturneV1.4</referenceversion>
 
   <study label='LAPLACIEN' status='on'>
     <variable label='passif' status='on'>

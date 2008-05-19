@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<autovalid name="Validation Code_Saturne 1.3">
+<autovalid name="Validation Code_Saturne 1.4">
 
 <!--==========================================================================
 *
@@ -29,7 +29,7 @@
 *===========================================================================-->
 
   <referencepath>/home/saturne/Validation</referencepath>
-  <referenceversion>ncs-1.3.2</referenceversion>
+  <referenceversion>ncs-1.4.a</referenceversion>
 
   <study label='LAPLACIEN' status='on'>
     <variable label='scalaire' status='on'>

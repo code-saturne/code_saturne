@@ -1,11 +1,11 @@
-CODE_SATURNE VERSION 1.3
+CODE_SATURNE VERSION 1.4
 ========================
 
-This is version 1.3.2 of the Code_Saturne CFD tool. It is composed of
+This is version 1.4.a of the Code_Saturne CFD tool. It is composed of
 the following elements :
-* Code_Saturne Kernel version 1.3.2
+* Code_Saturne Kernel version 1.4.a
 * Code_Saturne Preprocessor version 1.3.2
-* Code_Saturne Graphical User Interface version 1.3.2
+* Code_Saturne Graphical User Interface version 1.3.3
 Other versions of these elements might not be compatible.
 
 
