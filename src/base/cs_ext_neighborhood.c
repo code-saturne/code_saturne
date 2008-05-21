@@ -58,9 +58,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_halo.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_prototypes.h"
@@ -159,13 +158,11 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
     j1 = mesh->i_face_cells[i*2    ] - 1;
     j2 = mesh->i_face_cells[i*2 + 1] - 1;
     if (j1 < mesh->n_cells) {
-      cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1] - 1]
-        =   i + 1;
+      cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1] - 1] = i + 1;
       cell_faces_count[j1] += 1;
     }
     if (j2 < mesh->n_cells) {
-      cell_faces_lst[cell_faces_idx[j2] + cell_faces_count[j2] - 1]
-        = -(i + 1);
+      cell_faces_lst[cell_faces_idx[j2] + cell_faces_count[j2] - 1] = -(i + 1);
       cell_faces_count[j2] += 1;
     }
   }
@@ -317,11 +314,11 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
  * Create a "vertex -> cells" connectivity.
  *
  * parameters:
- *   face_id          --> identification number for the face
- *   cell_id          --> identification number for the cell sharing this face
- *   mesh             --> pointer to a cs_mesh_t structure
- *   p_vtx_cells_idx  <-- pointer to the "vtx -> cells" connectivity index
- *   p_vtx_cells_lst  <-- pointer to the "vtx -> cells" connectivity list
+ *   face_id        --> identification number for the face
+ *   cell_id        --> identification number for the cell sharing this face
+ *   mesh           --> pointer to a cs_mesh_t structure
+ *   vtx_cells_idx  <-- pointer to the "vtx -> cells" connectivity index
+ *   vtx_cells_lst  <-- pointer to the "vtx -> cells" connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
@@ -383,8 +380,8 @@ _tag_cells(cs_int_t    face_id,
 
 /*---------------------------------------------------------------------------
  * Reverse "ghost cell -> vertex" connectivity into "vertex -> ghost cells"
- * connectivity for out_halo elements.
- * Build the coonectivity index.
+ * connectivity for halo elements.
+ * Build the connectivity index.
  *
  * parameters:
  *   halo            --> pointer to a cs_mesh_halo_t structure
@@ -416,11 +413,11 @@ _reverse_connectivity_idx(cs_mesh_halo_t  *halo,
 
   if (rank_id == -1) {
     start_idx = 0;
-    end_idx = halo->n_elts_out[CS_MESH_HALO_EXTENDED];
+    end_idx = halo->n_elts[CS_MESH_HALO_EXTENDED];
   }
   else { /* Call with rank_id > 1 for standard halo */
-    start_idx = halo->index_out[2*rank_id];
-    end_idx = halo->index_out[2*rank_id+1];
+    start_idx = halo->index[2*rank_id];
+    end_idx = halo->index[2*rank_id+1];
   }
 
   /* Define index */
@@ -447,7 +444,7 @@ _reverse_connectivity_idx(cs_mesh_halo_t  *halo,
 
 /*---------------------------------------------------------------------------
  * Reverse "ghost cells -> vertex" connectivity into "vertex -> ghost cells"
- * connectivity for out_halo elements.
+ * connectivity for halo elements.
  * Build the connectivity list.
  *
  * parameters:
@@ -484,11 +481,11 @@ _reverse_connectivity_lst(cs_mesh_halo_t  *halo,
 
   if (rank_id == -1) {
     start_idx = 0;
-    end_idx = halo->n_elts_out[CS_MESH_HALO_EXTENDED];
+    end_idx = halo->n_elts[CS_MESH_HALO_EXTENDED];
   }
   else {
-    start_idx = halo->index_out[2*rank_id];
-    end_idx = halo->index_out[2*rank_id+1];
+    start_idx = halo->index[2*rank_id];
+    end_idx = halo->index[2*rank_id+1];
   }
 
   /* Fill the connectivity list */
@@ -520,21 +517,21 @@ _reverse_connectivity_lst(cs_mesh_halo_t  *halo,
  * the local cell numbering.
  *
  * parameters:
- *   halo               --> pointer to a cs_mesh_halo_t structure
- *   n_vertices         --> number of vertices
- *   out_gcell_vtx_idx  --> "ghost cell -> vertices" connectivity index
- *   out_gcell_vtx_lst  --> "ghost cell -> vertices" connectivity list
- *   p_vtx_gcells_idx   <-- pointer to "vertex -> ghost cells" index
- *   p_vtx_gcells_lst   <-- pointer to "vertex -> ghost cells" list
+ *   halo              --> pointer to a cs_mesh_halo_t structure
+ *   n_vertices        --> number of vertices
+ *   gcell_vtx_idx     --> "ghost cell -> vertices" connectivity index
+ *   gcell_vtx_lst     --> "ghost cell -> vertices" connectivity list
+ *   p_vtx_gcells_idx  <-- pointer to "vertex -> ghost cells" index
+ *   p_vtx_gcells_lst  <-- pointer to "vertex -> ghost cells" list
  *---------------------------------------------------------------------------*/
 
 static void
-_create_vtx_out_gcells_connect(cs_mesh_halo_t   *halo,
-                               cs_int_t          n_vertices,
-                               cs_int_t         *out_gcells_vtx_idx,
-                               cs_int_t         *out_gcells_vtx_lst,
-                               cs_int_t         *p_vtx_gcells_idx[],
-                               cs_int_t         *p_vtx_gcells_lst[])
+_create_vtx_gcells_connect(cs_mesh_halo_t   *halo,
+                           cs_int_t          n_vertices,
+                           cs_int_t         *gcells_vtx_idx,
+                           cs_int_t         *gcells_vtx_lst,
+                           cs_int_t         *p_vtx_gcells_idx[],
+                           cs_int_t         *p_vtx_gcells_lst[])
 {
   cs_int_t  *vtx_buffer = NULL, *vtx_counter = NULL, *vtx_checker = NULL;
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
@@ -551,8 +548,8 @@ _create_vtx_out_gcells_connect(cs_mesh_halo_t   *halo,
                             n_vertices,
                             -1,
                             vtx_checker,
-                            out_gcells_vtx_idx,
-                            out_gcells_vtx_lst,
+                            gcells_vtx_idx,
+                            gcells_vtx_lst,
                             vtx_gcells_idx);
 
   BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_int_t);
@@ -562,8 +559,8 @@ _create_vtx_out_gcells_connect(cs_mesh_halo_t   *halo,
                             -1,
                             vtx_counter,
                             vtx_checker,
-                            out_gcells_vtx_idx,
-                            out_gcells_vtx_lst,
+                            gcells_vtx_idx,
+                            gcells_vtx_lst,
                             vtx_gcells_idx,
                             vtx_gcells_lst);
 
@@ -1129,7 +1126,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
        (unsigned long)n_deleted_cells,
        ratio);
 
-#if 0
+#if 0 /* For debugging purpose */
       for (i = 0; i < mesh->n_cells ; i++) {
         cs_int_t  j;
         bft_printf(" cellule %d :: ", i+1);
@@ -1247,15 +1244,15 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
  * Create the  "cell -> cells" connectivity
  *
  * parameters:
- *   mesh                 <->  pointer to a mesh structure.
- *   p_out_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_out_gcell_vtx_lst  <--  pointer to the connectivity list
+ *   mesh           <->  pointer to a mesh structure.
+ *   gcell_vtx_idx  <--  pointer to the connectivity index
+ *   gcell_vtx_lst  <--  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
 cs_ext_neighborhood_define(cs_mesh_t   *mesh,
-                           cs_int_t    *out_gcell_vtx_idx,
-                           cs_int_t    *out_gcell_vtx_lst)
+                           cs_int_t    *gcell_vtx_idx,
+                           cs_int_t    *gcell_vtx_lst)
 {
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
   cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
@@ -1282,12 +1279,12 @@ cs_ext_neighborhood_define(cs_mesh_t   *mesh,
 
     /* Create a "vertex -> ghost cells" connectivity */
 
-    _create_vtx_out_gcells_connect(halo,
-                                   mesh->n_vertices,
-                                   out_gcell_vtx_idx,
-                                   out_gcell_vtx_lst,
-                                   &vtx_gcells_idx,
-                                   &vtx_gcells_lst);
+    _create_vtx_gcells_connect(halo,
+                               mesh->n_vertices,
+                               gcell_vtx_idx,
+                               gcell_vtx_lst,
+                               &vtx_gcells_idx,
+                               &vtx_gcells_lst);
 
     mesh->vtx_gcells_idx = vtx_gcells_idx;
     mesh->vtx_gcells_lst = vtx_gcells_lst;

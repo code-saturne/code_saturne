@@ -118,26 +118,26 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
       if (   mesh->n_domains == 1
           || halo->c_domain_rank[rank_id] == local_rank) {
 
-        start_std = halo->perio_lst_out[shift + 4*rank_id];
-        length = halo->perio_lst_out[shift + 4*rank_id + 1];
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
         end_std = start_std + length;
 
         for (i = start_std; i < end_std; i++) {
 
-          icelcr[i] = halo->list_out[i] + 1;
+          icelcr[i] = halo->list[i] + 1;
           ipercr[i] = t_id;
 
         } /* End of loop on standard ghost cells */
 
         if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
 
-          start_ext = halo->perio_lst_out[shift + 4*rank_id + 2];
-          length = halo->perio_lst_out[shift + 4*rank_id + 3];
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
           end_ext = start_ext + length;
 
           for (i = start_ext; i < end_ext; i++) {
 
-            icelcr[i] = halo->list_out[i] + 1;
+            icelcr[i] = halo->list[i] + 1;
             ipercr[i] = t_id;
 
           }

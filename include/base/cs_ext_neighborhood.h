@@ -111,15 +111,15 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
  * Create the  "cell -> cells" connectivity
  *
  * parameters:
- *   mesh                 <->  pointer to a mesh structure.
- *   p_out_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_out_gcell_vtx_lst  <--  pointer to the connectivity list
+ *   mesh           <->  pointer to a mesh structure.
+ *   gcell_vtx_idx  <--  pointer to the connectivity index
+ *   gcell_vtx_lst  <--  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
 cs_ext_neighborhood_define(cs_mesh_t   *mesh,
-                           cs_int_t    *out_gcell_vtx_idx,
-                           cs_int_t    *out_gcell_vtx_lst);
+                           cs_int_t    *gcell_vtx_idx,
+                           cs_int_t    *gcell_vtx_lst);
 
 /*----------------------------------------------------------------------------*/
 

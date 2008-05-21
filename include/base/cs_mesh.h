@@ -82,41 +82,43 @@ typedef struct {
   cs_int_t  n_c_domains;     /* Number of communicating domains. */
   cs_int_t  *c_domain_rank;  /* List of communicating ranks */
 
-  /* in_halo features : send to distant ranks */
+  /* send_halo features : send to distant ranks */
 
-  cs_int_t  n_elts_in[2];    /* Numer of ghost elements in in_halo
+  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_halo
                                 n_elts[0] = standard elements
                                 n_elts[1] = extended + standard elements */
 
-  cs_int_t  *list_in;        /* List of local numbers of elements in in_halo */
+  cs_int_t  *send_list;        /* List of local numbers of elements in send_halo */
 
-  cs_int_t  *index_in;       /* Index on in_elements.
-                                Size = 2*n_c_domains. For each rank, we
-                                have an index for standard halo and one
-                                for extended halo. */
+  cs_int_t  *send_index;       /* Index on in_elements.
+                                  Size = 2*n_c_domains. For each rank, we
+                                  have an index for standard halo and one
+                                  for extended halo. */
 
-  cs_int_t  *perio_lst_in;  /* For each transformation and for each type of halo
-                               on each communicating rank, we store 2 data:
-                                 - start index,
-                                 - number of elements. */
+  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of halo
+                                  on each communicating rank, we store 2 data:
+                                   - start index,
+                                   - number of elements. */
 
-  /* out_halo features : receive from distant ranks */
+  /* halo features : receive from distant ranks */
 
-  cs_int_t  n_elts_out[2];  /* Numer of ghost elements in out_halo
+  cs_int_t  n_elts[2];      /* Numer of ghost elements in halo
                                  n_elts[0] = standard elements
                                  n_elts[1] = extended + standard elements */
 
-  cs_int_t  *list_out;      /* List of local numbers of elements in out_halo */
+  cs_int_t  *list;          /* List of local numbers of elements in halo */
 
-  cs_int_t  *index_out;     /* Index on in_elements.
+  cs_int_t  *index;         /* Index on in_elements.
                                Size = 2*n_c_domains. For each rank, we
                                have an index for standard halo and one
                                for extended halo. */
 
-  cs_int_t  *perio_lst_out; /* For each transformation and for each type of halo
+  cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
                                on each communicating rank, we store 2 data:
                                  - start index,
                                  - number of elements. */
+
+  /* Variables used during the synchronization process */
 
   cs_real_t  *tmp_buffer;   /* Buffer used to de-interlace variable
                                in case of strided variable to sync. */
@@ -127,8 +129,8 @@ typedef struct {
 
   cs_real_t  *comm_buffer;      /* Buffer for the communication purpose.
                                    Buffer size is equal to the maximum
-                                   number of ghost cells between in_halo and
-                                   out_halo. */
+                                   number of ghost cells between send_halo and
+                                   halo. */
 #endif
 
   /* Organisation of perio_lst:

@@ -177,8 +177,8 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
 
      if (halo->c_domain_rank[rank_id] != local_rank) {
 
-      start = halo->index_out[2*rank_id];
-      length = halo->index_out[2*rank_id + 2] - halo->index_out[2*rank_id] ;
+      start = halo->index[2*rank_id];
+      length = halo->index[2*rank_id + 2] - halo->index[2*rank_id] ;
 
       buffer = mesh->cell_family + mesh->n_cells + start ;
 
@@ -206,12 +206,12 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-      start = halo->index_in[2*rank_id];
-      length =  halo->index_in[2*rank_id + 2] - halo->index_in[2*rank_id] ;
+      start = halo->send_index[2*rank_id];
+      length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
 
       for (i = 0; i < length; i++)
         build_buffer[start + i]
-          = mesh->cell_family[halo->list_in[start + i]];
+          = mesh->cell_family[halo->send_list[start + i]];
 
       buffer = build_buffer + start;
 
@@ -430,7 +430,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   if (halo != NULL) {
 
-    cs_int_t  n_std_ghost_cells = halo->n_elts_out[CS_MESH_HALO_STANDARD];
+    cs_int_t  n_std_ghost_cells = halo->n_elts[CS_MESH_HALO_STANDARD];
 
     bft_printf(_("\n Nombre de cellules fantômes locales :          %10d\n"),
                mesh->n_ghost_cells);
@@ -556,10 +556,10 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
  *
  * Interface Fortran :
  *
- * SUBROUTINE SAVNUM (IVECTV, IVECTB, INUMFI, INUMFB)
+ * SUBROUTINE SAVNUM (IVECTI, IVECTB, INUMFI, INUMFB)
  * *****************
  *
- * INTEGER          IVECTV      : --> : Indicateur renum. faces internes
+ * INTEGER          IVECTI      : --> : Indicateur renum. faces internes
  * INTEGER          IVECTB      : --> : Indicateur renum. faces de bord
  * INTEGER          INUMFI      : --> : Table de renum. des faces internes
  * INTEGER          INUMFB      : --> : Table de renum. des faces de bord
@@ -567,7 +567,7 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
 
 void CS_PROCF (savnum, SAVNUM)
 (
- const cs_int_t   *const ivectv,  /* --> Indicateur renum. faces internes     */
+ const cs_int_t   *const ivecti,  /* --> Indicateur renum. faces internes     */
  const cs_int_t   *const ivectb,  /* --> Indicateur renum. faces de bord      */
  const cs_int_t   *const inumfi,  /* --> Table de renum. des faces internes   */
  const cs_int_t   *const inumfb   /* --> Table de renum. des faces de bord    */
@@ -579,7 +579,7 @@ void CS_PROCF (savnum, SAVNUM)
 
   /* Sauvegarde correspondance des faces internes -> faces internes initiales */
 
-  if (*ivectv != 0) {
+  if (*ivecti != 0) {
 
     BFT_MALLOC(mesh->init_i_face_num, mesh->n_i_faces, cs_int_t);
 
@@ -1061,7 +1061,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
   double  halo_time = 0, interface_time = 0, ext_neighborhood_time = 0;
 
   int  *periodic_num = NULL;
-  cs_int_t  *out_gcell_vtx_idx = NULL, *out_gcell_vtx_lst = NULL;
+  cs_int_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
   fvm_lnum_t  *n_periodic_couples = NULL;
   fvm_gnum_t  *g_vertex_num = NULL;
   fvm_gnum_t  **periodic_couples = NULL;
@@ -1138,20 +1138,24 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
                               &n_periodic_couples,
                               &periodic_couples);
 
-    }
+#if 0 /* For debugging purpose */
+      for (i = 0; i < n_periodic_lists; i++) {
 
-#if 0
-    for (i = 0; i < n_periodic_lists; i++) {
-      cs_int_t  j;
-      bft_printf("periodicity number: %d\n", periodic_num[i]);
-      bft_printf("number of couples : %d\n", n_periodic_couples[i]);
-      for (j = 0; j < n_periodic_couples[i]; j++)
-        bft_printf("%4d --> %4d\n",
-                   periodic_couples[i][2*j], periodic_couples[i][2*j + 1]);
-    }
+        cs_int_t  j;
 
-    fvm_periodicity_dump(mesh->periodicity);
+        bft_printf("periodicity number: %d\n", periodic_num[i]);
+        bft_printf("number of couples : %d\n", n_periodic_couples[i]);
+
+        for (j = 0; j < n_periodic_couples[i]; j++)
+          bft_printf("%4d --> %4d\n",
+                     periodic_couples[i][2*j], periodic_couples[i][2*j + 1]);
+
+      }
+
+      fvm_periodicity_dump(mesh->periodicity);
 #endif
+
+    }
 
     bft_printf(_(" Création de l'interface\n"));
     bft_printf_flush();
@@ -1174,7 +1178,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       BFT_FREE(periodic_couples[i]);
     BFT_FREE(periodic_couples);
 
-#if 0
+#if 0 /* For debugging purpose */
     bft_printf("Dump de l'interface complete et finale\n");
     fvm_interface_set_dump(interface_set);
 #endif
@@ -1196,8 +1200,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     cs_halo_define(mesh,
                    interface_set,
-                   &out_gcell_vtx_idx,
-                   &out_gcell_vtx_lst);
+                   &gcell_vtx_idx,
+                   &gcell_vtx_lst);
 
     fvm_interface_set_destroy(interface_set);
 
@@ -1216,8 +1220,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf_flush();
 
     cs_ext_neighborhood_define(mesh,
-                               out_gcell_vtx_idx,
-                               out_gcell_vtx_lst);
+                               gcell_vtx_idx,
+                               gcell_vtx_lst);
 
     bft_printf_flush();
     t2 = bft_timer_wtime();
@@ -1227,8 +1231,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
   /* Free memory */
 
-  BFT_FREE(out_gcell_vtx_idx);
-  BFT_FREE(out_gcell_vtx_lst);
+  BFT_FREE(gcell_vtx_idx);
+  BFT_FREE(gcell_vtx_lst);
 
   /* Output for listing */
 
@@ -1442,26 +1446,26 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
     bft_printf(_("\nHalo information: %p\n"), halo);
 
-    bft_printf(_("n_c_domains:                %d\n"), halo->n_c_domains);
-    bft_printf(_("n_ghost_cells:                %d\n"),mesh->n_ghost_cells);
+    bft_printf(_("n_c_domains:              %d\n"), halo->n_c_domains);
+    bft_printf(_("n_ghost_cells:            %d\n"),mesh->n_ghost_cells);
     bft_printf(_("n_std_ghost_cells:        %d\n"),
-               halo->n_elts_out[CS_MESH_HALO_STANDARD]);
+               halo->n_elts[CS_MESH_HALO_STANDARD]);
     bft_printf(_("n_ext_ghost_cells:        %d\n"),
-               halo->n_elts_out[CS_MESH_HALO_EXTENDED]
-               - halo->n_elts_out[CS_MESH_HALO_STANDARD]);
+               halo->n_elts[CS_MESH_HALO_EXTENDED]
+               - halo->n_elts[CS_MESH_HALO_STANDARD]);
 
     for (i = 0; i < halo->n_c_domains; i++) {
 
       bft_printf(_("\n\nRank id:        %d\n"
                    "Index start:        %d        end:        %d\n"
                    "Cell numbering:        "), halo->c_domain_rank[i],
-                 halo->index_out[2*i], halo->index_out[2*i+2]);
-      for (j = halo->index_out[2*i]; j < halo->index_out[2*i+2]; j++)
-        bft_printf("%3d (%d) ; ",halo->list_out[j]+1, j+1+mesh->n_cells);
+                 halo->index[2*i], halo->index[2*i+2]);
+      for (j = halo->index[2*i]; j < halo->index[2*i+2]; j++)
+        bft_printf("%3d (%d) ; ",halo->list[j]+1, j+1+mesh->n_cells);
 
     } /* End of loop on the frontiers of halo */
 
-    if (mesh->n_init_perio > 0 && halo->perio_lst_out != NULL) {
+    if (mesh->n_init_perio > 0 && halo->perio_lst != NULL) {
 
       const cs_int_t  n_c_domains = halo->n_c_domains;
       const cs_int_t  n_transforms = mesh->n_transforms;
@@ -1475,8 +1479,8 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
           bft_printf("< rank:%3d >< transform:%2d > start_idx: %5d"
                      "        n_elts: %5d\n",
                      halo->c_domain_rank[j], i,
-                     halo->perio_lst_out[4*n_c_domains*i + 4*j],
-                     halo->perio_lst_out[4*n_c_domains*i + 4*j+1]);
+                     halo->perio_lst[4*n_c_domains*i + 4*j],
+                     halo->perio_lst[4*n_c_domains*i + 4*j+1]);
 
       bft_printf("\nData in the extended halo\n");
       for (i = 0; i < n_transforms; i++)
@@ -1484,8 +1488,8 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
           bft_printf("< rank:%3d >< transform:%2d >        "
                      "start_idx:  %5d, n_elts:  %5d\n",
                      halo->c_domain_rank[j], i,
-                     halo->perio_lst_out[4*n_c_domains*i + 4*j+2],
-                     halo->perio_lst_out[4*n_c_domains*i + 4*j+3]);
+                     halo->perio_lst[4*n_c_domains*i + 4*j+2],
+                     halo->perio_lst[4*n_c_domains*i + 4*j+3]);
 
     } /* End if n_perio > 0 */
 

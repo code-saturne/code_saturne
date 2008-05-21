@@ -201,7 +201,7 @@ void
 CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
                           const cs_int_t    *iphas,
                           const cs_int_t    *iappel,
-                          const cs_real_t    rom[],
+                          cs_real_t          rom[],
                           cs_real_t         *dudxyz,
                           cs_real_t         *drdxyz,
                           cs_real_t         *wdudxy,
@@ -235,14 +235,14 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  *
  * INTEGER          NPHAS        :  -> : numero de phase courante
  * INTEGER          IVAR         :  -> : numero de la variable
- * INTEGER          IDIMTE       :  -> : dimension de la variable (maximum 3)
+ * INTEGER          IDIMTE       : <-  : dimension de la variable (maximum 3)
  *                                        0 : scalaire (VAR11), ou assimile
  *                                            scalaire
  *                                        1 : vecteur (VAR11,VAR22,VAR33)
  *                                        2 : tenseur d'ordre 2 (VARIJ)
  *                                       21 : tenseur d'ordre 2 suppose
  *                                            diagonal (VAR11, VAR22, VAR33)
- * INTEGER          ITENSO       :  -> : pour l'explicitation de la rotation
+ * INTEGER          ITENSO       : <-  : pour l'explicitation de la rotation
  *                                        0 : scalaire (VAR11)
  *                                        1 : composante de vecteur ou de
  *                                            tenseur (VAR11) implicite pour
@@ -268,9 +268,9 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  * INTEGER          IR12         :  -> :     "                   "
  * INTEGER          IR13         :  -> :     "                   "
  * INTEGER          IR23         :  -> :     "                   "
- * DOUBLE PRECISION DPDX(NCELET) :  -> : gradient de IVAR
- * DOUBLE PRECISION DPDY(NCELET) :  -> :    "        "
- * DOUBLE PRECISION DPDZ(NCELET) :  -> :    "        "
+ * DOUBLE PRECISION DPDX(NCELET) : <-> : gradient de IVAR
+ * DOUBLE PRECISION DPDY(NCELET) : <-> :    "        "
+ * DOUBLE PRECISION DPDZ(NCELET) : <-> :    "        "
  * DOUBLE PRECISION DUDXYZ       :  -> : gradient de U aux cellules halo pour
  *                                       l'approche explicite en periodicite
  * DOUBLE PRECISION DRDXYZ       :  -> : gradient de R aux cellules halo pour
@@ -301,8 +301,8 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
                           cs_real_t          dpdx[],
                           cs_real_t          dpdy[],
                           cs_real_t          dpdz[],
-                          cs_real_t         *dudxyz,
-                          cs_real_t         *drdxyz);
+                          const cs_real_t   *dudxyz,
+                          const cs_real_t   *drdxyz);
 
 /*----------------------------------------------------------------------------
  * Exchange buffers for PERINU
@@ -339,7 +339,7 @@ CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
  * *****************
  *
  * INTEGER          IPHAS         :  -> : current phase number
- * DOUBLE PRECISION DUDXYZ        :  -> : gradient of the velocity vector
+ * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
  *                                        for ghost cells and for an explicit
  *                                        treatment of the periodicity.
  *
@@ -358,9 +358,9 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
  * SUBROUTINE PEINR1 (VAR)
  * *****************
  *
- * INTEGER          ISOU          : -> : component of the Reynolds stress tensor
- * INTEGER          IPHAS         : -> : current phase number
- * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
+ * INTEGER          ISOU          :  -> : component of the Reynolds stress tensor
+ * INTEGER          IPHAS         :  -> : current phase number
+ * DOUBLE PRECISION DRDXYZ        : <-> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  * DOUBLE PRECISION W1..3(NCELET) : -  : working buffers

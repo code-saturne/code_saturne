@@ -117,17 +117,17 @@ cs_halo_get_n_g_ghost_cells(cs_mesh_t  *mesh);
  * Define halo structures for internal and distant ghost cells.
  *
  * parameters:
- *   mesh                 -->  pointer to cs_mesh_t structure
- *   interface_set        -->  pointer to fvm_interface_set_t structure.
- *   p_out_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_out_gcell_vtx_lst  <--  pointer to the connectivity list
+ *   mesh             -->  pointer to cs_mesh_t structure
+ *   interface_set    -->  pointer to fvm_interface_set_t structure.
+ *   p_gcell_vtx_idx  <--  pointer to the connectivity index
+ *   p_gcell_vtx_lst  <--  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
 cs_halo_define(cs_mesh_t            *mesh,
                fvm_interface_set_t  *interface_set,
-               cs_int_t             *p_out_gcell_vtx_idx[],
-               cs_int_t             *p_out_gcell_vtx_lst[]);
+               cs_int_t             *p_gcell_vtx_idx[],
+               cs_int_t             *p_gcell_vtx_lst[]);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_halo_t structure.

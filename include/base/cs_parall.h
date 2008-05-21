@@ -81,7 +81,7 @@ CS_PROCF (pargeo, PARGEO)(cs_int_t  *ncelgb,
 /*----------------------------------------------------------------------------
  * Update a buffer on cells in case of parallelism
  *
- * This function copies values of the cells in the in_halo (local cells) to
+ * This function copies values of the cells in the send_halo (local cells) to
  * ghost cells on distant ranks.
  *
  * Fortran interface :
@@ -100,7 +100,7 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[]);
  * Update a buffer on cells in case of parallelism
  *
  * This function copies values of the cells in the entire (i.e. std + ext)
- * in_halo (local cells) to ghost cells on distant ranks.
+ * send_halo (local cells) to ghost cells on distant ranks.
  *
  * PVAR has to be well allocated => n_cells + n_cells_with_ghosts where
  * n_cells_with_ghosts = n_std_ghost_cells + n_ext_ghost_cells.

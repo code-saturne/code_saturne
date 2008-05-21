@@ -161,13 +161,13 @@ _sync_cells(cs_real_t            *var_buffer,
          Standard + extended ghost cells. (n_cells to n_cells + n_ghost_cells)
       */
 
-      start = halo->index_out[2*rank_id];
+      start = halo->index[2*rank_id];
 
       if (op_type == CS_MESH_HALO_STANDARD)
-        length = halo->index_out[2*rank_id + 1] - halo->index_out[2*rank_id];
+        length = halo->index[2*rank_id + 1] - halo->index[2*rank_id];
 
       else if (op_type == CS_MESH_HALO_EXTENDED)
-        length = halo->index_out[2*rank_id + 2] - halo->index_out[2*rank_id];
+        length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
 
       if (length > 0) {
 
@@ -198,18 +198,18 @@ _sync_cells(cs_real_t            *var_buffer,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-      start = halo->index_in[2*rank_id];
+      start = halo->send_index[2*rank_id];
 
       if (op_type == CS_MESH_HALO_STANDARD)
-        length = halo->index_in[2*rank_id + 1] - halo->index_in[2*rank_id];
+        length = halo->send_index[2*rank_id + 1] - halo->send_index[2*rank_id];
 
       else if (op_type == CS_MESH_HALO_EXTENDED)
-        length = halo->index_in[2*rank_id + 2] - halo->index_in[2*rank_id];
+        length = halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
 
       if (length > 0) {
 
         for (id = 0 ; id < length ; id++)
-          halo->comm_buffer[start + id] = var_buffer[halo->list_in[start + id]];
+          halo->comm_buffer[start + id] = var_buffer[halo->send_list[start + id]];
 
         buf = halo->comm_buffer + start ;
 
@@ -313,7 +313,7 @@ CS_PROCF (pargeo, PARGEO)(cs_int_t  *ncelgb,
 /*----------------------------------------------------------------------------
  * Update a buffer on cells in case of parallelism
  *
- * This function copies values of the cells in the standard in_halo (local cells)
+ * This function copies values of the cells in the standard send_halo (local cells)
  * to ghost cells on distant ranks.
  *
  * Fortran interface :
@@ -342,7 +342,7 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
  * Update a buffer on cells in case of parallelism
  *
  * This function copies values of the cells in the entire (i.e. std + ext)
- * in_halo (local cells) to ghost cells on distant ranks.
+ * send_halo (local cells) to ghost cells on distant ranks.
  *
  * PVAR has to be well allocated => n_cells + n_cells_with_ghosts where
  * n_cells_with_ghosts = n_std_ghost_cells + n_ext_ghost_cells.
