@@ -53,8 +53,8 @@ MPE             =0
 MPE_COMM        =0
 
 # Pour Open MPI sur saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.5/arch/Linux_x86_64
-MPI_INC         =-isystem$(MPI_HOME)/include
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux_x86_64
+MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
 # Macro pour Sockets
@@ -71,17 +71,17 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux_x86_64/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macro pour BLAS
 #----------------
 
 # Option BLAS
 BLAS            =1
-BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
+BLAS_HOME       =/home/saturne/opt/atlas-3.8.1/arch/Linux_x86_64_core2duo
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
