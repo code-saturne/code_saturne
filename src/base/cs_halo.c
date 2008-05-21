@@ -3163,7 +3163,7 @@ _update_gcells_connect(cs_mesh_t       *mesh,
 
                       if (mesh->global_i_face_num != NULL)
                         out_glob_face_num =
-                          mesh->global_i_face_num[out_glob_face_num];
+                          mesh->global_i_face_num[-out_glob_face_num];
                       else
                         out_glob_face_num += 1;
 
