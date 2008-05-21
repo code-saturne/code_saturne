@@ -3125,14 +3125,8 @@ _update_gcells_connect(cs_mesh_t       *mesh,
 
                     if (_glob_face_num < 0) {
 
-                      if (mesh->global_i_face_num != NULL)
-                        _glob_face_num = mesh->global_i_face_num[-_glob_face_num];
-                      else
-                        _glob_face_num += 1;
-#if 0 /* FIXME: potential problem in sequential run with these lines? */
                       assert(mesh->global_i_face_num != NULL);
                       _glob_face_num = mesh->global_i_face_num[-_glob_face_num];
-#endif
 
                     }
 
