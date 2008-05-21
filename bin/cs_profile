@@ -90,7 +90,7 @@
 
 # Chemins et librairies pour MPI
   if [ "$NOM_ARCH" = "Linux" ] ; then
-    CS_MPI_PATH=/home/saturne/opt/openmpi-1.2.5/arch/Linux/bin
+    CS_MPI_PATH=/home/saturne/opt/openmpi-1.2.6/arch/Linux/bin
   elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
     CS_MPI_PATH=/usr/local/mpichgm-1.2.6.14b-64b/bin
   else
