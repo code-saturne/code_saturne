@@ -54,6 +54,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------
@@ -99,12 +100,12 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  n_transforms = mesh->n_transforms;
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
 
-  if (mesh->halo_type == CS_MESH_HALO_N_TYPES)
+  if (mesh->halo_type == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
@@ -129,7 +130,7 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
 
         } /* End of loop on standard ghost cells */
 
-        if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+        if (mesh->halo_type == CS_HALO_EXTENDED) {
 
           start_ext = halo->perio_lst[shift + 4*rank_id + 2];
           length = halo->perio_lst[shift + 4*rank_id + 3];

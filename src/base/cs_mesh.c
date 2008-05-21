@@ -64,8 +64,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_perio.h"
 #include "cs_halo.h"
+#include "cs_mesh_halo.h"
+#include "cs_perio.h"
+#include "cs_mesh_quantities.h"
 #include "cs_ext_neighborhood.h"
 
 /*----------------------------------------------------------------------------
@@ -73,7 +75,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -153,7 +154,7 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
 
   int  request_count = 0;
   cs_int_t  *build_buffer = NULL, *buffer = NULL;
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
 
@@ -360,7 +361,7 @@ _print_halo_info(cs_mesh_t  *mesh,
                  double      halo_time,
                  double      ext_neighborhood_time)
 {
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   cs_int_t  *rank_buffer = NULL;
 
@@ -372,7 +373,7 @@ _print_halo_info(cs_mesh_t  *mesh,
     bft_printf(_("     Création de l'interface :                  %.3g s\n"),
                interface_time);
 
-  if (mesh->halo_type == CS_MESH_HALO_EXTENDED)
+  if (mesh->halo_type == CS_HALO_EXTENDED)
     bft_printf(_("     Création de la connectivité étendue :      %.3g s\n"),
                ext_neighborhood_time);
 
@@ -430,7 +431,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   if (halo != NULL) {
 
-    cs_int_t  n_std_ghost_cells = halo->n_elts[CS_MESH_HALO_STANDARD];
+    cs_int_t  n_std_ghost_cells = halo->n_elts[CS_HALO_STANDARD];
 
     bft_printf(_("\n Nombre de cellules fantômes locales :          %10d\n"),
                mesh->n_ghost_cells);
@@ -671,7 +672,7 @@ cs_mesh_create(void)
 
   /* Halo features */
 
-  mesh->halo_type = CS_MESH_HALO_N_TYPES;
+  mesh->halo_type = CS_HALO_N_TYPES;
   mesh->n_ghost_cells = 0;
   mesh->n_cells_with_ghosts = 0;
   mesh->halo = NULL;
@@ -766,7 +767,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   if (mesh->n_init_perio > 0)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
 
-  if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
+  if (mesh->halo_type == CS_HALO_EXTENDED) {
     BFT_FREE(mesh->vtx_gcells_idx);
     BFT_FREE(mesh->vtx_gcells_lst);
   }
@@ -1089,7 +1090,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       bft_printf("\n Construction du halo avec voisinage étendu\n"
                  " ==========================================\n\n");
 
-      mesh->halo_type = CS_MESH_HALO_EXTENDED;
+      mesh->halo_type = CS_HALO_EXTENDED;
 
       if (mesh->n_init_perio > 1) {
 
@@ -1105,7 +1106,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       bft_printf("\n Construction du halo avec voisinage standard\n"
                  " ============================================\n\n");
 
-      mesh->halo_type = CS_MESH_HALO_STANDARD;
+      mesh->halo_type = CS_HALO_STANDARD;
 
     }
 
@@ -1188,9 +1189,9 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     t1 = bft_timer_wtime();
 
-    /* Creation of the cs_mesh_halo_t structure. */
+    /* Creation of the cs_halo_t structure. */
 
-    bft_printf(_(" Création des halos\n"));
+    bft_printf(_(" Création de la structure halo\n"));
     bft_printf_flush();
 
     mesh->halo = cs_halo_create(interface_set);
@@ -1198,10 +1199,10 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf(_(" Définition des halos\n"));
     bft_printf_flush();
 
-    cs_halo_define(mesh,
-                   interface_set,
-                   &gcell_vtx_idx,
-                   &gcell_vtx_lst);
+    cs_mesh_halo_define(mesh,
+                        interface_set,
+                        &gcell_vtx_idx,
+                        &gcell_vtx_lst);
 
     fvm_interface_set_destroy(interface_set);
 
@@ -1236,7 +1237,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
   /* Output for listing */
 
-  if (mesh->halo_type != CS_MESH_HALO_N_TYPES)
+  if (mesh->halo_type != CS_HALO_N_TYPES)
     _print_halo_info(mesh,
                      interface_time,
                      halo_time,
@@ -1245,6 +1246,38 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
   else if (ivoset == 1)
     bft_printf(_("\n Création de la connectivité étendue (%.3g s)\n"),
                ext_neighborhood_time);
+}
+
+/*----------------------------------------------------------------------------
+ * Get the global number of ghost cells.
+ *
+ * parameters:
+ *   mesh  -->  pointer to a mesh structure
+ *
+ * returns:
+ *   global number of ghost cells
+ *---------------------------------------------------------------------------*/
+
+cs_int_t
+cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
+{
+  cs_int_t  n_g_ghost_cells = 0;
+
+  if (cs_glob_base_nbr == 1)
+    n_g_ghost_cells = mesh->n_ghost_cells;
+
+  else {
+
+    assert(cs_glob_base_nbr > 1);
+
+#if defined(_CS_HAVE_MPI)
+    MPI_Allreduce(&(mesh->n_ghost_cells), &n_g_ghost_cells, 1, MPI_INT,
+                  MPI_SUM, cs_glob_base_mpi_comm);
+#endif
+
+  }
+
+  return n_g_ghost_cells;
 }
 
 /*----------------------------------------------------------------------------
@@ -1442,17 +1475,15 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   if (mesh->halo != NULL) {
 
-    cs_mesh_halo_t  *halo = mesh->halo;
+    cs_halo_t  *halo = mesh->halo;
 
     bft_printf(_("\nHalo information: %p\n"), halo);
 
     bft_printf(_("n_c_domains:              %d\n"), halo->n_c_domains);
-    bft_printf(_("n_ghost_cells:            %d\n"),mesh->n_ghost_cells);
-    bft_printf(_("n_std_ghost_cells:        %d\n"),
-               halo->n_elts[CS_MESH_HALO_STANDARD]);
+    bft_printf(_("n_ghost_cells:            %d\n"), mesh->n_ghost_cells);
+    bft_printf(_("n_std_ghost_cells:        %d\n"), halo->n_elts[CS_HALO_STANDARD]);
     bft_printf(_("n_ext_ghost_cells:        %d\n"),
-               halo->n_elts[CS_MESH_HALO_EXTENDED]
-               - halo->n_elts[CS_MESH_HALO_STANDARD]);
+               halo->n_elts[CS_HALO_EXTENDED] - halo->n_elts[CS_HALO_STANDARD]);
 
     for (i = 0; i < halo->n_c_domains; i++) {
 

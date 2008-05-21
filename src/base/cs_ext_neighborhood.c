@@ -384,7 +384,7 @@ _tag_cells(cs_int_t    face_id,
  * Build the connectivity index.
  *
  * parameters:
- *   halo            --> pointer to a cs_mesh_halo_t structure
+ *   halo            --> pointer to a cs_halo_t structure
  *   rank_id         --> rank number to work with
  *   checker         <-> temporary array to check vertices
  *   gcell_vtx_idx   --> "ghost cell -> vertices" connectivity index
@@ -393,13 +393,13 @@ _tag_cells(cs_int_t    face_id,
  *---------------------------------------------------------------------------*/
 
 static void
-_reverse_connectivity_idx(cs_mesh_halo_t  *halo,
-                          cs_int_t         n_vertices,
-                          cs_int_t         rank_id,
-                          cs_int_t        *checker,
-                          cs_int_t        *gcell_vtx_idx,
-                          cs_int_t        *gcell_vtx_lst,
-                          cs_int_t        *vtx_gcells_idx)
+_reverse_connectivity_idx(cs_halo_t  *halo,
+                          cs_int_t    n_vertices,
+                          cs_int_t    rank_id,
+                          cs_int_t   *checker,
+                          cs_int_t   *gcell_vtx_idx,
+                          cs_int_t   *gcell_vtx_lst,
+                          cs_int_t   *vtx_gcells_idx)
 {
   cs_int_t  i, j, id, vtx_id, start_idx, end_idx;
 
@@ -413,7 +413,7 @@ _reverse_connectivity_idx(cs_mesh_halo_t  *halo,
 
   if (rank_id == -1) {
     start_idx = 0;
-    end_idx = halo->n_elts[CS_MESH_HALO_EXTENDED];
+    end_idx = halo->n_elts[CS_HALO_EXTENDED];
   }
   else { /* Call with rank_id > 1 for standard halo */
     start_idx = halo->index[2*rank_id];
@@ -448,7 +448,7 @@ _reverse_connectivity_idx(cs_mesh_halo_t  *halo,
  * Build the connectivity list.
  *
  * parameters:
- *   halo            --> pointer to a cs_mesh_halo_t structure
+ *   halo            --> pointer to a cs_halo_t structure
  *   n_vertices      --> number of vertices
  *   rank_id         --> rank number to work with
  *   counter         <-> temporary array to count vertices
@@ -460,15 +460,15 @@ _reverse_connectivity_idx(cs_mesh_halo_t  *halo,
  *---------------------------------------------------------------------------*/
 
 static void
-_reverse_connectivity_lst(cs_mesh_halo_t  *halo,
-                          cs_int_t         n_vertices,
-                          cs_int_t         rank_id,
-                          cs_int_t        *counter,
-                          cs_int_t        *checker,
-                          cs_int_t        *gcell_vtx_idx,
-                          cs_int_t        *gcell_vtx_lst,
-                          cs_int_t        *vtx_gcells_idx,
-                          cs_int_t        *vtx_gcells_lst)
+_reverse_connectivity_lst(cs_halo_t  *halo,
+                          cs_int_t    n_vertices,
+                          cs_int_t    rank_id,
+                          cs_int_t   *counter,
+                          cs_int_t   *checker,
+                          cs_int_t   *gcell_vtx_idx,
+                          cs_int_t   *gcell_vtx_lst,
+                          cs_int_t   *vtx_gcells_idx,
+                          cs_int_t   *vtx_gcells_lst)
 {
   cs_int_t  i, j, id, shift, vtx_id, start_idx, end_idx;
 
@@ -481,7 +481,7 @@ _reverse_connectivity_lst(cs_mesh_halo_t  *halo,
 
   if (rank_id == -1) {
     start_idx = 0;
-    end_idx = halo->n_elts[CS_MESH_HALO_EXTENDED];
+    end_idx = halo->n_elts[CS_HALO_EXTENDED];
   }
   else {
     start_idx = halo->index[2*rank_id];
@@ -517,7 +517,7 @@ _reverse_connectivity_lst(cs_mesh_halo_t  *halo,
  * the local cell numbering.
  *
  * parameters:
- *   halo              --> pointer to a cs_mesh_halo_t structure
+ *   halo              --> pointer to a cs_halo_t structure
  *   n_vertices        --> number of vertices
  *   gcell_vtx_idx     --> "ghost cell -> vertices" connectivity index
  *   gcell_vtx_lst     --> "ghost cell -> vertices" connectivity list
@@ -526,12 +526,12 @@ _reverse_connectivity_lst(cs_mesh_halo_t  *halo,
  *---------------------------------------------------------------------------*/
 
 static void
-_create_vtx_gcells_connect(cs_mesh_halo_t   *halo,
-                           cs_int_t          n_vertices,
-                           cs_int_t         *gcells_vtx_idx,
-                           cs_int_t         *gcells_vtx_lst,
-                           cs_int_t         *p_vtx_gcells_idx[],
-                           cs_int_t         *p_vtx_gcells_lst[])
+_create_vtx_gcells_connect(cs_halo_t   *halo,
+                           cs_int_t     n_vertices,
+                           cs_int_t    *gcells_vtx_idx,
+                           cs_int_t    *gcells_vtx_lst,
+                           cs_int_t    *p_vtx_gcells_idx[],
+                           cs_int_t    *p_vtx_gcells_lst[])
 {
   cs_int_t  *vtx_buffer = NULL, *vtx_counter = NULL, *vtx_checker = NULL;
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
@@ -974,7 +974,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     if (   mesh->cell_cells_lst == NULL
         || mesh->cell_cells_idx == NULL
-        || mesh->halo_type == CS_MESH_HALO_STANDARD) {
+        || mesh->halo_type == CS_HALO_STANDARD) {
       bft_printf
         (_("\nATTENTION\n"
            "Le voisinage étendu est nul alors que la méthode de calcul\n"
@@ -1160,10 +1160,10 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
-                          cs_real_t         f_var[],
-                          cs_real_t         wbuf1[],
-                          cs_real_t         wbuf2[])
+CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
+                          cs_real_t    f_var[],
+                          cs_real_t    wbuf1[],
+                          cs_real_t    wbuf2[])
 {
   cs_int_t  i, j, k;
 
@@ -1177,7 +1177,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
      parallelism */
 
   if(mesh->n_domains > 1)
-    cs_parall_sync_cells(var, CS_MESH_HALO_EXTENDED, 1);
+    cs_parall_sync_cells(var, CS_HALO_EXTENDED, 1);
 
   /* Cell volume has been sync in cs_mesh_quantities */
 
@@ -1187,7 +1187,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(var,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED);
+                           CS_HALO_EXTENDED);
 
   /* Allocate and initialize working buffers */
 
@@ -1231,12 +1231,12 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t         var[],
     f_var[i] = wbuf1[i]/wbuf2[i];
 
   if(mesh->n_domains > 1)
-    cs_parall_sync_cells(f_var, CS_MESH_HALO_STANDARD, 1);
+    cs_parall_sync_cells(f_var, CS_HALO_STANDARD, 1);
 
   if(mesh->n_init_perio > 1)
     cs_perio_sync_var_scal(f_var,
                            CS_PERIO_ROTA_COPY,
-                           CS_MESH_HALO_STANDARD);
+                           CS_HALO_STANDARD);
 
 }
 
@@ -1259,7 +1259,7 @@ cs_ext_neighborhood_define(cs_mesh_t   *mesh,
   cs_int_t  *cell_i_faces_idx = NULL, *cell_i_faces_lst = NULL;
   cs_int_t  *cell_cells_idx = NULL, *cell_cells_lst = NULL;
 
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   /* Get "cell -> faces" connectivity for the local mesh */
 
@@ -1275,7 +1275,7 @@ cs_ext_neighborhood_define(cs_mesh_t   *mesh,
                              &vtx_cells_idx,
                              &vtx_cells_lst);
 
-  if (cs_halo_get_n_g_ghost_cells(mesh) > 0) {
+  if (cs_mesh_n_g_ghost_cells(mesh) > 0) {
 
     /* Create a "vertex -> ghost cells" connectivity */
 

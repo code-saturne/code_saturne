@@ -43,6 +43,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
@@ -622,9 +623,9 @@ CS_PROCF (parmem, PARMEM)(cs_int_t   *memimx,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_sync_cells(cs_real_t             *var_buffer,
-                     cs_mesh_halo_type_t    op_type,
-                     cs_int_t               stride);
+cs_parall_sync_cells(cs_real_t        *var_buffer,
+                     cs_halo_type_t    op_type,
+                     cs_int_t          stride);
 
 /*----------------------------------------------------------------------------
  * Compute the sum of real values for entities belonging to a fvm_interface_t

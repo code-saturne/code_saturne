@@ -53,6 +53,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
@@ -1096,11 +1097,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     /* Sync coordinates of centres of gravity for cells in the halo */
 
-    cs_parall_sync_cells(mesh_quantities->cell_cen, CS_MESH_HALO_EXTENDED, 3);
+    cs_parall_sync_cells(mesh_quantities->cell_cen, CS_HALO_EXTENDED, 3);
 
     /* Sync volume of cells for cells in the halo */
 
-    cs_parall_sync_cells(mesh_quantities->cell_vol, CS_MESH_HALO_EXTENDED, 1);
+    cs_parall_sync_cells(mesh_quantities->cell_vol, CS_HALO_EXTENDED, 1);
 
   } /* If there are several ranks */
 

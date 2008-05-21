@@ -57,6 +57,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_quality.h"
@@ -162,7 +163,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
   const cs_int_t  n_domains = mesh->n_domains;
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const cs_mesh_halo_t  *halo = mesh->halo;
+  const cs_halo_t  *halo = mesh->halo;
   const cs_int_t  n_c_ranks = halo->n_c_domains;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
@@ -311,7 +312,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
   const cs_int_t  n_domains = mesh->n_domains;
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const cs_mesh_halo_t  *halo = mesh->halo;
+  const cs_halo_t  *halo = mesh->halo;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;

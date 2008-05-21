@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_MESH_HALO_H__
-#define __CS_MESH_HALO_H__
+#ifndef __CS_HALO_H__
+#define __CS_HALO_H__
 
 /*============================================================================
  * Structure and function headers handling with ghost cells
@@ -43,7 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,12 +54,116 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*=============================================================================
- * Macro Definitions
+ * Local Macro definitions
  *============================================================================*/
 
+/* Halo type */
+
+typedef enum {
+
+  CS_HALO_STANDARD,
+  CS_HALO_EXTENDED,
+  CS_HALO_N_TYPES
+
+} cs_halo_type_t;
+
 /*============================================================================
- * Type definitions
+ * Type definition
  *============================================================================*/
+
+/* Structure for halo management */
+/* ----------------------------- */
+
+typedef struct {
+
+  cs_int_t  n_c_domains;     /* Number of communicating domains. */
+  cs_int_t  *c_domain_rank;  /* List of communicating ranks */
+
+  /* send_halo features : send to distant ranks */
+
+  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_halo
+                                n_elts[0] = standard elements
+                                n_elts[1] = extended + standard elements */
+
+  cs_int_t  *send_list;        /* List of local numbers of elements in send_halo */
+
+  cs_int_t  *send_index;       /* Index on in_elements.
+                                  Size = 2*n_c_domains. For each rank, we
+                                  have an index for standard halo and one
+                                  for extended halo. */
+
+  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of halo
+                                  on each communicating rank, we store 2 data:
+                                   - start index,
+                                   - number of elements. */
+
+  /* halo features : receive from distant ranks */
+
+  cs_int_t  n_elts[2];      /* Numer of ghost elements in halo
+                                 n_elts[0] = standard elements
+                                 n_elts[1] = extended + standard elements */
+
+  cs_int_t  *list;          /* List of local numbers of elements in halo */
+
+  cs_int_t  *index;         /* Index on in_elements.
+                               Size = 2*n_c_domains. For each rank, we
+                               have an index for standard halo and one
+                               for extended halo. */
+
+  cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
+                               on each communicating rank, we store 2 data:
+                                 - start index,
+                                 - number of elements. */
+
+  /* Variables used during the synchronization process */
+
+  cs_real_t  *tmp_buffer;   /* Buffer used to de-interlace variable
+                               in case of strided variable to sync. */
+
+#if defined(_CS_HAVE_MPI)
+  MPI_Request   *mpi_request;   /* MPI Request array */
+  MPI_Status    *mpi_status;    /* MPI Status array */
+
+  cs_real_t  *comm_buffer;      /* Buffer for the communication purpose.
+                                   Buffer size is equal to the maximum
+                                   number of ghost cells between send_halo and
+                                   halo. */
+#endif
+
+  /* Organisation of perio_lst:
+
+         -------------------------------------------------
+    T1:  |   |   |   |   |   |   |   |   |   |   |   |   |
+         -------------------------------------------------
+          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
+          ______  ______  ______  ______  ______  ______
+           std     ext     std     ext     std     ext
+           ___________     ___________     ___________
+             rank 0          rank 1          rank 2
+
+         -------------------------------------------------
+    T2:  |   |   |   |   |   |   |   |   |   |   |   |   |
+         -------------------------------------------------
+          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
+          ______  ______  ______  ______  ______  ______
+           std     ext     std     ext     std     ext
+           ___________     ___________     ___________
+             rank 0          rank 1          rank 2
+
+         -------------------------------------------------
+    T3:  |   |   |   |   |   |   |   |   |   |   |   |   |
+         -------------------------------------------------
+          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
+          ______  ______  ______  ______  ______  ______
+           std     ext     std     ext     std     ext
+           ___________     ___________     ___________
+             rank 0          rank 1          rank 2
+
+  etc...
+
+  */
+
+} cs_halo_t;
 
 /*=============================================================================
  * Global static variables
@@ -84,7 +187,7 @@ extern "C" {
  *   pointer to created cs_mesh_halo_t structure
  *---------------------------------------------------------------------------*/
 
-cs_mesh_halo_t *
+cs_halo_t *
 cs_halo_create(fvm_interface_set_t  *ifs);
 
 /*----------------------------------------------------------------------------
@@ -97,50 +200,27 @@ cs_halo_create(fvm_interface_set_t  *ifs);
  *   pointer to deleted halo structure (NULL)
  *---------------------------------------------------------------------------*/
 
-cs_mesh_halo_t *
-cs_halo_destroy(cs_mesh_halo_t  *this_halo);
-
-/*----------------------------------------------------------------------------
- * Get the global number of ghost cells.
- *
- * parameters:
- *  mesh -->  pointer to a mesh structure
- *
- * returns:
- *  Global number of ghost cells
- *---------------------------------------------------------------------------*/
-
-cs_int_t
-cs_halo_get_n_g_ghost_cells(cs_mesh_t  *mesh);
-
-/*----------------------------------------------------------------------------
- * Define halo structures for internal and distant ghost cells.
- *
- * parameters:
- *   mesh             -->  pointer to cs_mesh_t structure
- *   interface_set    -->  pointer to fvm_interface_set_t structure.
- *   p_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_gcell_vtx_lst  <--  pointer to the connectivity list
- *---------------------------------------------------------------------------*/
-
-void
-cs_halo_define(cs_mesh_t            *mesh,
-               fvm_interface_set_t  *interface_set,
-               cs_int_t             *p_gcell_vtx_idx[],
-               cs_int_t             *p_gcell_vtx_lst[]);
+cs_halo_t *
+cs_halo_destroy(cs_halo_t  *this_halo);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_halo_t structure.
  *
  * parameters:
- *   mesh        -->  mesh associated with the halo structure
- *   print_level -->  If 0 only dimensions and indexes are printed, else
- *                    everything is printed
+ *   n_cells        -->  number of cells
+ *   n_init_perio   -->  initial number of periodicity
+ *   n_transforms   -->  number of transformations
+ *   print_level    -->  0 only dimensions and indexes are printed, else (1)
+ *                       everything is printed
+ *   halo           --> pointer to cs_halo_t struture
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_dump(cs_mesh_t  *this_mesh,
-             cs_int_t    print_level);
+cs_halo_dump(cs_int_t    n_cells,
+             cs_int_t    n_init_perio,
+             cs_int_t    n_transforms,
+             cs_int_t    print_level,
+             cs_halo_t  *halo);
 
 /*----------------------------------------------------------------------------*/
 
@@ -148,4 +228,4 @@ cs_halo_dump(cs_mesh_t  *this_mesh,
 }
 #endif /* __cplusplus */
 
-#endif /* __CS_MESH_HALO_H__ */
+#endif /* __CS_HALO_H__ */

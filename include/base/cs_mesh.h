@@ -46,6 +46,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -60,114 +61,9 @@ extern "C" {
  * Local Macro definitions
  *============================================================================*/
 
-/* Halo type */
-
-typedef enum {
-
-  CS_MESH_HALO_STANDARD,
-  CS_MESH_HALO_EXTENDED,
-  CS_MESH_HALO_N_TYPES
-
-} cs_mesh_halo_type_t;
-
 /*============================================================================
  * Type definition
  *============================================================================*/
-
-/* Structure for halo management */
-/* ----------------------------- */
-
-typedef struct {
-
-  cs_int_t  n_c_domains;     /* Number of communicating domains. */
-  cs_int_t  *c_domain_rank;  /* List of communicating ranks */
-
-  /* send_halo features : send to distant ranks */
-
-  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_halo
-                                n_elts[0] = standard elements
-                                n_elts[1] = extended + standard elements */
-
-  cs_int_t  *send_list;        /* List of local numbers of elements in send_halo */
-
-  cs_int_t  *send_index;       /* Index on in_elements.
-                                  Size = 2*n_c_domains. For each rank, we
-                                  have an index for standard halo and one
-                                  for extended halo. */
-
-  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of halo
-                                  on each communicating rank, we store 2 data:
-                                   - start index,
-                                   - number of elements. */
-
-  /* halo features : receive from distant ranks */
-
-  cs_int_t  n_elts[2];      /* Numer of ghost elements in halo
-                                 n_elts[0] = standard elements
-                                 n_elts[1] = extended + standard elements */
-
-  cs_int_t  *list;          /* List of local numbers of elements in halo */
-
-  cs_int_t  *index;         /* Index on in_elements.
-                               Size = 2*n_c_domains. For each rank, we
-                               have an index for standard halo and one
-                               for extended halo. */
-
-  cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
-                               on each communicating rank, we store 2 data:
-                                 - start index,
-                                 - number of elements. */
-
-  /* Variables used during the synchronization process */
-
-  cs_real_t  *tmp_buffer;   /* Buffer used to de-interlace variable
-                               in case of strided variable to sync. */
-
-#if defined(_CS_HAVE_MPI)
-  MPI_Request   *mpi_request;   /* MPI Request array */
-  MPI_Status    *mpi_status;    /* MPI Status array */
-
-  cs_real_t  *comm_buffer;      /* Buffer for the communication purpose.
-                                   Buffer size is equal to the maximum
-                                   number of ghost cells between send_halo and
-                                   halo. */
-#endif
-
-  /* Organisation of perio_lst:
-
-         -------------------------------------------------
-    T1:  |   |   |   |   |   |   |   |   |   |   |   |   |
-         -------------------------------------------------
-          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
-          ______  ______  ______  ______  ______  ______
-           std     ext     std     ext     std     ext
-           ___________     ___________     ___________
-             rank 0          rank 1          rank 2
-
-         -------------------------------------------------
-    T2:  |   |   |   |   |   |   |   |   |   |   |   |   |
-         -------------------------------------------------
-          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
-          ______  ______  ______  ______  ______  ______
-           std     ext     std     ext     std     ext
-           ___________     ___________     ___________
-             rank 0          rank 1          rank 2
-
-         -------------------------------------------------
-    T3:  |   |   |   |   |   |   |   |   |   |   |   |   |
-         -------------------------------------------------
-          idx  n  idx  n  idx  n  idx  n  idx  n  idx  n
-          ______  ______  ______  ______  ______  ______
-           std     ext     std     ext     std     ext
-           ___________     ___________     ___________
-             rank 0          rank 1          rank 2
-
-  etc...
-
-  */
-
-} cs_mesh_halo_t;
-
 
 /* Mesh structure definition */
 /* ------------------------- */
@@ -243,13 +139,13 @@ typedef struct {
 
   /* Parallelism and/or periodic features */
 
-  cs_mesh_halo_type_t  halo_type;  /* Halo type */
+  cs_halo_type_t  halo_type;       /* Halo type */
 
   cs_int_t   n_cells_with_ghosts;  /* Total number of cells on the local rank
                                       (n_cells + n_ghost_cells) */
   cs_int_t   n_ghost_cells;        /* Number of "ghost" cells */
 
-  cs_mesh_halo_t  *halo;           /* Structure used to manage ghost cells */
+  cs_halo_t  *halo;                /* Structure used to manage ghost cells */
 
   /* Extended neighborhood features */
 
@@ -482,6 +378,19 @@ cs_mesh_init_parall(cs_mesh_t  *mesh);
 
 void
 cs_mesh_init_halo(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Get the global number of ghost cells.
+ *
+ * parameters:
+ *  mesh -->  pointer to a mesh structure
+ *
+ * returns:
+ *  Global number of ghost cells
+ *---------------------------------------------------------------------------*/
+
+cs_int_t
+cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Assign selectors to global mesh.

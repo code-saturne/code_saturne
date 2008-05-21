@@ -57,10 +57,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_ext_neighborhood.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_halo.h"
+#include "cs_mesh.h"
+#include "cs_ext_neighborhood.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_prototypes.h"
@@ -185,25 +185,25 @@ void CS_PROCF (cgrdmc, CGRDMC)
   /* Sync data in case of parallelism or periodicity */
 
   if (mesh->n_domains > 1)
-    cs_parall_sync_cells(pvar, CS_MESH_HALO_EXTENDED, 1);
+    cs_parall_sync_cells(pvar, CS_HALO_EXTENDED, 1);
 
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(pvar,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED);
+                           CS_HALO_EXTENDED);
 
   if (*iphydp != 0) {
 
     if (mesh->n_domains > 1) {
-      cs_parall_sync_cells(fextx, CS_MESH_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(fexty, CS_MESH_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(fextz, CS_MESH_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(fextx, CS_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(fexty, CS_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(fextz, CS_HALO_EXTENDED, 1);
     }
 
     if (mesh->n_init_perio > 0)
       cs_perio_sync_var_vect(fextx, fexty, fextz,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_MESH_HALO_EXTENDED);
+                             CS_HALO_EXTENDED);
 
   }
 
@@ -293,27 +293,27 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
      cs_parall_sync_cells() in parallel */
 
   if (mesh->n_domains > 1)
-    cs_parall_sync_cells(var, CS_MESH_HALO_EXTENDED, 1);
+    cs_parall_sync_cells(var, CS_HALO_EXTENDED, 1);
 
   if (mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(var,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_MESH_HALO_EXTENDED);
+                           CS_HALO_EXTENDED);
 
   /* Exchange for the gradients. Not useful for working array */
 
   if (*imligp == 1) {
 
     if (mesh->n_domains > 1) {
-      cs_parall_sync_cells(dpdx, CS_MESH_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(dpdy, CS_MESH_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(dpdz, CS_MESH_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(dpdx, CS_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(dpdy, CS_HALO_EXTENDED, 1);
+      cs_parall_sync_cells(dpdz, CS_HALO_EXTENDED, 1);
     }
 
     if (mesh->n_init_perio > 0)
       cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_MESH_HALO_EXTENDED);
+                             CS_HALO_EXTENDED);
 
   } /* End if imligp == 1 */
 
@@ -478,12 +478,12 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     if (mesh->n_domains > 1) {
 
       if (*imrgra == 2 || *imrgra ==  3) {
-        cs_parall_sync_cells(denom, CS_MESH_HALO_EXTENDED, 1);
-        cs_parall_sync_cells(denum, CS_MESH_HALO_EXTENDED, 1);
+        cs_parall_sync_cells(denom, CS_HALO_EXTENDED, 1);
+        cs_parall_sync_cells(denum, CS_HALO_EXTENDED, 1);
       }
       else {
-        cs_parall_sync_cells(denom, CS_MESH_HALO_STANDARD, 1);
-        cs_parall_sync_cells(denum, CS_MESH_HALO_STANDARD, 1);
+        cs_parall_sync_cells(denom, CS_HALO_STANDARD, 1);
+        cs_parall_sync_cells(denum, CS_HALO_STANDARD, 1);
       }
 
     }
@@ -494,20 +494,20 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED);
+                               CS_HALO_EXTENDED);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_EXTENDED);
+                               CS_HALO_EXTENDED);
 
       }
       else {
 
         cs_perio_sync_var_scal(denom,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD);
+                               CS_HALO_STANDARD);
         cs_perio_sync_var_scal(denum,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_MESH_HALO_STANDARD);
+                               CS_HALO_STANDARD);
 
       }
 
@@ -627,9 +627,9 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
   if (mesh->n_domains > 1) {
 
-    cs_parall_sync_cells(dpdx, CS_MESH_HALO_STANDARD, 1);
-    cs_parall_sync_cells(dpdy, CS_MESH_HALO_STANDARD, 1);
-    cs_parall_sync_cells(dpdz, CS_MESH_HALO_STANDARD, 1);
+    cs_parall_sync_cells(dpdx, CS_HALO_STANDARD, 1);
+    cs_parall_sync_cells(dpdy, CS_HALO_STANDARD, 1);
+    cs_parall_sync_cells(dpdz, CS_HALO_STANDARD, 1);
 
   }
 
@@ -640,11 +640,11 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     if (*itenso == 2)
       cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_MESH_HALO_STANDARD);
+                             CS_HALO_STANDARD);
     else
       cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
                              CS_PERIO_ROTA_COPY,
-                             CS_MESH_HALO_STANDARD);
+                             CS_HALO_STANDARD);
 
   }
 

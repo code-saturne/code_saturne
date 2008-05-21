@@ -132,8 +132,8 @@ static  cs_int_t n_interface_sr_calls = 0;
  *----------------------------------------------------------------------------*/
 
 static void
-_sync_cells(cs_real_t            *var_buffer,
-            cs_mesh_halo_type_t   op_type)
+_sync_cells(cs_real_t       *var_buffer,
+            cs_halo_type_t   op_type)
 {
 #if defined(_CS_HAVE_MPI)
 
@@ -143,7 +143,7 @@ _sync_cells(cs_real_t            *var_buffer,
 
   cs_real_t  *buf = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
 
@@ -163,10 +163,10 @@ _sync_cells(cs_real_t            *var_buffer,
 
       start = halo->index[2*rank_id];
 
-      if (op_type == CS_MESH_HALO_STANDARD)
+      if (op_type == CS_HALO_STANDARD)
         length = halo->index[2*rank_id + 1] - halo->index[2*rank_id];
 
-      else if (op_type == CS_MESH_HALO_EXTENDED)
+      else if (op_type == CS_HALO_EXTENDED)
         length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
 
       if (length > 0) {
@@ -200,10 +200,10 @@ _sync_cells(cs_real_t            *var_buffer,
 
       start = halo->send_index[2*rank_id];
 
-      if (op_type == CS_MESH_HALO_STANDARD)
+      if (op_type == CS_HALO_STANDARD)
         length = halo->send_index[2*rank_id + 1] - halo->send_index[2*rank_id];
 
-      else if (op_type == CS_MESH_HALO_EXTENDED)
+      else if (op_type == CS_HALO_EXTENDED)
         length = halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
 
       if (length > 0) {
@@ -246,15 +246,15 @@ _sync_cells(cs_real_t            *var_buffer,
  *----------------------------------------------------------------------------*/
 
 static void
-_sync_cells_strided(cs_real_t             *var_buffer,
-                    cs_mesh_halo_type_t    op_type,
-                    cs_int_t               stride)
+_sync_cells_strided(cs_real_t        *var_buffer,
+                    cs_halo_type_t    op_type,
+                    cs_int_t          stride)
 {
 #if defined(_CS_HAVE_MPI)
   cs_int_t  i, j;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_halo_t  *halo = mesh->halo;
+  cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  n_cells = mesh->n_cells;
   const cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
@@ -329,7 +329,7 @@ void
 CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 {
 
-  cs_parall_sync_cells(var, CS_MESH_HALO_STANDARD, 1);
+  cs_parall_sync_cells(var, CS_HALO_STANDARD, 1);
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcom\n",
@@ -366,7 +366,7 @@ CS_PROCF (parcve, PARCVE)(cs_real_t     pvar[]
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   if(mesh->n_domains > 1)
-    cs_parall_sync_cells(pvar, CS_MESH_HALO_EXTENDED, 1);
+    cs_parall_sync_cells(pvar, CS_HALO_EXTENDED, 1);
 
 #if CS_PARALL_DEBUG_COUNT
   printf ("irang = %d, iappel = %d, tot = %d, parcve\n",
@@ -1416,9 +1416,9 @@ CS_PROCF (parmem, PARMEM)(cs_int_t   *memimx,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_sync_cells(cs_real_t             *var_buffer,
-                     cs_mesh_halo_type_t    op_type,
-                     cs_int_t               stride)
+cs_parall_sync_cells(cs_real_t        *var_buffer,
+                     cs_halo_type_t    op_type,
+                     cs_int_t          stride)
 {
   assert(var_buffer != NULL);
 

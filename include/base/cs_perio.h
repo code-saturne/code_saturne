@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
@@ -409,8 +410,8 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_coords(cs_real_t            *coords,
-                     cs_mesh_halo_type_t   halo_mode);
+cs_perio_sync_coords(cs_real_t       *coords,
+                     cs_halo_type_t   halo_mode);
 
 /*----------------------------------------------------------------------------
  * Initialize cs_mesh_quantities_t elements for periodicity.
@@ -432,9 +433,9 @@ cs_perio_sync_geo(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_scal(cs_real_t            var[],
-                       cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode);
+cs_perio_sync_var_scal(cs_real_t        var[],
+                       cs_perio_rota_t  rota_mode,
+                       cs_halo_type_t   halo_mode);
 
 /*----------------------------------------------------------------------------
  * Update values for a real vector between periodic cells.
@@ -449,11 +450,11 @@ cs_perio_sync_var_scal(cs_real_t            var[],
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(cs_real_t            varX[],
-                       cs_real_t            varY[],
-                       cs_real_t            varZ[],
-                       cs_perio_rota_t      rota_mode,
-                       cs_mesh_halo_type_t  halo_mode);
+cs_perio_sync_var_vect(cs_real_t        varX[],
+                       cs_real_t        varY[],
+                       cs_real_t        varZ[],
+                       cs_perio_rota_t  rota_mode,
+                       cs_halo_type_t   halo_mode);
 
 /*----------------------------------------------------------------------------
  * Update values for a real tensor between periodic cells.
@@ -472,16 +473,16 @@ cs_perio_sync_var_vect(cs_real_t            varX[],
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens(cs_real_t            var11[],
-                       cs_real_t            var12[],
-                       cs_real_t            var13[],
-                       cs_real_t            var21[],
-                       cs_real_t            var22[],
-                       cs_real_t            var23[],
-                       cs_real_t            var31[],
-                       cs_real_t            var32[],
-                       cs_real_t            var33[],
-                       cs_mesh_halo_type_t  halo_mode);
+cs_perio_sync_var_tens(cs_real_t       var11[],
+                       cs_real_t       var12[],
+                       cs_real_t       var13[],
+                       cs_real_t       var21[],
+                       cs_real_t       var22[],
+                       cs_real_t       var23[],
+                       cs_real_t       var31[],
+                       cs_real_t       var32[],
+                       cs_real_t       var33[],
+                       cs_halo_type_t  halo_mode);
 
 /*----------------------------------------------------------------------------
  * Update values for a real tensor between periodic cells.
@@ -496,10 +497,10 @@ cs_perio_sync_var_tens(cs_real_t            var11[],
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag(cs_real_t            var11[],
-                       cs_real_t            var22[],
-                       cs_real_t            var33[],
-                       cs_mesh_halo_type_t  halo_mode);
+cs_perio_sync_var_diag(cs_real_t         var11[],
+                       cs_real_t         var22[],
+                       cs_real_t         var33[],
+                       cs_halo_type_t    halo_mode);
 
 /*----------------------------------------------------------------------------
  * Define parameters for building an interface set structure on the main mesh.

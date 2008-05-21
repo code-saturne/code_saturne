@@ -97,6 +97,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_prototypes.h"
 #include "cs_parall.h"
 #include "cs_perio.h"
@@ -3192,12 +3193,12 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
     /* Update distant ghost cells */
 
     if (cs_glob_base_nbr > 1)
-      cs_parall_sync_cells(x, CS_MESH_HALO_STANDARD, 1);
+      cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
 
     /* Synchronize periodic values */
 
     if (matrix->periodic)
-      cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
+      cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
 
     /* Now call local matrix.vector product */
 
@@ -3248,8 +3249,8 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   rotation_mode --> Halo update option for rotational periodicity
- *   alpha  --> Scalar, alpha in alpha.A.x + beta.y
- *   beta   --> Scalar, beta in alpha.A.x + beta.y
+ *   alpha         --> Scalar, alpha in alpha.A.x + beta.y
+ *   beta          --> Scalar, beta in alpha.A.x + beta.y
  *   matrix        --> Pointer to matrix structure
  *   x             <-> Multipliying vector values (ghost values updated)
  *   y             <-- Resulting vector
@@ -3266,12 +3267,12 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
   /* Update distant ghost cells */
 
   if (cs_glob_base_nbr > 1)
-    cs_parall_sync_cells(x, CS_MESH_HALO_STANDARD, 1);
+    cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
 
   /* Synchronize periodic values */
 
   if (matrix->periodic)
-    cs_perio_sync_var_scal(x, rotation_mode, CS_MESH_HALO_STANDARD);
+    cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
 
   /* Now call local matrix.vector product */
 
