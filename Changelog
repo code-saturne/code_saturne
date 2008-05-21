@@ -1,3 +1,28 @@
+* 21/05/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Renaming and reshaping the halos structures in order
+  to prepare for multigrid integration
+
+  modified routines:
+    include/base/cs_halo.h
+    include/base/cs_mesh.h
+    include/base/cs_parall.h
+    include/base/cs_perio.h
+    src/lagr/cs_lagr_perio.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_parall.c
+    src/base/cs_matrix.c
+    src/base/cs_gradient.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_perio.c
+    src/base/cs_halo.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_warping.c
+
+   added subroutines:
+    include/base/cs_mesh_halo.h
+    src/base/cs_mesh_halo.c
+
 * 16/05/2008 - Alexandre Douce <alexandre.douce@edf.fr>
   Corrections on Lagrangian module (wrong definition
   of STATFB in dvvpst.F)
