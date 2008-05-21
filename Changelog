@@ -1,3 +1,9 @@
+* 21/05/2008 - David Monfort <david.monfort@edf.fr>
+  Bug correction in halos definition arising in some
+  very rare cases (ported from trunk).
+  modified routines:
+    cs_halo.c
+
 * 16/05/2008 - Alexandre Douce <alexandre.douce@edf.fr>
   Corrections on Lagrangian module (wrong definition
   of STATFB in dvvpst.F)
