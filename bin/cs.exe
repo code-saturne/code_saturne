@@ -1,5 +1,5 @@
 #!/bin/sh
-EXE=cs13.exe
+EXE=cs14.exe
 BASEPATH=`dirname $0`
 EXECPATH=$BASEPATH/../arch/$NOM_ARCH/bin
 

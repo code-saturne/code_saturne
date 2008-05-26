@@ -302,7 +302,7 @@ THISSCRIPT=$0
 USER=`whoami`
 DATE=`date '+%m%d%H%M'`
 SUFFIXE=$DATE
-EXE=cs13.exe
+EXE=cs14.exe
 EXE_SYR=syrthes
 #
 # on recopie le script de lancement avant de se positionner dans le
@@ -936,7 +936,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
   if [ $? -ne 0 ]
   then
     cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
-    echo ERREUR DE COMPILATION OU D\'EDITION DE LIENS
+    echo "ERREUR DE COMPILATION OU D'EDITION DE LIENS"
     rm -f *.o
     exit 1
   else
@@ -966,7 +966,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     if [ $? -ne 0 ]
     then
       cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
-      echo ERREUR DE COMPILATION OU D\'EDITION DE LIENS
+      echo "ERREUR DE COMPILATION OU D'EDITION DE LIENS"
       rm -f *.o
       exit 1
     else

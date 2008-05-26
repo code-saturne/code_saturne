@@ -128,8 +128,8 @@ echo $compillog
 #     sur hp, par exemple f90 +version n'en cree pas)
 
  echo ' '                                       >> ${compillog}
- if [ -f cs13.exe ] ; then 
-   ./cs13.exe                                   >> ${compillog} 2>&1
+ if [ -f cs14.exe ] ; then 
+   ./cs14.exe                                   >> ${compillog} 2>&1
  else
    echo ' Pas d executable test FORTRAN '       >> ${compillog} 
  fi
@@ -177,8 +177,8 @@ cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
 #   Execution 
 
  echo ' '                                       >> ${compillog}
- if [ -f cs13.exe ] ; then 
-   ./cs13.exe                                   >> ${compillog} 2>&1
+ if [ -f cs14.exe ] ; then 
+   ./cs14.exe                                   >> ${compillog} 2>&1
  echo ' '                                       >> ${compillog}
  else
    echo ' Pas d executable test C '             >> ${compillog} 

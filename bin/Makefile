@@ -57,7 +57,7 @@ BLD_CS         = $(DIR_CS)/build
 # Names of the base library and Code_Saturne executable file
 
 NOM_LIB_CS_PRE = "saturne"
-NOM_EXE        = "cs13.exe"
+NOM_EXE        = "cs14.exe"
 
 
 # Purify
