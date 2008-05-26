@@ -59,11 +59,12 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Read mesh dimension data from Preprocessor output.
+ * Receive messages from the pre-processor about the dimensions of mesh
+ * parameters
  *
  * FORTRAN Interface:
  *
- * SUBROUTINE LEDEVI (NOMRUB, TYPENT, NBRENT, TABENT)
+ * SUBROUTINE LEDEVI(NOMRUB, TYPENT, NBRENT, TABENT)
  * *****************
  *
  * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
@@ -79,19 +80,19 @@ extern "C" {
  * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (ledevi, LEDEVI)
+void CS_PROCF(ledevi, LEDEVI)
 (
- cs_int_t   *ndim,          /* <-- dimension de l'espace                      */
- cs_int_t   *ncel,          /* <-- nombre d'éléments actifs                   */
- cs_int_t   *nfac,          /* <-- nombre de faces internes                   */
- cs_int_t   *nfabor,        /* <-- nombre de faces de bord                    */
- cs_int_t   *nfml,          /* <-- nombre de familles des faces de bord       */
- cs_int_t   *nprfml,        /* <-- nombre de propriétés max par famille       */
- cs_int_t   *nsom,          /* <-- nombre de sommets (optionnel)              */
- cs_int_t   *lndfac,        /* <-- longueur de somfac (optionnel)             */
- cs_int_t   *lndfbr,        /* <-- longueur de somfbr (optionnel)             */
- cs_int_t   *iperio,        /* <-- indicateur de périodicité                  */
- cs_int_t   *iperot         /* <-- nombre de périodicités de rotation         */
+ cs_int_t   *const ndim,    /* <-- dimension de l'espace                      */
+ cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs                   */
+ cs_int_t   *const nfac,    /* <-- nombre de faces internes                   */
+ cs_int_t   *const nfabor,  /* <-- nombre de faces de bord                    */
+ cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord       */
+ cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille       */
+ cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)              */
+ cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)             */
+ cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)             */
+ cs_int_t   *const iperio,  /* <-- indicateur de périodicité                  */
+ cs_int_t   *const iperot   /* <-- nombre de périodicités de rotation         */
 );
 
 /*============================================================================

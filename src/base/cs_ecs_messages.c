@@ -183,7 +183,6 @@ static void _add_periodicity(void)
  * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
  * INTEGER          IPERIO      : <-- : Indicateur de périodicité
  * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
- * INTEGER          ISTOP       : <-- : Indicateur d'arrêt demandé si > 0
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ledevi, LEDEVI)
