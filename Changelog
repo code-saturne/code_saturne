@@ -1,3 +1,11 @@
+
+* 26/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removing unused MSR matrix format
+  modified routines:
+    include/base/cs_matrix.h
+    src/base/cs_benchmark.c
+    src/base/cs_matrix.c
+
 * 21/05/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
   Renaming and reshaping the halos structures in order
   to prepare for multigrid integration

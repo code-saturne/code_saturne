@@ -1256,17 +1256,6 @@ cs_benchmark(int  mpi_trace_mode)
                           n_cells, n_cells_ext, n_faces,
                           mesh->global_cell_num, mesh->i_face_cells);
 
-    _matrix_creation_test(n_runs,
-                          _("MSR"),
-                          CS_MATRIX_MSR, CS_FALSE,
-                          n_cells, n_cells_ext, n_faces,
-                          mesh->global_cell_num, mesh->i_face_cells);
-
-    _matrix_creation_test(n_runs,
-                          _("MSR sym"),
-                          CS_MATRIX_MSR, CS_TRUE,
-                          n_cells, n_cells_ext, n_faces,
-                          mesh->global_cell_num, mesh->i_face_cells);
 
     /* Assignment tests */
 
@@ -1304,23 +1293,6 @@ cs_benchmark(int  mpi_trace_mode)
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells, da, xa);
 
-    _matrix_assignment_test(n_runs,
-                            _("MSR"),
-                            CS_MATRIX_MSR, CS_FALSE, CS_FALSE,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells, da, xa);
-
-    _matrix_assignment_test(n_runs,
-                            _("MSR, sym coeffs"),
-                            CS_MATRIX_MSR, CS_FALSE, CS_TRUE,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells, da, xa);
-
-    _matrix_assignment_test(n_runs,
-                            _("MSR_sym"),
-                            CS_MATRIX_MSR, CS_TRUE, CS_TRUE,
-                            n_cells, n_cells_ext, n_faces,
-                            mesh->global_cell_num, mesh->i_face_cells, da, xa);
 
   }
 
@@ -1352,20 +1324,6 @@ cs_benchmark(int  mpi_trace_mode)
   _matrix_vector_test(n_runs,
                       _("CSR_sym"),
                       CS_MATRIX_CSR, CS_TRUE, CS_TRUE,
-                      n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells,
-                      da, xa, x1, y1);
-
-  _matrix_vector_test(n_runs,
-                      _("MSR"),
-                      CS_MATRIX_MSR, CS_FALSE, CS_FALSE,
-                      n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells,
-                      da, xa, x1, y1);
-
-  _matrix_vector_test(n_runs,
-                      _("MSR_sym"),
-                      CS_MATRIX_MSR, CS_TRUE, CS_TRUE,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells,
                       da, xa, x1, y1);

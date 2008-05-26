@@ -65,7 +65,6 @@ typedef enum {
 
   CS_MATRIX_NATIVE,     /* Native matrix format */
   CS_MATRIX_CSR,        /* Compressed Sparse Row storage format */
-  CS_MATRIX_MSR,        /* Modified Sparse Row storage format */
   CS_MATRIX_N_TYPES     /* Number of known matrix types */
 
 } cs_matrix_type_t;
