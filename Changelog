@@ -1,5 +1,12 @@
 
 * 26/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a routine to compute the minimum of an integer
+  over the domains in case of parallelism
+  modified routines:
+    include/base/cs_parall.h
+    src/base/cs_parall.c
+
+* 26/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Removing unused MSR matrix format
   modified routines:
     include/base/cs_matrix.h

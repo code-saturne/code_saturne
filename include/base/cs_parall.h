@@ -112,17 +112,10 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[]);
  * *****************
  *
  * DOUBLE PRECISION  PVAR      : <-> : variable buffer to sync
- *
- * Returns:
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (parcve, PARCVE)(cs_real_t     pvar[]
-                          CS_ARGF_SUPP_CHAINE); /* (arguments 'longueur'
-                                                  éventuels, Fortran, inutilisés
-                                                  lors de l'appel mais placés
-                                                  par de nombreux compilateurs)
-                                                */
+CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[]);
 
 /*----------------------------------------------------------------------------
  * Compute the maximum value of a counter (int) for the entire domain in
@@ -141,6 +134,22 @@ CS_PROCF (parcve, PARCVE)(cs_real_t     pvar[]
 
 void
 CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter);
+
+/*----------------------------------------------------------------------------
+ * Compute the minimum value of a counter (int) for the entire domain in
+ * case of parallelism.
+ *
+ * Fortran Interface
+ *
+ * SUBROUTINE PARCMN (IND)
+ * *****************
+ *
+ * INTEGER          COUNTER       <-> : input = local counter
+ *                                      output = global min counter
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter);
 
 /*----------------------------------------------------------------------------
  * Compute the global sum of a counter (int) for the entire domain in case

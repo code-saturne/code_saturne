@@ -97,6 +97,7 @@ static  cs_int_t n_pargve_calls = 0;
 static  cs_int_t n_parcom_calls = 0;
 static  cs_int_t n_parcve_calls = 0;
 static  cs_int_t n_parcmx_calls = 0;
+static  cs_int_t n_parcmn_calls = 0;
 static  cs_int_t n_parcpt_calls = 0;
 static  cs_int_t n_parsom_calls = 0;
 static  cs_int_t n_parmax_calls = 0;
@@ -356,12 +357,7 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (parcve, PARCVE)(cs_real_t     pvar[]
-                          CS_ARGF_SUPP_CHAINE)  /* (arguments 'longueur'
-                                                  éventuels, Fortran, inutilisés
-                                                  lors de l'appel mais placés
-                                                  par de nombreux compilateurs)
-                                                */
+CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[])
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -407,6 +403,42 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcmx\n",
          cs_glob_base_rang, n_parcmx_calls++, n_total_par_calls++);
+#endif
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the minimum value of a counter (int) for the entire domain in
+ * case of parallelism.
+ *
+ * Fortran Interface
+ *
+ * SUBROUTINE PARCMN (IND)
+ * *****************
+ *
+ * INTEGER          COUNTER       <-> : input = local counter
+ *                                      output = global min counter
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
+{
+#if defined(_CS_HAVE_MPI)
+
+  cs_int_t  global_max;
+
+  assert(sizeof(int) == sizeof(cs_int_t));
+
+  MPI_Allreduce(counter, &global_max, 1, CS_MPI_INT, MPI_MIN,
+                cs_glob_base_mpi_comm);
+
+  *counter = global_max;
+
+#endif
+
+#if CS_PARALL_DEBUG_COUNT
+  printf("irang = %d, iappel = %d, tot = %d, parcmn\n",
+         cs_glob_base_rang, n_parcmn_calls++, n_total_par_calls++);
 #endif
 
 }
