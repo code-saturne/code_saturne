@@ -310,7 +310,6 @@ const char  *cs_matrix_type_name[] = {N_("native"),
 const char  *cs_matrix_type_fullname[] = {N_("diagonal + faces"),
                                           N_("Compressed Sparse Row")};
 
-static cs_bool_t _cs_glob_matrix_use_promav = false;
 static int _cs_glob_matrix_prefetch_rows = 2048;
 
 /*============================================================================
@@ -2146,68 +2145,30 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
                           cs_real_t          *restrict x,
                           cs_real_t          *restrict y)
 {
-  /* Are we using the legacy fortran matrix-vector product ? */
+  size_t ii;
+  size_t n_cells_ext = matrix->n_cells_ext;
 
-  if (   matrix->type == CS_MATRIX_NATIVE
-      && _cs_glob_matrix_use_promav == true
-      && ((cs_matrix_coeff_native_t *)(matrix->coeffs))->da != NULL
-      && ((cs_matrix_coeff_native_t *)(matrix->coeffs))->xa != NULL
-      && matrix->face_cell != NULL) {
+  /* Synchronize for parallelism and periodicity first */
 
-    cs_int_t iinvpe = 1;
+  for (ii = matrix->n_cells; ii < n_cells_ext; y[ii++] = 0.);
 
-    const cs_matrix_struct_native_t *ms = matrix->structure;
-    const cs_matrix_coeff_native_t *mc = matrix->coeffs;
+  /* Update distant ghost cells */
 
-    cs_int_t isym = (mc->symmetric) ? 1 : 2;
+  if (cs_glob_base_nbr > 1)
+    cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
 
-    if (rotation_mode == CS_PERIO_ROTA_RESET)
-      iinvpe = 2;
-    else if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-      iinvpe = 3;
+  /* Synchronize periodic values */
 
-    CS_PROCF(promav, PROMAV)(&ms->n_cells_ext,
-                             &ms->n_cells,
-                             &ms->n_faces,
-                             &isym,
-                             &iinvpe,
-                             ms->face_cell,
-                             mc->da,
-                             mc->xa,
-                             x,
-                             y);
-  }
+  if (matrix->periodic)
+    cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
 
-  /* If using a method implemented here, synchronize for parallelism
-   * and periodicity first */
+  /* Now call local matrix.vector product */
 
-  else {
+  if (matrix->vector_multiply != NULL)
+    matrix->vector_multiply(matrix, x, y);
 
-    size_t ii;
-    size_t n_cells_ext = matrix->n_cells_ext;
-
-    for (ii = matrix->n_cells; ii < n_cells_ext; y[ii++] = 0.);
-
-    /* Update distant ghost cells */
-
-    if (cs_glob_base_nbr > 1)
-      cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
-
-    /* Synchronize periodic values */
-
-    if (matrix->periodic)
-      cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
-
-    /* Now call local matrix.vector product */
-
-    if (matrix->vector_multiply != NULL)
-      matrix->vector_multiply(matrix, x, y);
-
-    else if (matrix->alpha_a_x_p_beta_y != NULL)
-      matrix->alpha_a_x_p_beta_y(1.0, 0.0, matrix, x, y);
-
-  }
-
+  else if (matrix->alpha_a_x_p_beta_y != NULL)
+    matrix->alpha_a_x_p_beta_y(1.0, 0.0, matrix, x, y);
 }
 
 /*----------------------------------------------------------------------------
