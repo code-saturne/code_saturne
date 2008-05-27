@@ -54,7 +54,7 @@ MPE_COMM        =0
 
 # Pour Open MPI sur saturne
 MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux
-MPI_INC         =-isystem$(MPI_HOME)/include
+MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
 # Macro pour Sockets
@@ -138,13 +138,22 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
 LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
+
+
+# Options pour librairie partagee
+#--------------------------------
+
+BUILD_SO        =1
+CCFLAGSSO       =-fPIC
+FTNFLAGSSO      =-fPIC
+LDEDLFLAGSSO    =-Wl,-soname -Wl,libcs14.so -fPIC -shared
 
 
 # Positionnement des variables pour le pre-processeur

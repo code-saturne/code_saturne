@@ -58,6 +58,7 @@ BLD_CS         = $(DIR_CS)/build
 
 NOM_LIB_CS_PRE = "saturne"
 NOM_EXE        = "cs14.exe"
+NOM_SO         = "libcs14.so"
 
 
 # Purify
@@ -176,6 +177,23 @@ link:
 	@make privfin
 
 
+link_shared:
+	@make privtitre
+	@make privconfig
+	@if   [ ${BUILD_SO} -ne 1 ] ;\
+	 then echo ;\
+	      echo "$(SO)CONFIGURATION ERROR$(NO)" ;\
+	      echo ;\
+	      echo "$(BO)macros are not configured for shared library$(NO)" ;\
+	      echo ;\
+	      tput init ;\
+	      exit 1 ;\
+	 fi ;
+	@make privcompil
+	@make privlink LINKTARGETTYPE="SO"
+	@make privfin
+
+
 compversion:
 	@make privtitre
 	@make privcompil
@@ -257,6 +275,10 @@ privcompil:
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
 	 dir_inc_cs="$(BFT_INC) $(FVM_INC)" ;\
+	 if   [ ${BUILD_SO} -eq 1 ] ;\
+	 then cflags="$${cflags} $(CCFLAGSSO)" ;\
+	      fflags="$${fflags} $(FTNFLAGSSO)" ;\
+	 fi ; \
 	 if   [ ${MPI} -eq 1 ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(MPI_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_MPI " ;\
@@ -571,6 +593,10 @@ privmodexe:
 	@ls -l $(NOM_EXE)
 	@make privfin
 
+privmodso:
+	@echo "***  Librairie:" ; echo
+	@ls -l $(NOM_SO)
+	@make privfin
 
 # same as in privmodlink, duplicate librariesloc at link to
 #     ensure all modules are found (due to crossed dependencies)
@@ -669,6 +695,11 @@ privcmdlink:
                    $(LIBRARIES) $(MYLIBS)
 
 
+privcmdlinkshared:
+	$(LDEDL) -o $(NOM_SO) $(LDEDLFLAGSSO) $(ALLLDEDLFLAGS) \
+	            $(LISTE_OBJ) $(LIBRARIES) $(MYLIBS)
+
+
 privmodlink:
 	@liste_obj="" ;\
 	 for file in *.o ;\
@@ -714,12 +745,27 @@ privmodlink:
 	     done ;\
 	     librariessup="$${librariessup} $${libpath}" ;\
 	     echo libpath=$${libpath} ;\
-          fi ;\
-	 make privcmdlink \
-	        ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
-                LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)"
+         fi ;\
+	 if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
+	     if [ ! -f cs_main.o ] ; then \
+	        ar x $(ARCH_CS)/lib/libsaturneBASE$(OPT).a cs_main.o ;\
+	        liste_obj="$${liste_obj} cs_main.o" ;\
+	     fi ;\
+	     objcopy --redefine-sym main=cs_main cs_main.o cs_main.o ;\
+	     make privcmdlinkshared \
+	         ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
+                 LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
+	 else \
+	     make privcmdlink \
+	         ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
+                 LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
+	 fi 
 	@echo "***  Linking finished" ; echo
-	@make privmodexe NOM_EXE=" $(NOM_EXE) "
+	@if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
+	    make privmodso NOM_SO=" $(NOM_SO) " ;\
+	 else \
+	    make privmodexe NOM_EXE=" $(NOM_EXE) " ;\
+	 fi
 
 
 privlink:
@@ -904,7 +950,7 @@ clean purge rmobj:
 
 rmexe:
 	@make privconfig
-	@\rm -f $(NOM_EXE) *.out
+	@\rm -f $(NOM_EXE) $(NOM_SO) *.out
 
 rmlib:
 	@make privconfig
@@ -933,6 +979,7 @@ help info:
 	@echo "                $(BO)lib_install$(NO) : library creation and installation"
 	@echo "                $(BO)comp$(NO)        : compilation only"
 	@echo "                $(BO)link$(NO)        : link of Code_Saturne"
+	@echo "                $(BO)link_shared$(NO) : link of Code_Saturne shared library"
 	@echo "                $(BO)saturne$(NO)     : same"
 	@echo "                $(BO)clean$(NO)       : delete object files"
 	@echo "                $(BO)purge$(NO)       : same"

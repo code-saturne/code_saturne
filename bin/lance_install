@@ -481,12 +481,23 @@ Macro_readme_comp=$2
    else
      if   [ "${opttrav}" = "" ] ; then 
        make saturne                || sortie "Echec de make saturne "
+       if [ `uname` = "Linux" ] ; then
+         make link_shared          || sortie "Echec de make lib_shared "
+       fi
      else
        make saturne OPT="$opttrav" || sortie "Echec de make saturne OPT=$opttrav"
+       if [ `uname` = "Linux" ] ; then
+         make link_shared OPT="$opttrav" || sortie "Echec de make lib_shared "
+       fi
      fi
      for file in *.exe ; do
        mv $file ${CS_HOME}/arch/${NOM_ARCH}/bin/`basename $file .exe`${opttrav}.exe
      done
+     if [ `uname` = "Linux" ] ; then
+       for file in *.so ; do
+         mv $file ${CS_HOME}/arch/${NOM_ARCH}/lib/`basename $file .so`${opttrav}.so
+       done
+     fi
    fi
 #
    info "Generation du fichier resume" 

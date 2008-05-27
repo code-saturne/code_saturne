@@ -147,6 +147,15 @@ LDEDLFLAGSVERS  = -v
 LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/lib64:
 
 
+# Options pour librairie partagee
+#--------------------------------
+
+BUILD_SO        =1
+CCFLAGSSO       =-fPIC
+FTNFLAGSSO      =-fPIC
+LDEDLFLAGSSO    =-Wl,-soname -Wl,libcs14.so -fPIC -shared
+
+
 # Positionnement des variables pour le pre-processeur
 #----------------------------------------------------
 #
