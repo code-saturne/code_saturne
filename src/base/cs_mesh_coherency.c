@@ -272,11 +272,12 @@ cs_mesh_coherency_check(void)
         delta_buffer[coord_id*n_cells_with_ghosts + cell_id] =
           delta[3*cell_id + coord_id];
 
-    cs_perio_sync_var_vect(delta_buffer,
-                           delta_buffer +   n_cells_with_ghosts,
-                           delta_buffer + 2*n_cells_with_ghosts,
+    cs_perio_sync_var_vect(mesh->halo,
+                           mesh->halo_type,
                            CS_PERIO_ROTA_COPY,
-                           mesh->halo_type);
+                           delta_buffer,
+                           delta_buffer +   n_cells_with_ghosts,
+                           delta_buffer + 2*n_cells_with_ghosts);
 
     for (coord_id = 0; coord_id < 3; coord_id++)
       for (cell_id = n_cells; cell_id < n_cells_with_ghosts; cell_id++)
@@ -285,7 +286,7 @@ cs_mesh_coherency_check(void)
 
     BFT_FREE(delta_buffer);
 
-    cs_perio_sync_coords(mean, mesh->halo_type);
+    cs_perio_sync_coords(mesh->halo, mesh->halo_type, mean);
 
   }
 

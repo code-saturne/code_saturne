@@ -89,6 +89,94 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Update array of element variable values for periodicity in serial mode,
+ * prior to geometric transformations.
+ *
+ * This function exits immediately in parallel mode, as values should in
+ * this case have been updated through halo synchronization.
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   halo_type --> halo synchronization on standard or extended cells
+ *   var       <-> pointer to cell variable
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_loc_var(const cs_halo_t  *halo,
+              cs_halo_type_t    halo_type,
+              cs_real_t         var[])
+{
+  cs_int_t  i, start, length;
+
+  if (cs_glob_base_nbr == 1) {
+
+    cs_real_t *recv_var
+      = var + halo->n_local_elts + halo->index[0];
+
+    start = halo->send_index[0];
+
+    if (halo_type == CS_HALO_EXTENDED)
+      length =  halo->send_index[2] - halo->send_index[0];
+    else
+      length =  halo->send_index[1] - halo->send_index[0];
+
+    for (i = 0; i < length; i++)
+      recv_var[i] = var[halo->send_list[start + i]];
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of strided element variable values for same-rank periodicity,
+ * prior to geometric transformations.
+ *
+ * Periodic values obtained from different ranks should already have been
+ * updated through parallel synchronization.
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   halo_type --> halo synchronization on standard or extended cells
+ *   var       <-> pointer to cell variable
+ *   stride    --> variable stride
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_loc_var_strided(const cs_halo_t  *halo,
+                      cs_halo_type_t    halo_type,
+                      cs_real_t         var[],
+                      int               stride)
+{
+  cs_int_t  i, j, start, length;
+
+  int rank_id = 0;
+  const int  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+
+  for (rank_id = 0;
+       (   rank_id < halo->n_c_domains
+        && halo->c_domain_rank[rank_id] != local_rank);
+       rank_id++);
+
+  if (halo->c_domain_rank[rank_id] == local_rank) {
+
+    cs_real_t *recv_var
+      = var + halo->n_local_elts + halo->index[2*rank_id];
+
+    start = halo->send_index[2*rank_id];
+
+    if (halo_type == CS_HALO_EXTENDED)
+      length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
+    else
+      length =  halo->send_index[2*rank_id + 1] - halo->send_index[2*rank_id];
+
+    for (i = 0; i < length; i++) {
+      for (j = 0; j < stride; j++)
+        recv_var[i*stride + j] = var[(halo->send_list[start + i])*stride + j];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute a matrix/vector product to apply a transformation to a given
  * vector.
  *
@@ -237,23 +325,45 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
 }
 
 /*----------------------------------------------------------------------------
+ * Test if a halo seems compatible with the main mesh's periodic
+ * transformations.
+ *
+ * If a halo is not compatible, abort with an error message.
+ *
+ * parameters:
+ *   halo --> pointer to halo structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_test_halo_compatibility(const cs_halo_t  *halo)
+{
+  assert(halo != NULL);
+
+  if (cs_glob_mesh->n_transforms != halo->n_transforms)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Les %d transformations périodiques du halo ne correspondent\n"
+                "pas à celles du maillage principal (au nombre de %d)\n"),
+              halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
+}
+
+/*----------------------------------------------------------------------------
  * Update dudxyz and wdudxy for periodic ghost cells.
  *
  * Called by PERMAS.
  *
  * parameters:
- *   cell_id1 --> id of the periodic ghost cells in halo
- *   cell_id2 --> id of the parent cells of cell_id1.
- *   rom      --> density array.
- *   call_id  --> first or second call
- *   phase_id --> phase id
- *   dudxyz   <-> gradient on the components of the velocity.
- *   wdudxy   <-> associated working array.
+ *   h_cell_id --> cell id in halo
+ *   cell_id   --> cell id
+ *   rom       --> density array
+ *   call_id   --> first or second call
+ *   phase_id  --> phase id
+ *   dudxyz    <-> gradient on the components of the velocity.
+ *   wdudxy    <-> associated working array.
  *----------------------------------------------------------------------------*/
 
 static void
-_update_dudxyz(cs_int_t          cell_id1,
-               cs_int_t          cell_id2,
+_update_dudxyz(cs_int_t          h_cell_id,
+               cs_int_t          cell_id,
                const cs_real_t  *rom,
                cs_int_t          call_id,
                cs_int_t          phase_id,
@@ -271,9 +381,9 @@ _update_dudxyz(cs_int_t          cell_id1,
 
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
-        id = cell_id1 + n_ghost_cells*i + stride*j + 3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j + 3*stride*phase_id;
         wdudxy[id] = dudxyz[id];
-        dudxyz[id] *= rom[cell_id2];
+        dudxyz[id] *= rom[cell_id];
       }
     }
 
@@ -282,7 +392,7 @@ _update_dudxyz(cs_int_t          cell_id1,
 
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
-        id = cell_id1 + n_ghost_cells*i + stride*j + 3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j + 3*stride*phase_id;
         dudxyz[id] = wdudxy[id];
       }
     }
@@ -297,18 +407,18 @@ _update_dudxyz(cs_int_t          cell_id1,
  * Called by PERMAS.
  *
  * parameters:
- *   cell_id1 --> id of the periodic ghost cells in halo
- *   cell_id2 --> id of the parent cells of cell_id1.
- *   rom      --> density array.
- *   call_id  --> first or second call
- *   phase_id --> phase id
- *   drdxyz   <-> Gradient on components of Rij (Reynolds stress tensor)
- *   wdrdxy   <-> associated working array.
+ *   h_cell_id --> cell id in halo
+ *   cell_id   --> cell id
+ *   rom       --> density array
+ *   call_id   --> first or second call
+ *   phase_id  --> phase id
+ *   drdxyz    <-> Gradient on components of Rij (Reynolds stress tensor)
+ *   wdrdxy    <-> associated working array.
  *----------------------------------------------------------------------------*/
 
 static void
-_update_drdxyz(cs_int_t          cell_id1,
-               cs_int_t          cell_id2,
+_update_drdxyz(cs_int_t          h_cell_id,
+               cs_int_t          cell_id,
                const cs_real_t  *rom,
                cs_int_t          call_id,
                cs_int_t          phase_id,
@@ -326,9 +436,9 @@ _update_drdxyz(cs_int_t          cell_id1,
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = cell_id1 + n_ghost_cells*i + stride*j +3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j +3*stride*phase_id;
         wdrdxy[id] = drdxyz[id];
-        drdxyz[id] *= rom[cell_id2];
+        drdxyz[id] *= rom[cell_id];
       }
     }
 
@@ -337,7 +447,7 @@ _update_drdxyz(cs_int_t          cell_id1,
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = cell_id1 + n_ghost_cells*i + stride*j +3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j +3*stride*phase_id;
         drdxyz[id] = wdrdxy[id];
       }
     }
@@ -399,7 +509,7 @@ _peinur1(cs_int_t      strid_c,
          cs_real_t    *w2,
          cs_real_t    *w3)
 {
-  cs_int_t  i, t_id, rank_id, cell_id, shift;
+  cs_int_t  i, t_id, rank_id, shift;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -407,7 +517,10 @@ _peinur1(cs_int_t      strid_c,
 
   const cs_int_t  n_cells = mesh->n_cells;
   const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+
+  _sync_loc_var(mesh->halo, mesh->halo_type, w1);
+  _sync_loc_var(mesh->halo, mesh->halo_type, w2);
+  _sync_loc_var(mesh->halo, mesh->halo_type, w3);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -427,52 +540,21 @@ _peinur1(cs_int_t      strid_c,
 
       }
 
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
+      for (i = start_std; i < end_std; i++) {
+        dxyz[i + strid_c + strid_v*0 + strid_p] = w1[n_cells + i];
+        dxyz[i + strid_c + strid_v*1 + strid_p] = w2[n_cells + i];
+        dxyz[i + strid_c + strid_v*2 + strid_p] = w3[n_cells + i];
+      }
 
-        for (i = start_std; i < end_std; i++) {
+      if (mesh->halo_type == CS_HALO_EXTENDED) {
 
-          cell_id = halo->list[i];
-          dxyz[i + strid_c + strid_v*0 + strid_p] = w1[cell_id];
-          dxyz[i + strid_c + strid_v*1 + strid_p] = w2[cell_id];
-          dxyz[i + strid_c + strid_v*2 + strid_p] = w3[cell_id];
-
-        }
-
-        if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++) {
-
-            cell_id = halo->list[i];
-            dxyz[i + strid_c + strid_v*0 + strid_p] = w1[cell_id];
-            dxyz[i + strid_c + strid_v*1 + strid_p] = w2[cell_id];
-            dxyz[i + strid_c + strid_v*2 + strid_p] = w3[cell_id];
-
-          }
-
-        } /* End if extended halo */
-
-      } /* End if on local rank */
-
-      else {
-
-        for (i = start_std; i < end_std; i++) {
+        for (i = start_ext; i < end_ext; i++) {
           dxyz[i + strid_c + strid_v*0 + strid_p] = w1[n_cells + i];
           dxyz[i + strid_c + strid_v*1 + strid_p] = w2[n_cells + i];
           dxyz[i + strid_c + strid_v*2 + strid_p] = w3[n_cells + i];
         }
 
-        if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++) {
-            dxyz[i + strid_c + strid_v*0 + strid_p] = w1[n_cells + i];
-            dxyz[i + strid_c + strid_v*1 + strid_p] = w2[n_cells + i];
-            dxyz[i + strid_c + strid_v*2 + strid_p] = w3[n_cells + i];
-          }
-
-        } /* End if extended halo */
-
-      } /* If on distant ranks */
+      } /* End if extended halo */
 
     } /* End of loop on ranks */
 
@@ -823,6 +905,8 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
 {
   cs_bool_t  bool_err = CS_FALSE;
 
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+
   /* 1. Checking    */
   /*----------------*/
 
@@ -846,34 +930,38 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
        translation and rotation */
 
     if (*itenso == 0)
-      cs_perio_sync_var_scal(var11,
+      cs_perio_sync_var_scal(halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_COPY,
-                             CS_HALO_STANDARD);
+                             var11);
 
     /* Input parameter is a scalar. Sync values on periodic cells for
        translation. We ignore the rotation tranformations. */
 
     else if (*itenso == 1)
-      cs_perio_sync_var_scal(var11,
+      cs_perio_sync_var_scal(halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_HALO_STANDARD);
+                             var11);
 
     /* Reset elements generated by a rotation. (used in Jacobi for Reynolds
        stresses or to solve velocity )*/
 
     else if (*itenso == 11)
-      cs_perio_sync_var_scal(var11,
+      cs_perio_sync_var_scal(halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_RESET,
-                             CS_HALO_STANDARD);
+                             var11);
 
     /* Variable is part of a tensor, so exchange is possible only in
        translation; 3 components are exchanged (we may guess that for
        rotations, something has been done before; see PERINR for example). */
 
     else if (*itenso == 2)
-      cs_perio_sync_var_vect(var11, var22, var33,
+      cs_perio_sync_var_vect(halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_HALO_STANDARD);
+                             var11, var22, var33);
 
   } /* End of idimte == 0 case */
 
@@ -881,29 +969,31 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
      it is (at least) a vector. Translation and rotation are exchanged. */
 
   else if (*idimte == 1)
-    cs_perio_sync_var_vect(var11, var22, var33,
+    cs_perio_sync_var_vect(halo,
+                           CS_HALO_STANDARD,
                            CS_PERIO_ROTA_COPY,
-                           CS_HALO_STANDARD);
+                           var11, var22, var33);
 
   /* --> If we want to handle the variable as a tensor, we suppose that
      it is a tensor. Translation and rotation are exchanged. */
 
   else if (*idimte == 2)
-    cs_perio_sync_var_tens(var11, var12, var13,
+    cs_perio_sync_var_tens(halo,
+                           CS_HALO_STANDARD,
+                           var11, var12, var13,
                            var21, var22, var23,
-                           var31, var32, var33,
-                           CS_HALO_STANDARD);
+                           var31, var32, var33);
 
   /* --> If we want to handle the variable as a tensor, but that
      it is a tensor's diagonal, we suppose that it is a tensor.
      Translation and rotation are exchanged. */
 
   else if (*idimte == 21)
-    cs_perio_sync_var_diag(var11, var22, var33,
-                           CS_HALO_STANDARD);
+    cs_perio_sync_var_diag(halo,
+                           CS_HALO_STANDARD,
+                           var11, var22, var33);
 
 }
-
 
 /*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
@@ -950,7 +1040,7 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
                           cs_real_t         *wdudxy,
                           cs_real_t         *wdrdxy)
 {
-  cs_int_t  i, id, rank_id, shift, t_id;
+  cs_int_t  i, cell_id, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -958,10 +1048,12 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
   cs_halo_type_t  halo_type = mesh->halo_type;
 
   const cs_int_t  phase_id = *iphas - 1;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
 
   if (halo_type == CS_HALO_N_TYPES)
     return;
+
+  if (*iappel == 1)
+    _sync_loc_var(mesh->halo, mesh->halo_type, rom);
 
   for (t_id = 0; t_id < mesh->n_transforms; t_id++) {
 
@@ -981,66 +1073,33 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
 
       }
 
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
+      for (i = start_std; i < end_std; i++) {
 
-        for (i = start_std; i < end_std; i++) {
+        cell_id = mesh->n_cells + i;
 
-          id = halo->list[i];
+        if (*imaspe == 1)
+          _update_dudxyz(i, cell_id, rom, *iappel, phase_id, dudxyz, wdudxy);
+
+        if (*imaspe == 2)
+          _update_drdxyz(i, cell_id, rom, *iappel, phase_id, drdxyz, wdrdxy);
+
+      } /* End of loop on halo elements */
+
+      if (halo_type == CS_HALO_EXTENDED) {
+
+        for (i = start_ext; i < end_ext; i++) {
+
+          cell_id = mesh->n_cells + i;
 
           if (*imaspe == 1)
-            _update_dudxyz(i, id, rom, *iappel, phase_id, dudxyz, wdudxy);
+            _update_dudxyz(i, cell_id, rom, *iappel, phase_id, dudxyz, wdudxy);
 
           if (*imaspe == 2)
-            _update_drdxyz(i, id, rom, *iappel, phase_id, drdxyz, wdrdxy);
+            _update_drdxyz(i, cell_id, rom, *iappel, phase_id, drdxyz, wdrdxy);
 
         } /* End of loop on halo elements */
 
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++) {
-
-            id = halo->list[i];
-
-            if (*imaspe == 1)
-              _update_dudxyz(i, id, rom, *iappel, phase_id, dudxyz, wdudxy);
-
-            if (*imaspe == 2)
-              _update_drdxyz(i, id, rom, *iappel, phase_id, drdxyz, wdrdxy);
-
-          } /* End of loop on halo elements */
-
-        } /* End if extended halo */
-
-      } /* End if on local rank */
-
-      else {
-
-        for (i = start_std; i < end_std; i++) {
-
-          if (*imaspe == 1)
-            _update_dudxyz(i, i, rom, *iappel, phase_id, dudxyz, wdudxy);
-
-          if (*imaspe == 2)
-            _update_drdxyz(i, i, rom, *iappel, phase_id, drdxyz, wdrdxy);
-
-        } /* End of loop on halo elements */
-
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++) {
-
-            if (*imaspe == 1)
-              _update_dudxyz(i, i, rom, *iappel, phase_id, dudxyz, wdudxy);
-
-            if (*imaspe == 2)
-              _update_drdxyz(i, i, rom, *iappel, phase_id, drdxyz, wdrdxy);
-
-          } /* End of loop on halo elements */
-
-        } /* End if extended halo */
-
-      } /* End if distant ranks */
+      } /* End if extended halo */
 
     } /* End of loop on ranks */
 
@@ -1861,32 +1920,35 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
  * Apply transformation on coordinates.
  *
  * parameters:
- *   coords     -->  coordinates on which transformation have to be done.
- *   halo_type  -->  type of halo to treat
+ *   halo      <-> halo associated with coordinates to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   coords    --> coordinates on which transformation have to be done.
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_coords(cs_real_t       *coords,
-                     cs_halo_type_t   halo_type)
+cs_perio_sync_coords(const cs_halo_t *halo,
+                     cs_halo_type_t   sync_mode,
+                     cs_real_t       *coords)
 {
-  cs_int_t  i, rank_id, t_id, cell_id, shift;
+  cs_int_t  i, rank_id, t_id, shift;
   cs_int_t  start_std, start_ext, end_std, end_ext, length;
 
   cs_real_t  matrix[3][4];
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts = halo->n_local_elts;
 
-  if (halo_type == CS_HALO_N_TYPES)
+  if (sync_mode == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  _sync_loc_var_strided(halo, sync_mode, coords, 3);
 
   /* Compute the new cell centers through periodicity */
 
@@ -1903,7 +1965,7 @@ cs_perio_sync_coords(cs_real_t       *coords,
       length = halo->perio_lst[shift + 4*rank_id + 1];
       end_std = start_std + length;
 
-      if (halo_type == CS_HALO_EXTENDED) {
+      if (sync_mode == CS_HALO_EXTENDED) {
 
         start_ext = halo->perio_lst[shift + 4*rank_id + 2];
         length = halo->perio_lst[shift + 4*rank_id + 3];
@@ -1911,56 +1973,19 @@ cs_perio_sync_coords(cs_real_t       *coords,
 
       }
 
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync.) */
+      /* apply transformation for standard halo */
 
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
+      for (i = start_std; i < end_std; i++)
+        _apply_vector_transfo(matrix, n_elts+i, n_elts+i, coords);
 
-        /* apply transformation for standard halo */
+      /* apply transformation for extended halo */
 
-        for (i = start_std; i < end_std; i++) {
+      if (sync_mode == CS_HALO_EXTENDED) {
 
-          cell_id = halo->list[i];
-          _apply_vector_transfo(matrix, cell_id, n_cells+i, coords);
+        for (i = start_ext; i < end_ext; i++)
+          _apply_vector_transfo(matrix, n_elts+i, n_elts+i, coords);
 
-        }
-
-        /* apply transformation for extended halo */
-
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++) {
-
-            cell_id = halo->list[i];
-            _apply_vector_transfo(matrix, cell_id, n_cells+i, coords);
-
-          }
-
-        } /* End if extended halo */
-
-      } /* End if on local rank */
-
-      else {
-
-        /* For cells on distant ranks (a parallel synchronization has been
-           done before) */
-
-        /* apply transformation for standard halo */
-
-        for (i = start_std; i < end_std; i++)
-          _apply_vector_transfo(matrix, n_cells+i, n_cells+i, coords);
-
-        /* apply transformation for extended halo */
-
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          for (i = start_ext; i < end_ext; i++)
-            _apply_vector_transfo(matrix, n_cells+i, n_cells+i, coords);
-
-        } /* End if extended halo */
-
-      }
+      } /* End if extended halo */
 
     } /* End of loop on ranks */
 
@@ -1981,51 +2006,54 @@ cs_perio_sync_geo(void)
   cs_real_t  *xyzcen = cs_glob_mesh_quantities->cell_cen;
   cs_real_t  *cell_volume = cs_glob_mesh_quantities->cell_vol;
 
-  const cs_halo_type_t  halo_type = mesh->halo_type;
+  const cs_halo_type_t  sync_mode = mesh->halo_type;
 
   /* Compute the new cell centers through periodicity */
 
-  cs_perio_sync_coords(xyzcen, halo_type);
+  cs_perio_sync_coords(mesh->halo, sync_mode, xyzcen);
 
   /* Update cell volume for cells in halo */
 
-  cs_perio_sync_var_scal(cell_volume,
+  cs_perio_sync_var_scal(mesh->halo,
+                         sync_mode,
                          CS_PERIO_ROTA_COPY,
-                         CS_HALO_EXTENDED);
-
+                         cell_volume);
 }
 
 /*----------------------------------------------------------------------------
- * Update values for a real scalar between periodic cells.
+ * Synchronize values for a real scalar between periodic elements.
  *
  * parameters:
- *   var         <-> scalar to update
- *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
- *                   COPY, IGNORE or RESET
- *   halo_type   --> kind of halo treatment
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
+ *                 COPY, IGNORE or RESET
+ *   var       <-> scalar to synchronize
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_scal(cs_real_t        var[],
+cs_perio_sync_var_scal(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
                        cs_perio_rota_t  rota_mode,
-                       cs_halo_type_t   halo_type)
+                       cs_real_t        var[])
 {
-  cs_int_t  i, rank_id, shift, t_id, cell_id;
+  cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const fvm_periodicity_t *periodicity = mesh->periodicity;
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
 
-  if (halo_type == CS_HALO_N_TYPES)
+  if (sync_mode == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  _sync_loc_var(halo, sync_mode, var);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2033,120 +2061,84 @@ cs_perio_sync_var_scal(cs_real_t        var[],
 
     perio_type = fvm_periodicity_get_type(periodicity, t_id);
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    /* Reset values if mode is CS_PERIO_ROTA_RESET */
 
-      start_std = halo->perio_lst[shift + 4*rank_id];
-      length = halo->perio_lst[shift + 4*rank_id + 1];
-      end_std = start_std + length;
+    if (   rota_mode == CS_PERIO_ROTA_RESET
+        && perio_type >= FVM_PERIODICITY_ROTATION) {
 
-      if (halo_type == CS_HALO_EXTENDED) {
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-        length = halo->perio_lst[shift + 4*rank_id + 3];
-        end_ext = start_ext + length;
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
 
-      }
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync. */
-
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
-
-        /* Si la variable est un scalaire ou que l'on est en translation,
-           tout va bien : on echange tout */
-
-        if (   rota_mode == CS_PERIO_ROTA_COPY
-            || perio_type == FVM_PERIODICITY_TRANSLATION) {
-
-          for (i = start_std; i < end_std; i++) {
-            cell_id = halo->list[i];
-            var[n_cells + i] = var[cell_id];
-          }
-
-          if (halo_type == CS_HALO_EXTENDED) {
-
-            for (i = start_ext; i < end_ext; i++) {
-              cell_id = halo->list[i];
-              var[n_cells + i] = var[cell_id];
-            }
-
-          }
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
 
         }
-        else if (   rota_mode == CS_PERIO_ROTA_RESET
-                 && perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++)
-            var[n_cells + i] = 0.;
-
-          if (halo_type == CS_HALO_EXTENDED)
-            for (i = start_ext; i < end_ext; i++)
-              var[n_cells + i] = 0.;
-
-        }
-
-      } /* If we are on the local rank */
-
-      /* For parallel and periodic cells, reset values if
-         mode is CS_PERIO_ROTA_RESET */
-
-      else if (   rota_mode == CS_PERIO_ROTA_RESET
-               && perio_type >= FVM_PERIODICITY_ROTATION) {
 
         for (i = start_std; i < end_std; i++)
-          var[n_cells + i] = 0.;
+          var[n_elts + i] = 0.;
 
-        if (halo_type == CS_HALO_EXTENDED)
+        if (sync_mode == CS_HALO_EXTENDED) {
           for (i = start_ext; i < end_ext; i++)
-            var[n_cells + i] = 0.;
+            var[n_elts + i] = 0.;
+        }
 
-      }
+      } /* End of loop on ranks */
 
-    } /* End of loop on ranks */
+    }
 
-  } /* End of loop on transformations for the local rank */
+  } /* End of loop on transformations */
 
 }
 
 /*----------------------------------------------------------------------------
- * Update values for a real vector between periodic cells.
+ * Synchronize values for a real vector between periodic cells.
  *
  * parameters:
- *   var_x       <-> component of the vector to update
- *   var_y       <-> component of the vector to update
- *   var_z       <-> component of the vector to update
- *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
- *                   COPY, IGNORE or RESET
- *   halo_type   --> kind of halo treatment
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
+ *                 COPY, IGNORE or RESET
+ *   var_x     <-> component of the vector to update
+ *   var_y     <-> component of the vector to update
+ *   var_z     <-> component of the vector to update
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(cs_real_t        var_x[],
-                       cs_real_t        var_y[],
-                       cs_real_t        var_z[],
+cs_perio_sync_var_vect(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
                        cs_perio_rota_t  rota_mode,
-                       cs_halo_type_t   halo_type)
+                       cs_real_t        var_x[],
+                       cs_real_t        var_y[],
+                       cs_real_t        var_z[])
 {
-  cs_int_t  i, rank_id, shift, t_id, cell_id;
+  cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
   cs_real_t  x_in, y_in, z_in;
 
   cs_real_t matrix[3][4];
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const fvm_periodicity_t *periodicity = mesh->periodicity;
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
 
-  if (halo_type == CS_HALO_N_TYPES)
+  if (sync_mode == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  _sync_loc_var(halo, sync_mode, var_x);
+  _sync_loc_var(halo, sync_mode, var_y);
+  _sync_loc_var(halo, sync_mode, var_z);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2154,184 +2146,97 @@ cs_perio_sync_var_vect(cs_real_t        var_x[],
 
     perio_type = fvm_periodicity_get_type(periodicity, t_id);
 
-    if (perio_type >= FVM_PERIODICITY_ROTATION)
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
       fvm_periodicity_get_matrix(periodicity, t_id, matrix);
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-      start_std = halo->perio_lst[shift + 4*rank_id];
-      length = halo->perio_lst[shift + 4*rank_id + 1];
-      end_std = start_std + length;
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
 
-      if (halo_type == CS_HALO_EXTENDED) {
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-        length = halo->perio_lst[shift + 4*rank_id + 3];
-        end_ext = start_ext + length;
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
 
-      }
+        }
 
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync. */
-
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
-
-        if (perio_type == FVM_PERIODICITY_TRANSLATION) {
+        if (rota_mode == CS_PERIO_ROTA_COPY) {
 
           for (i = start_std; i < end_std; i++) {
-            cell_id = halo->list[i];
-            var_x[n_cells + i] = var_x[cell_id];
-            var_y[n_cells + i] = var_y[cell_id];
-            var_z[n_cells + i] = var_z[cell_id];
+
+            x_in = var_x[n_elts + i];
+            y_in = var_y[n_elts + i];
+            z_in = var_z[n_elts + i];
+
+            _apply_vector_rotation(matrix,
+                                   x_in,
+                                   y_in,
+                                   z_in,
+                                   &var_x[n_elts+i],
+                                   &var_y[n_elts+i],
+                                   &var_z[n_elts+i]);
           }
 
-          if (halo_type == CS_HALO_EXTENDED) {
+          if (sync_mode == CS_HALO_EXTENDED) {
 
             for (i = start_ext; i < end_ext; i++) {
-              cell_id = halo->list[i];
-              var_x[n_cells + i] = var_x[cell_id];
-              var_y[n_cells + i] = var_y[cell_id];
-              var_z[n_cells + i] = var_z[cell_id];
-            }
 
-          }
-
-        } /* End of the treatment of translation */
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          if (rota_mode == CS_PERIO_ROTA_COPY) {
-
-            for (i = start_std; i < end_std; i++) {
-              cell_id = halo->list[i];
-              _apply_vector_rotation(matrix,
-                                     var_x[cell_id],
-                                     var_y[cell_id],
-                                     var_z[cell_id],
-                                     &var_x[n_cells+i],
-                                     &var_y[n_cells+i],
-                                     &var_z[n_cells+i]);
-            }
-
-            if (halo_type == CS_HALO_EXTENDED) {
-
-              for (i = start_ext; i < end_ext; i++) {
-                cell_id = halo->list[i];
-                _apply_vector_rotation(matrix,
-                                       var_x[cell_id],
-                                       var_y[cell_id],
-                                       var_z[cell_id],
-                                       &var_x[n_cells+i],
-                                       &var_y[n_cells+i],
-                                       &var_z[n_cells+i]);
-              }
-
-            }
-
-          } /* End if rota_mode == CS_PERIO_ROTA_COPY */
-
-          if (rota_mode == CS_PERIO_ROTA_RESET) {
-
-            for (i = start_std; i < end_std; i++) {
-              var_x[n_cells + i] = 0;
-              var_y[n_cells + i] = 0;
-              var_z[n_cells + i] = 0;
-            }
-
-            if (halo_type == CS_HALO_EXTENDED) {
-
-              for (i = start_ext; i < end_ext; i++) {
-                var_x[n_cells + i] = 0;
-                var_y[n_cells + i] = 0;
-                var_z[n_cells + i] = 0;
-              }
-
-            }
-
-          } /* End if rota_mode == CS_PERIO_ROTA_RESET */
-
-        } /* End of the treatment of rotation */
-
-      } /* If we are on the local rank */
-
-      else {
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          if (rota_mode == CS_PERIO_ROTA_COPY) {
-
-            for (i = start_std; i < end_std; i++) {
-
-              x_in = var_x[n_cells + i];
-              y_in = var_y[n_cells + i];
-              z_in = var_z[n_cells + i];
+              x_in = var_x[n_elts + i];
+              y_in = var_y[n_elts + i];
+              z_in = var_z[n_elts + i];
 
               _apply_vector_rotation(matrix,
                                      x_in,
                                      y_in,
                                      z_in,
-                                     &var_x[n_cells+i],
-                                     &var_y[n_cells+i],
-                                     &var_z[n_cells+i]);
-            }
-
-            if (halo_type == CS_HALO_EXTENDED) {
-
-              for (i = start_ext; i < end_ext; i++) {
-
-                x_in = var_x[n_cells + i];
-                y_in = var_y[n_cells + i];
-                z_in = var_z[n_cells + i];
-
-                _apply_vector_rotation(matrix,
-                                       x_in,
-                                       y_in,
-                                       z_in,
-                                       &var_x[n_cells+i],
-                                       &var_y[n_cells+i],
-                                       &var_z[n_cells+i]);
-
-              }
+                                     &var_x[n_elts+i],
+                                     &var_y[n_elts+i],
+                                     &var_z[n_elts+i]);
 
             }
 
-          } /* End if rota_mode == CS_PERIO_ROTA_COPY */
+          }
 
-          if (rota_mode == CS_PERIO_ROTA_RESET) {
+        } /* End if rota_mode == CS_PERIO_ROTA_COPY */
 
-            for (i = start_std; i < end_std; i++) {
-              var_x[n_cells + i] = 0;
-              var_y[n_cells + i] = 0;
-              var_z[n_cells + i] = 0;
+        if (rota_mode == CS_PERIO_ROTA_RESET) {
+
+          for (i = start_std; i < end_std; i++) {
+            var_x[n_elts + i] = 0;
+            var_y[n_elts + i] = 0;
+            var_z[n_elts + i] = 0;
+          }
+
+          if (sync_mode == CS_HALO_EXTENDED) {
+
+            for (i = start_ext; i < end_ext; i++) {
+              var_x[n_elts + i] = 0;
+              var_y[n_elts + i] = 0;
+              var_z[n_elts + i] = 0;
             }
 
-            if (halo_type == CS_HALO_EXTENDED) {
+          }
 
-              for (i = start_ext; i < end_ext; i++) {
-                var_x[n_cells + i] = 0;
-                var_y[n_cells + i] = 0;
-                var_z[n_cells + i] = 0;
-              }
-
-            }
-
-          } /* End if rota_mode == CS_PERIO_ROTA_RESET */
-
-        } /* End of the treatment of rotation */
-
-      } /* If we are on distant ranks */
+        } /* End if rota_mode == CS_PERIO_ROTA_RESET */
 
       } /* End of loop on ranks */
 
-  } /* End of loop on transformations for the local rank */
+    } /* End of the treatment of rotation */
+
+  } /* End of loop on transformations */
 
 }
 
 /*----------------------------------------------------------------------------
- * Update values for a real tensor between periodic cells.
+ * Synchronize values for a real tensor between periodic cells.
  *
  * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var12     <-> component of the tensor to update
  *   var13     <-> component of the tensor to update
@@ -2341,11 +2246,12 @@ cs_perio_sync_var_vect(cs_real_t        var_x[],
  *   var31     <-> component of the tensor to update
  *   var32     <-> component of the tensor to update
  *   var33     <-> component of the tensor to update
- *   halo_type --> kind of halo treatment
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens(cs_real_t        var11[],
+cs_perio_sync_var_tens(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var11[],
                        cs_real_t        var12[],
                        cs_real_t        var13[],
                        cs_real_t        var21[],
@@ -2353,28 +2259,36 @@ cs_perio_sync_var_tens(cs_real_t        var11[],
                        cs_real_t        var23[],
                        cs_real_t        var31[],
                        cs_real_t        var32[],
-                       cs_real_t        var33[],
-                       cs_halo_type_t   halo_type)
+                       cs_real_t        var33[])
 {
-  cs_int_t  i, rank_id, shift, t_id, cell_id;
+  cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
   cs_real_t  v11, v12, v13, v21, v22, v23, v31, v32, v33;
 
   cs_real_t  matrix[3][4];
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const fvm_periodicity_t *periodicity = mesh->periodicity;
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
 
-  if (halo_type == CS_HALO_N_TYPES)
+  if (sync_mode == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  _sync_loc_var(halo, sync_mode, var11);
+  _sync_loc_var(halo, sync_mode, var12);
+  _sync_loc_var(halo, sync_mode, var13);
+  _sync_loc_var(halo, sync_mode, var21);
+  _sync_loc_var(halo, sync_mode, var22);
+  _sync_loc_var(halo, sync_mode, var23);
+  _sync_loc_var(halo, sync_mode, var31);
+  _sync_loc_var(halo, sync_mode, var32);
+  _sync_loc_var(halo, sync_mode, var33);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2382,161 +2296,75 @@ cs_perio_sync_var_tens(cs_real_t        var11[],
 
     perio_type = fvm_periodicity_get_type(periodicity, t_id);
 
-    if (perio_type >= FVM_PERIODICITY_ROTATION)
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
       fvm_periodicity_get_matrix(periodicity, t_id, matrix);
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-      start_std = halo->perio_lst[shift + 4*rank_id];
-      length = halo->perio_lst[shift + 4*rank_id + 1];
-      end_std = start_std + length;
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
 
-      if (halo_type == CS_HALO_EXTENDED) {
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-        length = halo->perio_lst[shift + 4*rank_id + 3];
-        end_ext = start_ext + length;
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
 
-      }
+        }
 
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync. */
+        for (i = start_std; i < end_std; i++) {
 
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
+          v11 = var11[n_elts + i];
+          v12 = var12[n_elts + i];
+          v13 = var13[n_elts + i];
+          v21 = var21[n_elts + i];
+          v22 = var22[n_elts + i];
+          v23 = var23[n_elts + i];
+          v31 = var31[n_elts + i];
+          v32 = var32[n_elts + i];
+          v33 = var33[n_elts + i];
 
-        /* Si la variable est un scalaire ou que l'on est en translation,
-           tout va bien : on echange tout */
+          _apply_tensor_rotation(matrix,
+                                 v11, v12, v13, v21, v22, v23,
+                                 v31, v32, v33,
+                                 &var11[n_elts + i], &var12[n_elts + i],
+                                 &var13[n_elts + i], &var21[n_elts + i],
+                                 &var22[n_elts + i], &var23[n_elts + i],
+                                 &var31[n_elts + i], &var32[n_elts + i],
+                                 &var33[n_elts + i]);
 
-        if (perio_type == FVM_PERIODICITY_TRANSLATION) {
+        }
 
-          for (i = start_std; i < end_std; i++) {
-            cell_id = halo->list[i];
-            var11[n_cells + i] = var11[cell_id];
-            var12[n_cells + i] = var12[cell_id];
-            var13[n_cells + i] = var13[cell_id];
-            var21[n_cells + i] = var21[cell_id];
-            var22[n_cells + i] = var22[cell_id];
-            var23[n_cells + i] = var23[cell_id];
-            var31[n_cells + i] = var31[cell_id];
-            var32[n_cells + i] = var32[cell_id];
-            var33[n_cells + i] = var33[cell_id];
-          }
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-          if (halo_type == CS_HALO_EXTENDED) {
+          for (i = start_ext; i < end_ext; i++) {
 
-            for (i = start_ext; i < end_ext; i++) {
-              cell_id = halo->list[i];
-              var11[n_cells + i] = var11[cell_id];
-              var12[n_cells + i] = var12[cell_id];
-              var13[n_cells + i] = var13[cell_id];
-              var21[n_cells + i] = var21[cell_id];
-              var22[n_cells + i] = var22[cell_id];
-              var23[n_cells + i] = var23[cell_id];
-              var31[n_cells + i] = var31[cell_id];
-              var32[n_cells + i] = var32[cell_id];
-              var33[n_cells + i] = var33[cell_id];
-            }
-
-          }
-
-        } /* End of the treatment of translation */
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++) {
-
-            cell_id = halo->list[i];
-
-            _apply_tensor_rotation(matrix,
-               var11[cell_id], var12[cell_id], var13[cell_id],
-               var21[cell_id], var22[cell_id], var23[cell_id],
-               var31[cell_id], var32[cell_id], var33[cell_id],
-               &var11[n_cells + i], &var12[n_cells + i], &var13[n_cells + i],
-               &var21[n_cells + i], &var22[n_cells + i], &var23[n_cells + i],
-               &var31[n_cells + i], &var32[n_cells + i], &var33[n_cells + i]);
-
-          }
-
-          if (halo_type == CS_HALO_EXTENDED) {
-
-            for (i = start_ext; i < end_ext; i++) {
-
-              cell_id = halo->list[i];
-
-              _apply_tensor_rotation(matrix,
-                 var11[cell_id], var12[cell_id], var13[cell_id],
-                 var21[cell_id], var22[cell_id], var23[cell_id],
-                 var31[cell_id], var32[cell_id], var33[cell_id],
-                 &var11[n_cells + i], &var12[n_cells + i], &var13[n_cells + i],
-                 &var21[n_cells + i], &var22[n_cells + i], &var23[n_cells + i],
-                 &var31[n_cells + i], &var32[n_cells + i], &var33[n_cells + i]);
-
-            }
-
-          }
-
-        } /* End of the treatment of rotation */
-
-      } /* If we are on the local rank */
-
-      else {
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++) {
-
-            v11 = var11[n_cells + i];
-            v12 = var12[n_cells + i];
-            v13 = var13[n_cells + i];
-            v21 = var21[n_cells + i];
-            v22 = var22[n_cells + i];
-            v23 = var23[n_cells + i];
-            v31 = var31[n_cells + i];
-            v32 = var32[n_cells + i];
-            v33 = var33[n_cells + i];
+            v11 = var11[n_elts + i];
+            v12 = var12[n_elts + i];
+            v13 = var13[n_elts + i];
+            v21 = var21[n_elts + i];
+            v22 = var22[n_elts + i];
+            v23 = var23[n_elts + i];
+            v31 = var31[n_elts + i];
+            v32 = var32[n_elts + i];
+            v33 = var33[n_elts + i];
 
             _apply_tensor_rotation(matrix,
                                    v11, v12, v13, v21, v22, v23,
                                    v31, v32, v33,
-                                   &var11[n_cells + i], &var12[n_cells + i],
-                                   &var13[n_cells + i], &var21[n_cells + i],
-                                   &var22[n_cells + i], &var23[n_cells + i],
-                                   &var31[n_cells + i], &var32[n_cells + i],
-                                   &var33[n_cells + i]);
+                                   &var11[n_elts + i], &var12[n_elts + i],
+                                   &var13[n_elts + i], &var21[n_elts + i],
+                                   &var22[n_elts + i], &var23[n_elts + i],
+                                   &var31[n_elts + i], &var32[n_elts + i],
+                                   &var33[n_elts + i]);
 
           }
 
-          if (halo_type == CS_HALO_EXTENDED) {
-
-            for (i = start_ext; i < end_ext; i++) {
-
-              v11 = var11[n_cells + i];
-              v12 = var12[n_cells + i];
-              v13 = var13[n_cells + i];
-              v21 = var21[n_cells + i];
-              v22 = var22[n_cells + i];
-              v23 = var23[n_cells + i];
-              v31 = var31[n_cells + i];
-              v32 = var32[n_cells + i];
-              v33 = var33[n_cells + i];
-
-              _apply_tensor_rotation(matrix,
-                                     v11, v12, v13, v21, v22, v23,
-                                     v31, v32, v33,
-                                     &var11[n_cells + i], &var12[n_cells + i],
-                                     &var13[n_cells + i], &var21[n_cells + i],
-                                     &var22[n_cells + i], &var23[n_cells + i],
-                                     &var31[n_cells + i], &var32[n_cells + i],
-                                     &var33[n_cells + i]);
-
-            }
-
-          } /* End if halo is extended */
-
         } /* End of the treatment of rotation */
 
-      } /* If we are on distant ranks */
+      } /* End if halo is extended */
 
     } /* End of loop on ranks */
 
@@ -2545,41 +2373,46 @@ cs_perio_sync_var_tens(cs_real_t        var11[],
 }
 
 /*----------------------------------------------------------------------------
- * Update values for a real tensor between periodic cells.
+ * Synchronize values for a real diagonal tensor between periodic cells.
  *
  * We only know the diagonal of the tensor.
  *
  * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var22     <-> component of the tensor to update
  *   var33     <-> component of the tensor to update
- *   halo_type --> kind of halo treatment
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag(cs_real_t        var11[],
+cs_perio_sync_var_diag(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var11[],
                        cs_real_t        var22[],
-                       cs_real_t        var33[],
-                       cs_halo_type_t   halo_type)
+                       cs_real_t        var33[])
 {
-  cs_int_t  i, rank_id, shift, t_id, cell_id;
+  cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
   cs_real_t  v11, v22, v33;
   cs_real_t  matrix[3][4];
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  n_cells   = mesh->n_cells ;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-  const fvm_periodicity_t *periodicity = mesh->periodicity;
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
 
-  if (halo_type == CS_HALO_N_TYPES)
+  if (sync_mode == CS_HALO_N_TYPES)
     return;
 
   assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  _sync_loc_var(halo, sync_mode, var11);
+  _sync_loc_var(halo, sync_mode, var22);
+  _sync_loc_var(halo, sync_mode, var33);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2587,134 +2420,61 @@ cs_perio_sync_var_diag(cs_real_t        var11[],
 
     perio_type = fvm_periodicity_get_type(periodicity, t_id);
 
-    if (perio_type >= FVM_PERIODICITY_ROTATION)
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
       fvm_periodicity_get_matrix(periodicity, t_id, matrix);
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-      start_std = halo->perio_lst[shift + 4*rank_id];
-      length = halo->perio_lst[shift + 4*rank_id + 1];
-      end_std = start_std + length;
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
 
-      if (halo_type == CS_HALO_EXTENDED) {
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-        length = halo->perio_lst[shift + 4*rank_id + 3];
-        end_ext = start_ext + length;
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
 
-      }
+        }
 
-      /* Treatment for local periodic cells (copy periodic and parallel
-         cells already done with the parallel sync. */
+        for (i = start_std; i < end_std; i++) {
 
-      if (   mesh->n_domains == 1
-          || halo->c_domain_rank[rank_id] == local_rank) {
+          v11 = var11[n_elts + i];
+          v22 = var22[n_elts + i];
+          v33 = var33[n_elts + i];
 
-        /* Si la variable est un scalaire ou que l'on est en translation,
-           tout va bien : on echange tout */
+          _apply_tensor_rotation(matrix, v11, 0, 0,
+                                 0, v22, 0, 0, 0, v33,
+                                 &var11[n_elts + i], NULL, NULL,
+                                 NULL, &var22[n_elts + i], NULL,
+                                 NULL, NULL, &var33[n_elts + i]);
 
-        if (perio_type == FVM_PERIODICITY_TRANSLATION) {
+        }
 
-          for (i = start_std; i < end_std; i++) {
-            cell_id = halo->list[i];
-            var11[n_cells + i] = var11[cell_id];
-            var22[n_cells + i] = var22[cell_id];
-            var33[n_cells + i] = var33[cell_id];
-          }
+        if (sync_mode == CS_HALO_EXTENDED) {
 
-          if (halo_type == CS_HALO_EXTENDED) {
+          for (i = start_ext; i < end_ext; i++) {
 
-            for (i = start_ext; i < end_ext; i++) {
-              cell_id = halo->list[i];
-              var11[n_cells + i] = var11[cell_id];
-              var22[n_cells + i] = var22[cell_id];
-              var33[n_cells + i] = var33[cell_id];
-            }
-
-          }
-
-        } /* End of the treatment of translation */
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++) {
-
-            cell_id = halo->list[i];
-
-            _apply_tensor_rotation(matrix,
-                                   var11[cell_id], 0, 0,
-                                   0, var22[cell_id], 0,
-                                   0, 0, var33[cell_id],
-                                   &var11[n_cells + i], NULL, NULL,
-                                   NULL, &var22[n_cells + i], NULL,
-                                   NULL, NULL, &var33[n_cells + i]);
-          }
-
-          if (halo_type == CS_HALO_EXTENDED) {
-
-            for (i = start_ext; i < end_ext; i++) {
-
-              cell_id = halo->list[i];
-
-              _apply_tensor_rotation(matrix,
-                                     var11[cell_id], 0, 0,
-                                     0, var22[cell_id], 0,
-                                     0, 0, var33[cell_id],
-                                     &var11[n_cells + i], NULL, NULL,
-                                     NULL, &var22[n_cells + i], NULL,
-                                     NULL, NULL, &var33[n_cells + i]);
-
-            }
-
-          }
-
-        } /* End of the treatment of rotation */
-
-      } /* If we are on the local rank */
-
-      else {
-
-        if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-          for (i = start_std; i < end_std; i++) {
-
-            v11 = var11[n_cells + i];
-            v22 = var22[n_cells + i];
-            v33 = var33[n_cells + i];
+            v11 = var11[n_elts + i];
+            v22 = var22[n_elts + i];
+            v33 = var33[n_elts + i];
 
             _apply_tensor_rotation(matrix, v11, 0, 0,
                                    0, v22, 0, 0, 0, v33,
-                                   &var11[n_cells + i], NULL, NULL,
-                                   NULL, &var22[n_cells + i], NULL,
-                                   NULL, NULL, &var33[n_cells + i]);
+                                   &var11[n_elts + i], NULL, NULL,
+                                   NULL, &var22[n_elts + i], NULL,
+                                   NULL, NULL, &var33[n_elts + i]);
 
           }
 
-          if (halo_type == CS_HALO_EXTENDED) {
+        } /* End if halo is extended */
 
-            for (i = start_ext; i < end_ext; i++) {
+      } /* End of loop on ranks */
 
-              v11 = var11[n_cells + i];
-              v22 = var22[n_cells + i];
-              v33 = var33[n_cells + i];
+    } /* End of the treatment of rotation */
 
-              _apply_tensor_rotation(matrix, v11, 0, 0,
-                                     0, v22, 0, 0, 0, v33,
-                                     &var11[n_cells + i], NULL, NULL,
-                                     NULL, &var22[n_cells + i], NULL,
-                                     NULL, NULL, &var33[n_cells + i]);
-
-            }
-
-          } /* End if halo is extended */
-
-        } /* End of the treatment of rotation */
-
-      } /* If we are on distant ranks */
-
-    } /* End of loop on ranks */
-
-  } /* End of loop on transformations for the local rank */
+  } /* End of loop on transformations */
 
 }
 

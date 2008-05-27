@@ -60,15 +60,15 @@ extern "C" {
 
 typedef struct {
 
-  cs_real_t  *cell_cen;    /* Cell centre coordinates  */
-  cs_real_t  *cell_vol;    /* Cell volume */
+  cs_real_t  *cell_cen;       /* Cell center coordinates  */
+  cs_real_t  *cell_vol;       /* Cell volume */
 
-  cs_real_t  *i_face_normal;  /* Surface normal of internal faces. Norm is the
-                              area of the face */
-  cs_real_t  *b_face_normal;  /* Surface normal of border faces. Norm is the
-                              area of the face */
-  cs_real_t  *i_face_cog;   /* Coord. of the centre of gravity for internal faces */
-  cs_real_t  *b_face_cog;   /* Coord. of the centre of gravity for border faces */
+  cs_real_t  *i_face_normal;  /* Surface normal of internal faces.
+                                 (L2 norm equals area of the face) */
+  cs_real_t  *b_face_normal;  /* Surface normal of border faces.
+                                 (L2 norm equals area of the face) */
+  cs_real_t  *i_face_cog;     /* Center of gravity of internal faces */
+  cs_real_t  *b_face_cog;     /* Center of gravity of border faces */
 
 } cs_mesh_quantities_t ;
 

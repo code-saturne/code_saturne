@@ -49,7 +49,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_comm.h"
-#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -123,158 +122,6 @@ static  cs_int_t n_interface_sr_calls = 0;
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Update values for cells belonging to halo (standard halo cell or
- * standard + extended halo cell according to op_type).
- *
- * parameters:
- *   var_buffer  <-> values to sync
- *   op_type     --> type of the synchronization (std / std + ext)
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_cells(cs_real_t       *var_buffer,
-            cs_halo_type_t   op_type)
-{
-#if defined(_CS_HAVE_MPI)
-
-  cs_int_t  id, rank_id, start, length;
-
-  int  cpt_request = 0;
-
-  cs_real_t  *buf = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-
-  /* Send and Receive data from distant ranks with
-     non-blocking communications */
-
-  /* Receive (to be done first) */
-  /*----------------------------*/
-
-  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-      /* Values are directly received in the halo.
-         Standard + extended ghost cells. (n_cells to n_cells + n_ghost_cells)
-      */
-
-      start = halo->index[2*rank_id];
-
-      if (op_type == CS_HALO_STANDARD)
-        length = halo->index[2*rank_id + 1] - halo->index[2*rank_id];
-
-      else if (op_type == CS_HALO_EXTENDED)
-        length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
-
-      if (length > 0) {
-
-        buf = var_buffer + mesh->n_cells + start;
-
-        MPI_Irecv(buf,
-                  length,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_base_mpi_comm,
-                  &(halo->mpi_request[cpt_request++]));
-
-      }
-
-    }
-
-  } /* End of loop on communicating ranks */
-
-  /* We wait for receiving all messages */
-
-  MPI_Barrier(cs_glob_base_mpi_comm);
-
-  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-    /* Send */
-    /*------*/
-
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-      start = halo->send_index[2*rank_id];
-
-      if (op_type == CS_HALO_STANDARD)
-        length = halo->send_index[2*rank_id + 1] - halo->send_index[2*rank_id];
-
-      else if (op_type == CS_HALO_EXTENDED)
-        length = halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
-
-      if (length > 0) {
-
-        for (id = 0 ; id < length ; id++)
-          halo->comm_buffer[start + id] = var_buffer[halo->send_list[start + id]];
-
-        buf = halo->comm_buffer + start ;
-
-        MPI_Isend(buf,
-                  length,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_base_mpi_comm,
-                  &(halo->mpi_request[cpt_request++]));
-
-      }
-
-    }
-
-  } /* End of loop on communicating ranks */
-
-  /* Sync after each communicating rank had received all the messages */
-
-  MPI_Waitall(cpt_request, halo->mpi_request, halo->mpi_status);
-
-#endif
-
-}
-
-/*----------------------------------------------------------------------------
- * Update strided values for cells belonging to halo (standard halo cell or
- * standard + extended halo cell according to op_type).
- *
- * parameters:
- *   var_buffer  <-> values to sync
- *   op_type     --> type of the synchronization (std / std + ext)
- *   stride      --> number of values (no interlaced) by entity
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_cells_strided(cs_real_t        *var_buffer,
-                    cs_halo_type_t    op_type,
-                    cs_int_t          stride)
-{
-#if defined(_CS_HAVE_MPI)
-  cs_int_t  i, j;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-
-  for (i = 0; i < stride; i++) {
-
-    for (j = 0; j < n_cells_with_ghosts; j++)
-      halo->tmp_buffer[j] = var_buffer[j*stride + i];
-
-    _sync_cells(halo->tmp_buffer, op_type);
-
-    for (j = n_cells ; j < n_cells_with_ghosts ; j++)
-      var_buffer[j*stride + i] = halo->tmp_buffer[j];
-
-  } /* End of loop on stride */
-
-#endif
-}
-
 /*============================================================================
  *  Public functions definition for API Fortran
  *============================================================================*/
@@ -314,8 +161,8 @@ CS_PROCF (pargeo, PARGEO)(cs_int_t  *ncelgb,
 /*----------------------------------------------------------------------------
  * Update a buffer on cells in case of parallelism
  *
- * This function copies values of the cells in the standard send_halo (local cells)
- * to ghost cells on distant ranks.
+ * This function copies values of the cells in the standard send_halo
+ * (local cells) to ghost cells on distant ranks.
  *
  * Fortran interface :
  *
@@ -330,7 +177,7 @@ void
 CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 {
 
-  cs_parall_sync_cells(var, CS_HALO_STANDARD, 1);
+  cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcom\n",
@@ -359,10 +206,8 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 void
 CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[])
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if(mesh->n_domains > 1)
-    cs_parall_sync_cells(pvar, CS_HALO_EXTENDED, 1);
+  cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_EXTENDED, pvar);
 
 #if CS_PARALL_DEBUG_COUNT
   printf ("irang = %d, iappel = %d, tot = %d, parcve\n",
@@ -1455,9 +1300,9 @@ cs_parall_sync_cells(cs_real_t        *var_buffer,
   assert(var_buffer != NULL);
 
   if (stride == 1)
-    _sync_cells(var_buffer, op_type);
+    cs_halo_sync_var(cs_glob_mesh->halo, op_type, var_buffer);
   else
-    _sync_cells_strided(var_buffer, op_type, stride);
+    cs_halo_sync_var_strided(cs_glob_mesh->halo, op_type, var_buffer, stride);
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcve\n",

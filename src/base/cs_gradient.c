@@ -188,9 +188,10 @@ void CS_PROCF (cgrdmc, CGRDMC)
     cs_parall_sync_cells(pvar, CS_HALO_EXTENDED, 1);
 
   if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(pvar,
+    cs_perio_sync_var_scal(mesh->halo,
+                           CS_HALO_EXTENDED,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_HALO_EXTENDED);
+                           pvar);
 
   if (*iphydp != 0) {
 
@@ -201,9 +202,10 @@ void CS_PROCF (cgrdmc, CGRDMC)
     }
 
     if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_vect(fextx, fexty, fextz,
+      cs_perio_sync_var_vect(mesh->halo,
+                             CS_HALO_EXTENDED,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_HALO_EXTENDED);
+                             fextx, fexty, fextz);
 
   }
 
@@ -296,9 +298,10 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     cs_parall_sync_cells(var, CS_HALO_EXTENDED, 1);
 
   if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(var,
+    cs_perio_sync_var_scal(mesh->halo,
+                           CS_HALO_EXTENDED,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_HALO_EXTENDED);
+                           var);
 
   /* Exchange for the gradients. Not useful for working array */
 
@@ -311,9 +314,10 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     }
 
     if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
+      cs_perio_sync_var_vect(mesh->halo,
+                             CS_HALO_EXTENDED,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_HALO_EXTENDED);
+                             dpdx, dpdy, dpdz);
 
   } /* End if imligp == 1 */
 
@@ -492,22 +496,26 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
       if (*imrgra == 2 || *imrgra ==  3) {
 
-        cs_perio_sync_var_scal(denom,
+        cs_perio_sync_var_scal(mesh->halo,
+                               CS_HALO_EXTENDED,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_HALO_EXTENDED);
-        cs_perio_sync_var_scal(denum,
+                               denom);
+        cs_perio_sync_var_scal(mesh->halo,
+                               CS_HALO_EXTENDED,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_HALO_EXTENDED);
+                               denum);
 
       }
       else {
 
-        cs_perio_sync_var_scal(denom,
+        cs_perio_sync_var_scal(mesh->halo,
+                               CS_HALO_STANDARD,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_HALO_STANDARD);
-        cs_perio_sync_var_scal(denum,
+                               denom);
+        cs_perio_sync_var_scal(mesh->halo,
+                               CS_HALO_STANDARD,
                                CS_PERIO_ROTA_IGNORE,
-                               CS_HALO_STANDARD);
+                               denum);
 
       }
 
@@ -638,13 +646,15 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     /* If the gradient is not treated as a "true" vector */
 
     if (*itenso == 2)
-      cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
+      cs_perio_sync_var_vect(mesh->halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_IGNORE,
-                             CS_HALO_STANDARD);
+                             dpdx, dpdy, dpdz);
     else
-      cs_perio_sync_var_vect(dpdx, dpdy, dpdz,
+      cs_perio_sync_var_vect(mesh->halo,
+                             CS_HALO_STANDARD,
                              CS_PERIO_ROTA_COPY,
-                             CS_HALO_STANDARD);
+                             dpdx, dpdy, dpdz);
 
   }
 

@@ -125,7 +125,7 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
 
         for (i = start_std; i < end_std; i++) {
 
-          icelcr[i] = halo->list[i] + 1;
+          icelcr[i] = halo->send_list[i] + 1;
           ipercr[i] = t_id;
 
         } /* End of loop on standard ghost cells */
@@ -138,7 +138,7 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
 
           for (i = start_ext; i < end_ext; i++) {
 
-            icelcr[i] = halo->list[i] + 1;
+            icelcr[i] = halo->send_list[i] + 1;
             ipercr[i] = t_id;
 
           }

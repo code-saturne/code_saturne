@@ -368,12 +368,13 @@ void
 cs_mesh_init_parall(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Creation and initialization of halo structure.
- * Treatment of parallel and/or periodic halo for standard and extended
- * ghost cells according to halo type.
+ * Creation and initialization of halo structures.
+ *
+ * Treatment of parallel and/or periodic halos for standard and extended
+ * ghost cells according to halo type requested by global options.
  *
  * parameters:
- *   mesh  <->  pointer to mesh structure.
+ *   mesh  <->  pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void

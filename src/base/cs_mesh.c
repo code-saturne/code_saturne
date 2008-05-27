@@ -144,97 +144,18 @@ CS_PROCF (haltyp, HALTYP)(const cs_int_t   *ivoset);
  *   mesh  <->  pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_MPI)
-
 static void
 _sync_cell_fam(cs_mesh_t   *const mesh)
 {
-
-  cs_int_t  i, rank_id, start, length;
-
-  int  request_count = 0;
-  cs_int_t  *build_buffer = NULL, *buffer = NULL;
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-
-  /* No treatment in serial mode */
-
-  if (cs_glob_base_nbr < 2)
+  if (halo == NULL)
     return;
 
   bft_printf(_(" Synchronisation des familles des cellules\n"));
 
-  /* We use communication buffer of the halo structure. This buffer
-     was initially built to be used with reals. We have to be careful. */
-
-  assert(sizeof(cs_int_t) <= sizeof(cs_real_t));
-
-  build_buffer = (cs_int_t *)halo->comm_buffer;
-
-  /* Receive data from distant ranks */
-
-  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-     if (halo->c_domain_rank[rank_id] != local_rank) {
-
-      start = halo->index[2*rank_id];
-      length = halo->index[2*rank_id + 2] - halo->index[2*rank_id] ;
-
-      buffer = mesh->cell_family + mesh->n_cells + start ;
-
-      MPI_Irecv(buffer,
-                length,
-                CS_MPI_INT,
-                halo->c_domain_rank[rank_id],
-                halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm,
-                &(halo->mpi_request[request_count++]));
-
-    }
-
-  }
-
-  /* We wait for receiving all messages */
-
-  MPI_Barrier(cs_glob_base_mpi_comm);
-
-  /* Send data to distant ranks */
-
-  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-    /* If this is not the local rank */
-
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-      start = halo->send_index[2*rank_id];
-      length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
-
-      for (i = 0; i < length; i++)
-        build_buffer[start + i]
-          = mesh->cell_family[halo->send_list[start + i]];
-
-      buffer = build_buffer + start;
-
-      MPI_Isend(buffer,
-                length,
-                CS_MPI_INT,
-                halo->c_domain_rank[rank_id],
-                local_rank,
-                cs_glob_base_mpi_comm,
-                &(halo->mpi_request[request_count++]));
-
-    }
-
-  }
-
-  /* Wait for all exchanges being done */
-
-  MPI_Waitall(request_count, halo->mpi_request, halo->mpi_status);
-
+  cs_halo_sync_num(halo, CS_HALO_EXTENDED, mesh->cell_family);
 }
-
-#endif
 
 /*----------------------------------------------------------------------------
  * Compute the minimum and the maximum of a vector (locally).
@@ -1036,18 +957,18 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   mesh->n_g_b_faces = n_g_elts[2];
   mesh->n_g_vertices = n_g_elts[3];
 
-  /* Sync cell family array */
-
-  _sync_cell_fam(mesh);
-
 #endif
 
+  /* Sync cell family array (also in case of periodicity) */
+
+  _sync_cell_fam(mesh);
 }
 
 /*----------------------------------------------------------------------------
  * Creation and initialization of halo structures.
+ *
  * Treatment of parallel and/or periodic halos for standard and extended
- * ghost cells according.
+ * ghost cells according to halo type requested by global options.
  *
  * parameters:
  *   mesh  <->  pointer to mesh structure
@@ -1067,7 +988,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
   fvm_gnum_t  *g_vertex_num = NULL;
   fvm_gnum_t  **periodic_couples = NULL;
 
-  fvm_interface_set_t  *interface_set = NULL;
+  fvm_interface_set_t  *vertex_interfaces = NULL;
 
   const fvm_lnum_t  n_vertices = mesh->n_vertices;
 
@@ -1161,14 +1082,14 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf(_(" Création de l'interface\n"));
     bft_printf_flush();
 
-    interface_set = fvm_interface_set_create(n_vertices,
-                                             NULL,
-                                             g_vertex_num,
-                                             mesh->periodicity,
-                                             n_periodic_lists,
-                                             periodic_num,
-                                             n_periodic_couples,
-                   (const fvm_gnum_t **const)periodic_couples);
+    vertex_interfaces = fvm_interface_set_create(n_vertices,
+                                                 NULL,
+                                                 g_vertex_num,
+                                                 mesh->periodicity,
+                                                 n_periodic_lists,
+                                                 periodic_num,
+                                                 n_periodic_couples,
+                       (const fvm_gnum_t **const)periodic_couples);
 
     if (mesh->n_domains == 1)
       BFT_FREE(g_vertex_num);
@@ -1179,9 +1100,9 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       BFT_FREE(periodic_couples[i]);
     BFT_FREE(periodic_couples);
 
-#if 0 /* For debugging purpose */
+#if 0 /* For debugging purposes */
     bft_printf("Dump de l'interface complete et finale\n");
-    fvm_interface_set_dump(interface_set);
+    fvm_interface_set_dump(vertex_interfaces);
 #endif
 
     t2 = bft_timer_wtime();
@@ -1194,17 +1115,17 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf(_(" Création de la structure halo\n"));
     bft_printf_flush();
 
-    mesh->halo = cs_halo_create(interface_set);
+    mesh->halo = cs_halo_create(vertex_interfaces);
 
     bft_printf(_(" Définition des halos\n"));
     bft_printf_flush();
 
     cs_mesh_halo_define(mesh,
-                        interface_set,
+                        vertex_interfaces,
                         &gcell_vtx_idx,
                         &gcell_vtx_lst);
 
-    fvm_interface_set_destroy(interface_set);
+    fvm_interface_set_destroy(vertex_interfaces);
 
     t2 = bft_timer_wtime();
     halo_time = t2-t1;
@@ -1488,11 +1409,14 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
     for (i = 0; i < halo->n_c_domains; i++) {
 
       bft_printf(_("\n\nRank id:        %d\n"
-                   "Index start:        %d        end:        %d\n"
-                   "Cell numbering:        "), halo->c_domain_rank[i],
-                 halo->index[2*i], halo->index[2*i+2]);
-      for (j = halo->index[2*i]; j < halo->index[2*i+2]; j++)
-        bft_printf("%3d (%d) ; ",halo->list[j]+1, j+1+mesh->n_cells);
+                   "Halo index start:        %d        end:        %d\n"
+                   "Send index start:        %d        end:        %d\n"
+                   "Send cell numbers:\n"),
+                 halo->c_domain_rank[i],
+                 halo->index[2*i], halo->index[2*i+2],
+                 halo->send_index[2*i], halo->send_index[2*i+2]);
+      for (j = halo->send_index[2*i]; j < halo->send_index[2*i+2]; j++)
+        bft_printf("  %10d : %10d\n", j+1, halo->send_list[j]+1);
 
     } /* End of loop on the frontiers of halo */
 

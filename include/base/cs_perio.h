@@ -405,13 +405,15 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
  * Apply transformation on coordinates.
  *
  * parameters:
- *   coords     -->  coordinates on which transformation have to be done.
- *   halo_mode  -->  type of halo to treat
+ *   halo      <-> halo associated with coordinates to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   coords    --> coordinates on which transformation have to be done.
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_coords(cs_real_t       *coords,
-                     cs_halo_type_t   halo_mode);
+cs_perio_sync_coords(const cs_halo_t *halo,
+                     cs_halo_type_t   sync_mode,
+                     cs_real_t       *coords);
 
 /*----------------------------------------------------------------------------
  * Initialize cs_mesh_quantities_t elements for periodicity.
@@ -423,43 +425,49 @@ void
 cs_perio_sync_geo(void);
 
 /*----------------------------------------------------------------------------
- * Update values for a real scalar between periodic cells.
+ * Synchronize values for a real scalar between periodic elements.
  *
  * parameters:
- *   var         <-> scalar to update
- *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
- *                   COPY, IGNORE or RESET
- *   halo_mode   --> kind of halo treatment
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
+ *                 COPY, IGNORE or RESET
+ *   var       <-> scalar to synchronize
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_scal(cs_real_t        var[],
+cs_perio_sync_var_scal(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
                        cs_perio_rota_t  rota_mode,
-                       cs_halo_type_t   halo_mode);
+                       cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
- * Update values for a real vector between periodic cells.
+ * Synchronize values for a real vector between periodic cells.
  *
  * parameters:
- *   var_x       <-> component of the vector to update
- *   var_y       <-> component of the vector to update
- *   var_z       <-> component of the vector to update
- *   mode_rota   --> Kind of treatment to do on periodic cells of the halo.
- *                   COPY, IGNORE or RESET
- *   halo_mode   --> kind of halo treatment
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   rota_mode --> Kind of treatment to do on periodic cells of the halo:
+ *                 COPY, IGNORE or RESET
+ *   var_x     <-> component of the vector to update
+ *   var_y     <-> component of the vector to update
+ *   var_z     <-> component of the vector to update
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(cs_real_t        varX[],
-                       cs_real_t        varY[],
-                       cs_real_t        varZ[],
+cs_perio_sync_var_vect(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
                        cs_perio_rota_t  rota_mode,
-                       cs_halo_type_t   halo_mode);
+                       cs_real_t        var_x[],
+                       cs_real_t        var_y[],
+                       cs_real_t        var_z[]);
 
 /*----------------------------------------------------------------------------
- * Update values for a real tensor between periodic cells.
+ * Synchronize values for a real tensor between periodic cells.
  *
  * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var12     <-> component of the tensor to update
  *   var13     <-> component of the tensor to update
@@ -469,38 +477,40 @@ cs_perio_sync_var_vect(cs_real_t        varX[],
  *   var31     <-> component of the tensor to update
  *   var32     <-> component of the tensor to update
  *   var33     <-> component of the tensor to update
- *   halo_mode --> kind of halo treatment
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens(cs_real_t       var11[],
-                       cs_real_t       var12[],
-                       cs_real_t       var13[],
-                       cs_real_t       var21[],
-                       cs_real_t       var22[],
-                       cs_real_t       var23[],
-                       cs_real_t       var31[],
-                       cs_real_t       var32[],
-                       cs_real_t       var33[],
-                       cs_halo_type_t  halo_mode);
+cs_perio_sync_var_tens(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var11[],
+                       cs_real_t        var12[],
+                       cs_real_t        var13[],
+                       cs_real_t        var21[],
+                       cs_real_t        var22[],
+                       cs_real_t        var23[],
+                       cs_real_t        var31[],
+                       cs_real_t        var32[],
+                       cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
- * Update values for a real tensor between periodic cells.
+ * Synchronize values for a real diagonal tensor between periodic cells.
  *
  * We only know the diagonal of the tensor.
  *
  * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var22     <-> component of the tensor to update
  *   var33     <-> component of the tensor to update
- *   halo_mode --> kind of halo treatment
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag(cs_real_t         var11[],
-                       cs_real_t         var22[],
-                       cs_real_t         var33[],
-                       cs_halo_type_t    halo_mode);
+cs_perio_sync_var_diag(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var11[],
+                       cs_real_t        var22[],
+                       cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
  * Define parameters for building an interface set structure on the main mesh.

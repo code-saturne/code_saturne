@@ -161,6 +161,13 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   cs_int_t  *domain_to_c_rank = NULL;
   cs_int_t  *s_rank_index = NULL, *r_rank_index = NULL;
 
+#if defined(_CS_HAVE_MPI)
+  MPI_Request _request[128];
+  MPI_Request *request = _request;
+  MPI_Status _status[128];
+  MPI_Status *status = _status;
+#endif
+
   const cs_int_t  n_domains = mesh->n_domains;
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
   const cs_halo_t  *halo = mesh->halo;
@@ -168,6 +175,13 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;
+
+#if defined(_CS_HAVE_MPI)
+  if (halo->n_c_domains*2 > 128) {
+    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+  }
+#endif
 
   BFT_MALLOC(s_rank_index, n_c_ranks + 1, cs_int_t);
   BFT_MALLOC(r_rank_index, n_c_ranks + 1, cs_int_t);
@@ -225,7 +239,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
       MPI_Irecv(&(r_rank_index[rank_id+1]), 1, MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                 cs_glob_base_mpi_comm,
-                &(halo->mpi_request[cpt_request++]));
+                &(request[cpt_request++]));
 #endif
 
     }
@@ -249,7 +263,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
         MPI_Isend(&(s_rank_index[rank_id+1]), 1, MPI_INT,
                   halo->c_domain_rank[rank_id], local_rank,
                   cs_glob_base_mpi_comm,
-                  &(halo->mpi_request[cpt_request++]));
+                  &(request[cpt_request++]));
 #endif
 
     }
@@ -260,7 +274,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Waitall(cpt_request, halo->mpi_request, halo->mpi_status);
+    MPI_Waitall(cpt_request, request, status);
 #endif
 
   /* Define send/receive index */
@@ -273,6 +287,13 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   *p_domain_to_c_rank = domain_to_c_rank;
   *p_s_rank_index = s_rank_index;
   *p_r_rank_index = r_rank_index;
+
+#if defined(_CS_HAVE_MPI)
+  if (request != _request) {
+    BFT_FREE(request);
+    BFT_FREE(status);
+  }
+#endif
 
 }
 
@@ -310,12 +331,26 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   cs_int_t  *counter = NULL;
   cs_int_t  *perio_s_buffer = NULL, *perio_r_buffer = NULL;
 
+#if defined(_CS_HAVE_MPI)
+  MPI_Request _request[128];
+  MPI_Request *request = _request;
+  MPI_Status _status[128];
+  MPI_Status *status = _status;
+#endif
+
   const cs_int_t  n_domains = mesh->n_domains;
   const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
   const cs_halo_t  *halo = mesh->halo;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;
+
+#if defined(_CS_HAVE_MPI)
+  if (halo->n_c_domains*2 > 128) {
+    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+  }
+#endif
 
   /* Allocation and intialization */
 
@@ -385,7 +420,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Irecv(&(perio_r_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm, &(halo->mpi_request[cpt_request++]));
+                cs_glob_base_mpi_comm, &(request[cpt_request++]));
 #endif
 
     }
@@ -417,7 +452,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Isend(&(perio_s_buffer[shift]), n_elts, MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_base_mpi_comm, &(halo->mpi_request[cpt_request++]));
+                cs_glob_base_mpi_comm, &(request[cpt_request++]));
 #endif
 
     }
@@ -428,7 +463,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Waitall(cpt_request, halo->mpi_request, halo->mpi_status);
+    MPI_Waitall(cpt_request, request, status);
 #endif
 
   /* Apply perio_r_buffer to the new face->vertices connectivity */
@@ -462,6 +497,12 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   BFT_FREE(perio_s_buffer);
   BFT_FREE(counter);
 
+#if defined(_CS_HAVE_MPI)
+  if (request != _request) {
+    BFT_FREE(request);
+    BFT_FREE(status);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------

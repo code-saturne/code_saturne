@@ -286,10 +286,12 @@ struct _cs_matrix_t {
 
   /* Pointers to shared arrays from mesh structure
      (face->cell connectivity for coefficient assignment,
-     local->local cell numbering for future info or renumbering) */
+     local->local cell numbering for future info or renumbering,
+     and halo) */
 
   const cs_int_t        *face_cell;    /* Face -> cells connectivity (1 to n) */
   const fvm_gnum_t      *cell_num;     /* Global cell numbers */
+  const cs_halo_t       *halo;         /* Parallel or periodic halo */
 
   /* Function pointers */
 
@@ -2042,9 +2044,9 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
  * Create a matrix Structure.
  *
  * Note that the structure created maps to the given existing
- * cell global number and face -> cell connectivity arrays, so it must be
- * destroyed before they are freed (usually along with the code's main
- * face -> cell structure).
+ * cell global number, face -> cell connectivity arrays, and cell halo
+ * structure, so it must be destroyed before they are freed
+ * (usually along with the code's main face -> cell structure).
  *
  * Note that the resulting matrix structure will contain either a full or
  * an empty main diagonal, and that the extra-diagonal structure is always
@@ -2063,6 +2065,7 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
  *   n_faces     --> Local number of internal faces
  *   cell_num    --> Global cell numbers (1 to n)
  *   face_cell   --> Face -> cells connectivity (1 to n)
+ *   halo        --> Halo structure associated with cells, or NULL
  *
  * returns:
  *   pointer to created matrix structure;
@@ -2077,7 +2080,8 @@ cs_matrix_create(cs_matrix_type_t   type,
                  cs_int_t           n_cells_ext,
                  cs_int_t           n_faces,
                  const fvm_gnum_t  *cell_num,
-                 const cs_int_t    *face_cell)
+                 const cs_int_t    *face_cell,
+                 const cs_halo_t   *halo)
 {
   cs_matrix_t *m;
 
@@ -2124,6 +2128,7 @@ cs_matrix_create(cs_matrix_type_t   type,
 
   m->face_cell = face_cell;
   m->cell_num = cell_num;
+  m->halo = halo;
 
   /* Set function pointers here */
 
@@ -2341,13 +2346,13 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
 
   /* Update distant ghost cells */
 
-  if (cs_glob_base_nbr > 1)
-    cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
+  if (matrix->halo != NULL)
+    cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
   /* Synchronize periodic values */
 
   if (matrix->periodic)
-    cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
+    cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
 
   /* Now call local matrix.vector product */
 
@@ -2412,13 +2417,13 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
 {
   /* Update distant ghost cells */
 
-  if (cs_glob_base_nbr > 1)
-    cs_parall_sync_cells(x, CS_HALO_STANDARD, 1);
+  if (matrix->halo != NULL)
+    cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
   /* Synchronize periodic values */
 
   if (matrix->periodic)
-    cs_perio_sync_var_scal(x, rotation_mode, CS_HALO_STANDARD);
+    cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
 
   /* Now call local matrix.vector product */
 

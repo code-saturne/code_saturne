@@ -93,9 +93,9 @@ extern const char  *cs_matrix_type_fullname[];
  * Create a matrix Structure.
  *
  * Note that the structure created maps to the given existing
- * cell global number and face -> cell connectivity arrays, so it must be
- * destroyed before they are freed (usually along with the code's main
- * face -> cell structure).
+ * cell global number, face -> cell connectivity arrays, and cell halo
+ * structure, so it must be destroyed before they are freed
+ * (usually along with the code's main face -> cell structure).
  *
  * Note that the resulting matrix structure will contain either a full or
  * an empty main diagonal, and that the extra-diagonal structure is always
@@ -114,6 +114,7 @@ extern const char  *cs_matrix_type_fullname[];
  *   n_faces     --> Local number of internal faces
  *   cell_num    --> Global cell numbers (1 to n)
  *   face_cell   --> Face -> cells connectivity (1 to n)
+ *   halo        --> Halo structure associated with cells, or NULL
  *
  * returns:
  *   pointer to created matrix structure;
@@ -128,7 +129,8 @@ cs_matrix_create(cs_matrix_type_t   type,
                  cs_int_t           n_cells_ext,
                  cs_int_t           n_faces,
                  const fvm_gnum_t  *cell_num,
-                 const cs_int_t    *face_cell);
+                 const cs_int_t    *face_cell,
+                 const cs_halo_t   *halo);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.

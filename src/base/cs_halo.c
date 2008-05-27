@@ -75,6 +75,34 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Number of defined halos */
+
+static int _cs_glob_n_halos = 0;
+
+/* De-interlace buffer for strided operations */
+
+static size_t _cs_glob_halo_tmp_buffer_size = 0;
+static void  *_cs_glob_halo_tmp_buffer = NULL;  /* De-interlace buffer */
+
+#if defined(_CS_HAVE_MPI)
+
+/* Send buffer for synchronization */
+
+static size_t _cs_glob_halo_send_buffer_size = 0;
+static void  *_cs_glob_halo_send_buffer = NULL;
+
+/* MPI Request and status arrays */
+
+static int           _cs_glob_halo_request_size = 0;
+static MPI_Request  *_cs_glob_halo_request = NULL;
+static MPI_Status   *_cs_glob_halo_status = NULL;
+
+#endif
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -93,7 +121,6 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 {
   cs_int_t  i, tmp_id, perio_lst_size;
 
-  cs_int_t  n_transforms = 0;
   cs_int_t  loc_id = -1;
 
   cs_halo_t  *halo = NULL;
@@ -104,7 +131,11 @@ cs_halo_create(fvm_interface_set_t  *ifs)
   BFT_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = fvm_interface_set_size(ifs);
-  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, cs_int_t);
+  halo->n_transforms = 0;
+
+  halo->n_local_elts = 0;
+
+  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
   /* Check if cs_glob_base_rang belongs to interface set in order to
      order ranks with local rank at first place */
@@ -158,21 +189,72 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   } /* End of ordering ranks */
 
-  n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_int_t);
+  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_int_t);
 
-  /* We need 2 data per transformation and there are n_transforms
-     transformations. For each rank, we need data for standard and
-     extended halo. */
-
-  perio_lst_size = 2*n_transforms * 2*halo->n_c_domains;
-
-  BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_int_t);
-  BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_int_t);
-
-  for (i = 0; i < perio_lst_size; i++) {
-    halo->send_perio_lst[i] = 0;
-    halo->perio_lst[i] = 0;
+  for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
+    halo->send_index[i] = 0;
+    halo->index[i] = 0;
   }
+
+  halo->send_perio_lst = NULL;
+  halo->perio_lst = NULL;
+
+  if (periodicity != NULL) {
+
+    halo->n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+
+    /* We need 2 data per transformation and there are n_transforms
+       transformations. For each rank, we need data for standard and
+       extended halo. */
+
+    perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
+
+    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_int_t);
+    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_int_t);
+
+    for (i = 0; i < perio_lst_size; i++) {
+      halo->send_perio_lst[i] = 0;
+      halo->perio_lst[i] = 0;
+    }
+
+  }
+
+  halo->send_list = NULL;
+
+  _cs_glob_n_halos += 1;
+
+  return halo;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a halo structure, using a reference halo
+ *
+ * parameters:
+ *   ref  -->  pointer to reference halo
+ *
+ * returns:
+ *  pointer to created cs_mesh_halo_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_halo_t *
+cs_halo_create_from_ref(const cs_halo_t  *ref)
+{
+  cs_int_t  i;
+
+  cs_halo_t  *halo = NULL;
+
+  BFT_MALLOC(halo, 1, cs_halo_t);
+
+  halo->n_c_domains = ref->n_c_domains;
+  halo->n_transforms = ref->n_transforms;
+
+  halo->n_local_elts = 0;
+
+  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
+
+  for (i = 0; i < halo->n_c_domains; i++)
+    halo->c_domain_rank[i] = ref->c_domain_rank[i];
 
   BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_int_t);
   BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_int_t);
@@ -182,16 +264,26 @@ cs_halo_create(fvm_interface_set_t  *ifs)
     halo->index[i] = 0;
   }
 
+  halo->send_perio_lst = NULL;
+  halo->perio_lst = NULL;
+
+  if (halo->n_transforms > 0) {
+
+    cs_int_t  perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
+
+    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_int_t);
+    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_int_t);
+
+    for (i = 0; i < perio_lst_size; i++) {
+      halo->send_perio_lst[i] = 0;
+      halo->perio_lst[i] = 0;
+    }
+
+  }
+
   halo->send_list = NULL;
-  halo->list = NULL;
-  halo->tmp_buffer = NULL;
 
-#if defined(_CS_HAVE_MPI)
-  BFT_MALLOC(halo->mpi_request, 2*halo->n_c_domains, MPI_Request);
-  BFT_MALLOC(halo->mpi_status, 2*halo->n_c_domains, MPI_Status);
-
-  halo->comm_buffer = NULL;
-#endif
+  _cs_glob_n_halos += 1;
 
   return halo;
 }
@@ -223,41 +315,402 @@ cs_halo_destroy(cs_halo_t  *halo)
   if (halo->send_list != NULL)
     BFT_FREE(halo->send_list);
 
-  if (halo->list != NULL)
-    BFT_FREE(halo->list);
-
-  if (halo->tmp_buffer != NULL)
-    BFT_FREE(halo->tmp_buffer);
-
-#if defined(_CS_HAVE_MPI)
-  BFT_FREE(halo->mpi_request);
-  BFT_FREE(halo->mpi_status);
-  BFT_FREE(halo->comm_buffer);
-#endif
-
   BFT_FREE(halo);
 
+  _cs_glob_n_halos -= 1;
+
+  /* Delete buffers if no halo remains */
+
+  if (_cs_glob_n_halos == 0) {
+
+    _cs_glob_halo_tmp_buffer_size = 0;
+
+    BFT_FREE(_cs_glob_halo_tmp_buffer);
+
+#if defined(_CS_HAVE_MPI)
+
+    if (cs_glob_base_nbr > 1) {
+
+      _cs_glob_halo_send_buffer_size = 0;
+      _cs_glob_halo_request_size = 0;
+
+      BFT_FREE(_cs_glob_halo_send_buffer);
+
+      BFT_FREE(_cs_glob_halo_request);
+      BFT_FREE(_cs_glob_halo_status);
+    }
+
+#endif
+
+  }
+
   return NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Update global buffer sizes so as to be usable with a given halo.
+ *
+ * This function should be called at the end of any halo creation,
+ * so that buffer sizes are increased if necessary.
+ *
+ * parameters:
+ *   halo  --> pointer to cs_mesh_halo_t structure.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_update_buffers(const cs_halo_t *halo)
+{
+  if (halo == NULL)
+    return;
+
+  size_t tmp_buffer_size = (  (  halo->n_local_elts
+                               + halo->n_elts[CS_HALO_EXTENDED])
+                            * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)));
+
+  if (tmp_buffer_size > _cs_glob_halo_tmp_buffer_size) {
+    _cs_glob_halo_tmp_buffer_size =  tmp_buffer_size;
+    BFT_REALLOC(_cs_glob_halo_tmp_buffer, _cs_glob_halo_tmp_buffer_size, char);
+  }
+
+
+#if defined(_CS_HAVE_MPI)
+
+  if (cs_glob_base_nbr > 1) {
+
+    size_t send_buffer_size = (  CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
+                                      halo->n_elts[CS_HALO_EXTENDED])
+                               * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)));
+
+    int n_requests = halo->n_c_domains*2;
+
+    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
+      _cs_glob_halo_send_buffer_size =  send_buffer_size;
+      BFT_REALLOC(_cs_glob_halo_send_buffer,
+                  _cs_glob_halo_send_buffer_size,
+                  char);
+    }
+
+    if (n_requests > _cs_glob_halo_request_size) {
+      _cs_glob_halo_request_size = n_requests;
+      BFT_REALLOC(_cs_glob_halo_request,
+                  _cs_glob_halo_request_size,
+                  MPI_Request);
+      BFT_REALLOC(_cs_glob_halo_status,
+                  _cs_glob_halo_request_size,
+                  MPI_Status);
+
+    }
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of element number (integer) values in case of parallelism
+ * or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   num       <-> pointer to local number value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_num(const cs_halo_t  *halo,
+                 cs_halo_type_t    sync_mode,
+                 cs_int_t          num[])
+{
+  fvm_lnum_t i, start, length;
+
+  cs_int_t end_shift = 0;
+  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+
+  if (sync_mode == CS_HALO_STANDARD)
+    end_shift = 1;
+
+  else if (sync_mode == CS_HALO_EXTENDED)
+    end_shift = 2;
+
+#if defined(_CS_HAVE_MPI)
+
+  if (cs_glob_base_nbr > 1) {
+
+    int rank_id;
+    int request_count = 0;
+    cs_int_t *build_buffer = (cs_int_t *)_cs_glob_halo_send_buffer;
+    cs_int_t *buffer = NULL;
+    const int local_rank = cs_glob_base_rang;
+
+    /* Receive data from distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start = halo->index[2*rank_id];
+      length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        buffer = num + halo->n_local_elts + start ;
+
+        MPI_Irecv(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+      else
+        local_rank_id = rank_id;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    MPI_Barrier(cs_glob_base_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length =   halo->send_index[2*rank_id + end_shift]
+                 - halo->send_index[2*rank_id];
+
+        for (i = 0; i < length; i++)
+          build_buffer[start + i] = num[halo->send_list[start + i]];
+
+        buffer = build_buffer + start;
+
+        MPI_Isend(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank_id],
+                  local_rank,
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+  }
+
+#endif /* defined(_CS_HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (halo->n_transforms > 0) {
+
+    if (local_rank_id > -1) {
+
+      cs_int_t *recv_num
+        = num + halo->n_local_elts + halo->index[2*local_rank_id];
+
+      start = halo->send_index[2*local_rank_id];
+      length =   halo->send_index[2*local_rank_id + end_shift]
+               - halo->send_index[2*local_rank_id];
+
+      for (i = 0; i < length; i++)
+        recv_num[i] = num[halo->send_list[start + i]];
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of element variable (floating-point) values in case of
+ * parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_var(const cs_halo_t  *halo,
+                 cs_halo_type_t    sync_mode,
+                 cs_real_t         var[])
+{
+  fvm_lnum_t i, start, length;
+
+  cs_int_t end_shift = 0;
+  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+
+  if (sync_mode == CS_HALO_STANDARD)
+    end_shift = 1;
+
+  else if (sync_mode == CS_HALO_EXTENDED)
+    end_shift = 2;
+
+#if defined(_CS_HAVE_MPI)
+
+  if (cs_glob_base_nbr > 1) {
+
+    int rank_id;
+    int request_count = 0;
+    cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
+    cs_real_t *buffer = NULL;
+    const int local_rank = cs_glob_base_rang;
+
+    /* Receive data from distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start = halo->index[2*rank_id];
+      length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        buffer = var + halo->n_local_elts + start ;
+
+        MPI_Irecv(buffer,
+                  length,
+                  CS_MPI_REAL,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+      else
+        local_rank_id = rank_id;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    MPI_Barrier(cs_glob_base_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length =   halo->send_index[2*rank_id + end_shift]
+                 - halo->send_index[2*rank_id];
+
+        for (i = 0; i < length; i++)
+          build_buffer[start + i] = var[halo->send_list[start + i]];
+
+        buffer = build_buffer + start;
+
+        MPI_Isend(buffer,
+                  length,
+                  CS_MPI_REAL,
+                  halo->c_domain_rank[rank_id],
+                  local_rank,
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+  }
+
+#endif /* defined(_CS_HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (halo->n_transforms > 0) {
+
+    if (local_rank_id > -1) {
+
+      cs_real_t *recv_var
+        = var + halo->n_local_elts + halo->index[2*local_rank_id];
+
+      start = halo->send_index[2*local_rank_id];
+      length =   halo->send_index[2*local_rank_id + end_shift]
+               - halo->send_index[2*local_rank_id];
+
+      for (i = 0; i < length; i++)
+        recv_var[i] = var[halo->send_list[start + i]];
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of strided element variable (floating-point) values in case
+ * of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *   stride    --> number of (interlaced) values by entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_var_strided(const cs_halo_t  *halo,
+                         cs_halo_type_t    sync_mode,
+                         cs_real_t         var[],
+                         int               stride)
+{
+  cs_int_t  i, j;
+
+  cs_real_t *tmp_buffer = (cs_real_t *)_cs_glob_halo_tmp_buffer;
+
+  const cs_int_t  n_elts = halo->n_local_elts;
+  const cs_int_t  n_elts_extended = halo->n_local_elts + halo->n_elts[1];
+
+  for (i = 0; i < stride; i++) {
+
+    for (j = 0; j < n_elts_extended; j++)
+      tmp_buffer[j] = var[j*stride + i];
+
+    cs_halo_sync_var(halo, sync_mode, tmp_buffer);
+
+    for (j = n_elts; j < n_elts_extended; j++)
+      var[j*stride + i] = tmp_buffer[j];
+
+  }
 }
 
 /*----------------------------------------------------------------------------
  * Dump a cs_halo_t structure.
  *
  * parameters:
- *   n_cells        -->  number of cells
- *   n_init_perio   -->  initial number of periodicity
- *   n_transforms   -->  number of transformations
+ *   halo           --> pointer to cs_halo_t struture
  *   print_level    -->  0 only dimensions and indexes are printed, else (1)
  *                       everything is printed
- *   halo           --> pointer to cs_halo_t struture
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_dump(cs_int_t    n_cells,
-             cs_int_t    n_init_perio,
-             cs_int_t    n_transforms,
-             cs_int_t    print_level,
-             cs_halo_t  *halo)
+cs_halo_dump(const cs_halo_t  *halo,
+             cs_int_t          print_level)
 {
   cs_int_t  i, j, halo_id;
 
@@ -266,14 +719,12 @@ cs_halo_dump(cs_int_t    n_cells,
     return;
   }
 
-  bft_printf(_("\n  halo        : %p\n"
-               "  n_init_perio  : %d\n"
-               "  n_transforms  : %d\n"
-               "  n_c_domains   : %d\n"),
-             halo, n_init_perio, n_transforms,
-             halo->n_c_domains);
+  bft_printf(_("\n  halo:         %p\n"
+               "  n_transforms:   %d\n"
+               "  n_c_domains:    %d\n"),
+             halo, halo->n_transforms, halo->n_c_domains);
 
-  bft_printf("\nRanks on halo frontier :\n");
+  bft_printf("\nRanks on halo frontier:\n");
   for (i = 0; i < halo->n_c_domains; i++)
     bft_printf("%5d", halo->c_domain_rank[i]);
 
@@ -286,7 +737,7 @@ cs_halo_dump(cs_int_t    n_cells,
 
     if (halo_id == 0) {
 
-      bft_printf("    send_halo :\n");
+      bft_printf("    send_list:\n");
       n_elts[0] = halo->n_send_elts[0];
       n_elts[1] = halo->n_send_elts[1];
       index = halo->send_index;
@@ -296,27 +747,27 @@ cs_halo_dump(cs_int_t    n_cells,
     }
     else if (halo_id == 1) {
 
-      bft_printf("    halo :\n");
+      bft_printf("    halo:\n");
       n_elts[0] = halo->n_elts[0];
       n_elts[1] = halo->n_elts[1];
       index = halo->index;
-      list = halo->list;
+      list = NULL;
       perio_lst = halo->perio_lst;
 
     }
 
     bft_printf("    ---------\n\n");
-    bft_printf(_("  n_ghost_cells       : %d\n"
-                 "  n_std_ghost_cells   : %d\n"), n_elts[1], n_elts[0]);
+    bft_printf(_("  n_ghost_cells:        %d\n"
+                 "  n_std_ghost_cells:    %d\n"), n_elts[1], n_elts[0]);
 
     if (index == NULL)
       return;
 
-    if (n_init_perio > 0) {
+    if (halo->n_transforms > 0) {
 
       const cs_int_t  stride = 4*halo->n_c_domains;
 
-      for (i = 0; i < n_transforms; i++) {
+      for (i = 0; i < halo->n_transforms; i++) {
 
         bft_printf("\nTransformation n°: %d\n", i+1);
 
@@ -344,11 +795,11 @@ cs_halo_dump(cs_int_t    n_cells,
         bft_printf(_("  idx start %d:          idx end   %d:\n"),
                    index[2*i], index[2*i+1]);
 
-        if (print_level == 1) {
+        if (print_level == 1 && list != NULL) {
           bft_printf(_("\n            id      cell number\n"));
           for (j = index[2*i]; j < index[2*i+1]; j++)
             bft_printf(_("    %10d %10d %10d\n"),
-                       j, list[j]+1, n_cells+j+1);
+                       j, list[j]+1, halo->n_local_elts+j+1);
         }
 
       } /* there are elements on standard neighborhood */
@@ -359,11 +810,11 @@ cs_halo_dump(cs_int_t    n_cells,
         bft_printf(_("  idx start %d:          idx end   %d:\n"),
                    index[2*i+1], index[2*i+2]);
 
-        if (print_level == 1) {
+        if (print_level == 1 && list != NULL) {
           bft_printf(_("\n            id      cell number\n"));
           for (j = index[2*i+1]; j < index[2*i+2]; j++)
             bft_printf(_("    %10d %10d %10d\n"),
-                       j, list[j]+1, n_cells+j+1);
+                       j, list[j]+1, halo->n_local_elts+j+1);
         }
 
       } /* If there are elements on extended neighborhood */

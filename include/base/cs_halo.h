@@ -76,24 +76,30 @@ typedef enum {
 
 typedef struct {
 
-  cs_int_t  n_c_domains;     /* Number of communicating domains. */
-  cs_int_t  *c_domain_rank;  /* List of communicating ranks */
+  int       n_c_domains;     /* Number of communicating domains. */
+  int       n_transforms;    /* Number of periodic transformations */
+
+  int       *c_domain_rank;  /* List of communicating ranks */
+
 
   /* send_halo features : send to distant ranks */
 
-  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_halo
+  cs_int_t  n_local_elts;      /* Number of local elements */
+  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_list
                                 n_elts[0] = standard elements
                                 n_elts[1] = extended + standard elements */
 
-  cs_int_t  *send_list;        /* List of local numbers of elements in send_halo */
+  cs_int_t  *send_list;        /* List of local elements in distant halos
+                                  (0 to n-1 numbering) */
 
-  cs_int_t  *send_index;       /* Index on in_elements.
-                                  Size = 2*n_c_domains. For each rank, we
+  cs_int_t  *send_index;       /* Index on send_list
+                                  Size = 2*n_c_domains + 1. For each rank, we
                                   have an index for standard halo and one
                                   for extended halo. */
 
-  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of halo
-                                  on each communicating rank, we store 2 data:
+  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of
+                                  halo on each communicating rank, we store
+                                  2 values:
                                    - start index,
                                    - number of elements. */
 
@@ -103,32 +109,15 @@ typedef struct {
                                  n_elts[0] = standard elements
                                  n_elts[1] = extended + standard elements */
 
-  cs_int_t  *list;          /* List of local numbers of elements in halo */
-
-  cs_int_t  *index;         /* Index on in_elements.
+  cs_int_t  *index;         /* Index on halo sections;
                                Size = 2*n_c_domains. For each rank, we
-                               have an index for standard halo and one
-                               for extended halo. */
+                               have an index for the standard halo and one
+                               for the extended halo. */
 
   cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
                                on each communicating rank, we store 2 data:
                                  - start index,
                                  - number of elements. */
-
-  /* Variables used during the synchronization process */
-
-  cs_real_t  *tmp_buffer;   /* Buffer used to de-interlace variable
-                               in case of strided variable to sync. */
-
-#if defined(_CS_HAVE_MPI)
-  MPI_Request   *mpi_request;   /* MPI Request array */
-  MPI_Status    *mpi_status;    /* MPI Status array */
-
-  cs_real_t  *comm_buffer;      /* Buffer for the communication purpose.
-                                   Buffer size is equal to the maximum
-                                   number of ghost cells between send_halo and
-                                   halo. */
-#endif
 
   /* Organisation of perio_lst:
 
@@ -191,6 +180,19 @@ cs_halo_t *
 cs_halo_create(fvm_interface_set_t  *ifs);
 
 /*----------------------------------------------------------------------------
+ * Create a halo structure, using a reference halo
+ *
+ * parameters:
+ *   ref  -->  pointer to reference halo
+ *
+ * returns:
+ *  pointer to created cs_mesh_halo_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_halo_t *
+cs_halo_create_from_ref(const cs_halo_t  *ref);
+
+/*----------------------------------------------------------------------------
  * Destroy a halo structure.
  *
  * parameters:
@@ -204,23 +206,89 @@ cs_halo_t *
 cs_halo_destroy(cs_halo_t  *this_halo);
 
 /*----------------------------------------------------------------------------
- * Dump a cs_mesh_halo_t structure.
+ * Update global buffer sizes so as to be usable with a given halo.
+ *
+ * This function should be called at the end of any halo creation,
+ * so that buffer sizes are increased if necessary.
  *
  * parameters:
- *   n_cells        -->  number of cells
- *   n_init_perio   -->  initial number of periodicity
- *   n_transforms   -->  number of transformations
- *   print_level    -->  0 only dimensions and indexes are printed, else (1)
- *                       everything is printed
- *   halo           --> pointer to cs_halo_t struture
+ *   halo  --> pointer to cs_mesh_halo_t structure.
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_dump(cs_int_t    n_cells,
-             cs_int_t    n_init_perio,
-             cs_int_t    n_transforms,
-             cs_int_t    print_level,
-             cs_halo_t  *halo);
+cs_halo_update_buffers(const cs_halo_t *halo);
+
+/*----------------------------------------------------------------------------
+ * Update array of element number (integer) values in case of parallelism
+ * or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   num       <-> pointer to local number value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_num(const cs_halo_t  *halo,
+                 cs_halo_type_t    sync_mode,
+                 cs_int_t          num[]);
+
+/*----------------------------------------------------------------------------
+ * Update array of element variable (floating-point) values in case of
+ * parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_var(const cs_halo_t  *halo,
+                 cs_halo_type_t    sync_mode,
+                 cs_real_t         var[]);
+
+/*----------------------------------------------------------------------------
+ * Update array of strided element variable (floating-point) values in case
+ * of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *   stride    --> number of (interlaced) values by entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_var_strided(const cs_halo_t  *halo,
+                         cs_halo_type_t    sync_mode,
+                         cs_real_t         var[],
+                         int               stride);
+
+/*----------------------------------------------------------------------------
+ * Dump a cs_mesh_halo_t structure.
+ *
+ * parameters:
+ *   halo           -->  pointer to cs_halo_t struture
+ *   print_level    -->  0 only dimensions and indexes are printed, else (1)
+ *                       everything is printed
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_dump(const cs_halo_t  *halo,
+             cs_int_t          print_level);
 
 /*----------------------------------------------------------------------------*/
 

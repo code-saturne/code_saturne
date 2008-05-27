@@ -1185,9 +1185,10 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
      periodicity */
 
   if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(var,
+    cs_perio_sync_var_scal(mesh->halo,
+                           CS_HALO_EXTENDED,
                            CS_PERIO_ROTA_IGNORE,
-                           CS_HALO_EXTENDED);
+                           var);
 
   /* Allocate and initialize working buffers */
 
@@ -1234,9 +1235,10 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
     cs_parall_sync_cells(f_var, CS_HALO_STANDARD, 1);
 
   if(mesh->n_init_perio > 1)
-    cs_perio_sync_var_scal(f_var,
+    cs_perio_sync_var_scal(mesh->halo,
+                           CS_HALO_STANDARD,
                            CS_PERIO_ROTA_COPY,
-                           CS_HALO_STANDARD);
+                           f_var);
 
 }
 
