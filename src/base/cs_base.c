@@ -149,137 +149,7 @@ int  cs_glob_mpe_compute_b = 0;
 #endif
 
 /*============================================================================
- * Prototypes de fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur la sortie standard
- *----------------------------------------------------------------------------*/
-
-static int _cs_base_bft_printf
-(
- const char     *const format,
-       va_list         arg_ptr
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message d'erreur
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_err_printf
-(
- const char     *const format,
- ...
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message d'erreur
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_err_vprintf
-(
- const char     *const format,
-       va_list         arg_ptr
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction de vidage du tampon d'impression sur la sortie standard
- *----------------------------------------------------------------------------*/
-
-static int _cs_base_bft_printf_flush
-(
- void
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'arret du code en cas d'erreur
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_gestion_erreur
-(
- const char     *const nom_fic,
- const int             num_ligne,
- const int             code_err_sys,
- const char     *const format,
-       va_list         arg_ptr
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un "backtrace"
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_backtrace_print
-(
-  int  niv_debut
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction de gestion d'un signal fatal (de type SIGFPE ou SIGSEGV)
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_sig_fatal(int  signum);
-
-
-#if defined(_CS_HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- *  Finalisation MPI
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_mpi_fin
-(
- void
-);
-
-
-#if defined(DEBUG) || !defined(NDEBUG)
-
-/*----------------------------------------------------------------------------
- * Gestionnaire d'erreur MPI
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_erreur_mpi
-(
- MPI_Comm  *comm,
- int       *errcode,
- ...
-);
-
-#endif
-
-#endif /* defined(_CS_HAVE_MPI) */
-
-
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
-
-/*----------------------------------------------------------------------------
- *  Initialisation de l'instrumentation MPE.
- *----------------------------------------------------------------------------*/
-
-void _cs_base_prof_mpe_init
-(
- cs_int_t     rang       /* --> Rang MPI dans le communicateur local          */
-);
-
-/*----------------------------------------------------------------------------
- *  Finalisation de l'instrumentation MPE
- *----------------------------------------------------------------------------*/
-
-void _cs_base_prof_mpe_fin
-(
- void
-);
-
-#endif /* defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) */
-
-/*============================================================================
- * Prototypes de fonctions Fortran associées
+ * Prototypes de fonctions Fortran associées aux impressions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -311,6 +181,481 @@ extern void CS_PROCF(csclli, CSCLLI)
 (
  void
 );
+
+
+/*============================================================================
+ * Définitions de fonctions privées
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Fonction d'impression d'un message sur la sortie standard
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_base_bft_printf(const char     *const format,
+                    va_list         arg_ptr)
+{
+ cs_int_t  line;
+ cs_int_t  msgsize;
+
+ /* Tampon pour impressions depuis du code C : on imprime dans un chaîne
+    de caractères, qui sera imprimée vers un fichier par du code Fortran.
+    Une fois les impressions Fortran totalement remplacées par des impressions
+    C, on pourra supprimer cette étape, mais elle est nécessaire pour l'instant
+    afin de pouvoir utiliser les mêmes fichiers de sortie */
+
+#undef CS_BUF_PRINT_F_SIZE
+#define CS_BUF_PRINT_F_SIZE 16384
+
+ static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
+
+ /* Impression dans le tampon */
+
+#if (_CS_STDC_VERSION < 199901L)
+  msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
+#else
+  msgsize = vsnprintf (cs_buf_print_f, CS_BUF_PRINT_F_SIZE, format, arg_ptr);
+#endif
+
+  line = __LINE__ - 1;
+
+  if (msgsize == -1 || msgsize > CS_BUF_PRINT_F_SIZE - 1) {
+    fprintf(stderr,
+            _("Erreur fatale: bft_printf() appellé sur message de taille %d\n"
+              "alors que le tampon d'impression est de taille %d."),
+            msgsize, CS_BUF_PRINT_F_SIZE);
+
+    /* Try to force segmentation fault (to call signal handlers);
+       as stack has most likely been corrupted, this is the most
+       "similar" error that allows for portable handling. */
+    {
+      int *_force_err = NULL;
+      *_force_err = 0;
+    }
+    cs_exit(EXIT_FAILURE);
+  }
+
+  /* Impression effective par le code Fortran */
+
+  CS_PROCF (csprnt, CSPRNT) (cs_buf_print_f, &msgsize);
+
+  return msgsize;
+}
+
+/*----------------------------------------------------------------------------
+ * Fonction de vidage du tampon d'impression sur la sortie standard
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_base_bft_printf_flush(void)
+{
+  CS_PROCF (csflsh, CSFLSH) ();
+
+  return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Fonction d'impression d'un message sur les sorties erreur
+ *
+ * On répète le message sur la sortie standard et sur un fichier erreur.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_err_vprintf(const char  *format,
+                     va_list      arg_ptr)
+{
+  static cs_bool_t  initialise = CS_FALSE;
+
+  /* message sur la sortie standard */
+
+#if defined(va_copy) || defined(__va_copy)
+  {
+    va_list arg_ptr_2;
+
+#if defined(va_copy)
+    va_copy(arg_ptr_2, arg_ptr);
+#else
+    __va_copy(arg_ptr_2, arg_ptr);
+#endif
+    _cs_base_bft_printf(format, arg_ptr_2);
+    va_end(arg_ptr_2);
+  }
+#endif
+
+  /* message sur une sortie erreur spécifique, à n'initialiser
+     que si la sortie erreur est effectivement nécessaire */
+
+  if (initialise == CS_FALSE) {
+
+    char nom_fic_err[81];
+
+    if (cs_glob_base_rang < 1)
+      strcpy(nom_fic_err, _("erreur"));
+    else
+      sprintf(nom_fic_err, _("erreur_n%04d"), cs_glob_base_rang + 1);
+
+    freopen(nom_fic_err, "w", stderr);
+
+    initialise = CS_TRUE;
+
+  }
+
+  vfprintf(stderr, format, arg_ptr);
+}
+
+/*----------------------------------------------------------------------------
+ * Fonction d'impression d'un message sur les sorties erreur
+ *
+ * On répète le message sur la sortie standard et sur un fichier erreur.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_err_printf(const char  *format,
+                    ...)
+{
+  /* Initialisation de la liste des arguments */
+
+  va_list  arg_ptr;
+
+  va_start(arg_ptr, format);
+
+  /* message sur les sorties */
+
+  _cs_base_err_vprintf(format, arg_ptr);
+
+  /* Finalisation de la liste des arguments */
+
+  va_end(arg_ptr);
+}
+
+
+/*----------------------------------------------------------------------------
+ * Fonction d'arret du code en cas d'erreur
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_gestion_erreur(const char  *nom_fic,
+                        int          num_ligne,
+                        int          code_err_sys,
+                        const char  *format,
+                        va_list      arg_ptr)
+{
+  bft_printf_flush();
+
+  _cs_base_err_printf("\n");
+
+  if (code_err_sys != 0)
+    _cs_base_err_printf(_("\nErreur système : %s\n"), strerror(code_err_sys));
+
+  _cs_base_err_printf(_("\n%s:%d: Erreur fatale.\n\n"), nom_fic, num_ligne);
+
+  _cs_base_err_vprintf(format, arg_ptr);
+
+  _cs_base_err_printf("\n\n");
+
+  bft_backtrace_print(3);
+
+#if defined(_CS_HAVE_MPI)
+  {
+    int mpi_flag;
+
+    MPI_Initialized(&mpi_flag);
+
+    if (mpi_flag != 0)
+      MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
+  }
+#endif /* _CS_HAVE_MPI */
+
+  exit(EXIT_FAILURE);
+}
+
+/*----------------------------------------------------------------------------
+ * Fonction d'impression d'un "backtrace"
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_backtrace_print(int  niv_debut)
+{
+  size_t  ind;
+  bft_backtrace_t  *tr = NULL;
+
+  tr = bft_backtrace_create();
+
+  if (tr != NULL) {
+
+    char s_func_buf[67];
+
+    const char *s_file;
+    const char *s_func;
+    const char *s_addr;
+
+    const char s_inconnu[] = "?";
+    const char s_vide[] = "";
+    const char *s_prefix = s_vide;
+
+    size_t nbr = bft_backtrace_size(tr);
+
+    if (nbr > 0)
+      _cs_base_err_printf("\nPile d'appels :\n");
+
+    for (ind = niv_debut ; ind < nbr ; ind++) {
+
+      s_file = bft_backtrace_file(tr, ind);
+      s_func = bft_backtrace_function(tr, ind);
+      s_addr = bft_backtrace_address(tr, ind);
+
+      if (s_file == NULL)
+        s_file = s_inconnu;
+      if (s_func == NULL)
+        strcpy(s_func_buf, "?");
+      else {
+        s_func_buf[0] = '<';
+        strncpy(s_func_buf + 1, s_func, 64);
+        strcat(s_func_buf, ">");
+      }
+      if (s_addr == NULL)
+        s_addr = s_inconnu;
+
+      _cs_base_err_printf("%s%4d: %-12s %-32s (%s)\n", s_prefix,
+                          ind-niv_debut+1, s_addr, s_func_buf, s_file);
+
+    }
+
+    bft_backtrace_destroy(tr);
+
+    if (nbr > 0)
+      _cs_base_err_printf("Fin de la pile\n\n");
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Fonction de gestion d'un signal fatal (de type SIGFPE ou SIGSEGV)
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_sig_fatal(int  signum)
+{
+  bft_printf_flush();
+
+  switch (signum) {
+
+#if defined(SIGHUP)
+  case SIGHUP:
+    _cs_base_err_printf(_("Signal SIGHUP (déconnexion) intercepté.\n"
+                          "--> calcul interrompu.\n"));
+    break;
+#endif
+
+  case SIGINT:
+    _cs_base_err_printf(_("Signal SIGINT (Control+C ou équivalent) reçu.\n"
+                          "--> calcul interrompu par l'utilisateur.\n"));
+    break;
+
+  case SIGTERM:
+    _cs_base_err_printf(_("Signal SIGTERM (terminaison) reçu.\n"
+                          "--> calcul interrompu par l'environnement.\n"));
+    break;
+
+  case SIGFPE:
+    _cs_base_err_printf(_("Signal SIGFPE (exception en virgule flottante) "
+                          "intercepté !\n"));
+    break;
+
+  case SIGSEGV:
+    _cs_base_err_printf(_("Signal SIGSEGV (accès à une zone mémoire "
+                          "interdite) intercepté !\n"));
+    break;
+
+#if defined(SIGXCPU)
+  case SIGXCPU:
+    _cs_base_err_printf(_("Signal SIGXCPU (temps CPU limite atteint) "
+                          "intercepté.\n"));
+    break;
+#endif
+
+  default:
+    _cs_base_err_printf(_("Signal %d intercepté !\n"), signum);
+  }
+
+  bft_backtrace_print(3);
+
+#if defined(_CS_HAVE_MPI)
+
+  {
+    int mpi_flag;
+
+    MPI_Initialized (&mpi_flag);
+    if (mpi_flag != 0)
+      MPI_Abort (MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+
+#endif
+
+  exit(EXIT_FAILURE);
+}
+
+#if defined(_CS_HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ *  Finalisation MPI
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_mpi_fin(void)
+{
+#if defined(_CS_HAVE_MPE)
+  if (cs_glob_base_nbr > 1)
+    _cs_base_prof_mpe_fin();
+#endif
+
+#if defined(FVM_HAVE_MPI)
+  fvm_parall_set_mpi_comm(MPI_COMM_NULL);
+#endif
+
+  bft_error_handler_set(cs_glob_base_gest_erreur_sauve);
+
+  if (   cs_glob_base_mpi_comm != MPI_COMM_NULL
+      && cs_glob_base_mpi_comm != MPI_COMM_WORLD)
+    MPI_Comm_free(&cs_glob_base_mpi_comm);
+}
+
+
+#if defined(DEBUG) || !defined(NDEBUG)
+
+/*----------------------------------------------------------------------------
+ * Gestionnaire d'erreur MPI
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_erreur_mpi(MPI_Comm  *comm,
+                    int       *errcode,
+                    ...)
+{
+  int err_len;
+  char err_string[MPI_MAX_ERROR_STRING + 1];
+
+#if defined MPI_MAX_OBJECT_NAME
+  int name_len = 0;
+  char comm_name[MPI_MAX_OBJECT_NAME + 1];
+#endif
+
+  bft_printf_flush();
+
+  _cs_base_err_printf("\n");
+
+  MPI_Error_string(*errcode, err_string, &err_len);
+  err_string[err_len] = '\0';
+
+#if defined MPI_MAX_OBJECT_NAME
+  MPI_Comm_get_name(*comm, comm_name, &name_len);
+  comm_name[name_len] = '\0';
+  _cs_base_err_printf(_("\nErreur MPI (communicateur %s):\n"
+                        "%s\n"), comm_name, err_string);
+#else
+  _cs_base_err_printf(_("\nErreur MPI :\n"
+                        "%s\n"), err_string);
+#endif
+
+  _cs_base_err_printf("\n\n");
+
+  bft_backtrace_print(3);
+
+  MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
+
+  exit(EXIT_FAILURE);
+}
+
+#endif
+#endif /* _CS_HAVE_MPI */
+
+
+#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
+
+/*----------------------------------------------------------------------------
+ * Initialisation de l'instrumentation MPE.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_prof_mpe_init(int  rang)
+{
+  int flag;
+
+  MPI_Initialized(&flag);
+
+  /* MPE_Init_log() & MPE_finish_log() ne sont PAS nécessaires si la
+     libraire liblmpe.a est "linkée" avec saturne. Dans ce cas, c'est
+     MPI_Init() qui se charge de l'appel de MPE_Init_log() */
+
+  if (flag) {
+
+    MPE_Init_log();
+
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_broadcast_a,
+                               &cs_glob_mpe_broadcast_b);
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_synchro_a,
+                               &cs_glob_mpe_synchro_b);
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_send_a,
+                               &cs_glob_mpe_send_b);
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_rcv_a,
+                               &cs_glob_mpe_rcv_b);
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_reduce_a,
+                               &cs_glob_mpe_reduce_b);
+    MPE_Log_get_state_eventIDs(&cs_glob_mpe_compute_a,
+                               &cs_glob_mpe_compute_b);
+
+    if (rang == 0) {
+
+      MPE_Describe_state(cs_glob_mpe_broadcast_a,
+                         cs_glob_mpe_broadcast_b,
+                         "Broadcast", "orange");
+      MPE_Describe_state(cs_glob_mpe_synchro_a,
+                         cs_glob_mpe_synchro_b,
+                         "MPI Barrier", "blue");
+      MPE_Describe_state(cs_glob_mpe_send_a,
+                         cs_glob_mpe_send_b,
+                         "Send", "yellow");
+      MPE_Describe_state(cs_glob_mpe_rcv_a,
+                         cs_glob_mpe_rcv_b,
+                         "Receive", "red");
+      MPE_Describe_state(cs_glob_mpe_reduce_a,
+                         cs_glob_mpe_reduce_b,
+                         "Reduce", "white");
+      MPE_Describe_state(cs_glob_mpe_compute_a,
+                         cs_glob_mpe_compute_b,
+                         "Compute", "green");
+
+      MPE_Start_log();
+      MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ *  Finalisation de l'instrumentation MPE
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_prof_mpe_fin(void)
+{
+  int flag, rang;
+
+  MPI_Initialized(&flag);
+
+  if (flag)
+    MPI_Comm_rank(MPI_COMM_WORLD, &rang);
+
+  MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
+  MPE_Log_sync_clocks();
+
+  if (rang == 0)
+    MPE_Finish_log("Code_Saturne");
+}
+
+#endif /* defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) */
 
 
 /*============================================================================
@@ -372,10 +717,10 @@ void CS_PROCF (dmtmps, DMTMPS)
 
 void cs_base_mpi_init
 (
- int         *argc,      /* --> Nombre d'arguments ligne de commandes        */
- char      ***argv,      /* --> Tableau des arguments ligne de commandes     */
- cs_int_t     rang_deb   /* --> Rang du premier processus du groupe
-                          *     dans MPI_COMM_WORLD                          */
+ int      *argc,          /* --> Nombre d'arguments ligne de commandes        */
+ char   ***argv,          /* --> Tableau des arguments ligne de commandes     */
+ int       rang_deb       /* --> Rang du premier processus du groupe
+                           *     dans MPI_COMM_WORLD                          */
 )
 {
   int flag, nbr, rang;
@@ -943,11 +1288,11 @@ void cs_base_warn
 
 char  * cs_base_chaine_f_vers_c_cree
 (
- const char      *const chaine,             /* --> Chaîne Fortran             */
- const cs_int_t         longueur            /* --> Longueur de la chaîne      */
+ const char      * f_str,                   /* --> Chaîne Fortran             */
+ int               f_len                    /* --> Longueur de la chaîne      */
 )
 {
-  char * chaine_c = NULL;
+  char * c_str = NULL;
   int    i, i1, i2, l;
 
   /* Initialisation si nécessaire */
@@ -961,11 +1306,11 @@ char  * cs_base_chaine_f_vers_c_cree
   /* Traitement du nom pour l'API C */
 
   for (i1 = 0 ;
-       i1 < longueur && (chaine[i1] == ' ' || chaine[i1] == '\t') ;
+       i1 < f_len && (f_str[i1] == ' ' || f_str[i1] == '\t') ;
        i1++);
 
-  for (i2 = longueur - 1 ;
-       i2 > i1 && (chaine[i2] == ' ' || chaine[i2] == '\t') ;
+  for (i2 = f_len - 1 ;
+       i2 > i1 && (f_str[i2] == ' ' || f_str[i2] == '\t') ;
        i2--);
 
   l = i2 - i1 + 1;
@@ -975,22 +1320,22 @@ char  * cs_base_chaine_f_vers_c_cree
   if (l < CS_BASE_LNG_CHAINE) {
     for (i = 0 ; i < CS_BASE_NBR_CHAINE ; i++) {
       if (cs_glob_base_chaine_libre[i] == CS_TRUE) {
-        chaine_c = cs_glob_base_chaine[i];
+        c_str = cs_glob_base_chaine[i];
         cs_glob_base_chaine_libre[i] = CS_FALSE;
         break;
       }
     }
   }
 
-  if (chaine_c == NULL)
-    BFT_MALLOC(chaine_c, l + 1, char);
+  if (c_str == NULL)
+    BFT_MALLOC(c_str, l + 1, char);
 
   for (i = 0 ; i < l ; i++, i1++)
-    chaine_c[i] = chaine[i1];
+    c_str[i] = f_str[i1];
 
-  chaine_c[l] = '\0';
+  c_str[l] = '\0';
 
-  return chaine_c;
+  return c_str;
 }
 
 
@@ -1000,513 +1345,24 @@ char  * cs_base_chaine_f_vers_c_cree
 
 char  * cs_base_chaine_f_vers_c_detruit
 (
- char  * chaine                             /* --> Chaîne C                   */
+ char  * c_str                              /* --> Chaîne C                   */
 )
 {
   cs_int_t ind;
 
   for (ind = 0 ; ind < CS_BASE_NBR_CHAINE ; ind++) {
-    if (chaine == cs_glob_base_chaine[ind]) {
+    if (c_str == cs_glob_base_chaine[ind]) {
       cs_glob_base_chaine_libre[ind] = CS_TRUE;
-      chaine = NULL;
+      c_str = NULL;
       break;
     }
   }
 
   if (ind == CS_BASE_NBR_CHAINE)
-    BFT_FREE(chaine);
+    BFT_FREE(c_str);
 
-  return chaine;
+  return c_str;
 }
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur la sortie standard
- *----------------------------------------------------------------------------*/
-
-static int _cs_base_bft_printf
-(
- const char     *const format,
-       va_list         arg_ptr
-)
-{
- cs_int_t  line;
- cs_int_t  msgsize;
-
- /* Tampon pour impressions depuis du code C : on imprime dans un chaîne
-    de caractères, qui sera imprimée vers un fichier par du code Fortran.
-    Une fois les impressions Fortran totalement remplacées par des impressions
-    C, on pourra supprimer cette étape, mais elle est nécessaire pour l'instant
-    afin de pouvoir utiliser les mêmes fichiers de sortie */
-
-#undef CS_BUF_PRINT_F_SIZE
-#define CS_BUF_PRINT_F_SIZE 16384
-
- static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
-
- /* Impression dans le tampon */
-
-#if (_CS_STDC_VERSION < 199901L)
-  msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
-#else
-  msgsize = vsnprintf (cs_buf_print_f, CS_BUF_PRINT_F_SIZE, format, arg_ptr);
-#endif
-
-  line = __LINE__ - 1;
-
-  if (msgsize == -1 || msgsize > CS_BUF_PRINT_F_SIZE - 1) {
-    _cs_base_err_printf("\nCode_Saturne : %s:%d\n", __FILE__, line);
-    _cs_base_err_printf(_("\nErreur système : %s\n"), strerror(errno));
-    cs_exit(EXIT_FAILURE);
-  }
-
-  /* Impression effective par le code Fortran */
-
-  CS_PROCF (csprnt, CSPRNT) (cs_buf_print_f, &msgsize);
-
-  return msgsize;
-}
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur les sorties erreur
- *
- * On répète le message sur la sortie standard et sur un fichier erreur.
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_err_printf
-(
- const char     *const format,
- ...
-)
-{
-  /* Initialisation de la liste des arguments */
-
-  va_list  arg_ptr;
-
-  va_start(arg_ptr, format);
-
-  /* message sur les sorties */
-
-  _cs_base_err_vprintf(format, arg_ptr);
-
-  /* Finalisation de la liste des arguments */
-
-  va_end(arg_ptr);
-}
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur les sorties erreur
- *
- * On répète le message sur la sortie standard et sur un fichier erreur.
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_err_vprintf
-(
- const char     *const format,
-       va_list         arg_ptr
-)
-{
-  static cs_bool_t  initialise = CS_FALSE;
-
-  /* message sur la sortie standard */
-
-#if defined(va_copy) || defined(__va_copy)
-  {
-    va_list arg_ptr_2;
-
-#if defined(va_copy)
-    va_copy(arg_ptr_2, arg_ptr);
-#else
-    __va_copy(arg_ptr_2, arg_ptr);
-#endif
-    _cs_base_bft_printf(format, arg_ptr_2);
-    va_end(arg_ptr_2);
-  }
-#endif
-
-  /* message sur une sortie erreur spécifique, à n'initialiser
-     que si la sortie erreur est effectivement nécessaire */
-
-  if (initialise == CS_FALSE) {
-
-    char nom_fic_err[81];
-
-    if (cs_glob_base_rang < 1)
-      strcpy(nom_fic_err, _("erreur"));
-    else
-      sprintf(nom_fic_err, _("erreur_n%04d"), cs_glob_base_rang + 1);
-
-    freopen(nom_fic_err, "w", stderr);
-
-    initialise = CS_TRUE;
-
-  }
-
-  vfprintf(stderr, format, arg_ptr);
-}
-
-
-/*----------------------------------------------------------------------------
- * Fonction de vidage du tampon d'impression sur la sortie standard
- *----------------------------------------------------------------------------*/
-
-static int _cs_base_bft_printf_flush
-(
- void
-)
-{
-  CS_PROCF (csflsh, CSFLSH) ();
-
-  return 0;
-}
-
-
-/*----------------------------------------------------------------------------
- * Fonction d'arret du code en cas d'erreur
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_gestion_erreur
-(
- const char     *const nom_fic,
- const int             num_ligne,
- const int             code_err_sys,
- const char     *const format,
-       va_list         arg_ptr
-)
-{
-  bft_printf_flush();
-
-  _cs_base_err_printf("\n");
-
-  if (code_err_sys != 0)
-    _cs_base_err_printf(_("\nErreur système : %s\n"), strerror(code_err_sys));
-
-  _cs_base_err_printf(_("\n%s:%d: Erreur fatale.\n\n"), nom_fic, num_ligne);
-
-  _cs_base_err_vprintf(format, arg_ptr);
-
-  _cs_base_err_printf("\n\n");
-
-  bft_backtrace_print(3);
-
-#if defined(_CS_HAVE_MPI)
-  {
-    int mpi_flag;
-
-    MPI_Initialized(&mpi_flag);
-
-    if (mpi_flag != 0)
-      MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
-  }
-#endif /* _CS_HAVE_MPI */
-
-  exit(EXIT_FAILURE);
-}
-
-/*----------------------------------------------------------------------------
- * Fonction d'impression d'un "backtrace"
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_backtrace_print
-(
-  int  niv_debut
-)
-{
-  size_t  ind;
-  bft_backtrace_t  *tr = NULL;
-
-  tr = bft_backtrace_create();
-
-  if (tr != NULL) {
-
-    char s_func_buf[67];
-
-    const char *s_file;
-    const char *s_func;
-    const char *s_addr;
-
-    const char s_inconnu[] = "?";
-    const char s_vide[] = "";
-    const char *s_prefix = s_vide;
-
-    size_t nbr = bft_backtrace_size(tr);
-
-    if (nbr > 0)
-      _cs_base_err_printf("\nPile d'appels :\n");
-
-    for (ind = niv_debut ; ind < nbr ; ind++) {
-
-      s_file = bft_backtrace_file(tr, ind);
-      s_func = bft_backtrace_function(tr, ind);
-      s_addr = bft_backtrace_address(tr, ind);
-
-      if (s_file == NULL)
-        s_file = s_inconnu;
-      if (s_func == NULL)
-        strcpy(s_func_buf, "?");
-      else {
-        s_func_buf[0] = '<';
-        strncpy(s_func_buf + 1, s_func, 64);
-        strcat(s_func_buf, ">");
-      }
-      if (s_addr == NULL)
-        s_addr = s_inconnu;
-
-      _cs_base_err_printf("%s%4d: %-12s %-32s (%s)\n", s_prefix,
-                          ind-niv_debut+1, s_addr, s_func_buf, s_file);
-
-    }
-
-    bft_backtrace_destroy(tr);
-
-    if (nbr > 0)
-      _cs_base_err_printf("Fin de la pile\n\n");
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Fonction de gestion d'un signal fatal (de type SIGFPE ou SIGSEGV)
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_sig_fatal(int  signum)
-{
-  bft_printf_flush();
-
-  switch (signum) {
-
-#if defined(SIGHUP)
-  case SIGHUP:
-    _cs_base_err_printf(_("Signal SIGHUP (déconnexion) intercepté.\n"
-                          "--> calcul interrompu.\n"));
-    break;
-#endif
-
-  case SIGINT:
-    _cs_base_err_printf(_("Signal SIGINT (Control+C ou équivalent) reçu.\n"
-                          "--> calcul interrompu par l'utilisateur.\n"));
-    break;
-
-  case SIGTERM:
-    _cs_base_err_printf(_("Signal SIGTERM (terminaison) reçu.\n"
-                          "--> calcul interrompu par l'environnement.\n"));
-    break;
-
-  case SIGFPE:
-    _cs_base_err_printf(_("Signal SIGFPE (exception en virgule flottante) "
-                          "intercepté !\n"));
-    break;
-
-  case SIGSEGV:
-    _cs_base_err_printf(_("Signal SIGSEGV (accès à une zone mémoire "
-                          "interdite) intercepté !\n"));
-    break;
-
-#if defined(SIGXCPU)
-  case SIGXCPU:
-    _cs_base_err_printf(_("Signal SIGXCPU (temps CPU limite atteint) "
-                          "intercepté.\n"));
-    break;
-#endif
-
-  default:
-    _cs_base_err_printf(_("Signal %d intercepté !\n"), signum);
-  }
-
-  bft_backtrace_print(3);
-
-#if defined(_CS_HAVE_MPI)
-
-  {
-    int mpi_flag;
-
-    MPI_Initialized (&mpi_flag);
-    if (mpi_flag != 0)
-      MPI_Abort (MPI_COMM_WORLD, EXIT_FAILURE);
-  }
-
-#endif
-
-  exit(EXIT_FAILURE);
-}
-
-
-#if defined(_CS_HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- *  Finalisation MPI
- *----------------------------------------------------------------------------*/
-
-static void _cs_base_mpi_fin
-(
- void
-)
-{
-#if defined(_CS_HAVE_MPE)
-  if (cs_glob_base_nbr > 1)
-    _cs_base_prof_mpe_fin();
-#endif
-
-#if defined(FVM_HAVE_MPI)
-  fvm_parall_set_mpi_comm(MPI_COMM_NULL);
-#endif
-
-  bft_error_handler_set(cs_glob_base_gest_erreur_sauve);
-
-  if (   cs_glob_base_mpi_comm != MPI_COMM_NULL
-      && cs_glob_base_mpi_comm != MPI_COMM_WORLD)
-    MPI_Comm_free(&cs_glob_base_mpi_comm);
-}
-
-
-#if defined(DEBUG) || !defined(NDEBUG)
-
-/*----------------------------------------------------------------------------
- * Gestionnaire d'erreur MPI
- *----------------------------------------------------------------------------*/
-
-void _cs_base_erreur_mpi
-(
- MPI_Comm  *comm,
- int       *errcode,
- ...
-)
-{
-  int err_len;
-  char err_string[MPI_MAX_ERROR_STRING + 1];
-
-#if defined MPI_MAX_OBJECT_NAME
-  int name_len = 0;
-  char comm_name[MPI_MAX_OBJECT_NAME + 1];
-#endif
-
-  bft_printf_flush();
-
-  _cs_base_err_printf("\n");
-
-  MPI_Error_string(*errcode, err_string, &err_len);
-  err_string[err_len] = '\0';
-
-#if defined MPI_MAX_OBJECT_NAME
-  MPI_Comm_get_name(*comm, comm_name, &name_len);
-  comm_name[name_len] = '\0';
-  _cs_base_err_printf(_("\nErreur MPI (communicateur %s):\n"
-                        "%s\n"), comm_name, err_string);
-#else
-  _cs_base_err_printf(_("\nErreur MPI :\n"
-                        "%s\n"), err_string);
-#endif
-
-  _cs_base_err_printf("\n\n");
-
-  bft_backtrace_print(3);
-
-  MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
-
-  exit(EXIT_FAILURE);
-}
-
-#endif
-#endif /* _CS_HAVE_MPI */
-
-
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
-
-/*----------------------------------------------------------------------------
- *  Initialisation de l'instrumentation MPE.
- *----------------------------------------------------------------------------*/
-
-void _cs_base_prof_mpe_init
-(
- cs_int_t     rang       /* --> Rang MPI dans le communicateur local          */
-)
-{
-  int flag;
-
-  MPI_Initialized(&flag);
-
-  /* MPE_Init_log() & MPE_finish_log() ne sont PAS nécessaires si la
-     libraire liblmpe.a est "linkée" avec saturne. Dans ce cas, c'est
-     MPI_Init() qui se charge de l'appel de MPE_Init_log() */
-
-  if (flag) {
-
-    MPE_Init_log();
-
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_broadcast_a,
-                               &cs_glob_mpe_broadcast_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_synchro_a,
-                               &cs_glob_mpe_synchro_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_send_a,
-                               &cs_glob_mpe_send_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_rcv_a,
-                               &cs_glob_mpe_rcv_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_reduce_a,
-                               &cs_glob_mpe_reduce_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_compute_a,
-                               &cs_glob_mpe_compute_b);
-
-    if (rang == 0) {
-
-      MPE_Describe_state(cs_glob_mpe_broadcast_a,
-                         cs_glob_mpe_broadcast_b,
-                         "Broadcast", "orange");
-      MPE_Describe_state(cs_glob_mpe_synchro_a,
-                         cs_glob_mpe_synchro_b,
-                         "MPI Barrier", "blue");
-      MPE_Describe_state(cs_glob_mpe_send_a,
-                         cs_glob_mpe_send_b,
-                         "Send", "yellow");
-      MPE_Describe_state(cs_glob_mpe_rcv_a,
-                         cs_glob_mpe_rcv_b,
-                         "Receive", "red");
-      MPE_Describe_state(cs_glob_mpe_reduce_a,
-                         cs_glob_mpe_reduce_b,
-                         "Reduce", "white");
-      MPE_Describe_state(cs_glob_mpe_compute_a,
-                         cs_glob_mpe_compute_b,
-                         "Compute", "green");
-
-      MPE_Start_log();
-      MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- *  Finalisation de l'instrumentation MPE
- *----------------------------------------------------------------------------*/
-
-void _cs_base_prof_mpe_fin
-(
- void
-)
-{
-  int flag, rang;
-
-  MPI_Initialized(&flag);
-
-  if (flag)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rang);
-
-  MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
-  MPE_Log_sync_clocks();
-
-  if (rang == 0)
-    MPE_Finish_log("Code_Saturne");
-}
-
-#endif /* defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) */
 
 /*----------------------------------------------------------------------------*/
 
