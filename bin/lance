@@ -494,11 +494,11 @@ if [ ! -z "$MPIHOSTS" ] ; then
   echo "$NOMBRE_DE_PROCESSEURS processeur(s) reserve(s) en tout"
 fi
 #
-# Si le noyau fonctionne en parallele, on doit lui preciser le nombre
-# de domaines, ainsi qu'au Preprocesseur
+# Si le noyau fonctionne en parallele, on doit lui preciser,
+# ainsi qu'au Preprocesseur
 if [ $nproc_noy -gt 1 ] ; then 
   ARG_ECS_PAR=" -p $nproc_noy"
-  ARG_CS_PAR=" -p $nproc_noy"
+  ARG_CS_PAR=" -mpi"
 else
   ARG_ECS_PAR=""
   ARG_CS_PAR=""

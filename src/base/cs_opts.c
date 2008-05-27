@@ -124,7 +124,7 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("Utilisation : %s [options]\n"), name);
 
-  fprintf (e, "\nOptions de la ligne de commandes :\n\n");
+  fprintf (e, _("\nOptions de la ligne de commandes :\n\n"));
   fprintf
     (e, _(" -ec, --echo-comm  echo des données issues du Préprocesseur ou\n"
           "                   des communications avec Syrthes ;\n"
@@ -144,10 +144,9 @@ _arg_env_help(const char  *name)
 
 #if defined(_CS_HAVE_MPI)
   fprintf
-    (e, _(" -p, --parallel    activation du parallélisme ;\n"
-          "                    [i] n : rang MPI global du 1er processus\n"
-          "                            noyau (défaut : 0) et nombre\n"
-          "                            de processus noyau\n"));
+    (e, _(" -mpi, --mpi       activation du parallélisme ;\n"
+          "                    [i] : rang MPI global du 1er processus\n"
+          "                          noyau (défaut : 0)\n"));
   fprintf
     (e, _(" --coupl-cs        couplage avec une autre instance du code\n"
           "                     i : rang MPI global du 1er processus\n"
@@ -579,7 +578,6 @@ cs_opts_logfile_head(int    argc,
 
   bft_printf(_("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n"));
 
-
   bft_printf(_("  build %s\n"), str);
 
 #if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
@@ -627,7 +625,6 @@ cs_opts_mpi_rank(int    * argc,
   char    *s;
   int     arg_id, argerr;
 
-  int  n_ranks = 1;
   int  root_rank = -1;
   int  syr_rank = -1;
   int  syr_rank_max = -1;
@@ -641,7 +638,7 @@ cs_opts_mpi_rank(int    * argc,
   /*
     Using standard MPICH1 1.2.x with the p4 (default) mechanism,
     the information required by MPI_Init() are transferred through
-    the commande line, which is then modified by MPI_Init();
+    the command line, which is then modified by MPI_Init();
     in this case, only rank 0 knows the "user" command line arguments
     at program startup, the other processes obtaining them only upon
     calling  MPI_Init(). In this case, it is thus necessary to initialize
@@ -670,24 +667,15 @@ cs_opts_mpi_rank(int    * argc,
 
     /* Parallel run */
 
-    if (strcmp(s, "-p") == 0 || strcmp(s, "--parallel") == 0) {
-      cs_int_t n1 = 0, n2 = 0;
+    if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
+      int _root_rank = 0;
       cs_int_t tmperr = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, *argc, *argv, &argerr);
-      n_ranks = n1;
-      if (argerr == 0)
-        n2 = (cs_int_t) _arg_to_int(arg_id + 1, *argc, *argv, &tmperr);
+      _root_rank = _arg_to_int(arg_id + 1, *argc, *argv, &tmperr);
       if (tmperr == 0) {
         arg_id++;
-        if (n2 > 0) {
-          root_rank = n1;
-          n_ranks = n2;
-        }
+        root_rank = _root_rank;
       }
-      else
-        n_ranks = n1;
-      if (n_ranks > 1)
-        use_mpi = CS_TRUE;
+      use_mpi = CS_TRUE;
     }
 
     /* Coupling */
@@ -755,8 +743,8 @@ cs_opts_define(int         argc,
 {
   /* Local variables */
 
-  char  *s;
-  int    arg_id = 0, argerr = 0;
+  const char *s;
+  int arg_id = 0, argerr = 0;
 
   /* Default initialization */
 
@@ -794,12 +782,9 @@ cs_opts_define(int         argc,
 
 #if defined(_CS_HAVE_MPI)
 
-    else if (strcmp(s, "-p") == 0 || strcmp(s, "--parallel") == 0) {
-      cs_int_t n1 = 0, n2 = 0;
+    else if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
       cs_int_t tmperr = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (argerr == 0)
-        n2 = (cs_int_t) _arg_to_int(arg_id + 1, argc, argv, &tmperr);
+      (void)_arg_to_int(arg_id + 1, argc, argv, &tmperr);
       if (tmperr == 0) {
         arg_id++;
       }
@@ -877,6 +862,8 @@ cs_opts_define(int         argc,
       }
     }
 
+    /* Usage */
+
     else if (strcmp(s, "-h") == 0 || strcmp(s, "--help") == 0)
       argerr = 2;
     else
@@ -890,8 +877,10 @@ cs_opts_define(int         argc,
 
   /* Print help and exit if required or in case of command line error */
   if (argerr != 0) {
-    cs_opts_logfile_head(argc, argv);
-    _arg_env_help(argv[0]) ;
+    if (cs_glob_base_rang <= 0) {
+      cs_opts_logfile_head(argc, argv);
+      _arg_env_help(argv[0]) ;
+    }
     if (argerr == 2)
       cs_exit(EXIT_SUCCESS);
     else

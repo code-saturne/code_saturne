@@ -1,4 +1,10 @@
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplifying the command line option for a parallel run.
+  modified routines:
+    bin/lance_install
+    src/base/cs_opts.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding support for a shared library on Linux systems.
   modified routines:
     bin/lance_install

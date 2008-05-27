@@ -1022,12 +1022,9 @@ Kernel command line.\\
 The value of \texttt{n} is accessible in the variable LONGRA\index{LONGRA} in
 the FORTRAN code.
 
-\item \texttt{-p n} or \texttt{-parallel n}: specifies the number of processors
-(potentially virtual) on
-which the Kernel will run.  In the launch script, the number of
-processors used is specified in the \texttt{NOMBRE\_DE\_PROCESSEURS} variable,
-or through the batch headers. If necessary, the launch script then automatically
-passes the \texttt{-p} option to the Kernel command line (see \ref{prg_lance}).
+\item \texttt{-mpi} or \texttt{--mpi}: specifies that the calculation is running with MPI communications. The number of processors used will be guessed interactively by the Kernel. If necessary, the launch script automatically
+passes the \texttt{-mpi} option to the Kernel command line
+(see \ref{prg_lance}).
 
 \item \texttt{--coupl-cs}: this option concerns the coupling of different
 executions of \CS. It is still under development. Please refer to \CS
