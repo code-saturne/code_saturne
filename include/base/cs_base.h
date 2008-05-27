@@ -104,7 +104,7 @@ extern "C" {
  * peuvent être mieux optimisées sur des données respectant un certain
  * alignement en mémoire; (si 0, aucun alignement exploité) */
 
-#if defined(__blrts__)
+#if defined(__blrts__) || defined(__bgp__)
 #define CS_MEM_ALIGN 16
 #else
 #define CS_MEM_ALIGN 0
