@@ -1,4 +1,16 @@
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a sub-script to check FORTRAN user files consistency.
+  Adding a script to clean the directories.
+  Updating the compiler for EDF Calibre 5 workstations.
+  modified routines:
+    bin/lance
+    bin/lance_install
+    bin/macros_Linux_x86_64.mk
+  added routines:
+    bin/check_consistency
+    aux/clean
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding a warning in case of rotation periodicity
   modified routines:
     src/base/cs_matrix.c

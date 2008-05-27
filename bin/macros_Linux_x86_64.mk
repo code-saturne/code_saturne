@@ -97,7 +97,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -118,7 +118,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -138,13 +138,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
+LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/lib64:
 
 
 # Positionnement des variables pour le pre-processeur

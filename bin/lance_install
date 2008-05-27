@@ -529,6 +529,7 @@ Macro_readme_comp=$2
  find . -type f -exec chmod    u=rw,g=r,o=r {} \;
 #Fichiers executables par le login saturne
  listebin="autovalid \
+check_consistency \
 check_mesh \
 compiler_version \
 cree_sat \
@@ -544,6 +545,7 @@ rang_mpi.sh"
 #Fichiers accessibles et executables par tous
  listebin="autovalid \
 compiler_version \
+check_consistency \
 check_mesh \
 cree_sat \
 cs.exe \
@@ -556,7 +558,8 @@ rang_mpi.sh"
  done
 #Fichiers executables dans aux
  listeaux="rmb.sh \
-rmb.sh_lance"
+rmb.sh_lance \
+clean"
  for fich in $listeaux  ; do 
    chmod    u+x aux/$fich
  done

@@ -1,0 +1,306 @@
+#!/bin/sh
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2007 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+# Fonction de reperage d'un sous programme utilisateur
+#  pour le moment, on fait simple 
+#   (on pourrait verifier que uslag2 contient bien uslag2 ou encore 
+#   qu'il n'est pas bidon ...)
+presence () {
+
+  presence_sspgm=$1
+
+  if [ ! -f "${presence_sspgm}" ] ; then
+    presence_PRESENT="non"
+  else
+    presence_PRESENT="oui"
+  fi
+  echo ${presence_PRESENT} 
+}
+#
+########################################################################
+#
+args=""
+if [ "$*" != "" ] ; then 
+  args="$*"
+fi
+#
+cur_dir=`pwd`
+param=""
+expect_dir="false"
+expect_param="false"
+#
+for arg in $args ; do
+  #
+  if [ "$expect_dir" = "true" ] ; then
+    cur_dir=$arg
+    expect_dir="false"
+  fi    
+  if [ "$expect_param" = "true" ] ; then
+    param=$arg
+    expect_param="false"
+  fi    
+  #
+  if [ "$arg" = "-dir" ] ; then
+    expect_dir="true"
+  else
+    expect_dir="false"
+  fi
+  if [ "$arg" = "-param" ] ; then
+    expect_param="true"
+  else
+    expect_param="false"
+  fi
+  #
+done
+#
+#
+# Detection de la presence de modules
+
+# Standard
+USCLIM_PRESENT=`presence "${cur_dir}/usclim.F"`
+
+# Lagrangien
+USLAG2_PRESENT=`presence "${cur_dir}/uslag2.F"`
+
+# Rayonnement
+USRAY2_PRESENT=`presence "${cur_dir}/usray2.F"`
+if [ ! -z "$PARAM" ] ; then 
+  NRAYT=`grep "radiative_transfer\ model" ${param} | grep -v "off" |wc -l`
+  if [ $NRAYT -eq 1 ] ; then
+    USRAY2_PRESENT="oui"
+  fi
+fi
+
+# Charbon pulverise
+USCPCL_PRESENT=`presence "${cur_dir}/uscpcl.F"`
+if [ ! -z "$PARAM" ] ; then 
+  NCHARB=`grep "pulverized_coal\ model" ${param} | grep -v "off" |wc -l`
+  if [ $NCHARB -eq 1 ] ; then
+    USCPCL_PRESENT="oui"
+  fi
+fi
+
+# Combustion gaz chimie 3 points
+USD3PC_PRESENT=`presence "${cur_dir}/usd3pc.F"`
+
+# Combustion gaz EBU
+USEBUC_PRESENT=`presence "${cur_dir}/usebuc.F"`
+
+# Combustion gaz LWC
+USLWCC_PRESENT=`presence "${cur_dir}/uslwcc.F"`
+
+# Electrique
+USELCL_PRESENT=`presence "${cur_dir}/uselcl.F"`
+
+# Compressible
+USCFCL_PRESENT=`presence "${cur_dir}/uscfcl.F"`
+
+# Fuel
+USFUCL_PRESENT=`presence "${cur_dir}/usfucl.F"`
+
+# Tests de compatibilite
+
+if [ "${USCPCL_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque le modele de combustion du charbon pulverise"
+    echo "  est active, usclim ne doit pas etre utilise"
+    echo "  Les conditions aux limites sont fournies dans"
+    echo "  l interface graphique ou dans uscpcl."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USD3PC_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque usd3pc est complete, usclim ne doit pas l'etre"
+    echo "  (modele combustion chimie trois points)"
+    echo "  Les conditions aux limites sont fournies dans usd3pc."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USEBUC_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque usebuc est complete, usclim ne doit pas l'etre"
+    echo "  (modele combustion EBU)"
+    echo "  Les conditions aux limites sont fournies dans usebuc."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USLWCC_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque uslwcc est complete, usclim ne doit pas l'etre"
+    echo "  (modele combustion LWC)"
+    echo "  Les conditions aux limites sont fournies dans uslwcc."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USELCL_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque uselcl est complete, usclim ne doit pas l'etre"
+    echo "  (modele electrique)"
+    echo "  Les conditions aux limites sont fournies dans uselcl."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USCFCL_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque uscfcl est complete, usclim ne doit pas l'etre"
+    echo "  (modele compressible)"
+    echo "  Les conditions aux limites sont fournies dans uscfcl."
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ "${USFUCL_PRESENT}" = "oui" ] ; then
+  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Lorsque usfucl est complete, usclim ne doit pas l'etre"
+    echo "  (modele fuel)"
+    echo "  Les conditions aux limites sont fournies dans usfucl."
+    echo ""
+    exit 1
+  fi
+fi
+
+# Traduction 
+if [ "${USLAG2_PRESENT}" = "oui" ] ; then
+  LAGRANGIEN=oui
+  echo ""
+  echo " Utilisation du module lagrangien "  
+  echo ""
+else
+  LAGRANGIEN=non
+fi
+if [ "${USRAY2_PRESENT}" = "oui" ] ; then
+  RAYONNEMENT=oui
+  echo ""
+  echo " Utilisation du module rayonnement "  
+  echo ""
+else
+  RAYONNEMENT=non
+fi
+COMBUSTION=non
+if [ "${USCPCL_PRESENT}" = "oui" ] ; then
+  COMBUSTION=oui
+  COMBUSTION_CPP=oui
+  echo ""
+  echo " Utilisation du module combustion charbon pulverise "  
+  echo ""
+else
+  COMBUSTION_CPP=non
+fi
+if [ "${USD3PC_PRESENT}" = "oui" ] ; then
+  COMBUSTION=oui
+  COMBUSTION_C3P=oui
+  echo ""
+  echo " Utilisation du module combustion chimie trois points "  
+  echo ""
+else
+  COMBUSTION_C3P=non
+fi
+if [ "${USEBUC_PRESENT}" = "oui" ] ; then
+  COMBUSTION=oui
+  COMBUSTION_EBU=oui
+  echo ""
+  echo " Utilisation du module combustion EBU "  
+  echo ""
+else
+  COMBUSTION_EBU=non
+fi
+if [ "${USLWCC_PRESENT}" = "oui" ] ; then
+  COMBUSTION=oui
+  COMBUSTION_LWC=oui
+  echo ""
+  echo " Utilisation du module combustion LWC "  
+  echo ""
+else
+  COMBUSTION_LWC=non
+fi
+if [ "${USELCL_PRESENT}" = "oui" ] ; then
+  ELECTRIQUE=oui
+  echo ""
+  echo " Utilisation du module electrique "  
+  echo ""
+else
+  ELECTRIQUE=non
+fi
+
+if [ "${USCFCL_PRESENT}" = "oui" ] ; then
+  COMPRESSIBLE=oui
+  echo ""
+  echo " Utilisation du module compressible "  
+  echo ""
+else
+  COMPRESSIBLE=non
+fi
+
+if [ "${USFUCL_PRESENT}" = "oui" ] ; then
+  FUEL=oui
+  echo ""
+  echo " Utilisation du module fuel "
+  echo ""
+else
+  FUEL=non
+fi
+
+# Pas de lagrangien en parallele
+if [ "${LAGRANGIEN}" = "oui" ] ; then 
+  if [ ${nproc_noy} -gt 1 ] ; then 
+    echo ""
+    echo " -- ERREUR -- "
+    echo " Le mode parallele est incompatible avec le module Lagrangien"
+    echo "  dans la version courante.                          "
+    echo ""
+    exit 1
+  fi
+fi
+
+########################################################################
