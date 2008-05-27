@@ -1,6 +1,7 @@
 
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
-  Removing native matrix-vector product from C call
+  Removing native matrix-vector product from C call.
+  Changing CSR matrix format behaviour.
   modifified routine:
     src/base/cs_matrix.c
 
