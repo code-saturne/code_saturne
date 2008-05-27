@@ -100,7 +100,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER IFAC,II,JJ,IEL,IDIMTE,ITENSO
+      INTEGER IFAC,II,JJ,IEL,IDIMTE,ITENSO,IMODE
 C
 C***********************************************************************
 C
@@ -122,6 +122,12 @@ C
 C
 C     2 - PRODUIT MATRICE/VECTEUR TERMES X-TRADIAGONAUX
 C     -------------------------------------------------
+C
+      IF (IPERIO.EQ.1. .AND. IINVPE.EQ.3) THEN
+        IMODE = 0
+        CALL PERSVR(IMODE, VX)
+C       ===========
+      ENDIF
 C
 C ---> TRAITEMENT DU PARALLELISME
 C
@@ -159,6 +165,9 @@ C           ===========
      &    VX     , VX     , VX    ,
      &    VX     , VX     , VX    ,
      &    VX     , VX     , VX    )
+            IMODE = 1
+            CALL PERSVR(IMODE, VX)
+C           ===========
           ENDIF
       ENDIF
 C

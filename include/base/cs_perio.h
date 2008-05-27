@@ -164,6 +164,31 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
+ * Save or restore rotation terms in halo for a cell variable.
+ *
+ * Only the terms from one variable may be saved at a time, and they
+ * must be restored before other terms may be saved.
+ *
+ * This function may be used to cancel the effect of halo synchronization
+ * for for rotational periodicities, by saving halo rotation terms
+ * before halo synchronization, and restoring them after synchronization.
+ *
+ * Fortran API:
+ *
+ * SUBROUTINE PERSVR
+ * *****************
+ *
+ * INTEGER          IMODE         :  -> : mode
+ *                                        0 : save halo rotation terms
+ *                                        1 : restore halo rotation terms
+ * DOUBLE PRECISION VAR(NCELET)   :  -  : cell variable
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (persvr, PERSVR) (const cs_int_t  *mode,
+                           cs_real_t        var[]);
+
+/*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
  *
  * If INIMAS is called by NAVSTO :
@@ -511,6 +536,47 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
                        cs_real_t        var11[],
                        cs_real_t        var22[],
                        cs_real_t        var33[]);
+
+/*----------------------------------------------------------------------------
+ * Save rotation terms of a halo to a buffer.
+ *
+ * parameters:
+ *   halo        --> pointer to halo structure
+ *   op_type     --> kind of halo treatment (standard or extended)
+ *   var         --> variable whose halo rotation terms are to be saved
+ *                   (size: halo->n_local_elts + halo->n_elts[opt_type])
+ *   save_buffer <-- buffer in which the rotation halo terms are to be saved
+ *                   (size: halo->n_elts[op_type])
+ *
+ * returns:
+ *   local number of values saved or restored.
+ *----------------------------------------------------------------------------*/
+
+size_t
+cs_perio_save_rotation_halo(const cs_halo_t   *halo,
+                            cs_halo_type_t     op_type,
+                            const cs_real_t    var[],
+                            cs_real_t          save_buffer[]);
+
+/*----------------------------------------------------------------------------
+ * Restore rotation terms of a halo from a buffer.
+ *
+ * parameters:
+ *   halo        --> pointer to halo structure
+ *   op_type     --> kind of halo treatment (standard or extended)
+ *   var         <-> variable whose halo rotation terms are to be restored
+ *   save_buffer --> buffer in which the rotation halo terms were saved
+ *                   (size: halo->n_elts[op_type])
+ *
+ * returns:
+ *   local number of values saved or restored.
+ *----------------------------------------------------------------------------*/
+
+size_t
+cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
+                               cs_halo_type_t     op_type,
+                               cs_real_t          var[],
+                               const cs_real_t    save_buffer[]);
 
 /*----------------------------------------------------------------------------
  * Define parameters for building an interface set structure on the main mesh.

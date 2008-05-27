@@ -1,4 +1,13 @@
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding two routines to save and restore the halos
+  with a rotation periodicity (before doing a matrix
+  vector product under certain circumstances)
+  modified routines:
+    include/base/cs_perio.h
+    src/base/promav.F
+    src/base/cs_perio.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Updating the halo structure in order to prepare
   for a parallel and periodic multigrid algorithm.
   modified routines:
