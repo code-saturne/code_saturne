@@ -1,4 +1,9 @@
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a warning in case of rotation periodicity
+  modified routines:
+    src/base/cs_matrix.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding two routines to save and restore the halos
   with a rotation periodicity (before doing a matrix
   vector product under certain circumstances)
