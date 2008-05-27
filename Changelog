@@ -1,3 +1,8 @@
+* 26/05/2008 - David Monfort <david.monfort@edf.fr>
+  Correcting wrong arguments in RAYDAK
+  modified routine:
+    raydak.F
+
 * 21/05/2008 - David Monfort <david.monfort@edf.fr>
   Bug correction in halos definition arising in some
   very rare cases (ported from trunk).
