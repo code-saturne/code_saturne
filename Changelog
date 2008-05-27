@@ -1,4 +1,12 @@
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding support for a shared library on Linux systems.
+  modified routines:
+    bin/lance_install
+    bin/Makefile
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding a sub-script to check FORTRAN user files consistency.
   Adding a script to clean the directories.
   Updating the compiler for EDF Calibre 5 workstations.
