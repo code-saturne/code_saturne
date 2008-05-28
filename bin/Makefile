@@ -197,11 +197,6 @@ comp:
 	@make privfin
 
 
-foresys:
-	@make privtitre 
-	@make privforesys
-
-
 privcomp:
 	@make privconfig
 	@make privcompil
@@ -393,63 +388,6 @@ privcompil:
 				              $(FTNCOMPFLAGS)"  ;\
 	 fi
 	@echo "***  Compilation finished"   ; echo
-
-#
-# privforesys recognizes the working directory (module and OPT),
-#            makes a symbolic link to the source files (in case of build),
-#            generates the dependency lists,
-#            and sets OBJECTS and compiler options.
-#
-
-privforesys:
-	 @dirtrav=`pwd` ;\
-	 dirprec=`dirname $${dirtrav}` ;\
-	 if   [ "$${dirprec}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
-	 then opttrav="" ;\
-	      modtrav=`basename $${dirtrav}` ;\
-	 else dirprec1=`dirname $${dirprec}` ;\
-	      if   [ "$${dirprec1}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
-	      then opttrav=`basename $${dirtrav}` ;\
-	           modtrav=`basename $${dirprec}` ;\
-	      else opttrav="$(MYOPT)" ;\
-	           modtrav="" ;\
-	      fi ;\
-	 fi ;\
-	 if   [ "$${modtrav}" = "FORESYS" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cfbl $(INC_CS)/mati" ;\
-	      src_cs_all="$(USR_CS)/base $(SRC_CS)/base $(SRC_CS)/pprt\
-	                  $(USR_CS)/cogz $(SRC_CS)/cogz\
-	                  $(USR_CS)/cplv $(SRC_CS)/cplv\
-	                  $(USR_CS)/elec $(SRC_CS)/elec\
-                        $(USR_CS)/fuel $(SRC_CS)/fuel\
-	                  $(USR_CS)/lagr $(SRC_CS)/lagr\
-	                  $(USR_CS)/rayt $(SRC_CS)/rayt\
-	                  $(SRC_CS)/mati\
-                        $(USR_CS)/cfbl $(SRC_CS)/cfbl";\
-		 for dir in $${src_cs_all} $${inc_cs_all}  ;\
-		 do for fich in $${dir}/*.[F,h] ;\
-		    do if [ -f "$${fich}" ] ;\
-		       then fichloc=`basename $${fich}` ;\
-		            cp $${fich} $${fichloc} ;\
-		       fi ;\
-		     done ;\
-		  done ;\
-		 for dir in $${src_cs_all} $${inc_cs_all}  ;\
-		 do for fich in $${dir}/*.[F,h] ;\
-		    do if [ -f "$${fich}" ] ;\
-		       then fichloc=`basename $${fich}` ;\
-		    	      preproc="non" ;\
-		            grep '#' $${fichloc}  1> /dev/null 2>&1 && preproc="oui" ;\
-			      if [ "$${preproc}" = "oui" ] ;\
-			      then cc -P $(VARDEF) $(FTNCOMPFLAGSDEF) $${fichloc} ;\
-			           ext=`echo $${fichloc}|awk -F. '{print $$2}'` ;\
-			           fic=`echo $${fichloc}|awk -F. '{print $$1}'` ;\
-			 	     mv $${fic}.i $${fic}.$${ext} ;\
-			      fi ;\
-		       fi ;\
-		     done ;\
-		  done ;\
-	 fi 	   
 
 #
 # privdepend genere les listes de dependance
