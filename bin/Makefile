@@ -61,11 +61,6 @@ NOM_EXE        = "cs14.exe"
 NOM_SO         = "libcs14.so"
 
 
-# Purify
-
-PURIFY         = purify
-
-
 # OS-specific macros
 # ==================
 
@@ -76,7 +71,7 @@ include $(BIN_CS)/macros_$(NOM_ARCH).mk
 # User macros
 #============
 
-# Definition of the chosen mode (EF, PUR, DBG ...)
+# Definition of the chosen mode (EF, DBG ...)
 
 MYOPT           = $(OPT)
 
@@ -100,8 +95,6 @@ LIBRARYLO     = $(LIBLO)
 
 LIBRARYDBG    = $(LIBDBG)
 
-LIBRARYPUR    =
-
 LIBRARYEF     = $(LIBEF)
 
 LIBRARY       = $(LIBBASIC)
@@ -122,17 +115,14 @@ NO = `tput rmso; tput sgr0`
 
 .c.o:
 	@echo $<
-	@\rm -f $*_pure*.o
 	$(CCOMP)   $(INC_CS_I) $(ALLCCOMPFLAGS) -c $<
 
 #%.o : %.F95
 #	@echo $<
-#	@\rm -f $*_pure*.o
 #	$(FTNCOMP) $(ALLFCOMPFLAGS) -c $<
 
 .F.o:
 	@echo $<
-	@\rm -f $*_pure*.o
 	$(FTNCOMP) $(ALLFCOMPFLAGS) -c $<
 
 
@@ -323,13 +313,6 @@ privcompil:
 	                         INC_CS_I="$${dir_inc_cs}" \
                    ALLCCOMPFLAGS=" $${cflags} $(MYCCOMPFLAGS) \
 				    -DDEBUG   $(CCOMPFLAGSDBG)"  \
-                   ALLFCOMPFLAGS=" $${fflags} $(MYFTNCOMPFLAGS) \
-				              $(FTNCOMPFLAGSDBG)"  ;\
-	 elif [ "$(MYOPT)" = "PUR" ] ;\
-	 then make privdependobj OBJECTS="`cat .liste_mkfiles.o`" \
-                                 INC_CS_I="$${dir_inc_cs}" \
-                   ALLCCOMPFLAGS=" $${cflags} $(MYCCOMPFLAGS) \
-				    -DNDEBUG  $(CCOMPFLAGSDBG)" \
                    ALLFCOMPFLAGS=" $${fflags} $(MYFTNCOMPFLAGS) \
 				              $(FTNCOMPFLAGSDBG)"  ;\
 	 elif [ "$(MYOPT)" = "PROF" ] ;\
@@ -598,38 +581,6 @@ privmodso:
 	@ls -l $(NOM_SO)
 	@make privfin
 
-# same as in privmodlink, duplicate librariesloc at link to
-#     ensure all modules are found (due to crossed dependencies)
-privmodpurify:
-	@for fichobj in *.c ;\
-	 do \
-	     nom=`basename $${fichobj} .c` ;\
-             nom=`ls -1 $${nom}*.o | grep -v _pure_` ;\
-	     objinstr="$${objinstr} $${nom}" ;\
-	 done ;\
-	 for fichobj in *.F ;\
-	 do \
-	     nom=`basename $${fichobj} .F` ;\
-             nom=`ls -1 $${nom}*.o | grep -v _pure_` ;\
-	     objinstr="$${objinstr} $${nom}" ;\
-	 done ;\
-	 for fichobj in *.F95 ;\
-	 do \
-	     nom=`basename $${fichobj} .F95` ;\
-             nom=`ls -1 $${nom}*.o | grep -v _pure_` ;\
-	     objinstr="$${objinstr} $${nom}" ;\
-	 done ;\
-	 librariesloc=""; \
-	 for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
-	 do \
-	     librariesloc="$${librariesloc} $(ARCHLIB_CS)/lib$(NOM_LIB_CS_PRE)$${lib}$(MYOPT).a" ;\
-	 done ;\
-	$(PURIFY) $(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS) $${objinstr} \
-	           $${librariesloc} $${librariesloc} $(LIBRARY) $(MYLIBS)
-	@echo "***  Linking finished"; echo
-	@make privmodexe
-
-
 #
 # privlib generates the library 
 #           its name is based on the working directory
@@ -777,8 +728,6 @@ privlink:
 	 then library="$${library} $(LIBRARYDBG) " ;\
 	 elif [ "$(MYOPT)" = "EF" ]  ;\
 	 then library="$${library} $(LIBRARYEF) " ;\
-	 elif [ "$(MYOPT)" = "PUR" ]  ;\
-	 then library="$${library} $(LIBRARYPUR) " ;\
 	 elif [ "$(MYOPT)" = "PROF" ]  ;\
 	 then library="$${library} $(LIBRARYOPT) " ;\
 	 elif [ "$(MYOPT)" = "VERS" ]  ;\
@@ -812,10 +761,6 @@ privlink:
 	                 LIBRARY="$${library}" ;\
 	 elif [ "$(MYOPT)" = "EF" ]  ;\
 	 then make privmodlink \
-	           ALLLDEDLFLAGS="$(MYLDEDLFLAGS) $(LDEDLFLAGSDBG)" \
-	                 LIBRARY="$${library}" ;\
-	 elif [ "$(MYOPT)" = "PUR" ] ;\
-	 then make privmodpurify \
 	           ALLLDEDLFLAGS="$(MYLDEDLFLAGS) $(LDEDLFLAGSDBG)" \
 	                 LIBRARY="$${library}" ;\
 	 elif [ "$(MYOPT)" = "PROF" ] ;\
@@ -995,7 +940,6 @@ help info:
 	@echo "                $(BO)EF$(NO)       : option for debug with ElectricFence"
 	@echo "                $(BO)VERS$(NO)     : option for compiler versions"
 	@echo "                $(BO)PROF$(NO)     : option for profiling"
-	@echo "                $(BO)PUR$(NO)      : option for link with Purify"
 	@echo
 	@echo "     and the additional user options:"
 	@echo "     $(SO)<OPTC>$(NO)    : C compiler options"

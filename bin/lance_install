@@ -63,7 +63,7 @@
     echo " Exemples :                                                        "
     echo "   lance_install                                                   "
     echo "   lance_install BASE LAGR BASE/DBG                                "
-    echo "   lance_install -PUR                                              "
+    echo "   lance_install -DBG                                              "
     echo
     echo
     echo " Cas particuliers :                                                "
@@ -242,7 +242,7 @@ Macro_readme_comp=$2
  listemoddef="BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
 #
 # Liste de toutes les options
- listeoptall="LO DBG EF PROF PUR"
+ listeoptall="LO DBG EF PROF"
 #
 #
 # Aide

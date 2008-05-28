@@ -223,7 +223,7 @@ Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont
     des options plus avancees, a usage des developpeurs.
 
   OPTIMISATION permet de specifier l'optimisation selectionnee 
-    (LO, DBG, EF, PROF, PUR...). Par defaut, les choix
+    (LO, DBG, EF, PROF, ...). Par defaut, les choix
     standards de Code_saturne sont utilises. Ce parametre est 
     surtout utile en developpement pour utiliser les bibliotheques
     sans optimisation, en debug, etc. Il est donc conseille de 
