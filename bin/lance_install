@@ -242,7 +242,7 @@ Macro_readme_comp=$2
  listemoddef="BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
 #
 # Liste de toutes les options
- listeoptall="LO DBG EM EF PROF PUR"
+ listeoptall="LO DBG EF PROF PUR"
 #
 #
 # Aide
