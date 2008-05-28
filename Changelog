@@ -1,3 +1,12 @@
+* 28/05/2008 - David Monfort <david.monfort@edf.fr> 
+  Removing the parts of the compilation scripts concerning
+  the Purify and Foresys tools, as they are no more used.
+  modified routines:
+    bin/lance_install
+    bin/lance.help
+    bin/Makefile
+    doc/USERS/latex/saturne1.tex
+
 * 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplifying the command line option for a parallel run.
   modified routines:
