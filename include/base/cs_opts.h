@@ -96,6 +96,11 @@ typedef struct {
   cs_bool_t      cwf;            /* CS_TRUE if cut is required */
   double         cwf_criterion;  /* Criterion to choose which face to cut */
 
+  /* Connection with proxy */
+
+  char          *proxy_socket;   /* Name of proxy socket */
+  int            proxy_key;      /* Key for connection to proxy */
+
 } cs_opts_t;
 
 /*=============================================================================

@@ -94,6 +94,12 @@ extern "C" {
 
 typedef void (*_cs_base_sighandler_t) (int);
 
+/*----------------------------------------------------------------------------
+ * Prototypes de fonctions privées nécessaires aux variables globales.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_exit(int status);
 
 /*============================================================================
  * Variables globales associées a la librairie
@@ -108,8 +114,9 @@ MPI_Comm  cs_glob_base_mpi_comm = MPI_COMM_NULL;      /* Intra-communicateur  */
 
 bft_error_handler_t  *cs_glob_base_gest_erreur_sauve = NULL;
 
-
 /* Variables globales statiques (variables privées de cs_base.c) */
+
+static cs_bool_t  cs_glob_base_bft_mem_init = CS_FALSE;
 
 static cs_bool_t  cs_glob_base_chaine_init = CS_FALSE;
 static cs_bool_t  cs_glob_base_chaine_libre[CS_BASE_NBR_CHAINE];
@@ -130,6 +137,10 @@ static _cs_base_sighandler_t cs_glob_base_sigsegv_sauve = SIG_DFL;
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_sauve = SIG_DFL;
 #endif
+
+/* Variables globales associées à des pointeurs de fonction */
+
+static cs_exit_t  *_cs_glob_exit = (_cs_base_exit);
 
 /* Variables globales associées à l'instrumentation */
 
@@ -328,6 +339,36 @@ _cs_base_err_printf(const char  *format,
   va_end(arg_ptr);
 }
 
+/*----------------------------------------------------------------------------
+ * Fonction de sortie
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_exit(int status)
+{
+#if defined(_CS_HAVE_MPI)
+  {
+    int mpi_flag;
+
+    MPI_Initialized(&mpi_flag);
+
+    if (mpi_flag != 0) {
+
+      if (status != EXIT_SUCCESS)
+        MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
+
+      else { /*  if (status == EXIT_SUCCESS) */
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Finalize();
+
+      }
+    }
+  }
+#endif /* _CS_HAVE_MPI */
+
+  exit(status);
+}
 
 /*----------------------------------------------------------------------------
  * Fonction d'arret du code en cas d'erreur
@@ -355,18 +396,7 @@ _cs_base_gestion_erreur(const char  *nom_fic,
 
   bft_backtrace_print(3);
 
-#if defined(_CS_HAVE_MPI)
-  {
-    int mpi_flag;
-
-    MPI_Initialized(&mpi_flag);
-
-    if (mpi_flag != 0)
-      MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
-  }
-#endif /* _CS_HAVE_MPI */
-
-  exit(EXIT_FAILURE);
+  _cs_glob_exit(EXIT_FAILURE);
 }
 
 /*----------------------------------------------------------------------------
@@ -480,19 +510,7 @@ _cs_base_sig_fatal(int  signum)
 
   bft_backtrace_print(3);
 
-#if defined(_CS_HAVE_MPI)
-
-  {
-    int mpi_flag;
-
-    MPI_Initialized (&mpi_flag);
-    if (mpi_flag != 0)
-      MPI_Abort (MPI_COMM_WORLD, EXIT_FAILURE);
-  }
-
-#endif
-
-  exit(EXIT_FAILURE);
+  _cs_glob_exit(EXIT_FAILURE);
 }
 
 #if defined(_CS_HAVE_MPI)
@@ -561,9 +579,7 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 
   bft_backtrace_print(3);
 
-  MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
-
-  exit(EXIT_FAILURE);
+  _cs_glob_exit(EXIT_FAILURE);
 }
 
 #endif
@@ -817,12 +833,8 @@ void cs_exit
     bft_backtrace_print(2);
 
   }
-  else {
 
-    /* Fermeture des listings */
-    CS_PROCF(csclli, CSCLLI)();
-
-  }
+  CS_PROCF(csclli, CSCLLI)(); /* Fermeture des listings */
 
 #if defined(_CS_HAVE_MPI)
 
@@ -833,22 +845,15 @@ void cs_exit
 
     if (mpi_flag != 0) {
 
-      if (statut == EXIT_FAILURE) {
-        MPI_Abort(MPI_COMM_WORLD, statut);
-      }
-      else {
+      if (statut != EXIT_FAILURE) {
         _cs_base_mpi_fin();
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Finalize();
       }
-
     }
-
   }
 
 #endif /* _CS_HAVE_MPI */
 
-  exit(statut);
+  _cs_glob_exit(statut);
 }
 
 
@@ -928,7 +933,13 @@ void cs_base_mem_init
 
   }
 
-  bft_mem_init(nom_complet);
+  if (bft_mem_initialized())
+    cs_glob_base_bft_mem_init = false;
+
+  else {
+    cs_glob_base_bft_mem_init = true;
+    bft_mem_init(nom_complet);
+  }
 
   if (nom_complet != NULL)
     free (nom_complet);
@@ -1053,7 +1064,8 @@ void cs_base_mem_fin
 
   /* Arrêt de la gestion mémoire */
 
-  bft_mem_end();
+  if (cs_glob_base_bft_mem_init == true)
+    bft_mem_end();
 
   /* Arrêt du comptage mémoire */
 
@@ -1364,6 +1376,21 @@ char  * cs_base_chaine_f_vers_c_detruit
   return c_str;
 }
 
+
+/*----------------------------------------------------------------------------
+ * Modification du comportement de sortie du programme par défaut
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_exit_set(cs_exit_t *exit_func)
+{
+  _cs_glob_exit = exit_func;
+}
+
+
+/*============================================================================
+ * Fonctions privées
+ *============================================================================*/
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

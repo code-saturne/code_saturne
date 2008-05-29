@@ -208,6 +208,9 @@ typedef enum {
   CS_TYPE_void
 } cs_type_t;
 
+/* Exit function prototype */
+
+typedef void (cs_exit_t) (int status);
 
 /*=============================================================================
  * Global variable definitions
@@ -404,6 +407,15 @@ cs_base_chaine_f_vers_c_cree(const char  *f_str,
 char  *
 cs_base_chaine_f_vers_c_detruit(char  *c_str);
 
+/*----------------------------------------------------------------------------
+ * Modify program exit behavior setting a specific exit function.
+ *
+ * parameters:
+ *   exit_func <-- pointer to exit function which should be used
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_exit_set(cs_exit_t *exit_func);
 
 /*----------------------------------------------------------------------------*/
 

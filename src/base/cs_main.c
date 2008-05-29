@@ -73,6 +73,7 @@
 #include "cs_mesh_coherency.h"
 #include "cs_opts.h"
 #include "cs_pp_io.h"
+#include "cs_proxy_comm.h"
 #include "cs_renumber.h"
 #include "cs_sles.h"
 #include "cs_suite.h"
@@ -274,6 +275,16 @@ int main
   /* Entête et rappel des options de la ligne de commande */
 
   cs_opts_logfile_head(argc, argv);
+
+  /* Connexion éventuelle avec le lanceur CFD_Proxy */
+
+  if (opts.proxy_socket != NULL) {
+    cs_proxy_comm_initialize(opts.proxy_socket,
+                             opts.proxy_key,
+                             CS_PROXY_COMM_TYPE_SOCKET);
+    BFT_FREE(opts.proxy_socket);
+    opts.proxy_key = -1;
+  }
 
   /* Infos système */
 
@@ -520,6 +531,10 @@ int main
 
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);
+
+  /* Fin de communication éventuelle avec un proxy */
+
+  cs_proxy_comm_finalize();
 
   /* Temps CPU et finalisation de la gestion mémoire */
 

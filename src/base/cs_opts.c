@@ -746,6 +746,9 @@ cs_opts_define(int         argc,
   const char *s;
   int arg_id = 0, argerr = 0;
 
+  const char socketoptbase[] = "--proxy-socket=";
+  const char keyoptbase[] = "--proxy-key=";
+
   /* Default initialization */
 
   opts->ifoenv = 1;
@@ -762,6 +765,9 @@ cs_opts_define(int         argc,
 
   opts->cwf = CS_FALSE;
   opts->cwf_criterion = 0.01;
+
+  opts->proxy_socket = NULL;
+  opts->proxy_key = -1;
 
   /* Parse command line arguments */
 
@@ -861,6 +867,27 @@ cs_opts_define(int         argc,
         }
       }
     }
+
+#if defined(_CS_HAVE_SOCKET)
+
+    /* Proxy connection options (do not appear in help as they
+       are not destined to be used directly by a user) */
+
+    else if (strncmp(s, socketoptbase, strlen(socketoptbase)) == 0) {
+      const char *_s = s + strlen(socketoptbase);
+      BFT_MALLOC(opts->proxy_socket, strlen(_s) + 1, char);
+      strcpy(opts->proxy_socket, _s);
+    }
+
+    else if (strncmp(s, keyoptbase, strlen(keyoptbase)) == 0) {
+      const char *_start = s + strlen(keyoptbase);
+      char *_end = NULL;
+      opts->proxy_key = strtol(_start, &_end, 0);
+      if (_end != _start + strlen(_start))
+        argerr = 1;
+    }
+
+#endif /* defined(_CS_HAVE_SOCKET) */
 
     /* Usage */
 

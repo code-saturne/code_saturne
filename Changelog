@@ -1,4 +1,20 @@
 * 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding communications with a proxy, in order to prepare
+  the Code_Saturne/Code_Aster coupling via Salomé/YACS.
+  modified routines:
+    include/base/cs_opts.h
+    include/base/cs_base.h
+    src/base/cs_base.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+
+  added routines:
+    include/base/cs_calcium.h
+    include/base/cs_proxy_comm.h
+    src/base/cs_proxy_comm.c
+    src/base/cs_calcium.c
+
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Modification of the behaviour of renumbering.
   modified routines:
     include/base/cs_post.h
