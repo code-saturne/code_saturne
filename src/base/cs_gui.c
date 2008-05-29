@@ -4861,6 +4861,16 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
   icoftu[6] = _user_array("real_user_array", "nfabor");
   icoftu[7] = _user_array("real_user_array", "dimless");
 
+  icoftu[8]  = _user_array("integer_work_array", "ncelet");
+  icoftu[9]  = _user_array("integer_work_array", "nfac");
+  icoftu[10] = _user_array("integer_work_array", "nfabor");
+  icoftu[11] = _user_array("integer_work_array", "dimless");
+
+  icoftu[12] = _user_array("real_work_array", "ncelet");
+  icoftu[13] = _user_array("real_work_array", "nfac");
+  icoftu[14] = _user_array("real_work_array", "nfabor");
+  icoftu[15] = _user_array("real_work_array", "dimless");
+
 
 #if _XML_DEBUG_
   bft_printf(_("==>UIUSAR\n"));
@@ -4868,6 +4878,10 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
                 icoftu[0],icoftu[1],icoftu[2],icoftu[3]);
   bft_printf(_("           %i %i %i %i\n"),
                 icoftu[4],icoftu[5],icoftu[6],icoftu[7]);
+  bft_printf(_("--icoftu = %i %i %i %i\n"),
+                icoftu[8],icoftu[9],icoftu[10],icoftu[11]);
+  bft_printf(_("           %i %i %i %i\n"),
+                icoftu[12],icoftu[13],icoftu[14],icoftu[15]);
 #endif
 }
 

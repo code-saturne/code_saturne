@@ -136,12 +136,6 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -solcom           Noyau autonome avec maillage \"geomet\" au\n"
           "                   format SolCom (obsolète) ;\n"));
-  fprintf
-    (e, _(" -iasize           taille du tableau de travail entier IA ;\n"
-          "                    n : nombre d'entiers (défaut : automatique)\n"
-          " -rasize           taille du tableau de travail réel RA ;\n"
-          "                    n : nombre de réels (defaut : automatique)\n"));
-
 #if defined(_CS_HAVE_MPI)
   fprintf
     (e, _(" -mpi, --mpi       activation du parallélisme ;\n"
@@ -754,9 +748,6 @@ cs_opts_define(int         argc,
   opts->ifoenv = 1;
   opts->echo_comm = -1;
 
-  opts->longia =  0;
-  opts->longra =  0;
-
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
 
@@ -780,11 +771,6 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "-ec") == 0 || strcmp(s, "--echo-comm") == 0)
       opts->echo_comm = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
-
-    else if (strcmp(s, "-iasize") == 0)
-      opts->longia = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
-    else if (strcmp(s, "-rasize") == 0)
-      opts->longra = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
 
 #if defined(_CS_HAVE_MPI)
 
@@ -900,7 +886,6 @@ cs_opts_define(int         argc,
 
   /* End initialization (sanity check) */
   if (opts->echo_comm < -1) argerr = 1;
-  if (opts->longia <  0 || opts->longra < 0) argerr = 1;
 
   /* Print help and exit if required or in case of command line error */
   if (argerr != 0) {

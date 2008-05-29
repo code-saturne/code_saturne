@@ -30,7 +30,7 @@ c@verse
                         SUBROUTINE INITI1
 C                       *****************
 C     -------------------------------------------------------------
-     & ( LONGIB , LONGRB , IDBIA0 , IDBRA0, IVERIF )
+     & ( IVERIF )
 C     -------------------------------------------------------------
 C***********************************************************************
 C  FONCTION  :
@@ -75,13 +75,7 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
-      INCLUDE "memoir.h"
-      INCLUDE "cstnum.h"
-      INCLUDE "dimens.h"
-      INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
-      INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "matiss.h"
 C
@@ -89,7 +83,6 @@ C***********************************************************************
 C
 C ARGUMENTS
 C
-      INTEGER          LONGIB, LONGRB, IDBIA0, IDBRA0
       INTEGER          IVERIF
 C
 C VARIABLES LOCALES
@@ -97,16 +90,6 @@ C
       INTEGER          IOK
 C
 C***********************************************************************
-C
-C=======================================================================
-C 0. LONGIB et LONGRB s'appellent longia et longra dans cs_main
-C    On souhaite les faire transiter par COMMON sous le nom de
-C      LONGIA et LONGRA et on doit donc les appeler differemment
-C      dans les arguments.
-C=======================================================================
-C
-      LONGIA = LONGIB
-      LONGRA = LONGRB
 C
 C=======================================================================
 C 1. INITIALISATION DES VARIABLES EN COMMON
@@ -208,35 +191,14 @@ C=======================================================================
 C 5. IMPRESSIONS
 C=======================================================================
 C
-       CALL IMPINI
-C      ===========
+      CALL IMPINI
+C     ===========
 C
-       IF (IMATIS.EQ.1) THEN
-         CALL MTIMPI
-C        ===========
-       ENDIF
-C
-C=======================================================================
-C 7. DIMENSIONNEMENT MEMOIRE PAR DEFAUT
-C=======================================================================
-C
-C
-      IF (LONGIA .EQ. 0) THEN
-         LONGIA =  30 * MAX (NCEL, NFABOR)
+      IF (IMATIS.EQ.1) THEN
+        CALL MTIMPI
+C       ===========
       ENDIF
 C
-      IF (LONGRA .EQ. 0) THEN
-         LONGRA = 120 * MAX (NCEL, NFABOR)
-      ENDIF
-C
-      MTOTIA = LONGIA
-      MTOTRA = LONGRA
-C
-      LONGIB = LONGIA
-      LONGRB = LONGRA
-C
-      IDBIA0 = 1
-      IDBRA0 = 1
 C
       RETURN
       END

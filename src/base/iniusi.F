@@ -86,7 +86,6 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "vector.h"
@@ -574,9 +573,6 @@ C
           CALL CFNMVA(NOMVAR(II), LEN(NOMVAR(II)), II)
 C         ===========
         ENDDO
-C
-        CALL UIUSAR(ICOFTU)
-C       ===========
 C
       ENDIF
 C

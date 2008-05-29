@@ -2,24 +2,6 @@ AIDE AU REMPLISSAGE DU FICHIER lance
 ====================================
 ====================================
 
-L'utilisateur peut avoir a modifier la taille des tableaux 
-  d'entiers et de reels ici : LONGIA et LONGRA respectivement
-Le nombre d'entiers LONGIA et le nombre de reels LONGRA 
-  dependent des options de calcul, du type d'elements, 
-  des caracteristiques du maillage (2d, 3d, hybride, 
-  non conforme ...) et du nombre de variables, par exemple.
-  En k-epsilon, si on note NCEL le nombre de cellules du 
-  maillage, on peut la plupart du temps utiliser la majoration 
-  grossiere suivante : LONGIA =  45*NCEL et LONGRA = 220*NCEL
-  En Rij-epsilon, une majoration de 20% pourra etre appliquee.
-  Ces valeurs sont relativement elevees pour prendre en compte
-  les maillages 2D qui comprennent de nombreuses faces de bord :
-  une formule plus precise mais plus complexe serait necessaire.
-  Pour les gros cas 3D, une estimation plus precise est donnee 
-  par : LONGIA =  25*NCEL et LONGRA = 120*NCEL.
-
-               -------------------------------
-
 L'utilisateur peut souhaiter ne pas utiliser le preprocesseur
   (uniquement pour les maillages *tlc *slc) : positionner
    SOLCOM=1

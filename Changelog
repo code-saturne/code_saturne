@@ -1,3 +1,26 @@
+* 29/05/2008 - David Monfort <david.monfort@edf.fr> 
+  The size of the work arrays IA and RA is now defined
+  with a FORTRAN user file and no more via the scripts,
+  making them independent of the number of sub-domains
+  in case of a parallel run.
+  modified routines:
+    users/base/usini1.F
+    include/base/cs_opts.h
+    include/base/dimens.h
+    include/base/memoir.h
+    doc/USER/latex/saturne1.tex
+    src/base/initi1.F
+    src/base/impini.F
+    src/base/cs_main.c
+    src/base/caltri.F
+    src/base/iniusi.F
+    src/base/cs_gui.c
+    src/base/iniini.F
+    src/base/cs_opts.c
+    src/base/memini.F
+    bin/lance
+    bin/lance.help
+
 * 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding communications with a proxy, in order to prepare
   the Code_Saturne/Code_Aster coupling via Salomé/YACS.

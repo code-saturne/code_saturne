@@ -66,11 +66,6 @@ typedef struct {
   cs_int_t         ifoenv;      /* 0 if not using Preprocessor, 1 otherwise */
   cs_int_t         echo_comm;   /* Communication verbosity */
 
-  /* Total sizes for work arrays */
-
-  cs_int_t         longia;      /* Size of integer work arrays */
-  cs_int_t         longra;      /* Size of floating point work arrays */
-
   /* Redirection of standard output */
 
   cs_int_t         ilisr0;      /* Redirection for rank 0

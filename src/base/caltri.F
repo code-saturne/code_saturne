@@ -30,13 +30,14 @@ c@verse
                         SUBROUTINE CALTRI
 C                       *****************
 C     -------------------------------------------------------------
-     & ( LONGIA , LONGRA , IDEBIA , IDEBRA , IVERIF ,
+     & ( IVERIF ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD ,
      &   VOLUME ,
-     &   RA     )
+     &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
 C  FONCTION  :
@@ -52,11 +53,9 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! LONGIA       ! E  !  -> ! LONGUEUR DU TABLEAU  DES ENTIERS  IA !
-CARGU ! LONGRA       ! E  !  -> ! LONGUEUR DU TABLEAU  DES REELS    RA !
-CARGU ! IDEBIA       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS IA !
-CARGU ! IDEBRA       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS RA !
 CARGU ! IVERIF       ! E  !  -> ! INDICATEUR DES TESTS ELEMENTAIRES    !
+CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
+CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
 CARGU ! IFACEL       ! TE !  -> ! ELEMENTS VOISINS D'UNE FACE INTERNE  !
 CARGU ! (2, NFAC)    !    !     !                                      !
 CARGU ! IFABOR       ! TE !  -> ! ELEMENT  VOISIN  D'UNE FACE DE BORD  !
@@ -139,7 +138,7 @@ C***********************************************************************
 C
 C ARGUMENTS
 C
-      INTEGER          LONGIA , LONGRA , IDEBIA , IDEBRA
+      INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
       INTEGER          IVERIF
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
@@ -147,14 +146,14 @@ C
       INTEGER          IPRFML(NFML,NPRFML)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
-      INTEGER          IA(*)
+      INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE), IA(*)
 C
       DOUBLE PRECISION XYZCEN(NDIM,NCELET)
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
       DOUBLE PRECISION XYZNOD(NDIM,NNOD), VOLUME(NCELET)
 
-      DOUBLE PRECISION RA(*)
+      DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
 C
@@ -164,9 +163,7 @@ C
       INTEGER          IDT
       INTEGER          IISSTD , IFRCX
 C
-      INTEGER          IITUSE , IRTUSE
-      INTEGER          IIDEVE , IRDEVE
-C
+      INTEGER          IDEBIA , IDEBRA
       INTEGER          IFINIA , IFINRA , IDBIA1 , IDBRA1, IDBIA2
       INTEGER          IDITIA, IDITRA
       INTEGER          IFNIA1 , IFNRA1 , IFNIA2 , IFNIA3, IFNRA2
@@ -199,83 +196,40 @@ C
 C
 C***********************************************************************
 C
+C=======================================================================
+C 1. INITIALISATIONS
+C=======================================================================
+C
+C     Initialisation de la premiere case libre des tableaux IA et RA
+      IDEBIA = 1
+      IDEBRA = 1
+C
 C     Initialisation du generateur de nombres aleatoires
 C     (pas toujours necessaire mais ne coute rien)
       CALL ZUFALLI(0)
 C     ============
 C
-C=======================================================================
-C 1. MEMOIRE INITIALE POUR UTILISATEUR, DEVELOPPEUR
-C=======================================================================
-C
-C---> MEMOIRE PERMANENTE
-C
-      NITUSE = ICOFTU(1)*NCELET + ICOFTU(2)*NFAC + ICOFTU(3)*NFABOR
-     &       + ICOFTU(4)
-      NRTUSE = ICOFTU(5)*NCELET + ICOFTU(6)*NFAC + ICOFTU(7)*NFABOR
-     &       + ICOFTU(8)
-C
-      CALL USTBUS
-C     ===========
-     &   (NCEL  , NCELET, NFAC  , NFABOR, NNOD  ,
-     &    NIDEVE, NITUSE, NRDEVE, NRTUSE)
-C
-      IOK = 0
-      IF(NIDEVE.LT.0) THEN
-        WRITE(NFECRA,8000)'NIDEVE',NIDEVE
-        IOK = IOK + 1
-      ENDIF
-      IF(NRDEVE.LT.0) THEN
-        WRITE(NFECRA,8000)'NRDEVE',NRDEVE
-        IOK = IOK + 1
-      ENDIF
-      IF(NITUSE.LT.0) THEN
-        WRITE(NFECRA,8000)'NITUSE',NITUSE
-        IOK = IOK + 1
-      ENDIF
-      IF(NRTUSE.LT.0) THEN
-        WRITE(NFECRA,8000)'NRTUSE',NRTUSE
-        IOK = IOK + 1
-      ENDIF
-      IF (IOK.GT.0) CALL CSEXIT(1)
-C                   ===========
-      WRITE(NFECRA,8010) NIDEVE,NRDEVE,NITUSE,NRTUSE
-
-C
-      CALL MEMINI
-C     ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIDEVE , IITUSE ,
-     &   IRDEVE , IRTUSE ,
-     &   IFINIA , IFINRA )
-C
-      IDEBIA = IFINIA
-      IDEBRA = IFINRA
-C
 C---> MISE A ZERO DES TABLEAUX UTILISATEUR ET DEVELOPPEUR
 C
       IF(NITUSE.GT.0) THEN
         DO IIII = 1, NITUSE
-          IA(IITUSE+IIII-1) = 0
+          ITUSER(IIII) = 0
         ENDDO
       ENDIF
       IF(NRTUSE.GT.0) THEN
         DO IIII = 1, NRTUSE
-          RA(IRTUSE+IIII-1) = 0.D0
+          RTUSER(IIII) = 0.D0
         ENDDO
       ENDIF
 C
       IF(NIDEVE.GT.0) THEN
         DO IIII = 1, NIDEVE
-          IA(IIDEVE+IIII-1) = 0
+          IDEVEL(IIII) = 0
         ENDDO
       ENDIF
       IF(NRDEVE.GT.0) THEN
         DO IIII = 1, NRDEVE
-          RA(IRDEVE+IIII-1) = 0.D0
+          RDEVEL(IIII) = 0.D0
         ENDDO
       ENDIF
 C
@@ -301,10 +255,10 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IFOENV , NFECRA ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA         ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA        )
+     &   RDEVEL , RTUSER , RA     )
       ENDIF
 C
 C
@@ -332,11 +286,11 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA        ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   VOLTOT ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA        )
+     &   RDEVEL , RTUSER , RA     )
 C
 C
 C
@@ -483,11 +437,11 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME , RA(IRTP) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         GOTO 200
 C
@@ -506,12 +460,12 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 6. CALCUL SUITE EVENTUEL
@@ -525,10 +479,10 @@ C       ===========
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NNOD   ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C     En ALE, il faut recalculer les parametres geometriques
         IF (IALE.EQ.1) THEN
@@ -550,10 +504,10 @@ C         ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   VOLTOT ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -574,12 +528,12 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX ) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 8.1 MODULE DE RAYONNEMENT : CALCUL SUITE EVENTUEL
@@ -592,10 +546,10 @@ C       ===========
      & ( IFINIA , IFINRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   RA(ITSRE)  , RA(ITSRI)  ,
      &   RA(ITPARO) , RA(IQINCI) ,  RA(IFCONV) , RA(IHCONV) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -648,7 +602,7 @@ C     ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IDBIA1) , IA(IDBIA1) , IA(IDBIA1) ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDBRA1) , RA(IDBRA1) , RA(IDBRA1) ,
@@ -657,7 +611,7 @@ C     ===========
      &   RA(IDT)    , RA(IRTPA)  ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       IAPPEL = 1
       CALL VERT1D
@@ -694,7 +648,7 @@ C       ============
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIFPT1) , IA(INPPT1) , IA(IICLT1) ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(ITPPT1) , RA(IRGPT1) , RA(IEPPT1) ,
@@ -703,7 +657,7 @@ C       ============
      &   RA(IDT)    , RA(IRTPA)  ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         IAPPEL = 2
         CALL VERT1D
@@ -780,13 +734,13 @@ C         ============
      &   NCEPDC(IPHAS) , NCKPDC(IPHAS)     , IPHAS  , IAPPEL ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IDBIA1),
-     &   IA(IIDEVE) , IA(IITUSE) , IA         ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IDBRA1) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ELSE
 C
@@ -804,13 +758,13 @@ C         ============
      &   NCEPDC(IPHAS) , NCKPDC(IPHAS)     , IPHAS  , IAPPEL ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IDBIA1),
-     &   IA(IIDEVE) , IA(IITUSE) , IA         ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IDBRA1) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -846,13 +800,13 @@ C           ============
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICEPD(IPHAS)),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(ICKUPD(IPHAS)) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
           ELSE
 C
@@ -871,13 +825,13 @@ C           ============
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICEPD(IPHAS)),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(ICKUPD(IPHAS)) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
           ENDIF
 C
@@ -907,13 +861,13 @@ C       ============
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICEPD(IPHAS)) ,
      &   IA(IDBIA1) , IA(IDBIA1),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(ICKUPD(IPHAS))       , RA(IDBRA1),
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDDO
 C
@@ -950,13 +904,13 @@ C         ============
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICEPD(IPHAS)) ,
      &   IA(IICESM(IPHAS)) , IA(IITPSM(IPHAS)),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(ICKUPD(IPHAS)), RA(ISMACE(IPHAS)),
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -998,13 +952,13 @@ C       ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIREPV)      ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         CALL VORVER ( NFABOR , IA(IIREPV)  , IAPPEL )
 C       ===========
@@ -1024,10 +978,10 @@ C       ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIREPV),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD ,
      &   VOLUME , RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1050,10 +1004,10 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME , RA(IDT),
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1147,14 +1101,14 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IISSTD),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ITSLAG) , RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IFRCX)  ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 12. CALCUL DES MOYENNES TEMPORELLES (ACCUMULATION)
@@ -1166,9 +1120,9 @@ C
 C     ===========
      &     ( IFINIA , IFINRA , NCEL   , NCELET ,
      &       NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &       IA(IIDEVE) , IA(IITUSE) , IA    ,
+     &       IDEVEL , ITUSER , IA     ,
      &       RA(IRTP  ) , RA(IDT   ) , RA(IPROPC) ,
-     &       RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &       RDEVEL , RTUSER , RA     )
       ENDIF
 C
 C
@@ -1206,7 +1160,7 @@ C       ===========
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICOCE) , IA(IITYCE) , IA(IIFRLA) , IA(IIITEP) ,
      &   IA(IINDEP) , IA(IIBORD) ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA         ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1221,7 +1175,7 @@ C       ===========
      &   RA(IGRADP) , RA(IGRADV) , RA(ICROUL) ,
      &   RA(IBRGAU) , RA(ITEBRU) ,
      &   RA(IW1   ) , RA(IW2   ) , RA(IW3   ) , RA(IAUXL)  , RA(IAUXL2),
-     &   RA(IRDEVE) , RA(IRTUSE) , RA         )
+     &   RDEVEL , RTUSER , RA     )
 C
 C--> Ici on libere la memoire reserve par MEMLA2
 C      (i.e. on oublie ILAGIA et ILAGRA)
@@ -1245,7 +1199,7 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IIITEP),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1253,7 +1207,7 @@ C       ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ITSLAG),
      &   RA(ISTATF) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1273,7 +1227,7 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IIITEP),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1281,7 +1235,7 @@ C       ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IETTP)  , RA(IETTPA) , RA(IITEPA) , RA(ISTATC) , RA(ISTATV),
      &   RA(ITSLAG) , RA(ISTATF) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1303,14 +1257,14 @@ C         ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IIMPAL)      ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IDEPAL) , RA(IXYZN0) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -1372,11 +1326,11 @@ C       ===========
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NNOD   ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN     , SURFAC     , SURFBO     , CDGFAC     , CDGFBO    ,
      &   RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
      &   RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX)  ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         IF (NFPT1T.GT.0) THEN
           CALL ECRT1D
@@ -1399,7 +1353,7 @@ C         ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICOCE) , IA(IITYCE) , IA(IIITEP) ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1407,7 +1361,7 @@ C         ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IETTP)  , RA(IITEPA) , RA(ISTATF) ,
      &   RA(ISTATC) , RA(ISTATV) , RA(ITSLAG) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA         )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -1421,7 +1375,7 @@ C         ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1430,7 +1384,7 @@ C         ===========
      &   RA(ITSRE)  , RA(ITSRI)  ,
      &   RA(ITPARO) , RA(IQINCI) , RA(IXLAM)  , RA(IEPA)   , RA(IEPS)  ,
      &   RA(IFNET)  , RA(IFCONV) , RA(IHCONV) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
         ENDIF
 C
         IF(IWARN0.GT.0) THEN
@@ -1452,14 +1406,13 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA         ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) , RA(ISTATC) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 21. SORTIE DES FICHIERS POST STANDARDS
@@ -1483,15 +1436,14 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   TTCABS , XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(ISTATC) , RA(ISTATV) , RA(ISTATF) ,
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 22. HISTORIQUES
@@ -1524,9 +1476,9 @@ C         ===========
      &   (IFINIA , IFINRA , NDIM   , NCELET , NCEL,
      &    NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &    MODHIS ,
-     &    IA(IIDEVE) , IA(IITUSE) , IA      ,
+     &    IDEVEL , ITUSER , IA     ,
      &    XYZCEN ,
-     &    RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &    RDEVEL , RTUSER , RA     )
 C
           IF (IILAGR.GT.0) THEN
             CALL LAGHIS
@@ -1534,10 +1486,10 @@ C           ===========
      &     (IFINIA , IFINRA , NDIM   , NCELET , NCEL,
      &      NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &      MODHIS , NVLSTA ,
-     &      IA(IIDEVE) , IA(IITUSE) , IA      ,
+     &      IDEVEL , ITUSER , IA     ,
      &      XYZCEN , VOLUME ,
      &      RA(ISTATC) , RA(ISTATV) ,
-     &      RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &      RDEVEL , RTUSER , RA     )
           ENDIF
 C
           IF (IHISTR.EQ.1) THEN
@@ -1546,8 +1498,8 @@ C           ===========
      &     (IFINIA , IFINRA , NCELET , NCEL,
      &      NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &      MODHIS ,
-     &      IA(IIDEVE) , IA(IITUSE) , IA      ,
-     &      RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &      IDEVEL , ITUSER , IA     ,
+     &      RDEVEL , RTUSER , RA     )
           ENDIF
 C
         ENDIF
@@ -1562,13 +1514,13 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
      &   RA(IPROPC) , RA(IPROPF) , RA(IPROPB) ,
      &   RA(ICOEFA) , RA(ICOEFB) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
 C=======================================================================
 C 23. ECRITURE LISTING TOUTES LES NTLIST ITERATIONS
@@ -1588,9 +1540,9 @@ C       ===========
      &  ( IFINIA , IFINRA ,
      &    NVAR   , NPHAS  , NDIM   , NCELET , NCEL   ,
      &    NIDEVE , NRDEVE , NITUSE , NRTUSE , IRTP   ,
-     &    IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &    IDEVEL , ITUSER , IA     ,
      &    RA(IRTP  ) , RA(IRTPA ) , RA(IDT ) , VOLUME , XYZCEN,
-     &    RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &    RDEVEL , RTUSER , RA     )
 C
         IF (IILAGR.GT.0) THEN
 C
@@ -1605,7 +1557,7 @@ C         ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IIITEP),
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1613,8 +1565,7 @@ C         ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IETTP)  , RA(IITEPA) , RA(ISTATC) ,  RA(ISTATV) ,
      &   RA(ITSLAG) , RA(ISTATF),
-     &   RA(IRDEVE) , RA(IRTUSE) ,
-     &   RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
 C
@@ -1664,11 +1615,11 @@ C     ===========
      &  NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NNOD   ,
      &  NVAR   , NSCAL  , NPHAS  ,
      &  NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &  IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &  IDEVEL , ITUSER , IA     ,
      &  XYZCEN     , SURFAC     , SURFBO     , CDGFAC     , CDGFBO    ,
      &  RA(IDT)    , RA(IRTP)   , RA(IPROPC) , RA(IPROPF) , RA(IPROPB),
      &  RA(ICOEFA) , RA(ICOEFB) , RA(IFRCX)  ,
-     &  RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &  RDEVEL , RTUSER , RA     )
 C
       IF (NFPT1T.GT.0) THEN
 
@@ -1692,7 +1643,7 @@ C       ===========
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IA(IICOCE) , IA(IITYCE) , IA(IIITEP) ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1700,7 +1651,7 @@ C       ===========
      &   RA(ICOEFA) , RA(ICOEFB) ,
      &   RA(IETTP)  , RA(IITEPA) , RA(ISTATF) ,
      &   RA(ISTATC) , RA(ISTATV) , RA(ITSLAG) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA         )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1716,7 +1667,7 @@ C       ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA     ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
      &   RA(IDT)    , RA(IRTPA)  , RA(IRTP)   ,
@@ -1725,7 +1676,7 @@ C       ===========
      &   RA(ITSRE)  , RA(ITSRI)  ,
      &   RA(ITPARO) , RA(IQINCI) , RA(IXLAM)  , RA(IEPA)   , RA(IEPS)  ,
      &   RA(IFNET)  , RA(IFCONV) , RA(IHCONV) ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA     )
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C
@@ -1737,9 +1688,9 @@ C     ===========
      &(  IFINIA , IFINRA , NDIM   , NCELET , NCEL,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   MODHIS ,
-     &   IA(IIDEVE) , IA(IITUSE) , IA      ,
+     &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN ,
-     &   RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &   RDEVEL , RTUSER , RA     )
 C
       IF (IILAGR.GT.0) THEN
           CALL LAGHIS
@@ -1747,10 +1698,10 @@ C         ===========
      &   (IFINIA , IFINRA , NDIM   , NCELET , NCEL,
      &    NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &    MODHIS , NVLSTA ,
-     &    IA(IIDEVE) , IA(IITUSE) , IA      ,
+     &   IDEVEL , ITUSER , IA     ,
      &    XYZCEN , VOLUME ,
      &    RA(ISTATC) , RA(ISTATV) ,
-     &    RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &   RDEVEL , RTUSER , RA     )
       ENDIF
       IF (IHISTR.EQ.1) THEN
         CALL STRHIS
@@ -1758,8 +1709,8 @@ C       ===========
      & (IFINIA , IFINRA , NCELET , NCEL,
      &  NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &  MODHIS ,
-     &  IA(IIDEVE) , IA(IITUSE) , IA      ,
-     &  RA(IRDEVE) , RA(IRTUSE) , RA      )
+     &  IDEVEL , ITUSER , IA     ,
+     &  RDEVEL , RTUSER , RA     )
       ENDIF
 C
 C     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D
@@ -1890,27 +1841,6 @@ C
      &                                                                /,
      &                                                                /,
      &'***************************************************************')
- 8000 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    ',A6,' DOIT ETRE UN ENTIER POSITIF OU NUL               ',/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute                            ',/,
-     &'@                                                            ',/,
-     &'@  Verifier les parametres donnes via l''interface ou ustbus.',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 8010 FORMAT(/,
-     &' --- Taille des tableaux auxiliaires                         ',/,
-     &'       NIDEVE = ',4X,I10,    ' (Nb d  entiers en acces dvpt )',/,
-     &'       NRDEVE = ',4X,I10,    ' (Nb de reels   en acces dvpt )',/,
-     &'       NITUSE = ',4X,I10,    ' (Nb d  entiers en acces user )',/,
-     &'       NRTUSE = ',4X,I10,    ' (Nb de reels   en acces user )',/)
 C
 C=======================================================================
 C 26. FIN

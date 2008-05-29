@@ -30,13 +30,8 @@ c@verse
                         SUBROUTINE MEMINI
 C                       *****************
 C     -------------------------------------------------------------
-     & ( IDBIA0 , IDBRA0 ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIDEVE , IITUSE ,
-     &   IRDEVE , IRTUSE ,
-     &   IFINIA , IFINRA )
+     & ( LONGIA , LONGRA ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE )
 C     -------------------------------------------------------------
 C***********************************************************************
 C  FONCTION
@@ -44,7 +39,7 @@ C  --------
 c@foncb
 CFONC
 CFONC          GESTION MEMOIRE INITIALE
-CFONC          COUPLAGE, DEVELOPPEUR, UTILISATEUR
+CFONC          MACROS TABLEAUX, DEVELOPPEUR, UTILISATEUR
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -53,29 +48,9 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! IDBIA0/RA0   ! E  !  -> ! DEBUT DE LA PLACE LIBRE DANS IA ER RA!
-CARGU ! IDBIA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS IA !
-CARGU ! IDBRA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS RA !
-CARGU ! NDIM         ! E  !  -> ! DIMENSION DE L'ESPACE                !
-CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
-CARGU ! NCEL         ! E  !  -> ! NOMBRE D'ELEMENTS ACTIFS             !
-CARGU ! NFAC         ! E  !  -> ! NOMBRE DE FACES INTERNES             !
-CARGU ! NFABOR       ! E  !  -> ! NOMBRE DE FACES DE BORD              !
-CARGU ! NFML         ! E  !  -> ! NOMBRE DE FAMILLES D ENTITES         !
-CARGU ! NPRFML       ! E  !  -> ! NOMBRE DE PROPRIETESE DES FAMILLES   !
-CARGU ! NNOD         ! E  !  -> ! NOMBRE DE SOMMETS                    !
-CARGU ! LNDFAC       ! E  !  -> ! LONGUEUR DU TABLEAU NODFAC (OPTIONNEL!
-CARGU ! LNDFBR       ! E  !  -> ! LONGUEUR DU TABLEAU NODFBR (OPTIONNEL!
+CARGU ! LONGIA LONGRA! E  !  -> ! LONGUEUR DE IA     RA                !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
-CARGU ! IIDEVE       ! E  ! <-  ! POINTEUR DE IDEVEL DANS IA           !
-CARGU ! IITUSE       ! E  ! <-  ! POINTEUR DE ITUSER DANS IA           !
-CARGU ! IRDEVE       ! E  ! <-  ! POINTEUR DE RDEVEL DANS RA           !
-CARGU ! IRTUSE       ! E  ! <-  ! POINTEUR DE RTUSER DANS RA           !
-CARGU ! IFINIA       ! E  ! <-  ! POINTEUR DE LA PREMIERE CAS LIBRE    !
-CARGU !              !    !     !  DANS IA EN SORTIE                   !
-CARGU ! IFINRA       ! E  ! <-  ! POINTEUR DE LA PREMIERE CAS LIBRE    !
-CARGU !              !    !     !  DANS RA EN SORTIE                   !
 CARGU .______________.____._____.______________________________________.
 c@argue
 C
@@ -99,45 +74,156 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
+      INCLUDE "paramx.h"
+      INCLUDE "memoir.h"
+      INCLUDE "dimens.h"
+      INCLUDE "entsor.h"
+      INCLUDE "ihmpre.h"
+C
 C***********************************************************************
 C
-C     - REMARQUE : INTERDICTION DE TOUCHER A IDBIA0 IDBRA0
+C ARGUMENTS
 C
-      INTEGER IDBIA0 , IDBRA0
-      INTEGER NDIM   , NCELET , NCEL   , NFAC   , NFABOR
-      INTEGER NFML   , NPRFML
-      INTEGER NNOD   , LNDFAC , LNDFBR
+      INTEGER LONGIA , LONGRA
       INTEGER NIDEVE , NRDEVE , NITUSE , NRTUSE
-      INTEGER IIDEVE , IITUSE
-      INTEGER IRDEVE , IRTUSE
-      INTEGER IFINIA , IFINRA
 C
-      INTEGER IDEBIA, IDEBRA
+C VARIABLES LOCALES
+C
+      INTEGER II, IOK
+      INTEGER ICOFTU(16)
+C
+C***********************************************************************
 C
 C=======================================================================
-C 1. GESTION MEMOIRE DEVELOPPEUR ET UTILISATEUR
+C 0. INITIALISATIONS
 C=======================================================================
 C
-C---> MEMOIRE CONSERVEE JUSQU'A LA FIN
+C --- Dimension des macros tableaux entier IA et reel RA
 C
-      IDEBIA = IDBIA0
-      IDEBRA = IDBRA0
+      LONGIA = 0
+      LONGRA = 0
 C
-      IIDEVE = IDEBIA
-      IITUSE = IIDEVE+NIDEVE
-      IFINIA = IITUSE+NITUSE
+C --- Dimension des tableaux utilisateurs et developpeurs
+C      supplementaires (entiers et reels) generalement un multiple
+C      de NCEL, NFABOR ...
 C
-      IRDEVE = IDEBRA
-      IRTUSE = IRDEVE+NRDEVE
-      IFINRA = IRTUSE+NRTUSE
+      NIDEVE = 0
+      NRDEVE = 0
 C
-C---> VERIFICATION
+      NITUSE = 0
+      NRTUSE = 0
 C
-      CALL IASIZE('MEMINI',IFINIA)
+      DO II = 1, 16
+        ICOFTU(II) = 0
+      ENDDO
+C
+C=======================================================================
+C 1. MEMOIRE INITIALE POUR UTILISATEUR, DEVELOPPEUR
+C=======================================================================
+C
+#if defined(_CS_HAVE_XML)
+C
+C   - Interface Code_Saturne
+C     ======================
+C
+      IF(IIHMPR.EQ.1) THEN
+C
+        CALL UIUSAR(ICOFTU)
+C       ===========
+C
+        NITUSE = ICOFTU(1)*NCELET + ICOFTU(2)*NFAC + ICOFTU(3)*NFABOR
+     &         + ICOFTU(4)
+        NRTUSE = ICOFTU(5)*NCELET + ICOFTU(6)*NFAC + ICOFTU(7)*NFABOR
+     &         + ICOFTU(8)
+        LONGIA = ICOFTU( 9)*NCELET + ICOFTU(10)*NFAC + ICOFTU(11)*NFABOR
+     &         + ICOFTU(12)
+        LONGRA = ICOFTU(13)*NCELET + ICOFTU(14)*NFAC + ICOFTU(15)*NFABOR
+     &         + ICOFTU(16)
+C
+      ENDIF
+C
+#endif
+C
+C   - Sous-programme utilisateur
+C     ==========================
+C
+      CALL USTBTR
 C     ===========
+     & ( NCEL   , NCELET , NFAC   , NFABOR , NNOD  ,
+     &   LONGIA , LONGRA ,
+     &   NIDEVE , NITUSE , NRDEVE , NRTUSE )
 C
-      CALL RASIZE('MEMINI',IFINRA)
-C     ===========
+C
+C=======================================================================
+C 2. VERIFICATIONS
+C=======================================================================
+C
+      IOK = 0
+C
+      IF (LONGIA.LT.0) THEN
+        WRITE(NFECRA,1000)'LONGIA',LONGIA
+        IOK = IOK + 1
+      ENDIF
+      IF (LONGRA.LT.0) THEN
+        WRITE(NFECRA,1000)'LONGRA',LONGIA
+        IOK = IOK + 1
+      ENDIF
+C
+      IF (NIDEVE.LT.0) THEN
+        WRITE(NFECRA,1000)'NIDEVE',NIDEVE
+        IOK = IOK + 1
+      ENDIF
+      IF (NRDEVE.LT.0) THEN
+        WRITE(NFECRA,1000)'NRDEVE',NRDEVE
+        IOK = IOK + 1
+      ENDIF
+      IF (NITUSE.LT.0) THEN
+        WRITE(NFECRA,1000)'NITUSE',NITUSE
+        IOK = IOK + 1
+      ENDIF
+      IF (NRTUSE.LT.0) THEN
+        WRITE(NFECRA,1000)'NRTUSE',NRTUSE
+        IOK = IOK + 1
+      ENDIF
+C
+      IF (IOK.GT.0) CALL CSEXIT(1)
+C                   ===========
+C
+C=======================================================================
+C 3. DIMENSIONNEMENT MEMOIRE PAR DEFAUT
+C=======================================================================
+C
+      IF (LONGIA.EQ.0) THEN
+        LONGIA =  30 * MAX(NCELET, NFABOR)
+      ENDIF
+C
+      IF (LONGRA.EQ.0) THEN
+        LONGRA = 120 * MAX(NCELET, NFABOR)
+      ENDIF
+C
+      MTOTIA = LONGIA
+      MTOTRA = LONGRA
+C
+C----
+C FORMATS
+C----
+C
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@    ',A6,' DOIT ETRE UN ENTIER POSITIF OU NUL               ',/,
+     &'@    IL VAUT ICI ',I10                                        ,/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne peut etre execute                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier les parametres donnes via l''interface ou ustbtr.',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
 C
       RETURN
       END

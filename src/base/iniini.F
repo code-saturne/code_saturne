@@ -577,19 +577,6 @@ C --- Nombre de tableaux NFABOR de type COEFA (ou COEFB)
 C
       NCOFAB = 0
 C
-C --- Dimension des tableaux utilisateurs et developpeurs
-C      supplementaires (entiers et reels) generalement un multiple
-C      de NCEL, NFABOR ...
-C
-      NIDEVE = 0
-      NRDEVE = 0
-C
-      NITUSE = 0
-      NRTUSE = 0
-      DO II = 1, 8
-        ICOFTU(II) = 0
-      ENDDO
-C
 C
 C=======================================================================
 C 5. POSITION DES VARIABLES DE numvar.h

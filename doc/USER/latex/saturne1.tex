@@ -1003,24 +1003,6 @@ automatically added to the Kernel command line. The variable
 IFOENV\index{IFOENV} in the FORTRAN code will be set to 0 if the
 \texttt{-solcom} option has been used, otherwise it will be set to 1.
 
-\item \texttt{-iasize n}: specifies the size \texttt{n} of the macro-array of
-integers IA (number of integers in the array). If the size is not sufficient,
-\CS stops and indicates the additional size needed.\\
-The value of \texttt{n} is to be placed in the \texttt{LONGIA} variable in the launch
-script. The option \mbox{\texttt{-iasize \$LONGIA}} is automatically added to the
-Kernel command line.\\
-The value of \texttt{n} is accessible in the variable LONGIA\index{LONGIA} in
-the FORTRAN code.
-
-\item \texttt{-rasize n}: specifies the size \texttt{n} of the macro-array of
-reals RA (number of reals in the array). If the size is not sufficient,
-\CS stops and indicates the additional size needed.\\
-The value of \texttt{n} is to be placed in the \texttt{LONGRA} variable in the launch
-script. The option \mbox{\texttt{-rasize \$LONGRA}} is automatically added to the
-Kernel command line.\\
-The value of \texttt{n} is accessible in the variable LONGRA\index{LONGRA} in
-the FORTRAN code.
-
 \item \texttt{-mpi} or \texttt{--mpi}: specifies that the calculation is running with MPI communications. The number of processors used will be guessed interactively by the Kernel. If necessary, the launch script automatically
 passes the \texttt{-mpi} option to the Kernel command line
 (see \ref{prg_lance}).
@@ -1179,12 +1161,6 @@ specific to the cluster of the University of Manchester
 
 \item \texttt{SOLCOM}: a value of 1 will pass the \texttt{-solcom} option to the
 Kernel (see \ref{prg_optappelnoy})
-
-\item \texttt{LONGIA}: value of the parameter LONGIA to be passed to the Kernel
-through the \texttt{-iasize} option (see \ref{prg_optappelnoy}).
-
-\item \texttt{LONGRA}: value of the parameter LONGIA to be passed to the Kernel
-through the \texttt{-rasize} option (see \ref{prg_optappelnoy})
 \end{list}
 
 {\it For parallel computations, LONGIA and LONGRA can theoretically

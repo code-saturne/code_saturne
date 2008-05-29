@@ -2184,3 +2184,148 @@ C
       RETURN
       END
 c@z
+C
+C
+C***********************************************************************
+C
+C
+c@a
+                        SUBROUTINE USTBTR
+C                       *****************
+C     -------------------------------------------------------------
+     & ( NCEL   , NCELET , NFAC   , NFABOR , NNOD   ,
+     &   LONGIA , LONGRA ,
+     &   NIDEVE , NITUSE , NRDEVE , NRTUSE )
+C     -------------------------------------------------------------
+C***********************************************************************
+C  FONCTION  :
+C  ---------
+c@foncb
+CFONC
+CFONC  ROUTINE UTILISATEUR POUR DEFINIR LES DIMENSIONS
+CFONC    DES MACROS TABLEAUX IA ET RA
+CFONC    DES TABLEAUX UTILISATEUR ITUSER ET RTUSER
+CFONC    DES TABLEAUX DEVELOPPEUR IDEVEL ET RDEVEL
+CFONC
+c@fonce
+C-----------------------------------------------------------------------
+C                             ARGUMENTS
+c@argub
+CARGU .______________.____._____.______________________________________.
+CARGU !    NOM       !TYPE!MODE !                   ROLE               !
+CARGU !______________!____!_____!______________________________________!
+CARGU ! NCEL         ! E  !  -> ! NOMBRE DE CELLULES HORS HALO         !
+CARGU ! NCELET       ! E  !  -> ! NOMBRE DE CELLULES HALO INCLUS       !
+CARGU ! NFAC         ! E  !  -> ! NOMBRE DE FACES INTERNES             !
+CARGU ! NFABOR       ! E  !  -> ! NOMBRE DE FACES DE BORD              !
+CARGU ! NNOD         ! E  !  -> ! NOMBRE DE NOEUDS                     !
+CARGU ! LONGIA       ! E  ! <-  ! DIMENSION DU TABLEAU IA              !
+CARGU ! LONGRA       ! E  ! <-  ! DIMENSION DU TABLEAU RA              !
+CARGU ! NIDEVE       ! E  ! <-  ! DIMENSION DU TABLEAU IDEVEL          !
+CARGU ! NITUSE       ! E  ! <-  ! DIMENSION DU TABLEAU ITUSER          !
+CARGU ! NRDEVE       ! E  ! <-  ! DIMENSION DU TABLEAU RDEVEL          !
+CARGU ! NRTUSE       ! E  ! <-  ! DIMENSION DU TABLEAU RTUSER          !
+CARGU !______________!____!_____!______________________________________!
+c@argue
+C
+c@commb
+CCOMM                             COMMONS
+CCOMM .______________.____._____.______________________________________.
+CCOMM !    NOM       !TYPE!MODE !                   ROLE               !
+CCOMM !______________!____!_____!______________________________________!
+CCOMM !______________!____!_____!______________________________________!
+c@comme
+C
+C     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+C            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+C     MODE : -> DONNEE, <- RESULTAT, <-> DONNEE MODIFIEE,
+C            - TABLEAU DE TRAVAIL
+C***********************************************************************
+C
+      IMPLICIT NONE
+C
+C***********************************************************************
+C     DONNEES EN COMMON
+C***********************************************************************
+C
+C***********************************************************************
+C
+C ARGUMENTS
+C
+      INTEGER          NCEL  , NCELET, NFAC  , NFABOR, NNOD
+      INTEGER          LONGIA, LONGRA
+      INTEGER          NIDEVE, NITUSE, NRDEVE, NRTUSE
+C
+C***********************************************************************
+C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+C=======================================================================
+C
+      IF(1.EQ.1) RETURN
+C
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+C
+C=======================================================================
+C 1. DIMENSION DES MACROS TABLEAUX IA ET RA :
+C
+C  L'utilisateur peut avoir a modifier la taille des tableaux
+C    d'entiers et de reels ici : LONGIA et LONGRA respectivement
+C
+C  Le nombre d'entiers LONGIA et le nombre de reels LONGRA
+C    dependent des options de calcul, du type d'elements,
+C    d es caracteristiques du maillage (2d, 3d, hybride,
+C    non conforme ...) et du nombre de variables, par exemple.
+C    En k-epsilon, si on note NCEL le nombre de cellules du
+C    maillage, on peut la plupart du temps utiliser la majoration
+C    grossiere suivante : LONGIA =  45*NCEL et LONGRA = 220*NCEL
+C    En Rij-epsilon, une majoration de 20% pourra etre appliquee.
+c    Ces valeurs sont relativement elevees pour prendre en compte
+C    les maillages 2D qui comprennent de nombreuses faces de bord :
+C    une formule plus precise mais plus complexe serait necessaire.
+C    Pour les gros cas 3D, une estimation plus precise est donnee
+C    par : LONGIA =  25*NCEL et LONGRA = 120*NCEL.
+C
+C  Si LONGIA et LONGRA sont laisses a 0, alors ces valeurs sont
+C    remplies de maniere automatique
+C
+C=======================================================================
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+C
+C     DIMENSION DU MACRO TABLEAU D'ENTIERS IA
+C
+      LONGIA = 0
+C
+C     DIMENSION DU MACRO TABLEAU DE REELS RA
+C
+      LONGRA = 0
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+C
+C=======================================================================
+C 2. DIMENSIONS DES TABLEAUX UTILISATEUR ITUSER ET RTUSER
+C=======================================================================
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+C
+C     DIMENSION DU TABLEAU D'ENTIERS ITUSER
+C
+      NITUSE = 0
+C
+C     DIMENSION DU TABLEAU DE REELS RTUSER
+C
+      NRTUSE = 0
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+C
+C
+C----
+C FORMATS
+C----
+C
+C
+C
+      RETURN
+      END
+c@z

@@ -124,10 +124,6 @@ extern void CS_PROCF(csinit, CSINIT)
 
 extern void CS_PROCF(initi1, INITI1)
 (
- cs_int_t  *longia,    /* Longueur du tableau d'entiers IA                    */
- cs_int_t  *longra,    /* Longueur du tableau d'entiers IA                    */
- cs_int_t  *idebia,    /* Premiere position libre dans IA                     */
- cs_int_t  *idebra,    /* Premiere position libre dans RA                     */
  cs_int_t  *iverif     /* Activation des tests élémentaires                   */
 );
 
@@ -137,11 +133,11 @@ extern void CS_PROCF(initi1, INITI1)
 
 extern void CS_PROCF(caltri, CALTRI)
 (
- cs_int_t   *longia,   /* Longueur du tableau d'entiers IA                    */
- cs_int_t   *longra,   /* Longueur du tableau d'entiers IA                    */
- cs_int_t   *idebia,   /* Premiere position libre dans IA                     */
- cs_int_t   *idebra,   /* Premiere position libre dans RA                     */
  cs_int_t   *iverif,   /* Activation des tests elementaires                   */
+ cs_int_t   *nideve,   /* Longueur du tableau d'entiers IDEVEL                */
+ cs_int_t   *nrdeve,   /* Longueur du tableau de reels  RDEVEL                */
+ cs_int_t   *nituse,   /* Longueur du tableau d'entiers ITUSER                */
+ cs_int_t   *nrtuse,   /* Longueur du tableau de reels  RTUSER                */
  cs_int_t   *ifacel,   /* Éléments voisins d'une face interne                 */
  cs_int_t   *ifabor,   /* Élément  voisin  d'une face de bord                 */
  cs_int_t   *ifmfbr,   /* Numéro de famille d'une face de bord                */
@@ -151,6 +147,8 @@ extern void CS_PROCF(caltri, CALTRI)
  cs_int_t   *nodfac,   /* Connectivité faces internes/sommets (optionnelle)   */
  cs_int_t   *ipnfbr,   /* Pointeur par sommet dans NODFBR (optionnel)         */
  cs_int_t   *nodfbr,   /* Connectivité faces de bord/sommets (optionnelle)    */
+ cs_int_t   *idevel,   /* Pointeur sur le tableau d'entiers IDEVEL            */
+ cs_int_t   *ituser,   /* Pointeur sur le tableau d'entiers ITUSER            */
  cs_int_t   *ia,       /* Pointeur sur le tableau d'entiers IA                */
  cs_real_t  *xyzcen,   /* Points associés aux centres des volumes de contrôle */
  cs_real_t  *surfac,   /* Vecteurs surfaces des faces internes                */
@@ -159,6 +157,8 @@ extern void CS_PROCF(caltri, CALTRI)
  cs_real_t  *cdgfbr,   /* Centres de gravité des faces de bord                */
  cs_real_t  *xyznod,   /* Coordonnées des sommets (optionnelle)               */
  cs_real_t  *volume,   /* Volumes des cellules                                */
+ cs_real_t  *rdevel,   /* Pointeur sur le tableau de reels RDEVEL             */
+ cs_real_t  *rtuser,   /* Pointeur sur le tableau de reels RTUSER             */
  cs_real_t  *ra        /* Pointeur sur le tableau de reels RA                 */
 );
 
@@ -191,14 +191,8 @@ void CS_PROCF (usmodg, USMODG)
 );
 
 /*----------------------------------------------------------------------------
- * Update dimension of the mesh for FORTRAN common.
- *
- * Interface Fortran :
- *
- * SUBROUTINE MAJGEO (NCELET, NFAC, NFABOR, NFACGB, NFBRGB)
- * *****************
- *
- * INTEGER          NCELET      : --> : New value to assign
+ * SUBROUTINE MAJGEO : sous-progamme de mise a jour des dimensions du maillage
+ *                     dans les commons Fortran
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (majgeo, MAJGEO)
@@ -208,6 +202,20 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *const nfabor,  /* --> New number of border faces           */
  const cs_int_t   *const nfacgb,  /* --> New number of global internal faces  */
  const cs_int_t   *const nfbrgb   /* --> New number of global border faces    */
+);
+
+/*----------------------------------------------------------------------------
+ * SUBROUTINE MEMINI : sous-progamme d'initialisation memoire Fortran
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (memini, MEMINI)
+(
+ cs_int_t  *iasize,    /* Longueur du tableau d'entiers IA                    */
+ cs_int_t  *rasize,    /* Longueur du tableau de reels  RA                    */
+ cs_int_t  *nideve,    /* Longueur du tableau d'entiers IDEVEL                */
+ cs_int_t  *nrdeve,    /* Longueur du tableau de reels  RDEVEL                */
+ cs_int_t  *nituse,    /* Longueur du tableau d'entiers ITUSER                */
+ cs_int_t  *nrtuse     /* Longueur du tableau de reels  RTUSER                */
 );
 
 /*============================================================================
@@ -226,13 +234,22 @@ int main
 {
   cs_int_t  n_g_i_faces, n_g_b_faces;
   double  t1, t2;
-  cs_int_t  idebia, idebra;
+
+  cs_int_t  iasize, rasize;
+  cs_int_t  nituse, nrtuse, nideve, nrdeve;
+
   cs_opts_t  opts;
 
   int  rang_deb = -1;
   int  _verif = -1;
+
   cs_int_t  *ia = NULL;
+  cs_int_t  *ituser = NULL;
+  cs_int_t  *idevel = NULL;
+
   cs_real_t  *ra = NULL;
+  cs_real_t  *rtuser = NULL;
+  cs_real_t  *rdevel = NULL;
 
   /* Première analyse de la ligne de commande pour savoir si l'on a besoin
      de MPI ou non, et initialisation de MPI le cas échéant */
@@ -331,11 +348,7 @@ int main
   if (opts.benchmark > 0 && _verif < 0)
     _verif = 0;
 
-  CS_PROCF(initi1, INITI1)(&(opts.longia),
-                           &(opts.longra),
-                           &idebia,
-                           &idebra,
-                           &_verif);
+  CS_PROCF(initi1, INITI1)(&_verif);
 
   if (opts.ifoenv == 0) {
 
@@ -462,8 +475,30 @@ int main
   if (opts.iverif != 0 && opts.benchmark <= 0) {
 
     /* Allocation des tableaux de travail */
-    BFT_MALLOC(ia, opts.longia, cs_int_t);
-    BFT_MALLOC(ra, opts.longra, cs_real_t);
+
+    CS_PROCF(memini, MEMINI)(&iasize, &rasize,
+                             &nideve, &nrdeve, &nituse, &nrtuse);
+
+    bft_printf(_("\n"
+                 " --- Mémoire\n"
+                 "       LONGIA =     %10d (Nombre d entiers            )\n"
+                 "       LONGRA =     %10d (Nombre de reels double prec.)\n"
+                 "\n"
+                 " --- Taille des tableaux auxiliaires\n"
+                 "       NIDEVE =     %10d (Nb d  entiers en acces dvpt )\n"
+                 "       NRDEVE =     %10d (Nb de reels   en acces dvpt )\n"
+                 "       NITUSE =     %10d (Nb d  entiers en acces user )\n"
+                 "       NRTUSE =     %10d (Nb de reels   en acces user )\n\n"),
+               iasize, rasize, nituse, nrtuse, nideve, nrdeve);
+
+    BFT_MALLOC(ia, iasize, cs_int_t);
+    BFT_MALLOC(ra, rasize, cs_real_t);
+
+    BFT_MALLOC(ituser, nituse, cs_int_t);
+    BFT_MALLOC(rtuser, nrtuse, cs_real_t);
+
+    BFT_MALLOC(idevel, nideve, cs_int_t);
+    BFT_MALLOC(rdevel, nrdeve, cs_real_t);
 
     /* Initialisation de la résolution des systèmes linéaires */
 
@@ -473,11 +508,8 @@ int main
      *  appel du sous-programme de gestion de calcul (noyau du code)
      *------------------------------------------------------------------------*/
 
-    CS_PROCF(caltri, CALTRI)(&(opts.longia),
-                             &(opts.longra),
-                             &idebia,
-                             &idebra,
-                             &(opts.iverif),
+    CS_PROCF(caltri, CALTRI)(&(opts.iverif),
+                             &nideve, &nrdeve, &nituse, &nrtuse,
                              cs_glob_mesh->i_face_cells,
                              cs_glob_mesh->b_face_cells,
                              cs_glob_mesh->b_face_family,
@@ -487,7 +519,7 @@ int main
                              cs_glob_mesh->i_face_vtx_lst,
                              cs_glob_mesh->b_face_vtx_idx,
                              cs_glob_mesh->b_face_vtx_lst,
-                             ia,
+                             idevel, ituser, ia,
                              cs_glob_mesh_quantities->cell_cen,
                              cs_glob_mesh_quantities->i_face_normal,
                              cs_glob_mesh_quantities->b_face_normal,
@@ -495,7 +527,7 @@ int main
                              cs_glob_mesh_quantities->b_face_cog,
                              cs_glob_mesh->vtx_coord,
                              cs_glob_mesh_quantities->cell_vol,
-                             ra);
+                             rdevel, rtuser, ra);
 
     /* Fin de la résolution des systèmes linéaires */
 
@@ -506,6 +538,12 @@ int main
     /* Libération des tableaux de travail */
     BFT_FREE(ia);
     BFT_FREE(ra);
+
+    BFT_FREE(ituser);
+    BFT_FREE(rtuser);
+
+    BFT_FREE(idevel);
+    BFT_FREE(rdevel);
 
   }
 

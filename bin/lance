@@ -138,8 +138,6 @@
 #                    -------------------------------
 #
 SOLCOM=0
-LONGIA=1000000
-LONGRA=5000000
 #
 # Sur certaines machines, dont Tantale, des librairies externes
 # peuvent necessiter la definition de la variable TERM
@@ -1059,7 +1057,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     echo "  $RUN/$EXE_SYR \$@ -comm-mpi 1 -nbr_sat $nproc_noy $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
     echo "else" >> $localexec
     echo "  $VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMANDE_SYRTHES -proc 0 $COMMANDE_DF "\
-         "$ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY -iasize $LONGIA -rasize $LONGRA "\
+         "$ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
          "$COMMANDE_PARAM " >> $localexec 
     echo "fi" >> $localexec
     echo "retour=\$?" >> $localexec
@@ -1082,8 +1080,8 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     echo '#!/bin/sh' > $localexec 
     echo cd $RUN >> $localexec 
     echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMANDE_SYRTHES $COMMANDE_DF "\
-                 " $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY -iasize $LONGIA "\
-                 " -rasize $LONGRA $COMMANDE_PARAM " >> $localexec 
+                 " $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
+                 " $COMMANDE_PARAM " >> $localexec 
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
     chmod 700 $localexec
@@ -1115,7 +1113,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       echo cd $RUN >> $localexec 
       echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR "\
            " $COMMANDE_DF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-	   "-iasize $LONGIA  -rasize $LONGRA $COMMANDE_PARAM "  >> $localexec 
+	   " $COMMANDE_PARAM "  >> $localexec 
       echo "retour=\$?" >> $localexec
       echo "exit \$retour" >> $localexec
       chmod 700 $localexec
@@ -1127,7 +1125,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
   else # cas SOLCOM = 1
     #
     $VALGRIND $RUN/$EXE -solcom \
-          -iasize $LONGIA -rasize $LONGRA $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \
+          $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \
           || erreur " A L'EXECUTION DU NOYAU "
     #
   fi

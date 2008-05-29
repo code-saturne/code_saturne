@@ -69,7 +69,6 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
-      INCLUDE "memoir.h"
       INCLUDE "cstnum.h"
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
@@ -1389,10 +1388,6 @@ C   - Marge en temps CPU
 C
       WRITE(NFECRA,7210) TMARUS
 C
-C   - Place memoire
-C
-      WRITE(NFECRA,7310) LONGIA, LONGRA
-C
       WRITE(NFECRA,9900)
 C
 C
@@ -1448,12 +1443,6 @@ C
  7210 FORMAT(
      &' --- Marge en temps CPU                                      ',/,
      &'       TMARUS = ', E14.5,    ' (Marge CPU avant arret       )',/)
- 7310 FORMAT(
-     &' --- Memoire                                                 ',/,
-     &'       LONGIA = ',4X,I10,    ' (Nombre d entiers            )',/,
-     &'       LONGRA = ',4X,I10,    ' (Nombre de reels double prec.)',/,
-     &'     Si ces nombres sont nuls, le dimensionnement sera       ',/,
-     &'       automatique.                                          ',/)
 C
 C=======================================================================
 C 8. ENTREES SORTIES

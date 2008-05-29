@@ -33,8 +33,4 @@ C
       INTEGER           MTOTIA,MTOTRA
       COMMON / IMEMOI / MTOTIA,MTOTRA
 C
-C Ce dernier common sert a faire transiter la longueur des tableaux
-C   reserve dans les sous programmes initi1, impini, iasize et rasize
-      INTEGER           LONGIA,LONGRA
-      COMMON / ILONGI / LONGIA,LONGRA
 c@z
