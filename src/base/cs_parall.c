@@ -73,17 +73,6 @@ extern "C" {
 #define CS_PARALL_ARRAY_SIZE  500
 
 
-#if defined(_CS_HAVE_MPI)
-
-typedef struct
-{
-  long val;
-  int  rang;
-} cs_mpi_long_int_t;
-
-#endif
-
-
 /*============================================================================
  *  Global static variables
  *============================================================================*/
@@ -1234,45 +1223,6 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
 
   else
     *gnum = 0;
-
-}
-
-/*----------------------------------------------------------------------------
- * Maximum value of a counter and associated 6 character string
- * (used for Fortan maximum memory count in IA/RA).
- *
- * Fortran Interface
- *
- * Interface Fortran :
- *
- * SUBROUTINE PARMEM (MEMIMX, XYZVAR)
- * *****************
- *
- * INTEGER          MEMIMX      : <-> : maximum value reached
- * CHARACTER        SPGMAX(6)   : <-> : associated subroutine name
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmem, PARMEM)(cs_int_t   *memimx,
-                          char        spgmax[6])
-{
-#if defined(_CS_HAVE_MPI)
-
-  cs_mpi_long_int_t  val_in, val_max;
-
-  assert(sizeof(double) == sizeof(cs_real_t));
-
-  val_in.val  = *memimx;
-  val_in.rang = cs_glob_base_rang;
-
-  MPI_Allreduce(&val_in, &val_max, 1, MPI_LONG_INT, MPI_MAXLOC,
-                cs_glob_base_mpi_comm);
-
-  *memimx = val_max.val;
-
-  MPI_Bcast(spgmax, 6, MPI_CHAR, val_max.rang, cs_glob_base_mpi_comm);
-
-#endif
 
 }
 

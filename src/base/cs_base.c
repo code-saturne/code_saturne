@@ -90,6 +90,20 @@ extern "C" {
 #define CS_BASE_NBR_CHAINE                               5
 #define CS_BASE_LNG_CHAINE                               64
 
+/*============================================================================
+ * Types privés
+ *============================================================================*/
+
+#if defined(_CS_HAVE_MPI)
+
+typedef struct
+{
+  long val;
+  int  rang;
+} _cs_base_mpi_long_int_t;
+
+#endif
+
 /* Type pour la sauvegarde des signaux */
 
 typedef void (*_cs_base_sighandler_t) (int);
@@ -141,6 +155,15 @@ static _cs_base_sighandler_t cs_glob_base_sigcpu_sauve = SIG_DFL;
 /* Variables globales associées à des pointeurs de fonction */
 
 static cs_exit_t  *_cs_glob_exit = (_cs_base_exit);
+
+/* Variables globales associées à la gestion des tableaux de travail Fortran */
+
+static char      _cs_glob_srt_ia_peak[7] = "      ";
+static char      _cs_glob_srt_ra_peak[7] = "      ";
+static cs_int_t  _cs_glob_mem_ia_peak = 0;
+static cs_int_t  _cs_glob_mem_ra_peak = 0;
+static cs_int_t  _cs_glob_mem_ia_size = 0;
+static cs_int_t  _cs_glob_mem_ra_size = 0;
 
 /* Variables globales associées à l'instrumentation */
 
@@ -673,6 +696,36 @@ _cs_base_prof_mpe_fin(void)
 
 #endif /* defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) */
 
+/*----------------------------------------------------------------------------
+ * Maximum value of a counter and associated 6 character string
+ * (used for Fortan maximum memory count in IA/RA).
+ *
+ * parameters:
+ *   mem_peak  <-> maximum value reached
+ *   srt_peak  <-> associated subroutine name
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_work_mem_max(cs_int_t  *mem_peak,
+                      char       srt_peak[6])
+{
+#if defined(_CS_HAVE_MPI)
+
+  _cs_base_mpi_long_int_t  val_in, val_max;
+
+  assert(sizeof(double) == sizeof(cs_real_t));
+
+  val_in.val  = *mem_peak;
+  val_in.rang = cs_glob_base_rang;
+
+  MPI_Allreduce(&val_in, &val_max, 1, MPI_LONG_INT, MPI_MAXLOC,
+                cs_glob_base_mpi_comm);
+
+  *mem_peak = val_max.val;
+
+  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rang, cs_glob_base_mpi_comm);
+#endif
+}
 
 /*============================================================================
  *  Fonctions publiques pour API Fortran
@@ -717,6 +770,94 @@ void CS_PROCF (dmtmps, DMTMPS)
   *tcpu = bft_timer_cpu_time();
 }
 
+
+/*----------------------------------------------------------------------------
+ * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
+ * pas  LONGIA.
+ *
+ * Interface Fortran :
+ *
+ * SUBROUTINE IASIZE (SOUSPG, MEMINT)
+ * *****************
+ *
+ * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
+ * INTEGER          MEMINT      : --> : Indice de la dernière case utilisée
+ *                              :     : dans IA
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (iasize, IASIZE)
+(
+ const char   souspg[6],
+ cs_int_t    *memint
+)
+{
+  /* Test if enough memory is available */
+
+  if (*memint > _cs_glob_mem_ia_size) {
+    char _souspg[7];
+    strncpy(_souspg, souspg, 6);
+    _souspg[6] = '\0';
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Sous-programme appelant IASIZE :                   %s\n"
+                " Mémoire nécessaire dans IA (en nombre d'entiers) : %d\n"
+                "         disponible :                               %d\n\n"
+                " ----> Définir IASIZE au moins égale à %d entiers)."),
+              _souspg, *memint, _cs_glob_mem_ia_size, *memint);
+  }
+
+  /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
+
+  else if (*memint > _cs_glob_mem_ia_peak) {
+
+    _cs_glob_mem_ia_peak = *memint;
+    strncpy(_cs_glob_srt_ia_peak, souspg, 6);
+    _cs_glob_srt_ia_peak[6] = '\0';
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
+ * pas  LONGRA.
+ *
+ * Interface Fortran :
+ *
+ * SUBROUTINE RASIZE (SOUSPG, MEMINT)
+ * *****************
+ *
+ * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
+ * INTEGER          MEMRDP      : --> : Indice de la dernière case utilisée
+ *                              :     : dans RA
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (rasize, RASIZE)
+(
+ const char   souspg[6],
+ cs_int_t    *memrdp
+)
+{
+  /* Test if enough memory is available */
+
+  if (*memrdp > _cs_glob_mem_ra_size) {
+    char _souspg[7];
+    strncpy(_souspg, souspg, 6);
+    _souspg[6] = '\0';
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Sous-programme appelant RASIZE :                   %s\n"
+                " Mémoire nécessaire dans RA (en nombre de réels) :  %d\n"
+                "         disponible :                               %d\n\n"
+                " ----> Définir RASIZE au moins égale à %d réels)."),
+              _souspg, *memrdp, _cs_glob_mem_ra_size, *memrdp);
+  }
+
+  /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
+
+  else if (*memrdp > _cs_glob_mem_ra_peak) {
+
+    _cs_glob_mem_ra_peak = *memrdp;
+    strncpy(_cs_glob_srt_ra_peak, souspg, 6);
+    _cs_glob_srt_ra_peak[6] = '\0';
+  }
+}
 
 /*============================================================================
  * Fonctions publiques
@@ -947,6 +1088,28 @@ void cs_base_mem_init
 
 
 /*----------------------------------------------------------------------------
+ * Allocate Fortran work arrays and prepare for their use
+ *----------------------------------------------------------------------------*/
+
+void cs_base_mem_init_work
+(
+ size_t       iasize,
+ size_t       rasize,
+ cs_int_t   **ia,
+ cs_real_t  **ra
+)
+{
+  /* Allocation des tableaux de travail */
+
+  BFT_MALLOC(*ia, iasize, cs_int_t);
+  BFT_MALLOC(*ra, rasize, cs_real_t);
+
+  _cs_glob_mem_ia_size = iasize;
+  _cs_glob_mem_ra_size = rasize;
+}
+
+
+/*----------------------------------------------------------------------------
  * Fonction terminant la gestion de contrôle de la mémoire allouée
  * et affichant le bilan de la mémoire consommée.
  *----------------------------------------------------------------------------*/
@@ -1059,6 +1222,50 @@ void cs_base_mem_fin
       }
 #endif
     }
+
+  }
+
+  /* Information sur la gestion des tableaux de travail Fortran */
+
+  if (cs_glob_base_nbr > 1) {
+    _cs_base_work_mem_max(&_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak);
+    _cs_base_work_mem_max(&_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak);
+  }
+
+  if (_cs_glob_mem_ia_size > 0 || _cs_glob_mem_ra_size > 0) {
+
+    size_t wk_unit[2] = {0, 0};
+    double wk_size[2] = {0., 0.};
+
+    wk_size[0] = (  sizeof(cs_int_t)*_cs_glob_mem_ia_size
+                  + sizeof(cs_real_t)*_cs_glob_mem_ra_size) / 1000;
+    wk_size[1] = (  sizeof(cs_int_t)*_cs_glob_mem_ia_peak
+                  + sizeof(cs_real_t)*_cs_glob_mem_ra_peak) / 1000;
+
+#if defined(_CS_HAVE_MPI)
+    if (cs_glob_base_nbr > 1) {
+      double _wk_size_loc = wk_size[0];
+      MPI_Allreduce(&_wk_size_loc, &(wk_size[0]), 1, MPI_DOUBLE, MPI_MAX,
+                    cs_glob_base_mpi_comm);
+    }
+#endif
+
+    for (ind_bil = 0; ind_bil < 2; ind_bil++) {
+      for (itot = 0; wk_size[ind_bil] > 1024. && unite[itot] != 'p'; itot++)
+        wk_size[ind_bil] /= 1024.;
+      wk_unit[ind_bil] = itot;
+    }
+
+    bft_printf(_("\n"
+                 "  Utilisation des tableaux de travail Fortran :\n"
+                 "   %-12lu entiers nécessaires (maximum atteint dans %s)\n"
+                 "   %-12lu réels   nécessaires (maximum atteint dans %s)\n\n"
+                 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
+                 "                                      utilisée %12.3f %co\n"),
+               (unsigned long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
+               (unsigned long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
+               wk_size[0], unite[wk_unit[0]],
+               wk_size[1], unite[wk_unit[1]]);
 
   }
 

@@ -596,25 +596,6 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
                           cs_int_t   *rankid,
                           cs_int_t   *gnum);
 
-/*----------------------------------------------------------------------------
- * Maximum value of a counter and associated 6 character string
- * (used for Fortan maximum memory count in IA/RA).
- *
- * Fortran Interface
- *
- * Interface Fortran :
- *
- * SUBROUTINE PARMEM (MEMIMX, XYZVAR)
- * *****************
- *
- * INTEGER          MEMIMX      : <-> : maximum value reached
- * CHARACTER        SPGMAX(6)   : <-> : associated subroutine name
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmem, PARMEM)(cs_int_t   *memimx,
-                          char        spgmax[6]);
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/

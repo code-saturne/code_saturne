@@ -1755,13 +1755,6 @@ C       ===========
 C
 #endif
 C
-      IF(IWARN0.GT.0) THEN
-        WRITE(NFECRA,5000)
-        IIII = 0
-        CALL IASIZE('FINFIN',IIII)
-        CALL RASIZE('FINFIN',IIII)
-      ENDIF
-C
       WRITE(NFECRA,7000)
 C
 C----
@@ -1828,9 +1821,6 @@ C
  4010 FORMAT(                                                         /,
      & 3X,'** TEMPS CPU POUR LES SORTIES FINALES : ',E14.5           ,/,
      & 3X,'   ----------------------------------                    ',/)
- 5000 FORMAT(/,
-     & 3X,'** MEMOIRE DE TRAVAIL FORTRAN UTILISEE                   ',/,
-     & 3X,'   -----------------------------------                   ',/)
  7000 FORMAT(/,/,
      &' =========================================================== ',/,
      &                                                              /,/,

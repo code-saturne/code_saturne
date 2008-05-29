@@ -75,7 +75,6 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
-      INCLUDE "memoir.h"
       INCLUDE "dimens.h"
       INCLUDE "entsor.h"
       INCLUDE "ihmpre.h"
@@ -200,9 +199,6 @@ C
       IF (LONGRA.EQ.0) THEN
         LONGRA = 120 * MAX(NCELET, NFABOR)
       ENDIF
-C
-      MTOTIA = LONGIA
-      MTOTRA = LONGRA
 C
 C----
 C FORMATS

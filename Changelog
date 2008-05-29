@@ -1,3 +1,18 @@
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translating memory checking from FORTRAN to C.
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_parall.h
+    src/base/cs_base.c
+    src/base/cs_parall.c
+    src/base/cs_main.c
+    src/base/caltri.F
+    src/base/memini.F
+  deleted routines:
+    include/base/memoir.h
+    src/base/rasize.F
+    src/base/iasize.F
+
 * 29/05/2008 - David Monfort <david.monfort@edf.fr> 
   The size of the work arrays IA and RA is now defined
   with a FORTRAN user file and no more via the scripts,
@@ -20,6 +35,8 @@
     src/base/memini.F
     bin/lance
     bin/lance.help
+  deleted routines:
+    users/base/ustbus.F
 
 * 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding communications with a proxy, in order to prepare
@@ -30,7 +47,6 @@
     src/base/cs_base.c
     src/base/cs_main.c
     src/base/cs_opts.c
-
   added routines:
     include/base/cs_calcium.h
     include/base/cs_proxy_comm.h

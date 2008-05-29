@@ -491,8 +491,7 @@ int main
                  "       NRTUSE =     %10d (Nb de reels   en acces user )\n\n"),
                iasize, rasize, nituse, nrtuse, nideve, nrdeve);
 
-    BFT_MALLOC(ia, iasize, cs_int_t);
-    BFT_MALLOC(ra, rasize, cs_real_t);
+    cs_base_mem_init_work(iasize, rasize, &ia, &ra);
 
     BFT_MALLOC(ituser, nituse, cs_int_t);
     BFT_MALLOC(rtuser, nrtuse, cs_real_t);
