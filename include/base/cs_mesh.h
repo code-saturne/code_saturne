@@ -115,19 +115,9 @@ typedef struct {
   /* Global numbering */
 
   fvm_gnum_t  *global_cell_num;    /* Global cell numbering */
-  fvm_gnum_t  *global_i_face_num;  /* Global internal face numbering
-                                      (remain in the initial local numbering) */
-  fvm_gnum_t  *global_b_face_num;  /* Global border face numbering
-                                      (remain in the initial local numbering) */
+  fvm_gnum_t  *global_i_face_num;  /* Global internal face numbering */
+  fvm_gnum_t  *global_b_face_num;  /* Global border face numbering */
   fvm_gnum_t  *global_vtx_num;     /* Global vertex numbering */
-
-
-  /* Initial face numbering (for exchange and restart) */
-
-  cs_int_t   *init_i_face_num;    /* Initial internal face numbering
-                                    (if renumbering) */
-  cs_int_t   *init_b_face_num;    /* Initial border face numbering
-                                    (if renumbering) */
 
   /* Periodictity features */
 

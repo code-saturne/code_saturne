@@ -191,20 +191,6 @@ static char  cs_suite_fmt_ascii_tab_real[] = " %23.15E";
 static cs_int_t     cs_glob_suite_ptr_nbr = 0;
 static cs_suite_t **cs_glob_suite_ptr_tab = NULL;
 
-#if defined(_CS_HAVE_MPI)
-
-/* Mode de rapatriement sûr (légèrement plus lent) */
-
-/* IBM Blue Gene ou Cray XT */
-#if   defined(__blrts__) || defined(__bgp__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-static cs_bool_t cs_glob_suite_sync_gather = CS_TRUE;
-#else
-static cs_bool_t cs_glob_suite_sync_gather = CS_FALSE;
-#endif
-
-#endif /* defined(_CS_HAVE_MPI) */
-
 
 /*============================================================================
  *  Prototypes de fonctions privées
@@ -345,33 +331,27 @@ static void cs_loc_suite_rub_f77_vers_C
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- *  Fonction qui créé des listes locales->globales associées à chaque bloc.
+ *  Fonction qui prépare la redistribution des valeurs associées à une
+ *  entité de maillage.
  *
- *  Pour le processus "maître E/S", le tableau "nbr_ent_bloc" indiquant le
- *  nombre d'entités appartenant à chaque bloc, et ceci pour chaque domaine :
- *  nbr_ent(bloc, domaine) = nbr_ent_bloc[nbr_bloc * ind_dom + ind_bloc] ;
- *  Pour les autres processus, le tableau "nbr_ent_loc" indique le nombre
- *  d'entités locales appartenant à chaque bloc.
- *  Les tableaux "lst_ent_loc" et "lst_ent_glob" donnent les indices locaux
- *  et globaux des entités locales appartenant à chaque bloc (nbr_ent_loc[0]
- *  premières valeurs pour le bloc 0, nbr_ent_loc[1] suivantes pour le
- *  second, etc.).
- *
- *  Ces tableaux sont alloués ici et devront être libérés par la suite.
- *
- *  On renvoie la plus grande valeur (globale) de nbr_ent_loc.
+ *  Les tableaux alloués doivent être libérés par l'appelant.
  *----------------------------------------------------------------------------*/
 
-static cs_int_t cs_loc_suite_cree_listes_ent
+static void cs_loc_suite_prep_dist
 (
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
-       cs_int_t     *const pas_bloc,      /* <-- Taille blocs (sauf dernier)  */
-       cs_int_t   * *const nbr_ent_bloc,  /* <-- Nombre d'entités par bloc    */
-       cs_int_t   * *const lst_ent_loc,   /* <-- Liste des entités par bloc   */
-       cs_int_t   * *const lst_ent_glob   /* <-- Liste des entités par bloc   */
+ const cs_int_t       nbr_ent_glob,    /* --> Nombre global d'entités         */
+ const cs_int_t       nbr_ent_loc,     /* --> Nombre local d'entités          */
+ const cs_int_t       nbr_bloc,        /* --> Nombre de blocs                 */
+ cs_int_t            *block_buf_size,  /* <-- Taille somme tableaux / bloc    */
+ cs_int_t            *owner_buf_size,  /* <-- Taille somme tableaux / rang    */
+ cs_int_t            *pas_bloc,        /* <-- Pas associé à chaque bloc       */
+ const fvm_gnum_t     num_glob_ent[],  /* --> Numéros globaux des entités     */
+ int                **owner_ent_id,    /* <-- Id entités de chaque rang       */
+ int                **block_count,     /* <-- Nb. entités locales / bloc      */
+ int                **owner_count,     /* <-- Nb. entités rang / bloc         */
+ int                **block_disp,      /* <-- Positions associés aux blocs    */
+ int                **owner_disp,      /* <-- Positions associés aux rangs    */
+ int                **block_start      /* <-- Décalage pour chaque bloc       */
 );
 
 
@@ -433,7 +413,7 @@ static void cs_loc_suite_distr_val
 static void cs_loc_suite_permute_lec
 (
  const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const cs_int_t     *const num_ent_ini,   /* --> Numéros globaux des entités  */
+ const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
  const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
  const cs_type_t           typ_val,       /* --> Type de valeur               */
        cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
@@ -447,7 +427,7 @@ static void cs_loc_suite_permute_lec
 static cs_byte_t * cs_loc_suite_permute_ecr
 (
  const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const cs_int_t     *const num_ent_ini,   /* --> Numéros globaux des entités  */
+ const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
  const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
  const cs_type_t           typ_val,       /* --> Type de valeur               */
  const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
@@ -1202,26 +1182,40 @@ cs_int_t cs_suite_lit_rub
   switch (support) {
 
   case CS_SUITE_SUPPORT_SCAL:
+    nbr_ent_glob = nbr_val_tot/nbr_val_ent;
+    nbr_ent_loc  = nbr_val_tot/nbr_val_ent;
+    num_glob_ent = NULL;
     break;
   case CS_SUITE_SUPPORT_CEL:
     if (mesh->n_g_cells != (fvm_gnum_t)suite->nbr_cel)
       return CS_SUITE_ERR_SUPPORT;
+    nbr_ent_glob = mesh->n_g_cells;
+    nbr_ent_loc  = mesh->n_cells;
+    num_glob_ent = mesh->global_cell_num;
     break;
   case CS_SUITE_SUPPORT_FAC_INT:
     if (mesh->n_g_i_faces != (fvm_gnum_t)suite->nbr_fac)
       return CS_SUITE_ERR_SUPPORT;
+    nbr_ent_glob = mesh->n_g_i_faces;
+    nbr_ent_loc  = mesh->n_i_faces;
+    num_glob_ent = mesh->global_i_face_num;
     break;
   case CS_SUITE_SUPPORT_FAC_BRD:
     if (mesh->n_g_b_faces != (fvm_gnum_t)suite->nbr_fbr)
       return CS_SUITE_ERR_SUPPORT;
+    nbr_ent_glob = mesh->n_g_b_faces;
+    nbr_ent_loc  = mesh->n_b_faces;
+    num_glob_ent = mesh->global_b_face_num;
     break;
   case CS_SUITE_SUPPORT_SOM:
     if (mesh->n_g_vertices != (fvm_gnum_t)suite->nbr_som)
       return CS_SUITE_ERR_SUPPORT;
+    nbr_ent_glob = mesh->n_g_vertices;
+    nbr_ent_loc  = mesh->n_vertices;
+    num_glob_ent = mesh->global_vtx_num;
     break;
   default:
-    assert(support <= CS_SUITE_SUPPORT_SOM);
-
+    assert(0);
   }
 
   /* On recherche l'enregistrement correspondant dans l'index */
@@ -1287,9 +1281,18 @@ cs_int_t cs_suite_lit_rub
 
   /* En mode non-parallèle */
 
-  if (cs_glob_base_rang < 0)
+  if (cs_glob_base_nbr == 1) {
+
     cs_loc_suite_lit_val(suite->type, fic, nbr_val_tot, typ_val, val,
                          buffer_ascii);
+
+    if (num_glob_ent != NULL)
+      cs_loc_suite_permute_lec(nbr_ent_loc,
+                               num_glob_ent,
+                               nbr_val_ent,
+                               typ_val,
+                               val);
+  }
 
 #if defined(_CS_HAVE_MPI)
 
@@ -1310,34 +1313,6 @@ cs_int_t cs_suite_lit_rub
   else {
 
     cs_int_t  nbr_bloc;
-
-    switch(support) {
-
-    case CS_SUITE_SUPPORT_CEL:
-      nbr_ent_glob = mesh->n_g_cells;
-      nbr_ent_loc  = mesh->n_cells;
-      num_glob_ent = mesh->global_cell_num;
-      break;
-    case CS_SUITE_SUPPORT_FAC_INT:
-      nbr_ent_glob = mesh->n_g_i_faces;
-      nbr_ent_loc  = mesh->n_i_faces;
-      num_glob_ent = mesh->global_i_face_num;
-      break;
-    case CS_SUITE_SUPPORT_FAC_BRD:
-      nbr_ent_glob = mesh->n_g_b_faces;
-      nbr_ent_loc  = mesh->n_b_faces;
-      num_glob_ent = mesh->global_b_face_num;
-      break;
-    case CS_SUITE_SUPPORT_SOM:
-      nbr_ent_glob = mesh->n_g_vertices;
-      nbr_ent_loc  = mesh->n_vertices;
-      num_glob_ent = mesh->global_vtx_num;
-      break;
-    default:
-      assert(   support > CS_SUITE_SUPPORT_SCAL
-             && support <= CS_SUITE_SUPPORT_SOM);
-
-    }
 
     nbr_bloc = (  ((sizeof(cs_real_t) * nbr_ent_glob * nbr_val_ent) - 1)
                 / cs_suite_taille_buf_def) + 1;
@@ -1360,33 +1335,9 @@ cs_int_t cs_suite_lit_rub
 
 #endif /* #if defined(_CS_HAVE_MPI) */
 
-  /* Traitement des renumérotations éventuelles */
-
-  switch (support) {
-
-  case CS_SUITE_SUPPORT_FAC_INT:
-    cs_loc_suite_permute_lec(mesh->n_i_faces,
-                             mesh->init_i_face_num,
-                             nbr_val_ent,
-                             typ_val,
-                             val);
-    break;
-  case CS_SUITE_SUPPORT_FAC_BRD:
-    cs_loc_suite_permute_lec(mesh->n_b_faces,
-                             mesh->init_b_face_num,
-                             nbr_val_ent,
-                             typ_val,
-                             val);
-    break;
-  default:
-    break;
-
-  }
-
   /* Retour */
 
   return CS_SUITE_SUCCES;
-
 }
 
 
@@ -1408,7 +1359,6 @@ void cs_suite_ecr_rub
   cs_int_t         nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
   fvm_gnum_t      *num_glob_ent;
   bft_file_off_t   taille_rub, pos_fic_cur;
-  cs_byte_t       *val_tmp;
 
   cs_int_t         ind_col_0 = 0;
 
@@ -1523,29 +1473,6 @@ void cs_suite_ecr_rub
 
   }
 
-  /* Traitement des renumérotations éventuelles */
-
-  switch (support) {
-
-  case CS_SUITE_SUPPORT_FAC_INT:
-    val_tmp = cs_loc_suite_permute_ecr(mesh->n_i_faces,
-                                       mesh->init_i_face_num,
-                                       nbr_val_ent,
-                                       typ_val,
-                                       val);
-    break;
-  case CS_SUITE_SUPPORT_FAC_BRD:
-    val_tmp = cs_loc_suite_permute_ecr(mesh->n_b_faces,
-                                       mesh->init_b_face_num,
-                                       nbr_val_ent,
-                                       typ_val,
-                                       val);
-    break;
-  default:
-    val_tmp = NULL;
-
-  }
-
   /* Contenu de la rubrique */
   /*------------------------*/
 
@@ -1553,15 +1480,58 @@ void cs_suite_ecr_rub
                                           support,
                                           nbr_val_ent);
 
+  switch (support) {
+
+  case CS_SUITE_SUPPORT_SCAL:
+    nbr_ent_glob = nbr_val_tot/nbr_val_ent;
+    nbr_ent_loc  = nbr_val_tot/nbr_val_ent;
+    num_glob_ent = NULL;
+    break;
+  case CS_SUITE_SUPPORT_CEL:
+    nbr_ent_glob = mesh->n_g_cells;
+    nbr_ent_loc  = mesh->n_cells;
+    num_glob_ent = mesh->global_cell_num;
+    break;
+  case CS_SUITE_SUPPORT_FAC_INT:
+    nbr_ent_glob = mesh->n_g_i_faces;
+    nbr_ent_loc  = mesh->n_i_faces;
+    num_glob_ent = mesh->global_i_face_num;
+    break;
+  case CS_SUITE_SUPPORT_FAC_BRD:
+    nbr_ent_glob = mesh->n_g_b_faces;
+    nbr_ent_loc  = mesh->n_b_faces;
+    num_glob_ent = mesh->global_b_face_num;
+    break;
+  case CS_SUITE_SUPPORT_SOM:
+    nbr_ent_glob = mesh->n_g_vertices;
+    nbr_ent_loc  = mesh->n_vertices;
+    num_glob_ent = mesh->global_vtx_num;
+    break;
+  default:
+    assert(0);
+
+  }
+
   /* En mode non-parallèle */
 
-  if (cs_glob_base_rang < 0) {
+  if (cs_glob_base_nbr == 1) {
+
+    cs_byte_t  *val_tmp = NULL;
+
+    if (num_glob_ent != NULL) /* Traitement des renumérotations éventuelles */
+      val_tmp = cs_loc_suite_permute_ecr(nbr_ent_loc,
+                                         num_glob_ent,
+                                         nbr_val_ent,
+                                         typ_val,
+                                         val);
 
     cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val,
                          (val_tmp != NULL) ? val_tmp : val,
                          &ind_col_0);
     cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
 
+    if (val_tmp != NULL)
+      BFT_FREE (val_tmp);
   }
 
 #if defined(_CS_HAVE_MPI)
@@ -1571,8 +1541,7 @@ void cs_suite_ecr_rub
   else if (support == CS_SUITE_SUPPORT_SCAL) {
 
     if (cs_glob_base_rang == 0) {
-      cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val,
-                           (val_tmp != NULL) ? val_tmp : val,
+      cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val, val,
                            &ind_col_0);
       cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
     }
@@ -1585,34 +1554,6 @@ void cs_suite_ecr_rub
 
     cs_int_t  nbr_bloc;
 
-    switch(support) {
-
-    case CS_SUITE_SUPPORT_CEL:
-      nbr_ent_glob = mesh->n_g_cells;
-      nbr_ent_loc  = mesh->n_cells;
-      num_glob_ent = mesh->global_cell_num;
-      break;
-    case CS_SUITE_SUPPORT_FAC_INT:
-      nbr_ent_glob = mesh->n_g_i_faces;
-      nbr_ent_loc  = mesh->n_i_faces;
-      num_glob_ent = mesh->global_i_face_num;
-      break;
-    case CS_SUITE_SUPPORT_FAC_BRD:
-      nbr_ent_glob = mesh->n_g_b_faces;
-      nbr_ent_loc  = mesh->n_b_faces;
-      num_glob_ent = mesh->global_b_face_num;
-      break;
-    case CS_SUITE_SUPPORT_SOM:
-      nbr_ent_glob = mesh->n_g_vertices;
-      nbr_ent_loc  = mesh->n_vertices;
-      num_glob_ent = mesh->global_vtx_num;
-      break;
-    default:
-      assert(   support > CS_SUITE_SUPPORT_SCAL
-             && support <= CS_SUITE_SUPPORT_SOM);
-
-    }
-
     nbr_bloc = (  ((sizeof(cs_real_t) * nbr_ent_glob * nbr_val_ent) - 1)
                 / cs_suite_taille_buf_def) + 1;
     if (nbr_bloc > cs_glob_base_nbr)
@@ -1620,23 +1561,18 @@ void cs_suite_ecr_rub
     if (nbr_bloc == 0 )
       nbr_bloc = 1;
 
-    cs_loc_suite_ecr_val_ent
-      (suite,
-       nbr_bloc,
-       nbr_ent_glob,
-       nbr_ent_loc,
-       num_glob_ent,
-       nbr_val_ent,
-       typ_val,
-       (val_tmp != NULL) ? val_tmp : (const cs_byte_t *)val);
+    cs_loc_suite_ecr_val_ent(suite,
+                             nbr_bloc,
+                             nbr_ent_glob,
+                             nbr_ent_loc,
+                             num_glob_ent,
+                             nbr_val_ent,
+                             typ_val,
+                             (const cs_byte_t *)val);
 
   }
 
 #endif /* #if defined(_CS_HAVE_MPI) */
-
-  if (val_tmp != NULL)
-    BFT_FREE (val_tmp);
-
 }
 
 
@@ -2323,120 +2259,107 @@ static void cs_loc_suite_ecr_val_fin
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- *  Fonction qui créé des listes locales->globales associées à chaque bloc.
+ *  Fonction qui prépare la redistribution des valeurs associées à une
+ *  entité de maillage.
  *
- *  Pour le processus "maître E/S", le tableau "nbr_ent_bloc" indiquant le
- *  nombre d'entités appartenant à chaque bloc, et ceci pour chaque domaine :
- *  nbr_ent(bloc, domaine) = nbr_ent_bloc[nbr_bloc * ind_dom + ind_bloc] ;
- *  Pour les autres processus, le tableau "nbr_ent_loc" indique le nombre
- *  d'entités locales appartenant à chaque bloc.
- *  Les tableaux "lst_ent_loc" et "lst_ent_glob" donnent les indices locaux
- *  et globaux des entités locales appartenant à chaque bloc (nbr_ent_loc[0]
- *  premières valeurs pour le bloc 0, nbr_ent_loc[1] suivantes pour le
- *  second, etc.)
- *
- *  Ces tableaux sont alloués ici et devront être libérés par la suite.
- *
- *  On renvoie la plus grande valeur (globale) de nbr_ent_loc.
+ *  Les tableaux alloués doivent être libérés par l'appelant.
  *----------------------------------------------------------------------------*/
 
-static cs_int_t cs_loc_suite_cree_listes_ent
+static void cs_loc_suite_prep_dist
 (
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
-       cs_int_t     *const pas_bloc,      /* <-- Taille blocs (sauf dernier)  */
-       cs_int_t   * *const nbr_ent_bloc,  /* <-- Nombre d'entités par bloc    */
-       cs_int_t   * *const lst_ent_loc,   /* <-- Liste des entités par bloc   */
-       cs_int_t   * *const lst_ent_glob   /* <-- Liste des entités par bloc   */
+ const cs_int_t       nbr_ent_glob,    /* --> Nombre global d'entités         */
+ const cs_int_t       nbr_ent_loc,     /* --> Nombre local d'entités          */
+ const cs_int_t       nbr_bloc,        /* --> Nombre de blocs                 */
+ cs_int_t            *pas_bloc,        /* <-- Pas associé à chaque bloc       */
+ cs_int_t            *block_buf_size,  /* <-- Taille somme tableaux / bloc    */
+ cs_int_t            *owner_buf_size,  /* <-- Taille somme tableaux / rang    */
+ const fvm_gnum_t     num_glob_ent[],  /* --> Numéros globaux des entités     */
+ int                **owner_ent_id,    /* <-- Id entités de chaque rang       */
+ int                **block_count,     /* <-- Nb. entités locales / bloc      */
+ int                **owner_count,     /* <-- Nb. entités rang / bloc         */
+ int                **block_disp,      /* <-- Positions associés aux blocs    */
+ int                **owner_disp,      /* <-- Positions associés aux rangs    */
+ int                **block_start      /* <-- Décalage pour chaque bloc       */
 )
 {
+  int       ind_bloc;
+  cs_int_t  _pas_bloc, ind;
 
-  cs_int_t  ind, ind_bloc, ind_glob_ent;
-  cs_int_t  taille_max_loc, taille_max_glob;
+  int *_block_ent_id = NULL, *_owner_ent_id = NULL;
+  int *_block_count = NULL, *_owner_count = NULL;
+  int *_block_disp = NULL, *_owner_disp = NULL;
+  int *_block_start = NULL;
 
-  cs_int_t  *pos_ent_bloc;
-  cs_int_t  *nbr_ent_bloc_loc;
+  /* Initialisations */
 
-  /* pas_bloc = ceil(nbr_ent_glob/nbr_bloc) */
+  /* _pas_bloc = ceil(nbr_ent_glob/nbr_bloc) */
 
-  *pas_bloc = nbr_ent_glob / nbr_bloc;
+  _pas_bloc = nbr_ent_glob / nbr_bloc;
   if (nbr_ent_glob % nbr_bloc > 0)
-    *pas_bloc += 1;
+    _pas_bloc += 1;
 
   /* Allocation */
 
-  BFT_MALLOC(*lst_ent_loc,  nbr_ent_loc, cs_int_t);
-  BFT_MALLOC(*lst_ent_glob, nbr_ent_loc, cs_int_t);
-
-  if (cs_glob_base_rang == 0) {
-    BFT_MALLOC(*nbr_ent_bloc, nbr_bloc * cs_glob_base_nbr, cs_int_t);
-    BFT_MALLOC(nbr_ent_bloc_loc, nbr_bloc, cs_int_t);
-  }
-  else {
-    BFT_MALLOC(*nbr_ent_bloc, nbr_bloc, cs_int_t);
-    nbr_ent_bloc_loc = *nbr_ent_bloc;
-  }
-
-  BFT_MALLOC(pos_ent_bloc, nbr_bloc, cs_int_t);
-
+  BFT_MALLOC(_block_count, cs_glob_base_nbr, int);
+  BFT_MALLOC(_owner_count, cs_glob_base_nbr, int);
+  BFT_MALLOC(_block_disp, cs_glob_base_nbr, int);
+  BFT_MALLOC(_owner_disp, cs_glob_base_nbr, int);
+  BFT_MALLOC(_block_start, cs_glob_base_nbr, int);
 
   /* Comptage */
 
-  for (ind_bloc = 0 ; ind_bloc < nbr_bloc ; ind_bloc++)
-    nbr_ent_bloc_loc[ind_bloc] = 0;
+  for (ind_bloc = 0 ; ind_bloc < cs_glob_base_nbr ; ind_bloc++)
+    _block_count[ind_bloc] = 0;
 
   for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
-    ind_bloc = (num_glob_ent[ind] - 1) / *pas_bloc;
-    nbr_ent_bloc_loc[ind_bloc] += 1;
+    ind_bloc = (num_glob_ent[ind] - 1) / _pas_bloc;
+    _block_count[ind_bloc] += 1;
   }
 
-  /* Affectation */
+  MPI_Alltoall(_block_count, 1, MPI_INT, _owner_count, 1, MPI_INT,
+               cs_glob_base_mpi_comm);
 
-  pos_ent_bloc[0] = 0;
-  for (ind_bloc = 1 ; ind_bloc < nbr_bloc ; ind_bloc++)
-    pos_ent_bloc[ind_bloc]
-      = pos_ent_bloc[ind_bloc - 1] + nbr_ent_bloc_loc[ind_bloc - 1];
+  /* Création des index */
+
+  _block_disp[0] = 0;
+  _owner_disp[0] = 0;
+  for (ind = 1; ind < cs_glob_base_nbr; ind++) {
+    _block_disp[ind] = _block_disp[ind-1] + _block_count[ind-1];
+    _owner_disp[ind] = _owner_disp[ind-1] + _owner_count[ind-1];
+  }
+
+  *block_buf_size =   _block_disp[cs_glob_base_nbr - 1]
+                    + _block_count[cs_glob_base_nbr - 1];
+  *owner_buf_size =   _owner_disp[cs_glob_base_nbr - 1]
+                    + _owner_count[cs_glob_base_nbr - 1];
+
+  memcpy(_block_start, _block_disp, sizeof(int)*cs_glob_base_nbr);
+
+  /* Préparation des listes */
+
+  BFT_MALLOC(_block_ent_id, *block_buf_size, int);
+  BFT_MALLOC(_owner_ent_id, *owner_buf_size, int);
 
   for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
-    ind_glob_ent = num_glob_ent[ind] - 1;
-    ind_bloc = ind_glob_ent / *pas_bloc;
-    (*lst_ent_loc) [pos_ent_bloc[ind_bloc]] = ind;
-    (*lst_ent_glob)[pos_ent_bloc[ind_bloc]] = ind_glob_ent % (*pas_bloc);
-    pos_ent_bloc[ind_bloc] += 1;
+    ind_bloc = (num_glob_ent[ind] - 1) / _pas_bloc;
+    _block_ent_id[_block_start[ind_bloc]] = (num_glob_ent[ind] - 1) % _pas_bloc;
+    _block_start[ind_bloc] += 1;
   }
 
-  BFT_FREE(pos_ent_bloc);
-
-  /*
-   * Dimensionnement des messages ; le processus "maître E/S" stocke
-   * le nombre d'entités par bloc et par domaine externe :
-   * nbr_ent_bloc[ind_dom][ind_bloc]
-   */
-
-  MPI_Gather(nbr_ent_bloc_loc, nbr_bloc, CS_MPI_INT,
-             *nbr_ent_bloc, nbr_bloc, CS_MPI_INT, 0,
-             cs_glob_base_mpi_comm);
-
-  if (cs_glob_base_rang == 0)
-    BFT_FREE(nbr_ent_bloc_loc);
-  else
-    nbr_ent_bloc_loc = NULL;
-
-  /* Tailles des divers messages */
-
-  taille_max_loc = (*nbr_ent_bloc)[0];
-  for (ind_bloc = 1 ; ind_bloc < nbr_bloc ; ind_bloc++)
-    taille_max_loc = CS_MAX(taille_max_loc, (*nbr_ent_bloc)[ind_bloc]);
-
-  MPI_Allreduce(&taille_max_loc, &taille_max_glob, 1, CS_MPI_INT, MPI_MAX,
+  MPI_Alltoallv(_block_ent_id, _block_count, _block_disp, MPI_INT,
+                _owner_ent_id, _owner_count, _owner_disp, MPI_INT,
                 cs_glob_base_mpi_comm);
 
-  return taille_max_glob;
+  BFT_FREE(_block_ent_id);
 
+  *pas_bloc = _pas_bloc;
+  *owner_ent_id = _owner_ent_id;
+  *block_count = _block_count;
+  *owner_count = _owner_count;
+  *block_disp = _block_disp;
+  *owner_disp = _owner_disp;
+  *block_start = _block_start;
 }
-
 
 /*----------------------------------------------------------------------------
  *  Fonction qui lit les valeurs associées à une variable définie sur
@@ -2456,24 +2379,23 @@ static void cs_loc_suite_lit_val_ent
        cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
 )
 {
-
   char      buffer_ascii[CS_SUITE_LNG_BUF_ASCII + 1];
 
-  cs_int_t  pas_bloc, ind, ind_dom, ind_bloc, ind_loc;
-  cs_int_t  ind_deb_glob_bloc, ind_fin_glob_bloc, nbr_ent_glob_bloc;
-  cs_int_t  ind_deb_loc_bloc, nbr_ent_bloc_cur;
-  cs_int_t  nbr_bloc_max;
+  cs_int_t  pas_bloc, ind, ind_bloc, start_loc;
 
-  cs_int_t  *nbr_ent_bloc;
-  cs_int_t  *lst_ent_loc;
-  cs_int_t  *lst_ent_glob;
-  cs_int_t  *ind_ent_bloc;
+  cs_int_t  nbr_ent_bloc = 0;
 
-  cs_int_t   *buffer_ent_bloc = NULL;
+  cs_byte_t  *buffer = NULL;
 
-  cs_byte_t  *buffer_fic = NULL, *buffer_msg = NULL;
+  cs_int_t  block_buf_size = 0, owner_buf_size = 0;
 
-  size_t      ind_byte, nbr_byte_ent;
+  cs_byte_t *block_val = NULL, *owner_val = NULL;
+  int *owner_ent_id = NULL;
+  int *block_count = NULL, *owner_count = NULL;
+  int *block_disp = NULL, *owner_disp = NULL;
+  int *block_start = NULL;
+
+  size_t      ind_byte, nbr_byte_ent, nbr_byte_val;
 
   MPI_Datatype  mpi_typ;
   MPI_Status    status;
@@ -2486,11 +2408,12 @@ static void cs_loc_suite_lit_val_ent
   case CS_TYPE_cs_int_t:
     mpi_typ      = CS_MPI_INT;
     nbr_byte_ent = nbr_val_ent * sizeof(cs_int_t);
+    nbr_byte_val = sizeof(cs_int_t);
     break;
   case CS_TYPE_cs_real_t:
     mpi_typ      = CS_MPI_REAL;
     nbr_byte_ent = nbr_val_ent * sizeof(cs_real_t);
-    break;
+    nbr_byte_val = sizeof(cs_real_t);
     break;
   default:
     assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
@@ -2499,133 +2422,131 @@ static void cs_loc_suite_lit_val_ent
   /* Création des listes d'entités associées à la redistribution */
   /*-------------------------------------------------------------*/
 
-  nbr_bloc_max = cs_loc_suite_cree_listes_ent(nbr_bloc,
-                                              nbr_ent_glob,
-                                              nbr_ent_loc,
-                                              num_glob_ent,
-                                              &pas_bloc,
-                                              &nbr_ent_bloc,
-                                              &lst_ent_loc,
-                                              &lst_ent_glob);
+  cs_loc_suite_prep_dist(nbr_ent_glob,
+                         nbr_ent_loc,
+                         nbr_bloc,
+                         &pas_bloc,
+                         &block_buf_size,
+                         &owner_buf_size,
+                         num_glob_ent,
+                         &owner_ent_id,
+                         &block_count,
+                         &owner_count,
+                         &block_disp,
+                         &owner_disp,
+                         &block_start);
 
-  /* Allocation des tableaux de travail */
+  /* Lecture et répartition des blocs sur les rangs */
+  /*------------------------------------------------*/
 
-  if (cs_glob_base_rang == 0)
-    BFT_MALLOC(buffer_ent_bloc, nbr_bloc_max, cs_int_t);
+  if (owner_buf_size > 0)
+    BFT_MALLOC(buffer, pas_bloc * nbr_byte_ent, cs_byte_t);
 
-  BFT_MALLOC(buffer_fic, pas_bloc     * nbr_byte_ent, cs_byte_t);
-  BFT_MALLOC(buffer_msg, nbr_bloc_max * nbr_byte_ent, cs_byte_t);
+  /* Lecture sur fichier */
 
-  /* Boucle sur les blocs */
-  /*----------------------*/
+  if (cs_glob_base_rang == 0) {
 
-  ind_deb_glob_bloc = 0;
-  ind_deb_loc_bloc  = 0;
+    cs_byte_t  *buffer_fic = NULL;
 
-  for (ind_bloc = 0 ; ind_bloc < nbr_bloc ; ind_bloc++) {
+    if (nbr_bloc > 1)
+      BFT_MALLOC(buffer_fic, pas_bloc * nbr_byte_ent, cs_byte_t);
 
-    ind_fin_glob_bloc = CS_MIN(ind_deb_glob_bloc + pas_bloc, nbr_ent_glob);
+    /* Boucle sur les blocs */
 
-    /* Traitement processus "maître E/S" */
+    for (ind_bloc = 0; ind_bloc < nbr_bloc; ind_bloc++) {
 
-    if (cs_glob_base_rang == 0) {
+      if (ind_bloc < nbr_bloc - 1)
+        nbr_ent_bloc = pas_bloc;
+      else /* if (ind_bloc == nbr_bloc - 1) */
+        nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
 
-      nbr_ent_glob_bloc = ind_fin_glob_bloc - ind_deb_glob_bloc;
+      if (ind_bloc == 0)
+        cs_loc_suite_lit_val(suite->type, fic, nbr_ent_bloc * nbr_val_ent,
+                             typ_val, buffer, buffer_ascii);
 
-      /* Lecture sur fichier */
-
-      cs_loc_suite_lit_val(suite->type, fic, nbr_ent_glob_bloc * nbr_val_ent,
-                           typ_val, (void *)buffer_fic, buffer_ascii);
-
-      for (ind_dom = 0 ; ind_dom < cs_glob_base_nbr ; ind_dom++) {
-
-        /* Index des valeurs */
-
-        nbr_ent_bloc_cur = nbr_ent_bloc[ind_dom * nbr_bloc + ind_bloc];
-
-        if (ind_dom > 0) {
-          if (nbr_ent_bloc_cur > 0) {
-            MPI_Recv((void *)buffer_ent_bloc, nbr_ent_bloc_cur, CS_MPI_INT,
-                     ind_dom, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
-                     &status);
-            ind_ent_bloc = buffer_ent_bloc;
-          }
-        }
-        else /* if (ind_dom == 0) */
-          ind_ent_bloc = lst_ent_glob + ind_deb_loc_bloc;
-
-        /* Envoi des valeurs indexées */
-
-        if (ind_dom > 0) {
-          if (nbr_ent_bloc_cur > 0) {
-            ind = 0;
-            for (ind_loc = 0 ; ind_loc < nbr_ent_bloc_cur ; ind_loc++) {
-              for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-                buffer_msg[ind++]
-                  = buffer_fic[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte];
-            }
-            MPI_Send((void *)buffer_msg,
-                     nbr_ent_bloc_cur * nbr_val_ent, mpi_typ,
-                     ind_dom, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
-          }
-        }
-        else { /* if (ind_dom == 0) */
-          for (ind_loc = 0 ; ind_loc < nbr_ent_bloc_cur ; ind_loc++) {
-            for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-              tab_val[((lst_ent_loc + ind_deb_loc_bloc)[ind_loc])
-                        * nbr_byte_ent + ind_byte]
-                = buffer_fic[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte];
-          }
-        }
-
+      else {
+        cs_loc_suite_lit_val(suite->type, fic, nbr_ent_bloc * nbr_val_ent,
+                             typ_val, buffer_fic, buffer_ascii);
+        MPI_Send(buffer_fic, nbr_ent_bloc * nbr_val_ent,
+                 mpi_typ, ind_bloc, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
       }
 
     }
 
-    /* Traitement autres processus */
+    if (nbr_bloc > 1)
+      BFT_FREE(buffer_fic);
+  }
 
-    else if (nbr_ent_bloc[ind_bloc] > 0) {
+  /* Réception à partir du rang 0 sinon */
 
-      /* Index des valeurs */
+  else if (cs_glob_base_rang < nbr_bloc) {
 
-      ind_ent_bloc = lst_ent_glob + ind_deb_loc_bloc;
+    ind_bloc = cs_glob_base_rang;
 
-      MPI_Send((void *)ind_ent_bloc,
-               nbr_ent_bloc[ind_bloc], CS_MPI_INT,
-               0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
+    if (ind_bloc < nbr_bloc - 1)
+      nbr_ent_bloc = pas_bloc;
+    else /* if (ind_bloc == nbr_bloc - 1) */
+      nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
 
-      /* Remplissage et envoi des valeurs indexées */
-
-      ind_ent_bloc = lst_ent_loc + ind_deb_loc_bloc;
-
-      MPI_Recv((void *)buffer_msg, nbr_ent_bloc[ind_bloc] * nbr_val_ent,
-               mpi_typ, 0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm, &status);
-      ind = 0;
-      for (ind_loc = 0 ; ind_loc < nbr_ent_bloc[ind_bloc] ; ind_loc++) {
-        for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-          tab_val[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte]
-            = buffer_msg[ind++];
-      }
-
-    }
-
-    ind_deb_glob_bloc = ind_fin_glob_bloc;
-    ind_deb_loc_bloc += nbr_ent_bloc[ind_bloc];
+    MPI_Recv(buffer,
+             nbr_ent_bloc * nbr_val_ent, mpi_typ,
+             0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
+             &status);
 
   }
 
-  /* Libération des tableaux de travail */
+  /* Préparation des valeurs à distribuer */
 
-  BFT_FREE(buffer_fic);
-  BFT_FREE(buffer_msg);
+  if (owner_buf_size > 0) {
 
-  if (cs_glob_base_rang == 0)
-    BFT_FREE(buffer_ent_bloc);
+    BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
 
-  BFT_FREE(nbr_ent_bloc);
-  BFT_FREE(lst_ent_loc);
-  BFT_FREE(lst_ent_glob);
+    for (ind = 0; ind < owner_buf_size; ind++) {
+      start_loc = owner_ent_id[ind]*nbr_byte_ent;
+      for (ind_byte = 0; ind_byte < nbr_byte_ent; ind_byte++)
+        owner_val[ind*nbr_byte_ent + ind_byte]
+          = buffer[start_loc + ind_byte];
+    }
 
+    BFT_FREE(owner_ent_id);
+  }
+
+  for (ind = 0; ind < cs_glob_base_nbr; ind++) {
+    block_count[ind] *= nbr_val_ent;
+    owner_count[ind] *= nbr_val_ent;
+    block_disp[ind] *= nbr_val_ent;
+    owner_disp[ind] *= nbr_val_ent;
+  }
+
+  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
+
+  MPI_Alltoallv(owner_val, owner_count, owner_disp, mpi_typ,
+                block_val, block_count, block_disp, mpi_typ,
+                cs_glob_base_mpi_comm);
+
+  /* Libération des tableaux qui ne sont plus utiles */
+
+  if (owner_buf_size > 0)
+    BFT_FREE(owner_val);
+  BFT_FREE(owner_disp);
+  BFT_FREE(owner_count);
+
+  /* Distribution finale des données */
+
+  for (ind = 0; ind < cs_glob_base_nbr; ind++)
+    block_disp[ind] *= nbr_val_ent;
+
+  for (ind = 0; ind < nbr_ent_loc; ind++) {
+    ind_bloc = (num_glob_ent[ind] - 1) / pas_bloc;
+    start_loc = block_disp[ind_bloc]*nbr_byte_val;
+    for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
+      tab_val[ind*nbr_byte_ent + ind_byte] = block_val[start_loc + ind_byte];
+    block_disp[ind_bloc] += nbr_val_ent;
+  }
+
+  BFT_FREE(block_val);
+  BFT_FREE(block_count);
+  BFT_FREE(block_disp);
 }
 
 
@@ -2646,21 +2567,20 @@ static void cs_loc_suite_ecr_val_ent
  const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
 )
 {
+  cs_int_t  pas_bloc, ind, ind_bloc, start_loc;
 
-  cs_int_t  pas_bloc, ind, ind_dom, ind_bloc, ind_loc;
-  cs_int_t  ind_deb_glob_bloc, ind_fin_glob_bloc, nbr_ent_glob_bloc;
-  cs_int_t  ind_deb_loc_bloc, nbr_ent_bloc_cur;
-  cs_int_t  nbr_bloc_max;
+  cs_int_t  ind_col = 0;
+  cs_int_t  nbr_ent_bloc = 0;
 
-  cs_int_t  *nbr_ent_bloc;
-  cs_int_t  *lst_ent_loc;
-  cs_int_t  *lst_ent_glob;
-  cs_int_t  *ind_ent_bloc;
+  cs_int_t  block_buf_size = 0, owner_buf_size = 0;
 
-  cs_int_t    ind_col = 0;
-  cs_int_t   *buffer_ent_bloc = NULL;
+  cs_byte_t *block_val = NULL, *owner_val = NULL;
+  int *owner_ent_id = NULL;
+  int *block_count = NULL, *owner_count = NULL;
+  int *block_disp = NULL, *owner_disp = NULL;
+  int *block_start = NULL;
 
-  cs_byte_t  *buffer_fic = NULL, *buffer_msg = NULL;
+  cs_byte_t  *buffer = NULL;
 
   size_t      ind_byte, nbr_byte_ent;
 
@@ -2685,145 +2605,118 @@ static void cs_loc_suite_ecr_val_ent
   /* Création des listes d'entités associées à la redistribution */
   /*-------------------------------------------------------------*/
 
-  nbr_bloc_max = cs_loc_suite_cree_listes_ent(nbr_bloc,
-                                              nbr_ent_glob,
-                                              nbr_ent_loc,
-                                              num_glob_ent,
-                                              &pas_bloc,
-                                              &nbr_ent_bloc,
-                                              &lst_ent_loc,
-                                              &lst_ent_glob);
+  cs_loc_suite_prep_dist(nbr_ent_glob,
+                         nbr_ent_loc,
+                         nbr_bloc,
+                         &pas_bloc,
+                         &block_buf_size,
+                         &owner_buf_size,
+                         num_glob_ent,
+                         &owner_ent_id,
+                         &block_count,
+                         &owner_count,
+                         &block_disp,
+                         &owner_disp,
+                         &block_start);
 
-  /* Allocation des tableaux de travail */
+  /* Préparation des valeurs à envoyer */
 
-  if (cs_glob_base_rang == 0)
-    BFT_MALLOC(buffer_ent_bloc, nbr_bloc_max, cs_int_t);
+  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
+  BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
 
-  BFT_MALLOC(buffer_fic, pas_bloc     * nbr_byte_ent, cs_byte_t);
-  BFT_MALLOC(buffer_msg, nbr_bloc_max * nbr_byte_ent, cs_byte_t);
+  memcpy(block_start, block_disp, sizeof(int)*cs_glob_base_nbr);
 
-  /* Boucle sur les blocs */
-  /*----------------------*/
+  for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
+    ind_bloc = (num_glob_ent[ind] - 1) / pas_bloc;
+    start_loc = block_start[ind_bloc]*nbr_byte_ent;
+    for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
+      block_val[start_loc + ind_byte] = tab_val[ind*nbr_byte_ent + ind_byte];
+    block_start[ind_bloc] += 1;
+  }
 
-  ind_deb_glob_bloc = 0;
-  ind_deb_loc_bloc  = 0;
+  BFT_FREE(block_start);
 
-  for (ind_bloc = 0 ; ind_bloc < nbr_bloc ; ind_bloc++) {
+  for (ind = 0; ind < cs_glob_base_nbr; ind++) {
+    block_count[ind] *= nbr_val_ent;
+    owner_count[ind] *= nbr_val_ent;
+    block_disp[ind] *= nbr_val_ent;
+    owner_disp[ind] *= nbr_val_ent;
+  }
 
-    ind_fin_glob_bloc = CS_MIN(ind_deb_glob_bloc + pas_bloc, nbr_ent_glob);
+  MPI_Alltoallv(block_val, block_count, block_disp, mpi_typ,
+                owner_val, owner_count, owner_disp, mpi_typ,
+                cs_glob_base_mpi_comm);
 
-    /* Traitement processus "maître E/S" */
+  /* Libération des tableaux liés à l'échange qui ne sont plus utiles */
 
-    if (cs_glob_base_rang == 0) {
+  BFT_FREE(block_val);
+  BFT_FREE(block_count);
+  BFT_FREE(owner_count);
+  BFT_FREE(block_disp);
+  BFT_FREE(owner_disp);
 
-      nbr_ent_glob_bloc = ind_fin_glob_bloc - ind_deb_glob_bloc;
+  if (owner_buf_size > 0) {
 
-      for (ind_dom = 0 ; ind_dom < cs_glob_base_nbr ; ind_dom++) {
+    BFT_MALLOC(buffer, pas_bloc*nbr_byte_ent, cs_byte_t);
 
-        nbr_ent_bloc_cur = nbr_ent_bloc[ind_dom * nbr_bloc + ind_bloc];
-
-        /* Synchronisation forcée pour éviter que tous les autres
-           rangs ne postent des envois en même temps (pouvant
-           mener à un problème d'allocation de buffers) */
-
-        if (   cs_glob_suite_sync_gather == CS_TRUE
-            && ind_dom > 0 && nbr_ent_bloc_cur > 0) {
-          int _ind_dom = ind_dom;
-          MPI_Send(&_ind_dom, 1, MPI_INT, ind_dom,
-                   CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
-        }
-
-        /* Index des valeurs */
-
-        if (ind_dom > 0) {
-          if (nbr_ent_bloc_cur > 0) {
-            MPI_Recv((void *)buffer_ent_bloc, nbr_ent_bloc_cur, CS_MPI_INT,
-                     ind_dom, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
-                     &status);
-            ind_ent_bloc = buffer_ent_bloc;
-          }
-        }
-        else /* if (ind_dom == 0) */
-          ind_ent_bloc = lst_ent_glob + ind_deb_loc_bloc;
-
-        /* Récupération des valeurs indexées et préparation écriture */
-
-        if (ind_dom > 0) {
-          if (nbr_ent_bloc_cur > 0) {
-            MPI_Recv((void *)buffer_msg,
-                     nbr_ent_bloc_cur * nbr_val_ent, mpi_typ,
-                     ind_dom, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
-                     &status);
-            ind = 0;
-            for (ind_loc = 0 ; ind_loc < nbr_ent_bloc_cur ; ind_loc++) {
-              for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-                buffer_fic[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte]
-                  = buffer_msg[ind++];
-            }
-          }
-        }
-        else { /* if (ind_dom == 0) */
-          for (ind_loc = 0 ; ind_loc < nbr_ent_bloc_cur ; ind_loc++) {
-            for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-              buffer_fic[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte]
-                = tab_val[((lst_ent_loc + ind_deb_loc_bloc)[ind_loc])
-                          * nbr_byte_ent + ind_byte];
-          }
-        }
-
-      }
-
-      /* Écriture sur fichier */
-
-      cs_loc_suite_ecr_val(suite, nbr_ent_glob_bloc * nbr_val_ent,
-                           typ_val, (void *)buffer_fic, &ind_col);
-
+    for (ind = 0; ind < owner_buf_size; ind++) {
+      start_loc = owner_ent_id[ind]*nbr_byte_ent;
+      for (ind_byte = 0; ind_byte < nbr_byte_ent; ind_byte++)
+        buffer[start_loc + ind_byte]
+          = owner_val[ind*nbr_byte_ent + ind_byte];
     }
 
-    /* Traitement autres processus */
+    BFT_FREE(owner_ent_id);
+    BFT_FREE(owner_val);
+  }
 
-    else if (nbr_ent_bloc[ind_bloc] > 0) {
+  /* Écriture sur fichier */
 
-      /* Remplissage des valeurs indexées */
+  if (cs_glob_base_rang == 0) {
 
-      ind_ent_bloc = lst_ent_loc + ind_deb_loc_bloc;
+    /* Boucle sur les blocs */
 
-      ind = 0;
-      for (ind_loc = 0 ; ind_loc < nbr_ent_bloc[ind_bloc] ; ind_loc++) {
-        for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-          buffer_msg[ind++]
-            = tab_val[ind_ent_bloc[ind_loc] * nbr_byte_ent + ind_byte];
-      }
+    for (ind_bloc = 0; ind_bloc < nbr_bloc; ind_bloc++) {
 
-      /* Synchronisation forcée pour éviter que tous les autres
-         rangs ne postent des envois en même temps (pouvant
-         mener à un problème d'allocation de buffers) */
+      if (ind_bloc < nbr_bloc - 1)
+        nbr_ent_bloc = pas_bloc;
+      else /* if (ind_bloc == nbr_bloc - 1) */
+        nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
 
-      if (cs_glob_suite_sync_gather == CS_TRUE) {
-        int _ind_sync;
-        MPI_Recv(&_ind_sync, 1, MPI_INT, 0,
-                 CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm, &status);
-      }
+      /* Valeurs déjà disponibles sur le rang 0 */
 
-      /* Index des valeurs */
+      if (ind_bloc > 0)
+        MPI_Recv(buffer,
+                 nbr_ent_bloc * nbr_val_ent, mpi_typ,
+                 ind_bloc, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
+                 &status);
 
-      ind_ent_bloc = lst_ent_glob + ind_deb_loc_bloc;
+      /* Valeurs maintenant disponibles */
 
-      MPI_Send((void *)ind_ent_bloc,
-               nbr_ent_bloc[ind_bloc], CS_MPI_INT,
-               0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
-
-      /* Envoi des valeurs indexées */
-
-      MPI_Send((void *)buffer_msg, nbr_ent_bloc[ind_bloc] * nbr_val_ent,
-               mpi_typ, 0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
+      cs_loc_suite_ecr_val(suite, nbr_ent_bloc * nbr_val_ent,
+                           typ_val, (void *)buffer, &ind_col);
 
     }
-
-    ind_deb_glob_bloc = ind_fin_glob_bloc;
-    ind_deb_loc_bloc += nbr_ent_bloc[ind_bloc];
 
   }
+
+  /* Envoi au rang 0 sinon */
+
+  else if (cs_glob_base_rang < nbr_bloc) {
+
+    ind_bloc = cs_glob_base_rang;
+
+    if (ind_bloc < nbr_bloc - 1)
+      nbr_ent_bloc = pas_bloc;
+    else /* if (ind_bloc == nbr_bloc - 1) */
+      nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
+
+    MPI_Send(buffer, nbr_ent_bloc * nbr_val_ent,
+             mpi_typ, 0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
+
+  }
+
+  assert(cs_glob_base_rang < nbr_bloc || owner_buf_size == 0);
 
   /* Retour à la ligne pour fichier ASCII */
 
@@ -2832,16 +2725,7 @@ static void cs_loc_suite_ecr_val_ent
 
   /* Libération des tableaux de travail */
 
-  BFT_FREE(buffer_fic);
-  BFT_FREE(buffer_msg);
-
-  if (cs_glob_base_rang == 0)
-    BFT_FREE(buffer_ent_bloc);
-
-  BFT_FREE(nbr_ent_bloc);
-  BFT_FREE(lst_ent_loc);
-  BFT_FREE(lst_ent_glob);
-
+  BFT_FREE(buffer);
 }
 
 
@@ -3593,7 +3477,7 @@ static void cs_loc_suite_rub_f77_vers_C
 static void cs_loc_suite_permute_lec
 (
  const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const cs_int_t     *const num_ent_ini,   /* --> Numéros globaux des entités  */
+ const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
  const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
  const cs_type_t           typ_val,       /* --> Type de valeur               */
        cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
@@ -3665,7 +3549,7 @@ static void cs_loc_suite_permute_lec
 static cs_byte_t * cs_loc_suite_permute_ecr
 (
  const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const cs_int_t     *const num_ent_ini,   /* --> Numéros globaux des entités  */
+ const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
  const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
  const cs_type_t           typ_val,       /* --> Type de valeur               */
  const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */

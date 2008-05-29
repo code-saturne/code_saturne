@@ -413,6 +413,47 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Update a global numbering array in case of entity renumbering
+ *
+ * parameters:
+ *   n_elts      --> number of elements in array
+ *   init_num    --> initial local number of renumbered elements (1 to n)
+ *   global_num  <-> global numbering (allocated if initially NULL)
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_global_num(size_t              n_elts,
+                   const fvm_lnum_t    init_num[],
+                   fvm_gnum_t        **global_num)
+{
+  size_t i;
+  fvm_gnum_t *_global_num = *global_num;
+
+  if (_global_num == NULL) {
+
+      BFT_MALLOC(_global_num, n_elts, fvm_gnum_t);
+
+      for (i = 0; i < n_elts; i++)
+        _global_num[i] = init_num[i];
+
+      *global_num = _global_num;
+  }
+
+  else {
+
+    fvm_gnum_t *tmp_global;
+
+    BFT_MALLOC(tmp_global, n_elts, fvm_gnum_t);
+    memcpy(tmp_global, _global_num, n_elts*sizeof(fvm_gnum_t));
+
+    for (i = 0; i < n_elts; i++)
+      _global_num[i] = tmp_global[init_num[i] - 1];
+
+    BFT_FREE(tmp_global);
+  }
+}
+
 /*============================================================================
  *  Public functions definition for API Fortran
  *============================================================================*/
@@ -495,32 +536,21 @@ void CS_PROCF (savnum, SAVNUM)
  const cs_int_t   *const inumfb   /* --> Table de renum. des faces de bord    */
 )
 {
-  cs_int_t  i;
-
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Sauvegarde correspondance des faces internes -> faces internes initiales */
 
-  if (*ivecti != 0) {
-
-    BFT_MALLOC(mesh->init_i_face_num, mesh->n_i_faces, cs_int_t);
-
-    for (i = 0; i < mesh->n_i_faces; i++)
-      mesh->init_i_face_num[i] = inumfi[i];
-
-  }
+  if (*ivecti != 0)
+    _update_global_num(mesh->n_i_faces,
+                       inumfi,
+                       &(mesh->global_i_face_num));
 
   /* Sauvegarde correspondance des faces de bord -> faces de bord initiales */
 
-  if (*ivectb != 0) {
-
-    BFT_MALLOC(mesh->init_b_face_num, mesh->n_b_faces, cs_int_t);
-
-    for (i = 0; i < mesh->n_b_faces; i++)
-      mesh->init_b_face_num[i] = inumfb[i];
-
-  }
-
+  if (*ivectb != 0)
+    _update_global_num(mesh->n_b_faces,
+                       inumfb,
+                       &(mesh->global_b_face_num));
 }
 
 /*=============================================================================
@@ -579,11 +609,6 @@ cs_mesh_create(void)
   mesh->global_i_face_num = NULL;
   mesh->global_b_face_num = NULL;
   mesh->global_vtx_num = NULL;
-
-  /* Initial face numbering (for exchange and restart) */
-
-  mesh->init_i_face_num = NULL;
-  mesh->init_b_face_num = NULL;
 
   /* Periodic features */
 
@@ -672,9 +697,6 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->global_i_face_num);
   BFT_FREE(mesh->global_b_face_num);
   BFT_FREE(mesh->global_vtx_num);
-
-  BFT_FREE(mesh->init_i_face_num);
-  BFT_FREE(mesh->init_b_face_num);
 
   BFT_FREE(mesh->group_idx);
   BFT_FREE(mesh->group_lst);

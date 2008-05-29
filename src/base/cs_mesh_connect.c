@@ -558,71 +558,39 @@ fvm_nodal_t  * cs_maillage_extrait_fac_nodal
 
   BFT_FREE(liste_fac_extr);
 
-  /* En cas de parallélisme, tri des faces par numéro ou indice
-     global croissant */
+  /* En cas de parallélisme, ou de renumérotation des faces,
+     tri des faces par numéro ou indice global croissant */
 
-  if (cs_glob_base_nbr > 1) {
-
-    BFT_MALLOC(num_glob_fac, nbr_fac_max, fvm_gnum_t);
-
-    if (mesh->init_b_face_num == NULL) {
-      for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-        num_glob_fac[ifac] = mesh->global_b_face_num[ifac];
-    }
-    else {
-      for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-        num_glob_fac[ifac] =
-          mesh->global_b_face_num[mesh->init_b_face_num[ifac] - 1];
-    }
-
-    assert(mesh->n_g_b_faces + mesh->n_g_i_faces > 0);
-
-    if (mesh->init_i_face_num == NULL) {
-      for (ifac = 0, i = mesh->n_b_faces ;
-           ifac < mesh->n_i_faces ;
-           ifac++, i++)
-        num_glob_fac[i] = mesh->global_i_face_num[ifac] + mesh->n_g_b_faces;
-    }
-    else {
-      for (ifac = 0, i = mesh->n_b_faces ;
-           ifac < mesh->n_i_faces ;
-           ifac++, i++)
-        num_glob_fac[i] = mesh->global_i_face_num[mesh->init_i_face_num[ifac] - 1]
-                        + mesh->n_g_b_faces;
-    }
-
-  }
-
-  /* Sans parallélisme, on doit tout de même tenir compte d'une éventuelle
-     renumérotation des faces */
-
-  else if (mesh->init_i_face_num != NULL || mesh->init_b_face_num != NULL) {
+  if (mesh->global_i_face_num != NULL || mesh->global_b_face_num != NULL) {
 
     BFT_MALLOC(num_glob_fac, nbr_fac_max, fvm_gnum_t);
 
-    if (mesh->init_b_face_num == NULL) {
+    if (mesh->global_b_face_num == NULL) {
       for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
         num_glob_fac[ifac] = ifac + 1;
     }
     else {
       for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-        num_glob_fac[ifac] = mesh->init_b_face_num[ifac] - 1;
+        num_glob_fac[ifac] = mesh->global_b_face_num[ifac];
     }
 
-    if (mesh->init_i_face_num == NULL) {
+    assert(mesh->n_g_b_faces + mesh->n_g_i_faces > 0);
+
+    if (mesh->global_i_face_num == NULL) {
       for (ifac = 0, i = mesh->n_b_faces ;
            ifac < mesh->n_i_faces ;
            ifac++, i++)
-        num_glob_fac[i] = mesh->n_b_faces + ifac + 1;
+        num_glob_fac[i] = ifac + 1 + mesh->n_g_b_faces;
     }
     else {
       for (ifac = 0, i = mesh->n_b_faces ;
            ifac < mesh->n_i_faces ;
            ifac++, i++)
-        num_glob_fac[i] = mesh->n_b_faces + mesh->init_i_face_num[ifac];
+        num_glob_fac[i] = mesh->global_i_face_num[ifac] + mesh->n_g_b_faces;
     }
 
   }
+
 
   fvm_nodal_order_faces(maillage_ext, num_glob_fac);
   fvm_nodal_init_io_num(maillage_ext, num_glob_fac, 2);

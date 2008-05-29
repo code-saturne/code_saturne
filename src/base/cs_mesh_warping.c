@@ -49,6 +49,7 @@
 
 #include <fvm_defs.h>
 #include <fvm_io_num.h>
+#include <fvm_order.h>
 #include <fvm_triangulate.h>
 #include <fvm_nodal.h>
 #include <fvm_writer.h>
@@ -780,6 +781,7 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
  *   p_cut_face_lst          <-> pointer to the cut face list
  *   p_n_sub_elt_lst         <-> pointer to the sub-elt count list
  *   p_n_faces               <-> pointer to the number of faces
+ *   p_face_num              <-> pointer to the global face numbers
  *   p_face_vtx_connect_size <-> size of the "face -> vertex" connectivity
  *   p_face_cells            <-> "face -> cells" connectivity
  *   p_face_vtx_idx          <-> pointer on "face -> vertices" connect. index
@@ -990,6 +992,80 @@ _cut_warped_faces(cs_mesh_t       *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Update warped faces global numbers after cutting
+ *
+ * parameters:
+ *   mesh                <-> pointer to a mesh structure
+ *   n_faces             --> number of faces
+ *   n_init_faces        --> initial number of faces
+ *   n_cut_faces         --> number of cut faces
+ *   cut_face_lst        --> pointer to the cut face list
+ *   n_sub_elt_lst       --> sub-elt count list
+ *   n_g_faces           <-> global number of faces
+ *   p_global_face_num   <-> pointer to the global face numbers
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cut_faces_num(cs_mesh_t       *mesh,
+                      cs_int_t         n_faces,
+                      cs_int_t         n_init_faces,
+                      fvm_lnum_t       n_sub_elt_lst[],
+                      fvm_gnum_t      *n_g_faces,
+                      fvm_gnum_t     **p_global_face_num)
+{
+  size_t  size;
+
+  fvm_io_num_t  *new_io_num = NULL, *previous_io_num = NULL;
+  const fvm_gnum_t  *global_num = NULL;
+
+  /* Simply update global number of faces in trivial case */
+
+  *n_g_faces = n_faces;
+
+  if (*p_global_face_num == NULL)
+    return;
+
+  /* Faces should not have been reordered */
+
+  if (fvm_order_local_test(NULL, *p_global_face_num, n_init_faces) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              _("On a découpé les faces préalablement renumérotées.\n"
+                "Ce cas ne devrait pas se produire, car on devrait découper\n"
+                "les entités de maillage avant de les renuméroter."));
+
+  /* Update global number of internal faces and its global numbering */
+
+  if (mesh->n_domains > 1) {
+
+    bft_printf(_("\t%12d faces globalement avant découpage\n"),
+               *n_g_faces);
+
+    previous_io_num = fvm_io_num_create(NULL,
+                                        *p_global_face_num,
+                                        n_init_faces,
+                                        0);
+    new_io_num = fvm_io_num_create_from_sub(previous_io_num,
+                                            n_sub_elt_lst);
+
+    previous_io_num = fvm_io_num_destroy(previous_io_num);
+
+    *n_g_faces = fvm_io_num_get_global_count(new_io_num);
+
+    global_num = fvm_io_num_get_global_num(new_io_num);
+
+    BFT_REALLOC(*p_global_face_num, n_faces, fvm_gnum_t);
+    size = sizeof(fvm_gnum_t) * n_faces;
+    memcpy(*p_global_face_num, global_num, size);
+
+    bft_printf(_("\t%12d faces globalement après découpage\n\n"),
+               *n_g_faces);
+
+    new_io_num = fvm_io_num_destroy(new_io_num);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Post-process the warped faces before cutting.
  *
  * parameters:
@@ -1122,7 +1198,6 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                           double        max_warp_angle)
 {
   cs_int_t  i;
-  size_t  size;
 
   cs_int_t  n_i_warp_faces = 0, n_b_warp_faces = 0;
   cs_int_t  n_i_cut_faces = 0, n_b_cut_faces = 0;
@@ -1131,12 +1206,9 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   double  *working_array = NULL, *i_face_warping = NULL, *b_face_warping = NULL;
   fvm_lnum_t  *n_i_sub_elt_lst = NULL, *n_b_sub_elt_lst = NULL;
   fvm_gnum_t  n_g_i_warp_faces = 0, n_g_b_warp_faces = 0;
-  fvm_io_num_t  *new_i_io_num = NULL, *previous_i_io_num = NULL;
-  fvm_io_num_t  *new_b_io_num = NULL, *previous_b_io_num = NULL;
 
   const cs_int_t  n_init_i_faces = mesh->n_i_faces;
   const cs_int_t  n_init_b_faces = mesh->n_b_faces;
-  const fvm_gnum_t  *global_num = NULL;
 
 #if 0   /* JB DEBUG */
   cs_mesh_dump(mesh);
@@ -1223,13 +1295,6 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   /* Internal face treatment */
   /* ----------------------- */
 
-  /* Define previous fvm_io_num_t structure for internal faces */
-
-  previous_i_io_num = fvm_io_num_create(NULL,
-                                        mesh->global_i_face_num,
-                                        n_init_i_faces,
-                                        0);
-
   if (mesh->n_init_perio == 0)
     _cut_warped_faces(mesh,
                       INTERNAL_FACES,
@@ -1268,46 +1333,19 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Update global number of internal faces and its global numbering */
 
-  if (mesh->n_domains > 1) {
-
-    bft_printf(_("\t%12d faces globalement avant découpage\n"),
-               mesh->n_g_i_faces);
-
-    new_i_io_num = fvm_io_num_create_from_sub(previous_i_io_num,
-                                              n_i_sub_elt_lst);
-
-    mesh->n_g_i_faces = fvm_io_num_get_global_count(new_i_io_num);
-
-    global_num = fvm_io_num_get_global_num(new_i_io_num);
-
-    BFT_REALLOC(mesh->global_i_face_num, mesh->n_i_faces, fvm_gnum_t);
-    size = sizeof(fvm_gnum_t) * mesh->n_i_faces;
-    memcpy(mesh->global_i_face_num, global_num, size);
-
-    bft_printf(_("\t%12d faces globalement après découpage\n\n"),
-               mesh->n_g_i_faces);
-
-    new_i_io_num = fvm_io_num_destroy(new_i_io_num);
-
-  }
-  else
-    mesh->n_g_i_faces = mesh->n_i_faces;
+  _update_cut_faces_num(mesh,
+                        mesh->n_i_faces,
+                        n_init_i_faces,
+                        n_i_sub_elt_lst,
+                        &(mesh->n_g_i_faces),
+                        &(mesh->global_i_face_num));
 
   /* Partial memory free */
-
-  previous_i_io_num = fvm_io_num_destroy(previous_i_io_num);
 
   BFT_FREE(n_i_sub_elt_lst);
 
   /* Border face treatment */
   /* --------------------- */
-
-  /* Define previous fvm_io_num_t structure for border faces */
-
-  previous_b_io_num = fvm_io_num_create(NULL,
-                                        mesh->global_b_face_num,
-                                        n_init_b_faces,
-                                        0);
 
   _cut_warped_faces(mesh,
                     BORDER_FACES,
@@ -1333,40 +1371,18 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Update global number of border faces and its global numbering */
 
-  if (mesh->n_domains > 1) {
-
-    bft_printf(_("\t%12d faces globalement avant découpage\n"),
-               mesh->n_g_b_faces);
-
-    new_b_io_num = fvm_io_num_create_from_sub(previous_b_io_num,
-                                              n_b_sub_elt_lst);
-
-    mesh->n_g_b_faces = fvm_io_num_get_global_count(new_b_io_num);
-
-    global_num = fvm_io_num_get_global_num(new_b_io_num);
-
-    BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, fvm_gnum_t);
-    size = sizeof(fvm_gnum_t) * mesh->n_b_faces;
-    memcpy(mesh->global_b_face_num, global_num, size);
-
-    bft_printf(_("\t%12d faces globalement après découpage.\n"),
-               mesh->n_g_b_faces);
-
-    new_b_io_num = fvm_io_num_destroy(new_b_io_num);
-
-  }
-  else
-    mesh->n_g_b_faces = mesh->n_b_faces;
+  _update_cut_faces_num(mesh,
+                        mesh->n_b_faces,
+                        n_init_b_faces,
+                        n_b_sub_elt_lst,
+                        &(mesh->n_g_b_faces),
+                        &(mesh->global_b_face_num));
 
   /* Partial memory free */
-
-  previous_b_io_num = fvm_io_num_destroy(previous_b_io_num);
 
   BFT_FREE(n_b_sub_elt_lst);
 
   /* Post-treatment of the selected faces */
-
-  cs_post_renum_faces();
 
   _post_after_cutting(n_i_cut_faces,
                       n_b_cut_faces,

@@ -618,7 +618,7 @@ C
 C Mise a jour des numeros d'elements parents pour les maillages post
 C (doit etre appele apres SAVNUM)
 C
-        CALL PSTRNM
+        CALL PSTRNM(IVECTI, IVECTB, INUMFI, INUMFB)
 C       ===========
 C
       ENDIF

@@ -438,13 +438,21 @@ void CS_PROCF (pstev1, PSTEV1)
  *
  * Interface Fortran :
  *
- * SUBROUTINE PSTRNM
+ * SUBROUTINE PSTRNM(IVECTI, IVECTB, INUMFI, INUMFB)
  * *****************
+ *
+ * INTEGER IVECTI               : --> : Indicateur de renum. faces internes
+ * INTEGER IVECTB               : --> : Indicateur de renum. faces de bord
+ * INTEGER INUMFI(NFAC)         : --> : Table de renum. des faces internes
+ * INTEGER INUMFB(NFABOR)       : --> : Table de renum. des faces de bord
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstrnm, PSTRNM)
 (
- void
+ cs_int_t  *ivecti,           /* --> vectorisation des faces internes         */
+ cs_int_t  *ivectb,           /* --> vectorisation des faces de bord          */
+ cs_int_t  *inumfi,           /* --> numérotation initiale des faces internes */
+ cs_int_t  *inumfb            /* --> numérotation initiale des faces de bord  */
 );
 
 
@@ -731,7 +739,8 @@ void cs_post_ecrit_var_som
 
 void cs_post_renum_faces
 (
- void
+ cs_int_t  *init_i_face_num,  /* --> numérotation initiale des faces internes */
+ cs_int_t  *init_b_face_num   /* --> numérotation initiale des faces de bord  */
 );
 
 /*----------------------------------------------------------------------------

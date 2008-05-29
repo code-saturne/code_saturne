@@ -63,6 +63,7 @@
 #include "cs_benchmark.h"
 #include "cs_comm.h"
 #include "cs_couplage.h"
+#include "cs_ecs_messages.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_quantities.h"
@@ -70,7 +71,6 @@
 #include "cs_mesh_quality.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_coherency.h"
-#include "cs_ecs_messages.h"
 #include "cs_opts.h"
 #include "cs_pp_io.h"
 #include "cs_renumber.h"
@@ -354,13 +354,6 @@ int main
 
   cs_mesh_init_parall(cs_glob_mesh);
 
-  /* Renumérotation en fonction des options du code */
-
-  bft_printf("\n Renumerotation du maillage:\n");
-  bft_printf_flush();
-  cs_renumber_mesh(cs_glob_mesh,
-                   cs_glob_mesh_quantities);
-
   /* Modification éventuelle de la géométrie */
 
   CS_PROCF (usmodg, USMODG)(&(cs_glob_mesh->dim),
@@ -396,6 +389,13 @@ int main
 
   }
 
+  /* Renumérotation en fonction des options du code */
+
+  bft_printf(_("\n Renumerotation du maillage:\n"));
+  bft_printf_flush();
+  cs_renumber_mesh(cs_glob_mesh,
+                   cs_glob_mesh_quantities);
+
   /* Mise à jour de certaines dimensions du maillage */
 
   n_g_i_faces = (cs_int_t)cs_glob_mesh->n_g_i_faces;
@@ -424,7 +424,7 @@ int main
 
   cs_mesh_info(cs_glob_mesh);
 
-/* Initialisation de la partie selector de la structure maillage */
+  /* Initialisation de la partie selector de la structure maillage */
   cs_mesh_init_selectors();
 
 #if 0
@@ -436,7 +436,7 @@ int main
   /* Boucle en temps ou critères de qualité selon options de vérification */
 
   if (opts.iverif == 0) {
-    bft_printf("\n Calcul des critères de qualité\n");
+    bft_printf(_("\n Calcul des critères de qualité\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
   }
 
@@ -498,7 +498,7 @@ int main
 
   }
 
-  bft_printf("\n Destruction des structures et clôture du calcul\n");
+  bft_printf(_("\n Destruction des structures et clôture du calcul\n"));
   bft_printf_flush();
 
   /* Libération de structures internes de l'API F77 pour fichiers suite */
@@ -522,15 +522,16 @@ int main
   cs_mesh_destroy(cs_glob_mesh);
 
   /* Temps CPU et finalisation de la gestion mémoire */
+
   cs_base_bilan_temps();
   cs_base_mem_fin();
 
   /* retour */
+
   cs_exit(EXIT_SUCCESS);
 
   /* jamais appelé normalement, mais pour éviter un warning de compilation */
   return 0;
-
 }
 
 /*----------------------------------------------------------------------------*/

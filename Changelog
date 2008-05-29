@@ -1,3 +1,16 @@
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Modification of the behaviour of renumbering.
+  modified routines:
+    include/base/cs_post.h
+    include/base/cs_mesh.h
+    src/base/numvec.F
+    src/base/cs_main.c
+    src/base/cs_post.c
+    src/base/cs_suite.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_mesh_connect.c
+
 * 28/05/2008 - David Monfort <david.monfort@edf.fr> 
   Removing the parts of the compilation scripts concerning
   the Purify and Foresys tools, as they are no more used.

@@ -1429,16 +1429,33 @@ void CS_PROCF (pstev1, PSTEV1)
  *
  * Interface Fortran :
  *
- * SUBROUTINE PSTRNM
+ * SUBROUTINE PSTRNM(IVECTI, IVECTB, INUMFI, INUMFB)
  * *****************
+ *
+ * INTEGER IVECTI               : --> : Indicateur de renum. faces internes
+ * INTEGER IVECTB               : --> : Indicateur de renum. faces de bord
+ * INTEGER INUMFI(NFAC)         : --> : Table de renum. des faces internes
+ * INTEGER INUMFB(NFABOR)       : --> : Table de renum. des faces de bord
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstrnm, PSTRNM)
 (
- void
+ cs_int_t  *ivecti,           /* --> vectorisation des faces internes         */
+ cs_int_t  *ivectb,           /* --> vectorisation des faces de bord          */
+ cs_int_t  *inumfi,           /* --> numérotation initiale des faces internes */
+ cs_int_t  *inumfb            /* --> numérotation initiale des faces de bord  */
 )
 {
-  cs_post_renum_faces();
+  cs_int_t *_inumfi = NULL;
+  cs_int_t *_inumfb = NULL;
+
+  if (*ivecti != 0)
+    _inumfi = inumfi;
+
+  if (*ivectb != 0)
+    _inumfb = inumfb;
+
+  cs_post_renum_faces(_inumfi, _inumfb);
 }
 
 /*============================================================================
@@ -2469,7 +2486,8 @@ void cs_post_ecrit_var_som
 
 void cs_post_renum_faces
 (
- void
+ cs_int_t  *init_i_face_num,  /* --> numérotation initiale des faces internes */
+ cs_int_t  *init_b_face_num   /* --> numérotation initiale des faces de bord  */
 )
 {
   int       i;
@@ -2505,16 +2523,16 @@ void cs_post_renum_faces
 
     BFT_MALLOC(renum_ent_parent, nbr_ent, cs_int_t);
 
-    if (maillage->init_b_face_num == NULL) {
+    if (init_b_face_num == NULL) {
       for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++)
         renum_ent_parent[ifac] = ifac + 1;
     }
     else {
       for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++)
-        renum_ent_parent[maillage->init_b_face_num[ifac] - 1] = ifac + 1;
+        renum_ent_parent[init_b_face_num[ifac] - 1] = ifac + 1;
     }
 
-    if (maillage->init_i_face_num == NULL) {
+    if (init_i_face_num == NULL) {
       for (ifac = 0, i = maillage->n_b_faces ;
            ifac < maillage->n_i_faces ;
            ifac++, i++)
@@ -2525,8 +2543,7 @@ void cs_post_renum_faces
       for (ifac = 0, i = maillage->n_b_faces ;
            ifac < maillage->n_i_faces ;
            ifac++, i++)
-        renum_ent_parent[  maillage->n_b_faces
-                         + maillage->init_i_face_num[ifac] - 1]
+        renum_ent_parent[maillage->n_b_faces + init_i_face_num[ifac] - 1]
           = maillage->n_b_faces + ifac + 1;
     }
 
