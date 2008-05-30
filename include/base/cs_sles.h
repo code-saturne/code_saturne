@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -71,6 +72,10 @@ typedef enum {
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/* Short names for matrix types */
+
+extern const char *cs_sles_type_name[];
 
 /*=============================================================================
  * Public function prototypes for Fortran API
@@ -126,6 +131,89 @@ cs_sles_initialize(void);
 
 void
 cs_sles_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Test if a general sparse linear system needs solving or if the right-hand
+ * side is already zero within convergence criteria.
+ *
+ * The computed residue is also updated;
+ *
+ * parameters:
+ *   var_name      --> Variable name
+ *   solver_name   --> Name of solver
+ *   n_rows        --> Number of (non ghost) rows in rhs
+ *   verbosity     --> Verbosity level
+ *   r_norm        --> Residue normalization
+ *   residue       <-> Residue
+ *   rhs           --> Right hand side
+ *
+ * returns:
+ *   1 if solving is required, 0 if the rhs is already zero within tolerance
+ *   criteria (precision of residue normalization)
+ *----------------------------------------------------------------------------*/
+
+int
+cs_sles_needs_solving(const char        *var_name,
+                      const char        *solver_name,
+                      cs_int_t           n_rows,
+                      int                verbosity,
+                      double             r_norm,
+                      double            *residue,
+                      const cs_real_t   *rhs);
+
+/*----------------------------------------------------------------------------
+ * General sparse linear system resolution.
+ *
+ * Note that in most cases (if the right-hand side is not already zero
+ * within convergence criteria), coefficients are assigned to matrixes
+ * then released by this function, so coefficients need not be assigned
+ * prior to this call, and will have been released upon returning.
+ *
+ * parameters:
+ *   var_name      --> Variable name
+ *   solver_type   --> Type of solver (PCG, Jacobi, ...)
+ *   update_stats  --> Automatic solver statistics indicator
+ *   symmetric     --> Symmetric coefficients indicator
+ *   ad_coeffs     --> Diagonal coefficients of linear equation matrix
+ *   ax_coeffs     --> Non-diagonal coefficients of linear equation matrix
+ *   a             <-> Matrix
+ *   ax            <-> Non-diagonal part of linear equation matrix
+ *                     (only necessary if poly_degree > 0)
+ *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode --> Halo update option for rotational periodicity
+ *   verbosity     --> Verbosity level
+ *   n_max_iter    --> Maximum number of iterations
+ *   precision     --> Precision limit
+ *   r_norm        --> Residue normalization
+ *   n_iter        <-- Number of iterations
+ *   residue       <-> Residue
+ *   rhs           --> Right hand side
+ *   vx            <-- System solution
+ *   aux_size      --> Number of elements in aux_vectors
+ *   aux_vectors   --- Optional working area (allocation otherwise)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_solve(const char         *var_name,
+              cs_sles_type_t      solver_type,
+              cs_bool_t           update_stats,
+              cs_bool_t           symmetric,
+              const cs_real_t    *ad_coeffs,
+              const cs_real_t    *ax_coeffs,
+              cs_matrix_t        *a,
+              cs_matrix_t        *ax,
+              int                 poly_degree,
+              cs_perio_rota_t     rotation_mode,
+              int                 verbosity,
+              int                 n_max_iter,
+              double              precision,
+              double              r_norm,
+              int                *n_iter,
+              double             *residue,
+              const cs_real_t    *rhs,
+              cs_real_t          *vx,
+              size_t              aux_size,
+              void               *aux_vectors);
 
 /*----------------------------------------------------------------------------*/
 

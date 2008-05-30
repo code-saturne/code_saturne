@@ -1,3 +1,48 @@
+* 30/05/2008 - Namane Mechitoua <namane.mechitoua@edf.fr>
+               Sophie Bosse <sophie.bosse@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Modification of the algebric multigrid algorithm
+  adapted to the resolution of pressure equation.
+  The algorithm works in serial and parallel runs.
+  modified routines:
+    users/base/usini1.F
+    include/base/cs_prototypes.h
+    include/base/optcal.h
+    include/base/cs_sles.h
+    doc/USER/latex/saturne2.tex
+    src/cfbl/cfcdts.F
+    src/base/verini.F
+    src/base/resolp.F
+    src/base/impini.F
+    src/base/cs_main.c
+    src/base/cs_sles.c
+    src/base/calgeo.F
+    src/base/iniini.F
+    src/base/modini.F
+    src/base/codits.F
+    src/base/invers.F
+  added routines:
+    include/base/cs_grid.h
+    include/base/cs_multigrid.h
+    src/base/autmgr.F
+    src/base/crstgr.F
+    src/base/cs_grid.c
+    src/base/cs_multigrid.c
+    users/base/ustmgr.F
+  deleted routines:
+    include/base/mltgrd.h
+    src/base/calgrg.F
+    src/base/cgstab.F
+    src/base/clmlga.F
+    src/base/cycmgr.F
+    src/base/gradco.F
+    src/base/jacobi.F
+    src/base/memgrg.F
+    src/base/mempgr.F
+    src/base/premgr.F
+    src/base/prolon.F
+    src/base/resmgr.F
+
 * 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Translating memory checking from FORTRAN to C.
   modified routines:

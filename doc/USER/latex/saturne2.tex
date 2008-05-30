@@ -1860,16 +1860,19 @@ useful if and only if IMGR(IVAR) = 1}
 {when using the multigrid method, maximum number of grid levels\\
 useful if and only if IMGR(IVAR) = 1 for at least one variable IVAR}
 
+\motcle{NCYMAX}{IA}{integer $>$ 0}{10}{O}{L3}
+{for each unknown IVAR, NCYMAX(IVAR) is the maximum number of multigrid cycles.\\
+useful if and only if IMGR(IVAR) = 1}
+
 \motcle{NITMGF}{IA}{integer $>$ 0}{10}{O}{L3}
-{for each unknown IVAR, NITMGF(IVAR) is the maximum number of iterations on the intermediary
-grids when the multigrid method is used\\
+{for each unknown IVAR, NITMGF(IVAR) is the maximum number of iterations on
+all grids except for the coarsest when the multigrid method is used;
+the resolution on the coarsest grid uses NITMAX.\\
 useful if and only if IMGR(IVAR) = 1}
 
 \minititre{Warning}
-The algebraic multigrid method does not work when the mesh contains
-subdivided faces (or more generally when two different faces have the
-same pair of neighbors). In addition, it has been validated up to now only for
-the variable ``pressure'' (IMGR(IPR(IPHAS))=1) and with non-parallel computations.
+The algebraic multigrid method has only been tested for
+the ``pressure'' variable (IMGR(IPR(IPHAS))=1).
 
 %==================================
 \subsubsection{Convective scheme}

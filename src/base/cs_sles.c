@@ -63,9 +63,10 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
-#include "cs_prototypes.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
+
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -189,6 +190,9 @@ const char *cs_sles_type_name[] = {N_("Gradient conjugué"),
  * parameters:
  *   name --> system name
  *   type --> resolution method
+ *
+ * returns:
+ *   pointer to newly created linear system info structure
  *----------------------------------------------------------------------------*/
 
 static cs_sles_info_t *
@@ -700,14 +704,11 @@ _polynomial_preconditionning(cs_int_t            n_cells,
  *   a             --> Matrix
  *   ax            --> Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   n_cells_ext   --> Local number of cells + ghost cells sharing a face
- *   n_cells       --> Local number of cells
- *   n_faces       --> Local number of internal faces
- *   symmetric     --> 1: symmetric; 2: non-symmetric
  *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode --> Halo update option for rotational periodicity
  *   convergence   --> Convergence information structure
  *   rhs           --> Right hand side
+ *   vx            <-- System solution
  *   aux_size      --> Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
@@ -897,14 +898,11 @@ _conjugate_gradient_sp(const char             *var_name,
  *   a             --> Matrix
  *   ax            --> Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   n_cells_ext   --> Local number of cells + ghost cells sharing a face
- *   n_cells       --> Local number of cells
- *   n_faces       --> Local number of internal faces
- *   symmetric     --> 1: symmetric; 2: non-symmetric
  *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode --> Halo update option for rotational periodicity
  *   convergence   --> Convergence information structure
  *   rhs           --> Right hand side
+ *   vx            <-- System solution
  *   aux_size      --> Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
@@ -1096,13 +1094,10 @@ _conjugate_gradient_mp(const char             *var_name,
  *                     (only necessary if poly_degree > 0)
  *   ax            --> Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   n_cells_ext   --> Local number of cells + ghost cells sharing a face
- *   n_cells       --> Local number of cells
- *   n_faces       --> Local number of internal faces
- *   symmetric     --> 1: symmetric; 2: non-symmetric
  *   rotation_mode --> Halo update option for rotational periodicity
  *   convergence   --> Convergence information structure
  *   rhs           --> Right hand side
+ *   vx            <-- System solution
  *   aux_size      --> Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
@@ -1225,14 +1220,11 @@ _jacobi(const char             *var_name,
  *   a             --> Matrix
  *   ax            --> Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   n_cells_ext   --> Local number of cells + ghost cells sharing a face
- *   n_cells       --> Local number of cells
- *   n_faces       --> Local number of internal faces
- *   symmetric     --> 1: symmetric; 2: non-symmetric
  *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode --> Halo update option for rotational periodicity
  *   convergence   --> Convergence information structure
  *   rhs           --> Right hand side
+ *   vx            <-- System solution
  *   aux_size      --> Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
@@ -1490,18 +1482,14 @@ void CS_PROCF(reslin, RESLIN)
 {
   char *var_name;
   cs_sles_type_t type;
-  double  wt_start, wt_stop, cpu_start, cpu_stop;
 
-  cs_sles_info_t *sles_info = NULL;
+  int n_iter = *niterf;
   cs_bool_t symmetric = (*isym == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
   assert(ifacel != NULL);
-
-  wt_start =bft_timer_wtime();
-  cpu_start =bft_timer_cpu_time();
 
   if (*iinvpe == 2)
     rotation_mode = CS_PERIO_ROTA_RESET;
@@ -1525,137 +1513,30 @@ void CS_PROCF(reslin, RESLIN)
     assert(0);
   }
 
-  sles_info = _find_or_add_system(var_name, type);
+  cs_sles_solve(var_name,
+                type,
+                true,
+                symmetric,
+                dam,
+                xam,
+                cs_glob_sles_base_matrix,
+                cs_glob_sles_native_matrix,
+                *ipol,
+                rotation_mode,
+                *iwarnp,
+                *nitmap,
+                *epsilp,
+                *rnorm,
+                &n_iter,
+                residu,
+                rhs,
+                vx,
+                0,
+                NULL);
 
-  /* Initialize number of iterations and residue, check for immediate return */
-
-  *niterf = 0;
-  *residu = sqrt(_dot_product(*ncel, rhs, rhs));
-
-  if (*rnorm <= EPZERO || *residu <= EPZERO) {
-    if (*iwarnp > 1)
-      bft_printf(_("%s [%s]:\n"
-                   "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"),
-                 _(cs_sles_type_name[type]), var_name, *rnorm, *residu);
-  }
-
-  /* Solve sparse linear system */
-
-  else {
-
-    cs_sles_convergence_t  convergence;
-    cs_matrix_t  *a = NULL;
-    cs_matrix_t  *ax = NULL;
-
-    if (type == CS_SLES_JACOBI) {
-
-      ax = cs_glob_sles_base_matrix;
-      cs_matrix_set_coefficients(ax, symmetric, NULL, xam);
-
-    }
-    else { /* if (type != CS_SLES_JACOBI) */
-
-      a = cs_glob_sles_base_matrix;
-      cs_matrix_set_coefficients(a, symmetric, dam, xam);
-
-      if (*ipol > 0) {
-        ax = cs_glob_sles_native_matrix;
-        cs_matrix_set_coefficients(ax, symmetric, NULL, xam);
-      }
-    }
-
-    _convergence_init(&convergence,
-                      _(cs_sles_type_name[type]),
-                      var_name,
-                      *iwarnp,
-                      *nitmap,
-                      *epsilp,
-                      *rnorm,
-                      *residu);
-
-    switch (type) {
-    case CS_SLES_PCG:
-      if (cs_glob_base_nbr == 1)
-        _conjugate_gradient_sp(var_name,
-                               a,
-                               ax,
-                               *ipol,
-                               rotation_mode,
-                               &convergence,
-                               rhs,
-                               vx,
-                               0,
-                               NULL);
-      else
-        _conjugate_gradient_mp(var_name,
-                               a,
-                               ax,
-                               *ipol,
-                               rotation_mode,
-                               &convergence,
-                               rhs,
-                               vx,
-                               0,
-                               NULL);
-      break;
-    case CS_SLES_JACOBI:
-      _jacobi(var_name,
-              dam,
-              ax,
-              rotation_mode,
-              &convergence,
-              rhs,
-              vx,
-              0,
-              NULL);
-      break;
-    case CS_SLES_BICGSTAB:
-      _bi_cgstab(var_name,
-                 a,
-                 ax,
-                 *ipol,
-                 rotation_mode,
-                 &convergence,
-                 rhs,
-                 vx,
-                 0,
-                 NULL);
-      break;
-    default:
-      break;
-    }
-
-    if (a != NULL)
-      cs_matrix_release_coefficients(a);
-
-    if (ax != NULL)
-      cs_matrix_release_coefficients(ax);
-
-    *niterf = convergence.n_iterations;
-    *residu = convergence.residue;
-
-  }
+  *niterf = n_iter;
 
   cs_base_chaine_f_vers_c_detruit(var_name);
-
-  wt_stop =bft_timer_wtime();
-  cpu_stop =bft_timer_cpu_time();
-
-  if (sles_info->n_calls == 1)
-    sles_info->n_iterations_min = *niterf;
-
-  sles_info->n_calls += 1;
-
-  if (sles_info->n_iterations_min > (unsigned)(*niterf))
-    sles_info->n_iterations_min = *niterf;
-  if (sles_info->n_iterations_max < (unsigned)(*niterf))
-    sles_info->n_iterations_max = *niterf;
-
-  sles_info->n_iterations_last = *niterf;
-  sles_info->n_iterations_tot += *niterf;
-
-  sles_info->wt_tot += (wt_stop - wt_start);
-  sles_info->cpu_tot += (cpu_stop - cpu_start);
 }
 
 /*============================================================================
@@ -1709,7 +1590,7 @@ cs_sles_finalize(void)
 {
   int ii;
 
-  /* Free sytem info */
+  /* Free system info */
 
   for (ii = 0; ii < cs_glob_sles_n_systems; ii++) {
     _sles_info_dump(cs_glob_sles_systems[ii]);
@@ -1725,6 +1606,262 @@ cs_sles_finalize(void)
 
   cs_matrix_destroy(&cs_glob_sles_native_matrix);
   cs_matrix_destroy(&cs_glob_sles_base_matrix);
+}
+
+/*----------------------------------------------------------------------------
+ * Test if a general sparse linear system needs solving or if the right-hand
+ * side is already zero within convergence criteria.
+ *
+ * The computed residue is also updated;
+ *
+ * parameters:
+ *   var_name      --> Variable name
+ *   solver_name   --> Name of solver
+ *   n_rows        --> Number of (non ghost) rows in rhs
+ *   verbosity     --> Verbosity level
+ *   r_norm        --> Residue normalization
+ *   residue       <-> Residue
+ *   rhs           --> Right hand side
+ *
+ * returns:
+ *   1 if solving is required, 0 if the rhs is already zero within tolerance
+ *   criteria (precision of residue normalization)
+ *----------------------------------------------------------------------------*/
+
+int
+cs_sles_needs_solving(const char        *var_name,
+                      const char        *solver_name,
+                      cs_int_t           n_rows,
+                      int                verbosity,
+                      double             r_norm,
+                      double            *residue,
+                      const cs_real_t   *rhs)
+{
+  int retval = 1;
+
+  /* Initialize residue, check for immediate return */
+
+  *residue = sqrt(_dot_product(n_rows, rhs, rhs));
+
+  if (r_norm <= EPZERO || *residue <= EPZERO) {
+    if (verbosity > 1)
+      bft_printf(_("%s [%s]:\n"
+                   "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"),
+                 solver_name, var_name, r_norm, *residue);
+    retval = 0;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * General sparse linear system resolution.
+ *
+ * Note that in most cases (if the right-hand side is not already zero
+ * within convergence criteria), coefficients are assigned to matrixes
+ * then released by this function, so coefficients need not be assigned
+ * prior to this call, and will have been released upon returning.
+ *
+ * parameters:
+ *   var_name      --> Variable name
+ *   solver_type   --> Type of solver (PCG, Jacobi, ...)
+ *   update_stats  --> Automatic solver statistics indicator
+ *   symmetric     --> Symmetric coefficients indicator
+ *   ad_coeffs     --> Diagonal coefficients of linear equation matrix
+ *   ax_coeffs     --> Non-diagonal coefficients of linear equation matrix
+ *   a             <-> Matrix
+ *   ax            <-> Non-diagonal part of linear equation matrix
+ *                     (only necessary if poly_degree > 0)
+ *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode --> Halo update option for rotational periodicity
+ *   verbosity     --> Verbosity level
+ *   n_max_iter    --> Maximum number of iterations
+ *   precision     --> Precision limit
+ *   r_norm        --> Residue normalization
+ *   n_iter        <-- Number of iterations
+ *   residue       <-> Residue
+ *   rhs           --> Right hand side
+ *   vx            <-- System solution
+ *   aux_size      --> Number of elements in aux_vectors
+ *   aux_vectors   --- Optional working area (allocation otherwise)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_solve(const char         *var_name,
+              cs_sles_type_t      solver_type,
+              cs_bool_t           update_stats,
+              cs_bool_t           symmetric,
+              const cs_real_t    *ad_coeffs,
+              const cs_real_t    *ax_coeffs,
+              cs_matrix_t        *a,
+              cs_matrix_t        *ax,
+              int                 poly_degree,
+              cs_perio_rota_t     rotation_mode,
+              int                 verbosity,
+              int                 n_max_iter,
+              double              precision,
+              double              r_norm,
+              int                *n_iter,
+              double             *residue,
+              const cs_real_t    *rhs,
+              cs_real_t          *vx,
+              size_t              aux_size,
+              void               *aux_vectors)
+{
+  cs_int_t  n_rows;
+  unsigned _n_iter = 0;
+  cs_sles_convergence_t  convergence;
+
+  cs_sles_info_t *sles_info = NULL;
+  double  wt_start = 0.0, wt_stop = 0.0;
+  double  cpu_start = 0.0, cpu_stop = 0.0;
+
+  cs_matrix_t *_a = a;
+  cs_matrix_t *_ax = ax;
+
+  n_rows = cs_matrix_get_n_rows(a);
+
+  if (update_stats == true) {
+    wt_start =bft_timer_wtime();
+    cpu_start =bft_timer_cpu_time();
+    sles_info = _find_or_add_system(var_name, solver_type);
+  }
+
+  /* Initialize number of iterations and residue,
+     check for immediate return,
+     and solve sparse linear system */
+
+  *n_iter = 0;
+
+  if (cs_sles_needs_solving(var_name,
+                            _(cs_sles_type_name[solver_type]),
+                            n_rows,
+                            verbosity,
+                            r_norm,
+                            residue,
+                            rhs) != 0) {
+
+    /* Set matrix coefficients */
+
+    if (solver_type == CS_SLES_JACOBI) {
+
+      if (ax == NULL) {
+        _a = NULL;
+        _ax = a;
+      }
+
+      cs_matrix_set_coefficients(_ax, symmetric, NULL, ax_coeffs);
+    }
+
+    else { /* if (solver_type != CS_SLES_JACOBI) */
+
+      cs_matrix_set_coefficients(_a, symmetric, ad_coeffs, ax_coeffs);
+
+      if (poly_degree > 0) {
+        cs_matrix_set_coefficients(_ax, symmetric, NULL, ax_coeffs);
+      }
+    }
+
+    /* Solve sparse linear system */
+
+    _convergence_init(&convergence,
+                      _(cs_sles_type_name[solver_type]),
+                      var_name,
+                      verbosity,
+                      n_max_iter,
+                      precision,
+                      r_norm,
+                      *residue);
+
+    switch (solver_type) {
+    case CS_SLES_PCG:
+      if (cs_glob_base_nbr == 1)
+        _conjugate_gradient_sp(var_name,
+                               _a,
+                               _ax,
+                               poly_degree,
+                               rotation_mode,
+                               &convergence,
+                               rhs,
+                               vx,
+                               aux_size,
+                               aux_vectors);
+      else
+        _conjugate_gradient_mp(var_name,
+                               _a,
+                               _ax,
+                               poly_degree,
+                               rotation_mode,
+                               &convergence,
+                               rhs,
+                               vx,
+                               aux_size,
+                               aux_vectors);
+      break;
+    case CS_SLES_JACOBI:
+      _jacobi(var_name,
+              ad_coeffs,
+              _ax,
+              rotation_mode,
+              &convergence,
+              rhs,
+              vx,
+              aux_size,
+              aux_vectors);
+      break;
+    case CS_SLES_BICGSTAB:
+      _bi_cgstab(var_name,
+                 _a,
+                 _ax,
+                 poly_degree,
+                 rotation_mode,
+                 &convergence,
+                 rhs,
+                 vx,
+                 aux_size,
+                 aux_vectors);
+      break;
+    default:
+      break;
+    }
+
+    /* Release matrix coefficients */
+
+    if (_a != NULL)
+      cs_matrix_release_coefficients(_a);
+    if (_ax != NULL)
+      cs_matrix_release_coefficients(_ax);
+
+    /* Update return values */
+
+    _n_iter = convergence.n_iterations;
+
+    *n_iter = convergence.n_iterations;
+    *residue = convergence.residue;
+
+  }
+
+  if (update_stats == true) {
+
+    wt_stop =bft_timer_wtime();
+    cpu_stop =bft_timer_cpu_time();
+
+    if (sles_info->n_calls == 0)
+      sles_info->n_iterations_min = _n_iter;
+
+    sles_info->n_calls += 1;
+
+    if (sles_info->n_iterations_min > _n_iter)
+      sles_info->n_iterations_min = _n_iter;
+    if (sles_info->n_iterations_max < _n_iter)
+      sles_info->n_iterations_max = _n_iter;
+
+    sles_info->n_iterations_last = _n_iter;
+    sles_info->n_iterations_tot += _n_iter;
+
+    sles_info->wt_tot += (wt_stop - wt_start);
+    sles_info->cpu_tot += (cpu_stop - cpu_start);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

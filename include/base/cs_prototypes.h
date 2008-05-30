@@ -56,6 +56,75 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Compute coarsening array for algebraic multigrid
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (autmgr, AUTMGR)
+(
+ const cs_int_t   *const igr,         /* --> new grid level (0 = base)        */
+ const cs_int_t   *const isym,        /* --> 1: symmetric; 2 nonsymmteric     */
+ const cs_int_t   *const iagmax,      /* --> max fine cells per coarse cell   */
+ const cs_int_t   *const nagmax,      /* --> fine cells per coarse cell limit */
+ const cs_int_t   *const ncelf,       /* --> number of cells in fine grid     */
+ const cs_int_t   *const ncelfe,      /* --> n. of cells w. halo in fine grid */
+ const cs_int_t   *const nfacf,       /* --> number of faces in fine grid     */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t          ifacef[],    /* --> fine grid face->cell connect.    */
+ const cs_real_t         daf[],       /* --> diagonal terms of fine grid      */
+ const cs_real_t         xaf[],       /* --> extradiagonal terms of fine grid */
+ const cs_real_t         surfaf[],    /* --> fine grid face surface vectors   */
+ const cs_real_t         volumf[],    /* --> fine grid cell volumes           */
+ const cs_real_t         xyzfin[],    /* --> fine grid cell centers           */
+       cs_int_t          irscel[],    /* <-- Fine -> coarse cell connectivity */
+       cs_int_t          indic[],     /* --> work array of size ncelfe        */
+       cs_int_t          inombr[],    /* --> work array of size ncelfe        */
+       cs_int_t          irsfac[],    /* --> work array of size nfacf         */
+       cs_int_t          indicf[],    /* --> work array of size nfacf         */
+       cs_real_t         w1[],        /* --> work array of size ncelfe        */
+       cs_real_t         w2[]         /* --> work array of size ncelfe        */
+);
+
+/*----------------------------------------------------------------------------
+ * Compute coarsening grid values for algebraic multigrid
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (crstgr, CRSTGR)
+(
+ const cs_int_t   *const iappel,      /* --> call number (0 or 1)             */
+ const cs_int_t   *const isym,        /* --> 1: symmetric; 2 nonsymmteric     */
+ const cs_int_t   *const igr,         /* --> new grid level (0 = base)        */
+ const cs_int_t   *const ncelf,       /* --> number of cells in fine grid     */
+ const cs_int_t   *const ncelg,       /* --> number of cells in coarse grid   */
+ const cs_int_t   *const ncelfe,      /* --> n. of cells w. halo in fine grid */
+ const cs_int_t   *const ncelge,      /* --> n. of cells w. halo coarse grid  */
+ const cs_int_t   *const nfacf,       /* --> number of faces in fine grid     */
+ const cs_int_t   *const nfacg,       /* --> number of faces in coarse grid   */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t          ifacef[],    /* --> fine grid face->cell connect.    */
+ const cs_int_t          ifaceg[],    /* --> coarse grid face->cell connect.  */
+ const cs_int_t          irscel[],    /* <-- Fine -> coarse cell connectivity */
+ const cs_int_t          irsfac[],    /* <-- Fine -> coarse face connectivity */
+ const cs_real_t         volumf[],    /* --> fine grid cell volumes           */
+ const cs_real_t         xyzfin[],    /* --> fine grid cell centers           */
+ const cs_real_t         surfaf[],    /* --> fine grid face surface vectors   */
+ const cs_real_t         xaf0[],      /* --> symmetrized extradiagonal, fine  */
+ const cs_real_t         xaf0ij[],    /* --> matrix coarsening term, fine     */
+ const cs_real_t         daf[],       /* --> diagonal terms of fine grid      */
+ const cs_real_t         xaf[],       /* --> extradiagonal terms of fine grid */
+ const cs_real_t         volumg[],    /* --> coarse grid cell volumes         */
+ const cs_real_t         xyzgro[],    /* --> coarse grid cell centers         */
+ const cs_real_t         surfag[],    /* --> coarse grid face surface vectors */
+ const cs_real_t         xag0[],      /* --> symmetrized extradiag., coarse   */
+ const cs_real_t         xag0ij[],    /* --> matrix coarsening term, coarse   */
+ const cs_real_t         dag[],       /* --> diagonal terms of coarse grid    */
+ const cs_real_t         xag[],       /* --> extradiagonal terms, coarse grid */
+       cs_real_t         rwc1[],      /* --> work array of size ncelfe        */
+       cs_real_t         rwc2[],      /* --> work array of size ncelfe        */
+       cs_real_t         rwc3[],      /* --> work array of size ncelfe        */
+       cs_real_t         rwc4[]       /* --> work array of size ncelfe        */
+);
+
+/*----------------------------------------------------------------------------
  * Compute gradients using least squares method (standard or extended
  * neighborhood)
  *----------------------------------------------------------------------------*/
@@ -194,6 +263,35 @@ void CS_PROCF (proxav, PROXAV)
  const cs_real_t  *xa,            /* --> Matrix extra-diagonal terms */
  const cs_real_t  *vx,            /* --> Vector to be multiplied */
  const cs_real_t  *vy             /* <-- Resulting vector */
+);
+
+/*----------------------------------------------------------------------------
+ * User function to compute coarsening array for algebraic multigrid
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (ustmgr, USTMGR)
+(
+ const cs_int_t   *const iappel,      /* --> 1: initialization call
+                                             2: computional call              */
+ const cs_int_t   *const igr,         /* --> new grid level (0 = base)        */
+ const cs_int_t   *const isym,        /* --> 1: symmetric; 2 nonsymmteric     */
+ const cs_int_t   *const ncelf,       /* --> number of cells in fine grid     */
+ const cs_int_t   *const ncelfe,      /* --> n. of cells w. halo in fine grid */
+ const cs_int_t   *const nfacf,       /* --> number of faces in fine grid     */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+       cs_int_t   *const iusmgr,      /* <-  0: automatic method
+                                             1: use this sub-routine          */
+       cs_int_t   *const niw,         /* <-  size of iw for call 2            */
+       cs_int_t   *const nrw,         /* <-  size of rw for call 2            */
+ const cs_int_t          ifacef[],    /* --> fine grid face->cell connect.    */
+ const cs_real_t         daf[],       /* --> diagonal terms of fine grid      */
+ const cs_real_t         xaf[],       /* --> extradiagonal terms of fine grid */
+ const cs_real_t         surfaf[],    /* --> fine grid face surface vectors   */
+ const cs_real_t         volumf[],    /* --> fine grid cell volumes           */
+ const cs_real_t         xyzfin[],    /* --> fine grid cell centers           */
+       cs_int_t          irscel[],    /* <-- Fine -> coarse cell connectivity */
+       cs_int_t          iw[],        /* --> work array of size niw (call 2)  */
+       cs_real_t         rw[]         /* --> work array of size nrw (call 2)  */
 );
 
 /*----------------------------------------------------------------------------*/

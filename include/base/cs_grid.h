@@ -1,0 +1,281 @@
+/*============================================================================
+ *
+ *     This file is part of the Code_Saturne Kernel, element of the
+ *     Code_Saturne CFD tool.
+ *
+ *     Copyright (C) 1998-2008 EDF S.A., France
+ *
+ *     contact: saturne-support@edf.fr
+ *
+ *     The Code_Saturne Kernel is free software; you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     The Code_Saturne Kernel is distributed in the hope that it will be
+ *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the Code_Saturne Kernel; if not, write to the
+ *     Free Software Foundation, Inc.,
+ *     51 Franklin St, Fifth Floor,
+ *     Boston, MA  02110-1301  USA
+ *
+ *============================================================================*/
+
+#ifndef __CS_GRID_H__
+#define __CS_GRID_H__
+
+/*============================================================================
+ * Grid connectivity and data used for multgrid coarsening
+ * and associated matrix construction.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_base.h"
+
+#include "cs_matrix.h"
+#include "cs_perio.h"
+
+/*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* Structure associated with opaque grid object */
+
+typedef struct _cs_grid_t cs_grid_t;
+
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create base grid by mapping from shared mesh values.
+ *
+ * Note that as arrays given as arguments are shared by the created grid
+ * (which can only access them, not modify them), the grid should be
+ * destroyed before those arrays.
+ *
+ * parameters:
+ *   n_cells     --> Local number of cells
+ *   n_cells_ext --> Local number of cells + ghost cells
+ *   n_faces     --> Local number of faces
+ *   symmetric   --> True if xam is symmetric, false otherwise
+ *   face_cell   --> Face -> cells connectivity (1 to n)
+ *   halo        --> Halo structure associated with this level, or NULL.
+ *   cell_cen    --> Cell center (size: 3.n_cells_ext)
+ *   cell_vol    --> Cell volume (size: n_cells_ext)
+ *   face_normal --> Internal face normals (size: 3.n_faces)
+ *   da          --> Matrix diagonal (size: n_cell_ext)
+ *   xa          --> Matrix extra-diagonal terms
+ *                   (size: n_faces if symmetric, 2.n_faces otherwise)
+ *
+ * returns:
+ *   base grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_create_from_shared(fvm_lnum_t         n_cells,
+                           fvm_lnum_t         n_cells_ext,
+                           fvm_lnum_t         n_faces,
+                           cs_bool_t          symmetric,
+                           const fvm_lnum_t  *face_cell,
+                           const cs_halo_t   *halo,
+                           const cs_real_t   *cell_cen,
+                           const cs_real_t   *cell_vol,
+                           const cs_real_t   *face_normal,
+                           const cs_real_t   *da,
+                           const cs_real_t   *xa);
+
+/*----------------------------------------------------------------------------
+ * Destroy a grid structure.
+ *
+ * parameters:
+ *   grid <-> Pointer to grid structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_destroy(cs_grid_t **grid);
+
+/*----------------------------------------------------------------------------
+ * Get grid information.
+ *
+ * parameters:
+ *   g           --> Grid structure
+ *   level       <-- Level in multigrid hierarchy (or NULL)
+ *   symmetric   <-- Symmetric matrix coefficients indicator (or NULL)
+ *   n_cells_ext <-- Number of local cells (or NULL)
+ *   n_cells_ext <-- Number of cells including ghosts (or NULL)
+ *   n_cells_ext <-- Number of faces (or NULL)
+ *   n_g_cells   <-- Number of global cells (or NULL)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_get_info(const cs_grid_t  *g,
+                 int              *level,
+                 cs_bool_t        *symmetric,
+                 fvm_lnum_t       *n_cells,
+                 fvm_lnum_t       *n_cells_ext,
+                 fvm_lnum_t       *n_faces,
+                 fvm_gnum_t       *n_g_cells);
+
+/*----------------------------------------------------------------------------
+ * Get number of cells corresponding to a grid.
+ *
+ * parameters:
+ *   g --> Grid structure
+ *
+ * returns:
+ *   number of cells of grid structure
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_grid_get_n_cells(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
+ * Get number of extended (local + ghost) cells corresponding to a grid.
+ *
+ * parameters:
+ *   g --> Grid structure
+ *
+ * returns:
+ *   number of extended cells of grid structure
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_grid_get_n_cells_ext(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
+ * Get global number of cells corresponding to a grid.
+ *
+ * parameters:
+ *   g --> Grid structure
+ *
+ * returns:
+ *   global number of cells of grid structure
+ *----------------------------------------------------------------------------*/
+
+fvm_gnum_t
+cs_grid_get_n_g_cells(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
+ * Get grid's associated matrix information.
+ *
+ * parameters:
+ *   g           --> Grid structure
+ *   da          <-- Diagonal matrix coefficients
+ *   xa          <-- Non-diagonal matrix coefficients
+ *   m           <-- Associated matrix structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_get_matrix(const cs_grid_t  *g,
+                   const cs_real_t  **da,
+                   const cs_real_t  **xa,
+                   cs_matrix_t      **m);
+
+/*----------------------------------------------------------------------------
+ * Create coarse grid from fine grid.
+ *
+ * parameters:
+ *   f                   --> Fine grid structure
+ *   verbosity           --> Verbosity level
+ *   agglomeration_limit --> Maximum allowed fine cells per coarse cell
+ *   max_agglomeration   <-> Maximum fine cells per coarse cell
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_coarsen(const cs_grid_t  *f,
+                int               verbosity,
+                int               agglomeration_limit,
+                int              *max_agglomeration);
+
+/*----------------------------------------------------------------------------
+ * Compute coarse cell variable values from fine cell values
+ *
+ * parameters:
+ *   f       --> Fine grid structure
+ *   c       --> Fine grid structure
+ *   f_var   --> Variable defined on fine grid cells
+ *   c_var   <-- Variable defined on coarse grid cells
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_restrict_cell_var(const cs_grid_t  *f,
+                          const cs_grid_t  *c,
+                          const cs_real_t  *f_var,
+                          cs_real_t        *c_var);
+
+/*----------------------------------------------------------------------------
+ * Compute fine cell variable values from coarse cell values
+ *
+ * parameters:
+ *   c       --> Fine grid structure
+ *   f       --> Fine grid structure
+ *   c_var   <-- Variable defined on coarse grid cells
+ *   f_var   --> Variable defined on fine grid cells
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_prolong_cell_var(const cs_grid_t  *c,
+                         const cs_grid_t  *f,
+                         const cs_real_t  *c_var,
+                         cs_real_t        *f_var);
+
+/*----------------------------------------------------------------------------
+ * Project coarse grid cell numbers to base grid.
+ *
+ * If a global coarse grid cell number is larger than max_num, its
+ * value modulo max_num is used.
+ *
+ * parameters:
+ *   g             --> Grid structure
+ *   n_base_cells  --> Number of cells in base grid
+ *   max_num       --> Values of c_cell_num = global_num % max_num
+ *   c_cell_num    <-- Global coarse cell number (modulo max_num)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_cell_num(const cs_grid_t  *g,
+                         fvm_lnum_t        n_base_cells,
+                         int               max_num,
+                         int               c_cell_num[]);
+
+/*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __CS_GRID_H__ */

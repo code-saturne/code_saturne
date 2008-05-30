@@ -75,7 +75,6 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "albase.h"
@@ -1405,7 +1404,7 @@ C
 C
 C
 C=======================================================================
-C 2. MULTIGRILLE : TABLEAUX DE mltgrd.h : formats 3000
+C 2. MULTIGRILLE : TABLEAUX DU MULTIGRILLE : formats 3000
 C=======================================================================
 C
 C --- Options generales
@@ -1418,6 +1417,12 @@ C
             WRITE(NFECRA,3000) CHAINE(1:8),'IMGR  ',II,IMGR(II)
             IOK = IOK + 1
           ENDIF
+          DO IPHAS = 1, NPHAS
+            IF(IMGR(II).EQ.1.AND.II.NE.IPR(IPHAS)) THEN
+              WRITE(NFECRA,3001)
+              IOK = IOK + 1
+            ENDIF
+          ENDDO
           IF(IMGR(II).EQ.1) THEN
             IF(NCYMAX(II).LE.0) THEN
               WRITE(NFECRA,3010) CHAINE(1:8),'NCYMAX',II,NCYMAX(II)
@@ -1690,23 +1695,6 @@ C       renforce vitesse pression et l'ALE
         IOK = IOK + 1
       ENDIF
 C
-C --- periodicite incompatible avec multigrille
-      IF(IPERIO.EQ.1) THEN
-        IMGROK = 0
-        DO IPP = 2, NVPPMX
-          II = ITRSVR(IPP)
-          IF(II.GE.1) THEN
-            IF(IMGR(II).EQ.1) THEN
-              IMGROK = 1
-            ENDIF
-          ENDIF
-        ENDDO
-        IF(IMGROK.NE.0) THEN
-          WRITE(NFECRA,5004)IPERIO
-          IOK = IOK + 1
-        ENDIF
-      ENDIF
-C
 C --- periodicite incompatible avec le mode de calcul
 C       direct de la distance a la paroi
       IF(IPERIO.EQ.1.AND.INEEDY.EQ.1.AND.ABS(ICDPAR).EQ.2) THEN
@@ -1771,23 +1759,6 @@ C --- parallelisme incompatible avec lagrangien
       IF(IRANGP.GE.0.AND.IILAGR.NE.0) THEN
         WRITE(NFECRA,6002)IRANGP,IILAGR
         IOK = IOK + 1
-      ENDIF
-C
-C --- parallelisme incompatible avec multigrille
-      IF(IRANGP.GE.0) THEN
-        IMGROK = 0
-        DO IPP = 2, NVPPMX
-          II = ITRSVR(IPP)
-          IF(II.GE.1) THEN
-            IF(IMGR(II).EQ.1) THEN
-              IMGROK = 1
-            ENDIF
-          ENDIF
-        ENDDO
-        IF(IMGROK.NE.0) THEN
-          WRITE(NFECRA,6004)IRANGP
-          IOK = IOK + 1
-        ENDIF
       ENDIF
 C
 C --- parallelisme incompatible avec le mode de calcul
@@ -3755,6 +3726,21 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+ 3001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
+     &'@    *********                                               ',/,
+     &'@  L algorithme de resolution multigrille algebrique         ',/,
+     &'@  n est disponible que pour la variable pression.           ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne peut etre execute.                           ',/,
+     &'@                                                            ',/,
+     &'@  Verifier les parametres donnes via l''interface ou usini1.',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
  3010 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -4077,25 +4063,6 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
- 5004 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    LA PERIODICITE N''EST PAS COMPATIBLE AVEC LE MULTIGRILLE',/,
-     &'@       DANS LA VERSION COURANTE                             ',/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  La variable COMMANDE_PERIO a ete renseignee dans le       ',/,
-     &'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,
-     &'@    par IPERIO = ',I10,   ').                               ',/,
-     &'@  L''indicateur IMGR a ete positionne a 1                   ',/,
-     &'@    pour une variable au moins dans l''interface ou usini1. ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
  5005 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -4230,23 +4197,6 @@ C
      &'@  Le processeur courant est de rang ',I10                    ,/,
      &'@  L''indicateur IILAGR a ete positionne a ',I10              ,/,
      &'@    dans uslag1 (module lagrangien active pour IILAGR>0).   ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 6004 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    LE PARALLELISME N''EST PAS COMPATIBLE AVEC LE           ',/,
-     &'@                        MULTIGRILLE DANS LA VERSION COURANTE',/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  Le processeur courant est de rang ',I10                    ,/,
-     &'@  L''indicateur IMGR a ete positionne a 1                   ',/,
-     &'@    pour une variable au moins dans l''interface ou usini1. ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)

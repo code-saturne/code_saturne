@@ -75,7 +75,6 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "pointe.h"
@@ -942,8 +941,6 @@ C
 C
 C --- Multigrille
 C       On donne ici les valeurs par defaut des options de base.
-C       Des complements seront apportes lors de
-C         l'initialisation des variables de mltgrd.h
 C
       DO II = 1, NVARMX
         IMGR(II) = 0
@@ -952,7 +949,17 @@ C
       DO II = 1, NVARMX
         NCYMAX(II) = 100
         NITMGF(II) = 10
+        NAGMX0(II)= 8
+        IAGMX0(II)= 1
+        NCPMGR(II)= 0
       ENDDO
+C
+C --- Nombre max de cellules et de niveaux
+C
+      NCEGRM = 30
+      NGRMAX = NGRMMX
+C
+      RLXP1 = 1.D0
 C
 C --- Suite de calcul
 C       Calcul non suite par defaut
@@ -1250,44 +1257,7 @@ C
 C --- Ici tout optcal.h est initialise
 C
 C=======================================================================
-C 8. MULTIGRILLE : TABLEAUX DE mltgrd.h
-C      IL NE S'AGIT PAS A PROPREMENT PARLER DE TABLEAUX UTILISATEURS
-C=======================================================================
-C
-C --- Nombre max de cellules et de niveaux
-C
-      NCEGRM = 30
-      NGRMAX = NGRMMX
-C
-C --- Pointeurs partiels sur les descripteurs des maillages grossiers
-C       dans IA et RA
-C
-C              NE PAS MODIFIER
-C              ---------------
-C    Entiers
-      JNCEL  = 1
-      JNFAC  = 2
-      JIFACE = 3
-      JIRESP = 4
-C    Reels
-      JDA    = 1
-      JXA    = 2
-C
-C --- Pointeurs sur les descripteurs de maillage grossiers
-C
-      DO JJ = 1, NGRMAX
-        DO II = 1, NTGREN
-          IPGREN(II,JJ) = 1
-        ENDDO
-        DO II = 1, NTGRRE
-          IPGRRE(II,JJ) = 1
-        ENDDO
-      ENDDO
-C
-C --- Ici tout mltgrd.h est initialise
-C
-C=======================================================================
-C 9. TABLEAUX DE cstphy.h
+C 8. TABLEAUX DE cstphy.h
 C=======================================================================
 C
 C --- Gravite
@@ -1450,7 +1420,7 @@ C
 C --- Ici tout cstphy a ete initialise
 C
 C=======================================================================
-C 10. INDICATEURS DE VECTORISATION
+C 9. INDICATEURS DE VECTORISATION
 C=======================================================================
 C
 C  On les prend ici egaux a -1 ; si l'utilisateur ne les positionne pas
@@ -1471,14 +1441,14 @@ C
 #endif
 C
 C=======================================================================
-C 11. INITIALISATION DES PARAMETRES DE PERIODICITE de period.h
+C 10. INITIALISATION DES PARAMETRES DE PERIODICITE de period.h
 C=======================================================================
 C
       IGUPER = 0
       IGRPER = 0
 C
 C=======================================================================
-C 12. INITIALISATION DES PARAMETRES DE IHM de ihmpre.h
+C 11. INITIALISATION DES PARAMETRES DE IHM de ihmpre.h
 C=======================================================================
 C
 C     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
@@ -1487,7 +1457,7 @@ C
       IIHMPR = 0
 C
 C=======================================================================
-C 13. INITIALISATION DES PARAMETRES ALE de albase.h et alstru.h
+C 12. INITIALISATION DES PARAMETRES ALE de albase.h et alstru.h
 C=======================================================================
 C
 C --- Methode ALE

@@ -232,35 +232,7 @@ C     ===========
 C
 C
 C=======================================================================
-C 6. MULTIGRILLE ALGEBRIQUE
-C=======================================================================
-C
-C PREPARATION ET VERIFICATIONS
-C
-      IMGRMX = 0
-      DO IVAR = 1, NVARMX
-        IMGRMX = MAX(IMGRMX,IMGR(IVAR))
-      ENDDO
-C
-      IF (IMGRMX.NE.0) THEN
-C
-        CALL MEMPGR
-C       ===========
-     & ( IDEBIA ,  IDEBRA ,
-     &   NCEL   , NFAC    ,
-     &   IIP    , IINDIC  , IIW     , IICELF ,
-     &   IFINIA , IFINRA   )
-C
-        CALL PREMGR
-C       ===========
-     & ( IFINIA , IFINRA ,
-     &   NCEL   , NFAC   , IFACEL ,
-     &   IA(IIP) , IA(IINDIC) , IA(IIW) , IA(IICELF) )
-C
-      ENDIF
-C
-C=======================================================================
-C 7. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
+C 6. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
 C=======================================================================
 C
       IF (IMRGRA.EQ.3) THEN

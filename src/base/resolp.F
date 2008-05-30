@@ -268,13 +268,14 @@ C
 C VARIABLES LOCALES
 C
       CHARACTER*80     CHAINE
+      INTEGER          LCHAIN
       INTEGER          IDEBIA, IDEBRA
       INTEGER          ICCOCG, INC   , INIT  , ISYM  , IPOL  , ISQRT
       INTEGER          IEL   , IFAC  , IFAC0 , IEL0
       INTEGER          IRESLP, NSWRP , NSWMPR
       INTEGER          ISWEEP, NITERF, ICYCLE, NGR   , IFINIA , IFINRA
       INTEGER          IFLMB0, IFCSOR
-      INTEGER          NSWRGP, IMLIGP, IWARNP, IWARMG
+      INTEGER          NSWRGP, IMLIGP, IWARNP
       INTEGER          IPRIPH, IUIPH , IVIPH , IWIPH ,ICLIPF
       INTEGER                  ICLIPR, ICLIUP, ICLIVP, ICLIWP
       INTEGER          IPCROM, IPCROA, IPBROM, IFLMAS, IFLMAB
@@ -285,6 +286,7 @@ C
       INTEGER          IINVPE, IMASPE, INDHYD
       INTEGER          IDIMTE, ITENSO, IESDEP
       INTEGER          IDTSCA
+      INTEGER          IAGMAX, NAGMAX, NPSTMG
       DOUBLE PRECISION RESIDU, PHYDR0
       DOUBLE PRECISION ARDTSR, ARSR  , ARAKPH, UNSARA, THETAP
       DOUBLE PRECISION DTSROM, UNSVOM, ROMRO0, RO0IPH
@@ -1065,30 +1067,24 @@ C
 C
 C --- Initialisations
 C
-        IFINIA = IDEBIA
-        IFINRA = IDEBRA
         NGR = 0
 C
 C --- Creation de la hierarchie de maillages
 C
-        IWARMG = IWARNI(IPRIPH)
+        CHAINE = NOMVAR(IPP)
+        IWARNP = IWARNI(IPRIPH)
+        IAGMAX = IAGMX0(IPRIPH)
+        NAGMAX = NAGMX0(IPRIPH)
+        NPSTMG = NCPMGR(IPRIPH)
+        LCHAIN = 8
+C
         CALL CLMLGA
 C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IWARMG , NFECRA , IFINIA , IFINRA , NGR    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DAM    , XAM    , DAG    , XAG    ,
-     &   RDEVEL , RTUSER , RA     )
-C
-        IDEBIA = IFINIA
-        IDEBRA = IFINRA
+     & ( CHAINE(1:8) ,     LCHAIN ,
+     &   NCELET , NCEL   , NFAC   ,
+     &   ISYM   , IAGMAX , NAGMAX , NPSTMG , IWARNP ,
+     &   NGRMAX , NCEGRM , NGR    ,
+     &   DAM    , XAM    )
 C
       ENDIF
 C
@@ -1537,6 +1533,17 @@ C
         DO IEL = 1, NCEL
           RTP(IEL,IPRIPH) = RTPA(IEL,IPRIPH) + RTP(IEL,IPRIPH)
         ENDDO
+      ENDIF
+C
+C=======================================================================
+C 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+C=======================================================================
+C
+      IF (IMGR(IPRIPH).GT.0) THEN
+        CHAINE = NOMVAR(IPP)
+        LCHAIN = 8
+        CALL DSMLGA(CHAINE(1:8), LCHAIN)
+C       ===========
       ENDIF
 C
 C--------

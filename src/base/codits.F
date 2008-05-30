@@ -431,31 +431,6 @@ C     En stationnaire, on relaxe la diagonale
           DAM(IEL) = DAM(IEL)/RELAXP
         ENDDO
       ENDIF
-C      CREATION DE LA HIERARCHIE DE MAILLAGE SI MULTIGRILLE
-C
-      IF( IMGRP.GT.0 ) THEN
-C
-        NGR = 0
-C
-        CALL CLMLGA
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IWARNP , NFECRA , IFINIA , IFINRA , NGR    ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DAM    , XAM    , DAG    , XAG    ,
-     &   RDEVEL , RTUSER , RA     )
-C
-        IDEBIA = IFINIA
-        IDEBRA = IFINRA
-C
-      ENDIF
 C
 C
 C=======================================================================

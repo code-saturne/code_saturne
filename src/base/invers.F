@@ -183,7 +183,7 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
-      INCLUDE "mltgrd.h"
+      INCLUDE "optcal.h"
 C
 C***********************************************************************
 C
@@ -227,9 +227,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          LNOM
-      INTEGER          IGR
-C     INTEGER          NCELW, NITW
-      INTEGER          IRESMO(0:NGRMMX) , NITSMO(2,0:NGRMMX)
+      INTEGER          IRESDS, IRESAS, NITMDS, NITMAS
 C
 C***********************************************************************
 C
@@ -247,44 +245,19 @@ C RESOLUTION
 C
       IF( IMGRP.EQ.1 ) THEN
 C
-        DO IGR = 0, NGR
-          NITSMO(1,IGR) = NITMFP
-          NITSMO(2,IGR) = NITMFP
-C-option
-C on itere de plus en plus, plus le maillage est grossier
-c          IF (IGR.EQ.0) THEN
-c            NCELW = NCEL
-c          ELSE
-c            NCELW = IA(IPGREN(JNCEL,IGR))
-c          ENDIF
-c          NITW = MIN(NCELW/2,INT(NITMFP*(1.5)**IGR))
-c          NITSMO(1,IGR) = NITW
-c          NITSMO(2,IGR) = NITW
-C-option
-C-option
-C on n'itere qu'un maillage sur 3
-c          IF (MOD(IGR,3).NE.0) THEN
-c            NITSMO(1,IGR) = 0
-c            NITSMO(2,IGR) = 0
-c          ENDIF
-C-option
-          IRESMO(IGR) = IRESLP
-        ENDDO
-        NITSMO(1,NGR) = NITMAP
+        IRESDS = IRESLP
+        IRESAS = IRESLP
 C
-C
+        NITMDS = NITMFP
+        NITMAS = NITMFP
 C
         CALL RESMGR
 C       ===========
-     & ( CNOM   , IDEBIA , IDEBRA , NGR    , NCELET , NCEL   , NFAC   ,
-     &   ISYM   , IPOL   , IRESMO , NITSMO , NCYMXP , IINVPE ,
-     &   IWARNP , NFECRA , ICYCLE ,
-     &   EPSILP , RNORM  , RESIDU ,
-     &   IFACEL , IRESPR , IFACLG ,
-     &   DAM    , XAM    , DAG    , XAG    , SMBRP  , BG     ,
-     &   VX     , DXG    , W1     , W2     , W3     , W4     ,
-     &   W5     , W6     ,
-     &   IA     , RA      )
+     & ( CNOM   , LNOM   , NCELET , NCEL   , NFAC   ,
+     &   ISYM   , IRESDS , IRESAS , IRESLP , IPOL   ,
+     &   NCYMXP , NITMDS , NITMAS , NITMAP , IINVPE ,
+     &   IWARNP , ICYCLE , NITERF , EPSILP , RNORM  , RESIDU ,
+     &   IFACEL , SMBRP  , VX     )
 C
       ELSEIF(IMGRP.EQ.0) THEN
 C

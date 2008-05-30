@@ -934,7 +934,6 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "vector.h"
@@ -1229,6 +1228,24 @@ C
       ENDIF
 C
 C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+C
+C
+C --- Parametres  multigrille algebrique
+C
+C     IMGR = 0 : PAS DE MULTIGRILLE
+C     IMGR = 1 : MULTIGRILLE ALGEBRIQUE
+C
+C     Uniquement disponible pour la pression
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+C
+      IPHAS = 1
+      IMGR(IPR(IPHAS)) = 0
+C
+C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+C
+C
+C=================================================================
 C
 C --- Stabilisation en regime turbulent
 C
@@ -1661,7 +1678,6 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "mltgrd.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "vector.h"

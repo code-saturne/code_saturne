@@ -71,6 +71,7 @@
 #include "cs_mesh_quality.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_coherency.h"
+#include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_pp_io.h"
 #include "cs_proxy_comm.h"
@@ -502,6 +503,7 @@ int main
     /* Initialisation de la résolution des systèmes linéaires */
 
     cs_sles_initialize();
+    cs_multigrid_initialize();
 
     /*------------------------------------------------------------------------
      *  appel du sous-programme de gestion de calcul (noyau du code)
@@ -530,6 +532,7 @@ int main
 
     /* Fin de la résolution des systèmes linéaires */
 
+    cs_multigrid_finalize();
     cs_sles_finalize();
 
     /* les fichiers listing de noeuds > 0 sont fermés dans caltri. */
