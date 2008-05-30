@@ -296,19 +296,12 @@ privcompil:
 				    -DDEBUG   $(CCOMPFLAGSLO)"  \
 	           ALLFCOMPFLAGS=" $${fflags} $(MYFTNCOMPFLAGS) \
 				              $(FTNCOMPFLAGSLO)" ;\
-	 elif [ "$(MYOPT)" = "DBG" ] ;\
+	 elif [ "$(MYOPT)" = "DBG" -o "$(MYOPT)" = "EF" ] ;\
 	 then make privdependobj OBJECTS="`cat .liste_mkfiles.o`" \
 	                         INC_CS_I="$${dir_inc_cs}" \
 	           ALLCCOMPFLAGS=" $${cflags} $(MYCCOMPFLAGS) \
 				    -DDEBUG   $(CCOMPFLAGSDBG)"  \
 	           ALLFCOMPFLAGS=" $${fflags} $(MYFTNCOMPFLAGS) \
-				              $(FTNCOMPFLAGSDBG)"  ;\
-	 elif [ "$(MYOPT)" = "EF" ] ;\
-	 then make privdependobj OBJECTS="`cat .liste_mkfiles.o`" \
-	                         INC_CS_I="$${dir_inc_cs}" \
-                   ALLCCOMPFLAGS=" $${cflags} $(MYCCOMPFLAGS) \
-				    -DDEBUG   $(CCOMPFLAGSDBG)"  \
-                   ALLFCOMPFLAGS=" $${fflags} $(MYFTNCOMPFLAGS) \
 				              $(FTNCOMPFLAGSDBG)"  ;\
 	 elif [ "$(MYOPT)" = "PROF" ] ;\
 	 then \
@@ -597,10 +590,19 @@ privmodlink:
 		fi ;\
 	 done ;\
 	 librariesloc=""; \
-	 for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
-	 do \
-	     librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}$(MYOPT)" ;\
-	 done ;\
+	 if   [ "$(MYOPT)" = "EF" ] ;\
+	 then \
+	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   do \
+	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}DBG" ;\
+	   done ;\
+	    librariesloc="$${librariesloc} $(LIBRARYEF)" ;\
+	 else \
+	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   do \
+	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}$(MYOPT)" ;\
+	   done ;\
+	 fi ;\
 	 if [ "$(MYOPT)" = "VERS" ] ;\
 	 then librariesloc="" ;\
 	 fi ;\
@@ -662,10 +664,8 @@ privlink:
 	@library=" $(LIBRARY) " ;\
 	 if   [ "$(MYOPT)" = "LO" ] ;\
 	 then library="$${library} $(LIBRARYLO) " ;\
-	 elif [ "$(MYOPT)" = "DBG" ]  ;\
+	 elif [ "$(MYOPT)" = "DBG" -o "$(MYOPT)" = "EF" ]  ;\
 	 then library="$${library} $(LIBRARYDBG) " ;\
-	 elif [ "$(MYOPT)" = "EF" ]  ;\
-	 then library="$${library} $(LIBRARYEF) " ;\
 	 elif [ "$(MYOPT)" = "PROF" ]  ;\
 	 then library="$${library} $(LIBRARYOPT) " ;\
 	 elif [ "$(MYOPT)" = "VERS" ]  ;\
