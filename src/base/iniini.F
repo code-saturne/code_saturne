@@ -957,7 +957,7 @@ C
 C --- Nombre max de cellules et de niveaux
 C
       NCEGRM = 30
-      NGRMAX = NGRMMX
+      NGRMAX = 25
 C
       RLXP1 = 1.D0
 C
