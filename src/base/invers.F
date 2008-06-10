@@ -34,7 +34,7 @@ C     -------------------------------------------------------------
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  , NGR    ,
+     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  ,
      &   NCYMXP , NITMFP ,
      &   IWARNP , NFECRA , NITERF , ICYCLE , IINVPE ,
      &   EPSILP , RNORM  , RESIDU ,
@@ -93,7 +93,6 @@ CARGU !              !    !     !            = 1 JACOBI                !
 CARGU !              !    !     !            = 2 CGSTAB                !
 CARGU ! NITMAP       ! E  !  -> ! NOMBRE MAX D'ITER POUR RESOL ITERATIV!
 CARGU ! IMGRP        ! E  !  -> ! INDICATEUR = 0 PAS DE MULTIGRILLE    !
-CARGU ! NGR          ! E  !  -> ! NOMBRE DE NIVEAUX DE GRILLES         !
 CARGU ! NCYMXP       ! E  !  -> ! NOMBRE DE CYCLES MAX POUR MULTIGRILLE!
 CARGU ! NITMFP       ! E  !  -> ! NOMBRE D ITER SUR MAILLAGE FIN       !
 CARGU ! IWARNP       ! E  !  -> ! NIVEAU D'IMPRESSION                  !
@@ -196,7 +195,7 @@ C
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          ISYM   , IPOL   , IRESLP , NITMAP
-      INTEGER          IMGRP  , NGR    , NCYMXP , NITMFP
+      INTEGER          IMGRP  , NCYMXP , NITMFP
       INTEGER          IWARNP , NFECRA
       INTEGER          NITERF , ICYCLE , IINVPE
       DOUBLE PRECISION EPSILP , RNORM  , RESIDU

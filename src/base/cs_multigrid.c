@@ -1402,7 +1402,6 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *ngrmax,    /* --> Maximum number of grid levels */
  const cs_int_t   *ncegrm,    /* --> Maximum local number of cells on
                                      coarsest grid */
- cs_int_t         *ngr,       /* <-- Number of grid levels */
  const cs_real_t  *dam,       /* --> Matrix diagonal */
  const cs_real_t  *xam        /* --> Matrix extra-diagonal terms */
 )
@@ -1550,15 +1549,13 @@ void CS_PROCF(clmlga, CLMLGA)
       break;
   }
 
-  *ngr = grid_lv;
-
   /* Print final info */
 
   if (*iwarnp > 1)
     bft_printf
       (_("   nombre de maillages grossiers :                        %d\n"
          "   nombre de cellules dans le maillage le plus grossier : %lu\n\n"),
-       *ngr, (unsigned long)n_g_cells);
+       grid_lv, (unsigned long)n_g_cells);
 
   /* Prepare preprocessing info if necessary */
 

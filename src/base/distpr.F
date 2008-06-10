@@ -222,7 +222,7 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          NDIRCP, ICONVP, IDIFFP, ISYM
       INTEGER          IPOL  , IRESLP, IPP
-      INTEGER          NITERF, ICYCLE, NGR   , NCYMXP, NITMFP
+      INTEGER          NITERF, ICYCLE, NCYMXP, NITMFP
       INTEGER          IINVPE, IDIMTE, ITENSO
       INTEGER          ISQRT , IEL   , IFAC  , IPHAS
       INTEGER          INC   , ICCOCG, IPHYDP, IVAR
@@ -334,8 +334,7 @@ C=======================================================================
       NOMVAR(IPP) = 'DisParoi'
       IPOL   = 0
       IRESLP = 0
-C Pas de multigrille (NGR,NCYMXP,NITMFP sont arbitraies)
-      NGR    = 0
+C Pas de multigrille (NCYMXP,NITMFP sont arbitraies)
       NCYMXP = 100
       NITMFP = 10
 C Periodicite
@@ -366,7 +365,7 @@ C       ===========
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IPOL   , IRESLP , NITMAY , IMGRPY , NGR    ,
+     &   ISYM   , IPOL   , IRESLP , NITMAY , IMGRPY ,
      &   NCYMXP , NITMFP ,
      &   IWARNY , NFECRA , NITERF , ICYCLE , IINVPE ,
      &   EPSILY , RNORM  , RESIDU ,

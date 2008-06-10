@@ -273,7 +273,7 @@ C
       INTEGER          ICCOCG, INC   , INIT  , ISYM  , IPOL  , ISQRT
       INTEGER          IEL   , IFAC  , IFAC0 , IEL0
       INTEGER          IRESLP, NSWRP , NSWMPR
-      INTEGER          ISWEEP, NITERF, ICYCLE, NGR   , IFINIA , IFINRA
+      INTEGER          ISWEEP, NITERF, ICYCLE, IFINIA , IFINRA
       INTEGER          IFLMB0, IFCSOR
       INTEGER          NSWRGP, IMLIGP, IWARNP
       INTEGER          IPRIPH, IUIPH , IVIPH , IWIPH ,ICLIPF
@@ -1065,10 +1065,6 @@ C=======================================================================
 C
       IF (IMGR(IPRIPH).GT.0) THEN
 C
-C --- Initialisations
-C
-        NGR = 0
-C
 C --- Creation de la hierarchie de maillages
 C
         CHAINE = NOMVAR(IPP)
@@ -1083,7 +1079,7 @@ C       ===========
      & ( CHAINE(1:8) ,     LCHAIN ,
      &   NCELET , NCEL   , NFAC   ,
      &   ISYM   , IAGMAX , NAGMAX , NPSTMG , IWARNP ,
-     &   NGRMAX , NCEGRM , NGR    ,
+     &   NGRMAX , NCEGRM ,
      &   DAM    , XAM    )
 C
       ENDIF
@@ -1258,7 +1254,7 @@ C       ===========
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  , NGR    ,
+     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  ,
      &   NCYMAP , NITMGP ,
      &   IWARNP , NFECRA , NITERF , ICYCLE , IINVPE ,
      &   EPSILP , RNORMP(IPHAS)   , RESIDU ,

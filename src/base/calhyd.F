@@ -230,7 +230,7 @@ C
       INTEGER          ICCOCG, INC   , INIT  , ISYM  , IPOL  , ISQRT
       INTEGER          IEL   , ICAL
       INTEGER          IRESLP, NSWMPR
-      INTEGER          ISWEEP, NITERF, ICYCLE, NGR
+      INTEGER          ISWEEP, NITERF, ICYCLE
       INTEGER          IPHYDP
       INTEGER          NSWRGP, IMLIGP, IWARNP
       INTEGER          IPRIPH
@@ -462,7 +462,7 @@ C       ===========
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  , NGR    ,
+     &   ISYM   , IPOL   , IRESLP , NITMAP , IMGRP  ,
      &   NCYMAP , NITMGP ,
      &   IWARNP , NFECRA , NITERF , ICYCLE , IINVPE ,
      &   EPSILP , RNORM  , RESIDU ,

@@ -88,7 +88,6 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *ngrmax,    /* --> Maximum number of grid levels */
  const cs_int_t   *ncegrm,    /* --> Maximum local number of cells on
                                      coarsest grid */
- cs_int_t         *ngr,       /* <-- Number of grid levels */
  const cs_real_t  *dam,       /* --> Matrix diagonal */
  const cs_real_t  *xam        /* --> Matrix extra-diagonal terms */
 );
