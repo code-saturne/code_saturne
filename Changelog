@@ -1,4 +1,9 @@
 * 10/06/2008 - David Monfort <david.monfort@edf.fr>
+  Bug correction on an usued static array in FORTRAN
+  modified routines:
+    src/fuel/futsvi.F
+
+* 10/06/2008 - David Monfort <david.monfort@edf.fr>
   Removing unused arrays related to multigrid algorithm:
   IFACLG, IRESPR, DAG and XAG.
   modified routines:
