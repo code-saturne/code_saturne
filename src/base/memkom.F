@@ -35,8 +35,7 @@ C     -------------------------------------------------------------
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIFACL , IIRESP ,
-     &   IDTR   , IVISCF , IVISCB , IDAM   , IXAM   , IDAG   , IXAG   ,
+     &   IDTR   , IVISCF , IVISCB , IDAM   , IXAM   ,
      &   IDRTP  , ISMBRK , ISMBRW , ITINSK , ITINSW , IF1    ,
      &   IW1    , IW2    , IW3    , IW4    , IW5    , IW6    , IW7    ,
      &   IW8    , IW9    ,
@@ -75,12 +74,9 @@ CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
-CARGU ! IIFACL       ! E  ! <-  ! "POINTEUR" SUR IFACLG                !
-CARGU ! IIRESP       ! E  ! <-  ! "POINTEUR" SUR IRESPR                !
 CARGU ! IDTR         ! E  ! <-  ! "POINTEUR" SUR DTR                   !
 CARGU ! IVISCF, B    ! E  ! <-  ! "POINTEUR" SUR VISCF, VISCB          !
 CARGU ! IDAM, IXAM   ! E  ! <-  ! "POINTEUR" SUR DAM, XAM              !
-CARGU ! IDAG, IXAG   ! E  ! <-  ! "POINTEUR" SUR DAG, XAG              !
 CARGU ! IDRTP        ! E  ! <-  ! "POINTEUR" SUR DRTP                  !
 CARGU ! ISMBRK, W    ! E  ! <-  ! "POINTEUR" SUR SMBRK, SMBRW          !
 CARGU ! ITINSK, W    ! E  ! <-  ! "POINTEUR" SUR TINSTK, TINSTW        !
@@ -127,16 +123,15 @@ C
       INTEGER          NVAR   , NSCAL  , NPHAS
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
-      INTEGER          IIFACL , IIRESP
       INTEGER          IDTR
-      INTEGER          IVISCF , IVISCB , IDAM   , IXAM   , IDAG   , IXAG
+      INTEGER          IVISCF , IVISCB , IDAM   , IXAM
       INTEGER          IDRTP  , ISMBRK , ISMBRW , ITINSK , ITINSW
       INTEGER          IF1
       INTEGER          IW1    , IW2    , IW3    , IW4    , IW5    , IW6
       INTEGER          IW7    , IW8    , IW9
       INTEGER          IFINIA , IFINRA
 C
-      INTEGER          IDEBIA , IDEBRA , IMLGRD , IPHAS
+      INTEGER          IDEBIA , IDEBRA
 C
 C***********************************************************************
 C
@@ -145,28 +140,14 @@ C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
-      IMLGRD = 0
-      DO IPHAS = 1, NPHAS
-        IF(IMGR(IK (IPHAS)).EQ.1.OR.
-     &     IMGR(IOMG(IPHAS)).EQ.1    ) THEN
-          IMLGRD = 1
-        ENDIF
-      ENDDO
-C
 C---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
-C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMLGRD
-      IFINIA =       IIRESP + NCELET*IMLGRD
 C
       IDTR   =       IDEBRA
       IVISCF =       IDTR   + NCELET
       IVISCB =       IVISCF + NFAC
       IDAM   =       IVISCB + NFABOR
       IXAM   =       IDAM   + NCELET
-      IDAG   =       IXAM   + NFAC*2
-      IXAG   =       IDAG   + NCELET*IMLGRD
-      IDRTP  =       IXAG   + NFAC*2*IMLGRD
+      IDRTP  =       IXAM   + NFAC*2
       ISMBRK =       IDRTP  + NCELET
       ISMBRW =       ISMBRK + NCELET
       ITINSK =       ISMBRW + NCELET

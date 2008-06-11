@@ -37,7 +37,7 @@ C     --------------------------------------------------------------
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , ITYPFB ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR , IZFRAD ,
+     &   IZFRAD ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
@@ -47,7 +47,7 @@ C
      &   FLURDS , FLURDB ,
 C
      &   DTR    , VISCF  , VISCB  ,
-     &   DAM    , XAM    , DAG    , XAG    ,
+     &   DAM    , XAM    ,
      &   DRTP   , SMBRS  , ROVSDT ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , W9     , W10    ,
@@ -122,8 +122,6 @@ CARGU ! IPNFBR       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFBR)   !    !     !  FACE DE BORD DANS NODFBR (OPTIONNEL)!
 CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (NFABOR+1) !    !     !  (OPTIONNEL)                         !
-CARGU ! IFACLG(2,NFAC! TE !  -  ! TAB ENTIER MULTIGRILLE               !
-CARGU ! IRESPR(NCELET! TE !  -  ! TAB ENTIER MULTIGRILLE               !
 CARGU ! IZFRAD(NFABOR! TE !  -> ! NUMERO DE ZONE DES FACES DE BORD     !
 CARGU !   ,NPHAST)   !    !     !                                      !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
@@ -163,8 +161,6 @@ CARGU ! VISCF(NFAC)  ! TR !  -  ! VISC*SURFACE/DIST AUX FACES INTERNES !
 CARGU ! VISCB(NFABOR ! TR !  -  ! VISC*SURFACE/DIST AUX FACES DE BORD  !
 CARGU ! DAM(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
 CARGU ! XAM(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
-CARGU ! DAG(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
-CARGU ! XAG(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
 CARGU ! DRTP(NCELET  ! TR !  -  ! TABLEAU DE TRAVAIL POUR INCREMENT    !
 CARGU ! SMBRS(NCELET ! TR !  -  ! TABLEAU DE TRAVAIL POUR SEC MEM      !
 CARGU ! ROVSDT(NCELET! TR !  -  ! TABLEAU DE TRAVAIL POUR TERME INSTAT !
@@ -263,7 +259,6 @@ C
       INTEGER          IPRFML(NFML,NPRFML) , ITYPFB(NFABOR,NPHAS)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
-      INTEGER          IFACLG(2,NFAC), IRESPR(NCELET)
       INTEGER          IZFRAD(NFABOR,NPHAST)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
@@ -283,7 +278,6 @@ C
       DOUBLE PRECISION DTR(NCELET)
       DOUBLE PRECISION VISCF(NFAC), VISCB(NFABOR)
       DOUBLE PRECISION DAM(NCELET), XAM(NFAC,2)
-      DOUBLE PRECISION DAG(NCELET), XAG(NFAC,2)
       DOUBLE PRECISION DRTP(NCELET), SMBRS(NCELET)
       DOUBLE PRECISION ROVSDT(NCELET)
       DOUBLE PRECISION W1(NCELET) , W2(NCELET) , W3(NCELET)
@@ -909,7 +903,6 @@ C         ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , ITYPFB ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
@@ -917,7 +910,7 @@ C         ===========
      &   COFRUA , COFRUB ,
      &   FLURDS , FLURDB ,
      &   DTR    , VISCF  , VISCB  ,
-     &   DAM    , XAM    , DAG    , XAG    ,
+     &   DAM    , XAM    ,
      &   DRTP   , SMBRS  , ROVSDT ,
 C
      &   RAYABS(1,IPH) , RAYEMI(1,IPH) , RAYEXP(1,IPH) ,
@@ -1003,7 +996,6 @@ C         ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , ITYPFB ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
@@ -1011,7 +1003,7 @@ C         ===========
      &   COFRUA , COFRUB ,
      &   FLURDS , FLURDB ,
      &   DTR    , VISCF  , VISCB  ,
-     &   DAM    , XAM    , DAG    , XAG    ,
+     &   DAM    , XAM    ,
      &   DRTP   , SMBRS  , ROVSDT ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , W9     , W10    ,

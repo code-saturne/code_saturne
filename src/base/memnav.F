@@ -36,7 +36,7 @@ C     -------------------------------------------------------------
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IVISCF , IVISCB , IVISFI , IVISBI ,
-     &   IDAM   , IXAM   , IDAG   , IXAG   , IIFACL , IIRESP ,
+     &   IDAM   , IXAM   ,
      &   IDRTP  , IGRDP  , ISMBR  , IROVSD ,
      &   IW1    , IW2    , IW3    , IW4    , IW5    , IW6    , IW7    ,
      &   IW8    , IW9    , IW10   , IDFRCX , IFRCHY , IDFRHY ,
@@ -77,12 +77,9 @@ CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
-CARGU ! IIFACL       ! E  ! <-  ! "POINTEUR" SUR IFACLG                !
-CARGU ! IIRESP       ! E  ! <-  ! "POINTEUR" SUR IRESPR                !
 CARGU ! IVISCF, B    ! E  ! <-  ! "POINTEUR" SUR VISCF, VISCB          !
 CARGU ! IVISFI, BI   ! E  ! <-  ! "POINTEUR" SUR VISCFI, VISCBI        !
 CARGU ! IDAM, IXAM   ! E  ! <-  ! "POINTEUR" SUR DAM, XAM              !
-CARGU ! IDAG, IXAG   ! E  ! <-  ! "POINTEUR" SUR DAG, XAG              !
 CARGU ! IDRTP        ! E  ! <-  ! "POINTEUR" SUR DRTP                  !
 CARGU ! IGRDP        ! E  ! <-  ! "POINTEUR" SUR GRDP                  !
 CARGU ! ISMBR        ! E  ! <-  ! "POINTEUR" SUR SMBR                  !
@@ -137,9 +134,8 @@ C
       INTEGER          NVAR   , NSCAL  , NPHAS
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
-      INTEGER          IIFACL , IIRESP
       INTEGER          IVISCF , IVISCB , IVISFI , IVISBI
-      INTEGER          IDAM   , IXAM   , IDAG   , IXAG
+      INTEGER          IDAM   , IXAM
       INTEGER          IDRTP  , IGRDP  , ISMBR  , IROVSD
       INTEGER          IW1    , IW2    , IW3    , IW4    , IW5    , IW6
       INTEGER          IW7    , IW8    , IW9    , IW10
@@ -148,7 +144,7 @@ C
       INTEGER          ITRAVA , IXIMPA , IUVWK
       INTEGER          IFINIA , IFINRA
 C
-      INTEGER          IDEBIA , IDEBRA , IPHAS, IMLGRD, IRIJ
+      INTEGER          IDEBIA , IDEBRA , IPHAS, IRIJ
 C
       INTEGER          IESCAT
       INTEGER          IIRNPN
@@ -170,26 +166,12 @@ C
         ENDIF
       ENDDO
 C
-      IMLGRD = 0
-      DO IPHAS = 1, NPHAS
-        IF(IMGR(IPR(IPHAS)).EQ.1.OR.
-     &     IMGR(IU (IPHAS)).EQ.1.OR.
-     &     IMGR(IV (IPHAS)).EQ.1.OR.
-     &     IMGR(IW (IPHAS)).EQ.1    ) THEN
-          IMLGRD = 1
-        ENDIF
-      ENDDO
-C
       IESCAT = 0
       DO IPHAS = 1, NPHAS
         IF(IESCAL(IESTOT,IPHAS).GT.0) THEN
           IESCAT = 1
         ENDIF
       ENDDO
-C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMLGRD
-      IFINIA =       IIRESP + NCELET*IMLGRD
 C
 C Attention :
 C   ci-dessous, on fait pointer VISCFI et VISCBI
@@ -206,9 +188,7 @@ C
       IVISCB =       IVISBI + NFABOR*IRIJ
       IDAM   =       IVISCB + NFABOR
       IXAM   =       IDAM   + NCELET
-      IDAG   =       IXAM   + NFAC*2
-      IXAG   =       IDAG   + NCELET*IMLGRD
-      IDRTP  =       IXAG   + NFAC*2*IMLGRD
+      IDRTP  =       IXAM   + NFAC*2
       IGRDP  =       IDRTP  + NCELET
       ISMBR  =       IGRDP  + NCELET*3
       IROVSD =       ISMBR  + NCELET

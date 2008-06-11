@@ -42,14 +42,13 @@ C     --------------------------------------------------------------
      &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETAP ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   PVARA  , PVARK  ,
      &   COEFAP , COEFBP , COFAFP , COFBFP , FLUMAS , FLUMAB ,
      &   VISCFM , VISCBM , VISCFS , VISCBS ,
      &   ROVSDT , SMBRP  , PVAR   ,
-     &   DAM    , XAM    , DAG    , XAG    , DPVAR  ,
+     &   DAM    , XAM    , DPVAR  ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , SMBINI ,
      &   RDEVEL , RTUSER , RA     )
@@ -192,9 +191,6 @@ CARGU ! IPNFBR       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFBR)   !    !     !  FACE DE BORD DANS NODFBR (OPTIONNEL)!
 CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (NFABOR+1) !    !     !  (OPTIONNEL)                         !
-CARGU ! IFACLG       ! TE !  -  ! MACRO VOISINS DES MACROS FACES INT   !
-CARGU ! (2,NFAC)     !    !     !                                      !
-CARGU ! IRESPR(NCELET! TE !  -  ! MACRO EL AUQUEL APPARTIENT UN MICROEL!
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -236,8 +232,6 @@ CARGU ! PVAR (NCELET ! TR ! <-> ! VARIABLE RESOLUE                     !
 CARGU ! DAM(NCELET   ! TR ! <-  ! TABLEAU DE TRAVAIL POUR MATRICE      !
 CARGU !              !    !     !  ET RESULTAT ESTIMATEUR              !
 CARGU ! XAM(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
-CARGU ! DAG(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
-CARGU ! XAG(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
 CARGU ! W1...8(NCELET! TR !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! SMBINI(NCELET! TR !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
@@ -297,7 +291,6 @@ C
       INTEGER          IPRFML(NFML,NPRFML)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
-      INTEGER          IFACLG(2,NFAC), IRESPR(NCELET)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
@@ -314,7 +307,6 @@ C
       DOUBLE PRECISION ROVSDT(NCELET), SMBRP(NCELET)
       DOUBLE PRECISION PVAR(NCELET)
       DOUBLE PRECISION DAM(NCELET), XAM(NFAC ,2)
-      DOUBLE PRECISION DAG(NCELET), XAG(NFAC ,2)
       DOUBLE PRECISION DPVAR(NCELET)
       DOUBLE PRECISION W1(NCELET), W2(NCELET), W3(NCELET), W4(NCELET)
       DOUBLE PRECISION W5(NCELET), W6(NCELET), W7(NCELET), W8(NCELET)
@@ -592,11 +584,9 @@ C       ===========
      &   EPSILP , RNORM  , RESIDU ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DAM    , XAM    , SMBRP  , DPVAR  ,
-     &   DAG    , XAG    , W1     , W2     ,
      &   W3     , W4     , W5     , W6     , W7     , W8     ,
      &   RDEVEL , RTUSER , RA     )
 C

@@ -37,7 +37,6 @@ C     --------------------------------------------------------------
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ITYPFB ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DISTPA ,
@@ -112,8 +111,6 @@ CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (NFABOR+1) !    !     !  (OPTIONNEL)                         !
 CARGU ! ITYPFB(NFABOR! TE !  -> ! TYPE DES FACES DE BORD               !
 CARGU !  NPHAS      )!    !     !                                      !
-CARGU ! IFACLG(2,NFAC! TE !  -  ! TAB ENTIER MULTIGRILLE               !
-CARGU ! IRESPR(NCELET! TE !  -  ! TAB ENTIER MULTIGRILLE               !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -197,7 +194,6 @@ C
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          ITYPFB(NFABOR,NPHAS)
-      INTEGER          IFACLG(2,NFAC), IRESPR(NCELET)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
@@ -371,11 +367,9 @@ C       ===========
      &   EPSILY , RNORM  , RESIDU ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DAM    , XAM    , SMBDP  , RTPDP  ,
-     &   DAM    , XAM    , W1     , W2     ,
      &   W3     , W4     , W5     , W6     , W8     , W9     ,
      &   RDEVEL , RTUSER , RA     )
 C

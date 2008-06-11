@@ -35,9 +35,8 @@ C     -------------------------------------------------------------
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ITURBP ,
-     &   IIFACL , IIRESP ,
      &   IDTR   , IVISCF , IVISCB , ICOEFX ,
-     &   IDAM   , IXAM   , IDAG   , IXAG   , IDRTP  ,
+     &   IDAM   , IXAM   , IDRTP  ,
      &   ISMBR  , IROVSD , IGRDVT , IPRODU , IGRARX , IGRARY , IGRARZ ,
      &   IW1    , IW2    , IW3    , IW4    , IW5    , IW6    , IW7    ,
      &   IW8    , IW9    ,
@@ -76,15 +75,12 @@ CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
-CARGU ! IIFACL       ! E  ! <-  ! "POINTEUR" SUR IFACLG                !
-CARGU ! IIRESP       ! E  ! <-  ! "POINTEUR" SUR IRESPR                !
 CARGU ! IDTR         ! E  ! <-  ! "POINTEUR" SUR DTR                   !
 CARGU ! IVISCF, B    ! E  ! <-  ! "POINTEUR" SUR VISCF, VISCB          !
 CARGU ! ICOEFX       ! E  ! <-  ! "POINTEUR" SUR COEFAX                !
 CARGU !              ! TR !  -  !   ATTENTION : UNIQUEMENT AVEC ECHO   !
 CARGU !              ! TR !  -  !   DE PAROI ET ABS(ICDPAR) = 1        !
 CARGU ! IDAM, IXAM   ! E  ! <-  ! "POINTEUR" SUR DAM, XAM              !
-CARGU ! IDAG, IXAG   ! E  ! <-  ! "POINTEUR" SUR DAG, XAG              !
 CARGU ! IDRTP        ! E  ! <-  ! "POINTEUR" SUR DRTP                  !
 CARGU ! ISMBR        ! E  ! <-  ! "POINTEUR" SUR SMBR                  !
 CARGU ! IROVSD       ! E  ! <-  ! "POINTEUR" SUR ROVSDT                !
@@ -135,17 +131,16 @@ C
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          ITURBP
 C
-      INTEGER          IIFACL , IIRESP
       INTEGER          IDTR
       INTEGER          IVISCF , IVISCB , ICOEFX
-      INTEGER          IDAM   , IXAM   , IDAG   , IXAG
+      INTEGER          IDAM   , IXAM
       INTEGER          IDRTP  , ISMBR  , IROVSD , IGRDVT , IPRODU
       INTEGER          IGRARX , IGRARY , IGRARZ
       INTEGER          IW1    , IW2    , IW3    , IW4    , IW5    , IW6
       INTEGER          IW7    , IW8    , IW9
       INTEGER          IFINIA , IFINRA
 C
-      INTEGER          IDEBIA, IDEBRA, IMLGRD, JGRARI, ICOBX
+      INTEGER          IDEBIA, IDEBRA, JGRARI, ICOBX
       INTEGER          IPHAS
 C
 C***********************************************************************
@@ -154,19 +149,6 @@ C---> INITIALISATION
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
-C
-      IMLGRD = 0
-      DO IPHAS = 1, NPHAS
-        IF(IMGR(IR11(IPHAS)).EQ.1.OR.
-     &     IMGR(IR22(IPHAS)).EQ.1.OR.
-     &     IMGR(IR33(IPHAS)).EQ.1.OR.
-     &     IMGR(IR12(IPHAS)).EQ.1.OR.
-     &     IMGR(IR13(IPHAS)).EQ.1.OR.
-     &     IMGR(IR23(IPHAS)).EQ.1.OR.
-     &     IMGR(IEP (IPHAS)).EQ.1    ) THEN
-          IMLGRD = 1
-        ENDIF
-      ENDDO
 C
       JGRARI = 0
       DO IPHAS = 1, NPHAS
@@ -188,19 +170,13 @@ C
 C
 C---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMLGRD
-      IFINIA =       IIRESP + NCELET*IMLGRD
-C
       IDTR   =       IDEBRA
       IVISCF =       IDTR   + NCELET
       IVISCB =       IVISCF + NFAC
       ICOEFX =       IVISCB + NFABOR
       IDAM   =       ICOEFX + NFABOR*ICOBX
       IXAM   =       IDAM   + NCELET
-      IDAG   =       IXAM   + NFAC*2
-      IXAG   =       IDAG   + NCELET*IMLGRD
-      IDRTP  =       IXAG   + NFAC*2*IMLGRD
+      IDRTP  =       IXAM   + NFAC*2
       ISMBR  =       IDRTP  + NCELET
       IROVSD =       ISMBR  + NCELET
 c     suivant qu'on est en ITURB=30 ou 31 on

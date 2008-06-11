@@ -241,13 +241,11 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IFINIA, IFINRA
       INTEGER          NPT , IEL , IFAC
-      INTEGER          IMLGRD
       INTEGER          IPHILA , IPHIL
       INTEGER          IW1   , IW2   , IW3   , IW4 , IW5
       INTEGER          IW6   , IW7   , IW8   , IW9
-      INTEGER          IIFACL , IIRESP
       INTEGER          IDTR   , IFMALA , IFMALB
-      INTEGER          IVISCF , IVISCB , IDAM   , IXAM   , IDAG   , IXAG
+      INTEGER          IVISCF , IVISCB , IDAM   , IXAM
       INTEGER          IDRTP  , ISMBR  , IROVSD
       INTEGER          ICOEFAP , ICOEFBP
       INTEGER          IVAR0
@@ -267,26 +265,12 @@ C=======================================================================
 C 1.  INITIALISATIONS
 C=======================================================================
 C
-C   Multigrille algebrique  IMLGRD = 0 --> NON
-C                           IMLGRD = 1 --> OUI
-C   Modifier aussi sa valeur dans LAGEQP
-C
-      IMLGRD = 0
-C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMLGRD
-      IFINIA =       IIRESP + NCELET*IMLGRD
-      CALL IASIZE('LAGPOI',IFINIA)
-C     ===========
-C
       IDTR   = IDEBRA
       IVISCF = IDTR   + NCELET
       IVISCB = IVISCF + NFAC
       IDAM   = IVISCB + NFABOR
       IXAM   = IDAM   + NCELET
-      IDAG   = IXAM   + NFAC*2
-      IXAG   = IDAG   + NCELET*IMLGRD
-      IDRTP  = IXAG   + NFAC*2*IMLGRD
+      IDRTP  = IXAM   + NFAC*2
       ISMBR  = IDRTP  + NCELET
       IROVSD = ISMBR  + NCELET
       IFMALA = IROVSD + NCELET
@@ -334,12 +318,11 @@ C     ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IA(IIFACL) , IA(IIRESP) ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , PROPCE , PROPFA , PROPFB ,
      &   RA(IVISCF) , RA(IVISCB) ,
-     &   RA(IDAM) , RA(IXAM) , RA(IDAG) , RA(IXAG) ,
+     &   RA(IDAM) , RA(IXAM) ,
      &   RA(IDRTP) , RA(ISMBR) , RA(IROVSD) ,
      &   RA(IFMALA) , RA(IFMALB) ,
      &   STATIS(1,ILVX) , STATIS(1,ILVY) , STATIS(1,ILVZ) ,

@@ -1,3 +1,47 @@
+* 10/06/2008 - David Monfort <david.monfort@edf.fr>
+  Removing unused arrays related to multigrid algorithm:
+  IFACLG, IRESPR, DAG and XAG.
+  modified routines:
+    src/rayt/raydom.F
+    src/rayt/raysol.F
+    src/rayt/raypun.F
+    src/rayt/memra2.F
+    src/lagr/lageqp.F
+    src/lagr/lagpoi.F
+    src/cfbl/cfener.F
+    src/cfbl/memcfm.F
+    src/cfbl/cfcdts.F
+    src/cfbl/cfqdmv.F
+    src/cfbl/cfmsvl.F
+    src/base/memv2f.F
+    src/base/alelap.F
+    src/base/resrij.F
+    src/base/memdis.F
+    src/base/memale.F
+    src/base/resolp.F
+    src/base/resv2f.F
+    src/base/turbkw.F
+    src/base/turrij.F
+    src/base/navsto.F
+    src/base/distyp.F
+    src/base/memkep.F
+    src/base/memkom.F
+    src/base/covofi.F
+    src/base/memdyp.F
+    src/base/reseps.F
+    src/base/distpr.F
+    src/base/resssg.F
+    src/base/turbke.F
+    src/base/scalai.F
+    src/base/memsca.F
+    src/base/preduv.F
+    src/base/memnav.F
+    src/base/memrij.F
+    src/base/codits.F
+    src/base/calhyd.F
+    src/base/invers.F
+    src/base/tridim.F
+
 * 30/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Modification of Code_Saturne compilation with the
   ElectricFence library.

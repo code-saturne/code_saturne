@@ -35,7 +35,6 @@ C     -------------------------------------------------------------
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIFACL , IIRESP ,
      &   IVISCF , IVISCB , IDAM   , IXAM   , ISMBR  , IROVSD ,
      &   IRTDP  , ICOEFA , ICOEFB ,
      &   IW1    , IW2    , IW3    , IW4    , IW5    , IW6    , IW7    ,
@@ -123,7 +122,6 @@ C
       INTEGER          NVAR   , NSCAL  , NPHAS
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
-      INTEGER          IIFACL , IIRESP
       INTEGER          IVISCF , IVISCB , IDAM   , IXAM
       INTEGER          ISMBR  , IROVSD
       INTEGER          IRTDP  , ICOEFA , ICOEFB
@@ -142,10 +140,6 @@ C
 C
 C
 C---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
-C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMGRPY
-      IFINIA =       IIRESP + NCELET*IMGRPY
 C
       IVISCF =       IDEBRA
       IVISCB =       IVISCF + NFAC

@@ -38,7 +38,7 @@ C     -------------------------------------------------------------
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   ICEPDC , ICETSM , ITPSMP , IFACLG , IRESPR ,
+     &   ICEPDC , ICETSM , ITPSMP ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
@@ -46,7 +46,7 @@ C     -------------------------------------------------------------
      &   CKUPDC , SMCELP , GAMMA  ,
      &   VISCF  , VISCB  , COEFAX ,
      &   TSLAGE , TSLAGI ,
-     &   DAM    , XAM    , DAG    , XAG    , DRTP   , SMBR   , ROVSDT ,
+     &   DAM    , XAM    , DRTP   , SMBR   , ROVSDT ,
      &   W1     , W2     , W3     , W4     ,
      &   W5     , W6     , W7     , W8     , W9     ,
      &   RDEVEL , RTUSER , RA     )
@@ -116,8 +116,6 @@ CARGU ! ICEPDC(NCELET! TE !  -> ! NUMERO DES NCEPDP CELLULES AVEC PDC  !
 CARGU ! ICETSM(NCESMP! TE !  -> ! NUMERO DES CELLULES A SOURCE DE MASSE!
 CARGU ! ITPSMP       ! TE !  -> ! TYPE DE SOURCE DE MASSE POUR LA      !
 CARGU ! (NCESMP)     !    !     !  VARIABLES (cf. USTSMA)              !
-CARGU ! IFACLG(2,NFAC! TE !  -  ! TAB ENTIER MULTIGRILLE               !
-CARGU ! IRESPR(NCELET! TE !  -  ! TAB ENTIER MULTIGRILLE               !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -164,8 +162,6 @@ CARGU ! TSLAGE(NCELET! TR !  -> ! TS EXPLICITE COUPLAGE RETOUR LAGR.   !
 CARGU ! TSLAGI(NCELET! TR !  -> ! TS IMPLICITE COUPLAGE RETOUR LAGR.   !
 CARGU ! DAM(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
 CARGU ! XAM(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
-CARGU ! DAG(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
-CARGU ! XAG(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE (MGM)!
 CARGU ! DRTP(NCELET  ! TR !  -  ! TABLEAU DE TRAVAIL POUR INCREMENT    !
 CARGU ! SMBR(NCELET  ! TR !  -  ! TABLEAU DE TRAVAIL POUR SEC MEM      !
 CARGU ! ROVSDT(NCELET! TR !  -  ! TABLEAU DE TRAVAIL POUR TERME INSTAT !
@@ -230,7 +226,6 @@ C
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          ICEPDC(NCEPDP)
       INTEGER          ICETSM(NCESMP), ITPSMP(NCESMP)
-      INTEGER          IFACLG(2,NFAC), IRESPR(NCELET)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
@@ -249,7 +244,6 @@ C
       DOUBLE PRECISION VISCF(NFAC), VISCB(NFABOR), COEFAX(NFABOR)
       DOUBLE PRECISION TSLAGE(NCELET),TSLAGI(NCELET)
       DOUBLE PRECISION DAM(NCELET), XAM(NFAC,2)
-      DOUBLE PRECISION DAG(NCELET), XAG(NFAC,2)
       DOUBLE PRECISION DRTP(NCELET), SMBR(NCELET), ROVSDT(NCELET)
       DOUBLE PRECISION W1(NCELET), W2(NCELET), W3(NCELET)
       DOUBLE PRECISION W4(NCELET), W5(NCELET), W6(NCELET)
@@ -953,7 +947,6 @@ C     ===========
      &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETV  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   RTPA(1,IVAR)    , RTPA(1,IVAR)    ,
@@ -962,7 +955,7 @@ C     ===========
      &                     PROPFA(1,IFLMAS), PROPFB(1,IFLMAB),
      &   VISCF  , VISCB  , VISCF  , VISCB  ,
      &   ROVSDT , SMBR   , RTP(1,IVAR)     ,
-     &   DAM    , XAM    , DAG    , XAG    , DRTP   ,
+     &   DAM    , XAM    , DRTP   ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , W9     ,
      &   RDEVEL , RTUSER , RA     )

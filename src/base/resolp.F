@@ -37,14 +37,14 @@ C     --------------------------------------------------------------
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   ICEPDC , ICETSM , ITYPSM , ISOSTD , IFACLG , IRESPR , IDTSCA ,
+     &   ICEPDC , ICETSM , ITYPSM , ISOSTD , IDTSCA ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  , CKUPDC , SMACEL ,
      &   FRCXT  , DFRCXT , TPUCOU , TRAV   ,
      &   VISCF  , VISCB  , VISCFI , VISCBI ,
-     &   DAM    , XAM    , DAG    , XAG    ,
+     &   DAM    , XAM    ,
      &   DRTP   , SMBR   , ROVSDT , TSLAGR ,
      &   W1     , W2     , W3     , W4     , W5     , W6     ,
      &   W7     , W8     , W9     , FRCHY  , DFRCHY , COEFU  , TRAVA  ,
@@ -112,8 +112,6 @@ CARGU ! ITYPSM       ! TE !  -> ! TYPE DE SOURCE DE MASSE POUR LES     !
 CARGU ! (NCESMP,NVAR)!    !     !  VARIABLES (cf. USTSMA)              !
 CARGU ! ISOSTD       ! TE !  -> ! INDICATEUR DE SORTIE STANDARD        !
 CARGU !    (NFABOR+1)!    !     !  +NUMERO DE LA FACE DE REFERENCE     !
-CARGU ! IFACLG(2,NFAC! TE !  -  ! TAB ENTIER MULTIGRILLE               !
-CARGU ! IRESPR(NCELET! TE !  -  ! TAB ENTIER MULTIGRILLE               !
 CARGU ! IDTSCA       ! E  !  -> ! INDICATEUR DE PAS DE TEMPS NON SCALAI!
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
@@ -161,8 +159,6 @@ CARGU ! VISCFI(NFAC) ! TR !  -  ! IDEM VISCF POUR INCREMENTS           !
 CARGU ! VISCBI(NFABOR! TR !  -  ! IDEM VISCB POUR INCREMENTS           !
 CARGU ! DAM(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
 CARGU ! XAM(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
-CARGU ! DAG(NCELET   ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
-CARGU ! XAG(NFAC,*)  ! TR !  -  ! TABLEAU DE TRAVAIL POUR MATRICE      !
 CARGU ! DRTP(NCELET  ! TR !  -  ! TABLEAU DE TRAVAIL POUR INCREMENT    !
 CARGU ! SMBR  (NCELET! TR !  -  ! TABLEAU DE TRAVAIL POUR SEC MEM      !
 CARGU ! ROVSDT(NCELET! TR !  -  ! TABLEAU DE TRAVAIL POUR TERME INSTAT !
@@ -236,7 +232,6 @@ C
       INTEGER          ICEPDC(NCEPDP)
       INTEGER          ICETSM(NCESMP), ITYPSM(NCESMP,NVAR)
       INTEGER          ISOSTD(NFABOR+1,NPHAS)
-      INTEGER          IFACLG(2,NFAC), IRESPR(NCELET)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
@@ -254,7 +249,6 @@ C
       DOUBLE PRECISION VISCF(NFAC), VISCB(NFABOR)
       DOUBLE PRECISION VISCFI(NFAC), VISCBI(NFABOR)
       DOUBLE PRECISION DAM(NCELET), XAM(NFAC,2)
-      DOUBLE PRECISION DAG(NCELET), XAG(NFAC,2)
       DOUBLE PRECISION DRTP(NCELET)
       DOUBLE PRECISION SMBR(NCELET), ROVSDT(NCELET)
       DOUBLE PRECISION TSLAGR(NCELET,*)
@@ -567,7 +561,7 @@ C           ===========
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR , INDHYD ,
+     &   INDHYD ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   FRCHY (1,1) , FRCHY (1,2) , FRCHY (1,3) ,
@@ -575,7 +569,7 @@ C           ===========
      &   RTP(1,IPRIPH)   , PROPFA(1,IFLMAS), PROPFB(1,IFLMAB),
      &   COEFA(1,ICLIPF) , COEFB(1,ICLIPF) ,
      &   VISCF  , VISCB  ,
-     &   DAM    , XAM    , DAG    , XAG    ,
+     &   DAM    , XAM    ,
      &   DRTP   , SMBR   ,
      &   W1     , W2     , W3     , W4     , W5     , W6     ,
      &   W7     , W8     , W9     , ROVSDT ,
@@ -1260,11 +1254,9 @@ C       ===========
      &   EPSILP , RNORMP(IPHAS)   , RESIDU ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IFACLG , IRESPR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DAM    , XAM    , SMBR   , DRTP   ,
-     &   DAG    , XAG    , W1     , W2     ,
      &   W3     , W4     , W5     , W6     , W8     , W9     ,
      &   RDEVEL , RTUSER , RA     )
 C

@@ -35,7 +35,6 @@ C     -------------------------------------------------------------
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IIFACL , IIRESP ,
      &   IDAM   , IXAM   , ISMBR  , IROVSD ,
      &   IRTDP  , IDRTDP ,
      &   IQFX   , IQFY   , IQFZ   , ICOEFQ , IRHO   , IRHOB  ,
@@ -78,8 +77,6 @@ CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
-CARGU ! IIFACL       ! E  ! <-  ! "POINTEUR" SUR IFACLG                !
-CARGU ! IIRESP       ! E  ! <-  ! "POINTEUR" SUR IRESPR                !
 CARGU ! IDAM, IXAM   ! E  ! <-  ! "POINTEUR" SUR DAM, XAM              !
 CARGU ! ISMBR        ! E  ! <-  ! "POINTEUR" SUR SMBR                  !
 CARGU ! IROVSD       ! E  ! <-  ! "POINTEUR" SUR ROVSDT                !
@@ -132,7 +129,6 @@ C
       INTEGER          NVAR   , NSCAL  , NPHAS
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
-      INTEGER          IIFACL , IIRESP
       INTEGER          IDAM   , IXAM   , ISMBR  , IROVSD
       INTEGER          IRTDP  , IDRTDP
       INTEGER          IQFX   , IQFY   , IQFZ   , ICOEFQ
@@ -156,10 +152,6 @@ C
 C
 C
 C---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
-C
-      IIFACL =       IDEBIA
-      IIRESP =       IIFACL + NFAC*2*IMGRPY
-      IFINIA =       IIRESP + NCELET*IMGRPY
 C
       IDAM   =       IDEBRA
       IXAM   =       IDAM   + NCELET
