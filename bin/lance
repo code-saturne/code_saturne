@@ -84,8 +84,12 @@
 #                  CARTES BATCH POUR LE CLUSTER CHATOU sous PBS
 #                  ============================================
 #
-#PBS -l nodes=4:ppn=2,walltime=1:00:00,mem=320mb
-#PBS -j eo -N nometcas
+#PBS -l nodes=4:ppn=2
+#PBS -l walltime=1:00:00
+#PBS -l mem=320mb
+#
+#PBS -j eo
+#PBS -N nometcas
 #
 #  nodes= nombre de "noeuds" a reserver sur le cluster
 #  ppn  = nombre de processeurs par noeud (1 ou 2)
@@ -949,8 +953,8 @@ echo '    REP. RUN        : ' $RUN                             >>$resume
 echo '  ----------------------------------------------------'  >>$resume
 echo '    EXECUTABLE      : ' $EXE                             >>$resume
 echo '      BIB           : ' $BIB                             >>$resume
-echo '      COMPILATEUR f : ' $COMPF                           >>$resume
-echo '      COMPILATEUR c : ' $COMPC                           >>$resume
+echo '      COMPILATEUR f : ' $FTNCOMP                         >>$resume
+echo '      COMPILATEUR c : ' $CCOMP                           >>$resume
 echo '      OPTIONS     f : ' $OPTCOMPF1                       >>$resume
 echo '  ----------------------------------------------------'  >>$resume
 #
