@@ -828,7 +828,6 @@ C--------
 C FORMATS
 C--------
 C
- 1000 FORMAT (A)
  1010 FORMAT (I10)
  1020 FORMAT (I10,I10)
  1030 FORMAT (e12.5)
@@ -869,13 +868,6 @@ C
  5022 FORMAT('scalar per node: dck                     ',A )
  5023 FORMAT('scalar per node: mch                     ',A )
  5024 FORMAT('scalar per node: mck                     ',A )
-C
- 6000 FORMAT('geometrie trajectoire')
- 6001 FORMAT('au format ensight6 (case)')
- 6002 FORMAT('node id assign')
- 6003 FORMAT('element id assign')
-C
-
 C
  9999 FORMAT(
      &'@                                                            ',/,

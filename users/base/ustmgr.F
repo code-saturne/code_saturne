@@ -137,12 +137,10 @@ C
 C
 C VARIABLES LOCALES
 C
-      LOGICAL          CRITER
       INTEGER          NCELG
-      INTEGER          IEL, IEL1, IEL2, IEL1V, IFAC, IFAC2
-      INTEGER          IELG, IEL1G, IEL2G, IFACG, ICELG, NCELT
+      INTEGER          IFAC
       INTEGER          INDIC, IRSPR2, IPAIMP, IW1
-      INTEGER          ICOMP, IEDIR
+      INTEGER          IEDIR
 C
       INTEGER          IMP, JMP, KMP, I, J, K, ICEL
       INTEGER          NTEST, IP, JP, KP, IJK, IGLOB, I1, IG, JG

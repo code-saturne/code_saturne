@@ -97,7 +97,7 @@ C
 C ARGUMENTS
 C
       INTEGER          IDBIA0, IDBRA0
-      INTEGER          NDIM, NCELET, NCEL
+      INTEGER          NCELET, NCEL
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          MODHIS
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE), IA(*)

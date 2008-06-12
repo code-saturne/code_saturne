@@ -226,7 +226,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA , IDEBRA
-      INTEGER          IP , IAUXP , IFINIA , IFINRA, IFEXLA
+      INTEGER          IP , IFINIA , IFINRA, IFEXLA
       DOUBLE PRECISION D3 , AA
 C
 C***********************************************************************

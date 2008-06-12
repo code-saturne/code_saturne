@@ -219,7 +219,7 @@ C
 C Variables locales
 C
       INTEGER          IDEBIA , IDEBRA
-      INTEGER          IFBT1D , II , IFAC , IFML , ICOUL
+      INTEGER          IFBT1D , II , IFAC
       INTEGER          ILELT, NLELT
 C
 C***********************************************************************

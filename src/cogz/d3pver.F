@@ -93,7 +93,6 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IPHAS
-      CHARACTER        CHAINE*80
 C
 C***********************************************************************
 C

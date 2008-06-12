@@ -162,8 +162,6 @@ C
 C VARIABLES LOCALES
 C
       INTEGER IDEBIA, IDEBRA
-      INTEGER IFINIA, IFINRA
-      INTEGER IIP   , IINDIC , IIW   , IICELF, IMGRMX, IVAR
 C
 C=======================================================================
 C 1. ON SAUVEGARDE LA POSITION DE LA MEMOIRE

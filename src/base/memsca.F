@@ -129,7 +129,7 @@ C
       INTEGER          IW7    , IW8    , IW9
       INTEGER          IFINIA , IFINRA
 C
-      INTEGER          IDEBIA, IDEBRA, ISCAL
+      INTEGER          IDEBIA, IDEBRA
 C
 C***********************************************************************
 C

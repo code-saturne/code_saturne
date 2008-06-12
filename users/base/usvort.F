@@ -225,10 +225,8 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IFAC, IENT, IEL, ICOUL, IFML
+      INTEGER          IFAC, IENT
       INTEGER          ILELT, NLELT
-C
-      DOUBLE PRECISION XX
 C
 C=======================================================================
 C 1. PARAMETRES GLOBAUX

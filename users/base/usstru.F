@@ -242,7 +242,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
-      INTEGER          IFAC, IFML, ICOUL
+      INTEGER          IFAC
       INTEGER          ILELT, NLELT
 C
 C***********************************************************************
@@ -536,7 +536,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          II, JJ, ISTR
-      DOUBLE PRECISION THETA, SINT, COST, XM, XC, XK, FX, FY, FZ
+      DOUBLE PRECISION THETA, SINT, COST, XM, XC, XK, FX, FY
 C
 C***********************************************************************
 C
