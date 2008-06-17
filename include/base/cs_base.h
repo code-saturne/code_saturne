@@ -64,6 +64,9 @@ extern "C" {
 #elif defined(__hpux__) || defined(__hpux) || defined(hpux)
 #define _CS_ARCH_HP_UX
 
+#elif defined(__blrts__) || defined(__bgp__)
+#define _CS_ARCH_Blue_Gene
+
 #elif defined(__linux__) || defined(__linux) || defined(linux)
 #define _CS_ARCH_Linux
 
