@@ -41,6 +41,8 @@ extern "C" {
 
 /*-----------------------------------------------------------------------------*/
 
+#include <stddef.h>
+
 #if defined(_CS_HAVE_MPI)
 
 #include <mpi.h>
