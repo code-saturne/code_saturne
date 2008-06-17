@@ -1,3 +1,9 @@
+* 17/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplification of some scripts
+  modified scripts:
+    bin/cs_profile
+    bin/SaturneGUI
+
 * 17/05/2008 - David Monfort <david.monfort@edf.fr>
   Bug correction on an unused static array in FORTRAN
   modified routines:

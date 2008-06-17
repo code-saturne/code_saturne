@@ -30,7 +30,19 @@
 #
 #============================================================================
 
-#
-/home/saturne/opt/python/arch/${NOM_ARCH}/bin/python NOMCSGUIHOME/ics.py $*
+# Librairies pour l'interface (si necessaire)
+if [ -d ${CS_ROOT}/opt/tcl8.3/arch/${NOM_ARCH}/lib ] ; then
+  LD_LIBRARY_PATH=$CS_ROOT/opt/tcl8.3/arch/$NOM_ARCH/lib:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH
+fi
+
+if [ -x ${CS_ROOT}/opt/python/arch/${NOM_ARCH}/bin/python ] ; then
+  CS_PYTHON=${CS_ROOT}/opt/python/arch/${NOM_ARCH}/bin/python
+else
+  CS_PYTHON=python
+fi
+
+$CS_PYTHON NOMCSGUIHOME/ics.py $*
+
 exit
 
