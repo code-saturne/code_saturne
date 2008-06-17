@@ -242,8 +242,7 @@ C       XXXX.MED.$DATE dans le repertoire RESU. Si NOMREP est d'une autre
 C       forme, il faudra gerer son rapatriement a la main.
 C
 C       NOMFMT permet de choisir le format de sortie
-C       ("EnSight Gold" uniquement aujourd'hui, "MED_fichier" et "CGNS"
-C       a terme, ou "text" a des fins de debug).
+C       ("EnSight Gold", "MED_fichier", "CGNS", ou "text" a des fins de debug)
 C
 C       OPTFMT permet de fournir des options specifiques au format de
 C       sortie (separees par des virgules) ;
