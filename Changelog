@@ -1,3 +1,16 @@
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Add a warning when the number of preprocessor_output files
+  read by the kernel does not correspond to the number of MPI
+  processes.
+  modified routine:
+    src/base/cs_ecs_messages.c
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Merging the correction on wrong arguments in RAYDAK
+  from Version1_3 branch.
+  modified routine:
+    src/rayt/raydak.F
+
 * 10/06/2008 - David Monfort <david.monfort@edf.fr>
   Bug correction on an usued static array in FORTRAN
   modified routines:
