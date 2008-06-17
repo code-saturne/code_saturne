@@ -70,10 +70,10 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /usr
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macro pour BLAS
 #----------------

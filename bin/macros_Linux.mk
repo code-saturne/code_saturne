@@ -71,20 +71,20 @@ SOCKET_LIB      =
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macro pour BLAS
 #----------------
 
 # Option BLAS
 BLAS            =1
-BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
-BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_HOME       =
+BLAS_INC        =
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-lcblas -latlas
 
 
 # Preprocesseur
@@ -97,7 +97,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -118,7 +118,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -144,7 +144,7 @@ LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux/lib:
 
 
 # Options pour librairie partagee

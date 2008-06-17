@@ -81,10 +81,10 @@ XML_LIB  =-lxml2
 
 # Option BLAS
 BLAS            =1
-BLAS_HOME       =/home/saturne/opt/atlas-3.8.1/arch/Linux_x86_64_core2duo
-BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_HOME       =
+BLAS_INC        =
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-lcblas -latlas
 
 
 # Preprocesseur
@@ -97,7 +97,7 @@ PREPROCFLAGS    =
 # Compilateur C
 #--------------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -118,7 +118,7 @@ CCOMPFLAGSVERS         = -v
 #--------------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -144,7 +144,7 @@ LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.4/arch/Linux_x86_64/lib64:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/lib64:
 
 
 # Options pour librairie partagee
