@@ -67,7 +67,6 @@ CARGU ! VOLUME       ! TR !  -> ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET      !    !     !                                      !
 CARGU ! SMBRS(NCELET)! TR ! <-  ! SECOND MEMBRE EXPLICITE              !
 CARGU ! ROVSDT(NCELET! TR ! <-  ! PARTIE DIAGONALE IMPLICITE           !
-CARGU ! XHLF         ! TR ! <-> ! SOMME DE F1,F3,F4 SUR LE FUEL        !
 CARGU ! W1(NCELET)   ! TR !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU !______________!____!_____!______________________________________!
 c@argue
@@ -115,7 +114,6 @@ C
       DOUBLE PRECISION RTP(NCELET,*), PROPCE(NCELET,*)
       DOUBLE PRECISION VOLUME(NCELET)
       DOUBLE PRECISION SMBRS(NCELET), ROVSDT(NCELET)
-      DOUBLE PRECISION XHLF(NCELET)
       DOUBLE PRECISION W1(NCELET)
 C
 C VARIABLES LOCALES

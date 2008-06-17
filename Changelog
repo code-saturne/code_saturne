@@ -1,4 +1,9 @@
 * 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Bug correction on an unused static array in FORTRAN
+  modified routines:
+    src/fuel/futsvi.F
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
   Add a warning when the number of preprocessor_output files
   read by the kernel does not correspond to the number of MPI
   processes.
