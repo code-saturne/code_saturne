@@ -30,8 +30,8 @@ c@verse
                         SUBROUTINE RAYDAK
 C                       *****************
 C     -------------------------------------------------------------
-     & ( NCELET , NCEL   ,
-     &   PCO2   , PH2O   , FV     , TEMP   , CK     )
+     & ( NCEL   , NCELET ,
+     &   CK     , PCO2   , PH2O   , FV     , TEMP   )
 C     -------------------------------------------------------------
 C***********************************************************************
 C FONCTION :
@@ -51,14 +51,14 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
 CARGU ! NCEL         ! E  !  -> ! NOMBRE D'ELEMENTS ACTIFS             !
-CARGU ! PCO2(NCELET) ! TR !  -> ! PRESSION PARIELLE DE CO2             !
-CARGU ! PCO2(NCELET) ! TR !  -> ! PRESSION PARIELLE DE H2O             !
-CARGU ! FV  (NCELET) ! TR !  -> ! FRACTION VOLUMIQUE DE SUIES          !
-CARGU ! TEMP(NCELET) ! TR !  -> ! TEMPERATURE                          !
+CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
 CARGU ! CK (NCELET)  ! TR ! <-  ! COEFFICIENT D'ABSORPTION DU MILIEU   !
 CARGU !              !    !     ! (NUL SI TRANSPARENT)                 !
+CARGU ! PCO2(NCELET) ! TR !  -> ! PRESSION PARTIELLE DE CO2            !
+CARGU ! PCO2(NCELET) ! TR !  -> ! PRESSION PARTIELLE DE H2O            !
+CARGU ! FV  (NCELET) ! TR !  -> ! FRACTION VOLUMIQUE DE SUIES          !
+CARGU ! TEMP(NCELET) ! TR !  -> ! TEMPERATURE                          !
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
@@ -104,7 +104,7 @@ C=======================================================================
 C CALCULS
 C=======================================================================
 C
-C --- Longueur moyenne de penetration du rayonnment
+C --- Longueur moyenne de penetration du rayonnement
 C
       PATH = 15.D0
 C
