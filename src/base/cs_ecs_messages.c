@@ -389,8 +389,16 @@ void CS_PROCF(ledevi, LEDEVI)
       if (dim_read != CS_TRUE || header.nbr_elt != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.nom_rub, cs_pp_io_get_name(comm));
-      else
+      else {
         cs_pp_io_read_body(&header, (void *) &(mesh->n_domains),comm);
+        if (mesh->n_domains != cs_glob_base_nbr)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Le nombre de rangs indiqué par le fichier\n"
+                      "\"%s\" (%d)\n"
+                      "ne correspond pas au nombre de rangs courant (%d)."),
+                    cs_pp_io_get_name(comm), (int)mesh->n_domains,
+                    (int)cs_glob_base_nbr);
+      }
 
     }
 
