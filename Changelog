@@ -1,13 +1,27 @@
 * 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Removing LD_LIBRARY_PATH related to libxml2 library
+  because all machines have it installed locally.
+  Adding a comment when the user need to have it
+  installed elsewhere.
+  modified scripts:
+    bin/cs_profile
+  modified macros:
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging of version 1.4.a
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
   Updating macros on Linux systems (use of local
   libxml2 and ATLAS libraries whane available) and
   upgrading to gcc 4.3.1
   modified macros:
-    macros_Linux_CCRT.mk
-    macros_Linux_Ch.mk
-    macros_Linux_IA64.mk
-    macros_Linux.mk
-    macros_Linux_x86_64.mk
+    bin/macros_Linux_CCRT.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
 
 * 17/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplification of some scripts

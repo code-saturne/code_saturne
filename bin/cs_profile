@@ -70,15 +70,10 @@
 # Path 
   PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
 
-# Librairies pour l'interface (si necessaire)
-  if [ -d ${CS_ROOT}/opt/libxml2-2.6.19/arch/${NOM_ARCH}/lib ] ; then
-    LD_LIBRARY_PATH=$CS_ROOT/opt/libxml2-2.6.19/arch/$NOM_ARCH/lib:$LD_LIBRARY_PATH
-  fi
-
 # Export des variables
   export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
   export SYRCS_HOME CSHOMARD_HOME
-  export PATH LD_LIBRARY_PATH
+  export PATH
 
 # Chemins et librairies pour MPI
   if [ "$NOM_ARCH" = "Linux" -o "$NOM_ARCH" = "Linux_x86_64" ] ; then

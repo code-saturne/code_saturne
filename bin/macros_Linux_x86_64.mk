@@ -146,6 +146,9 @@ LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
 LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/lib64:
 
+# If libxml2 must be installed under CS_ROOT, it may be necessary to add
+# $(CS_ROOT)/opt/libxml2-2.6.19/arch/$NOM_ARCH/lib
+# to LDEDLRPATH
 
 # Options pour librairie partagee
 #--------------------------------
