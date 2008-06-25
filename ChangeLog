@@ -1,0 +1,2362 @@
+* 25/05/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a bug on coordinates synchronization when
+  periodicity is present.
+  modified routine:
+   src/base/cs_perio.c
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Removing LD_LIBRARY_PATH related to libxml2 library
+  because all machines have it installed locally.
+  Adding a comment when the user need to have it
+  installed elsewhere.
+  modified scripts:
+    bin/cs_profile
+  modified macros:
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging of version 1.4.a
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Updating macros on Linux systems (use of local
+  libxml2 and ATLAS libraries whane available) and
+  upgrading to gcc 4.3.1
+  modified macros:
+    bin/macros_Linux_CCRT.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 17/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplification of some scripts
+  modified scripts:
+    bin/cs_profile
+    bin/SaturneGUI
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Add a warning when the number of preprocessor_output files
+  read by the kernel does not correspond to the number of MPI
+  processes.
+  modified routine:
+    src/base/cs_ecs_messages.c
+
+* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+  Merging the correction on wrong arguments in RAYDAK
+  from Version1_3 branch.
+  modified routine:
+    src/rayt/raydak.F
+
+* 10/06/2008 - David Monfort <david.monfort@edf.fr>
+  Bug correction on an usued static array in FORTRAN
+  modified routines:
+    src/fuel/futsvi.F
+
+* 10/06/2008 - David Monfort <david.monfort@edf.fr>
+  Removing unused arrays related to multigrid algorithm:
+  IFACLG, IRESPR, DAG and XAG.
+  modified routines:
+    src/rayt/raydom.F
+    src/rayt/raysol.F
+    src/rayt/raypun.F
+    src/rayt/memra2.F
+    src/lagr/lageqp.F
+    src/lagr/lagpoi.F
+    src/cfbl/cfener.F
+    src/cfbl/memcfm.F
+    src/cfbl/cfcdts.F
+    src/cfbl/cfqdmv.F
+    src/cfbl/cfmsvl.F
+    src/base/memv2f.F
+    src/base/alelap.F
+    src/base/resrij.F
+    src/base/memdis.F
+    src/base/memale.F
+    src/base/resolp.F
+    src/base/resv2f.F
+    src/base/turbkw.F
+    src/base/turrij.F
+    src/base/navsto.F
+    src/base/distyp.F
+    src/base/memkep.F
+    src/base/memkom.F
+    src/base/covofi.F
+    src/base/memdyp.F
+    src/base/reseps.F
+    src/base/distpr.F
+    src/base/resssg.F
+    src/base/turbke.F
+    src/base/scalai.F
+    src/base/memsca.F
+    src/base/preduv.F
+    src/base/memnav.F
+    src/base/memrij.F
+    src/base/codits.F
+    src/base/calhyd.F
+    src/base/invers.F
+    src/base/tridim.F
+
+* 30/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Modification of Code_Saturne compilation with the
+  ElectricFence library.
+  modified routines:
+    bin/macros_Linux_x86_64.mk
+    bin/lance_install
+    bin/Makefile
+
+* 30/05/2008 - Namane Mechitoua <namane.mechitoua@edf.fr>
+               Sophie Bosse <sophie.bosse@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Modification of the algebric multigrid algorithm
+  adapted to the resolution of pressure equation.
+  The algorithm works in serial and parallel runs.
+  modified routines:
+    users/base/usini1.F
+    include/base/cs_prototypes.h
+    include/base/optcal.h
+    include/base/cs_sles.h
+    doc/USER/latex/saturne2.tex
+    src/cfbl/cfcdts.F
+    src/base/verini.F
+    src/base/resolp.F
+    src/base/impini.F
+    src/base/cs_main.c
+    src/base/cs_sles.c
+    src/base/calgeo.F
+    src/base/iniini.F
+    src/base/modini.F
+    src/base/codits.F
+    src/base/invers.F
+  added routines:
+    include/base/cs_grid.h
+    include/base/cs_multigrid.h
+    src/base/autmgr.F
+    src/base/crstgr.F
+    src/base/cs_grid.c
+    src/base/cs_multigrid.c
+    users/base/ustmgr.F
+  deleted routines:
+    include/base/mltgrd.h
+    src/base/calgrg.F
+    src/base/cgstab.F
+    src/base/clmlga.F
+    src/base/cycmgr.F
+    src/base/gradco.F
+    src/base/jacobi.F
+    src/base/memgrg.F
+    src/base/mempgr.F
+    src/base/premgr.F
+    src/base/prolon.F
+    src/base/resmgr.F
+
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translating memory checking from FORTRAN to C.
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_parall.h
+    src/base/cs_base.c
+    src/base/cs_parall.c
+    src/base/cs_main.c
+    src/base/caltri.F
+    src/base/memini.F
+  deleted routines:
+    include/base/memoir.h
+    src/base/rasize.F
+    src/base/iasize.F
+
+* 29/05/2008 - David Monfort <david.monfort@edf.fr> 
+  The size of the work arrays IA and RA is now defined
+  with a FORTRAN user file and no more via the scripts,
+  making them independent of the number of sub-domains
+  in case of a parallel run.
+  modified routines:
+    users/base/usini1.F
+    include/base/cs_opts.h
+    include/base/dimens.h
+    include/base/memoir.h
+    doc/USER/latex/saturne1.tex
+    src/base/initi1.F
+    src/base/impini.F
+    src/base/cs_main.c
+    src/base/caltri.F
+    src/base/iniusi.F
+    src/base/cs_gui.c
+    src/base/iniini.F
+    src/base/cs_opts.c
+    src/base/memini.F
+    bin/lance
+    bin/lance.help
+  deleted routines:
+    users/base/ustbus.F
+
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding communications with a proxy, in order to prepare
+  the Code_Saturne/Code_Aster coupling via Salomé/YACS.
+  modified routines:
+    include/base/cs_opts.h
+    include/base/cs_base.h
+    src/base/cs_base.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+  added routines:
+    include/base/cs_calcium.h
+    include/base/cs_proxy_comm.h
+    src/base/cs_proxy_comm.c
+    src/base/cs_calcium.c
+
+* 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Modification of the behaviour of renumbering.
+  modified routines:
+    include/base/cs_post.h
+    include/base/cs_mesh.h
+    src/base/numvec.F
+    src/base/cs_main.c
+    src/base/cs_post.c
+    src/base/cs_suite.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_mesh_connect.c
+
+* 28/05/2008 - David Monfort <david.monfort@edf.fr> 
+  Removing the parts of the compilation scripts concerning
+  the Purify and Foresys tools, as they are no more used.
+  modified routines:
+    bin/lance_install
+    bin/lance.help
+    bin/Makefile
+    doc/USERS/latex/saturne1.tex
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplifying the command line option for a parallel run.
+  modified routines:
+    bin/lance_install
+    src/base/cs_opts.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding support for a shared library on Linux systems.
+  modified routines:
+    bin/lance_install
+    bin/Makefile
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a sub-script to check FORTRAN user files consistency.
+  Adding a script to clean the directories.
+  Updating the compiler for EDF Calibre 5 workstations.
+  modified routines:
+    bin/lance
+    bin/lance_install
+    bin/macros_Linux_x86_64.mk
+  added routines:
+    bin/check_consistency
+    aux/clean
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a warning in case of rotation periodicity
+  modified routines:
+    src/base/cs_matrix.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding two routines to save and restore the halos
+  with a rotation periodicity (before doing a matrix
+  vector product under certain circumstances)
+  modified routines:
+    include/base/cs_perio.h
+    src/base/promav.F
+    src/base/cs_perio.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updating the halo structure in order to prepare
+  for a parallel and periodic multigrid algorithm.
+  modified routines:
+    include/base/cs_matrix.h
+    include/base/cs_halo.h
+    include/base/cs_mesh.h
+    include/base/cs_mesh_quantities.h
+    include/base/cs_perio.h
+    src/lagr/cs_lagr_perio.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_benchmark.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_mesh_halo.c
+    src/base/cs_parall.c
+    src/base/cs_matrix.c
+    src/base/cs_gradient.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_perio.c
+    src/base/cs_sles.c
+    src/base/cs_halo.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_warping.c
+
+* 27/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removing native matrix-vector product from C call.
+  Changing CSR matrix format behaviour.
+  modifified routine:
+    src/base/cs_matrix.c
+
+* 26/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adding a routine to compute the minimum of an integer
+  over the domains in case of parallelism
+  modified routines:
+    include/base/cs_parall.h
+    src/base/cs_parall.c
+
+* 26/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removing unused MSR matrix format
+  modified routines:
+    include/base/cs_matrix.h
+    src/base/cs_benchmark.c
+    src/base/cs_matrix.c
+
+* 21/05/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Renaming and reshaping the halos structures in order
+  to prepare for multigrid integration
+
+  modified routines:
+    include/base/cs_halo.h
+    include/base/cs_mesh.h
+    include/base/cs_parall.h
+    include/base/cs_perio.h
+    src/lagr/cs_lagr_perio.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_parall.c
+    src/base/cs_matrix.c
+    src/base/cs_gradient.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_perio.c
+    src/base/cs_halo.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_warping.c
+
+   added subroutines:
+    include/base/cs_mesh_halo.h
+    src/base/cs_mesh_halo.c
+
+* 16/05/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Corrections on Lagrangian module (wrong definition
+  of STATFB in dvvpst.F)
+  modified routines:
+    dvvpst.F
+    uslag1.F
+
+* 16/04/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging of version 1.3.2
+
+* 10/04/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Several corrections on the user guide
+  modified routine:
+    saturne1.tex
+
+* 08/04/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Port to BlueGene/P and Cray XT
+  modified routines:
+    cs_base.c
+    cs_sles.c
+    cs_suite.c
+    tremai.c
+   
+* 08/04/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Wrong index when setting the last character of a string
+  when parsing the groups name when coupling with SYRTHES
+  modified routines:
+    cs_mesh_select.c
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on the gradient limitation when a rotational
+  periodicity is present
+  modified routines:
+    cs_gradient.h
+    cs_gradient.c
+    grdcel.F
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on the gradient computation with IMRGRA = 4
+  modified routine:
+    grdcel.F
+
+* 28/03/2008 - David Monfort <david.monfort@edf.fr>
+  The indirection between a scalar of the electric module and
+  the whole scalars array was mis-used in the physical properties
+  initialisation of this module.
+  modified routines:
+    elphyv.F
+
+* 21/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Corrected extended neighborhood reduction bug
+  modified routines:
+    cs_ext_neighborhood.c
+
+* 12/03/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging of the Version1_3 branch
+  Trunk open for new commits.
+
+* 12/03/2008 - David Monfort <david.monfort@edf.fr>
+  Add a cleaning pass when installing the documentation
+  modified routines:
+    lance_install
+  
+* 05/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Tests on a specific array for the extended neighborhood instead of
+  halo_type, to avoid failing tests in sequential compuations.
+  Fix a bug in the gradient limitation when using the extended
+  neighborhood.
+  modified routines:
+    cs_gradient.c
+	cs_mesh.c
+	cs_mesh_coherency.c
+
+* 05/03/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Fixes a bug during the pressure sweeps while using the steady-state
+  algorithm.
+  modified routines:
+    resolp.F
+
+* 05/03/2008 - Yvan fournier <yvan.fournier@edf.fr> 
+  Fixes an error when parsing arguments that arise in some
+  configuration
+  modified routines:
+    cs_opts.c
+  
+* 05/03/2008 - David Monfort <david.monfort@edf.fr>
+  Adds a warning when using the dynamic model in LES along with a
+  least-squares method based on a reduced extended neighborhood for
+  the gradient computation
+  modified routine:
+    saturne2.tex
+	verini.F
+	ussmag.F
+  
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Update FVM API to take into account some particular cases
+  where two periodicities are not commutative
+  modified routines:
+    cs_mesh.c
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Add a warning when changing the mesh vertices coordinates along
+  with periodicity, which can break the periodicity parameters.
+  modified routines:
+    saturne1.tex
+	usmodg.F
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Remove no more used function _sync_var_scal_strided and update
+  consequently cs_perio_sync_var_scal. Remove prototype for PERCVE
+  as well.
+  modified routines:
+    cs_perio.h
+	cs_ext_neighborhood.c
+	cs_gradient.c
+	cs_matrix.c
+	cs_perio.c
+
+* 04/03/2008 - David Monfort <david.monfort@edf.fr>
+  Fix a rotational periodicity issue in mesh coherency checks.
+  A variable was treated as a scalar instead as a vector.
+  modified routines:
+    cs_mesh_coherency.c
+
+* 04/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a bug in the definition of the extended halo when one needs to
+  use the extended neighborhood
+  modified routines:
+    cs_halo.c
+
+* 04/03/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correct distance use at the first time-step when using the k-w SST
+  model and the old algorithm to compute the wall distance
+  modified routines:
+    vissst.F
+
+* 27/02/2008 - David Monfort <david.monfort@edf.fr>
+  Remove abort when checking for auxilliary sequel file and LES model
+
+* 26/02/2008 - David Monfort <david.monfort@edf.fr>
+  Change the behaviour when trying to get a list of cells or faces
+  with the selector. Revert to the old behaviour when the selection
+  was done through the mesh properties. A warning is issued instead
+  of an error when the criteria returns an empty selection.
+  modified routines:
+    cs_gui.c
+    cs_selector.c
+
+* 22/02/2008 - David Monfort <david.monfort@edf.fr>
+  Move unmaintained macros files to aux/macros_old
+  moved files:
+    macros_IRIX64.mk
+    macros_sunOS.mk
+
+* 22/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add macros files for MacOSX and Linux x86_64 systems
+  Change wring optimisation -O6 to -O3 for GCC compilers
+  added routines:
+    macros_Darwin.mk
+    macros_Linux_x86_64.mk
+  modified routines:
+    macros_Linux.mk
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Make Code_Saturne stop when a Lagrangian calculation is run with the
+  steady-state algorithm
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Change the name Syrthes to SYRTHES following the deposit brand
+
+* 20/02/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Add documentation on faces/cells selection with GETxxx via fvm_selector
+
+* 20/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add comments on steady-state algorithm IDTVAR=-1
+  modified routines:
+    saturne2.tex
+    usini1.F
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Set the version number of Code_Saturne Kernel to 1.3.2
+  modified routines:
+    COMPATIBILITY
+    compil.exe
+    Makefile
+    autovalid.xml
+    cs_profile
+    csdoc.sty
+    cs_ops.c
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Add a temporary "tmp_Saturne/$ETUDE.$CAS.$DATE" directory when running
+  a case in $TMPDIR (when defined by the system) to avoid an issue
+  with the linux distribution CAELinux
+  modified routines:
+    lance
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Update the macros files to new version of BFT and FVM
+  modified routines:
+    cs_couplage.c
+    COMPATIBILITY
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Make use of the "xspace" package in the documentation for intelligent spaces
+
+* 18/02/2008 - David Monfort <david.monfort@edf.fr>
+  Complete reorganisation of the theory documentation to follow the template
+  of the user and tutorial documents
+
+* 15/02/2008 - David Monfort <david.monfort@edf.fr>
+  Centralized EDF and Code_Saturne logos in the style directory
+
+* 12/02/2008 - David Monfort <david.monfort@edf.fr>
+  Correction of unitialized values in the vortex method when ICAS=4
+  modified routines:
+    vorini.F
+
+* 12/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Global allocation of an auxilliary array, instead of local
+  modified routines:
+    caltri.F
+    lagcel.F
+    lagopt.F
+    lagune.F
+    ouestu.F
+    uslag1.F
+
+* 12/02/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Bug fix in coal combustion
+  modified routines:
+    cpcym2.F
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Keep the consistancy between the maximum number of phases
+  in cs_perio.h and paramx.h (both being set at 1 for the moment)
+
+* 07/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug fixes for the computation of mean values of combustion
+  variables within the GUI
+  modified routines:
+    cs_gui.c
+    usini1.F
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Inversion of argument of the user function PHIDAT,
+  accordingly to how it called by the kernel
+  modified routines:
+    usvort.F
+
+* 07/02/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug fixes when reading a sequel file
+  modified routines:
+    laglec.F
+    lagout.F
+
+* 07/02/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Variant for Intel compiler on Itanium only, optimizations by BULL
+  modified routines:
+    cs_matrix.c
+    cs_sles.c
+
+* 07/02/2008 - David Monfort <david.monfort@edf.fr>
+  Wrong affectation for last element in an array in cs_post.c
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Renaming the Preprocessor listing from listenv to listpre
+  modified routines:
+    lance
+    saturne1.tex
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Minor correction of the Makefile for the target LINK
+
+* 14/01/2008 - David Monfort <david.monfort@edf.fr>
+  Correction in the macro definition of the keyword inline
+  modified routine:
+    cs_base.h
+    cs_lagrang.c
+
+* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Bug fix in face renumbering and ponderation algorithm
+  improvement
+  modified routines:
+    cs_syr_coupling.c
+
+* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Missing argument in printf function in cs_syr_mesages.c
+
+* 08/01/2008 - David Monfort <david.monfort@edf.fr>
+  Portability improvements in scripts
+  Thanks to Thierry Thomas for reporting the problems
+  modified routines:
+    Makefile
+    compiler_version
+    cree_sat
+    gracehst
+    grp
+
+* 28/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.1
+
+* 19/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Syntax and unused variables correction
+  deleted routines:
+    usrubm.F
+    postlc.F
+  modified routines:
+    calhyd.F
+    caltri.F
+    cfphyv.F
+    clptrg.F
+    cpcym2.F
+    cpflux.F
+    cplph1.F
+    cpphy1.F
+    cpphyv.F
+    cpteh1.F
+    cptssc.F
+    cptsvc.F
+    cregeo.F
+    cs_gui.c
+    cs_mesh.c
+    cs_mesh_warping.c
+    cs_parall.c
+    ebuphy.F
+    ebuver.F
+    enslag.F
+    fucym1.F
+    fuflux.F
+    fuincl.h
+    fuiniv.F
+    fulecd.F
+    fuphy1.F
+    fuphy2.F
+    fuphyv.F
+    fuptcl.F
+    futeh1.F
+    futeh2.F
+    futhp1.F
+    futssc.F
+    futsvc.F
+    futsvi.F
+    fuveri.F
+    iniusi.F
+    lagaff.F
+    lagcel.F
+    lagent.F
+    lagesp.F
+    lagfch.F
+    laghis.F
+    laglis.F
+    lagnpr.F
+    lagnwc.F
+    lagout.F
+    lagune.F
+    lwcver.F
+    optcal.h
+    pdflwc.F
+    pdfpp4.F
+    prods2.F
+    prods3.F
+    prodsc.F
+    resolp.F
+    strhis.F
+    usalcl.F
+    uscfcl.F
+    uscfpv.F
+    uscpcl.F
+    uscplc.F
+    usd3pc.F
+    usebuc.F
+    uselcl.F
+    usfucl.F
+    usfuiv.F
+    uslabo.F
+    usladp.F
+    uslafe.F
+    uslag2.F
+    uslwcc.F
+    usnpst.F
+    usray5.F
+
+* 15/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Correction of inlet conditions in coal combustion
+  with GUI
+  modified routines:
+    cs_gui.c
+    cs_gui.h
+    ppclim.F
+
+
+* 15/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Passing of missing MAXELT/LSTELT arguments
+  for GETCEL selection in user routines
+  modified routines:
+    cfiniv.F
+    cfmsfl.F
+    cfmsgs.F
+    cfphyv.F
+    cfqdmv.F
+    cpiniv.F
+    cplini.F
+    d3pini.F
+    ebuini.F
+    eliniv.F
+    elphyv.F
+    fuiniv.F
+    inivar.F
+    lwcini.F
+    preduv.F
+    reseps.F
+    resrij.F
+    resssg.F
+    scalai.F
+    turbke.F
+    turbkw.F
+    uscfpv.F
+    uscfxi.F
+    uscpiv.F
+    usd3pi.F
+    usebui.F
+    useliv.F
+    uselph.F
+    usfuiv.F
+    usiniv.F
+    uslwci.F
+    ustske.F
+    ustskw.F
+    ustsns.F
+    ustsri.F
+    ustsv2.F
+
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Bug correction in typecl.F on the setting
+  of the reference face for pressure when
+  some outlet boundary conditions are changed
+  from standard values (+ bug correction in 
+  parallel when IPHYDR=1)
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Misspelling of SRROM in info message
+  modified routines:
+    d3pver.F
+    ebuver.F
+    lwcver.F
+    cplver.F
+    elveri.F
+    fuveri.F
+
+
+
+* 14/11/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of the launch script lance for
+  a correct copy of thermochemical files with
+  the pulverized coal module + correction of
+  error in the protecting test of uscpcl.F
+
+* 12/11/2007 - David Monfort <david.monfort@edf.fr>
+  Bug correction in an (unused!) function fo cs_blas.c
+
+* 07/11/07 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of intermediate version 1.3.1-rc1 before
+  second phase of validation campaign
+
+* 07/11/07 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Minor modification in fuphy1.F
+
+* 05/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Bug correction for P1 radiative transfer in usray5.F
+
+* 31/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of an erroneous assert in cs_halo.c
+
+* 31/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Storage on preprocessor files in a subdirectory of
+  the temporary execution directory + change of
+  BLAS libraries on Linux
+  modified routines
+    cs_main.c
+    cs_pp_io.c
+    cs_pp_io.h
+  modified script:
+    lance
+    macros_Linux.mk
+
+
+* 31/10/2007 - Nicole Picard <nicole-n.picard@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Modification and correction of GUI reader
+  modified routines:
+    caltri.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_radiative_transfer.c
+    cs_gui_radiative_transfer.h
+    cs_gui_util.c
+    cs_main.c
+    iniusi.F
+    ppclim.F
+    tridim.F
+
+* 31/10/2007 - Fabien Huvelin <fabien.huvelin@edf.fr>
+               Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of strpre.F for correct handling of structure
+  initial displacement
+
+* 30/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Suppression of unused variables in cptssc.F
+
+* 30/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Correction of automatic stop of calculation when
+  P1 radiative transfer assumptions are not met
+  modified routine:
+    caltri.F
+
+* 23/10/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Update of comments on GETFBR/GETFAC/GETCEL in user
+  routines
+  modified routines:
+    usalcl.F
+    usclim.F
+    uskpdc.F
+    usproj.F
+    uspt1d.F
+    usstru.F
+    ustsma.F
+    ustssc.F
+    usvort.F
+    uscfcl.F
+    usd3pc.F
+    usebuc.F
+    uslwcc.F
+    uscpcl.F
+    uscplc.F
+    uselcl.F
+    usetcl.F
+    usfucl.F
+    uslag2.F
+    usray2.F
+
+* 22/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update of compilation commands for BlueGene
+  modified scripts:
+    macros_Blue_Gene_L.mk
+    Makefile
+
+* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Bug correction in extended neighborhood (index error
+  in connectivity list and shunted use of ext_neighborhood
+  in gradient calculation)
+  modified routines:
+    cs_ext_neighborhood.c
+    cs_gradient.c
+
+* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of bug in rotation periodicity with lagrangian
+  module + minor comments and syntax modifications +
+  compilation options for CCRT machines
+  modified routines:
+    cs_benchmark.c
+    cs_lagr_perio.c
+    cs_perio.c
+    lagcel.F
+  modified cripts:
+    macros_Linux_CCRT.mk
+    macros_Linux_IA64.mk
+
+
+* 19/10/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Robustness modification in scalai.F: initialisation
+  of RTPA not done if NTCABS.EQ.1 but in IPASS.EQ.1
+  (in case a first iteration with NTCABS=0 is done).
+
+* 19/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in cs_suite.c : floating point
+  exception on certain architectures in parallel
+  when a number of entities (cells, internal faces
+  or boundary faces) is zero
+  (e.g. triple periodicity box)
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in the CPU time calculation
+  in cs_benchmark.c when compiling without
+  MPI
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor indentation modifications
+  modified routines:
+    covofi.F
+    cs_ext_neighborhood.c
+    cs_mesh.h
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Change in the syntax of tests to avoid a warning
+  on IA64 architecture with intel compilers
+  modified routines:
+    varpos.F
+    verini.F
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use of MPI_RANK variable for MPICH2 in rang_mpi.sh
+  + minor change in file permissions in lance_install
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction in index shift in paragv routine
+  in cs_parall.c
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of pragma commands for xlc compiler in
+  cs_matrix.c
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move of obsolete macros_OSF1.mk and macros_HU-UX.mk
+  files in new aux/macros_old archive directory
+
+* 16/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Plugging of fvm-0.9.0 with extra argument in selector
+  routines
+  modified routines:
+    cs_gui.c
+    cs_mesh.c
+    cs_selector.c
+  modified scripts:
+    macros*.mk
+
+* 15/10/2007 - David Monfort <david.monfort@edf.fr>
+  Correction of compilation warnings
+  modified routines:
+    cs_gui_radiative_transfer.c
+    cs_halo.c
+
+* 11/10/2007 - David Monfort <david.monfort@edf.fr>
+  Correction fof IDIMTE coefficient in reseps.F for
+  rotation periodicity synchronization in standard Rij-eps
+  model
+
+* 09/10/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Use of bft-1.0.5 
+  modified scripts : macros*.mk
+
+* 09/10/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+               Matthieu Guillaud <matthieu.guillaud@edf.fr>
+  Code_Saturne tutorial
+
+* 09/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Correction of error in argument passing of NDIRCP
+  in covofi.F
+
+* 09/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+               Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Various modifications:
+  - synchronization with Syrthes only if ITRALE>0 in caltri.F
+  - change in the syntax of a test in covofi.F to avoid a warning
+    on IA64 architecture with intel compilers
+  - creation of erreur_n*** files only for processor 0 and the
+    processors receiving a segmentation fault or floating point
+    exception message
+  - correction fo benchmark mode with info on elapsed time
+  - correction in test on extended neighborhood detection
+  - correction of a problem depending on the order of exchange
+    of MPI messages for dimension calculation
+  - minor corrections in cs_mesh.c and cs_mesh_coherency.c
+    (unused variables, comments)
+  - change of kernel options "couleur" and "groupe" to "color"
+    and "group" for Syrthes options
+  - assert error in debug mode due to wrong initialization
+    on 64bits machine
+  - modification of residue test to detect when conjugate
+    gradient diverges
+  - memory management error when calling usray2.F in raycli.F
+  - global detection of boundary conditions errors in typecl.F
+  - example character strings in usdpst.F initialized to ' ' and
+    not '' (Fortran norm)
+  modified routines:
+    caltri.F
+    covofi.F
+    cs_base.c
+    cs_benchmark.c
+    cs_ext_neighborhood.c
+    cs_halo.c
+    cs_mesh.c
+    cs_mesh_coherency.c
+    cs_opts.c
+    cs_pp_io.c
+    cs_sles.c
+    raycli.F
+    typecl.F
+    usdpst.F
+
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Missing access to STATIV array in usproj.F
+  modified routines:
+    caltri.F
+    usproj.F
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Problem with pointer IIFRLA defined as real instead of
+  integer in memla1.F
+
+* 08/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Error in the example uselrc.F. Use of RTP(.,ISCALT(1))
+  instaed of RTP(.,ISCA(ISCALT(1)))
+
+
+* 08/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Initialization error on the incident flux QINCID for
+  non-wall boundaries
+  modified routines:
+    raycli.F
+
+
+* 08/10/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  No coherency between lagout and lagent on the rubrique name
+  for NBCLST + uninitialized argument in IASIZE in laglec.F
+  modified routines:
+    lagent.F
+    laglec.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of character chain length in inipst.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction in DEPALE and CSMAGO initialisation
+  modified routines:
+    caltri.F
+    iniva0.F
+    memtri.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Optimised debug options for IA64 architecture
+  modified script:
+    macros_Linux_IA64.mk
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Correction of index error in mobile structures initialisation
+  modified routine:
+    iniini.F
+
+* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Missing update of fortran commons after cutting of warped faces.
+  modified routines:
+    cs_main.c
+    iniini.F
+    majgeo.F
+
+* 17/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of intermediate version 1.3.1-dvp
+
+* 16/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of coherency test in REDVSE in cs_ext_neighborhood.c
+  to allow the use of IMRGRA=3 when the extended neighborhood has
+  been calculated but is empty (1D meshes!!!).
+
+* 16/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Forgotten RELAXP argument in the CODITS call in cfmsvl.F
+
+
+* 14/08/2007 - Nicole Picard <nicole-n.picard@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Correction in pulverised coal data entry through GUI
+  modified routines:
+    cpini1.F
+    cpprop.F
+    cpvarp.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_matisse.c
+    cs_gui_radiative_transfer.c
+    cs_gui_util.c
+    iniusi.F
+
+
+* 13/08/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Erroneous dynamic allocation of work array in stdtcl.F
+  modified routines:
+    stdtcl.F
+    tridim.F
+
+* 08/08/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Bug correction in cptssc.F (test to avoid a 0/0 division)
+
+* 08/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Adaptation of lance.help to new english syntax of preprocessor
+  and kernel options
+
+* 07/08/2007 - Yannick Lecocq <yannick.lecocq@edf.fr>
+  Missing assignment of IDIMTE and ITENSO before PERCOM
+  in reseps.F
+
+* 06/08/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of erroneous assert in cs_pp_io.c
+
+* 03/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of unwanted ALE initialisation iteration when
+  IALE = 0
+  modified routines:
+    modini.F
+
+* 03/08/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Missing arguments to ustbus.F
+  modified routines:
+    caltri.F
+    ustbus.F
+
+
+===========================================================================
+
+* 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.0
+  
+* 26/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor correction of fvm_selector in cs_mesh.c
+  
+* 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change in the location of the definition of
+  NIDEVE, NRDEVE, NITUSE and NRTUSE
+  added routine:
+    ustbus.F
+  modified routines:
+    caltri.F
+    cs_gui.c
+    cs_gui.h
+    dimens.h
+    impini.F
+    iniini.F
+    iniusi.F
+    usini1.F
+    verini.F
+
+* 26/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of ALE initialisation step for
+  better continuity in calculation sequels.
+  modified routines:
+    albase.h
+    caltri.F
+    ecrava.F
+    iniini.F
+    lecamx.F
+    modini.F
+    strdep.F
+    strini.F
+    strpre.F
+    tridim.F
+    usalin.F
+    verini.F
+
+* 23/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Minor changes around stdtcl.F
+  modified routines:
+    stdtcl.F
+    tridim.F
+
+* 23/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  check_mesh routine, cleaning of lance_install script,
+  correction of cs_halo.c for safer geometrical
+  tests on halo creation
+  added script:
+    check_mesh
+  modified routine:
+    cs_halo.c
+  modified scripts:
+    info_cs
+    lance_install
+
+* 23/07/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Minor corrections in fuel module
+  modified data file:
+    JANAF
+  modified routines:
+    futsvi.F
+    usfucl.F
+
+
+* 23/07/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Correction of dvvpst.F for lagrangian post-processing
+
+===========================================================================
+
+* 23/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.n
+
+* 23/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translation of Code_Saturne arguments, renaming of Envelope into
+  Preprocesseur, suppression of useless "const" + various name modifications
+  and comments
+  modified scripts:
+    lance
+    lance.help
+    lance_install
+    verifmail
+  modified routines:
+    cs_ale.c
+    cs_ale.h
+    cs_base.c
+    cs_base.h
+    cs_benchmark.c
+    cs_comm.c
+    cs_comm.h
+    cs_couplage.c
+    cs_ecs_messages.c
+    cs_ecs_messages.h
+    cs_halo.c
+    cs_halo.h
+    cs_main.c
+    cs_mesh.c
+    cs_mesh.h
+    cs_mesh_coherency.c
+    cs_mesh_coherency.h
+    cs_mesh_quality.c
+    cs_mesh_quality.h
+    cs_mesh_quantities.c
+    cs_mesh_quantities.h
+    cs_mesh_select.c
+    cs_mesh_select.h
+    cs_mesh_solcom.c
+    cs_mesh_solcom.h
+    cs_mesh_warping.c
+    cs_mesh_warping.h
+    cs_opts.c
+    cs_opts.h
+    cs_parall.c
+    cs_parall.h
+    cs_perio.c
+    cs_perio.h
+    cs_post.c
+    cs_pp_io.c
+    cs_pp_io.h
+    cs_sles.c
+    cs_syr_coupling.c
+    cs_syr_coupling.h
+    cs_syr_messages.c
+    cs_syr_messages.h
+    csinit.F
+    entsor.h
+    iasize.F
+    iniini.F
+    parge1.F
+    rasize.F
+    rayens.F
+    rayopt.F
+
+* 23/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Externalisation of CGRDMC and CLMGRD in a specific routine
+  added routines:
+    cs_gradient.c
+    cs_gradient.h
+  modified routines
+    calgeo.F
+    cs_ext_neighborhood.c
+    cs_ext_neighborhood.h
+
+
+* 23/07/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  GUI bug corrections:
+  added routine:
+    stdtcl.F
+  modified routines:
+    cs_gui.c
+    cs_gui.h
+    memtri.F
+    ppclim.F
+    tridim.F
+
+
+* 23/07/2007 - Alexandre Douce <alexandre.douce@edf.fr>
+  Corrections in lagrangian module
+  modified routines:
+    caltri.F
+    dvvpst.F
+    impini.F
+    iniusi.F
+    lagent.F
+    lagfch.F
+    laghis.F
+    lagopt.F
+    lagran.h
+    memla1.F
+    memla2.F
+    uslabo.F
+    uslag1.F
+    uslag2.F
+    usray2.F
+
+
+
+===========================================================================
+
+* 13/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.m
+
+
+* 13/07/2007 - Carole Vit <carole.vit@edf.fr>
+               Éric Quémerais <eric.quemerais@edf.fr>
+               Nicole Picard <nicole-n.picard@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Adaptation to new version of GUI, implementation
+  of fvm_selector potentialities
+  added routines:
+    cs_interpr_util.F
+    cs_selector.c
+    cs_selector.h
+  modified data file:
+    dp_FCP
+  modified routines
+    caltri.F
+    cfener.F
+    cou1do.F
+    covofi.F
+    cpini1.F
+    cplecd.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_util.c
+    cs_gui_util.h
+    cs_mesh.c
+    cs_mesh.h
+    cs_main.c
+    iniusi.F
+    inivar.F
+    lagent.F
+    ppclim.F
+    raycli.F
+    strini.F
+    tridim.F
+    usalcl.F
+    uscfcl.F
+    usclim.F
+    uscpcl.F
+    uscplc.F
+    usd3pc.F
+    usebuc.F
+    uselcl.F
+    usetcl.F
+    uskpdc.F
+    uslag2.F
+    uslwcc.F
+    usproj.F
+    uspt1d.F
+    usray2.F
+    usray3.F
+    usray5.F
+    usstru.F
+    ustsma.F
+    ustssc.F
+    usvort.F
+
+===========================================================================
+
+* 12/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.l
+
+* 09/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Partial compliance of rough wall with GUI
+  modified routines:
+    caltri.F
+    cs_gui.c
+    cs_gui.h
+
+* 09/07/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Creation of parallel and periodic halos by the kernel,
+  use of fvm-0.8.0 + internationalisation of C routines
+  added routines:
+    cs_halo.c
+    cs_halo.h
+    cs_mesh_coherency.c
+    cs_mesh_coherency.h
+    cs_mesh_warping.c
+    cs_mesh_warping.h
+    cs_pp_io.c
+    cs_pp_io.h
+    haltyp.F
+    majgeo.F
+  modified scripts:
+    macros*.mk
+  modified routines:
+    calgeo.F
+    caltri.F
+    cs_ale.c
+    cs_ale.h
+    cs_benchmark.c
+    cs_comm.c
+    cs_comm.h
+    cs_couplage.c
+    cs_couplage.h
+    cs_gui.c
+    cs_gui_matisse.c
+    cs_gui_radiative_transfer.c
+    cs_gui_util.c
+    cs_lagr_perio.c
+    cs_lagr_perio.h
+    cs_lagrang.c
+    cs_lagrang.h
+    cs_main.c
+    cs_matrix.c
+    cs_mesh_quality.c
+    cs_mesh_quality.h
+    cs_opts.c
+    cs_opts.h
+    cs_perio.c
+    cs_perio.h
+    cs_post.c
+    cs_post.h
+    cs_renumber.c
+    cs_renumber.h
+    cs_sles.c
+    cs_suite.c
+    cs_syr_coupling.c
+    cs_ventil.F
+    cs_ventil.h
+    grdcel.F
+    impini.F
+    iniini.F
+    initi1.F
+    lagcel.F
+    lagnwc.F
+  modified and renamed routines:
+    cs_maillage.c  cs_mesh.c
+    cs_maillage.h  cs_mesh.h
+    cs_maillage_connect.c  cs_mesh_connect.c
+    cs_maillage_connect.h  cs_mesh_connect.h
+    cs_maillage_grd.c  cs_mesh_quantities.c
+    cs_maillage_grd.h  cs_mesh_quantities.h
+    cs_maillage_select.c  cs_mesh_select.c
+    cs_maillage_select.h  cs_mesh_select.h
+    cs_maillage_solcom.c  cs_mesh_solcom.c
+    cs_maillage_solcom.h  cs_mesh_solcom.h
+    cs_messages_ecs.c   cs_ecs_messages.c
+    cs_messages_ecs.h  cs_ecs_messages.h
+    cs_parallel.c  cs_parall.c
+    cs_parallel.h  cs_parall.h
+    cs_voiset.c  cs_ext_neighborhood.c
+    cs_voiset.h  cs_ext_neighborhood.h
+  removed routines:
+    cs_msg.c
+    cs_msg.h
+    filtre.F
+    limgrd.F
+
+===========================================================================
+
+* 06/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.k
+
+
+* 04/07/2007 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
+  Implementation of rough wall boundary conditions
+  added routines:
+    clptrg.F
+  modified routine:
+    cfxtcl.F
+    clptur.F
+    clsyvt.F
+    condli.F
+    cou1di.F
+    coupbi.F
+    cpltcl.F
+    cpptcl.F
+    d3ptcl.F
+    distpr.F
+    distyp.F
+    ebutcl.F
+    fuptcl.F
+    lageqp.F
+    lwctcl.F
+    paramx.h
+    ppclim.F
+    ppprcl.F
+    ppray4.F
+    pptycl.F
+    precli.F
+    raycli.F
+    raypun.F
+    rijech.F
+    tridim.F
+    typecl.F
+    usalcl.F
+    usclim.F
+    uscpcl.F
+    uscplc.F
+    usd3pc.F
+    usebuc.F
+    uselcl.F
+    usetcl.F
+    usfucl.F
+    uslwcc.F
+    usray2.F
+    usray4.F
+    usray5.F
+    usruet.F
+    vericl.F
+    vor2cl.F
+
+===========================================================================
+
+* 03/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.j
+
+* 02/07/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Implementation of fuel combustion, coal humidity and
+  reorganisation of pulverised coal combustion.
+  added data files:
+    dp_FUE
+  added routines:
+    cpcym2.F
+    fucym1.F
+    fuflux.F
+    fuincl.h
+    fuini1.F
+    fuiniv.F
+    fulecd.F
+    fupdfr.F
+    fuphy1.F
+    fuphy2.F
+    fuphyv.F
+    fuprop.F
+    fuptcl.F
+    futeh1.F
+    futeh2.F
+    futhp1.F
+    futhp2.F
+    futssc.F
+    futsvc.F
+    futsvi.F
+    fuvarp.F
+    fuveri.F
+    memfu1.F
+    usfucl.F
+    usfui1.F
+    usfuiv.F
+  modified data files:
+    dp_FCP
+    JAnAF
+  modified routines:
+    copdfr.F -> renamed pppdfr.F
+    covofi.F
+    cpflux.F
+    cpincl.h
+    cpini1.F
+    cpiniv.F
+    cplecd.F
+    cpphy1.F
+    cpphy2.F
+    cpphyv.F
+    cpprop.F
+    cpptcl.F
+    cprays.F
+    cpteh2.F
+    cpthp2.F
+    cptssc.F
+    cpvarp.F
+    cpveri.F
+    cs_gui.c
+    cs_gui.h
+    d3phst.F
+    d3pint.F
+    d3pphy.F
+    d3pver.F
+    ebuver.F
+    ecrava.F
+    impini.F
+    iniusi.F
+    lagcar.F
+    lagent.F
+    lages1.F
+    lages2.F
+    laggra.F
+    lagich.F
+    lagitf.F
+    laglec.F
+    lagopt.F
+    lagout.F
+    lecamx.F
+    lwcver.F
+    ppcabs.F
+    ppclim.F
+    ppcsca.F
+    ppincl.h
+    ppinii.F
+    ppiniv.F
+    pplecd.F
+    ppphyv.F
+    ppprcl.F
+    ppprop.F
+    ppray4.F
+    ppthch.h
+    pptssc.F
+    pptycl.F
+    ppvarp.F
+    raydom.F
+    rayopt.F
+    scalai.F
+    uscpi1.F
+    uscpiv.F
+    usppmo.F
+  modified scripts:
+    lance
+    lance_install
+    Makefile
+
+
+
+* 02/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Suppression of useless vide.h files
+
+* 02/07/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update of macros_*.mk for Linux, Linux_IA64 and Linux_CCRT, definition of
+  C-Blas as default, suppression of some unused arguments in gradient
+  calculation to allow earlier call.
+  modified scripts:
+    macros_Linux.mk
+    macros_Linux_CCRT.mk
+    macros_Linux_IA64.mk
+  modified routines:
+    cs_blas.c
+    cs_blas.h
+    cs_voiset.c
+    cs_voiset.h
+    gradmc.F
+    gradrc.F
+    grdcel.F
+    tremai.c
+
+===========================================================================
+
+* 02/07/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.i
+
+* 29/06/2007 - Carole Vit <carole.vit@edf.fr>
+               Sofiane Benhamadouche <sofiane.benhaamdouche@edf.fr>
+               Marc Sakiz <marc.sakiz@edf.fr>
+  Implementation of steady-state algorithm
+  modified routines:
+    alelap.F
+    bilsc2.F
+    codits.F
+    covofi.F
+    cs_opts.c
+    distpr.F
+    distyp.F
+    dttvar.F
+    impini.F
+    iniini.F
+    iniusi.F
+    matrdt.F
+    modini.F
+    navsto.F
+    optcal.h
+    preduv.F
+    reseps.F
+    resolp.F
+    resrij.F
+    resssg.F
+    resv2f.F
+    tridim.F
+    turbke.F
+    turbkw.F
+    verini.F
+    cfmsvl.F
+    lageqp.F
+    raypun.F
+    raysol.F
+
+
+===========================================================================
+
+* 25/06/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.h
+
+* 25/06/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of erroneous verification test on
+  time averages in varpos.F
+
+* 22/06/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Compatibility of ALE method with 2nd order time
+  scheme and velocity/pressure sub-iterations (but
+  it does not imply that the mesh movement and
+  inner structure coupling is 2nd order ...)
+  + full explicit treatment of the mass flux if
+  ISTMPF.EQ.0 in case of velocity/pressure sub-iterations
+  modified routines:
+    schtmp.F
+    strdep.F
+    strpre.F
+    tridim.F
+    verini.F
+
+* 11/06/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update of macros*.mk, minor modifications to benchmarking
+  mode and BLAS porting, extension solver reorganisation
+  modified scripts:
+    macros_*.mk
+  modified routines:
+    cs_benchmark.c
+    cs_matrix.c
+    cs_sles.c
+    invers.F
+
+* 11/06/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Merge of base_1 and base_2 directories as base in src
+  and corresponding modification of Makefile
+
+* 06/06/2007 - David Monfort <david.monfort@edf.fr>
+  Correction of Makefile to avoid problems with *.F* files
+  that are not *.F nor *.F95
+
+* 27/04/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of missing ITUSER/RTUSER/IDEVEL/RDEVEL arguments
+  in certain routines
+  modified routines:
+    caltri.F
+    cregeo.F
+    lagcar.F
+    lageli.F
+    lagent.F
+    lages1.F
+    lages2.F
+    lagesp.F
+    lagfch.F
+    lagipn.F
+    lagnew.F
+    lagnpr.F
+    lagnwc.F
+    lagrus.F
+    lagsta.F
+    lagune.F
+    usdpst.F
+    usladp.F
+    uslafe.F
+    uslain.F
+    uslatc.F
+    uslatp.F
+
+* 25/04/2007 - David Monfort <david.monfort@edf.fr>
+  Suppression of useless test on IISUIT before the second
+  call to ECRAVA in caltri.F
+
+* 25/04/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of specific cases where "inline" commands
+  are banned
+  modified routines:
+  cs_base.h
+  cs_lagrang.c
+  cs_matrix.c
+  cs_sles.c
+
+===========================================================================
+
+* 18/04/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.g
+
+
+* 18/04/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Porting on Linux_Argent architecture (CCRT Bull Novascale
+  Itanium cluster), including BLAS compatibility
+  added script:
+    marcos_Linux_Argent.mk
+  modified scripts:
+    cs_profile
+    lance
+    rang_mpi.sh
+  modified routines:
+    cs_blas.c
+    cs_blas.h
+
+	
+* 10/04/2007 - Yvan Fournier <yvan.fournier@edf.fr>
+  Reorganisation of the linear solvers, "matrix" structure,
+  adaptation to BLAS libraires, management of memory alignment
+  for BlueGene optimisation, benchmark mode for testing linear
+  solvers, change in the position of the renumbering of cells
+  for vector machines optimisation, adaptation to fvm-0.7.0, 
+  optimisation of parallel/periodic synchronisations to avoid
+  redudancies, automatic supression of X or 1 in the post-processing
+  name of a vector variable with components labelled (...X,...Y,...Z)
+  or (...1, ...2, ...3) 
+  modified scripts:
+    cs_profile
+    lance_install
+    macros_Blue_Gene_L.mk
+    macros_HP-UX.mk
+    macros_IRIX64.mk
+    macros_Linux.mk
+    macros_Linux_CCRT.mk
+    macros_Linux_Ch.mk
+    macros_OSF1.mk
+    macros_SunOS.mk
+    Makefile
+    rang_mpi.sh
+  added routines:
+    cs_benchmark.c
+    cs_benchmark.h
+    cs_blas.c
+    cs_blas.h
+    cs_matrix.c
+    cs_matrix.h
+    cs_prototypes.h
+    cs_renumber.c
+    cs_renumber.h
+    cs_sles.c
+    cs_sles.h
+  deleted routines:
+    memnvc.F
+  modified routines:
+    cfcdts.F
+    cgstab.F
+    codits.F
+    cregeo.F
+    cycmgr.F
+    cs_base.h
+    cs_couplage.c
+    cs_maillage_connect.c
+    cs_maillage_solcom.c
+    cs_main.c
+    cs_opts.c
+    cs_opts.h
+    cs_parallel.c
+    cs_perio.c
+    cs_perio.h
+    cs_post_util.F
+    dvvpst.F
+    gradco.F
+    iniini.F
+    invers.F
+    jacobi.F
+    numvec.F
+    prcpol.F
+    promav.F
+    proxav.F
+
+* 05/04/2007 - Fabien Huvelin <fabien.huvelin@edf.fr>
+  Chronological records of structure displacement, velocity
+  acceleration and forces + improved force and displacement
+  prediction for explicit internal structure coupling
+  modified routines:
+    albase.h
+    alstru.h
+    caltri.F
+    entsor.h
+    iniini.F
+    modini.F
+    paramx.h
+    strdep.F
+    strini.F
+    strpre.F
+    tridim.F
+    usalin.F
+    usstru.F
+    verini.F
+  added routine:
+    strhis.F
+
+* 26/03/2007 - Fabien Huvelin <fabien.huvelin@edf.fr>
+  Displacement based Newmark scheme for internal
+  structure coupling instead of acceleration based scheme
+  modified routines:
+    alstru.h
+    iniini.F
+    modini.F
+    newmrk.F
+    strdep.F
+    strini.F
+    verini.F
+
+* 26/03/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Implementation of an orthotropic mesh viscosity
+  for the ALE method
+  modified routines:
+    albase.h
+    alelap.F
+    condli.F
+    ecrava.F
+    iniini.F
+    iniva0.F
+    lecamx.F
+    modini.F
+    numvar.h
+    phyvar.F
+    usalin.F
+    usvima.F
+    varpos.F
+
+
+* 01/03/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change in comments, initialisation and tests
+  on ITRSVR
+  modified routines:
+    entsor.h
+    iniini.F
+    modini.F
+    verini.F
+
+===========================================================================
+
+* 01/03/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.f
+
+* 01/03/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Bug correction in initialisation of IPRTOT pointer
+  in varpos.F
+  modified routines:
+    iniini.F
+    varpos.F
+
+* 14/02/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of lance to limit its size (problem
+  with LSF with too large scripts)
+  added script:
+    lance.help
+  modified script:
+    cree_sat
+    lance
+
+* 13/02/2007 - Yvan Fournier - <yvan.fournier@edf.fr>
+  Modification of Makefile for BLAS on Blue Gene architecture
+
+* 13/02/2007 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Correction for Syrthes coupling with 2D solid meshes
+  modified routines:
+    cs_mesh_quality.c
+    cs_post.c
+    cs_syr_coupling.c
+
+* 10/02/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change in the architecture of the libraries
+  (creation of the "arch" directory)
+  modified scripts:
+  lance_install
+  Makefile
+
+* 10/02/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change of an ambiguous notation in the routines
+  for the specific physics source terms.
+  modified routines:
+    cpltss.F
+    cpltsv.F
+    cptssc.F
+    cptsvc.F
+    cptsvi.F
+    ebutss.F
+    eltssc.F
+    lwctss.F
+    pptssc.F
+	
+* 09/02/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+             - Alexandre Douce <alexandre.douce@edf.fr>
+  Modifications in the Lagrangian module: chemical forces
+  (van der Waals et al.), particule slugging and advanced
+  particle/wall interaction, compliance with periodic
+  boundaries, advanced statistics control (averages and
+  root mean squares) and post-processing.
+  added routines:
+    cs_lagr_perio.c
+    cs_lagr_perio.h
+    lagaff.F
+    lagfch.F
+    laghis.F
+    lagnpr.F
+    usladp.F
+    uslafe.F
+    uslapr.F
+  deleted routine:
+    lagraf.F
+  modified routines:
+    caltri.F
+    cs_post.c
+    cs_post.h
+    dvvpst.F
+    enslag.F
+    entsor.h
+    impini.F
+    iniini.F
+    lagcar.F
+    lagcel.F
+    lagdeb.F
+    lageli.F
+    lagent.F
+    lages1.F
+    lages2.F
+    lagesp.F
+    lagini.F
+    laglec.F
+    laglis.F
+    lagnwc.F
+    lagopt.F
+    lagout.F
+    lagpar.h
+    lagran.h
+    lagrus.F
+    lagsta.F
+    lagune.F
+    memla1.F
+    memla2.F
+    memtri.F
+    ouestu.F
+    uslabo.F
+    uslaen.F
+    uslag1.F
+    uslag2.F
+    uslaru.F
+    uslast.F
+    verini.F
+
+* 08/02/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Changes in boundary conditions for compressible module
+  (Code_Saturne bug tracker ticket #57)
+  modified routines:
+    cfxtcl.F
+    uscfth.F
+
+* 31/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Deletion of the STUB ifdef and associated compilation
+  options
+  modified routines:
+    cfdttv.F
+    cfener.F
+    cfini1.F
+    cfiniv.F
+    cfmsvl.F
+    cfphyv.F
+    cfprop.F
+    cfqdmv.F
+    cfvarp.F
+    cfxtcl.F
+    coini1.F
+    colecd.F
+    coprop.F
+    cothht.F
+    covarp.F
+    cpflux.F
+    cpini1.F
+    cpiniv.F
+    cplecd.F
+    cplin1.F
+    cplini.F
+    cplphy.F
+    cplpro.F
+    cpltcl.F
+    cpltss.F
+    cplvar.F
+    cpphyv.F
+    cpprop.F
+    cpptcl.F
+    cprays.F
+    cpthp1.F
+    cpthp2.F
+    cptssc.F
+    cpvarp.F
+    d3pini.F
+    d3pphy.F
+    d3ptcl.F
+    ebuini.F
+    ebuphy.F
+    ebutcl.F
+    ebutss.F
+    elflux.F
+    elini1.F
+    eliniv.F
+    ellecd.F
+    elphyv.F
+    elprop.F
+    eltssc.F
+    elvarp.F
+    lagini.F
+    laglec.F
+    laglis.F
+    lagopt.F
+    lagout.F
+    lagune.F
+    lwcini.F
+    lwcphy.F
+    lwctcl.F
+    lwctss.F
+    memcfm.F
+    memla1.F
+    memla2.F
+    memmat.F
+    memra1.F
+    memra2.F
+    memra3.F
+    mtimpi.F
+    mtini1.F
+    mtkpdc.F
+    mtphyv.F
+    mtproj.F
+    mttsns.F
+    mttssc.F
+    mttycl.F
+    raycli.F
+    raydak.F
+    raydom.F
+    rayens.F
+    raylec.F
+    rayopt.F
+    rayout.F
+    raysca.F
+    uscfcl.F
+    uscfth.F
+    uscpcl.F
+    uscplc.F
+    usd3pc.F
+    usebuc.F
+    uselcl.F
+    uselen.F
+    uselrc.F
+    usetcl.F
+    uslaen.F
+    uslwcc.F
+  modified scripts:
+    lance
+    lance_install
+    macros_*.mk
+    Makefile
+
+* 29/01/2007 - Carole Vit <carole.vit@edf.fr>
+  Post-processing of the Courant and Fourier numbers
+  (listing, chronological records, 3D post-processing)
+
+* 09/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of bug in argument passing of codits in raysol.F and raypun.F
+  (bug introduced in version 1.3.c with the change from IDIRCL to NDIRCL).
+  
+* 08/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Writing of Cmu constant in listing with k-omega SST model (used
+  for epsilon/omega conversions)
+
+* 08/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Minor changes in comments of many files
+
+* 04/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Modification of the test on ICDPAR and parallelism/periodicity
+  in verini.F
+
+* 03/01/2007 - Marc Sakiz <marc.sakiz@edf.fr>
+  Suppression of useless ISTAT and NDIRCP in matrdt
+  modified routines:
+    distyp.F
+    dttvar.F
+    matrdt.F
+
+* 21/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Link to BFT 1.0.3
+  modified scripts:
+    macros_*.mk
+
+* 21/12/2006 - Alexandre Douce <alexandre.douce@edf.fr>
+  Modifications for pulverised coal and radiative transfer
+  in GUI
+  added routine:
+    usray5.F
+  modified routines:
+    cpini1.F
+    cpveri.F
+    cs_gui.c
+    cs_gui.h
+    cs_gui_radiative_transfer.c
+    cs_gui_radiative_transfer.h
+    cs_gui_util.c
+    cs_gui_util.h
+    inivar.F
+    ppcabs.F
+    ppclim.F
+    raycli.F
+    raydom.F
+    rayopt.F
+    tridim.F
+    uscpi1.F
+    usray2.F
+    usray3.F
+
+* 21/12/2006 - Flavien Billard <flavien.billard@gmail.com>
+  Modification in source term for the fb equation
+  in resv2f.F
+
+* 21/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of memory management in strini.F
+
+* 21/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Deletion of file v2nutp.F (unused routine, remnance
+  of tests on v2f model with IKEKOU=1)
+
+===========================================================================
+
+* 18/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Tagging of version 1.3.e
+
+* 18/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Adding of GPL licence tag on all files.
+
+* 15/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor modification in user manual
+
+* 15/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Finer CPU time analysis for post-processing in
+  cs_post.c
+
+* 15/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Suppression of unused arguments in limgrd.F
+  modified routines:
+    cs_voiset.c
+    cs_voiset.h
+    grdcel.F
+    limgrd.F
+	
+* 15/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Corrected "assert" instructions + correction of
+  cs_syr_coupling.c (adaptation to fvm-0.6.2)
+  modified routines:
+    cs_maillage_connect.c
+    cs_mesh_quality.c
+    cs_syr_coupling.c
+	
+	
+* 15/12/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preparation for BLAS libraries and other optimisations
+  for Blue Gene
+  modified routines:
+    cs_base.c
+    cs_parallel.c
+    gradco.F
+    prodsc.F
+    promav.F
+    tremai.c
+  modified script:
+    Makefile
+	
+* 07/12/2006 - Carole Vit <carole.vit@edf.fr>
+  Correction of debugging message format in iniusi.F
+
+* 07/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Deletion of unnecessary calls to include memoir.h
+  modified routines:
+    iniini.F
+    iniusi.F
+    modini.F
+    usini1.F
+    verini.F
+
+* 06/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Bug correction in dttvar.F (at the first time step, NDIRCL is initialised
+  to 0 which results in a slight shift of the diagonal of the matrix
+  used to calculate the time step when IDTVAR>0)
+
+* 01/12/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Bug correction in the ALE method (calculation of the flux with
+  imposed displacement of inner vertices + boundary conditions of
+  moving symmetry faces
+  modified routines:
+    navsto.F
+    tridim.F
+    typecl.F
+
+* 30/11/2006 - David Monfort <david.monfort@edf.fr>
+  Bug correction in the arguments of codits in distyp.F
+
+* 30/11/2006 - David Monfort <david.monfort@edf.fr>
+  Minor corrections of the examples in usvpst.F and comments
+  in usstru.F
+
+* 29/11/2006 - Frederic Archambeau <frederic.archambeau@edf.fr>
+  Correction of missing definition of IPCROM and IPBROM
+  in the last IPHAS loop of navsto.F
+  (Code_Saturne bug tracker ticket #59)
+
+	
+* ../11/2006 - David Monfort <david.monfort@edf.fr>
+  Correction of verifmail due to new Envelope options
+  (Code_Saturne bug tracker ticket #53)
+
+* ../11/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change of NSPHMX to 1 in paramx.h (since IPHAS is forced to 1)
+
+* ../11/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of the display and the test on IPSTFO
+  modified routines:
+    impini.F
+    verini.F
+	
+* ../11/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction in modini.F to have default post-processing of the mesh
+  viscosity with ALE
+
+* ../11/2006 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Correction of a bug in cs_base.c (dimension of cs_glob_base_chaine)
+
+* ../11/2006 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correction of a bug in dttvar.F in case IPTLRO=1 (introduced un 1.3.d)
+  modified routines:
+    dttvar.F
+    memdtv.F
+    tridim.F
+	
+* ../11/2006 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of a bug in cs_suite.c (introduced in version 1.3.d)
+	
+* ../11/2006 - David Monfort <david.monfort@edf.fr>
+  Correction of a "real.EQ.0.D0" test in visdyn.F and in ussmag.F
+  (Code_Saturne bug tracker ticket #56)
+	
+* ../11/2006 - David Monfort <david.monfort@edf.fr>
+  Modification of gracehst to write the temporary file in /tmp
+  (Code_Saturne bug tracker ticket #55)
+
+* ../11/2006 - Marc Sakiz <marc.sakiz@edf.fr
+  Correction in navsto.F (RETURN added for IPRCO=0)
+	
+* ../11/2006 - Emmanuel Lemoine <emmanuel.lemoine@incka.fr>
+  Corrections in strdep.F (PARSOM forgotten in the evaluation of FORSTR)
+  + no need to multiply by SURFBN in FORSTR
+
+* 21/11/2006 - Marc Sakiz < marc.sakiz@edf.fr>
+  Import of version ncs-1.3.d
+  For the history of earlier modifications, refer to the Synchronisation
+  file of version 1.3.d.
+
+===========================================================================
+===========================================================================
