@@ -159,7 +159,7 @@ _sync_loc_var_strided(const cs_halo_t  *halo,
   if (halo->c_domain_rank[rank_id] == local_rank) {
 
     cs_real_t *recv_var
-      = var + halo->n_local_elts + halo->index[2*rank_id];
+      = var + halo->n_local_elts*stride + halo->index[2*rank_id];
 
     start = halo->send_index[2*rank_id];
 
