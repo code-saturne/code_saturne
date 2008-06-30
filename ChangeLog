@@ -1,4 +1,10 @@
 * 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Cosmethic changes in Fortran memory display.
+  modified routines:
+    src/base/cs_base.c
+    src/base/cs_main.c
+
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Move a variable declaration to follow C89 standards.
   modified routine:
     src/base/cs_matrix.c
@@ -36,7 +42,7 @@
   modified script:
     bin/lance
 
-* 25/05/2008 - David Monfort <david.monfort@edf.fr>
+* 25/06/2008 - David Monfort <david.monfort@edf.fr>
   Fixing a bug on coordinates synchronization when
   periodicity is present.
   modified routine:

@@ -481,16 +481,26 @@ int main
                              &nideve, &nrdeve, &nituse, &nrtuse);
 
     bft_printf(_("\n"
-                 " --- Mémoire\n"
-                 "       LONGIA =     %10d (Nombre d entiers            )\n"
-                 "       LONGRA =     %10d (Nombre de reels double prec.)\n"
-                 "\n"
-                 " --- Taille des tableaux auxiliaires\n"
-                 "       NIDEVE =     %10d (Nb d  entiers en acces dvpt )\n"
-                 "       NRDEVE =     %10d (Nb de reels   en acces dvpt )\n"
-                 "       NITUSE =     %10d (Nb d  entiers en acces user )\n"
-                 "       NRTUSE =     %10d (Nb de reels   en acces user )\n\n"),
-               iasize, rasize, nituse, nrtuse, nideve, nrdeve);
+                 " --- Tableaux de travail Fortran principaux :\n"
+                 "       LONGIA =   %10d (Nombre d'entiers)\n"
+                 "       LONGRA =   %10d (Nombre de réels)\n"
+                 "       (%d octets/entier, %d octets/réel)\n"),
+               iasize, rasize,
+               sizeof(cs_int_t)/sizeof(char),
+               sizeof(cs_real_t)/sizeof(char));
+
+    if (nideve > 0 || nrdeve >0)
+      bft_printf(_("\n"
+                   " --- Tableaux de travail Fortran développeur :\n"
+                   "       NIDEVE =   %10d (Nombre d'entiers)\n"
+                   "       NRDEVE =   %10d (Nombre de réels)\n"),
+                 nideve, nrdeve);
+
+    bft_printf(_("\n"
+                 " --- Tableaux de travail Fortran utilisateur :\n"
+                 "       NITUSE =   %10d (Nombre d'entiers)\n"
+                 "       NRTUSE =   %10d (Nombre de réels)\n\n"),
+               nituse, nrtuse);
 
     cs_base_mem_init_work(iasize, rasize, &ia, &ra);
 
