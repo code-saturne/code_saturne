@@ -668,9 +668,9 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
 # Detection de la presence et tests de compatibilite de modules
   if [ ! -z "$PARAM" ] ; then
-    ${CS_HOME}/bin/check_consistency -param $PARAM
+    ${CS_HOME}/bin/check_consistency -param $PARAM -nproc $nproc_noy
   else
-    ${CS_HOME}/bin/check_consistency
+    ${CS_HOME}/bin/check_consistency -nproc $nproc_noy
   fi
   if [ $? = 1 ] ; then
     exit 1
@@ -1248,7 +1248,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
  
   liste_rayt=`ls bord* 2>/dev/null`
   if [ ! -z "${liste_rayt}" ] ; then 
-    for fich in $liste_lagr ; do 
+    for fich in $liste_rayt ; do 
       if [ ! -d $RESU/CHR.$SUFFIXE ] ; then 
         mkdir $RESU/CHR.$SUFFIXE 
       fi

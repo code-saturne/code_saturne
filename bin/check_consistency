@@ -51,19 +51,25 @@ fi
 #
 cur_dir=`pwd`
 param=""
+nproc=1
 expect_dir="false"
 expect_param="false"
+expect_nproc="false"
 #
 for arg in $args ; do
   #
   if [ "$expect_dir" = "true" ] ; then
     cur_dir=$arg
     expect_dir="false"
-  fi    
+  fi
   if [ "$expect_param" = "true" ] ; then
     param=$arg
     expect_param="false"
-  fi    
+  fi
+  if [ "$expect_nproc" = "true" ] ; then
+    nproc=$arg
+    expect_nproc="false"
+  fi
   #
   if [ "$arg" = "-dir" ] ; then
     expect_dir="true"
@@ -74,6 +80,11 @@ for arg in $args ; do
     expect_param="true"
   else
     expect_param="false"
+  fi
+  if [ "$arg" = "-nproc" ] ; then
+    expect_nproc="true"
+  else
+    expect_nproc="false"
   fi
   #
 done
@@ -89,7 +100,7 @@ USLAG2_PRESENT=`presence "${cur_dir}/uslag2.F"`
 
 # Rayonnement
 USRAY2_PRESENT=`presence "${cur_dir}/usray2.F"`
-if [ ! -z "$PARAM" ] ; then 
+if [ ! -z "${param}" ] ; then 
   NRAYT=`grep "radiative_transfer\ model" ${param} | grep -v "off" |wc -l`
   if [ $NRAYT -eq 1 ] ; then
     USRAY2_PRESENT="oui"
@@ -98,7 +109,7 @@ fi
 
 # Charbon pulverise
 USCPCL_PRESENT=`presence "${cur_dir}/uscpcl.F"`
-if [ ! -z "$PARAM" ] ; then 
+if [ ! -z "${param}" ] ; then 
   NCHARB=`grep "pulverized_coal\ model" ${param} | grep -v "off" |wc -l`
   if [ $NCHARB -eq 1 ] ; then
     USCPCL_PRESENT="oui"
@@ -293,7 +304,7 @@ fi
 
 # Pas de lagrangien en parallele
 if [ "${LAGRANGIEN}" = "oui" ] ; then 
-  if [ ${nproc_noy} -gt 1 ] ; then 
+  if [ ${nproc} -gt 1 ] ; then 
     echo ""
     echo " -- ERREUR -- "
     echo " Le mode parallele est incompatible avec le module Lagrangien"

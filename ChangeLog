@@ -1,4 +1,12 @@
 * 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Adding a test on the number of domains and the lagrangian
+  simulation in the launch script, and fixing a bug on the
+  radiation results copy.
+  modified scripts:
+   bin/check_consistency
+   bin/lance
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
   Creating a directory structure for How-to documentation.
   added directories:
     doc/HOWTO
