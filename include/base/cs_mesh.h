@@ -188,9 +188,8 @@ typedef struct {
                                   we have the distant rank number. Exist
                                   only in case of parallelism. */
 
-  /* Temporary features to define a periodicity. This king of information
-     is sent by the pre-precessor up to now. This will be unseful when the
-     pre-processor will have been rewritten */
+  /* Temporary features to define a periodicity. This kind of information
+     is currently sent by the pre-processor. */
 
   cs_int_t                 perio_num;
   fvm_periodicity_type_t   perio_type;

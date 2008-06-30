@@ -149,10 +149,10 @@ static void _cs_pp_io_echo_pre
 
 static void _cs_pp_io_echo_entete
 (
- const char        *nom_rub,
-       size_t       nbr_elt,
-       cs_type_t    typ_elt,
-       cs_type_t    typ_lu
+ const char          *nom_rub,
+       size_t         nbr_elt,
+       cs_type_t      typ_elt,
+       fvm_datatype_t typ_lu
 );
 
 
@@ -734,10 +734,10 @@ static void _cs_pp_io_echo_pre
 
 static void _cs_pp_io_echo_entete
 (
- const char        *nom_rub,
-       size_t       nbr_elt,
-       cs_type_t    typ_elt,
-       cs_type_t    typ_lu
+ const char           *nom_rub,
+       size_t          nbr_elt,
+       cs_type_t       typ_elt,
+       fvm_datatype_t  typ_lu
 )
 {
 

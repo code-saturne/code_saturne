@@ -260,31 +260,31 @@ privcompil:
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
 	 dir_inc_cs="$(BFT_INC) $(FVM_INC)" ;\
-	 if   [ ${BUILD_SO} -eq 1 ] ;\
+	 if   [ "${BUILD_SO}" -eq "1" ] ;\
 	 then cflags="$${cflags} $(CCFLAGSSO)" ;\
 	      fflags="$${fflags} $(FTNFLAGSSO)" ;\
 	 fi ; \
-	 if   [ ${MPI} -eq 1 ] ;\
+	 if   [ "${MPI}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(MPI_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_MPI " ;\
 	 fi ; \
-       if [ ${MPE} -eq 1 ] ;\
+       if [ "${MPE}" -eq "1" ] ;\
        then dir_inc_cs="$${dir_inc_cs} $(MPE_INC)" ;\
             cflags="$${cflags} -D_CS_HAVE_MPE ";\
-	   if [ ${MPE_COMM} -eq 1 ] ; \
+	   if [ "${MPE_COMM}" -eq "1" ] ; \
                then cflags="$${cflags} -D_CS_COMM_PROFILING ";\
          fi ; \
        fi ; \
-	 if   [ ${SOCKET} -eq 1 ] ;\
+	 if   [ "${SOCKET}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(SOCKET_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_SOCKET " ;\
 	 fi ; \
-	 if   [ ${BLAS} -eq 1 ] ;\
+	 if   [ "${BLAS}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(BLAS_INC)" ;\
 	      cflags="$${cflags} $(BLAS_CFLAGS) " ;\
 	      fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_HAVE_BLAS " ;\
 	 fi ; \
-	 if   [ ${XML} -eq 1 ] ;\
+	 if   [ "${XML}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(XML_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_XML " ;\
 	      fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_HAVE_XML " ;\
@@ -407,8 +407,8 @@ privdependoptpart:
 	 then \
 	      for file in $(LISTE_OPT_PART) ;\
 	      do \
-	           if test -n "$${file}" ;\
-	           then if test -r "$${file}" ;\
+	           if [ -n "$${file}" ] ;\
+	           then if [ -r "$${file}" ] ;\
 		          then mkfiles="$${mkfiles} `basename $${file}`" ;\
 	                fi ;\
 		     fi ;\
@@ -446,24 +446,24 @@ privcopie:
 	 if   [   "$${dirprec}" != "$(BLD_CS)/$(NOM_ARCH)" \
 	       -a "$${dirprec1}" != "$(BLD_CS)/$(NOM_ARCH)" ] ;\
 	 then  for dir in $(INC_CS) ;\
-	       do  if [ -d $${dir} ] ;\
+	       do  if [ -d "$${dir}" ] ;\
 	           then \
 	                 ifich="0" ;\
 	                 for fich in $${dir}/*.* ;\
 	                 do \
-		           if   [ -f $${fich} ] ;\
+		           if   [ -f "$${fich}" ] ;\
 		           then ifich="1" ;\
 		           fi ;\
 	                 done ;\
-		         if   [ $${ifich} -eq "1" ] ;\
+		         if   [ "$${ifich}" -eq "1" ] ;\
 		         then \
 			          for fich in $${dir}/*.? ;\
 			          do \
-				         if [ ! -d $${fich} ] ;\
+				         if [ ! -d "$${fich}" ] ;\
 				         then	fichloc=`basename $${fich}` ;\
 				              if [ ! -h $${fichloc} ] ;\
 	                                then \
-				                    if [ ! -f $${fichloc} ] ;\
+				                    if [ ! -f "$${fichloc}" ] ;\
 					              then \
 	                                           ln -s $${fich} . ;\
 					              fi ;\
@@ -475,22 +475,22 @@ privcopie:
 	       done ;\
 	 else  for dir in $(INC_CS) $(SRC_CS) ;\
 	       do \
-		     if [ -d $${dir} ] ;\
+		     if [ -d "$${dir}" ] ;\
 	           then \
 	                 ifich="0" ;\
 	                 for fich in $${dir}/*.* ;\
 	                 do \
-		           if   [ -f $${fich} ] ;\
+		           if   [ -f "$${fich}" ] ;\
 		           then ifich="1" ;\
 		           fi ;\
 	                 done ;\
-		         if   [ $${ifich} -eq "1" ] ;\
+		         if   [ "$${ifich}" -eq "1" ] ;\
 		         then \
 			          for fich in $${dir}/*.? ;\
 			          do \
-				          if [ ! -d $${fich} ] ;\
+				          if [ ! -d "$${fich}" ] ;\
 				          then	fichloc=`basename $${fich}` ;\
-				                	if test ! -h $${fichloc} ;\
+				                	if [ ! -h "$${fichloc}" ] ;\
 					           then ln -s $${fich} . ;\
 					           fi ;\
 			      		     touch -r $${fich} $${fichloc} ;\
@@ -585,7 +585,7 @@ privcmdlinkshared:
 privmodlink:
 	@liste_obj="" ;\
 	 for file in *.o ;\
-	 do	if test "$${file}" != "*.o" ;\
+	 do	if [ "$${file}" != "*.o" ] ;\
 		then liste_obj="$${liste_obj} $${file}" ;\
 		fi ;\
 	 done ;\
@@ -673,20 +673,20 @@ privlink:
 	 elif [ "$(MYOPT)" = "" ]  ;\
 	 then library="$${library} $(LIBRARYOPT) " ;\
 	 fi ; \
-	 if [ ${MPI} -eq 1 ] ;\
+	 if [ "${MPI}" -eq "1" ] ;\
 	 then \
-	   if [ ${MPE} -eq 1 ] ;\
+	   if [ "${MPE}" -eq "1" ] ;\
 	     then library="${MPE_LIB} $${library} " ;\
 	   fi ; \
            library="${MPI_LIB} $${library} " ;\
 	 fi ; \
-	 if [ ${SOCKET} -eq 1 ] ;\
+	 if [ "${SOCKET}" -eq "1" ] ;\
 	 then library="$${library} ${SOCKET_LIB} " ;\
 	 fi ; \
-	 if [ ${BLAS} -eq 1 ] ;\
+	 if [ "${BLAS}" -eq "1" ] ;\
 	 then library="${BLAS_LDFLAGS} $${library} " ;\
 	 fi ; \
-	 if [ ${XML} -eq 1 ] ;\
+	 if [ "${XML}" -eq "1" ] ;\
 	 then library="${XML_LIB} $${library} " ;\
 	 fi ; \
 	 if   [ "$(MYOPT)" = "LO" ] ;\
@@ -731,7 +731,7 @@ all $(NOM_EXE):
 
 privconfig:
 	@dirtrav=`pwd` ;\
-	 if   [   -d $(BLD_CS) -a   -x $(BLD_CS) ] ;\
+	 if   [   -d "$(BLD_CS)" -a   -x "$(BLD_CS)" ] ;\
 	 then dirbuild=$(BLD_CS) ;\
 	      findirtrav=`echo "$${dirtrav}" | awk -F"$${dirbuild}" '{print $$2}'` ;\
 	      if   [ "$${findirtrav}" != "" ] ;\
@@ -739,9 +739,9 @@ privconfig:
 	           make privconflib  ;\
 	      else echo "***  \"make\" in a user directory" ;\
 	      fi ;\
-	 elif [   -d $(BLD_CS) -a ! -x $(BLD_CS) ] ;\
+	 elif [   -d "$(BLD_CS)" -a ! -x "$(BLD_CS)" ] ;\
 	 then echo "***  \"make\" in a user directory" ;\
-	 elif [ ! -d $(BLD_CS)                   ] ;\
+	 elif [ ! -d "$(BLD_CS)"                   ] ;\
 	 then echo "***  \"make\" in a user directory" ;\
 	      echo "              ($(BO)$(BLD_CS)$(NO) does not exist)";\
 	      tput init ;\
@@ -778,7 +778,7 @@ privconflib:
 	 fi ;\
 	 dirprec=`dirname $${dirprec}` ;\
 	 dirlib=`dirname $${dirprec}` ;\
-	 if   test ! "$$dirlib" = "$(DIR_CS)" ;\
+	 if   [ ! "$$dirlib" = "$(DIR_CS)" ] ;\
 	 then echo ;\
 	      echo "$(SO)CONFIGURATION ERROR$(NO)" ;\
 	      echo ;\
@@ -825,7 +825,7 @@ clean purge rmobj:
 	      .liste_mkfiles.* .liste_mkoptpart.o so_locations
 	@for file in *.c *.F *.F95 *.h *.hf *.i ;\
 	 do \
-	      if test -h $${file} ;\
+	      if [ -h "$${file}" ] ;\
 	      then \rm -f $${file} ;\
 	      fi ;\
 	 done

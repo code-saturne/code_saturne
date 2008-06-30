@@ -76,23 +76,19 @@ void CS_PROCF(csgfbr, CSGFBR)
   *n_faces = 0;
 
   /* Copy fstr without last blanks  */
-  BFT_MALLOC(cpyfstr, *len + 1, char);
   lenwithoutblank = *len - 1;
-
   while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
 
-  if (lenwithoutblank < -1) {
-    BFT_FREE(cpyfstr);
+  if (lenwithoutblank < -1)
     return;
-  }
-  else
-    lenwithoutblank += 2;
+
+  lenwithoutblank += 2;
+
+  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   for(i = 0 ; i < lenwithoutblank; i++)
     cpyfstr[i] = fstr[i];
   cpyfstr[lenwithoutblank] = '\0';
-
-  BFT_REALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   /* Get faces with C string */
 
@@ -136,23 +132,19 @@ void CS_PROCF(csgfac, CSGFAC)
   *n_faces = 0;
 
   /* Copy fstr without last blanks  */
-  BFT_MALLOC(cpyfstr, *len + 1, char);
   lenwithoutblank = *len - 1;
-
   while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
 
-  if (lenwithoutblank < -1) {
-    BFT_FREE(cpyfstr);
+  if (lenwithoutblank < -1)
     return;
-  }
-  else
-    lenwithoutblank += 2;
+
+  lenwithoutblank += 2;
+
+  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   for(i = 0 ; i < lenwithoutblank; i++)
     cpyfstr[i] = fstr[i];
   cpyfstr[lenwithoutblank] = '\0';
-
-  BFT_REALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   /* Get faces with C string */
 
@@ -196,23 +188,19 @@ void CS_PROCF(csgcel, CSGCEL)
   *n_cells = 0;
 
   /* Copy fstr without last blanks  */
-  BFT_MALLOC(cpyfstr, *len + 1, char);
   lenwithoutblank = *len - 1;
+  while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
 
-  while(cpyfstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
-
-  if (lenwithoutblank < -1) {
-    BFT_FREE(cpyfstr);
+  if (lenwithoutblank < -1)
     return;
-  }
-  else
-    lenwithoutblank += 2;
+
+  lenwithoutblank += 2;
+
+  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   for(i = 0 ; i < lenwithoutblank; i++)
     cpyfstr[i] = fstr[i];
   cpyfstr[lenwithoutblank] = '\0';
-
-  BFT_REALLOC(cpyfstr, lenwithoutblank + 1, char);
 
   /* Get cells with C string */
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,

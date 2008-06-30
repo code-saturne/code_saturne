@@ -557,7 +557,7 @@ cs_gui_get_attribute_value(char *const path)
     bft_error(__FILE__, __LINE__, 0,
               _("Several attributes found: %i \n"
                 "The first one is %s \nXpath: %s\n"),
-                size, attr[0], path);
+                size, array[0], path);
 
   BFT_MALLOC(attr, strlen(array[0])+1, char);
   strcpy(attr, array[0]);

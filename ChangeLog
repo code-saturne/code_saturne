@@ -1,10 +1,48 @@
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move a variable declaration to follow C89 standards.
+  modified routine:
+    src/base/cs_matrix.c
+
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction on argument types (no impact as they are enum types).
+  modified routine:
+    src/base/cs_pp_io.c
+
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixing a bug in error display in cs_gui_get_attribute_value. 
+  modified routine:
+    src/base/cs_gui_util.c
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a bug with cell selection.
+  modified routine:
+    src/base/cs_selector.c
+
+* 30/06/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  With periodicity, particule tracking can raise an issue.
+  One forces ISENSF to zero in order to avoid it temporarily.
+  modified routine:
+    src/lagr/ouestu.F
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Correction on strings comparisons in the Makefile,
+  possibly source of failure on some systems (SunOS at least)
+  modified script:
+    bin/lance
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Suppression of RUBENS references in the launch script
+  modified script:
+    bin/lance
+
 * 25/05/2008 - David Monfort <david.monfort@edf.fr>
   Fixing a bug on coordinates synchronization when
   periodicity is present.
   modified routine:
    src/base/cs_perio.c
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Removing LD_LIBRARY_PATH related to libxml2 library
   because all machines have it installed locally.
   Adding a comment when the user need to have it
@@ -15,10 +53,10 @@
     bin/macros_Linux.mk
     bin/macros_Linux_x86_64.mk
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Tagging of version 1.4.a
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Updating macros on Linux systems (use of local
   libxml2 and ATLAS libraries whane available) and
   upgrading to gcc 4.3.1
@@ -29,20 +67,20 @@
     bin/macros_Linux.mk
     bin/macros_Linux_x86_64.mk
 
-* 17/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+* 17/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplification of some scripts
   modified scripts:
     bin/cs_profile
     bin/SaturneGUI
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Add a warning when the number of preprocessor_output files
   read by the kernel does not correspond to the number of MPI
   processes.
   modified routine:
     src/base/cs_ecs_messages.c
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Merging the correction on wrong arguments in RAYDAK
   from Version1_3 branch.
   modified routine:

@@ -542,9 +542,9 @@ _set_coeffs_native(cs_matrix_t      *matrix,
                    const cs_real_t  *xa)
 {
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  mc->symmetric = symmetric;
-
   const cs_matrix_struct_native_t  *ms = matrix->structure;
+
+  mc->symmetric = symmetric;
 
   /* Map or copy values */
 
