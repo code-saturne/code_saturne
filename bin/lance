@@ -1444,7 +1444,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi
   fi
 
-  for fich in $PARAM $DONNEES_THERMOCHIMIE rubmail dessin ; do 
+  for fich in $PARAM $DONNEES_THERMOCHIMIE ; do 
     if [ -f $fich ] ; then 
       cp $fich $RESU/$fich.$SUFFIXE
     fi
