@@ -1,3 +1,8 @@
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a bug on the rough wall-function for k-omega model
+  modified routine:
+    src/base/clptrg.F
+
 * 30/06/2008 - Alexandre Douce <alexandre.douce@edf.fr>
                Nicole Picard <nicole-n.picard@edf.fr>
   Fixing bugs in the GUI management:
