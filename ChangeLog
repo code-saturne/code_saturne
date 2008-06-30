@@ -1,3 +1,15 @@
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Creating a directory structure for How-to documentation.
+  added directories:
+    doc/HOWTO
+    doc/HOWTO/graphics
+    doc/HOWTO/input
+    doc/HOWTO/latex
+  added scripts:
+    doc/HOWTO/graphics/Makefile
+    doc/HOWTO/latex/Makefile
+    doc/HOWTO/Makefile
+
 * 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Cosmethic changes in Fortran memory display.
   modified routines:
