@@ -1,7 +1,14 @@
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+ Fixing some bugs in the multigrid algorithm when periodicity
+ is present.
+ modified routine:
+   src/base/cs_grid.c
+
 * 30/06/2008 - David Monfort <david.monfort@edf.fr>
   Fixing a but in the call to CODITS in the non-dimensional
   distance to the wall calculation.
-  modified scripts:
+  modified routine:
     src/base/distyp.F
 
 * 30/06/2008 - David Monfort <david.monfort@edf.fr>

@@ -450,16 +450,17 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                           cs_int_t          coarse_send[],
                           cs_int_t          coarse_cell[])
 {
-  int rank_id;
   fvm_lnum_t  i, start, length;
 
-  int  request_count = 0;
-
-  const int  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
 
 #if defined(_CS_HAVE_MPI)
 
   if (cs_glob_base_nbr > 1) {
+
+    int rank_id;
+    int  request_count = 0;
+    const int  local_rank = cs_glob_base_rang;
 
     MPI_Request _request[128];
     MPI_Request *request = _request;
@@ -491,6 +492,8 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                   &(request[request_count++]));
 
       }
+      else
+        local_rank_id = rank_id;
 
     }
 
@@ -537,21 +540,18 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
   if (halo->n_transforms > 0) {
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    if (local_rank_id > -1) {
 
-      if (halo->c_domain_rank[rank_id] != local_rank) {
+      cs_int_t *_coarse_cell
+        = coarse_cell + halo->n_local_elts + halo->index[2*local_rank_id];
 
-        cs_int_t *_coarse_cell
-          = coarse_cell + halo->n_local_elts + halo->index[2*rank_id];
+      start = halo->send_index[2*local_rank_id];
+      length =   halo->send_index[2*local_rank_id + 2]
+               - halo->send_index[2*local_rank_id];
 
-        start = halo->send_index[2*rank_id];
-        length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
+      for (i = 0; i < length; i++)
+        _coarse_cell[i] = coarse_send[start + i];
 
-        for (i = 0; i < length; i++)
-          _coarse_cell[i] = coarse_send[start + i];
-
-        break;
-      }
     }
 
   }
@@ -636,7 +636,7 @@ _coarsen_halo(const cs_grid_t   *f,
 
     for (tr_id = 0; tr_id < f_halo->n_transforms; tr_id++) {
       start_end_id[tr_id*2 + 2]
-        = f_halo->send_perio_lst[stride*tr_id+ + 4*domain_id];
+        = f_halo->send_perio_lst[stride*tr_id + 4*domain_id];
       start_end_id[tr_id*2 + 3]
         =   start_end_id[tr_id*2 + 2]
           + f_halo->send_perio_lst[stride*tr_id + 4*domain_id + 1];
@@ -651,8 +651,8 @@ _coarsen_halo(const cs_grid_t   *f,
 
       sub_count = 0;
 
-      if (n_sections > 1)
-        c_halo->send_perio_lst[stride*section_id + 4*domain_id]
+      if (section_id > 0)
+        c_halo->send_perio_lst[stride*(section_id-1) + 4*domain_id]
           = c_halo->n_send_elts[0];
 
       /* Build halo renumbering */
@@ -670,12 +670,12 @@ _coarsen_halo(const cs_grid_t   *f,
 
       c_halo->n_send_elts[0] += sub_count;
 
-      if (n_sections > 1) {
-        c_halo->send_perio_lst[stride*section_id + 4*domain_id + 1]
+      if (section_id > 0) {
+        c_halo->send_perio_lst[stride*(section_id-1) + 4*domain_id + 1]
           = sub_count;
-        c_halo->send_perio_lst[stride*section_id + 4*domain_id + 2]
+        c_halo->send_perio_lst[stride*(section_id-1) + 4*domain_id + 2]
           = c_halo->n_send_elts[0];
-        c_halo->send_perio_lst[stride*section_id + 4*domain_id + 3]
+        c_halo->send_perio_lst[stride*(section_id-1) + 4*domain_id + 3]
           = 0;
       }
 
@@ -735,10 +735,6 @@ _coarsen_halo(const cs_grid_t   *f,
 
       sub_count = 0;
 
-      if (n_sections > 1)
-        c_halo->perio_lst[stride*section_id + 4*domain_id]
-          = c_n_cells + c_halo->n_elts[0];
-
       /* Build halo renumbering */
 
       for (ii = start_id, jj = -1; ii < end_id; ii++) {
@@ -747,16 +743,22 @@ _coarsen_halo(const cs_grid_t   *f,
         coarse_cell[ii] += c_n_cells + c_halo->n_elts[0] + 1;
       }
 
-      if (n_sections > 1) {
-        c_halo->perio_lst[stride*section_id + 4*domain_id]
-          = c_halo->n_local_elts + jj;
-        c_halo->perio_lst[stride*section_id + 4*domain_id]
-          = c_halo->n_local_elts + c_halo->n_elts[0] + jj;
-        c_halo->perio_lst[stride*section_id + 4*domain_id] = 0;
+      if (section_id > 0) {
+        c_halo->perio_lst[stride*(section_id-1) + 4*domain_id]
+          = c_halo->n_elts[0];
+        c_halo->perio_lst[stride*(section_id-1) + 4*domain_id + 1]
+          = jj + 1;
       }
 
       c_halo->n_elts[0] += jj + 1;
 
+    }
+
+    for (tr_id = 0; tr_id < f_halo->n_transforms; tr_id++) {
+      c_halo->perio_lst[stride*tr_id + 4*domain_id + 2]
+        = c_halo->n_elts[0];
+      c_halo->perio_lst[stride*tr_id + 4*domain_id + 3]
+          = 0;
     }
 
     /* Update index */
@@ -806,8 +808,8 @@ _coarsen_halo(const cs_grid_t   *f,
 
       sub_count = 0;
 
-      if (n_sections > 1)
-        c_halo->send_perio_lst[stride*section_id + 4*domain_id]
+      if (section_id > 0)
+        c_halo->send_perio_lst[stride*(section_id-1) + 4*domain_id]
           = c_halo->n_send_elts[0];
 
       /* Build halo renumbering */
