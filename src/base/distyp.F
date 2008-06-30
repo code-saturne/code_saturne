@@ -730,7 +730,7 @@ C       ===========
      &   COEFAX , COEFBX , COEFAX , COEFBX , FLUMAS , FLUMAB ,
      &   FLUMAS , FLUMAB , FLUMAS , FLUMAB ,
      &   ROVSDP , SMBDP  , RTPDP  ,
-     &   DAM    , XAM    , DAM    , XAM    , DRTP   ,
+     &   DAM    , XAM    , DRTP   ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , W9     ,
      &   RDEVEL , RTUSER , RA     )

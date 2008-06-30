@@ -1,4 +1,10 @@
 * 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a but in the call to CODITS in the non-dimensional
+  distance to the wall calculation.
+  modified scripts:
+    src/base/distyp.F
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
   Adding a test on the number of domains and the lagrangian
   simulation in the launch script, and fixing a bug on the
   radiation results copy.
