@@ -202,8 +202,8 @@ LIBEF    =
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
 #
-# paquet 70% cpu promav gradrc gradco prodsc
-# paquet 10% cpu jacobi prcpol bilsc2 ;
+# paquet 70% cpu promav gradrc prodsc
+# paquet 10% cpu bilsc2 ;
 #    option -qhot recommande pour ces sous-programmes
 #    pour les autres, on privilegie l'O3, qui est suppose plus fiable
 #      mais fait perdre un  peu de temps

@@ -186,13 +186,12 @@ LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 #                fic_3.F
 #
 #
-# paquet 70% cpu promav gradrc gradco prodsc
-# paquet 10% cpu jacobi prcpol bilsc2 ;
+# paquet 70% cpu promav gradrc prodsc
+# paquet 10% cpu bilsc2 ;
 #    prodsc est 4 fois plus rapide en O3 qu'en O2
 #    bilsc2 plus rapide en O1
 #    pour les autres, on privilegie l'O2, qui est suppose plus fiable
-#      mais fait perdre un  peu de temps (2% de perte par rapport a 
-#      gradco O3, gradrc jacobi prcpol promav O5) 
+#      mais fait perdre un  peu de temps
 #
 #  Pour les fortrans, les listes ci-dessous servent a differencier
 #	les options d'optimisation

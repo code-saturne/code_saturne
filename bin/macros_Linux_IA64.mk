@@ -177,8 +177,8 @@ LIBEF    =-lefence
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
 #
-# paquet 70% cpu promav gradrc gradco prodsc
-# paquet 10% cpu jacobi prcpol bilsc2 ;
+# paquet 70% cpu promav gradrc prodsc
+# paquet 10% cpu bilsc2 ;
 #
 #  Pour les fortrans, les listes ci-dessous servent a differencier
 #	les options d'optimisation
