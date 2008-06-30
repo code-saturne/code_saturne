@@ -1,3 +1,10 @@
+* 30/06/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  With periodicity, particule tracking can raise an issue.
+  One forces ISENSF to zero in order to avoid it temporarily.
+  modified routine:
+    src/lagr/ouestu.F
+
+
 * 30/06/2008 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Correction on strings comparisons in the Makefile,

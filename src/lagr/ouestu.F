@@ -109,6 +109,7 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "cstnum.h"
+      INCLUDE "period.h"
 C
 C***********************************************************************
 C
@@ -253,6 +254,11 @@ C     ===========
 C
 C--> Si l'orientation precedente a echouee, on en essaie une autre,
 C    mais elle est dangereuse dans le cas des cellules convaves.
+C
+C    En periodicite, on force ISENSF a zero a cause d'un probleme
+C    potentiel de reperage des particules dans le cas contraire
+C    (FIXME: determiner la source du probleme)
+      IF (IPERIO.EQ.1) ISENSF = 0
 C
       IF (ISENSF.EQ.0) THEN
 C
