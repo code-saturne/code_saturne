@@ -1,4 +1,9 @@
 * 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction on argument types (no impact as they are enum types).
+  modified routine:
+    src/base/cs_pp_io.c
+
+* 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixing a bug in error display in cs_gui_get_attribute_value. 
   modified routine:
     src/base/cs_gui_util.c
