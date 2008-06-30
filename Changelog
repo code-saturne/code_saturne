@@ -1,15 +1,27 @@
-* 17/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Correction on strings comparisons in the Makefile,
+  possibly source of failure on some systems (SunOS at least)
+  modified script:
+    bin/lance
+
+* 30/06/2008 - David Monfort <david.monfort@edf.fr>
+  Suppression of RUBENS references in the launch script
+  modified script:
+    bin/lance
+
+* 17/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplification of some scripts
   modified scripts:
     bin/cs_profile
     bin/SaturneGUI
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Bug correction on an unused static array in FORTRAN
   modified routines:
     src/fuel/futsvi.F
 
-* 17/05/2008 - David Monfort <david.monfort@edf.fr>
+* 17/06/2008 - David Monfort <david.monfort@edf.fr>
   Add a warning when the number of preprocessor_output files
   read by the kernel does not correspond to the number of MPI
   processes.
