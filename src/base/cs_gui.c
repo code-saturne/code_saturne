@@ -2599,7 +2599,8 @@ static void cs_gui_boundary_rough(const char *const label,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "boundary_conditions", "wall");
   cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_element(&path, "rough_wall");
+  cs_xpath_add_elements(&path, 2, "velocity_pressure", "rough_wall");
+  cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result)) boundaries->rough[izone] = result;
   BFT_FREE(path);
@@ -4077,8 +4078,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
   k = vars->nvar - vars->nscaus - vars->nscapp;
 
-  /* 1) variables from velocity_pressure (but not pressure) and turbulence */
+  /* 1) variables from velocity_pressure and turbulence */
+  /* 1-a) for pressure */
+     j = vars->rtp[0];
+     cs_gui_variable_value(vars->name[0], "solveur_precision", &epsilo[j]);
+     tmp = (double) nitmax[j];
+     cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
+     nitmax[j] = (int) tmp;
 
+  /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
      j = vars->rtp[i];
      cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
@@ -5388,7 +5396,6 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         ivar = 1;
         for (ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac]-1;
-          icodcl[ivar *(*nfabor) + ifbr] = 6;
           rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->rough[izone];
         }
@@ -5545,22 +5552,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     if (faces>0) {
         ifbr = faces_list[0]-1;
-        for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
+        for (i=0; i<vars->nvar; i++) {
           ivar = vars->rtp[i];
           bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
                            "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-                         vars->char2[ivar],
-                         itypfb[iphas *(*nfabor) + ifbr],
-                         icodcl[ivar *(*nfabor) + ifbr ],
-                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-        }
-
-        for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
-                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
-                         vars->label[ivar],
+                         vars->name[ivar],
                          itypfb[iphas *(*nfabor) + ifbr],
                          icodcl[ivar *(*nfabor) + ifbr ],
                          rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
@@ -6320,7 +6316,6 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         ivar = 1;
         for (ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac]-1;
-          icodcl[ivar *(*nfabor) + ifbr] = 6;
           rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->rough[izone];
         }
