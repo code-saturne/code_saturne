@@ -98,10 +98,6 @@ extern "C" {
  * Local Structure Definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Local Structure Definitions
- *----------------------------------------------------------------------------*/
-
 /* Basic per linear system options and logging */
 /*---------------------------------------------*/
 
@@ -174,7 +170,7 @@ cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 
 /* Sparse linear equation solver type names */
 
-/* Short names for matrix types */
+/* Short names for solver types */
 
 const char *cs_sles_type_name[] = {N_("Gradient conjugué"),
                                    N_("Jacobi"),
