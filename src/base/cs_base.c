@@ -158,8 +158,8 @@ static cs_exit_t  *_cs_glob_exit = (_cs_base_exit);
 
 /* Variables globales associées à la gestion des tableaux de travail Fortran */
 
-static char      _cs_glob_srt_ia_peak[7] = "      ";
-static char      _cs_glob_srt_ra_peak[7] = "      ";
+static char      _cs_glob_srt_ia_peak[7] = "------";
+static char      _cs_glob_srt_ra_peak[7] = "------";
 static cs_int_t  _cs_glob_mem_ia_peak = 0;
 static cs_int_t  _cs_glob_mem_ra_peak = 0;
 static cs_int_t  _cs_glob_mem_ia_size = 0;
