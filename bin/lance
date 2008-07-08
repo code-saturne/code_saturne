@@ -706,7 +706,9 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     mkdir fort_syrthes 
     cd fort_syrthes
     for fich in $FORT_SYR/*.[F,c,h] ; do 
-      cp ${fich} .
+      if [ -f $fich ] ; then
+        cp ${fich} .
+      fi
     done
     ln -s $SYRCS_HOME/bin/Makefile .
     make syrthes NOM_ARCH=${NOM_ARCH} 2>>$cur_dir/compil.log 1>&2

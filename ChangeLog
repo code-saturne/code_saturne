@@ -1,3 +1,9 @@
+* 08/07/2008 - David Monfort <david.monfort@edf.fr>
+  Improving the gracehst wrapper to make it accept more than
+  30 probes.
+  modified script:
+    bin/gracehst
+
 * 30/06/2008 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
  Fixing some bugs in the multigrid algorithm when periodicity

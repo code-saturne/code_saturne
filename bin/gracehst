@@ -56,6 +56,6 @@ if [ -f $tmp ] ; then
   exit
 fi
 
-grep -v '#' $hst  | cut -c9-500 > $tmp 
+grep -v '#' $hst  | cut -c9- > $tmp 
 xmgrace -geometry 1100x850 -nxy $tmp 
 rm -f $tmp
