@@ -1,3 +1,9 @@
+* 10/07/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a bug if the dynamic Smagorinsky model is chosen
+  and a periodicity is present
+  modified routine:
+    src/base/cs_ext_neigborhood.c
+
 * 08/07/2008 - David Monfort <david.monfort@edf.fr>
   Improving the gracehst wrapper to make it accept more than
   30 probes.
