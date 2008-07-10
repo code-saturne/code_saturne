@@ -1234,7 +1234,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
   if(mesh->n_domains > 1)
     cs_parall_sync_cells(f_var, CS_HALO_STANDARD, 1);
 
-  if(mesh->n_init_perio > 1)
+  if(mesh->n_init_perio > 0)
     cs_perio_sync_var_scal(mesh->halo,
                            CS_HALO_STANDARD,
                            CS_PERIO_ROTA_COPY,
