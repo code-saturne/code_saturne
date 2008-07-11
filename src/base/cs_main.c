@@ -61,7 +61,6 @@
 
 #include "cs_base.h"
 #include "cs_benchmark.h"
-#include "cs_comm.h"
 #include "cs_couplage.h"
 #include "cs_ecs_messages.h"
 #include "cs_mesh.h"
