@@ -1242,7 +1242,7 @@ static void _cs_base_backtrace_print
     size_t nbr = bft_backtrace_size(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf("\nPile d'appels :\n");
+      _cs_base_err_printf(_("\nPile d'appels :\n"));
 
     for (ind = niv_debut ; ind < nbr ; ind++) {
 
@@ -1270,7 +1270,7 @@ static void _cs_base_backtrace_print
     bft_backtrace_destroy(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf("Fin de la pile\n\n");
+      _cs_base_err_printf(_("Fin de la pile\n\n"));
   }
 
 }
