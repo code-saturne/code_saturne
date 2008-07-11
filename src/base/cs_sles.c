@@ -389,7 +389,7 @@ _convergence_init(cs_sles_convergence_t  *convergence,
   convergence->initial_residue = residue;
 
   if (verbosity > 1) {
-    bft_printf(_("%s [%s]:\n"), solver_name, var_name);
+    bft_printf("%s [%s]:\n", solver_name, var_name);
     if (verbosity > 2)
       bft_printf(_("  n_iter     res_abs     res_nor\n"));
   }
@@ -458,7 +458,7 @@ _convergence_test(const char             *solver_name,
     else {
       if (verbosity > 0) {
         if (verbosity == 1) /* Already output if verbosity > 1 */
-          bft_printf(_("%s [%s]:\n"), solver_name, var_name);
+          bft_printf("%s [%s]:\n", solver_name, var_name);
         if (verbosity <= 2) /* Already output if verbosity > 2 */
           bft_printf(_(final_fmt),
                      n_iter, residue, residue/convergence->r_norm);

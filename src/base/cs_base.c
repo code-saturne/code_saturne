@@ -324,9 +324,9 @@ _cs_base_err_vprintf(const char  *format,
     char nom_fic_err[81];
 
     if (cs_glob_base_rang < 1)
-      strcpy(nom_fic_err, _("erreur"));
+      strcpy(nom_fic_err, "erreur");
     else
-      sprintf(nom_fic_err, _("erreur_n%04d"), cs_glob_base_rang + 1);
+      sprintf(nom_fic_err, "erreur_n%04d", cs_glob_base_rang + 1);
 
     freopen(nom_fic_err, "w", stderr);
 
@@ -449,7 +449,7 @@ _cs_base_backtrace_print(int  niv_debut)
     size_t nbr = bft_backtrace_size(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf("\nPile d'appels :\n");
+      _cs_base_err_printf(_("\nPile d'appels :\n"));
 
     for (ind = niv_debut ; ind < nbr ; ind++) {
 
@@ -477,7 +477,7 @@ _cs_base_backtrace_print(int  niv_debut)
     bft_backtrace_destroy(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf("Fin de la pile\n\n");
+      _cs_base_err_printf(_("Fin de la pile\n\n"));
   }
 
 }

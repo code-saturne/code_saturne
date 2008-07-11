@@ -86,6 +86,12 @@ BLAS_INC        =
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-lcblas -latlas
 
+# Macro pour gettext
+#-------------------
+
+# Option gettext
+NLS				=0
+
 
 # Preprocesseur
 #--------------

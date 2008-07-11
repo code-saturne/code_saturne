@@ -82,6 +82,13 @@ BLAS_CFLAGS     =-D_CS_HAVE_MKL
 BLAS_INC        =-I/applications/intel/cmkl/9.0.018/include
 BLAS_LDFLAGS    =-L/applications/intel/cmkl/9.0.018/lib/64 -lmkl -lmkl_blacs_intelmpi20 -lmkl_ipf -lguide -lpthread 
 
+# Macro pour gettext
+#-------------------
+
+# Option gettext
+NLS				=0
+
+
 # Preprocesseur
 #--------------
 

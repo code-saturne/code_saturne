@@ -81,6 +81,13 @@ BLAS_INC        =
 BLAS_CFLAGS     =
 BLAS_LDFLAGS    =
 
+# Macro pour gettext
+#-------------------
+
+# Option gettext
+NLS				=0
+
+
 # Preprocesseur
 #--------------
 

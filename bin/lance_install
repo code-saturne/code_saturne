@@ -278,6 +278,18 @@ Macro_readme_comp=$2
  fi
 #
 #
+# On se debarrasse de PO
+# ======================
+#
+ if [ "$1" = "PO" ] ; then
+   titre "Creation des fichiers de traduction"
+   mkdir -p ${CS_HOME}/arch/${NOM_ARCH}/share/locale/fr/LC_MESSAGES
+   cp -f ${CS_HOME}/po/fr.gmo ${CS_HOME}/arch/${NOM_ARCH}/share/locale/fr/LC_MESSAGES/ncs.mo
+   titrefin "Fin de creation des fichiers de traduction"
+   local_exit
+ fi
+#
+#
 # Liste des bibliotheques a generer
 # =================================
 #
