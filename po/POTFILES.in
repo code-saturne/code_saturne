@@ -10,6 +10,7 @@ src/base/cs_gui_matisse.c
 src/base/cs_gui_radiative_transfer.c
 src/base/cs_gui_util.c
 src/base/cs_halo.c
+src/base/cs_io.c
 src/base/cs_main.c
 src/base/cs_matrix.c
 src/base/cs_mesh.c
@@ -23,7 +24,6 @@ src/base/cs_mesh_warping.c
 src/base/cs_opts.c
 src/base/cs_perio.c
 src/base/cs_post.c
-src/base/cs_pp_io.c
 src/base/cs_selector.c
 src/base/cs_sles.c
 src/base/cs_suite.c
