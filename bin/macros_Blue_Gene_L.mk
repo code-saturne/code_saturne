@@ -95,6 +95,12 @@ BLAS_INC        =-I/opt/ibmmath/essl/4.2/include
 BLAS_CFLAGS     =-D_CS_HAVE_ESSL
 BLAS_LDFLAGS    =
 
+# Macro pour gettext
+#-------------------
+
+# Option gettext
+NLS				=0
+
 
 # Preprocesseur
 #--------------

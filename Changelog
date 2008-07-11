@@ -1,4 +1,33 @@
 * 11/07/2008 - David Monfort <david.monfort@edf.fr>
+  Finalization of the localization of Code_Saturne Kernel.
+  modified routines:
+    include/base/cs_base.h
+    src/base/cs_main.c
+  modified scripts:
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_CCRT.mk
+    bin/macros_Linux_x86_64.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Darwin.mk
+    bin/lance_install
+    bin/macros_Linux.mk
+    bin/macros_Blue_Gene_L.mk
+    bin/Makefile
+  added scripts:
+    sbin
+    sbin/gettextize
+    po
+    po/Rules-quot
+    po/en@quot.header
+    po/insert-header.sin
+    po/LINGUAS
+    po/quot.sed
+    po/boldquot.sed
+    po/en@boldquot.header
+    po/remove-potcdate.sin
+    po/POTFILES.in
+
+* 11/07/2008 - David Monfort <david.monfort@edf.fr>
   Preparing the localization of the C strings with the gettext tools
   modified sources:
     src/base/cs_base.c

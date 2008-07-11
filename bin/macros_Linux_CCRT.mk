@@ -89,6 +89,13 @@ BLAS_INC        =-I/applications/atlas/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-L/applications/atlas/lib -lcblas -latlas -lg2c
 
+# Macro pour gettext
+#-------------------
+
+# Option gettext
+NLS				=0
+
+
 # Preprocesseur
 #--------------
 

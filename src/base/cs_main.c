@@ -249,8 +249,18 @@ int main
   /* initialisation par défaut */
 
 #if defined(_CS_ARCH_Linux)
-  setlocale(LC_ALL,"");
+
+  if (getenv("LANG") != NULL)
+    setlocale(LC_ALL,"");
+  else
+    setlocale(LC_ALL, "C");
   setlocale(LC_NUMERIC, "C");
+
+#endif
+
+#if defined(ENABLE_NLS)
+  bindtextdomain(PACKAGE, LOCALEDIR);
+  textdomain(PACKAGE);
 #endif
 
   (void)bft_timer_wtime();

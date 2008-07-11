@@ -126,11 +126,21 @@ extern "C" {
  * semblable (pour encadrer les chaînes de caractères imprimables)
  */
 
-#undef _
-#define _(String) String
+#if defined(ENABLE_NLS)
 
-#undef N_
+#include <libintl.h>
+#define _(String) gettext(String)
+#define gettext_noop(String) String
+#define N_(String) gettext_noop(String)
+
+#else
+
+#define _(String) String
 #define N_(String) String
+#define textdomain(Domain)
+#define bindtextdomain(Package, Directory)
+
+#endif
 
 /* Définition de la version du langage C utilisé (C89 ou C99) */
 

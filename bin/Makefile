@@ -56,12 +56,14 @@ USR_CS         = $(DIR_CS)/users
 ARCH_CS        = $(DIR_CS)/arch/$(NOM_ARCH)
 ARCHBIN_CS     = $(ARCH_CS)/bin
 ARCHLIB_CS     = $(ARCH_CS)/lib
+ARCHLOCALE_CS  = $(ARCH_CS)/share/locale
 BLD_CS         = $(DIR_CS)/build
 
 # Names of the base library and Code_Saturne executable file
 
 NOM_LIB_CS_PRE = "saturne"
 NOM_EXE        = "cs13.exe"
+NOM_PACKAGE    = "ncs"
 
 
 # Purify
@@ -285,6 +287,9 @@ privcompil:
 	 then dir_inc_cs="$${dir_inc_cs} $(XML_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_XML " ;\
 	      fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_HAVE_XML " ;\
+	 fi ; \
+	 if   [ "${NLS}" -eq "1" ] ;\
+	 then cflags="$${cflags} -DENABLE_NLS -DPACKAGE=\\\"$(NOM_PACKAGE)\\\" -DLOCALEDIR=\\\"$(ARCHLOCALE_CS)\\\"" ;\
 	 fi ; \
 	 if   [ "$(MYOPT)" = "LO" ] ;\
 	 then make privdependobj OBJECTS="`cat .liste_mkfiles.o`" \
