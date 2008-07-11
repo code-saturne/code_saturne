@@ -1090,8 +1090,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     if (ivoset == 1) {
 
-      bft_printf("\n Construction du halo avec voisinage étendu\n"
-                 " ==========================================\n\n");
+      bft_printf(_("\n Construction du halo avec voisinage étendu\n"
+                   " ==========================================\n\n"));
 
       mesh->halo_type = CS_MESH_HALO_EXTENDED;
 
@@ -1106,8 +1106,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     }
     else {
 
-      bft_printf("\n Construction du halo avec voisinage standard\n"
-                 " ============================================\n\n");
+      bft_printf(_("\n Construction du halo avec voisinage standard\n"
+                   " ============================================\n\n"));
 
       mesh->halo_type = CS_MESH_HALO_STANDARD;
 
@@ -1476,17 +1476,17 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
       bft_printf("\nData in the standard halo\n");
       for (i = 0; i < n_transforms; i++)
         for (j = 0; j < n_c_domains; j++)
-          bft_printf("< rank:%3d >< transform:%2d > start_idx: %5d"
-                     "        n_elts: %5d\n",
+          bft_printf(_("< rank:%3d >< transform:%2d > start_idx: %5d"
+                       "        n_elts: %5d\n"),
                      halo->c_domain_rank[j], i,
                      halo->perio_lst_out[4*n_c_domains*i + 4*j],
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+1]);
 
-      bft_printf("\nData in the extended halo\n");
+      bft_printf(_("\nData in the extended halo\n"));
       for (i = 0; i < n_transforms; i++)
         for (j = 0; j < n_c_domains; j++)
-          bft_printf("< rank:%3d >< transform:%2d >        "
-                     "start_idx:  %5d, n_elts:  %5d\n",
+          bft_printf(_("< rank:%3d >< transform:%2d >        "
+                       "start_idx:  %5d, n_elts:  %5d\n"),
                      halo->c_domain_rank[j], i,
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+2],
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+3]);
@@ -1497,7 +1497,7 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   if (mesh->cell_cells_idx != NULL) {
 
-    bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
+    bft_printf(_("\n\nCell -> cells connectivity for extended neighborhood\n\n"));
     for (i = 0; i < mesh->n_cells; i++) {
       bft_printf("< cell n°:%3d>        ", i+1);
       for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)

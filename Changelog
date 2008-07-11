@@ -1,3 +1,14 @@
+* 11/07/2008 - David Monfort <david.monfort@edf.fr>
+  Preparing the localization of the C strings with the gettext tools
+  modified sources:
+    src/base/cs_base.c
+    src/base/cs_main.c
+    src/base/cs_comm.c
+    src/base/cs_sles.c
+    src/base/cs_halo.c
+    src/base/cs_opts.c
+    src/base/cs_mesh.c
+
 * 10/07/2008 - David Monfort <david.monfort@edf.fr>
   Fixing a bug if the dynamic Smagorinsky model is chosen
   and a periodicity is present

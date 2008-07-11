@@ -1142,9 +1142,9 @@ static void _cs_base_err_vprintf
     char nom_fic_err[81];
 
     if (cs_glob_base_rang < 1)
-      strcpy(nom_fic_err, _("erreur"));
+      strcpy(nom_fic_err, "erreur");
     else
-      sprintf(nom_fic_err, _("erreur_n%04d"), cs_glob_base_rang + 1);
+      sprintf(nom_fic_err, "erreur_n%04d", cs_glob_base_rang + 1);
 
     freopen(nom_fic_err, "w", stderr);
 

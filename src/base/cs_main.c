@@ -360,7 +360,7 @@ int main
 
   /* Renumérotation en fonction des options du code */
 
-  bft_printf("\n Renumerotation du maillage:\n");
+  bft_printf(_("\n Renumerotation du maillage:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
@@ -440,7 +440,7 @@ int main
   /* Boucle en temps ou critères de qualité selon options de vérification */
 
   if (opts.iverif == 0) {
-    bft_printf("\n Calcul des critères de qualité\n");
+    bft_printf(_("\n Calcul des critères de qualité\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
   }
 
@@ -502,7 +502,7 @@ int main
 
   }
 
-  bft_printf("\n Destruction des structures et clôture du calcul\n");
+  bft_printf(_("\n Destruction des structures et clôture du calcul\n"));
   bft_printf_flush();
 
   /* Libération de structures internes de l'API F77 pour fichiers suite */

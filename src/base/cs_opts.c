@@ -128,7 +128,7 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("Utilisation : %s [options]\n"), name);
 
-  fprintf (e, "\nOptions de la ligne de commandes :\n\n");
+  fprintf (e, _("\nOptions de la ligne de commandes :\n\n"));
   fprintf
     (e, _(" -ec, --echo-comm  echo des données issues du Préprocesseur ou\n"
           "                   des communications avec Syrthes ;\n"

@@ -516,7 +516,7 @@ cs_comm_t * cs_comm_initialise
 
   /* Info sur le succès de la création de l'interface */
 
-  bft_printf(_(" [ok]\n"));
+  bft_printf(" [ok]\n");
   bft_printf_flush();
 
   return comm;
@@ -1412,7 +1412,7 @@ static void cs_loc_comm_mpi_ouvre
   {
     int rang;
 
-    bft_printf("Instrumentation de la communication MPI via MPE\n");
+    bft_printf(_("Instrumentation de la communication MPI via MPE\n"));
     bft_printf_flush();
 
     cs_glob_mpe_comm_ouvre = MPE_Log_get_event_number();

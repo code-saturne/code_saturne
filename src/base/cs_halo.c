@@ -3853,7 +3853,7 @@ cs_halo_dump(cs_mesh_t  *mesh,
              halo, mesh->n_init_perio, mesh->n_transforms,
              halo->n_c_domains);
 
-  bft_printf("\nRanks on mesh halo frontier :\n");
+  bft_printf(_("\nRanks on mesh halo frontier :\n"));
   for (i = 0; i < halo->n_c_domains; i++)
     bft_printf("%5d", halo->c_domain_rank[i]);
 
@@ -3898,11 +3898,11 @@ cs_halo_dump(cs_mesh_t  *mesh,
 
       for (i = 0; i < mesh->n_transforms; i++) {
 
-        bft_printf("\nTransformation n°: %d\n", i+1);
+        bft_printf(_("\nTransformation n°: %d\n"), i+1);
 
         for (j = 0; j < halo->n_c_domains; j++) {
 
-          bft_printf("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n",
+          bft_printf(_("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n"),
                      halo->c_domain_rank[j],
                      perio_lst[i*stride + 4*j],
                      perio_lst[i*stride + 4*j+1],
