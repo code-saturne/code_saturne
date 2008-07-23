@@ -59,7 +59,7 @@
 #include "cs_comm.h"
 
 #include "cs_couplage.h"
-#include "cs_syr_coupling.h"
+#include "cs_syr3_coupling.h"
 
 #if defined(_CS_HAVE_XML)
 #include "cs_gui.h"

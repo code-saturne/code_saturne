@@ -77,7 +77,7 @@
 #include "cs_renumber.h"
 #include "cs_sles.h"
 #include "cs_suite.h"
-#include "cs_syr_coupling.h"
+#include "cs_syr3_coupling.h"
 #include "cs_post.h"
 
 #if defined(_CS_HAVE_XML)
