@@ -341,8 +341,8 @@ int main
 
       for (coupl_id = 0; coupl_id < n_coupl; coupl_id++)
         cs_syr3_coupling_init_comm(cs_syr3_coupling_by_id(coupl_id),
-				   coupl_id + 1,
-				   opts.echo_comm);
+                                   coupl_id + 1,
+                                   opts.echo_comm);
 
     } /* Couplage Syrthes */
 

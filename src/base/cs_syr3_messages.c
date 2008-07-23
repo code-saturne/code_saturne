@@ -240,19 +240,19 @@ void CS_PROCF(itdsyr, ITDSYR)
 
       if (*ntcabs == *ntmabs)
         cs_syr3_comm_envoie_message(0,
-				    CS_SYR3_COMM_CMD_ITER_DEB_FIN,
-				    0,
-				    CS_TYPE_char,
-				    NULL,
-				    comm);
+                                    CS_SYR3_COMM_CMD_ITER_DEB_FIN,
+                                    0,
+                                    CS_TYPE_char,
+                                    NULL,
+                                    comm);
 
       else if (*ntcabs < *ntmabs)
         cs_syr3_comm_envoie_message(0,
-				    CS_SYR3_COMM_CMD_ITER_DEB,
-				    0,
-				    CS_TYPE_char,
-				    NULL,
-				    comm);
+                                    CS_SYR3_COMM_CMD_ITER_DEB,
+                                    0,
+                                    CS_TYPE_char,
+                                    NULL,
+                                    comm);
 
       else
         bft_error(__FILE__, __LINE__, 0,
@@ -343,16 +343,16 @@ void CS_PROCF (varsyi, VARSYI)
     BFT_MALLOC(syr_data, header.nbr_elt, cs_real_t);
 
     cs_syr3_comm_recoit_corps(&header,
-			      syr_data,
-			      comm);
+                              syr_data,
+                              comm);
 
     /* Transfer received fields from vertices to faces */
 
     cs_syr3_coupling_post_var_update(syr_coupling, 0, syr_data);
 
     cs_syr3_coupling_vtx_to_elt(syr_coupling,
-				syr_data,
-				twall);
+                                syr_data,
+                                twall);
   }
 
   if (syr_data != NULL)
@@ -431,20 +431,20 @@ void CS_PROCF (varsyo, VARSYO)
       BFT_MALLOC(syr_data, n_syr_values * 2, cs_real_t);
 
       cs_syr3_coupling_elt_to_vtx(syr_coupling,
-				  src_data,
-				  n_syr_values,
-				  syr_data);
+                                  src_data,
+                                  n_syr_values,
+                                  syr_data);
 
       cs_syr3_coupling_post_var_update(syr_coupling, 1 + var_id, syr_data);
 
       /* Send data to Syrthes */
 
       cs_syr3_comm_envoie_message(0,
-				  section_name,
-				  n_syr_values,
-				  CS_TYPE_cs_real_t,
-				  syr_data,
-				  comm);
+                                  section_name,
+                                  n_syr_values,
+                                  CS_TYPE_cs_real_t,
+                                  syr_data,
+                                  comm);
 
       BFT_FREE(syr_data);
 

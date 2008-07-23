@@ -278,16 +278,16 @@ cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *syr_coupling);
 
 void
 cs_syr3_coupling_add(cs_int_t       dim,
-		     cs_int_t       ref_axis,
-		     cs_bool_t      invsel,
-		     cs_int_t       n_colors,
-		     cs_int_t      *colors,
-		     cs_int_t       n_groups,
-		     char         **groups,
+                     cs_int_t       ref_axis,
+                     cs_bool_t      invsel,
+                     cs_int_t       n_colors,
+                     cs_int_t      *colors,
+                     cs_int_t       n_groups,
+                     char         **groups,
 #if defined (_CS_HAVE_MPI)
-		     cs_int_t       syr_proc_rank,
+                     cs_int_t       syr_proc_rank,
 #endif
-		     cs_syr3_comm_type_t comm_type);
+                     cs_syr3_comm_type_t comm_type);
 
 /*----------------------------------------------------------------------------
  * Initialize communicator for Syrthes coupling
@@ -300,8 +300,8 @@ cs_syr3_coupling_add(cs_int_t       dim,
 
 void
 cs_syr3_coupling_init_comm(cs_syr3_coupling_t *syr_coupling,
-			   cs_int_t           num_syr_coupling,
-			   cs_int_t           comm_echo);
+                           cs_int_t           num_syr_coupling,
+                           cs_int_t           comm_echo);
 
 /*----------------------------------------------------------------------------
  * Destroy cs_syr3_coupling_t structures
@@ -320,7 +320,7 @@ cs_syr3_coupling_all_destroy(void);
 
 void
 cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
-			   const cs_int_t     coupl_num);
+                           const cs_int_t     coupl_num);
 
 /*----------------------------------------------------------------------------
  * Interpolate a vertex field to an element-centered field
@@ -333,8 +333,8 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
 void
 cs_syr3_coupling_vtx_to_elt(cs_syr3_coupling_t        *syr_coupling,
-			    cs_real_t          *const vtx_values,
-			    cs_real_t                *elt_values);
+                            cs_real_t          *const vtx_values,
+                            cs_real_t                *elt_values);
 
 /*----------------------------------------------------------------------------
  * Interpolate an element-centered field to a vertex field.
@@ -352,9 +352,9 @@ cs_syr3_coupling_vtx_to_elt(cs_syr3_coupling_t        *syr_coupling,
 
 void
 cs_syr3_coupling_elt_to_vtx(cs_syr3_coupling_t        *syr_coupling,
-			    cs_real_t          *const elt_values,
-			    cs_int_t                  n_vertices,
-			    cs_real_t                *vtx_values);
+                            cs_real_t          *const elt_values,
+                            cs_int_t                  n_vertices,
+                            cs_real_t                *vtx_values);
 
 /*----------------------------------------------------------------------------
  * Update post-processing variables of a Syrthes coupling
@@ -369,8 +369,8 @@ cs_syr3_coupling_elt_to_vtx(cs_syr3_coupling_t        *syr_coupling,
 
 void
 cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
-				 int                step,
-				 const cs_real_t   *var);
+                                 int                step,
+                                 const cs_real_t   *var);
 
 /*----------------------------------------------------------------------------
  * Get the local (negative) numbers associated with the first and last
@@ -383,7 +383,7 @@ cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
 
 void
 cs_syr3_coupling_post_id_extents(cs_int_t  *const id_mesh_start,
-				 cs_int_t  *const id_mesh_end);
+                                 cs_int_t  *const id_mesh_end);
 
 /*----------------------------------------------------------------------------*/
 

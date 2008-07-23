@@ -647,40 +647,40 @@ void cs_syr3_comm_envoie_message
     /* numéro de type de la rubrique */
 
     cs_loc_syr3_comm_ecrit_rec(comm,
-			       (const void *)(&num_rub),
-			       1,
-			       CS_TYPE_cs_int_t);
+                               (const void *)(&num_rub),
+                               1,
+                               CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (num_rub == 0)
       cs_loc_syr3_comm_ecrit_rec(comm,
-				 (const void *) nom_rub_ecr,
-				 CS_SYR3_COMM_LNG_NOM_RUB,
-				 CS_TYPE_char);
+                                 (const void *) nom_rub_ecr,
+                                 CS_SYR3_COMM_LNG_NOM_RUB,
+                                 CS_TYPE_char);
 
     /* nombre d'éléments */
 
     cs_loc_syr3_comm_ecrit_rec(comm,
-			       (const void *)(&nbr_elt),
-			       1,
-			       CS_TYPE_cs_int_t);
+                               (const void *)(&nbr_elt),
+                               1,
+                               CS_TYPE_cs_int_t);
 
     if (nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
       cs_loc_syr3_comm_ecrit_rec(comm,
-				 (const void *) nom_typ_elt_ecr,
-				 CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-				 CS_TYPE_char);
+                                 (const void *) nom_typ_elt_ecr,
+                                 CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+                                 CS_TYPE_char);
 
       /* valeurs des éléments */
 
       cs_loc_syr3_comm_ecrit_rec(comm,
-				 (const void *) elt,
-				 (size_t) nbr_elt,
-				 typ_elt);
+                                 (const void *) elt,
+                                 (size_t) nbr_elt,
+                                 typ_elt);
 
     } /* Fin : s'il y a des éléments a écrire */
 
@@ -699,16 +699,16 @@ void cs_syr3_comm_envoie_message
     cs_int_t  nbr_elt_rub_ecr = nbr_elt;
 
     cs_loc_syr3_comm_mpi_entete(&num_rub_ecr,
-				nom_rub_ecr,
-				&nbr_elt_rub_ecr,
-				nom_typ_elt_ecr,
-				comm);
+                                nom_rub_ecr,
+                                &nbr_elt_rub_ecr,
+                                nom_typ_elt_ecr,
+                                comm);
 
     if (nbr_elt > 0)
       cs_loc_syr3_comm_mpi_corps((void *) elt,
-				 nbr_elt,
-				 typ_elt,
-				 comm);
+                                 nbr_elt,
+                                 typ_elt,
+                                 comm);
 
   }
 
@@ -724,40 +724,40 @@ void cs_syr3_comm_envoie_message
     /* numéro de type de la rubrique */
 
     cs_loc_syr3_comm_ecrit_sock(comm,
-				(const void *)(&num_rub),
-				1,
-				CS_TYPE_cs_int_t);
+                                (const void *)(&num_rub),
+                                1,
+                                CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (num_rub == 0)
       cs_loc_syr3_comm_ecrit_sock(comm,
-				  (const void *) nom_rub_ecr,
-				  CS_SYR3_COMM_LNG_NOM_RUB,
-				  CS_TYPE_char);
+                                  (const void *) nom_rub_ecr,
+                                  CS_SYR3_COMM_LNG_NOM_RUB,
+                                  CS_TYPE_char);
 
     /* nombre d'éléments */
 
     cs_loc_syr3_comm_ecrit_sock(comm,
-				(const void *)(&nbr_elt),
-				1,
-				CS_TYPE_cs_int_t);
+                                (const void *)(&nbr_elt),
+                                1,
+                                CS_TYPE_cs_int_t);
 
     if (nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
       cs_loc_syr3_comm_ecrit_sock(comm,
-				  (const void *) nom_typ_elt_ecr,
-				  CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-				  CS_TYPE_char);
+                                  (const void *) nom_typ_elt_ecr,
+                                  CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+                                  CS_TYPE_char);
 
       /* valeurs des éléments */
 
       cs_loc_syr3_comm_ecrit_sock(comm,
-				  (const void *) elt,
-				  (size_t) nbr_elt,
-				  typ_elt);
+                                  (const void *) elt,
+                                  (size_t) nbr_elt,
+                                  typ_elt);
 
     } /* Fin : s'il y a des éléments à écrire */
 
@@ -769,15 +769,15 @@ void cs_syr3_comm_envoie_message
 
   if (comm->echo  >= 0)
     cs_loc_syr3_comm_echo_entete(num_rub,
-				 nom_rub,
-				 nbr_elt,
-				 typ_elt);
+                                 nom_rub,
+                                 nbr_elt,
+                                 typ_elt);
 
   if (comm->echo > 0)
     cs_loc_syr3_comm_echo_donnees(comm->echo,
-				  nbr_elt,
-				  typ_elt,
-				  elt);
+                                  nbr_elt,
+                                  typ_elt,
+                                  elt);
 
 }
 
@@ -811,24 +811,24 @@ cs_int_t cs_syr3_comm_recoit_entete
     /* numéro de type de la rubrique */
 
     cs_loc_syr3_comm_lit_rec(comm,
-			     (void *) &(entete->num_rub),
-			     1,
-			     CS_TYPE_cs_int_t);
+                             (void *) &(entete->num_rub),
+                             1,
+                             CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (entete->num_rub == 0)
       cs_loc_syr3_comm_lit_rec(comm,
-			       (void *) &(entete->nom_rub),
-			       CS_SYR3_COMM_LNG_NOM_RUB,
-			       CS_TYPE_char);
+                               (void *) &(entete->nom_rub),
+                               CS_SYR3_COMM_LNG_NOM_RUB,
+                               CS_TYPE_char);
 
     /* nombre d'éléments */
 
     cs_loc_syr3_comm_lit_rec(comm,
-			     (void *) &(entete->nbr_elt),
-			     1,
-			     CS_TYPE_cs_int_t);
+                             (void *) &(entete->nbr_elt),
+                             1,
+                             CS_TYPE_cs_int_t);
 
 
     if (entete->nbr_elt != 0) {
@@ -836,9 +836,9 @@ cs_int_t cs_syr3_comm_recoit_entete
       /* nom du type d'éléments */
 
       cs_loc_syr3_comm_lit_rec(comm,
-			       (void *) nom_typ_elt,
-			       CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-			       CS_TYPE_char);
+                               (void *) nom_typ_elt,
+                               CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+                               CS_TYPE_char);
 
     } /* Fin : s'il y a des elements à lire */
 
@@ -852,10 +852,10 @@ cs_int_t cs_syr3_comm_recoit_entete
   else if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
     cs_loc_syr3_comm_mpi_entete(&(entete->num_rub),
-				entete->nom_rub,
-				&(entete->nbr_elt),
-				nom_typ_elt,
-				comm);
+                                entete->nom_rub,
+                                &(entete->nbr_elt),
+                                nom_typ_elt,
+                                comm);
 
   }
 
@@ -871,24 +871,24 @@ cs_int_t cs_syr3_comm_recoit_entete
     /* numéro de type de la rubrique */
 
     cs_loc_syr3_comm_lit_sock(comm,
-			      (void *) &(entete->num_rub),
-			      1,
-			      CS_TYPE_cs_int_t);
+                              (void *) &(entete->num_rub),
+                              1,
+                              CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (entete->num_rub == 0)
       cs_loc_syr3_comm_lit_sock(comm,
-				(void *) &(entete->nom_rub),
-				CS_SYR3_COMM_LNG_NOM_RUB,
-				CS_TYPE_char);
+                                (void *) &(entete->nom_rub),
+                                CS_SYR3_COMM_LNG_NOM_RUB,
+                                CS_TYPE_char);
 
     /* nombre d'éléments */
 
     cs_loc_syr3_comm_lit_sock(comm,
-			      (void *) &(entete->nbr_elt),
-			      1,
-			      CS_TYPE_cs_int_t);
+                              (void *) &(entete->nbr_elt),
+                              1,
+                              CS_TYPE_cs_int_t);
 
 
     if (entete->nbr_elt != 0) {
@@ -896,9 +896,9 @@ cs_int_t cs_syr3_comm_recoit_entete
       /* nom du type d'éléments */
 
       cs_loc_syr3_comm_lit_sock(comm,
-				(void *) nom_typ_elt,
-				CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-				CS_TYPE_char);
+                                (void *) nom_typ_elt,
+                                CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+                                CS_TYPE_char);
 
     } /* Fin : s'il y a des elements à lire */
 
@@ -933,9 +933,9 @@ cs_int_t cs_syr3_comm_recoit_entete
 
   if (comm->echo >= 0)
     cs_loc_syr3_comm_echo_entete(entete->num_rub,
-				 entete->nom_rub,
-				 entete->nbr_elt,
-				 entete->typ_elt);
+                                 entete->nom_rub,
+                                 entete->nbr_elt,
+                                 entete->typ_elt);
 
 
   /* Transmission du nombre d'elements à lire */
@@ -1020,9 +1020,9 @@ void * cs_syr3_comm_recoit_corps
 
     if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
       cs_loc_syr3_comm_lit_rec(comm,
-			       (void *)_elt_rub,
-			       (size_t) entete->nbr_elt,
-			       entete->typ_elt);
+                               (void *)_elt_rub,
+                               (size_t) entete->nbr_elt,
+                               entete->typ_elt);
 
 #if defined(_CS_HAVE_MPI)
 
@@ -1030,9 +1030,9 @@ void * cs_syr3_comm_recoit_corps
 
     else if (comm->type == CS_SYR3_COMM_TYPE_MPI)
       cs_loc_syr3_comm_mpi_corps((void *)_elt_rub,
-				 entete->nbr_elt,
-				 entete->typ_elt,
-				 comm);
+                                 entete->nbr_elt,
+                                 entete->typ_elt,
+                                 comm);
 
 #endif /* (_CS_HAVE_MPI) */
 
@@ -1042,9 +1042,9 @@ void * cs_syr3_comm_recoit_corps
 
     else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
       cs_loc_syr3_comm_lit_sock(comm,
-				(void *)_elt_rub,
-				(size_t) entete->nbr_elt,
-				entete->typ_elt);
+                                (void *)_elt_rub,
+                                (size_t) entete->nbr_elt,
+                                entete->typ_elt);
 
 #endif /* (_CS_HAVE_SOCKET) */
 
@@ -1062,9 +1062,9 @@ void * cs_syr3_comm_recoit_corps
 
     if (comm->echo > 0)
       cs_loc_syr3_comm_echo_donnees(comm->echo,
-				    entete->nbr_elt,
-				    entete->typ_elt,
-				    _elt_rub);
+                                    entete->nbr_elt,
+                                    entete->typ_elt,
+                                    _elt_rub);
 
 
   } /* Fin : s'il y a des éléments a lire */
