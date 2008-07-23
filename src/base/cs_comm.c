@@ -70,7 +70,7 @@
  *  Fichiers  `include' associés au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "cs_comm.h"
+#include "cs_syr3_comm.h"
 
 
 #ifdef __cplusplus
