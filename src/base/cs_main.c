@@ -334,15 +334,15 @@ int main
 
     /* Initialisation des communications avec Syrthes */
 
-    if (cs_syr_coupling_n_couplings() != 0) {
+    if (cs_syr3_coupling_n_couplings() != 0) {
 
       cs_int_t coupl_id;
-      cs_int_t n_coupl = cs_syr_coupling_n_couplings();
+      cs_int_t n_coupl = cs_syr3_coupling_n_couplings();
 
       for (coupl_id = 0; coupl_id < n_coupl; coupl_id++)
-        cs_syr_coupling_init_comm(cs_syr_coupling_by_id(coupl_id),
-                                  coupl_id + 1,
-                                  opts.echo_comm);
+        cs_syr3_coupling_init_comm(cs_syr3_coupling_by_id(coupl_id),
+				   coupl_id + 1,
+				   opts.echo_comm);
 
     } /* Couplage Syrthes */
 
@@ -577,7 +577,7 @@ int main
 
   /* Libération de la mémoire éventuellement affectée aux couplages */
 
-  cs_syr_coupling_all_destroy();
+  cs_syr3_coupling_all_destroy();
 #if defined(_CS_HAVE_MPI)
   cs_couplage_detruit_tout();
 #endif

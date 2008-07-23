@@ -117,12 +117,12 @@ void CS_PROCF(tstsyr, TSTSYR)
 )
 {
   cs_int_t  ii, i_coupl;
-  cs_comm_msg_entete_t  header;
+  cs_syr3_comm_msg_entete_t  header;
   char  section_name[32];
 
-  cs_int_t  n_coupl = cs_syr_coupling_n_couplings();
-  cs_syr_coupling_t *syr_coupling = NULL;
-  cs_comm_t  *comm = NULL;
+  cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
+  cs_syr3_coupling_t *syr_coupling = NULL;
+  cs_syr3_comm_t  *comm = NULL;
 
   *imsfin = 0;
 
@@ -132,10 +132,10 @@ void CS_PROCF(tstsyr, TSTSYR)
 
       *imsfin = 0;
 
-      syr_coupling = cs_syr_coupling_by_id(i_coupl);
-      comm = cs_syr_coupling_get_recv_comm(syr_coupling);
+      syr_coupling = cs_syr3_coupling_by_id(i_coupl);
+      comm = cs_syr3_coupling_get_recv_comm(syr_coupling);
 
-      cs_comm_recoit_entete(&header, comm);
+      cs_syr3_comm_recoit_entete(&header, comm);
 
       assert(header.num_rub == 0);
 
@@ -144,8 +144,8 @@ void CS_PROCF(tstsyr, TSTSYR)
 
       /* Treatment according to the received header */
 
-      if (!strncmp(CS_COMM_CMD_ARRET, section_name,
-                   strlen(CS_COMM_CMD_ARRET) )) {
+      if (!strncmp(CS_SYR3_COMM_CMD_ARRET, section_name,
+                   strlen(CS_SYR3_COMM_CMD_ARRET) )) {
 
         *ntmabs = *ntcabs;
         *imsfin = 1;
@@ -159,8 +159,8 @@ void CS_PROCF(tstsyr, TSTSYR)
                    section_name);
 
       }
-      else if (!strncmp(CS_COMM_FIN_FICHIER, section_name,
-                        strlen(CS_COMM_FIN_FICHIER) )) {
+      else if (!strncmp(CS_SYR3_COMM_FIN_FICHIER, section_name,
+                        strlen(CS_SYR3_COMM_FIN_FICHIER) )) {
 
         *ntmabs = *ntcabs;
         *imsfin = 1;
@@ -175,8 +175,8 @@ void CS_PROCF(tstsyr, TSTSYR)
            section_name);
 
       }
-      else if (strncmp(CS_COMM_CMD_ITER_DEB, section_name,
-                       strlen(CS_COMM_CMD_ITER_DEB) )) {
+      else if (strncmp(CS_SYR3_COMM_CMD_ITER_DEB, section_name,
+                       strlen(CS_SYR3_COMM_CMD_ITER_DEB) )) {
 
         bft_error
           (__FILE__, __LINE__, 0,
@@ -220,8 +220,8 @@ void CS_PROCF(itdsyr, ITDSYR)
 {
   cs_int_t  i_coupl;
 
-  cs_int_t  n_coupl = cs_syr_coupling_n_couplings();
-  cs_comm_t *comm = NULL;
+  cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
+  cs_syr3_comm_t *comm = NULL;
 
   /* If there is at least one syrthes coupling */
 
@@ -234,25 +234,25 @@ void CS_PROCF(itdsyr, ITDSYR)
 
     for (i_coupl = 0; i_coupl < n_coupl; i_coupl++) {
 
-      cs_syr_coupling_t *coupl = cs_syr_coupling_by_id(i_coupl);
+      cs_syr3_coupling_t *coupl = cs_syr3_coupling_by_id(i_coupl);
 
-      comm = cs_syr_coupling_get_send_comm(coupl);
+      comm = cs_syr3_coupling_get_send_comm(coupl);
 
       if (*ntcabs == *ntmabs)
-        cs_comm_envoie_message(0,
-                               CS_COMM_CMD_ITER_DEB_FIN,
-                               0,
-                               CS_TYPE_char,
-                               NULL,
-                               comm);
+        cs_syr3_comm_envoie_message(0,
+				    CS_SYR3_COMM_CMD_ITER_DEB_FIN,
+				    0,
+				    CS_TYPE_char,
+				    NULL,
+				    comm);
 
       else if (*ntcabs < *ntmabs)
-        cs_comm_envoie_message(0,
-                               CS_COMM_CMD_ITER_DEB,
-                               0,
-                               CS_TYPE_char,
-                               NULL,
-                               comm);
+        cs_syr3_comm_envoie_message(0,
+				    CS_SYR3_COMM_CMD_ITER_DEB,
+				    0,
+				    CS_TYPE_char,
+				    NULL,
+				    comm);
 
       else
         bft_error(__FILE__, __LINE__, 0,
@@ -287,16 +287,16 @@ void CS_PROCF (varsyi, VARSYI)
 )
 {
   cs_int_t  ii;
-  cs_comm_msg_entete_t  header;
+  cs_syr3_comm_msg_entete_t  header;
 
-  char  section_name[CS_COMM_LNG_NOM_RUB + 1];
+  char  section_name[CS_SYR3_COMM_LNG_NOM_RUB + 1];
 
   cs_real_t  *syr_data = NULL;
 
   cs_int_t  n_vertices = 0;
-  cs_int_t  n_coupl = cs_syr_coupling_n_couplings();
-  cs_syr_coupling_t  *syr_coupling = NULL;
-  cs_comm_t  *comm = NULL;
+  cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
+  cs_syr3_coupling_t  *syr_coupling = NULL;
+  cs_syr3_comm_t  *comm = NULL;
 
   if (*numsyr < 1 || *numsyr > n_coupl)
     bft_error(__FILE__, __LINE__, 0,
@@ -305,10 +305,10 @@ void CS_PROCF (varsyi, VARSYI)
               *numsyr, n_coupl);
   else {
 
-    syr_coupling = cs_syr_coupling_by_id(*numsyr - 1);
-    comm = cs_syr_coupling_get_recv_comm(syr_coupling);
+    syr_coupling = cs_syr3_coupling_by_id(*numsyr - 1);
+    comm = cs_syr3_coupling_get_recv_comm(syr_coupling);
 
-    n_vertices = cs_syr_coupling_get_n_vertices(syr_coupling);
+    n_vertices = cs_syr3_coupling_get_n_vertices(syr_coupling);
 
   }
 
@@ -318,17 +318,17 @@ void CS_PROCF (varsyi, VARSYI)
 
     sprintf(section_name, "coupl:b:tparoi:%04d", *numsyr);
 
-    for (ii = strlen(section_name); ii < CS_COMM_LNG_NOM_RUB; ii++)
+    for (ii = strlen(section_name); ii < CS_SYR3_COMM_LNG_NOM_RUB; ii++)
       section_name[ii] = ' ';
-    section_name[CS_COMM_LNG_NOM_RUB] = '\0';
+    section_name[CS_SYR3_COMM_LNG_NOM_RUB] = '\0';
 
     /* Receive header and check consistency */
 
-    cs_comm_recoit_entete(&header, comm);
+    cs_syr3_comm_recoit_entete(&header, comm);
 
     assert(header.num_rub == 0);
 
-    if (   strncmp(header.nom_rub, section_name, CS_COMM_LNG_NOM_RUB) != 0
+    if (   strncmp(header.nom_rub, section_name, CS_SYR3_COMM_LNG_NOM_RUB) != 0
         || (header.nbr_elt > 0 && header.typ_elt != CS_TYPE_cs_real_t)
         || header.nbr_elt != n_vertices)
       bft_error(__FILE__, __LINE__, 0,
@@ -342,17 +342,17 @@ void CS_PROCF (varsyi, VARSYI)
 
     BFT_MALLOC(syr_data, header.nbr_elt, cs_real_t);
 
-    cs_comm_recoit_corps(&header,
-                         syr_data,
-                         comm);
+    cs_syr3_comm_recoit_corps(&header,
+			      syr_data,
+			      comm);
 
     /* Transfer received fields from vertices to faces */
 
-    cs_syr_coupling_post_var_update(syr_coupling, 0, syr_data);
+    cs_syr3_coupling_post_var_update(syr_coupling, 0, syr_data);
 
-    cs_syr_coupling_vtx_to_elt(syr_coupling,
-                               syr_data,
-                               twall);
+    cs_syr3_coupling_vtx_to_elt(syr_coupling,
+				syr_data,
+				twall);
   }
 
   if (syr_data != NULL)
@@ -383,13 +383,13 @@ void CS_PROCF (varsyo, VARSYO)
 )
 {
   cs_int_t  ii, var_id;
-  char  section_name[CS_COMM_LNG_NOM_RUB + 1];
+  char  section_name[CS_SYR3_COMM_LNG_NOM_RUB + 1];
 
   cs_int_t  n_syr_values = 0;
-  cs_int_t  n_coupl = cs_syr_coupling_n_couplings();
+  cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
   cs_real_t  *src_data = NULL, *syr_data = NULL;
-  cs_syr_coupling_t  *syr_coupling = NULL;
-  cs_comm_t  *comm = NULL;
+  cs_syr3_coupling_t  *syr_coupling = NULL;
+  cs_syr3_comm_t  *comm = NULL;
 
   if (*numsyr < 1 || *numsyr > n_coupl)
     bft_error(__FILE__, __LINE__, 0,
@@ -398,8 +398,8 @@ void CS_PROCF (varsyo, VARSYO)
               *numsyr, n_coupl);
   else {
 
-    syr_coupling = cs_syr_coupling_by_id(*numsyr - 1);
-    comm = cs_syr_coupling_get_send_comm(syr_coupling);
+    syr_coupling = cs_syr3_coupling_by_id(*numsyr - 1);
+    comm = cs_syr3_coupling_get_send_comm(syr_coupling);
 
   }
 
@@ -416,35 +416,35 @@ void CS_PROCF (varsyo, VARSYO)
       src_data = hwall;
     }
 
-    for (ii = strlen(section_name); ii < CS_COMM_LNG_NOM_RUB; ii++)
+    for (ii = strlen(section_name); ii < CS_SYR3_COMM_LNG_NOM_RUB; ii++)
       section_name[ii] = ' ';
-    section_name[CS_COMM_LNG_NOM_RUB] = '\0';
+    section_name[CS_SYR3_COMM_LNG_NOM_RUB] = '\0';
 
     if (*nbrent > 0) { /* Send data to Syrthes */
 
       /* Number of vertices in coupled mesh */
 
-      n_syr_values = cs_syr_coupling_get_n_vertices(syr_coupling);
+      n_syr_values = cs_syr3_coupling_get_n_vertices(syr_coupling);
 
       /* Transfer Code_Saturne fields to vertices */
 
       BFT_MALLOC(syr_data, n_syr_values * 2, cs_real_t);
 
-      cs_syr_coupling_elt_to_vtx(syr_coupling,
-                                 src_data,
-                                 n_syr_values,
-                                 syr_data);
+      cs_syr3_coupling_elt_to_vtx(syr_coupling,
+				  src_data,
+				  n_syr_values,
+				  syr_data);
 
-      cs_syr_coupling_post_var_update(syr_coupling, 1 + var_id, syr_data);
+      cs_syr3_coupling_post_var_update(syr_coupling, 1 + var_id, syr_data);
 
       /* Send data to Syrthes */
 
-      cs_comm_envoie_message(0,
-                             section_name,
-                             n_syr_values,
-                             CS_TYPE_cs_real_t,
-                             syr_data,
-                             comm);
+      cs_syr3_comm_envoie_message(0,
+				  section_name,
+				  n_syr_values,
+				  CS_TYPE_cs_real_t,
+				  syr_data,
+				  comm);
 
       BFT_FREE(syr_data);
 

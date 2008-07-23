@@ -374,7 +374,7 @@ _syr_read_args(int   *arg_id,
   cs_int_t *colors = NULL;
   cs_int_t  n_groups = 0;
   char    **groups = NULL;
-  cs_comm_type_t  comm_type = CS_COMM_TYPE_BINAIRE;
+  cs_syr3_comm_type_t  comm_type = CS_SYR3_COMM_TYPE_BINAIRE;
 #if defined (_CS_HAVE_MPI)
   cs_int_t  syr_proc_rank = -1;
 #endif
@@ -403,13 +403,13 @@ _syr_read_args(int   *arg_id,
       invsel = CS_TRUE;
 #if defined(_CS_HAVE_SOCKET)
     else if (strcmp(s, "-socket") == 0) {
-      comm_type = CS_COMM_TYPE_SOCKET;
-      cs_comm_init_socket();
+      comm_type = CS_SYR3_COMM_TYPE_SOCKET;
+      cs_syr3_comm_init_socket();
     }
 #endif
 #if defined (_CS_HAVE_MPI)
     else if (strcmp(s, "-proc") == 0) {
-      comm_type = CS_COMM_TYPE_MPI;
+      comm_type = CS_SYR3_COMM_TYPE_MPI;
       if (ii < argc - 1 && strncmp(argv[ii + 1], "-", 1))
         syr_proc_rank = atoi(argv[++ii]);
     }
@@ -462,17 +462,17 @@ _syr_read_args(int   *arg_id,
     *argerr = 1;
 
   if (*argerr == 0)
-    cs_syr_coupling_add(dim,
-                        axis_id,
-                        invsel,
-                        n_colors,
-                        colors,
-                        n_groups,
-                        groups,
+    cs_syr3_coupling_add(dim,
+                         axis_id,
+                         invsel,
+                         n_colors,
+                         colors,
+                         n_groups,
+                         groups,
 #if defined (_CS_HAVE_MPI)
-                        syr_proc_rank,
+                         syr_proc_rank,
 #endif
-                        comm_type);
+                         comm_type);
 
   /* Free temporary memory */
 

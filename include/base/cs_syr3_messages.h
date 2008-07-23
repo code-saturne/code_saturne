@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_SYR_MESSAGES_H__
-#define __CS_SYR_MESSAGES_H__
+#ifndef __CS_SYR3_MESSAGES_H__
+#define __CS_SYR3_MESSAGES_H__
 
 /*============================================================================
  * Manage messages for Syrthes coupling: sending, receiving and interpolation
@@ -174,4 +174,4 @@ void CS_PROCF (varsyo, VARSYO)
 }
 #endif /* __cplusplus */
 
-#endif /* __CS_MESSAGES_SYR_H__ */
+#endif /* __CS_SYR3_MESSAGES_H__ */

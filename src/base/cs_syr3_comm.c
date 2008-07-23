@@ -41,7 +41,7 @@
 #include <mpi.h>
 #endif
 
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
 #include <mpe.h>
 #endif
 
@@ -82,7 +82,7 @@ extern "C" {
  *  Structures locales
  *============================================================================*/
 
-struct _cs_comm_t {
+struct _cs_syr3_comm_t {
 
   char            *nom;          /* Nom du communicateur                      */
 
@@ -90,8 +90,8 @@ struct _cs_comm_t {
   cs_int_t         rang_proc;    /* Rang processus en communication (MPI)     */
   int              sock;         /* Numéro de socket                          */
 
-  cs_comm_mode_t   mode;         /* Mode de communication                     */
-  cs_comm_type_t   type;         /* Type de codage des donnees                */
+  cs_syr3_comm_mode_t   mode;    /* Mode de communication                     */
+  cs_syr3_comm_type_t   type;    /* Type de codage des donnees                */
   cs_bool_t        swap_endian;  /* Permutation des octets ?                  */
   cs_int_t         echo;         /* Niveau d'impression des donnees           */
 
@@ -102,13 +102,13 @@ struct _cs_comm_t {
  *  Constantes et Macros
  *============================================================================*/
 
-#define CS_COMM_LNG_NOM_TYPE_ELT         2    /* Longueur du nom de type      */
+#define CS_SYR3_COMM_LNG_NOM_TYPE_ELT         2    /* Longueur du nom de type      */
 
-#define CS_COMM_SOCKET_ENTETE            "CS_comm_socket"
+#define CS_SYR3_COMM_SOCKET_ENTETE            "CS_comm_socket"
 
-#define CS_COMM_SOCKET_NBR_MAX          8
-#define CS_LOC_COMM_LNG_HOSTNAME      256
-#define CS_LOC_COMM_LNG_NOM_MAX       256
+#define CS_SYR3_COMM_SOCKET_NBR_MAX          8
+#define CS_LOC_SYR3_COMM_LNG_HOSTNAME      256
+#define CS_LOC_SYR3_COMM_LNG_NOM_MAX       256
 
 /*
   Si SSIZE_MAX non définie via les "includes" système, on prend la valeur
@@ -125,16 +125,16 @@ struct _cs_comm_t {
  *  Variables globales statiques
  *============================================================================*/
 
-static char  cs_comm_nom_typ_elt_char[] = "c ";  /* Type "chaîne"  */
-static char  cs_comm_nom_typ_elt_int[]  = "i ";  /* Type "entier"  */
-static char  cs_comm_nom_typ_elt_real[] = "r8";  /* Type "réel"    */
+static char  cs_syr3_comm_nom_typ_elt_char[] = "c ";  /* Type "chaîne"  */
+static char  cs_syr3_comm_nom_typ_elt_int[]  = "i ";  /* Type "entier"  */
+static char  cs_syr3_comm_nom_typ_elt_real[] = "r8";  /* Type "réel"    */
 
 
 #if defined(_CS_HAVE_SOCKET)
 
 static cs_bool_t       cs_glob_comm_little_endian = CS_FALSE;
 
-static char  cs_glob_comm_sock_nom_hote[CS_LOC_COMM_LNG_HOSTNAME + 1];
+static char  cs_glob_comm_sock_nom_hote[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 static int   cs_glob_comm_sock_num_port = -1;
 
 static int             cs_glob_comm_socket = 0;
@@ -148,7 +148,7 @@ static char  cs_glob_comm_err_socket[]
 
 /* Instrumentation MPE */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
 static int cs_glob_mpe_comm_ouvre;
 static int cs_glob_mpe_comm_entete;
 static int cs_glob_mpe_comm_corps;
@@ -164,11 +164,11 @@ static int cs_glob_mpe_comm_corps;
  *  servant a vérifier le bon format des fichiers
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_fic_ouvre
+static void cs_loc_syr3_comm_fic_ouvre
 (
-       cs_comm_t  *const comm,
- const char       *const  nom,
- const char       *const chaine_magique
+       cs_syr3_comm_t  *const comm,
+ const char            *const  nom,
+ const char            *const chaine_magique
 );
 
 
@@ -176,9 +176,9 @@ static void cs_loc_comm_fic_ouvre
  *  Fonction qui ferme le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_fic_ferme
+static void cs_loc_syr3_comm_fic_ferme
 (
- cs_comm_t  *comm
+ cs_syr3_comm_t  *comm
 );
 
 
@@ -190,10 +190,10 @@ static void cs_loc_comm_fic_ferme
  *  données
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_ouvre
+static void cs_loc_syr3_comm_mpi_ouvre
 (
-       cs_comm_t         *comm,
- const char       *const  chaine_magique
+       cs_syr3_comm_t         *comm,
+ const char            *const  chaine_magique
 );
 
 
@@ -201,13 +201,13 @@ static void cs_loc_comm_mpi_ouvre
  *  Fonction qui échange une entête de rubrique via MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_entete
+static void cs_loc_syr3_comm_mpi_entete
 (
-       cs_int_t   *const num_rub,
-       char       *const nom_rub,
-       cs_int_t   *const nbr_elt_rub,
-       char       *const nom_typ_elt,
- const cs_comm_t  *const comm
+       cs_int_t        *const num_rub,
+       char            *const nom_rub,
+       cs_int_t        *const nbr_elt_rub,
+       char            *const nom_typ_elt,
+ const cs_syr3_comm_t  *const comm
 );
 
 
@@ -215,12 +215,12 @@ static void cs_loc_comm_mpi_entete
  *  Fonction qui échange le corps d'une rubrique via MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_corps
+static void cs_loc_syr3_comm_mpi_corps
 (
-       void        *const elt_rub,
- const cs_int_t           nbr_elt_rub,
-       cs_type_t          typ_elt,
- const cs_comm_t   *const comm
+       void             *const elt_rub,
+ const cs_int_t                nbr_elt_rub,
+       cs_type_t               typ_elt,
+ const cs_syr3_comm_t   *const comm
 );
 
 
@@ -229,10 +229,10 @@ static void cs_loc_comm_mpi_corps
  *  communication MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_msg_err
+static void cs_loc_syr3_comm_mpi_msg_err
 (
- const cs_comm_t  *const comm,
- const int               error
+ const cs_syr3_comm_t  *const comm,
+ const int                    error
 );
 
 #endif /* (_CS_HAVE_MPI) */
@@ -244,9 +244,9 @@ static void cs_loc_comm_mpi_msg_err
  *  Fonction qui initialise une connection par "socket"
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_connect
+static void cs_loc_syr3_comm_sock_connect
 (
- cs_comm_t  *const  comm
+ cs_syr3_comm_t  *const  comm
 );
 
 
@@ -254,11 +254,11 @@ static void cs_loc_comm_sock_connect
  *  Fonction qui assure l'échange de la "chaine magique" via les sockets
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_ouvre
+static void cs_loc_syr3_comm_sock_ouvre
 (
-       cs_comm_t  *const  comm          ,
- const char       *const  nom_fic       ,
- const char       *const  chaine_magique
+       cs_syr3_comm_t  *const  comm          ,
+ const char            *const  nom_fic       ,
+ const char            *const  chaine_magique
 );
 
 
@@ -266,9 +266,9 @@ static void cs_loc_comm_sock_ouvre
  *  Fonction qui ferme la connextion avec le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_ferme
+static void cs_loc_syr3_comm_sock_ferme
 (
- cs_comm_t  *comm
+ cs_syr3_comm_t  *comm
 );
 
 
@@ -276,12 +276,12 @@ static void cs_loc_comm_sock_ferme
  *  Fonction qui écrit un enregistrement dans le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_ecrit_sock
+static void cs_loc_syr3_comm_ecrit_sock
 (
- const cs_comm_t  *const comm,
- const cs_byte_t  *      rec,
- const size_t            nbr,
-       cs_type_t         typ_e
+ const cs_syr3_comm_t  *const comm,
+ const cs_byte_t       *      rec,
+ const size_t                 nbr,
+       cs_type_t              typ_e
 );
 
 
@@ -289,12 +289,12 @@ static void cs_loc_comm_ecrit_sock
  *  Fonction qui lit un enregistrement dans le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_lit_sock
+static void cs_loc_syr3_comm_lit_sock
 (
- const cs_comm_t  *const comm,
-       cs_byte_t  *      rec,
- const size_t            nbr,
-       cs_type_t         typ_e
+ const cs_syr3_comm_t  *const comm,
+       cs_byte_t       *      rec,
+ const size_t                 nbr,
+       cs_type_t              typ_e
 );
 
 #endif /* (_CS_HAVE_SOCKET) */
@@ -304,9 +304,9 @@ static void cs_loc_comm_lit_sock
  *  Affichage de l'attente d'échange d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_pre
+static void cs_loc_syr3_comm_echo_pre
 (
- const cs_comm_t  *const comm
+ const cs_syr3_comm_t  *const comm
 );
 
 
@@ -314,7 +314,7 @@ static void cs_loc_comm_echo_pre
  *  Affichage de l'entete d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_entete
+static void cs_loc_syr3_comm_echo_entete
 (
  const cs_int_t           num_rub,
  const char        *const nom_rub,
@@ -327,7 +327,7 @@ static void cs_loc_comm_echo_entete
  *  Affichage (partiel) du contenu d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_donnees
+static void cs_loc_syr3_comm_echo_donnees
 (
  const cs_int_t          echo,
  const cs_int_t          nbr_elt,
@@ -340,12 +340,12 @@ static void cs_loc_comm_echo_donnees
  *  Fonction qui écrit un enregistrement dans le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_ecrit_rec
+static void cs_loc_syr3_comm_ecrit_rec
 (
- const cs_comm_t   *const comm,
- const void        *const rec,
- const size_t             nbr,
-       cs_type_t          typ
+ const cs_syr3_comm_t   *const comm,
+ const void             *const rec,
+ const size_t                  nbr,
+       cs_type_t               typ
 );
 
 
@@ -353,12 +353,12 @@ static void cs_loc_comm_ecrit_rec
  *  Fonction qui lit un enregistrement dans le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_lit_rec
+static void cs_loc_syr3_comm_lit_rec
 (
- const cs_comm_t   *const comm,
-       void        *const rec ,
- const size_t             nbr,
-       cs_type_t          typ
+ const cs_syr3_comm_t   *const comm,
+       void             *const rec ,
+ const size_t                  nbr,
+       cs_type_t               typ
 );
 
 
@@ -370,7 +370,7 @@ static void cs_loc_comm_lit_rec
  *  Fonction qui initialise une communication
  *----------------------------------------------------------------------------*/
 
-cs_comm_t * cs_comm_initialise
+cs_syr3_comm_t * cs_syr3_comm_initialise
 (
  const char          *const nom_emetteur,   /* --> partie "émetteur" du nom   */
  const char          *const nom_recepteur,  /* --> partie "recepteur du nom   */
@@ -380,8 +380,8 @@ cs_comm_t * cs_comm_initialise
  const cs_int_t             rang_proc,      /* --> Rang processus en comm
                                                     (< 0 si comm par fichier) */
 #endif
- const cs_comm_mode_t       mode,           /* --> Émission ou réception      */
- const cs_comm_type_t       type,           /* --> Type de communication      */
+ const cs_syr3_comm_mode_t  mode,           /* --> Émission ou réception      */
+ const cs_syr3_comm_type_t  type,           /* --> Type de communication      */
  const cs_int_t             echo            /* --> Écho sur sortie principale
                                                     (< 0 si aucun, entête si 0,
                                                     n premiers et derniers
@@ -391,10 +391,10 @@ cs_comm_t * cs_comm_initialise
   unsigned    int_endian;
 
   char       *nom_fic = NULL;
-  cs_comm_t  *comm = NULL;
+  cs_syr3_comm_t  *comm = NULL;
 
 
-  BFT_MALLOC(comm, 1, cs_comm_t);
+  BFT_MALLOC(comm, 1, cs_syr3_comm_t);
 
   /* Construction du nom du communicateur */
 
@@ -450,18 +450,18 @@ cs_comm_t * cs_comm_initialise
   bft_printf_flush();
 
 #if defined(_CS_HAVE_SOCKET)
-  if (comm->type == CS_COMM_TYPE_SOCKET)
-    cs_loc_comm_sock_connect(comm);
+  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+    cs_loc_syr3_comm_sock_connect(comm);
 #endif /* (_CS_HAVE_SOCKET) */
 
 
   /* Création du descripteur de fichier d'interface */
   /*------------------------------------------------*/
 
-  if (comm->type == CS_COMM_TYPE_MPI) {
+  if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
 #if defined(_CS_HAVE_MPI)
-    cs_loc_comm_mpi_ouvre(comm, chaine_magique);
+    cs_loc_syr3_comm_mpi_ouvre(comm, chaine_magique);
 #else
     assert(comm->rang_proc < 0);
 #endif
@@ -481,28 +481,28 @@ cs_comm_t * cs_comm_initialise
                  + 1 + (cs_glob_base_nbr == 1 ? 0 : 4 + 2) + (numero == 0 ? 0 : 4 + 1),
                  char);
 
-      if (mode == CS_COMM_MODE_EMISSION)
+      if (mode == CS_SYR3_COMM_MODE_EMISSION)
         sprintf(nom_fic, "%s_n%04d_vers_%s",
                 nom_emetteur, cs_glob_base_rang + 1, nom_recepteur);
-      else if (mode == CS_COMM_MODE_RECEPTION)
+      else if (mode == CS_SYR3_COMM_MODE_RECEPTION)
         sprintf(nom_fic, "%s_vers_%s_n%04d",
                 nom_emetteur, nom_recepteur, cs_glob_base_rang + 1);
       else
-        assert(   mode == CS_COMM_MODE_EMISSION
-               || mode == CS_COMM_MODE_RECEPTION);
+        assert(   mode == CS_SYR3_COMM_MODE_EMISSION
+               || mode == CS_SYR3_COMM_MODE_RECEPTION);
 
       if (numero > 0)
         sprintf(nom_fic + strlen(nom_fic), ".%04d", numero);
 
     }
 
-    if (comm->type == CS_COMM_TYPE_BINAIRE)
+    if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
 
-      cs_loc_comm_fic_ouvre(comm, nom_fic, chaine_magique);
+      cs_loc_syr3_comm_fic_ouvre(comm, nom_fic, chaine_magique);
 
 #if defined(_CS_HAVE_SOCKET)
-    else if (comm->type == CS_COMM_TYPE_SOCKET)
-      cs_loc_comm_sock_ouvre(comm, nom_fic, chaine_magique);
+    else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+      cs_loc_syr3_comm_sock_ouvre(comm, nom_fic, chaine_magique);
 #endif /* (_CS_HAVE_SOCKET) */
 
     if (cs_glob_base_nbr > 1)
@@ -524,9 +524,9 @@ cs_comm_t * cs_comm_initialise
  *  Fonction qui termine une communication
  *----------------------------------------------------------------------------*/
 
-cs_comm_t * cs_comm_termine
+cs_syr3_comm_t * cs_syr3_comm_termine
 (
- cs_comm_t *comm
+ cs_syr3_comm_t *comm
 )
 {
 
@@ -535,13 +535,13 @@ cs_comm_t * cs_comm_termine
   bft_printf(_("\n  Fermeture de la communication :  %s\n"), comm->nom);
   bft_printf_flush();
 
-  if (comm->type == CS_COMM_TYPE_BINAIRE)
-    cs_loc_comm_fic_ferme(comm);
+  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
+    cs_loc_syr3_comm_fic_ferme(comm);
 
 #if defined(_CS_HAVE_SOCKET)
 
-  else if (comm->type == CS_COMM_TYPE_SOCKET)
-    cs_loc_comm_sock_ferme(comm);
+  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+    cs_loc_syr3_comm_sock_ferme(comm);
 
 #endif /* (_CS_HAVE_SOCKET) */
 
@@ -557,9 +557,9 @@ cs_comm_t * cs_comm_termine
  *  Fonction qui renvoie un pointeur sur le nom d'une communication
  *----------------------------------------------------------------------------*/
 
-const char * cs_comm_ret_nom
+const char * cs_syr3_comm_ret_nom
 (
- const cs_comm_t  *const comm
+ const cs_syr3_comm_t  *const comm
 )
 {
   assert(comm != NULL);
@@ -572,21 +572,21 @@ const char * cs_comm_ret_nom
  *  Envoi d'un message
  *----------------------------------------------------------------------------*/
 
-void cs_comm_envoie_message
+void cs_syr3_comm_envoie_message
 (
  const cs_int_t          num_rub,           /* --> Num. rubrique associée     */
- const char              nom_rub[CS_COMM_LNG_NOM_RUB], /* --> Si num_rub = 0  */
+ const char              nom_rub[CS_SYR3_COMM_LNG_NOM_RUB], /* Si num_rub = 0 */
  const cs_int_t          nbr_elt,           /* --> Nombre d'éléments          */
  const cs_type_t         typ_elt,           /* --> Type si nbr_elt > 0        */
        void       *const elt,               /* --> Éléments si nbr_elt > 0    */
- const cs_comm_t  *const comm
+ const cs_syr3_comm_t  *const comm
 )
 {
 
-  char   nom_rub_ecr[CS_COMM_LNG_NOM_RUB + 1];
+  char   nom_rub_ecr[CS_SYR3_COMM_LNG_NOM_RUB + 1];
 
   char  *nom_typ_elt;
-  char   nom_typ_elt_ecr[CS_COMM_LNG_NOM_TYPE_ELT + 1];
+  char   nom_typ_elt_ecr[CS_SYR3_COMM_LNG_NOM_TYPE_ELT + 1];
 
 
   assert(comm != NULL);
@@ -597,8 +597,8 @@ void cs_comm_envoie_message
 
   sprintf(nom_rub_ecr,
           "%-*.*s",
-          CS_COMM_LNG_NOM_RUB,
-          CS_COMM_LNG_NOM_RUB,
+          CS_SYR3_COMM_LNG_NOM_RUB,
+          CS_SYR3_COMM_LNG_NOM_RUB,
           nom_rub);
 
 
@@ -609,15 +609,15 @@ void cs_comm_envoie_message
     switch(typ_elt) {
 
     case CS_TYPE_cs_int_t:
-      nom_typ_elt = cs_comm_nom_typ_elt_int;
+      nom_typ_elt = cs_syr3_comm_nom_typ_elt_int;
       break;
 
     case CS_TYPE_cs_real_t:
-      nom_typ_elt = cs_comm_nom_typ_elt_real;
+      nom_typ_elt = cs_syr3_comm_nom_typ_elt_real;
       break;
 
     case CS_TYPE_char:
-      nom_typ_elt = cs_comm_nom_typ_elt_char;
+      nom_typ_elt = cs_syr3_comm_nom_typ_elt_char;
       break;
 
     default:
@@ -629,58 +629,58 @@ void cs_comm_envoie_message
 
     sprintf(nom_typ_elt_ecr,
             "%-*.*s",
-            CS_COMM_LNG_NOM_TYPE_ELT,
-            CS_COMM_LNG_NOM_TYPE_ELT,
+            CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+            CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
             nom_typ_elt);
 
   }
 
   if (comm->echo  >= 0)
-    cs_loc_comm_echo_pre(comm);
+    cs_loc_syr3_comm_echo_pre(comm);
 
 
   /* Communication par fichier */
   /*---------------------------*/
 
-  if (comm->type == CS_COMM_TYPE_BINAIRE) {
+  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE) {
 
     /* numéro de type de la rubrique */
 
-    cs_loc_comm_ecrit_rec(comm,
-                          (const void *)(&num_rub),
-                          1,
-                          CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_ecrit_rec(comm,
+			       (const void *)(&num_rub),
+			       1,
+			       CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (num_rub == 0)
-      cs_loc_comm_ecrit_rec(comm,
-                            (const void *) nom_rub_ecr,
-                            CS_COMM_LNG_NOM_RUB,
-                            CS_TYPE_char);
+      cs_loc_syr3_comm_ecrit_rec(comm,
+				 (const void *) nom_rub_ecr,
+				 CS_SYR3_COMM_LNG_NOM_RUB,
+				 CS_TYPE_char);
 
     /* nombre d'éléments */
 
-    cs_loc_comm_ecrit_rec(comm,
-                          (const void *)(&nbr_elt),
-                          1,
-                          CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_ecrit_rec(comm,
+			       (const void *)(&nbr_elt),
+			       1,
+			       CS_TYPE_cs_int_t);
 
     if (nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
-      cs_loc_comm_ecrit_rec(comm,
-                            (const void *) nom_typ_elt_ecr,
-                            CS_COMM_LNG_NOM_TYPE_ELT,
-                            CS_TYPE_char);
+      cs_loc_syr3_comm_ecrit_rec(comm,
+				 (const void *) nom_typ_elt_ecr,
+				 CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+				 CS_TYPE_char);
 
       /* valeurs des éléments */
 
-      cs_loc_comm_ecrit_rec(comm,
-                            (const void *) elt,
-                            (size_t) nbr_elt,
-                            typ_elt);
+      cs_loc_syr3_comm_ecrit_rec(comm,
+				 (const void *) elt,
+				 (size_t) nbr_elt,
+				 typ_elt);
 
     } /* Fin : s'il y a des éléments a écrire */
 
@@ -693,22 +693,22 @@ void cs_comm_envoie_message
   /* Communication par MPI */
   /*-----------------------*/
 
-  else if (comm->type == CS_COMM_TYPE_MPI) {
+  else if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
     cs_int_t  num_rub_ecr     = num_rub;
     cs_int_t  nbr_elt_rub_ecr = nbr_elt;
 
-    cs_loc_comm_mpi_entete(&num_rub_ecr,
-                           nom_rub_ecr,
-                           &nbr_elt_rub_ecr,
-                           nom_typ_elt_ecr,
-                           comm);
+    cs_loc_syr3_comm_mpi_entete(&num_rub_ecr,
+				nom_rub_ecr,
+				&nbr_elt_rub_ecr,
+				nom_typ_elt_ecr,
+				comm);
 
     if (nbr_elt > 0)
-      cs_loc_comm_mpi_corps((void *) elt,
-                            nbr_elt,
-                            typ_elt,
-                            comm);
+      cs_loc_syr3_comm_mpi_corps((void *) elt,
+				 nbr_elt,
+				 typ_elt,
+				 comm);
 
   }
 
@@ -719,45 +719,45 @@ void cs_comm_envoie_message
   /* Communication par socket */
   /*--------------------------*/
 
-  else if (comm->type == CS_COMM_TYPE_SOCKET) {
+  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
 
     /* numéro de type de la rubrique */
 
-    cs_loc_comm_ecrit_sock(comm,
-                           (const void *)(&num_rub),
-                           1,
-                           CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_ecrit_sock(comm,
+				(const void *)(&num_rub),
+				1,
+				CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (num_rub == 0)
-      cs_loc_comm_ecrit_sock(comm,
-                             (const void *) nom_rub_ecr,
-                             CS_COMM_LNG_NOM_RUB,
-                             CS_TYPE_char);
+      cs_loc_syr3_comm_ecrit_sock(comm,
+				  (const void *) nom_rub_ecr,
+				  CS_SYR3_COMM_LNG_NOM_RUB,
+				  CS_TYPE_char);
 
     /* nombre d'éléments */
 
-    cs_loc_comm_ecrit_sock(comm,
-                           (const void *)(&nbr_elt),
-                           1,
-                           CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_ecrit_sock(comm,
+				(const void *)(&nbr_elt),
+				1,
+				CS_TYPE_cs_int_t);
 
     if (nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
-      cs_loc_comm_ecrit_sock(comm,
-                             (const void *) nom_typ_elt_ecr,
-                             CS_COMM_LNG_NOM_TYPE_ELT,
-                             CS_TYPE_char);
+      cs_loc_syr3_comm_ecrit_sock(comm,
+				  (const void *) nom_typ_elt_ecr,
+				  CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+				  CS_TYPE_char);
 
       /* valeurs des éléments */
 
-      cs_loc_comm_ecrit_sock(comm,
-                             (const void *) elt,
-                             (size_t) nbr_elt,
-                             typ_elt);
+      cs_loc_syr3_comm_ecrit_sock(comm,
+				  (const void *) elt,
+				  (size_t) nbr_elt,
+				  typ_elt);
 
     } /* Fin : s'il y a des éléments à écrire */
 
@@ -768,16 +768,16 @@ void cs_comm_envoie_message
   /* Affichage éventuel */
 
   if (comm->echo  >= 0)
-    cs_loc_comm_echo_entete(num_rub,
-                            nom_rub,
-                            nbr_elt,
-                            typ_elt);
+    cs_loc_syr3_comm_echo_entete(num_rub,
+				 nom_rub,
+				 nbr_elt,
+				 typ_elt);
 
   if (comm->echo > 0)
-    cs_loc_comm_echo_donnees(comm->echo,
-                             nbr_elt,
-                             typ_elt,
-                             elt);
+    cs_loc_syr3_comm_echo_donnees(comm->echo,
+				  nbr_elt,
+				  typ_elt,
+				  elt);
 
 }
 
@@ -787,58 +787,58 @@ void cs_comm_envoie_message
  *  corps du message.
  *----------------------------------------------------------------------------*/
 
-cs_int_t cs_comm_recoit_entete
+cs_int_t cs_syr3_comm_recoit_entete
 (
-       cs_comm_msg_entete_t  *const entete,  /* <-- entête du message         */
- const cs_comm_t             *const comm
+       cs_syr3_comm_msg_entete_t  *const entete,  /* <-- entête du message    */
+ const cs_syr3_comm_t             *const comm
 )
 {
-  char   nom_typ_elt[CS_COMM_LNG_NOM_TYPE_ELT + 1];
+  char   nom_typ_elt[CS_SYR3_COMM_LNG_NOM_TYPE_ELT + 1];
 
   assert(comm  != NULL);
 
   entete->nbr_elt = 0;
 
   if (comm->echo >= 0)
-    cs_loc_comm_echo_pre(comm);
+    cs_loc_syr3_comm_echo_pre(comm);
 
 
   /* Communication par fichier */
   /*---------------------------*/
 
-  if (comm->type == CS_COMM_TYPE_BINAIRE) {
+  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE) {
 
     /* numéro de type de la rubrique */
 
-    cs_loc_comm_lit_rec(comm,
-                        (void *) &(entete->num_rub),
-                        1,
-                        CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_lit_rec(comm,
+			     (void *) &(entete->num_rub),
+			     1,
+			     CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (entete->num_rub == 0)
-      cs_loc_comm_lit_rec(comm,
-                          (void *) &(entete->nom_rub),
-                          CS_COMM_LNG_NOM_RUB,
-                          CS_TYPE_char);
+      cs_loc_syr3_comm_lit_rec(comm,
+			       (void *) &(entete->nom_rub),
+			       CS_SYR3_COMM_LNG_NOM_RUB,
+			       CS_TYPE_char);
 
     /* nombre d'éléments */
 
-    cs_loc_comm_lit_rec(comm,
-                        (void *) &(entete->nbr_elt),
-                        1,
-                        CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_lit_rec(comm,
+			     (void *) &(entete->nbr_elt),
+			     1,
+			     CS_TYPE_cs_int_t);
 
 
     if (entete->nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
-      cs_loc_comm_lit_rec(comm,
-                          (void *) nom_typ_elt,
-                          CS_COMM_LNG_NOM_TYPE_ELT,
-                          CS_TYPE_char);
+      cs_loc_syr3_comm_lit_rec(comm,
+			       (void *) nom_typ_elt,
+			       CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+			       CS_TYPE_char);
 
     } /* Fin : s'il y a des elements à lire */
 
@@ -849,13 +849,13 @@ cs_int_t cs_comm_recoit_entete
   /* Communication par MPI */
   /*-----------------------*/
 
-  else if (comm->type == CS_COMM_TYPE_MPI) {
+  else if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
-    cs_loc_comm_mpi_entete(&(entete->num_rub),
-                           entete->nom_rub,
-                           &(entete->nbr_elt),
-                           nom_typ_elt,
-                           comm);
+    cs_loc_syr3_comm_mpi_entete(&(entete->num_rub),
+				entete->nom_rub,
+				&(entete->nbr_elt),
+				nom_typ_elt,
+				comm);
 
   }
 
@@ -866,39 +866,39 @@ cs_int_t cs_comm_recoit_entete
   /* Communication par socket */
   /*--------------------------*/
 
-  else if (comm->type == CS_COMM_TYPE_SOCKET) {
+  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
 
     /* numéro de type de la rubrique */
 
-    cs_loc_comm_lit_sock(comm,
-                         (void *) &(entete->num_rub),
-                         1,
-                         CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_lit_sock(comm,
+			      (void *) &(entete->num_rub),
+			      1,
+			      CS_TYPE_cs_int_t);
 
     /* nom de type de la rubrique */
 
     if (entete->num_rub == 0)
-      cs_loc_comm_lit_sock(comm,
-                           (void *) &(entete->nom_rub),
-                           CS_COMM_LNG_NOM_RUB,
-                           CS_TYPE_char);
+      cs_loc_syr3_comm_lit_sock(comm,
+				(void *) &(entete->nom_rub),
+				CS_SYR3_COMM_LNG_NOM_RUB,
+				CS_TYPE_char);
 
     /* nombre d'éléments */
 
-    cs_loc_comm_lit_sock(comm,
-                         (void *) &(entete->nbr_elt),
-                         1,
-                         CS_TYPE_cs_int_t);
+    cs_loc_syr3_comm_lit_sock(comm,
+			      (void *) &(entete->nbr_elt),
+			      1,
+			      CS_TYPE_cs_int_t);
 
 
     if (entete->nbr_elt != 0) {
 
       /* nom du type d'éléments */
 
-      cs_loc_comm_lit_sock(comm,
-                           (void *) nom_typ_elt,
-                           CS_COMM_LNG_NOM_TYPE_ELT,
-                           CS_TYPE_char);
+      cs_loc_syr3_comm_lit_sock(comm,
+				(void *) nom_typ_elt,
+				CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
+				CS_TYPE_char);
 
     } /* Fin : s'il y a des elements à lire */
 
@@ -906,25 +906,25 @@ cs_int_t cs_comm_recoit_entete
 
 #endif /* (_CS_HAVE_SOCKET) */
 
-  entete->nom_rub[CS_COMM_LNG_NOM_RUB] = '\0';
+  entete->nom_rub[CS_SYR3_COMM_LNG_NOM_RUB] = '\0';
 
   if (entete->nbr_elt != 0) {
 
-    nom_typ_elt[CS_COMM_LNG_NOM_TYPE_ELT] = '\0';
+    nom_typ_elt[CS_SYR3_COMM_LNG_NOM_TYPE_ELT] = '\0';
 
-    if (strcmp(nom_typ_elt, cs_comm_nom_typ_elt_int) == 0)
+    if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_int) == 0)
       entete->typ_elt = CS_TYPE_cs_int_t;
 
-    else if (strcmp(nom_typ_elt, cs_comm_nom_typ_elt_real) == 0)
+    else if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_real) == 0)
       entete->typ_elt = CS_TYPE_cs_real_t;
 
-    else if (strcmp(nom_typ_elt, cs_comm_nom_typ_elt_char) == 0)
+    else if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_char) == 0)
       entete->typ_elt = CS_TYPE_char;
 
     else
-      assert(   strcmp(nom_typ_elt, cs_comm_nom_typ_elt_int) == 0
-             || strcmp(nom_typ_elt, cs_comm_nom_typ_elt_real) == 0
-             || strcmp(nom_typ_elt, cs_comm_nom_typ_elt_char) == 0);
+      assert(   strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_int) == 0
+             || strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_real) == 0
+             || strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_char) == 0);
 
   }
 
@@ -932,10 +932,10 @@ cs_int_t cs_comm_recoit_entete
   /* Affichage eventuel */
 
   if (comm->echo >= 0)
-    cs_loc_comm_echo_entete(entete->num_rub,
-                            entete->nom_rub,
-                            entete->nbr_elt,
-                            entete->typ_elt);
+    cs_loc_syr3_comm_echo_entete(entete->num_rub,
+				 entete->nom_rub,
+				 entete->nbr_elt,
+				 entete->typ_elt);
 
 
   /* Transmission du nombre d'elements à lire */
@@ -954,11 +954,11 @@ cs_int_t cs_comm_recoit_entete
  *  ici, et la fonction renvoie un pointeur sur cette zone.
  *----------------------------------------------------------------------------*/
 
-void * cs_comm_recoit_corps
+void * cs_syr3_comm_recoit_corps
 (
- const cs_comm_msg_entete_t  *const entete,  /* --> entête du message         */
-       void                  *const elt,     /* --> Pointeur sur les éléments */
- const cs_comm_t             *const comm
+ const cs_syr3_comm_msg_entete_t  *const entete, /* entête du message         */
+       void                       *const elt,    /* Pointeur sur les éléments */
+ const cs_syr3_comm_t             *const comm
 )
 {
 
@@ -1018,21 +1018,21 @@ void * cs_comm_recoit_corps
 
     /* Communication par fichier */
 
-    if (comm->type == CS_COMM_TYPE_BINAIRE)
-      cs_loc_comm_lit_rec(comm,
-                          (void *)_elt_rub,
-                          (size_t) entete->nbr_elt,
-                          entete->typ_elt);
+    if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
+      cs_loc_syr3_comm_lit_rec(comm,
+			       (void *)_elt_rub,
+			       (size_t) entete->nbr_elt,
+			       entete->typ_elt);
 
 #if defined(_CS_HAVE_MPI)
 
     /* Communication par MPI */
 
-    else if (comm->type == CS_COMM_TYPE_MPI)
-      cs_loc_comm_mpi_corps((void *)_elt_rub,
-                            entete->nbr_elt,
-                            entete->typ_elt,
-                            comm);
+    else if (comm->type == CS_SYR3_COMM_TYPE_MPI)
+      cs_loc_syr3_comm_mpi_corps((void *)_elt_rub,
+				 entete->nbr_elt,
+				 entete->typ_elt,
+				 comm);
 
 #endif /* (_CS_HAVE_MPI) */
 
@@ -1040,11 +1040,11 @@ void * cs_comm_recoit_corps
 
     /* Communication par socket */
 
-    else if (comm->type == CS_COMM_TYPE_SOCKET)
-      cs_loc_comm_lit_sock(comm,
-                           (void *)_elt_rub,
-                           (size_t) entete->nbr_elt,
-                           entete->typ_elt);
+    else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+      cs_loc_syr3_comm_lit_sock(comm,
+				(void *)_elt_rub,
+				(size_t) entete->nbr_elt,
+				entete->typ_elt);
 
 #endif /* (_CS_HAVE_SOCKET) */
 
@@ -1061,10 +1061,10 @@ void * cs_comm_recoit_corps
     /* Affichage éventuel */
 
     if (comm->echo > 0)
-      cs_loc_comm_echo_donnees(comm->echo,
-                               entete->nbr_elt,
-                               entete->typ_elt,
-                               _elt_rub);
+      cs_loc_syr3_comm_echo_donnees(comm->echo,
+				    entete->nbr_elt,
+				    entete->typ_elt,
+				    _elt_rub);
 
 
   } /* Fin : s'il y a des éléments a lire */
@@ -1081,12 +1081,12 @@ void * cs_comm_recoit_corps
  *  Fonction qui ouvre un "socket" IP pour préparer ce mode de communication
  *----------------------------------------------------------------------------*/
 
-void cs_comm_init_socket
+void cs_syr3_comm_init_socket
 (
  void
 )
 {
-  char       chaine[CS_LOC_COMM_LNG_HOSTNAME + 1];
+  char       chaine[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 
   int        nbr_connect_max;
   int        num_port;
@@ -1111,11 +1111,11 @@ void cs_comm_init_socket
 
   nbr_connect_max = 0;
 
-  if (getenv("CS_COMM_SOCKET_NBR_MAX") != NULL)
-    nbr_connect_max = atoi(getenv("CS_COMM_SOCKET_NBR_MAX"));
+  if (getenv("CS_SYR3_COMM_SOCKET_NBR_MAX") != NULL)
+    nbr_connect_max = atoi(getenv("CS_SYR3_COMM_SOCKET_NBR_MAX"));
 
   if (nbr_connect_max == 0)
-    nbr_connect_max = CS_COMM_SOCKET_NBR_MAX;
+    nbr_connect_max = CS_SYR3_COMM_SOCKET_NBR_MAX;
 
   /* Test si système "big-endian" (référence réseau) ou "little-endian" */
 
@@ -1165,10 +1165,10 @@ void cs_comm_init_socket
                          1);
   }
 
-  if (gethostname(chaine, CS_LOC_COMM_LNG_HOSTNAME) < 0)
+  if (gethostname(chaine, CS_LOC_SYR3_COMM_LNG_HOSTNAME) < 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Erreur de récupération du nom de la machine"));
-  chaine[CS_LOC_COMM_LNG_HOSTNAME] = '\0';
+  chaine[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
 
   ent_hote = gethostbyname(chaine);
   memcpy(ent_hote->h_addr, &addr_sock.sin_addr, ent_hote->h_length);
@@ -1222,8 +1222,8 @@ void cs_comm_init_socket
 
   }
 
-  memcpy(cs_glob_comm_sock_nom_hote, chaine, CS_LOC_COMM_LNG_HOSTNAME);
-  cs_glob_comm_sock_nom_hote[CS_LOC_COMM_LNG_HOSTNAME] = '\0';
+  memcpy(cs_glob_comm_sock_nom_hote, chaine, CS_LOC_SYR3_COMM_LNG_HOSTNAME);
+  cs_glob_comm_sock_nom_hote[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
   cs_glob_comm_sock_num_port = num_port;
 
 }
@@ -1232,7 +1232,7 @@ void cs_comm_init_socket
  *  Fonction qui ferme le "socket" IP avec ce mode de communication
  *----------------------------------------------------------------------------*/
 
-void cs_comm_termine_socket
+void cs_syr3_comm_termine_socket
 (
  void
 )
@@ -1261,9 +1261,9 @@ void cs_comm_termine_socket
  *  servant a vérifier le bon format des fichiers
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_fic_ouvre
+static void cs_loc_syr3_comm_fic_ouvre
 (
-       cs_comm_t  *const  comm,
+       cs_syr3_comm_t  *const  comm,
  const char       *const  nom,
  const char       *const  chaine_magique
 )
@@ -1277,28 +1277,28 @@ static void cs_loc_comm_fic_ouvre
 
   switch(comm->type) {
 
-  case CS_COMM_TYPE_BINAIRE:
+  case CS_SYR3_COMM_TYPE_BINAIRE:
     fic_typ_comm = BFT_FILE_TYPE_BINARY;
     break;
 
   default:
-    assert(comm->type == CS_COMM_TYPE_BINAIRE);
+    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
 
   }
 
   switch(comm->mode) {
 
-  case CS_COMM_MODE_RECEPTION:
+  case CS_SYR3_COMM_MODE_RECEPTION:
     fic_mod_comm = BFT_FILE_MODE_READ;
     break;
 
-  case CS_COMM_MODE_EMISSION:
+  case CS_SYR3_COMM_MODE_EMISSION:
     fic_mod_comm = BFT_FILE_MODE_WRITE;
     break;
 
   default:
-    assert(   comm->mode == CS_COMM_MODE_RECEPTION
-           || comm->mode == CS_COMM_MODE_EMISSION);
+    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
+           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
 
   }
 
@@ -1315,14 +1315,14 @@ static void cs_loc_comm_fic_ouvre
   /* Écriture ou lecture éventuelle d'une chaine magique */
   /*-----------------------------------------------------*/
 
-  if (comm->mode == CS_COMM_MODE_RECEPTION) {
+  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
 
     char      *chaine_magique_lue;
     cs_int_t   lng_chaine_magique = strlen(chaine_magique);
 
     BFT_MALLOC(chaine_magique_lue, lng_chaine_magique + 1, char);
 
-    cs_loc_comm_lit_rec(comm,
+    cs_loc_syr3_comm_lit_rec(comm,
                         (void *)(chaine_magique_lue),
                         strlen(chaine_magique),
                         CS_TYPE_char);
@@ -1348,9 +1348,9 @@ static void cs_loc_comm_fic_ouvre
     BFT_FREE(chaine_magique_lue);
 
   }
-  else if (comm->mode == CS_COMM_MODE_EMISSION) {
+  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
 
-    cs_loc_comm_ecrit_rec(comm,
+    cs_loc_syr3_comm_ecrit_rec(comm,
                           (const void *)(chaine_magique),
                           strlen(chaine_magique),
                           CS_TYPE_char);
@@ -1366,9 +1366,9 @@ static void cs_loc_comm_fic_ouvre
  *  Fonction qui ferme le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_fic_ferme
+static void cs_loc_syr3_comm_fic_ferme
 (
- cs_comm_t  *comm
+ cs_syr3_comm_t  *comm
 )
 {
 
@@ -1385,9 +1385,9 @@ static void cs_loc_comm_fic_ferme
  *  données
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_ouvre
+static void cs_loc_syr3_comm_mpi_ouvre
 (
-       cs_comm_t  *const  comm,
+       cs_syr3_comm_t  *const  comm,
  const char       *const  chaine_magique
 )
 {
@@ -1404,7 +1404,7 @@ static void cs_loc_comm_mpi_ouvre
   /* Initialisation de l'instrumentation */
   /*-------------------------------------*/
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
   {
     int rang;
 
@@ -1422,11 +1422,11 @@ static void cs_loc_comm_mpi_ouvre
 
     if (rang == 0) {
       MPE_Describe_event(cs_glob_mpe_comm_ouvre,
-                         "cs_loc_comm_mpi_ouvre", "white");
+                         "cs_loc_syr3_comm_mpi_ouvre", "white");
       MPE_Describe_event(cs_glob_mpe_comm_entete,
                          "cs_loc_com_mpi_entete", "blue");
       MPE_Describe_event(cs_glob_mpe_comm_corps,
-                         "cs_loc_comm_mpi_corps", "orange");
+                         "cs_loc_syr3_comm_mpi_corps", "orange");
     }
   }
 #endif
@@ -1437,8 +1437,8 @@ static void cs_loc_comm_mpi_ouvre
 
   /* Instructions */
 
-  assert(   comm->mode == CS_COMM_MODE_RECEPTION
-         || comm->mode == CS_COMM_MODE_EMISSION);
+  assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
+         || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
 
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
@@ -1457,9 +1457,9 @@ static void cs_loc_comm_mpi_ouvre
   /* Écriture ou lecture eventuelle d'une chaine magique */
   /*-----------------------------------------------------*/
 
-  if (comm->mode == CS_COMM_MODE_RECEPTION) {
+  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_rcv_a, 0, NULL);
 #endif
@@ -1468,14 +1468,14 @@ static void cs_loc_comm_mpi_ouvre
                       comm->rang_proc,
                       MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_rcv_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
     MPE_Log_event(cs_glob_mpe_comm_ouvre, 0, NULL);
 #endif
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_comm_mpi_msg_err(comm, ierror);
+      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
 
     chaine_magique_comm[lng_chaine_magique] = '\0';
 
@@ -1494,11 +1494,11 @@ static void cs_loc_comm_mpi_ouvre
     }
 
   }
-  else if (comm->mode == CS_COMM_MODE_EMISSION) {
+  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
 
     strncpy(chaine_magique_comm, chaine_magique, lng_chaine_magique);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_send_a, 0, NULL);
 #endif
@@ -1507,14 +1507,14 @@ static void cs_loc_comm_mpi_ouvre
                       comm->rang_proc,
                       0, MPI_COMM_WORLD);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_send_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
     MPE_Log_event(cs_glob_mpe_comm_ouvre, 0, NULL);
 #endif
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_comm_mpi_msg_err(comm, ierror);
+      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
 
   }
 
@@ -1527,22 +1527,22 @@ static void cs_loc_comm_mpi_ouvre
  *  Fonction qui échange une entête de rubrique via MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_entete
+static void cs_loc_syr3_comm_mpi_entete
 (
-       cs_int_t   *const num_rub,
-       char       *const nom_rub,
-       cs_int_t   *const nbr_elt_rub,
-       char       *const nom_typ_elt,
- const cs_comm_t  *const comm
+       cs_int_t        *const num_rub,
+       char            *const nom_rub,
+       cs_int_t        *const nbr_elt_rub,
+       char            *const nom_typ_elt,
+ const cs_syr3_comm_t  *const comm
 )
 {
 
-#undef  CS_COMM_MPI_PACK_SIZE
-#define CS_COMM_MPI_PACK_SIZE          CS_COMM_LNG_NOM_RUB \
-                                      + CS_COMM_LNG_NOM_TYPE_ELT \
+#undef  CS_SYR3_COMM_MPI_PACK_SIZE
+#define CS_SYR3_COMM_MPI_PACK_SIZE      CS_SYR3_COMM_LNG_NOM_RUB \
+                                      + CS_SYR3_COMM_LNG_NOM_TYPE_ELT \
                                       + (sizeof(int) * 2)
 
-  char buffer[CS_COMM_MPI_PACK_SIZE];
+  char buffer[CS_SYR3_COMM_MPI_PACK_SIZE];
 
   int position, ierror;
 
@@ -1559,45 +1559,45 @@ static void cs_loc_comm_mpi_entete
   /* Communication en réception */
   /*----------------------------*/
 
-  if (comm->mode == CS_COMM_MODE_RECEPTION) {
+  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
 
     /* Réception du message */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_rcv_a, 0, NULL);
 #endif
 
-    ierror = MPI_Recv(buffer, CS_COMM_MPI_PACK_SIZE, MPI_PACKED,
+    ierror = MPI_Recv(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, MPI_PACKED,
                       comm->rang_proc,
                       MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_rcv_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
     MPE_Log_event(cs_glob_mpe_comm_entete, 0, NULL);
 #endif
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_comm_mpi_msg_err(comm, ierror);
+      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
 
 
     /* Extraction des éléments du tampon */
 
     position = 0;
-    MPI_Unpack(buffer, CS_COMM_MPI_PACK_SIZE, &position, num_rub,
+    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, num_rub,
                1, CS_MPI_INT, MPI_COMM_WORLD);
 
     if (*num_rub == 0)
-      MPI_Unpack(buffer, CS_COMM_MPI_PACK_SIZE, &position, nom_rub,
-                 CS_COMM_LNG_NOM_RUB, MPI_CHAR, MPI_COMM_WORLD);
+      MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nom_rub,
+                 CS_SYR3_COMM_LNG_NOM_RUB, MPI_CHAR, MPI_COMM_WORLD);
 
-    MPI_Unpack(buffer, CS_COMM_MPI_PACK_SIZE, &position, nbr_elt_rub,
+    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nbr_elt_rub,
                1, CS_MPI_INT, MPI_COMM_WORLD);
 
     if (*nbr_elt_rub > 0)
-      MPI_Unpack(buffer, CS_COMM_MPI_PACK_SIZE, &position, nom_typ_elt,
-                 CS_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, MPI_COMM_WORLD);
+      MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nom_typ_elt,
+                 CS_SYR3_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, MPI_COMM_WORLD);
 
   }
 
@@ -1605,28 +1605,28 @@ static void cs_loc_comm_mpi_entete
   /* Communication en émission */
   /*---------------------------*/
 
-  else if (comm->mode == CS_COMM_MODE_EMISSION) {
+  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
 
     /* Assemblage du tampon */
 
     position = 0;
-    MPI_Pack(num_rub, 1, CS_MPI_INT, buffer, CS_COMM_MPI_PACK_SIZE,
+    MPI_Pack(num_rub, 1, CS_MPI_INT, buffer, CS_SYR3_COMM_MPI_PACK_SIZE,
              &position, MPI_COMM_WORLD);
 
     if (*num_rub == 0)
-      MPI_Pack(nom_rub, CS_COMM_LNG_NOM_RUB, MPI_CHAR, buffer,
-               CS_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+      MPI_Pack(nom_rub, CS_SYR3_COMM_LNG_NOM_RUB, MPI_CHAR, buffer,
+               CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
 
-    MPI_Pack(nbr_elt_rub, 1, CS_MPI_INT, buffer, CS_COMM_MPI_PACK_SIZE,
+    MPI_Pack(nbr_elt_rub, 1, CS_MPI_INT, buffer, CS_SYR3_COMM_MPI_PACK_SIZE,
              &position, MPI_COMM_WORLD);
 
     if (*nbr_elt_rub > 0)
-      MPI_Pack(nom_typ_elt, CS_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, buffer,
-               CS_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
+      MPI_Pack(nom_typ_elt, CS_SYR3_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, buffer,
+               CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
 
     /* Envoi du message */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_send_a, 0, NULL);
 #endif
@@ -1634,21 +1634,21 @@ static void cs_loc_comm_mpi_entete
     ierror = MPI_Send(buffer, position, MPI_PACKED, comm->rang_proc,
                       0, MPI_COMM_WORLD);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
     MPE_Log_event(cs_glob_mpe_send_b, 0, NULL);
     MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
     MPE_Log_event(cs_glob_mpe_comm_entete, 0, NULL);
 #endif
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_comm_mpi_msg_err(comm, ierror);
+      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
 
   }
 
   else
 
-    assert(   comm->mode == CS_COMM_MODE_RECEPTION
-           || comm->mode == CS_COMM_MODE_EMISSION);
+    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
+           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
 
 }
 
@@ -1657,12 +1657,12 @@ static void cs_loc_comm_mpi_entete
  *  Fonction qui échange le corps d'une rubrique via MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_corps
+static void cs_loc_syr3_comm_mpi_corps
 (
-       void        *const elt_rub,
- const cs_int_t           nbr_elt_rub,
-       cs_type_t          typ_elt,
- const cs_comm_t   *const comm
+       void             *const elt_rub,
+ const cs_int_t                nbr_elt_rub,
+       cs_type_t               typ_elt,
+ const cs_syr3_comm_t   *const comm
 )
 {
 
@@ -1681,14 +1681,14 @@ static void cs_loc_comm_mpi_corps
   /* Communication en réception */
   /*----------------------------*/
 
-  if (comm->mode == CS_COMM_MODE_RECEPTION) {
+  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
 
 
     switch (typ_elt) {
 
     case CS_TYPE_cs_int_t:             /* Tableau d'entiers */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_rcv_a, 0, NULL);
 #endif
@@ -1697,7 +1697,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_rcv_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1706,7 +1706,7 @@ static void cs_loc_comm_mpi_corps
 
     case CS_TYPE_cs_real_t:            /* Tableau de réels double précision */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_rcv_a, 0, NULL);
 #endif
@@ -1715,7 +1715,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_rcv_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1725,7 +1725,7 @@ static void cs_loc_comm_mpi_corps
 
     case CS_TYPE_char:                 /* Tableau de caractères */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_rcv_a, 0, NULL);
 #endif
@@ -1734,7 +1734,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_rcv_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1756,14 +1756,14 @@ static void cs_loc_comm_mpi_corps
   /* Communication en émission */
   /*---------------------------*/
 
-  else if (comm->mode == CS_COMM_MODE_EMISSION) {
+  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
 
 
     switch (typ_elt) {
 
     case CS_TYPE_cs_int_t:             /* Tableau d'entiers */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_send_a, 0, NULL);
 #endif
@@ -1772,7 +1772,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         0, MPI_COMM_WORLD);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_send_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1782,7 +1782,7 @@ static void cs_loc_comm_mpi_corps
 
     case CS_TYPE_cs_real_t:            /* Tableau de réels double précision */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_send_a, 0, NULL);
 #endif
@@ -1791,7 +1791,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         0, MPI_COMM_WORLD);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_send_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1801,7 +1801,7 @@ static void cs_loc_comm_mpi_corps
 
     case CS_TYPE_char:                 /* Tableau de caractères */
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_send_a, 0, NULL);
 #endif
@@ -1810,7 +1810,7 @@ static void cs_loc_comm_mpi_corps
                         comm->rang_proc,
                         0, MPI_COMM_WORLD);
 
-#if defined(_CS_HAVE_MPE) && defined(_CS_COMM_PROFILING)
+#if defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
       MPE_Log_event(cs_glob_mpe_send_b, 0, NULL);
       MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
       MPE_Log_event(cs_glob_mpe_comm_corps, 0, NULL);
@@ -1831,12 +1831,12 @@ static void cs_loc_comm_mpi_corps
 
   else
 
-    assert(   comm->mode == CS_COMM_MODE_RECEPTION
-           || comm->mode == CS_COMM_MODE_EMISSION);
+    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
+           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
 
 
   if (ierror != MPI_SUCCESS)
-    cs_loc_comm_mpi_msg_err(comm, ierror);
+    cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
 
 }
 
@@ -1846,10 +1846,10 @@ static void cs_loc_comm_mpi_corps
  *  communication MPI
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_mpi_msg_err
+static void cs_loc_syr3_comm_mpi_msg_err
 (
- const cs_comm_t  *const comm,
- const int               error
+ const cs_syr3_comm_t  *const comm,
+ const int                    error
 )
 {
 
@@ -1874,9 +1874,9 @@ static void cs_loc_comm_mpi_msg_err
  *  Fonction qui initialise une connection par "socket"
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_connect
+static void cs_loc_syr3_comm_sock_connect
 (
- cs_comm_t         *comm
+ cs_syr3_comm_t         *comm
 )
 {
   int ind;
@@ -1898,7 +1898,7 @@ static void cs_loc_comm_sock_connect
 #endif
   int rang = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
 
-  const int lng_hostname = CS_LOC_COMM_LNG_HOSTNAME + 1;
+  const int lng_hostname = CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1;
 
 
   /* Connexion au socket "serveur" */
@@ -1997,20 +1997,20 @@ static void cs_loc_comm_sock_connect
  *  Fonction qui assure l'échange de la "chaine magique" via les sockets
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_ouvre
+static void cs_loc_syr3_comm_sock_ouvre
 (
- cs_comm_t   *const  comm,
- const char  *const  nom_fic,
- const char  *const  chaine_magique
+ cs_syr3_comm_t   *const  comm,
+ const char       *const  nom_fic,
+ const char       *const  chaine_magique
 )
 {
-  char nom_tmp[CS_LOC_COMM_LNG_NOM_MAX + 1];
+  char nom_tmp[CS_LOC_SYR3_COMM_LNG_NOM_MAX + 1];
 
   int taille;
 
   int rang = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
 
-  taille = strlen(CS_COMM_SOCKET_ENTETE);
+  taille = strlen(CS_SYR3_COMM_SOCKET_ENTETE);
 
   if (read(comm->sock, nom_tmp, taille) < taille)
     bft_error(__FILE__, __LINE__, errno,
@@ -2019,7 +2019,7 @@ static void cs_loc_comm_sock_ouvre
 
   /* Vérification que la connexion provient du bon type d'application */
 
-  if (strncmp(nom_tmp, CS_COMM_SOCKET_ENTETE, taille != 0))
+  if (strncmp(nom_tmp, CS_SYR3_COMM_SOCKET_ENTETE, taille != 0))
     bft_error(__FILE__, __LINE__, 0,
               _("Tentative de connexion au port de communication avec\n"
                 "un format de message non reconnu\n"));
@@ -2033,7 +2033,7 @@ static void cs_loc_comm_sock_ouvre
   nom_tmp[4] = '\0';
   taille = atoi(nom_tmp);
 
-  if (taille <= CS_LOC_COMM_LNG_NOM_MAX) {
+  if (taille <= CS_LOC_SYR3_COMM_LNG_NOM_MAX) {
 
     /* Nom du fichier en communication */
 
@@ -2062,14 +2062,14 @@ static void cs_loc_comm_sock_ouvre
   /* Écriture ou lecture éventuelle d'une chaine magique */
   /*-----------------------------------------------------*/
 
-  if (comm->mode == CS_COMM_MODE_RECEPTION) {
+  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
 
     char      *chaine_magique_lue;
     cs_int_t   lng_chaine_magique = strlen(chaine_magique);
 
     BFT_MALLOC(chaine_magique_lue, lng_chaine_magique + 1, char);
 
-    cs_loc_comm_lit_sock(comm,
+    cs_loc_syr3_comm_lit_sock(comm,
                          (void *)(chaine_magique_lue),
                          strlen(chaine_magique),
                          CS_TYPE_char);
@@ -2095,9 +2095,9 @@ static void cs_loc_comm_sock_ouvre
     BFT_FREE(chaine_magique_lue);
 
   }
-  else if (comm->mode == CS_COMM_MODE_EMISSION) {
+  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
 
-    cs_loc_comm_ecrit_sock(comm,
+    cs_loc_syr3_comm_ecrit_sock(comm,
                            (const void *)(chaine_magique),
                            strlen(chaine_magique),
                            CS_TYPE_char);
@@ -2111,9 +2111,9 @@ static void cs_loc_comm_sock_ouvre
  *  Fonction qui ferme la connextion avec le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_sock_ferme
+static void cs_loc_syr3_comm_sock_ferme
 (
- cs_comm_t  *comm
+ cs_syr3_comm_t  *comm
 )
 {
   if (close(comm->sock) != 0)
@@ -2130,12 +2130,12 @@ static void cs_loc_comm_sock_ferme
  *  Fonction qui écrit un enregistrement dans le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_ecrit_sock
+static void cs_loc_syr3_comm_ecrit_sock
 (
- const cs_comm_t  *const comm,
- const cs_byte_t  *      rec,
- const size_t            nbr,
-       cs_type_t         type
+ const cs_syr3_comm_t  *const comm,
+ const cs_byte_t       *      rec,
+ const size_t                 nbr,
+       cs_type_t              type
 )
 {
   size_t   ind_deb;
@@ -2215,12 +2215,12 @@ static void cs_loc_comm_ecrit_sock
  *  Fonction qui lit un enregistrement dans le socket d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_lit_sock
+static void cs_loc_syr3_comm_lit_sock
 (
- const cs_comm_t  *const comm,
-       cs_byte_t  *      rec,
- const size_t            nbr,
-       cs_type_t         type
+ const cs_syr3_comm_t  *const comm,
+       cs_byte_t       *      rec,
+ const size_t                 nbr,
+       cs_type_t              type
 )
 {
   size_t   ind_deb;
@@ -2290,26 +2290,26 @@ static void cs_loc_comm_lit_sock
  *  Affichage de l'attente d'échange d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_pre
+static void cs_loc_syr3_comm_echo_pre
 (
- const cs_comm_t  *const comm
+ const cs_syr3_comm_t  *const comm
 )
 {
   assert(comm != NULL);
 
   switch(comm->mode) {
 
-  case CS_COMM_MODE_RECEPTION:
+  case CS_SYR3_COMM_MODE_RECEPTION:
     bft_printf(_("\nMessage reçu sur \"%s\" :\n"), comm->nom);
     break;
 
-  case CS_COMM_MODE_EMISSION:
+  case CS_SYR3_COMM_MODE_EMISSION:
     bft_printf(_("\nMessage envoyé sur \"%s\" :\n"), comm->nom);
     break;
 
   default:
-    assert(   comm->mode == CS_COMM_MODE_RECEPTION
-           || comm->mode == CS_COMM_MODE_EMISSION);
+    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
+           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
   }
 
   bft_printf_flush();
@@ -2321,7 +2321,7 @@ static void cs_loc_comm_echo_pre
  *  Affichage de l'entete d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_entete
+static void cs_loc_syr3_comm_echo_entete
 (
  const cs_int_t           num_rub,
  const char        *const nom_rub,
@@ -2330,12 +2330,12 @@ static void cs_loc_comm_echo_entete
 )
 {
 
-  char nom_rub_ecr[CS_COMM_LNG_NOM_RUB + 1];
+  char nom_rub_ecr[CS_SYR3_COMM_LNG_NOM_RUB + 1];
 
   /* instructions */
 
-  strncpy(nom_rub_ecr, nom_rub,  CS_COMM_LNG_NOM_RUB);
-  nom_rub_ecr[CS_COMM_LNG_NOM_RUB] = '\0';
+  strncpy(nom_rub_ecr, nom_rub,  CS_SYR3_COMM_LNG_NOM_RUB);
+  nom_rub_ecr[CS_SYR3_COMM_LNG_NOM_RUB] = '\0';
 
   bft_printf(_("    numéro de rubrique    : %d\n"
                "    nom de la rubrique    : \"%s\"\n"
@@ -2348,13 +2348,13 @@ static void cs_loc_comm_echo_entete
 
     switch(typ_elt) {
     case CS_TYPE_char:
-      nom_typ = cs_comm_nom_typ_elt_char;
+      nom_typ = cs_syr3_comm_nom_typ_elt_char;
       break;
     case CS_TYPE_cs_int_t:
-      nom_typ = cs_comm_nom_typ_elt_int;
+      nom_typ = cs_syr3_comm_nom_typ_elt_int;
       break;
     case CS_TYPE_cs_real_t:
-      nom_typ = cs_comm_nom_typ_elt_real;
+      nom_typ = cs_syr3_comm_nom_typ_elt_real;
       break;
     default:
       assert(   typ_elt == CS_TYPE_char
@@ -2375,7 +2375,7 @@ static void cs_loc_comm_echo_entete
  *  Affichage (partiel) du contenu d'un message
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_echo_donnees
+static void cs_loc_syr3_comm_echo_donnees
 (
  const cs_int_t          echo,
  const cs_int_t          nbr_elt,
@@ -2464,12 +2464,12 @@ static void cs_loc_comm_echo_donnees
  *  Fonction qui écrit un enregistrement dans le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_ecrit_rec
+static void cs_loc_syr3_comm_ecrit_rec
 (
- const cs_comm_t   *const comm,
- const void        *const rec,
- const size_t             nbr,
-       cs_type_t          typ
+ const cs_syr3_comm_t   *const comm,
+ const void             *const rec,
+ const size_t                  nbr,
+       cs_type_t               typ
 )
 {
   size_t  taille = 0;
@@ -2479,7 +2479,7 @@ static void cs_loc_comm_ecrit_rec
 
   switch(comm->type) {
 
-  case CS_COMM_TYPE_BINAIRE:
+  case CS_SYR3_COMM_TYPE_BINAIRE:
 
     /* écriture de l'enregistrement dans le fichier */
 
@@ -2503,7 +2503,7 @@ static void cs_loc_comm_ecrit_rec
     break;
 
   default:
-    assert(comm->type == CS_COMM_TYPE_BINAIRE);
+    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
 
   }
 
@@ -2514,12 +2514,12 @@ static void cs_loc_comm_ecrit_rec
  *  Fonction qui lit un enregistrement dans le fichier d'interface
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_comm_lit_rec
+static void cs_loc_syr3_comm_lit_rec
 (
- const cs_comm_t  *const comm,
-       void       *const rec,
- const size_t            nbr,
-       cs_type_t         typ
+ const cs_syr3_comm_t  *const comm,
+       void            *const rec,
+ const size_t                 nbr,
+       cs_type_t              typ
 )
 {
   size_t  taille = 0;
@@ -2530,7 +2530,7 @@ static void cs_loc_comm_lit_rec
 
   switch(comm->type) {
 
-  case CS_COMM_TYPE_BINAIRE:
+  case CS_SYR3_COMM_TYPE_BINAIRE:
 
     /* Lecture de l'enregistrement dans le fichier */
 
@@ -2555,7 +2555,7 @@ static void cs_loc_comm_lit_rec
 
   default:
 
-    assert(comm->type == CS_COMM_TYPE_BINAIRE);
+    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
 
   }
 

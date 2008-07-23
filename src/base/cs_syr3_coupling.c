@@ -110,7 +110,7 @@ enum {X, Y, Z} ;
 
 /* Structure associated with Syrthes coupling */
 
-struct _cs_syr_coupling_t {
+struct _cs_syr3_coupling_t {
 
   cs_int_t        dim;              /* Coupled mesh dimension */
   cs_int_t        ref_axis;         /* Selected axis for edge extraction */
@@ -139,10 +139,10 @@ struct _cs_syr_coupling_t {
 
   /* Communication structure */
 
-  cs_comm_t      *send_comm;        /* Sending communicator */
-  cs_comm_t      *recv_comm;        /* Receiving communicator */
-  cs_comm_type_t  comm_type;        /* Communicator type */
-  int             comm_echo;        /* Optional echo to standard output */
+  cs_syr3_comm_t      *send_comm;        /* Sending communicator */
+  cs_syr3_comm_t      *recv_comm;        /* Receiving communicator */
+  cs_syr3_comm_type_t  comm_type;        /* Communicator type */
+  int                  comm_echo;        /* Optional echo to standard output */
 
 #if defined (_CS_HAVE_MPI)
   cs_int_t        syr_proc_rank;    /* Syrthes rank */
@@ -154,8 +154,8 @@ struct _cs_syr_coupling_t {
  *  Global variables
  *============================================================================*/
 
-static cs_int_t             cs_glob_syr_n_couplings = 0;
-static cs_syr_coupling_t  **cs_glob_syr_coupling_array = NULL;
+static cs_int_t              cs_glob_syr_n_couplings = 0;
+static cs_syr3_coupling_t  **cs_glob_syr_coupling_array = NULL;
 
 /* Start and end (negative) numbers associated with
    dedicated post processing meshes */
@@ -205,8 +205,8 @@ _convert_fvm_gnum(fvm_gnum_t   fvm_data[],
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_t *
-_define_coupled_mesh(char               *coupled_mesh_name,
-                     cs_syr_coupling_t  *syr_coupling)
+_define_coupled_mesh(char                *coupled_mesh_name,
+                     cs_syr3_coupling_t  *syr_coupling)
 {
   cs_int_t n_colors, n_groups;
 
@@ -275,7 +275,7 @@ _define_coupled_mesh(char               *coupled_mesh_name,
  *----------------------------------------------------------------------------*/
 
 static void
-_renum_faces_list(cs_syr_coupling_t *syr_coupling)
+_renum_faces_list(cs_syr3_coupling_t *syr_coupling)
 {
   cs_int_t  i, fac_id;
   cs_int_t  elt_num, elt_num_prev, n_elts;
@@ -341,9 +341,9 @@ _renum_faces_list(cs_syr_coupling_t *syr_coupling)
  *----------------------------------------------------------------------------*/
 
 static void
-_send_coords(cs_syr_coupling_t  *syr_coupling,
-             cs_int_t            n_vertices,
-             cs_real_t          *coords)
+_send_coords(cs_syr3_coupling_t  *syr_coupling,
+             cs_int_t             n_vertices,
+             cs_real_t           *coords)
 {
   cs_int_t  elt_size;
 
@@ -359,24 +359,24 @@ _send_coords(cs_syr_coupling_t  *syr_coupling,
 
   /* Send number of vertices */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:npoinf",
-                         1,
-                         CS_TYPE_cs_int_t,
-                         &n_vertices,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:npoinf",
+			      1,
+			      CS_TYPE_cs_int_t,
+			      &n_vertices,
+			      syr_coupling->send_comm);
 
   n_g_vertices = fvm_nodal_get_n_g_vertices(coupled_mesh);
   _n_g_vertices = n_g_vertices;
 
   /* Send global number of vertices */
-
-  cs_comm_envoie_message(0,
-                         "coupl:b:g:npoinf",
-                         1,
-                         CS_TYPE_cs_int_t,
-                         &_n_g_vertices,
-                         syr_coupling->send_comm);
+  
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:g:npoinf",
+			      1,
+			      CS_TYPE_cs_int_t,
+			      &_n_g_vertices,
+			      syr_coupling->send_comm);
 
   if (n_coupl_faces > 0) {
 
@@ -398,12 +398,12 @@ _send_coords(cs_syr_coupling_t  *syr_coupling,
 
   /* Send global vertex numbering */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:g:vtxnum",
-                         n_vertices,
-                         CS_TYPE_cs_int_t,
-                         global_vtx_num_int,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:g:vtxnum",
+			      n_vertices,
+			      CS_TYPE_cs_int_t,
+			      global_vtx_num_int,
+			      syr_coupling->send_comm);
 
   if (global_vtx_num_buffer != NULL) {
 
@@ -430,12 +430,12 @@ _send_coords(cs_syr_coupling_t  *syr_coupling,
 
   /* Send vertices's coordinates */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:xyzf",
-                         dim * n_vertices,
-                         CS_TYPE_cs_real_t,
-                         coords,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:xyzf",
+			      dim * n_vertices,
+			      CS_TYPE_cs_real_t,
+			      coords,
+			      syr_coupling->send_comm);
 
 }
 
@@ -448,8 +448,8 @@ _send_coords(cs_syr_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 static void
-_send_connectivity(cs_syr_coupling_t  *syr_coupling,
-                   cs_int_t            n_elts)
+_send_connectivity(cs_syr3_coupling_t  *syr_coupling,
+                   cs_int_t             n_elts)
 {
   cs_int_t  i_elt, i_dim;
   cs_int_t  stride, elt_size;
@@ -466,12 +466,12 @@ _send_connectivity(cs_syr_coupling_t  *syr_coupling,
 
   /* Send number of elements */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:nelebf",
-                         1,
-                         CS_TYPE_cs_int_t,
-                         &n_elts,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:nelebf",
+			      1,
+			      CS_TYPE_cs_int_t,
+			      &n_elts,
+			      syr_coupling->send_comm);
 
   /* Get global element num */
 
@@ -503,12 +503,12 @@ _send_connectivity(cs_syr_coupling_t  *syr_coupling,
 
   /* Send global element numbering */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:g:eltnum",
-                         n_elts,
-                         CS_TYPE_cs_int_t,
-                         (cs_int_t *)glob_elt_num,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:g:eltnum",
+			      n_elts,
+			      CS_TYPE_cs_int_t,
+			      (cs_int_t *)glob_elt_num,
+			      syr_coupling->send_comm);
 
   if (glob_elt_num != NULL)
     BFT_FREE(glob_elt_num);
@@ -557,12 +557,12 @@ _send_connectivity(cs_syr_coupling_t  *syr_coupling,
 
   /* Send connectivity */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:nodebf",
-                         n_connect,
-                         CS_TYPE_cs_int_t,
-                         ni_connect,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:nodebf",
+			      n_connect,
+			      CS_TYPE_cs_int_t,
+			      ni_connect,
+			      syr_coupling->send_comm);
 
   if (n_coupl_faces > 0)
     BFT_FREE(ni_connect);
@@ -580,9 +580,9 @@ _send_connectivity(cs_syr_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_weighting(cs_syr_coupling_t  *syr_coupling,
-                   cs_real_t          *coords,
-                   cs_int_t            n_elts)
+_compute_weighting(cs_syr3_coupling_t  *syr_coupling,
+                   cs_real_t           *coords,
+                   cs_int_t             n_elts)
 {
   cs_int_t  i_elt, i_stride, i_dim;
   cs_int_t  stride;
@@ -700,13 +700,13 @@ _compute_weighting(cs_syr_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 static void
-_interpolate_vtx_to_elt(cs_syr_coupling_t  *syr_coupling,
-                        cs_real_t          *elt_values,
-                        cs_real_t          *vtx_values,
-                        cs_int_t            n_elts,
-                        cs_int_t            stride,
-                        cs_int_t           *parent_num,
-                        cs_int_t           *connect)
+_interpolate_vtx_to_elt(cs_syr3_coupling_t  *syr_coupling,
+                        cs_real_t           *elt_values,
+                        cs_real_t           *vtx_values,
+                        cs_int_t             n_elts,
+                        cs_int_t             stride,
+                        cs_int_t            *parent_num,
+                        cs_int_t            *connect)
 {
   cs_int_t  i, j, vtx_id, fac_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -781,14 +781,14 @@ _interpolate_vtx_to_elt(cs_syr_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 static void
-_interpolate_elt_to_vtx(cs_syr_coupling_t  *syr_coupling,
-                        cs_real_t          *elt_values,
-                        cs_int_t            n_vertices,
-                        cs_real_t          *vtx_values,
-                        cs_int_t            n_elts,
-                        cs_int_t            stride,
-                        cs_int_t           *parent_num,
-                        cs_int_t           *connect)
+_interpolate_elt_to_vtx(cs_syr3_coupling_t  *syr_coupling,
+                        cs_real_t           *elt_values,
+                        cs_int_t             n_vertices,
+                        cs_real_t           *vtx_values,
+                        cs_int_t             n_elts,
+                        cs_int_t             stride,
+                        cs_int_t            *parent_num,
+                        cs_int_t            *connect)
 {
   cs_int_t  i, j, fac_id, vtx_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -850,11 +850,11 @@ _interpolate_elt_to_vtx(cs_syr_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_syr_coupling_post_function(cs_int_t   coupling_id,
-                               cs_int_t   nt_cur_abs,
-                               cs_real_t  t_cur_abs)
+_cs_syr3_coupling_post_function(cs_int_t   coupling_id,
+				cs_int_t   nt_cur_abs,
+				cs_real_t  t_cur_abs)
 {
-  cs_syr_coupling_t * syr_coupling = cs_syr_coupling_by_id(coupling_id);
+  cs_syr3_coupling_t * syr_coupling = cs_syr3_coupling_by_id(coupling_id);
 
   if (syr_coupling->post_mesh_id != 0) {
 
@@ -891,13 +891,13 @@ _cs_syr_coupling_post_function(cs_int_t   coupling_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_syr_coupling_post_init(cs_int_t  coupling_id,
+_cs_syr3_coupling_post_init(cs_int_t  coupling_id,
                            cs_int_t  writer_id)
 {
   cs_int_t  n_vertices = 0;
   cs_int_t  mesh_id = cs_post_ret_num_maillage_libre();
 
-  cs_syr_coupling_t  *syr_coupling = cs_syr_coupling_by_id(coupling_id);
+  cs_syr3_coupling_t  *syr_coupling = cs_syr3_coupling_by_id(coupling_id);
 
   assert(syr_coupling != NULL);
 
@@ -939,7 +939,7 @@ _cs_syr_coupling_post_init(cs_int_t  coupling_id,
 
   /* Register post processing function */
 
-  cs_post_ajoute_var_temporelle(_cs_syr_coupling_post_function,
+  cs_post_ajoute_var_temporelle(_cs_syr3_coupling_post_function,
                                 coupling_id);
 
   /* Update start and end (negative) numbers associated with
@@ -959,7 +959,7 @@ _cs_syr_coupling_post_init(cs_int_t  coupling_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_syr_coupling(cs_syr_coupling_t  *syr_coupling)
+_dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
 {
   int  i;
 
@@ -968,7 +968,7 @@ _dump_syr_coupling(cs_syr_coupling_t  *syr_coupling)
   assert(syr_coupling != NULL);
 
   bft_printf("\n xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf(_("   DUMP D'UNE STRUCTURE cs_syr_syr_coupling_t\n"));
+  bft_printf(_("   DUMP D'UNE STRUCTURE cs_syr3_syr_coupling_t\n"));
   bft_printf(" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
   bft_printf_flush();
 
@@ -1003,11 +1003,11 @@ _dump_syr_coupling(cs_syr_coupling_t  *syr_coupling)
 
   if (syr_coupling->send_comm != NULL) {
     bft_printf(_("Communicateur en émission: %s\n"),
-               cs_comm_ret_nom(syr_coupling->send_comm));
+               cs_syr3_comm_ret_nom(syr_coupling->send_comm));
   }
   if (syr_coupling->recv_comm != NULL) {
     bft_printf(_("Communicateur en réception: %s\n"),
-               cs_comm_ret_nom(syr_coupling->recv_comm));
+               cs_syr3_comm_ret_nom(syr_coupling->recv_comm));
   }
 
   bft_printf(_("\nType de communication: %i\n"),
@@ -1019,7 +1019,7 @@ _dump_syr_coupling(cs_syr_coupling_t  *syr_coupling)
 #endif
 
   bft_printf("\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf(_("  FIN DU DUMP DE LA STRUCTURE cs_syr_coupling_t\n"));
+  bft_printf(_("  FIN DU DUMP DE LA STRUCTURE cs_syr3_coupling_t\n"));
   bft_printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
   bft_printf_flush();
 }
@@ -1070,10 +1070,10 @@ void CS_PROCF(geosyr, GEOSYR)
 
   for (i_coupl = 0; i_coupl < *n_couplings; i_coupl++) {
 
-    cs_syr_coupling_t *syr_coupling = cs_glob_syr_coupling_array[i_coupl];
+    cs_syr3_coupling_t *syr_coupling = cs_glob_syr_coupling_array[i_coupl];
 
-    cs_syr_coupling_init_mesh(syr_coupling,
-                              i_coupl + 1);
+    cs_syr3_coupling_init_mesh(syr_coupling,
+			       i_coupl + 1);
 
   }
 
@@ -1130,7 +1130,7 @@ void CS_PROCF(lfasyr, LFASYR)
 )
 {
   cs_int_t  i;
-  cs_syr_coupling_t  *coupling = NULL;
+  cs_syr3_coupling_t  *coupling = NULL;
 
   if (*coupl_num < 1 || *coupl_num > cs_glob_syr_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
@@ -1168,7 +1168,7 @@ void CS_PROCF(pstisy, PSTISY)
   cs_int_t i_coupl;
 
   for (i_coupl = 0; i_coupl < cs_glob_syr_n_couplings; i_coupl++)
-    _cs_syr_coupling_post_init(i_coupl, -1);
+    _cs_syr3_coupling_post_init(i_coupl, -1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1190,7 +1190,7 @@ void CS_PROCF (pstesy, PSTESY)
  cs_int_t  *const last_id
 )
 {
-  cs_syr_coupling_post_id_extents(first_id, last_id);
+  cs_syr3_coupling_post_id_extents(first_id, last_id);
 }
 
 /*============================================================================
@@ -1205,7 +1205,7 @@ void CS_PROCF (pstesy, PSTESY)
  *----------------------------------------------------------------------------*/
 
 cs_int_t
-cs_syr_coupling_n_couplings(void)
+cs_syr3_coupling_n_couplings(void)
 {
   return cs_glob_syr_n_couplings;
 }
@@ -1220,10 +1220,10 @@ cs_syr_coupling_n_couplings(void)
  *   pointer to Syrthes coupling structure
  *----------------------------------------------------------------------------*/
 
-cs_syr_coupling_t *
-cs_syr_coupling_by_id(cs_int_t coupling_id)
+cs_syr3_coupling_t *
+cs_syr3_coupling_by_id(cs_int_t coupling_id)
 {
-  cs_syr_coupling_t  *retval = NULL;
+  cs_syr3_coupling_t  *retval = NULL;
 
   if (   coupling_id > -1
       && coupling_id < cs_glob_syr_n_couplings)
@@ -1242,8 +1242,8 @@ cs_syr_coupling_by_id(cs_int_t coupling_id)
  *   communicator type
  *----------------------------------------------------------------------------*/
 
-cs_comm_type_t
-cs_syr_coupling_get_comm_type(const cs_syr_coupling_t *syr_coupling)
+cs_syr3_comm_type_t
+cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t *syr_coupling)
 {
   return syr_coupling->comm_type;
 }
@@ -1258,8 +1258,8 @@ cs_syr_coupling_get_comm_type(const cs_syr_coupling_t *syr_coupling)
  *   pointer to send communicator
  *----------------------------------------------------------------------------*/
 
-cs_comm_t *
-cs_syr_coupling_get_send_comm(const cs_syr_coupling_t *const syr_coupling)
+cs_syr3_comm_t *
+cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t *const syr_coupling)
 {
   assert(syr_coupling != NULL);
 
@@ -1276,8 +1276,8 @@ cs_syr_coupling_get_send_comm(const cs_syr_coupling_t *const syr_coupling)
  *   pointer to receive communicator
  *----------------------------------------------------------------------------*/
 
-cs_comm_t *
-cs_syr_coupling_get_recv_comm(const cs_syr_coupling_t *const syr_coupling)
+cs_syr3_comm_t *
+cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t *const syr_coupling)
 {
   assert(syr_coupling != NULL);
 
@@ -1295,7 +1295,7 @@ cs_syr_coupling_get_recv_comm(const cs_syr_coupling_t *const syr_coupling)
  *----------------------------------------------------------------------------*/
 
 cs_int_t
-cs_syr_coupling_get_n_vertices(const cs_syr_coupling_t *const syr_coupling)
+cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *const syr_coupling)
 {
   cs_int_t n_vertices = 0;
 
@@ -1322,7 +1322,7 @@ cs_syr_coupling_get_n_vertices(const cs_syr_coupling_t *const syr_coupling)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_add(cs_int_t       dim,
+cs_syr3_coupling_add(cs_int_t       dim,
                     cs_int_t       ref_axis,
                     cs_bool_t      inv_sel,
                     cs_int_t       n_colors,
@@ -1332,15 +1332,15 @@ cs_syr_coupling_add(cs_int_t       dim,
 #if defined (_CS_HAVE_MPI)
                     cs_int_t       syr_proc_rank,
 #endif
-                    cs_comm_type_t comm_type)
+                    cs_syr3_comm_type_t comm_type)
 {
-  cs_syr_coupling_t *syr_coupling = NULL;
+  cs_syr3_coupling_t *syr_coupling = NULL;
 
-  /* Allocate _cs_syr_coupling_t structure */
+  /* Allocate _cs_syr3_coupling_t structure */
 
   BFT_REALLOC(cs_glob_syr_coupling_array,
-              cs_glob_syr_n_couplings + 1, cs_syr_coupling_t*);
-  BFT_MALLOC(syr_coupling, 1, cs_syr_coupling_t);
+              cs_glob_syr_n_couplings + 1, cs_syr3_coupling_t*);
+  BFT_MALLOC(syr_coupling, 1, cs_syr3_coupling_t);
 
   syr_coupling->dim = dim;
   syr_coupling->ref_axis = ref_axis;
@@ -1392,7 +1392,7 @@ cs_syr_coupling_add(cs_int_t       dim,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_init_comm(cs_syr_coupling_t *syr_coupling,
+cs_syr3_coupling_init_comm(cs_syr3_coupling_t *syr_coupling,
                           cs_int_t           num_syr_coupling,
                           cs_int_t           comm_echo)
 {
@@ -1402,29 +1402,29 @@ cs_syr_coupling_init_comm(cs_syr_coupling_t *syr_coupling,
 
   /* Initialize receiving communicator */
 
-  syr_coupling->recv_comm = cs_comm_initialise("syrthes",
-                                               "solveur",
-                                               "SYRTHES_VERS_SATURNE_1.0",
-                                               num_syr_coupling,
+  syr_coupling->recv_comm = cs_syr3_comm_initialise("syrthes",
+						    "solveur",
+						    "SYRTHES_VERS_SATURNE_1.0",
+						    num_syr_coupling,
 #if defined(_CS_HAVE_MPI)
-                                               syr_coupling->syr_proc_rank,
+						    syr_coupling->syr_proc_rank,
 #endif
-                                               CS_COMM_MODE_RECEPTION,
-                                               syr_coupling->comm_type,
-                                               comm_echo);
+						    CS_SYR3_COMM_MODE_RECEPTION,
+						    syr_coupling->comm_type,
+						    comm_echo);
 
   /* Initialize sending communicator */
 
-  syr_coupling->send_comm = cs_comm_initialise("solveur",
-                                               "syrthes",
-                                               "SATURNE_VERS_SYRTHES_1.0",
-                                               num_syr_coupling,
+  syr_coupling->send_comm = cs_syr3_comm_initialise("solveur",
+						    "syrthes",
+						    "SATURNE_VERS_SYRTHES_1.0",
+						    num_syr_coupling,
 #if defined(_CS_HAVE_MPI)
-                                               syr_coupling->syr_proc_rank,
+						    syr_coupling->syr_proc_rank,
 #endif
-                                               CS_COMM_MODE_EMISSION,
-                                               syr_coupling->comm_type,
-                                               comm_echo);
+						    CS_SYR3_COMM_MODE_EMISSION,
+						    syr_coupling->comm_type,
+						    comm_echo);
 
   if (comm_echo >= 0) {
     for (i_coupl = 0 ; i_coupl < cs_glob_syr_n_couplings; i_coupl++)
@@ -1434,14 +1434,14 @@ cs_syr_coupling_init_comm(cs_syr_coupling_t *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
- * Destroy cs_syr_coupling_t structures
+ * Destroy cs_syr3_coupling_t structures
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_all_destroy(void)
+cs_syr3_coupling_all_destroy(void)
 {
   cs_int_t i_coupl;
-  cs_syr_coupling_t *syr_coupling = NULL;
+  cs_syr3_coupling_t *syr_coupling = NULL;
 
   if (cs_glob_syr_n_couplings == 0)
     return;
@@ -1452,14 +1452,14 @@ cs_syr_coupling_all_destroy(void)
 
     /* Sending "End Of File" message */
 
-    cs_comm_envoie_message(0,
-                           CS_COMM_FIN_FICHIER,
+    cs_syr3_comm_envoie_message(0,
+                           CS_SYR3_COMM_FIN_FICHIER,
                            0,
                            CS_TYPE_void,
                            NULL,
                            syr_coupling->send_comm);
 
-    /* Free _cs_syr_coupling structure */
+    /* Free _cs_syr3_coupling structure */
 
     BFT_FREE(syr_coupling->coupl_face_list);
 
@@ -1473,8 +1473,8 @@ cs_syr_coupling_all_destroy(void)
 
     /* Close send and receive communicators */
 
-    syr_coupling->send_comm = cs_comm_termine(syr_coupling->send_comm);
-    syr_coupling->recv_comm = cs_comm_termine(syr_coupling->recv_comm);
+    syr_coupling->send_comm = cs_syr3_comm_termine(syr_coupling->send_comm);
+    syr_coupling->recv_comm = cs_syr3_comm_termine(syr_coupling->recv_comm);
 
     syr_coupling->select = cs_mesh_select_destroy(syr_coupling->select);
 
@@ -1488,8 +1488,8 @@ cs_syr_coupling_all_destroy(void)
       syr_coupling->if_set = fvm_interface_set_destroy(syr_coupling->if_set);
 
 #if defined(_CS_HAVE_SOCKET)
-    if (syr_coupling->comm_type == CS_COMM_TYPE_SOCKET)
-      cs_comm_termine_socket();
+    if (syr_coupling->comm_type == CS_SYR3_COMM_TYPE_SOCKET)
+      cs_syr3_comm_termine_socket();
 #endif
 
     BFT_FREE(syr_coupling);
@@ -1514,8 +1514,8 @@ cs_syr_coupling_all_destroy(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
-                          const cs_int_t     coupl_num)
+cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
+                          const cs_int_t       coupl_num)
 {
   cs_int_t  length;
   cs_int_t  dim;
@@ -1641,12 +1641,12 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
 
   /* Spatial dimension */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:ndim_",
-                         1,
-                         CS_TYPE_cs_int_t,
-                         &(syr_coupling->dim),
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:ndim_",
+			      1,
+			      CS_TYPE_cs_int_t,
+			      &(syr_coupling->dim),
+			      syr_coupling->send_comm);
 
   /* Vertices information */
 
@@ -1697,12 +1697,12 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
 
   /* Ready to start time iterations */
 
-  cs_comm_envoie_message(0,
-                         "coupl:b:debut",
-                         0,
-                         CS_TYPE_void,
-                         NULL,
-                         syr_coupling->send_comm);
+  cs_syr3_comm_envoie_message(0,
+			      "coupl:b:debut",
+			      0,
+			      CS_TYPE_void,
+			      NULL,
+			      syr_coupling->send_comm);
 
   /* Free memory */
 
@@ -1723,7 +1723,7 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_vtx_to_elt(cs_syr_coupling_t        *syr_coupling,
+cs_syr3_coupling_vtx_to_elt(cs_syr3_coupling_t        *syr_coupling,
                            cs_real_t          *const vtx_values,
                            cs_real_t                *elt_values)
 {
@@ -1809,10 +1809,10 @@ cs_syr_coupling_vtx_to_elt(cs_syr_coupling_t        *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_elt_to_vtx(cs_syr_coupling_t        *syr_coupling,
-                           cs_real_t          *const elt_values,
-                           cs_int_t                  n_vertices,
-                           cs_real_t                *vtx_values)
+cs_syr3_coupling_elt_to_vtx(cs_syr3_coupling_t        *syr_coupling,
+			    cs_real_t           *const elt_values,
+			    cs_int_t                   n_vertices,
+			    cs_real_t                 *vtx_values)
 {
   cs_int_t n_elts, stride;
 
@@ -1896,7 +1896,7 @@ cs_syr_coupling_elt_to_vtx(cs_syr_coupling_t        *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_post_var_update(cs_syr_coupling_t *syr_coupling,
+cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
                                 int                step,
                                 const cs_real_t   *var)
 {
@@ -1954,7 +1954,7 @@ cs_syr_coupling_post_var_update(cs_syr_coupling_t *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_post_id_extents(cs_int_t  *const id_mesh_start,
+cs_syr3_coupling_post_id_extents(cs_int_t  *const id_mesh_start,
                                 cs_int_t  *const id_mesh_end)
 {
   *id_mesh_start = cs_glob_syr_post_maillage_ext[0];
