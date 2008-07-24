@@ -35,6 +35,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if defined(_CS_HAVE_MPI)
@@ -76,8 +77,7 @@ extern "C" {
 typedef struct _cs_suite_rec_t {
 
   char            *nom;          /* Nom de l'enregistrement */
-  cs_int_t         ind_support;  /* Indice du support (code cs_suite_support_t
-                                    ou utilisateur dans version ultérieure) */
+  int              ind_support;  /* Indice du support */
   cs_int_t         nbr_val_ent;  /* Nombre de valeurs/entité support */
   cs_type_t        typ_val;      /* Type de variable */
 
@@ -85,6 +85,17 @@ typedef struct _cs_suite_rec_t {
   bft_file_off_t   pos_fic;      /* Position du début dans le fichier */
 
 } cs_suite_rec_t;
+
+typedef struct _cs_suite_sup_t {
+
+  char              *nom;             /* Nom du support */
+  char               nom_sup[4];      /* Nom associé pour rubriques */
+  fvm_lnum_t         nbr_ent_loc;     /* Nombre local d'entités */
+  fvm_gnum_t         nbr_ent_glob_f;  /* Nombre global d'entités fichier */
+  fvm_gnum_t         nbr_ent_glob;    /* Nombre global d'entités */
+  const fvm_gnum_t  *num_glob_ent;    /* Numéros globaux des entités, ou NULL */
+
+} cs_suite_sup_t;
 
 struct _cs_suite_t {
 
@@ -108,6 +119,9 @@ struct _cs_suite_t {
                                     nbr_fic en lecture (plusieurs fichiers
                                     peuvent être ouverts si données trop
                                     volumineuses pour un seul */
+
+  int              nbr_sup_add;  /* Nombre de supports utilisateur */
+  cs_suite_sup_t  *tab_sup_add;  /* Tableau des supports utilisateur */
 
   cs_suite_type_t  type;         /* Type de codage des données */
   cs_suite_mode_t  mode;         /* Lecture ou écriture */
@@ -202,9 +216,9 @@ static cs_suite_t **cs_glob_suite_ptr_tab = NULL;
 
 static cs_int_t cs_loc_suite_calc_nbr_ent
 (
- const cs_suite_t          *const suite,       /* --> Suite associée          */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent  /* --> Nb. val/point support   */
+ const cs_suite_t  *suite,                     /* --> Suite associée          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent                /* --> Nb. val/point support   */
 );
 
 
@@ -215,10 +229,10 @@ static cs_int_t cs_loc_suite_calc_nbr_ent
 
 static bft_file_off_t cs_loc_suite_calc_avance
 (
- const cs_suite_t          *const suite,       /* --> Suite associée          */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val      /* --> Type de valeurs         */
+ const cs_suite_t  *suite,                     /* --> Suite associée          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       cs_type_t    typ_val                    /* --> Type de valeurs         */
 );
 
 
@@ -233,8 +247,21 @@ static bft_file_off_t cs_loc_suite_calc_avance
 
 static cs_bool_t cs_loc_suite_fic_ajoute
 (
- cs_suite_t       *const suite              /* --> Structure suite            */
+ cs_suite_t  *suite                         /* --> Structure suite            */
 );
+
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui écrit une définition de support sur fichier suite.
+ *----------------------------------------------------------------------------*/
+
+static void cs_loc_suite_ecr_rub_sup
+(
+       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+ const char        *nom_sup,                   /* --> Nom du support          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_ent_glob               /* --> Taille du support       */
+ );
 
 
 /*----------------------------------------------------------------------------
@@ -244,12 +271,12 @@ static cs_bool_t cs_loc_suite_fic_ajoute
 
 static void cs_loc_suite_lit_val
 (
- const cs_suite_type_t         type,           /* --> Structure suite         */
- const bft_file_t       *const fic,            /* --> Fichier associé         */
- const cs_int_t                nbr_val,        /* --> Nb. valeurs à lire      */
- const cs_type_t               typ_val,        /* --> Type de valeurs         */
-       void             *const val,            /* <-- Valeurs à lire          */
-       char                    asc_buffer[]    /* <-> Buffer texte            */
+       cs_suite_type_t   type,                 /* --> Structure suite         */
+ const bft_file_t       *fic,                  /* --> Fichier associé         */
+       cs_int_t          nbr_val,              /* --> Nb. valeurs à lire      */
+       cs_type_t         typ_val,              /* --> Type de valeurs         */
+       void             *val,                  /* <-- Valeurs à lire          */
+       char              asc_buffer[]          /* <-> Buffer texte            */
 );
 
 
@@ -259,11 +286,11 @@ static void cs_loc_suite_lit_val
 
 static void cs_loc_suite_ecr_val
 (
- const cs_suite_t          *const suite,       /* --> Ptr. fichier suite      */
- const cs_int_t                   nbr_val,     /* --> Nb. valeurs à écrire    */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
- const void                *const val,         /* --> Valeurs à écrire        */
-       cs_int_t            *const ind_col      /* <-> Colonne départ/fin      */
+ const cs_suite_t  *suite,                     /* --> Ptr. fichier suite      */
+       cs_int_t     nbr_val,                   /* --> Nb. valeurs à écrire    */
+       cs_type_t    typ_val,                   /* --> Type de valeurs         */
+ const void        *val,                       /* --> Valeurs à écrire        */
+       cs_int_t    *ind_col                    /* <-> Colonne départ/fin      */
 );
 
 
@@ -273,8 +300,8 @@ static void cs_loc_suite_ecr_val
 
 static void cs_loc_suite_ecr_val_fin
 (
- const cs_suite_t          *const suite,       /* --> Ptr. fichier suite      */
-       cs_int_t            *const ind_col      /* <-> Colonne départ/fin      */
+ const cs_suite_t   * suite,                   /* --> Ptr. fichier suite      */
+       cs_int_t     * ind_col                  /* <-> Colonne départ/fin      */
 );
 
 
@@ -318,13 +345,13 @@ static void cs_loc_suite_prepare_index
 
 static void cs_loc_suite_rub_f77_vers_C
 (
- const cs_int_t             *const numsui,  /* --> Numéro du fichier suite    */
- const cs_int_t             *const itysup,  /* --> Code type de support       */
- const cs_int_t             *const irtype,  /* --> Entiers ou réels ?         */
-       cs_suite_t          **const suite,   /* <-- Pointeur structure suite   */
-       cs_suite_support_t   *const support, /* <-- Type de support            */
-       cs_type_t            *const typ_val, /* <-- Entiers ou réels           */
-       cs_int_t             *const ierror   /* <-- 0 = succès, < 0 = erreur   */
+ const cs_int_t         *const numsui,      /* --> Numéro du fichier suite    */
+ const cs_int_t         *const itysup,      /* --> Code type de support       */
+ const cs_int_t         *const irtype,      /* --> Entiers ou réels ?         */
+       cs_suite_t      **const suite,       /* <-- Pointeur structure suite   */
+       int              *const ind_support, /* <-- Type de support            */
+       cs_type_t        *const typ_val,     /* <-- Entiers ou réels           */
+       cs_int_t         *const ierror       /* <-- 0 = succès, < 0 = erreur   */
 );
 
 
@@ -431,6 +458,34 @@ static cs_byte_t * cs_loc_suite_permute_ecr
  const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
  const cs_type_t           typ_val,       /* --> Type de valeur               */
  const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
+);
+
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui définit un support supplémentaire.
+ *
+ *  Renvoie l'indice du support ajouté.
+ *----------------------------------------------------------------------------*/
+
+int cs_suite_ajoute_support
+(
+       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
+ const char        *nomsup,               /* --> Nom de la rubrique           */
+       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entités      */
+       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entités       */
+ const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entités  */
+);
+
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui initialise un support supplémentaire
+ *----------------------------------------------------------------------------*/
+
+static void cs_loc_suite_init_support
+(
+       cs_suite_t   *suite,         /* --> Ptr. fichier suite                 */
+ const char         *nomrub,        /* --> Nom de la rubrique                 */
+ const fvm_gnum_t    nbr_ent_glob   /* --> Nombre global d'entités            */
 );
 
 
@@ -672,9 +727,9 @@ void CS_PROCF (tstsui, TSTSUI)
 
   else {
 
-    cs_suite_verif_support(cs_glob_suite_ptr_tab[indsui],
-                           &corresp_cel, &corresp_fac,
-                           &corresp_fbr, &corresp_som);
+    cs_suite_verif_support_base(cs_glob_suite_ptr_tab[indsui],
+                                &corresp_cel, &corresp_fac,
+                                &corresp_fbr, &corresp_som);
 
     *indcel = (corresp_cel == CS_TRUE ? 1 : 0);
     *indfac = (corresp_fac == CS_TRUE ? 1 : 0);
@@ -762,10 +817,10 @@ void CS_PROCF (lecsui, LECSUI)
 {
   char    *nombuf;
 
-  cs_type_t          typ_val;
+  cs_type_t   typ_val;
 
-  cs_suite_t         *suite;
-  cs_suite_support_t  support;
+  cs_suite_t  *suite;
+  int          ind_support;
 
 
   *ierror = CS_SUITE_SUCCES;
@@ -781,7 +836,7 @@ void CS_PROCF (lecsui, LECSUI)
                               itysup,
                               irtype,
                               &suite,
-                              &support,
+                              &ind_support,
                               &typ_val,
                               ierror);
 
@@ -792,7 +847,7 @@ void CS_PROCF (lecsui, LECSUI)
 
   *ierror = cs_suite_lit_rub(suite,
                              nombuf,
-                             support,
+                             ind_support,
                              *nbvent,
                              typ_val,
                              tabvar);
@@ -844,18 +899,17 @@ void CS_PROCF (ecrsui, ECRSUI)
 {
   char    *nombuf;
 
-  cs_type_t          typ_val;
+  cs_type_t     typ_val;
 
-  cs_suite_t         *suite;
-  cs_suite_support_t  support;
+  cs_suite_t   *suite;
+  int           ind_support;
 
 
   *ierror = CS_SUITE_SUCCES;
 
   /* Traitement du nom pour l'API C */
 
-  nombuf = cs_base_chaine_f_vers_c_cree(nomrub,
-                                        *lngnom);
+  nombuf = cs_base_chaine_f_vers_c_cree(nomrub, *lngnom);
 
   /* Traitement des autres arguments pour l'API C */
 
@@ -863,7 +917,7 @@ void CS_PROCF (ecrsui, ECRSUI)
                               itysup,
                               irtype,
                               &suite,
-                              &support,
+                              &ind_support,
                               &typ_val,
                               ierror);
 
@@ -874,7 +928,7 @@ void CS_PROCF (ecrsui, ECRSUI)
 
   cs_suite_ecr_rub(suite,
                    nombuf,
-                   support,
+                   ind_support,
                    *nbvent,
                    typ_val,
                    tabvar);
@@ -882,7 +936,6 @@ void CS_PROCF (ecrsui, ECRSUI)
   /* Libération de mémoire si nécessaire */
 
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
-
 }
 
 
@@ -940,6 +993,11 @@ cs_suite_t * cs_suite_cree
     suite->nbr_fbr = mesh->n_g_b_faces;
     suite->nbr_som = mesh->n_g_vertices;
   }
+
+  /* Initialisation des supports utilisateurs  */
+
+  suite->nbr_sup_add = 0;
+  suite->tab_sup_add = NULL;
 
   /* Initialisation de l'index (pour lecture) */
 
@@ -1038,6 +1096,14 @@ cs_suite_t * cs_suite_detruit
   if (suite->tab_rec != NULL)
     BFT_FREE(suite->tab_rec);
 
+  if (suite->nbr_sup_add > 0) {
+    int ind_sup;
+    for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++)
+      BFT_FREE((suite->tab_sup_add[ind_sup]).nom);
+  }
+  if (suite->tab_sup_add != NULL)
+    BFT_FREE(suite->tab_sup_add);
+
   /* Dernières libérations mémoire */
 
   BFT_FREE(suite->nom);
@@ -1049,13 +1115,13 @@ cs_suite_t * cs_suite_detruit
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui vérifie le support associé à un fichier suite ;
+ *  Fonction qui vérifie les supports de base associé à un fichier suite ;
  *  On renvoie pour chaque type d'entité CS_TRUE si le nombre d'entités
  *  associées au fichier suite correspond au nombre d'entités en cours (et
  *  donc que l'on considère que le support est bien le même), CS_FALSE sinon.
  *----------------------------------------------------------------------------*/
 
-void cs_suite_verif_support
+void cs_suite_verif_support_base
 (
  const cs_suite_t  *const suite,            /* --> Fichier suite              */
        cs_bool_t   *const corresp_cel,      /* <-- Corresp. cellules          */
@@ -1081,9 +1147,8 @@ void cs_suite_verif_support
 
   if (cs_glob_base_rang <= 0) {
 
-    /*
-     * Dimensions du support
-     */
+    /* Dimensions du support */
+
     if ((fvm_gnum_t)suite->nbr_cel != mesh->n_g_cells) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("Le nombre de cellules associées au fichier suite\n"
@@ -1115,6 +1180,81 @@ void cs_suite_verif_support
 
 
 /*----------------------------------------------------------------------------
+ *  Fonction qui ajoute un support supplémentaire.
+ *
+ *  Renvoie l'indice associé au support, ou -1 en cas d'erreur.
+ *----------------------------------------------------------------------------*/
+
+int cs_suite_ajoute_support
+(
+       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
+ const char        *nom_sup,              /* --> Nom de la rubrique           */
+       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entités      */
+       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entités       */
+ const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entités  */
+)
+{
+  int  ind_sup;
+
+  int errval = -1;
+
+  if (suite->mode == CS_SUITE_MODE_LECTURE) {
+
+    /* Recherche d'un support avec le même nom */
+
+    for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++) {
+
+      if ((strcmp((suite->tab_sup_add[ind_sup]).nom, nom_sup) == 0)) {
+
+        (suite->tab_sup_add[ind_sup]).nbr_ent_glob = nbr_ent_glob;
+
+        (suite->tab_sup_add[ind_sup]).nbr_ent_loc  = nbr_ent_loc;
+        (suite->tab_sup_add[ind_sup]).num_glob_ent = num_glob_ent;
+
+        return ind_sup + 5;
+
+      }
+    }
+  }
+
+  else {
+
+    int ind_sup_f = suite->nbr_sup_add + 5;
+
+    /* Création d'un nouveau support */
+
+    suite->nbr_sup_add += 1;
+
+    BFT_REALLOC(suite->tab_sup_add, suite->nbr_sup_add, cs_suite_sup_t);
+    BFT_MALLOC((suite->tab_sup_add[suite->nbr_sup_add-1]).nom,
+               strlen(nom_sup)+1,
+               char);
+
+    strcpy((suite->tab_sup_add[suite->nbr_sup_add-1]).nom, nom_sup);
+
+    sprintf((suite->tab_sup_add[suite->nbr_sup_add-1]).nom_sup,
+            "%03i",
+            ind_sup_f);
+
+    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_glob   = nbr_ent_glob;
+    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_glob_f = nbr_ent_glob;
+    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_loc    = nbr_ent_loc;
+    (suite->tab_sup_add[suite->nbr_sup_add-1]).num_glob_ent   = num_glob_ent;
+
+    cs_loc_suite_ecr_rub_sup(suite,
+                             nom_sup,
+                             suite->nbr_sup_add + 4,
+                             nbr_ent_glob);
+
+    return ind_sup_f;
+
+  }
+
+  return errval;
+}
+
+
+/*----------------------------------------------------------------------------
  *  Fonction qui affiche l'index généré lors de l'analyse du fichier
  *----------------------------------------------------------------------------*/
 
@@ -1123,26 +1263,43 @@ void cs_suite_affiche_index
  const cs_suite_t  *const  suite          /* --> Structure suite              */
 )
 {
+  int ind_sup;
+
   cs_int_t  ind_rec;
 
   assert(suite != NULL);
+
+  for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++) {
+    const cs_suite_sup_t *spt = &(suite->tab_sup_add[ind_sup]);
+    bft_printf(_("  Support supplémentaire : %s\n"
+                 "    (numéro : %03d, nbr_ent_glob : %lu\n"),
+               spt->nom, (unsigned long)(spt->nbr_ent_glob));
+  }
+  if (suite->nbr_sup_add > 0)
+    bft_printf("\n");
 
   bft_printf(_("  Index associé à la suite : %s\n"
                "  (support, nbr_val/ent, type_val, [ind_fic, pos_fic], "
                "nom) : \n"),
              suite->nom);
 
-  for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++)
+  for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
+    char nom_sup[4];
+    if ((suite->tab_rec[ind_rec]).ind_support < CS_SUITE_SUPPORT_SOM)
+      strcpy(nom_sup,
+             cs_suite_nom_support[(suite->tab_rec[ind_rec]).ind_support]);
+    else
+      sprintf(nom_sup, "%03d", (suite->tab_rec[ind_rec]).ind_support);
     bft_printf("    %s  %d  %s  [%2d %10d]  %s\n",
-               cs_suite_nom_support[(suite->tab_rec[ind_rec]).ind_support],
+               nom_sup,
                (suite->tab_rec[ind_rec]).nbr_val_ent,
                cs_suite_nom_typ_elt[(suite->tab_rec[ind_rec]).typ_val],
                (suite->tab_rec[ind_rec]).ind_fic,
                (int)(suite->tab_rec[ind_rec]).pos_fic,
                (suite->tab_rec[ind_rec]).nom);
+  }
 
   bft_printf("\n");
-
 }
 
 
@@ -1154,19 +1311,19 @@ void cs_suite_affiche_index
 
 cs_int_t cs_suite_lit_rub
 (
- const cs_suite_t          *const suite,       /* --> Ptr. structure suite    */
- const char                *const nom_rub,     /* --> Nom de la rubrique      */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
-       void                *const val          /* <-- Valeurs à lire          */
+ const cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+ const char        *nom_rub,                   /* --> Nom de la rubrique      */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       cs_type_t    typ_val,                   /* --> Type de valeurs         */
+       void        *val                        /* <-- Valeurs à lire          */
 )
 {
 
   char         buffer_ascii[CS_SUITE_LNG_BUF_ASCII + 1];
 
   cs_int_t     nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
-  fvm_gnum_t  *num_glob_ent;
+  const fvm_gnum_t  *num_glob_ent;
 
   cs_int_t     ind_rec;
   bft_file_t  *fic;
@@ -1179,7 +1336,7 @@ cs_int_t cs_suite_lit_rub
 
   /* Vérification du support associé */
 
-  switch (support) {
+  switch (ind_support) {
 
   case CS_SUITE_SUPPORT_SCAL:
     nbr_ent_glob = nbr_val_tot/nbr_val_ent;
@@ -1215,7 +1372,14 @@ cs_int_t cs_suite_lit_rub
     num_glob_ent = mesh->global_vtx_num;
     break;
   default:
-    assert(0);
+    if (ind_support < 0 || (ind_support-5) >= suite->nbr_sup_add)
+      return CS_SUITE_ERR_SUPPORT;
+    if (   (suite->tab_sup_add[ind_support-5]).nbr_ent_glob_f
+        != (suite->tab_sup_add[ind_support-5]).nbr_ent_glob)
+      return CS_SUITE_ERR_SUPPORT;
+    nbr_ent_glob = (suite->tab_sup_add[ind_support-5]).nbr_ent_glob;
+    nbr_ent_loc  = (suite->tab_sup_add[ind_support-5]).nbr_ent_loc;
+    num_glob_ent = (suite->tab_sup_add[ind_support-5]).num_glob_ent;
   }
 
   /* On recherche l'enregistrement correspondant dans l'index */
@@ -1235,15 +1399,13 @@ cs_int_t cs_suite_lit_rub
     de même nom mais de support approprié.
   */
 
-  if (   (cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support)
-      != support) {
+  if ((suite->tab_rec[ind_rec]).ind_support != ind_support) {
 
     for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
       if (   (strncmp((suite->tab_rec[ind_rec]).nom,
                       nom_rub,
                       strlen((suite->tab_rec[ind_rec]).nom)) == 0)
-          && ((cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support)
-              == support))
+          && ((suite->tab_rec[ind_rec]).ind_support == ind_support))
       break;
     }
 
@@ -1276,7 +1438,7 @@ cs_int_t cs_suite_lit_rub
   /*------------------------*/
 
   nbr_val_tot = cs_loc_suite_calc_nbr_ent(suite,
-                                          support,
+                                          ind_support,
                                           nbr_val_ent);
 
   /* En mode non-parallèle */
@@ -1298,7 +1460,7 @@ cs_int_t cs_suite_lit_rub
 
   /* Variable indépendante du support et commune aux processus */
 
-  else if (support == CS_SUITE_SUPPORT_SCAL) {
+  else if (ind_support == CS_SUITE_SUPPORT_SCAL) {
 
     if (cs_glob_base_rang == 0)
       cs_loc_suite_lit_val(suite->type, fic, nbr_val_tot, typ_val, val,
@@ -1347,20 +1509,21 @@ cs_int_t cs_suite_lit_rub
 
 void cs_suite_ecr_rub
 (
-       cs_suite_t          *const suite,       /* --> Ptr. structure suite    */
- const char                *const nom_rub,     /* --> Nom de la rubrique      */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
- const void                *const val          /* --> Valeurs à écrire        */
+       cs_suite_t   *suite,                    /* --> Ptr. structure suite    */
+ const char         *nom_rub,                  /* --> Nom de la rubrique      */
+       int           ind_support,              /* --> Support de la variable  */
+       cs_int_t      nbr_val_ent,              /* --> Nb. val/point support   */
+       cs_type_t     typ_val,                  /* --> Type de valeurs         */
+ const void         *val                       /* --> Valeurs à écrire        */
 )
 {
 
   cs_int_t         nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
-  fvm_gnum_t      *num_glob_ent;
   bft_file_off_t   taille_rub, pos_fic_cur;
 
   cs_int_t         ind_col_0 = 0;
+
+  const fvm_gnum_t  *num_glob_ent;
 
   cs_mesh_t   *mesh = cs_glob_mesh;
 
@@ -1377,7 +1540,7 @@ void cs_suite_ecr_rub
 
     /* Taille données */
     taille_rub = cs_loc_suite_calc_avance(suite,
-                                          support,
+                                          ind_support,
                                           nbr_val_ent,
                                           typ_val);
 
@@ -1446,12 +1609,20 @@ void cs_suite_ecr_rub
 
     case CS_SUITE_TYPE_ASCII:
 
-      bft_file_printf(suite->fic[0], "[%s\n", nom_rub);
-      bft_file_printf(suite->fic[0],
-                      " support = %3s, nbr_val_ent = %3d, typ_val = %3s]\n",
-                      cs_suite_nom_support[(int)support],
-                      (int)nbr_val_ent,
-                      cs_suite_nom_typ_elt[(int)typ_val]);
+      {
+        char code_support[5];
+        if (ind_support <= 4)
+          strcpy(code_support, cs_suite_nom_support[ind_support]);
+        else
+          strcpy(code_support, suite->tab_sup_add[ind_support-5].nom_sup);
+
+        bft_file_printf(suite->fic[0], "[%s\n", nom_rub);
+        bft_file_printf(suite->fic[0],
+                        " support = %3s, nbr_val_ent = %3d, typ_val = %3s]\n",
+                        code_support,
+                        (int)nbr_val_ent,
+                        cs_suite_nom_typ_elt[(int)typ_val]);
+      }
       break;
 
     case CS_SUITE_TYPE_BINAIRE:
@@ -1460,7 +1631,7 @@ void cs_suite_ecr_rub
         cs_int_t  buf[4];
 
         buf[0] = strlen(nom_rub) + 1;
-        buf[1] = (int)support;
+        buf[1] = ind_support;
         buf[2] = (int)nbr_val_ent;
         buf[3] = (int)typ_val;
 
@@ -1477,10 +1648,10 @@ void cs_suite_ecr_rub
   /*------------------------*/
 
   nbr_val_tot = cs_loc_suite_calc_nbr_ent(suite,
-                                          support,
+                                          ind_support,
                                           nbr_val_ent);
 
-  switch (support) {
+  switch (ind_support) {
 
   case CS_SUITE_SUPPORT_SCAL:
     nbr_ent_glob = nbr_val_tot/nbr_val_ent;
@@ -1508,8 +1679,10 @@ void cs_suite_ecr_rub
     num_glob_ent = mesh->global_vtx_num;
     break;
   default:
-    assert(0);
-
+    assert(ind_support >= 0 && (ind_support-5) < suite->nbr_sup_add);
+    nbr_ent_glob = (suite->tab_sup_add[ind_support-5]).nbr_ent_glob;
+    nbr_ent_loc  = (suite->tab_sup_add[ind_support-5]).nbr_ent_loc;
+    num_glob_ent = (suite->tab_sup_add[ind_support-5]).num_glob_ent;
   }
 
   /* En mode non-parallèle */
@@ -1538,7 +1711,7 @@ void cs_suite_ecr_rub
 
   /* Variable indépendante du support et commune aux processus */
 
-  else if (support == CS_SUITE_SUPPORT_SCAL) {
+  else if (ind_support == CS_SUITE_SUPPORT_SCAL) {
 
     if (cs_glob_base_rang == 0) {
       cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val, val,
@@ -1636,12 +1809,12 @@ void cs_suite_f77_api_finalize
 
 static cs_int_t cs_loc_suite_calc_nbr_ent
 (
- const cs_suite_t          *const suite,       /* --> Suite associée          */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent  /* --> Nb. val/point support   */
+ const cs_suite_t  *suite,                     /* --> Suite associée          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent                /* --> Nb. val/point support   */
 )
 {
-  switch(support) {
+  switch(ind_support) {
 
   case CS_SUITE_SUPPORT_SCAL:
     return (nbr_val_ent);
@@ -1654,12 +1827,15 @@ static cs_int_t cs_loc_suite_calc_nbr_ent
   case CS_SUITE_SUPPORT_SOM:
     return (suite->nbr_som * nbr_val_ent);
   default:
-    assert(support <= CS_SUITE_SUPPORT_SOM);
-
+    if (ind_support < 0 || (ind_support-5) >= suite->nbr_sup_add)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le numéro de support %d indiqué pour le fichier suite\n"
+                  "<%s> n'est pas valide."),
+                ind_support, suite->nom);
+    return (cs_int_t)(suite->tab_sup_add[ind_support-5]).nbr_ent_glob_f;
   }
 
   return 0;
-
 }
 
 
@@ -1670,10 +1846,10 @@ static cs_int_t cs_loc_suite_calc_nbr_ent
 
 static bft_file_off_t cs_loc_suite_calc_avance
 (
- const cs_suite_t          *const suite,       /* --> Suite associée          */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val      /* --> Type de valeurs         */
+ const cs_suite_t  *suite,                     /* --> Suite associée          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       cs_type_t    typ_val                    /* --> Type de valeurs         */
 )
 {
   cs_int_t        nbr_val;
@@ -1684,7 +1860,7 @@ static bft_file_off_t cs_loc_suite_calc_avance
   assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
 
   nbr_val = cs_loc_suite_calc_nbr_ent(suite,
-                                      support,
+                                      ind_support,
                                       nbr_val_ent);
 
   if (suite->type == CS_SUITE_TYPE_ASCII) {
@@ -1731,7 +1907,6 @@ static bft_file_off_t cs_loc_suite_calc_avance
   }
 
   return (taille);
-
 }
 
 
@@ -1746,12 +1921,13 @@ static bft_file_off_t cs_loc_suite_calc_avance
 
 static cs_bool_t cs_loc_suite_fic_ajoute
 (
- cs_suite_t       *const suite              /* --> Structure suite            */
+ cs_suite_t  *suite                         /* --> Structure suite            */
 )
 {
-/* On ne change le numero que si les fichiers suite des
- * versions precedentes ne sont plus compatibles. Ce numero est en
- * fait deconnecte du numero de version */
+  /* On ne change le numero que si les fichiers suite des
+   * versions précédentes ne sont plus compatibles. Ce numéro est en
+   * fait déconnecté du numero de version */
+
   char entete_txt[] = "Code_Saturne 1.1 (reprise)\n";
   char entete_bin[] = "Code_Saturne_1.1_bin_reprise\n";
   char buffer[CS_SUITE_LNG_BUF_ASCII + 1];
@@ -1956,18 +2132,88 @@ static cs_bool_t cs_loc_suite_fic_ajoute
 
 
 /*----------------------------------------------------------------------------
+ *  Fonction qui écrit une définition de support sur fichier suite.
+ *----------------------------------------------------------------------------*/
+
+static void cs_loc_suite_ecr_rub_sup
+(
+       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+ const char        *nom_sup,                   /* --> Nom du support          */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_ent_glob               /* --> Taille du support       */
+)
+{
+  cs_int_t         ind_col_0 = 0;
+
+
+  assert(suite != NULL);
+  assert(   suite->type == CS_SUITE_TYPE_ASCII
+         || suite->type == CS_SUITE_TYPE_BINAIRE);
+
+
+  /* Entête de la rubrique */
+  /* --------------------- */
+
+  if (cs_glob_base_rang <= 0) {
+
+    switch(suite->type) {
+
+    case CS_SUITE_TYPE_ASCII:
+
+      {
+        bft_file_printf(suite->fic[0], "[%s\n", nom_sup);
+        bft_file_printf(suite->fic[0],
+                        " support = %3d, nbr_val_ent =   1, typ_val = %3s]\n",
+                        ind_support,
+                        cs_suite_nom_typ_elt[(int)CS_TYPE_cs_int_t]);
+      }
+      break;
+
+    case CS_SUITE_TYPE_BINAIRE:
+
+      {
+        cs_int_t  buf[4];
+
+        buf[0] = strlen(nom_sup) + 1;
+        buf[1] = ind_support;
+        buf[2] = 1;
+        buf[3] = (int)CS_TYPE_cs_int_t;
+
+        bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
+        bft_file_write(nom_sup, 1, buf[0], suite->fic[0]);
+      }
+      break;
+
+    }
+
+  }
+
+  /* Contenu de la rubrique */
+  /*------------------------*/
+
+  /* Variable indépendante du support et commune aux processus */
+
+  if (cs_glob_base_rang <= 0) {
+    cs_loc_suite_ecr_val(suite, 1, CS_TYPE_cs_int_t, &nbr_ent_glob, &ind_col_0);
+    cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------
  *  Fonction qui lit une liste de valeurs sur un fichier ; on suppose que
  *  l'on est déjà à la bonne position de départ dans le fichier.
  *----------------------------------------------------------------------------*/
 
 static void cs_loc_suite_lit_val
 (
- const cs_suite_type_t         type,           /* --> Structure suite         */
- const bft_file_t       *const fic,            /* --> Fichier associé         */
- const cs_int_t                nbr_val,        /* --> Nb. valeurs à lire      */
- const cs_type_t               typ_val,        /* --> Type de valeurs         */
-       void             *const val,            /* <-- Valeurs à lire          */
-       char                    asc_buffer[]    /* <-> Buffer texte            */
+       cs_suite_type_t   type,                 /* --> Structure suite         */
+ const bft_file_t       *fic,                  /* --> Fichier associé         */
+       cs_int_t          nbr_val,              /* --> Nb. valeurs à lire      */
+       cs_type_t         typ_val,              /* --> Type de valeurs         */
+       void             *val,                  /* <-- Valeurs à lire          */
+       char              asc_buffer[]          /* <-> Buffer texte            */
 )
 {
 
@@ -2140,11 +2386,11 @@ static void cs_loc_suite_lit_val
 
 static void cs_loc_suite_ecr_val
 (
- const cs_suite_t          *const suite,       /* --> Ptr. fichier suite      */
- const cs_int_t                   nbr_val,     /* --> Nb. valeurs à écrire    */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
- const void                *const val,         /* --> Valeurs à écrire        */
-       cs_int_t            *const ind_col      /* <-> Colonne départ/fin      */
+ const cs_suite_t  *suite,                     /* --> Ptr. fichier suite      */
+       cs_int_t     nbr_val,                   /* --> Nb. valeurs à écrire    */
+       cs_type_t    typ_val,                   /* --> Type de valeurs         */
+ const void        *val,                       /* --> Valeurs à écrire        */
+       cs_int_t    *ind_col                    /* <-> Colonne départ/fin      */
 )
 {
 
@@ -2237,8 +2483,8 @@ static void cs_loc_suite_ecr_val
 
 static void cs_loc_suite_ecr_val_fin
 (
- const cs_suite_t          *const suite,       /* --> Ptr. fichier suite      */
-       cs_int_t            *const ind_col      /* <-> Colonne départ/fin      */
+ const cs_suite_t   * suite,                   /* --> Ptr. fichier suite      */
+       cs_int_t     * ind_col                  /* <-> Colonne départ/fin      */
 )
 {
   /* Rien à faire pour les fichiers binaires */
@@ -2791,6 +3037,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 )
 {
   char buffer [CS_SUITE_LNG_BUF_ASCII + 1];
+  char nom_tmp[CS_SUITE_LNG_BUF_ASCII + 1];
   char sub    [CS_SUITE_LNG_BUF_ASCII + 1];
   char str_typ[CS_SUITE_LNG_BUF_ASCII + 1];
   char *str;
@@ -2800,6 +3047,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
   int nbr_ent, nbr_val_ent;
 
+  int ind_sup = -1;
   cs_int_t  num_ligne = 1;
   cs_int_t  ind_fic   = suite->nbr_fic - 1;
 
@@ -2842,10 +3090,9 @@ static cs_bool_t cs_loc_suite_analyse_txt
       }
 
     }
-    else {               /* if (str != NULL) */
+    else { /* if (str != NULL) */
 
-      err_fmt = CS_TRUE;
-      /* break; */
+      err_fmt = CS_TRUE; /* break; */
 
     }
 
@@ -2896,7 +3143,6 @@ static cs_bool_t cs_loc_suite_analyse_txt
     /* Traitement d'une rubrique */
 
     else if (buffer[0] == '[') {
-
       lng = strlen(buffer);
       while (   buffer[lng - 1] == '\n' || buffer[lng - 1] == '\r'
                 || buffer[lng - 1] == '\t' || buffer[lng - 1] == ' ') {
@@ -2941,15 +3187,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
       /* Traitement d'un enregistrement standard */
 
-      if (suite->nbr_rec == suite->nbr_rec_max) {
-        suite->nbr_rec_max *= 2;
-        BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
-      }
-
-      ind_rec = suite->nbr_rec;
-
-      BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(sub) + 1, char);
-      strcpy((suite->tab_rec[ind_rec]).nom, sub);
+      strcpy(nom_tmp, sub);
 
       str = bft_file_gets_try(buffer,
                               CS_SUITE_LNG_BUF_ASCII,
@@ -3021,57 +3259,110 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
       }
 
-      /* Remplissage de la structure */
+      /* Détermination du numéro de support associé */
 
-      for (ind = CS_SUITE_SUPPORT_SCAL ;
-           ind <= CS_SUITE_SUPPORT_SOM ; ind++) {
-        if (strcmp(sub, cs_suite_nom_support[ind]) == 0) {
-          (suite->tab_rec[ind_rec]).ind_support = (cs_suite_support_t)ind;
+      for (ind_sup = CS_SUITE_SUPPORT_SCAL;
+           ind_sup <= CS_SUITE_SUPPORT_SOM;
+           ind_sup++) {
+        if (strcmp(sub, cs_suite_nom_support[ind_sup]) == 0)
             break;
-        }
       }
-      if (ind > CS_SUITE_SUPPORT_SOM)
-        err_fmt = CS_TRUE;
-      (suite->tab_rec[ind_rec]).nbr_val_ent = (cs_int_t) nbr_val_ent;
-      for (ind = 0 ; ind < 3 ; ind++) {
-        if (strcmp(str_typ, cs_suite_nom_typ_elt[ind]) == 0) {
-          (suite->tab_rec[ind_rec]).typ_val = (cs_type_t)ind;
-            break;
-        }
+      if (ind_sup > CS_SUITE_SUPPORT_SOM) {
+        ind_sup = atoi(sub);
+        if (ind_sup < 5)
+          err_fmt = CS_TRUE;
       }
-      if (ind == 3)
-        err_fmt = CS_TRUE;
 
-      /* Position dans le fichier */
+      /* Si l'enregistrement définit un support additionnel */
 
-      (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
-      (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
+      if (ind_sup > (CS_SUITE_SUPPORT_SOM + suite->nbr_sup_add)) {
 
-      /* Libération du nom si erreur de format */
+        char buffer_ascii[80];
 
-      if (   (fin_fic == CS_TRUE || err_fmt == CS_TRUE)
-          && (suite->tab_rec[ind_rec]).nom != NULL)
-        BFT_FREE((suite->tab_rec[ind_rec]).nom);
+        cs_int_t nbr_ent_sup = 0;
+
+        if (   ind_sup != suite->nbr_sup_add + 5
+            || nbr_val_ent != 1
+            || (strcmp(str_typ, cs_suite_nom_typ_elt[1]) != 0)) {
+          bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
+                       "de support additionnel (%s) incorrecte."),
+                     suite->nom);
+          return CS_FALSE;
+        }
+
+        /* Lecture du nombre global d'entités associé */
+
+        buffer_ascii[0] = '\0';
+        cs_loc_suite_lit_val(CS_SUITE_TYPE_ASCII,
+                             suite->fic[ind_fic],
+                             1,
+                             CS_TYPE_cs_int_t,
+                             &nbr_ent_sup,
+                             buffer_ascii);
+
+        cs_loc_suite_init_support(suite,
+                                  nom_tmp,
+                                  nbr_ent_sup);
+      }
+
+      /* Sinon, on a affaire à un enregistrement standard */
 
       else {
 
-        /* Incrémentation compteur */
+        if (suite->nbr_rec == suite->nbr_rec_max) {
+          suite->nbr_rec_max *= 2;
+          BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
+        }
 
-        suite->nbr_rec += 1;
+        ind_rec = suite->nbr_rec;
 
-        /* Passage rapide à la suite */
+        (suite->tab_rec[ind_rec]).ind_support = ind_sup;
 
-        bft_file_seek
-          (suite->fic[ind_fic],
-           (  (suite->tab_rec[ind_rec]).pos_fic
-            + cs_loc_suite_calc_avance
-                (suite,
-                 (cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support),
-                 (suite->tab_rec[ind_rec]).nbr_val_ent,
-                 (suite->tab_rec[ind_rec]).typ_val)),
-           BFT_FILE_SEEK_SET);
+        BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(nom_tmp) + 1, char);
+        strcpy((suite->tab_rec[ind_rec]).nom, nom_tmp);
 
-      }
+        (suite->tab_rec[ind_rec]).nbr_val_ent = (cs_int_t)nbr_val_ent;
+        for (ind = 0 ; ind < 3 ; ind++) {
+          if (strcmp(str_typ, cs_suite_nom_typ_elt[ind]) == 0) {
+            (suite->tab_rec[ind_rec]).typ_val = (cs_type_t)ind;
+            break;
+          }
+        }
+        if (ind == 3)
+          err_fmt = CS_TRUE;
+
+        /* Position dans le fichier */
+
+        (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
+        (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
+
+        /* Libération du nom si erreur de format */
+
+        if (   (fin_fic == CS_TRUE || err_fmt == CS_TRUE)
+               && (suite->tab_rec[ind_rec]).nom != NULL)
+          BFT_FREE((suite->tab_rec[ind_rec]).nom);
+
+        else {
+
+          /* Incrémentation compteur */
+
+          suite->nbr_rec += 1;
+
+          /* Passage rapide à la suite */
+
+          bft_file_seek
+            (suite->fic[ind_fic],
+             (  (suite->tab_rec[ind_rec]).pos_fic
+              + cs_loc_suite_calc_avance
+                  (suite,
+                   ((suite->tab_rec[ind_rec]).ind_support),
+                   (suite->tab_rec[ind_rec]).nbr_val_ent,
+                   (suite->tab_rec[ind_rec]).typ_val)),
+             BFT_FILE_SEEK_SET);
+
+        }
+
+      } /* fin du traitement pour un enregistrement standard */
 
     }
 
@@ -3203,43 +3494,71 @@ static cs_bool_t cs_loc_suite_analyse_bin
       continue;
     }
 
-    /* Traitement d'un enregistrement standard */
+    /* Si l'enregistrement définit un support additionnel */
 
-    if (suite->nbr_rec == suite->nbr_rec_max) {
-      suite->nbr_rec_max *= 2;
-      BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
+    if (buf[1] > (CS_SUITE_SUPPORT_SOM + suite->nbr_sup_add)) {
+
+      cs_int_t nbr_ent_sup = 0;
+
+      if (   buf[1] != suite->nbr_sup_add + 5
+          || buf[2] != 1
+          || buf[3] != 1) {
+        bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
+                     "de support additionnel (%s) incorrecte."),
+                   suite->nom);
+        return CS_FALSE;
+      }
+
+      /* Lecture du nombre global d'entités associé */
+
+      bft_file_read(&nbr_ent_sup, sizeof(cs_int_t), 1, suite->fic[ind_fic]);
+
+      cs_loc_suite_init_support(suite,
+                                nom,
+                                nbr_ent_sup);
+
     }
 
-    ind_rec = suite->nbr_rec;
+    /* Traitement d'un enregistrement standard */
 
-    BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(nom) + 1, char);
-    strcpy((suite->tab_rec[ind_rec]).nom, nom);
+    else {
 
-    (suite->tab_rec[ind_rec]).ind_support = buf[1];
-    (suite->tab_rec[ind_rec]).nbr_val_ent = buf[2];
-    (suite->tab_rec[ind_rec]).typ_val     = (cs_type_t)buf[3];
+      if (suite->nbr_rec == suite->nbr_rec_max) {
+        suite->nbr_rec_max *= 2;
+        BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
+      }
 
-    /* Position dans le fichier */
+      ind_rec = suite->nbr_rec;
 
-    (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
-    (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
+      BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(nom) + 1, char);
+      strcpy((suite->tab_rec[ind_rec]).nom, nom);
 
-    /* Incrémentation compteur */
+      (suite->tab_rec[ind_rec]).ind_support = buf[1];
+      (suite->tab_rec[ind_rec]).nbr_val_ent = buf[2];
+      (suite->tab_rec[ind_rec]).typ_val     = (cs_type_t)buf[3];
 
-    suite->nbr_rec += 1;
+      /* Position dans le fichier */
 
-    /* Passage rapide à la suite */
+      (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
+      (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
 
-    bft_file_seek
-      (suite->fic[ind_fic],
-       (  (suite->tab_rec[ind_rec]).pos_fic
-        + cs_loc_suite_calc_avance
-            (suite,
-             (cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support),
-             (suite->tab_rec[ind_rec]).nbr_val_ent,
-             (suite->tab_rec[ind_rec]).typ_val)),
-       BFT_FILE_SEEK_SET);
+      /* Incrémentation compteur */
 
+      suite->nbr_rec += 1;
+
+      /* Passage rapide à la suite */
+
+      bft_file_seek
+        (suite->fic[ind_fic],
+         (  (suite->tab_rec[ind_rec]).pos_fic
+          + cs_loc_suite_calc_avance
+              (suite,
+               (cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support),
+               (suite->tab_rec[ind_rec]).nbr_val_ent,
+               (suite->tab_rec[ind_rec]).typ_val)),
+         BFT_FILE_SEEK_SET);
+
+    }
   }
 
   if (nom != buf_nom)
@@ -3385,7 +3704,7 @@ static void cs_loc_suite_rub_f77_vers_C
  const cs_int_t             *const itysup,  /* --> Code type de support       */
  const cs_int_t             *const irtype,  /* --> Entiers ou réels ?         */
        cs_suite_t          **const suite,   /* <-- Pointeur structure suite   */
-       cs_suite_support_t   *const support, /* <-- Type de support            */
+       int                  *const support, /* <-- Type de support            */
        cs_type_t            *const typ_val, /* <-- Entiers ou réels           */
        cs_int_t             *const ierror   /* <-- 0 = succès, < 0 = erreur   */
 )
@@ -3608,6 +3927,29 @@ static cs_byte_t * cs_loc_suite_permute_ecr
 
 }
 
+/*----------------------------------------------------------------------------
+ *  Fonction qui initialise un support supplémentaire
+ *----------------------------------------------------------------------------*/
+
+static void cs_loc_suite_init_support
+(
+       cs_suite_t   *suite,         /* --> Ptr. fichier suite                 */
+ const char         *nomrub,        /* --> Nom de la rubrique                 */
+ const fvm_gnum_t    nbr_ent_glob   /* --> Nombre global d'entités            */
+)
+{
+  int ind_sup;
+
+  suite->nbr_sup_add += 1;
+  BFT_REALLOC(suite->tab_sup_add, suite->nbr_sup_add, cs_suite_sup_t);
+  ind_sup = suite->nbr_sup_add-1;
+
+  BFT_MALLOC((suite->tab_sup_add[ind_sup]).nom, strlen(nomrub) + 1, char);
+  strcpy((suite->tab_sup_add[ind_sup]).nom, nomrub);
+  (suite->tab_sup_add[ind_sup]).nbr_ent_glob_f = nbr_ent_glob;
+}
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }

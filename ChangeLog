@@ -1,3 +1,11 @@
+* 24/07/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Extending support for restart files to extracted part
+  of the mesh
+  modfified routines:
+    include/base/cs_suite.h
+    src/base/cs_suite.c
+    src/base/cs_tpar1d.c
+
 * 24/07/2008 - David Monfort <david.monfort@edf.fr>
   Removing cs_perio_sync_geo by cs_perio_sync_var
   modified routines:

@@ -424,8 +424,8 @@ void CS_PROCF (lect1d,LECT1D)
   suite = cs_glob_tpar1d_suite;
 
   /* Vérification du support associé au fichier suite */
-  cs_suite_verif_support ( suite, &corresp_cel, &corresp_fac,
-                           &corresp_fbr, &corresp_som );
+  cs_suite_verif_support_base(suite, &corresp_cel, &corresp_fac,
+                              &corresp_fbr, &corresp_som );
 
   /* On ne s'intéresse qu'aux faces de bord */
   indfac = ( corresp_fbr == CS_TRUE ? 1 : 0 );

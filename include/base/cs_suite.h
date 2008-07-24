@@ -41,6 +41,11 @@ extern "C" {
  *  Fichiers `include' librairie standard C
  *----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------
+ *  Fichiers `include` librairies BFT et FVM
+ *----------------------------------------------------------------------------*/
+
+#include <fvm_defs.h>
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' locaux
@@ -335,13 +340,29 @@ cs_suite_t * cs_suite_detruit
  *  donc que l'on considere que le support est bien le meme), CS_FALSE sinon.
  *----------------------------------------------------------------------------*/
 
-void cs_suite_verif_support
+void cs_suite_verif_support_base
 (
  const cs_suite_t  *const suite,            /* --> Fichier suite              */
        cs_bool_t   *const corresp_cel,      /* <-- Corresp. cellules          */
        cs_bool_t   *const corresp_fac,      /* <-- Corresp. faces internes    */
        cs_bool_t   *const corresp_fbr,      /* <-- Corresp. faces de bord     */
        cs_bool_t   *const corresp_som       /* <-- Corresp. sommets           */
+);
+
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui ajoute un support supplementaire.
+ *
+ *  Renvoie l'indice associe au support, ou -1 en cas d'erreur.
+ *----------------------------------------------------------------------------*/
+
+int cs_suite_ajoute_support
+(
+       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
+ const char        *nom_sup,              /* --> Nom de la rubrique           */
+       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entites      */
+       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entites       */
+ const fvm_gnum_t  *num_glob_ent          /* --> Numeros globaux des entites  */
 );
 
 
@@ -363,12 +384,12 @@ void cs_suite_affiche_index
 
 cs_int_t cs_suite_lit_rub
 (
- const cs_suite_t          *const suite,       /* --> Ptr. structure suite    */
- const char                *const nom_rub,     /* --> Nom de la rubrique      */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
-       void                *const val          /* <-- Valeurs a lire          */
+ const cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+ const char        *nom_rub,                   /* --> Nom de la rubrique      */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       cs_type_t    typ_val,                   /* --> Type de valeurs         */
+       void        *val                        /* <-- Valeurs a lire          */
 );
 
 
@@ -378,12 +399,12 @@ cs_int_t cs_suite_lit_rub
 
 void cs_suite_ecr_rub
 (
-       cs_suite_t          *const suite,       /* --> Ptr. structure suite    */
- const char                *const nom_rub,     /* --> Nom de la rubrique      */
- const cs_suite_support_t         support,     /* --> Support de la variable  */
- const cs_int_t                   nbr_val_ent, /* --> Nb. val/point support   */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
- const void                *const val          /* --> Valeurs a ecrire        */
+       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+ const char        *nom_rub,                   /* --> Nom de la rubrique      */
+       int          ind_support,               /* --> Support de la variable  */
+       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       cs_type_t    typ_val,                   /* --> Type de valeurs         */
+ const void        *val                        /* <-- Valeurs a lire          */
 );
 
 
