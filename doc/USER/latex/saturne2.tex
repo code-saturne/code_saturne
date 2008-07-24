@@ -2323,6 +2323,15 @@ other variables. With a second-order scheme in time (ISCHTP=2) or LES, the
 default values are 5 for pressure and 10 for the other variables.\\
 useful for all the unknowns}
 
+\motcle{EPSRSM}{RA}{real number $>$ 0}{1.D-8,1.D-5}{O}{L3}
+{for each unknown IVAR, relative precision on the reconstruction of the
+right hand-side. The default value is EPSRSM(IVAR)=1.D-8. This value is set low
+on purpose. When there are enough iterations on the reconstruction of the
+right-hand side of the equation,
+the value may be increased (by default, in case of second-order in time,
+with NSWRSM = 5 or 10, EPSRSM is increased to 1.D-5).\\
+always useful}
+
 
 %====================================================================================
 \subsection{Numerical, physical and modeling parameters}

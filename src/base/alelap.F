@@ -219,6 +219,7 @@ C
       INTEGER          NITMAP, NSWRSP, IRCFLP, ISCHCP, ISSTPP, IESCAP
       INTEGER          IMGRP , NCYMXP, NITMFP
       DOUBLE PRECISION BLENCP, EPSILP, EPSRGP, CLIMGP, EXTRAP, THETV
+      DOUBLE PRECISION EPSRSP
       DOUBLE PRECISION RELAXP
 C
 C***********************************************************************
@@ -313,6 +314,7 @@ C
         IWARNP = IWARNI(IVAR)
         BLENCP = BLENCV(IVAR)
         EPSILP = EPSILO(IVAR)
+        EPSRSP = EPSRSM(IVAR)
         EPSRGP = EPSRGR(IVAR)
         CLIMGP = CLIMGR(IVAR)
         EXTRAP = EXTRAG(IVAR)
@@ -330,7 +332,8 @@ C       ===========
      &   IMRGRA , NSWRSP , NSWRGP , IMLIGP , IRCFLP ,
      &   ISCHCP , ISSTPP , IESCAP ,
      &   IMGRP  , NCYMXP , NITMFP , IPP    , IWARNP ,
-     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETV  ,
+     &   BLENCP , EPSILP , EPSRSP , EPSRGP , CLIMGP , EXTRAP ,
+     &   RELAXP , THETV  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,

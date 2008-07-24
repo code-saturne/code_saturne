@@ -241,7 +241,7 @@ C
       INTEGER          IMGRP, NCYMXP, NITMFP
       INTEGER          ICOEFAX,ICOEFAY,ICOEFAZ,ICEFAP
       INTEGER          ICOEFBX,ICOEFBY,ICOEFBZ,ICEFBP
-      DOUBLE PRECISION EPSRGP, CLIMGP, EXTRAP, BLENCP, EPSILP
+      DOUBLE PRECISION EPSRGP, CLIMGP, EXTRAP, BLENCP, EPSILP, EPSRSP
       DOUBLE PRECISION RELAXP, THETAP
 C
 C***********************************************************************
@@ -438,6 +438,7 @@ C Valeur par defaut
       IWARNP = 10
       BLENCP = 0.D0
       EPSILP = 1.D-8
+      EPSRSP = 1.D-8
       EPSRGP = 1.D-5
       CLIMGP = 1.5D0
       EXTRAP = 0.D0
@@ -477,7 +478,8 @@ C     ===========
      &   IMRGRA , NSWRSP , NSWRGP , IMLIGP , IRCFLP ,
      &   ISCHCP , ISSTPP , IESCAP ,
      &   IMGRP  , NCYMXP , NITMFP , IPP    , IWARNP ,
-     &   BLENCP , EPSILP , EPSRGP , CLIMGP , EXTRAP , RELAXP , THETAP ,
+     &   BLENCP , EPSILP , EPSRSP , EPSRGP , CLIMGP , EXTRAP ,
+     &   RELAXP , THETAP ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,

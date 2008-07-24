@@ -815,16 +815,18 @@ C
       ENDDO
 C
 C
-C ---> NSWRSM ET EPSILO
+C ---> NSWRSM, EPSRSM ET EPSILO
 C        Si l'utilisateur n'a rien specifie  (NSWRSM=-999),
 C        On impose
 C           a l'ordre 1 :
 C                  2  pour la pression
 C                  1  pour les autres variables
+C                  on initialise EPSRSM a 1.D-8
 C                  on initialise EPSILO a 1.D-8
 C           a l'ordre 2 :
 C                  5  pour la pression
 C                  10 pour les autres variables
+C                  on initialise EPSRSM a 1.D-5
 C                  on initialise EPSILO a 1.D-5
 C     Attention aux tests dans verini
 C
@@ -832,19 +834,24 @@ C
         IF(ISCHTP(IPHAS).EQ.2) THEN
           II = IPR(IPHAS)
           IF(NSWRSM(II).EQ.-999) NSWRSM(II) = 5
+          IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-5
           IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-5
           II = IU(IPHAS)
           IF(NSWRSM(II).EQ.-999) NSWRSM(II) = 10
+          IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-5
           IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-5
           II = IV(IPHAS)
           IF(NSWRSM(II).EQ.-999) NSWRSM(II) = 10
+          IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-5
           IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-5
           II = IW(IPHAS)
           IF(NSWRSM(II).EQ.-999) NSWRSM(II) = 10
+          IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-5
           IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-5
           DO JJ = 1, NSCAL
             II = ISCA(JJ)
             IF(NSWRSM(II).EQ.-999) NSWRSM(II) = 10
+            IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-5
             IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-5
           ENDDO
         ENDIF
@@ -854,6 +861,7 @@ C
 C
       DO II = 1, NVARMX
         IF (NSWRSM(II).EQ.-999) NSWRSM(II) = 1
+        IF(ABS(EPSRSM(II)+999.D0).LT.EPZERO) EPSRSM(II) = 1.D-8
         IF(ABS(EPSILO(II)+999.D0).LT.EPZERO) EPSILO(II) = 1.D-8
       ENDDO
 C

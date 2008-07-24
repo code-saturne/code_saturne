@@ -937,6 +937,7 @@ C
       ENDDO
       DO II = 1, NVARMX
         EPSILO(II) = -999.D0
+        EPSRSM(II) = -999.D0
       ENDDO
 C
 C --- Multigrille

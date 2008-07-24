@@ -933,7 +933,7 @@ C
         IF(II.GE.1) THEN
           CHAINE=NOMVAR(IPP)
           WRITE(NFECRA,4520) CHAINE(1:8),
-     &      NSWRGR(II),NSWRSM(II),EPSRGR(II),EXTRAG(II)
+     &      NSWRGR(II),NSWRSM(II),EPSRGR(II),EPSRSM(II),EXTRAG(II)
         ENDIF
       ENDDO
       WRITE(NFECRA,4511)
@@ -1002,7 +1002,7 @@ C
           WRITE(NFECRA,4951)
      &        NITMAY, NSWRSY, NSWRGY, IMLIGY, IRCFLY, ISCHCY,
      &        ISSTPY, IMGRPY, IWARNY, NTCMXY,
-     &        BLENCY, EPSILY, EPSRGY, CLIMGY, EXTRAY, COUMXY,
+     &        BLENCY, EPSILY, EPSRSY, EPSRGY, CLIMGY, EXTRAY, COUMXY,
      &        EPSCVY, YPLMXY
         ENDIF
         WRITE(NFECRA,9900)
@@ -1019,13 +1019,13 @@ C
      &'       ANOMAX = ',E14.5 ,    ' (Angle de non ortho. limite  )',/,
      &'                               (pour moindres carres etendu )',/,
      &'                                                             ',/,
-     &'-----------------------------------------------              ',/,
-     &' Variable NSWRGR NSWRSM      EPSRGR      EXTRAG              ',/,
-     &'-----------------------------------------------              '  )
+     &'-----------------------------------------------------------  ',/,
+     &' Variable NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG  ',/,
+     &'-----------------------------------------------------------  '  )
  4520 FORMAT(
-     & 1X,    A8,    I7,    I7,      E12.4,      E12.4                 )
+     & 1X,    A8,    I7,    I7,      E12.4,      E12.4,      E12.4     )
  4511 FORMAT(
-     &'-----------------------------------------------              ',/,
+     &'-----------------------------------------------------------  ',/,
      &'                                                             ',/,
      &'-----------------------------------                          ',/,
      &' Variable IRCFLU IMLIGR      CLIMGR                          ',/,
@@ -1037,7 +1037,8 @@ C
      &'                                                             ',/,
      &'       NSWRGR =                (nb sweep reconstruction grad)',/,
      &'       NSWRSM =                (nb sweep reconstruction smb )',/,
-     &'       EPSRGR =                (precision reconstruction    )',/,
+     &'       EPSRGR =                (precision reconstruction gra)',/,
+     &'       EPSRSM =                (precision reconstruction smb)',/,
      &'       EXTRAG =  [0.;1.]       (extrapolation des gradients )',/,
      &'       IRCFLU =  0 ou  1       (reconstruction des flux     )',/,
      &'       IMLIGR =  < 0, 0 ou 1   (methode de limit. des grad  )',/,
@@ -1161,6 +1162,7 @@ C
      &'                                                             ',/,
      &'       BLENCY = ',E14.5 ,    ' (Prop. ordre 2 schema convect.',/,
      &'       EPSILY = ',E14.5 ,    ' (Precision solveur iteratif   ',/,
+     &'       EPSRSY = ',E14.5 ,    ' (Precision reconst. smb.      ',/,
      &'       EPSRGY = ',E14.5 ,    ' (Precision reconst. grd.      ',/,
      &'       CLIMGY = ',E14.5 ,    ' (Coeff. pour limitation grd.  ',/,
      &'       EXTRAY = ',E14.5 ,    ' (Coeff. pour extrapolation grd',/,

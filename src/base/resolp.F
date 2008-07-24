@@ -1136,7 +1136,7 @@ C
 C
 C  Test a modifier eventuellement
 C (il faut qu'il soit plus strict que celui de gradco)
-        IF( RESIDU .LE. 10.D0*EPSILO(IPRIPH)*RNORMP(IPHAS) ) THEN
+        IF( RESIDU .LE. 10.D0*EPSRSM(IPRIPH)*RNORMP(IPHAS) ) THEN
 C --- Si convergence, calcul de l'indicateur
 C                     mise a jour du flux de masse et sortie
 C

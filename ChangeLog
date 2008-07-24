@@ -1,3 +1,33 @@
+* 24/07/2008 - David Monfort <david.monfort@edf.fr>
+  The reconstruction of the right-hand side has now its
+  own precision parameter (EPSRSM) instead of using EPSILO.
+  modified routines:
+    include/base/optcal.h
+    doc/USER/latex/saturne2.tex
+    src/rayt/raysol.F
+    src/rayt/raypun.F
+    src/lagr/lageqp.F
+    src/cfbl/cfener.F
+    src/cfbl/cfcdts.F
+    src/cfbl/cfqdmv.F
+    src/cfbl/cfmsvl.F
+    src/base/alelap.F
+    src/base/resrij.F
+    src/base/resolp.F
+    src/base/resv2f.F
+    src/base/turbkw.F
+    src/base/distyp.F
+    src/base/covofi.F
+    src/base/impini.F
+    src/base/reseps.F
+    src/base/resssg.F
+    src/base/turbke.F
+    src/base/iniini.F
+    src/base/preduv.F
+    src/base/modini.F
+    src/base/codits.F
+    src/base/calhyd.F
+
 * 24/07/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Extending support for restart files to extracted part
   of the mesh
