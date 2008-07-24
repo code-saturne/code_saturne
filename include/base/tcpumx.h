@@ -38,23 +38,23 @@ extern "C" {
 
 
 /*============================================================================
- *  Récuperation du temps cpu alloué au process
+ *  Recuperation du temps cpu alloue au process
  *  (utile notamment pour cluster sous PBS)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Récuperation du temps cpu alloué au process
+ * Recuperation du temps cpu alloue au process
  *
  * Interface Fortran :
  *
  * SUBROUTINE TCPUMX (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
+ * DOUBLE PRECISION TPS        : <-- : Temps restant (defaut : 7 jours)
  * INTEGER          RET        : <-- : Code de retour ;
  *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette méthode
- *                             :     :   1 : limite de temps CPU déterminée
+ *                             :     :   0 : pas de limite via cette methode
+ *                             :     :   1 : limite de temps CPU determinee
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tcpumx, TCPUMX) (double  *tps,

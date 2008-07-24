@@ -336,7 +336,7 @@ C        Ainsi, dans l'exemple fourni, on initialise la pression et
 C          la temperature
 C
 C  ** ICCFTH est un indicateur permettant de reperer quelles variables
-C       ont été renseignées. Ne pas le modifier.
+C       ont ete renseignees. Ne pas le modifier.
 C
 C
         ICCFTH = 10000
@@ -378,8 +378,8 @@ C     4. Energie Totale Specifique (en J/kg)
         ENDIF
 C
 C  ** Calcul automatique des deux autres variables
-C     Ce sont les valeurs de ICCFTH qui déterminent les variables
-C       connues et les variables à calculer.
+C     Ce sont les valeurs de ICCFTH qui determinent les variables
+C       connues et les variables a calculer.
 C
         CALL USCFTH
 C       ===========

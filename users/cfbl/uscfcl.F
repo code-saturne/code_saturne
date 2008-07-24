@@ -408,7 +408,7 @@ C       (sauf Temperature-Energie) et les 2 autres variables seront
 C       calculees automatiquement
 C
 C    ** Choisir les 2 variables a imposer et effacer les autres
-C       (elles sont calculées par les lois thermodynamiques dans uscfth)
+C       (elles sont calculees par les lois thermodynamiques dans uscfth)
 C
 C     Pression (en Pa)
         RCODCL(IFAC,IPR(IPHAS),1) = 5.D5
@@ -444,8 +444,8 @@ C         est variable, il peut etre utile de reprendre ici la loi
 C         imposee dans USCFPV. On utilise ici par defaut la valeur
 C         VISCL0 donnee dans USINI1
 C       En ce qui concerne la masse volumique, on peut utiliser directement
-C         sa valeur aux faces de bord si elle est connue (et imposée
-C         ci-dessus). Dans le cas général, on propose d'utiliser la valeur
+C         sa valeur aux faces de bord si elle est connue (et imposee
+C         ci-dessus). Dans le cas general, on propose d'utiliser la valeur
 C         de la cellule adjacente.
 C
 C         Diametre hydraulique
@@ -505,14 +505,14 @@ C
 C
 C --- Exemple de sortie supersonique
 C
-C       toutes les caractéristiques sortent
+C       toutes les caracteristiques sortent
 C       on ne doit rien imposer (ce sont les valeurs internes qui sont
 C         utilisees pour le calcul des flux de bord)
 C
 C       pour la turbulence et les scalaires, si on fournit ici des
 C         valeurs de RCODCL, on les impose en Dirichlet si le flux
 C         de masse est entrant ; sinon, on impose un flux nul (flux de
-C         masse sortant ou RCODCL renseigné ici).
+C         masse sortant ou RCODCL renseigne ici).
 C         Noter que pour la turbulence, il faut renseigner RCODCL pour
 C         toutes les variables turbulentes (sinon, on applique un flux
 C         nul).
@@ -620,8 +620,8 @@ C         est variable, il peut etre utile de reprendre ici la loi
 C         imposee dans USCFPV. On utilise ici par defaut la valeur
 C         VISCL0 donnee dans USINI1
 C       En ce qui concerne la masse volumique, on peut utiliser directement
-C         sa valeur aux faces de bord si elle est connue (et imposée
-C         ci-dessus). Dans le cas général, on propose d'utiliser la valeur
+C         sa valeur aux faces de bord si elle est connue (et imposee
+C         ci-dessus). Dans le cas general, on propose d'utiliser la valeur
 C         de la cellule adjacente.
 C
 C         Diametre hydraulique
@@ -725,24 +725,24 @@ C
         ITYPFB(IFAC,IPHAS) = IPAROI
 C
 C
-C     Paroi défilante
-C       Par défaut, la paroi n'est pas défilante
-C       Si la paroi est défilante, donner les composantes non nulles
-C         de la vitesse. La vitesse sera projetée dans le plan
-C         tangeant à la paroi. Dans l'exemple suivant, on impose
-C         Ux = 1. (l'exemple est activé si IUTILE=1)
+C     Paroi defilante
+C       Par defaut, la paroi n'est pas defilante
+C       Si la paroi est defilante, donner les composantes non nulles
+C         de la vitesse. La vitesse sera projetee dans le plan
+C         tangeant a la paroi. Dans l'exemple suivant, on impose
+C         Ux = 1. (l'exemple est active si IUTILE=1)
 C
         IUTILE = 0
         IF(IUTILE.EQ.1) THEN
           RCODCL(IFAC,IU(IPHAS),1) = 1.D0
         ENDIF
 C
-C     Température imposée
-C       Par défaut, la paroi est adiabatique
-C       Si la paroi est à température imposée, l'indiquer par
+C     Temperature imposee
+C       Par defaut, la paroi est adiabatique
+C       Si la paroi est a temperature imposee, l'indiquer par
 C         ICODCL = 5 et donner la valeur en Kelvin dans RCODCL(.,.,1)
 C         Dans l'exemple suivant, on impose T = 293.15 K (l'exemple
-C         est activé si IUTILE=1)
+C         est active si IUTILE=1)
 C
         IUTILE = 0
         IF(IUTILE.EQ.1) THEN
@@ -750,12 +750,12 @@ C
           RCODCL(IFAC,ISCA(ITEMPK(IPHAS)),1) = 20.D0 + 273.15D0
         ENDIF
 C
-C     Flux imposé
-C       Par défaut, la paroi est adiabatique
-C       Si la paroi est à flux imposé, l'indiquer par
+C     Flux impose
+C       Par defaut, la paroi est adiabatique
+C       Si la paroi est a flux impose, l'indiquer par
 C         ICODCL = 3 et donner la valeur en Watt/m2 dans RCODCL(.,.,3)
 C         Dans l'exemple suivant, on impose un flux de 1000 W/m2
-C         - la plage en été - (l'exemple est activé si IUTILE=1)
+C         - la plage en ete - (l'exemple est active si IUTILE=1)
 C
         IUTILE = 0
         IF(IUTILE.EQ.1) THEN

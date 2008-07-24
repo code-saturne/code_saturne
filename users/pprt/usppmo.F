@@ -228,7 +228,7 @@ C=======================================================================
 C
 C
 C-----Si INDJON=1 on utilise une tabulation ENTH-TEMP calculee par JANAF
-C     sinon, l'utilisateur doit lui même fournir sa propre tabulation
+C     sinon, l'utilisateur doit lui meme fournir sa propre tabulation
 C
       INDJON = 1
 C

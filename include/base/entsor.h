@@ -118,9 +118,9 @@ C               0 : fixes,
 C               1 : deformables a topologie constante,
 C               2 : modifiables (pourront etre completement redefinis
 C                   en cours de calcul via le sous-programme USMPST),
-C              10 : comme INDMOD = 0, avec champ de déplacement,
-C              11 : comme INDMOD = 1, avec champ de déplacement,
-C              12 : comme INDMOD = 2, avec champ de déplacement.
+C              10 : comme INDMOD = 0, avec champ de deplacement,
+C              11 : comme INDMOD = 1, avec champ de deplacement,
+C              12 : comme INDMOD = 2, avec champ de deplacement.
 C     NTCHR  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
 C     ICHRVR : on sort la variable (1) ou non (0) ou non initialise
 C     FMTCHR : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')

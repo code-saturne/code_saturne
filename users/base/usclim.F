@@ -936,7 +936,7 @@ C       l'utilisateur, sur la base de conditions de paroi.
 C       On impose en couleur 1234 une paroi pour toutes les phases
 C       avec, en outre,
 C          une condition de Dirichlet sur la vitesse de la phase 1
-C          (paroi mobile avec adhérence) et
+C          (paroi mobile avec adherence) et
 C          une condition de Dirichlet sur le premier scalaire.
 C
       CALL GETFBR('1234',NLELT,LSTELT)

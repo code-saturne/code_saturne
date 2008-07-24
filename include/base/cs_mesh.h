@@ -213,20 +213,20 @@ extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer on builder mesh
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Recherche du numéro de groupe correspondant à un nom donné. Si le groupe
- * existe, le numéro renvoyé correspond au rang du groupe (commençant à 1)
- * dans la liste des groupes du maillage, et multiplié par -1. Cette
- * numérotation est celle utilisée dans le tableau IPRFML(NFML, NPRFML)
+ * Recherche du numero de groupe correspondant a un nom donne. Si le groupe
+ * existe, le numero renvoye correspond au rang du groupe (commencant a 1)
+ * dans la liste des groupes du maillage, et multiplie par -1. Cette
+ * numerotation est celle utilisee dans le tableau IPRFML(NFML, NPRFML)
  * de description des familles.
  *
- * Si le groupe de nom indiqué n'existe pas, on renvoie 9999.
+ * Si le groupe de nom indique n'existe pas, on renvoie 9999.
  *
  * Interface Fortran :
  *
  * FUNCTION NUMGRP (NOMGRP, LNGNOM)
  * ***************
  *
- * CHARACTER*       NOMGRP      : --> : Nom du groupe recherché
+ * CHARACTER*       NOMGRP      : --> : Nom du groupe recherche
  * INTEGER          LNGNOM      : --> : Longueur du nom du groupe
  *----------------------------------------------------------------------------*/
 
@@ -234,24 +234,24 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
 (
  const char       *const nomgrp,  /* --> Nom du groupe                        */
  const cs_int_t   *const lngnom   /* --> Longueur du nom                      */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' eventuels F77, */
+                                  /*     inutilises lors de l'appel mais      */
+                                  /*     places par de nombreux compilateurs) */
 );
 
 
 /*----------------------------------------------------------------------------
- * Sauvegarde des numérotations initiales des faces
+ * Sauvegarde des numerotations initiales des faces
  *
- * Remarque : lorsque des faces sont renumérotées, les connectivités et
- *            variables basées sur les faces sont toutes mises à jour, sauf
- *            les numéros globaux associés à ces faces (en cas de parallélisme)
- *            et conservés dans la structure maillage ('num_fac'et num_fbr') ;
- *            en effet, cette numérotation est destinée à se ramener à la
- *            numérotation initiale, notamment pour l'écriture et la lecture de
- *            fichiers suite indépendants du nombre de domaines en parallélisme
- *            ou d'une renumérotation vectorielle, et il est plus aisé de la
- *            manipuler si elle n'est pas modifiée.
+ * Remarque : lorsque des faces sont renumerotees, les connectivites et
+ *            variables basees sur les faces sont toutes mises a jour, sauf
+ *            les numeros globaux associes a ces faces (en cas de parallelisme)
+ *            et conserves dans la structure maillage ('num_fac'et num_fbr') ;
+ *            en effet, cette numerotation est destinee a se ramener a la
+ *            numerotation initiale, notamment pour l'ecriture et la lecture de
+ *            fichiers suite independants du nombre de domaines en parallelisme
+ *            ou d'une renumerotation vectorielle, et il est plus aise de la
+ *            manipuler si elle n'est pas modifiee.
  *
  * Interface Fortran :
  *

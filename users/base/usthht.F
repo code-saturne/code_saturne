@@ -96,7 +96,7 @@ C
 C
 C     Pour le second exemple ci-dessous,
 C        donnee de NTAB > 1 valeurs (fictives) de H (=HT) tabulees
-C        en fonction de NTAB valeurs de T (=TH) (attention a l'unité K ou C)
+C        en fonction de NTAB valeurs de T (=TH) (attention a l'unite K ou C)
 C
       INTEGER          NTAB
       PARAMETER       (NTAB=5)

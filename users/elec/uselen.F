@@ -433,7 +433,7 @@ C
             TRACEL(ILOC+2*NCELPS) = -PROPCE(IEL,IPCSII)*W1(IEL,3)
           ENDDO
 C
-C         La variable est définie sur le tableau de travail. On
+C         La variable est definie sur le tableau de travail. On
 C         a deja utilise l'indirection via LSTCEL (donc IVARPR = 0),
 C         et les valeurs sont non entrelacees (IENTLA = 0)
           IENTLA = 0
@@ -616,7 +616,7 @@ C
             TRACEL(ILOC+2*NCELPS) = TRACEL(ILOC+2*NCELPS) + ZERO
           ENDDO
 C
-C         La variable est définie sur le tableau de travail. On
+C         La variable est definie sur le tableau de travail. On
 C         a deja utilise l'indirection via LSTCEL (donc IVARPR = 0),
 C         et les valeurs sont non entrelacees (IENTLA = 0)
           IENTLA = 0

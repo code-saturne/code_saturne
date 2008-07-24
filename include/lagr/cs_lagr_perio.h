@@ -40,7 +40,7 @@
 #ifdef __cplusplus
 extern "C" {
 #if 0
-} /* Fausse accolade pour ramener l'auto-indentation d'Emacs à la colonne 0 */
+} /* Fausse accolade pour ramener l'auto-indentation d'Emacs a la colonne 0 */
 #endif
 #endif /* __cplusplus */
 

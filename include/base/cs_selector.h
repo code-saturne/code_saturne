@@ -29,7 +29,7 @@
 #define __CS_SELECTOR_H__
 
 /*============================================================================
- * Structure principale associée à un maillage
+ * Structure principale associee a un maillage
  *============================================================================*/
 
 #ifdef __cplusplus

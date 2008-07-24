@@ -317,8 +317,8 @@ C                  = 3 : condition de flux
 C     TEPT1D(II) : temperature exterieure
 C     HEPT1D(II) : coefficient d'echange exterieur
 C     FEPT1D(II) : flux applique a l'exterieur ( flux<0 = flux entrant)
-C     XLMT1D(II) : coefficient de conductivite lambda de la paroi (W/m/°C)
-C     RCPT1D(II) : coefficient rho*Cp de la paroi (J/m3/°C)
+C     XLMT1D(II) : coefficient de conductivite lambda de la paroi (W/m/^0C)
+C     RCPT1D(II) : coefficient rho*Cp de la paroi (J/m3/^0C)
 C     DTPT1D(II) : pas de temps de resolution de l'equation thermique dans
 C                  la IIeme face de bord avec module thermique 1D (s)
       IF (IAPPEL.EQ.3) THEN

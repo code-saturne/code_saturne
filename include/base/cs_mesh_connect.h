@@ -29,8 +29,8 @@
 #define __CS_MESH_CONNECT_H__
 
 /*============================================================================
- * Passage d'une connectivité noyau à une connecitvité nodale de la
- * structure principale associée à un maillage
+ * Passage d'une connectivite noyau a une connecitvite nodale de la
+ * structure principale associee a un maillage
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -48,12 +48,12 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*=============================================================================
- * Définitions de macros
+ * Definitions de macros
  *============================================================================*/
 
 
 /*============================================================================
- * Définitions de types
+ * Definitions de types
  *============================================================================*/
 
 
@@ -72,17 +72,17 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Extraction de la connectivité "cellules -> faces" d'un maillage.
+ * Extraction de la connectivite "cellules -> faces" d'un maillage.
  *
- * On considère une numérotation commune des faces internes et des
- * faces de bord, dans laquelle les faces de bord sont définies en
- * premier. L'indice commun de la i-ème face de bord est donc égal à i,
- * et celui de la j-ième face interne à nbr_fbr + j.
+ * On considere une numerotation commune des faces internes et des
+ * faces de bord, dans laquelle les faces de bord sont definies en
+ * premier. L'indice commun de la i-eme face de bord est donc egal a i,
+ * et celui de la j-ieme face interne a nbr_fbr + j.
  *
  * Si ind_cel_extr != NULL, alors :
- * --- ind_cel_extr[icel] = indice dans la liste à extraire (0 à n-1)
- *     si icel correspond à une cellule à extraire
- * --- ind_cel_extr[icel] = -1 si la cellule icel est à ignorer
+ * --- ind_cel_extr[icel] = indice dans la liste a extraire (0 a n-1)
+ *     si icel correspond a une cellule a extraire
+ * --- ind_cel_extr[icel] = -1 si la cellule icel est a ignorer
  *----------------------------------------------------------------------------*/
 
 void cs_maillage_ret_cel_fac
@@ -98,48 +98,48 @@ void cs_maillage_ret_cel_fac
 
 
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
+ * Extraction et conversion en connectivite nodale externe d'un sous-ensemble
  * des cellules d'un maillage.
  *
- * La liste des cellules à traiter est optionnelle ; elle peut ne pas
- * être ordonnée en entrée, elle le sera toujours en sortie (les cellules
- * étant extraites au cours d'un parcours en ordre croissant, la liste
- * est réordonnée pour assurer la cohérence des liens des cellules extraites
- * vers leurs cellules parentes, construits à partir de cette liste).
+ * La liste des cellules a traiter est optionnelle ; elle peut ne pas
+ * etre ordonnee en entree, elle le sera toujours en sortie (les cellules
+ * etant extraites au cours d'un parcours en ordre croissant, la liste
+ * est reordonnee pour assurer la coherence des liens des cellules extraites
+ * vers leurs cellules parentes, construits a partir de cette liste).
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_t  * cs_maillage_extrait_cel_nodal
 (
  const cs_mesh_t      *const maillage,      /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
+ const char           *const nom,           /* --> nom a affecter             */
  const cs_int_t              nbr_liste_cel, /* --> taille de liste_cel[]      */
        cs_int_t              liste_cel[]    /* <-> liste optionnelle des
-                                             *     cellules à traiter (1 à n) */
+                                             *     cellules a traiter (1 a n) */
 );
 
 
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
+ * Extraction et conversion en connectivite nodale externe d'un sous-ensemble
  * des faces d'un maillage.
  *
- * Les listes des faces à traiter sont optionnelles (si aucune des deux
- * n'est fournie, on extrait les faces de bord par défaut); elle peuvent
- * ne pas être ordonnées en entrée, elle le seront toujours en sortie
- * (les faces étant extraites au cours d'un parcours en ordre croissant,
- * la liste est réordonnée pour assurer la cohérence des liens des faces
- * extraites vers leurs faces parentes, construites à partir de cette liste).
+ * Les listes des faces a traiter sont optionnelles (si aucune des deux
+ * n'est fournie, on extrait les faces de bord par defaut); elle peuvent
+ * ne pas etre ordonnees en entree, elle le seront toujours en sortie
+ * (les faces etant extraites au cours d'un parcours en ordre croissant,
+ * la liste est reordonnee pour assurer la coherence des liens des faces
+ * extraites vers leurs faces parentes, construites a partir de cette liste).
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_t  * cs_maillage_extrait_fac_nodal
 (
  const cs_mesh_t      *const maillage,      /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
+ const char           *const nom,           /* --> nom a affecter             */
  const cs_int_t              nbr_liste_fac, /* --> taille de liste_fac[]      */
  const cs_int_t              nbr_liste_fbr, /* --> taille de liste_fbr[]      */
        cs_int_t              liste_fac[],   /* <-> liste optionnelle des faces
-                                             *     internes à traiter (1 à n) */
+                                             *     internes a traiter (1 a n) */
        cs_int_t              liste_fbr[]    /* <-> liste optionnelle des faces
-                                             *     de bord à traiter (1 à n)  */
+                                             *     de bord a traiter (1 a n)  */
 );
 
 

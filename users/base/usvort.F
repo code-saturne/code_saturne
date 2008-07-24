@@ -289,7 +289,7 @@ C=======================================================================
 C 3. PARAMETRES GEOMETRIQUES ET CONDITIONS LIMITES
 C=======================================================================
 C
-C --- Cas traité
+C --- Cas traite
 C
 C ICAS = 1...Conduite rectangulaire
 C        2...Conduite circulaire
@@ -309,7 +309,7 @@ C --- Repere definissant le plan d'entree
 C
 C     Si ICAS = 4, le code se charge de ces donnees
 C     Sinon il faut preciser les vecteurs DIR1 et DIR2 definissant
-C     un repère directe tel que DIR3 soit un vecteur entrant normal
+C     un repere directe tel que DIR3 soit un vecteur entrant normal
 C     a la face d'entree.
 C
         IENT = 1
@@ -473,7 +473,7 @@ C         dans le plan d'entree du calcul
 C
 C         Grad[u.DIR3].n est le gradient dans la direction normale
 C         a la paroi, de la vitesse principale dans le plan d'entree.
-C         Cette données n'est utilisée qu'avec ICAS=2
+C         Cette donnees n'est utilisee qu'avec ICAS=2
 C
 C FICVOR...Nom du fichier de donnees utilisateur
 C
@@ -483,8 +483,8 @@ C
         IENT = 2
         NDAT(IENT) = 2080
 C
-C Par les defaut les fichiers sont nommes "vordat" affecté de l'indice
-C d'entrée
+C Par les defaut les fichiers sont nommes "vordat" affecte de l'indice
+C d'entree
 C
         IENT = 1
         FICVOR(IENT) = 'entree_1.dat'
@@ -585,7 +585,7 @@ C
 C
 C Dans l'exemple suivant, on se contente de retourne la valeur situee
 C dans le fichier de donnee a l'abscisse la plus proche du point de
-C coordonnée (Y,Z) ou l'on cherche a connaitre la valeur de la
+C coordonnee (Y,Z) ou l'on cherche a connaitre la valeur de la
 C variable numero VARDAT.
 C
 C

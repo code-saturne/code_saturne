@@ -68,31 +68,31 @@ extern "C" {
  * *****************
  *
  * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NCEL        : <-- : Nombre d'éléments actifs
+ * INTEGER          NCEL        : <-- : Nombre d'elements actifs
  * INTEGER          NFAC        : <-- : Nombre de faces internes
  * INTEGER          NFABOR      : <-- : Nombre de faces de bord
  * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
+ * INTEGER          NPRFML      : <-- : Nombre de proprietes max par famille
  * INTEGER          NSOM        : <-- : Nombre de sommets (optionnel)
  * INTEGER          LNDFAC      : <-- : Longueur de SOMFAC (optionnel)
  * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
- * INTEGER          IPERIO      : <-- : Indicateur de périodicité
- * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
+ * INTEGER          IPERIO      : <-- : Indicateur de periodicite
+ * INTEGER          IPEROT      : <-- : Nombre de periodicites de rotation
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ledevi, LEDEVI)
 (
  cs_int_t   *const ndim,    /* <-- dimension de l'espace                      */
- cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs                   */
+ cs_int_t   *const ncel,    /* <-- nombre d'elements actifs                   */
  cs_int_t   *const nfac,    /* <-- nombre de faces internes                   */
  cs_int_t   *const nfabor,  /* <-- nombre de faces de bord                    */
  cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord       */
- cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille       */
+ cs_int_t   *const nprfml,  /* <-- nombre de proprietes max par famille       */
  cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)              */
  cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)             */
  cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)             */
- cs_int_t   *const iperio,  /* <-- indicateur de périodicité                  */
- cs_int_t   *const iperot   /* <-- nombre de périodicités de rotation         */
+ cs_int_t   *const iperio,  /* <-- indicateur de periodicite                  */
+ cs_int_t   *const iperot   /* <-- nombre de periodicites de rotation         */
 );
 
 /*============================================================================

@@ -217,7 +217,7 @@ C=======================================================================
 C
 C ATTENTION : les grandeurs physiques liees au milieu semi-transparent,
 C             controlees par le mot-cle IRAYVP, respectent la frequence
-C             de sortie chronologique imposée via NTCHR (dans USINI1.F),
+C             de sortie chronologique imposee via NTCHR (dans USINI1.F),
 C             alors que les grandeurs liees a la frontiere ne sont
 C             disponibles que pour le dernier pas de temps.
 C             En cas de besoin de visualisation de l'evolution en temps

@@ -124,14 +124,14 @@ CFONC
 CFONC       CORPS                        EPSP
 CFONC       ------------------------------------
 CFONC       acier poli                   0,06
-CFONC       acier oxydé                  0,80
+CFONC       acier oxyde                  0,80
 CFONC       aceir rugueux                0,94
 CFONC       aluminium poli               0,04
-CFONC       aluminium oxydé (intérieur)  0,09
-CFONC       aluminium oxydé (air humide) 0,90
+CFONC       aluminium oxyde (interieur)  0,09
+CFONC       aluminium oxyde (air humide) 0,90
 CFONC       brique                       0,93
-CFONC       béton                        0,93
-CFONC       papier                     0,8 à 0,9
+CFONC       beton                        0,93
+CFONC       papier                     0,8 a 0,9
 CFONC       eau                          0,96
 CFONC
 CFONC
