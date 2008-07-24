@@ -43,8 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -599,23 +597,6 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * update values for cells belonging to halo.
- *
- * Standard halo cell values or (standard + extended) halo cell values
- * are synchronized according to op_type.
- *
- * parameters:
- *   var_buffer  <-> values to sync
- *   op_type     --> type of the synchronization (std / std + ext)
- *   stride      --> number of values (not interlaced) by entity
- *----------------------------------------------------------------------------*/
-
-void
-cs_parall_sync_cells(cs_real_t        *var_buffer,
-                     cs_halo_type_t    op_type,
-                     cs_int_t          stride);
 
 /*----------------------------------------------------------------------------
  * Compute the sum of real values for entities belonging to a fvm_interface_t

@@ -55,7 +55,6 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
@@ -1092,23 +1091,18 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   /* Parallel synchronization */
 
-  if (cs_glob_base_nbr > 1) {
+  /* Synchronize geometric quantities */
 
-    /* Sync coordinates of centres of gravity for cells in the halo */
+  if (mesh->halo != NULL) {
 
-    cs_parall_sync_cells(mesh_quantities->cell_cen, CS_HALO_EXTENDED, 3);
+    cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
+                             mesh_quantities->cell_cen, 3);
 
-    /* Sync volume of cells for cells in the halo */
+    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);
 
-    cs_parall_sync_cells(mesh_quantities->cell_vol, CS_HALO_EXTENDED, 1);
-
-  } /* If there are several ranks */
-
-  /* Update cell quantities in case of periodicity */
-
-  if (mesh->n_init_perio > 0)
-    cs_perio_sync_geo();
-
+    if (mesh->n_init_perio > 0)
+      cs_perio_sync_geo();
+  }
 }
 
 /*----------------------------------------------------------------------------

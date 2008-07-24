@@ -60,7 +60,6 @@
 
 #include "cs_halo.h"
 #include "cs_mesh_quantities.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_prototypes.h"
 
@@ -1173,22 +1172,19 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  /* Update the halo for standard and extended neighborhood in case of
-     parallelism */
+  /* Synchronize variable */
 
-  if(mesh->n_domains > 1)
-    cs_parall_sync_cells(var, CS_HALO_EXTENDED, 1);
+  if (mesh->halo != NULL) {
 
-  /* Cell volume has been sync in cs_mesh_quantities */
+    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
 
-  /* Update the halo for standard and extended neighborhood in case of
-     periodicity */
+    if (mesh->n_init_perio > 0)
+      cs_perio_sync_var_scal(mesh->halo,
+                             CS_HALO_EXTENDED,
+                             CS_PERIO_ROTA_IGNORE,
+                             var);
 
-  if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(mesh->halo,
-                           CS_HALO_EXTENDED,
-                           CS_PERIO_ROTA_IGNORE,
-                           var);
+  }
 
   /* Allocate and initialize working buffers */
 
@@ -1231,15 +1227,19 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
   for (i = 0; i < n_cells; i++)
     f_var[i] = wbuf1[i]/wbuf2[i];
 
-  if(mesh->n_domains > 1)
-    cs_parall_sync_cells(f_var, CS_HALO_STANDARD, 1);
+  /* Synchronize variable */
 
-  if(mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(mesh->halo,
-                           CS_HALO_STANDARD,
-                           CS_PERIO_ROTA_COPY,
-                           f_var);
+  if (mesh->halo != NULL) {
 
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_var);
+
+    if (mesh->n_init_perio > 0)
+      cs_perio_sync_var_scal(mesh->halo,
+                             CS_HALO_STANDARD,
+                             CS_PERIO_ROTA_COPY,
+                             f_var);
+
+  }
 }
 
 /*----------------------------------------------------------------------------

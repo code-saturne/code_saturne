@@ -77,7 +77,6 @@
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_prototypes.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_sles.h"
 

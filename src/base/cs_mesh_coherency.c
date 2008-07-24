@@ -56,7 +56,6 @@
 #include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
@@ -248,12 +247,12 @@ cs_mesh_coherency_check(void)
 
   } /* End of loop on coordinates */
 
-  /* Synchronize data for parallelism and periodicity */
+  /* Synchronize variable */
 
-  if (mesh->n_domains > 1) {
+  if (mesh->halo != NULL) {
 
-    cs_parall_sync_cells(mean, mesh->halo_type, 3);
-    cs_parall_sync_cells(delta, mesh->halo_type, 3);
+    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, mean, 3);
+    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, delta, 3);
 
   }
 

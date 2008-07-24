@@ -61,7 +61,6 @@
 #include "cs_mesh.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_prototypes.h"
 
@@ -182,30 +181,35 @@ void CS_PROCF (cgrdmc, CGRDMC)
   cs_int_t  *ielvse = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
 
-  /* Sync data in case of parallelism or periodicity */
+  /* Synchronize variable */
 
-  if (mesh->n_domains > 1)
-    cs_parall_sync_cells(pvar, CS_HALO_EXTENDED, 1);
+  if (mesh->halo != NULL) {
 
-  if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(mesh->halo,
-                           CS_HALO_EXTENDED,
-                           CS_PERIO_ROTA_IGNORE,
-                           pvar);
+    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, pvar);
+
+    if (mesh->n_init_perio > 0)
+      cs_perio_sync_var_scal(mesh->halo,
+                             CS_HALO_EXTENDED,
+                             CS_PERIO_ROTA_IGNORE,
+                             pvar);
+
+  }
 
   if (*iphydp != 0) {
 
-    if (mesh->n_domains > 1) {
-      cs_parall_sync_cells(fextx, CS_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(fexty, CS_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(fextz, CS_HALO_EXTENDED, 1);
-    }
+    if (mesh->halo != NULL) {
 
-    if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_vect(mesh->halo,
-                             CS_HALO_EXTENDED,
-                             CS_PERIO_ROTA_IGNORE,
-                             fextx, fexty, fextz);
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fextx);
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fexty);
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fextz);
+
+      if (mesh->n_init_perio > 0)
+        cs_perio_sync_var_vect(mesh->halo,
+                               CS_HALO_EXTENDED,
+                               CS_PERIO_ROTA_IGNORE,
+                               fextx, fexty, fextz);
+
+    }
 
   }
 
@@ -288,36 +292,33 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   if (*imligp < 0)
     return;
 
-  /* Exchange for parallelism and periodicity */
+  /* Synchronize variable */
 
-  /* Caution: a processor may have no values to receive,
-     but have values to send, so all ranks must call
-     cs_parall_sync_cells() in parallel */
+  if (mesh->halo != NULL) {
 
-  if (mesh->n_domains > 1)
-    cs_parall_sync_cells(var, CS_HALO_EXTENDED, 1);
-
-  if (mesh->n_init_perio > 0)
-    cs_perio_sync_var_scal(mesh->halo,
-                           CS_HALO_EXTENDED,
-                           CS_PERIO_ROTA_IGNORE,
-                           var);
-
-  /* Exchange for the gradients. Not useful for working array */
-
-  if (*imligp == 1) {
-
-    if (mesh->n_domains > 1) {
-      cs_parall_sync_cells(dpdx, CS_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(dpdy, CS_HALO_EXTENDED, 1);
-      cs_parall_sync_cells(dpdz, CS_HALO_EXTENDED, 1);
-    }
+    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
 
     if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_vect(mesh->halo,
+      cs_perio_sync_var_scal(mesh->halo,
                              CS_HALO_EXTENDED,
                              CS_PERIO_ROTA_IGNORE,
-                             dpdx, dpdy, dpdz);
+                             var);
+
+    /* Exchange for the gradients. Not useful for working array */
+
+    if (*imligp == 1) {
+
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdx);
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdy);
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdz);
+
+      if (mesh->n_init_perio > 0)
+        cs_perio_sync_var_vect(mesh->halo,
+                               CS_HALO_EXTENDED,
+                               CS_PERIO_ROTA_IGNORE,
+                               dpdx, dpdy, dpdz);
+
+    }
 
   } /* End if imligp == 1 */
 
@@ -479,43 +480,46 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     for (i = 0; i < n_cells_wghosts; i++)
       clip_factor[i] = (cs_real_t)DBL_MAX;
 
-    if (mesh->n_domains > 1) {
+
+    /* Synchronize variable */
+
+    if (mesh->halo != NULL) {
 
       if (*imrgra == 2 || *imrgra ==  3) {
-        cs_parall_sync_cells(denom, CS_HALO_EXTENDED, 1);
-        cs_parall_sync_cells(denum, CS_HALO_EXTENDED, 1);
+        cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, denom);
+        cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, denum);
       }
       else {
-        cs_parall_sync_cells(denom, CS_HALO_STANDARD, 1);
-        cs_parall_sync_cells(denum, CS_HALO_STANDARD, 1);
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, denom);
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, denum);
       }
 
-    }
+      if (mesh->n_init_perio > 0) {
 
-    if (mesh->n_init_perio > 0) {
+        if (*imrgra == 2 || *imrgra ==  3) {
 
-      if (*imrgra == 2 || *imrgra ==  3) {
+          cs_perio_sync_var_scal(mesh->halo,
+                                 CS_HALO_EXTENDED,
+                                 CS_PERIO_ROTA_IGNORE,
+                                 denom);
+          cs_perio_sync_var_scal(mesh->halo,
+                                 CS_HALO_EXTENDED,
+                                 CS_PERIO_ROTA_IGNORE,
+                                 denum);
 
-        cs_perio_sync_var_scal(mesh->halo,
-                               CS_HALO_EXTENDED,
-                               CS_PERIO_ROTA_IGNORE,
-                               denom);
-        cs_perio_sync_var_scal(mesh->halo,
-                               CS_HALO_EXTENDED,
-                               CS_PERIO_ROTA_IGNORE,
-                               denum);
+        }
+        else {
 
-      }
-      else {
+          cs_perio_sync_var_scal(mesh->halo,
+                                 CS_HALO_STANDARD,
+                                 CS_PERIO_ROTA_IGNORE,
+                                 denom);
+          cs_perio_sync_var_scal(mesh->halo,
+                                 CS_HALO_STANDARD,
+                                 CS_PERIO_ROTA_IGNORE,
+                                 denum);
 
-        cs_perio_sync_var_scal(mesh->halo,
-                               CS_HALO_STANDARD,
-                               CS_PERIO_ROTA_IGNORE,
-                               denom);
-        cs_perio_sync_var_scal(mesh->halo,
-                               CS_HALO_STANDARD,
-                               CS_PERIO_ROTA_IGNORE,
-                               denum);
+        }
 
       }
 
@@ -631,30 +635,30 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
                  "    FACTEUR MINIMUM = %14.5e ; FACTEUR MAXIMUM = %14.5e\n"),
                n_clip, min_factor, max_factor);
 
-  /* Sync dpdx, dpdy, dpdz in case of parallelism or periodicity */
+  /* Synchronize dpdx, dpdy, dpdz */
 
-  if (mesh->n_domains > 1) {
+  if (mesh->halo != NULL) {
 
-    cs_parall_sync_cells(dpdx, CS_HALO_STANDARD, 1);
-    cs_parall_sync_cells(dpdy, CS_HALO_STANDARD, 1);
-    cs_parall_sync_cells(dpdz, CS_HALO_STANDARD, 1);
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdx);
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdy);
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdz);
 
-  }
+    if (mesh->n_init_perio > 0) {
 
-  if (mesh->n_init_perio > 0) {
+      /* If the gradient is not treated as a "true" vector */
 
-    /* If the gradient is not treated as a "true" vector */
+      if (*itenso == 2)
+        cs_perio_sync_var_vect(mesh->halo,
+                               CS_HALO_STANDARD,
+                               CS_PERIO_ROTA_IGNORE,
+                               dpdx, dpdy, dpdz);
+      else
+        cs_perio_sync_var_vect(mesh->halo,
+                               CS_HALO_STANDARD,
+                               CS_PERIO_ROTA_COPY,
+                               dpdx, dpdy, dpdz);
 
-    if (*itenso == 2)
-      cs_perio_sync_var_vect(mesh->halo,
-                             CS_HALO_STANDARD,
-                             CS_PERIO_ROTA_IGNORE,
-                             dpdx, dpdy, dpdz);
-    else
-      cs_perio_sync_var_vect(mesh->halo,
-                             CS_HALO_STANDARD,
-                             CS_PERIO_ROTA_COPY,
-                             dpdx, dpdy, dpdz);
+    }
 
   }
 

@@ -99,7 +99,6 @@
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_prototypes.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 
 /*----------------------------------------------------------------------------

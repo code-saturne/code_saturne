@@ -80,7 +80,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_prototypes.h"
-#include "cs_parall.h"
 #include "cs_perio.h"
 #include "cs_post.h"
 #include "cs_sles.h"
