@@ -143,7 +143,7 @@ C
 C     On s'aide du vecteur surface d'une face de l'entree (supposee plane)
 C     pour definir le repere local
 C
-        VV = DSQRT(SURF(1,IENT)**2 + SURF(2,IENT)**2 + SURF(3,IENT)**2)
+        VV = SQRT(SURF(1,IENT)**2 + SURF(2,IENT)**2 + SURF(3,IENT)**2)
 C
         DIR3(1,IENT) = -SURF(1,IENT)/VV
         DIR3(2,IENT) = -SURF(2,IENT)/VV
@@ -159,7 +159,7 @@ C
           DIR1(3,IENT) = 0.D0
         ENDIF
 C
-        VV = DSQRT(DIR1(1,IENT)**2 + DIR1(2,IENT)**2 + DIR1(3,IENT)**2)
+        VV = SQRT(DIR1(1,IENT)**2 + DIR1(2,IENT)**2 + DIR1(3,IENT)**2)
 C
         DIR1(1,IENT) = DIR1(1,IENT)/VV
         DIR1(2,IENT) = DIR1(2,IENT)/VV

@@ -165,9 +165,9 @@ C
 C ---> determination du signe de la racine
 C
           IF ((1.D0-MOYADM).GT.MOYADM) THEN
-            D = 0.5D0+DSQRT((C-4.D0)/(4.D0*C))
+            D = 0.5D0+SQRT((C-4.D0)/(4.D0*C))
           ELSE
-            D = 0.5D0-DSQRT((C-4.D0)/(4.D0*C))
+            D = 0.5D0-SQRT((C-4.D0)/(4.D0*C))
           ENDIF
 C
 C ---> calcul des amplitudes des 2 pics
@@ -177,8 +177,8 @@ C
 C
 C -----> Calcul des positions des deux pics
 C
-          EXIT01 = VALMOY - DSQRT((1.D0-D)/(D)*VALVAR)
-          EXIT02 = VALMOY + DSQRT((D)/(1.D0-D)*VALVAR)
+          EXIT01 = VALMOY - SQRT((1.D0-D)/(D)*VALVAR)
+          EXIT02 = VALMOY + SQRT((D)/(1.D0-D)*VALVAR)
 C
           EXIT01 = MAX(VALMIN,MIN(EXIT01,VALMAX))
           EXIT02 = MAX(VALMIN,MIN(EXIT02,VALMAX))

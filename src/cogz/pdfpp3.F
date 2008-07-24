@@ -364,7 +364,7 @@ C
 C
             W(IDIRAC) = VREF / LREF * (- D(IDIRAC)*RHOL(IDIRAC)
      &           * YFUEL*YO2
-     &           * DEXP( -THETA(IDIRAC) ))
+     &           * EXP( -THETA(IDIRAC) ))
 C     -> BO 27/06 Controle du signe de W
 C
             W(IDIRAC) = MIN( W(IDIRAC), ZERO)

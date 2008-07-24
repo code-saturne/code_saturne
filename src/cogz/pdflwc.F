@@ -314,7 +314,7 @@ C
 C
             W(IDIRAC) = VREF / LREF * (- D(IDIRAC)*RHOL(IDIRAC)
      &                  * YFUEL*YO2
-     &                  * DEXP( -THETA(IDIRAC) ))
+     &                  * EXP( -THETA(IDIRAC) ))
 C
 C ---> Masse molaire du melange
 C
@@ -400,14 +400,14 @@ C
 C
 C ---> Test sur GP2M
 C
-              G(1) = -DSQRT( -GMIN/GMAX*GP2M )
+              G(1) = -SQRT( -GMIN/GMAX*GP2M )
               G(2) =  -D(1) * G(1) / D(2)
 C
               DO IDIRAC = 1, NDIRAC
                 F(IDIRAC) =
-     &                    FMP + G(IDIRAC) * DSQRT( FP2MP/GP2M)
+     &                    FMP + G(IDIRAC) * SQRT( FP2MP/GP2M)
                 Y(IDIRAC) =
-     &                    YFMP + G(IDIRAC) * DSQRT( YFP2MP/GP2M)
+     &                    YFMP + G(IDIRAC) * SQRT( YFP2MP/GP2M)
               ENDDO
 C
 C --- CAS 2 : Droite Horizontale
@@ -443,14 +443,14 @@ C ---> Calcul de la variance de l'abscisse curviligne (GP2M)
 C
               GP2M = FP2MP + YFP2MP
 C
-              G(1) = -DSQRT( -GMIN/GMAX*GP2M )
+              G(1) = -SQRT( -GMIN/GMAX*GP2M )
               G(2) =  -D(1) * G(1) / D(2)
 C
               DO IDIRAC = 1, NDIRAC
                 F(IDIRAC) =
-     &              FMP + G(IDIRAC) * DSQRT( FP2MP/GP2M)
+     &              FMP + G(IDIRAC) * SQRT( FP2MP/GP2M)
                 Y(IDIRAC) =
-     &              YFMP + G(IDIRAC) * DSQRT( YFP2MP/GP2M)
+     &              YFMP + G(IDIRAC) * SQRT( YFP2MP/GP2M)
               ENDDO
             ENDIF
 C
@@ -500,14 +500,14 @@ C
 C
 C ---> Test sur GP2M
 C
-              G(1) = -DSQRT( -GMIN/GMAX*GP2M )
+              G(1) = -SQRT( -GMIN/GMAX*GP2M )
               G(2) =  -D(1) * G(1) / D(2)
 C
               DO IDIRAC = 1, NDIRAC
                 F(IDIRAC) =
-     &              FMP + G(IDIRAC) * DSQRT( FP2MP/GP2M)
+     &              FMP + G(IDIRAC) * SQRT( FP2MP/GP2M)
                 Y(IDIRAC) =
-     &              YFMP + G(IDIRAC) * DSQRT( YFP2MP/GP2M)
+     &              YFMP + G(IDIRAC) * SQRT( YFP2MP/GP2M)
               ENDDO
 C
 C --- CAS 4 : Parallelisme avec la Droite de Combustion Complete
@@ -517,8 +517,8 @@ C     =====
      &        .AND.  ((SQRT(YFP2MP/FP2MP) * (1.D0-FS(1)))
      &                                        .GT. 1.D0 - EPSI) ) THEN
 C
-              AA1 = DSQRT( YFP2MP/FP2MP )
-              BB1 = YFMP - DSQRT( YFP2MP/FP2MP ) * FMP
+              AA1 = SQRT( YFP2MP/FP2MP )
+              BB1 = YFMP - SQRT( YFP2MP/FP2MP ) * FMP
 C
               AA2 = 1.D0
               BB2 = ZERO
@@ -555,14 +555,14 @@ C
 C
 C ---> Test sur GP2M
 C
-              G(1) = -DSQRT( -GMIN/GMAX*GP2M )
+              G(1) = -SQRT( -GMIN/GMAX*GP2M )
               G(2) =  -D(1) * G(1) / D(2)
 C
               DO IDIRAC = 1, NDIRAC
                 F(IDIRAC) =
-     &              FMP + G(IDIRAC) * DSQRT( FP2MP/GP2M)
+     &              FMP + G(IDIRAC) * SQRT( FP2MP/GP2M)
                 Y(IDIRAC) =
-     &             YFMP + G(IDIRAC) * DSQRT( YFP2MP/GP2M)
+     &             YFMP + G(IDIRAC) * SQRT( YFP2MP/GP2M)
               ENDDO
 C
 C --- CAS GENERAL
@@ -572,7 +572,7 @@ C
 C ---> Expression des differentes droites: Y=AX+B
 C
 C
-              AA1 = -DSQRT( YFP2MP/FP2MP )
+              AA1 = -SQRT( YFP2MP/FP2MP )
               BB1 = YFMP - AA1 * FMP
 C
               AA2 = 1.D0
@@ -631,14 +631,14 @@ C ---> Calcul de la variance de l'abscisse curviligne (GP2M)
 C
               GP2M = FP2MP + YFP2MP
 C
-              G(1) = -DSQRT( GMIN/GMAX*GP2M )
+              G(1) = -SQRT( GMIN/GMAX*GP2M )
               G(2) =  -D(1) * G(1) / D(2)
 C
               DO IDIRAC = 1, NDIRAC
                 F(IDIRAC) =
-     &              FMP + G(IDIRAC) * DSQRT( FP2MP/GP2M)
+     &              FMP + G(IDIRAC) * SQRT( FP2MP/GP2M)
                 Y(IDIRAC) =
-     &              YFMP + G(IDIRAC) * DSQRT( YFP2MP/GP2M)
+     &              YFMP + G(IDIRAC) * SQRT( YFP2MP/GP2M)
               ENDDO
 
             ENDIF
@@ -721,7 +721,7 @@ C
 C
             W(IDIRAC) = VREF / LREF * (- D(IDIRAC)*RHOL(IDIRAC)
      &                  * YFUEL*YO2
-     &                  * DEXP( -THETA(IDIRAC) ))
+     &                  * EXP( -THETA(IDIRAC) ))
 C
 C ---> Masse molaire du melange
 C
