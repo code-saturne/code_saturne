@@ -197,11 +197,17 @@ void CS_PROCF (usmodg, USMODG)
 
 extern void CS_PROCF (majgeo, MAJGEO)
 (
- const cs_int_t   *const ncelet,  /* --> New number of halo cells             */
- const cs_int_t   *const nfac,    /* --> New number of internal faces         */
- const cs_int_t   *const nfabor,  /* --> New number of border faces           */
- const cs_int_t   *const nfacgb,  /* --> New number of global internal faces  */
- const cs_int_t   *const nfbrgb   /* --> New number of global border faces    */
+ const cs_int_t   *const ncel,    /* --> Number of halo cells             */
+ const cs_int_t   *const ncelet,  /* --> Number of halo cells             */
+ const cs_int_t   *const nfac,    /* --> Number of internal faces         */
+ const cs_int_t   *const nfabor,  /* --> Number of border faces           */
+ const cs_int_t   *const nsom,    /* --> Number of vertices               */
+ const cs_int_t   *const lndfac,  /* --> Internal face -> vtx array size  */
+ const cs_int_t   *const lndfbr,  /* --> Boundary face -> vtx array size  */
+ const cs_int_t   *const ncelgb,  /* --> Global number of cells           */
+ const cs_int_t   *const nfacgb,  /* --> Global number of internal faces  */
+ const cs_int_t   *const nfbrgb,  /* --> Global number of boundary faces  */
+ const cs_int_t   *const nsomgb   /* --> Global number of vertices        */
 );
 
 /*----------------------------------------------------------------------------
@@ -232,7 +238,6 @@ int main
  char  *argv[]      /* Tableau des arguments de la ligne de commandes */
 )
 {
-  cs_int_t  n_g_i_faces, n_g_b_faces;
   double  t1, t2;
 
   cs_int_t  iasize, rasize;
@@ -432,14 +437,26 @@ int main
 
   /* Mise à jour de certaines dimensions du maillage */
 
-  n_g_i_faces = (cs_int_t)cs_glob_mesh->n_g_i_faces;
-  n_g_b_faces = (cs_int_t)cs_glob_mesh->n_g_b_faces;
+  {
+    cs_int_t  n_g_cells, n_g_i_faces, n_g_b_faces, n_g_vertices;
 
-  CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells_with_ghosts),
-                            &(cs_glob_mesh->n_i_faces),
-                            &(cs_glob_mesh->n_b_faces),
-                            &n_g_i_faces,
-                            &n_g_b_faces);
+    n_g_cells = cs_glob_mesh->n_g_cells;
+    n_g_i_faces = cs_glob_mesh->n_g_i_faces;
+    n_g_b_faces = cs_glob_mesh->n_g_b_faces;
+    n_g_vertices = cs_glob_mesh->n_g_vertices;
+
+    CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
+                              &(cs_glob_mesh->n_cells_with_ghosts),
+                              &(cs_glob_mesh->n_i_faces),
+                              &(cs_glob_mesh->n_b_faces),
+                              &(cs_glob_mesh->n_vertices),
+                              &(cs_glob_mesh->i_face_vtx_connect_size),
+                              &(cs_glob_mesh->b_face_vtx_connect_size),
+                              &n_g_cells,
+                              &n_g_i_faces,
+                              &n_g_b_faces,
+                              &n_g_vertices);
+  }
 
   /* Destruction du la structure temporaire servant à la construction du
      maillage principal */

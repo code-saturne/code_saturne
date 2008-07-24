@@ -243,24 +243,6 @@ C=======================================================================
 C 2. GEOMETRIE
 C=======================================================================
 C
-C ---> APPEL POUR PARALLELISME (DIMENSIONS GLOBALES)
-C
-      IF (IRANGP.GE.0) THEN
-        CALL PARGE1
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IFOENV , NFECRA ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
-     &   XYZNOD ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C
 C---> CALCULS GEOMETRIQUES
 C
 C     (MEMCLG remplit directement pointe.h)

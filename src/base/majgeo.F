@@ -30,21 +30,15 @@ c@verse
                         SUBROUTINE MAJGEO
 C                       *****************
 C     -------------------------------------------------------------
-     & ( NCELE2 , NFAC2  , NFABO2 , NFACG2 , NFBRG2 )
+     & ( NCEL2  , NCELE2 , NFAC2  , NFABO2 , NSOM2 ,
+     &   LNDFA2 , LNDFB2 , NCELG2 , NFACG2 , NFBRG2 , NSOMG2 )
 C     -------------------------------------------------------------
 C***********************************************************************
 C FONCTION :
 C ---------
 c@foncb
 CFONC
-CFONC PASSAGE DE NCELET DU C AU FORTRAN.
-CFONC
-CFONC PASSAGE DE NFAC ET NFABOR DU C AU FORTRAN AU CAS OU CES
-CFONC VALEURS SONT MODIFIEES PAR LE DECOUPAGE DES FACES GAUCHES.
-CFONC
-CFONC PASSAGE DES DIMENSIONS GLOBALES DES FACES DE BORD ET INTERNES
-CFONC POUR ASSURER LA COHERENCE DES VALEURS EN MONOPROC CAR EN CAS
-CFONC DE PARALLELISME CETTE TACHE EST ASSUREE PAR PARGEO.
+CFONC PASSAGE DES DIMENSIONS DU MAILLAGE DU C AU FORTRAN.
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -53,12 +47,17 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! NCELE2       ! E  !  -> ! NOUVEAU NOMBRE D'ELEMENTS            !
-CARGU !              !    !     ! HALO COMPRIS                         !
-CARGU ! NFAC2        ! E  !  -> ! NOUVEAU NOMBRE DE FACES INTERNES     !
-CARGU ! NFABO2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES DE BORD      !
-CARGU ! NFACG2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES INTERNES GLB.!
-CARGU ! NFBRG2       ! E  !  -> ! NOUVEAU NOMBRE DE FACES DE BORD GLOB.!
+CARGU ! NCEL2        ! E  !  -> ! NOMBRE DE CELLULES                   !
+CARGU ! NCELE2       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
+CARGU ! NFAC2        ! E  !  -> ! NOMBRE DE FACES INTERNES             !
+CARGU ! NFABO2       ! E  !  -> ! NOMBRE DE FACES DE BORD              !
+CARGU ! NSOM2        ! E  !  -> ! NOMBRE DE SOMMETS                    !
+CARGU ! LNDFA2       ! E  !  -> ! TAILLE DE LNDFAC                     !
+CARGU ! LNDFB2       ! E  !  -> ! TAILLE DE LNDFBR                     !
+CARGU ! NCELG2       ! E  !  -> ! NOMBRE GLOBAL DE CELLULES            !
+CARGU ! NFACG2       ! E  !  -> ! NOMBRE GLOBAL DE FACES INTERNES      !
+CARGU ! NFBRG2       ! E  !  -> ! NOMBRE GLOBAL DE FACES DE BORD       !
+CARGU ! NSOMG2       ! E  !  -> ! NOMBRE GLOBAL DE SOMMETS             !
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
@@ -84,19 +83,24 @@ C***********************************************************************
 C
       INCLUDE "dimens.h"
       INCLUDE "dimfbr.h"
+      INCLUDE "paramx.h"
+      INCLUDE "entsor.h"
       INCLUDE "parall.h"
 C
 C ARGUMENTS
 C
-      INTEGER          NCELE2, NFAC2  , NFABO2 , NFACG2 , NFBRG2
+      INTEGER          NCEL2, NCELE2, NFAC2, NFABO2, NSOM2
+      INTEGER          LNDFA2, LNDFB2
+      INTEGER          NCELG2, NFACG2 , NFBRG2, NSOMG2
 C
 C
 C***********************************************************************
 C
 C=======================================================================
-C 1. MISE A JOUR DU NOMBRE DE CELLULES ETENDUES
+C 1. MISE A JOUR DU NOMBRE DE CELLULES
 C=======================================================================
 C
+      NCEL = NCEL2
       NCELET = NCELE2
 C
 C=======================================================================
@@ -106,6 +110,9 @@ C
       NFAC = NFAC2
       NFABOR = NFABO2
 C
+      LNDFAC = LNDFA2
+      LNDFBR = LNDFB2
+C
 C     On remplit maintenant NDIMFB
       IF (NFABOR.EQ.0) THEN
         NDIMFB = 1
@@ -114,11 +121,51 @@ C     On remplit maintenant NDIMFB
       ENDIF
 C
 C=======================================================================
-C 3. MISE A JOUR DU NOMBRE DES FACES GLOBALES
+C 3. MISE A JOUR DU NOMBRE DES SOMMETS
 C=======================================================================
 C
+      NNOD = NSOM2
+C
+C=======================================================================
+C 4. MISE A JOUR DES TAILLES GLOBALES
+C=======================================================================
+C
+      NCELGB = NCELG2
       NFACGB = NFACG2
       NFBRGB = NFBRG2
+      NSOMGB = NSOMG2
+C
+C=======================================================================
+C 5. IMPRESSION EN CAS DE PARALLELISME
+C=======================================================================
+C
+      IF (IRANGP.GE.0) THEN
+        WRITE(NFECRA,1500)
+        WRITE(NFECRA,1510) NCELET,NCEL  ,NFAC  ,NFABOR,NNOD,
+     &                            NCELGB,NFACGB,NFBRGB,NSOMGB
+      ENDIF
+C
+ 1500 FORMAT(
+     &'                                                             ',/,
+     &' ** DIMENSIONS : Complement pour les calculs paralleles      ',/,
+     &'    ----------                                               ',/,
+     &'    Pour les calculs paralleles,                             ',/,
+     &'      ''local''  fait reference au processeur courant.       ',/,
+     &'      ''global'' fait reference a la somme sur tous les      ',/,
+     &'                                                  processeurs',/)
+ 1510 FORMAT(
+     &' --- Geometrie                                               ',/,
+     &'       NCELET = ',4X,I10,    ' (Nb de cellules + halo  local)',/,
+     &'                                                             ',/,
+     &'       NCEL   = ',4X,I10,    ' (Nb de cellules actives local)',/,
+     &'       NFAC   = ',4X,I10,    ' (Nb de faces internes   local)',/,
+     &'       NFABOR = ',4X,I10,    ' (Nb de faces de bord    local)',/,
+     &'       NNOD   = ',4X,I10,    ' (Nb de sommets          local)',/,
+     &'                                                             ',/,
+     &'       NCELGB = ',4X,I10,    ' (Nb de cellules actives global',/,
+     &'       NFACGB = ',4X,I10,    ' (Nb de faces internes   global',/,
+     &'       NFBRGB = ',4X,I10,    ' (Nb de faces de bord    global',/,
+     &'       NSOMGB = ',4X,I10,    ' (Nb de sommets          global',/)
 C
       RETURN
       END
