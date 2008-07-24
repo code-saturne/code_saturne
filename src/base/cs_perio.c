@@ -147,25 +147,17 @@ _sync_loc_var_strided(const cs_halo_t  *halo,
 {
   cs_int_t  i, j, start, length;
 
-  int rank_id = 0;
-  const int  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
-
-  for (rank_id = 0;
-       (   rank_id < halo->n_c_domains
-        && halo->c_domain_rank[rank_id] != local_rank);
-       rank_id++);
-
-  if (halo->c_domain_rank[rank_id] == local_rank) {
+  if (cs_glob_base_nbr == 1) {
 
     cs_real_t *recv_var
-      = var + halo->n_local_elts*stride + halo->index[2*rank_id];
+      = var + halo->n_local_elts*stride + halo->index[0];
 
-    start = halo->send_index[2*rank_id];
+    start = halo->send_index[0];
 
     if (halo_type == CS_HALO_EXTENDED)
-      length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
+      length =  halo->send_index[2] - halo->send_index[0];
     else
-      length =  halo->send_index[2*rank_id + 1] - halo->send_index[2*rank_id];
+      length =  halo->send_index[1] - halo->send_index[0];
 
     for (i = 0; i < length; i++) {
       for (j = 0; j < stride; j++)
