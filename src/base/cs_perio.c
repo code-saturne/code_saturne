@@ -62,7 +62,6 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_halo.h"
-#include "cs_mesh_quantities.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -2053,33 +2052,6 @@ cs_perio_sync_coords(const cs_halo_t *halo,
 
   } /* End of loop on transformation */
 
-}
-
-/*----------------------------------------------------------------------------
- * Initialize cs_mesh_quantities_t elements for periodicity.
- *
- * Updates cell center and cell family for halo cells.
- *----------------------------------------------------------------------------*/
-
-void
-cs_perio_sync_geo(void)
-{
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_real_t  *xyzcen = cs_glob_mesh_quantities->cell_cen;
-  cs_real_t  *cell_volume = cs_glob_mesh_quantities->cell_vol;
-
-  const cs_halo_type_t  sync_mode = mesh->halo_type;
-
-  /* Compute the new cell centers through periodicity */
-
-  cs_perio_sync_coords(mesh->halo, sync_mode, xyzcen);
-
-  /* Update cell volume for cells in halo */
-
-  cs_perio_sync_var_scal(mesh->halo,
-                         sync_mode,
-                         CS_PERIO_ROTA_COPY,
-                         cell_volume);
 }
 
 /*----------------------------------------------------------------------------

@@ -1100,8 +1100,17 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);
 
-    if (mesh->n_init_perio > 0)
-      cs_perio_sync_geo();
+    if (mesh->n_init_perio > 0) {
+
+       cs_perio_sync_coords(mesh->halo, mesh->halo_type,
+                            mesh_quantities->cell_cen);
+
+       cs_perio_sync_var_scal(mesh->halo,
+                              mesh->halo_type,
+                              CS_PERIO_ROTA_COPY,
+                              mesh_quantities->cell_vol);
+    }
+
   }
 }
 

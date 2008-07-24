@@ -441,15 +441,6 @@ cs_perio_sync_coords(const cs_halo_t *halo,
                      cs_real_t       *coords);
 
 /*----------------------------------------------------------------------------
- * Initialize cs_mesh_quantities_t elements for periodicity.
- *
- * Updates cell center and cell family for halo cells.
- *----------------------------------------------------------------------------*/
-
-void
-cs_perio_sync_geo(void);
-
-/*----------------------------------------------------------------------------
  * Synchronize values for a real scalar between periodic elements.
  *
  * parameters:

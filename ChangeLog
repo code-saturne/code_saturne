@@ -1,4 +1,11 @@
 * 24/07/2008 - David Monfort <david.monfort@edf.fr>
+  Removing cs_perio_sync_geo by cs_perio_sync_var
+  modified routines:
+    include/base/cs_perio.h
+    src/base/cs_mesh_quantities.c
+    src/base/cs_perio.c
+
+* 24/07/2008 - David Monfort <david.monfort@edf.fr>
   Replacing all occurences of cs_parall_sync with cs_halo_sync
   and removing this former function in cs_parall.
   modified routines:
