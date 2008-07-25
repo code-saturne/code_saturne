@@ -36,6 +36,8 @@
       NOM_ARCH=Linux_Ch
     elif [ -d /bgl/BlueLight/ppcfloor ] ; then
       NOM_ARCH=Blue_Gene_L
+    elif [ -d /bgsys/drivers/ppcfloor ] ; then
+      NOM_ARCH=Blue_Gene_P
     else
       MACHINE=`uname -m`
       case "$MACHINE" in
@@ -53,6 +55,8 @@
     CS_ROOT=/home/cont002/saturne
   elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then 
     CS_ROOT=/gpfs2/home/saturne
+  elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
+    CS_ROOT=/gpfs/home/saturne
   else
     CS_ROOT=/home/saturne
   fi
