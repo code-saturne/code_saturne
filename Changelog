@@ -1,3 +1,10 @@
+* 25/07/2008 - David Monfort <david.monfort@edf.fr>
+  Macros and architecture name set for BlueGene/P system
+  added script:
+    bin/macros_BlueGene_P.mk
+  modified script:
+    bin/cs_profile
+
 * 11/07/2008 - David Monfort <david.monfort@edf.fr>
   Finalization of the localization of Code_Saturne Kernel.
   modified routines:
