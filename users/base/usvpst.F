@@ -259,7 +259,7 @@ C=======================================================================
 C
 C
 C     Un maillage de posttraitement est une "part"
-C       (au sens EnSight ; les equivalents MED et CGNS sont le maillage
+C       (au sens EnSight ; les équivalents MED et CGNS sont le maillage
 C       et la base respectivement)
 C     L'utilisateur aura defini ses maillages de posttraitement dans
 C       usdpst (NBPART maillages de posttraitement)
@@ -302,7 +302,7 @@ C
 C
 C     Remarque : attention aux longueurs des noms de variables.
 C
-C                On autorise ici jusqu'a 32 caracteres , mais selon le
+C                On autorise ici jusqu'à 32 caracteres , mais selon le
 C                format utilise, les noms peuvent etre tronques :
 C
 C                  - a 19 caracteres pour une sortie EnSight
@@ -384,7 +384,7 @@ C
 C
 C         Ecriture effective des valeurs calculees
 C
-C         Valeurs non entrelacees
+C         Valeurs non entrelacées
           IENTLA = 0
 C
 C         Les variables sont definies sur le tableau de travail ;
@@ -467,7 +467,7 @@ C
 C
 C         Ecriture effective des valeurs calculees
 C
-C         Valeurs non entrelacees
+C         Valeurs non entrelacées
             IENTLA = 0
 C
 C         Les variables sont definies sur le tableau de travail ;
@@ -517,7 +517,7 @@ C
 C
 C         Ecriture effective des valeurs calculees
 C
-C         Valeurs non entrelacees
+C         Valeurs non entrelacées
           IENTLA = 0
 C
 C         Les variables sont definies sur le tableau de travail ;
@@ -573,7 +573,7 @@ C         a renseigner par l'utilisateur
 C
 C
 C
-C       Valeurs non entrelacees
+C       Valeurs non entrelacées
         IENTLA = 0
 C
 C       On utilise directement le tableau propfb definit sur le
@@ -617,7 +617,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 3
 C
-C       Valeurs entrelacees
+C       Valeurs entrelacées
         IENTLA = 1
 C
 C       Phase
@@ -716,7 +716,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 1
 C
-C       Valeurs non entrelacees (sans importance pour un scalaire)
+C       Valeurs non entrelacées (sans importance pour un scalaire)
         IENTLA = 0
 C
 C       Phase
@@ -812,7 +812,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
           IDIMT = 1
 C
-C       Valeurs non entrelacees (sans importance pour un scalaire)
+C       Valeurs non entrelacées (sans importance pour un scalaire)
         IENTLA = 0
 C
 C       Annulation de la variable sur les faces internes
@@ -869,7 +869,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 3
 C
-C       Valeurs entrelacees
+C       Valeurs entrelacées
         IENTLA = 1
 C
         DO ILOC = 1, NFACPS
@@ -920,7 +920,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 3
 C
-C       Valeurs non entrelacees
+C       Valeurs non entrelacées
         IENTLA = 0
 C
         DO ILOC = 1, NFACPS
@@ -971,7 +971,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 3
 C
-C       Valeurs entrelacees
+C       Valeurs entrelacées
         IENTLA = 1
 C
 C       Ecriture effective des valeurs calculees
@@ -1011,7 +1011,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 3
 C
-C       Valeurs non entrelacees
+C       Valeurs non entrelacées
         IENTLA = 0
 C
 C       Phase
@@ -1090,7 +1090,7 @@ C       Dimension de la variable (3 = vecteur, 1=scalaire)
 C         a renseigner par l'utilisateur
         IDIMT = 1
 C
-C       Valeurs non entrelacees (sans importance pour un scalaire)
+C       Valeurs non entrelacées (sans importance pour un scalaire)
         IENTLA = 0
 C
 C       Phase

@@ -1152,7 +1152,7 @@ C
 C
 C --> Bilan sur les termes sources de masse
 C     -------------------------------------
-C     On va separer les injections de masse des aspirations
+C     On va séparer les injections de masse des aspirations
 C     pour plus de generalite
 C
       NCESMP=NCETSM(IPHAS)
@@ -1162,7 +1162,7 @@ C
         ITPSMP = IITPSM(IPHAS)
         DO IELTSM = 1, NCESMP
 c     suivant le type d'injection, on utilise la valeur SMACEL ou la valeur ambiante
-c     de la temperature
+c     de la température
           IEL = IA(ICESMP+IELTSM-1)
           XGAMMA = RA( ISMACP+IELTSM+NCESMP*(IPR(IPHAS)-1)-1)
           IF ( IA( ITPSMP+IELTSM+NCESMP*(IVAR-1)-1).EQ.0
@@ -1556,7 +1556,7 @@ C     Ecriture de la valeur minimale renvoyee
       WRITE(NFECRA,5050)RRR
  5050 FORMAT(' USPROJ: Volume min par processeur = ', E14.5)
 C
-C  Maximum d'un reel et valeurs reelles associees
+C  Maximum d'un réel et valeurs reelles associées
 C       ici le volume et sa localisation
 C
 C     Maximum local et sa localisation (NBR=3 coordonnees)
@@ -1582,7 +1582,7 @@ C     Ecriture de la valeur maximale et localisation renvoyees
  5060 FORMAT(' USPROJ: Volume max = ', E14.5,/,
      &       '         Localisation x,y,z = ',3E14.5)
 C
-C  Minimum d'un reel et valeurs reelles associees
+C  Minimum d'un réel et valeurs reelles associées
 C       ici le volume et sa localisation
 C
 C     Minimum local et sa localisation (NBR=3 coordonnees)

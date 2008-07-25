@@ -41,7 +41,7 @@ C
 C     TRFMAT : Temperature de reference pour l'air en degre
 C     RRFMAT : Masse volumique de reference de l'air a TRFMAT degres
 C     CRFMAT : CP de reference pour l'air
-C     XMUMAT : Viscosite moleculaire dynamique de l'air consideree
+C     XMUMAT : Viscosite moléculaire dynamique de l'air consideree
 C     RTURB0 : Intensite turbulente (selon k = (3/2)*(V_ref*RTURB0/100)**2)
 C
       DOUBLE PRECISION TRFMAT, RRFMAT, CRFMAT, XMUMAT, RTURB0
@@ -136,7 +136,7 @@ C     EMICON : Emissivite des conteneurs
 C     EMIMUR : Emissivite des murs
 C     HEPCNT : Hauteur d erosion des panaches de convection naturelle
 C     DHPCNT : Debit enthalpique des panaches de convection naturelle
-C     DEBMAS : Debit de circulation forcee
+C     DEBMAS : Débit de circulation forcee
 C     PDCCHA : Perte de charge du diffuseur de cheminee d'ALIMENTATION
 C     PDCFCH : Perte de charge du filtre de cheminee d'ALIMENTATION
 C     DHCHEA : Diametre hydraulique de cheminee d'ALIMENTATION

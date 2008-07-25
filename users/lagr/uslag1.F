@@ -234,9 +234,9 @@ C
 C                         ENC1 * 1.0D+7
 C     Log  (10*VISCEN) = --------------- + ENC2
 C        10                            2
-C                        (Tp(^0C) - 150)
+C                        (Tp(°C) - 150)
 C
-C     La viscosite critique VISREF est donnee par la litterature et
+C     La viscosite critique VISREF est donnée par la litterature et
 C     peut varier entre 8 Pa.set 1.D7 Pa.s !
 C     En general on prend 1.0D+4 Pa.s...
 C
@@ -296,7 +296,7 @@ C=======================================================================
 C
 C     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
 C     (PAR DEFAUT : NBPMAX = 1000)
-C     * Attention, la memoire est reservee en consequence, et le nombre
+C     * Attention, la mémoire est réservée en conséquence, et le nombre
 C       max de particules traitees au cours d'une iteration Lagrangienne
 C       est limite a NBPMAX.
 C     * L'ordre de grandeur de NBPMAX doit etre evalue au mieux lors
@@ -469,7 +469,7 @@ C   1) Par defaut, statistiques TOUJOURS calculees :
 C         Moyenne et variance des composantes de la vitesse
 C         Moyenne et variance du taux de presence
 C            (i.e. concentration volumique)
-C         Moyenne et variance du temps de sejour
+C         Moyenne et variance du temps de séjour
 C
         IPV  =  1
         NOMLAG(IPV)  = 'MoVitPtX'
@@ -576,7 +576,7 @@ C
         ENDIF
 C
 C   5) Par defaut, statistique TOUJOURS calculee :
-C         Somme du poids statistiques associe aux particules
+C         Somme du poids statistiques associé aux particules
 C            (i.e. nombre de particules par cellules)
 C
         IPV  = IPV  + 1
@@ -685,8 +685,8 @@ C
       MODCPL = 0
 C
 C     IDIRLA  =1 ou 2 ou 3 : 1ere, 2eme ou 3eme direction
-C       du modele complet. Correspond a la direction principale
-C       de l'ecoulement. Permet de calculer un echelle de temps
+C       du modele complet. Correspond à la direction principale
+C       de l'écoulement. Permet de calculer un echelle de temps
 C       Lagrangienne non isotrope.
 C       (DEFAUT IDIRLA = 1)
 C
@@ -742,7 +742,7 @@ C
       FION = 1.D-2
 C
 C    DISTANCE DE COUPURE
-C      dans la litterature elle est egale a : 1.58D-10
+C      dans la litterature elle est egale à : 1.58D-10
 C                                        ou   1.65D-10
 C
       DCOUP = 1.58D-10

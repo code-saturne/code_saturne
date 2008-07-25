@@ -875,7 +875,7 @@ C----
 C
  1000 FORMAT(1X,' ERREUR VERSION JOULE : ',/,
      &       1X,' ====================   ',/,
-     &      10X,' Vous n''avez pas donne de transfo de reference',/,
+     &      10X,' Vous n''avez pas donne de transfo de référence',/,
      &      10X,' et vous n''avez pas de CL a potentiel nul dans le',
      &          ' domaine')
  1500 FORMAT(/,2X,' ** INFORMATIONS SUR LES DIFFERENTS TRANSFO'/,

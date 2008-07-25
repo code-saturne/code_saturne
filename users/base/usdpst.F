@@ -252,17 +252,17 @@ C         Pour EnSight, MED, ou CGNS :
 C                        "discard_polygons" pour supprimer les polygones,
 C                        "discard_polyhedra" pour supprimer les polyedres.
 C         Pour EnSight  ou MED :
-C                        "divide_polygons" pour decouper les polygones,
-C                        "divide_polyhedra" pour decouper les polyedres.
+C                        "divide_polygons" pour découper les polygones,
+C                        "divide_polyhedra" pour découper les polyedres.
 C
 C       INDMOD indique si les maillages ecrits seront :
 C         0 : fixes,
 C         1 : deformables a topologie constante,
 C         2 : modifiables (pourront etre completement redefinis en
 C             cours de calcul via le sous-programme USMPST).
-C        10 : comme INDMOD = 0, avec champ de deplacement
-C        11 : comme INDMOD = 1, avec champ de deplacement
-C        12 : comme INDMOD = 2, avec champ de deplacement
+C        10 : comme INDMOD = 0, avec champ de déplacement
+C        11 : comme INDMOD = 1, avec champ de déplacement
+C        12 : comme INDMOD = 2, avec champ de déplacement
 
 C       NTCHRL donne la frequence de sortie par defaut associee,
 C       (la sortie a un pas de temps donne pouvant etre forcee ou
@@ -322,15 +322,15 @@ C         A RENSEIGNER PAR L'UTILISATEUR
 C=======================================================================
 C
 C   NBPART est le nombre de "parts" qui seront generees
-C   (au sens EnSight ; les equivalents MED et CGNS sont le maillage
+C   (au sens EnSight ; les équivalents MED et CGNS sont le maillage
 C    et la base respectivement)
 C
 C   Une "part" peut etre tout volume ou surface que l'on definira par
 C   l'identification des cellules ou faces du maillage
 C
-C   Exemple : 4 "parts", correspondant respectivement a une coupe
-C             mixte faces de bord / faces internes, puis a une coupe
-C             contenant uniquement des faces internes, puis a deux extraits
+C   Exemple : 4 "parts", correspondant respectivement à une coupe
+C             mixte faces de bord / faces internes, puis à une coupe
+C             contenant uniquement des faces internes, puis à deux extraits
 C             evolutifs du maillage global. On ajoutera une 5eme "part",
 C             alias de la 2eme.
 C

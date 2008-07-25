@@ -101,9 +101,9 @@ CFONC      - de la chaleur specifique associee          CP     J/(kg degres)
 CFONC      - de la conductivite thermique associee      LAMBDA W/(m degres)
 CFONC      - des "diffusivites" associees aux scalaires VISCLS kg/(m s)
 CFONC
-CFONC  La masse volumique ne doit pas etre renseignee : en compressible,
-CFONC    c'est une variable resolue, que l'on peut initialiser si
-CFONC    necessaire dans USCFXI (RTP).
+CFONC  La masse volumique ne doit pas être renseignée : en compressible,
+CFONC    c'est une variable résolue, que l'on peut initialiser si
+CFONC    nécessaire dans USCFXI (RTP).
 CFONC
 CFONC  On dispose des types de faces de bord au pas de temps
 CFONC    precedent (sauf au premier pas de temps, ou les tableaux
@@ -362,7 +362,7 @@ C
 C   Positions des variables, coefficients
 C   -------------------------------------
 C
-C --- Numero de variable temperature pour la phase courante iphas
+C --- Numero de variable température pour la phase courante iphas
 C       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 C          IVART = ISCA(2)
 C
@@ -426,7 +426,7 @@ C
 C   Positions des variables, coefficients
 C   -------------------------------------
 C
-C --- Numero de variable temperature pour la phase courante iphas
+C --- Numero de variable température pour la phase courante iphas
 C       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 C          IVART = ISCA(2)
 C
@@ -511,7 +511,7 @@ C
 C   Positions des variables, coefficients
 C   -------------------------------------
 C
-C --- Numero de variable temperature pour la phase courante iphas
+C --- Numero de variable température pour la phase courante iphas
 C       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 C          IVART = ISCA(2)
 C
@@ -610,7 +610,7 @@ C
 C   Positions des variables, coefficients
 C   -------------------------------------
 C
-C --- Numero de variable temperature pour la phase courante iphas
+C --- Numero de variable température pour la phase courante iphas
 C       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 C          IVART = ISCA(2)
 C
@@ -711,7 +711,7 @@ C
 C   Positions des variables, coefficients
 C   -------------------------------------
 C
-C --- Numero de variable temperature pour la phase courante iphas
+C --- Numero de variable température pour la phase courante iphas
 C       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 C          IVART = ISCA(2)
 C

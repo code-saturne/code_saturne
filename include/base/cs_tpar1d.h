@@ -91,10 +91,10 @@ void CS_PROCF (lect1d,LECT1D)
                                                 module 1D                             */
  const cs_real_t  *const eppt1d,  /* <- Epaisseur de paroi des faces          */
  const cs_real_t  *const rgpt1d,  /* <- Raison geometrique associee aux faces */
-       cs_real_t  *const tppt1d   /* -> Temperature de paroi avec module 1D   */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' eventuels F77, */
-                                  /*     inutilises lors de l'appel mais      */
-                                  /*     places par de nombreux compilateurs) */
+       cs_real_t  *const tppt1d   /* -> Température de paroi avec module 1D   */
+ CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
+                                  /*     inutilisés lors de l'appel mais      */
+                                  /*     placés par de nombreux compilateurs) */
  );
 
 
@@ -110,12 +110,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
  const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
- const cs_real_t  *const tppt1d,  /* <- Temperature de paroi avec module 1D   */
+ const cs_real_t  *const tppt1d,  /* <- Température de paroi avec module 1D   */
  const cs_int_t   *const ifpt1d   /* <- Tableau d'indirection des faces avec
                                      module 1D                                */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' eventuels F77, */
-                                  /*     inutilises lors de l'appel mais      */
-                                  /*     places par de nombreux compilateurs) */
+ CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
+                                  /*     inutilisés lors de l'appel mais      */
+                                  /*     placés par de nombreux compilateurs) */
  );
 
 

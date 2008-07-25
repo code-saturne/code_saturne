@@ -1432,7 +1432,7 @@ C     Lorsqu'un modele physique particuliere a ete active
 C                  (charbon, combustion, modules electriques, compressible)
 C       on ne renseigne PAS les variables IROVAR et IVIVAR ici
 C                                  elles sont definies automatiquement.
-C       Pour le compressible, cependant, IVIVAR peut ^etre modifie dans
+C       Pour le compressible, cependant, IVIVAR peut être modifie dans
 C                                  le sous-programme utilisateur uscfx1.
 C
 C     Lorsqu'aucun modele physique particuliere n'a ete active,
@@ -1510,7 +1510,7 @@ C       carre des fluctuations d'un autre scalaire utilisateur,
 C                                   on ne renseigne pas VISLS0(JJ) ici.
 C       C'est l'objet du test sur ISCAVR(JJ) dans l'exemple ci-dessous.
 C       En effet la diffusivite de la moyenne du carre des fluctuations
-C       d'un scalaire est supposee identique a la diffusivite de ce
+C       d'un scalaire est supposee identique à la diffusivite de ce
 C       scalaire.
 C
 C     Lorsqu'on n'a pas active de physique particuliere
@@ -1797,9 +1797,9 @@ C               0 : fixes,
 C               1 : deformables a topologie constante,
 C               2 : modifiables (pourront etre completement redefinis en
 C                   cours de calcul via le sous-programme USMPST).
-C              10 : comme INDMOD = 0, avec champ de deplacement
-C              11 : comme INDMOD = 1, avec champ de deplacement
-C              12 : comme INDMOD = 2, avec champ de deplacement
+C              10 : comme INDMOD = 0, avec champ de déplacement
+C              11 : comme INDMOD = 1, avec champ de déplacement
+C              12 : comme INDMOD = 2, avec champ de déplacement
 C
 C     FMTCHR : format de sortie, parmi
 C              'EnSight Gold', 'MED_fichier', ou 'CGNS'

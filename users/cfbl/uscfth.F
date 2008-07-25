@@ -70,7 +70,7 @@ CFONC ====================================
 CFONC
 CFONC   1. GAZ PARFAIT (fournir la masse molaire XMASML)
 CFONC
-CFONC   2. GAZ PARFAIT A GAMMA VARIABLE (a adapter)
+CFONC   2. GAZ PARFAIT A GAMMA VARIABLE (à adapter)
 CFONC
 CFONC   3. VAN DER WAALS (pas encore implemente)
 CFONC
@@ -333,7 +333,7 @@ C 0. INITIALISATION
 C     Pas d'intervention utilisateur requise.
 C=======================================================================
 C
-C     Pointeurs memoire
+C     Pointeurs mémoire
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
@@ -360,9 +360,9 @@ C     Position des variables
 C
 C
 C     Si calcul aux cellules,
-C       indique, si > 0, que RTP doit etre modifie
+C       indique, si > 0, que RTP doit etre modifié
 C     Si calcul aux faces,
-C       indique le numero de la face consideree
+C       indique le numéro de la face considérée
       IFAC0 = IMODIF
 C
 C=======================================================================
@@ -417,11 +417,11 @@ C
 C     CALCUL DE LA CONSTANTE GAMAGP
 C     =============================
 C
-C     On la suppose superieure ou egale a 1.
-C     On la calcule a chaque appel, meme si cela peut paraitre cher, dans
-C       par coherence avec le cas gamma variable, pour lequel, on n'a pas
-C       prevu de la conserver. Avec un save et un test, on pourrait
-C       s'affranchir du calcul si necessaire.
+C     On la suppose supérieure ou égale à 1.
+C     On la calcule à chaque appel, même si cela peut paraître cher, dans
+C       par cohérence avec le cas gamma variable, pour lequel, on n'a pas
+C       prévu de la conserver. Avec un save et un test, on pourrait
+C       s'affranchir du calcul si nécessaire.
 C
         IF(ICCFTH.GT.0) THEN
 C
@@ -440,11 +440,11 @@ C
         ENDIF
 C
 C
-C     OPTIONS DE CALCUL  : Cp ET Cv CONSTANTS (hypothese gaz parfait)
+C     OPTIONS DE CALCUL  : Cp ET Cv CONSTANTS (hypothèse gaz parfait)
 C     =================
 C
-C     La valeur de CP0 est a fournir dans usini1. La valeur de CV0
-C       est calculee plus bas (a partir de CP0).
+C     La valeur de CP0 est à fournir dans usini1. La valeur de CV0
+C       est calculée plus bas (à partir de CP0).
 C
 C
         IF(ICCFTH.EQ.-1) THEN
@@ -455,7 +455,7 @@ C
 C
 C     INITIALISATIONS PAR DEFAUT (avant uscfxi)
 C     ==========================
-C     T0 est forcement positif (verifie dans verini)
+C     T0 est forcément positif (vérifié dans verini)
 C
         ELSEIF(ICCFTH.EQ.0) THEN
 C
@@ -476,11 +476,11 @@ C
 C
 C
 C --- Clipping si rho est exactement nul + write + stop
-C       En effet, si c'est le cas, on va necessairement se planter
+C       En effet, si c'est le cas, on va nécessairement se planter
 C       dans la thermo (bon, d'accord, pas dans tous les cas, mais
-C       pour le moment, je presume que les fluides a traiter seront
-C       assez classiques, avec des pbs a rho = 0)
-C       Appele en fin de resolution de la masse volumique (apres
+C       pour le moment, je présume que les fluides à traiter seront
+C       assez classiques, avec des pbs à rho = 0)
+C       Appelé en fin de resolution de la masse volumique (apres
 C       clipping classique et avant communication parallele).
 C
           IERR = 0
@@ -506,10 +506,10 @@ C
 C
 C
 C --- Clipping si e est exactement nul + write + stop
-C       En effet, si c'est le cas, on va necessairement se planter
+C       En effet, si c'est le cas, on va nécessairement se planter
 C       dans la thermo (bon, d'accord, pas dans tous les cas, mais
-C       pour le moment, je presume que les fluides a traiter seront
-C       assez classiques, avec des pbs a e = 0)
+C       pour le moment, je présume que les fluides à traiter seront
+C       assez classiques, avec des pbs à e = 0)
 C
           IERR = 0
           DO IEL = 1, NCEL
@@ -546,8 +546,8 @@ C     Test des valeurs de rho
               WRITE(NFECRA,3010)RTP(IEL,IRHIPH),IEL
             ENDIF
           ENDDO
-C     Si pb on s'arrete, car rho a ete fourni par l'utilisateur
-C       (initialisation erronee sans doute)
+C     Si pb on s'arrete, car rho a été fourni par l'utilisateur
+C       (initialisation erronée sans doute)
           IF(IERR.EQ.1) THEN
             CALL CSEXIT (1)
           ENDIF
@@ -582,8 +582,8 @@ C     Test des valeurs de T
               WRITE(NFECRA,2010)RTP(IEL,ITKIPH),IEL
             ENDIF
           ENDDO
-C     Si pb on s'arrete, car T a ete fourni par l'utilisateur
-C       (initialisation erronee par exemple, non en K ?)
+C     Si pb on s'arrete, car T a été fourni par l'utilisateur
+C       (initialisation erronée par exemple, non en K ?)
           IF(IERR.EQ.1) THEN
             CALL CSEXIT (1)
           ENDIF
@@ -612,7 +612,7 @@ C
         ELSEIF(ICCFTH.EQ.14.OR.ICCFTH.EQ.140000) THEN
 C
           DO IEL = 1, NCEL
-C     Energie interne (evite de diviser par T)
+C     Energie interne (évite de diviser par T)
             ENINT = RTP(IEL,IENIPH)
      &               - 0.5D0*( RTP(IEL,IUIPH)**2
      &                       + RTP(IEL,IVIPH)**2
@@ -661,7 +661,7 @@ C
         ELSEIF(ICCFTH.EQ.24.OR.ICCFTH.EQ.210000) THEN
 C
           DO IEL = 1, NCEL
-C     Energie interne (evite de diviser par T)
+C     Energie interne (évite de diviser par T)
             ENINT = RTP(IEL,IENIPH)
      &               - 0.5D0*( RTP(IEL,IUIPH)**2
      &                       + RTP(IEL,IVIPH)**2
@@ -686,7 +686,7 @@ C     ====================================              rho
 C
         ELSEIF(ICCFTH.EQ.126) THEN
 C
-C     Test des valeurs de rho (on peut eliminer ce test pour optimiser)
+C     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
           IUTILE = 0
           IF(IUTILE.EQ.1) THEN
             IERR = 0
@@ -710,7 +710,7 @@ C ======================================
 C
         ELSEIF(ICCFTH.EQ.162) THEN
 C
-C     Test des valeurs de rho (on peut eliminer ce test pour optimiser)
+C     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
           IUTILE = 0
           IF(IUTILE.EQ.1) THEN
             IERR = 0
@@ -740,7 +740,7 @@ C     ============================================          gamma
 C                                                        rho
         ELSEIF(ICCFTH.EQ.6) THEN
 C
-C     Test des valeurs de rho (on peut eliminer ce test pour optimiser)
+C     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
           IERR = 0
           DO IEL = 1, NCEL
             IF(RTP(IEL,IRHIPH).LE.0.D0) THEN
@@ -798,7 +798,7 @@ C
 C     On utilise un Neumann en pression. Bien que cela ne permette
 C       pas d'utiliser Rusanov, on espere que cela stabilise.
 C     On ajoute un test pour eviter de basculer
-C       de detente a choc d'un pas de temps a l'autre
+C       de detente a choc d'un pas de temps à l'autre
 C
 C     Detente
           IF(XMACH.LT.0.D0.AND.COEFB(IFAC,ICLP).LE.1.D0) THEN
@@ -808,7 +808,7 @@ C
      &             ** (2.D0*GAMAGP/(GAMAGP-1.D0))
 C         Si on detend trop fort : Dirichlet nul en pression
 C           (la valeur de COEFB ici est utilisee comme indicateur
-C            et sera retraitee plus tard dans cfxtcl)
+C            et sera retraitée plus tard dans cfxtcl)
             ELSE
               COEFB(IFAC,ICLP) = RINFIN
             ENDIF
@@ -838,19 +838,19 @@ C --- On impose un Neumann Homogene en Pression par defaut
 C         Pas d'intervention requise
 C
 C
-C --- ENTREE SUBSONIQUE, RHO ET U DONNES (subsonique par hypothese)
+C --- ENTREE SUBSONIQUE, RHO ET U DONNES (subsonique par hypothèse)
 C     ----------------------------------
 C
-C     Contrairement a la conception initiale, on impose un Dirichlet
+C     Contrairement à la conception initiale, on impose un Dirichlet
 C       explicite sur la pression et non pas un flux (on se base cpdt
 C       sur la meme valeur physique).
 C     Ceci a l'avantage de permettre l'utilisation de Rusanov pour
 C       lisser les conditions d'entree.
-C     En outre, ceci permet de ne pas avoir a gerer le remplissage de
+C     En outre, ceci permet de ne pas avoir à gérer le remplissage de
 C       coefb ici (c'est secondaire, car il faut le faire pour la paroi).
 C     Si on a des oscillations en temps, on pourra essayer d'eviter
-C       le basculement de detente a choc d'un pas de temps a l'autre.
-C     La pertinence de cette demarche reste a demontrer.
+C       le basculement de détente à choc d'un pas de temps à l'autre.
+C     La pertinence de cette démarche reste à démontrer.
 C
         ELSEIF(ICCFTH.EQ.92) THEN
 C
@@ -898,7 +898,7 @@ C --- Energie totale
      &                + COEFA(IFAC,ICLV)**2 + COEFA(IFAC,ICLW)**2)
 C
 C
-C --- ENTREE SUBSONIQUE, RHO*U ET RHO*U*H DONNES (subsonique par hypothese)
+C --- ENTREE SUBSONIQUE, RHO*U ET RHO*U*H DONNES (subsonique par hypothèse)
 C     ------------------------------------------
 C
 C     Ceci reste a completer :
@@ -915,10 +915,10 @@ C
 C     P   : a calculer avec un newton
 C     u et rho en fonction de P
 C     E en fonction de H
-C     (je l'ai ecrit, reste a le coder ...)
+C     (je l'ai ecrit, reste à le coder ...)
 C
 C
-C     SORTIE SUBSONIQUE (subsonique par hypothese)
+C     SORTIE SUBSONIQUE (subsonique par hypothèse)
 C     -----------------
 C
         ELSEIF(ICCFTH.EQ.93) THEN
@@ -1007,7 +1007,7 @@ C
 C
 C     T ET e EN FONCTION DE P ET rho
 C     ------------------------------
-C      on a donne des valeurs positives strictement (hypothese)
+C      on a donné des valeurs positives strictement (hypothèse)
 C
         ELSEIF(ICCFTH.EQ.912.OR.ICCFTH.EQ.60900) THEN
 C

@@ -256,7 +256,7 @@ C=======================================================================
 C
 C     Exemple :
 C               pour les maillage post utilisateur, on ne conserve que
-C               les mailles auxquelles la vitesse est superieure `a
+C               les mailles auxquelles la vitesse est superieure à
 C               un seuil donne.
 C
 C

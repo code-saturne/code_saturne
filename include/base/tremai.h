@@ -44,18 +44,18 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Calcul du temps restant alloue au process
+ * Calcul du temps restant alloué au process
  *
  * Interface Fortran :
  *
  * SUBROUTINE TREMAI (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (defaut : 7 jours)
+ * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
  * INTEGER          RET        : <-- : Code de retour ;
  *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette methode
- *                             :     :   1 : limite de temps CPU determinee
+ *                             :     :   0 : pas de limite via cette méthode
+ *                             :     :   1 : limite de temps CPU déterminée
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tremai, TREMAI) (double  *tps,

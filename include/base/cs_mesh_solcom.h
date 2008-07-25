@@ -64,8 +64,8 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Mise a jour des informations de dimensionnement maillage apres la lecture
- * de l'entete du fichier de maillage en mode IFOENV = 0
+ * Mise à jour des informations de dimensionnement maillage après la lecture
+ * de l'entête du fichier de maillage en mode IFOENV = 0
  *
  * Interface Fortran :
  *
@@ -75,37 +75,37 @@ extern "C" {
  *                    NTETRA, NPYRAM, NPRISM, NHEXAE )
  *
  * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NCELET      : <-- : Nombre d'elements halo compris
- * INTEGER          NCEL        : <-- : Nombre d'elements actifs
+ * INTEGER          NCELET      : <-- : Nombre d'éléments halo compris
+ * INTEGER          NCEL        : <-- : Nombre d'éléments actifs
  * INTEGER          NFAC        : <-- : Nombre de faces internes
  * INTEGER          NFABOR      : <-- : Nombre de faces de bord
  * INTEGER          NSOM        : <-- : Nombre de sommets (optionnel)
  * INTEGER          LNDFAC      : <-- : Longueur de SOMFAC (optionnel)
  * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
  * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de proprietes max par famille
- * INTEGER          NTETRA      : <-- : Nombre de tetraedres
+ * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
+ * INTEGER          NTETRA      : <-- : Nombre de tétraèdres
  * INTEGER          NPYRAM      : <-- : Nombre de pyramides
  * INTEGER          NPRISM      : <-- : Nombre de prismes
- * INTEGER          NHEXAE      : <-- : Nombre d'hexaedres
+ * INTEGER          NHEXAE      : <-- : Nombre d'hexaèdres
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dimgeo, DIMGEO)
 (
  const cs_int_t   *const ndim,    /* <-- dimension de l'espace                */
- const cs_int_t   *const ncelet,  /* <-- nombre d'elements halo compris       */
- const cs_int_t   *const ncel,    /* <-- nombre d'elements actifs             */
+ const cs_int_t   *const ncelet,  /* <-- nombre d'éléments halo compris       */
+ const cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs             */
  const cs_int_t   *const nfac,    /* <-- nombre de faces internes             */
  const cs_int_t   *const nfabor,  /* <-- nombre de faces de bord              */
  const cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)        */
  const cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)       */
  const cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)       */
  const cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord */
- const cs_int_t   *const nprfml,  /* <-- nombre de proprietes max par famille */
- const cs_int_t   *const ntetra,  /* <-- nombre de tetraedres                 */
+ const cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille */
+ const cs_int_t   *const ntetra,  /* <-- nombre de tétraèdres                 */
  const cs_int_t   *const npyram,  /* <-- nombre de pyramides                  */
  const cs_int_t   *const nprism,  /* <-- nombre de prismes                    */
- const cs_int_t   *const nhexae   /* <-- nombre d'hexaedres                   */
+ const cs_int_t   *const nhexae   /* <-- nombre d'hexaèdres                   */
 );
 
 /*=============================================================================
@@ -115,8 +115,8 @@ void CS_PROCF (dimgeo, DIMGEO)
 /*----------------------------------------------------------------------------
  * Lecture d'un maillage au format "SolCom"
  *
- * mesh               <-> maillage associe
- * mesh_quantities    <-> grandeurs associes
+ * mesh               <-> maillage associé
+ * mesh_quantities    <-> grandeurs associés
  *
  * Retour:
  *----------------------------------------------------------------------------*/

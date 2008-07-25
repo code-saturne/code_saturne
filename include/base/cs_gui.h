@@ -487,7 +487,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 
 
 /*----------------------------------------------------------------------------
- * Tableau des proprietes utilisees dans le calcul
+ * Tableau des propriétés utilisées dans le calcul
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprop, UIPROP) (const int *const irom,

@@ -57,7 +57,7 @@ extern "C" {
  * Macro definitions
  *============================================================================*/
 
-/* Nom du systeme */
+/* Nom du système */
 
 #if defined(__sgi__) || defined(__sgi) || defined(sgi)
 #define _CS_ARCH_IRIX_64
@@ -264,7 +264,7 @@ extern int  cs_glob_mpe_compute_b;
  * SUBROUTINE CSEXIT (STATUT)
  * *****************
  *
- * INTEGER          STATUT      : --> : 0 pour succes, 1 ou + pour erreur
+ * INTEGER          STATUT      : --> : 0 pour succès, 1 ou + pour erreur
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csexit, CSEXIT)
@@ -274,14 +274,14 @@ void CS_PROCF (csexit, CSEXIT)
 
 
 /*----------------------------------------------------------------------------
- * Temps CPU ecoule depuis le debut de l'execution
+ * Temps CPU écoulé depuis le début de l'exécution
  *
  * Interface Fortran :
  *
  * SUBROUTINE DMTMPS (TCPU)
  * *****************
  *
- * DOUBLE PRECISION TCPU        : --> : temps CPU (utilisateur + systeme)
+ * DOUBLE PRECISION TCPU        : --> : temps CPU (utilisateur + système)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dmtmps, DMTMPS)
@@ -290,7 +290,7 @@ void CS_PROCF (dmtmps, DMTMPS)
 );
 
 /*----------------------------------------------------------------------------
- * Verifier que la reservation en memoire effectuee par souspg ne depasse
+ * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
  * pas  LONGIA.
  *
  * Interface Fortran :
@@ -299,7 +299,7 @@ void CS_PROCF (dmtmps, DMTMPS)
  * *****************
  *
  * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMINT      : --> : Indice de la derniere case utilisee
+ * INTEGER          MEMINT      : --> : Indice de la dernière case utilisée
  *                              :     : dans IA
  *----------------------------------------------------------------------------*/
 
@@ -311,7 +311,7 @@ void CS_PROCF (iasize, IASIZE)
 
 
 /*----------------------------------------------------------------------------
- * Verifier que la reservation en memoire effectuee par souspg ne depasse
+ * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
  * pas  LONGRA.
  *
  * Interface Fortran :
@@ -320,7 +320,7 @@ void CS_PROCF (iasize, IASIZE)
  * *****************
  *
  * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMRDP      : --> : Indice de la derniere case utilisee
+ * INTEGER          MEMRDP      : --> : Indice de la dernière case utilisée
  *                              :     : dans RA
  *----------------------------------------------------------------------------*/
 

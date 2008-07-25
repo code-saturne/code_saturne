@@ -315,7 +315,7 @@ C
           SF = 0.D0
           VV = 0.D0
 C
-C         Calcul de la longueur caracteristique du domaine de calcul
+C         Calcul de la longueur caractéristique du domaine de calcul
 C
           DO IFAC = 1,NFABOR
              SF = SF + SQRT(

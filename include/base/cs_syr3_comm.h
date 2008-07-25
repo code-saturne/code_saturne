@@ -50,7 +50,7 @@ extern "C" {
 
 
 /*============================================================================
- *  Definitions d'enumerations
+ *  Définitions d'énumerations
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -67,19 +67,19 @@ typedef enum {
 
 
 /*----------------------------------------------------------------------------
- *  Emission ou reception de message
+ *  Emission ou réception de message
  *----------------------------------------------------------------------------*/
 
 typedef enum {
 
-  CS_SYR3_COMM_MODE_RECEPTION,   /* Communication en reception                */
-  CS_SYR3_COMM_MODE_EMISSION     /* Communication en emission                 */
+  CS_SYR3_COMM_MODE_RECEPTION,   /* Communication en réception                */
+  CS_SYR3_COMM_MODE_EMISSION     /* Communication en émission                 */
 
 } cs_syr3_comm_mode_t;
 
 
 /*============================================================================
- *  Definition de macros
+ *  Définition de macros
  *============================================================================*/
 
 #define CS_SYR3_COMM_FIN_FICHIER                           "EOF"
@@ -90,42 +90,42 @@ typedef enum {
 #define CS_SYR3_COMM_LNG_NOM_RUB       32   /* Longueur du nom d'une rubrique */
 
 /*
- * Communications par socket : on prevoit pour l'instant 8 codes couples
-                               au maximum ; cette valeur peut etre modifiee
+ * Communications par socket : on prévoit pour l'instant 8 codes couplés
+                               au maximum ; cette valeur peut être modifiée
                                par la variable d'environnement
                                CS_SYR3_COMM_SOCKET_NBR_MAX
 */
 
 
 /*============================================================================
- *  Declaration de structures
+ *  Déclaration de structures
  *============================================================================*/
 
 /*
-  Pointeur associe a un communicateur. La structure elle-meme est declaree
-  dans le fichier "cs_comm.c", car elle n'est pas necessaire ailleurs.
+  Pointeur associé à un communicateur. La structure elle-même est déclarée
+  dans le fichier "cs_comm.c", car elle n'est pas nécessaire ailleurs.
 */
 
 typedef struct _cs_syr3_comm_t cs_syr3_comm_t;
 
 
 /*
-  Structure de sauvegarde des donnees d'une entete de message, permettant de
-  simplifier le passage de ces donnees a differentes fonctions de traitement.
+  Structure de sauvegarde des données d'une entête de message, permettant de
+  simplifier le passage de ces données à différentes fonctions de traitement.
 */
 
 typedef struct {
 
-  cs_int_t   num_rub;                          /* Numero de rubrique associee */
+  cs_int_t   num_rub;                          /* Numéro de rubrique associée */
   char       nom_rub[CS_SYR3_COMM_LNG_NOM_RUB + 1]; /* Nom si num_rub = 0     */
-  cs_int_t   nbr_elt;                          /* Nombre d'elements           */
+  cs_int_t   nbr_elt;                          /* Nombre d'éléments           */
   cs_type_t  typ_elt;                          /* Type si nbr_elt > 0         */
 
 } cs_syr3_comm_msg_entete_t;
 
 
 /*=============================================================================
- * Definitions de variables globales
+ * Définitions de variables globales
  *============================================================================*/
 
 
@@ -139,20 +139,20 @@ typedef struct {
 
 cs_syr3_comm_t * cs_syr3_comm_initialise
 (
- const char          *const nom_emetteur,   /* --> partie "emetteur" du nom   */
+ const char          *const nom_emetteur,   /* --> partie "émetteur" du nom   */
  const char          *const nom_recepteur,  /* --> partie "recepteur du nom   */
- const char          *const chaine_magique, /* --> Cha^ine de verif. de type   */
- const cs_int_t             numero,         /* --> Complete le nom si non nul */
+ const char          *const chaine_magique, /* --> Chaîne de vérif. de type   */
+ const cs_int_t             numero,         /* --> Complète le nom si non nul */
 #if defined(_CS_HAVE_MPI)
  const cs_int_t             rang_proc,      /* --> Rang processus en comm
                                                     (< 0 si comm par fichier) */
 #endif
- const cs_syr3_comm_mode_t       mode,      /* --> emission ou reception      */
+ const cs_syr3_comm_mode_t       mode,      /* --> Émission ou réception      */
  const cs_syr3_comm_type_t       type,      /* --> Type de communication      */
- const cs_int_t             echo            /* --> echo sur sortie principale
-                                                    (< 0 si aucun, entete si 0,
+ const cs_int_t             echo            /* --> Écho sur sortie principale
+                                                    (< 0 si aucun, entête si 0,
                                                     n premiers et derniers
-                                                    elements si n)            */
+                                                    éléments si n)            */
 );
 
 
@@ -182,40 +182,40 @@ const char * cs_syr3_comm_ret_nom
 
 void cs_syr3_comm_envoie_message
 (
- const cs_int_t          num_rub,           /* --> Num. rubrique associee     */
+ const cs_int_t          num_rub,           /* --> Num. rubrique associée     */
  const char              nom_rub[CS_SYR3_COMM_LNG_NOM_RUB], /* Si num_rub = 0 */
- const cs_int_t          nbr_elt,           /* --> Nombre d'elements          */
+ const cs_int_t          nbr_elt,           /* --> Nombre d'éléments          */
  const cs_type_t         typ_elt,           /* --> Type si nbr_elt > 0        */
-       void       *const elt,               /* --> elements si nbr_elt > 0    */
+       void       *const elt,               /* --> Éléments si nbr_elt > 0    */
  const cs_syr3_comm_t  *const comm
 );
 
 
 /*----------------------------------------------------------------------------
- *  Reception de l'entete d'un message ; renvoie le nombre d'elements du
+ *  Réception de l'entete d'un message ; renvoie le nombre d'éléments du
  *  corps du message.
  *----------------------------------------------------------------------------*/
 
 cs_int_t cs_syr3_comm_recoit_entete
 (
-       cs_syr3_comm_msg_entete_t  *const entete,  /* entete du message        */
+       cs_syr3_comm_msg_entete_t  *const entete,  /* entête du message        */
  const cs_syr3_comm_t             *const comm
 );
 
 
 /*----------------------------------------------------------------------------
- *  Reception du corps d'un message.
+ *  Réception du corps d'un message.
  *
- *  Si la zone memoire destinee a recevoir les donnees existe deja, on
+ *  Si la zone mémoire destinée à recevoir les données existe deja, on
  *  fournit un pointeur "elt" sur cette zone ; la fonction renvoie alors
- *  ce meme pointeur. Sinon (si "elt" est a NULL), la memoire est allouee
+ *  ce même pointeur. Sinon (si "elt" est à NULL), la mémoire est allouée
  *  ici, et la fonction renvoie un pointeur sur cette zone.
  *----------------------------------------------------------------------------*/
 
 void * cs_syr3_comm_recoit_corps
 (
- const cs_syr3_comm_msg_entete_t  *const entete, /* entete du message         */
-       void                       *const elt,    /* Pointeur sur les elements */
+ const cs_syr3_comm_msg_entete_t  *const entete, /* entête du message         */
+       void                       *const elt,    /* Pointeur sur les éléments */
  const cs_syr3_comm_t             *const comm
 );
 
@@ -223,7 +223,7 @@ void * cs_syr3_comm_recoit_corps
 #if defined(_CS_HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ouvre un "socket" IP pour preparer ce mode de communication
+ *  Fonction qui ouvre un "socket" IP pour préparer ce mode de communication
  *----------------------------------------------------------------------------*/
 
 void cs_syr3_comm_init_socket

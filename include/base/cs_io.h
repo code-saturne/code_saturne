@@ -89,7 +89,7 @@ typedef struct _cs_pp_io_t cs_pp_io_t;
 typedef struct {
 
   char            nom_rub[CS_PP_IO_NAME_LEN + 1];     /* Nom  */
-  fvm_gnum_t      nbr_elt;                            /* Nombre d'elements */
+  fvm_gnum_t      nbr_elt;                            /* Nombre d'éléments */
   cs_type_t       typ_elt;                            /* Type si nbr_elt > 0 */
   fvm_datatype_t  typ_lu;                             /* Type dans le fichier */
 
@@ -108,22 +108,22 @@ extern cs_pp_io_t  *cs_glob_pp_io;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise une lecture ou ecriture
+ *  Fonction qui initialise une lecture ou écriture
  *----------------------------------------------------------------------------*/
 
 cs_pp_io_t * cs_pp_io_initialize
 (
- const char          *const nom_rep,        /* --> nom du repertoire associe  */
- const char          *const chaine_magique, /* --> Cha^ine de verif. de type   */
- const cs_pp_io_mode_t      mode,           /* --> emission ou reception      */
- const cs_int_t             echo            /* --> echo sur sortie principale
-                                                    (< 0 si aucun, entete si 0,
+ const char          *const nom_rep,        /* --> nom du répertoire associé  */
+ const char          *const chaine_magique, /* --> Chaîne de vérif. de type   */
+ const cs_pp_io_mode_t      mode,           /* --> Émission ou réception      */
+ const cs_int_t             echo            /* --> Écho sur sortie principale
+                                                    (< 0 si aucun, entête si 0,
                                                     n premiers et derniers
-                                                    elements si n)            */
+                                                    éléments si n)            */
 );
 
 /*----------------------------------------------------------------------------
- *  Fonction qui termine une lecture ou ecriture
+ *  Fonction qui termine une lecture ou écriture
  *----------------------------------------------------------------------------*/
 
 cs_pp_io_t * cs_pp_io_finalize
@@ -132,7 +132,7 @@ cs_pp_io_t * cs_pp_io_finalize
 );
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un pointeur sur le nom d'un pre traitemenent
+ *  Fonction qui renvoie un pointeur sur le nom d'un pré traitemenent
  *----------------------------------------------------------------------------*/
 
 const char * cs_pp_io_get_name
@@ -153,9 +153,9 @@ void cs_pp_io_read_header
 /*----------------------------------------------------------------------------
  *  Lecture du corps d'un message.
  *
- *  Si la zone memoire destinee a recevoir les donnees existe deja, on
+ *  Si la zone mémoire destinée à recevoir les données existe deja, on
  *  fournit un pointeur "elt" sur cette zone ; la fonction renvoie alors
- *  ce meme pointeur. Sinon (si "elt" est a NULL), la memoire est allouee
+ *  ce même pointeur. Sinon (si "elt" est à NULL), la mémoire est allouée
  *  ici, et la fonction renvoie un pointeur sur cette zone.
  *----------------------------------------------------------------------------*/
 

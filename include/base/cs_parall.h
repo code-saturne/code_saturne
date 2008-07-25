@@ -511,7 +511,7 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
  * *****************
  *
  * INTEGER          LNUM        : --> : local cell number
- * INTEGER          RANKID      : --> : rank of the domain (0 a N-1)
+ * INTEGER          RANKID      : --> : rank of the domain (0 à N-1)
  * INTEGER          GNUM        : <-- : global cell number
  *
  * Returns:

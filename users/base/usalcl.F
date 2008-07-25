@@ -266,9 +266,9 @@ CFONC Dans le cas de faces de paroi pour le fluide (ITYPFB=IPAROI ou IPARUG),
 CFONC   l'influence de la vitesse de maillage depend de sa signification
 CFONC   physique.
 CFONC   En effet, dans le cas d'une structure immergee par exemple, le
-CFONC   mouvement des faces de paroi de la structure correspond a un mouvement
+CFONC   mouvement des faces de paroi de la structure correspond à un mouvement
 CFONC   physique et doit donc entrainer le fluide.
-CFONC   Dans le cas d'un piston au contraire, les bords lateraux sont des
+CFONC   Dans le cas d'un piston au contraire, les bords latéraux sont des
 CFONC   parois ou le mouvement des noeuds n'a aucune signification physique et
 CFONC   ne doit pas entrainer le fluide.
 CFONC   Dans tous les cas, la vitesse de maillage normale a la face est prise
