@@ -668,7 +668,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
 # Detection de la presence et tests de compatibilite de modules
   if [ ! -z "$PARAM" ] ; then
-    ${CS_HOME}/bin/check_consistency -param $PARAM -nproc $nproc_noy
+    ${CS_HOME}/bin/check_consistency -param ../$PARAM -nproc $nproc_noy
   else
     ${CS_HOME}/bin/check_consistency -nproc $nproc_noy
   fi
