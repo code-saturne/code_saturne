@@ -25,12 +25,12 @@
 #     Boston, MA  02110-1301  USA
 #
 #=========================================================================
-#     Script de generation des bibliotheques du Noyau de Code_Saturne
+#     Script to generate Code_Saturne Kernel libraries
 #=========================================================================
 #
 #
-# Fonction : sortie
-# ==================
+# Function: exit
+# ==============
 #
  local_exit()
  {
@@ -39,54 +39,53 @@
    exit
  }
 #
-# Fonction : Aide
-# ================
+# Function: help
+# ==============
 #
  usage() {
     echo
-    echo "   Script de generation des bibliotheques du Noyau de Code_Saturne "
+    echo "   Script to generate Code_Saturne Kernel libraries                "
     echo
-    echo " Usage : lance_install                                             "
-    echo "    ou : lance_install <Lib>                                       "
-    echo "    ou : lance_install -<OPT>                                      "
+    echo "   Syntax: ./lance_install                                         "
+    echo "       or: ./lance_install <Lib>                                   "
+    echo "       or: ./lance_install -<OPT>                                  "
     echo 
-    echo "      avec :                                                       "
-    echo "      <Lib> : liste des bibliotheques (avec separateur blanc)" 
-    echo "              soit : <MOD> ou <MOD>/<OPT>                          " 
-    echo "                ou :                                               "
-    echo "                <MOD> designe $listemodall                         " 
-    echo "                <OPT> designe $listeoptall                         " 
+    echo "      with:                                                        "
+    echo "      <Lib>: list of libraries (space between them)                " 
+    echo "            either: <MOD> or <MOD>/<OPT>                           " 
+    echo "                or:                                                "
+    echo "                <MOD> means $listemodall                           " 
+    echo "                <OPT> means $listeoptall                           " 
     echo 
-    echo "      Par defaut la liste des bibliotheques (listelib) est         "
+    echo "      The default list of libraries (listelib) is                  "
     echo "          $listemoddef                                             "
     echo 
-    echo " Exemples :                                                        "
-    echo "   lance_install                                                   "
-    echo "   lance_install BASE LAGR BASE/DBG                                "
-    echo "   lance_install -DBG                                              "
+    echo " Examples of syntax:                                               "
+    echo "   ./lance_install                                                 "
+    echo "   ./lance_install BASE LAGR BASE/DBG                              "
+    echo "   ./lance_install -DBG                                            "
     echo
     echo
-    echo " Cas particuliers :                                                "
-    echo "   lance_install DOC                                               "
-    echo "          compilation de la documentation (utilisation, theorie    "
-    echo "                                                      et tutorial) "
-    echo "   lance_install -nc                                               "
-    echo "          n enleve pas les objets du repertoire build              "
+    echo " Exceptions:                                                       "
+    echo "   ./lance_install DOC                                             "
+    echo "          compilation of the documentation (userguide, theory      "
+    echo "                                                     and tutorial) "
+    echo "   ./lance_install -nc                                             "
+    echo "          does not remove the objects of the build directory       "
     echo
     local_exit
  }
 #
-#
-# Fonction : Message d'erreur avec sortie
-# =======================================
+# Function: Error message with output
+# ===================================
 #
  sortie()
  {
    dir_sortie=`pwd`
-   echo '  ' Repertoire : ${dir_sortie}
+   echo '  ' Directory: ${dir_sortie}
    echo 
    tput bold
-   echo '  ' Erreur : $*
+   echo '  ' Error : $*
    tput rmso ; tput sgr0
    tput init
    echo 
@@ -94,8 +93,8 @@
  }
 #
 #
-# Fonction : Message de banniere
-# ==============================
+# Function: banner message
+# ========================
 #
  banner()
  {
@@ -114,7 +113,7 @@
  }
 #
 #
-# Fonction : Message de bannierefin
+# Function: final banner message
 # ==============================
 #
  bannerfin()
@@ -133,8 +132,8 @@
  }
 #
 #
-# Fonction : Message de titre
-# ===========================
+# Function: Generation of the title
+# =================================
 #
  titre()
  {
@@ -146,8 +145,8 @@
  }
 #
 #
-# Fonction : Message de titrefin
-# ===========================
+# Function: Message of titrefin
+# =============================
 #
  titrefin()
  {
@@ -158,8 +157,8 @@
  }
 #
 #
-# Fonction : Message d'info
-# =========================
+# Function: Infos
+# ===============
 #
  info()
  {
@@ -167,12 +166,12 @@
  }
 #
 #
-# Fonction : Infos compilation
-# =========================
+# Function: Infos concerning the compilation
+# ==========================================
 #
-# Produit les infos sur le compilateur, l'userid, la date ... 
-#   Donner le nom du fichier a creer en argument
-#   Donner le nom du fichier macro contenant les options
+# Generate the infos about the compiler, the userid, the date ... 
+#   Give the file name to be created in argument
+#   Give the macro file name containing the options
 #
 cree_readme_comp()
 {
@@ -180,72 +179,71 @@ Fic_readme_comp=$1
 Macro_readme_comp=$2
 #
   echo                                                             \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo                                                             \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo '=========================================================='\
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo '------------------------------------------------'          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  echo ' Qui, ou et quand : '                                      \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  whoami     >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  pwd        >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  date       >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+  echo ' Who, where and when: '                                     \
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+  whoami     >> $Fic_readme_comp || exit create $Fic_readme_comp
+  pwd        >> $Fic_readme_comp || exit create $Fic_readme_comp
+  date       >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo '------------------------------------------------'          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  echo ' Machine : '                                               \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+  echo ' Machine Name: '                                            \
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   uname -a                                                         \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo '------------------------------------------------'          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  echo ' Compilateurs : '                                          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-# sous repertoire pour eviter que Makefile se croie en train de 
-#   construire une bibliotheque
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+  echo ' Compilers: '                                          \
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+# subdirectory to fool the Makefile, so that it does not build up a library. 
   wrk=wrk_compiler_version
   mkdir $wrk 
   cd $wrk 
   ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME}               \
                                   -nomarch ${NOM_ARCH}             \
-        -output $Fic_readme_comp || sortie creation $Fic_readme_comp
+        -output $Fic_readme_comp || exit create $Fic_readme_comp
   cd .. 
   rm -rf $wrk
   echo '------------------------------------------------'          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
-  echo ' Options : '                                               \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
+  echo ' Options: '                                               \
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   cat ${Macro_readme_comp}                                         \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo '------------------------------------------------'          \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
 
   echo '=========================================================='\
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo                                                             \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo                                                             \
-             >> $Fic_readme_comp || sortie creation $Fic_readme_comp
+             >> $Fic_readme_comp || exit create $Fic_readme_comp
 }
 #
 #
 #=========================================================================
-#                        Verifications initiales 
+#                        Initial Checks
 #=========================================================================
 #
-# Defaut  : Liste des bibliotheques a generer
-# ===========================================
+# Default: List of the libraries to generate
+# ==========================================
 #
-# Liste de tous les modules (DOC est un peu particulier)
+# List of all the modules (Special treatment for DOC)
  listemodall="BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
  listemoddef="BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
 #
-# Liste de toutes les options
+# List of all the options
  listeoptall="LO DBG PROF"
 #
 #
-# Aide
+# Help
 # ====
 #
  case $1 in 
@@ -253,44 +251,44 @@ Macro_readme_comp=$2
  esac
 #
 #
-# On se debarrasse de DOC
-# =======================
+# Generation of DOC
+# =================
 #
  if [ "$1" = "DOC" ] ; then
-  titre "Compilation de la documentation theorique"
+  titre "Compilation of the theory"
   cd ../doc/THEORY
   make
   make clean
-  titrefin "Fin de compilation de la documentation theorique"
+  titrefin "End of the theory compilation"
   echo
-  titre "Compilation de la documentation utilisateur"
+  titre "Compilation of the userguide"
   cd ../USER
   make
   make clean
-  titrefin "Fin de compilation de la documentation utilisateur"
+  titrefin "End of the userguide compilation"
   echo
-  titre "Compilation du tutorial"
+  titre "Compilation of the tutorials"
   cd ../TUTORIAL
   make
   make clean
-  titrefin "Fin de compilation du tutorial"
+  titrefin "End of the tutorials compilation"
   local_exit
  fi
 #
 #
-# On se debarrasse de PO
-# ======================
+# Generation of the locale files
+# ==============================
 #
  if [ "$1" = "PO" ] ; then
-   titre "Creation des fichiers de traduction"
+   titre "Creation of locale files"
    mkdir -p ${CS_HOME}/arch/${NOM_ARCH}/share/locale/fr/LC_MESSAGES
    cp -f ${CS_HOME}/po/fr.gmo ${CS_HOME}/arch/${NOM_ARCH}/share/locale/fr/LC_MESSAGES/ncs.mo
-   titrefin "Fin de creation des fichiers de traduction"
+   titrefin "End of creation of locale files"
    local_exit
  fi
 #
 #
-# Liste des bibliotheques a generer
+# List of the libraries to generate
 # =================================
 #
  listeopt=""
@@ -298,8 +296,8 @@ Macro_readme_comp=$2
    listeopt="$*"
  fi
 #
-# traitement de -noclean
- clean="oui"
+# use of -noclean
+ clean="yes"
  listeopt1=""
  for opt in $listeopt ; do
    if [ "$opt" != "-nc" ] ; then 
@@ -309,12 +307,12 @@ Macro_readme_comp=$2
        listeopt1="${listeopt1} $opt"
      fi
    else
-     clean="non"
+     clean="no"
    fi 
  done 
  listeopt="${listeopt1}"
 #
-# determination des mod et opt 
+# determination of mod and opt 
  listelib=""    
  if [ -z "${listeopt}" ] ; then
    for mod in $listemoddef ; do 
@@ -335,12 +333,12 @@ Macro_readme_comp=$2
    listelib="${listeopt}"
  fi
 #
-# Verification
-# ============
+# Check
+# =====
 #
  for var in $listelib ; do 
 #
-# bibliotheque modverif/optverif
+# library modverif/optverif
    optverif=`basename "$var"`
    modverif=`dirname  "$var"`
    if   [ "$modverif" = "." ] ; then 
@@ -348,73 +346,71 @@ Macro_readme_comp=$2
      optverif=""
    fi
 #
-# modverif est-il connu ?
-   okmod="non"
+# Is modverif known?
+   okmod="no"
    for mod in $listemodall ; do 
      if [ "$modverif" = "$mod" ] ; then 
-       okmod="oui"
+       okmod="yes"
      fi
    done
    if [ "$modverif" = "LINK" ] ; then 
-     okmod="oui"
+     okmod="yes"
    fi
 #
-# optverif est-il connu ?
+# Is optverif known?
    if [ "$optverif" != "" ] ; then 
-     okopt="non"
+     okopt="no"
      for opt in $listeoptall ; do 
        if [ "$optverif" = "$opt" ] ; then 
-         okopt="oui"
+         okopt="yes"
        fi
      done 
    fi
 #
-   if [ "$okmod" = "non" ] ; then
-     sortie "MOD=$modverif est inconnu"
+   if [ "$okmod" = "no" ] ; then
+     sortie "MOD=$modverif is not known"
    fi
-   if [ "$okopt" = "non" ] ; then
-     sortie "OPT=$optverif est inconnu"
+   if [ "$okopt" = "no" ] ; then
+     sortie "OPT=$optverif is not known"
    fi
 #
  done
 #
 #
-# L'architecture est-elle supportee ?
+# Is the architecture supported?
  if [ ! -f ${CS_HOME}/bin/macros_${NOM_ARCH}.mk ]
  then
-  sortie "Architecture ${NOM_ARCH} non supportee par cette version de Code_Saturne"
+  sortie "Architecture ${NOM_ARCH} not supported by this version of Code_Saturne"
  fi
 #
- banner "Installation des bibliotheques $listelib sous $NOM_ARCH"\
-        " Version de Code_Saturne ${CS_HOME} "
+ banner "Installation of the following libraries $listelib under $NOM_ARCH"\
+        " Version of Code_Saturne ${CS_HOME} "
 #
-# Repertoire de depart : obligatoirement $CS_HOME/bin (ex: /home/saturne/ncs-vrp/bin)
-# ====================
+# The starting directory has to be $CS_HOME/bin (ex: /home/saturne/ncs-vrp/bin)
+# =============================================================================
 #
  repbase=${CS_HOME}
  reptrav=`pwd`
  repprec=`dirname $reptrav`
  if [ $repbase != $repprec ] ; then 
    if [ $repbase = "" ] ; then 
-     sortie "Il faut obligatoirement initialiser la variable CS_HOME"
+     sortie "The variable CS_HOME has to be properly initialised"
    else
-     sortie "Il faut obligatoirement lancer l install de CS_HOME/bin = ${CS_HOME}/bin"
+     sortie "The installation has to be launched from CS_HOME/bin = ${CS_HOME}/bin"
    fi
  fi
  if [ ! -d ${CS_HOME} ] ; then 
-   sortie "${CS_HOME} n existe pas"
+   sortie "${CS_HOME} does not exist"
  fi 
 #
- titre "Repertoire de base CS_HOME = ${CS_HOME}"
+ titre "The initial directory is CS_HOME = ${CS_HOME}"
 #
 # Protection prealable
 # ====================
 #
-  titre "Protection prealable"
+  titre "Prerequisite protection"
 #
-# On positionne le masque a rien pour les autres (syntaxe vieille pour cause de sh)
-#
-  umask 007            || sortie "Il est impossible de positionner umask"
+  umask 007            || sortie "It is not possible to set up umask"
 #
 #
 #=========================================================================
@@ -422,10 +418,10 @@ Macro_readme_comp=$2
 #=========================================================================
 #
 #
-# Repertoire general
-# ==================
+# General directory
+# =================
 #
- cd ${CS_HOME}  || sortie  "Repertoire ${CS_HOME} inaccessible"
+ cd ${CS_HOME}  || sortie  "The ${CS_HOME} directory can not be reached"
 #
  build=build
  if [ ! -d $build ] ; then 
@@ -435,26 +431,26 @@ Macro_readme_comp=$2
    mkdir $build/${NOM_ARCH}
  fi
 #
-# Chmod sur le repertoire des librairies a remplacer par securite
+# Chmod of the library directories
 #
   if [ -d ${CS_HOME}/arch/${NOM_ARCH}/lib ] ; then
     chmod g-rwx,o-rwx ${CS_HOME}/arch/${NOM_ARCH}/lib
   fi
 #
 #
-# Boucle generale
-# ===============
+# General loop
+# ============
 #
  for dirlib in $listelib ; do 
 #
-   titre "Construction de $dirlib sous ${NOM_ARCH}"
+   titre "Construction of $dirlib under ${NOM_ARCH}"
 #
-   cd ${CS_HOME}/$build/${NOM_ARCH} || sortie  "Repertoire ${CS_HOME}/$build/${NOM_ARCH} inaccessible"
+   cd ${CS_HOME}/$build/${NOM_ARCH} || sortie  "The ${CS_HOME}/$build/${NOM_ARCH} directory can not be reached"
 #
-# Repertoire de la lib
-# ====================
+# Directory of the library
+# ========================
 #
-   info "Generation du repertoire  $dirlib"
+   info "Generation of the $dirlib directory"
 #
    modtrav=`echo $dirlib |cut -f1 -d"/"`
    if [ $modtrav = $dirlib ] ; then 
@@ -470,36 +466,36 @@ Macro_readme_comp=$2
      mkdir $modtrav/$opttrav
    fi
 #
-   cd $dirlib || sortie  "Repertoire $dirlib inaccessible" 
+   cd $dirlib || sortie  "The $dirlib directory can not be reached" 
 #
 #
-   info "Lien sur le Makefile"
+   info "Link to the Makefile"
 #
    if [ ! -f Makefile ] ; then 
-     ln -s ${CS_HOME}/bin/Makefile . || sortie  "Makefile existe ou ${CS_HOME}/bin/Makefile inaccessible"
+     ln -s ${CS_HOME}/bin/Makefile . || sortie  "The Makefile already exists or ${CS_HOME}/bin/Makefile can not be reached"
    else 
-     info "Makefile deja en place, lien sur "
+     info "Makefile already exists, and links on "
      ls -al ${CS_HOME}/bin/Makefile | awk '{print $NF}'
    fi
 # 
-   info "Lancement de make avec MOD=$modtrav OPT=$opttrav"
+   info "Start of make with MOD=$modtrav OPT=$opttrav"
 #
    if [ "${modtrav}" != "LINK" ] ; then
      if   [ "${opttrav}" = "" ] ; then 
-       make lib_install MOD="$modtrav"                || sortie "Echec de make lib_install MOD=$modtrav "
+       make lib_install MOD="$modtrav"                || sortie "make lib_install MOD=$modtrav failed"
      else
-       make lib_install MOD="$modtrav" OPT="$opttrav" || sortie "Echec de make lib_install MOD=$modtrav OPT=$opttrav"
+       make lib_install MOD="$modtrav" OPT="$opttrav" || sortie "make lib_install MOD=$modtrav OPT=$opttrav failed"
      fi
    else
      if   [ "${opttrav}" = "" ] ; then 
-       make saturne                || sortie "Echec de make saturne "
+       make saturne                || sortie "make saturne failed"
        if [ `uname` = "Linux" ] ; then
-         make link_shared          || sortie "Echec de make lib_shared "
+         make link_shared          || sortie "make lib_shared failed"
        fi
      else
-       make saturne OPT="$opttrav" || sortie "Echec de make saturne OPT=$opttrav"
+       make saturne OPT="$opttrav" || sortie "make saturne OPT=$opttrav failed"
        if [ `uname` = "Linux" ] ; then
-         make link_shared OPT="$opttrav" || sortie "Echec de make lib_shared "
+         make link_shared OPT="$opttrav" || sortie "make lib_shared OPT=$opttrav failed"
        fi
      fi
      for file in *.exe ; do
@@ -512,45 +508,45 @@ Macro_readme_comp=$2
      fi
    fi
 #
-   info "Generation du fichier resume" 
+   info "Generation of the summary file" 
 #
    readme=.readme${modtrav}${opttrav}
    cree_readme_comp `pwd`/$readme ${CS_HOME}/bin/macros_${NOM_ARCH}.mk 
-   cat $readme >> ${CS_HOME}/arch/${NOM_ARCH}/lib/$readme   || sortie  "Echec de stockage du resume"
+   cat $readme >> ${CS_HOME}/arch/${NOM_ARCH}/lib/$readme   || sortie  "writing of the summary file failed"
 #
-   info "Nettoyage avec MOD=$modtrav OPT=$opttrav"
+   info "Cleaning with MOD=$modtrav OPT=$opttrav"
 #
-   if [ "${clean}"   = "oui" ] ; then 
+   if [ "${clean}"   = "yes" ] ; then 
      if [ "${opttrav}" = "" ] ; then 
-       make clean MOD="$modtrav"              || sortie "Echec de make clean MOD=$modtrav "
+       make clean MOD="$modtrav"              || sortie "make clean MOD=$modtrav failed"
      else
-       make clean MOD="$modtrav" OPT="$opttrav" || sortie "Echec de make clean MOD=$modtrav OPT=$opttrav"
+       make clean MOD="$modtrav" OPT="$opttrav" || sortie "make clean MOD=$modtrav OPT=$opttrav failed"
      fi
    fi
    \rm -f $readme
 #
 #
 #
-# Fin de la boucle generale
-# =========================
+# End of the general loop
+# =======================
 #
-     titrefin "Fin de la construction de $dirlib"
+     titrefin "End of the construction of $dirlib"
 #
 #
  done
 #
 #
-# Verification des acces
-# ======================
+# Check of the permissions
+# ========================
 #
- titre "Verification des acces"
+ titre "Permission checks"
 #
- cd ${CS_HOME} || sortie  "Repertoire ${CS_HOME} inaccessible"
+ cd ${CS_HOME} || sortie  "The ${CS_HOME} directory can not be reached"
 #
-# Acces en lecture a tout
+# Full permissions for reading
  find . -type d -exec chmod    u=rwx,g=rx,o=rx {} \;
  find . -type f -exec chmod    u=rw,g=r,o=r {} \;
-#Fichiers executables par le login saturne
+# Executables for the saturne login
  listebin="autovalid \
 check_consistency \
 check_mesh \
@@ -565,7 +561,7 @@ rang_mpi.sh"
  for fich in $listebin  ; do 
    chmod    u+x bin/$fich
  done
-#Fichiers accessibles et executables par tous
+# Files readable and executable by all
  listebin="autovalid \
 compiler_version \
 check_consistency \
@@ -579,20 +575,20 @@ rang_mpi.sh"
  for fich in $listebin  ; do 
    chmod   g+x,o+x bin/$fich
  done
-#Fichiers executables dans aux
+# Executable files in aux
  listeaux="rmb.sh \
 rmb.sh_lance \
 clean"
  for fich in $listeaux  ; do 
    chmod    u+x aux/$fich
  done
-#Fichiers executables dans arch
+# Executable files in arch
 find arch -name "*.exe" -exec chmod uog+x {} \;
-# Acces au repertoire lib
+# Access to the lib directory
   chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #
- titrefin "Fin de la verification des acces"
+ titrefin "End of the permission checks"
 
- bannerfin "Fin de l'installation des bibliotheques $listelib" \
-           " Version de Code_Saturne ${CS_HOME} "
+ bannerfin "End of the installation of the $listelib libraries" \
+           " Code_Saturne version ${CS_HOME} "
 

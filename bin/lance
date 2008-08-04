@@ -28,33 +28,32 @@
 #
 ########################################################################
 #
-# Exemple de fichier de lancement Code_Saturne
+# Example of Code_Saturne execution script.
 #
 ########################################################################
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
-#   CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST 
-#   BIEN SON LANCE QUI EST UTILISE ET NON CELUI DE LA BIBLIOTHEQUE
+#   This test allows the user to make sure his ./lance is used and
+#   not the library's.
   echo ' ' 
-  echo ' Attention : ' 
+  echo ' Warning: ' 
   echo ' ' 
-  echo ' Le script de lancement lance utilise est celui de la '
-  echo '   bibliotheque : il est inadapte au cas a traiter.' 
+  echo ' This lance script is the one of the library'
+  echo ' Therefore, it can not be used to run the case.' 
   echo ' ' 
-  echo ' Pour utiliser le script lance de votre repertoire SCRIPTS '
-  echo '   il faut se placer dans ce repertoire et utiliser la commande'
+  echo ' To use lance located in SCRIPTS, go to SCRIPTS and type '
   echo '   ./lance '
   echo ' ' 
-  echo ' Si le message '
+  echo ' If the message'
   echo '   ./lance: cannot execute '
-  echo ' est renvoye, il faut rendre le fichier executable comme suit '
+  echo ' pops up, it is necessary to change the permissions as '
   echo '   chmod +x ./lance '
   echo ' ' 
   exit 1
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 ########################################################################
 #
-#                  CARTES BATCH POUR LE CCRT (Tantale/Platine sous LSF)
-#                  ====================================================
+#                  BATCH FILE FOR THE CCRT (Platine under LSF)
+#                  ===========================================
 #
 #BSUB -n 2
 #BSUB -W 00:05  
@@ -62,27 +61,16 @@
 #BSUB -e nometcase.%J 
 #BSUB -J nometcas
 #
-#  -n : nombre de processeurs
-#  -c : temps limite pour le job (cumul par processeur de tous les process du job)
-#       au format hh:mm (heures:minutes)
-#  -o : nom du listing de sortie
-#  -e : nom du listing d'erreur
-#  -J : nom du job
-#
-#ATTENTION : Les calculs lances sur Tantale sont executes sur Tantale, mais pour
-#            Nickel/Chrome, la machine d'execution (Nickel Ou Chrome) est definie
-#            par la classe du calcul et pas par la machine qui a execute la commande
-#            "bsub". Attention aux disques WORKDIR non partages entre Nickel et
-#            Chrome.
-#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
-#            sera reserve pour chacune des instances de SYRTHES.
-#            Le Noyau ne sera execute que sur les processeurs restants.
-#            Pensez  reserver un nombre suffisant de processeurs.
+#  -n : number of processors
+#  -W : walltime as hh:mm
+#  -o : output file name
+#  -e : error file name
+#  -J : job name
 #
 # ------------------------------------------------------------------
 #
-#                  CARTES BATCH POUR LE CLUSTER CHATOU sous PBS
-#                  ============================================
+#                  BATCH FILE FOR THE Chatou CLUSTER (PBS)
+#                  =======================================
 #
 #PBS -l nodes=4:ppn=2
 #PBS -l walltime=1:00:00
@@ -91,21 +79,20 @@
 #PBS -j eo
 #PBS -N nometcas
 #
-#  nodes= nombre de "noeuds" a reserver sur le cluster
-#  ppn  = nombre de processeurs par noeud (1 ou 2)
-#  cput     = cpu time (heures, minutes, secondes)
-#  walltime = wall clock time (heures, minutes, secondes)
-#  mem  = memoire
+#  nodes    : number of nodes
+#  ppn      : number of processes per node
+#  walltime : wall clock time (hh:mm:ss)
+#  mem      : memory
 #
-#ATTENTION : En cas de couplage avec SYRTHES, 1 processeur
-#            sera reserve pour chacune des instances de SYRTHES.
-#            Le Noyau ne sera execute que sur les processeurs restants.
-#            Pensez  reserver un nombre suffisant de processeurs.
+#WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
+#         instance of SYRTHES. The Kernel will be executed on the remaining
+#         processors, so make sure to reserve a sufficiently high number
+#         of processors.
 #
 # ------------------------------------------------------------------
 #
-#                  CARTES BATCH POUR LE CLUSTER de University of Manchester
-#                  ========================================================
+#                  BATCH FILE (University of Manchester Cluster)
+#                  =============================================
 #
 # set the name of the job
 ##$ -N nometcas
@@ -123,28 +110,48 @@
 ##$ -v MPI_HOME
 
 #set -x
+#
+# ------------------------------------------------------------------
+#
+#                  BATCH FILE (AIX, Loadlever)
+#                  ===========================
+#
+#@ shell = /bin/sh
+#
+#@ job_name = nometcas
+#
+#@ job_type = parallel
+#@ cpus = 128
+#@ node_usage = not_shared
+#
+#@ network.MPI = csss,shared,US
+#@ bulkxfer = oui
+#
+#@ wall_clock_limit = 00:20:00
+#@ account_no = z001
+#
+#@ output = $(job_name).$(schedd_host).$(jobid).out
+#@ error  = $(job_name).$(schedd_host).$(jobid).err
+#@ notification = never
+#
+#@ queue
+# suggested environment settings:
+#  export MP_EAGER_LIMIT=65536
+#  export MP_SHARED_MEMORY=oui
+#  export MEMORY_AFFINITY=MCM
+#  export MP_TASK_AFFINITY=MCM
+#
 ########################################################################
 #
-# Definition du cas 
-#        : rubrique utilisateur
+# BEGINNING OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
 #
-# Se reporter au fichier joint "lance.help" pour toute information
-#   sur les rubriques a remplir et les valeurs possibles.
-#
-#
-#                    -------------------------------
-#
-#
-#
-#                 NE PAS LAISSER DE BLANCS (c'est un script)
-#
+# lance.help gives more details about how to set variables.
 #
 #                    -------------------------------
 #
 SOLCOM=0
 #
-# Sur certaines machines, dont Tantale, des librairies externes
-# peuvent necessiter la definition de la variable TERM
+# On some systems, some external libraries may require TERM to be defined.
 export TERM=xterm
 #
 ETUDE=NOMET
@@ -157,25 +164,24 @@ COMMANDE_PERIO=
 COMMANDE_SYRTHES=
 DONNEES_THERMOCHIMIE=
 #
-# Choix du nombre total de processeurs utilises (si vide, detection automatique
-# via le systeme de queue si possible, mise a 1 sinon).
-# En cas de couplage SYRTHES avec MODE_COUPLAGE=MPI, le 1er processeur est
-# utilise pour SYRTHES, donc le nombre effectif de processeurs dedies au noyau
-# est reduit de 1.
-# La liste des processeurs n'est utilisable qu'hors systeme de queue
-# (un tel systeme fournissant lui-meme une liste equivalente)
+# Choose the total number of processors used (if empty, automatic detection
+# through the batch system if possible, set to 1 otherwise).
+# When coupling with SYRTHES with MODE_COUPLAGE=MPI, the 1st processor is
+# used by SYRTHES, so the effective number of processors assigned to the
+# Kernel is reduced by 1.
+# The processors list is only usable when not running on a batch system
+# (as such a system usually already defines a similar list)
 NOMBRE_DE_PROCESSEURS=
 LISTE_PROCESSEURS=
 #
 FICHIERS_DONNEES_UTILISATEUR=""
 FICHIERS_RESULTATS_UTILISATEUR=""
 #
-# Repertoire temporaire local (vide pour valeur automatique par defaut)
+# Working directory (leave empty for automatic default directory)
 CS_TMP_PREFIX=
 #CS_TMP_PREFIX=/local00/users/`whoami`
 #
 OPTIMISATION=
-LISTE_LIB_SAT=
 OPTION_LIB_EXT=
 VALGRIND=
 #
@@ -183,7 +189,7 @@ ARG_CS_VERIF=""
 ARG_CS_OUTPUT=""
 ECHOCOMM=""
 #
-#Pilotage du couplage avec HOMARD
+# Adaptation using HOMARD
 PILOTAGE_ADAPTATION=
 #
 resume=resume
@@ -196,36 +202,33 @@ SUITE_AMONT=$DATA/SUITE
 PRE_TRAITEMENT_AMONT=$DATA/PRE_TRAITEMENT
 REPMAIL=$REPBASE/../MAILLAGE
 #
-# Les variables suivantes ne sont utiles que dans les cas couples avec SYRTHES
-#  DATA_SYR : repertoire ou trouver SYRTHES_ENV
-#  FORT_SYR : repertoire ou trouver les fichiers utilisateur eventuels
+# The following variables are only used in case of coupling with SYRTHES.
+#  DATA_SYR : directory where to find SYRTHES_ENV
+#  FORT_SYR : directory where to find possible user source files
 DATA_SYR=$REPBASE/DATA_SYR
 SYRTHES_ENV=syrthes.env 
 FORT_SYR=$REPBASE/FORT_SYR
 #
-# Le mode de couplage eventuel avec SYRTHES peut etre choisi ici.
-# (attention aux majuscules/minuscules).
-# Si l'on n'a pas de couplage, cette variable sera mise a zero par la suite.
+# The possible coupling mode with SYRTHES may be chosen here.
+# (be careful of lowercase/uppercase).
 #
-#  MODE_COUPLAGE=MPI     : recommande sur tout cluster (CCRT ou Chatou notamment).
-#  MODE_COUPLAGE=sockets : solution de secours sur cluster si l'on ne sait
-#                          determiner le rang MPI d'un process a priori
-#                          (i.e. si rang_mpi.sh ne peut etre adapte)
-#                          ou si l'on ne dispose pas de MPI.
-#  MODE_COUPLAGE=pipes   : sur station de travail ou autre machine a memoire
-#                          partagee uniquement (les pipes n'etant visibles
-#                          que localement, et ne "traversant" pas le reseau).
+#  MODE_COUPLAGE=MPI        : should work on most machines.
+#  MODE_COUPLAGE=sockets    : should be activated on clusters when the MPI rank
+#                             of a process is not determinable or if MPI can
+#                             not be used.
+#  MODE_COUPLAGE=pipes      : on single node only (as pipes are not visible
+#                             across a network).
 MODE_COUPLAGE=MPI
 #
-# On peut utiliser 3 modes d'execution.
-# (attention aux minuscules/majuscules)
+# We can use 3 execution modes
+# (be careful with lowercase/uppercase)
 #
-#  MODE_EXEC=complet        : choix par defaut (Preprocesseur puis calcul).
-#  MODE_EXEC=pre_traitement : lancement du Preprocesseur seul, pour generer
-#                             les fichiers preprocessor_output/*.
-#  MODE_EXEC=calcul         : lancement du calcul seul, en utilisant des
-#                             fichiers preprocessor_output/* deja generes et
-#                             accessibles dans le repertoire $PRE_TRAITEMENT_AMONT.
+#  MODE_EXEC=complet        : default choice (Preprocessor then Kernel)
+#  MODE_EXEC=pre_traitement : run Proprocessor only, to generate
+#                             preprocessor_output/* files.
+#  MODE_EXEC=calcul         : run Kernel only, using pre-generated
+#                             preprocessor_output/* files, accessible in
+#                             directory $PRE_TRAITEMENT_AMONT.
 #
 MODE_EXEC=complet
 #
@@ -234,29 +237,28 @@ MODE_EXEC=complet
 #
 ########################################################################
 #
-# FIN DE ZONE UTILISATEUR POUR CALCULS STANDARDS
 # END OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
 #
 ########################################################################
 #
-#  Adresse de la bibliotheque du noyau    
+#  Kernel library
 CS_HOME=NOMCSHOME
 export CS_HOME
 #
-# Parametres d'installation
+# Installation parameters
 #
 . $CS_HOME/bin/cs_profile
 #
-#Verification de la compatibilite de la bibliotheque
+# Library compatibility check
 if [ ! -f ${CS_HOME}/bin/macros_${NOM_ARCH}.mk ]
 then
-  echo Architecture ${NOM_ARCH} non supportee par la version de Code_Saturne
+  echo "Architecture ${NOM_ARCH} not supported by this Code_Saturne version."
   echo ${CS_HOME}
   exit 1
 fi
 #
 ########################################################################
-#  Adaptation de maillage
+#  Mesh Adaptation
 #
 if [ ! -z  "${PILOTAGE_ADAPTATION}" ] ; then
   if [ "${PILOTAGE_ADAPTATION}" = "-aide" -o "${PILOTAGE_ADAPTATION}" = "-help" ] ; then
@@ -280,15 +282,14 @@ else
   COUPLAGE_SYRTHES=oui
   export SYRTHES
   if [ $N_COUPLAGE_SYRTHES -gt 1 ] ; then
-   echo "Ce script ne prend pas en charge plusieurs couplage SYRTHES"
-   echo "Nombre de couplages SYRTHES demande : $N_COUPLAGE_SYRTHES"
+   echo "This script can not handle multiple couplings with SYRTHES"
+   echo "Number of SYRTHES couplings requested: $N_COUPLAGE_SYRTHES"
   fi
 fi
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then 
   if [ $SOLCOM -eq 1 ] ; then
-   echo "Le couplage avec SYRTHES n est pas compatible avec les"
-   echo "maillages de type SOLCOM"
+   echo "SYRTHES coupling is not compatible with SOLCOM-type meshes"
    exit 1
   fi
 else
@@ -297,9 +298,9 @@ fi
 #
 ########################################################################
 #
-# Definition des parametres d'execution
+# Parameters for execution
 #
-#   Variables generales
+# General variables
 THISSCRIPT=$0
 USER=`whoami`
 DATE=`date '+%m%d%H%M'`
@@ -307,37 +308,24 @@ SUFFIXE=$DATE
 EXE=cs14.exe
 EXE_SYR=syrthes
 #
-# on recopie le script de lancement avant de se positionner dans le
-# repertoire de travail (car ensuite, un chemin relatif ne sera
-# plus a jour)
+# Copy lance before changing to the working directory
+# (as after that, the relative path will not be up to date).
+#
 
 cp $0 $RESU/lance.$SUFFIXE
 #
-#   Repertoire d'execution (accessible depuis tous les procs)
+# Execution directory (reachable by all the processors)
 #
 if [ ! -z "$CS_TMP_PREFIX" ] ; then
   RUN=${CS_TMP_PREFIX}/tmp_Saturne/$ETUDE.$CAS.$DATE
 #
 else
-#  Valeur par defaut si l'utilisateur n'a rien specifie
+#  Default if not specified by the user
 #
-#  A priori sur Nickel/Chrome, c'est mieux avec TMPDIR, sauf si on veut
-#    debuguer (car $TMPDIR est detruit a la fin du job)
-  if [ "$NOM_ARCH" = "OSF1" ] ; then
-    RUN=$TMPDIR
-#   RUN=/scratch/scratchdir/$USER/TMPDIR/$ETUDE.$CAS.$DATE
-#
-#  Sur Tantale, il n'y a pas de TMPDIR. On se met par defaut dans SCRATCHDIR
-  elif [ "$NOM_ARCH" = "Linux_CCRT" ] ; then
+#  On the CCRT, there is no TMPDIR. We work by default in SCRATCHDIR
+  if [ "$SCRATCHDIR" != "" ] ; then
     RUN=$SCRATCHDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
 #
-#  Sur Argent, il n'y a pas de TMPDIR. On se met par defaut dans SCRATCHDIR
-  elif [ "$NOM_ARCH" = "Linux_IA64" ] ; then
-    RUN=$SCRATCHDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
-#
-#  Sur station classique ou cluster generique, on
-#  n'utilisera TMPDIR que s'il est defini
-#  (via un systeme batch en general)
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
     RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
   else
@@ -345,13 +333,13 @@ else
   fi
 fi
 #
-# Creation automatique du repertoire si necessaire
+# Create directory if necessary
 if [ "$RUN" != "$TMPDIR" ] ; then
   if [ ! -d $RUN ] ; then
     mkdir -p $RUN || exit 1
   else
-    echo "Le repertoire RUN=$RUN existe deja."
-    echo "Le calcul ne peut pas etre execute."
+    echo "RUN=$RUN directory already exists."
+    echo "The simulation may not be run."
     exit 1
   fi
 fi
@@ -360,15 +348,15 @@ cd $RUN
 #
 ########################################################################
 #
-# Parallelisme
+# Set up MPI environment
 #
-# Liste des processeurs
+# Processors list
 #
-if [ -f "$TMPDIR/machines" ] ; then   # avec systeme de queue Manchester
+if [ -f "$TMPDIR/machines" ] ; then   # with batch system at Univ. Manchester
    MPIHOSTS="$TMPDIR/machines"
-elif [ ! -z "$PBS_NODEFILE" ] ; then    # avec system de queue PBS
+elif [ ! -z "$PBS_NODEFILE" ] ; then  # with PBS batch system
    MPIHOSTS="$PBS_NODEFILE"
-elif [ ! -z "$LSB_HOSTS" ] ; then       # avec systeme de queue LSF
+elif [ ! -z "$LSB_HOSTS" ] ; then     # with LSF batch system
    \rm -f $RUN/hostsfile
    echo $LSB_HOSTS | awk '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
    MPIHOSTS="$RUN/hostsfile"
@@ -379,26 +367,26 @@ elif [ ! -z "$LISTE_PROCESSEURS" ] ; then
    echo $LISTE_PROCESSEURS | awk  -F\& '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
    MPIHOSTS="$RUN/hostsfile"
 fi
-# Verification du nombre de processeurs
+# Check number of processors
 if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   if [ ! -z  "${NSLOTS}" ] ; then
-    # pour systeme de queue cluster Manchester
+    # for batch sytem at University of Manchester
     NOMBRE_DE_PROCESSEURS=$NSLOTS
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
-    # pour systeme de queue LSF avec Slurm
+    # for LSF batch system with Slurm
     NOMBRE_DE_PROCESSEURS=$SLURM_NPROCS
   elif [ ! -z "${LSB_HOSTS}" ] ; then
-    # pour systeme de queue LSF sans Slurm
+    # for LSF batch system without Slurm
     NOMBRE_DE_PROCESSEURS=`echo $LSB_HOSTS | wc -w`
   elif [ ! -z  "${MPIHOSTS}" ] ; then
-    # pour systeme de queue cluster MFEE ou des que MPIHOSTS est defini
+    # for batch sytme on MFEE cluster or whenever MPIHOSTS is defined
     NOMBRE_DE_PROCESSEURS=`cat $MPIHOSTS | wc -l`
   else
     NOMBRE_DE_PROCESSEURS=1
   fi
 fi
 #
-# Verification du nombre de noeuds si possible
+# Check number of nodes if possible
 NOMBRE_DE_NOEUDS=1
 if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   if [ ! -z  "${MPIHOSTS}" ] ; then
@@ -406,73 +394,69 @@ if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   fi
 fi
 #
-# Verification du nombre de processeurs demandes
+# Check for the number of requested processors
 nproc_noy=${NOMBRE_DE_PROCESSEURS}
 echo
 echo
 if [ $COUPLAGE_SYRTHES = oui ] ; then
-  echo "Couplage de Code_Saturne avec SYRTHES active"
+  echo "Coupling of Code_Saturne and SYRTHES on"
   if [ ! -z "$MPIHOSTS" ] ; then
-  #  si on utilise SYRTHES en batch par MPI, on lui reserve un processeur par instance
+  #  1 processor is reserved for SYRTHES if coupled through MPI.
     if [ "$MODE_COUPLAGE" = "MPI" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur."
-        echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
-        echo "   est donc insuffisant."
-        echo " Augmenter le nombre de processeurs reserves dans les cartes batch."
+        echo " WARNING, if MODE_COUPLAGE = MPI, SYRTHES reserves 1 processor,"
+        echo " so the requested number of processors ($NOMBRE_DE_PROCESSEURS)"
+        echo " is too small."
+        echo " Increase the number of requested processors."
         echo
         exit 1
       fi
     fi
-  #  si on utilise SYRTHES en batch pipe, on verifie que tout tient sur un seul noeud
+    # if SYRTHES is used in batch mode, check that everything fits on a node
     if [ "$MODE_COUPLAGE" = "pipes" -a "$NOMBRE_DE_NOEUDS" != 1 ] ; then
       echo
       echo
-      echo " Attention, avec MODE_COUPLAGE = pipes, les transmissions  "
-      echo "   SYRTHES-noyau se font par tubes (pipes). "
-      echo " Ici, plusieurs machines ont ete selectionnees pour "
-      echo "   realiser le calcul en parallele : "
+      echo " Warning, with MODE_COUPLAGE = pipes, SYRTHES-Kernel"
+      echo "   communications are done through pipes. "
+      echo " Here, multiple nodes (hosts) were selected for the parallel run:"
       cat "$MPIHOSTS"
-      echo " Les tubes (pipes) sont limites a un noeud et le calcul "
-      echo "   risque de ne pas pouvoir aboutir."
-      echo " Utiliser une autre valeur de MODE_COUPLAGE "
+      echo " Use another value of MODE_COUPLAGE "
       echo
       exit 1
     fi
   else
-  #  si on n'est pas en batch et qu'on couple par MPI, on doit specifier un nombre
-  #    de processeurs superieur a 1 pour activer MPI
+  # If we are not in batch mode and we use coupling through MPI, we must
+  # specify a number of processors greater than 1 to activate MPI.
     if [ "$MODE_COUPLAGE" = "MPI" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = MPI, SYRTHES reserve un processeur"
-        echo "   (eventuellement virtuel)."
-        echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
-        echo "   doit donc etre strictement superieur a 1."
-        echo " Augmenter NOMBRE_DE_PROCESSEURS."
+        echo " Warning, if MODE_COUPLAGE = MPI, SYRTHES reserves 1 processor"
+        echo " (which need not be a physical processor)."
+        echo " ($NOMBRE_DE_PROCESSEURS) must be strictly greater than 1."
+        echo " Increase NOMBRE_DE_PROCESSEURS."
         echo
         exit 1
       fi
     fi
-  #  si on n'est pas en batch et qu'on couple par pipes, on diminue aussi
-  #  NOMBRE_DE_PROCESSEURS pour ne pas avoir besoin de MPI si
-  #  Code_Saturne et SYRTHES tournent chacun sur 1 processeur
+  # If were are not in batch mode and are coupling with pipes,
+  # we also reduce NOMBRE_DE_PROCESSEURS so as not to need MPI if
+  # Code_Saturne and SYRTHES are each running on 1 processor.
     if [ "$MODE_COUPLAGE" = "pipes" ] ; then
       (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
       (( NOMBRE_DE_PROCESSEURS = NOMBRE_DE_PROCESSEURS - 1 ))
       if [ $nproc_noy -lt 1 ] ; then 
         echo
         echo
-        echo " Attention, avec MODE_COUPLAGE = pipes, SYRTHES reserve un processeur"
-        echo "   (eventuellement virtuel)."
-        echo "   Le nombre de processeurs demande ($NOMBRE_DE_PROCESSEURS)"
-        echo "   doit donc etre strictement superieur a 1."
-        echo " Augmenter NOMBRE_DE_PROCESSEURS."
+        echo " Warning, with MODE_COUPLAGE = pipes, SYRTHES reserves a processor"
+        echo "   (possibly virtual)."
+        echo "   The number of processors requested ($NOMBRE_DE_PROCESSEURS)"
+        echo "   msut thus be strictly greater than 1."
+        echo " Increase NOMBRE_DE_PROCESSEURS."
         echo
         exit 1
       fi
@@ -480,24 +464,24 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
   fi
 fi
 if [ $nproc_noy -gt 1 ] ; then
-  echo "Calcul Code_Saturne parallele avec decomposition en $nproc_noy sous-domaines"
+  echo "Parallel Code_Saturne with partitioning in $nproc_noy sub-domains"
   if [ $SOLCOM = 1 ] ; then 
     echo
     echo
-    echo " Calcul en parallele impossible avec SOLCOM = $SOLCOM "
-    echo " Utiliser SOLCOM = 0 "
+    echo " Parallel run impossible with SOLCOM = $SOLCOM "
+    echo " Use SOLCOM = 0 "
     echo
     exit 1
   fi
 else
-  echo "Calcul Code_Saturne monoprocesseur"
+  echo "Single processor Code_Saturne simulation"
 fi
 if [ ! -z "$MPIHOSTS" ] ; then
-  echo "$NOMBRE_DE_PROCESSEURS processeur(s) reserve(s) en tout"
+  echo "Total number of processors: $NOMBRE_DE_PROCESSEURS"
 fi
 #
-# Si le noyau fonctionne en parallele, on doit lui preciser,
-# ainsi qu'au Preprocesseur
+# In parallel mode, the number of processors must be specified
+# to the Kernel, as well as to the Preprocessor
 if [ $nproc_noy -gt 1 ] ; then 
   ARG_ECS_PAR=" -p $nproc_noy"
   ARG_CS_PAR=" -mpi"
@@ -506,11 +490,11 @@ else
   ARG_CS_PAR=""
 fi
 #
-# Parametres lies au systeme
+# System-related parameters
 #
 if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then 
 #
-# Valeurs par defaut definies au depart
+# Default values defined at start
   MPIBOOT=""
   MPIHALT=""
   MPIRUN="mpirun -np ${NOMBRE_DE_PROCESSEURS}"
@@ -532,19 +516,19 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
 #
   else 
     if [ -d "$CS_MPI_PATH" ] ; then 
-      if [ -f "${CS_MPI_PATH}/mpdboot" ] ; then          # Si MPI de type MPICH2
+      if [ -f "${CS_MPI_PATH}/mpdboot" ] ; then          # With MPICH2
         MPIBOOT="${CS_MPI_PATH}/mpdboot"
         MPIHALT="${CS_MPI_PATH}/mpdallexit"
         MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NOMBRE_DE_PROCESSEURS}" 
         if [ ! -z "$MPIHOSTS" ] ; then
           MPIBOOT="$MPIBOOT -n ${NOMBRE_DE_NOEUDS} -v -f $MPIHOSTS"
 	fi
-      elif [ -f "${CS_MPI_PATH}/ompi_info" ] ; then      # Si MPI de type Open MPI
+      elif [ -f "${CS_MPI_PATH}/ompi_info" ] ; then      # With Open MPI
         MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NOMBRE_DE_PROCESSEURS}" 
         if [ ! -z "$MPIHOSTS" ] ; then
           MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
         fi
-      elif [ -f "${CS_MPI_PATH}/lamboot" ] ; then        # Si MPI de type LAM MPI
+      elif [ -f "${CS_MPI_PATH}/lamboot" ] ; then        # With LAM MPI
         MPIBOOT="${CS_MPI_PATH}/lamboot"
         MPIHALT="${CS_MPI_PATH}/lamhalt"
         MPIRUN="${CS_MPI_PATH}/mpirun -np ${NOMBRE_DE_PROCESSEURS}" 
@@ -552,9 +536,9 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
           MPIBOOT="$MPIBOOT -v $MPIHOSTS"
           MPIHALT="$MPIHALT -v $MPIHOSTS"
         fi
-      elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then   # Si MPI de type MPICH
+      elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then   # With MPICH
         MPIRUN="${CS_MPI_PATH}/mpirun -np ${NOMBRE_DE_PROCESSEURS}" 
-        if [ ! -z "$TMPDIR/machines" ] ; then   # avec systeme de queue Manchester
+        if [ ! -z "$TMPDIR/machines" ] ; then   # With batch at Univ. Manchester
           MPIRUN="$MPIRUN -machinefile $TMPDIR/machines"
         elif [ ! -z "$MPIHOSTS" ] ; then
           MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
@@ -563,7 +547,7 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
     fi
   fi
 #
-#   si on ne demande pas plusieurs processeurs
+#   if we do not request multiple processors
 #
 else
 #
@@ -576,13 +560,13 @@ fi
 #
 # Communications
 #
-# Definition des sockets
+# Socket definition
 if [ $COUPLAGE_SYRTHES = oui -a "$MODE_COUPLAGE" = "sockets" ] ; then
   SOCKETSYR="-comm-socket"
 else
   SOCKETSYR=""
 fi
-# En prevision des echo comm si probleme
+# To help debug coupling problems, make communication more verbose
 if [ ! -z "$ECHOCOMM" ] ; then 
   ECHOCOMMNB="$ECHOCOMM"
   ECHOCOMMECS="-echo-comm $ECHOCOMMNB"
@@ -595,31 +579,30 @@ else
   ECHOCOMMNOY=""
 fi
 ########################################################################
-# Message d'accueil 
+# Greeting message
 #
 echo ' '
-echo '                       Execution de Code_Saturne '
-echo '                       ************************* '
+echo '                      Code_Saturne is running '
+echo '                      *********************** '
 echo ' '
-echo ' Repertoire de travail (penser a le purger periodiquement) : ' 
+echo ' Working directory (to be periodically cleaned) : ' 
 echo '    ' $RUN
 #
 ########################################################################
 #
-# Compilation et edition des liens
+# Compilation and link
 #
-# Remarque : on en profite pour reperer la presence de certains 
-#            sous-programmes utilisateurs.
+# Note: we also check the for the presence of certain user subroutines here.
 #
 if [ "$CS_HOME" = "" ]; then
    echo
-   echo "WARNING: la variable CS_HOME n est pas positionnee"
+   echo "WARNING: CS_HOME is not set."
    echo
    exit 1
 else
   echo
-  echo ' Version noyau :          ' $CS_HOME
-  echo ' Version preprocesseur :  ' $ECS_HOME
+  echo ' Kernel version:          ' $CS_HOME
+  echo ' Preprocessor version:    ' $ECS_HOME
 fi
 
 source_cas=$FORT
@@ -631,14 +614,14 @@ fi
 if [ $MODE_EXEC != pre_traitement ] ; then
 
   echo
-  echo  "  *****************************************************************************"
-  echo  "   Compilation des sous-programmes utilisateur et edition de liens Code_Saturne"
-  echo  "  *****************************************************************************"
+  echo  "  ***************************************************************"
+  echo  "   Compilation of user subroutines and linking of Code_Saturne"
+  echo  "  ***************************************************************"
 
   cur_dir=`pwd`
 
   #
-  # Recopie du fichier parametrique
+  # Copy of the parameter file
   if [ ! -z "$PARAM" ] ; then 
     var=$DATA/$PARAM
     if [ -f $var ] ; then 
@@ -646,18 +629,18 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       cp $var .
     else
       echo ' ' 
-      echo ' -- ERREUR -- ' 
-      echo ' Le fichier de donnees parametrique ' $var
-      echo '   n est pas accessible ' 
+      echo ' -- ERROR -- ' 
+      echo ' The parametes file ' $var
+      echo ' can not be accessed.' 
       exit 1
     fi
   fi
 
-  # Determination de la version des compilateurs 
+  # Compiler version
   ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
 
-  # Recopie des sources utilisateur 
-  #  (pas de liens : on recopie le repertoire ensuite)
+  # Copy of the user source files
+  # (no links: the directory is copied later)
   mkdir fort_saturne
   cd fort_saturne
   for fich in ${source_cas}/*.[F,c,h] ; do 
@@ -679,18 +662,18 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 # Compilation
   ln -s ${CS_HOME}/bin/Makefile .
 
-  make saturne OPT="${OPTIMISATION}" LIB="${LISTE_LIB_SAT}" OPTLIBS="${OPTION_LIB_EXT}"  2>>$cur_dir/compil.log 1>&2
+  make saturne OPT="${OPTIMISATION}" OPTLIBS="${OPTION_LIB_EXT}"  2>>$cur_dir/compil.log 1>&2
   if [ $? -ne 0 ]
   then
     cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
-    echo "ERREUR DE COMPILATION OU D'EDITION DE LIENS"
+    echo "COMPILE OR LINK ERROR"
     rm -f *.o
     exit 1
   else
     cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
   fi
 
-# Nettoyage
+# Cleanup
   make clean
   mv $EXE ${cur_dir}/
   cd ${cur_dir}
@@ -698,9 +681,9 @@ if [ $MODE_EXEC != pre_traitement ] ; then
   if [ $COUPLAGE_SYRTHES = oui ] ; then 
 
     echo
-    echo  "  *****************************************************************************"
-    echo  "    Compilation des sous-programmes utilisateur et edition de liens SYRTHES    "
-    echo  "  *****************************************************************************"
+    echo  "  **********************************************************"
+    echo  "   Compilation of the user subroutines and link of SYRTHES"
+    echo  "  **********************************************************"
 
     cur_dir=`pwd`
     mkdir fort_syrthes 
@@ -715,7 +698,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     if [ $? -ne 0 ]
     then
       cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
-      echo "ERREUR DE COMPILATION OU D'EDITION DE LIENS"
+      echo "COMPILE OR LINK ERROR"
       rm -f *.o
       exit 1
     else
@@ -732,11 +715,11 @@ fi # MODE_EXEC != pre_traitement
 #
 ########################################################################
 #
-# Mise en place des donnees
+# Data setup
 #
 echo
 echo  "  ********************************************"
-echo  "             Preparation du calcul            "
+echo  "             Preparing calculation            "
 echo  "  ********************************************"
 echo 
 if [ $SOLCOM = 1 ]
@@ -746,8 +729,8 @@ elif [ $MODE_EXEC != calcul ]
 then
   for var in $MAILLAGE ; do
     ln -s $REPMAIL/$var $var || exit 1
-#   cas particulier des maillages au format EnSight : lien sur le fichier .geo 
-#   necessaire (recuperation du nom de fichier dans le fichier .case)
+    # Special case for meshes in EnSight format: link to .geo file necessary
+    # (retrieve name through .case file)
     var2=`basename $var .case`
     if [ $var2 != $var ] ; then
       ficgeo_ensight=`awk '/^model:/ {print $2}' $var`
@@ -789,15 +772,15 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     var=$DATA/$DONNEES_THERMOCHIMIE
     if [ -f $var ] ; then 
       cp $var dp_tch
-  # recopie pour avoir le bon nom a la sauvegarde
+      # Copy so as to have correct name upon backup
       if [ "$DONNEES_THERMOCHIMIE" != "dp_tch" ] ; then 
         cp dp_tch $DONNEES_THERMOCHIMIE
       fi
     else
       echo ' ' 
-      echo ' -- ERREUR -- ' 
-      echo ' Le fichier de donnees thermochimie ' $var
-      echo '   n est pas accessible ' 
+      echo ' -- ERROR -- ' 
+      echo ' The thermochemistry file ' $var
+      echo ' can not be accessed. ' 
       exit 1
     fi    
     if [ "${COMBUSTION}" = "oui" -o "${FUEL}" = "oui" ] ; then 
@@ -809,10 +792,9 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     #
     cp $DATA_SYR/$SYRTHES_ENV  .
     #
-    # On extrait les informations de syrthes.env et on le modifie en csq 
-    #   (tous les fichiers seront locaux)
-    # On sauve le fichier auparavant pour pouvoir le recopier avec
-    #   les resultats ensuite
+    # Extract information from the syrthes.env file and build a local copy
+    # in which all files are local. The initial file is backed-up so that
+    # it may be copied with results afterwards.
     #
     cp $SYRTHES_ENV  $SYRTHES_ENV.save
     #
@@ -843,7 +825,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     sed -e "s/AVAL :.*/AVAL : .\//"   $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     sed -e "s/SUITE :.*/SUITE : .\//" $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     #
-    # si vide, on prend les noms par defaut pour les resultats  : 
+    # if empty, we use default names for results:
     if [ -z "$SYRTHES_CORR" ] ; then 
       SYRTHES_CORR="corresp"
     fi
@@ -888,7 +870,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi 
     #
     #
-    # On transfere les fichiers syrthes
+    # Transfer SYRTHES files
     #
     for var in $SYRTHES_DATA $SYRTHES_GEOM $SYRTHES_SUIT $SYRTHES_DATA_RAY $SYRTHES_MAIL_RAY ; do 
       cp $AMONT_SYR/$var $RUN/`echo $var | sed -e "s/.*\///"`
@@ -908,8 +890,8 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 fi # MODE_EXEC != pre_traitement
 
 ########################################################################
-# Temps limite pour PBS (on le fait ici pour laisser le temps a PBS
-#   de se rendre compte que ca a demarre)
+# Maximum time for PBS (done here so as to leave time for PBS to
+# realize that things have started).
 #
 if [ "$PBS_JOBID" != "" ] ; then 
   CS_MAXTIME=`qstat -r $PBS_JOBID | grep $PBS_JOBID | sed -e's/ \{1,\}/ /g' | cut -d ' ' -f 9`
@@ -918,17 +900,17 @@ fi
 #
 ########################################################################
 #
-# Resume : debut
+# Summary: start
 #
 echo '========================================================'>>$resume
-echo '    DATE DE DEBUT   : ' $DATE                            >>$resume
+echo '   STARTING TIME    : ' $DATE                            >>$resume
 echo '  ----------------------------------------------------'  >>$resume
 echo '    CS_HOME         : ' $CS_HOME                         >>$resume
 echo '    ECS_HOME        : ' $ECS_HOME                        >>$resume
 echo '    ------------------------------------------------  '  >>$resume
 cat  $CS_HOME/bin/cs_profile                                   >>$resume
 echo '  ----------------------------------------------------'  >>$resume
-echo '    UTILISATEUR     : ' $USER                            >>$resume
+echo '    USER            : ' $USER                            >>$resume
 echo '    ARCHITECTURE    : ' $NOM_ARCH                        >>$resume
 echo '========================================================'>>$resume
 echo '    MACHINE         : '                                  >>$resume
@@ -939,13 +921,13 @@ else
   echo '    N PROCS         : ' $NOMBRE_DE_PROCESSEURS         >>$resume
 fi
 if [ -z "$LISTE_PROCESSEURS" ] ; then 
-  echo '    PROCESSEURS     : ' par defaut                     >>$resume
+  echo '    PROCESSORS      : ' default                        >>$resume
 else
-  echo '    PROCESSEURS     : ' $NOMBRE_DE_PROCESSEURS         >>$resume
+  echo '    PROCESSORS      : ' $LISTE_PROCESSEURS             >>$resume
 fi
 echo '========================================================'>>$resume
 echo '  ----------------------------------------------------'  >>$resume
-echo '    CAS             : ' $CAS                             >>$resume
+echo '    CASE            : ' $CAS                             >>$resume
 echo '      CONFIG.       : ' $CONF                            >>$resume
 echo '        DATA        : ' $DATA                            >>$resume
 echo '        FORT        : ' $FORT                            >>$resume
@@ -954,16 +936,16 @@ echo '  ----------------------------------------------------'  >>$resume
 echo '    REP. RUN        : ' $RUN                             >>$resume
 echo '  ----------------------------------------------------'  >>$resume
 echo '    EXECUTABLE      : ' $EXE                             >>$resume
-echo '      BIB           : ' $BIB                             >>$resume
-echo '      COMPILATEUR f : ' $FTNCOMP                         >>$resume
-echo '      COMPILATEUR c : ' $CCOMP                           >>$resume
-echo '      OPTIONS     f : ' $OPTCOMPF1                       >>$resume
+echo '      LIB           : ' $BIB                             >>$resume
+echo '      f COMPILER    : ' $COMPF                           >>$resume
+echo '      c COMPILER    : ' $COMPC                           >>$resume
+echo '      f OPTIONS     : ' $OPTCOMPF1                       >>$resume
 echo '  ----------------------------------------------------'  >>$resume
 #
 # Execution 
 echo
 echo  "  ********************************************"
-echo  "                    Execution                 "
+echo  "           Code_Saturne is running            "
 echo  "  ********************************************"
 echo 
 #
@@ -973,13 +955,13 @@ erreur()
 echo ERREUR $1 >> $ERROR
 }
 #
-# Preparation supplementaire pour le couplage SYRTHES
+# More settings for SYRTHES coupling
 #
 if [ $COUPLAGE_SYRTHES = oui ] ; then
   #
   if [ "$MODE_COUPLAGE" = "pipes" ] ; then
     #
-    # Creation des pipes si besoin
+    # Pipe creation if necessary
     #
     if [ $nproc_noy -gt 1 ] ; then 
       num=1
@@ -1002,8 +984,8 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
       done
     fi
     #
-  # Si sockets, on doit adapter la COMMANDE_SYRTHES 
-  #   (on ajoute -socket apres -syrthes)
+  # If sockets, change COMMANDE_SYRTHES 
+  #   (add -socket after -syrthes)
   #
   elif [ "$MODE_COUPLAGE" = "sockets" ] ; then
     cmdsyr=""
@@ -1021,7 +1003,7 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
   #
 fi
 #
-# Lancement du Preprocesseur
+# Preprocessor start
 #
 if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   #
@@ -1034,8 +1016,8 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
     #
     PRE_TRAITEMENT_AVAL=$RESU/PRE_TRAITEMENT.$SUFFIXE
     if [ -d ${PRE_TRAITEMENT_AVAL} ] ; then
-      echo "Le repertoire ${PRE_TRAITEMENT_AVAL} existe deja."
-      echo "Copie des fichiers preprocessor_output/n* impossible"
+      echo "The ${PRE_TRAITEMENT_AVAL} already exists."
+      echo "Copy of preprocessor_output/n* files impossible"
     else
       cp -r preprocessor_output ${PRE_TRAITEMENT_AVAL}
     fi
@@ -1043,17 +1025,17 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
 #
 fi
 #
-# Lancement du calcul proprement dit
+# Run calculation proper.
 #
 if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
 #
   if [ $COUPLAGE_SYRTHES = oui -a "$MODE_COUPLAGE" = "MPI" ] ; then
-    # Communication par MPI
+    # MPI Communication
     #
-    # Attention a bien transmettre les eventuels arguments supplementaires
-    # fournis par mpirun a l'executable (pour le cas de MPICH 1.2 standard, qui
-    # fournit les parametres de MPI_Init via argc/argv) : on utilise donc $@
-    # pour transmettre les arguments fournis a localexec aux exectables appeles
+    # Make sure to transmit possible additional arguments assigned by mpirun to
+    # the executable with some MPI-1 implementations (vanilla MPICH 1.2 sets the
+    # parameters needed by MPI_Init through argc/argv): we use $@ to forward
+    # arguments passed to localexec to the true executable files.
     #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
@@ -1071,17 +1053,17 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     chmod 700 $localexec
     #
     $MPIBOOT
-    $MPIRUN $localexec || erreur " A L'EXECUTION DU NOYAU "
+    $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
     $MPIHALT
     #
   elif [ $COUPLAGE_SYRTHES = oui  ] ; then
-    # Communication par pipes ou sockets
+    # Pipes or socket communications
     #
-    # Lancement de saturne
-    # Attention a bien transmettre les eventuels arguments supplementaires
-    # fournis par mpirun a l'executable (pour le cas de MPICH 1.2 standard, qui
-    # fournit les parametres de MPI_Init via argc/argv) : on utilise donc $@
-    # pour transmettre les arguments fournis a localexec
+    # Start Code_Saturne
+    # Be careful to forward the optional additional arguments passed by
+    # mpirun to the executable (for the standard MPICH 1.2 case, as mpirun
+    # passes parameters used later by MPI_Init through argc/argv): we
+    # use $@ to forward arguments passed to localexec
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec 
     echo cd $RUN >> $localexec 
@@ -1092,19 +1074,19 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     echo "exit \$retour" >> $localexec
     chmod 700 $localexec
     $MPIBOOT
-    $MPIRUN $localexec || erreur " A L'EXECUTION DU NOYAU " &
+    $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) " &
     #
     if [ "$MODE_COUPLAGE" = "sockets" ] ; then
-      # Il faut recuperer la machine et le port dans le listing ;
-      #   on utilise un sleep pour laisser le temps au noyau de demarrer et
-      #   ecrire ces informations; on evite le while qui pourrait attendre eternellement
+      # We must obtain the machine and port information from the log;
+      #   we sleep to leave enought time to the Kernel to start and print
+      #   this information; we avoid while which could loop endlessly
       sleep 5
       MACHPORT=""
       MACHPORT=`grep 'Communication possible sur' listing|sed -e "s/Communication possible sur //g"|sed -e "s/, port /:/g"`
       SOCKETSYR="$SOCKETSYR $MACHPORT"
     fi
     #
-    # Lancement de SYRTHES
+    # Start SYRTHES
     if [ $COUPLAGE_SYRTHES = oui ] ; then
       ./$EXE_SYR -nbr_sat $nproc_noy $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1 
     fi
@@ -1124,7 +1106,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
       echo "exit \$retour" >> $localexec
       chmod 700 $localexec
       $MPIBOOT
-      $MPIRUN $localexec || erreur " A L'EXECUTION DU NOYAU "
+      $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
       $MPIHALT
     fi
     #
@@ -1140,10 +1122,9 @@ fi
 #
 ########################################################################
 #
-# Recuperation des resultats :
-#   on commence par tous les fichiers suite
-#   (en cas de pb disque, on a plus de chances de pouvoir 
-#    poursuivre le calcul). 
+# Treatment of the ouput files:
+#   Starts with the restart files
+#   (in case of full disk, increases chances of being able to continue).
 #
 if [ $MODE_EXEC != pre_traitement ] ; then
  
@@ -1212,7 +1193,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi
   done
 
-fi  # resultats de calcul
+fi  # output files
 
 for fich in list* erreur* *.med *.cgns ; do 
   if [ -f $fich ] ; then 
@@ -1220,22 +1201,21 @@ for fich in list* erreur* *.med *.cgns ; do
   fi
 done
 
-# Recup des cas EnSight et MED
-#   les fichiers bord* sont des sorties rayonnement eventuelles 
-#   faites dans le noyau en reponse a un besoin urgent 
-#   elles seront revues. 
+# Treatment of EnSight and MED files
+#   The $dir (=*.ensight and/or *.med) directories are copied
+#   to $DIR.$SUFFIXE
 
-#   On range les repertoires $dir (=*.ensight et/ou *.med)
-#   dans $DIR.$SUFFIXE
+#   We place directories $dir (=*.ensight and/or *.med)
+#   in $DIR.$SUFFIXE
 
 cas=`echo $CAS |tr "[:upper:]" "[:lower:]"`
 
 for dir in *.ensight *.med ; do
   if [ -d $dir ] ; then
     DIR=`echo $dir |tr "[:lower:]" "[:upper:]"`
-    mkdir $RESU/$DIR.$SUFFIXE 
+    mkdir $RESU/$DIR.$SUFFIXE
     if [ $? -ne 0 ] ; then
-      echo Echec a la creation de $RESU/$DIR.$SUFFIXE
+      echo Creating $RESU/$DIR.$SUFFIXE failed
     else
       for fich in $dir/*  ; do 
         if [ -f $fich ] ; then    
@@ -1267,12 +1247,12 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     done
   fi
 
-  # Fichier de resultats Matisse
+  # Matisse output files
   if [ -f ${RUN}/resuMatisse ] ; then
     matisse=`grep -i matisse $DATA/$PARAM`
     if [ ! -z "$matisse" ] ; then
-  # Ajout de la date sur la premiere ligne du fichier resuMatisse
-      AFDATE="Date du cas                                             : "$DATE
+  # The date is added to the first line of resuMatisse
+      AFDATE="Date of the case                                       : "$DATE
       sed  "1i\ ${AFDATE}" ${RUN}/resuMatisse >> ${RUN}/resuMatisse.mod
       mv ${RUN}/resuMatisse.mod ${RUN}/resuMatisse  
     fi
@@ -1283,7 +1263,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     if [ -d $dir ] ; then
       mkdir $RESU/FORT.$SUFFIXE
       if [ $? -ne 0 ] ; then
-        echo Echec a la creation de $RESU/FORT.$SUFFIXE
+        echo Failure creating $RESU/FORT.$SUFFIXE
       else
         for fich in $dir/*.[f,F,c,h] ; do
           if [ -f ${fich} ] ; then 
@@ -1299,7 +1279,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
   if [ $COUPLAGE_SYRTHES = oui ] ; then 
     mkdir $RESU/RESU_SYR.$SUFFIXE 
     if [ $? -ne 0 ] ; then
-      echo Echec a la creation de $RESU/RESU_SYR.$SUFFIXE
+      echo Failure creating $RESU/RESU_SYR.$SUFFIXE
     else
       for var in   $SYRTHES_ENV.save $SYRTHES_DATA $SYRTHES_DATA_RAY \
                    $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
@@ -1321,7 +1301,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
       if [ -d $dir ] ; then
         mkdir $RESU/FORT_SYR.$SUFFIXE
         if [ $? -ne 0 ] ; then
-          echo Echec a la creation de $RESU/FORT_SYR.$SUFFIXE
+          echo Failure creating $RESU/FORT_SYR.$SUFFIXE
         else
           for fich in $dir/*.[f,F,c,h] ; do
             if [ -f ${fich} ] ; then 
@@ -1335,14 +1315,14 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     done 
   fi
 
-fi  # donnees d'entree et resultats de calcul
+fi  # input data and outputs
 #
 ########################################################################
 #
-# Resume : fin
+# Summary: end
 #
 DATEFIN=`date '+%m%d%H%M'`
-echo '    DATE DE FIN     : ' $DATEFIN                         >>$resume
+echo '    End date        : ' $DATEFIN                         >>$resume
 echo '========================================================'>>$resume
 #
 cp $resume  $RESU/$resume.$SUFFIXE
@@ -1364,7 +1344,7 @@ else
 #
   echo
   echo  "  ********************************************"
-  echo  "             Fin normale du calcul            "
+  echo  "           Normal simulation finish"
   echo  "  ********************************************"
   exit 0
 #

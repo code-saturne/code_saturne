@@ -26,7 +26,7 @@
 #
 #============================================================================
 
-# Librairies pour l'interface (si necessaire)
+# Libraries for the interface (if necessary)
 if [ -d ${CS_ROOT}/opt/tcl8.3/arch/${NOM_ARCH}/lib ] ; then
   LD_LIBRARY_PATH=$CS_ROOT/opt/tcl8.3/arch/$NOM_ARCH/lib:$LD_LIBRARY_PATH
   export LD_LIBRARY_PATH

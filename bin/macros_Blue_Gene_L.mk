@@ -25,15 +25,15 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour Blue Gene
-################################################
+# Macros for Makefile under Blue Gene/L
+#######################################
 #
-# Chemins système
-#----------------
+# System paths
+#-------------
 
 BGL_SYS  = /bgl/BlueLight/ppcfloor/bglsys
 
-# Macro pour BFT
+# Macros for BFT
 #---------------
 
 BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.6/arch/bgl
@@ -41,7 +41,7 @@ BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.6/arch/bgl
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 
-# Macro pour FVM
+# Macros for FVM
 #---------------
 
 FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.10.0/arch/bgl
@@ -49,64 +49,64 @@ FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.10.0/arch/bgl
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
 
-# Macro pour MPI
+# Macros for MPI
 #---------------
 
-# Option MPI
+# MPI support
 MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# Pour MPI BlueGene
+# For Blue Gene MPI
 MPI_HOME        =
 MPI_INC         = -I$(BGL_SYS)/include
-MPI_LIB  = 
+MPI_LIB         =
 
-# Macro pour Sockets
+# Macros for Sockets
 #-------------------
 
-# Option Socket
+# Sockets support
 SOCKET          =0
 SOCKET_INC      =
 SOCKET_LIB      =
 
-# Macro pour XML
+# Macros for XML
 #---------------
 
-# Option XML
+# XML support
 XML             =1
 
 XML_HOME = /gpfs2/home/saturne/opt/libxml2-2.6.19
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/bgl/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
-# Macro pour BLAS
+# Macros for BLAS
 #----------------
 
-# Option BLAS
+# BLAS support
 BLAS            =1
-ESSL            =1 # librairie ESSL IBM avec extension BLAS
+ESSL            =1 # IBM ESSL library with BLAS extension
 BLAS_INC        =-I/opt/ibmmath/essl/4.2/include
 BLAS_CFLAGS     =-D_CS_HAVE_ESSL
 BLAS_LDFLAGS    =
 
-# Macro pour gettext
+# Macros for gettext
 #-------------------
 
-# Option gettext
+# gettext support
 NLS				=0
 
 
-# Preprocesseur
-#--------------
+# Preprocessor
+#-------------
 
 PREPROC         =
 PREPROCFLAGS    =
 
 
-# Compilateur C natif
-#--------------------
+# C compiler
+#-----------
 
 CCOMP                  = blrts_xlc
 
@@ -124,8 +124,8 @@ CCOMPFLAGSPROF         = -pg
 CCOMPFLAGSVERS         = -v
 
 
-# Compilateur FORTRAN
-#--------------------
+# Fortran compiler
+#-----------------
 #  Profiling gprof : -pg -a
 
 FTNCOMP                = blrts_xlf
@@ -160,62 +160,59 @@ LDEDLFLAGSVERS  = -v
 LDEDLRPATH      =
 
 
-# Positionnement des variables pour le pre-processeur
-#----------------------------------------------------
+# Set preprocessor variables
+#---------------------------
 #
-# _POSIX_SOURCE          : utilisation des fonctions standard POSIX
+# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
+# Libraries to link against
+#--------------------------
 
-# Librairies a "linker"
-#----------------------
-
-# Zlib utilisee par HDF5
+# Zlib used by HDF5
 ZLIB     = -L/gpfs2/home/saturne/opt/zlib-1.2.1/arch/bgl/lib -lz
 
-# Librairies IBM
+# IBM libraries
 MASS     = -L/opt/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -lmass -lmassv
 LIBMAT   = /bgl/local/lib/libmpitrace.a
 ESSL     = /opt/ibmmath/essl/4.2/lib/libesslbg.a
 EXIT     = /bgl/local/lib/libexit.a
 
-# Librairies de base toujours prises en compte
+# Base libraries (always used)
 
 LIBBASIC = $(ZLIB)\
 -Wl,-allow-multiple-definition $(MASS) $(ESSL) $(LIBMAT) -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv
 
-# Librairies en mode sans option
+# Libraries in production mode
 
 LIBOPT   =
 
-# Librairies en mode optimisation reduite
+# Libraries in reduced optimization mode
 
 LIBLO    =
 
-# Librairies en mode DEBUG
+# Libraries in DEBUG mode
 
 LIBDBG   =
 
-# Librairie en mode ElectricFence (malloc debugger)
+# Library in ElectricFence (malloc debugger) mode
 
 LIBEF    =
 
-# Liste eventuelle des fichiers a compiler avec des options particulieres
-#------------------------------------------------------------------------
+# Optional lists of files to compile with specific options
+#---------------------------------------------------------
 
-# Sous la forme :
+# In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
 #
-# paquet 70% cpu promav gradrc prodsc
-# paquet 10% cpu bilsc2 ;
-#    option -qhot recommande pour ces sous-programmes
-#    pour les autres, on privilegie l'O3, qui est suppose plus fiable
-#      mais fait perdre un  peu de temps
+# 70% cpu promav gradrc prodsc
+# 10% cpu bilsc2 ;
+#    option -qhot recommended for these subroutines
+#    for others, we prefer O3, less risky, but slightly slower
 #
-#  Pour les fortrans, les listes ci-dessous servent a differencier
-#	les options d'optimisation
+# The file lists below correspond to different optimization levels
 #
 
 LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c

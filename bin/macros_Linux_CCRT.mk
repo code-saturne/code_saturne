@@ -25,49 +25,50 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour HP Proliant DL585
-########################################################
+# Macros for Makefile under HP Proliant DL585
+#############################################
 #
-# Macros pour BFT
-#----------------
-
-BFT_HOME       = /home/cont002/saturne/opt/bft-1.0.6/arch/Linux
-BFT_INC        = -I$(BFT_HOME)/include
-BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
-
-# Macros pour FVM
-#----------------
-
-FVM_HOME       = /home/cont002/saturne/opt/fvm-0.10.0/arch/Linux
-FVM_INC        = -I$(FVM_HOME)/include
-FVM_LDFLAGS    = -L$(FVM_HOME)/lib -lfvm
-
-# Macro pour MPI
+# Macros for BFT
 #---------------
 
-# Option MPI
+BFT_HOME        =/home/cont002/saturne/opt/bft-1.0.6/arch/Linux
+
+BFT_INC         =-I$(BFT_HOME)/include
+BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
+
+# Macros for FVM
+#---------------
+
+FVM_HOME        =/home/cont002/saturne/opt/fvm-0.10.0/arch/Linux
+
+FVM_INC         =-I$(FVM_HOME)/include
+FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
+
+# Macros for MPI
+#---------------
+
+# MPI support
 MPI             =1
 MPE             =0
 MPE_COMM        =0
-#
+
 #Les bibliothèques MPI sont directement appelées par mpicc et mpif77
 MPI_INC         =
 MPI_LIB         =
 
 
-# Macro pour Sockets
+# Macros for Sockets
 #-------------------
 
-# Option Socket
+# Sockets support
 SOCKET          =1
 SOCKET_INC      =
 SOCKET_LIB      =
 
-
-# Macro pour XML
+# Macros for XML
 #---------------
 
-# Option XML
+# XML support
 XML             =1
 
 XML_HOME =
@@ -75,36 +76,38 @@ XML_HOME =
 XML_INC  =-I/usr/include/libxml2
 XML_LIB  =-lxml2
 
-# Macro pour BLAS
+# Macros for BLAS
 #----------------
 
-# Option BLAS
+# BLAS support
 BLAS            =1
-
-BLAS_INC        =-I/applications/atlas/include
+BLAS_HOME       =/applications/atlas
+BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L/applications/atlas/lib -lcblas -latlas -lg2c
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas -lg2c
 
-# Macro pour gettext
+# Macros for gettext
 #-------------------
 
-# Option gettext
+# gettext support
 NLS				=0
 
 
-# Preprocesseur
-#--------------
+# Preprocessor
+#-------------
 
 PREPROC         =
 PREPROCFLAGS    =
 
 
-# Compilateur
-#------------
+# C compiler
+#-----------
 
 CCOMP                  = mpicc
+
 #CCOMPFLAGSDEF          = -Xa -Ktrap=fp   Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 CCOMPFLAGSDEF          = -Xa
+
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O1 
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse  
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse
@@ -115,15 +118,16 @@ CCOMPFLAGSPROF         = -pg
 CCOMPFLAGSVERS         = -V
 
 
-
-# Compilateur FORTRAN
-#--------------------
+# Fortran compiler
+#-----------------
 #  Profiling gprof : -pg
 #  Attention, par defaut on a -Mbounds avec mpif77 (l'inverse de mpicc)
 
 FTNCOMP                = mpif77
-#FTNCOMPFLAGSDEF        = -Ktrap=fp -fastsse     Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
+
 FTNCOMPFLAGSDEF        = -fastsse
+#FTNCOMPFLAGSDEF        = -Ktrap=fp -fastsse     Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
+
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O -Mnobounds
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O2 -Mnobounds
@@ -149,53 +153,49 @@ LDEDLFLAGSVERS  = -V
 LDEDLRPATH      = -Wl,-rpath -Wl,
 
 
-# Positionnement des variables pour le pre-processeur
-#----------------------------------------------------
+# Set preprocessor variables
+#---------------------------
 #
-# _POSIX_SOURCE          : utilisation des fonctions standard POSIX
+# _POSIX_SOURCE          : POSIX standard functions
 #
 VARDEF          = -D_POSIX_SOURCE
 
+# Libraries to link against
+#--------------------------
 
-# Librairies a "linker"
-#----------------------
-
-# Librairies de base toujours prises en compte
+# Base libraries (always used)
 
 LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm
 
-# Librairies en mode sans option
+# Libraries in production mode
 
 LIBOPT   =
 
-# Librairies en mode optimisation reduite
+# Libraries in reduced optimization mode
 
 LIBLO    =
 
-# Librairies en mode DEBUG
+# Libraries in DEBUG mode
 
 LIBDBG   =
 
-# Librairie en mode ElectricFence (malloc debugger)
+# Library in ElectricFence (malloc debugger) mode
 
 LIBEF    =-lefence
 
-# Liste eventuelle des fichiers a compiler avec des options particulieres
-#------------------------------------------------------------------------
+# Optional lists of files to compile with specific options
+#---------------------------------------------------------
 
-# Sous la forme :
+# In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
 #
-# paquet 70% cpu promav gradrc prodsc
-# paquet 10% cpu bilsc2 ;
-#    prodsc est 4 fois plus rapide en O6 qu'en O2
-#    bilsc2 plus rapide en O1
-#    pour les autres, on privilegie l'O2, qui est suppose plus fiable
-#      mais fait perdre un  peu de temps
+# 70% cpu promav gradrc prodsc
+# 10% cpu bilsc2 ;
+#    option O3 recommended for these subroutines
+#    for others, we prefer O2, less risky, but slightly slower
 #
-#  Pour les fortrans, les listes ci-dessous servent a differencier
-#	les options d'optimisation
+# The file lists below correspond to different optimization levels
 #
 
 LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c
