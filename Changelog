@@ -1,3 +1,8 @@
+* 04/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve the mesh coherency tests in case of periodicity
+  modified subroutine:
+    src/base/cs_mesh_coherency.c
+
 * 04/08/2008 - Charles Moulinec <cmoulinec@dl.ac.uk>
                Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>

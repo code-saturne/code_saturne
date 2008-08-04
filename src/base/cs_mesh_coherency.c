@@ -268,12 +268,22 @@ cs_mesh_coherency_check(void)
 
     BFT_MALLOC(delta_buffer, 3*n_cells_with_ghosts, cs_real_t);
 
-    /* De-interlace delta arrays for periodicity exchange */
+    /* De-interlace delta arrays for periodicity exchange;
+       Also add factor of 1.8 (> sqrt(3)) as the longest diagonal
+       of a box of side 1 is sqrt(3), and may find itself aligned
+       with axes after rotation. */
 
-    for (coord_id = 0; coord_id < 3; coord_id++)
-      for (cell_id = 0; cell_id < n_cells; cell_id++)
-        delta_buffer[coord_id*n_cells_with_ghosts + cell_id] =
-          delta[3*cell_id + coord_id];
+    for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+      cs_real_t delta_max = delta[3*cell_id];
+      if (delta[3*cell_id + 1] > delta_max)
+        delta_max = delta[3*cell_id + 1];
+      if (delta[3*cell_id + 2] > delta_max)
+        delta_max = delta[3*cell_id + 2];
+      delta_max *= 1.8;
+      delta_buffer[                        cell_id] = delta_max;
+      delta_buffer[  n_cells_with_ghosts + cell_id] = delta_max;
+      delta_buffer[2*n_cells_with_ghosts + cell_id] = delta_max;
+    }
 
     cs_perio_sync_var_vect(delta_buffer,
                            delta_buffer +   n_cells_with_ghosts,
@@ -281,10 +291,11 @@ cs_mesh_coherency_check(void)
                            CS_PERIO_ROTA_COPY,
                            mesh->halo_type);
 
-    for (coord_id = 0; coord_id < 3; coord_id++)
+    for (coord_id = 0; coord_id < 3; coord_id++) {
       for (cell_id = n_cells; cell_id < n_cells_with_ghosts; cell_id++)
           delta[3*cell_id + coord_id] =
             delta_buffer[coord_id*n_cells_with_ghosts + cell_id];
+    }
 
     BFT_FREE(delta_buffer);
 
@@ -333,7 +344,7 @@ cs_mesh_coherency_check(void)
         bft_printf_flush();
 
         bft_error(__FILE__, __LINE__, 0,
-                  _("\nCoherency error in mesh checking.\n"
+                  _("\nCoherency error in standard halo.\n"
                     "Between cell %d and cell %d : test = %g\n"
                     "(delta = %g, delta_mean = %g)\n"),
                   cell_id1+1, cell_id2+1, test, delta_neighbor, delta_mean);
@@ -382,7 +393,7 @@ cs_mesh_coherency_check(void)
             bft_printf_flush();
 
             bft_error(__FILE__, __LINE__, 0,
-                      _("\nCoherency error in mesh checking.\n"
+                      _("\nCoherency error in extended halo.\n"
                         "Between cell %d and cell %d : test = %g\n"
                         "(delta = %g, delta_mean = %g)\n"),
                       cell_id+1, cell_id2+1, test, delta_neighbor, delta_mean);
