@@ -1,3 +1,8 @@
+* 04/08/2008 - Mehdi Ouraou <medhi.ouraou@edf.fr>
+  Correcting probes output for lagrangian statistics
+  modified subroutine:
+    src/lagr/laghis.F
+
 * 25/07/2008 - David Monfort <david.monfort@edf.fr>
   Macros and architecture name set for BlueGene/P system
   added script:
