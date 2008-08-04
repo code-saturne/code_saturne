@@ -219,9 +219,7 @@ C
 C
            DO ICAP = 1, NCAPT
              IF (IRANGP.LT.0) THEN
-               IF ( IVARL .NE. ILPD1 .AND. IVARL .NE. ILFV1 ) THEN
-                 VARCAP(ICAP) = RA(IDMOYD+NODCAP(ICAP)-1)
-               ENDIF
+               VARCAP(ICAP) = RA(IDMOYD+NODCAP(ICAP)-1)
              ELSE
                CALL PARHIS(NODCAP(ICAP), NDRCAP(ICAP),
 C              ===========

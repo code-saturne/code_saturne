@@ -1,5 +1,8 @@
+* 04/08/2008 - David Monfort <david.monfort@edf.fr>
+  Merging from the 1.3 branch (-r 527:528, lagrangian bug fix)
+
 * 25/07/2008 - David Monfort <david.monfort@edf.fr>
-  Merging from the 1.3 branche (-r 523:524, Port to BlueGene/P system)
+  Merging from the 1.3 branch (-r 523:524, Port to BlueGene/P system)
 
 * 24/07/2008 - David Monfort <david.monfort@edf.fr>
   The reconstruction of the right-hand side has now its
