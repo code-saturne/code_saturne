@@ -30,56 +30,56 @@
 #
 #============================================================================
 #
-# Détection a priori du rang MPI d'un processus
-#==============================================
+# A priori detection of the rank of a MPI process
+#================================================
 #
-# Pour récupérer le rang MPI depuis un script lancé
-# par mpirun (ou prun, mpijob, ou autre équivalent) :
+# In order to get the MPI rank from a script launched
+# by mpirun (or prun, mpijob, or equivalent):
 #
 # MPI_RANK=`$CS_HOME/bin/rang_mpi.sh $@`
 #
-# Utile surtout pour lancer des applications
-# MPMD de type couplage avec des environnements
-# MPI 1.2 ne proposant pas l'équivalent de la
-# commande mpiexec (ou des appschemas LAM)
+# Mainly useful to launch MPMD applications
+# like coupling within MPI 1.2 environment
+# which does not have a command like mpiexec
+# (or some appschemes as LAM)
 
-# Pour Cluster HP AlphaServer (Chrome au CCRT)
+# On HP AlphaServer cluster (CCRT: Chrome)
 if [ "$RMS_RANK" != "" ] ; then
   MPI_RANK="$RMS_RANK"
 
-# Pour Cluster Opteron ou Itanium sous Linux avec Slurm (Argent et Tantale au CCRT)
+# On Opteron or Itanium cluster under Linux with Slurm (CCRT: Platine, Tantale)
 elif [ "$SLURM_PROCID" != "" ] ; then
   MPI_RANK="$SLURM_PROCID"
 
-# Pour Cluster Opteron sous Linux MPICH-GM (Cluster Chatou)
+# On Opteron cluster under Linux MPICH-GM (EDF Chatou cluster)
 elif [ "$GMPI_ID" != "" ] ; then
   MPI_RANK="$GMPI_ID"
 
-# Pour Cluster MFTT sous Linux avec MPI Scali (réseau SCI)
+# On EDF MFTT cluster under Linux with MPI Scali (SCI network)
 elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
   MPI_RANK=`echo $SCAMPI_PROCESS_PARAM | cut -f4 -d' '`
 
-# Pour MPICH2 (qui fournit aussi la commande mpiexec)
+# For MPICH2 (it also provides the mpiexec command)
 elif [ "$PMI_RANK" != "" ] ; then
   MPI_RANK="$PMI_RANK" 
 
-# Pour Open MPI 1.0 (qui fournit aussi la commande mpiexec)
+# For Open MPI (it also provides the mpiexec command)
 elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then
   MPI_RANK="$OMPI_MCA_ns_nds_vpid"
 
-# Pour LAM 7.1 (où l'on peut aussi utiliser un appschema)
+# For LAM 7.1 (an appscheme can also be used)
 elif [ "$LAMRANK" != "" ] ; then
   MPI_RANK="$LAMRANK"
 
-# Pour machine IBM sous MVAPICH (d'après test Computing on Demand)
+# On IBM machine with MVAPICH (following a test "Computing on Demand")
 elif [ "$SMPIRUN_RANK" != "" ] ; then
   MPI_RANK="$MPIRUN_RANK"
 
-# Pour Cluster utilisant HP-MPI (ancien système Tantale au CCRT)
+# On cluster with HP-MPI (CCRT: Tantale, old system)
 elif [ "$MPI_PROC" != "" ] ; then
   MPI_RANK=`echo $MPI_PROC | cut -f 2 -d,`
 
-# Pour MPICH 1.2 "standard" (avec communication chp4 "usuelle")
+# For "standard" MPICH 1.2 (with "usual" chp4 communication)
 else
   MPI_RANK=0
   next_arg_is_rank=""
@@ -92,10 +92,10 @@ else
     fi
   done
 
-# Fin des cas connus
+# End of known cases
 fi
 
-# Affichage du rang obtenu
+# Output of the obtained rank
 
 echo "$MPI_RANK"
 

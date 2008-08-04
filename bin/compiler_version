@@ -33,31 +33,29 @@
 
  usage() {
     echo    
-    echo "   Script de determination du numero de version des compilateurs   "
+    echo "   Script for determination of compiler versions                   "
     echo    
-    echo " Usage : $0 [-cshome <CS_HOME>] [-nomarch <NOM_ARCH>] [-output <compil.log>]"
+    echo " Usage: $0 [-cshome <CS_HOME>] [-nomarch <NOM_ARCH>] [-output <compil.log>]"
     echo    
-    echo "      avec :                                                       "
-    echo "      <CS_HOME>    : variable CS_HOME de Code_Saturne              "
-    echo "                     peut etre fixee par defaut par l environnement"
-    echo "      <NOM_ARCH>   : nom de l architecture pour Code_Saturne       "
-    echo "                     peut etre fixee par defaut par l environnement"
-    echo "      <compil.log> : fichier d'output (donner le chemin complet)   "
-    echo "                     ./compil.log par defaut                       "
-    echo "                                                                   "
+    echo "      with:"
+    echo "      <CS_HOME>    : Code_Saturne CS_HOME variable"
+    echo "                     may have already been set by the environment"
+    echo "      <NOM_ARCH>   : Code_Saturne architecture name"
+    echo "                     may have already been set by the environment"
+    echo "      <compil.log> : output file (give the full path)"
+    echo "                     ./compil.log is the default"
+    echo
     echo    
     exit
  }
 
 
-# Repertoire de travail
+# Working directory
 
  dirbase=`pwd`
 
 
-# Interpretation de la ligne de commande
-
-#   Arguments explicites
+# Parse the command line
 
  while [ "$#" != 0 ] ; do 
    case $1 in 
@@ -68,7 +66,7 @@
    esac
  done
 
-#   Fichier trace par defaut
+# Is there a default file?
 
  if [ -z "${compillog}" ] ; then 
    compillog=${dirbase}/compil.log
@@ -76,100 +74,99 @@
 
 echo $compillog
 
-#   Verification de CS_HOME
+# CS_HOME version
 
  if [ -z ${CS_HOME} ] ; then 
    usage
-   echo ' ' 
-   echo ' La variable CS_HOME n est pas renseignee. Verifier le .monprofile. ' 
-   echo ' ' 
+   echo
+   echo ' CS_HOME is not valid. Check .profile.' 
+   echo
  fi
 
-#   Verification de NOM_ARCH
+# NOM_ARCH check
 
  if [ -z ${NOM_ARCH} ] ; then 
    usage
-   echo ' ' 
-   echo ' La variable NOM_ARCH n est pas renseignee. Verifier le .monprofile. ' 
-   echo ' ' 
+   echo
+   echo ' NOM_ARCH is not set. Check .profile.' 
+   echo
  fi
 
-# Debut des travaux
+# Start
 
- echo ' '                                       >> ${compillog}
- echo ' Version des compilateurs utilises '     >> ${compillog}
- echo ' '                                       >> ${compillog}
+ echo                                           >> ${compillog}
+ echo ' Version of compilers used'              >> ${compillog}
+ echo                                           >> ${compillog}
 
-# Version du compilateur FORTRAN
+# FORTRAN compiler version
  
  echo ' '                                       >> ${compillog}
  echo ' ====================================== '>> ${compillog}
  echo ' '                                       >> ${compillog}
- echo ' Compilateur FORTRAN '                   >> ${compillog}
+ echo ' FORTRAN Compiler    '                   >> ${compillog}
  echo ' '                                       >> ${compillog}
 
-#   Repertoire de travail temporaire
+#   Tmpdir
 
  dir_compiler_f_version=dir_compiler_f_version
  mkdir ${dir_compiler_f_version} || exit 
  cd ${dir_compiler_f_version}                   >> ${compillog} 2>&1
 
-#   Creation d'un fichier FORTRAN non vide 
-#     - pour eviter que les compilateurs ne se plaignent
-#     - pour pouvoir executer en cas de pb
+#   A non empty FORTRAN file is generated 
+#     - to fool the compiler
+#     - to be able to run the case if any problem
 
  foof=foo.F
  echo '      program foo'                       >> ${foof}
- echo '      print*,"Programme test FORTRAN execute avec succes "'   >> ${foof}
+ echo '      print*,"FORTRAN test program successfully ran "'   >> ${foof}
  echo '      end'                               >> ${foof}
 
-#   Compilation 
+# Compilation 
 
  ln -s ${CS_HOME}/bin/Makefile Makefile
  make compversion CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
 
-#   Execution (si un executable a ete cree 
-#     sur hp, par exemple f90 +version n'en cree pas)
+# Execution (if an executable has been generated)
 
  echo ' '                                       >> ${compillog}
  if [ -f cs13.exe ] ; then 
    ./cs13.exe                                   >> ${compillog} 2>&1
  else
-   echo ' Pas d executable test FORTRAN '       >> ${compillog} 
+   echo ' No FORTRAN test executable    '       >> ${compillog} 
  fi
  echo ' '                                       >> ${compillog}
 
-#   Retour au repertoire initial
+# Back to the initial directory
 
  cd ${dirbase}
 
-#   Menage
+# Clean
 
  rm -rf ${dir_compiler_f_version}
 
 
-# Version du compilateur C
+# C compiler version
 
  echo ' '                                       >> ${compillog}
  echo ' ====================================== '>> ${compillog}
  echo ' '                                       >> ${compillog}
- echo ' Compilateur C '                         >> ${compillog}
+ echo ' C Compiler    '                         >> ${compillog}
  echo ' '                                       >> ${compillog}
 
-#   Repertoire de travail temporaire
+# Tmpdir
 
 dir_compiler_c_version=dir_compiler_c_version
 mkdir ${dir_compiler_c_version} || exit 
 cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
 
-#   Creation fichier C non vide 
-#     - pour eviter que les compilateurs ne se plaignent
-#     - pour pouvoir executer en cas de pb
+#   A non empty C file is generated 
+#     - to fool the compiler
+#     - to be able to run in case of problem
 
  fooc=foo.c
  echo '     int main()'                         >> ${fooc}
  echo '     {'                                  >> ${fooc}
- echo '     printf("Programme test C execute avec succes");'>> ${fooc}
+ echo '     printf("C test program successfully ran");'>> ${fooc}
  echo '     return 0;'                          >> ${fooc}
  echo '     }'                                  >> ${fooc}
  
@@ -185,15 +182,15 @@ cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
    ./cs13.exe                                   >> ${compillog} 2>&1
  echo ' '                                       >> ${compillog}
  else
-   echo ' Pas d executable test C '             >> ${compillog} 
+   echo ' No C test executable    '             >> ${compillog} 
  fi
  echo ' '                                       >> ${compillog}
 
-#   Retour au repertoire initial
+# Back to the initial directory
 
  cd ${dirbase}
 
-#   Menage
+# Clean
 
  rm -rf ${dir_compiler_c_version}
  

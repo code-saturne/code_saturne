@@ -31,21 +31,21 @@
 #============================================================================
 #
 #=================================================
-#     Script de generation d'un cas Code_Saturne
+#     Script to generate a Code_Saturne study
 #=================================================
          
 usage() {
     echo
-    echo "   usage : cree_sat -etude nom_etude [nom_cas1 nom_cas2 ...][-noihm]"
-    echo "               creation d'une etude complete"
+    echo "   syntax: cree_sat -etude nom_etude [nom_cas1 nom_cas2 ...][-noihm]"
+    echo "               For a full study"
     echo "           cree_sat -cas nom_cas1 nom_cas2 ...[-noihm]"
-    echo "              creation de nouveaux sous-cas pour une etude"
+    echo "               For a cases created for an existing study"
     echo "           cree_sat -noihm"
-    echo "              fonctionnement sans IHM Code_Saturne "
-    echo "              (-noihm est obligatoirement le premier ou le dernier argument"
-    echo "                      et n apparait qu une seule fois)"
+    echo "               To force non GUI "
+    echo "              (The option -noihm has to be used only once at the beginning"
+    echo "                   or at the end the option list)"
     echo 
-    echo "           cree_sat -h pour une information plus detaillee ou directement :"
+    echo "           cree_sat -h for help or:"
     echo "            xpdf ${DOC_UTILISATION}"
     echo; exit
 }
@@ -54,129 +54,126 @@ usage() {
 enleve_test() {
 NTEST=0
 NTEST=`grep -c TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT $1`
-while [ $NTEST -gt 0 ] ; do  
+while [ $NTEST -gt 0 ] ; do
   NDEB=`grep -n TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT $1 \
     | head -1 | awk -F: '{print $1}'`
   if [ "$NDEB" != "" ]; then
     NFIN=`grep -n TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN $1 \
     | head -1 | awk -F: '{print $1}'`
     sed "${NDEB},${NFIN}d" $1 > ${1}.tmp
-    mv ${1}.tmp $1 
+    mv ${1}.tmp $1
   fi
   NTEST=`grep -c TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT $1`
 done
 }
 
-commente_exemple() {
+comment_example() {
 NTEST=0
 NTEST=`grep -c CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT $1`
-while [ $NTEST -gt 0 ] ; do  
+while [ $NTEST -gt 0 ] ; do
   NDEB=`grep -n CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT $1 \
     | head -1 | awk -F: '{print $1}'`
   if [ "$NDEB" != "" ]; then
     NFIN=`grep -n CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN $1 \
-    | head -1 | awk -F: '{print $1}'` 
+    | head -1 | awk -F: '{print $1}'`
 #   veiller a modifier la chaine recherchee, sinon on boucle a l'infini
     sed "${NDEB}s/DEBUT/debut/" $1 > ${1}.tmp
-    mv ${1}.tmp $1 
+    mv ${1}.tmp $1
     sed "${NFIN}s/FIN/fin/" $1 > ${1}.tmp
-    mv ${1}.tmp $1 
+    mv ${1}.tmp $1
     sed "${NDEB},${NFIN}s/^/Cex/" $1 > ${1}.tmp
-    mv ${1}.tmp $1 
+    mv ${1}.tmp $1
   fi
   NTEST=`grep -c CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT $1`
 done
 }
 
-enleve_commentaire() {
+remove_comment() {
 NTEST=0
 NTEST=`grep -c CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT $1`
-if [ $NTEST -gt 0 ] 
-then  
+if [ $NTEST -gt 0 ]
+then
   DEB=CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
   FIN=CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
   sed "/${DEB}/d" $1 > ${1}.tmp
-  mv ${1}.tmp $1 
+  mv ${1}.tmp $1
   sed "/${FIN}/d" $1 > ${1}.tmp
-  mv ${1}.tmp $1 
+  mv ${1}.tmp $1
 fi
 }
 
-cree_etude() {
-ETUDE="$1"
-if [ -d "$ETUDE" ]; then
-   echo "l'etude $ETUDE existe deja"
+create_study() {
+STUDY="$1"
+if [ -d "$STUDY" ]; then
+   echo "$STUDY already exists"
    exit
 fi
-mkdir $ETUDE
-mkdir ${ETUDE}/MAILLAGE
-mkdir ${ETUDE}/POST
-etude=`echo $ETUDE |tr "[:upper:]" "[:lower:]"`
+mkdir $STUDY
+mkdir ${STUDY}/MAILLAGE
+mkdir ${STUDY}/POST
+study=`echo $STUDY |tr "[:upper:]" "[:lower:]"`
 }
 
 
-cree_cas() {
-IHM=$1
+cree_case() {
+GUI=$1
 shift
-ETUDE=$1
+STUDY=$1
 shift
 REPBASE=`pwd`
 for i in $*
 do
-  CAS="${i}"
-  CAS=`echo $CAS | tr "[:lower:]" "[:upper:]"`
-  REPBASECAS=$REPBASE/$CAS
-  echo; echo "Creation du cas $CAS en cours..."
-  if [ -d "$CAS" -o -f "$CAS" ]; then
-     echo " le cas $CAS existe deja"
+  CASE="${i}"
+  CASE=`echo $CASE | tr "[:lower:]" "[:upper:]"`
+  REPBASECASE=$REPBASE/$CASE
+  echo; echo "Generating case $CASE ..."
+  if [ -d "$CASE" -o -f "$CASE" ]; then
+     echo "$CASE already exists"
      continue
   fi
-  etude=`echo $ETUDE |tr "[:upper:]" "[:lower:]"`
-  cas=`echo $CAS |tr "[:upper:]" "[:lower:]"`
+  study=`echo $STUDY |tr "[:upper:]" "[:lower:]"`
+  case=`echo $CASE |tr "[:upper:]" "[:lower:]"`
 
-  mkdir ${CAS}
-  mkdir ${CAS}/DATA
-  mkdir ${CAS}/FORT
-  mkdir ${CAS}/RESU
-  mkdir ${CAS}/SCRIPTS
+  mkdir ${CASE}
+  mkdir ${CASE}/DATA
+  mkdir ${CASE}/FORT
+  mkdir ${CASE}/RESU
+  mkdir ${CASE}/SCRIPTS
 
-#Recuperation du CS_HOME
-  FICCSHOMEBKSLH=$CAS/SCRIPTS/.cshomebkslh
+# Get CS_HOME
+  FICCSHOMEBKSLH=$CASE/SCRIPTS/.cshomebkslh
   echo $CS_HOME | sed -e "s/\//\\\\\//g" > $FICCSHOMEBKSLH
   CSHOMEBCKSLH=`cat $FICCSHOMEBKSLH`
   rm $FICCSHOMEBKSLH
 
-#Recuperation du CSGUI_HOME
-  FICCSGUIHOMEBKSLH=$CAS/SCRIPTS/.csguihomebkslh
+# Get CSGUI_HOME
+  FICCSGUIHOMEBKSLH=$CASE/SCRIPTS/.csguihomebkslh
   echo $CSGUI_HOME | sed -e "s/\//\\\\\//g" > $FICCSGUIHOMEBKSLH
   CSGUIHOMEBCKSLH=`cat $FICCSGUIHOMEBKSLH`
   rm $FICCSGUIHOMEBKSLH
 
-# recopie des donnees (uniquement les utiles)
+# Copy data (only that which is useful)
   thch=THCH
-  mkdir ${CAS}/DATA/$thch
+  mkdir ${CASE}/DATA/$thch
   for var in dp_C3P dp_C3PSJ dp_ELE dp_FCP ; do
-    cp -f $CS_HOME/data/thch/$var $CAS/DATA/$thch/.
+    cp -f $CS_HOME/data/thch/$var $CASE/DATA/$thch/.
   done
 
   gui=SaturneGUI
-  if [ "$IHM" = "ihm" ] ; then
-    cp -f $SCRIPT_HOME/$gui ${CAS}/DATA/.
-    sed "s/NOMCSGUIHOME/$CSGUIHOMEBCKSLH/g"  $CAS/DATA/$gui  >cas.tmp
-    mv -f cas.tmp $CAS/DATA/$gui
-    chmod +x $CAS/DATA/$gui
+  if [ "$GUI" = "gui" ] ; then
+    cp -f $SCRIPT_HOME/$gui ${CASE}/DATA/.
+    sed "s/NOMCSGUIHOME/$CSGUIHOMEBCKSLH/g"  $CASE/DATA/$gui  >case.tmp
+    mv -f case.tmp $CASE/DATA/$gui
+    chmod +x $CASE/DATA/$gui
   fi
 
-# recopie des src  utilisateur et masquage des repertoires CVS
+# Copy user source files and remove SVN directories
   users=USERS
-  cp -Rf $CS_HOME/users $CAS/FORT/$users
-  listedircvs=`find $CAS/FORT/$users -name CVS -print`
-  for dir in $listedircvs ; do
-    mv $dir `dirname ${dir}`/.CVS
-  done
+  cp -Rf $CS_HOME/users $CASE/FORT/$users
+  find $CASE/FORT/$users -name .svn -print0 | xargs -0r \rm -r
 
-# sur cluster, le nom est limite a 15 caracteres
-  NOMETCAS=`echo ${etude}${cas}|cut -c1-15`
+# On some batch sytems, the name is limited to 15 characters
+  NOMETCAS=`echo ${study}${case}|cut -c1-15`
 
   cp -f $SCRIPT_HOME/lance         $CAS/SCRIPTS
   cp -f $SCRIPT_HOME/lance.help    $CAS/SCRIPTS
@@ -185,31 +182,31 @@ do
   REPBASECASBCKSLH=`cat $FICREPBASECASBKSLH`
   rm $FICREPBASECASBKSLH
   sed -e "s/nometcas/$NOMETCAS/g" \
-      -e "s/NOMET/$ETUDE/g" \
-      -e "s/NOMCAS/$CAS/g" \
+      -e "s/NOMET/$STUDY/g" \
+      -e "s/NOMCAS/$CASE/g" \
       -e "s/NOMREPBASE/$REPBASECASBCKSLH/g" \
       -e "s/NOMCSHOME/$CSHOMEBCKSLH/g" \
-      -e "s/nomet/${etude}/g"  $CAS/SCRIPTS/lance         >cas.tmp
-  mv cas.tmp         $CAS/SCRIPTS/lance
+      -e "s/nomet/${study}/g"  $CASE/SCRIPTS/lance >case.tmp
+  mv case.tmp $CASE/SCRIPTS/lance
 
-  for fich in $CAS/FORT/$users/*/*.[F]
+  for fich in $CASE/FORT/$users/*/*.[F]
   do 
     if [ -f $fich ] ; then
-      if [ "$IHM" = "ihm" ] ; then 
-        commente_exemple $fich
+      if [ "$GUI" = "gui" ] ; then 
+        comment_example $fich
       else
-        enleve_commentaire $fich
+        remove_comment $fich
       fi
     fi
   done
-  for fich in $CAS/FORT/$users/*/*.[F,c] $CAS/SCRIPTS/lance
+  for fich in $CASE/FORT/$users/*/*.[F,c] $CASE/SCRIPTS/lance
   do
     if [ -f $fich ] ; then
       enleve_test $fich
     fi
   done
-  chmod +x $CAS/SCRIPTS/lance
-  echo "Creation du cas $CAS terminee"
+  chmod +x $CASE/SCRIPTS/lance
+  echo "Case $CAS created."
 done
 exit
 }
@@ -219,17 +216,17 @@ exit
 
 clear
 echo "================================================================="
-echo "               Generation d'un cas Saturne                       " 
+echo "             Code_Saturne study/case generation"
 echo "                        version 1.3                              "
 echo "================================================================="
 echo
 
 if [ -z "$CS_HOME" ]; then
   echo
-  tput bold ; 
-  echo " ATTENTION : La variable CS_HOME n'est pas positionnee"
+  tput bold ;
+  echo " WARNING: CS_HOME is not set."
   tput rmso ; tput sgr0
-  echo " Session terminee"; echo
+  echo " Session terminated"; echo
   exit
 fi
 
@@ -238,15 +235,15 @@ SCRIPT_HOME=$CS_HOME/bin
 FICHE_HOME=$CS_HOME/doc/FICHE
 DOC_UTILISATION=$CS_HOME/doc/UTILISATION/saturne.pdf
 
-NNOIHM=0
+NNOGUI=0
 for i in $*
 do
   if [ "${i}" = "-noihm" ]
   then
-     NNOIHM=`echo $NNOIHM |awk '{printf($1+1)}' `
+     NNOGUI=`echo $NNOGUI |awk '{printf($1+1)}' `
   fi
 done
-if [ $NNOIHM -eq 1 ]
+if [ $NNOGUI -eq 1 ]
 then 
   FIRST=$1
   LAST=`echo $* | awk '{print $NF}'`
@@ -254,11 +251,11 @@ then
   then 
     usage
   else
-    IHM=noihm
+    GUI=nogui
   fi  
-elif [ $NNOIHM -eq 0 ]
+elif [ $NNOGUI -eq 0 ]
 then
-  IHM=ihm
+  GUI=gui
 else
   usage 
 fi
@@ -270,8 +267,8 @@ fi
 
 TYPE=""
 case $1 in
-  -etude) TYPE="etude";shift;;
-  -cas) TYPE="cas";shift;;
+  -etude) TYPE="study";shift;;
+  -cas) TYPE="case";shift;;
   *) usage;;
 esac
 
@@ -280,34 +277,34 @@ then
   usage
 fi
 
-if [ $TYPE = "etude" ]
+if [ $TYPE = "study" ]
 then
-  ETUDE=$1
+  STUDY=$1
   shift
-  ETUDE=`echo $ETUDE |tr "[:lower:]" "[:upper:]"`
-  cree_etude $ETUDE
-  cd $ETUDE
+  STUDY=`echo $STUDY |tr "[:lower:]" "[:upper:]"`
+  create_study $STUDY
+  cd $STUDY
 else
-  ETUDE=`basename ${PWD}`
+  STUDY=`basename ${PWD}`
 fi
 
 if [ $# = 0 -o "$1" = "-noihm" ]
 then
-  CAS="CAS1"
+  CASE="CAS1"
 else  
-  CAS=""
+  CASE=""
   for i in $*
   do
     if [ "${i}" = "-noihm" ]
     then
        continue
     else
-      CAS="$CAS ${i}"
+      CASE="$CASE ${i}"
     fi
   done
 fi
 
-cree_cas $IHM $ETUDE $CAS
+create_case $GUI $STUDY $CASE
 
 exit
 

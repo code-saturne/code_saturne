@@ -1,124 +1,117 @@
-AIDE AU REMPLISSAGE DU FICHIER lance
-====================================
-====================================
+Setting runcase options
+=======================
+=======================
 
-L'utilisateur peut avoir a modifier la taille des tableaux 
-  d'entiers et de reels ici : LONGIA et LONGRA respectivement
-Le nombre d'entiers LONGIA et le nombre de reels LONGRA 
-  dependent des options de calcul, du type d'elements, 
-  des caracteristiques du maillage (2d, 3d, hybride, 
-  non conforme ...) et du nombre de variables, par exemple.
-  En k-epsilon, si on note NCEL le nombre de cellules du 
-  maillage, on peut la plupart du temps utiliser la majoration 
-  grossiere suivante : LONGIA =  45*NCEL et LONGRA = 220*NCEL
-  En Rij-epsilon, une majoration de 20% pourra etre appliquee.
-  Ces valeurs sont relativement elevees pour prendre en compte
-  les maillages 2D qui comprennent de nombreuses faces de bord :
-  une formule plus precise mais plus complexe serait necessaire.
-  Pour les gros cas 3D, une estimation plus precise est donnee 
-  par : LONGIA =  25*NCEL et LONGRA = 120*NCEL.
-
-               -------------------------------
-
-L'utilisateur peut souhaiter ne pas utiliser le preprocesseur
-  (uniquement pour les maillages *tlc *slc) : positionner
-   SOLCOM=1
-dans les autres cas positionner SOLCOM=0 en standard
-ATTENTION : la lecture des maillages .slc et .tlc n'est
-plus maintenue et est deconseillee.
+The user can modify the size of the arrays of integers
+  and of reals: LONGIA and LONGRA are used for that purpose,
+  respectively.
+The number of integers (LONGIA) and of reals (LONGRA) depends
+  on the options used for the simulation, on the type of elements,
+  on the mesh characteristics (2-D, 3-D, hybrid, hanging nodes,...)
+  and on the number of variables, for instance.
+If k-epsilon is used with NCEL being the number of mesh cells,
+  a maximum of LONGIA reads 45*NCEL and of LONGRA, 220*NCEL.
+If Rij-epsilon is used, the latter values augmented by 20%
+  should be sufficient.
+Those relatively high numbers are set to take into account
+  2D meshes, which usually contain a lot of boundary faces.
+  For large 3D cases, a more accurate estimation is given by:
+For large 3-D simulation, a better estimation of LONGIA and LONGRA
+  LONGIA =  25*NCEL et LONGRA = 120*NCEL.
 
                -------------------------------
 
-Pour recoller des maillages, on donne des options supplementaires
-  au preprocesseur :
-   - preciser le nom des maillages entre " " dans 
-     la variable MAILLAGE
-   - preciser les options de recollement dans la variable 
-     COMMANDE_RC. Il est preferable de preciser la couleur 
-     des faces a recoller. Si c'est impossible, 
-     il faut omettre l'option -color (mais le cout sera 
-     superieur et la robustesse parfois moindre).La selection
-     des faces peut se faire par d'autres moyens que la couleur
-     (voir l'aide du preprocesseur par ecs -h). 
-  Dans l'exemple ci-dessous, on cherche a recoller 
-    les faces de couleur 3, 4 et 6 des maillages titi.des 
-    et toto.unv.
+The user may choose not to use the preprocessor
+  (only for meshes in .tlc or .slc format) by setting
+  SOLCOM=1
+otherwise set SOLCOM=0 as a standard
+WARNING: .slc and .tlc formats are obsolete and their use is deprecated.
+
+               -------------------------------
+
+To join meshes with the preprocessor, additional options must be defined:
+   - assign to the MAILLAGE variable the name of the meshes between " ".
+   - assign to the COMMANDE_RC variable the joining option. It is recommended
+     to specify the color or group of the faces to be joined. If this can not
+     be done, the options -color or -group should not be used (but the cost of
+     the preprocessing will be higher and the process less robust). Selecting the
+     faces can be performed by other means (see the preprocessor help by ecs -h).
+  In the following example, the faces of color 3, 4 and 6 of the meshes
+     titi.des and toto.unv are joined as:
 
     MAILLAGE="titi.des toto.unv"
     COMMANDE_RC="-j -color 3 4 6"
 
-  S'il n'y a rien a recoller, on peut laisser vide 
-    la variable COMMANDE_RC, soit COMMANDE_RC=.
+  If no joining is necessary, the variable COMMANDE_RC is left empty, as:
+
+    COMMANDE_RC=
 
                -------------------------------
 
-Lorsque l'interface de Code_Saturne est utilisee, l'utilisateur
-  specifie le nom du fichier parametrique au format xml dans 
-  la variable PARAM. Le fichier doit etre localise dans le 
-  repertoire DATA du cas.
+when the Code_Saturne GUI is used, the user assigns the name of the
+  xml file to the variable PARAM. The file should be placed in
+  the directory DATA of the case.
 
                -------------------------------
 
-Pour decouper en triangles les faces dont la distorsion (warp) est 
-  superieure a un angle alpha en degres, on renseigne la variable 
-  COMMANDE_DF. Par exemple, pour decouper au dela d'un angle de 0.01
-  degres (c'est la valeur par defaut) : 
+The variable COMMANDE_DF is used to cut the faces whose warp angle is larger
+  than a given tolerance (in degrees). For instance, if the tolerance
+  angle is 0.01 degrees (default value), the command reads:
 
     COMMANDE_DF="-cwf 0.01"
 
-  Si l'on ne souhaite rien decouper (par defaut), c'est-a-dire si 
-    l'on souhaite utiliser le maillage tel qu'il a ete fourni par le 
-    mailleur, on laisse vide la variable COMMANDE_DF soit COMMANDE_DF=
+  If the user wants to use the mesh as obtained by the mesh generator,
+    COMMANDE_DF is left empty, as:
+
+    COMMANDE_DF=
 
                -------------------------------
 
-Pour traiter un cas periodique, il faut renseigner la variable 
-  COMMANDE_PERIO pour le preprocesseur en precisant l'option -perio :
+When periodicity applies, COMMANDE_PERIO is used by the preprocessor,
+  with the option -perio:
 
-  Deux types de periodicite sont possibles : translation et rotation :
+  Two types of periodicity are possible: translation and rotation.
     Translation : -perio -trans tx ty tz 
-      (tx,ty,tz): composantes du vecteur translation
-    Rotation    : deux possibilites 
-      - donnee de angle, direction et point invariant :
+      (tx,ty,tz): vector components
+    Rotation    : two methods are possible
+      - the angle, the direction and an invariant point are given:
         -perio -rota -angle a -dir dx dy dz -invpt px py pz  
-          a         : angle en degres (entre -180 et + 180)
-          (dx,dy,dz): composantes d'un vecteur directeur 
-                        de l'axe de rotation  
-          (px,py,pz): composantes du point invariant de la rotation
-      - donnee de matrice et point invariant :
+          a         : angle in degrees (between -180 and +180)
+          (dx,dy,dz): rotation axis vector components
+          (px,py,pz): rotation invariant point components
+      - the matrix and an invariant point are given:
         -perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py pz  
-          mij       : elements de la matrice de rotation par ligne
-          (px,py,pz): composantes du point invariant de la rotation
+          mij       : matrix elements (line by line)
+          (px,py,pz): rotation invariant point components
 
-  On peut composer translation et rotation : 
+  Translation and rotation can be used together: 
         -perio -trans tx ty tz -rota -angle a 
                                      -dir dx dy dz -invpt px py pz  
-     ou -perio -trans tx ty tz -rota -matrix m11 m12 m13 
+     or -perio -trans tx ty tz -rota -matrix m11 m12 m13 
                                              m21 m22 m23 
                                              m31 m32 m33 
                                      -invpt   px py pz   
-    La transformation composite est alors RoT (quel que soit l'ordre 
-      dans lequel apparaissent rotation et translation dans la ligne 
-      de commande).
+    The result is RoT (whatever the order of the rotation and translation in
+      the command line).
 
-  Le sens de la periodicite n'a pas d'importance (mais, dans le cas 
-    d'une transformation composee RoT, R et T doivent naturellement
-    etre coherentes entre elles).
+     Rotation and translation have to be consistant with each other.
 
-  Il est preferable de preciser les faces concernees, en utilisant 
-    les proprietes des faces, par exemple avec l'option -couleur (la 
-    selection des faces peut se faire par d'autres moyens que la 
-    couleur : voir l'aide du preprocesseur par ecs -h) : par exemple
+  It is better to use the faces where periodicity applies, by using the
+    property of these faces, with their color for instance (faces
+    can be selected by other means than their color: see ecs -h for more
+    details), for instance:
       -perio -trans 10 0 0 -color 1 2
 
-  On peut imposer jusqu'a trois periodicites (une par direction 
-    d'espace) : on repete pour cela l'option -perio. par exemple 
+  Up to 3 periodicity directions can be imposed (one per spacial direction),
+    for example: 
     -perio -trans 10 0 0 -perio -trans 0 1 0 -perio -trans 0 0 1
 
-  S'il n'y a pas de periodicite, on doit laisser vide 
-    la variable COMMANDE_PERIO, c'est-a-dire : COMMANDE_PERIO=
+  If periodicity does not apply, COMMANDE_PERIO is left empty as:
 
-  Exemple (le \ marque la continuation de la ligne de commande)
+    COMMANDE_PERIO=
+
+  Example ("\" shows the continuation of the command line):
+
     COMMANDE_PERIO="-perio -trans -10.2 0 0 -color 2               \
                     -perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 \
                            -color 3 4                              \
@@ -129,187 +122,162 @@ Pour traiter un cas periodique, il faut renseigner la variable
 
                -------------------------------
 
-Pour le couplage avec SYRTHES (un seul calcul fluide 
-    et un seul calcul solide) il suffit de renseigner
-    la variable COMMANDE_SYRTHES. S'il n'y a pas de couplage
-    il suffit de la laisser vide.
-  Dans l'exemple ci-dessous, on cherche a coupler les faces 
-    de bord fluide de couleur 2 et 3
+If coupling with SYRTHES applies, (only one fluid simulation coupled
+  with only one solid simulation), the variable COMMANDE_SYRTHES
+  is used. When there is no coupling, COMMANDE_SYRTHES is left empty.
+  In the following example, the fluid boundary faces of color 2 and 3
+    are coupled: 
 
     COMMANDE_SYRTHES="-syrthes -color 2 3"
 
-  Pour des couplages plus complexes, le script devra etre adapte. 
+  For more complex (multiple) couplings, the script will have to be changed.
 
                -------------------------------
 
-Le nom d'un eventuel fichier de donnees thermochimie peut etre 
-    fourni dans DONNEES_THERMOCHIMIE. Par exemple : 
-      DONNEES_THERMOCHIMIE="dp_FCP"
+If thermochemistry applies, the name of the thermochemistry data file
+  may be specified through DONNEES_THERMOCHIMIE. For example:
+    DONNEES_THERMOCHIMIE="dp_FCP"
 
                -------------------------------
 
-Le nom de fichiers de donnees utilisateur supplementaires a utiliser 
-    peut etre fourni dans FICHIERS_DONNEES_UTILISATEUR
-    Ces fichiers sont supposes etre dans le repertoire DATA
+
+User input files can be specified with the FICHIERS_DONNEES_UTILISATEUR
+  variable (left empty if none are used) and the files are located in DATA.
+ 
+               -------------------------------
+
+User output files to retrieve can be specified with
+FICHIERS_RESULTATS_UTILISATEUR.
 
                -------------------------------
 
-Le nom de fichiers resultats utilisateur supplementaires a rapatrier 
-    peut etre fourni dans FICHIERS_RESULTATS_UTILISATEUR
+The NOMBRE_DE_PROCESSEURS option defines the number of MPI processes to use
+  (ideally equal to the physical number of processors or cores, but this
+  is not mandatory). If the variable is left empty, it is determined
+  automatically (for PC's or workstations, NOMBRE_DE_PROCESSEURS is set to 1
+  and for clusters or supercomputers, it is set to the number of processors
+  reserved for the batch job).
+  When running a calculation through a batch system, it is not recommended
+  to force NOMBRE_DE_PROCESSEURS to a value different from the number of
+  processors required for the batch job, as oversubscribing may lead to
+  strongly degraded performance (and may even fail depending on the system's
+  mpi policy), and under-subscribing means reserving unused processors.
+  When running the script interactively (such as on a Linux PC),
+  NOMBRE_DE_PROCESSEURS may be set to a lower value than the number of
+  physical processors (to limit system load), or to a higher value
+  (usually for testing, as this reduces performance).
+  When coupling with SYRTHES using MPI, one process/processor is reserved
+  for SYRTHES, so the number of processors used for the kernel is
+  equal to nproc_noy = NOMBRE_DE_PROCESSEURS - 1.
+
+
+If we wish to specify distant machines (or are running on a cluster
+  with no batch system), the optional LISTE_PROCESSEURS string may be defined.
+  Running on multiple processors not reserved for this task is not recommended,
+  as load imbalance due to 1 processor running multiple jobs is enough to
+  degrade the performance for the whole job. Also, running in parallel without
+  a high performance network will lead to low performance (low latency being
+  even more important than high bandwidth).
+  Two simple examples:
+    LISTE_PROCESSEURS="machine1 cpu=nb_cpu1 user=userid1 & machine2 cpu=nb_cpu2 user=userid2"
+    LISTE_PROCESSEURS="machine1 & machine2"
+  The & separates 2 machines in the list. Fields are as follows: 
+    machine1 and machine2 indicate machine names (as given by the
+      hostname command).
+      for example: chi80xx.der.edf.fr 
+    nb_cpu1 and nb_cpu2 indicate the number of processors on hosts
+      machine1 and machine2
+      for example, on a dual-processor machine: cpu=2 
+    userid1 and userid2 indicate the user's login on  machine1 and machine2 
+  Fields cpu= and user= are optional.  
+  The machine from which the script is run will automatically be used with
+  most MPI environments. 
+  Selected machines must use a shared filesystem (at least NFS) and all
+  be of the same general OS and architecture type.
 
                -------------------------------
 
-L'option NOMBRE_DE_PROCESSEURS donne le nombre de processeurs (virtuels)
-    a utiliser. Si la variable est laissee vide, le script la remplit
-    automatiquement (pour les PC ou stations de travail NOMBRE_DE_PROCESSEURS
-    est mis a 1, pour les clusters il correspond au nombre de processeurs
-    reserves dans la carte ci-dessus).
-    En cas de calcul a travers un gestionnaire de queue (CCRT ou cluster)
-    NOMBRE_DE_PROCESSEURS est idealement egal au nombre de processeurs reels
-    reserves dans les cartes ci-dessus. Il doit imperativement etre inferieur
-    a ce nombre (un seul executable par processeur).
-    Dans le cas d'un calcul en interactif (type calcul sur PC Linux),
-    NOMBRE_DE_PROCESSEURS peut depasser le nombre de processeurs disponibles
-    sur la machine (mais perte d'efficacite).
-    Dans le cas d'un couplage avec SYRTHES a travers un gestionnaire de queue, 
-    un processeur sera reserve pour SYRTHES et le nombre de processeurs utilises
-    par le noyau sera donc egal a nproc_noy = NOMBRE_DE_PROCESSEURS-1.
-    
+The CS_TMP_PREFIX variable allows the user to specify in which temporary
+  directory the calculation will run. If left empty, a default directory
+  will be used (architecture dependent). If a value is specified,
+  the temporary directory will be:
+    RUN=$CS_TMP_PREFIX/tmp_Saturne/$STUDY.$CASE.$DATE
 
-
-Si l'on souhaite specifier des machines distantes, on peut completer  
-      la chaine optionnelle LISTE_PROCESSEURS. 
-    Ce n'est pas recommande car les performances du reseau sont 
-      generalement tres mauvaises.
-    Deux exemples simples :
-    LISTE_PROCESSEURS="machine1 cpu=nb_cpu1 user=userid1 & machine2 cpu=nb_cpu2 user=userid2")
-    LISTE_PROCESSEURS="machine1  & machine2")
-    Le & separe deux machines. Les champs sont les suivants : 
-      machine1 et machine2 designent le nom des machines 
-         (obtenu par la commande hostname) 
-         par exemple : chi80xx.der.edf.fr 
-      nb_cpu1 et nb_cpu2 designent le nombre de processeurs des 
-         machines machine1 et machine2 
-         par exemple, sur un pc biprocesseur : cpu=2 
-      userid1 et userid2 designent le login de l'utilisateur sur les
-         machines machine1 et machine2 
-    Les informations cpu= et user= sont optionnelles.  
-    La machine courante (celle depuis laquelle est execute le script)
-      sera obligatoirement utilisee. 
-    Les machines selectionnees doivent etre en nfs et de la meme 
-      architecture (toutes HP ou toutes IRIX, toutes Linux...).
+Specifying CS_TMP_PREFIX may be useful for example on a workstation so
+  as to use a large local disk (CS_TMP_PREFIX=/local00/users/`whoami`
+  for example).
+  Under some batch systems, the default of TMPDIR may be destroyed after
+  each run, so to keep this temporary directory after the run,
+  another value must be specified (CS_TMP_PREFIX=$SCRATCHDIR for example).
 
                -------------------------------
 
-La variable CS_TMP_PREFIX permet a l'utilisateur de specifier le
-    repertoire temporaire utilise pour le calcul. Si CS_TMP_PREFIX est
-    vide, le code utilise le repertoire par defaut (qui depend de
-    l'architecture). Si l'utilisateur a specifie une valeur, le
-    repertoire temporaire sera
-    RUN=$CS_TMP_PREFIX/tmp_Saturne/$ETUDE.$CAS.$DATE
+Options OPTIMISATION and OPTION_LIB_EXT are more advanced, mainly
+  for developers.
 
-Specifier CS_TMP_PREFIX peut etre utile par exemple sur station pour
-    profiter de la presence d'un disque local de grande capacite
-    CS_TMP_PREFIX=/local00/users/`whoami` (par exmple)
-    Sur Nickel/Chrome, le repertoire par defaut est TMPDIR, detruit
-    automatiquement apres chaque execution. Si l'utilisateur a besoin*
-    de conserver le repertoire temporaire apres execution (debugage)
-    il doit aussi changer CS_TMP_PREFIX
-    (CS_TMP_PREFIX=$SCRATCHDIR par exemple)
+  OPTIMISATION allows selecting the optimization level
+    (LO, DBG, EF, PROF, ...). By default, standard Code_Saturne choices
+    are used. This parameter may be used to used debug or profiling
+    libraries, or libraries built without optimization.
+    For production runs, this should be left empty.
+    A list of possible values for OPTIMISATION and a short explanation
+    is given by makehelp (see OPT=...).
 
-               -------------------------------
+  OPTION_LIB_EXT allows specifying external libraries to link. In this
+    case, the whole option to pass to the linker must be given.
+    For example:
+    OPTION_LIB_EXT="-L/home/saturne/opt/foo/lib -lfoo"
 
-Les options OPTIMISATION, LISTE_LIB_SAT et OPTION_LIB_EXT sont 
-    des options plus avancees, a usage des developpeurs.
-
-  OPTIMISATION permet de specifier l'optimisation selectionnee 
-    (LO, DBG, EF, PROF, PUR...). Par defaut, les choix
-    standards de Code_saturne sont utilises. Ce parametre est 
-    surtout utile en developpement pour utiliser les bibliotheques
-    sans optimisation, en debug, etc. Il est donc conseille de 
-    conserver la valeur par defaut (chaine vide).
-    Ce mot cle est ignore si LISTE_LIB_SAT n'est pas vide.
-    Une liste des valeurs d'OPTIMISATION et une explication est
-    fournie par makehelp (voir OPT=).
-
-  LISTE_LIB_SAT permet de specifier la liste exhaustive des 
-    bibliotheques de Code_saturne a utiliser lors de l'edition des
-    liens. Par defaut, les bibliotheques de tous les modules sont 
-    prises en compte. Ce parametre est surtout utile en 
-    developpement. Il est donc conseille de conserver la valeur 
-    par defaut (chaine vide). Exemple : 
-      LISTE_LIB_SAT="libsaturneBASE.a libsaturneCFBL.a libsaturneCOGZ.a \
-                     libsaturneCPLV.a libsaturneELECDBG.a libsaturneFUEL.a \
-                     libsaturneLAGR.a libsaturneRAYT.a libsaturneMATI.a"
-    Ce mot cle est prioritaire sur OPTIMISATION.
-    Une explication est fournie par makehelp (voir MOD=).
-
-  OPTION_LIB_EXT permet de specifier des librairies externes a
-    rajouter pour l'edition des liens. Dans ce cas, il faut
-    specifier l'integralite de la commande a passer au linker.
-    Par exemple :
-    OPTION_LIB_EXT="-L/home/saturne/opt/bidon/lib -lbidon"
-
-  VALGRIND permet de lancer le noyau avec VALGRIND si 
-    ce software de verification de la memoire est disponible (en 
-    pratique sous Linux). Pour l'activer :   
+  VALGRIND enables running of the Kernel through Valgrind if this
+    memory-checking tool is available (usually under Linux) To
+    activate it:
       VALGRIND=valgrind
-    avec eventuellement des options specifiques, comme par exemple
+    possibly with specific options, such as for example
       VALGRIND="valgrind --tool=memcheck"
-    Dans le cas ou valgrind n'est pas trouve automatiquement dans 
-    le PATH, specifier le chemin d'acces complet.
+    If valgrind is not in the PATH, its full path must be specified.
 
-  ARG_CS_VERIF permet d'activer des tests elementaires sur la
-    qualite du maillage et sur les performances de la machine.
-    ="-q 0" : criteres de qualite du maillage
-    ="-q 1" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=0
-    ="-q 2" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=1
-    ="-q 3" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=2
-    ="-q 4" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=3
-    ="-q 5" : test de calcul du gradient de sin(x+2y+3z) en IMRGRA=4
-    ="--benchmark" : performances des operations elementaires
-    ="--benchmark --mpitrace" : idem que benchmark avec operations
-                                effectuees une seule fois pour traces
-                                MPI legeres
-    En mode de verification, le code ne necessite aucun fichier
-    parametrique ni aucun sous-programme utilisateur.
+  ARG_CS_VERIF allows activation of elementary mesh quality tests,
+    as well as basic linear algebra operations micro-benchmarks.
+    ="-q 0" : mesh quality criteria
+    ="-q 1" : test precision of gradient for sin(x+2y+3z) with IMRGRA=0
+    ="-q 2" : test precision of gradient for sin(x+2y+3z) with IMRGRA=1
+    ="-q 3" : test precision of gradient for sin(x+2y+3z) with IMRGRA=2
+    ="-q 4" : test precision of gradient for sin(x+2y+3z) with IMRGRA=3
+    ="-q 5" : test precision of gradient for sin(x+2y+3z) with IMRGRA=4
+    ="--benchmark": basic linear algebra operation benchmark
+    ="--benchmark --mpitrace" : same as benchmark, with operations run
+                                only once, for use with MPI trace tools.
+    In mesh quality or benchmark mode, no parameter file or user
+    subroutine is needed.
 
-  ARG_CS_OUTPUT permet de gerer les redirections de listings. 
-    L'option "--log" permet de choisir la redirection des sorties
-    pour un calcul monoprocesseur ou pour le processeur de rang 0
-    d'un calcul en parallele.
-    "--log 0" sorties dirigees vers la sortie standard
-    "--log 1" sorties redirigees vers un fichier "listing"
-      (comportement par defaut)
-    L'option "--logp n" permet de choisir la redirection des sorties
-    pour les processeurs de rang 1 a N-1 d'un calcul en parallele sur
-    N processeurs :
-    "--logp -1" shunte les sorties des processeurs de rang superieur a 1
-      (comportement par defaut)
-    "--logp 0" ne fait aucune redirection. Toutes les impressions vont
-      vers la sortie standard (utile en debugage si chaque processeur
-      tourne dans un terminal different)
-    "--logp 1" redirige les sorties des processeurs de rang 1 a N-1 vers
-      les fichiers listing_n0002 a listing_n<N>.
-    Les options --log et --logp peuvent etre specifiees separement ou
-    ou ensemble dans la variable ARG_CS_OUTPUT.
+  ARG_CS_OUTPUT allows redirection of output. 
+    The "--log" option allows redirecting output for a single-processor
+    run or for rank 0 of a parallel run.
+    "--log 0" output redirected to standard output
+    "--log 1" output redirected to a "listing" file (default behavior)
+    The "--logp" option allows redirection of output for ranks 1 to n-1
+    for a parallel run on n processors:
+    "--logp -1" turns off output for ranks > 0 (default behavior)
+    "--logp 0" sends all output to the standard output (useful if every
+      rank is associated to a different console, such as when running
+      under a debugger).
+    "--logp 1" redirects all output from ranks 1 to n-1 to files
+      listing_n0002 to listing_n<N>.
+    Options --log and --logp may be specified together or separately
+    through the ARG_CS_OUTPUT variable.
 
-  ECHOCOMM permet de faire afficher les echanges preprocesseur noyau 
-    SYRTHES. Utile uniquement en cas de probleme de communication. 
-    Si on souhaite activer cette possibilite, on affecte 
-    une valeur entiere strictement positive a ECHOCOMM. A chaque 
-    communication, on affichera les ECHOCOMM premiers et derniers 
-    elements du message (caracteres, entieres, reels).
-    Par defaut, on conserve la chaine vide. 
-    Exemple d'activation raisonnable : 
+  ECHOCOMM allows for echo of communications between the kernel,
+    and SYRTHES 3. This is only useful when debugging a coupled
+    calculation. To activate this options, assign a strictly positive
+    value to ECHOCOMM. For each message exchanged, the ECHOCOMM first
+    and last values will be printed (characters, integers, or doubles).
+    By default, the string is kept empty. 
+    Reasonable activation value: 
       ECHOCOMM="10"
 
-  PILOTAGE_ADAPTATION permet d'utiliser les fonctionnalites d'adaptation
-    de maillage, en couplage avec le logiciel HOMARD.
-    Si la variable est absente, ou si elle est vide, c'est un calcul
-    sans adaptation.
-    Pour activer l'adaptation, on remplira cette variable PILOTAGE_ADAPTATION
-    avec le nom du fichier contenant les directives de pilotage.
-    Pour connaitre la syntaxe de ce fichier de pilotage, on fera :
-    PILOTAGE_ADAPTATION=-help et on lancera ce script lance.
-    CETTE FONCTIONNALITE EST ENCORE EN DEVELOPPEMENT
+  PILOTAGE_ADAPTATION allows use of mesh adaptation with the HOMARD
+    tool. If the variable is absent or empty, no adaptation occurs.
+    To activate adaptation, PILOTAGE_ADAPTATION will contain the name of
+    a file containing adaptation directives. To obtain the syntax of
+    this file, use PILOTAGE_ADAPTATION=help and run the script.
+    THIS FUNCTIONALITY IS NOT YET IN PRODUCTION

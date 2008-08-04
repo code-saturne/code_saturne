@@ -31,7 +31,7 @@
 #============================================================================
 #
 #=================================================
-#     Aide Code_Saturne
+#     Code_Saturne help
 #=================================================
 #
 
@@ -47,8 +47,8 @@
  NO=`tput rmso ; tput sgr0`
 
 #
-# Fonction : exit
-# ===============
+# Function: exit
+# ==============
 
  local_exit()
  {
@@ -58,8 +58,8 @@
  }
 
 #
-# Fonction : Message d'erreur avec sortie
-# =======================================
+# Function: error message with exit
+# =================================
 
  sortie()
  {
@@ -74,8 +74,8 @@
 
 
 #
-# Fonction utilisation
-# ====================
+# Function: usage
+# ===============
 
  usage() {
     echo
@@ -111,7 +111,7 @@
    local_exit
  fi
 
-# On teste l'existence de gv et xpdf
+# Test if xpdf or acroread exists
 isthere=`which xpdf 2>/dev/null |wc -w`
 if [ $isthere -eq 1 ] ; then
   acroread=xpdf
@@ -122,8 +122,7 @@ fi
 
  topic=$1
  if   [ "$topic" = "version" ] ; then 
-# determination du repertoire ou se trouve info_cs (ie du repertoire sur lequel pointe PATH)
-   whichINFOCS=`which info_cs |grep -v "vous etes sur"`
+   whichINFOCS=`which info_cs`
    varPATH=$whichINFOCS
    varPATH=`dirname  $varPATH`
    varPATH=`dirname  $varPATH`

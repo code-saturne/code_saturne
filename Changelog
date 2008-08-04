@@ -1,3 +1,26 @@
+* 04/08/2008 - Charles Moulinec <cmoulinec@dl.ac.uk>
+               Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  English translation of all the scripts
+  modified scripts:
+    bin/compiler_version
+    bin/cree_sat
+    bin/cs_profile
+    bin/info_cs
+    bin/lance
+    bin/lance_install
+    bin/lance.help
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_CCRT.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux_x86_64.mk
+    bin/rang_mpi.sh
+    bin/SaturneGUI
+
 * 04/08/2008 - Mehdi Ouraou <medhi.ouraou@edf.fr>
   Correcting probes output for lagrangian statistics
   modified subroutine:

@@ -29,10 +29,10 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour Linux
-############################################
+# Macros for Makefile under Linux x86
+#####################################
 #
-# Macro pour BFT
+# Macros for BFT
 #---------------
 
 BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
@@ -40,7 +40,7 @@ BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 
-# Macro pour FVM
+# Macros for FVM
 #---------------
 
 FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
@@ -48,64 +48,64 @@ FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
 
-# Macro pour MPI
+# Macros for MPI
 #---------------
 
-# Option MPI
+# MPI support
 MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# Pour Open MPI sur saturne
+# For Open MPI on saturne
 MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux
-MPI_INC         =-isystem$(MPI_HOME)/include
+MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
-# Macro pour Sockets
+# Macros for Sockets
 #-------------------
 
-# Option Socket
+# Sockets support
 SOCKET          =1
 SOCKET_INC      =
 SOCKET_LIB      =
 
-# Macro pour XML
+# Macros for XML
 #---------------
 
-# Option XML
+# XML support
 XML             =1
 
 XML_HOME = /home/saturne/opt/libxml2-2.6.19
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/Linux/lib -lxml2
+XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
-# Macro pour BLAS
+# Macros for BLAS
 #----------------
 
-# Option BLAS
+# BLAS support
 BLAS            =1
 BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 
-# Macro pour gettext
+# Macros for gettext
 #-------------------
 
-# Option gettext
+# gettext support
 NLS				=0
 
 
-# Preprocesseur
-#--------------
+# Preprocessor
+#-------------
 
 PREPROC         =
 PREPROCFLAGS    =
 
 
-# Compilateur C
-#--------------
+# C compiler
+#-----------
 
 CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gcc
 
@@ -118,14 +118,14 @@ CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3            
+CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3
 CCOMPFLAGSPROF         = -pg
-CCOMPFLAGSVERS         = -v            
+CCOMPFLAGSVERS         = -v
 
 
-# Compilateur FORTRAN 
-#--------------------
+# Fortran compiler
+#-----------------
 #  Profiling gprof : -pg -a
 
 FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux/bin/gfortran
@@ -157,59 +157,52 @@ LDEDLFLAGSVERS  = -v
 LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux/lib:
 
 
-# Positionnement des variables pour le pre-processeur
-#----------------------------------------------------
+# Set preprocessor variables
+#---------------------------
 #
-# _POSIX_SOURCE          : utilisation des fonctions standard POSIX
+# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
+# Libraries to link against
+#--------------------------
 
-# Librairies a "linker"
-#----------------------
-
-# Librairies de base toujours prises en compte
+# Base libraries (always used)
 
 LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread
 
-# Librairies en mode sans option
+# Libraries in production mode
 
 LIBOPT   =
 
-# Librairies en mode optimisation reduite
+# Libraries in reduced optimization mode
 
 LIBLO    =
 
-# Librairies en mode DEBUG
+# Libraries in DEBUG mode
 
 LIBDBG   =
 
-# Librairie en mode ElectricFence (malloc debugger)
+# Library in ElectricFence (malloc debugger) mode
 
 LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
 
-# Liste eventuelle des fichiers a compiler avec des options particulieres
-#------------------------------------------------------------------------
+# Optional lists of files to compile with specific options
+#---------------------------------------------------------
 
-# Sous la forme :
+# In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
 #
+# 70% cpu promav gradrc gradco prodsc
+# 10% cpu jacobi prcpol bilsc2 ;
+#    option O3 recommended for these subroutines
+#    for others, we prefer O2, less risky, but slightly slower
 #
-# paquet 70% cpu promav gradrc gradco prodsc
-# paquet 10% cpu jacobi prcpol bilsc2 ;
-#    prodsc est 4 fois plus rapide en O3 qu'en O2
-#    bilsc2 plus rapide en O1
-#    pour les autres, on privilegie l'O2, qui est suppose plus fiable
-#      mais fait perdre un  peu de temps (2% de perte par rapport a 
-#      gradco O3, gradrc jacobi prcpol promav O5) 
+# The file lists below correspond to different optimization levels
 #
-#  Pour les fortrans, les listes ci-dessous servent a differencier
-#	les options d'optimisation
-#
-#
-#  Temporairement, gradmc en O1 pour eviter un bug d'optim potentiel
-#       avec gcc 3.3.2 (resolu en 3.3.3)
+#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
+#       with gcc 3.3.2 (resolved with 3.3.3)
 #
 
 LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
