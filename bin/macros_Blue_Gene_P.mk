@@ -99,7 +99,7 @@ BLAS_LDFLAGS    =
 #-------------------
 
 # gettext support
-NLS				=0
+NLS                                =0
 
 
 # Preprocessor

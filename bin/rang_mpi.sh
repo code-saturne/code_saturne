@@ -57,7 +57,7 @@ elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
 
 # For MPICH2 (it also provides the mpiexec command)
 elif [ "$PMI_RANK" != "" ] ; then
-  MPI_RANK="$PMI_RANK" 
+  MPI_RANK="$PMI_RANK"
 
 # For Open MPI (it also provides the mpiexec command)
 elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then

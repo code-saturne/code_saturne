@@ -35,7 +35,7 @@
  local_exit()
  {
    tput rmso ; tput sgr0
-   tput init 
+   tput init
    exit
  }
 #
@@ -49,17 +49,17 @@
     echo "   Syntax: ./lance_install                                         "
     echo "       or: ./lance_install <Lib>                                   "
     echo "       or: ./lance_install -<OPT>                                  "
-    echo 
+    echo
     echo "      with:                                                        "
-    echo "      <Lib>: list of libraries (space between them)                " 
-    echo "            either: <MOD> or <MOD>/<OPT>                           " 
+    echo "      <Lib>: list of libraries (space between them)                "
+    echo "            either: <MOD> or <MOD>/<OPT>                           "
     echo "                or:                                                "
-    echo "                <MOD> means $listemodall                           " 
-    echo "                <OPT> means $listeoptall                           " 
-    echo 
+    echo "                <MOD> means $listemodall                           "
+    echo "                <OPT> means $listeoptall                           "
+    echo
     echo "      The default list of libraries (listelib) is                  "
     echo "          $listemoddef                                             "
-    echo 
+    echo
     echo " Examples of syntax:                                               "
     echo "   ./lance_install                                                 "
     echo "   ./lance_install BASE LAGR BASE/DBG                              "
@@ -83,12 +83,12 @@
  {
    dir_sortie=`pwd`
    echo '  ' Directory: ${dir_sortie}
-   echo 
+   echo
    tput bold
    echo '  ' Error : $*
    tput rmso ; tput sgr0
    tput init
-   echo 
+   echo
    local_exit
  }
 #
@@ -99,12 +99,12 @@
  banner()
  {
    tput bold
-   echo 
+   echo
    echo '   ' $1
    shift
    echo '   ' $1
    shift
-   if [ "$*" != "" ] ; then 
+   if [ "$*" != "" ] ; then
      echo '   ' $*
    fi
    echo '       ==================================================================  '
@@ -123,7 +123,7 @@
    shift
    echo '   ' $1
    shift
-   if [ "$*" != "" ] ; then 
+   if [ "$*" != "" ] ; then
      echo '   ' $*
    fi
    echo
@@ -138,7 +138,7 @@
  titre()
  {
    tput smso
-   echo 
+   echo
    echo ' ***' $*
    tput rmso ; tput sgr0
    tput init
@@ -169,7 +169,7 @@
 # Function: Infos concerning the compilation
 # ==========================================
 #
-# Generate the infos about the compiler, the userid, the date ... 
+# Generate the infos about the compiler, the userid, the date ...
 #   Give the file name to be created in argument
 #   Give the macro file name containing the options
 #
@@ -201,14 +201,14 @@ Macro_readme_comp=$2
              >> $Fic_readme_comp || exit create $Fic_readme_comp
   echo ' Compilers: '                                          \
              >> $Fic_readme_comp || exit create $Fic_readme_comp
-# subdirectory to fool the Makefile, so that it does not build up a library. 
+# subdirectory to fool the Makefile, so that it does not build up a library.
   wrk=wrk_compiler_version
-  mkdir $wrk 
-  cd $wrk 
+  mkdir $wrk
+  cd $wrk
   ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME}               \
                                   -nomarch ${NOM_ARCH}             \
         -output $Fic_readme_comp || exit create $Fic_readme_comp
-  cd .. 
+  cd ..
   rm -rf $wrk
   echo '------------------------------------------------'          \
              >> $Fic_readme_comp || exit create $Fic_readme_comp
@@ -246,7 +246,7 @@ Macro_readme_comp=$2
 # Help
 # ====
 #
- case $1 in 
+ case $1 in
    -help|-h) usage ; local_exit
  esac
 #
@@ -292,7 +292,7 @@ Macro_readme_comp=$2
 # =================================
 #
  listeopt=""
- if [ "$*" != "" ] ; then 
+ if [ "$*" != "" ] ; then
    listeopt="$*"
  fi
 #
@@ -300,34 +300,34 @@ Macro_readme_comp=$2
  clean="yes"
  listeopt1=""
  for opt in $listeopt ; do
-   if [ "$opt" != "-nc" ] ; then 
-     if [ -z "${listeopt1}" ] ; then 
+   if [ "$opt" != "-nc" ] ; then
+     if [ -z "${listeopt1}" ] ; then
        listeopt1="$opt"
      else
        listeopt1="${listeopt1} $opt"
      fi
    else
      clean="no"
-   fi 
- done 
+   fi
+ done
  listeopt="${listeopt1}"
 #
-# determination of mod and opt 
- listelib=""    
+# determination of mod and opt
+ listelib=""
  if [ -z "${listeopt}" ] ; then
-   for mod in $listemoddef ; do 
+   for mod in $listemoddef ; do
      listelib="$listelib $mod"
    done
    listelib="$listelib LINK"
  else
    for opt in $listeoptall ; do
      if [ "$listeopt" = "-$opt" ] ; then
-       for mod in $listemoddef ; do 
+       for mod in $listemoddef ; do
          listelib="$listelib $mod/$opt"
        done
        listelib="$listelib LINK/$opt"
      fi
-   done 
+   done
  fi
  if [ -z "${listelib}" ] ; then
    listelib="${listeopt}"
@@ -336,35 +336,35 @@ Macro_readme_comp=$2
 # Check
 # =====
 #
- for var in $listelib ; do 
+ for var in $listelib ; do
 #
 # library modverif/optverif
    optverif=`basename "$var"`
    modverif=`dirname  "$var"`
-   if   [ "$modverif" = "." ] ; then 
+   if   [ "$modverif" = "." ] ; then
      modverif=$optverif
      optverif=""
    fi
 #
 # Is modverif known?
    okmod="no"
-   for mod in $listemodall ; do 
-     if [ "$modverif" = "$mod" ] ; then 
+   for mod in $listemodall ; do
+     if [ "$modverif" = "$mod" ] ; then
        okmod="yes"
      fi
    done
-   if [ "$modverif" = "LINK" ] ; then 
+   if [ "$modverif" = "LINK" ] ; then
      okmod="yes"
    fi
 #
 # Is optverif known?
-   if [ "$optverif" != "" ] ; then 
+   if [ "$optverif" != "" ] ; then
      okopt="no"
-     for opt in $listeoptall ; do 
-       if [ "$optverif" = "$opt" ] ; then 
+     for opt in $listeoptall ; do
+       if [ "$optverif" = "$opt" ] ; then
          okopt="yes"
        fi
-     done 
+     done
    fi
 #
    if [ "$okmod" = "no" ] ; then
@@ -392,16 +392,16 @@ Macro_readme_comp=$2
  repbase=${CS_HOME}
  reptrav=`pwd`
  repprec=`dirname $reptrav`
- if [ $repbase != $repprec ] ; then 
-   if [ $repbase = "" ] ; then 
+ if [ $repbase != $repprec ] ; then
+   if [ $repbase = "" ] ; then
      sortie "The variable CS_HOME has to be properly initialised"
    else
      sortie "The installation has to be launched from CS_HOME/bin = ${CS_HOME}/bin"
    fi
  fi
- if [ ! -d ${CS_HOME} ] ; then 
+ if [ ! -d ${CS_HOME} ] ; then
    sortie "${CS_HOME} does not exist"
- fi 
+ fi
 #
  titre "The initial directory is CS_HOME = ${CS_HOME}"
 #
@@ -414,7 +414,7 @@ Macro_readme_comp=$2
 #
 #
 #=========================================================================
-#                        Installation 
+#                        Installation
 #=========================================================================
 #
 #
@@ -424,10 +424,10 @@ Macro_readme_comp=$2
  cd ${CS_HOME}  || sortie  "The ${CS_HOME} directory can not be reached"
 #
  build=build
- if [ ! -d $build ] ; then 
+ if [ ! -d $build ] ; then
    mkdir $build
  fi
- if [ ! -d $build/${NOM_ARCH} ] ; then 
+ if [ ! -d $build/${NOM_ARCH} ] ; then
    mkdir $build/${NOM_ARCH}
  fi
 #
@@ -441,7 +441,7 @@ Macro_readme_comp=$2
 # General loop
 # ============
 #
- for dirlib in $listelib ; do 
+ for dirlib in $listelib ; do
 #
    titre "Construction of $dirlib under ${NOM_ARCH}"
 #
@@ -453,41 +453,41 @@ Macro_readme_comp=$2
    info "Generation of the $dirlib directory"
 #
    modtrav=`echo $dirlib |cut -f1 -d"/"`
-   if [ $modtrav = $dirlib ] ; then 
+   if [ $modtrav = $dirlib ] ; then
      opttrav=""
    else
      opttrav=`echo $dirlib |cut -f2 -d"/"`
    fi
 #
-   if [ ! -d $modtrav ] ; then 
+   if [ ! -d $modtrav ] ; then
      mkdir $modtrav
    fi
-   if [ ! -d $modtrav/$opttrav ] ; then 
+   if [ ! -d $modtrav/$opttrav ] ; then
      mkdir $modtrav/$opttrav
    fi
 #
-   cd $dirlib || sortie  "The $dirlib directory can not be reached" 
+   cd $dirlib || sortie  "The $dirlib directory can not be reached"
 #
 #
    info "Link to the Makefile"
 #
-   if [ ! -f Makefile ] ; then 
+   if [ ! -f Makefile ] ; then
      ln -s ${CS_HOME}/bin/Makefile . || sortie  "The Makefile already exists or ${CS_HOME}/bin/Makefile can not be reached"
-   else 
+   else
      info "Makefile already exists, and links on "
      ls -al ${CS_HOME}/bin/Makefile | awk '{print $NF}'
    fi
-# 
+#
    info "Start of make with MOD=$modtrav OPT=$opttrav"
 #
    if [ "${modtrav}" != "LINK" ] ; then
-     if   [ "${opttrav}" = "" ] ; then 
+     if   [ "${opttrav}" = "" ] ; then
        make lib_install MOD="$modtrav"                || sortie "make lib_install MOD=$modtrav failed"
      else
        make lib_install MOD="$modtrav" OPT="$opttrav" || sortie "make lib_install MOD=$modtrav OPT=$opttrav failed"
      fi
    else
-     if   [ "${opttrav}" = "" ] ; then 
+     if   [ "${opttrav}" = "" ] ; then
        make saturne                || sortie "make saturne failed"
        if [ `uname` = "Linux" ] ; then
          make link_shared          || sortie "make lib_shared failed"
@@ -508,16 +508,16 @@ Macro_readme_comp=$2
      fi
    fi
 #
-   info "Generation of the summary file" 
+   info "Generation of the summary file"
 #
    readme=.readme${modtrav}${opttrav}
-   cree_readme_comp `pwd`/$readme ${CS_HOME}/bin/macros_${NOM_ARCH}.mk 
+   cree_readme_comp `pwd`/$readme ${CS_HOME}/bin/macros_${NOM_ARCH}.mk
    cat $readme >> ${CS_HOME}/arch/${NOM_ARCH}/lib/$readme   || sortie  "writing of the summary file failed"
 #
    info "Cleaning with MOD=$modtrav OPT=$opttrav"
 #
-   if [ "${clean}"   = "yes" ] ; then 
-     if [ "${opttrav}" = "" ] ; then 
+   if [ "${clean}"   = "yes" ] ; then
+     if [ "${opttrav}" = "" ] ; then
        make clean MOD="$modtrav"              || sortie "make clean MOD=$modtrav failed"
      else
        make clean MOD="$modtrav" OPT="$opttrav" || sortie "make clean MOD=$modtrav OPT=$opttrav failed"
@@ -558,7 +558,7 @@ grp \
 info_cs \
 lance_install \
 rang_mpi.sh"
- for fich in $listebin  ; do 
+ for fich in $listebin  ; do
    chmod    u+x bin/$fich
  done
 # Files readable and executable by all
@@ -572,14 +572,14 @@ gracehst \
 grp \
 info_cs \
 rang_mpi.sh"
- for fich in $listebin  ; do 
+ for fich in $listebin  ; do
    chmod   g+x,o+x bin/$fich
  done
 # Executable files in aux
  listeaux="rmb.sh \
 rmb.sh_lance \
 clean"
- for fich in $listeaux  ; do 
+ for fich in $listeaux  ; do
    chmod    u+x aux/$fich
  done
 # Executable files in arch

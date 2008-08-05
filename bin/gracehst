@@ -26,36 +26,36 @@
 #
 #============================================================================
 #
-if [ "$1" = "-h" ] ; then 
-echo ' ' 
+if [ "$1" = "-h" ] ; then
+echo ' '
 echo ' gracehst: runs grace -nxy on a Code_Saturne time         '
 echo '       monitoring file (chronological records) after      '
 echo '       removing the first column (in order to have        '
 echo '       physical time on the X axis).                      '
-echo '                                                          '  
+echo '                                                          '
 echo ' help: gracehst -h                                        '
-echo '                                                          '  
+echo '                                                          '
 echo ' examples:                                                '
-echo '                                                          '  
+echo '                                                          '
 echo '   for a time monitoring file VelocitU.hst                '
 echo '           gracehst VelocitU.hst                          '
-echo '                                                          '  
+echo '                                                          '
 echo '   for a series of files *.hst                            '
 echo '           for fic in *.hst ; do                          '
 echo '             gracehst $fic                                '
 echo '           done                                           '
 echo '                                                          '
-echo ' ' 
+echo ' '
 exit
 fi
 
 hst=$1
 tmp=/tmp/$hst.gracehstmod
-if [ -f $tmp ] ; then 
-  echo $tmp existe : stop 
+if [ -f $tmp ] ; then
+  echo $tmp existe : stop
   exit
 fi
 
-grep -v '#' $hst  | cut -c9- > $tmp 
-xmgrace -geometry 1100x850 -nxy $tmp 
+grep -v '#' $hst  | cut -c9- > $tmp
+xmgrace -geometry 1100x850 -nxy $tmp
 rm -f $tmp

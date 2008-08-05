@@ -90,7 +90,7 @@ BLAS_LDFLAGS    =-lcblas -latlas
 #-------------------
 
 # gettext support
-NLS				=0
+NLS                                =0
 
 
 # Preprocessor
@@ -108,7 +108,7 @@ CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gcc
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
                          -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
+                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2

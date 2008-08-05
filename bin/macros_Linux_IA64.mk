@@ -83,13 +83,13 @@ BLAS            =1
 BLAS_HOME       =/applications/intel/cmkl/9.0.018
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_MKL
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/64 -lmkl -lmkl_blacs_intelmpi20 -lmkl_ipf -lguide -lpthread 
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/64 -lmkl -lmkl_blacs_intelmpi20 -lmkl_ipf -lguide -lpthread
 
 # Macros for gettext
 #-------------------
 
 # gettext support
-NLS				=0
+NLS                                =0
 
 
 # Preprocessor
@@ -105,14 +105,14 @@ PREPROCFLAGS    =
 CCOMP                  = mpicc
 
 CCOMPFLAGSDEF          = -fpic -std=c99 -strict-ansi -Wall -Wcheck -Wmissing-prototypes \
-	            		 -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith \
-            			 -mtune=itanium2-p9000
+                                     -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith \
+                                     -mtune=itanium2-p9000
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O2
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3
-CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1            
+CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
 CCOMPFLAGSPROF         = -p
 CCOMPFLAGSVERS         = -V

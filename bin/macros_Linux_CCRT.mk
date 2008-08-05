@@ -90,7 +90,7 @@ BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas -lg2c
 #-------------------
 
 # gettext support
-NLS				=0
+NLS                                =0
 
 
 # Preprocessor
@@ -108,11 +108,11 @@ CCOMP                  = mpicc
 #CCOMPFLAGSDEF          = -Xa -Ktrap=fp   Bug compilateur PGI 6.2 si -Ktrap en meme temps que fastsse
 CCOMPFLAGSDEF          = -Xa
 
-CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O1 
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse  
+CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O1
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2 -fast -fastsse
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O1
-CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0            
+CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
 CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -Mbounds
 CCOMPFLAGSPROF         = -pg
 CCOMPFLAGSVERS         = -V

@@ -86,7 +86,7 @@ BLAS_LDFLAGS    =
 #-------------------
 
 # gettext support
-NLS				=0
+NLS                                =0
 
 
 # Preprocessor
@@ -104,7 +104,7 @@ CCOMP                  = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpicc
 CCOMPFLAGSDEF          = -ansi -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
                          -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
+                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
