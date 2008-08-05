@@ -572,33 +572,8 @@ if [ $EXEC_MODE != pre_traitement ] ; then
 
   if [ $SYRTHES_COUPLING = yes ] ; then
 
-    echo
-    echo  "  **********************************************************"
-    echo  "   Compilation of the user subroutines and link of SYRTHES"
-    echo  "  **********************************************************"
-
-    cur_dir=`pwd`
-    mkdir src_syrthes
-    cd src_syrthes
-    for f in $SRC_SYR/*.[F,c,h] ; do
-      if [ -f $f ] ; then
-        cp ${f} .
-      fi
-    done
-    ln -s $SYRCS_HOME/bin/Makefile .
-    make syrthes NOM_ARCH=${NOM_ARCH} 2>>$cur_dir/compil.log 1>&2
-    if [ $? -ne 0 ]
-    then
-      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
-      echo "COMPILE OR LINK ERROR"
-      rm -f *.o
-      exit 1
-    else
-      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
-    fi
-    make clean
-    mv syrthes $cur_dir/
-    cd $cur_dir
+    ${CS_HOME}/bin/runcase_syrthes -compile -src-syr=${SRC_SYR} \
+      -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log
 
   fi
 
@@ -686,94 +661,7 @@ if [ $EXEC_MODE != pre_traitement ] ; then
   #
   if [ $SYRTHES_COUPLING = yes ] ; then
     #
-    cp $DATA_SYR/$SYRTHES_ENV  .
-    #
-    # Extract information from the syrthes.env file and build a local copy
-    # in which all files are local. The initial file is backed-up so that
-    # it may be copied with results afterwards.
-    #
-    cp $SYRTHES_ENV  $SYRTHES_ENV.save
-    #
-    AMONT_SYR=`grep "AMONT :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-    AVAL_SYR=` grep "AVAL :"  $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-    SUITE_SYR=`grep "SUITE :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-    SYRTHES_DATA=`grep "DONNEES DU CALCUL :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_GEOM=`grep "GEOMETRIE SOLIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_SUIT=`grep "SUITE SOLIDE RESU :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_DATA_RAY=`grep "DONNEES POUR LE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_MAIL_RAY=`grep "MAILLAGE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_CORR=`grep "STOCKAGE DES CORRESPONDANTS :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_FFOR_RAY=`grep "FACTEURS DE FORME RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_CORR_RAY=`grep "STOCKAGE DES CORRESPONDANTS RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_RES1=`grep "RESU SYRTHES 1 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_RES2=`grep "RESU SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_CHR2=`grep "CHRONO SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_HIST=`grep "HISTORIQUE SOLIDE RESULTAT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_MAIL_PEAU_FLUIDE=`grep "MAILLAGE PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_RESU_PEAU_FLUIDE=`grep "RESULTATS PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_CHR_PEAU_FLUIDE=`grep "CHRONO PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_MAIL_RAY=`grep "MAILLAGE DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_RESU_RAY=`grep "RESULTATS DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_CHR_RAY=`grep "CHRONO DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_AVAL_HIST_RAY=`grep "HISTORIQUE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    sed -e "s/:.*\//: /"              $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
-    sed -e "s/AMONT :.*/AMONT : .\//" $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
-    sed -e "s/AVAL :.*/AVAL : .\//"   $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
-    sed -e "s/SUITE :.*/SUITE : .\//" $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
-    #
-    # if empty, we use default names for results:
-    if [ -z "$SYRTHES_CORR" ] ; then
-      SYRTHES_CORR="corresp"
-    fi
-    if [ -z "$SYRTHES_CORR_RAY" ] ; then
-      SYRTHES_CORR_RAY="corresp_ray"
-    fi
-    if [ -z "$SYRTHES_FFOR_RAY" ] ; then
-      SYRTHES_FFOR_RAY="fdf_ray"
-    fi
-    if [ -z "$SYRTHES_AVAL_RES1" ] ; then
-      SYRTHES_AVAL_RES1="geoms"
-    fi
-    if [ -z "$SYRTHES_AVAL_RES2" ] ; then
-      SYRTHES_AVAL_RES2="resus"
-    fi
-    if [ -z "$SYRTHES_AVAL_CHR2" ] ; then
-      SYRTHES_AVAL_CHR2="chronos"
-    fi
-    if [ -z "$SYRTHES_AVAL_HIST" ] ; then
-      SYRTHES_AVAL_HIST="histos"
-    fi
-    if [ -z "$SYRTHES_AVAL_MAIL_PEAU_FLUIDE" ] ; then
-      SYRTHES_AVAL_MAIL_PEAU_FLUIDE="geomf_ef"
-    fi
-    if [ -z "$SYRTHES_AVAL_RESU_PEAU_FLUIDE" ] ; then
-      SYRTHES_AVAL_RESU_PEAU_FLUIDE="resuf_ef"
-    fi
-    if [ -z "$SYRTHES_AVAL_CHR_PEAU_FLUIDE" ] ; then
-      SYRTHES_AVAL_CHR_PEAU_FLUIDE="chronof_ef"
-    fi
-    if [ -z "$SYRTHES_AVAL_MAIL_RAY" ] ; then
-      SYRTHES_AVAL_MAIL_RAY="resu_ray.geom"
-    fi
-    if [ -z "$SYRTHES_AVAL_RESU_RAY" ] ; then
-      SYRTHES_AVAL_RESU_RAY="resu_ray"
-    fi
-    if [ -z "$SYRTHES_AVAL_CHR_RAY" ] ; then
-      SYRTHES_AVAL_CHR_RAY="chrono_ray"
-    fi
-    if [ -z "$SYRTHES_AVAL_HIST_RAY" ] ; then
-      SYRTHES_AVAL_HIST_RAY="histor"
-    fi
-    #
-    #
-    # Transfer SYRTHES files
-    #
-    for var in $SYRTHES_DATA $SYRTHES_GEOM $SYRTHES_SUIT $SYRTHES_DATA_RAY $SYRTHES_MAIL_RAY ; do
-      cp $AMONT_SYR/$var $RUN/`echo $var | sed -e "s/.*\///"`
-    done
-    for var in $SYRTHES_CORR $SYRTHES_FFOR_RAY $SYRTHES_CORR_RAY ; do
-      cp $SUITE_SYR/$var $RUN/`echo $var | sed -e "s/.*\///"`
-    done
+    ${CS_HOME}/bin/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
     #
   fi
   #
@@ -1180,42 +1068,8 @@ if [ $EXEC_MODE != pre_traitement ] ; then
   done
 
   if [ $SYRTHES_COUPLING = yes ] ; then
-    mkdir $RESU/RESU_SYR.$SUFFIX
-    if [ $? -ne 0 ] ; then
-      echo Failure creating $RESU/RESU_SYR.$SUFFIX
-    else
-      for var in   $SYRTHES_ENV.save $SYRTHES_DATA $SYRTHES_DATA_RAY \
-                   $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
-                   $SYRTHES_AVAL_RES1 $SYRTHES_AVAL_RES2 $SYRTHES_AVAL_CHR2 \
-                   $SYRTHES_AVAL_HIST \
-                   $SYRTHES_AVAL_MAIL_PEAU_FLUIDE $SYRTHES_AVAL_RESU_PEAU_FLUIDE \
-                   $SYRTHES_AVAL_CHR_PEAU_FLUIDE \
-                   $SYRTHES_AVAL_MAIL_RAY $SYRTHES_AVAL_RESU_RAY \
-                   $SYRTHES_AVAL_CHR_RAY \
-                   $SYRTHES_AVAL_HIST_RAY   ; do
-          f=$RUN/`echo $var | sed -e "s/.*\///"`
-          if [ -f $f ] ; then         
-            cp $f $RESU/RESU_SYR.$SUFFIX/.
-          fi
-      done
-    fi
-    #
-    for dir in src_syrthes ; do
-      if [ -d $dir ] ; then
-        mkdir $RESU/SRC_SYR.$SUFFIX
-        if [ $? -ne 0 ] ; then
-          echo Failure creating $RESU/SRC_SYR.$SUFFIX
-        else
-          for f in $dir/*.[f,F,c,h] ; do
-            if [ -f ${f} ] ; then
-              cp -R ${f} $RESU/SRC_SYR.$SUFFIX/.
-              fbase=`basename ${f}`
-              chmod a-w $RESU/SRC_SYR.$SUFFIX/${fbase}
-            fi
-          done
-        fi
-      fi
-    done
+    ${CS_HOME}/bin/runcase_syrthes -copy-results \
+      -result-dir=${RESU}/RESU_SYR.${SUFFIX}
   fi
 
 fi  # input data and outputs
