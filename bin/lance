@@ -1261,7 +1261,7 @@ if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
   ${ECS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MAILLAGE -case $CAS \
                       $ECHOCOMMECS \
                       $COMMANDE_RC $COMMANDE_PERIO > listpre 2>&1 \
-                   || erreur " A L'EXECUTION DU PREPROCESSEUR"
+                   || erreur " WHILE RUNNING THE PREPROCESSOR "
   #
   if [ $MODE_EXEC = pre_traitement ] ; then
     #
@@ -1365,7 +1365,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     #
     $VALGRIND $RUN/$EXE -solcom \
           -iasize $LONGIA -rasize $LONGRA $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \
-          || erreur " A L'EXECUTION DU NOYAU "
+          || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
     #
   fi
 #
