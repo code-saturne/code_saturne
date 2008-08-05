@@ -175,9 +175,9 @@ do
 # On some batch sytems, the name is limited to 15 characters
   NOMETCAS=`echo ${study}${case}|cut -c1-15`
 
-  cp -f $SCRIPT_HOME/lance         $CAS/SCRIPTS
-  cp -f $SCRIPT_HOME/lance.help    $CAS/SCRIPTS
-  FICREPBASECASBKSLH=$CAS/SCRIPTS/.repbasecasbkslh
+  cp -f $SCRIPT_HOME/lance         $CASE/SCRIPTS
+  cp -f $SCRIPT_HOME/lance.help    $CASE/SCRIPTS
+  FICREPBASECASBKSLH=$CASE/SCRIPTS/.repbasecasbkslh
   echo $REPBASECAS | sed -e "s/\//\\\\\//g" > $FICREPBASECASBKSLH
   REPBASECASBCKSLH=`cat $FICREPBASECASBKSLH`
   rm $FICREPBASECASBKSLH
@@ -206,7 +206,7 @@ do
     fi
   done
   chmod +x $CASE/SCRIPTS/lance
-  echo "Case $CAS created."
+  echo "Case $CASE created."
 done
 exit
 }
