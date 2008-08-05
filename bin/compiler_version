@@ -28,11 +28,11 @@
 #
 
  usage() {
-    echo    
+    echo
     echo "   Script for determination of compiler versions                   "
-    echo    
+    echo
     echo " Usage: $0 [-cshome <CS_HOME>] [-nomarch <NOM_ARCH>] [-output <compil.log>]"
-    echo    
+    echo
     echo "      with:"
     echo "      <CS_HOME>    : Code_Saturne CS_HOME variable"
     echo "                     may have already been set by the environment"
@@ -41,7 +41,7 @@
     echo "      <compil.log> : output file (give the full path)"
     echo "                     ./compil.log is the default"
     echo
-    echo    
+    echo
     exit
  }
 
@@ -53,8 +53,8 @@
 
 # Parse the command line
 
- while [ "$#" != 0 ] ; do 
-   case $1 in 
+ while [ "$#" != 0 ] ; do
+   case $1 in
      -cshome)  shift ; CS_HOME="$1"    ; shift ;;
      -nomarch) shift ; NOM_ARCH="$1"   ; shift ;;
      -output)  shift ; compillog="$1"  ; shift ;;
@@ -64,7 +64,7 @@
 
 # Is there a default file?
 
- if [ -z "${compillog}" ] ; then 
+ if [ -z "${compillog}" ] ; then
    compillog=${dirbase}/compil.log
  fi
 
@@ -72,19 +72,19 @@ echo $compillog
 
 # CS_HOME version
 
- if [ -z ${CS_HOME} ] ; then 
+ if [ -z ${CS_HOME} ] ; then
    usage
    echo
-   echo ' CS_HOME is not valid. Check .profile.' 
+   echo ' CS_HOME is not valid. Check .profile.'
    echo
  fi
 
 # NOM_ARCH check
 
- if [ -z ${NOM_ARCH} ] ; then 
+ if [ -z ${NOM_ARCH} ] ; then
    usage
    echo
-   echo ' NOM_ARCH is not set. Check .profile.' 
+   echo ' NOM_ARCH is not set. Check .profile.'
    echo
  fi
 
@@ -95,7 +95,7 @@ echo $compillog
  echo                                           >> ${compillog}
 
 # FORTRAN compiler version
- 
+
  echo ' '                                       >> ${compillog}
  echo ' ====================================== '>> ${compillog}
  echo ' '                                       >> ${compillog}
@@ -105,10 +105,10 @@ echo $compillog
 #   Tmpdir
 
  dir_compiler_f_version=dir_compiler_f_version
- mkdir ${dir_compiler_f_version} || exit 
+ mkdir ${dir_compiler_f_version} || exit
  cd ${dir_compiler_f_version}                   >> ${compillog} 2>&1
 
-#   A non empty FORTRAN file is generated 
+#   A non empty FORTRAN file is generated
 #     - to fool the compiler
 #     - to be able to run the case if any problem
 
@@ -117,7 +117,7 @@ echo $compillog
  echo '      print*,"FORTRAN test program successfully ran "'   >> ${foof}
  echo '      end'                               >> ${foof}
 
-# Compilation 
+# Compilation
 
  ln -s ${CS_HOME}/bin/Makefile Makefile
  make compversion CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
@@ -125,10 +125,10 @@ echo $compillog
 # Execution (if an executable has been generated)
 
  echo ' '                                       >> ${compillog}
- if [ -f cs14.exe ] ; then 
+ if [ -f cs14.exe ] ; then
    ./cs14.exe                                   >> ${compillog} 2>&1
  else
-   echo ' No FORTRAN test executable    '       >> ${compillog} 
+   echo ' No FORTRAN test executable    '       >> ${compillog}
  fi
  echo ' '                                       >> ${compillog}
 
@@ -152,10 +152,10 @@ echo $compillog
 # Tmpdir
 
 dir_compiler_c_version=dir_compiler_c_version
-mkdir ${dir_compiler_c_version} || exit 
+mkdir ${dir_compiler_c_version} || exit
 cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
 
-#   A non empty C file is generated 
+#   A non empty C file is generated
 #     - to fool the compiler
 #     - to be able to run in case of problem
 
@@ -165,20 +165,20 @@ cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
  echo '     printf("C test program successfully ran");'>> ${fooc}
  echo '     return 0;'                          >> ${fooc}
  echo '     }'                                  >> ${fooc}
- 
-#   Compilation 
+
+#   Compilation
 
  ln -s ${CS_HOME}/bin/Makefile Makefile
  make compversion CS_HOME=${CS_HOME} NOM_ARCH=${NOM_ARCH} OPT="VERS" >> ${compillog} 2>&1
 
-#   Execution 
+#   Execution
 
  echo ' '                                       >> ${compillog}
- if [ -f cs14.exe ] ; then 
+ if [ -f cs14.exe ] ; then
    ./cs14.exe                                   >> ${compillog} 2>&1
  echo ' '                                       >> ${compillog}
  else
-   echo ' No C test executable    '             >> ${compillog} 
+   echo ' No C test executable    '             >> ${compillog}
  fi
  echo ' '                                       >> ${compillog}
 
@@ -189,7 +189,7 @@ cd ${dir_compiler_c_version}                    >> ${compillog} 2>&1
 # Clean
 
  rm -rf ${dir_compiler_c_version}
- 
+
  echo ' ====================================== '>> ${compillog}
  echo ' '                                       >> ${compillog}
 
