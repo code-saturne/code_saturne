@@ -125,7 +125,7 @@ for i in $*
 do
   CASE="${i}"
   CASE=`echo $CASE | tr "[:lower:]" "[:upper:]"`
-  REPBASECASE=$REPBASE/$CASE
+  REPBASECAS=$REPBASE/$CASE
   echo; echo "Generating case $CASE ..."
   if [ -d "$CASE" -o -f "$CASE" ]; then
      echo "$CASE already exists"
