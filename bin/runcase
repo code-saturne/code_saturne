@@ -228,6 +228,8 @@ COUPLING_MODE=MPI
 #
 EXEC_MODE=complet
 #
+EXEC_PREPROCESS=yes
+EXEC_KERNEL=yes
 #
 #
 #
@@ -589,8 +591,14 @@ echo  "  ********************************************"
 echo  "             Preparing calculation            "
 echo  "  ********************************************"
 echo
+#
+ERROR=false
+PREPROCESS_ERROR=false
+EXECUTION_ERROR=false
+#
 if [ $SOLCOM = 1 ]
 then
+  EXEC_PREPROCESS=no
   ln -s $MESHDIR/$MESH geomet || exit 1
 elif [ ${EXEC_MODE} != calcul ]
 then
@@ -741,12 +749,6 @@ echo  "           Code_Saturne is running            "
 echo  "  ********************************************"
 echo
 #
-ERROR=$RUN/error
-erreur()
-{
-echo ERREUR $1 >> $ERROR
-}
-#
 # More settings for SYRTHES coupling
 #
 if [ $SYRTHES_COUPLING = yes ] ; then
@@ -799,10 +801,16 @@ fi
 #
 if [ $SOLCOM = 0 -a $EXEC_MODE != calcul ] ; then
   #
-  ${CSPP_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MESH -case $CASE \
-                      $ECHOCOMMECS \
-                      $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1 \
-                   || erreur " A L'EXECUTION DU PREPROCESSEUR"
+  ${CS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MESH -case $CASE \
+                     $ECHOCOMMECS \
+                     $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1
+  if [ $? != 0 ] ; then
+    echo "Error running the preprocessor."
+    echo "Check preprocessor log (listpre) for details."
+    echo
+    PREPROCESS_ERROR=true
+    ERROR=true
+  fi
   #
   if [ $EXEC_MODE = pre_traitement ] ; then
     #
@@ -819,7 +827,7 @@ fi
 #
 # Run calculation proper.
 #
-if [ ! -f $ERROR -a $EXEC_MODE != pre_traitement ] ; then
+if [ "$ERROR" != "true" -a $EXEC_MODE != pre_traitement ] ; then
 #
   if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
     # MPI Communication
@@ -845,7 +853,7 @@ if [ ! -f $ERROR -a $EXEC_MODE != pre_traitement ] ; then
     chmod 700 $localexec
     #
     $MPIBOOT
-    $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
+    $MPIRUN $localexec || EXECUTION_ERROR=true
     $MPIHALT
     #
   elif [ $SYRTHES_COUPLING = yes  ] ; then
@@ -866,7 +874,7 @@ if [ ! -f $ERROR -a $EXEC_MODE != pre_traitement ] ; then
     echo "exit \$retour" >> $localexec
     chmod 700 $localexec
     $MPIBOOT
-    $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) " &
+    $MPIRUN $localexec || EXECUTION_ERROR=true &
     #
     if [ "$COUPLING_MODE" = "sockets" ] ; then
       # We must obtain the machine and port information from the log;
@@ -887,32 +895,47 @@ if [ ! -f $ERROR -a $EXEC_MODE != pre_traitement ] ; then
     #
   elif [ $SOLCOM = 0 ] ; then
     #
-    if [ ! -f $ERROR ] ; then
-      localexec=$RUN/localexec
-      echo '#!/bin/sh' > $localexec
-      echo cd $RUN >> $localexec
-      echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR "\
-           " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-           " $COMMAND_PARAM "  >> $localexec
-      echo "retour=\$?" >> $localexec
-      echo "exit \$retour" >> $localexec
-      chmod 700 $localexec
-      $MPIBOOT
-      $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
-      $MPIHALT
-    fi
+    localexec=$RUN/localexec
+    echo '#!/bin/sh' > $localexec
+    echo cd $RUN >> $localexec
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR "\
+         " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
+         " $COMMAND_PARAM "  >> $localexec
+    echo "retour=\$?" >> $localexec
+    echo "exit \$retour" >> $localexec
+    chmod 700 $localexec
+    $MPIBOOT
+    $MPIRUN $localexec || EXECUTION_ERROR=true
+    $MPIHALT
     #
   else # cas SOLCOM = 1
     #
     $VALGRIND $RUN/$EXE -solcom \
           $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM \
-          || erreur " A L'EXECUTION DU NOYAU "
+          || EXECUTION_ERROR=true
     #
   fi
 #
 fi
 #
 ########################################################################
+#
+if [ "$EXECUTION_ERROR" = "true" ] ; then
+  if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
+    echo "Error running the coupled calculation."
+    echo "Either the Kernel or SYRTHES may have failed."
+    echo
+    echo "Check Kernel log (listing) and SYRTHES log (listsyr) for details,"
+    echo "as well as eventual error* files."
+    echo
+  else
+    echo "Error running the calculation."
+    echo
+    echo "Check Kernel log (listing) and error* files for details"
+    echo
+  fi
+  ERROR=true
+fi
 #
 # Treatment of the ouput files:
 #   Starts with the restart files
@@ -987,7 +1010,7 @@ if [ $EXEC_MODE != pre_traitement ] ; then
 
 fi  # output files
 
-for f in list* erreur* *.med *.cgns ; do
+for f in list* error* *.med *.cgns ; do
   if [ -f $f ] ; then
     cp $f $RESU/$f.$SUFFIX
   fi
@@ -1078,6 +1101,15 @@ fi  # input data and outputs
 #
 # Summary: end
 #
+if  [ "$PREPROCESS_ERROR" = "true" ] ; then
+  EXEC_PREPROCESS="failed"
+fi
+echo "    Preprocessing   : " $EXEC_PREPROCESS                 >>$summary
+if  [ "$EXECUTION_ERROR" = "true" ] ; then
+  EXEC_KERNEL="failed"
+fi
+echo "    Calculation     : " $EXEC_KERNEL                     >>$summary
+#
 CURDATE=`unset LANG ; date`
 #
 echo '  ----------------------------------------------------'  >>$summary
@@ -1091,17 +1123,20 @@ cp $summary  $RESU/$summary.$SUFFIX
 #
 # Finish
 #
-if [ -f $ERROR ] ; then
-  echo
-  echo  "  ********************************************"
-  cat                        $ERROR
-  echo  "  ********************************************"
+echo
+echo  "  ********************************************"
+if [ "$EXECUTION_ERROR" = "true" ] ; then
+  echo  "         Error in calculation stage."
+elif  [ "$PREPROCESS_ERROR" = "true" ] ; then
+  echo  "         Error in preprocessing stage."
+else
+  echo  "           Normal simulation finish"
+fi
+echo  "  ********************************************"
+
+if [ "$ERROR" = "true" ] ; then
   exit 1
 else
-  echo
-  echo  "  ********************************************"
-  echo  "           Normal simulation finish"
-  echo  "  ********************************************"
   exit 0
 fi
 #

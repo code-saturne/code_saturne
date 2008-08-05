@@ -289,9 +289,7 @@ _cs_base_bft_printf_flush(void)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur les sorties erreur
- *
- * On répète le message sur la sortie standard et sur un fichier erreur.
+/bin/bash: oh: command not found
  *----------------------------------------------------------------------------*/
 
 static void
@@ -324,9 +322,9 @@ _cs_base_err_vprintf(const char  *format,
     char nom_fic_err[81];
 
     if (cs_glob_base_rang < 1)
-      strcpy(nom_fic_err, "erreur");
+      strcpy(nom_fic_err, "error");
     else
-      sprintf(nom_fic_err, "erreur_n%04d", cs_glob_base_rang + 1);
+      sprintf(nom_fic_err, "error_n%04d", cs_glob_base_rang + 1);
 
     freopen(nom_fic_err, "w", stderr);
 
