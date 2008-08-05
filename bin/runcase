@@ -345,6 +345,13 @@ cd $RUN
 #
 # Set up MPI environment
 #
+# Use makefile query to obtain the path to MPI binaries if those are
+# not on the default path. This is a peculiar use of make, but allows
+# us to avoid defining the MPI configuration in multiple files
+# (everything is defined in the corresponding macros_*.mk file).
+
+CS_MPI_PATH=`make -f ${CS_HOME}/bin/Makefile echo_mpi_bin`
+
 # NUMBER_OF_PROCESSORS is determined here if not already set;
 # MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
 # defined by the sourced script, and PATH may be updated.

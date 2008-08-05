@@ -52,6 +52,7 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
+MPI_BIN         =/usr/local/mpichgm-1.2.6.14b-64b/bin
 
 # Macros for Sockets
 #-------------------

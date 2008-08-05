@@ -54,6 +54,7 @@ MPE_COMM        =0
 
 # For Open MPI on saturne
 MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux_x86_64
+MPI_BIN         =$(MPI_HOME)/bin
 MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 

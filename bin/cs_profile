@@ -80,12 +80,3 @@
   export SYRCS_HOME CSHOMARD_HOME
   export PATH
 
-# Paths and libraries for MPI
-  if [ "$NOM_ARCH" = "Linux" -o "$NOM_ARCH" = "Linux_x86_64" ] ; then
-    CS_MPI_PATH=/home/saturne/opt/openmpi-1.2.6/arch/$NOM_ARCH/bin
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
-    CS_MPI_PATH=/usr/local/mpichgm-1.2.6.14b-64b/bin
-  else
-    CS_MPI_PATH=
-  fi
-  export CS_MPI_PATH

@@ -54,6 +54,7 @@ MPE_COMM        =0
 
 # For MPICH on saturne
 MPI_HOME        =
+MPI_BIN         =
 MPI_INC         =
 MPI_LIB         =
 

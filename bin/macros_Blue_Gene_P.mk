@@ -63,6 +63,7 @@ MPE_COMM        =0
 
 # For Blue Gene MPI
 MPI_HOME        =
+MPI_BIN         =
 MPI_INC         = -I$(BGL_SYS)/include
 MPI_LIB         =
 

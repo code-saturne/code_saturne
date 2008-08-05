@@ -204,6 +204,13 @@ privcomp:
 	@make privcompil
 
 #
+# echo_mpi_bin must be called using "make -f", so it must not include recursive
+#              calls to make, as they would not find the Makefile.
+
+echo_mpi_bin:
+	@echo $(MPI_BIN)
+
+#
 # privcompil recognizes the working directory (module and OPT),
 #            makes a symbolic link to the source files (in case of build),
 #            generates the dependency lists,

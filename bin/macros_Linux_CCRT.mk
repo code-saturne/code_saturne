@@ -53,6 +53,7 @@ MPE             =0
 MPE_COMM        =0
 
 #Les bibliothèques MPI sont directement appelées par mpicc et mpif77
+MPI_BIN         =
 MPI_INC         =
 MPI_LIB         =
 
