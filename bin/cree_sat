@@ -51,7 +51,7 @@ usage() {
 }
 
 
-enleve_test() {
+remove_test() {
 NTEST=0
 NTEST=`grep -c TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT $1`
 while [ $NTEST -gt 0 ] ; do
@@ -115,7 +115,7 @@ study=`echo $STUDY |tr "[:upper:]" "[:lower:]"`
 }
 
 
-cree_case() {
+create_case() {
 GUI=$1
 shift
 STUDY=$1
@@ -202,7 +202,7 @@ do
   for fich in $CASE/FORT/$users/*/*.[F,c] $CASE/SCRIPTS/lance
   do
     if [ -f $fich ] ; then
-      enleve_test $fich
+      remove_test $fich
     fi
   done
   chmod +x $CASE/SCRIPTS/lance
