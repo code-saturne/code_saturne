@@ -345,49 +345,11 @@ cd $RUN
 #
 # Set up MPI environment
 #
-# Processors list
+# NUMBER_OF_PROCESSORS is determined here if not already set;
+# MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
+# defined by the sourced script, and PATH may be updated.
 #
-if [ -f "$TMPDIR/machines" ] ; then   # with batch system at Univ. Manchester
-   MPIHOSTS="$TMPDIR/machines"
-elif [ ! -z "$PBS_NODEFILE" ] ; then  # with PBS batch system
-   MPIHOSTS="$PBS_NODEFILE"
-elif [ ! -z "$LSB_HOSTS" ] ; then     # with LSF batch system
-   \rm -f $RUN/hostsfile
-   echo $LSB_HOSTS | awk '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
-   MPIHOSTS="$RUN/hostsfile"
-elif [ ! -z "$LISTE_PROCESSEURS" ] ; then
-   \rm -f $RUN/hostsfile
-   localproc=`hostname`
-   echo $LISTE_PROCESSEURS | grep -q $localproc || LISTE_PROCESSEURS="$localproc & $LISTE_PROCESSEURS"
-   echo $LISTE_PROCESSEURS | awk  -F\& '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
-   MPIHOSTS="$RUN/hostsfile"
-fi
-# Check number of processors
-if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
-  if [ ! -z  "${NSLOTS}" ] ; then
-    # for batch sytem at University of Manchester
-    NUMBER_OF_PROCESSORS=$NSLOTS
-  elif [ ! -z "${SLURM_NPROCS}" ] ; then
-    # for LSF batch system with Slurm
-    NUMBER_OF_PROCESSORS=$SLURM_NPROCS
-  elif [ ! -z "${LSB_HOSTS}" ] ; then
-    # for LSF batch system without Slurm
-    NUMBER_OF_PROCESSORS=`echo $LSB_HOSTS | wc -w`
-  elif [ ! -z  "${MPIHOSTS}" ] ; then
-    # for batch sytme on MFEE cluster or whenever MPIHOSTS is defined
-    NUMBER_OF_PROCESSORS=`cat $MPIHOSTS | wc -l`
-  else
-    NUMBER_OF_PROCESSORS=1
-  fi
-fi
-#
-# Check number of nodes if possible
-NUMBER_OF_NODES=1
-if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
-  if [ ! -z  "${MPIHOSTS}" ] ; then
-    NUMBER_OF_NODES=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
-  fi
-fi
+. $CS_HOME/bin/runcase_mpi_env
 #
 # Check for the number of requested processors
 nproc_kernel="${NUMBER_OF_PROCESSORS}"
@@ -485,71 +447,6 @@ else
   ARG_CS_PAR=""
 fi
 #
-# System-related parameters
-#
-if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
-#
-# Default values defined at start
-  MPIBOOT=""
-  MPIHALT=""
-  MPIRUN="mpirun -np ${NUMBER_OF_PROCESSORS}"
-  if [ -d "$CS_MPI_PATH" ] ; then
-    export PATH=${CS_MPI_PATH}:$PATH
-  fi
-#
-  if [ "$NOM_ARCH" = "OSF1" ] ; then
-    MPIRUN="prun -n ${NUMBER_OF_PROCESSORS} -stv"
-#
-  elif [ "$NOM_ARCH" = "Linux_CCRT" ] ; then
-    MPIRUN="mpirun -srun"
-#
-  elif [ "$NOM_ARCH" = "Linux_IA64" ] ; then
-    MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"
-#
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
-    MPIRUN="mpirun -np ${NUMBER_OF_PROCESSORS} -machinefile $PBS_NODEFILE"
-#
-  else
-    if [ -d "$CS_MPI_PATH" ] ; then
-      if [ -f "${CS_MPI_PATH}/mpdboot" ] ; then          # With MPICH2
-        MPIBOOT="${CS_MPI_PATH}/mpdboot"
-        MPIHALT="${CS_MPI_PATH}/mpdallexit"
-        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NUMBER_OF_PROCESSORS}"
-        if [ ! -z "$MPIHOSTS" ] ; then
-          MPIBOOT="$MPIBOOT -n ${NUMBER_OF_NODES} -v -f $MPIHOSTS"
-        fi
-      elif [ -f "${CS_MPI_PATH}/ompi_info" ] ; then      # With Open MPI
-        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NUMBER_OF_PROCESSORS}"
-        if [ ! -z "$MPIHOSTS" ] ; then
-          MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
-        fi
-      elif [ -f "${CS_MPI_PATH}/lamboot" ] ; then        # With LAM MPI
-        MPIBOOT="${CS_MPI_PATH}/lamboot"
-        MPIHALT="${CS_MPI_PATH}/lamhalt"
-        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NUMBER_OF_PROCESSORS}"
-        if [ ! -z "$MPIHOSTS" ] ; then
-          MPIBOOT="$MPIBOOT -v $MPIHOSTS"
-          MPIHALT="$MPIHALT -v $MPIHOSTS"
-        fi
-      elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then   # With MPICH
-        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NUMBER_OF_PROCESSORS}"
-        if [ ! -z "$TMPDIR/machines" ] ; then   # With batch at Univ. Manchester
-          MPIRUN="$MPIRUN -machinefile $TMPDIR/machines"
-        elif [ ! -z "$MPIHOSTS" ] ; then
-          MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
-        fi
-      fi
-    fi
-  fi
-#
-#   if we do not request multiple processors
-#
-else
-#
-  MPIRUN=""
-  MPIBOOT=""
-  MPIHALT=""
-fi
 #
 ########################################################################
 #
