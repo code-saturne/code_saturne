@@ -334,7 +334,7 @@ cs_suite_t * cs_suite_detruit
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui vérifie le support associé à un fichier suite ;
+ *  Fonction qui vérifie les supports de base associé à un fichier suite ;
  *  On renvoie pour chaque type d'entité CS_TRUE si le nombre d'entités
  *  associées au fichier suite correspond au nombre d'entités en cours (et
  *  donc que l'on considère que le support est bien le même), CS_FALSE sinon.
@@ -362,7 +362,7 @@ int cs_suite_ajoute_support
  const char        *nom_sup,              /* --> Nom de la rubrique           */
        fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entites      */
        fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entites       */
- const fvm_gnum_t  *num_glob_ent          /* --> Numeros globaux des entites  */
+ const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entites  */
 );
 
 
@@ -389,7 +389,7 @@ cs_int_t cs_suite_lit_rub
        int          ind_support,               /* --> Support de la variable  */
        cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
        cs_type_t    typ_val,                   /* --> Type de valeurs         */
-       void        *val                        /* <-- Valeurs a lire          */
+       void        *val                        /* <-- Valeurs à lire          */
 );
 
 
@@ -404,7 +404,7 @@ void cs_suite_ecr_rub
        int          ind_support,               /* --> Support de la variable  */
        cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
        cs_type_t    typ_val,                   /* --> Type de valeurs         */
- const void        *val                        /* <-- Valeurs a lire          */
+ const void        *val                        /* <-- Valeurs à lire          */
 );
 
 
