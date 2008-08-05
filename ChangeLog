@@ -1,3 +1,38 @@
+* 05/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Scripts translation and improvements.
+  deleted scripts:
+    bin/cree_sat
+    bin/info_cs
+    bin/lance
+    bin/lance.help
+  added scripts:
+    bin/cs_create
+    bin/cs_info
+    bin/ecs
+    bin/runcase
+    bin/runcase.help
+    bin/runcase_mpi_env
+    bin/runcase_syrthes
+  modified scripts:
+    bin/compiler_version
+    bin/check_consistency
+    bin/check_mesh
+    bin/gracehst
+    bin/lance_install
+    bin/Makefile
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_CCRT.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA.mk
+    bin/macros_Linux_x86_64.mk
+    bin/SaturneGUI
+  modified routine:
+    src/base/cs_base.c
+
+
 * 04/08/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 531:532, coherency test improvement)
 
