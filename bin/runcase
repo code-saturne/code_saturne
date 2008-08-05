@@ -414,12 +414,10 @@ fi
 # To help debug coupling problems, make communication more verbose
 if [ ! -z "$ECHOCOMM" ] ; then
   ECHOCOMMNB="$ECHOCOMM"
-  ECHOCOMMECS="-echo-comm $ECHOCOMMNB"
   ECHOCOMMSYR="-echo-comm $ECHOCOMMNB"
   ECHOCOMMNOY="--echo-comm $ECHOCOMMNB"
 else
   ECHOCOMMNB=""
-  ECHOCOMMECS=""
   ECHOCOMMSYR=""
   ECHOCOMMNOY=""
 fi
@@ -728,7 +726,6 @@ fi
 if [ $SOLCOM = 0 -a $EXEC_MODE != calcul ] ; then
   #
   ${CS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MESH -case $CASE \
-                     $ECHOCOMMECS \
                      $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1
   if [ $? != 0 ] ; then
     echo "Error running the preprocessor."
