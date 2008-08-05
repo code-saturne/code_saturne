@@ -26,13 +26,13 @@
 #
 #============================================================================
 
-# Libraries for the interface (if necessary)
+# Libraries for the GUI (if necessary)
 if [ -d ${CS_ROOT}/opt/tcl8.3/arch/${NOM_ARCH}/lib ] ; then
   LD_LIBRARY_PATH=$CS_ROOT/opt/tcl8.3/arch/$NOM_ARCH/lib:$LD_LIBRARY_PATH
   export LD_LIBRARY_PATH
 fi
 
-# Python positionne par Salome
+# Python may be set by Salome under that environment
 if [ -n "${KERNEL_ROOT_DIR}" ] ; then
   CS_PYTHON=python
 elif [ -x ${CS_ROOT}/opt/python/arch/${NOM_ARCH}/bin/python ] ; then

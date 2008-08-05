@@ -29,19 +29,19 @@
 #=================================================
 #     Script to generate a Code_Saturne study
 #=================================================
-         
+
 usage() {
     echo
-    echo "   syntax: cree_sat -etude nom_etude [nom_cas1 nom_cas2 ...][-noihm]"
+    echo "   syntax: cs_create -study study_name [case_name1 case_name2 ...][-nogui]"
     echo "               For a full study"
-    echo "           cree_sat -cas nom_cas1 nom_cas2 ...[-noihm]"
+    echo "           cs_create -case case_name1 case_name2 ...[-nogui]"
     echo "               For a cases created for an existing study"
-    echo "           cree_sat -noihm"
+    echo "           cs_create -nogui"
     echo "               To force non GUI "
-    echo "              (The option -noihm has to be used only once at the beginning"
+    echo "              (The option -nogui has to be used only once at the beginning"
     echo "                   or at the end the option list)"
-    echo 
-    echo "           cree_sat -h for help or:"
+    echo
+    echo "           cs_create -h for help or:"
     echo "            xpdf ${DOC_UTILISATION}"
     echo; exit
 }
@@ -114,7 +114,7 @@ if [ -d "$STUDY" ]; then
    exit
 fi
 mkdir $STUDY
-mkdir ${STUDY}/MAILLAGE
+mkdir ${STUDY}/MESH
 mkdir ${STUDY}/POST
 study=`echo $STUDY |tr "[:upper:]" "[:lower:]"`
 }
@@ -130,7 +130,7 @@ for i in $*
 do
   CASE="${i}"
   CASE=`echo $CASE | tr "[:lower:]" "[:upper:]"`
-  REPBASECASE=$REPBASE/$CASE
+  REPBASECAS=$REPBASE/$CASE
   echo; echo "Generating case $CASE ..."
   if [ -d "$CASE" -o -f "$CASE" ]; then
      echo "$CASE already exists"
@@ -141,7 +141,7 @@ do
 
   mkdir ${CASE}
   mkdir ${CASE}/DATA
-  mkdir ${CASE}/FORT
+  mkdir ${CASE}/SRC
   mkdir ${CASE}/RESU
   mkdir ${CASE}/SCRIPTS
 
@@ -173,31 +173,31 @@ do
   fi
 
 # Copy user source files and remove SVN directories
-  users=USERS
-  cp -Rf $CS_HOME/users $CASE/FORT/$users
-  find $CASE/FORT/$users -name .svn -print0 | xargs -0r \rm -r
+  reference=REFERENCE
+  cp -Rf $CS_HOME/users $CASE/SRC/$reference
+  find $CASE/SRC/$reference -name .svn -print0 | xargs -0r \rm -r
 
 # On some batch sytems, the name is limited to 15 characters
-  NOMETCAS=`echo ${study}${case}|cut -c1-15`
+  NAMEANDCASE=`echo ${study}${case}|cut -c1-15`
 
-  cp -f $SCRIPT_HOME/lance         $CASE/SCRIPTS
-  cp -f $SCRIPT_HOME/lance.help    $CASE/SCRIPTS
+  cp -f $SCRIPT_HOME/runcase         $CASE/SCRIPTS
+  cp -f $SCRIPT_HOME/runcase.help    $CASE/SCRIPTS
   FICREPBASECASBKSLH=$CASE/SCRIPTS/.repbasecasbkslh
   echo $REPBASECAS | sed -e "s/\//\\\\\//g" > $FICREPBASECASBKSLH
   REPBASECASBCKSLH=`cat $FICREPBASECASBKSLH`
   rm $FICREPBASECASBKSLH
-  sed -e "s/nometcas/$NOMETCAS/g" \
-      -e "s/NOMET/$STUDY/g" \
-      -e "s/NOMCAS/$CASE/g" \
-      -e "s/NOMREPBASE/$REPBASECASBCKSLH/g" \
-      -e "s/NOMCSHOME/$CSHOMEBCKSLH/g" \
-      -e "s/nomet/${study}/g"  $CASE/SCRIPTS/lance >case.tmp
-  mv case.tmp $CASE/SCRIPTS/lance
+  sed -e "s/nameandcase/$NAMEANDCASE/g" \
+      -e "s/STUDYNAME/$STUDY/g" \
+      -e "s/CASENAME/$CASE/g" \
+      -e "s/CASEDIRNAME/$REPBASECASBCKSLH/g" \
+      -e "s/CSHOMENAME/$CSHOMEBCKSLH/g" \
+      -e "s/study/${study}/g"  $CASE/SCRIPTS/runcase >case.tmp
+  mv case.tmp $CASE/SCRIPTS/runcase
 
-  for fich in $CASE/FORT/$users/*/*.[F]
-  do 
+  for fich in $CASE/SRC/$reference/*/*.[F]
+  do
     if [ -f $fich ] ; then
-      if [ "$GUI" = "gui" ] ; then 
+      if [ "$GUI" = "gui" ] ; then
         comment_example $fich
       else
         remove_comment $fich
@@ -205,13 +205,13 @@ do
     fi
     version_tag $fich
   done
-  for fich in $CASE/FORT/$users/*/*.[F,c] $CASE/SCRIPTS/lance
+  for fich in $CASE/SRC/$reference/*/*.[F,c] $CASE/SCRIPTS/runcase
   do
     if [ -f $fich ] ; then
       remove_test $fich
     fi
   done
-  chmod +x $CASE/SCRIPTS/lance
+  chmod +x $CASE/SCRIPTS/runcase
   echo "Case $CASE created."
 done
 exit
@@ -244,41 +244,41 @@ DOC_UTILISATION=$CS_HOME/doc/UTILISATION/saturne.pdf
 NNOGUI=0
 for i in $*
 do
-  if [ "${i}" = "-noihm" ]
+  if [ "${i}" = "-nogui" ]
   then
      NNOGUI=`echo $NNOGUI |awk '{printf($1+1)}' `
   fi
 done
 if [ $NNOGUI -eq 1 ]
-then 
+then
   FIRST=$1
   LAST=`echo $* | awk '{print $NF}'`
-  if [ "$FIRST" != "-noihm" -a "$LAST" != "-noihm" ]
-  then 
+  if [ "$FIRST" != "-nogui" -a "$LAST" != "-nogui" ]
+  then
     usage
   else
     GUI=nogui
-  fi  
+  fi
 elif [ $NNOGUI -eq 0 ]
 then
   GUI=gui
 else
-  usage 
+  usage
 fi
 
-if [ "$1" = "-noihm" ]
+if [ "$1" = "-nogui" ]
 then
   shift
 fi
 
 TYPE=""
 case $1 in
-  -etude) TYPE="study";shift;;
-  -cas) TYPE="case";shift;;
+  -study) TYPE="study";shift;;
+  -case) TYPE="case";shift;;
   *) usage;;
 esac
 
-if [ $# = 0 -o "$1" = "-noihm" ]
+if [ $# = 0 -o "$1" = "-nogui" ]
 then
   usage
 fi
@@ -294,14 +294,14 @@ else
   STUDY=`basename ${PWD}`
 fi
 
-if [ $# = 0 -o "$1" = "-noihm" ]
+if [ $# = 0 -o "$1" = "-nogui" ]
 then
-  CASE="CAS1"
-else  
+  CASE="CASE1"
+else
   CASE=""
   for i in $*
   do
-    if [ "${i}" = "-noihm" ]
+    if [ "${i}" = "-nogui" ]
     then
        continue
     else

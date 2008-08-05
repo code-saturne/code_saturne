@@ -11,8 +11,8 @@ WARNING: .slc and .tlc formats are obsolete and their use is deprecated.
                -------------------------------
 
 To join meshes with the preprocessor, additional options must be defined:
-   - assign to the MAILLAGE variable the name of the meshes between " ".
-   - assign to the COMMANDE_RC variable the joining option. It is recommended
+   - assign to the MESH variable the name of the meshes between " ".
+   - assign to the COMMAND_JOIN variable the joining option. It is recommended
      to specify the color or group of the faces to be joined. If this can not
      be done, the options -color or -group should not be used (but the cost of
      the preprocessing will be higher and the process less robust). Selecting the
@@ -20,12 +20,12 @@ To join meshes with the preprocessor, additional options must be defined:
   In the following example, the faces of color 3, 4 and 6 of the meshes
      titi.des and toto.unv are joined as:
 
-    MAILLAGE="titi.des toto.unv"
-    COMMANDE_RC="-j -color 3 4 6"
+    MESH="titi.des toto.unv"
+    COMMAND_JOIN="-j -color 3 4 6"
 
-  If no joining is necessary, the variable COMMANDE_RC is left empty, as:
+  If no joining is necessary, the variable COMMAND_JOIN is left emtpy, as:
 
-    COMMANDE_RC=
+    COMMAND_JOIN=
 
                -------------------------------
 
@@ -35,43 +35,43 @@ when the Code_Saturne GUI is used, the user assigns the name of the
 
                -------------------------------
 
-The variable COMMANDE_DF is used to cut the faces whose warp angle is larger
+The variable COMMAND_CWF is used to cut the faces whose warp angle is larger
   than a given tolerance (in degrees). For instance, if the tolerance
   angle is 0.01 degrees (default value), the command reads:
 
-    COMMANDE_DF="-cwf 0.01"
+    COMMAND_CWF="-cwf 0.01"
 
   If the user wants to use the mesh as obtained by the mesh generator,
-    COMMANDE_DF is left empty, as:
+    COMMAND_CWF is left empty, as:
 
-    COMMANDE_DF=
+    COMMAND_CWF=
 
                -------------------------------
 
-When periodicity applies, COMMANDE_PERIO is used by the preprocessor,
+When periodicity applies, COMMAND_PERIO is used by the preprocessor,
   with the option -perio:
 
   Two types of periodicity are possible: translation and rotation.
-    Translation : -perio -trans tx ty tz 
+    Translation : -perio -trans tx ty tz
       (tx,ty,tz): vector components
     Rotation    : two methods are possible
       - the angle, the direction and an invariant point are given:
-        -perio -rota -angle a -dir dx dy dz -invpt px py pz  
+        -perio -rota -angle a -dir dx dy dz -invpt px py pz
           a         : angle in degrees (between -180 and +180)
           (dx,dy,dz): rotation axis vector components
           (px,py,pz): rotation invariant point components
       - the matrix and an invariant point are given:
-        -perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py pz  
+        -perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py pz
           mij       : matrix elements (line by line)
           (px,py,pz): rotation invariant point components
 
-  Translation and rotation can be used together: 
-        -perio -trans tx ty tz -rota -angle a 
-                                     -dir dx dy dz -invpt px py pz  
-     or -perio -trans tx ty tz -rota -matrix m11 m12 m13 
-                                             m21 m22 m23 
-                                             m31 m32 m33 
-                                     -invpt   px py pz   
+  Translation and rotation can be used together:
+        -perio -trans tx ty tz -rota -angle a
+                                     -dir dx dy dz -invpt px py pz
+     or -perio -trans tx ty tz -rota -matrix m11 m12 m13
+                                             m21 m22 m23
+                                             m31 m32 m33
+                                     -invpt   px py pz
     The result is RoT (whatever the order of the rotation and translation in
       the command line).
 
@@ -84,95 +84,94 @@ When periodicity applies, COMMANDE_PERIO is used by the preprocessor,
       -perio -trans 10 0 0 -color 1 2
 
   Up to 3 periodicity directions can be imposed (one per spacial direction),
-    for example: 
+    for example:
     -perio -trans 10 0 0 -perio -trans 0 1 0 -perio -trans 0 0 1
 
-  If periodicity does not apply, COMMANDE_PERIO is left empty as:
+  If periodicity does not apply, COMMAND_PERIO is left empty as:
 
-    COMMANDE_PERIO=
+    COMMAND_PERIO=
 
   Example ("\" shows the continuation of the command line):
 
-    COMMANDE_PERIO="-perio -trans -10.2 0 0 -color 2               \
-                    -perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 \
-                           -color 3 4                              \
-                    -perio -trans 0 1 0                            \ 
-                           -rota -matrix 1 0  0                    \
-                                         0 0 -1                    \
-                                         0 1  0 -invpt 0 0 -0.2    "
+    COMMAND_PERIO="-perio -trans -10.2 0 0 -color 2               \
+                   -perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 \
+                          -color 3 4                              \
+                   -perio -trans 0 1 0                            \
+                          -rota -matrix 1 0  0                    \
+                                        0 0 -1                    \
+                                        0 1  0 -invpt 0 0 -0.2    "
 
                -------------------------------
 
 If coupling with SYRTHES applies, (only one fluid simulation coupled
-  with only one solid simulation), the variable COMMANDE_SYRTHES
-  is used. When there is no coupling, COMMANDE_SYRTHES is left empty.
+  with only one solid simulation), the variable COMMAND_SYRTHES
+  is used. When there is no coupling, COMMAND_SYRTHES is left empty.
   In the following example, the fluid boundary faces of color 2 and 3
-    are coupled: 
+    are coupled:
 
-    COMMANDE_SYRTHES="-syrthes -color 2 3"
+    COMMAND_SYRTHES="-syrthes -color 2 3"
 
   For more complex (multiple) couplings, the script will have to be changed.
 
                -------------------------------
 
 If thermochemistry applies, the name of the thermochemistry data file
-  may be specified through DONNEES_THERMOCHIMIE. For example:
-    DONNEES_THERMOCHIMIE="dp_FCP"
+  may be specified through THERMOCHEMISTRY_DATA. For example:
+    THERMOCHEMISTRY_DATA="dp_FCP"
 
                -------------------------------
 
 
-User input files can be specified with the FICHIERS_DONNEES_UTILISATEUR
-  variable (left empty if none are used) and the files are located in DATA.
- 
-               -------------------------------
-
-User output files to retrieve can be specified with
-FICHIERS_RESULTATS_UTILISATEUR.
+User input files can be specified with the USER_INPUT_FILE variable
+  (left empty if none are used) and the files are located in DATA.
 
                -------------------------------
 
-The NOMBRE_DE_PROCESSEURS option defines the number of MPI processes to use
+User output files to retrieve can be specified with USER_OUTPUT_FILE.
+
+               -------------------------------
+
+The NUMBER_OF_PROCESSORS option defines the number of MPI processes to use
   (ideally equal to the physical number of processors or cores, but this
   is not mandatory). If the variable is left empty, it is determined
-  automatically (for PC's or workstations, NOMBRE_DE_PROCESSEURS is set to 1
+  automatically (for PC's or workstations, NUMBER_OF_PROCESSORS is set to 1
   and for clusters or supercomputers, it is set to the number of processors
   reserved for the batch job).
   When running a calculation through a batch system, it is not recommended
-  to force NOMBRE_DE_PROCESSEURS to a value different from the number of
+  to force NUMBER_OF_PROCESSORS to a value different from the number of
   processors required for the batch job, as oversubscribing may lead to
   strongly degraded performance (and may even fail depending on the system's
   mpi policy), and under-subscribing means reserving unused processors.
   When running the script interactively (such as on a Linux PC),
-  NOMBRE_DE_PROCESSEURS may be set to a lower value than the number of
+  NUMBER_OF_PROCESSORS may be set to a lower value than the number of
   physical processors (to limit system load), or to a higher value
   (usually for testing, as this reduces performance).
   When coupling with SYRTHES using MPI, one process/processor is reserved
   for SYRTHES, so the number of processors used for the kernel is
-  equal to nproc_noy = NOMBRE_DE_PROCESSEURS - 1.
+  equal to nproc_kernel = NUMBER_OF_PROCESSORS - 1.
 
 
 If we wish to specify distant machines (or are running on a cluster
-  with no batch system), the optional LISTE_PROCESSEURS string may be defined.
+  with no batch system), the optional PROCESSOR_LIST string may be defined.
   Running on multiple processors not reserved for this task is not recommended,
   as load imbalance due to 1 processor running multiple jobs is enough to
   degrade the performance for the whole job. Also, running in parallel without
   a high performance network will lead to low performance (low latency being
   even more important than high bandwidth).
   Two simple examples:
-    LISTE_PROCESSEURS="machine1 cpu=nb_cpu1 user=userid1 & machine2 cpu=nb_cpu2 user=userid2"
-    LISTE_PROCESSEURS="machine1 & machine2"
-  The & separates 2 machines in the list. Fields are as follows: 
+    PROCESSOR_LIST="machine1 cpu=nb_cpu1 user=userid1 & machine2 cpu=nb_cpu2 user=userid2"
+    PROCESSOR_LIST="machine1 & machine2"
+  The & separates 2 machines in the list. Fields are as follows:
     machine1 and machine2 indicate machine names (as given by the
       hostname command).
-      for example: chi80xx.der.edf.fr 
+      for example: chi80xx.der.edf.fr
     nb_cpu1 and nb_cpu2 indicate the number of processors on hosts
       machine1 and machine2
-      for example, on a dual-processor machine: cpu=2 
-    userid1 and userid2 indicate the user's login on  machine1 and machine2 
-  Fields cpu= and user= are optional.  
+      for example, on a dual-processor machine: cpu=2
+    userid1 and userid2 indicate the user's login on  machine1 and machine2
+  Fields cpu= and user= are optional.
   The machine from which the script is run will automatically be used with
-  most MPI environments. 
+  most MPI environments.
   Selected machines must use a shared filesystem (at least NFS) and all
   be of the same general OS and architecture type.
 
@@ -193,21 +192,21 @@ Specifying CS_TMP_PREFIX may be useful for example on a workstation so
 
                -------------------------------
 
-Options OPTIMISATION and OPTION_LIB_EXT are more advanced, mainly
+Options OPTIMIZATION and CS_LIB_ADD are more advanced, mainly
   for developers.
 
-  OPTIMISATION allows selecting the optimization level
+  OPTIMIZATION allows selecting the optimization level
     (LO, DBG, EF, PROF, ...). By default, standard Code_Saturne choices
     are used. This parameter may be used to used debug or profiling
     libraries, or libraries built without optimization.
     For production runs, this should be left empty.
-    A list of possible values for OPTIMISATION and a short explanation
+    A list of possible values for OPTIMIZATION and a short explanation
     is given by makehelp (see OPT=...).
 
-  OPTION_LIB_EXT allows specifying external libraries to link. In this
+  CS_LIB_ADD allows specifying external libraries to link. In this
     case, the whole option to pass to the linker must be given.
     For example:
-    OPTION_LIB_EXT="-L/home/saturne/opt/foo/lib -lfoo"
+    CS_LIB_ADD="-L/home/saturne/opt/foo/lib -lfoo"
 
   VALGRIND enables running of the Kernel through Valgrind if this
     memory-checking tool is available (usually under Linux) To
@@ -231,7 +230,7 @@ Options OPTIMISATION and OPTION_LIB_EXT are more advanced, mainly
     In mesh quality or benchmark mode, no parameter file or user
     subroutine is needed.
 
-  ARG_CS_OUTPUT allows redirection of output. 
+  ARG_CS_OUTPUT allows redirection of output.
     The "--log" option allows redirecting output for a single-processor
     run or for rank 0 of a parallel run.
     "--log 0" output redirected to standard output
@@ -252,13 +251,13 @@ Options OPTIMISATION and OPTION_LIB_EXT are more advanced, mainly
     calculation. To activate this options, assign a strictly positive
     value to ECHOCOMM. For each message exchanged, the ECHOCOMM first
     and last values will be printed (characters, integers, or doubles).
-    By default, the string is kept empty. 
-    Reasonable activation value: 
+    By default, the string is kept empty.
+    Reasonable activation value:
       ECHOCOMM="10"
 
-  PILOTAGE_ADAPTATION allows use of mesh adaptation with the HOMARD
-    tool. If the variable is absent or empty, no adaptation occurs.
-    To activate adaptation, PILOTAGE_ADAPTATION will contain the name of
-    a file containing adaptation directives. To obtain the syntax of
-    this file, use PILOTAGE_ADAPTATION=help and run the script.
+  ADAPTATION allows use of mesh adaptation with the HOMARD tool.
+    If the variable is absent or empty, no adaptation occurs.
+    To activate adaptation, ADAPTATION will contain the name of a file
+    containing adaptation directives. To obtain the syntax of this
+    file, use ADAPTATION=help and run the script.
     THIS FUNCTIONALITY IS NOT YET IN PRODUCTION

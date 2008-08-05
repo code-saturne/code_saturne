@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2008 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -26,26 +26,26 @@
 #
 #============================================================================
 #
-# Fonction de reperage d'un sous programme utilisateur
-#  pour le moment, on fait simple 
-#   (on pourrait verifier que uslag2 contient bien uslag2 ou encore 
-#   qu'il n'est pas bidon ...)
+# Function used to check if a user subroutine is present
+#  we keep things minimalistic here
+#   (we could check that uslag2 effectively contains uslag2 or
+#   that it compiles...)
 presence () {
 
   presence_sspgm=$1
 
   if [ ! -f "${presence_sspgm}" ] ; then
-    presence_PRESENT="non"
+    presence_PRESENT="no"
   else
-    presence_PRESENT="oui"
+    presence_PRESENT="yes"
   fi
-  echo ${presence_PRESENT} 
+  echo ${presence_PRESENT}
 }
 #
 ########################################################################
 #
 args=""
-if [ "$*" != "" ] ; then 
+if [ "$*" != "" ] ; then
   args="$*"
 fi
 #
@@ -90,7 +90,7 @@ for arg in $args ; do
 done
 #
 #
-# Detection de la presence de modules
+# Detect presence of modules
 
 # Standard
 USCLIM_PRESENT=`presence "${cur_dir}/usclim.F"`
@@ -98,34 +98,34 @@ USCLIM_PRESENT=`presence "${cur_dir}/usclim.F"`
 # Lagrangien
 USLAG2_PRESENT=`presence "${cur_dir}/uslag2.F"`
 
-# Rayonnement
+# Radiative transfer
 USRAY2_PRESENT=`presence "${cur_dir}/usray2.F"`
-if [ ! -z "${param}" ] ; then 
+if [ ! -z "${param}" ] ; then
   NRAYT=`grep "radiative_transfer\ model" ${param} | grep -v "off" |wc -l`
   if [ $NRAYT -eq 1 ] ; then
-    USRAY2_PRESENT="oui"
+    USRAY2_PRESENT="yes"
   fi
 fi
 
-# Charbon pulverise
+# Pulverized coal
 USCPCL_PRESENT=`presence "${cur_dir}/uscpcl.F"`
-if [ ! -z "${param}" ] ; then 
+if [ ! -z "${param}" ] ; then
   NCHARB=`grep "pulverized_coal\ model" ${param} | grep -v "off" |wc -l`
   if [ $NCHARB -eq 1 ] ; then
-    USCPCL_PRESENT="oui"
+    USCPCL_PRESENT="yes"
   fi
 fi
 
-# Combustion gaz chimie 3 points
+# Gas combustion with 3 point chemistry
 USD3PC_PRESENT=`presence "${cur_dir}/usd3pc.F"`
 
-# Combustion gaz EBU
+# EBU gas combustion
 USEBUC_PRESENT=`presence "${cur_dir}/usebuc.F"`
 
 # Combustion gaz LWC
 USLWCC_PRESENT=`presence "${cur_dir}/uslwcc.F"`
 
-# Electrique
+# Electric arcs
 USELCL_PRESENT=`presence "${cur_dir}/uselcl.F"`
 
 # Compressible
@@ -134,184 +134,183 @@ USCFCL_PRESENT=`presence "${cur_dir}/uscfcl.F"`
 # Fuel
 USFUCL_PRESENT=`presence "${cur_dir}/usfucl.F"`
 
-# Tests de compatibilite
+# Compatibility tests
 
-if [ "${USCPCL_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque le modele de combustion du charbon pulverise"
-    echo "  est active, usclim ne doit pas etre utilise"
-    echo "  Les conditions aux limites sont fournies dans"
-    echo "  l interface graphique ou dans uscpcl."
-    echo ""
+if [ "${USCPCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When the pulverized coal model is used,'
+    echo '  usclim not be used.'
+    echo '  Boundary conditions are defined through'
+    echo '  the GUI or uscpcl.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USD3PC_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque usd3pc est complete, usclim ne doit pas l'etre"
-    echo "  (modele combustion chimie trois points)"
-    echo "  Les conditions aux limites sont fournies dans usd3pc."
-    echo ""
+if [ "${USD3PC_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When usd3pc is used, usclim must not be'
+    echo '  (combustion with 3-point chemistry model)'
+    echo '  Boundary conditions are defined in usd3pc.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USEBUC_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque usebuc est complete, usclim ne doit pas l'etre"
-    echo "  (modele combustion EBU)"
-    echo "  Les conditions aux limites sont fournies dans usebuc."
-    echo ""
+if [ "${USEBUC_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When usebuc is used, usclim must not be'
+    echo '  (EBU combustion model)'
+    echo '  Boundary conditions are defined in usebuc.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USLWCC_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque uslwcc est complete, usclim ne doit pas l'etre"
-    echo "  (modele combustion LWC)"
-    echo "  Les conditions aux limites sont fournies dans uslwcc."
-    echo ""
+if [ "${USLWCC_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When uslwcc is used, usclim must not be'
+    echo '  (LWC combustion model)'
+    echo '  Boundary conditions are defined in uslwcc.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USELCL_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque uselcl est complete, usclim ne doit pas l'etre"
-    echo "  (modele electrique)"
-    echo "  Les conditions aux limites sont fournies dans uselcl."
-    echo ""
+if [ "${USELCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When uselcl is used, usclim must not be'
+    echo '  (Electric arcs model)'
+    echo '  Boundary conditions are defined in uselcl.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USCFCL_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque uscfcl est complete, usclim ne doit pas l'etre"
-    echo "  (modele compressible)"
-    echo "  Les conditions aux limites sont fournies dans uscfcl."
-    echo ""
+if [ "${USCFCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When uscfcl is used, usclim must not be'
+    echo '  (Compressible model)'
+    echo '  Boundary conditions are defined in uscfcl.'
+    echo
     exit 1
   fi
 fi
 
-if [ "${USFUCL_PRESENT}" = "oui" ] ; then
-  if [ "${USCLIM_PRESENT}" = "oui" ] ; then
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Lorsque usfucl est complete, usclim ne doit pas l'etre"
-    echo "  (modele fuel)"
-    echo "  Les conditions aux limites sont fournies dans usfucl."
-    echo ""
+if [ "${USFUCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When usfucl is used, usclim must not be'
+    echo '  (Fuel model)'
+    echo '  Boundary conditions are defined in usfucl.'
+    echo
     exit 1
   fi
 fi
 
-# Traduction 
-if [ "${USLAG2_PRESENT}" = "oui" ] ; then
-  LAGRANGIEN=oui
-  echo ""
-  echo " Utilisation du module lagrangien "  
-  echo ""
+# Translation
+if [ "${USLAG2_PRESENT}" = "yes" ] ; then
+  LAGRANGIEN=yes
+  echo
+  echo ' Use the Lagrangian module'
+  echo
 else
-  LAGRANGIEN=non
+  LAGRANGIEN=no
 fi
-if [ "${USRAY2_PRESENT}" = "oui" ] ; then
-  RAYONNEMENT=oui
-  echo ""
-  echo " Utilisation du module rayonnement "  
-  echo ""
+if [ "${USRAY2_PRESENT}" = "yes" ] ; then
+  RAYONNEMENT=yes
+  echo
+  echo ' Use the radiative transfer module'
+  echo
 else
-  RAYONNEMENT=non
+  RAYONNEMENT=no
 fi
-COMBUSTION=non
-if [ "${USCPCL_PRESENT}" = "oui" ] ; then
-  COMBUSTION=oui
-  COMBUSTION_CPP=oui
-  echo ""
-  echo " Utilisation du module combustion charbon pulverise "  
-  echo ""
+COMBUSTION=no
+if [ "${USCPCL_PRESENT}" = "yes" ] ; then
+  COMBUSTION=yes
+  COMBUSTION_CPP=yes
+  echo
+  echo ' Use the pulverized coal combustion module'
+  echo
 else
-  COMBUSTION_CPP=non
+  COMBUSTION_CPP=no
 fi
-if [ "${USD3PC_PRESENT}" = "oui" ] ; then
-  COMBUSTION=oui
-  COMBUSTION_C3P=oui
-  echo ""
-  echo " Utilisation du module combustion chimie trois points "  
-  echo ""
+if [ "${USD3PC_PRESENT}" = "yes" ] ; then
+  COMBUSTION=yes
+  COMBUSTION_C3P=yes
+  echo
+  echo ' Use the 3-point chemistry combustion module'
+  echo
 else
-  COMBUSTION_C3P=non
+  COMBUSTION_C3P=no
 fi
-if [ "${USEBUC_PRESENT}" = "oui" ] ; then
-  COMBUSTION=oui
-  COMBUSTION_EBU=oui
-  echo ""
-  echo " Utilisation du module combustion EBU "  
-  echo ""
+if [ "${USEBUC_PRESENT}" = "yes" ] ; then
+  COMBUSTION=yes
+  COMBUSTION_EBU=yes
+  echo
+  echo ' Use the EBU combustion module'
+  echo
 else
-  COMBUSTION_EBU=non
+  COMBUSTION_EBU=no
 fi
-if [ "${USLWCC_PRESENT}" = "oui" ] ; then
-  COMBUSTION=oui
-  COMBUSTION_LWC=oui
-  echo ""
-  echo " Utilisation du module combustion LWC "  
-  echo ""
+if [ "${USLWCC_PRESENT}" = "yes" ] ; then
+  COMBUSTION=yes
+  COMBUSTION_LWC=yes
+  echo
+  echo ' Use the LWC combustion module'
+  echo
 else
-  COMBUSTION_LWC=non
+  COMBUSTION_LWC=no
 fi
-if [ "${USELCL_PRESENT}" = "oui" ] ; then
-  ELECTRIQUE=oui
-  echo ""
-  echo " Utilisation du module electrique "  
-  echo ""
+if [ "${USELCL_PRESENT}" = "yes" ] ; then
+  ELECTRIQUE=yes
+  echo
+  echo ' Use the electric arc module'
+  echo
 else
-  ELECTRIQUE=non
-fi
-
-if [ "${USCFCL_PRESENT}" = "oui" ] ; then
-  COMPRESSIBLE=oui
-  echo ""
-  echo " Utilisation du module compressible "  
-  echo ""
-else
-  COMPRESSIBLE=non
+  ELECTRIQUE=no
 fi
 
-if [ "${USFUCL_PRESENT}" = "oui" ] ; then
-  FUEL=oui
-  echo ""
-  echo " Utilisation du module fuel "
-  echo ""
+if [ "${USCFCL_PRESENT}" = "yes" ] ; then
+  COMPRESSIBLE=yes
+  echo
+  echo ' Use the compressible module'
+  echo
 else
-  FUEL=non
+  COMPRESSIBLE=no
 fi
 
-# Pas de lagrangien en parallele
-if [ "${LAGRANGIEN}" = "oui" ] ; then 
-  if [ ${nproc} -gt 1 ] ; then 
-    echo ""
-    echo " -- ERREUR -- "
-    echo " Le mode parallele est incompatible avec le module Lagrangien"
-    echo "  dans la version courante.                          "
-    echo ""
+if [ "${USFUCL_PRESENT}" = "yes" ] ; then
+  FUEL=yes
+  echo
+  echo ' Use the fule module'
+  echo
+else
+  FUEL=no
+fi
+
+# No Lagrangian in parallel
+if [ "${LAGRANGIEN}" = "yes" ] ; then
+  if [ ${nproc} -gt 1 ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' The Lagrangian module is incompatible with'
+    echo '  parallel runs as of the current version.'
+    echo
     exit 1
   fi
 fi
 
-########################################################################

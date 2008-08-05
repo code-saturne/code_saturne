@@ -137,23 +137,23 @@
     echo "              Preprocessing messages are output to the screen."
     echo
     echo " -h           This message"
-    echo 
+    echo
     exit
   }
 
 # Check arguments
-  if [ $# = 0 ] ; then 
+  if [ $# = 0 ] ; then
     usage
     exit
   fi
-  if [ $1 = "-h" ] ; then 
+  if [ $1 = "-h" ] ; then
     usage
     exit
   fi
 
 # Run Preprocessor
   ERROR=0
-  $ECS_HOME/bin/ecs $* -ens -case check_mesh || ERROR=1
+  $CS_HOME/bin/ecs $* -ens -case check_mesh || ERROR=1
 
   if [ $ERROR -eq 0 ] ; then
     if [ -d check_mesh.ensight ] ; then
@@ -164,10 +164,10 @@
       sed "s/chr\./preprocessor\./g" check_mesh.ensight/PREPROCESSOR.case > check_mesh.ensight/PREPROCESSOR.case.mod \
            && mv -f check_mesh.ensight/PREPROCESSOR.case.mod check_mesh.ensight/PREPROCESSOR.case
     fi
-  
+
   # Run Kernel
     $CS_HOME/bin/cs.exe -q --log 0 || ERROR=1
-  
+
     if [ $ERROR -eq 0 ] ; then
       if [ -d chr.ensight ] ; then
         mv chr.ensight/* check_mesh.ensight

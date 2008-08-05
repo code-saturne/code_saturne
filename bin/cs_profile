@@ -42,8 +42,8 @@
       MACHINE=`uname -m`
       case "$MACHINE" in
         *86)    NOM_ARCH=Linux ;;
-        x86_64) NOM_ARCH=Linux_x86_64 ;; 
-        ia64)   NOM_ARCH=Linux_IA64 ;; 
+        x86_64) NOM_ARCH=Linux_x86_64 ;;
+        ia64)   NOM_ARCH=Linux_IA64 ;;
         *)      NOM_ARCH=Linux_$MACHINE ;;
       esac
     fi
@@ -51,17 +51,18 @@
 
 # Code_Saturne version
 
-  if [ "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then 
+  if [ "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then
     CS_ROOT=/home/cont002/saturne
-  elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then 
+  elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then
     CS_ROOT=/gpfs2/home/saturne
-  elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
+  elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then
     CS_ROOT=/gpfs/home/saturne
   else
     CS_ROOT=/home/saturne
   fi
+#
   CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.a
-  ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.2
+  CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.2
   CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.2
   SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.0.2
 #
@@ -71,11 +72,11 @@
     CSHOMARD_HOME=
   fi
 #
-# Path 
-  PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
+# Path
+  PATH=$CS_HOME/bin:$PATH
 
-# Export variables
-  export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
+# Export environment variables
+  export NOM_ARCH CS_ROOT CS_HOME CSPP_HOME CSGUI_HOME
   export SYRCS_HOME CSHOMARD_HOME
   export PATH
 

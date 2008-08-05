@@ -28,26 +28,22 @@
 #
 ########################################################################
 #
-# Example of Code_Saturne execution script.
-#
 ########################################################################
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
-#   This test allows the user to make sure his ./lance is used and
-#   not the library's.
-  echo ' ' 
-  echo ' Warning: ' 
-  echo ' ' 
-  echo ' This lance script is the one of the library'
-  echo ' Therefore, it can not be used to run the case.' 
-  echo ' ' 
-  echo ' To use lance located in SCRIPTS, go to SCRIPTS and type '
-  echo '   ./lance '
-  echo ' ' 
+  echo ' '
+  echo ' Warning: '
+  echo ' '
+  echo ' This runcase script is a template from the library'
+  echo ' Therefore, it can not be used to run the case.'
+  echo ' '
+  echo ' To use runcase located in SCRIPTS, go to SCRIPTS and type '
+  echo '   ./runcase '
+  echo ' '
   echo ' If the message'
-  echo '   ./lance: cannot execute '
+  echo '   ./runcase: cannot execute '
   echo ' pops up, it is necessary to change the permissions as '
-  echo '   chmod +x ./lance '
-  echo ' ' 
+  echo '   chmod +x ./runcase '
+  echo ' '
   exit 1
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 ########################################################################
@@ -56,10 +52,10 @@
 #                  ===========================================
 #
 #BSUB -n 2
-#BSUB -W 00:05  
-#BSUB -o nometcaso.%J 
-#BSUB -e nometcase.%J 
-#BSUB -J nometcas
+#BSUB -W 00:05
+#BSUB -o nameandcaseo.%J
+#BSUB -e nameandcasee.%J
+#BSUB -J nameandcase
 #
 #  -n : number of processors
 #  -W : walltime as hh:mm
@@ -77,10 +73,10 @@
 #PBS -l mem=320mb
 #
 #PBS -j eo
-#PBS -N nometcas
+#PBS -N nameandcase
 #
 #  nodes    : number of nodes
-#  ppn      : number of processes per node
+#  ppn      : number of process per node
 #  walltime : wall clock time (hh:mm:ss)
 #  mem      : memory
 #
@@ -95,7 +91,7 @@
 #                  =============================================
 #
 # set the name of the job
-##$ -N nometcas
+##$ -N nameandcase
 #
 # request between 2 and 4 slots
 ##$ -pe mpich 2-4
@@ -118,14 +114,14 @@
 #
 #@ shell = /bin/sh
 #
-#@ job_name = nometcas
+#@ job_name = nameandcase
 #
 #@ job_type = parallel
 #@ cpus = 128
 #@ node_usage = not_shared
 #
 #@ network.MPI = csss,shared,US
-#@ bulkxfer = oui
+#@ bulkxfer = yes
 #
 #@ wall_clock_limit = 00:20:00
 #@ account_no = z001
@@ -137,7 +133,7 @@
 #@ queue
 # suggested environment settings:
 #  export MP_EAGER_LIMIT=65536
-#  export MP_SHARED_MEMORY=oui
+#  export MP_SHARED_MEMORY=yes
 #  export MEMORY_AFFINITY=MCM
 #  export MP_TASK_AFFINITY=MCM
 #
@@ -145,7 +141,7 @@
 #
 # BEGINNING OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
 #
-# lance.help gives more details about how to set variables.
+# runcase.help gives more details about the different variables.
 #
 #                    -------------------------------
 #
@@ -154,35 +150,35 @@ SOLCOM=0
 # On some systems, some external libraries may require TERM to be defined.
 export TERM=xterm
 #
-ETUDE=NOMET
-CAS=NOMCAS
+STUDY=STUDYNAME
+CASE=CASENAME
 PARAM=
-MAILLAGE="nomet.unv"
-COMMANDE_RC=
-COMMANDE_DF=
-COMMANDE_PERIO=
-COMMANDE_SYRTHES=
-DONNEES_THERMOCHIMIE=
+MESH=
+COMMAND_JOIN=
+COMMAND_CWF=
+COMMAND_PERIO=
+COMMAND_SYRTHES=
+THERMOCHEMISTRY_DATA=
 #
 # Choose the total number of processors used (if empty, automatic detection
 # through the batch system if possible, set to 1 otherwise).
-# When coupling with SYRTHES with MODE_COUPLAGE=MPI, the 1st processor is
+# When coupling with SYRTHES with COUPLING_MODE=MPI, the 1st processor is
 # used by SYRTHES, so the effective number of processors assigned to the
 # Kernel is reduced by 1.
 # The processors list is only usable when not running on a batch system
 # (as such a system usually already defines a similar list)
-NOMBRE_DE_PROCESSEURS=
-LISTE_PROCESSEURS=
+NUMBER_OF_PROCESSORS=
+PROCESSOR_LIST=
 #
-FICHIERS_DONNEES_UTILISATEUR=""
-FICHIERS_RESULTATS_UTILISATEUR=""
+USER_INPUT_FILES=""
+USER_OUTPUT_FILES=""
 #
 # Working directory (leave empty for automatic default directory)
 CS_TMP_PREFIX=
 #CS_TMP_PREFIX=/local00/users/`whoami`
 #
-OPTIMISATION=
-OPTION_LIB_EXT=
+OPTIMIZATION=
+CS_LIB_ADD=
 VALGRIND=
 #
 ARG_CS_VERIF=""
@@ -190,47 +186,47 @@ ARG_CS_OUTPUT=""
 ECHOCOMM=""
 #
 # Adaptation using HOMARD
-PILOTAGE_ADAPTATION=
+ADAPTATION=
 #
-resume=resume
-REPBASE=NOMREPBASE
-DATA=$REPBASE/DATA
-RESU=$REPBASE/RESU
-FORT=$REPBASE/FORT
-SCRIPTS=$REPBASE/SCRIPTS
-SUITE_AMONT=$DATA/SUITE
-PRE_TRAITEMENT_AMONT=$DATA/PRE_TRAITEMENT
-REPMAIL=$REPBASE/../MAILLAGE
+summary=summary
+CASEDIR=CASEDIRNAME
+DATA=$CASEDIR/DATA
+RESU=$CASEDIR/RESU
+SRC=$CASEDIR/SRC
+SCRIPTS=$CASEDIR/SCRIPTS
+RESTART_IN=$DATA/RESTART
+PREPROCESSOR_OUTPUT_IN=$DATA/PREPROCESSOR_OUTPUT
+MESHDIR=$CASEDIR/../MESH
 #
 # The following variables are only used in case of coupling with SYRTHES.
 #  DATA_SYR : directory where to find SYRTHES_ENV
-#  FORT_SYR : directory where to find possible user source files
-DATA_SYR=$REPBASE/DATA_SYR
-SYRTHES_ENV=syrthes.env 
-FORT_SYR=$REPBASE/FORT_SYR
+#  SRC_SYR : directory where to find possible user source files
+DATA_SYR=$CASEDIR/DATA_SYR
+SYRTHES_ENV=syrthes.env
+SRC_SYR=$CASEDIR/SRC_SYR
 #
 # The possible coupling mode with SYRTHES may be chosen here.
 # (be careful of lowercase/uppercase).
 #
-#  MODE_COUPLAGE=MPI        : should work on most machines.
-#  MODE_COUPLAGE=sockets    : should be activated on clusters when the MPI rank
+#  COUPLING_MODE=MPI        : should work on most machines.
+#  COUPLING_MODE=sockets    : should be activated on clusters when the MPI rank
 #                             of a process is not determinable or if MPI can
 #                             not be used.
-#  MODE_COUPLAGE=pipes      : on single node only (as pipes are not visible
+#  COUPLING_MODE=pipes      : on single node only (as pipes are not visible
 #                             across a network).
-MODE_COUPLAGE=MPI
+COUPLING_MODE=MPI
 #
 # We can use 3 execution modes
 # (be careful with lowercase/uppercase)
 #
-#  MODE_EXEC=complet        : default choice (Preprocessor then Kernel)
-#  MODE_EXEC=pre_traitement : run Proprocessor only, to generate
+#  EXEC_MODE=complet        : default choice (Preprocessor then Kernel)
+#  EXEC_MODE=pre_traitement : run Proprocessor only, to generate
 #                             preprocessor_output/* files.
-#  MODE_EXEC=calcul         : run Kernel only, using pre-generated
+#  EXEC_MODE=calcul         : run Kernel only, using pre-generated
 #                             preprocessor_output/* files, accessible in
 #                             directory $PRE_TRAITEMENT_AMONT.
 #
-MODE_EXEC=complet
+EXEC_MODE=complet
 #
 #
 #
@@ -242,7 +238,7 @@ MODE_EXEC=complet
 ########################################################################
 #
 #  Kernel library
-CS_HOME=NOMCSHOME
+CS_HOME=CSHOMENAME
 export CS_HOME
 #
 # Installation parameters
@@ -260,40 +256,40 @@ fi
 ########################################################################
 #  Mesh Adaptation
 #
-if [ ! -z  "${PILOTAGE_ADAPTATION}" ] ; then
-  if [ "${PILOTAGE_ADAPTATION}" = "-aide" -o "${PILOTAGE_ADAPTATION}" = "-help" ] ; then
-    ${CSHOMARD_HOME}/saturne_homard ${PILOTAGE_ADAPTATION}
+if [ ! -z  "${ADAPTATION}" ] ; then
+  if [ "${ADAPTATION}" = "-help" ] ; then
+    ${CSHOMARD_HOME}/saturne_homard ${ADAPTATION}
     exit 0
   else
-    Options_HOMARD="  -v"
-    ${CSHOMARD_HOME}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $REPBASE \
-                    -Pilotage_Adaptation $PILOTAGE_ADAPTATION $Options_HOMARD || exit 1
+    HOMARD_options="  -v"
+    ${CSHOMARD_HOME}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $CASEDIR \
+                    -Pilotage_Adaptation $ADAPTATION $HOMARD_options || exit 1
   fi
 fi
 #
 #########################################################################
-#  
 #
-N_COUPLAGE_SYRTHES=0
-N_COUPLAGE_SYRTHES=`echo $COMMANDE_SYRTHES | grep -c syrthes`
-if [ $N_COUPLAGE_SYRTHES = 0 ] ; then 
-  COUPLAGE_SYRTHES=non
+#
+N_SYRTHES_COUPLINGS=0
+N_SYRTHES_COUPLINGS=`echo $COMMAND_SYRTHES | grep -c syrthes`
+if [ $N_SYRTHES_COUPLINGS = 0 ] ; then
+  SYRTHES_COUPLING=no
 else
-  COUPLAGE_SYRTHES=oui
+  SYRTHES_COUPLING=yes
   export SYRTHES
-  if [ $N_COUPLAGE_SYRTHES -gt 1 ] ; then
+  if [ $N_SYRTHES_COUPLINGS -gt 1 ] ; then
    echo "This script can not handle multiple couplings with SYRTHES"
-   echo "Number of SYRTHES couplings requested: $N_COUPLAGE_SYRTHES"
+   echo "Number of SYRTHES couplings requested: $N_SYRTHES_COUPLINGS"
   fi
 fi
 #
-if [ $COUPLAGE_SYRTHES = oui ] ; then 
+if [ $SYRTHES_COUPLING = yes ] ; then
   if [ $SOLCOM -eq 1 ] ; then
    echo "SYRTHES coupling is not compatible with SOLCOM-type meshes"
    exit 1
   fi
 else
-  MODE_COUPLAGE=
+  COUPLING_MODE=
 fi
 #
 ########################################################################
@@ -304,20 +300,19 @@ fi
 THISSCRIPT=$0
 USER=`whoami`
 DATE=`date '+%m%d%H%M'`
-SUFFIXE=$DATE
+SUFFIX=$DATE
 EXE=cs14.exe
 EXE_SYR=syrthes
 #
-# Copy lance before changing to the working directory
+# Copy runcase before changing to the working directory
 # (as after that, the relative path will not be up to date).
 #
-
-cp $0 $RESU/lance.$SUFFIXE
+cp $0 $RESU/runcase.$SUFFIX
 #
 # Execution directory (reachable by all the processors)
 #
 if [ ! -z "$CS_TMP_PREFIX" ] ; then
-  RUN=${CS_TMP_PREFIX}/tmp_Saturne/$ETUDE.$CAS.$DATE
+  RUN=${CS_TMP_PREFIX}/tmp_Saturne/$STUDY.$CASE.$DATE
 #
 else
 #  Default if not specified by the user
@@ -327,9 +322,9 @@ else
     RUN=$SCRATCHDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
 #
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
-    RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
+    RUN=$TMPDIR/tmp_Saturne/$STUDY.$CASE.$DATE
   else
-    RUN=$HOME/tmp_Saturne/$ETUDE.$CAS.$DATE
+    RUN=$HOME/tmp_Saturne/$STUDY.$CASE.$DATE
   fi
 fi
 #
@@ -338,7 +333,7 @@ if [ "$RUN" != "$TMPDIR" ] ; then
   if [ ! -d $RUN ] ; then
     mkdir -p $RUN || exit 1
   else
-    echo "RUN=$RUN directory already exists."
+    echo "RUN=$RUN already exists."
     echo "The simulation may not be run."
     exit 1
   fi
@@ -368,47 +363,47 @@ elif [ ! -z "$LISTE_PROCESSEURS" ] ; then
    MPIHOSTS="$RUN/hostsfile"
 fi
 # Check number of processors
-if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
+if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
   if [ ! -z  "${NSLOTS}" ] ; then
     # for batch sytem at University of Manchester
-    NOMBRE_DE_PROCESSEURS=$NSLOTS
+    NUMBER_OF_PROCESSORS=$NSLOTS
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
     # for LSF batch system with Slurm
-    NOMBRE_DE_PROCESSEURS=$SLURM_NPROCS
+    NUMBER_OF_PROCESSORS=$SLURM_NPROCS
   elif [ ! -z "${LSB_HOSTS}" ] ; then
     # for LSF batch system without Slurm
-    NOMBRE_DE_PROCESSEURS=`echo $LSB_HOSTS | wc -w`
+    NUMBER_OF_PROCESSORS=`echo $LSB_HOSTS | wc -w`
   elif [ ! -z  "${MPIHOSTS}" ] ; then
     # for batch sytme on MFEE cluster or whenever MPIHOSTS is defined
-    NOMBRE_DE_PROCESSEURS=`cat $MPIHOSTS | wc -l`
+    NUMBER_OF_PROCESSORS=`cat $MPIHOSTS | wc -l`
   else
-    NOMBRE_DE_PROCESSEURS=1
+    NUMBER_OF_PROCESSORS=1
   fi
 fi
 #
 # Check number of nodes if possible
-NOMBRE_DE_NOEUDS=1
-if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
+NUMBER_OF_NODES=1
+if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
   if [ ! -z  "${MPIHOSTS}" ] ; then
-    NOMBRE_DE_NOEUDS=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
+    NUMBER_OF_NODES=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
   fi
 fi
 #
 # Check for the number of requested processors
-nproc_noy=${NOMBRE_DE_PROCESSEURS}
+nproc_kernel="${NUMBER_OF_PROCESSORS}"
 echo
 echo
-if [ $COUPLAGE_SYRTHES = oui ] ; then
-  echo "Coupling of Code_Saturne and SYRTHES on"
+if [ $SYRTHES_COUPLING = yes ] ; then
+  echo "Coupling of Code_Saturne and SYRTHES activated."
   if [ ! -z "$MPIHOSTS" ] ; then
   #  1 processor is reserved for SYRTHES if coupled through MPI.
-    if [ "$MODE_COUPLAGE" = "MPI" ] ; then
-      (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
-      if [ $nproc_noy -lt 1 ] ; then 
+    if [ "$COUPLING_MODE" = "MPI" ] ; then
+      (( nproc_kernel = nproc_kernel - N_SYRTHES_COUPLINGS ))
+      if [ $nproc_kernel -lt 1 ] ; then
         echo
         echo
-        echo " WARNING, if MODE_COUPLAGE = MPI, SYRTHES reserves 1 processor,"
-        echo " so the requested number of processors ($NOMBRE_DE_PROCESSEURS)"
+        echo " WARNING, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor,"
+        echo " so the requested number of processors ($NUMBER_OF_PROCESSORS)"
         echo " is too small."
         echo " Increase the number of requested processors."
         echo
@@ -416,56 +411,56 @@ if [ $COUPLAGE_SYRTHES = oui ] ; then
       fi
     fi
     # if SYRTHES is used in batch mode, check that everything fits on a node
-    if [ "$MODE_COUPLAGE" = "pipes" -a "$NOMBRE_DE_NOEUDS" != 1 ] ; then
+    if [ "$COUPLING_MODE" = "pipes" -a "$NUMBER_OF_NODES" != 1 ] ; then
       echo
       echo
-      echo " Warning, with MODE_COUPLAGE = pipes, SYRTHES-Kernel"
+      echo " Warning, with COUPLING_MODE = pipes, SYRTHES-Kernel"
       echo "   communications are done through pipes. "
       echo " Here, multiple nodes (hosts) were selected for the parallel run:"
       cat "$MPIHOSTS"
-      echo " Use another value of MODE_COUPLAGE "
+      echo " Use another value of COUPLING_MODE "
       echo
       exit 1
     fi
   else
   # If we are not in batch mode and we use coupling through MPI, we must
   # specify a number of processors greater than 1 to activate MPI.
-    if [ "$MODE_COUPLAGE" = "MPI" ] ; then
-      (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
-      if [ $nproc_noy -lt 1 ] ; then 
+    if [ "$COUPLING_MODE" = "MPI" ] ; then
+      (( nproc_kernel = nproc_noy - N_SYRTHES_COUPLING ))
+      if [ $nproc_kernel -lt 1 ] ; then
         echo
         echo
-        echo " Warning, if MODE_COUPLAGE = MPI, SYRTHES reserves 1 processor"
+        echo " Warning, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor"
         echo " (which need not be a physical processor)."
-        echo " ($NOMBRE_DE_PROCESSEURS) must be strictly greater than 1."
-        echo " Increase NOMBRE_DE_PROCESSEURS."
+        echo " ($NUMBER_OF_PROCESSORS) must be strictly greater than 1."
+        echo " Increase NUMBER_OF_PROCESSORS."
         echo
         exit 1
       fi
     fi
   # If were are not in batch mode and are coupling with pipes,
-  # we also reduce NOMBRE_DE_PROCESSEURS so as not to need MPI if
+  # we also reduce NUMBER_OF_PROCESSORS so as not to need MPI if
   # Code_Saturne and SYRTHES are each running on 1 processor.
-    if [ "$MODE_COUPLAGE" = "pipes" ] ; then
-      (( nproc_noy = nproc_noy - N_COUPLAGE_SYRTHES ))
-      (( NOMBRE_DE_PROCESSEURS = NOMBRE_DE_PROCESSEURS - 1 ))
-      if [ $nproc_noy -lt 1 ] ; then 
+    if [ "$COUPLING_MODE" = "pipes" ] ; then
+      (( nproc_kernel = nproc_noy - N_SYRTHES_COUPLING ))
+      (( NUMBER_OF_PROCESSORS = NUMBER_OF_PROCESSORS - 1 ))
+      if [ $nproc_kernel -lt 1 ] ; then
         echo
         echo
-        echo " Warning, with MODE_COUPLAGE = pipes, SYRTHES reserves a processor"
+        echo " Warning, with COUPLING_MODE = pipes, SYRTHES reserves a processor"
         echo "   (possibly virtual)."
-        echo "   The number of processors requested ($NOMBRE_DE_PROCESSEURS)"
+        echo "   The number of processors requested ($NUMBER_OF_PROCESSORS)"
         echo "   msut thus be strictly greater than 1."
-        echo " Increase NOMBRE_DE_PROCESSEURS."
+        echo " Increase NUMBER_OF_PROCESSORS."
         echo
         exit 1
       fi
     fi
   fi
 fi
-if [ $nproc_noy -gt 1 ] ; then
-  echo "Parallel Code_Saturne with partitioning in $nproc_noy sub-domains"
-  if [ $SOLCOM = 1 ] ; then 
+if [ $nproc_kernel -gt 1 ] ; then
+  echo "Parallel Code_Saturne with partitioning in $nproc_kernel sub-domains"
+  if [ $SOLCOM = 1 ] ; then
     echo
     echo
     echo " Parallel run impossible with SOLCOM = $SOLCOM "
@@ -477,13 +472,13 @@ else
   echo "Single processor Code_Saturne simulation"
 fi
 if [ ! -z "$MPIHOSTS" ] ; then
-  echo "Total number of processors: $NOMBRE_DE_PROCESSEURS"
+  echo "Total number of processors: $NUMBER_OF_PROCESSORS"
 fi
 #
 # In parallel mode, the number of processors must be specified
 # to the Kernel, as well as to the Preprocessor
-if [ $nproc_noy -gt 1 ] ; then 
-  ARG_ECS_PAR=" -p $nproc_noy"
+if [ $nproc_kernel -gt 1 ] ; then
+  ARG_ECS_PAR=" -p $nproc_kernel"
   ARG_CS_PAR=" -mpi"
 else
   ARG_ECS_PAR=""
@@ -492,52 +487,52 @@ fi
 #
 # System-related parameters
 #
-if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then 
+if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
 #
 # Default values defined at start
   MPIBOOT=""
   MPIHALT=""
-  MPIRUN="mpirun -np ${NOMBRE_DE_PROCESSEURS}"
+  MPIRUN="mpirun -np ${NUMBER_OF_PROCESSORS}"
   if [ -d "$CS_MPI_PATH" ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "OSF1" ] ; then 
-    MPIRUN="prun -n ${NOMBRE_DE_PROCESSEURS} -stv"
+  if [ "$NOM_ARCH" = "OSF1" ] ; then
+    MPIRUN="prun -n ${NUMBER_OF_PROCESSORS} -stv"
 #
   elif [ "$NOM_ARCH" = "Linux_CCRT" ] ; then
     MPIRUN="mpirun -srun"
 #
   elif [ "$NOM_ARCH" = "Linux_IA64" ] ; then
-    MPIRUN="srun -n ${NOMBRE_DE_PROCESSEURS}"
+    MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"
 #
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then 
-    MPIRUN="mpirun -np ${NOMBRE_DE_PROCESSEURS} -machinefile $PBS_NODEFILE"
+  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
+    MPIRUN="mpirun -np ${NUMBER_OF_PROCESSORS} -machinefile $PBS_NODEFILE"
 #
-  else 
-    if [ -d "$CS_MPI_PATH" ] ; then 
+  else
+    if [ -d "$CS_MPI_PATH" ] ; then
       if [ -f "${CS_MPI_PATH}/mpdboot" ] ; then          # With MPICH2
         MPIBOOT="${CS_MPI_PATH}/mpdboot"
         MPIHALT="${CS_MPI_PATH}/mpdallexit"
-        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NOMBRE_DE_PROCESSEURS}" 
+        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NUMBER_OF_PROCESSORS}"
         if [ ! -z "$MPIHOSTS" ] ; then
-          MPIBOOT="$MPIBOOT -n ${NOMBRE_DE_NOEUDS} -v -f $MPIHOSTS"
-	fi
+          MPIBOOT="$MPIBOOT -n ${NUMBER_OF_NODES} -v -f $MPIHOSTS"
+        fi
       elif [ -f "${CS_MPI_PATH}/ompi_info" ] ; then      # With Open MPI
-        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NOMBRE_DE_PROCESSEURS}" 
+        MPIRUN="${CS_MPI_PATH}/mpiexec -n ${NUMBER_OF_PROCESSORS}"
         if [ ! -z "$MPIHOSTS" ] ; then
           MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
         fi
       elif [ -f "${CS_MPI_PATH}/lamboot" ] ; then        # With LAM MPI
         MPIBOOT="${CS_MPI_PATH}/lamboot"
         MPIHALT="${CS_MPI_PATH}/lamhalt"
-        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NOMBRE_DE_PROCESSEURS}" 
+        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NUMBER_OF_PROCESSORS}"
         if [ ! -z "$MPIHOSTS" ] ; then
           MPIBOOT="$MPIBOOT -v $MPIHOSTS"
           MPIHALT="$MPIHALT -v $MPIHOSTS"
         fi
       elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then   # With MPICH
-        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NOMBRE_DE_PROCESSEURS}" 
+        MPIRUN="${CS_MPI_PATH}/mpirun -np ${NUMBER_OF_PROCESSORS}"
         if [ ! -z "$TMPDIR/machines" ] ; then   # With batch at Univ. Manchester
           MPIRUN="$MPIRUN -machinefile $TMPDIR/machines"
         elif [ ! -z "$MPIHOSTS" ] ; then
@@ -561,13 +556,13 @@ fi
 # Communications
 #
 # Socket definition
-if [ $COUPLAGE_SYRTHES = oui -a "$MODE_COUPLAGE" = "sockets" ] ; then
+if [ $SYRTHES_COUPLING = yes -a "$COUPLING_MODE" = "sockets" ] ; then
   SOCKETSYR="-comm-socket"
 else
   SOCKETSYR=""
 fi
 # To help debug coupling problems, make communication more verbose
-if [ ! -z "$ECHOCOMM" ] ; then 
+if [ ! -z "$ECHOCOMM" ] ; then
   ECHOCOMMNB="$ECHOCOMM"
   ECHOCOMMECS="-echo-comm $ECHOCOMMNB"
   ECHOCOMMSYR="-echo-comm $ECHOCOMMNB"
@@ -585,7 +580,7 @@ echo ' '
 echo '                      Code_Saturne is running '
 echo '                      *********************** '
 echo ' '
-echo ' Working directory (to be periodically cleaned) : ' 
+echo ' Working directory (to be periodically cleaned) : '
 echo '    ' $RUN
 #
 ########################################################################
@@ -602,16 +597,16 @@ if [ "$CS_HOME" = "" ]; then
 else
   echo
   echo ' Kernel version:          ' $CS_HOME
-  echo ' Preprocessor version:    ' $ECS_HOME
+  echo ' Preprocessor version:    ' $CSPP_HOME
 fi
 
-source_cas=$FORT
+source_cas=$SRC
 
 if [ -f compil.log ] ; then
   rm -f compil.log
 fi
 
-if [ $MODE_EXEC != pre_traitement ] ; then
+if [ $EXEC_MODE != pre_traitement ] ; then
 
   echo
   echo  "  ***************************************************************"
@@ -622,16 +617,16 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
   #
   # Copy of the parameter file
-  if [ ! -z "$PARAM" ] ; then 
+  if [ ! -z "$PARAM" ] ; then
     var=$DATA/$PARAM
-    if [ -f $var ] ; then 
-      COMMANDE_PARAM="-param $PARAM"
+    if [ -f $var ] ; then
+      COMMAND_PARAM="-param $PARAM"
       cp $var .
     else
-      echo ' ' 
-      echo ' -- ERROR -- ' 
+      echo ' '
+      echo ' -- ERROR -- '
       echo ' The parametes file ' $var
-      echo ' can not be accessed.' 
+      echo ' can not be accessed.'
       exit 1
     fi
   fi
@@ -641,19 +636,19 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
   # Copy of the user source files
   # (no links: the directory is copied later)
-  mkdir fort_saturne
-  cd fort_saturne
-  for fich in ${source_cas}/*.[F,c,h] ; do 
-    if [ -f $fich ] ; then
-      cp ${fich} .
+  mkdir src_saturne
+  cd src_saturne
+  for f in ${source_cas}/*.[F,c,h] ; do
+    if [ -f $f ] ; then
+      cp ${f} .
     fi
   done
 
-# Detection de la presence et tests de compatibilite de modules
+  # Detect presence and test for compatibility of modules.
   if [ ! -z "$PARAM" ] ; then
-    ${CS_HOME}/bin/check_consistency -param ../$PARAM -nproc $nproc_noy
+    ${CS_HOME}/bin/check_consistency -param ../$PARAM -nproc $nproc_kernel
   else
-    ${CS_HOME}/bin/check_consistency -nproc $nproc_noy
+    ${CS_HOME}/bin/check_consistency -nproc $nproc_kernel
   fi
   if [ $? = 1 ] ; then
     exit 1
@@ -662,15 +657,15 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 # Compilation
   ln -s ${CS_HOME}/bin/Makefile .
 
-  make saturne OPT="${OPTIMISATION}" OPTLIBS="${OPTION_LIB_EXT}"  2>>$cur_dir/compil.log 1>&2
+  make saturne OPT="${OPTIMIZATION}" OPTLIBS="${CS_LIB_ADD}"  2>>$cur_dir/compil.log 1>&2
   if [ $? -ne 0 ]
   then
-    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
+    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
     echo "COMPILE OR LINK ERROR"
     rm -f *.o
     exit 1
   else
-    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
+    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
   fi
 
 # Cleanup
@@ -678,7 +673,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
   mv $EXE ${cur_dir}/
   cd ${cur_dir}
 
-  if [ $COUPLAGE_SYRTHES = oui ] ; then 
+  if [ $SYRTHES_COUPLING = yes ] ; then
 
     echo
     echo  "  **********************************************************"
@@ -686,23 +681,23 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     echo  "  **********************************************************"
 
     cur_dir=`pwd`
-    mkdir fort_syrthes 
-    cd fort_syrthes
-    for fich in $FORT_SYR/*.[F,c,h] ; do 
-      if [ -f $fich ] ; then
-        cp ${fich} .
+    mkdir src_syrthes
+    cd src_syrthes
+    for f in $SRC_SYR/*.[F,c,h] ; do
+      if [ -f $f ] ; then
+        cp ${f} .
       fi
     done
     ln -s $SYRCS_HOME/bin/Makefile .
     make syrthes NOM_ARCH=${NOM_ARCH} 2>>$cur_dir/compil.log 1>&2
     if [ $? -ne 0 ]
     then
-      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
       echo "COMPILE OR LINK ERROR"
       rm -f *.o
       exit 1
     else
-      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIXE
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
     fi
     make clean
     mv syrthes $cur_dir/
@@ -710,7 +705,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
 
   fi
 
-fi # MODE_EXEC != pre_traitement
+fi # EXEC_MODE != pre_traitement
 
 #
 ########################################################################
@@ -721,45 +716,45 @@ echo
 echo  "  ********************************************"
 echo  "             Preparing calculation            "
 echo  "  ********************************************"
-echo 
+echo
 if [ $SOLCOM = 1 ]
 then
-  ln -s $REPMAIL/$MAILLAGE geomet || exit 1
-elif [ $MODE_EXEC != calcul ]
+  ln -s $MESHDIR/$MESH geomet || exit 1
+elif [ ${EXEC_MODE} != calcul ]
 then
-  for var in $MAILLAGE ; do
-    ln -s $REPMAIL/$var $var || exit 1
+  for var in $MESH ; do
+    ln -s $MESHDIR/$var $var || exit 1
     # Special case for meshes in EnSight format: link to .geo file necessary
     # (retrieve name through .case file)
     var2=`basename $var .case`
     if [ $var2 != $var ] ; then
       ficgeo_ensight=`awk '/^model:/ {print $2}' $var`
-      ln -s $REPMAIL/$ficgeo_ensight $ficgeo_ensight || FIN
+      ln -s $MESHDIR/$ficgeo_ensight $ficgeo_ensight || FIN
     fi
   done
-elif [ $MODE_EXEC = calcul ]
+elif [ $EXEC_MODE = calcul ]
 then
-    ln -s ${PRE_TRAITEMENT_AMONT} preprocessor_output || exit 1
+    ln -s ${PREPROCESSOR_OUTPUT_IN} preprocessor_output || exit 1
 fi
 #
-if [ $MODE_EXEC != pre_traitement ] ; then
+if [ $EXEC_MODE != pre_traitement ] ; then
 
-  for var in ${SUITE_AMONT}/* ; do 
-    if [ -f $var ] ; then 
+  for var in ${RESTART_IN}/* ; do
+    if [ -f $var ] ; then
       varb=`basename $var`
-      if   [ $varb = suiava ] ; then 
+      if   [ $varb = suiava ] ; then
         vara=suiamo
-      elif [ $varb = suiavx ] ; then 
+      elif [ $varb = suiavx ] ; then
         vara=suiamx
-      elif [ $varb = vorava ] ; then 
+      elif [ $varb = vorava ] ; then
         vara=voramo
-      elif [ $varb = t1dava ] ; then 
+      elif [ $varb = t1dava ] ; then
         vara=t1damo
-      elif [ $varb = rayava ] ; then 
+      elif [ $varb = rayava ] ; then
         vara=rayamo
-      elif [ $varb = lagava ] ; then 
+      elif [ $varb = lagava ] ; then
         vara=lagamo
-      elif [ $varb = lasava ] ; then 
+      elif [ $varb = lasava ] ; then
         vara=lasamo
       else
         vara=$varb
@@ -768,27 +763,31 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     fi
   done
   #
-  if [ "${COMBUSTION}" = "oui" -o "${ELECTRIQUE}" = "oui" -o "${FUEL}" = "oui"  ] ; then 
-    var=$DATA/$DONNEES_THERMOCHIMIE
-    if [ -f $var ] ; then 
+  if [ "$THERMOCHEMISTRY_DATA" != "" ] ; then
+    var=$DATA/$THERMOCHEMISTRY_DATA
+    if [ -f $var ] ; then
       cp $var dp_tch
       # Copy so as to have correct name upon backup
-      if [ "$DONNEES_THERMOCHIMIE" != "dp_tch" ] ; then 
-        cp dp_tch $DONNEES_THERMOCHIMIE
+      if [ "$THERMOCHEMISTRY_DATA" != "dp_tch" ] ; then
+        cp dp_tch $THERMOCHEMISTRY_DATA
       fi
     else
-      echo ' ' 
-      echo ' -- ERROR -- ' 
+      echo ' '
+      echo ' -- ERROR -- '
       echo ' The thermochemistry file ' $var
-      echo ' can not be accessed. ' 
+      echo ' can not be accessed. '
       exit 1
-    fi    
-    if [ "${COMBUSTION}" = "oui" -o "${FUEL}" = "oui" ] ; then 
-      cp $CS_HOME/data/thch/JANAF JANAF
     fi
   fi
   #
-  if [ $COUPLAGE_SYRTHES = oui ] ; then 
+  for f in uscpcl.F usd3pc.F usebuc.F uslwcc.F usfucl.F
+  do
+    if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
+      cp $CS_HOME/data/thch/JANAF JANAF
+    fi
+  done
+  #
+  if [ $SYRTHES_COUPLING = yes ] ; then
     #
     cp $DATA_SYR/$SYRTHES_ENV  .
     #
@@ -798,7 +797,7 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     #
     cp $SYRTHES_ENV  $SYRTHES_ENV.save
     #
-    AMONT_SYR=`grep "AMONT :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"` 
+    AMONT_SYR=`grep "AMONT :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
     AVAL_SYR=` grep "AVAL :"  $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
     SUITE_SYR=`grep "SUITE :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
     SYRTHES_DATA=`grep "DONNEES DU CALCUL :" $SYRTHES_ENV | awk -F: '{print $NF}'`
@@ -808,146 +807,154 @@ if [ $MODE_EXEC != pre_traitement ] ; then
     SYRTHES_MAIL_RAY=`grep "MAILLAGE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
     SYRTHES_CORR=`grep "STOCKAGE DES CORRESPONDANTS :" $SYRTHES_ENV | awk -F: '{print $NF}'`
     SYRTHES_FFOR_RAY=`grep "FACTEURS DE FORME RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-    SYRTHES_CORR_RAY=`grep "STOCKAGE DES CORRESPONDANTS RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_RES1=`grep "RESU SYRTHES 1 :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_RES2=`grep "RESU SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_CHR2=`grep "CHRONO SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_HIST=`grep "HISTORIQUE SOLIDE RESULTAT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_MAIL_PEAU_FLUIDE=`grep "MAILLAGE PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_RESU_PEAU_FLUIDE=`grep "RESULTATS PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_CHR_PEAU_FLUIDE=`grep "CHRONO PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_MAIL_RAY=`grep "MAILLAGE DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_RESU_RAY=`grep "RESULTATS DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_CHR_RAY=`grep "CHRONO DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
-    SYRTHES_AVAL_HIST_RAY=`grep "HISTORIQUE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`   
+    SYRTHES_CORR_RAY=`grep "STOCKAGE DES CORRESPONDANTS RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_RES1=`grep "RESU SYRTHES 1 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_RES2=`grep "RESU SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_CHR2=`grep "CHRONO SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_HIST=`grep "HISTORIQUE SOLIDE RESULTAT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_MAIL_PEAU_FLUIDE=`grep "MAILLAGE PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_RESU_PEAU_FLUIDE=`grep "RESULTATS PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_CHR_PEAU_FLUIDE=`grep "CHRONO PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_MAIL_RAY=`grep "MAILLAGE DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_RESU_RAY=`grep "RESULTATS DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_CHR_RAY=`grep "CHRONO DE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+    SYRTHES_AVAL_HIST_RAY=`grep "HISTORIQUE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
     sed -e "s/:.*\//: /"              $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     sed -e "s/AMONT :.*/AMONT : .\//" $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     sed -e "s/AVAL :.*/AVAL : .\//"   $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     sed -e "s/SUITE :.*/SUITE : .\//" $SYRTHES_ENV > $SYRTHES_ENV.mod ; mv -f $SYRTHES_ENV.mod $SYRTHES_ENV
     #
     # if empty, we use default names for results:
-    if [ -z "$SYRTHES_CORR" ] ; then 
+    if [ -z "$SYRTHES_CORR" ] ; then
       SYRTHES_CORR="corresp"
     fi
-    if [ -z "$SYRTHES_CORR_RAY" ] ; then 
+    if [ -z "$SYRTHES_CORR_RAY" ] ; then
       SYRTHES_CORR_RAY="corresp_ray"
-    fi 
-    if [ -z "$SYRTHES_FFOR_RAY" ] ; then 
+    fi
+    if [ -z "$SYRTHES_FFOR_RAY" ] ; then
       SYRTHES_FFOR_RAY="fdf_ray"
-    fi 
-    if [ -z "$SYRTHES_AVAL_RES1" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_RES1" ] ; then
       SYRTHES_AVAL_RES1="geoms"
-    fi 
-    if [ -z "$SYRTHES_AVAL_RES2" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_RES2" ] ; then
       SYRTHES_AVAL_RES2="resus"
-    fi 
-    if [ -z "$SYRTHES_AVAL_CHR2" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_CHR2" ] ; then
       SYRTHES_AVAL_CHR2="chronos"
-    fi  
-    if [ -z "$SYRTHES_AVAL_HIST" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_HIST" ] ; then
       SYRTHES_AVAL_HIST="histos"
-    fi 
-    if [ -z "$SYRTHES_AVAL_MAIL_PEAU_FLUIDE" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_MAIL_PEAU_FLUIDE" ] ; then
       SYRTHES_AVAL_MAIL_PEAU_FLUIDE="geomf_ef"
-    fi 
-    if [ -z "$SYRTHES_AVAL_RESU_PEAU_FLUIDE" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_RESU_PEAU_FLUIDE" ] ; then
       SYRTHES_AVAL_RESU_PEAU_FLUIDE="resuf_ef"
-    fi 
-    if [ -z "$SYRTHES_AVAL_CHR_PEAU_FLUIDE" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_CHR_PEAU_FLUIDE" ] ; then
       SYRTHES_AVAL_CHR_PEAU_FLUIDE="chronof_ef"
-    fi 
-    if [ -z "$SYRTHES_AVAL_MAIL_RAY" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_MAIL_RAY" ] ; then
       SYRTHES_AVAL_MAIL_RAY="resu_ray.geom"
-    fi 
-    if [ -z "$SYRTHES_AVAL_RESU_RAY" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_RESU_RAY" ] ; then
       SYRTHES_AVAL_RESU_RAY="resu_ray"
-    fi 
-    if [ -z "$SYRTHES_AVAL_CHR_RAY" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_CHR_RAY" ] ; then
       SYRTHES_AVAL_CHR_RAY="chrono_ray"
-    fi 
-    if [ -z "$SYRTHES_AVAL_HIST_RAY" ] ; then 
+    fi
+    if [ -z "$SYRTHES_AVAL_HIST_RAY" ] ; then
       SYRTHES_AVAL_HIST_RAY="histor"
-    fi 
+    fi
     #
     #
     # Transfer SYRTHES files
     #
-    for var in $SYRTHES_DATA $SYRTHES_GEOM $SYRTHES_SUIT $SYRTHES_DATA_RAY $SYRTHES_MAIL_RAY ; do 
+    for var in $SYRTHES_DATA $SYRTHES_GEOM $SYRTHES_SUIT $SYRTHES_DATA_RAY $SYRTHES_MAIL_RAY ; do
       cp $AMONT_SYR/$var $RUN/`echo $var | sed -e "s/.*\///"`
     done
-    for var in $SYRTHES_CORR $SYRTHES_FFOR_RAY $SYRTHES_CORR_RAY ; do 
+    for var in $SYRTHES_CORR $SYRTHES_FFOR_RAY $SYRTHES_CORR_RAY ; do
       cp $SUITE_SYR/$var $RUN/`echo $var | sed -e "s/.*\///"`
     done
     #
   fi
   #
-  if [ ! -z "$FICHIERS_DONNEES_UTILISATEUR" ] ; then 
-    for fich in $FICHIERS_DONNEES_UTILISATEUR ; do 
-      cp $DATA/$fich .
+  if [ ! -z "$USER_INPUT_FILES" ] ; then
+    for f in $USER_INPUT_FILES ; do
+      cp $DATA/$f .
     done
   fi
   #
-fi # MODE_EXEC != pre_traitement
+fi # EXEC_MODE != pre_traitement
 
 ########################################################################
 # Maximum time for PBS (done here so as to leave time for PBS to
 # realize that things have started).
 #
-if [ "$PBS_JOBID" != "" ] ; then 
+if [ "$PBS_JOBID" != "" ] ; then
   CS_MAXTIME=`qstat -r $PBS_JOBID | grep $PBS_JOBID | sed -e's/ \{1,\}/ /g' | cut -d ' ' -f 9`
-  export CS_MAXTIME   
+  export CS_MAXTIME
 fi
 #
 ########################################################################
 #
 # Summary: start
 #
-echo '========================================================'>>$resume
-echo '   STARTING TIME    : ' $DATE                            >>$resume
-echo '  ----------------------------------------------------'  >>$resume
-echo '    CS_HOME         : ' $CS_HOME                         >>$resume
-echo '    ECS_HOME        : ' $ECS_HOME                        >>$resume
-echo '    ------------------------------------------------  '  >>$resume
-cat  $CS_HOME/bin/cs_profile                                   >>$resume
-echo '  ----------------------------------------------------'  >>$resume
-echo '    USER            : ' $USER                            >>$resume
-echo '    ARCHITECTURE    : ' $NOM_ARCH                        >>$resume
-echo '========================================================'>>$resume
-echo '    MACHINE         : '                                  >>$resume
-     uname -a                                                  >>$resume
-if [ -z "$NOMBRE_DE_PROCESSEURS" ] ; then 
-  echo '    N PROCS         : ' 1                              >>$resume
-else
-  echo '    N PROCS         : ' $NOMBRE_DE_PROCESSEURS         >>$resume
-fi
-if [ -z "$LISTE_PROCESSEURS" ] ; then 
-  echo '    PROCESSORS      : ' default                        >>$resume
-else
-  echo '    PROCESSORS      : ' $LISTE_PROCESSEURS             >>$resume
-fi
-echo '========================================================'>>$resume
-echo '  ----------------------------------------------------'  >>$resume
-echo '    CASE            : ' $CAS                             >>$resume
-echo '      CONFIG.       : ' $CONF                            >>$resume
-echo '        DATA        : ' $DATA                            >>$resume
-echo '        FORT        : ' $FORT                            >>$resume
-echo '        RESU        : ' $RESU                            >>$resume
-echo '  ----------------------------------------------------'  >>$resume
-echo '    REP. RUN        : ' $RUN                             >>$resume
-echo '  ----------------------------------------------------'  >>$resume
-echo '    EXECUTABLE      : ' $EXE                             >>$resume
-echo '      LIB           : ' $BIB                             >>$resume
-echo '      f COMPILER    : ' $COMPF                           >>$resume
-echo '      c COMPILER    : ' $COMPC                           >>$resume
-echo '      f OPTIONS     : ' $OPTCOMPF1                       >>$resume
-echo '  ----------------------------------------------------'  >>$resume
+CURDATE=`unset LANG ; date`
 #
-# Execution 
+echo '========================================================'>>$summary
+echo '   Start time       : ' $CURDATE                         >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    CS_HOME         : ' $CS_HOME                         >>$summary
+echo '    CSPP_HOME       : ' $CSPP_HOME                       >>$summary
+echo '    SYRCS_HOME      : ' $SYRCS_HOME                      >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    CS_ROOT         : ' $CS_ROOT                         >>$summary
+echo '    CSGUI_HOME      : ' $CSGUI_HOME                      >>$summary
+echo '    CSHOMARD_HOME   : ' $CSHOMARD_HOME                   >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary
+echo '    PATH            : ' $PATH                            >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    User            : ' $USER                            >>$summary
+echo '    Architecture    : ' $NOM_ARCH                        >>$summary
+echo '========================================================'>>$summary
+echo '    Machine         : '                                  >>$summary
+     uname -a                                                  >>$summary
+if [ -z "$NUMBER_OF_PROCESSORS" ] ; then
+  echo '    N Procs         : ' 1                              >>$summary
+else
+  echo '    N Procs         : ' $NUMBER_OF_PROCESSORS          >>$summary
+fi
+if [ -z "$PROCESSOR_LIST" ] ; then
+  echo '    Processors      : ' default                        >>$summary
+else
+  echo '    Processors      : ' $PROCESSOR_LIST                >>$summary
+fi
+echo '========================================================'>>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Case            : ' $CASE                            >>$summary
+echo '      DATA          : ' $DATA                            >>$summary
+echo '      SRC           : ' $SRC                             >>$summary
+echo '      RESU          : ' $RESU                            >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Exec. dir.      : ' $RUN                             >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Eexecutable     : ' $EXE                             >>$summary
+if [ -z "$OPTIMIZATION" ] ; then
+  echo '      Optimization  : default (production)'          >>$summary
+else
+  echo '      Optimization  : ' $OPTIMIZATION                >>$summary
+fi
+echo '  ----------------------------------------------------'  >>$summary
+#
+# Execution
 echo
 echo  "  ********************************************"
 echo  "           Code_Saturne is running            "
 echo  "  ********************************************"
-echo 
+echo
 #
 ERROR=$RUN/error
 erreur()
@@ -957,47 +964,47 @@ echo ERREUR $1 >> $ERROR
 #
 # More settings for SYRTHES coupling
 #
-if [ $COUPLAGE_SYRTHES = oui ] ; then
+if [ $SYRTHES_COUPLING = yes ] ; then
   #
-  if [ "$MODE_COUPLAGE" = "pipes" ] ; then
+  if [ "$COUPLING_MODE" = "pipes" ] ; then
     #
     # Pipe creation if necessary
     #
-    if [ $nproc_noy -gt 1 ] ; then 
+    if [ $nproc_kernel -gt 1 ] ; then
       num=1
-      while [ $num -le $nproc_noy ] ; do 
+      while [ $num -le $nproc_kernel ] ; do
         numf=`echo $num | awk '{printf "%4.4i\n", $1}'`
-        for fich in solveur_n${numf}_vers_syrthes.0001 syrthes_vers_solveur_n$numf.0001 ; do
-          if [ -f $fich ] ; then
-            rm -f $fich
+        for f in solveur_n${numf}_vers_syrthes.0001 syrthes_vers_solveur_n$numf.0001 ; do
+          if [ -f $f ] ; then
+            rm -f $f
           fi
-          mkfifo $fich
+          mkfifo $f
         done
         (( num = num + 1 ))
       done
     else
-      for fich in solveur_vers_syrthes.0001 syrthes_vers_solveur.0001 ; do
-        if [ -f $fich ] ; then 
-          rm -f $fich
+      for f in solveur_vers_syrthes.0001 syrthes_vers_solveur.0001 ; do
+        if [ -f $f ] ; then
+          rm -f $f
         fi
-        mkfifo $fich
+        mkfifo $f
       done
     fi
     #
-  # If sockets, change COMMANDE_SYRTHES 
+  # If sockets, change COMMAND_SYRTHES
   #   (add -socket after -syrthes)
   #
-  elif [ "$MODE_COUPLAGE" = "sockets" ] ; then
+  elif [ "$COUPLING_MODE" = "sockets" ] ; then
     cmdsyr=""
-    if [ ! -z "$COMMANDE_SYRTHES" ] ; then 
-      for var in $COMMANDE_SYRTHES ; do 
-        if [ "$var" = "-syrthes" ] ; then 
+    if [ ! -z "$COMMAND_SYRTHES" ] ; then
+      for var in $COMMAND_SYRTHES ; do
+        if [ "$var" = "-syrthes" ] ; then
           cmdsyr="$cmdsyr $var -socket"
-        else 
-          cmdsyr="$cmdsyr $var" 
-        fi 
+        else
+          cmdsyr="$cmdsyr $var"
+        fi
       done
-      COMMANDE_SYRTHES="$cmdsyr"
+      COMMAND_SYRTHES="$cmdsyr"
     fi
   fi
   #
@@ -1005,21 +1012,21 @@ fi
 #
 # Preprocessor start
 #
-if [ $SOLCOM = 0 -a $MODE_EXEC != calcul ] ; then
+if [ $SOLCOM = 0 -a $EXEC_MODE != calcul ] ; then
   #
-  ${ECS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MAILLAGE -case $CAS \
+  ${CSPP_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MESH -case $CASE \
                       $ECHOCOMMECS \
-                      $COMMANDE_RC $COMMANDE_PERIO > listpre 2>&1 \
+                      $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1 \
                    || erreur " A L'EXECUTION DU PREPROCESSEUR"
   #
-  if [ $MODE_EXEC = pre_traitement ] ; then
+  if [ $EXEC_MODE = pre_traitement ] ; then
     #
-    PRE_TRAITEMENT_AVAL=$RESU/PRE_TRAITEMENT.$SUFFIXE
-    if [ -d ${PRE_TRAITEMENT_AVAL} ] ; then
-      echo "The ${PRE_TRAITEMENT_AVAL} already exists."
+    PREPROCESSOR_OUTPUT_OUT=$RESU/preprocessor_output.$SUFFIX
+    if [ -d ${PREPROCESSOR_OUTPUT_OUT} ] ; then
+      echo "The ${PREPROCESSOR_OUTPUT_OUT} already exists."
       echo "Copy of preprocessor_output/n* files impossible"
     else
-      cp -r preprocessor_output ${PRE_TRAITEMENT_AVAL}
+      cp -r preprocessor_output ${PREPROCESSOR_OUTPUT}
     fi
   fi
 #
@@ -1027,9 +1034,9 @@ fi
 #
 # Run calculation proper.
 #
-if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
+if [ ! -f $ERROR -a $EXEC_MODE != pre_traitement ] ; then
 #
-  if [ $COUPLAGE_SYRTHES = oui -a "$MODE_COUPLAGE" = "MPI" ] ; then
+  if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
     # MPI Communication
     #
     # Make sure to transmit possible additional arguments assigned by mpirun to
@@ -1040,13 +1047,13 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
     echo "MPI_RANK=\`$CS_HOME/bin/rang_mpi.sh \$@\`" >> $localexec
-    echo cd $RUN >> $localexec 
+    echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
-    echo "  $RUN/$EXE_SYR \$@ -comm-mpi 1 -nbr_sat $nproc_noy $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
+    echo "  $RUN/$EXE_SYR \$@ -comm-mpi 1 -nbr_sat $nproc_kernel $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
     echo "else" >> $localexec
-    echo "  $VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMANDE_SYRTHES -proc 0 $COMMANDE_DF "\
+    echo "  $VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMAND_SYRTHES -proc 0 $COMMAND_CWF "\
          "$ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-         "$COMMANDE_PARAM " >> $localexec 
+         "$COMMAND_PARAM " >> $localexec
     echo "fi" >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
@@ -1056,7 +1063,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) "
     $MPIHALT
     #
-  elif [ $COUPLAGE_SYRTHES = oui  ] ; then
+  elif [ $SYRTHES_COUPLING = yes  ] ; then
     # Pipes or socket communications
     #
     # Start Code_Saturne
@@ -1065,43 +1072,43 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
     # passes parameters used later by MPI_Init through argc/argv): we
     # use $@ to forward arguments passed to localexec
     localexec=$RUN/localexec
-    echo '#!/bin/sh' > $localexec 
-    echo cd $RUN >> $localexec 
-    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMANDE_SYRTHES $COMMANDE_DF "\
+    echo '#!/bin/sh' > $localexec
+    echo cd $RUN >> $localexec
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMAND_SYRTHES $COMMAND_CWF "\
                  " $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-                 " $COMMANDE_PARAM " >> $localexec 
+                 " $COMMAND_PARAM " >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
     chmod 700 $localexec
     $MPIBOOT
     $MPIRUN $localexec || erreur " WHILE RUNNING THE KERNEL (SOLVER) " &
     #
-    if [ "$MODE_COUPLAGE" = "sockets" ] ; then
+    if [ "$COUPLING_MODE" = "sockets" ] ; then
       # We must obtain the machine and port information from the log;
       #   we sleep to leave enought time to the Kernel to start and print
       #   this information; we avoid while which could loop endlessly
       sleep 5
       MACHPORT=""
-      MACHPORT=`grep 'Communication possible sur' listing|sed -e "s/Communication possible sur //g"|sed -e "s/, port /:/g"`
+      MACHPORT=`grep 'Communication possible on' listing|sed -e "s/Communication possible sur //g"|sed -e "s/, port /:/g"`
       SOCKETSYR="$SOCKETSYR $MACHPORT"
     fi
     #
-    # Start SYRTHES
-    if [ $COUPLAGE_SYRTHES = oui ] ; then
-      ./$EXE_SYR -nbr_sat $nproc_noy $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1 
+    # SYRTHES
+    if [ $SYRTHES_COUPLING = yes ] ; then
+      ./$EXE_SYR -nbr_sat $nproc_kernel $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
     fi
     #
     $MPIHALT
     #
   elif [ $SOLCOM = 0 ] ; then
     #
-    if [ ! -f $ERROR ] ; then 
+    if [ ! -f $ERROR ] ; then
       localexec=$RUN/localexec
-      echo '#!/bin/sh' > $localexec 
-      echo cd $RUN >> $localexec 
+      echo '#!/bin/sh' > $localexec
+      echo cd $RUN >> $localexec
       echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR "\
-           " $COMMANDE_DF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-	   " $COMMANDE_PARAM "  >> $localexec 
+           " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
+           " $COMMAND_PARAM "  >> $localexec
       echo "retour=\$?" >> $localexec
       echo "exit \$retour" >> $localexec
       chmod 700 $localexec
@@ -1113,7 +1120,7 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
   else # cas SOLCOM = 1
     #
     $VALGRIND $RUN/$EXE -solcom \
-          $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMANDE_PARAM \
+          $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM \
           || erreur " A L'EXECUTION DU NOYAU "
     #
   fi
@@ -1126,124 +1133,123 @@ fi
 #   Starts with the restart files
 #   (in case of full disk, increases chances of being able to continue).
 #
-if [ $MODE_EXEC != pre_traitement ] ; then
- 
-  SUITE_AVAL=$RESU/SUITE.$SUFFIXE
+if [ $EXEC_MODE != pre_traitement ] ; then
+
+  RESTART_OUT=$RESU/RESTART.$SUFFIX
   iok=1
-  mkdir ${SUITE_AVAL} || iok=0
-  if [ $iok = 1 ] ; then 
-    for fich in suiava suiavx t1dava vorava rayava lagava* lasava* ; do 
-      if [ -f $fich ] ; then 
-        cp $fich ${SUITE_AVAL}
+  mkdir ${RESTART_OUT} || iok=0
+  if [ $iok = 1 ] ; then
+    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+      if [ -f $f ] ; then
+        cp $f ${RESTART_OUT}
       fi
     done
   else
-    for fich in suiava suiavx t1dava vorava rayava lagava* lasava* ; do 
-      if [ -f $fich ] ; then 
-        cp $fich $RESU/$fich.$SUFFIXE
+    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+      if [ -f $f ] ; then
+        cp $f $RESU/$f.$SUFFIX
       fi
     done
   fi
 
   resuser=0
-  for fich in ${FICHIERS_RESULTATS_UTILISATEUR} ; do 
-    if [ -f $fich ] ; then 
+  for f in ${USER_OUTPUT_FILES} ; do
+    if [ -f $f ] ; then
       resuser=1
     fi
   done
-  if [ ${resuser} = 1 ] ; then 
-    RES_USER=$RESU/RES_USER.$SUFFIXE
+  if [ ${resuser} = 1 ] ; then
+    RES_USER=$RESU/RES_USER.$SUFFIX
     iok=1
     mkdir ${RES_USER} || iok=0
-    if [ $iok = 1 ] ; then 
-      for fich in ${FICHIERS_RESULTATS_UTILISATEUR} ; do 
-        if [ -f $fich ] ; then 
-          cp $fich ${RES_USER}
+    if [ $iok = 1 ] ; then
+      for f in ${USER_OUTPUT_FILES} ; do
+        if [ -f $f ] ; then
+          cp $f ${RES_USER}
         fi
       done
     else
-      for fich in ${FICHIERS_RESULTATS_UTILISATEUR} ; do 
-        if [ -f $fich ] ; then 
-          cp $fich $RESU/$fich.$SUFFIXE
+      for f in ${USER_OUTPUT_FILES} ; do
+        if [ -f $f ] ; then
+          cp $f $RESU/$f.$SUFFIX
         fi
       done
     fi
   fi
 
-  for fich in $PARAM $DONNEES_THERMOCHIMIE ; do 
-    if [ -f $fich ] ; then 
-      cp $fich $RESU/$fich.$SUFFIXE
+  for f in $PARAM $THERMOCHEMISTRY_DATA ; do
+    if [ -f $f ] ; then
+      cp $f $RESU/$f.$SUFFIX
     fi
   done
 
-  for fich in *.hst ; do
-    if [ -f $fich ] ; then
-      if [ ! -d $RESU/HIST.$SUFFIXE ] ; then 
-        mkdir $RESU/HIST.$SUFFIXE
+  for f in *.hst ; do
+    if [ -f $f ] ; then
+      if [ ! -d $RESU/HIST.$SUFFIX ] ; then
+        mkdir $RESU/HIST.$SUFFIX
       fi
-      cp $fich $RESU/HIST.$SUFFIXE
+      cp $f $RESU/HIST.$SUFFIX
     fi
   done
-  for fich in ush* ; do
-    if [ -f $fich ] ; then
-      if [ ! -d $RESU/HIST.$SUFFIXE ] ; then 
-        mkdir $RESU/HIST.$SUFFIXE
+  for f in ush* ; do
+    if [ -f $f ] ; then
+      if [ ! -d $RESU/HIST.$SUFFIX ] ; then
+        mkdir $RESU/HIST.$SUFFIX
       fi
-      cp $fich $RESU/HIST.$SUFFIXE
+      cp $f $RESU/HIST.$SUFFIX
     fi
   done
 
 fi  # output files
 
-for fich in list* erreur* *.med *.cgns ; do 
-  if [ -f $fich ] ; then 
-    cp $fich $RESU/$fich.$SUFFIXE
+for f in list* erreur* *.med *.cgns ; do
+  if [ -f $f ] ; then
+    cp $f $RESU/$f.$SUFFIX
   fi
 done
 
 # Treatment of EnSight and MED files
 #   The $dir (=*.ensight and/or *.med) directories are copied
-#   to $DIR.$SUFFIXE
+#   to $DIR.$SUFFIX
 
 #   We place directories $dir (=*.ensight and/or *.med)
-#   in $DIR.$SUFFIXE
+#   in $DIR.$SUFFIX
 
-cas=`echo $CAS |tr "[:upper:]" "[:lower:]"`
+cas=`echo $CASE |tr "[:upper:]" "[:lower:]"`
 
 for dir in *.ensight *.med ; do
   if [ -d $dir ] ; then
     DIR=`echo $dir |tr "[:lower:]" "[:upper:]"`
-    mkdir $RESU/$DIR.$SUFFIXE
+    mkdir $RESU/$DIR.$SUFFIX
     if [ $? -ne 0 ] ; then
-      echo Creating $RESU/$DIR.$SUFFIXE failed
+      echo Creating $RESU/$DIR.$SUFFIX failed
     else
-      for fich in $dir/*  ; do 
-        if [ -f $fich ] ; then    
-          cp -R ${fich} $RESU/$DIR.$SUFFIXE/.
+      for f in $dir/*  ; do
+        if [ -f $f ] ; then
+          cp -R ${f} $RESU/$DIR.$SUFFIX/.
         fi
       done
     fi
   fi
 done
 
-if [ $MODE_EXEC != pre_traitement ] ; then
- 
-  liste_rayt=`ls bord* 2>/dev/null`
-  if [ ! -z "${liste_rayt}" ] ; then 
-    for fich in $liste_rayt ; do 
-      if [ ! -d $RESU/CHR.$SUFFIXE ] ; then 
-        mkdir $RESU/CHR.$SUFFIXE 
+if [ $EXEC_MODE != pre_traitement ] ; then
+
+  rayt_list=`ls bord* 2>/dev/null`
+  if [ ! -z "${rayt_list}" ] ; then
+    for f in $rayt_list ; do
+      if [ ! -d $RESU/CHR.$SUFFIX ] ; then
+        mkdir $RESU/CHR.$SUFFIX
       fi
-      cp $fich $RESU/CHR.$SUFFIXE/.
+      cp $f $RESU/CHR.$SUFFIX/.
     done
   fi
 
-
-  liste_lagr=`ls debug* deplacement* trajectoire* frontiere* 2>/dev/null`
-  if [ ! -z "${liste_lagr}" ] ; then 
-    mkdir $RESU/LAGR.$SUFFIXE
-    for fich in $liste_lagr ; do 
-      cp $fich $RESU/LAGR.$SUFFIXE
+  lagr_list=`ls debug* deplacement* trajectoire* frontiere* 2>/dev/null`
+  if [ ! -z "${lagr_list}" ] ; then
+    mkdir $RESU/LAGR.$SUFFIX
+    for f in $lagr_list ; do
+      cp $f $RESU/LAGR.$SUFFIX
     done
   fi
 
@@ -1254,32 +1260,32 @@ if [ $MODE_EXEC != pre_traitement ] ; then
   # The date is added to the first line of resuMatisse
       AFDATE="Date of the case                                       : "$DATE
       sed  "1i\ ${AFDATE}" ${RUN}/resuMatisse >> ${RUN}/resuMatisse.mod
-      mv ${RUN}/resuMatisse.mod ${RUN}/resuMatisse  
+      mv ${RUN}/resuMatisse.mod ${RUN}/resuMatisse
     fi
-    cp ${RUN}/resuMatisse ${RESU}/resuMatisse.$SUFFIXE
+    cp ${RUN}/resuMatisse ${RESU}/resuMatisse.$SUFFIX
   fi
 
-  for dir in fort_saturne ; do
+  for dir in src_saturne ; do
     if [ -d $dir ] ; then
-      mkdir $RESU/FORT.$SUFFIXE
+      mkdir $RESU/SRC.$SUFFIX
       if [ $? -ne 0 ] ; then
-        echo Failure creating $RESU/FORT.$SUFFIXE
+        echo Failure creating $RESU/SRC.$SUFFIX
       else
-        for fich in $dir/*.[f,F,c,h] ; do
-          if [ -f ${fich} ] ; then 
-            cp -R ${fich} $RESU/FORT.$SUFFIXE/. 
-            fichbase=`basename ${fich}`
-            chmod a-w $RESU/FORT.$SUFFIXE/${fichbase}
+        for f in $dir/*.[f,F,c,h] ; do
+          if [ -f ${f} ] ; then
+            cp -R ${f} $RESU/SRC.$SUFFIX/.
+            fbase=`basename ${f}`
+            chmod a-w $RESU/SRC.$SUFFIX/${fbase}
           fi
         done
       fi
     fi
-  done 
+  done
 
-  if [ $COUPLAGE_SYRTHES = oui ] ; then 
-    mkdir $RESU/RESU_SYR.$SUFFIXE 
+  if [ $SYRTHES_COUPLING = yes ] ; then
+    mkdir $RESU/RESU_SYR.$SUFFIX
     if [ $? -ne 0 ] ; then
-      echo Failure creating $RESU/RESU_SYR.$SUFFIXE
+      echo Failure creating $RESU/RESU_SYR.$SUFFIX
     else
       for var in   $SYRTHES_ENV.save $SYRTHES_DATA $SYRTHES_DATA_RAY \
                    $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
@@ -1290,29 +1296,29 @@ if [ $MODE_EXEC != pre_traitement ] ; then
                    $SYRTHES_AVAL_MAIL_RAY $SYRTHES_AVAL_RESU_RAY \
                    $SYRTHES_AVAL_CHR_RAY \
                    $SYRTHES_AVAL_HIST_RAY   ; do
-          fich=$RUN/`echo $var | sed -e "s/.*\///"`
-          if [ -f $fich ] ; then 	
-            cp $fich $RESU/RESU_SYR.$SUFFIXE/.
+          f=$RUN/`echo $var | sed -e "s/.*\///"`
+          if [ -f $f ] ; then         
+            cp $f $RESU/RESU_SYR.$SUFFIX/.
           fi
       done
     fi
     #
-    for dir in fort_syrthes ; do
+    for dir in src_syrthes ; do
       if [ -d $dir ] ; then
-        mkdir $RESU/FORT_SYR.$SUFFIXE
+        mkdir $RESU/SRC_SYR.$SUFFIX
         if [ $? -ne 0 ] ; then
-          echo Failure creating $RESU/FORT_SYR.$SUFFIXE
+          echo Failure creating $RESU/SRC_SYR.$SUFFIX
         else
-          for fich in $dir/*.[f,F,c,h] ; do
-            if [ -f ${fich} ] ; then 
-              cp -R ${fich} $RESU/FORT_SYR.$SUFFIXE/.
-              fichbase=`basename ${fich}`
-              chmod a-w $RESU/FORT_SYR.$SUFFIXE/${fichbase}
+          for f in $dir/*.[f,F,c,h] ; do
+            if [ -f ${f} ] ; then
+              cp -R ${f} $RESU/SRC_SYR.$SUFFIX/.
+              fbase=`basename ${f}`
+              chmod a-w $RESU/SRC_SYR.$SUFFIX/${fbase}
             fi
           done
         fi
       fi
-    done 
+    done
   fi
 
 fi  # input data and outputs
@@ -1321,35 +1327,31 @@ fi  # input data and outputs
 #
 # Summary: end
 #
-DATEFIN=`date '+%m%d%H%M'`
-echo '    End date        : ' $DATEFIN                         >>$resume
-echo '========================================================'>>$resume
+CURDATE=`unset LANG ; date`
 #
-cp $resume  $RESU/$resume.$SUFFIXE
+echo '  ----------------------------------------------------'  >>$summary
+echo '   Finish time      : ' $CURDATE                         >>$summary
+echo '========================================================'>>$summary
+#
+cp $summary  $RESU/$summary.$SUFFIX
 #
 ########################################################################
 #
 #
-# Fin
+# Finish
 #
-if [ -f $ERROR ] ; then 
-#
+if [ -f $ERROR ] ; then
   echo
   echo  "  ********************************************"
   cat                        $ERROR
   echo  "  ********************************************"
   exit 1
-#
 else
-#
   echo
   echo  "  ********************************************"
   echo  "           Normal simulation finish"
   echo  "  ********************************************"
   exit 0
-#
 fi
-#
-########################################################################
 #
 ########################################################################
