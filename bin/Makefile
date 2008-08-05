@@ -140,38 +140,19 @@ default:
 	 fi
 
 
-saturne:
-	@make link
+saturne: link
 
 
-lib:
-	@make privtitre
-	@make privconfig
-	@make privcompil 
-	@make privlib
-	@make privfin
+lib: privtitre privconfig privcompil privlib privfin
 
 
-lib_install:
-	@make privtitre
-	@make privconfig
-	@make privcompil 
-	@make privlib
-	@make privlibinst
-	@make privfin
+lib_install: privtitre privconfig privcompil privlib privlibinst privfin
 
 
-link:
-	@make privtitre
-	@make privconfig
-	@make privcompil
-	@make privlink
-	@make privfin
+link: privtitre privconfig privcompil privlink privfin
 
 
-link_shared:
-	@make privtitre
-	@make privconfig
+link_shared: privtitre privconfig
 	@if   [ ${BUILD_SO} -ne 1 ] ;\
 	 then echo ;\
 	      echo "$(SO)CONFIGURATION ERROR$(NO)" ;\
@@ -186,22 +167,14 @@ link_shared:
 	@make privfin
 
 
-compversion:
-	@make privtitre
-	@make privcompil
-	@make privlink
-	@make privfin
+compversion: privtitre privcompil privlink privfin
 
 
-comp:
-	@make privtitre
-	@make privcomp
-	@make privfin
+comp: privtitre privcomp privfin
 
 
-privcomp:
-	@make privconfig
-	@make privcompil
+privcomp: privconfig privcompil
+
 
 #
 # echo_mpi_bin must be called using "make -f", so it must not include recursive
@@ -262,10 +235,44 @@ privcompil:
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
 	      src_cs_all="" ;\
 	 fi ;\
+	 lndirs="" ;\
 	 if   [ "$${modtrav}" != "LINK" ] ;\
-	 then make privcopie INC_CS="$${inc_cs_all}" SRC_CS="$${src_cs_all}" ;\
+	 then dirtrav=`pwd` ;\
+	      dirprec=`dirname $${dirtrav}` ;\
+	      dirprec1=`dirname $${dirprec}` ;\
+	      if   [   "$${dirprec}" != "$(BLD_CS)/$(NOM_ARCH)" \
+	           -a "$${dirprec1}" != "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	      then  lndirs="$${inc_cs_all}" ;\
+	      else  lndirs="$${inc_cs_all} $${src_cs_all}" ;\
+	      fi ;\
 	 fi ;\
-       make privdepend ;\
+	 for dir in `echo $${lndirs}` ;\
+	 do \
+	      if [ -d "$${dir}" ] ;\
+	      then \
+	           ifich="0" ;\
+	           for fich in $${dir}/*.* ;\
+	           do \
+		        if [ -f "$${fich}" ] ;\
+		        then ifich="1" ;\
+		        fi ;\
+	           done ;\
+		   if [ "$${ifich}" -eq "1" ] ;\
+		   then \
+		        for fich in $${dir}/*.? ;\
+		        do \
+		             if [ ! -d "$${fich}" ] ;\
+			     then fichloc=`basename $${fich}` ;\
+			          if [ ! -h "$${fichloc}" ] ;\
+			          then ln -s $${fich} . ;\
+			               touch -r $${fich} $${fichloc} ;\
+			          fi ;\
+			     fi ;\
+		        done ;\
+		   fi ;\
+	      fi ;\
+	 done ;\
+	 make privdepend ;\
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
 	 dir_inc_cs="$(BFT_INC) $(FVM_INC)" ;\
@@ -445,86 +452,6 @@ privtitre:
 
 
 #
-# privcopie links to sources if we are in build, and to includes
-# not already present in the current directory
-#		we remove the "touch -r $${fich} $${fichloc} ;\" 
-#           in the user case
-#            
-
-privcopie:
-	@dirtrav=`pwd` ;\
-	 dirprec=`dirname $${dirtrav}` ;\
-	 dirprec1=`dirname $${dirprec}` ;\
-	 if   [   "$${dirprec}" != "$(BLD_CS)/$(NOM_ARCH)" \
-	       -a "$${dirprec1}" != "$(BLD_CS)/$(NOM_ARCH)" ] ;\
-	 then  for dir in $(INC_CS) ;\
-	       do  if [ -d "$${dir}" ] ;\
-	           then \
-	                 ifich="0" ;\
-	                 for fich in $${dir}/*.* ;\
-	                 do \
-		           if   [ -f "$${fich}" ] ;\
-		           then ifich="1" ;\
-		           fi ;\
-	                 done ;\
-		         if   [ "$${ifich}" -eq "1" ] ;\
-		         then \
-			          for fich in $${dir}/*.? ;\
-			          do \
-				         if [ ! -d "$${fich}" ] ;\
-				         then	fichloc=`basename $${fich}` ;\
-				              if [ ! -h $${fichloc} ] ;\
-	                                then \
-				                    if [ ! -f "$${fichloc}" ] ;\
-					              then \
-	                                           ln -s $${fich} . ;\
-					              fi ;\
-				              fi ;\
-				          fi ;\
-			          done ;\
-		         fi ;\
-		     fi ;\
-	       done ;\
-	 else  for dir in $(INC_CS) $(SRC_CS) ;\
-	       do \
-		     if [ -d "$${dir}" ] ;\
-	           then \
-	                 ifich="0" ;\
-	                 for fich in $${dir}/*.* ;\
-	                 do \
-		           if   [ -f "$${fich}" ] ;\
-		           then ifich="1" ;\
-		           fi ;\
-	                 done ;\
-		         if   [ "$${ifich}" -eq "1" ] ;\
-		         then \
-			          for fich in $${dir}/*.? ;\
-			          do \
-				          if [ ! -d "$${fich}" ] ;\
-				          then	fichloc=`basename $${fich}` ;\
-				                	if [ ! -h "$${fichloc}" ] ;\
-					           then ln -s $${fich} . ;\
-					           fi ;\
-			      		     touch -r $${fich} $${fichloc} ;\
-				          fi ;\
-			          done ;\
-		          fi ;\
-		     fi ;\
-	       done ;\
-	 fi 
-
-
-privmodexe:
-	@echo "***  Executable:" ; echo
-	@ls -l $(NOM_EXE)
-	@make privfin
-
-privmodso:
-	@echo "***  Librairie:" ; echo
-	@ls -l $(NOM_SO)
-	@make privfin
-
-#
 # privlib generates the library 
 #           its name is based on the working directory
 #
@@ -584,16 +511,6 @@ privlibinst:
 	@echo "***  Library installation finished" ; echo
 
 
-privcmdlink:
-	$(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS) $(LISTE_OBJ) \
-                   $(LIBRARIES) $(MYLIBS)
-
-
-privcmdlinkshared:
-	$(LDEDL) -o $(NOM_SO) $(LDEDLFLAGSSO) $(ALLLDEDLFLAGS) \
-	            $(LISTE_OBJ) $(LIBRARIES) $(MYLIBS)
-
-
 privmodlink:
 	@liste_obj="" ;\
 	 for file in *.o ;\
@@ -647,27 +564,29 @@ privmodlink:
 	         fi ;\
 	     done ;\
 	     librariessup="$${librariessup} $${libpath}" ;\
-	     echo libpath=$${libpath} ;\
          fi ;\
+         libraries="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
 	 if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
 	     if [ ! -f cs_main.o ] ; then \
 	        ar x $(ARCH_CS)/lib/libsaturneBASE$(OPT).a cs_main.o ;\
 	        liste_obj="$${liste_obj} cs_main.o" ;\
 	     fi ;\
 	     objcopy --redefine-sym main=cs_main cs_main.o cs_main.o ;\
-	     make privcmdlinkshared \
-	         ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
-                 LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
+	     link_cmd="$(LDEDL) -o $(NOM_SO) $(LDEDLFLAGSSO) $(ALLLDEDLFLAGS)" ;\
+	     link_cmd="$${link_cmd} $${liste_obj} $${libraries} $(MYLIBS)" ;\
+	     echo "$${link_cmd}" ;\
+	     $${link_cmd} ;\
 	 else \
-	     make privcmdlink \
-	         ALLLDEDLFLAGS="$(ALLLDEDLFLAGS)" LISTE_OBJ="$${liste_obj}" \
-                 LIBRARIES="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
+	     link_cmd="$(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS)" ;\
+	     link_cmd="$${link_cmd} $${liste_obj} $${libraries} $(MYLIBS)" ;\
+	     echo "$${link_cmd}" ;\
+	     $${link_cmd} ;\
 	 fi 
-	@echo "***  Linking finished" ; echo
+	@echo ; echo "***  Linking finished; library:" ; echo
 	@if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
-	    make privmodso NOM_SO=" $(NOM_SO) " ;\
+	     ls -l $(NOM_SO) ;\
 	 else \
-	    make privmodexe NOM_EXE=" $(NOM_EXE) " ;\
+	     ls -l $(NOM_EXE) ;\
 	 fi
 
 
@@ -728,11 +647,7 @@ privlink:
 	 fi
 
 
-all $(NOM_EXE):
-	@make privtitre
-	@make privcomp
-	@make privlink
-	@make privfin
+all $(NOM_EXE): privtitre privcomp privlink privfin
 
 #
 # privconfig used cd commands so that grep does not suffer from
@@ -831,8 +746,7 @@ privfin:
 	@echo
 
 
-clean purge rmobj:
-	@make privconfig
+clean purge rmobj: privconfig
 	@\rm -f *.o *.inl core \
 	      .liste_mkfiles.* .liste_mkoptpart.o so_locations
 	@for file in *.c *.F *.F95 *.h *.hf *.i ;\
@@ -843,23 +757,16 @@ clean purge rmobj:
 	 done
 
 
-rmexe:
-	@make privconfig
+rmexe: privconfig
 	@\rm -f $(NOM_EXE) $(NOM_SO) *.out
 
-rmlib:
-	@make privconfig
+rmlib: privconfig
 	@\rm -f "$(NOM_LIB_CS_PRE)$(MYOPT).a"
 
-new:
-	@make privconfig
-	@make clean
-	@make rmexe
-	@make privfin
+new: privconfig clean rmexe privfin
 
 
-help info:
-	@make privtitre
+help info: privtitre
 	@echo
 	@echo "Usage : $(BO)make$(NO)                     (in $(BO)build/$(NOM_ARCH)/$(NO)$(SO)<MOD>$(NO)$(BO)/$(NO))"
 	@echo "   or : $(BO)make$(NO)          $(BO)OPT=$(NO)$(SO)<OPT>$(NO)  (in $(BO)build/$(NOM_ARCH)/$(NO)$(SO)<MOD>$(NO)$(BO)/$(NO)$(SO)<OPT>$(NO)$(BO)/$(NO))"
@@ -867,7 +774,7 @@ help info:
 	@echo "   or : $(BO)make$(NO) $(SO)<target>$(NO) $(BO)OPT=$(NO)$(SO)<OPT>$(NO)  (in a user directory)"
 	@echo "                                 for Code_Saturne link"
 	@echo
-	@echo "     with :"
+	@echo "     with:"
 	@echo "     $(SO)<target>$(NO) : $(BO)saturne$(NO)     : Code_Saturne compilation and link"
 	@echo "                $(BO)all$(NO)         : same"
 	@echo "                $(BO)lib$(NO)         : library creation"
@@ -896,5 +803,8 @@ help info:
 	@echo "     $(SO)<OPTF>$(NO)    : Fortran compiler options"
 	@echo "     $(SO)<OPTLD>$(NO)   : linker options"
 	@echo "     $(SO)<OPTLIBS>$(NO) : additional library options"
+	@echo
+	@echo "   Environment configuration queries (for run script):"
+	@echo "     $(BO)make echo_mpi_bin$(NO) : echo MPI environment executables path"
 	@echo
 
