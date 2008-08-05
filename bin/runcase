@@ -212,8 +212,6 @@ SRC_SYR=$CASEDIR/SRC_SYR
 #  COUPLING_MODE=sockets    : should be activated on clusters when the MPI rank
 #                             of a process is not determinable or if MPI can
 #                             not be used.
-#  COUPLING_MODE=pipes      : on single node only (as pipes are not visible
-#                             across a network).
 COUPLING_MODE=MPI
 #
 # We can use 3 execution modes
@@ -321,7 +319,7 @@ else
 #
 #  On the CCRT, there is no TMPDIR. We work by default in SCRATCHDIR
   if [ "$SCRATCHDIR" != "" ] ; then
-    RUN=$SCRATCHDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
+    RUN=$SCRATCHDIR/tmp_Saturne/$STUDY.$CASE.$DATE
 #
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
     RUN=$TMPDIR/tmp_Saturne/$STUDY.$CASE.$DATE
@@ -359,66 +357,19 @@ echo
 echo
 if [ $SYRTHES_COUPLING = yes ] ; then
   echo "Coupling of Code_Saturne and SYRTHES activated."
-  if [ ! -z "$MPIHOSTS" ] ; then
   #  1 processor is reserved for SYRTHES if coupled through MPI.
-    if [ "$COUPLING_MODE" = "MPI" ] ; then
-      (( nproc_kernel = nproc_kernel - N_SYRTHES_COUPLINGS ))
-      if [ $nproc_kernel -lt 1 ] ; then
-        echo
-        echo
-        echo " WARNING, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor,"
-        echo " so the requested number of processors ($NUMBER_OF_PROCESSORS)"
-        echo " is too small."
-        echo " Increase the number of requested processors."
-        echo
-        exit 1
-      fi
-    fi
-    # if SYRTHES is used in batch mode, check that everything fits on a node
-    if [ "$COUPLING_MODE" = "pipes" -a "$NUMBER_OF_NODES" != 1 ] ; then
+  if [ "$COUPLING_MODE" = "MPI" ] ; then
+    (( nproc_kernel = nproc_kernel - N_SYRTHES_COUPLINGS ))
+    if [ $nproc_kernel -lt 1 ] ; then
       echo
       echo
-      echo " Warning, with COUPLING_MODE = pipes, SYRTHES-Kernel"
-      echo "   communications are done through pipes. "
-      echo " Here, multiple nodes (hosts) were selected for the parallel run:"
-      cat "$MPIHOSTS"
-      echo " Use another value of COUPLING_MODE "
+      echo " Warning, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor"
+      echo " (which need not be a physical processor)."
+      echo " Here, NUMBER_OF_PROCESSORS=${NUMBER_OF_PROCESSORS}, while it must"
+      echo " be strictly greater than 1."
+      echo " Increase the number of requested processors."
       echo
       exit 1
-    fi
-  else
-  # If we are not in batch mode and we use coupling through MPI, we must
-  # specify a number of processors greater than 1 to activate MPI.
-    if [ "$COUPLING_MODE" = "MPI" ] ; then
-      (( nproc_kernel = nproc_noy - N_SYRTHES_COUPLING ))
-      if [ $nproc_kernel -lt 1 ] ; then
-        echo
-        echo
-        echo " Warning, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor"
-        echo " (which need not be a physical processor)."
-        echo " ($NUMBER_OF_PROCESSORS) must be strictly greater than 1."
-        echo " Increase NUMBER_OF_PROCESSORS."
-        echo
-        exit 1
-      fi
-    fi
-  # If were are not in batch mode and are coupling with pipes,
-  # we also reduce NUMBER_OF_PROCESSORS so as not to need MPI if
-  # Code_Saturne and SYRTHES are each running on 1 processor.
-    if [ "$COUPLING_MODE" = "pipes" ] ; then
-      (( nproc_kernel = nproc_noy - N_SYRTHES_COUPLING ))
-      (( NUMBER_OF_PROCESSORS = NUMBER_OF_PROCESSORS - 1 ))
-      if [ $nproc_kernel -lt 1 ] ; then
-        echo
-        echo
-        echo " Warning, with COUPLING_MODE = pipes, SYRTHES reserves a processor"
-        echo "   (possibly virtual)."
-        echo "   The number of processors requested ($NUMBER_OF_PROCESSORS)"
-        echo "   msut thus be strictly greater than 1."
-        echo " Increase NUMBER_OF_PROCESSORS."
-        echo
-        exit 1
-      fi
     fi
   fi
 fi
@@ -753,35 +704,10 @@ echo
 #
 if [ $SYRTHES_COUPLING = yes ] ; then
   #
-  if [ "$COUPLING_MODE" = "pipes" ] ; then
-    #
-    # Pipe creation if necessary
-    #
-    if [ $nproc_kernel -gt 1 ] ; then
-      num=1
-      while [ $num -le $nproc_kernel ] ; do
-        numf=`echo $num | awk '{printf "%4.4i\n", $1}'`
-        for f in solveur_n${numf}_vers_syrthes.0001 syrthes_vers_solveur_n$numf.0001 ; do
-          if [ -f $f ] ; then
-            rm -f $f
-          fi
-          mkfifo $f
-        done
-        (( num = num + 1 ))
-      done
-    else
-      for f in solveur_vers_syrthes.0001 syrthes_vers_solveur.0001 ; do
-        if [ -f $f ] ; then
-          rm -f $f
-        fi
-        mkfifo $f
-      done
-    fi
-    #
   # If sockets, change COMMAND_SYRTHES
   #   (add -socket after -syrthes)
   #
-  elif [ "$COUPLING_MODE" = "sockets" ] ; then
+  if [ "$COUPLING_MODE" = "sockets" ] ; then
     cmdsyr=""
     if [ ! -z "$COMMAND_SYRTHES" ] ; then
       for var in $COMMAND_SYRTHES ; do
@@ -857,13 +783,8 @@ if [ "$ERROR" != "true" -a $EXEC_MODE != pre_traitement ] ; then
     $MPIHALT
     #
   elif [ $SYRTHES_COUPLING = yes  ] ; then
-    # Pipes or socket communications
+    # Socket communications
     #
-    # Start Code_Saturne
-    # Be careful to forward the optional additional arguments passed by
-    # mpirun to the executable (for the standard MPICH 1.2 case, as mpirun
-    # passes parameters used later by MPI_Init through argc/argv): we
-    # use $@ to forward arguments passed to localexec
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
     echo cd $RUN >> $localexec
