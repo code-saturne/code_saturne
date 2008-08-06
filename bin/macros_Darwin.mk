@@ -91,7 +91,7 @@ BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 #-------------------
 
 # gettext support
-NLS                                =0
+NLS             =0
 
 
 # Preprocessor

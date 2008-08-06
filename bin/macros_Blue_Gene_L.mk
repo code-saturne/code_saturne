@@ -77,7 +77,7 @@ SOCKET_LIB      =
 # XML support
 XML             =1
 
-XML_HOME = /gpfs2/home/saturne/opt/libxml2-2.6.19
+XML_HOME = /gpfs2/home/saturne/opt/libxml2-2.6.19/arch/bgl
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
 XML_LIB  =-L$(XML_HOME)/lib -lxml2
@@ -96,7 +96,7 @@ BLAS_LDFLAGS    =
 #-------------------
 
 # gettext support
-NLS                                =0
+NLS             =0
 
 
 # Preprocessor
