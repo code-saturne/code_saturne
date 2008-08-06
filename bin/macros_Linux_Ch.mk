@@ -100,7 +100,7 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpicc
+CCOMP                  = $(MPI_BIN)/mpicc
 
 CCOMPFLAGSDEF          = -ansi -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -121,7 +121,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpif77
+FTNCOMP                = $(MPI_BIN)/mpif77
 
 FTNCOMPFLAGSDEF        = -fno-silent -I.
 
@@ -141,7 +141,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpif77
+LDEDL           = $(MPI_BIN)/mpif77
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
