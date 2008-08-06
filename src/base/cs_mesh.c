@@ -1259,7 +1259,7 @@ cs_mesh_init_selectors(void)
           = cs_glob_mesh->family_item[j *cs_glob_mesh->n_families + i];
       }
       else if (  cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i]
-	       < 0) {
+               < 0) {
         /* Fortran formulation */
         grp_num = -cs_glob_mesh->family_item[j*cs_glob_mesh->n_families + i] -1;
         grp_idx = cs_glob_mesh->group_idx[grp_num];
