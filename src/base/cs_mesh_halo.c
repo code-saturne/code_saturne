@@ -1917,6 +1917,13 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
   const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
   const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
+  const char err_corresp[]
+    = N_("Incohérence repérée lors de la construction du halo.\n"
+         "Plusieurs points locaux ont le même correspondant distant ;\n"
+         "ceci est probablement dû à un effet de bord de la construction\n"
+         "de périodicités multiples par le Préprocesseur.\n"
+         "Coordonnées du premier point impacté: [%12.5e, %12.5e %12.5e].");
+
   _define_vtx_interface_idx(ifs,
                             halo->c_domain_rank[rank_id],
                             tr_id,
@@ -1972,12 +1979,10 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
             if (n_added_vertices > 0) {
 
               if (n_added_vertices > 1)
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Incohérence repérée lors de la construction du halo.\n"
-                            "Plusieurs points locaux ont le même correspondant\n"
-                            "distant ; ceci est probablement dû à un effet de bord\n"
-                            "de la construction de périodicités multiples par le\n"
-                            "Préprocesseur."));
+                bft_error(__FILE__, __LINE__, 0, _(err_corresp),
+                          mesh->vtx_coord[vtx_id*3],
+                          mesh->vtx_coord[vtx_id*3+1],
+                          mesh->vtx_coord[vtx_id*3+2]);
 
               /* Add this vertex if not already checked */
 
@@ -3531,7 +3536,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
        also ghost cells to ghost cells connectivity for standard and extended
        halo if necessary */
 
-    bft_printf(_("    Mise à jour de la connectivité IFACEL\n"));
+    bft_printf(_("    Mise à jour de la connectivité faces -> cellules\n"));
     bft_printf_flush();
 
     _update_gcells_connect(mesh,
