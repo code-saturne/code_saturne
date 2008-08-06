@@ -46,9 +46,9 @@
     echo
     echo "   Script to generate Code_Saturne Kernel libraries                "
     echo
-    echo "   Syntax: ./lance_install                                         "
-    echo "       or: ./lance_install <Lib>                                   "
-    echo "       or: ./lance_install -<OPT>                                  "
+    echo "   Syntax: ./install                                               "
+    echo "       or: ./install <Lib>                                         "
+    echo "       or: ./install -<OPT>                                        "
     echo
     echo "      with:                                                        "
     echo "      <Lib>: list of libraries (space between them)                "
@@ -61,16 +61,16 @@
     echo "          $listemoddef                                             "
     echo
     echo " Examples of syntax:                                               "
-    echo "   ./lance_install                                                 "
-    echo "   ./lance_install BASE LAGR BASE/DBG                              "
-    echo "   ./lance_install -DBG                                            "
+    echo "   ./install                                                       "
+    echo "   ./install BASE LAGR BASE/DBG                                    "
+    echo "   ./install -DBG                                                  "
     echo
     echo
     echo " Exceptions:                                                       "
-    echo "   ./lance_install DOC                                             "
+    echo "   ./install DOC                                                   "
     echo "          compilation of the documentation (userguide, theory      "
     echo "                                                     and tutorial) "
-    echo "   ./lance_install -nc                                             "
+    echo "   ./install -nc                                                   "
     echo "          does not remove the objects of the build directory       "
     echo
     local_exit
@@ -396,7 +396,7 @@ Macro_readme_comp=$2
    if [ $repbase = "" ] ; then
      sortie "The variable CS_HOME has to be properly initialised"
    else
-     sortie "The installation has to be launched from CS_HOME/bin = ${CS_HOME}/bin"
+     sortie "The installation has to be launched from CS_HOME/sbin = ${CS_HOME}/sbin"
    fi
  fi
  if [ ! -d ${CS_HOME} ] ; then
@@ -544,19 +544,19 @@ Macro_readme_comp=$2
  cd ${CS_HOME} || sortie  "The ${CS_HOME} directory can not be reached"
 #
 # Full permissions for reading
- find . -type d -exec chmod    u=rwx,g=rx,o=rx {} \;
- find . -type f -exec chmod    u=rw,g=r,o=r {} \;
+ find ${CS_HOME}/bin -type d -exec chmod    u=rwx,g=rx,o=rx {} \;
+ find ${CS_HOME}/bin -type f -exec chmod    u=rw,g=r,o=r {} \;
 # Executables for the saturne login
  listebin="autovalid \
 check_consistency \
 check_mesh \
 compiler_version \
-cree_sat \
+cs_create \
+cs_info \
 cs.exe \
+ecs \
 gracehst \
 grp \
-info_cs \
-lance_install \
 rang_mpi.sh"
  for fich in $listebin  ; do
    chmod    u+x bin/$fich
@@ -566,11 +566,12 @@ rang_mpi.sh"
 compiler_version \
 check_consistency \
 check_mesh \
-cree_sat \
+cs_create \
+cs_info \
 cs.exe \
+ecs \
 gracehst \
 grp \
-info_cs \
 rang_mpi.sh"
  for fich in $listebin  ; do
    chmod   g+x,o+x bin/$fich
@@ -583,7 +584,7 @@ clean"
    chmod    u+x aux/$fich
  done
 # Executable files in arch
-find arch -name "*.exe" -exec chmod uog+x {} \;
+  chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/bin/*
 # Access to the lib directory
   chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/lib
 #

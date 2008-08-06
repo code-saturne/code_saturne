@@ -332,10 +332,10 @@ int main
 
   if (opts.ifoenv != 0) {
 
-    cs_glob_pp_io = cs_pp_io_initialize("preprocessor_output",
-                                        "ECS_1.3",
-                                        CS_PP_IO_MODE_READ,
-                                        opts.echo_comm);
+    cs_glob_pp_io = cs_io_initialize("preprocessor_output",
+                                     "ECS_1.4",
+                                     CS_IO_MODE_READ,
+                                     -1);
 
     /* Initialisation des communications avec Syrthes */
 
@@ -377,7 +377,8 @@ int main
 
     /* Lecture des données issues du Préprocesseur */
 
-    cs_ecs_messages_read_data(cs_glob_mesh);
+    cs_ecs_messages_read_data(cs_glob_mesh,
+                              cs_glob_mesh_builder);
 
   } /* End if ifoenv != 0 */
 
@@ -457,6 +458,8 @@ int main
                               &n_g_b_faces,
                               &n_g_vertices);
   }
+
+  cs_mesh_print_info(cs_glob_mesh);
 
   /* Destruction du la structure temporaire servant à la construction du
      maillage principal */

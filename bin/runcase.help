@@ -192,6 +192,27 @@ Specifying CS_TMP_PREFIX may be useful for example on a workstation so
 
                -------------------------------
 
+The EXEC_PREPROCESS, EXEC_PARTITION, and EXEC_KERNEL variables allow running
+  only some specific stages of the calculation, and saving them for future use.
+  if EXEC_KERNEL is set to no, the Preprocessor's preprocessor_output file
+  is copied in RESU, and the Partitioner's output is copied in a
+  PARTITION_OUTPUT directory in RESU. note also that when partitioning with no
+  kernel execution, the number of processors required is not known in advance,
+  so the PARTITION_LIST variable must be used to indicate which partitionings
+  are required. For example, PARTITION_LIST="128 256" will generate
+  2 partitionings, with files domain_number_128 and domain_number_256
+  in RESU/PARTITION_OUTPUT. The option "-no-perio" may also be added to 
+  PARTITION_LIST if we do not want periodicity to be accounted for in the
+  connectivity graph.
+  If EXEC_PREPROCESS is set to no, a preprocessor_output file must be found in
+  DATA (typically, a symbolic link to a file in RESU).
+  If EXEC_PARTITION is set to no, a PARTITION_OUTPUT directory must be found
+  in DATA (typically, a symbolic link to a file in RESU). If no partitioning
+  is found, the calculation will continue, using an unoptimized partitioning,
+  which may impact performance.
+
+               -------------------------------
+
 Options OPTIMIZATION and CS_LIB_ADD are more advanced, mainly
   for developers.
 

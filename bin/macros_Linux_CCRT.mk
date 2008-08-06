@@ -39,7 +39,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/cont002/saturne/opt/fvm-0.10.0/arch/Linux
+FVM_HOME        =/home/cont002/saturne/opt/fvm-0.11.0/arch/Linux
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm

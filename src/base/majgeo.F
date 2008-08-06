@@ -135,38 +135,6 @@ C
       NFBRGB = NFBRG2
       NSOMGB = NSOMG2
 C
-C=======================================================================
-C 5. IMPRESSION EN CAS DE PARALLELISME
-C=======================================================================
-C
-      IF (IRANGP.GE.0) THEN
-        WRITE(NFECRA,1500)
-        WRITE(NFECRA,1510) NCELET,NCEL  ,NFAC  ,NFABOR,NNOD,
-     &                            NCELGB,NFACGB,NFBRGB,NSOMGB
-      ENDIF
-C
- 1500 FORMAT(
-     &'                                                             ',/,
-     &' ** DIMENSIONS : Complement pour les calculs paralleles      ',/,
-     &'    ----------                                               ',/,
-     &'    Pour les calculs paralleles,                             ',/,
-     &'      ''local''  fait reference au processeur courant.       ',/,
-     &'      ''global'' fait reference a la somme sur tous les      ',/,
-     &'                                                  processeurs',/)
- 1510 FORMAT(
-     &' --- Geometrie                                               ',/,
-     &'       NCELET = ',4X,I10,    ' (Nb de cellules + halo  local)',/,
-     &'                                                             ',/,
-     &'       NCEL   = ',4X,I10,    ' (Nb de cellules actives local)',/,
-     &'       NFAC   = ',4X,I10,    ' (Nb de faces internes   local)',/,
-     &'       NFABOR = ',4X,I10,    ' (Nb de faces de bord    local)',/,
-     &'       NNOD   = ',4X,I10,    ' (Nb de sommets          local)',/,
-     &'                                                             ',/,
-     &'       NCELGB = ',4X,I10,    ' (Nb de cellules actives global',/,
-     &'       NFACGB = ',4X,I10,    ' (Nb de faces internes   global',/,
-     &'       NFBRGB = ',4X,I10,    ' (Nb de faces de bord    global',/,
-     &'       NSOMGB = ',4X,I10,    ' (Nb de sommets          global',/)
-C
       RETURN
       END
 c@z

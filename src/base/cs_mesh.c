@@ -639,6 +639,7 @@ cs_mesh_create(void)
 
   mesh->family_item = NULL;
   mesh->cell_family = NULL;
+  mesh->i_face_family = NULL;
   mesh->b_face_family = NULL;
 
   /* Selector features */
@@ -703,6 +704,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   BFT_FREE(mesh->family_item);
   BFT_FREE(mesh->cell_family);
+  BFT_FREE(mesh->i_face_family);
   BFT_FREE(mesh->b_face_family);
 
   /* Free periodic structures */
@@ -1256,7 +1258,8 @@ cs_mesh_init_selectors(void)
         color[color_nbr++]
           = cs_glob_mesh->family_item[j *cs_glob_mesh->n_families + i];
       }
-      else if (cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i] < 0) {
+      else if (  cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i]
+	       < 0) {
         /* Fortran formulation */
         grp_num = -cs_glob_mesh->family_item[j*cs_glob_mesh->n_families + i] -1;
         grp_idx = cs_glob_mesh->group_idx[grp_num];
@@ -1300,7 +1303,7 @@ cs_mesh_init_selectors(void)
     = fvm_selector_create(cs_glob_mesh->dim,
                           cs_glob_mesh->n_i_faces,
                           cs_glob_mesh->class_defs,
-                          NULL,
+                          cs_glob_mesh->i_face_family,
                           1,
                           cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
@@ -1308,14 +1311,35 @@ cs_mesh_init_selectors(void)
 }
 
 /*----------------------------------------------------------------------------
- * Dump of a mesh structure.
+ * Print information on a mesh structure.
  *
  * parameters:
- *   mesh  <->  pointer to mesh structure.
+ *   mesh  -->  pointer to mesh structure.
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_dump(const cs_mesh_t  *const mesh)
+cs_mesh_print_info(const cs_mesh_t  *mesh)
+{
+  bft_printf(_(" Maillage\n"
+               "     Nombre de cellules :       %lu\n"
+               "     Nombre de faces internes : %lu\n"
+               "     Nombre de faces de bord :  %lu\n"
+               "     Nombre de sommets :        %lu\n"),
+             (unsigned long)(mesh->n_g_cells),
+             (unsigned long)(mesh->n_g_i_faces),
+             (unsigned long)(mesh->n_g_b_faces),
+             (unsigned long)(mesh->n_g_vertices));
+}
+
+/*----------------------------------------------------------------------------
+ * Dump of a mesh structure.
+ *
+ * parameters:
+ *   mesh  -->  pointer to mesh structure.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_dump(const cs_mesh_t  *mesh)
 {
   cs_int_t  i, j;
 
@@ -1424,7 +1448,8 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
     bft_printf(_("n_c_domains:              %d\n"), halo->n_c_domains);
     bft_printf(_("n_ghost_cells:            %d\n"), mesh->n_ghost_cells);
-    bft_printf(_("n_std_ghost_cells:        %d\n"), halo->n_elts[CS_HALO_STANDARD]);
+    bft_printf(_("n_std_ghost_cells:        %d\n"),
+               halo->n_elts[CS_HALO_STANDARD]);
     bft_printf(_("n_ext_ghost_cells:        %d\n"),
                halo->n_elts[CS_HALO_EXTENDED] - halo->n_elts[CS_HALO_STANDARD]);
 
@@ -1474,7 +1499,8 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   if (mesh->cell_cells_idx != NULL) {
 
-    bft_printf(_("\n\nCell -> cells connectivity for extended neighborhood\n\n"));
+    bft_printf
+      (_("\n\nCell -> cells connectivity for extended neighborhood\n\n"));
     for (i = 0; i < mesh->n_cells; i++) {
       bft_printf("< cell n°:%3d>        ", i+1);
       for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)

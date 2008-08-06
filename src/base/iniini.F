@@ -538,18 +538,9 @@ C          rubriques etant optionnelles.
 C
          CALL LEDEVI
 C        ===========
-     &   ( NDIM   , NCEL   , NFAC   , NFABOR , NFML   ,
-     &     NPRFML , NNOD   , LNDFAC , LNDFBR , IPERIO , IPEROT )
+     &   ( NDIM   , NFML   , NPRFML , IPERIO , IPEROT )
 C
       ENDIF
-C
-C --- DIMENSIONS GLOBALES
-C     (seront recalculees plus loin en cas de parallelisme)
-C     (pour les faces internes et de bord -> MAJGEO)
-C
-      NCELGB = NCEL
-      NCBRGB = 0
-      NSOMGB = NNOD
 C
 C
 C=======================================================================

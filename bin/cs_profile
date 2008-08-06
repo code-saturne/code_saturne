@@ -62,8 +62,8 @@
   fi
 #
   CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.a
-  CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.2
-  CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.2
+  CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.4.a
+  CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.3
   SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.0.2
 #
   if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then

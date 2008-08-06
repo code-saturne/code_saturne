@@ -1,4 +1,33 @@
 * 06/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Upgrading to Preprocessor 1.4 and FVM 0.11.0 in order
+  to separate the preprocessing from the partioning.
+  There is now a single preprocessor_output file, so that
+  mesh joining has not to be done again when one asks for
+  a different number of processors.
+  deleted script:
+    bin/lance_install
+  added script:
+    sbin/install
+  modified scripts:
+    bin/cs_profile
+    bin/macros_*.mk
+    bin/runcase
+    bin/runcase.help
+  modified routines:
+    include/base/cs_ecs_messages.h
+    include/base/cs_io.h
+    include/base/cs_mesh.h
+    include/base/parall.h
+    src/base/cs_ecs_messages.c
+    src/base/cs_io.c
+    src/base/cs_main.c
+    src/base/cs_mesh.c
+    src/base/cs_opts.c
+    src/base/impini.F
+    src/base/iniini.F
+    src/base/majgeo.F
+
+* 06/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Removing heap memory instrumentation.
   modified routines:
     src/base/cs_base.c

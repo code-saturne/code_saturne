@@ -172,8 +172,7 @@ C
 C --- Dimensions
 C
       WRITE(NFECRA,1500)
-      WRITE(NFECRA,1510) NCEL,NFAC,NFABOR,NNOD,LNDFAC,LNDFBR,
-     &                   NPRFML,NFML
+      WRITE(NFECRA,1510) NPRFML,NFML
       WRITE(NFECRA,1520) NPHAS,NVAR,NSCAL,NSCAUS,NSCAPP,
      &                   NPROCE,NPROFA,NPROFB
 C
@@ -183,18 +182,9 @@ C
  1500 FORMAT(
      &'                                                             ',/,
      &' ** DIMENSIONS                                               ',/,
-     &'    ----------                                               ',/,
-     &'    Pour les calculs paralleles,                             ',/,
-     &'      ''local'' fait reference au processeur courant et      ',/,
-     &'      l''information globale est donnee plus bas.            ',/)
+     &'    ----------                                               ',/)
  1510 FORMAT(
      &' --- Geometrie                                               ',/,
-     &'       NCEL   = ',4X,I10,    ' (Nb de cellules actives local)',/,
-     &'       NFAC   = ',4X,I10,    ' (Nb de faces internes   local)',/,
-     &'       NFABOR = ',4X,I10,    ' (Nb de faces de bord    local)',/,
-     &'       NNOD   = ',4X,I10,    ' (Nb de sommets          local)',/,
-     &'       LNDFAC = ',4X,I10,    ' (Nb connect fac -> som  local)',/,
-     &'       LNDFBR = ',4X,I10,    ' (Nb connect fbr -> som  local)',/,
      &'       NPRFML = ',4X,I10,    ' (Nb de proprietes de famille )',/,
      &'       NFML   = ',4X,I10,    ' (Nb de familles              )',/)
  1520 FORMAT(
@@ -1658,7 +1648,7 @@ C
  7650 FORMAT(
      &'                                                             ',/,
      &' --- Fichiers preprocesseur                                  ',/,
-     &'   Formats : 1=Lecture des fichiers enveloppe_vers_solveur   ',/,
+     &'   Formats : 1=Lecture des fichiers preprocessor_output      ',/,
      &'             0=Solveur autonome                              ',/,
      &'                                                             ',/,
      &'Format ',I10                                                  ,/)

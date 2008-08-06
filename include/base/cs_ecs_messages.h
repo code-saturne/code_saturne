@@ -68,14 +68,8 @@ extern "C" {
  * *****************
  *
  * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NCEL        : <-- : Nombre d'éléments actifs
- * INTEGER          NFAC        : <-- : Nombre de faces internes
- * INTEGER          NFABOR      : <-- : Nombre de faces de bord
  * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
  * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
- * INTEGER          NSOM        : <-- : Nombre de sommets (optionnel)
- * INTEGER          LNDFAC      : <-- : Longueur de SOMFAC (optionnel)
- * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
  * INTEGER          IPERIO      : <-- : Indicateur de périodicité
  * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
  *----------------------------------------------------------------------------*/
@@ -83,14 +77,8 @@ extern "C" {
 void CS_PROCF(ledevi, LEDEVI)
 (
  cs_int_t   *const ndim,    /* <-- dimension de l'espace                      */
- cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs                   */
- cs_int_t   *const nfac,    /* <-- nombre de faces internes                   */
- cs_int_t   *const nfabor,  /* <-- nombre de faces de bord                    */
  cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord       */
  cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille       */
- cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)              */
- cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)             */
- cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)             */
  cs_int_t   *const iperio,  /* <-- indicateur de périodicité                  */
  cs_int_t   *const iperot   /* <-- nombre de périodicités de rotation         */
 );
@@ -100,15 +88,18 @@ void CS_PROCF(ledevi, LEDEVI)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Receive data from the pre-processor and finalize communication with the
- * pre-processor
+ * Read data from the pre-processor and finalize pre-processor input.
  *
  * parameters:
- *   mesh  <-- pointer to mesh structure
+ *   mesh         <-- pointer to mesh structure
+ *   mesh_builder <-- pointer to mesh builder structure
+ *
+ * returns:
  *----------------------------------------------------------------------------*/
 
 void
-cs_ecs_messages_read_data(cs_mesh_t  *mesh);
+cs_ecs_messages_read_data(cs_mesh_t          *mesh,
+                          cs_mesh_builder_t  *mesh_builder);
 
 /*----------------------------------------------------------------------------*/
 

@@ -140,7 +140,7 @@ typedef struct {
   /* Extended neighborhood features */
 
   cs_int_t  *vtx_gcells_idx;   /* Index of the connectivity vertex -> cells
-                                  Used to build the connectivity cell -> cells */
+                                  Used to build cell -> cells connectivity */
 
   cs_int_t  *vtx_gcells_lst;   /* Connectivity vertex -> cells. */
 
@@ -161,6 +161,7 @@ typedef struct {
   cs_int_t    n_max_family_items;  /* Max. number of items for one family */
   cs_int_t   *family_item;         /* Family items */
   cs_int_t   *cell_family;         /* Cell family */
+  cs_int_t   *i_face_family;       /* Interior face family */
   cs_int_t   *b_face_family;       /* Border face family */
 
   fvm_group_class_set_t *class_defs;
@@ -187,15 +188,6 @@ typedef struct {
   cs_int_t   *per_rank_lst;    /* Remote ranks list. For each couple,
                                   we have the distant rank number. Exist
                                   only in case of parallelism. */
-
-  /* Temporary features to define a periodicity. This kind of information
-     is currently sent by the pre-processor. */
-
-  cs_int_t                 perio_num;
-  fvm_periodicity_type_t   perio_type;
-  cs_real_t                translation[3];
-  cs_real_t                invariant_point[3];
-  cs_real_t                rotation_matrix[3][3];
 
 } cs_mesh_builder_t ;
 
@@ -392,6 +384,16 @@ void
 cs_mesh_init_selectors(void);
 
 /*----------------------------------------------------------------------------
+ * Print information on a mesh structure.
+ *
+ * parameters:
+ *   mesh  -->  pointer to mesh structure.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_print_info(const cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Dump of a mesh structure.
  *
  * parameters:
@@ -399,7 +401,7 @@ cs_mesh_init_selectors(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_dump(const cs_mesh_t  *const mesh);
+cs_mesh_dump(const cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 

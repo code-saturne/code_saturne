@@ -170,6 +170,8 @@ THERMOCHEMISTRY_DATA=
 NUMBER_OF_PROCESSORS=
 PROCESSOR_LIST=
 #
+PARTITION_LIST=
+#
 USER_INPUT_FILES=""
 USER_OUTPUT_FILES=""
 #
@@ -195,18 +197,18 @@ RESU=$CASEDIR/RESU
 SRC=$CASEDIR/SRC
 SCRIPTS=$CASEDIR/SCRIPTS
 RESTART_IN=$DATA/RESTART
-PREPROCESSOR_OUTPUT_IN=$DATA/PREPROCESSOR_OUTPUT
+PREPROCESSOR_OUTPUT_IN=$DATA/preprocessor_output
+PARTITION_OUTPUT_IN=$DATA/PARTITION_OUTPUT
 MESHDIR=$CASEDIR/../MESH
 #
 # The following variables are only used in case of coupling with SYRTHES.
-#  DATA_SYR : directory where to find SYRTHES_ENV
-#  SRC_SYR : directory where to find possible user source files
+#  DATA_SYR: directory where to find SYRTHES_ENV
+#  SRC_SYR:  directory where to find possible user source files
 DATA_SYR=$CASEDIR/DATA_SYR
-SYRTHES_ENV=syrthes.env
 SRC_SYR=$CASEDIR/SRC_SYR
+SYRTHES_ENV=syrthes.env
 #
 # The possible coupling mode with SYRTHES may be chosen here.
-# (be careful of lowercase/uppercase).
 #
 #  COUPLING_MODE=MPI        : should work on most machines.
 #  COUPLING_MODE=sockets    : should be activated on clusters when the MPI rank
@@ -214,19 +216,22 @@ SRC_SYR=$CASEDIR/SRC_SYR
 #                             not be used.
 COUPLING_MODE=MPI
 #
-# We can use 3 execution modes
-# (be careful with lowercase/uppercase)
+#  Indicate which steps should be executed; if both the Preprocessor and the
+#  Kernel are executed, the "preprocessor_output" and eventual "domain_number_*"
+#  files are not saved. If only the preprocessor and / or partitioner are
+#  executed, the corresponding files will be saved in a RESU/PREPROCESSOR_OUTPUT
+#  and RESU/PARTITION directory. If the Preprocessor is not executed,
+#  "preprocessor_output" will be read from $PREPROCESSOR_OUTPUT_IN. If the
+#  Partitioner is not executed, "domain_number_*" will be read from
+#  $PARTITION_OUTPUT_IN if available (otherwise, unoptimized default
+#  partitioning will be used).
 #
-#  EXEC_MODE=complet        : default choice (Preprocessor then Kernel)
-#  EXEC_MODE=pre_traitement : run Proprocessor only, to generate
-#                             preprocessor_output/* files.
-#  EXEC_MODE=calcul         : run Kernel only, using pre-generated
-#                             preprocessor_output/* files, accessible in
-#                             directory $PRE_TRAITEMENT_AMONT.
-#
-EXEC_MODE=complet
+#  EXEC_PREPROCESS : should the Preprocessor be run ? (yes/no)
+#  EXEC_PARTITION  : should the Partitioner be run ? (yes/no)
+#  EXEC_KERNEL     : should the Kernel be run ? (yes/no)
 #
 EXEC_PREPROCESS=yes
+EXEC_PARTITION=yes
 EXEC_KERNEL=yes
 #
 #
@@ -397,13 +402,10 @@ if [ ! -z "$MPIHOSTS" ] ; then
   echo "Total number of processors: $NUMBER_OF_PROCESSORS"
 fi
 #
-# In parallel mode, the number of processors must be specified
-# to the Kernel, as well as to the Preprocessor
+# In parallel mode, the corresponding argument must be set
 if [ $nproc_kernel -gt 1 ] ; then
-  ARG_ECS_PAR=" -p $nproc_kernel"
   ARG_CS_PAR=" -mpi"
 else
-  ARG_ECS_PAR=""
   ARG_CS_PAR=""
 fi
 #
@@ -461,7 +463,7 @@ if [ -f compil.log ] ; then
   rm -f compil.log
 fi
 
-if [ $EXEC_MODE != pre_traitement ] ; then
+if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   echo
   echo  "  ***************************************************************"
@@ -535,7 +537,7 @@ if [ $EXEC_MODE != pre_traitement ] ; then
 
   fi
 
-fi # EXEC_MODE != pre_traitement
+fi # EXEC_KERNEL = yes
 
 #
 ########################################################################
@@ -550,13 +552,17 @@ echo
 #
 ERROR=false
 PREPROCESS_ERROR=false
+PARTITION_ERROR=false
 EXECUTION_ERROR=false
 #
 if [ $SOLCOM = 1 ]
 then
   EXEC_PREPROCESS=no
+  EXEC_PARTITION=no
   ln -s $MESHDIR/$MESH geomet || exit 1
-elif [ ${EXEC_MODE} != calcul ]
+fi
+#
+if [ "${EXEC_PREPROCESS}" = "yes" ]
 then
   for var in $MESH ; do
     ln -s $MESHDIR/$var $var || exit 1
@@ -568,12 +574,33 @@ then
       ln -s $MESHDIR/$ficgeo_ensight $ficgeo_ensight || FIN
     fi
   done
-elif [ $EXEC_MODE = calcul ]
-then
+else
+  if [ -f ${PREPROCESSOR_OUTPUT_IN} ] ; then
     ln -s ${PREPROCESSOR_OUTPUT_IN} preprocessor_output || exit 1
+  else
+    echo "Error: no preprocessor output file is available;"
+    echo "       (${PREPROCESSOR_OUTPUT_IN} does not exist."
+    echo "       or is not a standard file."
+    exit 1
+  fi
 fi
 #
-if [ $EXEC_MODE != pre_traitement ] ; then
+if [ $nproc_kernel -eq 1 -a "${EXEC_KERNEL}" = "yes" ] ; then
+  EXEC_PARTITION=no
+elif [ "${EXEC_PARTITION}" = "no" -a "${PARTITION_OUTPUT_IN}" != "" ]
+then
+  if [ -f ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel} ] ; then
+    ln -s ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel} .
+  else
+    echo "Warning: no partitioning file is available;"
+    echo "         (no ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel})."
+    echo
+    echo "         Unoptimized partitioning will be used."
+    echo "         Parallel performance may be degraded."
+  fi
+fi
+#
+if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   for var in ${RESTART_IN}/* ; do
     if [ -f $var ] ; then
@@ -635,7 +662,7 @@ if [ $EXEC_MODE != pre_traitement ] ; then
     done
   fi
   #
-fi # EXEC_MODE != pre_traitement
+fi # EXEC_KERNEL = yes
 
 ########################################################################
 # Maximum time for PBS (done here so as to leave time for PBS to
@@ -651,6 +678,7 @@ fi
 # Summary: start
 #
 CURDATE=`unset LANG ; date`
+CSPP_PATH=${CSPP_HOME}/arch/${NOM_ARCH}/bin
 #
 echo '========================================================'>>$summary
 echo '   Start time       : ' $CURDATE                         >>$summary
@@ -690,18 +718,26 @@ echo '      RESU          : ' $RESU                            >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 echo '    Exec. dir.      : ' $RUN                             >>$summary
 echo '  ----------------------------------------------------'  >>$summary
-echo '    Eexecutable     : ' $EXE                             >>$summary
-if [ -z "$OPTIMIZATION" ] ; then
-  echo '      Optimization  : default (production)'          >>$summary
-else
-  echo '      Optimization  : ' $OPTIMIZATION                >>$summary
+if [ "$EXEC_PREPROCESSOR" = "yes" ] ; then
+  echo '    Preprocessor    : ' ${CSPP_PATH}/ecs               >>$summary
+fi
+if [ "$EXEC_PARTITION" = "yes" ] ; then
+  echo '    Partitioner     : ' ${CSPP_PATH}/cs_partition      >>$summary
+fi
+if [ "$EXEC_KERNEL" = "yes" ] ; then
+  echo '    Executable      : ' $EXE                           >>$summary
+  if [ -z "$OPTIMIZATION" ] ; then
+    echo '      Optimization  : default (production)'          >>$summary
+  else
+    echo '      Optimization  : ' $OPTIMIZATION                >>$summary
+  fi
 fi
 echo '  ----------------------------------------------------'  >>$summary
 #
 # Execution
 echo
 echo  "  ********************************************"
-echo  "           Code_Saturne is running            "
+echo  "             Calculation starting"
 echo  "  ********************************************"
 echo
 #
@@ -730,10 +766,10 @@ fi
 #
 # Preprocessor start
 #
-if [ $SOLCOM = 0 -a $EXEC_MODE != calcul ] ; then
+if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
   #
-  ${CS_HOME}/bin/ecs $ARG_ECS_PAR -mesh $MESH -case $CASE \
-                     $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1
+  ${CSPP_PATH}/ecs -mesh $MESH "-case" $CASE \
+                   $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1
   if [ $? != 0 ] ; then
     echo "Error running the preprocessor."
     echo "Check preprocessor log (listpre) for details."
@@ -742,22 +778,65 @@ if [ $SOLCOM = 0 -a $EXEC_MODE != calcul ] ; then
     ERROR=true
   fi
   #
-  if [ $EXEC_MODE = pre_traitement ] ; then
+  if [ "${EXEC_KERNEL}" = "no" ] ; then
     #
     PREPROCESSOR_OUTPUT_OUT=$RESU/preprocessor_output.$SUFFIX
-    if [ -d ${PREPROCESSOR_OUTPUT_OUT} ] ; then
-      echo "The ${PREPROCESSOR_OUTPUT_OUT} already exists."
-      echo "Copy of preprocessor_output/n* files impossible"
+    cp preprocessor_output ${PREPROCESSOR_OUTPUT_OUT}
+  fi
+  #
+fi
+#
+# Partitioner start
+#
+if [ ! -f ${CSPP_PATH}/cs_partition ] ; then
+  echo "Warning: ${CSPP_PATH}/cs_partition not found."
+  echo
+  echo "The partitioner may not have been installed"
+  echo "  (this is the case if neither METIS nor."
+  echo "  SCOTCH are avaialable)."
+  echo
+  echo "Unoptimized partitioning will be used, so"
+  echo "parallel performance may be degraded."
+  echo
+  EXEC_PARTITION=no
+fi
+#
+if [ "${EXEC_PARTITION}" = "yes" ] ; then
+  #
+  if [ "${EXEC_KERNEL}" = "yes" ] ; then
+    ${CSPP_PATH}/cs_partition $nproc_kernel > listpart 2>&1
+  else
+    if [ -z "$PARTITION_LIST" ] ; then
+      echo "Error running the partitioner."
+      echo "PARTITION_LIST is not set."
+      echo "This variable should contain the number of processors"
+      echo "for which we partition (or a list of such numbers)."
+      PARTITION_ERROR=true
+      ERROR=true
     else
-      cp -r preprocessor_output ${PREPROCESSOR_OUTPUT}
+      ${CSPP_PATH}/cs_partition $PARTITION_LIST > listpart 2>&1
     fi
+  fi
+  if [ $? != 0 -a $PARTITION_ERROR = false ] ; then
+    echo "Error running the partitioner."
+    echo "Check partitioner log (listpart) for details."
+    echo
+    PARTITION_ERROR=true
+    ERROR=true
+  fi
+  #
+  if [ "${EXEC_KERNEL}" = "no" ] ; then
+    #
+    PARTITION_OUTPUT_OUT=$RESU/PARTITION_OUTPUT.$SUFFIX
+    mkdir $PARTITION_OUTPUT_OUT
+    cp -r domain_number_* ${PARTITION_OUTPUT_OUT}/
   fi
 #
 fi
 #
 # Run calculation proper.
 #
-if [ "$ERROR" != "true" -a $EXEC_MODE != pre_traitement ] ; then
+if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
 #
   if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
     # MPI Communication
@@ -866,7 +945,7 @@ fi
 #   Starts with the restart files
 #   (in case of full disk, increases chances of being able to continue).
 #
-if [ $EXEC_MODE != pre_traitement ] ; then
+if [ $EXEC_KERNEL = yes ] ; then
 
   RESTART_OUT=$RESU/RESTART.$SUFFIX
   iok=1
@@ -966,7 +1045,7 @@ for dir in *.ensight *.med ; do
   fi
 done
 
-if [ $EXEC_MODE != pre_traitement ] ; then
+if [ $EXEC_KERNEL = yes ] ; then
 
   rayt_list=`ls bord* 2>/dev/null`
   if [ ! -z "${rayt_list}" ] ; then
@@ -1030,6 +1109,10 @@ if  [ "$PREPROCESS_ERROR" = "true" ] ; then
   EXEC_PREPROCESS="failed"
 fi
 echo "    Preprocessing   : " $EXEC_PREPROCESS                 >>$summary
+if  [ "$PARTITION_ERROR" = "true" ] ; then
+  EXEC_PARTITION="failed"
+fi
+echo "    Partitioning    : " $EXEC_PARTITION                  >>$summary
 if  [ "$EXECUTION_ERROR" = "true" ] ; then
   EXEC_KERNEL="failed"
 fi
@@ -1052,6 +1135,8 @@ echo
 echo  "  ********************************************"
 if [ "$EXECUTION_ERROR" = "true" ] ; then
   echo  "         Error in calculation stage."
+elif  [ "$PARTITION_ERROR" = "true" ] ; then
+  echo  "         Error in partitioning stage."
 elif  [ "$PREPROCESS_ERROR" = "true" ] ; then
   echo  "         Error in preprocessing stage."
 else
