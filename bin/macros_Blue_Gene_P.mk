@@ -115,9 +115,7 @@ PREPROCFLAGS    =
 
 CCOMP                  = bgxlc
 
-CCOMPFLAGSDEF          =
-
-#CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450
+CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450
 #CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 #CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qsource -qlist
 
@@ -137,9 +135,7 @@ CCOMPFLAGSVERS         = -v
 
 FTNCOMP                = bgxlf
 
-FTNCOMPFLAGSDEF        = -qextname
-
-#FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname
+FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname
 #FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 #FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsource -qlist
 
@@ -159,7 +155,7 @@ FTNPREPROCOPT          = -WF,
 
 # Linker
 
-LDEDL           = bgxlf_r
+LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide
 #LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 LDEDLFLAGS      = -O3
 LDEDLFLAGSLO    = -O0
