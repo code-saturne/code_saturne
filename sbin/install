@@ -418,7 +418,7 @@ Macro_readme_comp=$2
 #
   titre "Prerequisite protection"
 #
-  umask 007            || sortie "It is not possible to set up umask"
+  umask 022            || sortie "It is not possible to set up umask"
 #
 #
 #=========================================================================
@@ -551,46 +551,6 @@ Macro_readme_comp=$2
 #
  cd ${CS_HOME} || sortie  "The ${CS_HOME} directory can not be reached"
 #
-# Full permissions for reading
- find ${CS_HOME}/bin -type d -exec chmod    u=rwx,g=rx,o=rx {} \;
- find ${CS_HOME}/bin -type f -exec chmod    u=rw,g=r,o=r {} \;
-# Executables for the saturne login
- listebin="autovalid \
-check_consistency \
-check_mesh \
-compiler_version \
-cs_create \
-cs_info \
-cs.exe \
-ecs \
-gracehst \
-grp \
-rang_mpi.sh"
- for fich in $listebin  ; do
-   chmod    u+x bin/$fich
- done
-# Files readable and executable by all
- listebin="autovalid \
-compiler_version \
-check_consistency \
-check_mesh \
-cs_create \
-cs_info \
-cs.exe \
-ecs \
-gracehst \
-grp \
-rang_mpi.sh"
- for fich in $listebin  ; do
-   chmod   g+x,o+x bin/$fich
- done
-# Executable files in aux
- listeaux="rmb.sh \
-rmb.sh_lance \
-clean"
- for fich in $listeaux  ; do
-   chmod    u+x aux/$fich
- done
 # Executable files in arch
   chmod g+rx,o+rx ${CS_HOME}/arch/${NOM_ARCH}/bin/*
 # Access to the lib directory
