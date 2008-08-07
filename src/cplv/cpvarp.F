@@ -81,6 +81,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
       INCLUDE "ihmpre.h"
 C
 C***********************************************************************
@@ -117,8 +118,6 @@ C
           IH2(ICLA) = ISCAPP(IS)
         ENDIF
 C
-
-C
       ENDDO
 C
 C ---> Variables propres a la phase continue
@@ -133,6 +132,10 @@ C
 C
       IS = IS+1
       IF3M  = ISCAPP(IS)
+      IF ( IHTCO2 .EQ. 1) THEN
+        IS = IS+1
+        IF3MC2 = ISCAPP(IS)
+      ENDIF
       IS = IS+1
       IF4P2M = ISCAPP(IS)
       IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
@@ -140,7 +143,16 @@ C
         IF5M  = ISCAPP(IS)
       ENDIF
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( NOXYD .GE. 2 ) THEN
+        IS = IS+1
+        IF6M  = ISCAPP(IS)
+      ENDIF
+      IF ( NOXYD .EQ. 3 ) THEN
+        IS = IS+1
+        IF7M  = ISCAPP(IS)
+      ENDIF
+C
+      IF ( IEQCO2 .GE. 1 ) THEN
         IS = IS+1
         IYCO2 = ISCAPP(IS)
       ENDIF
@@ -157,7 +169,6 @@ C     Construction de l'indirection entre la numerotation du noyau et XML
       ENDIF
 
 #endif
-
 C
 C=======================================================================
 C 2. PROPRIETES PHYSIQUES

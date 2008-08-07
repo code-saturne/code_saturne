@@ -99,7 +99,8 @@ C
 C ---- Variables transportees
 C        Phase continue (melange gazeux)
       INTEGER IF1M(NCHARM), IF2M(NCHARM)
-      INTEGER IF3M, IF4M, IF4P2M, IF5M
+      INTEGER IF3M, IF4M, IF4P2M, IF5M, IF6M, IF7M
+      INTEGER IF3MC2
 C        Phase dispersee (classe de particules)
       INTEGER IXCK(NCLCPM), IXCH(NCLCPM), INP(NCLCPM)
       INTEGER IH2(NCLCPM) , IXWT(NCLCPM)
@@ -110,7 +111,7 @@ C        Phase continue (melange gazeux)
 C        Phase dispersee (classes de particules)
       INTEGER ITEMP2(NCLCPM), IROM2(NCLCPM), IDIAM2(NCLCPM)
       INTEGER IX2(NCLCPM)
-      INTEGER IGMDCH(NCLCPM), IGMHET(NCLCPM)
+      INTEGER IGMDCH(NCLCPM), IGMHET(NCLCPM) , IGHCO2(NCLCPM)
       INTEGER IGMDV1(NCLCPM), IGMDV2(NCLCPM)
       INTEGER IGMSEC(NCLCPM)
 C        Rayonnement : integrale de la luminance sur 4*PI
@@ -120,17 +121,18 @@ C--> POINTEURS VARIABLES COMBUSTION FUEL
 C
 C ---- Variables transportees
 C        Phase continue
-       INTEGER IHLF, IFVAP, IFHTF
+       INTEGER IFVAP, IFHTF
 C        Phase dispersee
-       INTEGER IXKF, IXFOL, ING
-       INTEGER ITEMP3, IROM3, IDIAM3
-       INTEGER IX3
+       INTEGER IHLF(NCLCPM)
+       INTEGER IXKF(NCLCPM), IXFOL(NCLCPM), ING(NCLCPM)
+       INTEGER ITEMP3(NCLCPM), IROM3(NCLCPM), IDIAM3(NCLCPM)
+       INTEGER IX3(NCLCPM)
 C
 C ---- Variables d'etat
 C        Phase continue
-       INTEGER IYFOL
+       INTEGER IYFOL(NCLCPM)
 C        Phase dispersee
-       INTEGER IH1HLF, IGMHTF, IGMEVA
+       INTEGER IH1HLF(NCLCPM), IGMHTF(NCLCPM), IGMEVA(NCLCPM)
 C
 C--> POINTEURS VARIABLES VERSION ELECTRIQUES
 C
@@ -234,6 +236,7 @@ C ---- Combustion gaz
      &                  IYFM, IYFP2M, ICOYFP,
 C ---- Combustion charbon pulverise
      &                  IF1M, IF2M, IF3M, IF4M, IF4P2M, IF5M,
+     &                  IF6M, IF7M, IF3MC2 ,
      &                  IXCK, IXCH, INP , IH2 , IXWT  ,
 C ---- Combustion fuel
      &                  IHLF, IFVAP, IFHTF,
@@ -260,7 +263,7 @@ C ---- Combustion gaz
 C ---- Combustion charbon pulverise
      &                  IYM1, ITEMP1, IROM1 ,IMMEL,
      &                  ITEMP2, IROM2, IDIAM2, IX2,
-     &                  IGMDCH, IGMDV1, IGMDV2, IGMHET,
+     &                  IGMDCH, IGMDV1, IGMDV2, IGMHET, IGHCO2 ,
      &                  IGMSEC,
 C ---- Combustion fuel
      &                  IYFOL, ITEMP3, IROM3 , IDIAM3,

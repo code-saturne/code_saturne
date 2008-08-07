@@ -249,7 +249,8 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA , IFINIA , IFINRA
+      INTEGER          IF3MAX, IW9    , IW10
 C
 C***********************************************************************
 C
@@ -348,9 +349,17 @@ C ---> Flamme charbon pulverise
 C
         IF ( IPPMOD(ICP3PL).GE.0 ) THEN
 C
+          IFINIA = IDEBIA
+C
+          IF3MAX = IDEBRA
+          IW9    = IF3MAX + NCELET
+          IW10   = IW9    + NCELET
+          IFINRA = IW10   + NCELET
+          CALL RASIZE('PPPPHY',IFINRA)
+C
            CALL CPPHYV
 C          ===========
-     & ( IDEBIA , IDEBRA ,
+     & ( IFINIA , IFINRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
@@ -361,8 +370,10 @@ C          ===========
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
+     &   RA(IF3MAX),
      &   W1     , W2     , W3     , W4     ,
      &   W5     , W6     , W7     , W8     ,
+     &   RA(IW9), RA(IW10),
      &   RDEVEL , RTUSER , RA     )
 C
          ENDIF

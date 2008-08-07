@@ -108,7 +108,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IEL
-      INTEGER          N1     , N2     , IPCDIA
+      INTEGER          N1     , N2     , IPCDIA , ICLA
       DOUBLE PRECISION XNG    ,  D1S3
       DOUBLE PRECISION RHOFOL , DIAM3M , DIAM3X
 C
@@ -127,22 +127,24 @@ C    DE LA FRACTION MASSIQUE DE FOL
 C    DU DIAMETRE DU COKE
 C=======================================================================
 C
-      N1 = 0
-      N2 = 0
-      DIAM3M =  1.D0
-      DIAM3X =  0.D0
+      DO ICLA = 1, NCLAFU
 C
-      IPCDIA = IPPROC(IDIAM3)
+        N1 = 0
+        N2 = 0
+        DIAM3M =  1.D0
+        DIAM3X =  0.D0
 C
-      DO IEL = 1, NCEL
+        IPCDIA = IPPROC(IDIAM3(ICLA))
 C
-C      Masse Volumique
+        DO IEL = 1, NCEL
 C
-        PROPCE(IEL,IPPROC(IROM3)) = RHO0FL
+C        Masse Volumique
 C
-        YFOL   = RTP(IEL,ISCA(IYFOL))
-        XNG    = RTP(IEL,ISCA(ING))
-        RHOFOL = PROPCE(IEL,IPPROC(IROM3))
+          PROPCE(IEL,IPPROC(IROM3(ICLA))) = RHO0FL
+C
+          YFOL   = RTP(IEL,ISCA(IYFOL(ICLA)))
+          XNG    = RTP(IEL,ISCA(ING(ICLA)))
+          RHOFOL = PROPCE(IEL,IPPROC(IROM3(ICLA)))
 C
 C --- Calcul du diametre de la particule
 C
@@ -151,55 +153,59 @@ C     Diam en mm
 C     Xng en Ggouttes (en milliards de gouttes/kg de mélange)
 C     ça marche mais il faudrait un facteur mis à UN pour s'y retrouver
 C
-        IF ( YFOL .GT. EPSIFL .AND. (XNG*YFOL) .GT. 0.D0) THEN
-          PROPCE(IEL,IPCDIA) = ((YFOL / RHOFOL)
-     &                        /(PI/6.D0 * XNG) ) ** D1S3
-        ELSE
-          PROPCE(IEL,IPCDIA) = DINIFL
+          IF ( YFOL .GT. EPSIFL .AND. (XNG*YFOL) .GT. 0.D0) THEN
+C
+            PROPCE(IEL,IPCDIA) = ((YFOL / RHOFOL)
+     &                          /(PI/6.D0 * XNG) ) ** D1S3
+C
+            IF ( PROPCE(IEL,IPCDIA) .GT. DINIFL(ICLA) ) THEN
+              N1 = N1+1
+              DIAM3X = MAX(DIAM3X,PROPCE(IEL,IPCDIA))
+              PROPCE(IEL,IPCDIA) = DINIFL(ICLA)
+            ENDIF
+C
+            IF ( PROPCE(IEL,IPCDIA) .LT. DINIIN(ICLA) ) THEN
+              N2 = N2+1
+              DIAM3M = MIN(DIAM3M,PROPCE(IEL,IPCDIA))
+              PROPCE(IEL,IPCDIA) = DINIIN(ICLA)
+            ENDIF
+C
+          ELSE
+            PROPCE(IEL,IPCDIA) = DINIFL(ICLA)
+          ENDIF
+C
+        ENDDO
+C
+        IF (IRANGP.GE.0) THEN
+C
+          CALL PARCPT (N1)
+C         ===========
+          CALL PARCPT (N2)
+C         ===========
+C
+          CALL PARMAX (DIAM3X)
+C         ===========
+          CALL PARMIN (DIAM3M)
+C         ===========
         ENDIF
 C
-        IF ( PROPCE(IEL,IPCDIA) .GT. DINIFL ) THEN
-          N1 = N1+1
-          DIAM3X = MAX(DIAM3X,PROPCE(IEL,IPCDIA))
-          PROPCE(IEL,IPCDIA) = DINIFL
+        IF ( N1 .GT. 0 ) THEN
+          WRITE(NFECRA,1001) ICLA, N1, DIAM3X
         ENDIF
-C
-        IF ( PROPCE(IEL,IPCDIA) .LT. DINIIN ) THEN
-          N2 = N2+1
-          DIAM3M = MIN(DIAM3M,PROPCE(IEL,IPCDIA))
-          PROPCE(IEL,IPCDIA) = DINIIN
+        IF ( N2 .GT. 0 ) THEN
+          WRITE(NFECRA,1002)  ICLA, N2, DIAM3M
         ENDIF
 C
       ENDDO
-C
-      IF (IRANGP.GE.0) THEN
-C
-        CALL PARCPT (N1)
-C       ===========
-        CALL PARCPT (N2)
-C       ===========
-C
-        CALL PARMAX (DIAM3X)
-C       ===========
-        CALL PARMIN (DIAM3M)
-C       ===========
-      ENDIF
-C
-      IF ( N1 .GT. 0 ) THEN
-         WRITE(NFECRA,1001) N1, DIAM3X
-      ENDIF
-      IF ( N2 .GT. 0 ) THEN
-         WRITE(NFECRA,1002)  N2, DIAM3M
-      ENDIF
 C
 C----
 C FORMATS
 C----
 C
- 1001 FORMAT(/,1X,' CLIPPING EN MAX DU DIAMETRE :',
+ 1001 FORMAT(/,1X,' CLIPPING EN MAX DU DIAMETRE CLASSE :',I2,
      &       /,10X,' Nombre de points : ',I8,
      &       /,10X,' Valeur Max       : ',G15.7)
- 1002 FORMAT(/,1X,' CLIPPING EN MIN DU DIAMETRE :',
+ 1002 FORMAT(/,1X,' CLIPPING EN MIN DU DIAMETRE CLASSE :',I2,
      &       /,10X,' Nombre de points : ',I8,
      &       /,10X,' Valeur Min       : ',G15.7)
 C

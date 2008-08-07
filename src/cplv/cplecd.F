@@ -78,6 +78,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -88,8 +89,8 @@ C
       CHARACTER *150 CHAIN1,CHAIN2
       CHARACTER *12   NOMCOE(NGAZEM)
 C
-      INTEGER          IT     , ICE    , IAT    , IOS , II
-      INTEGER          NCOEL  , INICOE , INICHA
+      INTEGER          IT     , ICE    , IAT    , IOS , II , IOXY
+      INTEGER          NCOEL  , INICOE , INICHA , IERROR
       INTEGER          IDECAL , ICLA   , ICLAPC , ICHA   , IS
       INTEGER          IDEBCH , IFINCH , LONCH  , ICHAI  , ICHCOE
       INTEGER          ATCOEL(NGAZEM,NATOM)
@@ -100,7 +101,12 @@ C
       DOUBLE PRECISION TMIN   , TMAX
       DOUBLE PRECISION IPCI(NCHARM)
       DOUBLE PRECISION WMOLCE(NGAZEM), EHCOEL(NGAZEM,NPOT)
-      DOUBLE PRECISION CPCOEL(NGAZEM,NPOT)
+      DOUBLE PRECISION CPCOEL(NGAZEM,NPOT),DET,MATDET
+      DOUBLE PRECISION WMV1,WMVCH1,WMV2,WMVCH2
+      DOUBLE PRECISION A11,A12,A13,A21,A22,A23,A31,A32,A33
+      DOUBLE PRECISION DHVOL1,DHVOL2,HCOKE,HCHAR,EHVOL1,EHVOL2
+      DOUBLE PRECISION WMCO,WMO2,WMCO2,WMH2O,WMN2,WMC
+      DOUBLE PRECISION DMF4,DMF6,DMF7
 C
 C
 C***********************************************************************
@@ -296,11 +302,6 @@ C
       READ (IMPFPP,*,ERR=999,END=999 )
      &     ( RHO0CH(ICHA),ICHA=1,NCHARB )
 C
-C ------ Taux d'humidite (kg/kg) en %
-C
-      READ (IMPFPP,*,ERR=999,END=999 )
-     &     ( XWATCH(ICHA),ICHA=1,NCHARB )
-C
 C ---- Caracteristiques coke
 C
       READ (IMPFPP,*,ERR=999,END=999 )
@@ -342,6 +343,11 @@ C
       READ (IMPFPP,*,ERR=999,END=999 )
      &     ( CPASHC(ICHA),ICHA=1,NCHARB )
 C
+C ------ Taux d'humidite (kg/kg) en %
+C
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( XWATCH(ICHA),ICHA=1,NCHARB )
+C
 C        Transformation en kg/kg
       DO ICHA = 1, NCHARB
         XWATCH(ICHA) = XWATCH(ICHA)/100.D0
@@ -371,7 +377,7 @@ C
       READ (IMPFPP,*,ERR=999,END=999 )
      &     ( E2CH(ICHA),ICHA=1,NCHARB )
 C
-C ---- Parametres combustion heterogene (modele a sphere retrecissante)
+C ---- Parametres combustion heterogene pour O2(modele a sphere retrecissante)
 C
       READ (IMPFPP,*,ERR=999,END=999 )
 C
@@ -381,6 +387,47 @@ C
      &     ( EHETCH(ICHA),ICHA=1,NCHARB )
       READ (IMPFPP,*,ERR=999,END=999 )
      &     ( IOCHET(ICHA),ICHA=1,NCHARB)
+C
+C ---- Parametres combustion heterogene pour CO2(modele a sphere retrecissante)
+C
+      READ (IMPFPP,*,ERR=999,END=999 )
+C
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( AHETC2(ICHA),ICHA=1,NCHARB )
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( EHETC2(ICHA),ICHA=1,NCHARB )
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( IOETC2(ICHA),ICHA=1,NCHARB)
+C
+C --> Lecture caracteristiques Oxydants
+C
+      READ (IMPFPP,*,ERR=999,END=999 )
+C
+C ---- Nb d'oxydants
+C
+      READ ( IMPFPP,*,ERR=999,END=999 ) NOXYD
+      IF ( NOXYD.LT.1 .OR. NOXYD .GT. 3 ) THEN
+        WRITE(NFECRA,9895) NOXYD
+        CALL CSEXIT (1)
+      ENDIF
+C
+C ---- Composition en O2,N2,H2O,N2
+C
+      DO IOXY=1,3
+        OXYO2 (IOXY) = 0.D0
+        OXYN2 (IOXY) = 0.D0
+        OXYH2O(IOXY) = 0.D0
+        OXYCO2(IOXY) = 0.D0
+      ENDDO
+C
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( OXYO2(IOXY),IOXY=1,NOXYD )
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( OXYN2(IOXY),IOXY=1,NOXYD )
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( OXYH2O(IOXY),IOXY=1,NOXYD )
+      READ (IMPFPP,*,ERR=999,END=999 )
+     &     ( OXYCO2(IOXY),IOXY=1,NOXYD )
 C
 C --> Fermeture du fichier (ne pas oublier, car l'unite sert pour janaf)
 C
@@ -563,7 +610,6 @@ C                   CP = 4181.35
 C
       DO ICHA = 1, NCHARB
         EH0SOL(IWAT(ICHA)) = -15871802.2D0
-C
       ENDDO
 C
 C Construction table enthalpie/temperature Charbon
@@ -675,11 +721,31 @@ C
 C
 C --> Calcul relatifs aux matieres volatiles
 C
+C  On test que l'on utilise la meme option pour Y1 et Y2
+C  pour chaque charbon
+C
+      DO ICHA = 1, NCHARB
+        IF ( IY1CH(ICHA).NE. IY2CH(ICHA) ) THEN
+C
+          WRITE(NFECRA,9980) ICHA,IY1CH(ICHA),IY2CH(ICHA)
+          CALL CSEXIT(1)
+C
+        ENDIF
+        IF ( IY1CH(ICHA).LT. 0 .OR.  IY1CH(ICHA).LE.0 .OR.
+     &       IY2CH(ICHA).LT. 0 .OR.  IY2CH(ICHA).LE.0     ) THEN
+          WRITE(NFECRA,9981) ICHA,IY1CH(ICHA),IY1CH(ICHA)
+          CALL CSEXIT(1)
+        ENDIF
+      ENDDO
+C
 C ---- Matieres volatiles legeres : [CH(CHX1); CO]
 C       CH(ALPHA)O(BETA) --> A1 CH(CHX1) + B1 CO
 C                            + (1-A1-B1) CH(GAMMA)O(DELTA)
 C       Si IY1CH = 0 CHX1 fixe , Y1CH calcule
 C       Si IY1CH = 1 Y1CH fixe , CHX1 calcule
+C       Si IY1CH = 2 Y1CH fixe, CHX1 fixe, on ajoute de l'eau
+C       CH(ALPHA)O(BETA) --> A1 CH(CHX1) + B1 CO + C1 H2O
+C                            + (1-A1-B1) CH(GAMMA)O(DELTA)
 C
       DO ICHA = 1, NCHARB
         IF ( IY1CH(ICHA).EQ.0 ) THEN
@@ -693,7 +759,7 @@ C
      &                     DELTA(ICHA)*(ALPHA(ICHA)-CHX1(ICHA)) )
      &                     *WMOLE(ICO) )
      &               / DEN1
-        ELSE
+        ELSEIF(IY1CH(ICHA) .EQ. 1) THEN
           DEN1 = Y1CH(ICHA)*(1.D0-DELTA(ICHA))*WMOLS(ICH(ICHA))
      &         - WMOLAT(IATH)*(GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
      &                         ALPHA(ICHA)*(1.D0-DELTA(ICHA)))
@@ -703,13 +769,72 @@ C
      &                                 BETA(ICHA) *GAMMA(ICHA)  )
      &                 + Y1CH(ICHA)*GAMMA(ICHA)*WMOLS(ICH(ICHA)) )
      &               / DEN1
+        ELSEIF(IY1CH(ICHA) .EQ. 2) THEN
+          CHX1(ICHA)   = 4.D0
         ENDIF
 C
-        DEN1     =  (1.D0-DELTA(ICHA))*CHX1(ICHA)-GAMMA(ICHA)
-        A1(ICHA) = ( GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
-     &               ALPHA(ICHA)*(1.D0-DELTA(ICHA)) )       / DEN1
-        B1(ICHA) = ( BETA(ICHA)*(CHX1(ICHA)-GAMMA(ICHA)) +
-     &               DELTA(ICHA)*(ALPHA(ICHA)-CHX1(ICHA)) ) / DEN1
+        IF ( IY1CH(ICHA).LT.2) THEN
+         DEN1     =  (1.D0-DELTA(ICHA))*CHX1(ICHA)-GAMMA(ICHA)
+         A1(ICHA) = ( GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
+     &                ALPHA(ICHA)*(1.D0-DELTA(ICHA)) )       / DEN1
+         B1(ICHA) = ( BETA(ICHA)*(CHX1(ICHA)-GAMMA(ICHA)) +
+     &                DELTA(ICHA)*(ALPHA(ICHA)-CHX1(ICHA)) ) / DEN1
+         C1(ICHA) = ZERO
+        ELSE
+         WMV1 = Y1CH(ICHA)*( WMOLAT(IATC)
+     &                      +ALPHA(ICHA)*WMOLAT(IATH)
+     &                      +BETA(ICHA)*WMOLAT(IATO) )
+         WMVCH1 = WMOLAT(IATC) + CHX1(ICHA)*WMOLAT(IATH)
+C
+         A11 = 4.D0-GAMMA(ICHA)
+         A12 = -GAMMA(ICHA)
+         A13 = 2.D0
+         A21 = -DELTA(ICHA)
+         A22 = 1.D0-DELTA(ICHA)
+         A23 = 1.D0
+         A31 = WMVCH1
+         A32 = WMOLE(ICO)
+         A33 = WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+C
+         DEN1 = 1.D0 / DET
+C
+         A11 =  (ALPHA(ICHA)-GAMMA(ICHA))
+         A12 = -GAMMA(ICHA)
+         A13 =  2.D0
+         A21 =  (BETA(ICHA)-DELTA(ICHA) )
+         A22 =  (1.D0-DELTA(ICHA))
+         A23 =  1.D0
+         A31 =  WMV1
+         A32 =  WMOLE(ICO)
+         A33 =  WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         A1(ICHA) = DEN1 * DET
+C
+         A11 = 4.D0-GAMMA(ICHA)
+         A12 = ALPHA(ICHA)-GAMMA(ICHA)
+         A13 = 2.D0
+         A21 = -DELTA(ICHA)
+         A22 = BETA(ICHA)-DELTA(ICHA)
+         A23 = 1.D0
+         A31 = WMVCH1
+         A32 = WMV1
+         A33 = WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         B1(ICHA) = DEN1 * DET
+C
+         A11 = 4.D0-GAMMA(ICHA)
+         A12 = -GAMMA(ICHA)
+         A13 = ALPHA(ICHA)-GAMMA(ICHA)
+         A21 = -DELTA(ICHA)
+         A22 = 1.D0-DELTA(ICHA)
+         A23 = BETA(ICHA)-DELTA(ICHA)
+         A31 = WMVCH1
+         A32 = WMOLE(ICO)
+         A33 = WMV1
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         C1(ICHA) = DEN1 * DET
+        ENDIF
        ENDDO
 C
 C ---- Matieres volatiles lourdes : [CH(CHX2); CO]
@@ -717,6 +842,9 @@ C       CH(ALPHA)O(BETA) --> A2 CH(CHX2) + B2 CO
 C                            + (1-A2-B2) CH(GAMMA)O(DELTA)
 C       Si IY2CH = 0 CHX2 fixe, Y2CH calcule
 C       Si IY2CH = 1 Y2CH fixe, CHX2 calcule
+C       Si IY2CH = 2 Y2CH fixe, CHX2 fixe, on ajoute de l'eau
+C       CH(ALPHA)O(BETA) --> A2 CH(CHX2) + B2 CO + C2 H2O
+C                            + (1-A2-B2) CH(GAMMA)O(DELTA)
 C
       DO ICHA = 1, NCHARB
         IF ( IY2CH(ICHA).EQ.0 ) THEN
@@ -730,7 +858,7 @@ C
      &                     DELTA(ICHA)*(ALPHA(ICHA)-CHX2(ICHA)) )
      &                     *WMOLE(ICO) )
      &               / DEN2
-        ELSE
+        ELSEIF(IY2CH(ICHA).EQ.1) THEN
           DEN2 = Y2CH(ICHA)*(1.D0-DELTA(ICHA))*WMOLS(ICH(ICHA))
      &         - WMOLAT(IATH)*(GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
      &                         ALPHA(ICHA)*(1.D0-DELTA(ICHA)))
@@ -740,13 +868,72 @@ C
      &                                 BETA(ICHA) *GAMMA(ICHA)  )
      &                 + Y2CH(ICHA)*GAMMA(ICHA)*WMOLS(ICH(ICHA)) )
      &               / DEN2
+        ELSE
+          Y2CH(ICHA) = MIN(2.D0*Y1CH(ICHA),(1.D0+Y1CH(ICHA))/2.D0)
+          CHX2(ICHA) = 2.D0
         ENDIF
 C
-        DEN2     = (1.D0-DELTA(ICHA))*CHX2(ICHA)-GAMMA(ICHA)
-        A2(ICHA) = ( GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
-     &               ALPHA(ICHA)*(1.D0-DELTA(ICHA)) )       / DEN2
-        B2(ICHA) = ( BETA(ICHA)*(CHX2(ICHA)-GAMMA(ICHA)) +
-     &               DELTA(ICHA)*(ALPHA(ICHA)-CHX2(ICHA)) ) / DEN2
+        IF( IY2CH(ICHA).LT.2) THEN
+         DEN2     = (1.D0-DELTA(ICHA))*CHX2(ICHA)-GAMMA(ICHA)
+         A2(ICHA) = ( GAMMA(ICHA)*(BETA(ICHA)-1.D0) +
+     &                ALPHA(ICHA)*(1.D0-DELTA(ICHA)) )       / DEN2
+         B2(ICHA) = ( BETA(ICHA)*(CHX2(ICHA)-GAMMA(ICHA)) +
+     &                DELTA(ICHA)*(ALPHA(ICHA)-CHX2(ICHA)) ) / DEN2
+         C2(ICHA) = ZERO
+        ELSE
+         WMV2 = Y2CH(ICHA)*( WMOLAT(IATC)
+     &                      +ALPHA(ICHA)*WMOLAT(IATH)
+     &                      +BETA(ICHA)*WMOLAT(IATO) )
+         WMVCH2 = WMOLAT(IATC) + CHX2(ICHA)*WMOLAT(IATH)
+C
+         A11 = 2.D0-GAMMA(ICHA)
+         A12 = - GAMMA(ICHA)
+         A13 = 2.D0
+         A21 = -DELTA(ICHA)
+         A22 = 1.D0-DELTA(ICHA)
+         A23 = 1.D0
+         A31 = WMVCH2
+         A32 = WMOLE(ICO)
+         A33 = WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         DEN2 = 1.D0 / DET
+C
+         A11 = (ALPHA(ICHA)-GAMMA(ICHA))
+         A12 = - GAMMA(ICHA)
+         A13 = 2.D0
+         A21 = (BETA(ICHA)-DELTA(ICHA) )
+         A22 = (1.D0-DELTA(ICHA))
+         A23 = 1.D0
+         A31 = WMV2
+         A32 = WMOLE(ICO)
+         A33 = WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         A2(ICHA) = DEN2 * DET
+C
+         A11 = (2.D0-GAMMA(ICHA))
+         A12 = (ALPHA(ICHA)-GAMMA(ICHA))
+         A13 = 2.D0
+         A21 = -DELTA(ICHA)
+         A22 = (BETA(ICHA)-DELTA(ICHA))
+         A23 = 1.D0
+         A31 = WMVCH2
+         A32 = WMV2
+         A33 = WMOLE(IH2O)
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         B2(ICHA) = DEN2 * DET
+C
+         A11 = 2.D0-GAMMA(ICHA)
+         A12 = - GAMMA(ICHA)
+         A13 = ALPHA(ICHA)-GAMMA(ICHA)
+         A21 = -DELTA(ICHA)
+         A22 = 1.D0-DELTA(ICHA)
+         A23 = (BETA(ICHA)-DELTA(ICHA))
+         A31 = WMVCH2
+         A32 = WMOLE(ICO)
+         A33 = WMV2
+         DET = MATDET(A11, A12, A13, A21, A22, A23, A31, A32, A33)
+         C2(ICHA) = DEN2 * DET
+        ENDIF
       ENDDO
 C
 C --> Calcul de EHGAZE et de WMOLE
@@ -756,7 +943,7 @@ C ---- Especes CH(CHX1)
 C
       DO ICHA = 1, NCHARB
         WMOLE(ICHX1C(ICHA)) = WMOLAT(IATC)+CHX1(ICHA)*WMOLAT(IATH)
-        IF ( IY1CH(ICHA).EQ.0 ) THEN
+        IF ( IY1CH(ICHA).EQ.0 .OR. IY1CH(ICHA).EQ.2 ) THEN
           DO IT = 1, NPO
             EHGAZE(ICHX1C(ICHA),IT) = EHGAZE(ICHX1,IT)
           ENDDO
@@ -778,7 +965,7 @@ C ---- Especes CH(CHX2)
 C
       DO ICHA = 1, NCHARB
         WMOLE(ICHX2C(ICHA)) = WMOLAT(IATC)+CHX2(ICHA)*WMOLAT(IATH)
-        IF ( IY2CH(ICHA).EQ.0 ) THEN
+        IF ( IY2CH(ICHA).EQ.0 .OR. IY2CH(ICHA).EQ.2 ) THEN
           DO IT = 1, NPO
             EHGAZE(ICHX2C(ICHA),IT) = EHGAZE(ICHX2,IT)
           ENDDO
@@ -821,6 +1008,169 @@ C
 C
       ENDDO
 C
+C AFFICHAGE RECAPITULATIF
+C =======================
+C
+      WRITE(NFECRA,8000)
+C
+C  Constante du modele de devolatilisation
+C
+      WRITE(NFECRA,8100)
+      DO ICHA=1,NCHARB
+        WRITE(NFECRA,8101) ICHA
+        IF ( IY1CH(ICHA) .EQ.0 ) THEN
+          WRITE(NFECRA,8102)
+        ELSE IF ( IY1CH(ICHA) .EQ.1 ) THEN
+          WRITE(NFECRA,8103)
+        ELSE IF  ( IY1CH(ICHA) .EQ.2 ) THEN
+          WRITE(NFECRA,8104)
+        ENDIF
+C
+        WRITE(NFECRA,8105) Y1CH(ICHA),Y2CH(ICHA)
+      ENDDO
+C
+C
+C  Composition matieres volatiles
+C
+      WRITE(NFECRA,8010)
+C
+      WRITE(NFECRA,8051)
+      IERROR = 0
+      DO ICHA=1,NCHARB
+        WRITE(NFECRA,8052) ICHA,CHX1(ICHA),CHX2(ICHA)
+        IF ( CHX1(ICHA) .LE. 0.D0 .OR. CHX2(ICHA) .LE. 0 ) THEN
+          IERROR = 1
+        ENDIF
+      ENDDO
+      IF ( IERROR .EQ. 1 ) THEN
+        WRITE(NFECRA,9970)
+        CALL CSEXIT(1)
+      ENDIF
+C
+      DO ICHA=1,NCHARB
+        WRITE(NFECRA,8011)  ICHA
+        WRITE(NFECRA,8012)
+        WRITE(NFECRA,8013) A1(ICHA),B1(ICHA),C1(ICHA)
+        WRITE(NFECRA,8014) A2(ICHA),B2(ICHA),C2(ICHA)
+      ENDDO
+C
+C  Calcul de DHdev
+C
+      write(NFECRA,8001)
+      DO ICHA=1,NCHARB
+C
+C    Enthalie du Charbon
+C
+       HCHAR = EHSOLI(ICH(ICHA),1)
+       HCOKE = EHSOLI(ICK(ICHA),1)
+C
+C    Enthalpie des matieres volatiles
+C
+       EHVOL1 = ( A1(ICHA)*EHGAZE(ICHX1C(ICHA),1)*WMOLE(ICHX1C(ICHA))
+     &           +B1(ICHA)*EHGAZE(ICO ,1)*WMOLE(ICO)
+     &           +C1(ICHA)*EHGAZE(IH2O,1)*WMOLE(IH2O) )
+     &         /( A1(ICHA)*WMOLE(ICHX1C(ICHA))
+     &           +B1(ICHA)*WMOLE(ICO)
+     &           +C1(ICHA)*WMOLE(IH2O) )
+C
+       EHVOL2 = ( A2(ICHA)*EHGAZE(ICHX2C(ICHA),1)*WMOLE(ICHX2C(ICHA))
+     &           +B2(ICHA)*EHGAZE(ICO ,1)*WMOLE(ICO)
+     &           +C2(ICHA)*EHGAZE(IH2O,1)*WMOLE(IH2O) )
+     &         /( A2(ICHA)*WMOLE(ICHX2C(ICHA))
+     &           +B2(ICHA)*WMOLE(ICO)
+     &           +C2(ICHA)*WMOLE(IH2O) )
+C
+       DHVOL1 = HCHAR-Y1CH(ICHA)*EHVOL1-(1.D0-Y1CH(ICHA))*HCOKE
+       DHVOL2 = HCHAR-Y2CH(ICHA)*EHVOL2-(1.D0-Y2CH(ICHA))*HCOKE
+C
+       WRITE(NFECRA,8002) ICHA,DHVOL1,DHVOL2,PCICH(ICHA)
+C
+      ENDDO
+C
+C  Loi enthalpie/temperature
+C
+      WRITE(NFECRA,8020)
+      DO ICHA = 1, NCHARB
+        WRITE(NFECRA,8011) ICHA
+        WRITE(NFECRA,8021)
+        DO II = 1, NPOC
+          write(NFECRA,8022)THC(II),EHSOLI(ICH (ICHA),II)
+     &                             ,EHSOLI(ICK (ICHA),II)
+     &                             ,EHSOLI(IASH(ICHA),II)
+     &                             ,EHSOLI(IWAT(ICHA),II)
+        ENDDO
+      ENDDO
+C
+C  Calcul des AiFj : nbre de mole de i par kg de j a l'origine
+C
+      WMCO   = WMOLE(ICO)
+      WMO2   = WMOLE(IO2)
+      WMCO2  = WMOLE(ICO2)
+      WMH2O  = WMOLE(IH2O)
+      WMN2   = WMOLE(IN2)
+      WMC    = WMOLAT(IATC)
+C
+      ACOF3 =  1.D0/WMC
+      AO2F3 = -.5D0/WMC
+C
+      DMF4  = ( OXYO2 (1)*WMO2 +OXYN2 (1)*WMN2
+     &         +OXYH2O(1)*WMH2O+OXYCO2(1)*WMCO2 )
+C
+      IF ( DMF4 .LE. 0.D0 ) THEN
+        WRITE(NFECRA,9896) OXYO2(1) ,OXYN2(1) ,
+     &                     OXYH2O(1),OXYCO2(1)
+        CALL CSEXIT(1)
+      ENDIF
+C
+      AO2F4  = OXYO2(1)  / DMF4
+      AN2F4  = OXYN2(1)  / DMF4
+      AH2OF4 = OXYH2O(1) / DMF4
+      ACO2F4 = OXYCO2(1) / DMF4
+C
+      IF ( NOXYD .GE. 2.D0 ) THEN
+        DMF6  = ( OXYO2 (2)*WMO2 +OXYN2 (2)*WMN2
+     &           +OXYH2O(2)*WMH2O+OXYCO2(2)*WMCO2 )
+        IF ( DMF6 .LE. 0.D0 ) THEN
+          WRITE(NFECRA,9897) OXYO2(2) ,OXYN2(2) ,
+     &                       OXYH2O(2),OXYCO2(2)
+          CALL CSEXIT(1)
+        ENDIF
+C
+        AO2F6  = OXYO2(2)  / DMF6
+        AN2F6  = OXYN2(2)  / DMF6
+        AH2OF6 = OXYH2O(2) / DMF6
+        ACO2F6 = OXYCO2(2) / DMF6
+C
+      ELSE
+        AO2F6  = 0.D0
+        AN2F6  = 0.D0
+        AH2OF6 = 0.D0
+        ACO2F6 = 0.D0
+      ENDIF
+C
+      IF ( NOXYD .EQ. 3.D0 ) THEN
+        DMF7  = ( OXYO2 (3)*WMO2 +OXYN2 (3)*WMN2
+     &           +OXYH2O(3)*WMH2O+OXYCO2(3)*WMCO2 )
+        IF ( DMF7 .LE. 0.D0 ) THEN
+          WRITE(NFECRA,9898) OXYO2(3) ,OXYN2(3) ,
+     &                       OXYH2O(3),OXYCO2(3)
+          CALL CSEXIT(1)
+        ENDIF
+C
+        AO2F7  = OXYO2(3)  / DMF7
+        AN2F7  = OXYN2(3)  / DMF7
+        AH2OF7 = OXYH2O(3) / DMF7
+        ACO2F7 = OXYCO2(3) / DMF7
+C
+      ELSE
+        AO2F7  = 0.D0
+        AN2F7  = 0.D0
+        AH2OF7 = 0.D0
+        ACO2F7 = 0.D0
+      ENDIF
+C
+      AH2OF5  = 1.D0/WMH2O
+C
       RETURN
 C
 C
@@ -843,6 +1193,90 @@ C--------
 C FORMATS
 C--------
 C
+C
+ 8000 FORMAT(1X,' RECAPITULATIF SUR LES CHARBONS :'/,
+     &       1X,' ==============================  '  )
+ 8001 FORMAT(/,3X,'Delta Hdev  ',/,
+     &       5X,' Numero Charbon',6X,'Legeres',7X,'Lourdes',9X,'PCI')
+ 8002 FORMAT(10X,I3,8X,G15.7,1X,G15.7,G15.7)
+C
+ 8010 FORMAT(/,3X,'COMPOSITION MATIERES VOLATILES ')
+ 8011 FORMAT(/,5X,' Numero Charbon',I6)
+ 8012 FORMAT(18X,'CHX1 ',12X,'CO',12X,'H2O')
+ 8013 FORMAT( 8X,' MV1 ',G15.7,G15.7,G15.7)
+ 8014 FORMAT( 8X,' MV2 ',G15.7,G15.7,G15.7)
+ 8020 FORMAT(/,3X,'LOI ENTHALPIE/TEMERATURE ')
+ 8021 FORMAT( 10X,'TEMPERATURE',9X,'Hch ',10X,'Hcoke',10X,
+     &                             'Hash',10X,'Hwat')
+ 8022 FORMAT( 8X,5(G15.7))
+C
+ 8050 FORMAT(/,3X,'COMPOSITION DU CHARBON ')
+ 8051 FORMAT(/,5X,'Numero Charbon',7X,'CHX1',12X,'CHX2')
+ 8052 FORMAT(10X,I3,8X,G15.7,1X,G15.7)
+C
+ 8100 FORMAT(/,3X,'CONSTANTE DU MODELE DE DEVOLATILISATION')
+ 8101 FORMAT(/,8X,'CHARBON ',I2)
+ 8102 FORMAT(/,12X,'OPTION 0 : Y1 et Y2 CALCULES     ')
+ 8103 FORMAT(/,12X,'OPTION 1 : Y1 et Y2 FIXES        ')
+ 8104 FORMAT(/,12X,'OPTION 2 : CHX1 et CHX2 FIXES    ')
+
+ 8105 FORMAT(12X,'Y1CH = ',G15.7,3X,'Y2CH = ',G15.7)
+C
+ 9970 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  CERTAINES VALEURS DE CHX1 ET CHX2 SONT NEGATIVES          ',/,
+     &'@  OU NULLES                                                 ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9980 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  Vous utilisez une option differente pour Y1 et Y2         ',/,
+     &'@  pour le charbon ',I2,'                                    ',/,
+     &'@         IY1CH = ',I2,'                                     ',/,
+     &'@         IY2CH = ',I2,'                                     ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9981 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  Vous utilisez une option  pour Y1 et Y2 non disponible    ',/,
+     &'@  pour le charbon ',I2,'                                    ',/,
+     &'@         IY1CH = ',I2,'                                     ',/,
+     &'@         IY2CH = ',I2,'                                     ',/,
+     &'@                                                            ',/,
+     &'@  seules les valeur : 0 , 1 ou 2 sont admissibles.          ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
 C
  9991 FORMAT(
      &'@                                                            ',/,
@@ -979,7 +1413,170 @@ C
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
 C
+ 9895 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  Le nombre d''Oxydants doit etre compris entre 1 et 3      ',/,
+     &'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 9896 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  LA COMPOSITION DE L''OXYDANT 1 EST ERRONEE                ',/,
+     &'@     O2  :  ',G15.7,'                                       ',/,
+     &'@     N2  :  ',G15.7,'                                       ',/,
+     &'@     H2O :  ',G15.7,'                                       ',/,
+     &'@     CO2 :  ',G15.7,'                                       ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9897 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  LA COMPOSITION DE L''OXYDANT 2 EST ERRONEE                ',/,
+     &'@     O2  :  ',G15.7,'                                       ',/,
+     &'@     N2  :  ',G15.7,'                                       ',/,
+     &'@     H2O :  ',G15.7,'                                       ',/,
+     &'@     CO2 :  ',G15.7,'                                       ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9898 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  LA COMPOSITION DE L''OXYDANT 3 EST ERRONEE                ',/,
+     &'@     O2  :  ',G15.7,'                                       ',/,
+     &'@     N2  :  ',G15.7,'                                       ',/,
+     &'@     H2O :  ',G15.7,'                                       ',/,
+     &'@     CO2 :  ',G15.7,'                                       ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9899 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,
+     &'@    *********                                               ',/,
+     &'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,
+     &'@                                                            ',/,
+     &'@  LA COMPOSITION DE L''OXYDANT 1 EST ERRONEE                ',/,
+     &'@     O2  :  ',G15.7,'                                       ',/,
+     &'@     N2  :  ',G15.7,'                                       ',/,
+     &'@     H2O :  ',G15.7,'                                       ',/,
+     &'@     CO2 :  ',G15.7,'                                       ',/,
+     &'@                                                            ',/,
+     &'@  ALORS QUE L''OXYDANT 1 DOIT OBLIGATOIREMENT CONTENIR      ',/,
+     &'@  DE L''OXYGENE                                             ',/,
+     &'@                                                            ',/,
+     &'@  Verifier le fichier parametrique.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+C
       END
 C
 C
+c@z
+                            FUNCTION MATDET
+C                           ***************
+C     -------------------------------------------------------------
+     & ( A11 , A12 , A13 , A21 , A22 , A23 , A31 , A32 , A33 )
+C     -------------------------------------------------------------
+C***********************************************************************
+C FONCTION :
+C --------
+c@foncb
+CFONC
+CFONC  CALCUL DU DETERMINANT DE LA MATRICE 3x3
+CFONC
+c@fonce
+C                             ARGUMENTS
+c@argub
+CARGU .______________.____._____.______________________________________.
+CARGU !    NOM       !TYPE!MODE !                   ROLE               !
+CARGU !______________!____!_____!______________________________________!
+CARGU ! AA1 a A33    ! R  !  -> ! COEFFICIENT DE LA MATRICE            !
+CARGU !______________!____!_____!______________________________________!
+c@argue
+C
+c@commb
+CCOMM                             COMMONS
+CCOMM .______________.____._____.______________________________________.
+CCOMM !    NOM       !TYPE!MODE !                   ROLE               !
+CCOMM !______________!____!_____!______________________________________!
+CCOMM !______________!____!_____!______________________________________!
+c@comme
+C
+C     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
+C            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+C     MODE : -> DONNEE, <- RESULTAT, <-> DONNEE MODIFIEE,
+C            - TABLEAU DE TRAVAIL
+C***********************************************************************
+C
+      IMPLICIT NONE
+C
+C**********************************************************************
+C     DONNEES EN COMMON
+C**********************************************************************
+C
+C
+C***********************************************************************
+C
+C ARGUMENTS
+C
+      DOUBLE PRECISION A11, A12, A13, A21, A22, A23, A31, A32, A33
+      DOUBLE PRECISION MATDET
+C
+C***********************************************************************
+C
+C=======================================================================
+C 1. CALCUL DU DETERMINANT
+C=======================================================================
+C
+      MATDET = A11*A22*A33 + A21*A32*A13 + A31*A12*A23
+     &       - A11*A32*A23 - A21*A12*A33 - A31*A22*A13
+C
+      END
 c@z

@@ -82,6 +82,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "ihmpre.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -157,6 +158,10 @@ C ---- Variables propres a la phase continue
 C
       SCAMIN(IF3M) = 0.D0
       SCAMAX(IF3M) = 1.D0
+      IF ( IHTCO2 .EQ. 1 ) THEN
+        SCAMIN(IF3MC2) = 0.D0
+        SCAMAX(IF3MC2) = 1.D0
+      ENDIF
       SCAMIN(IF4P2M) = 0.D0
       SCAMAX(IF4P2M) = 0.25D0
       IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
@@ -164,7 +169,20 @@ C
         SCAMAX(IF5M) = 1.D0
       ENDIF
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+C    Oxycombustion
+C
+      IF ( NOXYD .GE. 2 ) THEN
+        SCAMIN(IF6M) = 0.D0
+        SCAMAX(IF6M) = 1.D0
+      ENDIF
+      IF ( NOXYD .EQ. 3 ) THEN
+        SCAMIN(IF7M) = 0.D0
+        SCAMAX(IF7M) = 1.D0
+      ENDIF
+C
+C    Modele de CO
+C
+      IF ( IEQCO2 .GE. 1 ) THEN
         SCAMIN(IYCO2) = 0.D0
         SCAMAX(IYCO2) = 1.D0
       ENDIF
@@ -349,10 +367,17 @@ C
 C ---- Variables propres a la phase continue
 C
       IPP = IPPRTP(ISCA(IF3M))
-      NOMVAR(IPP)  = 'Fr_HET'
+      NOMVAR(IPP)  = 'Fr_HET_O2'
       ICHRVR(IPP)  = 1
       ILISVR(IPP)  = 1
       IHISVR(IPP,1)= -1
+      IF ( IHTCO2 .EQ. 1 ) THEN
+        IPP = IPPRTP(ISCA(IF3MC2))
+        NOMVAR(IPP)  = 'Fr_HET_CO2'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDIF
       IPP = IPPRTP(ISCA(IF4P2M))
       NOMVAR(IPP)  = 'Var_AIR'
       ICHRVR(IPP)  = 1
@@ -365,14 +390,29 @@ C
         ILISVR(IPP)  = 1
         IHISVR(IPP,1)= -1
       ENDIF
-      IF ( IEQCO2 .EQ. 1 ) THEN
+C
+      IF ( NOXYD .GE. 2 ) THEN
+        IPP = IPPRTP(ISCA(IF6M))
+        NOMVAR(IPP)  = 'FR_OXYD2'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDIF
+      IF ( NOXYD .EQ. 3 ) THEN
+        IPP = IPPRTP(ISCA(IF7M))
+        NOMVAR(IPP)  = 'FR_OXYD3'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDIF
+C
+      IF ( IEQCO2 .GE. 1 ) THEN
         IPP = IPPRTP(ISCA(IYCO2))
         NOMVAR(IPP)  = 'FR_CO2'
         ICHRVR(IPP)  = 1
         ILISVR(IPP)  = 1
         IHISVR(IPP,1)= -1
       ENDIF
-C
 C
 C=======================================================================
 C 2. VARIABLES ALGEBRIQUES OU D'ETAT
@@ -421,10 +461,17 @@ C
         ILISVR(IPP)   = 1
         IHISVR(IPP,1) = -1
         IPP = IPPPRO(IPPROC(IGMHET(ICLA)))
-        WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_HET' ,ICLA
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_HET_O2' ,ICLA
         ICHRVR(IPP)   = 1
         ILISVR(IPP)   = 1
         IHISVR(IPP,1) = -1
+        IF ( IHTCO2 .EQ. 1 ) THEN
+          IPP = IPPPRO(IPPROC(IGHCO2(ICLA)))
+          WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_HET_CO2' ,ICLA
+          ICHRVR(IPP)   = 1
+          ILISVR(IPP)   = 1
+          IHISVR(IPP,1) = -1
+        ENDIF
 C
         IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
           IPP = IPPPRO(IPPROC(IGMSEC(ICLA)))
@@ -534,13 +581,24 @@ C
       ICOF1   = IS
       IS      = IS + 1
       ICOF2   = IS
+      IS      = IS + 1
+      IH2OF1  = IS
+      IS      = IS + 1
+      IH2OF2  = IS
+
 C
 C ---> Initialisation
 C
 C ---- Calcul de RO0 a partir de T0 et P0
 C        (loi des gaz parfaits applliquee a l'air)
 C
-      WMOLME = (WMOLE(IO2)+XSI*WMOLE(IN2)) / (1.D0+XSI)
+C    On initialise RO0 avec l'oxydant 1 qui est sense etre
+C    l'oxydant majoritaire
+C
+      WMOLME = ( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
+     &          +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1))
+     &        /(OXYO2(1)+OXYN2(1)+OXYH2O(1)+OXYCO2(1))
+C
       RO0(IPHAS) = P0(IPHAS)*WMOLME / (RR*T0(IPHAS))
 C
 C ---- Initialisation pour la masse volumique du coke
@@ -550,7 +608,7 @@ C
       ENDDO
 C
 C On met SRROM et DIFTL0 a -GRAND pour forcer l'utilisateur a les
-C definir dans cpini1
+C definir dans uscpi1
 C ---> Coefficient de relaxation de la masse volumique
 C      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
       SRROM = -GRAND
@@ -606,7 +664,6 @@ C       ===========
       ELSE
         WRITE(NFECRA,9998)
       ENDIF
-C
 C
  1000 FORMAT(
      &'@                                                            ',/,

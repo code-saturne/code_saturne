@@ -227,7 +227,7 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          IVAR   , IVARSC , IVARUT , IVAR0
-      INTEGER          IEL    , IPHAS  , IFAC
+      INTEGER          IEL    , IPHAS  , IFAC   , ICLA
       INTEGER          IPCROM , IPCVST
       INTEGER          IKIPH  , IEIPH , IOMGIP , IPHYDP
       INTEGER          IR11IP , IR22IP, IR33IP
@@ -321,7 +321,12 @@ C
 C ---- W8 = X1
 C
         DO IEL = 1, NCEL
-          W8(IEL) = 1.D0 - RTP(IEL,ISCA(IYFOL))
+          W8(IEL) = 1.D0
+        ENDDO
+        DO ICLA = 1, NCLAFU
+          DO IEL = 1, NCEL
+            W8(IEL) = W8(IEL) - RTP(IEL,ISCA(IYFOL(ICLA)))
+          ENDDO
         ENDDO
 C
 C ---- W7 = FJM (kg/kg du melange gazeux)

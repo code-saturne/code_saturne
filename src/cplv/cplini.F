@@ -201,6 +201,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C

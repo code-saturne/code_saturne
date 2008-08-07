@@ -87,10 +87,11 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
-      INTEGER          JPP
+      INTEGER          JPP , ICLA
 C
 C***********************************************************************
 C
@@ -149,23 +150,25 @@ C      - Enthalpie de la suspension
 C
 C --> Variables propres a la phase dispersee
 C
+      DO ICLA = 1, NCLAFU
 C       - Fraction massique de Fuel
-      JPP = IPPRTP(ISCA(IYFOL))
-      ICHRVR(JPP)  = 1
-      ILISVR(JPP)  = 1
-      IHISVR(JPP,1)= -1
+        JPP = IPPRTP(ISCA(IYFOL(ICLA)))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
 C
 C       - Nb de particules par kg de melange
-      JPP = IPPRTP(ISCA(ING))
-      ICHRVR(JPP)  = 1
-      ILISVR(JPP)  = 1
-      IHISVR(JPP,1)= -1
+        JPP = IPPRTP(ISCA(ING(ICLA)))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
 C
-C       - Enthalpie du Fuel (
-      JPP = IPPRTP(ISCA(IHLF))
-      ICHRVR(JPP)  = 1
-      ILISVR(JPP)  = 1
-      IHISVR(JPP,1)= -1
+C       - Enthalpie du Fuel
+        JPP = IPPRTP(ISCA(IHLF(ICLA)))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
+      ENDDO
 C
 C
 C --> Variables propres a la phase continue
@@ -191,8 +194,25 @@ C     - Variance associe au traceur 4 (air)
 C
 C     - YCO2
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
         JPP = IPPRTP(ISCA(IYCO2))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
+      ENDIF
+C
+C     - HCN et NO
+C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        JPP = IPPRTP(ISCA(IYHCN))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
+        JPP = IPPRTP(ISCA(IYNO))
+        ICHRVR(JPP)  = 1
+        ILISVR(JPP)  = 1
+        IHISVR(JPP,1)= -1
+        JPP = IPPRTP(ISCA(ITAIRE))
         ICHRVR(JPP)  = 1
         ILISVR(JPP)  = 1
         IHISVR(JPP,1)= -1
@@ -222,41 +242,43 @@ C     - Masse molaire du melange gazeux
 C
 C --> Variables algebriques propres a la phase dispersee
 C
+      DO ICLA = 1, NCLAFU
 C       - Temperature des gouttes
-      JPP = IPPPRO(IPPROC(ITEMP3))
-      ICHRVR(JPP)   = 1
-      ILISVR(JPP)   = 1
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(ITEMP3(ICLA)))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
 C
 C       - Masse volumique des gouttes
-      JPP = IPPPRO(IPPROC(IROM3))
-      ICHRVR(JPP)   = 1
-      ILISVR(JPP)   = 1
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IROM3(ICLA)))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
 C
 C       - Diametre des gouttes
-      JPP = IPPPRO(IPPROC(IDIAM3))
-      ICHRVR(JPP)   = 1
-      ILISVR(JPP)   = 1
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IDIAM3(ICLA)))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
 C
 C       - Transfert d'energie par convection-diffusion
-      JPP = IPPPRO(IPPROC(IH1HLF))
-      ICHRVR(JPP)   = 0
-      ILISVR(JPP)   = 0
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IH1HLF(ICLA)))
+        ICHRVR(JPP)   = 0
+        ILISVR(JPP)   = 0
+        IHISVR(JPP,1) = -1
 C
 C       - Transfert de masse du a l'evaporation (s-1) < 0
-      JPP = IPPPRO(IPPROC(IGMEVA))
-      ICHRVR(JPP)   = 0
-      ILISVR(JPP)   = 0
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IGMEVA(ICLA)))
+        ICHRVR(JPP)   = 0
+        ILISVR(JPP)   = 0
+        IHISVR(JPP,1) = -1
 C
 C       - Transfert de masse du a la combustion heterogene
-      JPP = IPPPRO(IPPROC(IGMHTF))
-      ICHRVR(JPP)   = 0
-      ILISVR(JPP)   = 0
-      IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IGMHTF(ICLA)))
+        ICHRVR(JPP)   = 0
+        ILISVR(JPP)   = 0
+        IHISVR(JPP,1) = -1
+      ENDDO
 C
 C --> Variables algebriques propres a la phase continue
 C
@@ -313,6 +335,22 @@ C     - Fraction massique (dans le melange gazeux) du SO2
       ICHRVR(JPP)   = 1
       ILISVR(JPP)   = 1
       IHISVR(JPP,1) = -1
+C
+C     - MODEL NOX :
+      IF ( IEQNOX .EQ. 1 ) THEN
+        JPP = IPPPRO(IPPROC(IGHCN1))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IGHCN2))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
+        JPP = IPPPRO(IPPROC(IGNOTH))
+        ICHRVR(JPP)   = 1
+        ILISVR(JPP)   = 1
+        IHISVR(JPP,1) = -1
+      ENDIF
 C
 C=======================================================================
 C 3. OPTIONS DE CALCUL

@@ -79,6 +79,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -91,6 +92,7 @@ C
 C
       INTEGER          IT     , ICE    , IAT    , IOS
       INTEGER          NCOEL  , INICOE
+      INTEGER          ICLA
       INTEGER          IDEBCH , IFINCH , LONCH  , ICHAI  , ICHCOE
       INTEGER          ATCOEL(NGAZEM,NATOM), INICHA
 C
@@ -232,9 +234,13 @@ C --> Lecture caracteristiques fuel
 C
       READ (IMPFPP,*,ERR=999,END=999 )
 C
+C ---- Nb de classes de fuel
+C
+      READ (IMPFPP,*,ERR=999,END=999 ) NCLAFU
+C
 C --> Diametre initial  (mm)
 C
-      READ (IMPFPP,*,ERR=999,END=999 ) DINIFL
+      READ (IMPFPP,*,ERR=999,END=999 ) ( DINIFL(ICLA),ICLA=1,NCLAFU )
 C
 C --> Composition elementaire en C, H, O, S, In (% en masse)
 C     In désigne les inertes (métaux, etc.) qui resteront
@@ -570,6 +576,7 @@ C
 C  L'enthalpie de changement de phase est donc celle de la réaction
 C  Fuel_Liquide => FKC*Coke + (1-FKC)*Fuel_Vapeur
         HRFVAP =  (1.D0-FKC)*H02FOV-H02FOL
+C
         WRITE(NFECRA,*) 'Donnees thermo pour le fuel'
         WRITE(NFECRA,*) 'PCIFOL ',PCIFOL
         WRITE(NFECRA,*) 'H02FOL ',H02FOL
@@ -616,9 +623,12 @@ C        on suppose que les masse vol sont les memes
 C        pour le fuel, coke et residu
 C
       RHOKF  = RHO0FL
-      DINIKF = DINIFL*(FKC*RHO0FL/RHOKF)**(1.D0/3.D0)
-      DINIIN = DINIFL*(XINFOL*RHO0FL/RHO0FL)**(1.D0/3.D0)
-      WRITE(NFECRA,*) ' D = ',DINIFL,DINIKF,DINIIN
+      DO ICLA = 1, NCLAFU
+        DINIKF(ICLA) = DINIFL(ICLA)*(FKC*RHO0FL/RHOKF)**(1.D0/3.D0)
+        DINIIN(ICLA) = DINIFL(ICLA)*(XINFOL*RHO0FL/RHO0FL)**(1.D0/3.D0)
+        WRITE(NFECRA,*) ' Classe D = ',ICLA,DINIFL(ICLA),DINIKF(ICLA),
+     &                                      DINIIN(ICLA)
+      ENDDO
 C
       RETURN
 C

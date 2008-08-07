@@ -115,7 +115,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IEL    , IPHAS
+      INTEGER          IEL    , ICLA   , IPHAS
       INTEGER          IPCROM
       INTEGER          IXCKCL , IXNPCL , IPCGHT , IPCDIA
 C
@@ -136,7 +136,12 @@ C
 C ---- W1 = X1
 C
       DO IEL = 1, NCEL
-        W1(IEL) = 1.D0 - RTP(IEL,ISCA(IYFOL))
+        W1(IEL) = 1.D0
+      ENDDO
+      DO ICLA = 1, NCLAFU
+        DO IEL = 1, NCEL
+          W1(IEL) = W1(IEL) - RTP(IEL,ISCA(IYFOL(ICLA)))
+        ENDDO
       ENDDO
 C
       D2S3 = 2.D0/3.D0
@@ -149,84 +154,89 @@ C
       IPHAS  = 1
       IPCROM = IPPROC(IROM(IPHAS))
       IXCKCL = ISCA(IFHTF)
-      IXNPCL = ISCA(ING)
-      IPCGHT = IPPROC(IGMHTF)
-      IPCDIA = IPPROC(IDIAM3)
-      IPCTE2 = IPPROC(ITEMP3)
       IPCTE1 = IPPROC(ITEMP1)
 C
-      DO IEL = 1, NCEL
+      DO ICLA = 1, NCLAFU
 C
-        IF ( RTP(IEL,ISCA(ING)) .GT. EPSIFL ) THEN
+        IXNPCL = ISCA(ING(ICLA))
+        IPCGHT = IPPROC(IGMHTF(ICLA))
+        IPCDIA = IPPROC(IDIAM3(ICLA))
+        IPCTE2 = IPPROC(ITEMP3(ICLA))
+C
+        DO IEL = 1, NCEL
+C
+          IF ( RTP(IEL,IXNPCL) .GT. EPSIFL ) THEN
 C
 C --> Calculs preliminaires
 C
-          FTRAC(1) = RTP(IEL,ISCA(IFVAP)) / W1(IEL)
-          FTRAC(3) = RTP(IEL,ISCA(IFHTF)) / W1(IEL)
-          FTRAC(4) = 1.D0-FTRAC(1)-FTRAC(3)
+            FTRAC(1) = RTP(IEL,ISCA(IFVAP)) / W1(IEL)
+            FTRAC(3) = RTP(IEL,ISCA(IFHTF)) / W1(IEL)
+            FTRAC(4) = 1.D0-FTRAC(1)-FTRAC(3)
 C
 C --> Prise en compte des TS interfaciaux relatifs
 C     au phenomene d'evaporation
 C
-c        GAMVAP = PROPCE(IEL,IPPROC(IGMEVA))*PROPCE(IEL,IPCROM)
+c           GAMVAP = PROPCE(IEL,IPPROC(IGMEVA(ICLA)))*PROPCE(IEL,IPCROM)
 C
-          T2MT1  = PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
-          GAMVAP = -PROPCE(IEL,IPPROC(IGMEVA))*T2MT1
-     &                                        *PROPCE(IEL,IPCROM)
+            T2MT1  = PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
+            GAMVAP = -PROPCE(IEL,IPPROC(IGMEVA(ICLA)))*T2MT1
+     &               *PROPCE(IEL,IPCROM)
 C
-          FSD(1) = 0.D0
-          FSD(3) = 0.D0
-          FSD(4) = 0.D0
+            FSD(1) = 0.D0
+            FSD(3) = 0.D0
+            FSD(4) = 0.D0
 C
-          FVAP(1) = 1.D0
-          FVAP(3) = 0.D0
-          FVAP(4) = 0.D0
+            FVAP(1) = 1.D0
+            FVAP(3) = 0.D0
+            FVAP(4) = 0.D0
 C
-          IF ( (FSD(NUMTRA)-FTRAC(NUMTRA))
-     &        *(2.D0*FVAP(NUMTRA)-FSD(NUMTRA)-FTRAC(NUMTRA))
-     &            .GT. EPSIFL ) THEN
-            SMBRS(IEL)  = SMBRS(IEL) + GAMVAP
-     &                   *VOLUME(IEL)*(FSD(NUMTRA)-FTRAC(NUMTRA))
-     &                   *(2.D0*FVAP(NUMTRA)-FSD(NUMTRA)-FTRAC(NUMTRA))
-          ENDIF
+            IF ( (FSD(NUMTRA)-FTRAC(NUMTRA))
+     &          *(2.D0*FVAP(NUMTRA)-FSD(NUMTRA)-FTRAC(NUMTRA))
+     &              .GT. EPSIFL ) THEN
+              SMBRS(IEL)  = SMBRS(IEL) + GAMVAP
+     &              *VOLUME(IEL)*(FSD(NUMTRA)-FTRAC(NUMTRA))
+     &              *(2.D0*FVAP(NUMTRA)-FSD(NUMTRA)-FTRAC(NUMTRA))
+            ENDIF
 C
 C --> Prise en compte des TS interfaciaux relatifs
 C     au phenomene de combustion heterogene
 C
-          GAMHET = -PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGHT)
+            GAMHET = -PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGHT)
 C
-          DIAMHT = ( ( RTP(IEL,ISCA(IYFOL))
-     &               /(RTP(IEL,ISCA(ING))*RHO0FL)
-     &                -PI*(DINIKF**3)*XINKF/6.D0  )
-     &                 *6.D0/(PI*(1.D0-XINKF)) )
-          DIAMHT = ABS(DIAMHT)**(1.D0/3.D0)
+            DIAMHT = ( ( RTP(IEL,ISCA(IYFOL(ICLA)))
+     &                 /(RTP(IEL,ISCA(ING(ICLA)))*RHO0FL)
+     &                  -PI*(DINIKF(ICLA)**3)*XINKF/6.D0  )
+     &                   *6.D0/(PI*(1.D0-XINKF)) )
+            DIAMHT = ABS(DIAMHT)**(1.D0/3.D0)
 C
-          DIAMAD = PROPCE(IEL,IPCDIA) / DINIKF
+            DIAMAD = PROPCE(IEL,IPCDIA) / DINIKF(ICLA)
 C
-          FSH(3) = 1.D0
-          IF ( DIAMAD.GT.EPSIFL ) THEN
-            FSH(3) = 1.D0 - (1.D0-FTRAC(3))
-     &              * EXP( PROPCE(IEL,IPCGHT)
-     &                    /( 2.D0*PI*2.77D-4*DIAMHT
-     &                      *RTP(IEL,IXNPCL)*PROPCE(IEL,IPCROM) ) )
+            FSH(3) = 1.D0
+            IF ( DIAMAD.GT.EPSIFL ) THEN
+              FSH(3) = 1.D0 - (1.D0-FTRAC(3))
+     &                * EXP( PROPCE(IEL,IPCGHT)
+     &                      /( 2.D0*PI*2.77D-4*DIAMHT
+     &                        *RTP(IEL,IXNPCL)*PROPCE(IEL,IPCROM) ) )
+            ENDIF
+C
+            FSH(1) = FTRAC(1) * (1.D0-FSH(3))/(1.D0-FTRAC(3))
+            FSH(4) = FTRAC(4) * (1.D0-FSH(3))/(1.D0-FTRAC(3))
+C
+            FHET(1) = ZERO
+            FHET(3) = 1.D0
+            FHET(4) = ZERO
+C
+            IF (  (FSH(NUMTRA)-FTRAC(NUMTRA))
+     &           *(2.D0*FHET(NUMTRA)-FSH(NUMTRA)-FTRAC(NUMTRA))
+     &             .GT. EPSIFL ) THEN
+              SMBRS(IEL)  = SMBRS(IEL) + GAMHET
+     &              *VOLUME(IEL)*(FSH(NUMTRA)-FTRAC(NUMTRA))
+     &              *(2.D0*FHET(NUMTRA)-FSH(NUMTRA)-FTRAC(NUMTRA))
+            ENDIF
+C
           ENDIF
 C
-          FSH(1) = FTRAC(1) * (1.D0-FSH(3))/(1.D0-FTRAC(3))
-          FSH(4) = FTRAC(4) * (1.D0-FSH(3))/(1.D0-FTRAC(3))
-C
-          FHET(1) = ZERO
-          FHET(3) = 1.D0
-          FHET(4) = ZERO
-C
-          IF (  (FSH(NUMTRA)-FTRAC(NUMTRA))
-     &         *(2.D0*FHET(NUMTRA)-FSH(NUMTRA)-FTRAC(NUMTRA))
-     &           .GT. EPSIFL ) THEN
-            SMBRS(IEL)  = SMBRS(IEL) + GAMHET
-     &                   *VOLUME(IEL)*(FSH(NUMTRA)-FTRAC(NUMTRA))
-     &                   *(2.D0*FHET(NUMTRA)-FSH(NUMTRA)-FTRAC(NUMTRA))
-          ENDIF
-C
-        ENDIF
+        ENDDO
 C
       ENDDO
 C

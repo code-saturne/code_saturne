@@ -575,6 +575,7 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IFAC, IPHAS, II
       INTEGER          IZONE
+      INTEGER          ICLAFU
       INTEGER          ILELT, NLELT
 C
       DOUBLE PRECISION UREF2, D2S3
@@ -773,8 +774,8 @@ C
       ENDDO
 C
 C
-C ---- Facette de type entree correspondant a une entree d'air + CP
-C        (Air Primaire + Charbon Pulverise)
+C ---- Facette de type entree correspondant a une entree d'air + Fuel
+C        (Air Primaire + Fuel)
 C
       CALL GETFBR('11',NLELT,LSTELT)
 C     ===========
@@ -801,15 +802,14 @@ C     - Debit en kg/s pour l'air
 C     - Temperature en K pour l'air
         TIMPAT(IZONE) = 800.D0  + TKELVI
 C
-C   On lit le diametre initiale dans le fichier dp_fue
-C
-C        - Diametre en mm des gouttes injectees
-C N.B.ce diam est en millimetres
-C          DINIFL(IZONE) = 50.D-3
-C          DINIKF(IZONE) = DINIFL(IZONE)*(FKC*RHO0FL/RHOKF)**(1./3.)
-C
 C     - Debit en kg/s pour le fuel
         QIMPFL(IZONE) = 1.46D-04/360.D0
+C
+C     - Distribution en masse en % pour le fuel
+C       relative a la classe ICLAFU (1 < ICLA < NCLAFU )
+        ICLAFU = 1
+        DISTFU(IZONE,ICLAFU) = 100.D0
+C
 C     - Temperature en K pour le fuel
         TIMPFL(IZONE) = 100.D0  + TKELVI
 C

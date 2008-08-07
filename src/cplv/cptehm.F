@@ -304,14 +304,18 @@ C                                            et CHx2m pour TH(I)
           YCHX20 = ZERO
           DO ICHA = 1, NCHARB
             DEN1   = 1.D0
-     &             / ( A1(ICHA)*WMOLE(ICHX1C(ICHA))+B1(ICHA)*WMOLE(ICO))
+     &             / ( A1(ICHA)*WMOLE(ICHX1C(ICHA))
+     &                +B1(ICHA)*WMOLE(ICO)
+     &                +C1(ICHA)*WMOLE(IH2O) )
             YCHX10 = YCHX10 + DEN1 *
      &        ( TBMCR(ICEL,IF1MC(ICHA))*A1(ICHA)*WMOLE(ICHX1C(ICHA)) )
             EHCHX1 = EHCHX1 + DEN1 *
      &        ( EHGAZE(ICHX1C(ICHA),I)*
      &          TBMCR(ICEL,IF1MC(ICHA))*A1(ICHA)*WMOLE(ICHX1C(ICHA)) )
             DEN2   = 1.D0
-     &             / ( A2(ICHA)*WMOLE(ICHX2C(ICHA))+B2(ICHA)*WMOLE(ICO))
+     &             / ( A2(ICHA)*WMOLE(ICHX2C(ICHA))
+     &                +B2(ICHA)*WMOLE(ICO)
+     &                +C2(ICHA)*WMOLE(IH2O) )
             YCHX20 = YCHX20 + DEN2 *
      &         ( TBMCR(ICEL,IF2MC(ICHA))*A2(ICHA)*WMOLE(ICHX2C(ICHA)) )
             EHCHX2 = EHCHX2 + DEN2 *
@@ -359,14 +363,18 @@ C                                            et CHx2m pour TH(I+1)
           YCHX20 = ZERO
           DO ICHA = 1, NCHARB
             DEN1   = 1.D0
-     &             / ( A1(ICHA)*WMOLE(ICHX1C(ICHA))+B1(ICHA)*WMOLE(ICO))
+     &             / ( A1(ICHA)*WMOLE(ICHX1C(ICHA))
+     &                +B1(ICHA)*WMOLE(ICO)
+     &                +C1(ICHA)*WMOLE(IH2O) )
             YCHX10 = YCHX10 + DEN1 *
      &        ( TBMCR(ICEL,IF1MC(ICHA))*A1(ICHA)*WMOLE(ICHX1C(ICHA)) )
             EHCHX1 = EHCHX1 + DEN1 *
      &        ( EHGAZE(ICHX1C(ICHA),I+1)*
      &          TBMCR(ICEL,IF1MC(ICHA))*A1(ICHA)*WMOLE(ICHX1C(ICHA)) )
             DEN2   = 1.D0
-     &             / ( A2(ICHA)*WMOLE(ICHX2C(ICHA))+B2(ICHA)*WMOLE(ICO))
+     &             / ( A2(ICHA)*WMOLE(ICHX2C(ICHA))
+     &                +B2(ICHA)*WMOLE(ICO)
+     &                +C2(ICHA)*WMOLE(IH2O) )
             YCHX20 = YCHX20 + DEN2 *
      &         ( TBMCR(ICEL,IF2MC(ICHA))*A2(ICHA)*WMOLE(ICHX2C(ICHA)) )
             EHCHX2 = EHCHX2 + DEN2 *

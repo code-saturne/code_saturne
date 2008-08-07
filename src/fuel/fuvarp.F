@@ -80,10 +80,11 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
-      INTEGER        IS, IPHAS, ISC
+      INTEGER        IS, IPHAS, ISC, ICLA
 C
 C***********************************************************************
 C=======================================================================
@@ -92,17 +93,18 @@ C=======================================================================
 C
 C ---> Variables propres a la suspension gaz - particules
 C
-      IS = 1
-      IHM   = ISCAPP(IS)
+      IHM   = ISCAPP(1)
 C
 C ---> Variables propres a la phase dispersee
 C
-      IS      = IS  + 1
-      ING     = ISCAPP(IS)
-      IS      = IS  + 1
-      IYFOL   = ISCAPP(IS)
-      IS      = IS  + 1
-      IHLF    = ISCAPP(IS)
+      DO ICLA = 1, NCLAFU
+        IS          = 1+ICLA
+        ING(ICLA)   = ISCAPP(IS)
+        IS          = 1+1*NCLAFU+ICLA
+        IYFOL(ICLA) = ISCAPP(IS)
+        IS          = 1+2*NCLAFU+ICLA
+        IHLF(ICLA)  = ISCAPP(IS)
+      ENDDO
 C
 C ---> Variables propres a la phase gaz
 C
@@ -113,9 +115,18 @@ C
       IS       = IS + 1
       IF4P2M   = ISCAPP(IS)
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
         IS = IS+1
         IYCO2 = ISCAPP(IS)
+      ENDIF
+C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        IS = IS+1
+        IYHCN = ISCAPP(IS)
+        IS = IS+1
+        IYNO  = ISCAPP(IS)
+        IS = IS+1
+        ITAIRE = ISCAPP(IS)
       ENDIF
 C
 C=======================================================================

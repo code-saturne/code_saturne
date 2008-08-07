@@ -41,8 +41,10 @@ C     -------------------------------------------------------------
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
+     &   F3MAX  ,
      &   W1     , W2     , W3     , W4     ,
      &   W5     , W6     , W7     , W8     ,
+     &   W9     , W10    ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -225,6 +227,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -253,8 +256,12 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
+C
+      DOUBLE PRECISION F3MAX(NCELET)
+C
       DOUBLE PRECISION W1(NCELET),W2(NCELET),W3(NCELET),W4(NCELET)
       DOUBLE PRECISION W5(NCELET),W6(NCELET),W7(NCELET),W8(NCELET)
+      DOUBLE PRECISION W9(NCELET),W10(NCELET)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -266,9 +273,11 @@ C
       INTEGER          IFINIA, IFINRA
       INTEGER          IEL, ICHA, ICLA, IPHAS, IPCROM, IPCRO2
       INTEGER          IZONE, IFAC
-      INTEGER          IPBROM, IPCX2C, IROMF
+      INTEGER          IPBROM, IPCX2C, IROMF , IOXY
+C
       DOUBLE PRECISION X1SRO1, X2SRO2, SRROM1, UNS1PW
       DOUBLE PRECISION X2TOT, WMOLME, UNSRO1
+      DOUBLE PRECISION FF4MIN,FF4MAX
 C
       INTEGER       IPASS
       DATA          IPASS /0/
@@ -351,7 +360,9 @@ C ---- W2 = F1M = SOMME(F1M(ICHA))
 C      W3 = F2M = SOMME(F2M(ICHA))
 C      W4 = F3M
 C      W6 = F5M
-C      W5 = F4M = 1. - F1M - F2M - F3M - F5M
+C      W9 = F6M
+C      W10= F7M
+C      W5 = F4M = 1. - F1M - F2M - F3M - F5M -F6M -F7M
 C      W7 = F4P2M
 C
       DO ICHA = 1, NCHARB
@@ -361,19 +372,58 @@ C
         ENDDO
       ENDDO
 C
+      FF4MIN = 1.D+20
+      FF4MAX =-1.D+20
       DO IEL = 1, NCEL
+C
         UNS1PW = 1.D0/(1.D0+W1(IEL))
-        W2(IEL) =  W2(IEL)              *UNS1PW
-        W3(IEL) =  W3(IEL)              *UNS1PW
-        W4(IEL) =  RTP(IEL,ISCA(IF3M))  *UNS1PW
+C
+        W4(IEL) =  RTP(IEL,ISCA(IF3M))
         IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
-          W6(IEL) =  RTP(IEL,ISCA(IF5M))  *UNS1PW
+          W6(IEL) =  RTP(IEL,ISCA(IF5M))
         ELSE
           W6(IEL) = 0.D0
         ENDIF
-        W5(IEL) = 1.D0 - W2(IEL) - W3(IEL) -W4(IEL)-W6(IEL)
-        W7(IEL) =  RTP(IEL,ISCA(IF4P2M))*UNS1PW
+C
+        IF ( NOXYD .GE. 2 ) THEN
+          W9(IEL) = RTP(IEL,ISCA(IF6M))
+          IF ( NOXYD .EQ. 3 ) THEN
+            W10(IEL) = RTP(IEL,ISCA(IF7M))
+          ELSE
+            W10(IEL) = 0.D0
+          ENDIF
+        ELSE
+          W9(IEL)  = 0.D0
+          W10(IEL) = 0.D0
+        ENDIF
+C
+        W5(IEL) = 1.D0
+     &           -( W2(IEL)+W3(IEL)+W4(IEL)
+     &             +W6(IEL)+W9(IEL)+W10(IEL))*UNS1PW
+C
+        FF4MAX = MAX(FF4MAX,W5(IEL))
+        FF4MIN = MIN(FF4MIN,W5(IEL))
+C
+c        IF ( W5(IEL) .LT. 0.D0 ) THEN
+c          W5(IEL) = 0.D0
+c        ENDIF
+C
+        W2(IEL) = W2(IEL)              *UNS1PW
+        W3(IEL) = W3(IEL)              *UNS1PW
+        W4(IEL) = W4(IEL)              *UNS1PW
+        W6(IEL) = W6(IEL)              *UNS1PW
+        W9(IEL) = W9(IEL)              *UNS1PW
+        W10(IEL)= W10(IEL)             *UNS1PW
+C
+        W7(IEL) = RTP(IEL,ISCA(IF4P2M))*UNS1PW
+C
       ENDDO
+C
+      IF ( IRANGP .GE. 0 ) THEN
+        CALL PARMIN(FF4MIN)
+        CALL PARMAX(FF4MAX)
+      ENDIF
+      WRITE(NFECRA,*) ' Valeur min max de F4 : ',FF4MIN,FF4MAX
 C
 C ---- W8 = H1 (transport de H2)
 C        Transport d'H2
@@ -424,8 +474,10 @@ C     ===========
      & ( IFINIA , IFINRA ,
      &   NCELET , NCEL   ,
      &   NTBCPI , NTBCPR , NTBMCI , NTBMCR , NTBWOI , NTBWOR ,
-     &   W2     , W3     , W4     , W5     , W6    , W7     ,
-C         F1M      F2M      F3M      F4M     F5M    F4P2M
+     &   W2     , W3     , W4     , W5     , W6    ,
+C         F1M      F2M      F3M      F4M      F5M
+     &   W9     , W10    , W7     , F3MAX  ,
+C         F6M      F7M      F4P2M
      &   W8     ,
 C         ENTH
      &   RTP    , PROPCE  , PROPCE(1,IROMF) ,
@@ -433,7 +485,6 @@ C                          ---------------- (masse vol. gaz)
      &   IA(ICPWI) , RA(ICPWR) ,
      &   IA(IMCWI) , RA(IMCWR) ,
      &   IA(IWORI) , RA(IWORR)  )
-C
 C
 C=======================================================================
 C 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
@@ -482,7 +533,7 @@ C
       IF (IPASS.GT.1.OR.(ISUITE.EQ.1.AND.INITRO(IPHAS).EQ.1)) THEN
         SRROM1 = SRROM
       ELSE
-        SRROM1 = 1.D0
+        SRROM1 = 0.D0
       ENDIF
 C
       DO IEL = 1, NCEL
@@ -534,7 +585,15 @@ C
                 X2SRO2 = X2SRO2 + X20(IZONE,ICLA)/RHO20(ICLA)
                 X2TOT  = X2TOT  + X20(IZONE,ICLA)
               ENDDO
-              WMOLME = (1.D0+XSI) / (WMOLE(IO2)+XSI*WMOLE(IN2))
+C
+              IOXY = INMOXY(IZONE)
+              WMOLME =( OXYO2(IOXY)+OXYN2(IOXY)
+     &                 +OXYH2O(IOXY)+OXYCO2(IOXY))
+     &               /( WMOLE(IO2) *OXYO2(IOXY)
+     &                 +WMOLE(IN2) *OXYN2(IOXY)
+     &                 +WMOLE(IH2O)*OXYH2O(IOXY)
+     &                 +WMOLE(ICO2)*OXYCO2(IOXY) )
+C
               UNSRO1 = (WMOLME*RR*TIMPAT(IZONE)) / P0(IPHAS)
               X1SRO1 = (1.D0-X2TOT) * UNSRO1
               PROPFB(IFAC,IPBROM) = 1.D0 / (X1SRO1+X2SRO2)

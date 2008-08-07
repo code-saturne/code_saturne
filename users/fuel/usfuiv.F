@@ -221,6 +221,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -251,7 +252,7 @@ C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
-      INTEGER          IEL, IGE, MODE, IPHAS
+      INTEGER          IEL, IGE, MODE, IPHAS, ICLA
 C
       DOUBLE PRECISION T1INIT, H1INIT, COEFE(NGAZEM)
       DOUBLE PRECISION T2INIT, H2INIT
@@ -348,12 +349,12 @@ C ------ Variables de transport relatives a la phase solide
 C
         H2INIT = H02FOL +  CP2FOL*(T2INIT-TREFTH)
 C
-        DO IEL = 1, NCEL
-
-          RTP(IEL,ISCA(IYFOL)) = ZERO
-          RTP(IEL,ISCA(ING )) = ZERO
-          RTP(IEL,ISCA(IHLF)) = H2INIT
-C
+        DO ICLA = 1, NCLAFU
+          DO IEL = 1, NCEL
+            RTP(IEL,ISCA(IYFOL(ICLA))) = ZERO
+            RTP(IEL,ISCA(ING(ICLA) ))  = ZERO
+            RTP(IEL,ISCA(IHLF(ICLA)))  = H2INIT
+          ENDDO
         ENDDO
 C
 C ------ Variables de transport relatives au melange
@@ -379,8 +380,13 @@ C
           RTP(IEL,ISCA(IFVAP )) = ZERO
           RTP(IEL,ISCA(IFHTF )) = ZERO
           RTP(IEL,ISCA(IF4P2M)) = ZERO
-          IF ( IEQCO2 .EQ. 1 ) THEN
+          IF ( IEQCO2 .GE. 1 ) THEN
             RTP(IEL,ISCA(IYCO2)) = ZERO
+          ENDIF
+          IF ( IEQNOX .EQ. 1 ) THEN
+            RTP(IEL,ISCA(IYHCN)) = ZERO
+            RTP(IEL,ISCA(IYNO )) = ZERO
+            RTP(IEL,ISCA(ITAIRE)) = 20.D0+TKELVI
           ENDIF
         ENDDO
 C

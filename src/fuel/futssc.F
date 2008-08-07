@@ -218,6 +218,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -265,19 +266,35 @@ C VARIABLES LOCALES
 C
       CHARACTER*80     CHAINE
       INTEGER          IDEBIA, IDEBRA
-      INTEGER          IVAR , IPCROM, IEL, IPHAS
-      INTEGER          IPCGHT
+      INTEGER          IVAR , IPCROM, IEL, IPHAS , ICLA , NUMCLA
+      INTEGER          IEXP1 , IEXP2 , IEXP3 , IFAC
       INTEGER          ISCALA
       INTEGER          IPCRO2 , IPCTE1 , IPCTE2
       INTEGER          IPCDIA , IPCVST
-      INTEGER          IESP
-      INTEGER          IMODE
+      INTEGER          IMODE  , IESP
+      INTEGER          IPCGEV , IPCGHT , IPCHGL
+      INTEGER          ITERMX,NBPAUV,NBRICH,NBEPAU,NBERIC
 C
-      DOUBLE PRECISION RHOVST
-      DOUBLE PRECISION ROM
-      DOUBLE PRECISION HFOV
-      DOUBLE PRECISION HO2,HCO,XESP(NGAZEM),T2MT1
+      DOUBLE PRECISION AUX, RHOVST
+      DOUBLE PRECISION T1, H1, T2, H2
+      DOUBLE PRECISION XNG,RHOFOL , ROM
+      DOUBLE PRECISION GAMEVA,FDEV,FSD,FTRAC,HFOV
+      DOUBLE PRECISION HO2,HCO,XESP(NGAZEM),XCOKE,T2MT1
       DOUBLE PRECISION GMECH,GMVAP,GMHET
+C
+      DOUBLE PRECISION XXCO,XXO2,XXCO2,XXH2O,XCO2MX
+      DOUBLE PRECISION XKP,XK0P,XKM,XK0M,WPLUS,WMOINS,T0P,T0M
+      DOUBLE PRECISION AUXP,AUXM, AUX1 , AUX2 , AUX3
+C
+      DOUBLE PRECISION XEQ,ANMR,XCOT,XO2T,XCO2E,XO2E,XCOE,TAUCHI,TAUTUR
+      DOUBLE PRECISION SQH2O , X2 , WMHCN , WMNO
+C
+      INTEGER          ITERCH
+      DOUBLE PRECISION ERR1MX,ERR2MX,ANMR0
+C
+      DOUBLE PRECISION ERRCH,TER1,DDELTA,FN,QPR
+      DOUBLE PRECISION AUXMAX,AUXMIN
+      DOUBLE PRECISION YMOY,VOLM,VOLMP,DMP
 C
 C***********************************************************************
 C=======================================================================
@@ -302,25 +319,32 @@ C --- Numero des grandeurs physiques (voir usclim)
       IPCROM = IPPROC(IROM(IPHAS))
       IPCVST = IPPROC(IVISCT(IPHAS))
 C
+C --- Temperature phase gaz
+C
+      IPCTE1 = IPPROC(ITEMP1)
+C
 C=======================================================================
 C 2. PRISE EN COMPTE DES TERMES SOURCES POUR LES VARIABLES RELATIVES
 C    AUX CLASSES DE PARTICULES
 C=======================================================================
 C
-      IPCRO2 = IPPROC(IROM3)
-      IPCDIA = IPPROC(IDIAM3)
-      IPCTE2 = IPPROC(ITEMP3)
-      IPCTE1 = IPPROC(ITEMP1)
-      IPCGHT = IPPROC(IGMHTF)
-C
-C
 C --> Terme source pour l'enthalpie du liquide
 C
-      IF ( IVAR .EQ. ISCA(IHLF) ) THEN
+      IF ( IVAR .GE. ISCA(IHLF(1))     .AND.
+     &     IVAR .LE. ISCA(IHLF(NCLAFU))      ) THEN
 C
         IF (IWARNI(IVAR).GE.1) THEN
           WRITE(NFECRA,1000) CHAINE(1:8)
         ENDIF
+C
+        NUMCLA = IVAR-ISCA(IHLF(1))+1
+C
+        IPCRO2 = IPPROC(IROM3 (NUMCLA))
+        IPCDIA = IPPROC(IDIAM3(NUMCLA))
+        IPCTE2 = IPPROC(ITEMP3(NUMCLA))
+        IPCGEV = IPPROC(IGMEVA(NUMCLA))
+        IPCGHT = IPPROC(IGMHTF(NUMCLA))
+        IPCHGL = IPPROC(IH1HLF(NUMCLA))
 C
 C       La variable est l'enthalpie du liquide ramenée à
 C       la masse de mélange
@@ -362,16 +386,16 @@ C
 C
           T2MT1 = PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
 C
-          GMECH = -PROPCE(IEL,IPPROC(IH1HLF))*T2MT1
-          GMVAP = PROPCE(IEL,IPPROC(IGMEVA))*HFOV*T2MT1
-          GMHET = 16.D0/12.D0*PROPCE(IEL,IPPROC(IGMHTF))*HO2
-     &           -28.D0/12.D0*PROPCE(IEL,IPPROC(IGMHTF))*HCO
+          GMECH = -PROPCE(IEL,IPCHGL)*T2MT1
+          GMVAP = PROPCE(IEL,IPCGEV)*HFOV*T2MT1
+          GMHET = 16.D0/12.D0*PROPCE(IEL,IPCGHT)*HO2
+     &           -28.D0/12.D0*PROPCE(IEL,IPCGHT)*HCO
 C
           SMBRS(IEL) = SMBRS(IEL) +
      &         ( GMECH+GMVAP+GMHET )*ROM*VOLUME(IEL)
 C
-          RHOVST = ( PROPCE(IEL,IPPROC(IH1HLF))
-     &              -PROPCE(IEL,IPPROC(IGMEVA))*HFOV )/CP2FOL
+          RHOVST = ( PROPCE(IEL,IPCHGL)
+     &              -PROPCE(IEL,IPCGEV)*HFOV )/CP2FOL
      &            *ROM*VOLUME(IEL)
 
           ROVSDT(IEL) = ROVSDT(IEL) +  MAX(ZERO,RHOVST)
@@ -380,17 +404,27 @@ C
 C
 C --> T.S. pour la masse de liquide
 C
-      ELSEIF ( IVAR .EQ. ISCA(IYFOL) ) THEN
+      ELSEIF ( IVAR .GE. ISCA(IYFOL(1))     .AND.
+     &         IVAR .LE. ISCA(IYFOL(NCLAFU))        ) THEN
 C
         IF (IWARNI(IVAR).GE.1) THEN
           WRITE(NFECRA,1000) CHAINE(1:8)
         ENDIF
 C
+        NUMCLA = IVAR-ISCA(IYFOL(1))+1
+C
+        IPCRO2 = IPPROC(IROM3 (NUMCLA))
+        IPCDIA = IPPROC(IDIAM3(NUMCLA))
+        IPCTE2 = IPPROC(ITEMP3(NUMCLA))
+        IPCGEV = IPPROC(IGMEVA(NUMCLA))
+        IPCGHT = IPPROC(IGMHTF(NUMCLA))
+        IPCHGL = IPPROC(IH1HLF(NUMCLA))
+C
         DO IEL = 1, NCEL
 C
           T2MT1 =  PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
-          GMVAP = -PROPCE(IEL,IPPROC(IGMEVA))*T2MT1
-          GMHET = -PROPCE(IEL,IPPROC(IGMHTF))
+          GMVAP = -PROPCE(IEL,IPCGEV)*T2MT1
+          GMHET = -PROPCE(IEL,IPCGHT)
 C
           SMBRS(IEL) = SMBRS(IEL)
      &         - PROPCE(IEL,IPCROM)*VOLUME(IEL)*(GMVAP+GMHET)
@@ -406,14 +440,21 @@ C
           WRITE(NFECRA,1000) CHAINE(1:8)
         ENDIF
 C
-        DO IEL = 1, NCEL
+        DO ICLA = 1, NCLAFU
 C
-          T2MT1 = PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
-          GMVAP = -PROPCE(IEL,IPPROC(IGMEVA))*T2MT1
+          IPCTE2 = IPPROC(ITEMP3(ICLA))
+          IPCGEV = IPPROC(IGMEVA(ICLA))
 C
-          SMBRS(IEL) = SMBRS(IEL)
-     &               + GMVAP*PROPCE(IEL,IPCROM)*VOLUME(IEL)
-C          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+          DO IEL = 1, NCEL
+C
+            T2MT1 = PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1)
+            GMVAP = -PROPCE(IEL,IPCGEV)*T2MT1
+C
+            SMBRS(IEL) = SMBRS(IEL)
+     &                 + GMVAP*PROPCE(IEL,IPCROM)*VOLUME(IEL)
+C           ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+C
+          ENDDO
 C
         ENDDO
 C
@@ -425,11 +466,17 @@ C
           WRITE(NFECRA,1000) CHAINE(1:8)
         ENDIF
 C
-        DO IEL = 1, NCEL
+        DO ICLA = 1, NCLAFU
 C
-          SMBRS(IEL) = SMBRS(IEL)
-     &         -PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGHT)*VOLUME(IEL)
-C          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+          IPCGHT = IPPROC(IGMHTF(ICLA))
+C
+          DO IEL = 1, NCEL
+C
+            SMBRS(IEL) = SMBRS(IEL)
+     &           -PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGHT)*VOLUME(IEL)
+C           ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+C
+          ENDDO
 C
         ENDDO
 C
@@ -485,7 +532,7 @@ C
 C
 C --> Terme source pour CO2
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
 C
         IF ( IVAR.EQ.ISCA(IYCO2) ) THEN
 C
@@ -496,12 +543,349 @@ C
 C
 C ---- Contribution du TS interfacial aux bilans explicite et implicite
 C
-          DO IEL = 1, NCEL
+C Oxydation du CO
+C ===============
 C
-C            SMBRS (IEL) = SMBRS (IEL) + ZERO
-C            ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+C  Dryer Glassman : XK0P en (moles/m3)**(-0.75) s-1
 C
+C          XK0P = 1.26D10
+C
+c           XK0P = 1.26D7 * (1.1)**(NTCABS)
+c           IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
+C
+C           T0P  = 4807.D0
+C
+C  Howard : XK0P en (moles/m3)**(-0.75) s-1
+C
+C             XK0P = 4.11D9
+C             T0P  = 15090.D0
+C
+C  Westbrook & Dryer
+C
+          XK0P = 23.256
+          T0P  = 20096.
+C
+C Dissociation du CO2 (Trinh Minh Chinh)
+C ===================
+C
+C          XK0M = 5.D8
+C          T0M  = 4807.D0
+C
+C          XK0M = 0.D0
+C
+C  Westbrook & Dryer
+C
+          XK0M = 20.03
+          T0M  = 20096.
+C
+          ERR1MX = 0.D0
+          ERR2MX = 0.D0
+C
+C Nombre d'iterations
+C
+          ITERMX = 5000
+C
+C Nombre de points converges
+C
+         NBPAUV = 0
+         NBEPAU = 0
+         NBRICH = 0
+         NBERIC = 0
+C
+C Precision pour la convergence
+C
+         ERRCH = 1.D-8
+C
+         DO IEL = 1, NCEL
+C
+           XXCO  = PROPCE(IEL,IPPROC(IYM1(ICO  )))/WMOLE(ICO)
+     &            *PROPCE(IEL,IPCROM)
+           XXO2  = PROPCE(IEL,IPPROC(IYM1(IO2  )))/WMOLE(IO2)
+     &            *PROPCE(IEL,IPCROM)
+           XXCO2 = PROPCE(IEL,IPPROC(IYM1(ICO2 )))/WMOLE(ICO2)
+     &            *PROPCE(IEL,IPCROM)
+           XXH2O = PROPCE(IEL,IPPROC(IYM1(IH2O )))/WMOLE(IH2O)
+     &            *PROPCE(IEL,IPCROM)
+C
+           XXCO  = MAX(XXCO ,ZERO)
+           XXO2  = MAX(XXO2 ,ZERO)
+           XXCO2 = MAX(XXCO2,ZERO)
+           XXH2O = MAX(XXH2O,ZERO)
+C
+           XCO2MX=XXCO2+MIN(XXCO,2.D0*XXO2)
+C
+C            XKP  = XK0P*EXP(-T0P/PROPCE(IEL,IPPROC(ITEMP1)))
+C            XKM  = XK0M*EXP(-T0M/PROPCE(IEL,IPPROC(ITEMP1)))
+C           if ( iel .eq. 36 ) then
+           XKP = EXP(XK0P-T0P/PROPCE(IEL,IPPROC(ITEMP1)))
+           XKM = EXP(XK0M-T0M/PROPCE(IEL,IPPROC(ITEMP1)))
+           XEQ = EXP(XK0M-XK0P)
+C
+C           Recherche de l'état d'équilibre
+C
+C           Recerche itérative sans controle de convergence
+C            (pour conserver la parallelisation sur les mailles)
+C           sur le nombre de moles de reaction séparant
+C           l'etat avant réaction (tel que calculé par Cpcym)
+C           de l'état d'équilibre
+C
+C           initialisation par l'état transporté
+C
+           ANMR  = XXCO2
+           XCOT  = XXCO + XXCO2
+           XO2T  = XXO2 + 0.5D0*XXCO2
+           SQH2O = SQRT(XXH2O)
+C
+           XO2E = XO2T-0.5D0*ANMR
+C
+C    Si presence de O2 et H2O
+C
+           IF ( XO2E .GT. 0.D0 .AND. SQH2O .GT. 0.D0 ) THEN
+C
+               IF ( IEL.EQ.36 .OR. IEL.EQ.15151) THEN
+                 write(*,*) ' TEST  = ',SQH2O,SQH2O .GT. 0.D0
+               ENDIF
+C
+             ITERCH = 0
+ 10          CONTINUE
+C
+               XCO2E = ANMR
+               XCOE = XCOT-ANMR
+               XO2E = XO2T-0.5D0*ANMR
+               ITERCH = ITERCH + 1
+C
+               IF ( IEL.EQ. 36 .OR. IEL.EQ.15151) THEN
+                 write(*,*) ' ITERCH  = ',ITERCH
+               ENDIF
+C
+               TER1 = XKP*SQH2O
+C
+               DDELTA = (TER1*XCOE*XO2E-XKM*XCO2E*(XO2E**0.75D0))
+     &                 /(TER1*(XO2E+XCOE/8.D0)+XKM*(XO2E**0.75D0))
+C
+C
+               ANMR = ANMR + DDELTA
+C
+C  Clipping
+C       Cote Pauvre
+              IF ( XO2T .GT. 0.5D0*XCOT ) THEN
+                ANMR = MAX( ZERO, MIN(XCOT,ANMR))
+              ELSE
+C       Cote Riche
+                ANMR = MAX( ZERO, MIN(2.D0*XO2T,ANMR))
+              ENDIF
+C
+C Test de convergence
+C
+              IF ( ABS(DDELTA) .GT. ERRCH
+     &             .AND. ITERCH.LT.ITERMX       ) GOTO 10
+C
+C Calcul du nombre de points non convergé
+C
+              IF ( ITERCH.EQ.ITERMX
+     &            .AND. ABS(DDELTA) .GT. ERRCH ) THEN
+C
+                NBERIC = NBERIC +1
+C
+              ENDIF
+ 20          CONTINUE
+             ERR1MX = MAX(ERR1MX,ABS(DDELTA))
+C
+             XCO2E = ANMR
+             XCOE  = XCOT-ANMR
+             XO2E  = XO2T-0.5D0*ANMR
+C
+             TAUChI = 1.D0/(XKP*SQH2O*(0.5D0*(XO2T+XO2E))**0.25D0)
+             TAUTUR = RTPA(IEL,IK(IPHAS))/RTPA(IEL,IEP(IPHAS))
+C
+             X2 = 0.D0
+             DO ICLA = 1,NCLAFU
+               X2 = X2 + RTP(IEL,ISCA(IYFOL(ICLA)))
+             ENDDO
+C
+C            On transporte CO2
+C
+             SMBRS(IEL)  = SMBRS(IEL)
+     &                   +WMOLE(ICO2)/PROPCE(IEL,IPCROM)
+     &        * (XCO2E-XXCO2)/(TAUChI+TAUTUR) * VOLUME(IEL)
+     &        * (1.D0-X2)
+C
+             W1(IEL) = VOLUME(IEL)/(TAUCHI+TAUTUR)
+             ROVSDT(IEL) = ROVSDT(IEL) +   MAX(W1(IEL),ZERO)
+C
+           ELSE
+C
+C     Pas de CO
+C
+             SMBRS(IEL)  = SMBRS(IEL) + 0.D0
+             ROVSDT(IEL) = ROVSDT(IEL)+ 0.D0
+C
+           ENDIF
+C
+         ENDDO
+C
+         IF(IRANGP.GE.0) THEN
+           CALL PARCPT(NBERIC)
+           CALL PARMAX(ERR1MX)
+         ENDIF
+         write(NFECRA,*) ' Erreur max = ',ERR1MX
+         write(NFECRA,*) ' Points non   ',NBERIC
+C
+        ENDIF
+C
+      ENDIF
+C
+C
+C --> Terme source pour HCN et NO : uniquement a partir de la 2eme
+C                                   iter
+C
+      IF ( IEQNOX .EQ. 1 .AND. NTCABS .GT. 1) THEN
+C
+        IF ( IVAR.EQ.ISCA(IYHCN) .OR. IVAR.EQ.ISCA(IYNO) ) THEN
+C
+          IEXP1  = IPPROC(IGHCN1)
+          IEXP2  = IPPROC(IGHCN2)
+          IEXP3  = IPPROC(IGNOTH)
+C
+C QPR= %N libéré pendant l'evaporation/taux de matieres volatiles
+C          moyen
+C
+          QPR = 0.5D0
+C
+C YMOY = % vapeur en sorties
+C
+          YMOY  = 0.D0
+          VOLM  = 0.D0
+          DMP   = 0.D0
+          VOLMP = 0.D0
+          DO IFAC=1,NFABOR
+C
+            IF ( ITYPFB(IFAC,IPHAS).EQ. ISOLIB ) THEN
+C
+              IEL = IFABOR(IFAC)
+C
+              YMOY = YMOY + RTPA(IEL,ISCA(IFVAP))*VOLUME(IEL)
+              VOLM = VOLM + VOLUME(IEL)
+              DO ICLA=1,NCLAFU
+                DMP  = DMP  + RTPA(IEL,ISCA(ING(ICLA)))
+     &                       *VOLUME(IEL)*DINIFL(ICLA)
+                VOLMP = VOLMP + VOLUME(IEL)
+              ENDDO
+C
+            ENDIF
           ENDDO
+C
+          IF ( IRANGP .GE. 0 ) THEN
+            CALL PARSOM(YMOY)
+            CALL PARSOM(VOLM)
+            CALL PARSOM(DMP)
+            CALL PARSOM(VOLMP)
+          ENDIF
+C
+          IF ( YMOY .GT. 0.D0 .AND. VOLM .GT. 0.D0 ) THEN
+            YMOY = YMOY/VOLM
+            IF ( DMP .GT. 0.D0 .AND. VOLMP .GT.0.D0 ) THEN
+              YMOY = YMOY/(DMP/VOLMP)
+              WRITE(NFECRA,*) ' Taux YMOY = ',YMOY
+            ELSE
+              WRITE(NFECRA,2000)
+              YMOY = 0.5D0
+            ENDIF
+          ELSE
+            WRITE(NFECRA,2000)
+            YMOY = 0.5D0
+          ENDIF
+C
+C Azote dans le fuel
+C
+          FN = 0.015
+C
+C Masse molaire
+C
+          WMHCN = 0.027D0
+          WMNO  = 0.030D0
+C
+          IF ( IVAR.EQ.ISCA(IYHCN) ) THEN
+C
+C        Terme source HCN
+C
+            IF (IWARNI(IVAR).GE.1) THEN
+              WRITE(NFECRA,1000) CHAINE(1:8)
+            ENDIF
+C
+            AUXMIN = 1.D+20
+            AUXMAX =-1.D+20
+C
+            DO IEL=1,NCEL
+C
+              AUX = VOLUME(IEL)*PROPCE(IEL,IPCROM)
+     &             *(PROPCE(IEL,IEXP1)+PROPCE(IEL,IEXP2))
+     &             *RTPA(IEL,ISCA(IYNO))
+     &             *PROPCE(IEL,IPPROC(IMMEL))
+     &             /WMOLE(IO2)
+C
+              SMBRS(IEL)  = SMBRS(IEL)
+     &                     -AUX*RTPA(IEL,IVAR)
+              ROVSDT(IEL) = ROVSDT(IEL) + AUX
+C
+              GMVAP = 0.D0
+              GMHET = 0.D0
+              DO ICLA=1,NCLAFU
+C
+                IPCGEV = IPPROC(IGMEVA(ICLA))
+                IPCGHT = IPPROC(IGMHTF(ICLA))
+                IPCTE2 = IPPROC(ITEMP3(ICLA))
+                IPCTE1 = IPPROC(ITEMP1)
+C
+                GMVAP = GMVAP
+     &                 + PROPCE(IEL,IPCROM)*VOLUME(IEL)
+     &                  *PROPCE(IEL,IPCGEV)
+     &                  *(PROPCE(IEL,IPCTE2)-PROPCE(IEL,IPCTE1))
+C
+                GMHET = GMHET
+     &                 +PROPCE(IEL,IPCROM)*VOLUME(IEL)
+     &                                    *PROPCE(IEL,IPCGHT)
+C
+              ENDDO
+C
+              AUX = -FN*WMHCN/(WMOLE(IN2)/2.D0)
+     &                 *(QPR*GMVAP+(1.D0-QPR*YMOY)/YMOY*GMHET)
+              SMBRS(IEL)  = SMBRS(IEL) + AUX
+              AUXMIN = MIN(AUXMIN,AUX)
+              AUXMAX = MAX(AUXMAX,AUX)
+C
+            ENDDO
+            write(*,*) ' AUX MIN MAX = ',AUXMIN,AUXMAX
+C
+          ENDIF
+C
+          IF ( IVAR.EQ.ISCA(IYNO) ) THEN
+C
+C        Terme source NO
+C
+            IF (IWARNI(IVAR).GE.1) THEN
+              WRITE(NFECRA,1000) CHAINE(1:8)
+            ENDIF
+C
+            DO IEL=1,NCEL
+C
+              AUX1 = VOLUME(IEL)*PROPCE(IEL,IPCROM)
+     &              *PROPCE(IEL,IEXP1)*RTPA(IEL,ISCA(IYHCN))
+     &              *PROPCE(IEL,IPPROC(IMMEL))/WMHCN
+              AUX2 = VOLUME(IEL)*PROPCE(IEL,IPCROM)
+     &              *PROPCE(IEL,IEXP2)*RTPA(IEL,ISCA(IYHCN))
+     &              *WMNO/WMHCN
+              AUX3 = VOLUME(IEL)*PROPCE(IEL,IPCROM)**1.5D0
+     &              *PROPCE(IEL,IEXP3)
+     &              *(PROPCE(IEL,IPPROC(IYM1(IO2))))*0.5D0
+     &              * PROPCE(IEL,IPPROC(IYM1(IN2)))
+C
+              SMBRS(IEL)  = SMBRS(IEL) - AUX1*RTPA(IEL,IVAR)
+     &                               + AUX2 + AUX3
+              ROVSDT(IEL) = ROVSDT(IEL) + AUX1
+            ENDDO
+C
+          ENDIF
 C
         ENDIF
 C
@@ -513,6 +897,9 @@ C--------
 C
  1000 FORMAT(' TERMES SOURCES PHYSIQUE PARTICULIERE POUR LA VARIABLE '
      &       ,A8,/)
+ 2000 FORMAT(' ATTENTION : LE TAUX DE VAPEUR EN SORTIE',
+     &       ' EST NULLE',/,
+     &       ' ON PREND QPR = 0.5')
 C
 C----
 C FIN

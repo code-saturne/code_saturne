@@ -91,6 +91,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -168,6 +169,11 @@ C        IPPMOD(ICP...) = 0 : Transport d'H2
 C        IPPMOD(ICP...) = 1 : Transport d'H2 + sechage
       IPPMOD(ICP3PL) = -1
 C
+C Prise en compte de la comb. Heterog par le CO2 : attention il
+C faut activer l'option "Equation sur le CO2"
+C
+      IHTCO2 = 0
+C
 C
 C----- Charbon pulverise couple lagrangien avec trois combustibles
 C      gazeux et granulometrie.
@@ -181,11 +187,23 @@ C
 C----- Combustion Fuel
 C        IPPMOD(ICFUEL) =-1 : modele non utilise
 C        IPPMOD(ICFUEL) = 0 : modele active
+C
       IPPMOD(ICFUEL) = -1
+C
+C----- MODEL NOx : pour l'instant on le met ici mais il
+C                          faudrait le deplacer, mais ou?
+C      Valable uniquement pour le Fuel
+C
+C        IEQNOX = 1 ----> Model NOx
+C
+      IEQNOX = 0
 C
 C----- Equation sur YCO2 : pour l'instant on le met ici mais il
 C                          faudrait le deplacer, mais ou?
-C      Valable pour le charbon et pour le Fuel mais non operationnel
+C      Valable pour le charbon et pour le Fuel
+C
+C         IEQCO2 = 1 ----> Transport de CO2
+C
       IEQCO2 = 0
 C
 C----- COMPF compressible sans choc

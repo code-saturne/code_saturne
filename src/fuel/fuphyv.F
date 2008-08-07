@@ -226,6 +226,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -264,13 +265,13 @@ C
       INTEGER          NTBFUI, IFUWI, NTBFUR, IFUWR
       INTEGER          NTBWOI, IWORI, NTBWOR, IWORR
       INTEGER          IFINIA, IFINRA
-      INTEGER          IEL, IPHAS, IPCROM, IPCRO2, IPCRO1
-      INTEGER          IZONE, IFAC
+      INTEGER          IEL, IPHAS, IPCROM, IPCRO2 , IPCTE1
+      INTEGER          IZONE, IFAC , ICLA
       INTEGER          IPBROM, IROMF
       DOUBLE PRECISION QTOTZ
       DOUBLE PRECISION X1SRO1, X2SRO2, SRROM1, UNS1PW
       DOUBLE PRECISION X2TOT, WMOLME, UNSRO1
-C      DOUBLE PRECISION EH2, TEBMOY
+      DOUBLE PRECISION X2H2
 C
       INTEGER       IPASS
       DATA          IPASS /0/
@@ -343,7 +344,11 @@ C
 C ---- W1 = - Somme des X2(i)
 C
       DO IEL = 1, NCEL
-        W1(IEL) = - RTP(IEL,ISCA(IYFOL))
+C
+        W1(IEL) = 0.D0
+        DO ICLA = 1, NCLAFU
+          W1(IEL) = W1(IEL) - RTP(IEL,ISCA(IYFOL(ICLA)))
+        ENDDO
         UNS1PW  = 1.D0 / ( 1.D0 + W1(IEL) )
         W2(IEL) =  RTP(IEL,ISCA(IFVAP))  * UNS1PW
         W4(IEL) =  RTP(IEL,ISCA(IFHTF))  * UNS1PW
@@ -385,7 +390,11 @@ C PPl 200106 c'était bien beau tant qu'il n'y avait que de la vapeur
 C  mais avec la combustion hétérogène c'est le foutoir
 C  on repasse (momentanément ?) à une enthalpie de phase
 C
-        W8(IEL) = ( RTP(IEL,ISCA(IHM)) - RTP(IEL,ISCA(IHLF)))
+        X2H2 = 0.D0
+        DO ICLA = 1, NCLAFU
+          X2H2 = X2H2 + RTP(IEL,ISCA(IHLF(ICLA)))
+        ENDDO
+        W8(IEL) = ( RTP(IEL,ISCA(IHM)) - X2H2 )
      &           *UNS1PW
 C
       ENDDO
@@ -400,7 +409,11 @@ C        Macro tableau d'entiers TBWOI : NTBWOI
 C        Macro tableau de reels  TBWOR : NTBWOR
 C
       NTBFUI = 1
-      NTBFUR = 11
+      IF ( IEQNOX .EQ. 0 ) THEN
+        NTBFUR = 11
+      ELSE
+        NTBFUR = 12
+      ENDIF
       NTBWOI = 0
       NTBWOR = 2
 C
@@ -429,7 +442,6 @@ C         ENTH du gaz
 C                          ---------------- (masse vol. gaz)
      &   IA(IFUWI) , RA(IFUWR) ,
      &   IA(IWORI) , RA(IWORR)  )
-C
 C
 C=======================================================================
 C 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
@@ -460,7 +472,13 @@ C
 C --- W2 = - Somme des X2(i)
 C
       DO IEL = 1, NCEL
-        W1(IEL) = -RTP(IEL,ISCA(IYFOL))
+        W2(IEL) = ZERO
+      ENDDO
+C
+      DO ICLA = 1, NCLAFU
+        DO IEL = 1, NCEL
+          W2(IEL) =  W2(IEL)-RTP(IEL,ISCA(IYFOL(ICLA)))
+        ENDDO
       ENDDO
 C
 C --- Calcul de Rho du melange : 1/Rho = X1/Rho1 + Somme(X2/Rho2)
@@ -475,20 +493,27 @@ C
       IF (IPASS.GT.1.OR.(ISUITE.EQ.1.AND.INITRO(IPHAS).EQ.1)) THEN
         SRROM1 = SRROM
       ELSE
-        SRROM1 = 1.D0
+        SRROM1 = 0.D0
       ENDIF
 C
       DO IEL = 1, NCEL
+C
+        X1SRO1 = (1.D0+W2(IEL)) / PROPCE(IEL,IROMF)
         X2SRO2 = ZERO
-          IPCRO1 = IPPROC(IROM1)
-          IPCRO2 = IPPROC(IROM3)
-C          X2SRO2 = X2SRO2 + PROPCE(IEL,IYFOL)/ PROPCE(IEL,IPCRO2)
-C        X1SRO1 = (1.D0+W1(IEL)) / PROPCE(IEL,IROMF)
+        DO ICLA = 1, NCLAFU
+C
+          IPCRO2 = IPPROC(IROM3(ICLA))
+          PROPCE(IEL,IPCRO2) = RHO0FL
+C
+          X2SRO2 = X2SRO2 + RTP(IEL,ISCA(IYFOL(ICLA)))
+     &                     /PROPCE(IEL,IPCRO2)
+C
+        ENDDO
+C
 C ---- Sous relaxation eventuelle a donner dans ppini1.F
-        PROPCE(IEL,IPCRO2) = RHO0FL
-        PROPCE(IEL,IPCROM) = 1.D0 /
-     &   (  RTP(IEL,ISCA(IYFOL))          / RHO0FL             +
-     &     (1.D0 - RTP(IEL,ISCA(IYFOL)))  / PROPCE(IEL,IPCRO1) )
+C
+        PROPCE(IEL,IPCROM) = SRROM1*PROPCE(IEL,IPCROM)
+     &                     + (1.D0-SRROM1)/(X1SRO1+X2SRO2)
        ENDDO
 C
 C=======================================================================

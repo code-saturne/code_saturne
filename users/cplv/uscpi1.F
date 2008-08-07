@@ -88,6 +88,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -208,11 +209,20 @@ C
       ENDDO
 C
 C     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
-C       lors de la combustion heterogene)
+C       lors de la combustion heterogene avec O2)
       IPP = IPPRTP(ISCA(IF3M))
       ICHRVR(IPP)  = 1
       ILISVR(IPP)  = 1
       IHISVR(IPP,1)= -1
+C
+C     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
+C       lors de la combustion heterogene avec CO2)
+      IF ( IHTCO2 .EQ. 1) THEN
+        IPP = IPPRTP(ISCA(IF3MC2))
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDIF
 C
 C     - Variance associe au traceur 4 (representatif de l'air)
       IPP = IPPRTP(ISCA(IF4P2M))
@@ -231,7 +241,7 @@ C       lors de la phase de sechage)
 C
 C     - YCO2
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
         IPP = IPPRTP(ISCA(IYCO2))
         ICHRVR(IPP)  = 1
         ILISVR(IPP)  = 1
@@ -303,12 +313,21 @@ C         (de la classe ICLA)
         ILISVR(IPP)   = 0
         IHISVR(IPP,1) = -1
 C
-C       - Taux de disparition du charbon reactif (s-1) < 0
+C       - Taux de disparition du charbon reactif (s-1) < 0 par O2
 C         (de la classe ICLA)
         IPP = IPPPRO(IPPROC(IGMHET(ICLA)))
         ICHRVR(IPP)   = 0
         ILISVR(IPP)   = 0
         IHISVR(IPP,1) = -1
+C
+C       - Taux de disparition du charbon reactif (s-1) < 0 par le CO2
+C         (de la classe ICLA)
+        IF ( IHTCO2 .EQ. 1 ) THEN
+          IPP = IPPPRO(IPPROC(IGHCO2(ICLA)))
+          ICHRVR(IPP)   = 0
+          ILISVR(IPP)   = 0
+          IHISVR(IPP,1) = -1
+        ENDIF
 C
 C       - Taux de disparitionde l'humidite < 0
 C         (de la classe ICLA)

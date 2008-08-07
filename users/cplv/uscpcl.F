@@ -659,11 +659,12 @@ C ------ Pour ces facettes d'entree , on est a debit impose
 C
         IENTAT(IZONE) = 1
         IQIMP(IZONE)  = 1
-C      - Debit en kg/s pour l'air
+C      - Numero de l'oxydant
+        INMOXY(IZONE) = 1
+C      - Debit en kg/s pour l'oxydant
         QIMPAT(IZONE) = 1.46D-03
-C      - Temperature en K pour l'air
+C      - Temperature en K pour l'oxydant
         TIMPAT(IZONE) = 400.D0 + TKELVI
-C
 C
 C ------ On impose en couleur 12 une entree a debit impose
 C        L'utilisateur donne donc ici uniquement
@@ -785,9 +786,11 @@ C ------ Pour ces facettes d'entree , on est a debit impose
 C
         IENTCP(IZONE) = 1
         IQIMP(IZONE)  = 1
-C      - Debit en kg/s pour l'air
+C      - Numero de l'oxydant
+        INMOXY(IZONE) = 1
+C      - Debit en kg/s pour l'oxydant
         QIMPAT(IZONE) = 1.46D-03
-C      - Temperature en K pour l'air
+C      - Temperature en K pour l'oxydant
         TIMPAT(IZONE) = 800.D0  + TKELVI
 C
 C ------ Initialisation (debit temperature et composition)

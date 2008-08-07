@@ -416,31 +416,39 @@ C ---- Combustion fuel
 C
             ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
 C
-              X2T = RTPA(IEL,ISCA(IYFOL))
+              X2T  = ZERO
+              X2H2 = ZERO
 C
-              MKFINI = RHO0FL*PI/6.D0*DINIKF**3
-              RHOFOL = PROPCE(IEL,IPPROC(IROM3))
-              DIAMGT = PROPCE(IEL,IPPROC(IDIAM3))
-              MASGUT = RHOFOL*PI/6.D0*DIAMGT**3
-              IF (DIAMGT.LE.DINIKF) THEN
-                MKGOUT = MASGUT
-              ELSE
-                MKGOUT = MKFINI
-              ENDIF
-              MFGOUT = MASGUT - MKGOUT
-              XSOLID(1) = 1.D0-FKC
-              XSOLID(2) = FKC
-              IF(Masgut.GT.ZERO) THEN
-                XSOLID(1) = MFGOUT / MASGUT
-                XSOLID(2) = MKGOUT / MASGUT
-              ENDIF
-              XSOLID(1) = MIN(1.D0,MAX(0.D0,XSOLID(1)))
-              XSOLID(2) = MIN(1.D0,MAX(0.D0,XSOLID(2)))
+              DO ICLA=1,NCLAFU
 C
-              CALL FUTHP2
-C             ===========
+                X2T = X2T+RTPA(IEL,ISCA(IYFOL(ICLA)))
+C
+                MKFINI = RHO0FL*PI/6.D0*DINIKF(ICLA)**3
+                RHOFOL = PROPCE(IEL,IPPROC(IROM3(ICLA)))
+                DIAMGT = PROPCE(IEL,IPPROC(IDIAM3(ICLA)))
+                MASGUT = RHOFOL*PI/6.D0*DIAMGT**3
+                IF (DIAMGT.LE.DINIKF(ICLA)) THEN
+                  MKGOUT = MASGUT
+                ELSE
+                  MKGOUT = MKFINI
+                ENDIF
+                MFGOUT = MASGUT - MKGOUT
+                XSOLID(1) = 1.D0-FKC
+                XSOLID(2) = FKC
+                IF(MASGUT.GT.EPZERO) THEN
+                  XSOLID(1) = MFGOUT / MASGUT
+                  XSOLID(2) = MKGOUT / MASGUT
+                ENDIF
+                XSOLID(1) = MIN(1.D0,MAX(0.D0,XSOLID(1)))
+                XSOLID(2) = MIN(1.D0,MAX(0.D0,XSOLID(2)))
+C
+                CALL FUTHP2
+C               ===========
      &        ( MODE   , H2     , XSOLID , TPAROP(IFAC) )
-              X2H2 =  X2T*H2
+C
+                X2H2 =  X2H2 + RTPA(IEL,ISCA(IYFOL(ICLA)))*H2
+C
+              ENDDO
 C
               DO IGE = 1,NGAZE
                 COEFE(IGE) = PROPCE(IEL,IPPROC(IYM1(IGE)))

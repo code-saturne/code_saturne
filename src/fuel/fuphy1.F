@@ -153,6 +153,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -215,6 +216,7 @@ C
         ELSE
           F1CL = 0.D0
         ENDIF
+C
         F3CL = 1.D0-F1CL
         F4CL = (1.D0-FF3MAX)*F3CL
 C
@@ -262,6 +264,7 @@ C      ===========
      & ( NCELET , NCEL   ,
      &   ITBFU(1,1) ,
 C         INTPDF
+     &   RTP    ,
      &   FVAP   ,   RTBFU(1,1) , RTBFU(1,2) ,
 C         F1M           F3M         F4M
      &  RTBFU(1,3) , RTBFU(1,4) ,RTBFU(1,5) ,
@@ -274,7 +277,9 @@ C           D4F4         HREC
      &   PROPCE(1,IPCYF1) , PROPCE(1,IPCYF3) ,
      &   PROPCE(1,IPCYOX) , PROPCE(1,IPCYP1) , PROPCE(1,IPCYP2) ,
      &   PROPCE(1,IPCYIN) ,
-     &   PROPCE(1,IPCY2S) , PROPCE(1,IPCYSO) )
+     &   PROPCE(1,IPCY2S) , PROPCE(1,IPCYSO) ,
+     &   RTBFU(1,12) )
+C         F4S3 pour NOx
 C
 C --> Clipping eventuel des fractions massiques
 C
@@ -286,6 +291,39 @@ C
         ENDDO
       ENDDO
 C
+C MODEL NOx : on y passe pas a la 1ere iter
+C
+      IF ( IEQNOX .EQ. 1 .AND. NTCABS .GT.1) THEN
+        CALL FUCYNO
+C       ===========
+     & ( NCELET , NCEL   ,
+     &   ITBFU(1,1) ,
+C         INTPDF
+     &   RTP    , PROPCE ,
+     &   FVAP   ,   RTBFU(1,1) , RTBFU(1,2) ,
+C         F1M           F3M         F4M
+     &  RTBFU(1,3) , RTBFU(1,4) ,RTBFU(1,5) ,
+C         F1CL         F3CL         F4CL
+
+     &   RTBFU(1,9) , RTBFU(1,10) , RTBFU(1,7) ,
+C           F4M1         F4M2        D4CL
+     &   RTBFU(1,8) ,RTBFU(1,11) , RTBFU(1,12) ,
+C           D4F4         HREC
+     &   PROPCE(1,IPCYF1) , PROPCE(1,IPCYF3) ,
+     &   PROPCE(1,IPCYOX) , PROPCE(1,IPCYP1) , PROPCE(1,IPCYP2) ,
+     &   PROPCE(1,IPCYIN) ,
+     &   PROPCE(1,IPCY2S) , PROPCE(1,IPCYSO) )
+C
+      ELSE IF ( IEQNOX .EQ. 1 ) THEN
+C
+        write(*,*) ' passage init ',IGHCN1,IGHCN2,IGNOTH
+        DO IEL = 1, NCEL
+          PROPCE(IEL,IPPROC(IGHCN1)) = 0.D0
+          PROPCE(IEL,IPPROC(IGHCN2)) = 0.D0
+          PROPCE(IEL,IPPROC(IGNOTH)) = 0.D0
+        ENDDO
+C
+      ENDIF
 C
 C=======================================================================
 C 3. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE

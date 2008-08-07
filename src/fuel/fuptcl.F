@@ -199,6 +199,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -239,16 +240,21 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          II, IPHAS, IFAC, IZONE, MODE, IEL, IGE, IOK
+      INTEGER          ICLA
       INTEGER          IPBROM, ICKE, IPCVIS
       INTEGER          NBRVAL
       DOUBLE PRECISION QISQC, VISCLA, D2S3, UREF2, RHOMOY, DHY, XITURB
       DOUBLE PRECISION XKENT, XEENT, T1, T2, USTAR2
       DOUBLE PRECISION H1(NOZPPM) , H3(NOZPPM)
-      DOUBLE PRECISION X3H30(NOZPPM)
+      DOUBLE PRECISION X30(NOZPPM,NCLCPM),X30T(NOZPPM)
+      DOUBLE PRECISION XMG0(NOZPPM,NCLCPM)
+      DOUBLE PRECISION X3H30T(NOZPPM)
       DOUBLE PRECISION QIMPC(NOZPPM) , QCALC(NOZPPM)
       DOUBLE PRECISION COEFE(NGAZEM)
       DOUBLE PRECISION XSOLID(2)
-      DOUBLE PRECISION HLF
+      DOUBLE PRECISION HLF , TOTFU , SDEB , SDEBT
+      DOUBLE PRECISION VOLM,VOLMP,DMP
+C
 C***********************************************************************
 C=======================================================================
 C 1.  INITIALISATIONS
@@ -295,6 +301,9 @@ C       ===========
         NBRVAL = NOZPPM
         CALL PARRMX(NBRVAL,TIMPFL)
 C       ===========
+        NBRVAL = NOZPPM*NCLCPM
+        CALL PARRMX(NBRVAL,DISTFU)
+C       ===========
       ENDIF
 C
 C
@@ -310,7 +319,6 @@ C
       DO IZONE = 1, NOZPPM
         QCALC(IZONE) = 0.D0
         H1(IZONE)    = 0.D0
-        X30(IZONE)   = 0.D0
       ENDDO
       DO IFAC = 1, NFABOR
         IZONE = IZFPPP(IFAC)
@@ -385,6 +393,70 @@ C
      &'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,
      &'@      le nombre de faces de bord dans la zone est non nul)  ',/,
      &'@    - que la masse volumique n''est pas nulle               ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+C=======================================================================
+C 3. VERIFICATIONS
+C        Somme des DISTributions FUel = 100% pour les zones IENTFL =1
+C=======================================================================
+C
+      IOK = 0
+      DO II = 1, NZFPPP
+        IZONE = ILZPPP(II)
+        IF ( IENTFL(IZONE).EQ.1 ) THEN
+          TOTFU = 0.D0
+          DO ICLA = 1, NCLAFU
+            TOTFU = TOTFU + DISTFU(IZONE,ICLA)
+          ENDDO
+          IF(ABS(TOTFU-100.D0).GT.EPZERO) THEN
+            WRITE(NFECRA,2010)
+            DO ICLA = 1, NCLAFU
+              WRITE(NFECRA,2011)IZONE,ICLA,
+     &               DISTFU(IZONE,ICLA)
+            ENDDO
+            WRITE(NFECRA,2012)IZONE,IENTFU(IZONE),
+     &             TOTFU,TOTFU-100.D0
+            IOK = IOK + 1
+          ENDIF
+        ENDIF
+      ENDDO
+C
+      IF(IOK.NE.0) THEN
+        CALL CSEXIT (1)
+C       ===========
+      ENDIF
+C
+ 2010 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,
+     &'@    *********                       FUEL                    ',/,
+     &'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,
+     &'@                                                            ',/,
+     &'@        Zone    Classe         Distfu(%)                    '  )
+ 2011 FORMAT(
+     &'@  ',I10   ,' ',I10   ,'    ',E14.5                             )
+ 2012 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,
+     &'@    *********                        FUEL                   ',/,
+     &'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,
+     &'@                                                            ',/,
+     &'@  On impose une entree fuel en IZONE = ', I10                ,/,
+     &'@    puisque               IENTFL(IZONE) = ', I10            ,/,
+     &'@  Or, sur cette zone, la somme des distributions            ',/,
+     &'@    en pourcentage pour le fuel IFOL = ', I10                ,/,
+     &'@    est differente de 100% : elle vaut TOTFOL = ', E14.5     ,/,
+     &'@    avec                           TOTFOL-100 = ', E14.5     ,/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@  Verifier usfucl.                                          ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
@@ -494,9 +566,24 @@ C
 C Une entree IENTRE est forcement du type
 C         IENTAT = 1 ou IENTFL = 1
         IF ( IENTAT(IZONE).EQ.1 .OR. IENTFL(IZONE).EQ.1) THEN
+C
+          X30T  (IZONE) = ZERO
+          X3H30T(IZONE) = ZERO
+C
+          DO ICLA = 1, NCLAFU
+C
 C ------ Calcul de X3 total par zone
-          X30(IZONE) = QIMPFL(IZONE)/QIMPC(IZONE)
-C ------ Calcul de H2 , XMG0
+C         Petite retouche au cas ou l'entree est fermee
+            IF(ABS(QIMPC(IZONE)).LT.EPZERO) THEN
+              X30(IZONE,ICLA) = 0.D0
+            ELSE
+              X30(IZONE,ICLA) = QIMPFL(IZONE)/QIMPC(IZONE)
+     &                         *DISTFU(IZONE,ICLA)*1.D-2
+            ENDIF
+            X30T(IZONE)     = X30T(IZONE) +  X30(IZONE,ICLA)
+C
+          ENDDO
+C ------ Calcul de H3 , XMG0
           IF ( IENTFL(IZONE) .EQ. 1 ) THEN
             T2        = TIMPFL(IZONE)
             XSOLID(1) = 1.D0-FKC
@@ -505,12 +592,17 @@ C ------ Calcul de H2 , XMG0
             CALL FUTHP2
 C           ===========
      &      ( MODE   ,  H3(IZONE), XSOLID ,  T2    )
-            XMG0(IZONE) = PI/6.D0 * (DINIFL**3) * RHO0FL
+C
+            DO ICLA = 1, NCLAFU
+              XMG0(IZONE,ICLA) = PI/6.D0*(DINIFL(ICLA)**3)*RHO0FL
+            ENDDO
           ELSE
             H3(IZONE) = ZERO
-            XMG0(IZONE) = 1.D0
+            DO ICLA = 1, NCLAFU
+              XMG0(IZONE,ICLA) = 1.D0
+            ENDDO
           ENDIF
-          X3H30(IZONE) = X30(IZONE) * H3(IZONE)
+          X3H30T(IZONE) = X30T(IZONE)*H3(IZONE)
 C
 C
 C ------ Calcul de H1(IZONE)
@@ -540,12 +632,15 @@ C
 C
 C ----  Traitement automatique des scalaires physiques particulieres
 C
+          DO ICLA = 1, NCLAFU
 C ------ CL pour Xfol
-          RCODCL(IFAC,ISCA(IYFOL),1) = X30(IZONE)
+            RCODCL(IFAC,ISCA(IYFOL(ICLA)),1) = X30(IZONE,ICLA)
 C ------ CL pour Ng
-          RCODCL(IFAC,ISCA(ING),1) = X30(IZONE) / XMG0(IZONE)
-C ------ CL pour X1HLF
-          RCODCL(IFAC,ISCA(IHLF),1) = X3H30(IZONE)
+            RCODCL(IFAC,ISCA(ING(ICLA)),1) = X30(IZONE,ICLA)
+     &                                      /XMG0(IZONE,ICLA)
+C ------ CL pour X2HLF
+            RCODCL(IFAC,ISCA(IHLF(ICLA)),1) = X30(IZONE,ICLA)*H3(IZONE)
+          ENDDO
 C ------ CL pour X1.FVAP
           RCODCL(IFAC,ISCA(IFVAP),1) = ZERO
 C ------ CL pour X1.FHTF
@@ -553,17 +648,59 @@ C ------ CL pour X1.FHTF
 C ------ CL pour FP4M
           RCODCL(IFAC,ISCA(IF4P2M),1)   = ZERO
 C ------ CL pour HM
-          RCODCL(IFAC,ISCA(IHM),1) = ( 1.D0 - X30(IZONE) )
-     &                              * H1(IZONE) + X3H30(IZONE)
+          RCODCL(IFAC,ISCA(IHM),1) = ( 1.D0 - X30T(IZONE) )
+     &                              * H1(IZONE) + X3H30T(IZONE)
 C
 C ------ CL pour X1.YCO2
-          IF ( IEQCO2 .EQ. 1 ) THEN
+          IF ( IEQCO2 .GE. 1 ) THEN
             RCODCL(IFAC,ISCA(IYCO2),1)   = ZERO
+          ENDIF
+C
+C ------ CL pour X1.HCN et X1.NO
+          IF ( IEQNOX .EQ. 1 ) THEN
+            RCODCL(IFAC,ISCA(IYHCN),1)   = ZERO
+            RCODCL(IFAC,ISCA(IYNO ),1)   = ZERO
+C ------ CL pour Tair
+            RCODCL(IFAC,ISCA(ITAIRE ),1)   = TIMPAT(IZONE)
           ENDIF
 C
         ENDIF
 C
       ENDDO
+C
+C MODEL NOX :
+C   - Calcul de Tair moyen sur les entrees (on moyenne en fonction du debit)
+C   - Calcul Ymoy : taux de vapeur moyen en sortie
+C
+      IF ( IEQNOX .EQ. 1) THEN
+C
+C Calcul Tair
+C
+        SDEB = 0.D0
+        SDEBT= 0.D0
+C
+        DO II = 1, NZFPPP
+C
+          IZONE = ILZPPP(II)
+C
+C Une entree IENTRE est forcement du type
+C         IENTAT = 1 ou IENTFL = 1
+          IF ( IENTAT(IZONE).EQ.1 .OR. IENTFL(IZONE).EQ.1) THEN
+C
+            SDEB  = SDEB  + QIMPAT(IZONE)
+            SDEBT = SDEBT + QIMPAT(IZONE)*TIMPAT(IZONE)
+C
+          ENDIF
+        ENDDO
+C
+        IF ( IRANGP .GE. 0 ) THEN
+          CALL PARSOM(SDEB)
+          CALL PARSOM(SDEBT)
+        ENDIF
+C
+        TAIRE = SDEBT/SDEB
+C
+      ENDIF
 C
 C----
 C FORMATS

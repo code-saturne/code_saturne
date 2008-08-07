@@ -82,11 +82,12 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
-      INTEGER          IPP ,  II , JJ , IOK
-      INTEGER          ISC , IS, IPHAS
+      INTEGER          IPP , II , JJ , IOK , ICLA
+      INTEGER          ISC , IPHAS
       DOUBLE PRECISION WMOLME
 C
 C***********************************************************************
@@ -120,12 +121,15 @@ C ---- Variables propres a la phase dispersee
 C
       SCAMIN(IHM) = H02FOL
       SCAMAX(IHM) = +GRAND
-      SCAMIN(ING)   = 0.D0
-      SCAMAX(ING)   = +RINFIN
-      SCAMIN(IYFOL) = 0.D0
-      SCAMAX(IYFOL) = 4.D-1
-      SCAMIN(IHLF)  = -GRAND
-      SCAMAX(IHLF)  = +GRAND
+C
+      DO ICLA=1,NCLAFU
+        SCAMIN(ING(ICLA))   = 0.D0
+        SCAMAX(ING(ICLA))   = +RINFIN
+        SCAMIN(IYFOL(ICLA)) = 0.D0
+        SCAMAX(IYFOL(ICLA)) = 4.D-1
+        SCAMIN(IHLF(ICLA))  = -GRAND
+        SCAMAX(IHLF(ICLA))  = +GRAND
+      ENDDO
 C
 C ---- Variables propres a la phase continue
 C
@@ -136,9 +140,18 @@ C
       SCAMIN(IF4P2M)  = 0.D0
       SCAMAX(IF4P2M)  = 0.25D0
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
         SCAMIN(IYCO2) = 0.D0
         SCAMAX(IYCO2) = 1.D0
+      ENDIF
+C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        SCAMIN(IYHCN)  = 0.D0
+        SCAMAX(IYHCN)  = 1.D0
+        SCAMIN(IYNO)   = 0.D0
+        SCAMAX(IYNO)   = 1.D0
+        SCAMIN(ITAIRE) = 0.D0
+        SCAMAX(ITAIRE) = +GRAND
       ENDIF
 C
 C --> Nature des scalaires transportes
@@ -245,21 +258,24 @@ C
       IHISVR(IPP,1)= -1
 C
 C ---- Variables propres a la phase dispersee
-      IPP = IPPRTP(ISCA(IYFOL))
-      NOMVAR(IPP) = 'YFOL_FOL'
-      ICHRVR(IPP)  = 1
-      ILISVR(IPP)  = 1
-      IHISVR(IPP,1)= -1
-      IPP = IPPRTP(ISCA(IHLF))
-      NOMVAR(IPP) = 'HLF_FOL'
-      ICHRVR(IPP)  = 1
-      ILISVR(IPP)  = 1
-      IHISVR(IPP,1)= -1
-      IPP = IPPRTP(ISCA(ING))
-      NOMVAR(IPP) = 'NG_FOL'
-      ICHRVR(IPP)  = 1
-      ILISVR(IPP)  = 1
-      IHISVR(IPP,1)= -1
+C
+      DO ICLA = 1, NCLAFU
+        IPP = IPPRTP(ISCA(IYFOL(ICLA)))
+        WRITE(NOMVAR(IPP),'(A8,I2.2)')'YFOL_FOL' ,ICLA
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+        IPP = IPPRTP(ISCA(IHLF(ICLA)))
+        WRITE(NOMVAR(IPP),'(A7,I2.2)')'HLF_FOL' ,ICLA
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+        IPP = IPPRTP(ISCA(ING(ICLA)))
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'NG_FOL' ,ICLA
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDDO
 C
 C ---- Variables propres a la phase gaz
 C
@@ -279,9 +295,27 @@ C
       ILISVR(IPP)  = 1
       IHISVR(IPP,1)= -1
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
         IPP = IPPRTP(ISCA(IYCO2))
         NOMVAR(IPP)  = 'FR_CO2'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+      ENDIF
+C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        IPP = IPPRTP(ISCA(IYHCN))
+        NOMVAR(IPP)  = 'FR_HCN'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+        IPP = IPPRTP(ISCA(IYNO))
+        NOMVAR(IPP)  = 'FR_NO'
+        ICHRVR(IPP)  = 1
+        ILISVR(IPP)  = 1
+        IHISVR(IPP,1)= -1
+        IPP = IPPRTP(ISCA(ITAIRE))
+        NOMVAR(IPP)  = 'Temp_air'
         ICHRVR(IPP)  = 1
         ILISVR(IPP)  = 1
         IHISVR(IPP,1)= -1
@@ -302,36 +336,38 @@ C
 C
 C ---> Variables algebriques propres a la phase dispersee
 C
-      IPP = IPPPRO(IPPROC(ITEMP3))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'Tem_FOL'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-      IPP = IPPPRO(IPPROC(IROM3))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'Rho_FOL'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-      IPP = IPPPRO(IPPROC(IDIAM3))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'Dia_gt'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-      IPP = IPPPRO(IPPROC(IH1HLF))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'H1-Hlf'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-      IPP = IPPPRO(IPPROC(IGMEVA))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_EVA'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-      IPP = IPPPRO(IPPROC(IGMHTF))
-      WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_HET'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
+      DO ICLA = 1, NCLAFU
+        IPP = IPPPRO(IPPROC(ITEMP3(ICLA)))
+        WRITE(NOMVAR(IPP),'(A7,I2.2)')'Tem_FOL',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+        IPP = IPPPRO(IPPROC(IROM3(ICLA)))
+        WRITE(NOMVAR(IPP),'(A7,I2.2)')'Rho_FOL',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+        IPP = IPPPRO(IPPROC(IDIAM3(ICLA)))
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'Dia_gt',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+        IPP = IPPPRO(IPPROC(IH1HLF(ICLA)))
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'H1-Hlf',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+        IPP = IPPPRO(IPPROC(IGMEVA(ICLA)))
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_EVA',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+        IPP = IPPPRO(IPPROC(IGMHTF(ICLA)))
+        WRITE(NOMVAR(IPP),'(A6,I2.2)')'Ga_HET',ICLA
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+      ENDDO
 C
 C ---> Variables algebriques propres a la phase continue
 C
@@ -386,25 +422,39 @@ C
       ILISVR(IPP)   = 1
       IHISVR(IPP,1) = -1
 C
+      IF ( IEQNOX .EQ. 1 ) THEN
+C
+        IPP = IPPPRO(IPPROC(IGHCN1))
+        NOMVAR(IPP)   = 'EXP1'
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+C
+        IPP = IPPPRO(IPPROC(IGHCN2))
+        NOMVAR(IPP)   = 'EXP2'
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+C
+        IPP = IPPPRO(IPPROC(IGNOTH))
+        NOMVAR(IPP)   = 'EXP3'
+        ICHRVR(IPP)   = 1
+        ILISVR(IPP)   = 1
+        IHISVR(IPP,1) = -1
+C
+      ENDIF
+C
 C ---> Rayonnement
 C
       IPP = IPPPRO(IPPROC(ILUMI))
       NOMVAR(IPP)   = 'IntLuminance_4PI'
-      ICHRVR(IPP)   = 1
-      ILISVR(IPP)   = 1
-      IHISVR(IPP,1) = -1
-C
+      ICHRVR(IPP)   = 0
+      ILISVR(IPP)   = 0
+      IHISVR(IPP,1) = 0
 C
 C=======================================================================
 C 3. INFORMATIONS COMPLEMENTAIRES
 C=======================================================================
-C
-C ---> Definition des pointeurs du tableau TBMCR utilise dans fuphy1.F
-C      et dans les sous-programmes appeles
-C
-      IS    = 0
-      IS    = IS + 1
-C     IFOV = IS
 C
 C ---> Initialisation
       IPHAS = 1

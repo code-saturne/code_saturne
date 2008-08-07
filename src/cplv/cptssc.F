@@ -80,6 +80,7 @@ CFONC      ex : pour la vitesse            kg m/s2
 CFONC           pour les temperatures      kg degres/s
 CFONC           pour les enthalpies        Joules/s
 CFONC     ROVSDT en kg /s
+CFONC
 c@fonce
 C-----------------------------------------------------------------------
 c@argub
@@ -215,6 +216,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -264,15 +266,17 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IVAR , IPCROM, IEL, IPHAS
       INTEGER          NUMCLA , NUMCHA , ICLA , NUMTRA
-      INTEGER          IPCGCH , IPCGD1 , IPCGD2 , IPCGHT
+      INTEGER          IPCGCH , IPCGD1 , IPCGD2 , IPCGHT , IPCSEC
       INTEGER          IXCHCL , IXCKCL , ISCALA
       INTEGER          IPCRO2 , IPCTE1 , IPCTE2 , IPCVSL , IPCCP
       INTEGER          IPCDIA , IPCVST
       INTEGER          MODE, IGE
-      INTEGER          IPCX2C , ICHA
-      INTEGER          IPCSEC
+      INTEGER          IFAC   , IFINRA , ICOEFA , ICOEFB
+      INTEGER          IPCX2C , ICHA , IMODE , II
+      INTEGER          ITERCH
+      INTEGER          ITERMX,NBPAUV,NBRICH,NBEPAU,NBERIC,IPGHC2
 C
-      DOUBLE PRECISION XNUSS
+      DOUBLE PRECISION EPSRGP , CLIMGP , EXTRAP , XNUSS
       DOUBLE PRECISION AUX, RHOVST
       DOUBLE PRECISION COEFE(NGAZEM)
       DOUBLE PRECISION T1, T2, HLV , HH2OV
@@ -284,6 +288,13 @@ C
       DOUBLE PRECISION XXCO,XXO2,XXCO2,XXH2O,XCO2MX
       DOUBLE PRECISION XKP,XK0P,XKM,XK0M,WPLUS,WMOINS,T0P,T0M
       DOUBLE PRECISION AUXP,AUXM
+C
+      DOUBLE PRECISION ANMR,XCOT,XO2T,XCO2E,XO2E,XCOE,TAUCHI,TAUTUR
+      DOUBLE PRECISION SQH2O , X2
+C
+      DOUBLE PRECISION ERR1MX,ERR2MX,ANMR0
+C
+      DOUBLE PRECISION ERRCH,TER1,DDELTA,XDEN
 C
 C***********************************************************************
 C
@@ -329,10 +340,10 @@ C
 C ---- Calcul de  W1 = - rho.GMDCH > 0
 C
           W1(IEL) = - PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGCH)
+     &               *VOLUME(IEL)
 C
 C ---- Calcul des parties explicite et implicite du TS
 C
-          W1(IEL) = W1(IEL)*VOLUME(IEL)
           ROVSDT(IEL) = ROVSDT(IEL) + MAX(W1(IEL),ZERO)
           SMBRS(IEL) = SMBRS(IEL) - W1(IEL)*RTPA(IEL,IVAR)
 C
@@ -356,6 +367,7 @@ C
         IXCHCL = ISCA(IXCH(NUMCLA))
         IXCKCL = ISCA(IXCK(NUMCLA))
         IPCGHT = IPPROC(IGMHET(NUMCLA))
+        IPGHC2 = IPPROC(IGHCO2(NUMCLA))
 C
         DO IEL = 1, NCEL
 C
@@ -375,6 +387,8 @@ C
 C
           IF ( RTPA(IEL,IXCKCL) .GT. EPSICP ) THEN
 C
+C Reaction C(s) + O2 ---> 0.5CO
+C =============================
 C
 C ---- Calcul de la partie implicite  > 0 du TS relatif a GMHET
 
@@ -394,9 +408,45 @@ C
 C ---- Calcul des parties explicite et implicite du TS
 C
           ROVSDT(IEL) = ROVSDT(IEL) + MAX(W3(IEL),ZERO)
+     &                              + MAX(W5(IEL),ZERO)
           SMBRS(IEL)  = SMBRS(IEL)  + W1(IEL) + W2(IEL) + W4(IEL)
+     &                              + W6(IEL)
 C
         ENDDO
+C
+        IF ( IHTCO2 .EQ. 1 ) THEN
+C
+          DO IEL = 1, NCEL
+C
+            IF ( RTPA(IEL,IXCKCL) .GT. EPSICP ) THEN
+C
+C Reaction C(s) + CO2 ---> 2CO
+C =============================
+C
+C ---- Calcul de la partie implicite  > 0 du TS relatif a GMHET
+
+              W5(IEL) = - 2.D0/3.D0*PROPCE(IEL,IPCROM)
+     &                             *PROPCE(IEL,IPGHC2)
+     &                 /(RTPA(IEL,IXCKCL))**(1.D0/3.D0)*VOLUME(IEL)
+C
+C ---- Calcul de la partie explicite < 0 du TS relatif a GMHET
+C
+              W6(IEL) = PROPCE(IEL,IPCROM)*PROPCE(IEL,IPGHC2)
+     &                 *(RTPA(IEL,IXCKCL))**(2.D0/3.D0)*VOLUME(IEL)
+C
+            ELSE
+              W5(IEL) = 0.D0
+              W6(IEL) = 0.D0
+            ENDIF
+C
+C ---- Calcul des parties explicite et implicite du TS
+C
+            ROVSDT(IEL) = ROVSDT(IEL) + MAX(W5(IEL),ZERO)
+            SMBRS(IEL)  = SMBRS(IEL)  + W6(IEL)
+C
+          ENDDO
+C
+        ENDIF
 C
       ENDIF
 C
@@ -423,7 +473,6 @@ C ---- Calcul des parties explicite et implicite du TS
 C
            IF ( RTPA(IEL,IVAR).GT. EPSICP .AND.
      &          XWATCH(NUMCHA).GT. EPSICP       ) THEN
-C
              W1(IEL) = PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCSEC)
      &                     *VOLUME(IEL)
      &                     *(1.D0/PROPCE(IEL,IPCX2C))
@@ -431,12 +480,6 @@ C
 C
               ROVSDT(IEL) = ROVSDT(IEL) + MAX(W1(IEL),ZERO)
               SMBRS(IEL)  = SMBRS(IEL)  - W1(IEL)*RTPA(IEL,IVAR)
-C
-           ELSE
-C
-C             ROVSDT(IEL) = ROVSDT(IEL) + ZERO
-C             SMBRS(IEL)  = SMBRS(IEL)  + ZERO
-C
            ENDIF
 C
           ENDDO
@@ -463,6 +506,7 @@ C
         IPCTE2 = IPPROC(ITEMP2(NUMCLA))
         IPCTE1 = IPPROC(ITEMP1)
         IPCGHT = IPPROC(IGMHET(NUMCLA))
+        IPGHC2 = IPPROC(IGMHET(NUMCLA))
 C
         IPCGD1 = IPPROC(IGMDV1(NUMCLA))
         IPCGD2 = IPPROC(IGMDV2(NUMCLA))
@@ -554,17 +598,26 @@ C
           ENDDO
 C
           COEFE(ICHX1) = A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))
-     &  /( A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))+B1(NUMCHA)*WMOLE(ICO))
+     &  /( A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))
+     &    +B1(NUMCHA)*WMOLE(ICO)
+     &    +C1(NUMCHA)*WMOLE(IH2O) )
           COEFE(ICO  ) = B1(NUMCHA)*WMOLE(ICO)
-     &   /( A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))+B1(NUMCHA)*WMOLE(ICO))
+     &   /( A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))
+     &     +B1(NUMCHA)*WMOLE(ICO)
+     &     +C1(NUMCHA)*WMOLE(IH2O) )
+          COEFE(IH2O ) = C1(NUMCHA)*WMOLE(IH2O)
+     &   /( A1(NUMCHA)*WMOLE(ICHX1C(NUMCHA))
+     &     +B1(NUMCHA)*WMOLE(ICO)
+     &     +C1(NUMCHA)*WMOLE(IH2O) )
 C
           T2         = PROPCE(IEL,IPCTE2)
           DO ICHA = 1, NCHARM
-            F1MC(ICHA) = 1.D0
+            F1MC(ICHA) = ZERO
             F2MC(ICHA) = ZERO
           ENDDO
-          MODE      = -1
+          F1MC(NUMCHA) = 1.D0
 C
+          MODE      = -1
           CALL CPTHP1
 C         ===========
      &    ( MODE  , XHDEV1    , COEFE  , F1MC   , F2MC   ,
@@ -576,17 +629,26 @@ C
             COEFE(IGE) = ZERO
           ENDDO
           COEFE(ICHX2) = A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))
-     &   /( A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))+B2(NUMCHA)*WMOLE(ICO))
+     &   /( A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))
+     &     +B2(NUMCHA)*WMOLE(ICO)
+     &     +C2(NUMCHA)*WMOLE(IH2O) )
           COEFE(ICO  ) = B2(NUMCHA)*WMOLE(ICO)
-     &   /( A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))+B2(NUMCHA)*WMOLE(ICO))
+     &   /( A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))
+     &     +B2(NUMCHA)*WMOLE(ICO)
+     &     +C2(NUMCHA)*WMOLE(IH2O) )
+          COEFE(IH2O ) = C2(NUMCHA)*WMOLE(IH2O)
+     &   /( A2(NUMCHA)*WMOLE(ICHX2C(NUMCHA))
+     &     +B2(NUMCHA)*WMOLE(ICO)
+     &     +C2(NUMCHA)*WMOLE(IH2O) )
 C
           T2         = PROPCE(IEL,IPCTE2)
           DO ICHA = 1, NCHARM
             F1MC(ICHA) = ZERO
-            F2MC(ICHA) = 1.D0
+            F2MC(ICHA) = ZERO
           ENDDO
-          MODE      = -1
+          F2MC(NUMCHA) = 1.D0
 C
+          MODE      = -1
           CALL CPTHP1
 C         ===========
      &    ( MODE  , XHDEV2    , COEFE  , F1MC   , F2MC   ,
@@ -599,7 +661,7 @@ C
 C
         ENDDO
 C
-C ------ combustion heterogene
+C ------ combustion heterogene : C(s) + 02 ---> 0.5 C0
 C        GamHET * (28/12 H(CO,T2)-16/12 H(O2,T1) )
 C
         DO IEL = 1, NCEL
@@ -660,6 +722,69 @@ C
 C
         ENDDO
 C
+C ------ combustion heterogene : C(s) + C02 ---> 2 C0
+C        GamHET * (56/12 H(CO,T2)-44/12 H(O2,T1) )
+C
+        IF ( IHTCO2 .EQ. 1 ) THEN
+          DO IEL = 1, NCEL
+C
+C        Calcul de HCO(T2)
+C
+            DO IGE = 1, NGAZEM
+              COEFE(IGE) = ZERO
+            ENDDO
+            COEFE(ICO) = 1.D0
+            DO ICHA = 1, NCHARM
+              F1MC(ICHA) = ZERO
+              F2MC(ICHA) = ZERO
+            ENDDO
+C
+            T2        = PROPCE(IEL,IPCTE2)
+            MODE      = -1
+            CALL CPTHP1
+C           ===========
+     &      ( MODE  , XHCO    , COEFE  , F1MC   , F2MC   ,
+     &        T2    )
+C
+C        Calcul de HCO2(T1)
+C
+            DO IGE = 1, NGAZEM
+              COEFE(IGE) = ZERO
+            ENDDO
+            COEFE(ICO2) = 1.D0
+            DO ICHA = 1, NCHARM
+              F1MC(ICHA) = ZERO
+              F2MC(ICHA) = ZERO
+            ENDDO
+C
+            T1        = PROPCE(IEL,IPCTE1)
+            MODE      = -1
+            CALL CPTHP1
+C           ===========
+     &      ( MODE  , XHO2    , COEFE  , F1MC   , F2MC   ,
+     &        T1    )
+C
+C         Contribution aux bilans explicite et implicite
+C
+            IF ( RTPA(IEL,IXCKCL) .GT. EPSICP ) THEN
+C
+              GAMHET = PROPCE(IEL,IPCROM)*PROPCE(IEL,IPGHC2)
+     &                 * ( (RTPA(IEL,IXCKCL))**(2.D0/3.D0) +
+     &                2.D0/3.D0*(RTP(IEL,IXCKCL)-RTPA(IEL,IXCKCL))
+     &                 /(RTPA(IEL,IXCKCL))**(1.D0/3.D0) )
+C
+            ELSE
+              GAMHET = 0.D0
+            ENDIF
+C
+           SMBRS(IEL) = SMBRS(IEL)
+     &                   +GAMHET
+     &                    *(56.D0/12.D0*XHCO-44.D0/12.D0*XHO2)
+     &                    *VOLUME(IEL)
+C
+          ENDDO
+C
+        ENDIF
 C
 C       --> Terme source sur H2 issu du sechage)
 C
@@ -752,7 +877,6 @@ C ---- Contribution du TS interfacial aux bilans explicite et implicite
 C
         DO IEL = 1, NCEL
           SMBRS(IEL)  = SMBRS(IEL)  + VOLUME(IEL) * W1(IEL)
-C          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
         ENDDO
 C
       ENDIF
@@ -787,13 +911,12 @@ C ---- Contribution du TS interfacial pour le bilan explicite
 C
         DO IEL = 1, NCEL
           SMBRS(IEL)  = SMBRS(IEL)  + VOLUME(IEL) * W1(IEL)
-C          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
         ENDDO
 C
       ENDIF
 C
 C
-C --> Terme source pour le traceur 3 (C de la comb. het.)
+C --> Terme source pour le traceur 3 (O2) (C de la comb. het.)
 C
       IF ( IVAR.EQ.ISCA(IF3M) ) THEN
 C
@@ -829,8 +952,52 @@ C ---- Contribution du TS interfacial aux bilans explicite et implicite
 C
         DO IEL = 1, NCEL
           SMBRS(IEL)  = SMBRS(IEL)  + VOLUME(IEL) * W1(IEL)
-C          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
         ENDDO
+C
+      ENDIF
+C
+C
+C
+C --> Terme source pour le traceur 3 (CO2) (C de la comb. het.)
+C
+      IF ( IHTCO2 .EQ. 1 ) THEN
+        IF ( IVAR.EQ.ISCA(IF3MC2) ) THEN
+C
+C RQ IMPORTANTE :  On prend les meme TS que pour Xck
+C                  afin d'etre conservatif
+C
+          IF (IWARNI(IVAR).GE.1) THEN
+            WRITE(NFECRA,1000) CHAINE(1:8)
+          ENDIF
+C
+C ---- Calcul prelimimaire pour la partie explicite : W1
+C                          pour la partie implicite : W2
+C
+          DO IEL = 1, NCEL
+            W1(IEL) = ZERO
+          ENDDO
+C
+          DO ICLA = 1, NCLACP
+            IPCGHT = IPPROC(IGHCO2(ICLA))
+            IXCKCL = ISCA(IXCK(ICLA))
+            DO IEL = 1, NCEL
+              IF ( RTPA(IEL,IXCKCL) .GT. EPSICP ) THEN
+                W1(IEL) = W1(IEL)
+     &                   - PROPCE(IEL,IPCROM)*PROPCE(IEL,IPCGHT)
+     &                   * ( (RTPA(IEL,IXCKCL))**(2.D0/3.D0) +
+     &                      2.D0/3.D0*(RTP(IEL,IXCKCL)-RTPA(IEL,IXCKCL))
+     &                      /(RTPA(IEL,IXCKCL))**(1.D0/3.D0) )
+              ENDIF
+            ENDDO
+          ENDDO
+C
+C ---- Contribution du TS interfacial aux bilans explicite et implicite
+C
+          DO IEL = 1, NCEL
+            SMBRS(IEL)  = SMBRS(IEL)  + VOLUME(IEL) * W1(IEL)
+          ENDDO
+C
+        ENDIF
 C
       ENDIF
 C
@@ -882,7 +1049,7 @@ C      ===========
 C
       ENDIF
 C
-C --> Terme source pour le traceur 5 (Eau issu du séchage)
+C --> Terme source pour le traceur 5 (Eau issue du séchage)
 C
       IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
 C
@@ -924,7 +1091,6 @@ C
 C
           DO IEL = 1, NCEL
             SMBRS(IEL)  = SMBRS(IEL)  + VOLUME(IEL) * W1(IEL)
-C            ROVSDT(IEL) = ROVSDT(IEL) + ZERO
           ENDDO
 C
         ENDIF
@@ -933,7 +1099,7 @@ C
 C
 C --> Terme source pour CO2
 C
-      IF ( IEQCO2 .EQ. 1 ) THEN
+      IF ( IEQCO2 .GE. 1 ) THEN
 C
         IF ( IVAR.EQ.ISCA(IYCO2) ) THEN
 C
@@ -949,65 +1115,210 @@ C ===============
 C
 C  Dryer Glassman : XK0P en (moles/m3)**(-0.75) s-1
 C
-          XK0P = 1.26D10
+C          XK0P = 1.26D10
 C
 c           XK0P = 1.26D7 * (1.1)**(NTCABS)
 c           IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
 C
-           T0P  = 4807.D0
+C           T0P  = 4807.D0
 C
 C  Howard : XK0P en (moles/m3)**(-0.75) s-1
 C
 C             XK0P = 4.11D9
 C             T0P  = 15090.D0
 C
+C  Westbrook & Dryer
+C
+          XK0P = 23.256D0
+          T0P  = 20096.D0
+C
 C Dissociation du CO2 (Trinh Minh Chinh)
 C ===================
 C
-          XK0M = 5.D8
-          T0M  = 4807.D0
+C          XK0M = 5.D8
+C          T0M  = 4807.D0
 C
-          XK0M = 0.D0
+C          XK0M = 0.D0
 C
-          DO IEL = 1, NCEL
+C  Westbrook & Dryer
 C
-            XXCO  = PROPCE(IEL,IPPROC(IYM1(ICO  )))/WMOLE(ICO)
-     &             *PROPCE(IEL,IPCROM)
-            XXO2  = PROPCE(IEL,IPPROC(IYM1(IO2  )))/WMOLE(IO2)
-     &             *PROPCE(IEL,IPCROM)
-            XXCO2 = PROPCE(IEL,IPPROC(IYM1(ICO2 )))/WMOLE(ICO2)
-     &             *PROPCE(IEL,IPCROM)
-            XXH2O = PROPCE(IEL,IPPROC(IYM1(IH2O )))/WMOLE(IH2O)
-     &             *PROPCE(IEL,IPCROM)
+          XK0M = 20.03D0
+          T0M  = 20096.D0
 C
-            XXCO  = MAX(XXCO ,ZERO)
-            XXO2  = MAX(XXO2 ,ZERO)
-            XXCO2 = MAX(XXCO2,ZERO)
-            XXH2O = MAX(XXH2O,ZERO)
+          ERR1MX = 0.D0
+          ERR2MX = 0.D0
 C
-            XCO2MX=XXCO2+MIN(XXCO,2.D0*XXO2)
+C Nombre d'iterations
 C
-            XKP  = XK0P*EXP(-T0P/PROPCE(IEL,IPPROC(ITEMP1)))
-            XKM  = XK0M*EXP(-T0M/PROPCE(IEL,IPPROC(ITEMP1)))
+          ITERMX = 500
 C
-            WPLUS = XKP*XXCO*XXO2**(0.25D0)*XXH2O**(0.5D0)
-            WMOINS= XKM*XXCO2
+C Nombre de points converges
 C
-            AUXP = WMOLE(ICO2)*WPLUS *VOLUME(IEL)
-            AUXM = WMOLE(ICO2)*WMOINS*VOLUME(IEL)
+         NBPAUV = 0
+         NBEPAU = 0
+         NBRICH = 0
+         NBERIC = 0
 C
-            SMBRS(IEL)  = SMBRS(IEL)  + AUXP-AUXM
+C Precision pour la convergence
 C
-            W1(IEL) = XKM*VOLUME(IEL)*PROPCE(IEL,IPCROM)
-            IF ( (XCO2MX-XXCO2) .GT. 0.D0 ) THEN
-              W1(IEL) = W1(IEL)
-     &                     +AUXP/(XCO2MX-XXCO2)/WMOLE(ICO2)
-     &                      *PROPCE(IEL,IPCROM)
-            ENDIF
+         ERRCH = 1.D-8
 C
-            ROVSDT(IEL) = ROVSDT(IEL) + MAX(W1(IEL),ZERO)
+         DO IEL = 1, NCEL
 C
-          ENDDO
+           XXCO  = PROPCE(IEL,IPPROC(IYM1(ICO  )))/WMOLE(ICO)
+     &            *PROPCE(IEL,IPPROC(IROM1))
+           XXO2  = PROPCE(IEL,IPPROC(IYM1(IO2  )))/WMOLE(IO2)
+     &             *PROPCE(IEL,IPPROC(IROM1))
+           XXCO2 = PROPCE(IEL,IPPROC(IYM1(ICO2 )))/WMOLE(ICO2)
+     &            *PROPCE(IEL,IPPROC(IROM1))
+           XXH2O = PROPCE(IEL,IPPROC(IYM1(IH2O )))/WMOLE(IH2O)
+     &            *PROPCE(IEL,IPPROC(IROM1))
+C
+           XXCO  = MAX(XXCO ,ZERO)
+           XXO2  = MAX(XXO2 ,ZERO)
+           XXCO2 = MAX(XXCO2,ZERO)
+           XXH2O = MAX(XXH2O,ZERO)
+C
+           XCO2MX=XXCO2+MIN(XXCO,2.D0*XXO2)
+C
+C            XKP  = XK0P*EXP(-T0P/PROPCE(IEL,IPPROC(ITEMP1)))
+C            XKM  = XK0M*EXP(-T0M/PROPCE(IEL,IPPROC(ITEMP1)))
+C
+           XKP = EXP(XK0P-T0P/PROPCE(IEL,IPPROC(ITEMP1)))
+           XKM = EXP(XK0M-T0M/PROPCE(IEL,IPPROC(ITEMP1)))
+C
+C           Recherche de l'état d'équilibre
+C
+C           Recerche itérative sans controle de convergence
+C            (pour conserver la parallelisation sur les mailles)
+C           sur le nombre de moles de reaction séparant
+C           l'etat avant réaction (tel que calculé par Cpcym)
+C           de l'état d'équilibre
+C
+C           initialisation par l'état transporté
+C
+           ANMR  = XXCO2
+           XCOT  = XXCO + XXCO2
+           XO2T  = XXO2 + 0.5D0*XXCO2
+           SQH2O = SQRT(XXH2O)
+C
+           ITERCH = 0
+ 10        CONTINUE
+C
+             XCO2E = ANMR
+             XCOE  = XCOT-ANMR
+             XO2E  = XO2T-0.5D0*ANMR
+             ITERCH = ITERCH + 1
+C
+             TER1 = XKP*(XO2E**0.25D0)*SQH2O
+             IF ( ABS(TER1) .GT. 1.D-15 ) THEN
+               DDELTA = (TER1*XCOE-XKM*XCO2E)
+     &                 /(TER1*(1.D0+XCOE/(8.D0*XO2E))+XKM)
+             ELSE
+               DDELTA = 0.D0
+             ENDIF
+C
+             ANMR = ANMR + DDELTA
+C
+C  Clipping
+C       Cote Pauvre
+             IF ( XO2T .GT. 0.5D0*XCOT ) THEN
+               ANMR = MAX(ZERO,MIN(XCOT,ANMR))
+             ELSE
+C       Cote Riche
+               ANMR = MAX(ZERO,MIN(2.D0*XO2T,ANMR))
+             ENDIF
+C
+C Test de convergence
+C
+             IF ( ABS(DDELTA) .GT. ERRCH
+     &           .AND. ITERCH.LT.ITERMX       ) GOTO 10
+C
+C Calcul du nombre de points non convergé
+C
+           IF ( ITERCH.EQ.ITERMX
+     &         .AND. ABS(DDELTA) .GT. ERRCH ) THEN
+             NBERIC = NBERIC +1
+           ENDIF
+           ERR1MX = MAX(ERR1MX,ABS(DDELTA))
+C
+           XCO2E = ANMR
+           XCOE  = XCOT-ANMR
+           XO2E  = XO2T-0.5D0*ANMR
+C
+           XDEN = XKP*SQH2O*(0.5D0*(XO2T+XO2E))**0.25D0
+           IF ( XDEN .NE. 0.D0 ) THEN
+C
+             TAUCHI = 1.D0/XDEN
+             TAUTUR = RTPA(IEL,IK(IPHAS))/RTPA(IEL,IEP(IPHAS))
+C
+             X2 = 0.D0
+             DO ICLA = 1, NCLACP
+               X2 = X2 + PROPCE(IEL,IPPROC(IX2(ICLA)))
+             ENDDO
+C
+             IF ( IEQCO2 .EQ. 1 ) THEN
+C
+C              On transporte CO2
+C
+               SMBRS(IEL)  = SMBRS(IEL)
+     &                      +WMOLE(ICO2)/PROPCE(IEL,IPPROC(IROM1))
+     &         * (XCO2E-XXCO2)/(TAUChI+TAUTUR)
+     &         * (1.D0-X2)
+     &         * VOLUME(IEL) * PROPCE(IEL,IPCROM)
+C
+             ELSE IF ( IEQCO2 .EQ. 2 ) THEN
+C
+C              On transporte CO
+C
+               SMBRS(IEL)  = SMBRS(IEL)
+     &                      +WMOLE(ICO)/PROPCE(IEL,IPPROC(IROM1))
+     &         * (XCOe-XXCO)/(TAUCHI+TAUTUR)
+     &         * (1.D0-X2)
+     &         * VOLUME(IEL) * PROPCE(IEL,IPCROM)
+C
+             ENDIF
+C
+             W1(IEL) = VOLUME(IEL)*PROPCE(IEL,IPCROM)/(TAUCHI+TAUTUR)
+             ROVSDT(IEL) = ROVSDT(IEL) +   MAX(W1(IEL),ZERO)
+C
+           ELSE
+             ROVSDT(IEL) = ROVSDT(IEL) + 0.D0
+             SMBRS(IEL)  = SMBRS(IEL)  + 0.D0
+           ENDIF
+C
+         ENDDO
+C
+         IF(IRANGP.GE.0) THEN
+           CALL PARCPT(NBERIC)
+           CALL PARMAX(ERR1MX)
+         ENDIF
+         write(NFECRA,*) ' Erreur max = ',ERR1MX
+         write(NFECRA,*) ' Points non   ',NBERIC
+C
+C     Terme source : combustion heterogene par le CO2
+C
+         IF ( IHTCO2 .EQ. 1) THEN
+C
+           DO IEL = 1, NCEL
+C
+             AUX = 0.D0
+             DO ICLA = 1,NCLACP
+C
+               IXCKCL = ISCA(IXCK(ICLA))
+               IPGHC2 = IPPROC(IGHCO2(ICLA))
+C
+               AUX = AUX
+     &              + PROPCE(IEL,IPCROM)*PROPCE(IEL,IPGHC2)
+     &               *(RTPA(IEL,IXCKCL))**(2.D0/3.D0)*VOLUME(IEL)
+C
+             ENDDO
+C
+             ROVSDT(IEL) = ROVSDT(IEL) - AUX*(WMOLE(ICO2)/0.012)
+C
+           ENDDO
+C
+         ENDIF
 C
         ENDIF
 C

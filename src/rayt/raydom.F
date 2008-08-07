@@ -411,9 +411,12 @@ C
                 ENDDO
               ENDDO
             ELSE IF ( IPPMOD(ICFUEL) .GE.0 ) THEN
-              DO IEL = 1,NCEL
-                W10(IEL) = W10(IEL)
-     &                   + RTPA(IEL,ISCA(IYFOL))*CK(IEL,2)
+              DO ICLA = 1,NCLAFU
+                IPCLA = 1+ICLA
+                DO IEL = 1,NCEL
+                  W10(IEL) = W10(IEL)
+     &                     + RTPA(IEL,ISCA(IYFOL(ICLA)))*CK(IEL,IPCLA)
+                ENDDO
               ENDDO
             ENDIF
 C
@@ -730,8 +733,11 @@ C         Fuel
 C
             ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
 C
-              DO IEL = 1,NCEL
-                TEMPK(IEL,2) = PROPCE(IEL,IPPROC(ITEMP3))
+              DO ICLA = 1, NCLAFU
+                IPCLA = 1+ICLA
+                DO IEL = 1,NCEL
+                  TEMPK(IEL,IPCLA) = PROPCE(IEL,IPPROC(ITEMP3(ICLA)))
+                ENDDO
               ENDDO
 C
             ENDIF
@@ -780,9 +786,12 @@ C
 C       Fuel
 C
           ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              RAYIMP(IEL,2) =STEPHN*CK(IEL,2)
-     &                             *(TEMPK(IEL,2)**4)
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                RAYIMP(IEL,IPCLA) =
+     &                  STEPHN*CK(IEL,IPCLA)*(TEMPK(IEL,IPCLA)**4)
+              ENDDO
             ENDDO
           ENDIF
 C
@@ -824,10 +833,14 @@ C
 C       FUEL
 C
           ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              SMBRS(IEL) = SMBRS(IEL)
-     &                    +( 3.D0 * RTPA(IEL,ISCA(IYFOL))
-     &                      *CK(IEL,2)*(TEMPK(IEL,2)**4)*VOLUME(IEL) )
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                SMBRS(IEL) = SMBRS(IEL)
+     &                      +( 3.D0 * RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                        *CK(IEL,IPCLA)*(TEMPK(IEL,IPCLA)**4)
+     &                        *VOLUME(IEL) )
+              ENDDO
             ENDDO
           ENDIF
 C
@@ -854,10 +867,13 @@ C
 C        Fuel
 C
           ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              ROVSDT(IEL) = ROVSDT(IEL)
-     &                     + (3.D0*RTPA(IEL,ISCA(IYFOL))
-     &                            *CK(IEL,2)*VOLUME(IEL) )
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                ROVSDT(IEL) = ROVSDT(IEL)
+     &                       + (3.D0*RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                              *CK(IEL,IPCLA)*VOLUME(IEL) )
+              ENDDO
             ENDDO
 C
           ENDIF
@@ -879,17 +895,20 @@ C
               IPCLA = 1+ICLA
               DO IEL = 1,NCEL
                 W10(IEL) = W10(IEL)
-     &                          + ( PROPCE(IEL,IPPROC(IX2(ICLA)))
-     &                          *   CK(IEL,IPCLA)                 )
+     &                    + ( PROPCE(IEL,IPPROC(IX2(ICLA)))
+     &                       *CK(IEL,IPCLA)                )
               ENDDO
             ENDDO
 
 C        Fuel
 C
           ELSE IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              W10(IEL) = W10(IEL)
-     &                  +RTPA(IEL,ISCA(IYFOL))*CK(IEL,2)
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                W10(IEL) = W10(IEL)
+     &                    +RTPA(IEL,ISCA(IYFOL(ICLA)))*CK(IEL,IPCLA)
+              ENDDO
             ENDDO
 C
           ENDIF
@@ -949,10 +968,13 @@ C
 C       Fuel
 C
           ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              SMBRS(IEL) = SMBRS(IEL)
-     &                    + RTPA(IEL,ISCA(IYFOL))
-     &                     *RAYIMP(IEL,2)*VOLUME(IEL)*UNSPI
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                SMBRS(IEL) = SMBRS(IEL)
+     &                      + RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                       *RAYIMP(IEL,IPCLA)*VOLUME(IEL)*UNSPI
+              ENDDO
             ENDDO
 C
           ENDIF
@@ -979,10 +1001,13 @@ C
 C        Fuel
 C
           ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              ROVSDT(IEL) = ROVSDT(IEL)
-     &                     + RTPA(IEL,ISCA(IYFOL))
-     &                      *CK(IEL,2)*VOLUME(IEL)
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                ROVSDT(IEL) = ROVSDT(IEL)
+     &                       + RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                        *CK(IEL,IPCLA)*VOLUME(IEL)
+              ENDDO
             ENDDO
 C
           ENDIF
@@ -1195,18 +1220,22 @@ C
 C Combustion Fuel : On rajoute la contribution des particules
 C
           ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
 C         Fluide
-              RAYABS(IEL,IPH) = RAYABS(IEL,IPH)
-     &                         + RTPA(IEL,ISCA(IYFOL))
-     &                          *CK(IEL,2)*RAYEXP(IEL,IPH)
-              RAYEMI(IEL,IPH) = RAYEMI(IEL,IPH)
-     &                         - 4.0D0*RTPA(IEL,ISCA(IYFOL))
-     &                                * RAYIMP(IEL,2)
+                RAYABS(IEL,IPH) = RAYABS(IEL,IPH)
+     &                           + RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                            *CK(IEL,IPCLA)*RAYEXP(IEL,IPH)
+                RAYEMI(IEL,IPH) = RAYEMI(IEL,IPH)
+     &                         - 4.0D0*RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                                * RAYIMP(IEL,IPCLA)
 C         Particule
-              RAYABS(IEL,2) = CK(IEL,2)*RAYEXP(IEL,IPH)
-              RAYEMI(IEL,2) = - 4.0D0 * RAYIMP(IEL,2)
-              RAYEXP(IEL,2) = RAYABS(IEL,2)+RAYEMI(IEL,2)
+                RAYABS(IEL,IPCLA) = CK(IEL,IPCLA)*RAYEXP(IEL,IPH)
+                RAYEMI(IEL,IPCLA) = -4.D0*RAYIMP(IEL,IPCLA)
+                RAYEXP(IEL,IPCLA) = RAYABS(IEL,IPCLA)
+     &                             +RAYEMI(IEL,IPCLA)
+              ENDDO
             ENDDO
 C
           ENDIF
@@ -1264,14 +1293,17 @@ C
 C Combustion FUEL : On rajoute la contribution des particules
 C
           ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-            DO IEL = 1,NCEL
-              RAYIMP(IEL,IPH) = RAYIMP(IEL,IPH)
-     &         -16.D0*CK(IEL,2)*RTPA(IEL,ISCA(IYFOL))
-     &               *STEPHN*(TEMPK(IEL,2)**3)
-     &               / CP2FOL
-              RAYIMP(IEL,IPCLA) =
-     &         -16.D0*CK(IEL,2) *STEPHN *(TEMPK(IEL,2)**3)
-     &                                / CP2FOL
+            DO ICLA = 1,NCLAFU
+              IPCLA = 1+ICLA
+              DO IEL = 1,NCEL
+                RAYIMP(IEL,IPH) = RAYIMP(IEL,IPH)
+     &           -16.D0*CK(IEL,IPCLA)*RTPA(IEL,ISCA(IYFOL(ICLA)))
+     &                 *STEPHN*(TEMPK(IEL,IPCLA)**3)
+     &                 /CP2FOL
+                RAYIMP(IEL,IPCLA) =
+     &           -16.D0*CK(IEL,IPCLA)*STEPHN*(TEMPK(IEL,IPCLA)**3)
+     &                           /CP2FOL
+              ENDDO
             ENDDO
           ENDIF
 C

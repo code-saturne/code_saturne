@@ -85,6 +85,7 @@ C
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
       INCLUDE "cpincl.h"
+      INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
 C
 C***********************************************************************
@@ -771,7 +772,7 @@ C--> Pour le Charbon Pulverise :
 C
 C--> Pour le Fuel :
       IF ( IPPMOD(ICFUEL) .GE. 0 ) THEN
-        NPHASC = NPHASC + 1
+        NPHASC = NPHASC + NCLAFU
       ENDIF
 C
       RETURN

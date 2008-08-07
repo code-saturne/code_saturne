@@ -121,17 +121,24 @@ C        Y2CH(CH)     --> Coefficient stoechiometrique (adim)
 C                         calcule si IY2CH = 0 ; donne si IY2CH = 1
 C        A2CH(CH)     --> Constante preexponetielle (1/s)
 C        E2CH(CH)     --> Energie d'activation (J/mol)
-C         - Parametres cinetiques pour la combustion heterogene du coke
+C         - Parametres cinetiques pour la combustion heterogene du coke avec O2
 C           (Modele a sphere retrecissante)
 C        AHETCH(CH)   --> Constante pre-exponentielle (kg/m2/s/atm)
 C        EHETCH(CH)   --> Energie d'activation (kcal/mol)
 C        IOCHET(CH)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
 C
+C         - Parametres cinetiques pour la combustion heterogene du coke avec CO2
+C           (Modele a sphere retrecissante)
+C        AHETC2(CH)   --> Constante pre-exponentielle (kg/m2/s/atm)
+C        EHETC2(CH)   --> Energie d'activation (kcal/mol)
+C        IOETC2(CH)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
+C
       INTEGER          IY1CH (NCHARM), IY2CH (NCHARM)
-      INTEGER          IOCHET (NCHARM)
+      INTEGER          IOCHET (NCHARM) , IOETC2(NCHARM)
       DOUBLE PRECISION Y1CH  (NCHARM), A1CH  (NCHARM), E1CH  (NCHARM),
      &                 Y2CH  (NCHARM), A2CH  (NCHARM), E2CH  (NCHARM),
-     &                 AHETCH(NCHARM), EHETCH(NCHARM)
+     &                 AHETCH(NCHARM), EHETCH(NCHARM),
+     &                 AHETC2(NCHARM), EHETC2(NCHARM)
 C
 C      - Enthalpie du charbon reactif, coke et cendres
 C     ICH(CH)      --> Pointeur dans le tableau EHSOLI pour
@@ -179,6 +186,19 @@ C
      &                 RHO20 (NCLCPM), RHO2MN(NCLCPM),
      &                 XMP0  (NCLCPM), XMASH (NCLCPM)
 C
+C--> DONNEES RELATIVES AUX OXYDANTS
+C
+C
+C       NOXYD        --> Nombre d'Oxydants (Maximum 3)
+C
+      INTEGER          NOXYD
+C
+C       OXYO2       --> composition des oxydants en O2
+C       OXYN2       --> composition des oxydants en N2
+C       OXYH2O      --> composition des oxydants en H2O
+C       OXYCO2      --> composition des oxydants en CO2
+C
+      DOUBLE PRECISION  OXYO2(3),OXYN2(3),OXYH2O(3),OXYCO2(3)
 C
 C--> DONNEES RELATIVES A LA COMBUSTION DES ESPECES GAZEUSES
 C
@@ -191,42 +211,43 @@ C        IO2         --> Pointeur O2    pour EHGAZE et WMOLE
 C        ICO2        --> Pointeur CO2   pour EHGAZE et WMOLE
 C        IH2O        --> Pointeur H2O   pour EHGAZE et WMOLE
 C        IN2         --> Pointeur N2    pour EHGAZE et WMOLE
-C        XSI         --> XSI = 3,76 pour de l'air
-C        F3MAX       --> Maximum pour le traceur F3
 C        CHX1(CH)    --> Composition de l'hydrocarbure relatif
 C                        au MVl : CH(X1)
 C        CHX2(CH)    --> Composition de l'hydrocarbure relatif
 C                        au MVL : CH(X2)
 C        A1(CH),     --> Coefficients stoechiometriques molaires pour
 C        B1(CH)          la reaction de devolatilisation a basses T
+C        C1(CH)
 C        A2(CH),     --> Coefficients stoechiometriques molaires pour
 C        B2(CH)          la reaction de devolatilisation a basses T
+C        C2(CH)
 C
       INTEGER          ICHX1C(NCHARM), ICHX2C(NCHARM),
      &                 ICHX1, ICHX2, ICO, IO2, ICO2, IH2O, IN2
-      DOUBLE PRECISION XSI, F3MAX,
-     &                 CHX1(NCHARM), CHX2(NCHARM),
-     &                 A1(NCHARM), B1(NCHARM),
-     &                 A2(NCHARM), B2(NCHARM)
+      DOUBLE PRECISION CHX1(NCHARM), CHX2(NCHARM),
+     &                 A1(NCHARM), B1(NCHARM),C1(NCHARM),
+     &                 A2(NCHARM), B2(NCHARM),C2(NCHARM)
 C
 C--> DONNEES COMPLEMENTAIRES RELATIVES AU CALCUL DE RHO
 C    SUR LES FACETTES DE BORD
 C
 C       IENTAT(IENT) --> Indicateur air par type de facette d'entree
 C       IENTCP(IENT) --> Indicateur CP  par type de facette d'entree
+C       INMOXY(IENT) --> Numero de l'oxydant
 C       TIMPAT(IENT) --> Temperature en K pour l'air relative
 C                         a l'entree IENT
 C       X20(IENT,    --> Fraction massique dans le melange de charbon
 C           ICLA   )     de la classe ICLA relative a l'entree IENT
 C
       INTEGER          IENTAT(NOZPPM), IENTCP(NOZPPM)
+      INTEGER          INMOXY(NOZPPM)
       DOUBLE PRECISION TIMPAT(NOZPPM), X20(NOZPPM,NCLCPM)
 C
 C--> POINTEURS DANS LE TABLEAU TBMCR
 C
       INTEGER IF1MC(NCHARM) , IF2MC(NCHARM)
       INTEGER IX1MC ,IX2MC, ICHX1F1, ICHX2F2
-      INTEGER ICOF1, ICOF2
+      INTEGER ICOF1, ICOF2, IH2OF1 , IH2OF2
 C
 C--> DEFINITION DES COMMONS
 C
@@ -236,10 +257,11 @@ C
      &                  ICHX1C, ICHX2C,
      &                  ICHX1 , ICHX2 ,
      &                  ICO   , IO2   , ICO2  , IH2O  , IN2   ,
-     &                  IENTAT, IENTCP,
+     &                  IENTAT, IENTCP, INMOXY,
      &                  IF1MC , IF2MC ,
      &                  IX1MC , IX2MC , ICHX1F1, ICHX2F2,
-     &                  ICOF1 , ICOF2 , IOCHET
+     &                  ICOF1 , ICOF2 , IOCHET , IOETC2 ,
+     &                  IH2OF1 , IH2OF2 , NOXYD
 C
       COMMON / RCPCOM / CCH   , HCH   , OCH   ,
      &                  ALPHA , BETA  , ALPHAM, BETAM ,
@@ -250,15 +272,14 @@ C
      &                  XASHCH, CPASHC, H0ASHC, XWATCH ,
      &                  H02CH , CP2CH ,
      &                  Y1CH  , A1CH  , E1CH  , Y2CH  , A2CH  , E2CH  ,
-     &                  AHETCH, EHETCH,
+     &                  AHETCH, EHETCH, AHETC2 , EHETC2 ,
      &                  EHSOLI, WMOLS ,
      &                  DIAM20, DIA2MN, RHO20 , RHO2MN,
      &                  XMP0  , XMASH ,
-     &                  XSI   , F3MAX ,
      &                  CHX1  , CHX2  ,
-     &                  A1    , B1    , A2    , B2    ,
+     &                  A1    , B1    , C1    , A2    , B2    , C2    ,
      &                  TIMPAT, X20   ,
-     &                  EH0SOL, CP2WAT
+     &                  EH0SOL, CP2WAT, OXYO2 , OXYN2 , OXYH2O, OXYCO2
 C
 C--> GRANDEURS FOURNIES PAR L'UTILISATEUR EN CONDITIONS AUX LIMITES
 C      PERMETTANT DE CALCULER AUTOMATIQUEMENT LA VITESSE, LA TURBULENCE,
@@ -293,14 +314,5 @@ C
        INTEGER          NPOC
        COMMON/ITABLC/   NPOC
 C
-C Equation sur YCO2
-C
-       INTEGER         IEQCO2 , IYCO2
-       COMMON/EQUCO2 / IEQCO2 , IYCO2
-
-
-
-
-
 C FIN
 c@z

@@ -88,6 +88,7 @@ C
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
       INCLUDE "coincl.h"
+      INCLUDE "ppcpfu.h"
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
@@ -100,7 +101,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER       IPROP, IGE
+      INTEGER       IPROP, IGE , ICLA , IPROP2
 C
 C***********************************************************************
 C
@@ -120,20 +121,32 @@ C    Phase continue (melange gazeux)
       IPROP = IPROP + 1
       IMMEL = IPROP
 C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        IPROP = IPROP + 1
+        IGHCN1 = IPROP
+        IPROP = IPROP + 1
+        IGHCN2 = IPROP
+        IPROP = IPROP + 1
+        IGNOTH = IPROP
+      ENDIF
+C
 C   Phase dispersee (classes de particules)
 C
-      IPROP  = IPROP
-      ITEMP3 = IPROP
-      IPROP        = IPROP + 1
-      IROM3        = IPROP
-      IPROP        = IPROP + 1
-      IDIAM3       = IPROP
-      IPROP        = IPROP + 1
-      IH1HLF       = IPROP
-      IPROP        = IPROP + 1
-      IGMEVA       = IPROP
-      IPROP        = IPROP + 1
-      IGMHTF       = IPROP
+      IPROP2 = IPROP
+      DO ICLA = 1, NCLAFU
+        IPROP        = IPROP2 + ICLA
+        ITEMP3(ICLA) = IPROP
+        IPROP        = IPROP2 + 1*NCLAFU + ICLA
+        IROM3(ICLA)  = IPROP
+        IPROP        = IPROP2 + 2*NCLAFU + ICLA
+        IDIAM3(ICLA) = IPROP
+        IPROP        = IPROP2 + 3*NCLAFU + ICLA
+        IH1HLF(ICLA) = IPROP
+        IPROP        = IPROP2 + 4*NCLAFU + ICLA
+        IGMEVA(ICLA) = IPROP
+        IPROP        = IPROP2 + 5*NCLAFU + ICLA
+        IGMHTF(ICLA) = IPROP
+      ENDDO
 C
 C   Phase dispersee (Luminance)
       IPROP  = IPROP + 1
@@ -179,38 +192,61 @@ C
       IPPPST                = IPPPST + 1
       IPPPRO(IPROP)         = IPPPST
 C
+      IF ( IEQNOX .EQ. 1 ) THEN
+C
+        IPROP                 = IPROP + 1
+        IPPROC(IGHCN1)        = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
+C
+        IPROP                 = IPROP + 1
+        IPPROC(IGHCN2)        = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
+C
+        IPROP                 = IPROP + 1
+        IPPROC(IGNOTH)        = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
+C
+      ENDIF
 C
 C   Phase dispersee (classes de particules)
 C
-      IPROP                 = IPROP +1
-      IPPROC(ITEMP3)        = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+      IPROP2 = IPROP
+      DO ICLA = 1, NCLAFU
 C
-      IPROP                 = IPROP + 1
-      IPPROC(IROM3)         = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+        IPROP                 = IPROP2 + ICLA
+        IPPROC(ITEMP3(ICLA))  = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
 C
-      IPROP                 = IPROP + 1
-      IPPROC(IDIAM3)        = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+        IPROP                 = IPROP2 + 1*NCLAFU + ICLA
+        IPPROC(IROM3(ICLA))   = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
 C
-      IPROP                 = IPROP + 1
-      IPPROC(IH1HLF)        = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+        IPROP                 = IPROP2 + 2*NCLAFU + ICLA
+        IPPROC(IDIAM3(ICLA))  = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
 C
-      IPROP                 = IPROP + 1
-      IPPROC(IGMEVA)        = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+        IPROP                 = IPROP2 + 3*NCLAFU + ICLA
+        IPPROC(IH1HLF(ICLA))  = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
 C
-      IPROP                 = IPROP + 1
-      IPPROC(IGMHTF)        = IPROP
-      IPPPST                = IPPPST + 1
-      IPPPRO(IPROP)         = IPPPST
+        IPROP                 = IPROP2 + 4*NCLAFU + ICLA
+        IPPROC(IGMEVA(ICLA))  = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
+C
+        IPROP                 = IPROP2 + 5*NCLAFU + ICLA
+        IPPROC(IGMHTF(ICLA))  = IPROP
+        IPPPST                = IPPPST + 1
+        IPPPRO(IPROP)         = IPPPST
+C
+      ENDDO
 C
 C
 C    Rayonnement : luminance

@@ -98,6 +98,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -130,6 +131,9 @@ C
       DOUBLE PRECISION DP , LV, YVS, YV , TEBL , SHRD , XMEAU, XMGAZ
       DOUBLE PRECISION XNUSS, TLIMIT , TMINI
       DOUBLE PRECISION TMIN, TMAX, YVMIN, YVMAX, YYMAX
+C
+      INTEGER          IPYCO2
+      DOUBLE PRECISION PPRCO2
 C
 C***********************************************************************
 C=======================================================================
@@ -282,9 +286,8 @@ C
         ENDIF
       ENDDO
 C
-C
 C=======================================================================
-C 4. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE
+C 4. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE AVEC O2
 C=======================================================================
 C
       IPCYOX = IPPROC(IYM1(IO2))
@@ -358,9 +361,87 @@ C
 C
       ENDDO
 C
+C=======================================================================
+C 5. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE AVEC CO2
+C=======================================================================
+C
+      IF ( IHTCO2 .EQ. 1) THEN
+C
+        IPYCO2 = IPPROC(IYM1(ICO2))
+        IPCTE1 = IPPROC(ITEMP1)
+C
+        DO ICLA = 1, NCLACP
+C
+          IPCGHT = IPPROC(IGHCO2(ICLA))
+          IPCDIA = IPPROC(IDIAM2(ICLA))
+          ICHA   = ICHCOR(ICLA)
+          IPCTEM = IPPROC(ITEMP2(ICLA))
+C
+          DO IEL = 1, NCEL
+C
+            XNP   = RTPA(IEL,ISCA(INP(ICLA)))
+            XUASH = XNP*(1.D0-XASHCH(ICHA))*XMP0(ICLA)
+C
+C --- Calcul de la pression partielle en oxygene (atm)
+C                                                 ---
+C       PCO2 = RHO1*RR*T*YO2/MO2
+C
+            PPRCO2 = W3(IEL)*RR*PROPCE(IEL,IPCTE1)
+     &              *PROPCE(IEL,IPYCO2)/WMOLE(ICO2)
+            PPRCO2 = PPRCO2 / PREFTH
+C
+C --- Coefficient de cinetique chimique de formation de CO
+C       en (kg.m-2.s-1.atm(-n))
+C
+            XDFCHI = AHETC2(ICHCOR(ICLA))
+     &        * EXP(-EHETC2(ICHCOR(ICLA))*4185.D0
+     &               / (RR * PROPCE(IEL,IPCTEM)) )
+C
+C --- Coefficient de diffusion en  (Kg/m2/s/atm) : XDFEXT
+C     Coefficient global pour n=0.5 en (kg/m2/s) : XDFTOT0
+C     Coefficient global pour n=1   en (Kg/m2/s) : XDFTOT1
+C
+            DIACKA = PROPCE(IEL,IPCDIA)/DIAM20(ICLA)
+            IF ( DIACKA .GT. EPSICP ) THEN
+              XDFEXT = 2.53D-7*((PROPCE(IEL,IPCTEM))**0.75D0)
+     &                / PROPCE(IEL,IPCDIA)*2.D0
+              XDFTOT1 = PPRCO2 / ( 1.D0/XDFCHI + 1.D0/XDFEXT )
+              XDFTOT0 = -(XDFCHI**2)/(2.D0*XDFEXT)+(PPRCO2*XDFCHI**2
+     &                  +(XDFCHI**4)/(4.D0*XDFEXT**2))**0.5D0
+            ELSE
+              XDFTOT1 = XDFCHI*PPRCO2
+              XDFTOT0 = XDFCHI*PPRCO2**0.5D0
+            ENDIF
+C
+C Rq AE : Pour l'instant, on se limite a ce test
+C         L'introduction d'une correlation de soufflage viendra
+C         ulterieurement.
+C
+C --- Calcul de COXCK tq : Se = COXCK * XCK**(2/3)
+C
+            COXCK = ZERO
+            IF ( XUASH.GT.EPSICP ) THEN
+              COXCK = PI*(DIAM20(ICLA)**2)*
+     &              (RHO20(ICLA)/(RHOCK(ICHA)*XUASH))**(2.D0/3.D0)
+            ENDIF
+C
+C --- Calcul de PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT0*PPRCO2*XNP < 0
+C --- ou  PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT1*PPRCO2*XNP < 0
+C
+            IF (IOETC2(ICHA).EQ.1) THEN
+              PROPCE(IEL,IPCGHT) = - XDFTOT1*COXCK*XNP
+            ELSE
+              PROPCE(IEL,IPCGHT) = - XDFTOT0*COXCK*XNP
+            ENDIF
+C
+          ENDDO
+C
+        ENDDO
+C
+      ENDIF
 C
 C=======================================================================
-C 5. TRANSFERTS DE MASSE LORS DE LA PHASE DE SECHAGE
+C 6. TRANSFERTS DE MASSE LORS DE LA PHASE DE SECHAGE
 C=======================================================================
 C
       IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN

@@ -87,6 +87,7 @@ C
       INCLUDE "cstnum.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
+      INCLUDE "ppcpfu.h"
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
@@ -141,9 +142,18 @@ C   Phase dispersee (classes de particules)
         IGMDV2(ICLA) = IPROP
         IPROP        = IPROP2 + 7*NCLACP + ICLA
         IGMHET(ICLA) = IPROP
-        IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+        IF ( IHTCO2 .EQ. 1 ) THEN
           IPROP        = IPROP2 + 8*NCLACP + ICLA
-          IGMSEC(ICLA) = IPROP
+          IGHCO2(ICLA) = IPROP
+          IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+            IPROP        = IPROP2 + 9*NCLACP + ICLA
+            IGMSEC(ICLA) = IPROP
+          ENDIF
+        ELSE
+          IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+            IPROP        = IPROP2 + 8*NCLACP + ICLA
+            IGMSEC(ICLA) = IPROP
+          ENDIF
         ENDIF
       ENDDO
 C
@@ -237,11 +247,25 @@ C
         IPPPST                = IPPPST + 1
         IPPPRO(IPROP)         = IPPPST
 C
-        IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+        IF ( IHTCO2 .EQ. 1 ) THEN
           IPROP                 = IPROP2 + 8*NCLACP + ICLA
-          IPPROC(IGMSEC(ICLA))  = IPROP
+          IPPROC(IGHCO2(ICLA))  = IPROP
           IPPPST                = IPPPST + 1
           IPPPRO(IPROP)         = IPPPST
+C
+          IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+            IPROP                 = IPROP2 + 9*NCLACP + ICLA
+            IPPROC(IGMSEC(ICLA))  = IPROP
+            IPPPST                = IPPPST + 1
+            IPPPRO(IPROP)         = IPPPST
+          ENDIF
+        ELSE
+          IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
+            IPROP                 = IPROP2 + 8*NCLACP + ICLA
+            IPPROC(IGMSEC(ICLA))  = IPROP
+            IPPPST                = IPPPST + 1
+            IPPPRO(IPROP)         = IPPPST
+          ENDIF
         ENDIF
 C
       ENDDO

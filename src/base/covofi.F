@@ -194,6 +194,7 @@ C
       INCLUDE "ppthch.h"
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
+      INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagran.h"
@@ -498,7 +499,9 @@ C     Ordre 2 non pris en compte
 C     Pour l'instant rayonnement non compatible avec Fuel
 C
       IF ( IRAYON(IPHAS).GE.1 .AND.
-     &     IPPMOD(ICFUEL) .GE. 0  .AND. ISCAL.EQ. IHLF ) THEN
+     &     IPPMOD(ICFUEL) .GE. 0  .AND.
+     &     ( ISCA(ISCAL) .GE. ISCA(IHLF(1)) .AND.
+     &       ISCA(ISCAL) .LE. ISCA(IHLF(NCLAFU)) ) ) THEN
 C
         WRITE(NFECRA,9001)
         CALL CSEXIT (1)

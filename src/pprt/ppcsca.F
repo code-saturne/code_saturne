@@ -82,6 +82,8 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "elincl.h"
+      INCLUDE "fuincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -148,15 +150,21 @@ C --> Flamme charbon pulverise
 C
 C ------ Transport d'H2
       IF ( IPPMOD(ICP3PL).EQ.0 ) THEN
-        NSCAPP = 1 + 2*NCHARB + 2 + 4*NCLACP
 C
-        IF ( IEQCO2.EQ. 1) NSCAPP = NSCAPP + 1
+        NSCAPP = 1 + 2*NCHARB + 2 + 4*NCLACP + (NOXYD-1)
+C
+        IF ( IHTCO2.EQ. 1) NSCAPP = NSCAPP + 1
+        IF ( IEQCO2.GE. 1) NSCAPP = NSCAPP + 1
 C
       ENDIF
-C ------ Transport d'H2 + phase de sechage
-      IF ( IPPMOD(ICP3PL).EQ.1 ) THEN
-        NSCAPP = 1 + 2*NCHARB + 3 +5*NCLACP
 C
+C ------ Transport d'H2 + phase de sechage
+C
+      IF ( IPPMOD(ICP3PL).EQ.1 ) THEN
+C
+        NSCAPP = 1 + 2*NCHARB + 3 +5*NCLACP + (NOXYD-1)
+C
+        IF ( IHTCO2.EQ. 1) NSCAPP = NSCAPP + 1
         IF ( IEQCO2.EQ. 1) NSCAPP = NSCAPP + 1
 C
       ENDIF
@@ -203,8 +211,9 @@ C 5. MODELES DE COMBUSTION FUEL (ICFUEL)
 C=======================================================================
 C
       IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        NSCAPP = 7
-        IF ( IEQCO2.EQ. 1) NSCAPP = NSCAPP + 1
+        NSCAPP = 4 + 3*NCLAFU
+        IF ( IEQCO2.GE. 1) NSCAPP = NSCAPP + 1
+        IF ( IEQNOX.EQ. 1) NSCAPP = NSCAPP + 3
       ENDIF
 C
 C=======================================================================

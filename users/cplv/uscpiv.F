@@ -219,6 +219,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -250,11 +251,13 @@ C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IEL, IGE, MODE, ICLA, ICHA, IPHAS
+      INTEGER          IOXY
 C
       DOUBLE PRECISION T1INIT, H1INIT, COEFE(NGAZEM)
       DOUBLE PRECISION T2INIT, H2INIT
       DOUBLE PRECISION F1MC(NCHARM), F2MC(NCHARM)
       DOUBLE PRECISION XKENT, XEENT, D2S3
+      DOUBLE PRECISION WMH2O,WMCO2,WMN2,WMO2,DMAS
 C
 C***********************************************************************
 C
@@ -348,14 +351,12 @@ C
         DO ICLA = 1, NCLACP
           ICHA = ICHCOR(ICLA)
 C
-          H2INIT = H02CH(ICHA) +  CP2CH(ICHA)*(T2INIT-TREFTH)
-C
           DO IEL = 1, NCEL
 
             RTP(IEL,ISCA(IXCH(ICLA))) = ZERO
             RTP(IEL,ISCA(IXCK(ICLA))) = ZERO
             RTP(IEL,ISCA(INP(ICLA) )) = ZERO
-            RTP(IEL,ISCA(IH2(ICLA))) = H2INIT
+            RTP(IEL,ISCA(IH2(ICLA)))  = ZERO
 C
             IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
               RTP(IEL,ISCA(IXWT(ICLA))) = ZERO
@@ -369,8 +370,20 @@ C
         DO IGE = 1, NGAZEM
           COEFE(IGE) = ZERO
         ENDDO
-        COEFE(IO2) = WMOLE(IO2) / (WMOLE(IO2)+XSI*WMOLE(IN2))
-        COEFE(IN2) = 1.D0 - COEFE(IO2)
+C
+C       On considere l'oxydant 1
+C
+        COEFE(IO2) = WMOLE(IO2)*OXYO2(1) 
+     &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
+        COEFE(IH2O) = WMOLE(IH2O)*OXYH2O(1) 
+     &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
+        COEFE(ICO2) = WMOLE(ICO2)*OXYCO2(1) 
+     &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
+        COEFE(IN2) = 1.D0-COEFE(IO2)-COEFE(IH2O)-COEFE(ICO2)
+C
         DO ICHA = 1, NCHARM
           F1MC(ICHA) = ZERO
           F2MC(ICHA) = ZERO
@@ -394,14 +407,43 @@ C
             RTP(IEL,ISCA(IF2M(ICHA))) = ZERO
           ENDDO
         ENDDO
+C
         DO IEL = 1, NCEL
+C
           RTP(IEL,ISCA(IF3M)) = ZERO
+C
+          IF ( IHTCO2 .EQ. 1 ) THEN
+            RTP(IEL,ISCA(IF3MC2)) = ZERO
+          ENDIF
+C
           RTP(IEL,ISCA(IF4P2M)) = ZERO
+C
           IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
             RTP(IEL,ISCA(IF5M)) = ZERO
           ENDIF
-          IF ( IEQCO2 .EQ. 1 ) THEN
-            RTP(IEL,ISCA(IYCO2)) = ZERO
+C
+          IF ( NOXYD .GE. 2 ) THEN
+            RTP(IEL,ISCA(IF6M)) = ZERO
+          ENDIF
+C
+          IF ( NOXYD .EQ. 3 ) THEN
+            RTP(IEL,ISCA(IF7M)) = ZERO
+          ENDIF
+C
+          IF ( IEQCO2.GE.1 ) THEN
+C
+            IOXY   =  1
+            WMO2   = WMOLE(IO2)
+            WMCO2  = WMOLE(ICO2)
+            WMH2O  = WMOLE(IH2O)    
+            WMN2   = WMOLE(IN2)  
+C
+            DMAS = ( OXYO2 (IOXY)*WMO2 +OXYN2 (IOXY)*WMN2
+     &              +OXYH2O(IOXY)*WMH2O+OXYCO2(IOXY)*WMCO2 ) 
+            XCO2 = OXYCO2(IOXY)*WMCO2/DMAS
+C
+            RTP(IEL,ISCA(IYCO2)) = OXYCO2(IOXY)*WMCO2/DMAS
+C
           ENDIF
         ENDDO
 C

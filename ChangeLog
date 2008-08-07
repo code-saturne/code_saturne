@@ -1,4 +1,68 @@
-* 06/08/2008 - David Monfort <david.monfort@edf.fr>
+* 07/08/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Add oxycombustion and fuel classes management.
+  added routines:
+    include/pprt/ppcpfu.h
+    src/fuel/fucyno.F
+  deleted routines:
+    src/cplv/cpcym1.F
+    src/cplv/cppdf5.F
+  modified routines:
+    include/cplv/cpincl.h
+    include/fuel/fuincl.h
+    include/pprt/ppincl.h
+    src/base/covofi.F
+    src/base/iniusi.F
+    src/cplv/cpcym2.F
+    src/cplv/cpflux.F
+    src/cplv/cpini1.F
+    src/cplv/cpiniv.F
+    src/cplv/cplecd.F
+    src/cplv/cplin1.F
+    src/cplv/cplini.F
+    src/cplv/cplphy.F
+    src/cplv/cpltcl.F
+    src/cplv/cplym1.F
+    src/cplv/cppdf4.F
+    src/cplv/cpphy1.F
+    src/cplv/cpphyv.F
+    src/cplv/cpprop.F
+    src/cplv/cpptcl.F
+    src/cplv/cpteh1.F
+    src/cplv/cptehm.F
+    src/cplv/cptssc.F
+    src/cplv/cpvarp.F
+    src/fuel/fucym1.F
+    src/fuel/fuflux.F
+    src/fuel/fuini1.F
+    src/fuel/fuiniv.F
+    src/fuel/fulecd.F
+    src/fuel/fuphy1.F
+    src/fuel/fuphy2.F
+    src/fuel/fuphyv.F
+    src/fuel/fuprop.F
+    src/fuel/fuptcl.F
+    src/fuel/futeh2.F
+    src/fuel/futssc.F
+    src/fuel/futsvc.F
+    src/fuel/futsvi.F
+    src/fuel/fuvarp.F
+    src/pprt/ppcabs.F
+    src/pprt/ppcsca.F
+    src/pprt/ppinii.F
+    src/pprt/pppdfr.F
+    src/pprt/ppphyv.F
+    src/pprt/ppray4.F
+    src/rayt/raydom.F
+    src/rayt/rayopt.F
+    users/cplv/uscpcl.F
+    users/cplv/uscpi1.F
+    users/cplv/uscpiv.F
+    users/fuel/usfucl.F
+    users/fuel/usfui1.F
+    users/fuel/usfuiv.F
+    users/pprt/usppmo.F
+
+* 07/08/2008 - David Monfort <david.monfort@edf.fr>
   Removing the compilation logs from versioning.
   removed files:
     aux/comparlist
@@ -71,7 +135,6 @@
     bin/SaturneGUI
   modified routine:
     src/base/cs_base.c
-
 
 * 04/08/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 531:532, coherency test improvement)

@@ -79,6 +79,7 @@ C
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "elincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -146,6 +147,8 @@ C       Variables transportees
       IF3M   = 0
       IF4P2M = 0
       IF5M   = 0
+      IF6M   = 0
+      IF7M   = 0
       IYCO2  = 0
       DO ICLA = 1, NCLCPM
         IXCK(ICLA)    = 0
@@ -169,6 +172,7 @@ C       Variables algebriques ou d'etat
         IGMDV1(ICLA) = 0
         IGMDV2(ICLA) = 0
         IGMHET(ICLA) = 0
+        IGHCO2(ICLA) = 0
         IGMSEC(ICLA) = 0
       ENDDO
 C
@@ -176,12 +180,18 @@ C ---> Initialisation pour la combustion fuel
 C       Variables transportees
 C
       IHM     = 0
-      ING     = 0
-      IYFOL   = 0
-      IHLF    = 0
+      DO ICLA = 1, NCLAFU
+        ING(ICLA)   = 0
+        IYFOL(ICLA) = 0
+        IHLF (ICLA) = 0
+      ENDDO
       IFVAP   = 0
       IFHTF   = 0
       IF4P2M  = 0
+      IYCO2   = 0
+      IYHCN   = 0
+      IYNO    = 0
+      ITAIRE  = 0
 C
 C       Variables algebriques ou d'etat
 C
@@ -190,12 +200,18 @@ C
         IYM1(IGE) = 0
       ENDDO
 C
-      IX3     = 0
-      ITEMP3  = 0
-      IROM3   = 0
-      IDIAM3  = 0
-      IGMEVA  = 0
-      IGMHTF  = 0
+      DO ICLA=1,NCLAFU
+        IX3(ICLA)    = 0
+        ITEMP3(ICLA) = 0
+        IROM3(ICLA)  = 0
+        IDIAM3(ICLA) = 0
+        IGMEVA(ICLA) = 0
+        IGMHTF(ICLA) = 0
+      ENDDO
+C
+      IGHCN1 = 0
+      IGHCN2 = 0
+      IGNOTH = 0
 C
 C ---> Initialisation pour l'effet Joule , Arc electrique et conduction ionique
 C
@@ -383,6 +399,11 @@ C
 C
         IOCHET(ICHA) = 0
 C
+        AHETC2(ICHA) = ZERO
+        EHETC2(ICHA) = ZERO
+C
+        IOETC2(ICHA) = 0
+C
         ICH(ICHA)    = 0
         ICK(ICHA)    = 0
         IASH(ICHA)   = 0
@@ -426,6 +447,8 @@ C
         ICHX2F2 = 0
         ICOF1   = 0
         ICOF2   = 0
+        IH2OF1  = 0
+        IH2OF2  = 0
 C
 C ---> Donnees relatives a la combustion des especes gazeuses
 C
@@ -442,7 +465,6 @@ C
       IN2   = 0
 C
       XSI   = 3.76D0
-      F3MAX =  2.D0*0.012D0 / (2.D0*0.028D0 + XSI*0.028D0)
 C
       DO ICHA = 1, NCHARM
         CHX1(ICHA) = ZERO
@@ -476,6 +498,12 @@ C ---> Donnees relatives au fuel
 C
       NSOLID = 0
 C
+C ----   Par classe
+C
+      NCLAFU = 0
+C
+C    1 seul fioul
+C
       CFOL    = ZERO
       HFOL    = ZERO
       OFOL     = ZERO
@@ -488,7 +516,6 @@ C
       RHOKF  = ZERO
       PCIKF = ZERO
 C
-      IYFOL  = 0
       YFOL   = ZERO
       AFOL   = ZERO
       EFOL   = ZERO

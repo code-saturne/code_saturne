@@ -100,12 +100,26 @@ C
 C      - Enthalpie du fuel et coke
 C     IFOL         --> Pointeur dans le tableau EHSOLI pour
 C                         le fuel oil liquid
-C     ICK          --> Pointeur dans le tableau EHSOLI pour
+C     IKF          --> Pointeur dans le tableau EHSOLI pour
 C                         le Coke
 C     EHSOLI(S,IT) --> Enthalpie massique (J/kg) du constituant solide
 C                         no S a la temperature T(IT)
 C
       INTEGER          IFOL, IKF
+C
+C ---- PAR CLASSES (grandeurs deduites)
+C
+C        NCLAFU     --> Nb de classes
+C
+      INTEGER          NCLAFU
+C
+C      - Proprietes : on garde le meme max que pour le charbon qui
+C        est definis dans ppppar.h
+C        DINIFL(CL)  --> Diametre initial (mm)
+C        DINIKF(CL)  --> Diametre coke (mm)
+C        DINIIN(CL)  --> Diametre min (mm)
+C
+      DOUBLE PRECISION DINIFL(NCLCPM),DINIKF(NCLCPM),DINIIN(NCLCPM)
 C
 C--> DONNEES RELATIVES A LA COMBUSTION DES ESPECES GAZEUSES
 C
@@ -129,22 +143,14 @@ C        Concentrations dans les espèces globales
 C        AFOVF1         nb de moles de vapeur associées à un kg de traceur 1
 C        ACOF1                          CO
 C        AH2SF1                         H2S
-C
-C        ACOF3                          CO                                 3
-C        AO2F3                          O2
 C        AH2SF3                         H2S
 C        AH2OF3                         H2O
-C        AN2F3                          N2
 C        FF3MAX fraction massqique maximale du traceur F3
 C               (correspondant à la masse libérée par combustion hétérogène il
 C                ne peut exister pur)
 C
-C        AO2F4         nb de moles de O2 dans l'oxydant associé au traceur 4
-C        AN2F4                        N2
 C
-      DOUBLE PRECISION FVAPMX,
-     &                 FOV,
-     &                 A, B
+      DOUBLE PRECISION FVAPMX, FOV, A, B
       INTEGER IFOV,IH2S,ISO2
 C
 C--> DONNEES COMPLEMENTAIRES RELATIVES AU CALCUL DE RHO
@@ -154,27 +160,21 @@ C       IENTAT(IENT) --> Indicateur air par type de facette d'entree
 C       IENTFL(IENT) --> Indicateur CFOL  par type de facette d'entree
 C       TIMPAT(IENT) --> Temperature en K pour l'air relative
 C                         a l'entree IENT
-C      X30(IENT)    --> Fraction massique  relative a l'entree IENT
-C      XMG0(IENT)
 C
       INTEGER          IENTFL(NOZPPM)
-      DOUBLE PRECISION X30(NOZPPM), XMG0(NOZPPM)
-C
 C
 C--> POINTEURS DANS LE TABLEAU TBMCR
 C
-      DOUBLE PRECISION AFOVF1,ACOF1,AH2SF1,ACOF3,AO2F3,AH2SF3,AH2OF3
-      DOUBLE PRECISION AN2F3,FF3MAX,AO2F4,AN2F4
+      DOUBLE PRECISION AFOVF1,ACOF1,AH2SF1,AH2SF3
+      DOUBLE PRECISION FF3MAX
 C
 C--> DEFINITION DES COMMONS
 C
-      COMMON / IFUCOM / IFOL, IKF,
-     &                  IENTFL,
-     &                  IOFHET
+      COMMON / IFUCOM / IFOL, IKF, IENTFL, IOFHET, NCLAFU
 C
       COMMON / IFUESP / IFOV,IH2S,ISO2
-      COMMON / RFUESP / AFOVF1,ACOF1,AH2SF1,ACOF3,AO2F3,AH2SF3,AH2OF3,
-     &                  AN2F3,FF3MAX,AO2F4,AN2F4
+      COMMON / RFUESP / AFOVF1,ACOF1,AH2SF1,AH2SF3,
+     &                  FF3MAX
 C
       COMMON / RFUCOM / CFOL   , HFOL  , OFOL , SFOL, XInFOL,
      &                  PCIFOL , RHO0FL, RHOKF ,
@@ -185,7 +185,7 @@ C
      &                  YFOL  , AFOL  , EFOL  , DFOL,
      &                  AHETFL, EHETFL,TEVAP1, TEVAP2 ,
      &                  FVAPMX, FOV, A   , B ,
-     &                  X30 , XMG0
+     &                  DINIFL , DINIKF , DINIIN
 C
 C--> GRANDEURS FOURNIES PAR L'UTILISATEUR EN CONDITIONS AUX LIMITES
 C      PERMETTANT DE CALCULER AUTOMATIQUEMENT LA VITESSE, LA TURBULENCE,
@@ -193,18 +193,14 @@ C      L'ENTHALPIE D'ENTREE.
 C
 C    POUR LES ENTREES UNIQUEMENT , IENT ETANT LE NUMERO DE ZONE FRONTIERE
 C
-C       QIMPAT(IENT)      --> Debit       Air                 en kg/s
-C       TIMPAT(IENT)      --> Temperature Air                 en K
 C       QIMPFL(IENT)      --> Debit      Fuel Oil Liquid     en kg/s
 C       TIMPFL(IENT)      --> Temperature  FOL               en K
-C       DINIFL(IENT)      --> Diametre initial des gouttes de FOL  en microns
 C
-      DOUBLE PRECISION  DINIFL,DINIKF,DINIIN
       DOUBLE PRECISION  QIMPFL(NOZPPM), TIMPFL(NOZPPM)
+      DOUBLE PRECISION  DISTFU(NOZPPM,NCLCPM)
       DOUBLE PRECISION  HLFM
 C
-      COMMON / RCPCLI / QIMPFL  , TIMPFL ,
-     &                  HLFM     , DINIFL ,DINIKF,DINIIN
+      COMMON / RCPCLI / QIMPFL  , TIMPFL , HLFM, DISTFU
 C
 C FIN
 c@z

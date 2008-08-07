@@ -131,11 +131,27 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IEL, N1, N2, N3, N4, N5
-      DOUBLE PRECISION T1, T2, T3, T1MOD, T2MOD
+      INTEGER          IEL, N1, N2, N3, N4, N5 , NFP2 , NBSPDF
+      DOUBLE PRECISION T1, T2, T3, T1MOD, T2MOD , FP2MAX
 C
 C
 C***********************************************************************
+C
+C=======================================================================
+C 0.  INITIALISATION
+C=======================================================================
+C
+      DO IEL = 1, NCEL
+C
+        INDPDF(IEL) = 0
+C
+        DIRMIN(IEL) = 0.D0
+        DIRMAX(IEL) = 0.D0
+        FDEB  (IEL) = 0.D0
+        FFIN  (IEL) = 0.D0
+        HREC  (IEL) = 0.D0
+C
+      ENDDO
 C
 C=======================================================================
 C 1.  CALCULS PRELIMINAIRES
@@ -147,7 +163,7 @@ C Parametre relatif a la moyenne
       T2 = 5.D-07
 C
       DO IEL = 1, NCEL
-        INDPDF(IEL) = 0
+C
 C Modifs des parametres T1 et T2 afin de tenir compte du fait que
 C   FMINI < FM < FMAXI
         T1MOD = T1*(FMAXI(IEL)-FMINI(IEL))**2
@@ -159,6 +175,21 @@ C   FMINI < FM < FMAXI
         ENDIF
       ENDDO
 C
+C Clipping de la variance
+C
+      NFP2 = 0
+      DO IEL = 1, NCEL
+        FP2MAX = (FMAXI(IEL)-FM(IEL))*(FM(IEL)-FMINI(IEL))
+        IF ( FP2M(IEL) .GT. FP2MAX ) THEN
+          FP2M(IEL) = FP2MAX
+          NFP2 = NFP2 + 1
+        ENDIF
+      ENDDO
+      IF ( IRANGP .GE. 0 ) THEN
+        CALL PARCPT(NFP2)
+      ENDIF
+      WRITE(NFECRA,*) ' PPPDFR : Points de clipping',
+     &                ' de la variance : ',NFP2
 C
 C=======================================================================
 C 2.  CALCUL DES PARAMETRES DE LA FONCTION DENSITE DE PROBABILITE
@@ -167,6 +198,7 @@ C
       DO IEL = 1, NCEL
 C
         IF ( INDPDF(IEL).EQ.1 ) THEN
+C
           IF (    (     (FM(IEL) .LE.(FMINI(IEL) + FMAXI(IEL))*0.5D0)
      &            .AND.(FP2M(IEL).LE.(FM(IEL) - FMINI(IEL))**2/3.D0))
      &       .OR. (     (FM(IEL) .GT.(FMINI(IEL) + FMAXI(IEL))*0.5D0)
@@ -210,8 +242,7 @@ C
      &                  + ( 3.D0*( (FM(IEL)-FMINI(IEL))**2+FP2M(IEL) )
      &                     + (FMAXI(IEL) - FMINI(IEL))**2
      &                     - 4.D0*(FM(IEL) - FMINI(IEL))
-     &                           *(FMAXI(IEL) - FMINI(IEL))
-     &                    )
+     &                           *(FMAXI(IEL) - FMINI(IEL)) )
      &                    / (2.D0*(FM(IEL) - FMAXI(IEL)))
             DIRMAX(IEL) = ( 3.D0*FP2M(IEL) -(FM(IEL) - FMAXI(IEL))**2 )
      &                 / ( 3.D0*((FM(IEL) - FMAXI(IEL))**2 +FP2M(IEL)) )
@@ -238,8 +269,14 @@ C
             T3 = SQRT(3.D0*T1*(FMAXI(IEL)-FMINI(IEL))**2)
             FDEB(IEL) = MIN(FMAXI(IEL),MAX(FMINI(IEL),FM(IEL) - T3))
             FFIN(IEL) = MIN(FMAXI(IEL),MAX(FMINI(IEL),FM(IEL) + T3))
-            HREC(IEL) = ( 1.D0-DIRMIN(IEL)-DIRMAX(IEL) )
-     &                 /( FFIN(IEL) - FDEB(IEL) )
+C
+            IF ( ABS(FFIN(IEL) - FDEB(IEL)).GT.EPZERO ) THEN
+              HREC(IEL) = ( 1.D0-DIRMIN(IEL)-DIRMAX(IEL) )
+     &                   /( FFIN(IEL) - FDEB(IEL) )
+            ELSE
+              HREC(IEL) = 0.D0
+            ENDIF
+C
           ENDIF
 C
         ELSE
@@ -252,6 +289,22 @@ C
 C
       ENDDO
 C
+C Verification : si Hrec <= 0 on passe sans les PDF
+C
+      NBSPDF = 0.D0
+      DO IEL=1,NCEL
+        IF ( HREC(IEL) .LE. 0.D0 .AND. INDPDF(IEL).EQ.1 ) THEN
+C
+          INDPDF(IEL) = 0
+          NBSPDF      = NBSPDF + 1
+C
+        ENDIF
+      ENDDO
+C
+      IF ( IRANGP .GE. 0 ) THEN
+         CALL PARCPT(NBSPDF)
+      ENDIF
+      WRITE(NFECRA,*) ' PPPDFR : Basculement sans les PDF ',NBSPDF
 C
 C=======================================================================
 C 4.  IMPRESSION

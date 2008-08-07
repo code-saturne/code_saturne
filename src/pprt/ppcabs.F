@@ -178,9 +178,9 @@ C
       INCLUDE "ppthch.h"
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
+      INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "parall.h"
-C
 C
 C***********************************************************************
 C
@@ -359,14 +359,20 @@ C ---->  Fuel
 C
       IF ( IPPMOD(ICFUEL).GE.0 ) THEN
 C
-        DO IEL = 1, NCEL
+        DO ICLA = 1, NCLAFU
+C
+          IPCK = 1 + ICLA
+C
+          DO IEL = 1, NCEL
 C
 C ---> Calcul du coeficient d'absorption des particules K2/X2
 C         3./2. ROM/(ROM2*D2)
 C
-          CK(IEL,2) = 1.5D0*PROPCE(IEL,IPPROC(IROM(IPHAS)))
-     &               / ( PROPCE(IEL,IPPROC(IROM3))
-     &                  *PROPCE(IEL,IPPROC(IDIAM3)) )
+            CK(IEL,IPCK) = 1.5D0*PROPCE(IEL,IPPROC(IROM(IPHAS)))
+     &                 / ( PROPCE(IEL,IPPROC(IROM3(ICLA)))
+     &                    *PROPCE(IEL,IPPROC(IDIAM3(ICLA))) )
+C
+          ENDDO
 C
         ENDDO
 C
@@ -408,18 +414,22 @@ C
            ENDDO
 C
            IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-              DO ICLA = 1,NCLACP
-                 IPCK = 1+ICLA
-                 DO IEL = 1,NCEL
-                    W3(IEL) = W3(IEL)
-     &                          + ( PROPCE(IEL,IPPROC(IX2(ICLA)))
-     &                          *   CK(IEL,IPCK)                 )
-                 ENDDO
-              ENDDO
+             DO ICLA = 1,NCLACP
+               IPCK = 1+ICLA
+               DO IEL = 1,NCEL
+                 W3(IEL) = W3(IEL)
+     &                    + PROPCE(IEL,IPPROC(IX2(ICLA)))
+     &                     *CK(IEL,IPCK)
+               ENDDO
+             ENDDO
            ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-              DO IEL = 1,NCEL
-                W3(IEL) = W3(IEL)
-     &                   + PROPCE(IEL,IPPROC(IYFOL))*CK(IEL,2)
+             DO ICLA = 1,NCLAFU
+               IPCK = 1+ICLA
+               DO IEL = 1,NCEL
+                 W3(IEL) = W3(IEL)
+     &                    + PROPCE(IEL,IPPROC(IYFOL(ICLA)))
+     &                     *CK(IEL,IPCK)
+               ENDDO
              ENDDO
            ENDIF
 C

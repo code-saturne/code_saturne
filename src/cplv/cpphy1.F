@@ -33,7 +33,8 @@ C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NCELET , NCEL   ,
      &   NITBCP , NRTBCP , NITBMC , NRTBMC , NITBWO , NRTBWO ,
-     &   F1M    , F2M    , F3M    , F4M    , F5M    , F4P2M  ,
+     &   F1M    , F2M    , F3M    , F4M    , F5M    ,
+     &   F6M    , F7M    , F4P2M  , F3MAX  ,
      &   ENTH   ,
      &   RTP    , PROPCE , ROM1   ,
      &   ITBCP  , RTBCP  ,
@@ -154,11 +155,14 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
       INCLUDE "entsor.h"
+      INCLUDE "parall.h"
+      INCLUDE "period.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -175,7 +179,10 @@ C
 C
       DOUBLE PRECISION F1M(NCELET), F2M(NCELET)
       DOUBLE PRECISION F3M(NCELET), F4M(NCELET) , F5M(NCELET)
-      DOUBLE PRECISION F4P2M(NCELET), ENTH(NCELET)
+      DOUBLE PRECISION F6M(NCELET), F7M(NCELET)
+      DOUBLE PRECISION F4P2M(NCELET)
+      DOUBLE PRECISION F3MAX(NCELET)
+      DOUBLE PRECISION ENTH(NCELET)
       DOUBLE PRECISION RTP(NCELET,*), PROPCE(NCELET,*)
       DOUBLE PRECISION ROM1(NCELET)
       DOUBLE PRECISION RTBCP(NCELET,NRTBCP)
@@ -190,13 +197,14 @@ C
       INTEGER          IPCTE1
       INTEGER          IPCYF1 , IPCYF2 , IPCYF3 , IPCYOX
       INTEGER          IPCYP1 , IPCYP2 , IPCYIN , IPCYCE
-      INTEGER          IPDF
+      INTEGER          IPDF   , NBF3
 C
       DOUBLE PRECISION WMOLME , WMCHX1 , WMCHX2
       DOUBLE PRECISION F1CL , F2CL , F3CL , F4CL , F5CL
-      DOUBLE PRECISION FP1  , FP2  , FP4  , FP5
-      DOUBLE PRECISION XALPHA , XBETA , XGAM , AO2F4
-      DOUBLE PRECISION F4CMIN,F4CMAX
+      DOUBLE PRECISION F6CL , F7CL
+      DOUBLE PRECISION FP1  , FP2  , FP4  , FP5, FP6, FP7
+      DOUBLE PRECISION XALPHA , XBETA , XGAM
+      DOUBLE PRECISION F4CMIN,F4CMAX,XDEN
 C
 C***********************************************************************
 C
@@ -237,103 +245,11 @@ C
         ENDDO
       ENDDO
 C
-      IPDF = 2
-      IF ( IPDF .EQ. 1 ) THEN
-C
-C INTEGRATION ANCIENNE VERSION
-C ============================
-C
-C
 C=======================================================================
 C 2. DETERMINATION DU TYPE DE PDF
 C=======================================================================
 C
-C ---- Reconstitution de 3 moyennes et de 1 variance
-C
-      CALL CPPDF4
-C     ===========
-     &( NCELET , NCEL   ,
-     &  F1M    , F2M    , F3M    , F4M    , F4P2M  ,
-     &  ITBCP(1,1) ,
-C         INDPDF
-     &  RTBCP(1,1) , RTBCP(1,2) , RTBCP(1,3) , RTBCP(1,4)  )
-C         SI7          SI8          SP2M         F4I7
-C
-C=======================================================================
-C 3. CALCUL DES PARAMETRES DE LA PDF CENTREE RECTANGLE - PICS DE DIRAC
-C=======================================================================
-C
-      CALL CPPDFR
-C     ===========
-     & ( NCELET , NCEL   ,
-     &   ITBCP(1,1) , RTBCP(1,1) , RTBCP(1,2) , RTBCP(1,3) ,
-C          INTPDF       SI7          SI8          SP2M
-     &   RTBCP(1,5) , RTBCP(1,6) , RTBCP(1,7) , RTBCP(1,8) ,
-C          DSI7         DSI8         SDEB         SFIN
-     &   RTBCP(1,9)  )
-C          HAUT
-C
-C
-C=======================================================================
-C 4. CALCUL DES CONCENTRATIONS MOYENNES
-C=======================================================================
-C
-C
-      IPCYF1 = IPPROC(IYM1(ICHX1))
-      IPCYF2 = IPPROC(IYM1(ICHX2))
-      IPCYF3 = IPPROC(IYM1(ICO  ))
-      IPCYOX = IPPROC(IYM1(IO2  ))
-      IPCYP1 = IPPROC(IYM1(ICO2 ))
-      IPCYP2 = IPPROC(IYM1(IH2O ))
-      IPCYIN = IPPROC(IYM1(IN2  ))
-C
-      CALL CPCYM1
-C     ===========
-     & ( NCELET , NCEL   , NITBMC , NRTBMC ,
-     &   RTP    ,
-     &   F1M    , F2M    , F3M    , F4M    ,
-     &   ITBCP(1,1) ,
-C          INTPDF
-     &   RTBCP(1,1) , RTBCP(1,2) , RTBCP(1,3) , RTBCP(1,4) ,
-C          SI7          SI8          SP2M         F4I7
-     &   RTBCP(1,5) , RTBCP(1,6) , RTBCP(1,7) , RTBCP(1,8) ,
-C          DSI7         DSI8         SDEB         SFIN
-     &   RTBCP(1,9) ,
-C          HAUT
-     &   PROPCE(1,IPCYF1) , PROPCE(1,IPCYF2) , PROPCE(1,IPCYF3) ,
-     &   PROPCE(1,IPCYOX) , PROPCE(1,IPCYP1) , PROPCE(1,IPCYP2) ,
-     &   PROPCE(1,IPCYIN) ,
-     &   ITBMC      , RTBMC      ,
-C          MACRO TABLEAU MULTI CHARBONS ENTIERS REELS
-     &   ITBWO(1,1) ,
-     &   RTBWO(1,1) , RTBWO(1,2) , RTBWO(1,3), RTBWO(1,4) )
-C          TABLEAUX DE TRAVAIL
-C
-C IMPORTANT : Voir dans PPINI1 pour savoir comment est range RTBMC
-C
-C --> Clipping eventuel des fractions massiques
-C
-      DO IEL = 1, NCEL
-        DO ICE = 1, (NGAZE-2*NCHARB)
-          IPCYCE = IPPROC(IYM1(ICE))
-          IF ( ABS(PROPCE(IEL,IPCYCE)).LT.EPSICP )
-     &         PROPCE(IEL,IPCYCE) = ZERO
-        ENDDO
-      ENDDO
-C
-      ELSE
-C
-C INTEGRATION NOUVELLE VERSION
-C ============================
-C
-C
-C=======================================================================
-C 2. DETERMINATION DU TYPE DE PDF
-C=======================================================================
-C
-      F4CMIN = 1.D+20
-      F4CMAX =-1.D+20
-C
+      NBF3 = 0
       DO IEL = 1, NCEL
 C
 C       Calcul de Fcl
@@ -345,44 +261,57 @@ C
           FP1 = 0.D0
           FP2 = 0.D0
         ENDIF
-        IF (F4M(IEL)+F5M(IEL) .GT. 0.D0 ) THEN
-          FP4 = F4M(IEL)/(F4M(IEL)+F5M(IEL))
-          FP5 = F5M(IEL)/(F4M(IEL)+F5M(IEL))
+        IF (F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL) .GT. 0.D0 ) THEN
+          FP4 = F4M(IEL)/(F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL))
+          FP5 = F5M(IEL)/(F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL))
+          FP6 = F6M(IEL)/(F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL))
+          FP7 = F7M(IEL)/(F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL))
         ELSE
           FP4 = 0.D0
           FP5 = 0.D0
+          FP6 = 0.D0
+          FP7 = 0.D0
         ENDIF
 C
-C      Fraction massique d'air humide en F3MAX
+C      Calcul de F3MAX
 C
-        AO2F4   = 1.D0 / (WMOLE(IO2)+XSI*WMOLE(IN2))
-        XALPHA = 1.D0/(1.D0+2.D0*WMOLAT(IATC)*FP4*AO2F4)
-C
-        IF ( ABS( (1.D0-XALPHA)*(FP4-F4M(IEL))
-     &           + XALPHA*FP4*F3M(IEL)         ).GT. 1.D-15 ) THEN
-          XGAM = FP4*F3M(IEL)
-     &          /( (1.D0-XALPHA)*(FP4-F4M(IEL))
-     &            + XALPHA*FP4*F3M(IEL)         )
+        IF ( ( AO2F4*F4M(IEL)+AO2F6*F6M(IEL)
+     &        +AO2F7*F7M(IEL) ) .GT. 0.D0     ) THEN
+          F3MAX(IEL) = 1.D0
+     &     /(1.D0+0.5D0*(1.D0/WMOLAT(IATC))
+     &                 *(F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL))
+     &                 /(AO2F4*F4M(IEL)+AO2F6*F6M(IEL)+AO2F7*F7M(IEL)) )
         ELSE
-          XGAM = 0.D0
+          F3MAX(IEL) = 1.D0
         ENDIF
 C
-        IF ( ABS(FP4-F4M(IEL)) .GT. 1.D-15 ) THEN
+        IF ( F3M(IEL) .GT. F3MAX(IEL) ) THEN
+          F3M(IEL) = F3MAX(IEL)
+          NBF3 = NBF3 + 1
+        ENDIF
 C
-          XBETA = (XGAM*XALPHA*FP4-F4M(IEL))
-     &           /(FP4-F4M(IEL))
+        XDEN = F3M(IEL)/F3MAX(IEL)+F1M(IEL)+F2M(IEL)
 C
-          F1CL = (1.D0-XBETA)*F1M(IEL)
-          F2CL = (1.D0-XBETA)*F2M(IEL)
-          F3CL = (1.D0-XBETA)*F3M(IEL)
-          F4CL = XBETA*FP4 + (1.D0-XBETA)*F4M(IEL)
-          F5CL = XBETA*FP5 + (1.D0-XBETA)*F5M(IEL)
+        IF ( XDEN .GT. 1.D-15 ) THEN
+C
+          XALPHA = 1.D0-1.D0/XDEN
+C
+          F1CL = (1.D0-XALPHA)*F1M(IEL)
+          F2CL = (1.D0-XALPHA)*F2M(IEL)
+          F3CL = (1.D0-XALPHA)*F3M(IEL)
+          F4CL = XALPHA*FP4 + (1.D0-XALPHA)*F4M(IEL)
+          F5CL = XALPHA*FP5 + (1.D0-XALPHA)*F5M(IEL)
+          F6CL = XALPHA*FP6 + (1.D0-XALPHA)*F6M(IEL)
+          F7CL = XALPHA*FP7 + (1.D0-XALPHA)*F7M(IEL)
+C
         ELSE
           F1CL = FP1
           F2CL = FP2
           F3CL = 0.D0
           F4CL = 0.D0
           F5CL = 0.D0
+          F6CL = 0.D0
+          F7CL = 0.D0
         ENDIF
 C
         RTBCP(IEL,1) = F1CL
@@ -390,31 +319,35 @@ C
         RTBCP(IEL,3) = F3CL
         RTBCP(IEL,4) = F4CL
         RTBCP(IEL,5) = F5CL
+        RTBCP(IEL,6) = F6CL
+        RTBCP(IEL,7) = F7CL
 C
 C       bornes min et max de la pdf : F4CL a 1
 C
-        RTBCP(IEL,6) = 1.D0
+        RTBCP(IEL,8) = 1.D0
 C
 C Somme de F4+F5
 C
-        RTBCP(IEL,12) = F4M(IEL) + F5M(IEL)
-C
-        F4CMIN = MIN(F4CL,F4CMIN)
-        F4CMAX = MAX(F4CL,F4CMAX)
+        RTBCP(IEL,14) = F4M(IEL)+F5M(IEL)+F6M(IEL)+F7M(IEL)
 C
       ENDDO
+C
+      IF ( IRANGP .GE. 0 ) THEN
+        CALL PARCPT(NBF3)
+      ENDIF
+      WRITE(NFECRA,*) ' Nombre de clipping sur F3 : ',NBF3
 C
       CALL PPPDFR
 C     ===========
      & ( NCELET,NCEL,
      &   ITBCP(1,1) ,
-     &   RTBCP(1,12), F4P2M ,
+     &   RTBCP(1,14), F4P2M ,
 C          F4+F5
-     &   RTBCP(1,4), RTBCP(1,6),
+     &   RTBCP(1,4), RTBCP(1,8),
 C           FMINI        FMAXI
-     &   RTBCP(1,7) , RTBCP(1,8) , RTBCP(1,9) , RTBCP(1,10),
+     &   RTBCP(1,9) , RTBCP(1,10) , RTBCP(1,11) , RTBCP(1,12),
 C           D4CL         D4F4          F4M1        F4M2
-     &    RTBCP(1,11) )
+     &    RTBCP(1,13) )
 C           HREC
 C
 C=======================================================================
@@ -436,13 +369,15 @@ C     ===========
      &   ITBCP(1,1) ,
 C         INTPDF
      &   RTP    ,
-     &   F1M    , F2M , F3M , F4M , F5M ,
-     &  RTBCP(1,1) ,  RTBCP(1,2) ,RTBCP(1,3) ,RTBCP(1,4) , RTBCP(1,5) ,
-C         F1CL         F2CL         F3CL        F4CL         F5CL
-
-     &   RTBCP(1,9) , RTBCP(1,10) , RTBCP(1,7) ,
+     &   F1M    , F2M , F3M , F4M , F5M , F6M , F7M ,
+     &   F3MAX  ,
+     &   RTBCP(1,1),RTBCP(1,2),RTBCP(1,3),RTBCP(1,4),RTBCP(1,5),
+C         F1CL        F2CL       F3CL      F4CL        F5CL
+     &  RTBCP(1,6) ,  RTBCP(1,7) ,
+C         F6CL         F7CL
+     &   RTBCP(1,11) , RTBCP(1,12) , RTBCP(1,9) ,
 C           F4M1         F4M2        D4CL
-     &   RTBCP(1,8) ,RTBCP(1,11) ,
+     &   RTBCP(1,10) ,RTBCP(1,13) ,
 C           D4F4         HREC
      &   RTBMC      , RTBWO(1,1)  ,
      &   PROPCE(1,IPCYF1) , PROPCE(1,IPCYF2) , PROPCE(1,IPCYF3) ,
@@ -458,8 +393,6 @@ C
      &         PROPCE(IEL,IPCYCE) = ZERO
         ENDDO
       ENDDO
-C
-      ENDIF
 C
 C=======================================================================
 C 4. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE
@@ -504,7 +437,6 @@ C      mais P0(IPHAS)
 C
         ROM1(IEL) = P0(IPHAS) / (WMOLME*RR*PROPCE(IEL,IPCTE1))
       ENDDO
-C
 C
 C=======================================================================
 C FORMATS

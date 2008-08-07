@@ -32,10 +32,11 @@ C                       *****************
 C     -------------------------------------------------------------
      & ( NCELET , NCEL   ,
      &   INDPDF ,
+     &   RTP    ,
      &   F1M    , F3M    , F4M   , F1CL  , F3CL , F4CL ,
      &   F4M1   , F4M2   , D4CL  , D4F4  , HREC ,
      &   FUEL1  , FUEL3  , OXYD  , PROD1 , PROD2  ,
-     &   XINER  , XH2S   , XSO2   )
+     &   XINER  , XH2S   , XSO2  , F4S3NO )
 C     -------------------------------------------------------------
 C***********************************************************************
 C FONCTION :
@@ -110,6 +111,7 @@ C
       INCLUDE "cpincl.h"
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -118,6 +120,7 @@ C
       INTEGER          NCELET , NCEL
       INTEGER          INDPDF(NCELET)
 C
+      DOUBLE PRECISION RTP(NCELET,*)
       DOUBLE PRECISION F1M(NCELET) , F3M(NCELET)  , F4M(NCELET)
       DOUBLE PRECISION F1CL(NCELET), F3CL(NCELET) , F4CL(NCELET)
 C
@@ -128,10 +131,11 @@ C
       DOUBLE PRECISION OXYD(NCELET) , PROD1(NCELET), PROD2(NCELET)
       DOUBLE PRECISION XINER(NCELET)
       DOUBLE PRECISION XH2S(NCELET) , XSO2(NCELET)
+      DOUBLE PRECISION F4S3NO(NCELET)
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IEL
+      INTEGER          IEL, ICLA
 C
       INTEGER          N1 , N2 , N3 , N4 , N5 , N6 , N7 , N8 , N9
       INTEGER          N10, N11
@@ -165,7 +169,8 @@ C
       DOUBLE PRECISION BB1,BB2
       DOUBLE PRECISION ZH2S0,ZH2S1,ZH2S2,ZH2S3
       DOUBLE PRECISION ZSO20,ZSO21,ZSO22,ZSO23
-      DOUBLE PRECISION F4S1,F4S2,F4S3
+      DOUBLE PRECISION F4S1,F4S2,F4S3,ZCO2T
+      DOUBLE PRECISION X2T
 C
 C***********************************************************************
 C
@@ -208,7 +213,6 @@ C
         XSO2 (IEL)  = ZERO
       ENDDO
 C
-C
 C  ANU1 : nb de moles d'oxygène pour convertir
 C         une mole de FOV en CO et H2O
 C
@@ -222,6 +226,11 @@ C  ANU3 nb de mole d'oxygene pour la reaction CO -> CO2
 C
       ANU3   = 0.5D0
 C
+      IF ( IEQNOX .EQ. 1 ) THEN
+        DO IEL=1,NCEL
+          F4S3NO(IEL) = 0.D0
+        ENDDO
+      ENDIF
 C
 C=======================================================================
 C 3. CALCUL DE LA COMPOSITION DU MELANGE SANS LES PDF
@@ -232,6 +241,17 @@ C
       DO IEL = 1, NCEL
 C
         IF ( INDPDF(IEL).EQ.0 ) THEN
+C
+          IF ( IEQCO2 .EQ. 1 ) THEN
+C
+            X2T = 0.D0
+            DO ICLA = 1, NCLAFU
+              X2T =  X2T+RTP(IEL,ISCA(IYFOL(ICLA)))
+            ENDDO
+C
+            ZCO2T = ( RTP(IEL,ISCA(IYCO2))/(1.D0-X2T) )/WMCO2
+C
+          ENDIF
 C
 C --> Composition de la phase gazeuse avant combustion (indice 0)
 C
@@ -276,15 +296,39 @@ C
           ZCO22 = ZCO21
           ZN22  = ZN21
 C
-          REAC3 = MIN(ZCO2,(ZO22/ANU3))
-          ZFOV3 = ZFOV2
-          ZO23  = ZO22  - ANU3*REAC3
-          ZCO3  = ZCO2  -      REAC3
-          ZCO23 = ZCO22 +      REAC3
-          ZH2O3 = ZH2O2
-          ZN23  = ZN22
-          ZH2S3 = ZH2S2
-          ZSO23 = ZSO22
+          IF ( IEQCO2 .EQ. 0 ) THEN
+C
+            REAC3 = MIN(ZCO2,(ZO22/ANU3))
+            ZFOV3 = ZFOV2
+            ZO23  = ZO22  - ANU3*REAC3
+            ZCO3  = ZCO2  -      REAC3
+            ZCO23 = ZCO22 +      REAC3
+            ZH2O3 = ZH2O2
+            ZN23  = ZN22
+            ZH2S3 = ZH2S2
+            ZSO23 = ZSO22
+C
+          ELSE IF ( IEQCO2 .EQ. 1 ) THEN
+C
+C           Transport de CO2
+C
+            ZFOV3 = ZFOV2
+            ZCO2T = MIN(ZCO2T,ZCO2,ZO22/ANU3)
+C
+            ZO23  = ZO22  - ANU3*ZCO2T
+            ZCO3  = ZCO2  -      ZCO2T
+            ZCO23 = ZCO2T
+            ZH2O3 = ZH2O2
+            ZN23  = ZN22
+            ZH2S3 = ZH2S2
+            ZSO23 = ZSO22
+C
+          ELSE IF ( IEQCO2 .NE. 0 ) THEN
+C
+            WRITE(NFECRA,3000) IEQCO2
+            CALL CSEXIT(1)
+C
+          ENDIF
 C
           FUEL1(IEL) = ZFOV3 * WMFOV
           FUEL3(IEL) = ZCO3  * WMCO
@@ -325,6 +369,17 @@ C
       DO IEL = 1, NCEL
 C
         IF ( INDPDF(IEL).EQ.1 ) THEN
+C
+          IF ( IEQCO2 .EQ. 1 ) THEN
+C
+            X2T = 0.D0
+            DO ICLA = 1, NCLAFU
+              X2T =  X2T+RTP(IEL,ISCA(IYFOL(ICLA)))
+            ENDDO
+C
+            ZCO2T = ( RTP(IEL,ISCA(IYCO2))/(1.D0-X2T) )/WMCO2
+C
+          ENDIF
 C
 C         Concentrations aux extrémités
 C
@@ -385,7 +440,7 @@ C         cl par s1
 C         s1 par s2
 C
           F4S2 = ( ANU2 * ZZS1(IH2S) + F4S1 * ZZF4(IO2) )
-     &         /( ANU2 * ZZS1(IH2S) +        ZZF4(IO2) )
+     &          /( ANU2 * ZZS1(IH2S) +        ZZF4(IO2) )
 C
 C     Calcul des concentrations au deuxième point stoechio
 C     avant réaction
@@ -417,6 +472,12 @@ C
           F4S3 = ( ANU3 * ZZS2(ICO ) + F4S2 * ZZF4(IO2) )
      &         / ( ANU3 * ZZS2(ICO ) +        ZZF4(IO2) )
 C
+C si calcul de NOx, on stocke F4S3 pour l'utiliser dans fucyno
+C
+          IF ( IEQNOX .EQ. 1 ) THEN
+            F4S3NO(IEL) = F4S3
+          ENDIF
+C
 C         Calcul des concentrations au troisième point stoechio
 C         avant réaction
 C
@@ -427,9 +488,11 @@ C
 C
 C         Le nombre de moles de réaction est le nombre de moles de CO
 C
-          ZZS3(ICO2) = ZZS3(ICO2) + ZZS3(ICO)
-          ZZS3(IO2)  = ZERO
-          ZZS3(ICO)  = ZERO
+          IF ( IEQCO2 .EQ. 0 ) THEN
+            ZZS3(ICO2) = ZZS3(ICO2) + ZZS3(ICO)
+            ZZS3(IO2)  = ZERO
+            ZZS3(ICO)  = ZERO
+          ENDIF
 C
 C        Désormais on connait les concentrations en 5 points
 C        cl,s1,s2,s3,f4
@@ -488,6 +551,23 @@ C
      &             +(ZZF4(II)-ZZS3(II))*(BB1+BB2)*0.5D0)
             ENDDO
           ENDIF
+C
+         IF ( IEQCO2 .EQ. 1 ) THEN
+C
+C  Transport de CO2
+C
+           ZCO2T = MIN(ZCO2T,ZZ(ICO),2.D0*ZZ(IO2))
+C
+           ZZ(ICO ) = ZZ(ICO) - ZCO2T
+           ZZ(IO2 ) = ZZ(IO2) - ANU3*ZCO2T
+           ZZ(ICO2) = ZCO2T
+C
+         ELSE IF ( IEQCO2 .NE. 0 ) THEN
+C
+           WRITE(NFECRA,3000) IEQCO2
+           CALL CSEXIT(1)
+C
+         ENDIF
 C
           FUEL1(IEL) = ZZ(IFOV ) * WMFOV
           FUEL3(IEL) = ZZ(ICO  ) * WMCO
@@ -585,25 +665,30 @@ C-------
 C
  1000 FORMAT (/,
      &'MODELISATION DE LA COMBUSTION AVEC LE MODELE DE DIFFUSION ',
-     &'TURBULENTE (CPCYM1)',/,
+     &'TURBULENTE (FUCYM1)',/,
      &'CHIMIE RAPIDE A 3 CORPS - EXTENSION A 3 COMBUSTIBLES ',
      &'(Application au FUEL)',/,
      &'==========================================================',
      &'==================',/,
      &' Nb de points de calculs                                     = ',
-     &   I6,/,
+     &   I9,/,
      &' Nb de points turbulents (passage par les PDF)               = ',
-     &   I6)
+     &   I9)
 C
  2200 FORMAT(/,
      &'CONTROLE DES VALEURS DES FRACTIONS MASSIQUES',/,
      &' Nb de points de calculs qui respectent somme des Yi = 1    = ',
-     &   I6,/,
-     &' Nb de points YFOV ,YCO    < 0 ou > 1 = ',I6,I6,/,
-     &' Nb de points YO2  ,YN2    < 0 ou > 1 = ',I6,I6,/,
-     &' Nb de points YCO2 ,YH2O   < 0 ou > 1 = ',I6,I6,/,
-     &' Nb de points YH2S ,YSO2   < 0 ou > 1 = ',I6,I6,/)
+     &   I9,/,
+     &' Nb de points YFOV ,YCO    < 0 ou > 1 = ',I9,I9,/,
+     &' Nb de points YO2  ,YN2    < 0 ou > 1 = ',I9,I9,/,
+     &' Nb de points YCO2 ,YH2O   < 0 ou > 1 = ',I9,I9,/,
+     &' Nb de points YH2S ,YSO2   < 0 ou > 1 = ',I9,I9,/)
 C
+ 3000 FORMAT(/,
+     &'MODELE DE CO FUEL ACTIVE : ',/,
+     &'       AVEC  IEQCO2 = ',I2,/,
+     &'HORS SEUL LES OPTIONS 0 et 1 SONT DISPONIBLES',/,
+     &'    ARRET DU CALCUL : VERIFIER USPPMO')
 C
       RETURN
       END

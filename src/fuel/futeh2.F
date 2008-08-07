@@ -101,7 +101,7 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          ICEL
+      INTEGER          ICEL , ICLA
       INTEGER          IPCTE1 , IPCTE2
       INTEGER          MODE
       DOUBLE PRECISION EH2, XSOLID(2)
@@ -120,14 +120,18 @@ C
 C --- Initialisation des tableaux
 C
       IPCTE1 = IPPROC(ITEMP1)
-      IPCTE2 = IPPROC(ITEMP3)
 C
-      DO ICEL = 1, NCEL
+      DO ICLA = 1, NCLAFU
+C
+        IPCTE2 = IPPROC(ITEMP3(ICLA))
+C
+        DO ICEL = 1, NCEL
 C
 C --- Initialisation de T2 a T20
 C
-        PROPCE(ICEL,IPCTE2) = 373.D0
+          PROPCE(ICEL,IPCTE2) = 373.D0
 C 20/09/05 Pour l'instant TinFol en dur, un jour on recuperera dans USFUCL
+        ENDDO
       ENDDO
 C
 C=======================================================================
@@ -136,36 +140,43 @@ C=======================================================================
 C
       MODE = 1
 C
-      MKFINI = RHO0FL*PI/6.D0*DINIKF**3
+      DO ICLA = 1, NCLAFU
 C
-      DO ICEL = 1, NCEL
+        IPCTE2 = IPPROC(ITEMP3(ICLA))
 C
-        RHOFOL = PROPCE(ICEL,IPPROC(IROM3))
-        DIAMGT = PROPCE(ICEL,IPPROC(IDIAM3))
-        MASGUT = RHO0FL*PI/6.D0*DIAMGT**3
-        IF (DIAMGT.LE.DINIKF) THEN
-          MKGOUT = MASGUT
-        ELSE
-          MKGOUT = MKFINI
-        ENDIF
-        MFGOUT = MASGUT - MKGOUT
-        XSOLID(1) = 1.D0-FKC
-        XSOLID(2) = FKC
-        IF(MASGUT.GT.ZERO) THEN
-          XSOLID(1) = MFGOUT / MASGUT
-          XSOLID(2) = MKGOUT / MASGUT
-        ENDIF
-        XSOLID(1) = MIN(1.D0,MAX(0.D0,XSOLID(1)))
-        XSOLID(2) = Min(1.D0,Max(0.D0,XSOLID(2)))
+        MKFINI = RHO0FL*PI/6.D0*DINIKF(ICLA)**3
 C
-        IF ( RTP(ICEL,ISCA(IYFOL)) .GT. (3.D3*EPSIFL) ) THEN
-          EH2 =  RTP(ICEL,ISCA(IHLF))/RTP(ICEL,ISCA(IYFOL))
-          CALL FUTHP2
-C         ============
+        DO ICEL = 1, NCEL
+C
+          RHOFOL = PROPCE(ICEL,IPPROC(IROM3(ICLA)))
+          DIAMGT = PROPCE(ICEL,IPPROC(IDIAM3(ICLA)))
+          MASGUT = RHO0FL*PI/6.D0*DIAMGT**3
+          IF (DIAMGT.LE.DINIKF(ICLA)) THEN
+            MKGOUT = MASGUT
+          ELSE
+            MKGOUT = MKFINI
+          ENDIF
+          MFGOUT = MASGUT - MKGOUT
+          XSOLID(1) = 1.D0-FKC
+          XSOLID(2) = FKC
+          IF(MASGUT.GT.ZERO) THEN
+            XSOLID(1) = MFGOUT / MASGUT
+            XSOLID(2) = MKGOUT / MASGUT
+          ENDIF
+          XSOLID(1) = MIN(1.D0,MAX(0.D0,XSOLID(1)))
+          XSOLID(2) = Min(1.D0,Max(0.D0,XSOLID(2)))
+C
+          IF ( RTP(ICEL,ISCA(IYFOL(ICLA))) .GT. (3.D3*EPSIFL) ) THEN
+            EH2 =  RTP(ICEL,ISCA(IHLF(ICLA)))
+     &            /RTP(ICEL,ISCA(IYFOL(ICLA)))
+            CALL FUTHP2
+C           ============
      &    ( MODE , EH2 , XSOLID , PROPCE(ICEL,IPCTE2) )
-        ELSE
-          PROPCE(ICEL,IPCTE2) = PROPCE(ICEL,IPCTE1)
-        ENDIF
+          ELSE
+            PROPCE(ICEL,IPCTE2) = PROPCE(ICEL,IPCTE1)
+          ENDIF
+C
+        ENDDO
 C
       ENDDO
 C

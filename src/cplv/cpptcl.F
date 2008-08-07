@@ -198,6 +198,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -240,15 +241,16 @@ C
       INTEGER          II, IPHAS, IFAC, IZONE, MODE, IEL, IGE, IOK
       INTEGER          ICHA, ICLAPC, ISOL, ICLA
       INTEGER          IPBROM, ICKE, IDECAL, IPCVIS
-      INTEGER          NBRVAL
+      INTEGER          NBRVAL, IOXY
       DOUBLE PRECISION QISQC, VISCLA, D2S3, UREF2, RHOMOY, DHY, XITURB
-      DOUBLE PRECISION USTAR2, XKENT, XEENT, T1, T2, TOTCP
+      DOUBLE PRECISION USTAR2, XKENT, XEENT, T1, T2, TOTCP , DMAS
       DOUBLE PRECISION H1    (NOZPPM) , H2   (NOZPPM,NCLCPM)
       DOUBLE PRECISION X2H20T(NOZPPM) , X20T (NOZPPM)
       DOUBLE PRECISION QIMPC (NOZPPM) , QCALC(NOZPPM)
       DOUBLE PRECISION COEFE (NGAZEM)
       DOUBLE PRECISION XSOLID(NSOLIM)
       DOUBLE PRECISION F1MC  (NCHARM) , F2MC (NCHARM)
+      DOUBLE PRECISION WMH2O,WMCO2,WMN2,WMO2
 C
 C***********************************************************************
 C=======================================================================
@@ -635,8 +637,16 @@ C ------ Calcul de H1(IZONE)
           DO IGE = 1, NGAZEM
             COEFE(IGE) = ZERO
           ENDDO
-          COEFE(IO2) = WMOLE(IO2) / (WMOLE(IO2)+XSI*WMOLE(IN2))
-          COEFE(IN2) = 1.D0 - COEFE(IO2)
+C
+          IOXY = INMOXY(IZONE)
+          DMAS = WMOLE(IO2) *OXYO2(IOXY) +WMOLE(IN2) *OXYN2(IOXY)
+     &          +WMOLE(IH2O)*OXYH2O(IOXY)+WMOLE(ICO2)*OXYCO2(IOXY)
+C
+          COEFE(IO2)  = WMOLE(IO2) *OXYO2(IOXY) /DMAS
+          COEFE(IH2O) = WMOLE(IH2O)*OXYH2O(IOXY)/DMAS
+          COEFE(ICO2) = WMOLE(ICO2)*OXYCO2(IOXY)/DMAS
+          COEFE(IN2)  = WMOLE(IN2) *OXYN2(IOXY) /DMAS
+C
           DO ICHA = 1, NCHARM
             F1MC(ICHA) = ZERO
             F2MC(ICHA) = ZERO
@@ -702,8 +712,12 @@ C ------ CL pour X1F1M et X1F2M du charbon ICHA
 C
           ENDDO
 C
-C ------ CL pour X1.F3M
+C ------ CL pour X1.F3M_O2
           RCODCL(IFAC,ISCA(IF3M),1) = ZERO
+C ------ CL pour X1.F3M_CO2
+          IF ( IHTCO2 .EQ. 1 ) THEN
+            RCODCL(IFAC,ISCA(IF3MC2),1) = ZERO
+          ENDIF
 C ------ CL pour X1.FP4M
           RCODCL(IFAC,ISCA(IF4P2M),1)   = ZERO
 C ------ CL pour HM
@@ -713,10 +727,36 @@ C ------ CL pour X1.F5M
           IF ( IPPMOD(ICP3PL) .EQ. 1 ) THEN
             RCODCL(IFAC,ISCA(IF5M),1)   = ZERO
           ENDIF
+C ------ CL pour X1.F6M
+          IF ( NOXYD .GE. 2 ) THEN
+            IF ( INMOXY(IZONE) .EQ. 2 ) THEN
+              RCODCL(IFAC,ISCA(IF6M),1)   = (1.D0-X20T(IZONE))
+            ELSE
+              RCODCL(IFAC,ISCA(IF6M),1)   = ZERO
+            ENDIF
+          ENDIF
+C ------ CL pour X1.F7M
+          IF ( NOXYD .EQ. 3 ) THEN
+            IF ( INMOXY(IZONE) .EQ. 3 ) THEN
+              RCODCL(IFAC,ISCA(IF7M),1)   = (1.D0-X20T(IZONE))
+            ELSE
+              RCODCL(IFAC,ISCA(IF7M),1)   = ZERO
+            ENDIF
+          ENDIF
 C
 C ------ CL pour X1.YCO2
-          IF ( IEQCO2 .EQ. 1 ) THEN
-            RCODCL(IFAC,ISCA(IYCO2),1)   = ZERO
+          IF ( IEQCO2 .GE. 1 ) THEN
+C
+            IOXY =  INMOXY(IZONE)
+            WMO2   = WMOLE(IO2)
+            WMCO2  = WMOLE(ICO2)
+            WMH2O  = WMOLE(IH2O)
+            WMN2   = WMOLE(IN2)
+C
+            DMAS = ( OXYO2 (IOXY)*WMO2 +OXYN2 (IOXY)*WMN2
+     &              +OXYH2O(IOXY)*WMH2O+OXYCO2(IOXY)*WMCO2 )
+            XCO2 = OXYCO2(IOXY)*WMCO2/DMAS
+            RCODCL(IFAC,ISCA(IYCO2),1)   = XCO2*(1.D0-X20T(IZONE))
           ENDIF
 C
         ENDIF

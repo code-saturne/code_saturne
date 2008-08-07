@@ -95,6 +95,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -113,6 +114,7 @@ C
       INTEGER          IEL
 C
       DOUBLE PRECISION F1I7, F2I7, F3I7, F4I8, S2MAX, T1, T2
+      DOUBLE PRECISION XF3MAX
 C
 C***********************************************************************
 C
@@ -156,6 +158,8 @@ C 3. CALCULS DES PARAMETRES DE LA PDF : SI7, SI8 et SP2M
 C    CALCUL DE F4I7
 C=======================================================================
 C
+      XF3MAX =  2.D0*0.012D0 / (2.D0*0.028D0 + XSI*0.028D0)
+C
       DO IEL = 1, NCEL
 C
         IF ( INDPDF(IEL).EQ.3 ) THEN
@@ -169,8 +173,8 @@ C
      &      ( 3.D0*SQRT(2.D0)/4.D0*(F2M(IEL)-F2I7) +
      &        SQRT(2.D0)/4.D0*(F3M(IEL)-F3I7) )**2 +
      &       ( F3M(IEL)-F3I7 )**2 )
-          F4I8 = (1.D0-F3MAX)*F3M(IEL)
-     &        / (F3M(IEL)+F3MAX*(1.D0-F3M(IEL)-F4M(IEL)))
+          F4I8 = (1.D0-XF3MAX)*F3M(IEL)
+     &        / (F3M(IEL)+XF3MAX*(1.D0-F3M(IEL)-F4M(IEL)))
           SI8(IEL)  = SI7(IEL)*(F4M(IEL)-F4I8)/(F4M(IEL)-F4I7(IEL))
           SP2M(IEL) = F4P2M(IEL)/(F4M(IEL)-F4I7(IEL))**2*(SI7(IEL))**2
           S2MAX     = -SI7(IEL)*SI8(IEL)

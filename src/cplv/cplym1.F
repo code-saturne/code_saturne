@@ -138,6 +138,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "ppcpfu.h"
 C
 C***********************************************************************
 C
@@ -179,8 +180,7 @@ C
       DOUBLE PRECISION WMCHX1 , WMCHX2 , WMCO   , WMCO2 , WMH2O
       DOUBLE PRECISION WMO2   , WMN2   , WMC
       DOUBLE PRECISION ACHX1F1, ACOF1  , ACHX2F2, ACOF2
-      DOUBLE PRECISION ACOF3  , AO2F3  , AO2F4  , AN2F4
-      DOUBLE PRECISION C1     , C2     , C3     , C4
+      DOUBLE PRECISION CC1    , CC2    , CC3    , CC4
       DOUBLE PRECISION F1I7   , F2I7   , F3I7
       DOUBLE PRECISION VARS
       DOUBLE PRECISION ZC(NGAZEM)
@@ -260,11 +260,6 @@ C --- Calcul de CX1M, CX2M
 C     et des coefficient relatifs a l'expression de
 C        ZCHx1m0, ZCHx2m0, ZCO0, ZO20 et ZN20
 C        fonctions de F1, F2, F3 et F4
-C
-      ACOF3   =  1.D0/WMC
-      AO2F3   = -.5D0/WMC
-      AO2F4   = 1.D0 / (WMO2+XSI*WMN2)
-      AN2F4   =  XSI / (WMO2+XSI*WMN2)
 C
       DO IEL = 1, NCEL
 C
@@ -528,10 +523,10 @@ C
 C
 C ----- Calcul de C1, C2, C3 et C4
 C
-          C1 = (F1I7     -F1M(IEL)) / SI7(IEL)
-          C2 = (F2I7     -F2M(IEL)) / SI7(IEL)
-          C3 = (F3I7     -F3M(IEL)) / SI7(IEL)
-          C4 = (F4I7(IEL)-F4M(IEL)) / SI7(IEL)
+          CC1 = (F1I7     -F1M(IEL)) / SI7(IEL)
+          CC2 = (F2I7     -F2M(IEL)) / SI7(IEL)
+          CC3 = (F3I7     -F3M(IEL)) / SI7(IEL)
+          CC4 = (F4I7(IEL)-F4M(IEL)) / SI7(IEL)
 C
 C ---- Rq : les autres pointeurs sont deja definis dans cplecd.F
 C
@@ -545,21 +540,21 @@ C --> Calculs des coefficients avant combustion phase gaz
 C       ZC(IGE) = AC0(IGE) + BC0(IGE) * S
 C
           AC0(ICHX1) = ACHX1F1*F1M(IEL)
-          BC0(ICHX1) = ACHX1F1*C1
+          BC0(ICHX1) = ACHX1F1*CC1
           AC0(ICHX2) = ACHX2F2*F2M(IEL)
-          BC0(ICHX2) = ACHX2F2*C2
+          BC0(ICHX2) = ACHX2F2*CC2
           AC0(ICO  ) = ACOF1*F1M(IEL)+ACOF2*F2M(IEL) +
      &                 ACOF3*F3M(IEL)
-          BC0(ICO  ) = ACOF1*C1      +ACOF2*C2       +
-     &                 ACOF3*C3
+          BC0(ICO  ) = ACOF1*CC1     +ACOF2*CC2      +
+     &                 ACOF3*CC3
           AC0(ICO2 ) = ZERO
           BC0(ICO2 ) = ZERO
           AC0(IH2O ) = ZERO
           BC0(IH2O ) = ZERO
           AC0(IO2  ) = AO2F3*F3M(IEL)+AO2F4*F4M(IEL)
-          BC0(IO2  ) = AO2F3*C3      +AO2F4*C4
+          BC0(IO2  ) = AO2F3*CC3     +AO2F4*CC4
           AC0(IN2  ) = AN2F4*F4M(IEL)
-          BC0(IN2  ) = AN2F4*C4
+          BC0(IN2  ) = AN2F4*CC4
 C
 C ---- Test
 #ifdef DEBUG
@@ -1091,62 +1086,62 @@ C
      &'==========================================================',
      &'==================',/,
      &' Nb de points de calculs                                     = ',
-     &   I6,/,
+     &   I9,/,
      &' Nb de points turbulents (passage par les PDF)               = ',
-     &   I6)
+     &   I9)
 C
  1100 FORMAT(
 C ..v.7..1....v....2....v....3....v....4....v....5....v....6....v....7.I
      &' Nb de points turbulents pour lesquels I7 app. [I4,L3] T12   = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 app. [I4,L5] T2    = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 app. [I4,L5] T13   = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 app. [L5,I3max] T11= ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 = I4  T3           = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 domaine P     = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I7 domaine I     = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I8 domaine P     = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I8 domaine I     = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I8 domaine R     = ',
-     &   I6,/,
+     &   I9,/,
      &' - - - - - - - - - - - - pour lesquels I8 domaine HR    = ',
-     &   I6)
+     &   I9)
 C
  2000 FORMAT(
      &'PDF CONJOINTE DEGENEREE EN PDF MONODIMENSIONNELLE',/,
-     &' Nb de points PDF rectangle sans Dirac            = ',I6,/,
-     &' - - - - - - - - - - - - -  et Dirac en I7        = ',I6,/,
-     &' - - - - - - - - - - - - -  et Dirac en I8        = ',I6,/,
-     &' - - - - - - - - - - - - -  et Diracs en I8 et I7 = ',I6)
+     &' Nb de points PDF rectangle sans Dirac            = ',I9,/,
+     &' - - - - - - - - - - - - -  et Dirac en I7        = ',I9,/,
+     &' - - - - - - - - - - - - -  et Dirac en I8        = ',I9,/,
+     &' - - - - - - - - - - - - -  et Diracs en I8 et I7 = ',I9)
 C
  2100 FORMAT(
      &'CONTROLE DES PARAMETRES DE LA PDF',/,
      &' Nb de points turbulents (passage par les PDF)              = ',
-     &   I6,/,
+     &   I9,/,
      &' Nb de points turbulents pour lesquels VARS est physique    = ',
-     &   I6,/
-     &' Nb de points Dirac_I7, Dirac_I8, HAUT < 0  = ',I6,I6,I6,/,
-     &' Nb de points Abs.Deb < SI7 ou > SI8        = ', I6,/,
-     &' Nb de points Abs.Fin < SI7 ou > SI8        = ', I6,/,
-     &' Nb de points (Abs.Fin-Abs.Deb) < 0         = ', I6)
+     &   I9,/
+     &' Nb de points Dirac_I7, Dirac_I8, HAUT < 0  = ',I9,I9,I9,/,
+     &' Nb de points Abs.Deb < SI7 ou > SI8        = ', I9,/,
+     &' Nb de points Abs.Fin < SI7 ou > SI8        = ', I9,/,
+     &' Nb de points (Abs.Fin-Abs.Deb) < 0         = ', I9)
 C
  2200 FORMAT(
      &'CONTROLE DES VALEURS DES FRACTIONS MASSIQUES',/,
      &' Nb de points de calculs                                    = ',
-     &   I6,/,
+     &   I9,/,
      &' Nb de points de calculs qui respectent somme des Yi = 1    = ',
-     &   I6,/,
-     &' Nb de points YCHx1m,YCHx2m,YCO < 0 ou > 1 = ',I6,I6,I6,/,
-     &' Nb de points YO2,YN2        < 0 ou > 1    = ',I6,I6,/,
-     &' Nb de points YCO2,YH2O      < 0 ou > 1    = ',I6,I6)
+     &   I9,/,
+     &' Nb de points YCHx1m,YCHx2m,YCO < 0 ou > 1 = ',I9,I9,I9,/,
+     &' Nb de points YO2,YN2        < 0 ou > 1    = ',I9,I9,/,
+     &' Nb de points YCO2,YH2O      < 0 ou > 1    = ',I9,I9)
 C
 C
       RETURN
