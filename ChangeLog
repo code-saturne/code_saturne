@@ -1,3 +1,9 @@
+* 06/08/2008 - David Monfort <david.monfort@edf.fr>
+  Removing the compilation logs from versioning.
+  removed files:
+    aux/comparlist
+    aux/listing_*
+
 * 06/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Upgrading to Preprocessor 1.4 and FVM 0.11.0 in order
   to separate the preprocessing from the partioning.
