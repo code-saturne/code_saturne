@@ -232,6 +232,14 @@ Macro_readme_comp=$2
 #                        Initial Checks
 #=========================================================================
 #
+# Sourcing cs_profile accordingly to where the install script is
+# ==============================================================
+#
+  prefix=`dirname $0`
+  prefix="$prefix/.."
+  titre "Sourcing $prefix/bin/cs_profile"
+  . $prefix/bin/cs_profile
+#
 # Default: List of the libraries to generate
 # ==========================================
 #

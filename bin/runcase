@@ -848,7 +848,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
-    echo "MPI_RANK=\`$CS_HOME/bin/rang_mpi.sh \$@\`" >> $localexec
+    echo "MPI_RANK=\`$CS_HOME/bin/mpi_rank.sh \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
     echo "  $RUN/$EXE_SYR \$@ -comm-mpi 1 -nbr_sat $nproc_kernel $ECHOCOMMSYR > listsyr 2>&1" >> $localexec

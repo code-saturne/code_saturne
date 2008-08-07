@@ -1,15 +1,15 @@
 #!/bin/sh
 
+prefix=`dirname $0`
+. $prefix/../bin/cs_profile
+
 echo Compilation for architecture $NOM_ARCH
 
-export CS_HOME=/home/saturne/Noyau/ncs-1.4.a
-cd $CS_HOME/sbin
-
-rm -f ../aux/listing_${NOM_ARCH} 
+rm -f listing_${NOM_ARCH} 
 if [ "$1" = "-test" ] ; then
-  ./install 1>../aux/listing_${NOM_ARCH} 2>&1   
+  ./install 1>listing_${NOM_ARCH} 2>&1   
 else
-  ./install -DBG && ./install 1>../aux/listing_${NOM_ARCH} 2>&1
+  ./install -DBG && ./install 1>listing_${NOM_ARCH} 2>&1
 fi
 
 exit
