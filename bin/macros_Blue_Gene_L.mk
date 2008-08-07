@@ -178,7 +178,7 @@ VARDEF          = -D_POSIX_SOURCE
 ZLIB     = -L/gpfs2/home/saturne/opt/zlib-1.2.1/arch/bgl/lib -lz
 
 # IBM libraries
-MASS     = -L/opt/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -lmass -lmassv
+MASS     = -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -lmass -lmassv
 LIBMAT   = /bgl/local/lib/libmpitrace.a
 ESSL     = /opt/ibmmath/essl/4.2/lib/libesslbg.a
 EXIT     = /bgl/local/lib/libexit.a
