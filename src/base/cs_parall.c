@@ -42,7 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h> /* JB DEBUG */
+#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -114,38 +114,6 @@ static  cs_int_t n_interface_sr_calls = 0;
 /*============================================================================
  *  Public functions definition for API Fortran
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Initialize global variable after reading the mesh in case of parallelism
- *
- * Fortran interface :
- *
- * SUBROUTINE PARGEO
- * *****************
- *
- * INTEGER          NCELGB      : --> : Global number of cells
- * INTEGER          NFACGB      : --> : Global number of internal faces
- * INTEGER          NFBRGB      : --> : Global number of border faces
- * INTEGER          NSOMGB      : --> : Global number of vertices
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pargeo, PARGEO)(cs_int_t  *ncelgb,
-                          cs_int_t  *nfacgb,
-                          cs_int_t  *nfbrgb,
-                          cs_int_t  *nsomgb)
-{
-
-#if defined(_CS_HAVE_MPI)
-
-  *ncelgb = cs_glob_mesh->n_g_cells;
-  *nfacgb = cs_glob_mesh->n_g_i_faces;
-  *nfbrgb = cs_glob_mesh->n_g_b_faces;
-  *nsomgb = cs_glob_mesh->n_g_vertices;
-
-#endif
-
-}
 
 /*----------------------------------------------------------------------------
  * Update a buffer on cells in case of parallelism

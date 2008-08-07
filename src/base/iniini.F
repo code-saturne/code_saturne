@@ -511,6 +511,11 @@ C
          LNDFBR = 0
          NCELBR = 0
 C
+         NCELGB = 0
+         NFACGB = 0
+         NFBRGB = 0
+         NSOMGB = 0
+C
 C Par defaut, on suppose qu'il n'y a pas de periodicite
          IPERIO = 0
          IPEROT = 0
