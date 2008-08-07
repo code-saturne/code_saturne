@@ -1,21 +1,21 @@
 #!/bin/sh
 
-RMBDIR=/tmp/`whoami`_rmb
+PREFIX=`dirname $0`
+PREFIX="$PREFIX/.."
+
+RMBDIR=tmp_rmb
 
 mkdir $RMBDIR || exit 1
 
-for file in $*
+for file in $PREFIX/src/*/*.c $PREFIX/src/*/*.F $PREFIX/users/*/*.F $PREFIX/include/*/*.h
 do
-  if [ -f $file ]
+  tmpfile=`basename $file`
+  sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile
+  diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
+  if [ $? = 1 ]
   then
-    tmpfile=$RMBDIR/`basename $file`
-    sed -e 's/ *$//' -e 's/	/        /g' $file > $tmpfile
-    diff $file $tmpfile > /dev/null 2>&1
-    if [ $? = 1 ]
-    then
-      echo $file
-      mv $tmpfile $file
-    fi
+    echo $file
+    mv $RMBDIR/$tmpfile $file
   fi
 done
 
