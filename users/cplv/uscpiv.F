@@ -373,15 +373,15 @@ C
 C
 C       On considere l'oxydant 1
 C
-        COEFE(IO2) = WMOLE(IO2)*OXYO2(1) 
+        COEFE(IO2) = WMOLE(IO2)*OXYO2(1)
      &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
-     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
-        COEFE(IH2O) = WMOLE(IH2O)*OXYH2O(1) 
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1))
+        COEFE(IH2O) = WMOLE(IH2O)*OXYH2O(1)
      &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
-     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
-        COEFE(ICO2) = WMOLE(ICO2)*OXYCO2(1) 
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1))
+        COEFE(ICO2) = WMOLE(ICO2)*OXYCO2(1)
      &              /( WMOLE(IO2) *OXYO2(1) +WMOLE(IN2) *OXYN2(1)
-     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1)) 
+     &                +WMOLE(IH2O)*OXYH2O(1)+WMOLE(ICO2)*OXYCO2(1))
         COEFE(IN2) = 1.D0-COEFE(IO2)-COEFE(IH2O)-COEFE(ICO2)
 C
         DO ICHA = 1, NCHARM
@@ -435,11 +435,11 @@ C
             IOXY   =  1
             WMO2   = WMOLE(IO2)
             WMCO2  = WMOLE(ICO2)
-            WMH2O  = WMOLE(IH2O)    
-            WMN2   = WMOLE(IN2)  
+            WMH2O  = WMOLE(IH2O)
+            WMN2   = WMOLE(IN2)
 C
             DMAS = ( OXYO2 (IOXY)*WMO2 +OXYN2 (IOXY)*WMN2
-     &              +OXYH2O(IOXY)*WMH2O+OXYCO2(IOXY)*WMCO2 ) 
+     &              +OXYH2O(IOXY)*WMH2O+OXYCO2(IOXY)*WMCO2 )
             XCO2 = OXYCO2(IOXY)*WMCO2/DMAS
 C
             RTP(IEL,ISCA(IYCO2)) = OXYCO2(IOXY)*WMCO2/DMAS

@@ -169,31 +169,6 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
- * Save or restore rotation terms in halo for a cell variable.
- *
- * Only the terms from one variable may be saved at a time, and they
- * must be restored before other terms may be saved.
- *
- * This function may be used to cancel the effect of halo synchronization
- * for for rotational periodicities, by saving halo rotation terms
- * before halo synchronization, and restoring them after synchronization.
- *
- * Fortran API:
- *
- * SUBROUTINE PERSVR
- * *****************
- *
- * INTEGER          IMODE         :  -> : mode
- *                                        0 : save halo rotation terms
- *                                        1 : restore halo rotation terms
- * DOUBLE PRECISION VAR(NCELET)   :  -  : cell variable
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (persvr, PERSVR) (const cs_int_t  *mode,
-                           cs_real_t        var[]);
-
-/*----------------------------------------------------------------------------
  * Update values of periodic cells on extended halos.
  *
  * Except for the extended halo, this function is the same as PERCOM.
@@ -243,6 +218,31 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
                            cs_real_t        var31[],
                            cs_real_t        var32[],
                            cs_real_t        var33[]);
+
+/*----------------------------------------------------------------------------
+ * Save or restore rotation terms in halo for a cell variable.
+ *
+ * Only the terms from one variable may be saved at a time, and they
+ * must be restored before other terms may be saved.
+ *
+ * This function may be used to cancel the effect of halo synchronization
+ * for for rotational periodicities, by saving halo rotation terms
+ * before halo synchronization, and restoring them after synchronization.
+ *
+ * Fortran API:
+ *
+ * SUBROUTINE PERSVR
+ * *****************
+ *
+ * INTEGER          IMODE         :  -> : mode
+ *                                        0 : save halo rotation terms
+ *                                        1 : restore halo rotation terms
+ * DOUBLE PRECISION VAR(NCELET)   :  -  : cell variable
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (persvr, PERSVR) (const cs_int_t  *mode,
+                           cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
