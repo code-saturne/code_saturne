@@ -356,24 +356,17 @@ int main
 
   } /* End if ifoenv != 0 */
 
-  /* Initialisation du post-traitement principal */
+  /* Initialisation des cas du post-traitement principal */
 
-  cs_post_init_pcp();
+  cs_post_init_pcp_writer();
 
-  /* Initialisation liées à la construction des halos */
+  /* Initialisations liées à la construction des halos */
 
   cs_mesh_init_halo(cs_glob_mesh);
 
   /* Initialisations liées au parallélisme */
 
   cs_mesh_init_parall(cs_glob_mesh);
-
-  /* Renumérotation en fonction des options du code */
-
-  bft_printf(_("\n Renumerotation du maillage:\n"));
-  bft_printf_flush();
-  cs_renumber_mesh(cs_glob_mesh,
-                   cs_glob_mesh_quantities);
 
   /* Modification éventuelle de la géométrie */
 
@@ -409,6 +402,17 @@ int main
     bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
 
   }
+
+  /* Renumérotation en fonction des options du code */
+
+  bft_printf(_("\n Renumerotation du maillage:\n"));
+  bft_printf_flush();
+  cs_renumber_mesh(cs_glob_mesh,
+                   cs_glob_mesh_quantities);
+
+  /* Initialisation des maillages du post-traitement principal */
+
+  cs_post_init_pcp_maillages();
 
   /* Mise à jour de certaines dimensions du maillage */
 

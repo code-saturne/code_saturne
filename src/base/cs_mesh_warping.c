@@ -1331,8 +1331,6 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-treatment of the selected faces */
 
-  cs_post_renum_faces();
-
   if (post_tag == CS_TRUE)
     _post_after_cutting(n_i_cut_faces,
                         n_b_cut_faces,

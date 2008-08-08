@@ -749,10 +749,20 @@ void cs_post_detruit
 
 
 /*----------------------------------------------------------------------------
- * Initialisation du post-traitement principal
+ * Initialisation du "writer" du post-traitement principal
  *----------------------------------------------------------------------------*/
 
-void cs_post_init_pcp
+void cs_post_init_pcp_writer
+(
+ void
+);
+
+
+/*----------------------------------------------------------------------------
+ * Initialisation des maillages du post-traitement principal
+ *----------------------------------------------------------------------------*/
+
+void cs_post_init_pcp_maillages
 (
  void
 );

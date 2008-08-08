@@ -2629,10 +2629,10 @@ void cs_post_detruit
 
 
 /*----------------------------------------------------------------------------
- * Initialisation du post-traitement principal
+ * Initialisation du "writer" du post-traitement principal
  *----------------------------------------------------------------------------*/
 
-void cs_post_init_pcp
+void cs_post_init_pcp_writer
 (
  void
 )
@@ -2650,8 +2650,6 @@ void cs_post_init_pcp
   const char  nomrep_def[] = ".";
   const char *nomrep = NULL;
 
-  cs_int_t  id_maillage = -1;
-
   const cs_int_t  id_writer = -1; /* Numéro du writer par défaut */
 
   /* Récupération des paramètres contenus dans les COMMONS Fortran */
@@ -2667,7 +2665,7 @@ void cs_post_init_pcp
   fmtchr[32] = '\0';
   optchr[96] = '\0';
 
-  if (indic_vol == 0 && indic_brd == 0)
+  if (indic_vol == 0 && indic_brd == 0 && indic_syr == 0)
     return;
 
   /* Création du writer par défaut */
@@ -2684,6 +2682,43 @@ void cs_post_init_pcp
                         optchr,
                         indic_mod,
                         ntchr);
+
+}
+
+
+/*----------------------------------------------------------------------------
+ * Initialisation des maillages du post-traitement principal
+ *----------------------------------------------------------------------------*/
+
+void cs_post_init_pcp_maillages
+(
+ void
+)
+{
+  /* Valeurs par défaut */
+
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1;
+  cs_int_t  indic_mod = -1;
+  char  fmtchr[32 + 1] = "";
+  char  optchr[96 + 1] = "";
+  cs_int_t  ntchr = -1;
+
+  cs_int_t  id_maillage = -1;
+
+  const cs_int_t  id_writer = -1; /* Numéro du writer par défaut */
+
+  /* Récupération des paramètres contenus dans les COMMONS Fortran */
+
+  CS_PROCF(inipst, INIPST)(&indic_vol,
+                           &indic_brd,
+                           &indic_syr,
+                           &indic_mod,
+                           &ntchr,
+                           fmtchr,
+                           optchr);
+
+  fmtchr[32] = '\0';
+  optchr[96] = '\0';
 
   /* Définition des maillages de post-traitement */
 
