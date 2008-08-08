@@ -403,7 +403,7 @@ int main
   if (opts.cwf == CS_TRUE) {
 
     t1 = bft_timer_wtime();
-    cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion);
+    cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);
     t2 = bft_timer_wtime();
 
     bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);

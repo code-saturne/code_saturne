@@ -189,7 +189,9 @@ _arg_env_help(const char  *name)
           "                    1 à 5 : activation de tests élémentaires\n"));
   fprintf
     (e, _(" -cwf              <critere> découpage des faces gauches\n"
-          "                   (cut warped faces)\n"));
+          "                   (cut warped faces)\n"
+          "                    -post : active le post-traitement lié au \n"
+          "                            découpage des faces\n"));
   fprintf
     (e, _(" --benchmark       performance des opérations élémentaires\n"
           "                   [--mpitrace] opérations effectuées une seule\n"
@@ -777,6 +779,7 @@ cs_opts_define(int         argc,
   opts->benchmark = 0;
 
   opts->cwf = CS_FALSE;
+  opts->cwf_post = CS_FALSE;
   opts->cwf_criterion = 0.01;
 
   /* Parse command line arguments */
@@ -877,6 +880,12 @@ cs_opts_define(int         argc,
           opts->cwf_criterion = _arg_to_double(arg_id + 1, argc, argv, &argerr);
           if (argerr == 0)
             arg_id++;
+        }
+      }
+      if (arg_id + 1 < argc) {
+        if (strcmp((argv[arg_id+1]), "-post") == 0) {
+          opts->cwf_post = CS_TRUE;
+          arg_id++;
         }
       }
     }

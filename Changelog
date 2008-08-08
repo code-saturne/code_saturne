@@ -1,3 +1,13 @@
+* 08/08/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Cut warped faces post-processing is now controlled by
+  a command line option.
+  modified routines:
+    include/base/cs_opts.h
+    include/base/cs_mesh_warping.h
+    src/base/cs_main.c
+    src/base/cs_opts.c
+    src/base/cs_mesh_warping.c
+
 * 08/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Updating the halos at the beginning of an outer iteration
   is now done on extended halos (fixing a possible bug in
