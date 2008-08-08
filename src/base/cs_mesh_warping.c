@@ -1191,11 +1191,13 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
  * parameters:
  *   mesh             <-> pointer to mesh structure.
  *   max_warp_angle   --> criterion to know which face to cut
+ *   post_tag         --> tag to know if we have to post-treat cut faces.
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
-                          double        max_warp_angle)
+                          double        max_warp_angle,
+                          cs_bool_t     post_tag)
 {
   cs_int_t  i;
 
@@ -1285,12 +1287,13 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-processing management */
 
-  _post_before_cutting(n_i_warp_faces,
-                       n_b_warp_faces,
-                       i_face_lst,
-                       b_face_lst,
-                       i_face_warping,
-                       b_face_warping);
+  if (post_tag == CS_TRUE)
+    _post_before_cutting(n_i_warp_faces,
+                         n_b_warp_faces,
+                         i_face_lst,
+                         b_face_lst,
+                         i_face_warping,
+                         b_face_warping);
 
   /* Internal face treatment */
   /* ----------------------- */
@@ -1384,10 +1387,11 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-treatment of the selected faces */
 
-  _post_after_cutting(n_i_cut_faces,
-                      n_b_cut_faces,
-                      i_face_lst,
-                      b_face_lst);
+  if (post_tag == CS_TRUE)
+    _post_after_cutting(n_i_cut_faces,
+                        n_b_cut_faces,
+                        i_face_lst,
+                        b_face_lst);
 
   /* Free memory */
 

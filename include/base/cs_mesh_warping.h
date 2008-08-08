@@ -68,11 +68,13 @@ extern "C" {
  * parameters:
  *   mesh             <-> pointer to mesh structure.
  *   max_warp_angle   --> criterion to know which face to cut
+ *   post_tag         --> tag to know if we have to post-treat cut faces.
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
-                          double        max_warp_angle);
+                          double        max_warp_angle,
+                          cs_bool_t     post_tag);
 
 /*----------------------------------------------------------------------------*/
 

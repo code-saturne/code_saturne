@@ -380,11 +380,11 @@ int main
 
   } /* End if ifoenv != 0 */
 
-  /* Initialisation du post-traitement principal */
+  /* Initialisation des cas du post-traitement principal */
 
-  cs_post_init_pcp();
+  cs_post_init_pcp_writer();
 
-  /* Initialisation liées à la construction des halos */
+  /* Initialisations liées à la construction des halos */
 
   cs_mesh_init_halo(cs_glob_mesh);
 
@@ -420,7 +420,7 @@ int main
   if (opts.cwf == CS_TRUE) {
 
     t1 = bft_timer_wtime();
-    cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion);
+    cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);
     t2 = bft_timer_wtime();
 
     bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
@@ -433,6 +433,10 @@ int main
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
+
+  /* Initialisation des maillages du post-traitement principal */
+
+  cs_post_init_pcp_maillages();
 
   /* Mise à jour de certaines dimensions du maillage */
 
