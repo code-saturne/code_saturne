@@ -65,7 +65,6 @@
 #include "cs_ecs_messages.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
-#include "cs_mesh_connect.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_solcom.h"
 #include "cs_mesh_quality.h"
@@ -82,7 +81,6 @@
 
 #if defined(_CS_HAVE_XML)
 #include "cs_gui.h"
-#include "cs_gui_radiative_transfer.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

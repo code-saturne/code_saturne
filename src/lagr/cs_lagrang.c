@@ -41,7 +41,6 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_printf.h>
 #include <bft_error.h>
 
 /*----------------------------------------------------------------------------
@@ -412,7 +411,6 @@ CS_PROCF (csieee,CSIEEE)(void)
 
   if (_check_ieee_standard()) {
 
-    bft_printf_flush();
     bft_error(__FILE__, __LINE__, 0,
               _("L'arithmétique IEEE 754 n'est pas respectée"
                 " par l'architecture courante"));

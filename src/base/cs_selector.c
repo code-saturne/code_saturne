@@ -40,7 +40,6 @@
 
 /* pour les API Fortran : a deplacer */
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_selector.h"
 
 #include "fvm_selector.h"

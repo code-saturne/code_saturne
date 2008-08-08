@@ -56,10 +56,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_gui_util.h"
 #include "cs_gui.h"
+#include "cs_gui_util.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "fvm_selector.h"
 
 /*----------------------------------------------------------------------------

@@ -65,8 +65,7 @@
 #include "cs_blas.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
-
-#include "cs_prototypes.h"
+#include "cs_perio.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

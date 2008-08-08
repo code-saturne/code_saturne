@@ -116,7 +116,6 @@ C
       INCLUDE "paramx.h"
       INCLUDE "vector.h"
       INCLUDE "entsor.h"
-      INCLUDE "parall.h"
 C
 C ARGUMENTS
 C

@@ -49,7 +49,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_syr3_coupling.h"
 
 #ifdef __cplusplus
 extern "C" {

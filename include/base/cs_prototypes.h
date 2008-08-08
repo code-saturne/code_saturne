@@ -190,7 +190,7 @@ extern void CS_PROCF (gradmc, GRADMC)
  * Mesh renumbering for vector processors
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (numvec, NUMVEC)
+extern void CS_PROCF (numvec, NUMVEC)
 (
  const cs_int_t   *ncelet,        /* --> Number of cells, halo included */
  const cs_int_t   *ncel,          /* --> Number of local cells */
@@ -222,47 +222,6 @@ void CS_PROCF (numvec, NUMVEC)
  cs_real_t        *rworkf,        /* <-> Work array, size: max(nfac, nfabor) */
  cs_real_t        *rsmbs,         /* <-> Work array, size: ncelet */
  cs_real_t        *rsmbv          /* <-> Work array, size: ncelet */
-);
-
-/*----------------------------------------------------------------------------
- * Matrix-vector product
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (promav, PROMAV)
-(
- const cs_int_t   *ncelet,        /* --> Number of cells, halo included */
- const cs_int_t   *ncel,          /* --> Number of local cells */
- const cs_int_t   *nfac,          /* --> Number of faces */
- const cs_int_t   *isym,          /* --> Symmetry indicator:
-                                         1: symmetric; 2: not symmetric */
- const cs_int_t   *iinvpe,        /* --> Indicator to cancel increments
-                                         in rotational periodicty (2) or
-                                         to exchange them as scalars (1) */
- const cs_int_t   *ifacel,        /* --> Face -> cell connectivity  */
- const cs_real_t  *da,            /* --> Matrix diagonal */
- const cs_real_t  *xa,            /* --> Matrix extra-diagonal terms */
- const cs_real_t  *vx,            /* --> Vector to be multiplied */
- const cs_real_t  *vy             /* <-- Resulting vector */
-);
-
-/*----------------------------------------------------------------------------
- * Matrix-vector product (non-symmetric part only)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (proxav, PROXAV)
-(
- const cs_int_t   *ncelet,        /* --> Number of cells, halo included */
- const cs_int_t   *ncel,          /* --> Number of local cells */
- const cs_int_t   *nfac,          /* --> Number of faces */
- const cs_int_t   *isym,          /* --> Symmetry indicator:
-                                         1: symmetric; 2: not symmetric */
- const cs_int_t   *iinvpe,        /* --> Indicator to cancel increments
-                                         in rotational periodicty (2) or
-                                         to exchange them as scalars (1) */
- const cs_int_t   *ifacel,        /* --> Face -> cell connectivity  */
- const cs_real_t  *xa,            /* --> Matrix extra-diagonal terms */
- const cs_real_t  *vx,            /* --> Vector to be multiplied */
- const cs_real_t  *vy             /* <-- Resulting vector */
 );
 
 /*----------------------------------------------------------------------------
