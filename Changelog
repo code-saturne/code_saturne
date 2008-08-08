@@ -1,3 +1,17 @@
+* 08/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updating the halos at the beginning of an outer iteration
+  is now done on extended halos (fixing a possible bug in
+  case of rotation).
+  modified routines:
+    include/base/cs_perio.h
+    src/base/cs_perio.c
+    src/base/tridim.F
+
+* 08/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve a halo coherency check.
+  modified routine:
+    src/base/cs_halo.c
+
 * 04/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve the mesh coherency tests in case of periodicity
   modified subroutine:
