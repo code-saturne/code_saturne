@@ -413,7 +413,7 @@ C
       IF(IRANGP.GE.0) THEN
 C
         DO IVAR = 1, NVAR
-          CALL PARCOM (RTP(1,IVAR))
+          CALL PARCVE (RTP(1,IVAR))
 C         ===========
         ENDDO
 C
@@ -432,7 +432,7 @@ C
           IWIPH = IW(IPHAS)
           IDIMTE = 1
           ITENSO = 0
-          CALL PERCOM
+          CALL PERCVE
 C         ===========
      &    ( IDIMTE , ITENSO ,
      &      RTP(1,IUIPH), RTP(1,IUIPH), RTP(1,IUIPH),
@@ -454,7 +454,7 @@ C
             IR12IP = IR12(IPHAS)
             IR13IP = IR13(IPHAS)
             IR23IP = IR23(IPHAS)
-            CALL PERCOM
+            CALL PERCVE
 C           ===========
      &    ( IDIMTE , ITENSO ,
      &      RTP(1,IR11IP), RTP(1,IR12IP), RTP(1,IR13IP),
@@ -482,7 +482,7 @@ C
 C
               IDIMTE = 0
               ITENSO = 0
-              CALL PERCOM
+              CALL PERCVE
 C             ===========
      &      ( IDIMTE , ITENSO ,
      &        RTP(1,IVAR), RTP(1,IVAR), RTP(1,IVAR),
@@ -509,17 +509,17 @@ C --- Communication de FRCXT
 C
           DO IPHAS = 1, NPHAS
             IF(IRANGP.GE.0) THEN
-              CALL PARCOM (FRCXT(1,1,IPHAS))
+              CALL PARCVE (FRCXT(1,1,IPHAS))
 C             ===========
-              CALL PARCOM (FRCXT(1,2,IPHAS))
+              CALL PARCVE (FRCXT(1,2,IPHAS))
 C             ===========
-              CALL PARCOM (FRCXT(1,3,IPHAS))
+              CALL PARCVE (FRCXT(1,3,IPHAS))
 C             ===========
             ENDIF
             IF(IPERIO.EQ.1) THEN
               IDIMTE = 1
               ITENSO = 0
-              CALL PERCOM
+              CALL PERCVE
 C             ===========
      &    ( IDIMTE , ITENSO ,
      &      FRCXT(1,1,IPHAS),FRCXT(1,1,IPHAS),FRCXT(1,1,IPHAS),
@@ -537,13 +537,13 @@ C
           DO IPHAS = 1, NPHAS
             IPCROM = IPPROC(IROM  (IPHAS))
             IF(IRANGP.GE.0) THEN
-              CALL PARCOM (PROPCE(1,IPCROM))
+              CALL PARCVE (PROPCE(1,IPCROM))
 C             ===========
             ENDIF
             IF(IPERIO.EQ.1) THEN
               IDIMTE = 0
               ITENSO = 0
-              CALL PERCOM
+              CALL PERCVE
 C             ===========
      &    ( IDIMTE , ITENSO ,
      &      PROPCE(1,IPCROM),PROPCE(1,IPCROM),PROPCE(1,IPCROM),
