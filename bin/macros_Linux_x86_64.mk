@@ -185,7 +185,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux_x86_64/lib -lefence
+LIBEF    =-lefence
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------
