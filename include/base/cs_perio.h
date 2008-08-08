@@ -82,7 +82,7 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update values of periodic cells.
+ * Update values of periodic cells on standard halos.
  *
  * VARIJ stands for the periodic variable to deal with.
  *
@@ -192,6 +192,57 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
 void
 CS_PROCF (persvr, PERSVR) (const cs_int_t  *mode,
                            cs_real_t        var[]);
+
+/*----------------------------------------------------------------------------
+ * Update values of periodic cells on extended halos.
+ *
+ * Except for the extended halo, this function is the same as PERCOM.
+ *
+ * Fortran API:
+ *
+ * SUBROUTINE PERCVE
+ * *****************
+ *
+ * INTEGER          IDIMTE        :  -> : variable dimension (maximum 3)
+ *                                        0 : scalar (VAR11), or considered
+ *                                            scalar
+ *                                        1 : vector (VAR11,VAR22,VAR33)
+ *                                        2 : tensor of rank 2 (VARIJ)
+ *                                       21 : tensor of rank 2 supposed
+ *                                            diagonal (VAR11, VAR22, VAR33)
+ * INTEGER          ITENSO        :  -> : to define rotation behavior
+ *                                        0 : scalar (VAR11)
+ *                                        1 : tensor or vector component
+ *                                            (VAR11), implicit in
+ *                                            translation case
+ *                                       11 : same as ITENSO=1 with vector
+ *                                            or tensor component cancelled
+ *                                            for rotation
+ *                                        2 : vector (VAR11, VAR22, VAR33)
+ *                                            implicit for rotation
+ * DOUBLE PRECISION VAR11(NCELET) :  -  : component 11 of rank 2 tensor
+ * DOUBLE PRECISION VAR12(NCELET) :  -  : component 12 of rank 2 tensor
+ * DOUBLE PRECISION VAR13(NCELET) :  -  : component 13 of rank 2 tensor
+ * DOUBLE PRECISION VAR21(NCELET) :  -  : component 21 of rank 2 tensor
+ * DOUBLE PRECISION VAR22(NCELET) :  -  : component 22 of rank 2 tensor
+ * DOUBLE PRECISION VAR23(NCELET) :  -  : component 23 of rank 2 tensor
+ * DOUBLE PRECISION VAR31(NCELET) :  -  : component 31 of rank 2 tensor
+ * DOUBLE PRECISION VAR32(NCELET) :  -  : component 32 of rank 2 tensor
+ * DOUBLE PRECISION VAR33(NCELET) :  -  : component 33 of rank 2 tensor
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
+                           const cs_int_t  *itenso,
+                           cs_real_t        var11[],
+                           cs_real_t        var12[],
+                           cs_real_t        var13[],
+                           cs_real_t        var21[],
+                           cs_real_t        var22[],
+                           cs_real_t        var23[],
+                           cs_real_t        var31[],
+                           cs_real_t        var32[],
+                           cs_real_t        var33[]);
 
 /*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
