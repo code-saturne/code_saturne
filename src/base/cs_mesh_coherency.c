@@ -271,18 +271,31 @@ cs_mesh_coherency_check(void)
        of a box of side 1 is sqrt(3), and may find itself aligned
        with axes after rotation. */
 
-    delta_mean_mult = 1.0/1.8;
+    if (mesh->have_rotation_perio == 1) {
 
-    for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
-      cs_real_t delta_max = delta[3*cell_id];
-      if (delta[3*cell_id + 1] > delta_max)
-        delta_max = delta[3*cell_id + 1];
-      if (delta[3*cell_id + 2] > delta_max)
-        delta_max = delta[3*cell_id + 2];
-      delta_max *= 1.8;
-      delta_buffer[                        cell_id] = delta_max;
-      delta_buffer[  n_cells_with_ghosts + cell_id] = delta_max;
-      delta_buffer[2*n_cells_with_ghosts + cell_id] = delta_max;
+      delta_mean_mult = 1.0/1.8;
+
+      for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+        cs_real_t delta_max = delta[3*cell_id];
+        if (delta[3*cell_id + 1] > delta_max)
+          delta_max = delta[3*cell_id + 1];
+        if (delta[3*cell_id + 2] > delta_max)
+          delta_max = delta[3*cell_id + 2];
+        delta_max *= 1.8;
+        delta_buffer[                        cell_id] = delta_max;
+        delta_buffer[  n_cells_with_ghosts + cell_id] = delta_max;
+        delta_buffer[2*n_cells_with_ghosts + cell_id] = delta_max;
+      }
+
+    }
+    else {
+
+      for (coord_id = 0; coord_id < 3; coord_id++) {
+        for (cell_id = 0; cell_id < n_cells; cell_id++)
+          delta_buffer[coord_id*n_cells_with_ghosts + cell_id]
+            = delta[3*cell_id + coord_id];
+      }
+
     }
 
     cs_perio_sync_var_vect(mesh->halo,

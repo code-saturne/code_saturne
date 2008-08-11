@@ -1861,6 +1861,8 @@ void CS_PROCF(ledevi, LEDEVI)
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_io_read_global(&header, (void *) iperot, pp_in);
+        if (*iperot > 0)
+          mesh->have_rotation_perio = 1;
       }
 
     }

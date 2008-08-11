@@ -125,6 +125,8 @@ typedef struct {
                                      (standard) */
   cs_int_t  n_transforms;         /* Number of transformations */
 
+  cs_int_t  have_rotation_perio;  /* Periodicity rotation indicator */
+
   fvm_periodicity_t  *periodicity;   /* parameters of each periodicity */
 
   /* Parallelism and/or periodic features */

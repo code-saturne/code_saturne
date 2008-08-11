@@ -614,6 +614,7 @@ cs_mesh_create(void)
 
   mesh->n_init_perio = 0;
   mesh->n_transforms = 0;
+  mesh->have_rotation_perio = 0;
   mesh->periodicity = NULL;
 
   /* Halo features */
