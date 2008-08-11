@@ -135,6 +135,8 @@ cs_mesh_coherency_check(void)
   cs_real_t  test, delta_mean, delta_neighbor;
   cs_real_t  _min, _max, coord;
 
+  cs_real_t delta_mean_mult = 1.0;
+
   cs_real_t  *minmax_buffer = NULL, *compute_buffer = NULL;
   cs_real_t  *min = NULL, *max = NULL, *mean = NULL, *delta = NULL;
 
@@ -273,6 +275,8 @@ cs_mesh_coherency_check(void)
        of a box of side 1 is sqrt(3), and may find itself aligned
        with axes after rotation. */
 
+    delta_mean_mult = 1.0/1.8;
+
     for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
       cs_real_t delta_max = delta[3*cell_id];
       if (delta[3*cell_id + 1] > delta_max)
@@ -319,7 +323,7 @@ cs_mesh_coherency_check(void)
       cs_real_t  mean1 = mean[3*cell_id1 + coord_id];
       cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
 
-      delta_mean = CS_ABS(mean2 - mean1);
+      delta_mean = CS_ABS(mean2 - mean1)*delta_mean_mult;
       delta_neighbor = (delta1 + delta2)/2.;
 
       test = (1 + CS_MESH_COHERENCY_TOLERANCE)*delta_neighbor - delta_mean;
@@ -368,7 +372,7 @@ cs_mesh_coherency_check(void)
           cs_real_t  mean1 = mean[3*cell_id + coord_id];
           cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
 
-          delta_mean = CS_ABS(mean2 - mean1);
+          delta_mean = CS_ABS(mean2 - mean1)*delta_mean_mult;
           delta_neighbor = (delta1 + delta2)/2.;
 
           test = (1 + CS_MESH_COHERENCY_TOLERANCE)*delta_neighbor - delta_mean;
