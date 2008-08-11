@@ -725,6 +725,9 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   /* Free halo structure */
 
+  if (mesh == cs_glob_mesh)
+    cs_perio_free_buffer();
+
   mesh->halo = cs_halo_destroy(mesh->halo);
 
   /* Free selection structures */
@@ -1144,6 +1147,9 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
                         vertex_interfaces,
                         &gcell_vtx_idx,
                         &gcell_vtx_lst);
+
+    if (mesh->n_init_perio > 0)
+      cs_perio_update_buffer(mesh->halo);
 
     fvm_interface_set_destroy(vertex_interfaces);
 

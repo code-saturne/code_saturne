@@ -83,6 +83,17 @@ extern "C" {
  *============================================================================*/
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* De-interlace buffer for strided operations */
+
+static size_t  _cs_glob_perio_halo_backup_size = 0;
+static size_t  _cs_glob_perio_halo_backup_id = 0;
+static cs_real_t  *_cs_glob_perio_halo_backup = NULL;
+static const cs_real_t  *_cs_glob_perio_last_backup[3] = {NULL, NULL, NULL};
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -388,7 +399,6 @@ _update_dudxyz(cs_int_t          h_cell_id,
     }
 
   } /* End if second call */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -443,40 +453,6 @@ _update_drdxyz(cs_int_t          h_cell_id,
     }
 
   } /* End if second call */
-
-}
-
-/*----------------------------------------------------------------------------
- * Test if there is/are rotation(s).
- *
- * returns:
- *   CS_TRUE or CS_FALSE;
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t
-_test_rota_presence(void)
-{
-  cs_int_t  t_id;
-
-  cs_bool_t  result = CS_FALSE;
-  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_int_t  n_transforms = mesh->n_transforms;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    perio_type = fvm_periodicity_get_type(periodicity, t_id);
-
-    if (perio_type >= FVM_PERIODICITY_ROTATION) {
-      result = CS_TRUE;
-      break;
-    }
-
-  }
-
-  return result;
 }
 
 /*----------------------------------------------------------------------------
@@ -506,11 +482,20 @@ _peinur1(cs_int_t      strid_c,
   cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  n_cells = mesh->n_cells;
+  const cs_int_t  n_ghost_cells = mesh->n_cells_with_ghosts - mesh->n_cells;
+  const size_t    save_block_size = n_ghost_cells*sizeof(cs_real_t);
   const cs_int_t  n_transforms = mesh->n_transforms;
 
-  _sync_loc_var(mesh->halo, mesh->halo_type, w1);
-  _sync_loc_var(mesh->halo, mesh->halo_type, w2);
-  _sync_loc_var(mesh->halo, mesh->halo_type, w3);
+  cs_real_t *w_save = NULL;
+  BFT_MALLOC(w_save, n_ghost_cells*3, cs_real_t);
+
+  memcpy(w_save,                   w1+n_cells, save_block_size);
+  memcpy(w_save +  n_ghost_cells,  w2+n_cells, save_block_size);
+  memcpy(w_save+(2*n_ghost_cells), w3+n_cells, save_block_size);
+
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w1);
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w2);
+  cs_halo_sync_var(mesh->halo, mesh->halo_type, w3);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -550,8 +535,12 @@ _peinur1(cs_int_t      strid_c,
 
   } /* End of loop on transformations */
 
-}
+  memcpy(w1+n_cells, w_save,                   save_block_size);
+  memcpy(w2+n_cells, w_save +  n_ghost_cells,  save_block_size);
+  memcpy(w3+n_cells, w_save+(2*n_ghost_cells), save_block_size);
 
+  BFT_FREE(w_save);
+}
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -660,7 +649,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
 
   if (bool_err == CS_TRUE)
     bft_error(__FILE__, __LINE__, 0,
-              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes"));
+              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes."));
 
   /* 2. Synchronization  */
   /*---------------------*/
@@ -879,68 +868,6 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
 }
 
 /*----------------------------------------------------------------------------
- * Save or restore rotation terms in halo for a cell variable.
- *
- * Only the terms from one variable may be saved at a time, and they
- * must be restored before other terms may be saved.
- *
- * This function may be used to cancel the effect of halo synchronization
- * for for rotational periodicities, by saving halo rotation terms
- * before halo synchronization, and restoring them after synchronization.
- *
- * Fortran API:
- *
- * SUBROUTINE PERSVR
- * *****************
- *
- * INTEGER          IMODE         :  -> : mode
- *                                        0 : save halo rotation terms
- *                                        1 : restore halo rotation terms
- * DOUBLE PRECISION VAR(NCELET)   :  -  : cell variable
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (persvr, PERSVR) (const cs_int_t  *mode,
-                           cs_real_t        var[])
-{
-  size_t      sr_count = 0;
-
-  static size_t save_buffer_size = 0;
-  static cs_real_t *save_buffer = NULL;
-
-  const cs_halo_t  *halo = cs_glob_mesh->halo;
-
-  if (*mode == 0) {
-
-    save_buffer_size = halo->n_elts[0];
-    BFT_MALLOC(save_buffer, save_buffer_size, cs_real_t);
-
-    sr_count = cs_perio_save_rotation_halo(halo,
-                                           CS_HALO_STANDARD,
-                                           var,
-                                           save_buffer);
-  }
-  else if (*mode == 1) {
-
-    if (save_buffer_size != (size_t)(halo->n_elts[0]))
-      bft_error(__FILE__, __LINE__, 0,
-                _("La taille du tableau de sauvegarde du halo de rotation (%d)\n"
-                  "ne correspond pas à la taille enregistréépas (%d)."),
-                (int)(halo->n_elts[0]), (int)(save_buffer_size));
-
-    sr_count = cs_perio_restore_rotation_halo(halo,
-                                              CS_HALO_STANDARD,
-                                              var,
-                                              save_buffer);
-
-    BFT_FREE(save_buffer);
-    save_buffer_size = 0;
-  }
-
-  assert(sr_count <= (size_t)(halo->n_elts[0]));
-}
-
-/*----------------------------------------------------------------------------
  * Periodicity management for INIMAS
  *
  * If INIMAS is called by NAVSTO :
@@ -1049,7 +976,6 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
     } /* End of loop on ranks */
 
   } /* End of loop on transformation */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1178,7 +1104,7 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
         their value.
   */
 
-  if (_test_rota_presence()) {
+  if (halo->n_rotations > 0) {
 
     assert(*iperot > 0);
 
@@ -1308,7 +1234,6 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
     }
 
   } /* If there is/are rotation(s) */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1347,7 +1272,6 @@ CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
   const cs_int_t  strid_c = n_ghost_cells * comp_id;
 
   _peinur1(strid_c, strid_v, strid_p, dudxyz, w1, w2, w3);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1467,7 +1391,6 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
     } /* End if periodicity is a rotation */
 
   } /* End of loop on transformation */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1506,7 +1429,6 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
   const cs_int_t  strid_c = n_ghost_cells * comp_id;
 
   _peinur1(strid_c, strid_v, strid_p, drdxyz, w1, w2, w3);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1854,7 +1776,6 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
     } /* If the transformation is a rotation */
 
   } /* End of loop on transformations */
-
 }
 
 /*============================================================================
@@ -1971,7 +1892,12 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
 
   _test_halo_compatibility(halo);
 
-  _sync_loc_var(halo, sync_mode, var);
+  if (rota_mode == CS_PERIO_ROTA_COPY)
+    _sync_loc_var(halo, sync_mode, var);
+
+  else if (   rota_mode == CS_PERIO_ROTA_IGNORE
+           && cs_glob_base_nbr > 1)
+    cs_perio_restore_rotation_halo(halo, sync_mode, var);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2011,7 +1937,6 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
     }
 
   } /* End of loop on transformations */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2054,9 +1979,18 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
 
   _test_halo_compatibility(halo);
 
-  _sync_loc_var(halo, sync_mode, var_x);
-  _sync_loc_var(halo, sync_mode, var_y);
-  _sync_loc_var(halo, sync_mode, var_z);
+  if (rota_mode == CS_PERIO_ROTA_COPY) {
+    _sync_loc_var(halo, sync_mode, var_x);
+    _sync_loc_var(halo, sync_mode, var_y);
+    _sync_loc_var(halo, sync_mode, var_z);
+  }
+  else if (   rota_mode == CS_PERIO_ROTA_IGNORE
+           && cs_glob_base_nbr > 1) {
+    cs_perio_restore_rotation_halo(halo, sync_mode, var_x);
+    cs_perio_restore_rotation_halo(halo, sync_mode, var_y);
+    cs_perio_restore_rotation_halo(halo, sync_mode, var_z);
+  }
+
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -2146,7 +2080,6 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
     } /* End of the treatment of rotation */
 
   } /* End of loop on transformations */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2287,7 +2220,6 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
     } /* End of loop on ranks */
 
   } /* End of loop on transformations for the local rank */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2393,19 +2325,81 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
     } /* End of the treatment of rotation */
 
   } /* End of loop on transformations */
-
 }
 
 /*----------------------------------------------------------------------------
- * Save rotation terms of a halo to a buffer.
+ * Update global halo backup buffer size so as to be usable with a given halo.
+ *
+ * This function should be called at the end of any halo creation,
+ * so that buffer sizes are increased if necessary.
+ *
+ * parameters:
+ *   halo  --> pointer to cs_mesh_halo_t structure.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_perio_update_buffer(const cs_halo_t *halo)
+{
+  cs_int_t  rank_id, shift, t_id;
+
+  cs_mesh_t  *mesh = cs_glob_mesh;
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  size_t save_count = 0;
+
+  const int  n_transforms = halo->n_transforms;
+  const fvm_periodicity_t *periodicity = mesh->periodicity;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  /* Loop on transforms */
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+        save_count += halo->perio_lst[shift + 4*rank_id + 1];
+        save_count += halo->perio_lst[shift + 4*rank_id + 3];
+      }
+
+    }
+
+  }
+
+  if (save_count > _cs_glob_perio_halo_backup_size) {
+    _cs_glob_perio_halo_backup_size = save_count;
+    BFT_REALLOC(_cs_glob_perio_halo_backup,
+                _cs_glob_perio_halo_backup_size * 3,
+                cs_real_t);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update free global halo backup buffer.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_perio_free_buffer(void)
+{
+  if (_cs_glob_perio_halo_backup != NULL)
+    BFT_FREE(_cs_glob_perio_halo_backup);
+}
+
+/*----------------------------------------------------------------------------
+ * Save rotation terms of a halo to an internal buffer.
  *
  * parameters:
  *   halo        --> pointer to halo structure
  *   op_type     --> kind of halo treatment (standard or extended)
  *   var         --> variable whose halo rotation terms are to be saved
  *                   (size: halo->n_local_elts + halo->n_elts[opt_type])
- *   save_buffer <-- buffer in which the rotation halo terms are to be saved
- *                   (size: halo->n_elts[op_type])
  *
  * returns:
  *   local number of values saved or restored.
@@ -2414,8 +2408,7 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
 size_t
 cs_perio_save_rotation_halo(const cs_halo_t   *halo,
                             cs_halo_type_t     op_type,
-                            const cs_real_t    var[],
-                            cs_real_t          save_buffer[])
+                            const cs_real_t    var[])
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
@@ -2423,7 +2416,10 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
   cs_mesh_t  *mesh = cs_glob_mesh;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
-  size_t save_count = 0;
+  size_t  save_count = 0;
+  cs_real_t  *save_buffer =   _cs_glob_perio_halo_backup
+                            + (  _cs_glob_perio_halo_backup_id
+                               * _cs_glob_perio_halo_backup_size);
 
   const int  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts  = halo->n_local_elts;
@@ -2435,6 +2431,9 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
   assert(halo != NULL);
 
   _test_halo_compatibility(halo);
+
+  _cs_glob_perio_last_backup[_cs_glob_perio_halo_backup_id] = var;
+  _cs_glob_perio_halo_backup_id = (_cs_glob_perio_halo_backup_id + 1) % 3;
 
   /* Loop on transforms */
 
@@ -2476,14 +2475,12 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
 }
 
 /*----------------------------------------------------------------------------
- * Restore rotation terms of a halo from a buffer.
+ * Restore rotation terms of a halo from an internal buffer.
  *
  * parameters:
  *   halo        --> pointer to halo structure
  *   op_type     --> kind of halo treatment (standard or extended)
  *   var         <-> variable whose halo rotation terms are to be restored
- *   save_buffer --> buffer in which the rotation halo terms were saved
- *                   (size: halo->n_elts[op_type])
  *
  * returns:
  *   local number of values saved or restored.
@@ -2492,8 +2489,7 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
 size_t
 cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
                                cs_halo_type_t     op_type,
-                               cs_real_t          var[],
-                               const cs_real_t    save_buffer[])
+                               cs_real_t          var[])
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
@@ -2503,6 +2499,7 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
 
   size_t restore_count = 0;
 
+  const cs_real_t  *save_buffer = NULL;
   const int  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts  = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = mesh->periodicity;
@@ -2513,6 +2510,23 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
   assert(halo != NULL);
 
   _test_halo_compatibility(halo);
+
+  for (i = 0; i < 3; i++) {
+    if (_cs_glob_perio_last_backup[i] == var) {
+      save_buffer =   _cs_glob_perio_halo_backup
+                    + i*_cs_glob_perio_halo_backup_size;
+      break;
+    }
+  }
+
+  if (i >= 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("On cherche à restaurer des éléments de rotation d'un\n"
+                "halo sur la variable définie à partir de l'adresse %p,\n"
+                "alors que les dernières variables dont le halo de rotation\n"
+                "a été sauvegardé sont définies à partir de [%p, %p, %p]."),
+              var, _cs_glob_perio_last_backup[0],
+              _cs_glob_perio_last_backup[1], _cs_glob_perio_last_backup[2]);
 
   /* Loop on transforms */
 

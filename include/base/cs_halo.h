@@ -36,6 +36,7 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <fvm_periodicity.h>
 #include <fvm_interface.h>
 
 /*----------------------------------------------------------------------------
@@ -54,7 +55,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*=============================================================================
- * Local Macro definitions
+ * Local Type definitions
  *============================================================================*/
 
 /* Halo type */
@@ -66,6 +67,17 @@ typedef enum {
   CS_HALO_N_TYPES
 
 } cs_halo_type_t;
+
+/* Options for cs_halo_sync_component(). */
+
+typedef enum {
+
+  CS_HALO_ROTATION_COPY,     /* Copy halo */
+  CS_HALO_ROTATION_ZERO,     /* Set rotation halo values to zero */
+  CS_HALO_ROTATION_IGNORE,   /* Do not modify rotation halo values */
+
+} cs_halo_rotation_t ;
+
 
 /*============================================================================
  * Type definition
@@ -81,10 +93,16 @@ typedef struct {
 
   int       *c_domain_rank;  /* List of communicating ranks */
 
+  const fvm_periodicity_t * periodicity; /* Pointer to periodicity
+                                            structure describing transforms */
+
+  int       n_rotations;     /* Number of periodic transformations
+                                involving rotations */
+
+  cs_int_t  n_local_elts;    /* Number of local elements */
 
   /* send_halo features : send to distant ranks */
 
-  cs_int_t  n_local_elts;      /* Number of local elements */
   cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_list
                                 n_elts[0] = standard elements
                                 n_elts[1] = extended + standard elements */
@@ -115,7 +133,7 @@ typedef struct {
                                for the extended halo. */
 
   cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
-                               on each communicating rank, we store 2 data:
+                               on each communicating rank, we store 2 values:
                                  - start index,
                                  - number of elements. */
 
@@ -208,19 +226,22 @@ cs_halo_destroy(cs_halo_t  *this_halo);
 /*----------------------------------------------------------------------------
  * Update global buffer sizes so as to be usable with a given halo.
  *
+ * Calls to halo synchronizations with variable strides up to 3 are
+ * expected. For strides greater than 3, the halo will be resized if
+ * necessary directly by the synchronization function.
+ *
  * This function should be called at the end of any halo creation,
  * so that buffer sizes are increased if necessary.
  *
  * parameters:
- *   halo  --> pointer to cs_mesh_halo_t structure.
+ *   halo --> pointer to cs_mesh_halo_t structure.
  *---------------------------------------------------------------------------*/
 
 void
 cs_halo_update_buffers(const cs_halo_t *halo);
 
 /*----------------------------------------------------------------------------
- * Update array of element number (integer) values in case of parallelism
- * or periodicity.
+ * Update array of integer halo values in case of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
@@ -238,7 +259,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                  cs_int_t          num[]);
 
 /*----------------------------------------------------------------------------
- * Update array of element variable (floating-point) values in case of
+ * Update array of variable (floating-point) halo values in case of
  * parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
@@ -257,7 +278,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                  cs_real_t         var[]);
 
 /*----------------------------------------------------------------------------
- * Update array of strided element variable (floating-point) values in case
+ * Update array of strided variable (floating-point) halo values in case
  * of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
@@ -276,6 +297,37 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                          cs_halo_type_t    sync_mode,
                          cs_real_t         var[],
                          int               stride);
+
+/*----------------------------------------------------------------------------
+ * Update array of vector variable component (floating-point) halo values
+ * in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_IGNORE, halo values
+ * corresponding to periodicity with rotation are left unchanged from their
+ * previous values.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_ZERO, halo values
+ * corresponding to periodicity with rotation are set to 0.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_COPY, halo values
+ * corresponding to periodicity with rotation are exchanged normally, so
+ * the behavior is the same as that of cs_halo_sync_var().
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_component(const cs_halo_t    *halo,
+                       cs_halo_type_t      sync_mode,
+                       cs_halo_rotation_t  rotation_op,
+                       cs_real_t           var[]);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_halo_t structure.

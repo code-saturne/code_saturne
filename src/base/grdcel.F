@@ -255,6 +255,11 @@ C   Aussi ce sous programme est-il appele dans phyvar (dans perinu perinr)
 C   pour calculer les gradients au debut du pas de temps et les stocker
 C   dans DUDXYZ et DRDXYZ
 C
+C Il est necessaire que ITENSO soit toujours initialise, meme hors
+C   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
+C
+      IDIMTE = 1
+      ITENSO = 0
 C
       IF(IPERIO.EQ.1) THEN
 C

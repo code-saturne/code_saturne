@@ -48,6 +48,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_perio.h" /* Only needed for PARCOM */
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -133,6 +135,9 @@ static  cs_int_t n_interface_sr_calls = 0;
 void
 CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 {
+
+  if (cs_glob_mesh->have_rotation_perio != 0)
+    cs_perio_save_rotation_halo(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
 
   cs_halo_sync_var(cs_glob_mesh->halo, CS_HALO_STANDARD, var);
 

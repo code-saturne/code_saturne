@@ -82,17 +82,17 @@ extern "C" {
 
 static int _cs_glob_n_halos = 0;
 
-/* De-interlace buffer for strided operations */
-
-static size_t _cs_glob_halo_tmp_buffer_size = 0;
-static void  *_cs_glob_halo_tmp_buffer = NULL;  /* De-interlace buffer */
-
 #if defined(_CS_HAVE_MPI)
 
 /* Send buffer for synchronization */
 
 static size_t _cs_glob_halo_send_buffer_size = 0;
 static void  *_cs_glob_halo_send_buffer = NULL;
+
+/* Buffer to save rotation halo values */
+
+static size_t  _cs_glob_halo_rot_backup_size = 0;
+static cs_real_t  *_cs_glob_halo_rot_backup = NULL;
 
 /* MPI Request and status arrays */
 
@@ -101,6 +101,203 @@ static MPI_Request  *_cs_glob_halo_request = NULL;
 static MPI_Status   *_cs_glob_halo_status = NULL;
 
 #endif
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Save rotation terms of a halo to an internal buffer.
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       --> variable whose halo rotation terms are to be saved
+ *                 (size: halo->n_local_elts + halo->n_elts[opt_type])
+ *----------------------------------------------------------------------------*/
+
+static void
+_save_rotation_values(const cs_halo_t  *halo,
+                      cs_halo_type_t    sync_mode,
+                      const cs_real_t   var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+
+  size_t  save_count = 0;
+  cs_real_t  *save_buffer = _cs_glob_halo_rot_backup;
+
+  const int  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts  = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  assert(halo != NULL);
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  /* Loop on transforms */
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    if (   fvm_periodicity_get_type(periodicity, t_id)
+        >= FVM_PERIODICITY_ROTATION) {
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = n_elts + halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        for (i = start_std; i < end_std; i++)
+          save_buffer[save_count++] = var[i];
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = n_elts + halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+          for (i = start_ext; i < end_ext; i++)
+            save_buffer[save_count++] = var[i];
+
+        }
+
+      }
+
+    } /* End if perio_type >= FVM_PERIODICITY_ROTATION) */
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Restore rotation terms of a halo from an internal buffer.
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> variable whose halo rotation terms are to be restored
+ *----------------------------------------------------------------------------*/
+
+static void
+_restore_rotation_values(const cs_halo_t  *halo,
+                         cs_halo_type_t    sync_mode,
+                         cs_real_t         var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+
+  size_t restore_count = 0;
+
+  const cs_real_t  *save_buffer = _cs_glob_halo_rot_backup;
+  const int  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts  = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  assert(halo != NULL);
+
+  /* Loop on transforms */
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    if (   fvm_periodicity_get_type(periodicity, t_id)
+        >= FVM_PERIODICITY_ROTATION) {
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = n_elts + halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        for (i = start_std; i < end_std; i++)
+          var[i] = save_buffer[restore_count++];
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = n_elts + halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+          for (i = start_ext; i < end_ext; i++)
+            var[i] = save_buffer[restore_count++];
+
+        }
+
+      }
+
+    } /* End if perio_type >= FVM_PERIODICITY_ROTATION) */
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set rotation terms of a halo to zero.
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> variable whose halo rotation terms are to be zeroed
+ *----------------------------------------------------------------------------*/
+
+static void
+_zero_rotation_values(const cs_halo_t  *halo,
+                      cs_halo_type_t    sync_mode,
+                      cs_real_t         var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+
+  const int  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts  = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  assert(halo != NULL);
+
+  /* Loop on transforms */
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    if (   fvm_periodicity_get_type(periodicity, t_id)
+        >= FVM_PERIODICITY_ROTATION) {
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = n_elts + halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        for (i = start_std; i < end_std; i++)
+          var[i] = 0.0;
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = n_elts + halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+          for (i = start_ext; i < end_ext; i++)
+            var[i] = 0.0;
+
+        }
+
+      }
+
+    } /* End if perio_type >= FVM_PERIODICITY_ROTATION) */
+
+  }
+}
 
 /*============================================================================
  * Public function definitions
@@ -126,12 +323,14 @@ cs_halo_create(fvm_interface_set_t  *ifs)
   cs_halo_t  *halo = NULL;
 
   const fvm_interface_t  *interface = NULL;
-  const fvm_periodicity_t  *periodicity = fvm_interface_set_periodicity(ifs);
 
   BFT_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = fvm_interface_set_size(ifs);
   halo->n_transforms = 0;
+
+  halo->periodicity = fvm_interface_set_periodicity(ifs);
+  halo->n_rotations = 0;
 
   halo->n_local_elts = 0;
 
@@ -200,12 +399,18 @@ cs_halo_create(fvm_interface_set_t  *ifs)
   halo->send_perio_lst = NULL;
   halo->perio_lst = NULL;
 
-  if (periodicity != NULL) {
+  if (halo->periodicity != NULL) {
 
-    halo->n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+    halo->n_transforms = fvm_periodicity_get_n_transforms(halo->periodicity);
 
-    /* We need 2 data per transformation and there are n_transforms
-       transformations. For each rank, we need data for standard and
+    for (i = 0; i < halo->n_transforms; i++) {
+      if (   fvm_periodicity_get_type(halo->periodicity, i)
+          >= FVM_PERIODICITY_ROTATION)
+        halo->n_rotations += 1;
+    }
+
+    /* We need 2 values per transformation and there are n_transforms
+       transformations. For each rank, we need a value for standard and
        extended halo. */
 
     perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
@@ -248,6 +453,9 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   halo->n_c_domains = ref->n_c_domains;
   halo->n_transforms = ref->n_transforms;
+
+  halo->periodicity = ref->periodicity;
+  halo->n_rotations = ref->n_rotations;
 
   halo->n_local_elts = 0;
 
@@ -323,10 +531,6 @@ cs_halo_destroy(cs_halo_t  *halo)
 
   if (_cs_glob_n_halos == 0) {
 
-    _cs_glob_halo_tmp_buffer_size = 0;
-
-    BFT_FREE(_cs_glob_halo_tmp_buffer);
-
 #if defined(_CS_HAVE_MPI)
 
     if (cs_glob_base_nbr > 1) {
@@ -350,11 +554,15 @@ cs_halo_destroy(cs_halo_t  *halo)
 /*----------------------------------------------------------------------------
  * Update global buffer sizes so as to be usable with a given halo.
  *
+ * Calls to halo synchronizations with variable strides up to 3 are
+ * expected. For strides greater than 3, the halo will be resized if
+ * necessary directly by the synchronization function.
+ *
  * This function should be called at the end of any halo creation,
  * so that buffer sizes are increased if necessary.
  *
  * parameters:
- *   halo  --> pointer to cs_mesh_halo_t structure.
+ *   halo --> pointer to cs_mesh_halo_t structure.
  *---------------------------------------------------------------------------*/
 
 void
@@ -363,23 +571,13 @@ cs_halo_update_buffers(const cs_halo_t *halo)
   if (halo == NULL)
     return;
 
-  size_t tmp_buffer_size = (  (  halo->n_local_elts
-                               + halo->n_elts[CS_HALO_EXTENDED])
-                            * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)));
-
-  if (tmp_buffer_size > _cs_glob_halo_tmp_buffer_size) {
-    _cs_glob_halo_tmp_buffer_size =  tmp_buffer_size;
-    BFT_REALLOC(_cs_glob_halo_tmp_buffer, _cs_glob_halo_tmp_buffer_size, char);
-  }
-
-
 #if defined(_CS_HAVE_MPI)
 
   if (cs_glob_base_nbr > 1) {
 
-    size_t send_buffer_size = (  CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                                      halo->n_elts[CS_HALO_EXTENDED])
-                               * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)));
+    size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
+                                       halo->n_elts[CS_HALO_EXTENDED])
+                              * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)) * 3;
 
     int n_requests = halo->n_c_domains*2;
 
@@ -404,11 +602,44 @@ cs_halo_update_buffers(const cs_halo_t *halo)
   }
 
 #endif
+
+  /* Buffer to save and restore rotation halo values */
+
+  if (halo->n_rotations > 0) {
+
+    int rank_id, t_id, shift;
+    size_t save_count = 0;
+
+    const fvm_periodicity_t *periodicity = halo->periodicity;
+
+    /* Loop on transforms */
+
+    for (t_id = 0; t_id < halo->n_transforms; t_id++) {
+
+      shift = 4 * halo->n_c_domains * t_id;
+
+      if (   fvm_periodicity_get_type(periodicity, t_id)
+          >= FVM_PERIODICITY_ROTATION) {
+        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+          save_count += halo->perio_lst[shift + 4*rank_id + 1];
+          save_count += halo->perio_lst[shift + 4*rank_id + 3];
+        }
+      }
+
+    }
+
+    if (save_count > _cs_glob_halo_rot_backup_size) {
+      _cs_glob_halo_rot_backup_size = save_count;
+      BFT_REALLOC(_cs_glob_halo_rot_backup,
+                  _cs_glob_halo_rot_backup_size,
+                  cs_real_t);
+    }
+
+  } /* End of test on presence of rotations */
 }
 
 /*----------------------------------------------------------------------------
- * Update array of element number (integer) values in case of parallelism
- * or periodicity.
+ * Update array of integer halo values in case of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
@@ -533,7 +764,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 }
 
 /*----------------------------------------------------------------------------
- * Update array of element variable (floating-point) values in case of
+ * Update array of variable (floating-point) halo values in case of
  * parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
@@ -659,7 +890,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 }
 
 /*----------------------------------------------------------------------------
- * Update array of strided element variable (floating-point) values in case
+ * Update array of strided variable (floating-point) values in case
  * of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
@@ -679,24 +910,194 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                          cs_real_t         var[],
                          int               stride)
 {
-  cs_int_t  i, j;
+  fvm_lnum_t i, j, start, length;
 
-  cs_real_t *tmp_buffer = (cs_real_t *)_cs_glob_halo_tmp_buffer;
+  cs_int_t end_shift = 0;
+  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
 
-  const cs_int_t  n_elts = halo->n_local_elts;
-  const cs_int_t  n_elts_extended = halo->n_local_elts + halo->n_elts[1];
+  const size_t send_buffer_size =   halo->n_elts[sync_mode]
+                                  * sizeof(cs_real_t) * stride;
 
-  for (i = 0; i < stride; i++) {
+  if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
+    _cs_glob_halo_send_buffer_size =  send_buffer_size;
+    BFT_REALLOC(_cs_glob_halo_send_buffer,
+                _cs_glob_halo_send_buffer_size,
+                char);
+  }
 
-    for (j = 0; j < n_elts_extended; j++)
-      tmp_buffer[j] = var[j*stride + i];
+  if (sync_mode == CS_HALO_STANDARD)
+    end_shift = 1;
 
-    cs_halo_sync_var(halo, sync_mode, tmp_buffer);
+  else if (sync_mode == CS_HALO_EXTENDED)
+    end_shift = 2;
 
-    for (j = n_elts; j < n_elts_extended; j++)
-      var[j*stride + i] = tmp_buffer[j];
+#if defined(_CS_HAVE_MPI)
+
+  if (cs_glob_base_nbr > 1) {
+
+    int rank_id;
+    int request_count = 0;
+    cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
+    cs_real_t *buffer = NULL;
+    const int local_rank = cs_glob_base_rang;
+
+    /* Receive data from distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      length = (  halo->index[2*rank_id + end_shift]
+                - halo->index[2*rank_id]) * stride;
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        buffer = var + (halo->n_local_elts + halo->index[2*rank_id])*stride;
+
+        MPI_Irecv(buffer,
+                  length,
+                  CS_MPI_REAL,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+      else
+        local_rank_id = rank_id;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    MPI_Barrier(cs_glob_base_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        start = halo->send_index[2*rank_id];
+        length = (  halo->send_index[2*rank_id + end_shift]
+                  - halo->send_index[2*rank_id]);
+
+        if (stride == 3) { /* Unroll loop for this case */
+          for (i = 0; i < length; i++) {
+            build_buffer[(start + i)*3]
+              = var[(halo->send_list[start + i])*3];
+            build_buffer[(start + i)*3 + 1]
+              = var[(halo->send_list[start + i])*3 + 1];
+            build_buffer[(start + i)*3 + 2]
+              = var[(halo->send_list[start + i])*3 + 2];
+          }
+        }
+        else {
+          for (i = 0; i < length; i++) {
+            for (j = 0; j < stride; j++)
+              build_buffer[(start + i)*stride + j]
+                = var[(halo->send_list[start + i])*stride + j];
+          }
+        }
+
+        buffer = build_buffer + start*stride;
+
+        MPI_Isend(buffer,
+                  length*stride,
+                  CS_MPI_REAL,
+                  halo->c_domain_rank[rank_id],
+                  local_rank,
+                  cs_glob_base_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+  }
+
+#endif /* defined(_CS_HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (halo->n_transforms > 0) {
+
+    if (local_rank_id > -1) {
+
+      cs_real_t *recv_var
+        = var + (halo->n_local_elts + halo->index[2*local_rank_id])*stride;
+
+      start = halo->send_index[2*local_rank_id];
+      length =   halo->send_index[2*local_rank_id + end_shift]
+               - halo->send_index[2*local_rank_id];
+
+      if (stride == 3) { /* Unroll loop for this case */
+        for (i = 0; i < length; i++) {
+          recv_var[i*3]     = var[(halo->send_list[start + i])*3];
+          recv_var[i*3 + 1] = var[(halo->send_list[start + i])*3 + 1];
+          recv_var[i*3 + 2] = var[(halo->send_list[start + i])*3 + 2];
+        }
+      }
+      else {
+        for (i = 0; i < length; i++) {
+          for (j = 0; j < stride; j++)
+            recv_var[i*stride + j]
+              = var[(halo->send_list[start + i])*stride + j];
+        }
+      }
+
+    }
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Update array of vector variable component (floating-point) halo values
+ * in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_IGNORE, halo values
+ * corresponding to periodicity with rotation are left unchanged from their
+ * previous values.
+ *
+ * If rotation_op is set to CS_HALO_ROTATION_ZERO, halo values
+ * corresponding to periodicity with rotation are set to 0.
+ *
+ * If rotation_op is equal to CS_HALO_ROTATION_COPY, halo values
+ * corresponding to periodicity with rotation are exchanged normally, so
+ * the behavior is the same as that of cs_halo_sync_var().
+ *
+ * parameters:
+ *   halo      --> pointer to halo structure
+ *   sync_mode --> synchronization mode (standard or extended)
+ *   var       <-> pointer to variable value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_component(const cs_halo_t    *halo,
+                       cs_halo_type_t      sync_mode,
+                       cs_halo_rotation_t  rotation_op,
+                       cs_real_t           var[])
+{
+  if (   halo->n_rotations > 0
+      && rotation_op == CS_HALO_ROTATION_IGNORE)
+    _save_rotation_values(halo, sync_mode, var);
+
+  cs_halo_sync_var(halo, sync_mode, var);
+
+  if (halo->n_rotations > 0) {
+    if (rotation_op == CS_HALO_ROTATION_IGNORE)
+      _restore_rotation_values(halo, sync_mode, var);
+    else if (rotation_op == CS_HALO_ROTATION_ZERO)
+      _zero_rotation_values(halo, sync_mode, var);
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -721,8 +1122,12 @@ cs_halo_dump(const cs_halo_t  *halo,
 
   bft_printf(_("\n  halo:         %p\n"
                "  n_transforms:   %d\n"
-               "  n_c_domains:    %d\n"),
-             halo, halo->n_transforms, halo->n_c_domains);
+               "  n_c_domains:    %d\n"
+               "  periodicity:    %p\n"
+               "  n_rotations:    %d\n"
+               "  n_local_elts:   %d\n"),
+             halo, halo->n_transforms, halo->n_c_domains,
+             halo->periodicity, halo->n_rotations, halo->n_local_elts);
 
   bft_printf(_("\nRanks on halo frontier:\n"));
   for (i = 0; i < halo->n_c_domains; i++)

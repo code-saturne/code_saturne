@@ -179,36 +179,40 @@ void CS_PROCF (cgrdmc, CGRDMC)
 {
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_halo_t  *halo = mesh->halo;
+
+  if (*imrgra == 2 || *imrgra ==  3)
+    halo_type = CS_HALO_EXTENDED;
 
   /* Synchronize variable */
 
-  if (mesh->halo != NULL) {
+  if (halo != NULL) {
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, pvar);
+    if (*itenso == 2)
+      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, pvar);
+    else
+      cs_halo_sync_var(halo, halo_type, pvar);
 
-    if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_scal(mesh->halo,
-                             CS_HALO_EXTENDED,
-                             CS_PERIO_ROTA_IGNORE,
-                             pvar);
+    /* TODO: check if fext* components are all up to date, in which
+     *       case we need no special treatment for *itenso = 2 */
 
-  }
+    if (*iphydp != 0) {
 
-  if (*iphydp != 0) {
-
-    if (mesh->halo != NULL) {
-
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fextx);
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fexty);
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, fextz);
-
-      if (mesh->n_init_perio > 0)
-        cs_perio_sync_var_vect(mesh->halo,
-                               CS_HALO_EXTENDED,
-                               CS_PERIO_ROTA_IGNORE,
+      if (*itenso == 2){
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextx);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fexty);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextz);
+      }
+      else {
+        cs_halo_sync_var(halo, halo_type, fextx);
+        cs_halo_sync_var(halo, halo_type, fexty);
+        cs_halo_sync_var(halo, halo_type, fextz);
+        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
                                fextx, fexty, fextz);
-
+      }
     }
 
   }
@@ -281,6 +285,8 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_int_t  n_i_faces = mesh->n_i_faces;
   const cs_int_t  n_cells = mesh->n_cells;
@@ -289,38 +295,40 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
+  const cs_halo_t *halo = mesh->halo;
+
   if (*imligp < 0)
     return;
 
+  if (*imrgra == 2 || *imrgra ==  3)
+    halo_type = CS_HALO_EXTENDED;
+
   /* Synchronize variable */
 
-  if (mesh->halo != NULL) {
+  if (halo != NULL) {
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
-
-    if (mesh->n_init_perio > 0)
-      cs_perio_sync_var_scal(mesh->halo,
-                             CS_HALO_EXTENDED,
-                             CS_PERIO_ROTA_IGNORE,
-                             var);
+    cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
 
     /* Exchange for the gradients. Not useful for working array */
 
     if (*imligp == 1) {
 
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdx);
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdy);
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, dpdz);
-
-      if (mesh->n_init_perio > 0)
-        cs_perio_sync_var_vect(mesh->halo,
-                               CS_HALO_EXTENDED,
-                               CS_PERIO_ROTA_IGNORE,
+      if (*itenso == 2){
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdx);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdy);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdz);
+      }
+      else {
+        cs_halo_sync_var(halo, halo_type, dpdx);
+        cs_halo_sync_var(halo, halo_type, dpdy);
+        cs_halo_sync_var(halo, halo_type, dpdz);
+        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
                                dpdx, dpdy, dpdz);
+      }
 
-    }
+    } /* End if imligp == 1 */
 
-  } /* End if imligp == 1 */
+  } /* End if halo */
 
   /* Allocate and initialize working buffers */
 
@@ -368,32 +376,28 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (cell_cells_idx != NULL) {
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-      if ( (*imrgra == 2) || (*imrgra == 3) ) {
+      for (i1 = 0; i1 < n_cells; i1++) {
+        for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
-        for (i1 = 0; i1 < n_cells; i1++) {
-          for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
+          i2 = cell_cells_lst[j] - 1;
 
-            i2 = cell_cells_lst[j] - 1;
+          for (k = 0; k < 3; k++)
+            dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
 
-            for (k = 0; k < 3; k++)
-              dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
+          dist1 = CS_ABS(  dist[0]*dpdx[i1]
+                         + dist[1]*dpdy[i1]
+                         + dist[2]*dpdz[i1]);
+          dvar = CS_ABS(var[i1] - var[i2]);
 
-            dist1 = CS_ABS(  dist[0]*dpdx[i1]
-                           + dist[1]*dpdy[i1]
-                           + dist[2]*dpdz[i1]);
-            dvar = CS_ABS(var[i1] - var[i2]);
+          denum[i1] = CS_MAX(denum[i1], dist1);
+          denom[i1] = CS_MAX(denom[i1], dvar);
 
-            denum[i1] = CS_MAX(denum[i1], dist1);
-            denom[i1] = CS_MAX(denom[i1], dvar);
-
-          }
         }
+      }
 
-      } /* End if imrgra == 2 or 3 */
-
-    } /* End if there is an extended neighborhood */
+    } /* End for extended halo */
 
   }
   else if (*imligp == 1) {
@@ -422,34 +426,30 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (cell_cells_idx != NULL) {
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-      if ( (*imrgra == 2) || (*imrgra == 3) ) {
+      for (i1 = 0; i1 < n_cells; i1++) {
+        for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
-        for (i1 = 0; i1 < n_cells; i1++) {
-          for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
+          i2 = cell_cells_lst[j] - 1;
 
-            i2 = cell_cells_lst[j] - 1;
+          for (k = 0; k < 3; k++)
+            dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
 
-            for (k = 0; k < 3; k++)
-              dist[k] = cell_cen[3*i1 + k] - cell_cen[3*i2 + k];
+          dpdxf = 0.5 * (dpdx[i1] + dpdx[i2]);
+          dpdyf = 0.5 * (dpdy[i1] + dpdy[i2]);
+          dpdzf = 0.5 * (dpdz[i1] + dpdz[i2]);
 
-            dpdxf = 0.5 * (dpdx[i1] + dpdx[i2]);
-            dpdyf = 0.5 * (dpdy[i1] + dpdy[i2]);
-            dpdzf = 0.5 * (dpdz[i1] + dpdz[i2]);
+          dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
+          dvar = CS_ABS(var[i1] - var[i2]);
 
-            dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
-            dvar = CS_ABS(var[i1] - var[i2]);
+          denum[i1] = CS_MAX(denum[i1], dist1);
+          denom[i1] = CS_MAX(denom[i1], dvar);
 
-            denum[i1] = CS_MAX(denum[i1], dist1);
-            denom[i1] = CS_MAX(denom[i1], dvar);
-
-          }
         }
+      }
 
-      } /* End if imrgra == 2 or 3 */
-
-    } /* End if there is an extended neighborhood */
+    } /* End for extended neighborhood */
 
   } /* End if *imligp == 1 */
 
@@ -483,46 +483,15 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Synchronize variable */
 
-    if (mesh->halo != NULL) {
-
-      if (*imrgra == 2 || *imrgra ==  3) {
-        cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, denom);
-        cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, denum);
+    if (halo != NULL) {
+      if (*itenso == 2) {
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denom);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denum);
       }
       else {
-        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, denom);
-        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, denum);
+        cs_halo_sync_var(halo, halo_type, denom);
+        cs_halo_sync_var(halo, halo_type, denum);
       }
-
-      if (mesh->n_init_perio > 0) {
-
-        if (*imrgra == 2 || *imrgra ==  3) {
-
-          cs_perio_sync_var_scal(mesh->halo,
-                                 CS_HALO_EXTENDED,
-                                 CS_PERIO_ROTA_IGNORE,
-                                 denom);
-          cs_perio_sync_var_scal(mesh->halo,
-                                 CS_HALO_EXTENDED,
-                                 CS_PERIO_ROTA_IGNORE,
-                                 denum);
-
-        }
-        else {
-
-          cs_perio_sync_var_scal(mesh->halo,
-                                 CS_HALO_STANDARD,
-                                 CS_PERIO_ROTA_IGNORE,
-                                 denom);
-          cs_perio_sync_var_scal(mesh->halo,
-                                 CS_HALO_STANDARD,
-                                 CS_PERIO_ROTA_IGNORE,
-                                 denum);
-
-        }
-
-      }
-
     }
 
     for (i = 0; i < n_i_faces; i++) {
@@ -547,33 +516,29 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
     /* Complement for extended neighborhood */
 
-    if (cell_cells_idx != NULL) {
+    if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-      if ( (*imrgra == 2) || (*imrgra == 3) ) {
+      for (i1 = 0; i1 < n_cells; i1++) {
 
-        for (i1 = 0; i1 < n_cells; i1++) {
+        factor1 = 1.0;
 
-          factor1 = 1.0;
+        for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
 
-          for (j = cell_cells_idx[i1] - 1; j < cell_cells_idx[i1+1] - 1; j++) {
+          i2 = cell_cells_lst[j] - 1;
+          factor2 = 1.0;
 
-            i2 = cell_cells_lst[j] - 1;
-            factor2 = 1.0;
+          if (denum[i2] > *climgp * denom[i2])
+            factor2 = *climgp * denom[i2]/denum[i2];
 
-            if (denum[i2] > *climgp * denom[i2])
-              factor2 = *climgp * denom[i2]/denum[i2];
+          factor1 = CS_MIN(factor1, factor2);
 
-            factor1 = CS_MIN(factor1, factor2);
+        }
 
-          }
+        clip_factor[i1] = CS_MIN(clip_factor[i1], factor1);
 
-          clip_factor[i1] = CS_MIN(clip_factor[i1], factor1);
+      } /* End of loop on cells */
 
-        } /* End of loop on cells */
-
-      } /* End if imrgra == 2 or 3 */
-
-    } /* End if there is an extended neighborhood */
+    } /* End for extended neighborhood */
 
     for (i = 0; i < n_cells; i++) {
 
@@ -637,26 +602,27 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
   /* Synchronize dpdx, dpdy, dpdz */
 
-  if (mesh->halo != NULL) {
+  if (halo != NULL) {
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdx);
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdy);
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, dpdz);
-
-    if (mesh->n_init_perio > 0) {
+    if (*itenso == 2) {
 
       /* If the gradient is not treated as a "true" vector */
 
-      if (*itenso == 2)
-        cs_perio_sync_var_vect(mesh->halo,
-                               CS_HALO_STANDARD,
-                               CS_PERIO_ROTA_IGNORE,
-                               dpdx, dpdy, dpdz);
-      else
-        cs_perio_sync_var_vect(mesh->halo,
-                               CS_HALO_STANDARD,
-                               CS_PERIO_ROTA_COPY,
-                               dpdx, dpdy, dpdz);
+      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdx);
+      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdy);
+      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, dpdz);
+
+    }
+    else {
+
+      cs_halo_sync_var(halo, halo_type, dpdx);
+      cs_halo_sync_var(halo, halo_type, dpdy);
+      cs_halo_sync_var(halo, halo_type, dpdz);
+
+      cs_perio_sync_var_vect(halo,
+                             halo_type,
+                             CS_PERIO_ROTA_COPY,
+                             dpdx, dpdy, dpdz);
 
     }
 
