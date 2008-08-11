@@ -158,7 +158,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
                        cs_int_t          *p_r_rank_index[])
 {
   cs_int_t  i, face_id, perio_id, rank_id, shift;
-  cs_int_t  n_triangles;
+  cs_int_t  n_triangles = 0;
 
   int  cpt_request = 0;
   cs_int_t  *domain_to_c_rank = NULL;
