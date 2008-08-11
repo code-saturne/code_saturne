@@ -42,16 +42,6 @@ SCRIPTS ET DOC
 
 * Script blue gene integre
 
-* Transferer au maximum la gestion du couplage Syrthes vers un sous-script
-  (Python ou Shell), avec 3 fonctionnalites principales:
-    coupl_syr -compile [ -source-dir=... -exec-dir=... ]
-    coupl_syr -copy-data [ -data-dir=... -exec-dir=... ]
-    coupl_syr -copy-results [ -results-dir=... -exec-dir=... ]
-  a appeler via le fichier lance principal. La possibiliter d'utiliser
-  une option -exec-dir pour un repertoire d'execution du Syrthes different
-  du repertoire courant serait utile pour le cas de couplages avec plusieures
-  instances de Syrthes (a executer forcement dans des sous-repertoires distincts).
-
 IHM
 ---
 * Quand on ne visite pas la page des physiques particulieres, meme si on n'a 
