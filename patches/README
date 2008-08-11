@@ -5,6 +5,8 @@ This directory contains files fixing potential problems that could arise
 in some particular situations. These patches have not been fully validated
 and therefore are NOT SUPPORTED.
 
-* cs_perio.c: in some rare situations where two periodicities exist,
-the periodicity definition might fail. If so, the user can test this
-algorithm by copying this file in his study's FORT directory.
+* cs_perio.c: in some rare situations with periodicity, the halo definition
+stage may fail, indicating a problem related to the preprocessor in case
+of multiple periodicities. In fact, this may be due to a bug, not necessarily
+related to preprocessing. In case this problem is encountered, the user can
+test a replacement algorithm by copying this file in his study's FORT directory.
