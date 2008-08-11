@@ -236,13 +236,12 @@ _cs_io_file_open(cs_io_t     *const cs_io,
 
   cs_io->f = fvm_file_open(name,
                            cs_io_mode,
-                           FVM_FILE_TYPE_BINARY,
                            hints,
                            cs_glob_base_mpi_comm);
 
 #else
 
-  cs_io->f = fvm_file_open(name, cs_io_mode, FVM_FILE_TYPE_BINARY, hints);
+  cs_io->f = fvm_file_open(name, cs_io_mode, hints);
 
 #endif
 
