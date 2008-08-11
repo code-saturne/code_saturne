@@ -1,3 +1,9 @@
+* 11/08/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
+  Replace the algorithm used to defined periodic couples
+  in order to avoid a possible issue.
+  modfied routine:
+    src/base/cs_perio.c
+
 * 11/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Modifications related to the Code_Saturne I/O  unification
   between the preprocessor output and the solver restart files.
