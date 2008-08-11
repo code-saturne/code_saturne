@@ -2652,11 +2652,11 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
       shift_key = n_perio*face_rank + perio_id;
 
       if (local_rank == face_rank)
-	send_count[shift_key] += n_face_vertices;
+        send_count[shift_key] += n_face_vertices;
 
       else
-	if (fac_num < 0)
-	  send_count[shift_key] += n_face_vertices;
+        if (fac_num < 0)
+          send_count[shift_key] += n_face_vertices;
 
     } /* End of loop on couples */
 
@@ -2667,7 +2667,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 #if defined(_CS_HAVE_MPI)
   if (n_ranks > 1)
     MPI_Alltoall(send_count, n_perio, CS_MPI_INT,
-		 recv_count, n_perio, CS_MPI_INT, cs_glob_base_mpi_comm);
+                 recv_count, n_perio, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
   if (n_ranks == 1)
@@ -2678,8 +2678,8 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 
   for (rank_id = 0; rank_id < n_ranks; rank_id++)
     for (perio_id = 0; perio_id < n_perio; perio_id++)
-      perio_couple_count[n_ranks*perio_id+rank_id] 
-	= recv_count[n_perio*rank_id+perio_id];
+      perio_couple_count[n_ranks*perio_id+rank_id]
+        = recv_count[n_perio*rank_id+perio_id];
 
   /* Define index */
 
@@ -2706,15 +2706,15 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
     periodic_couples[perio_id] = NULL;
 
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      n_periodic_couples[perio_id] += 
-	perio_couple_count[n_ranks*perio_id + rank_id];
+      n_periodic_couples[perio_id] +=
+        perio_couple_count[n_ranks*perio_id + rank_id];
 
     BFT_MALLOC(periodic_couples[perio_id],
                2*n_periodic_couples[perio_id],
                fvm_gnum_t);
 
   } /* End of loop on periodicities */
-  
+
   /* Build send buffer and the first part of the periodic couples
      in global numbering */
 
@@ -2749,77 +2749,77 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
       shift_key_couple = n_ranks*perio_id + face_rank;
 
       sshift = send_count[shift_key] + send_shift[shift_key];
-      rshift =  perio_couple_count[shift_key_couple] 
-	      + perio_couple_shift[shift_key_couple]
-	      - perio_couple_shift[n_ranks*perio_id];
+      rshift =  perio_couple_count[shift_key_couple]
+              + perio_couple_shift[shift_key_couple]
+              - perio_couple_shift[n_ranks*perio_id];
 
       /* Define f1 */
 
       for (k= 0, j = face_vtx_idx[fac_id]-1;
-	   j < face_vtx_idx[fac_id+1]-1; j++, k++) {
-	if (g_vtx_num != NULL)
-	  f1_vertices[k] = (fvm_gnum_t)g_vtx_num[face_vtx_lst[j]-1];
-	else
-	  f1_vertices[k] = (fvm_gnum_t)face_vtx_lst[j];
+           j < face_vtx_idx[fac_id+1]-1; j++, k++) {
+        if (g_vtx_num != NULL)
+          f1_vertices[k] = (fvm_gnum_t)g_vtx_num[face_vtx_lst[j]-1];
+        else
+          f1_vertices[k] = (fvm_gnum_t)face_vtx_lst[j];
       }
 
       if (local_rank == face_rank) {
 
-	/* Define f2 */
+        /* Define f2 */
 
-	fac_id = CS_ABS(per_face_lst[2*i+1]) - 1;
+        fac_id = CS_ABS(per_face_lst[2*i+1]) - 1;
 
-	for (k= 0, j = face_vtx_idx[fac_id]-1;
-	     j < face_vtx_idx[fac_id+1]-1; j++, k++) {
-	  if (g_vtx_num != NULL)
-	    f2_vertices[k] = (fvm_gnum_t)g_vtx_num[face_vtx_lst[j]-1];
-	  else
-	    f2_vertices[k] = (fvm_gnum_t)face_vtx_lst[j];
-	}
+        for (k= 0, j = face_vtx_idx[fac_id]-1;
+             j < face_vtx_idx[fac_id+1]-1; j++, k++) {
+          if (g_vtx_num != NULL)
+            f2_vertices[k] = (fvm_gnum_t)g_vtx_num[face_vtx_lst[j]-1];
+          else
+            f2_vertices[k] = (fvm_gnum_t)face_vtx_lst[j];
+        }
 
-	/* Fill buffers */
+        /* Fill buffers */
 
-	if (fac_num < 0) { /* Send f1 and copy f2 in periodic_couples */
+        if (fac_num < 0) { /* Send f1 and copy f2 in periodic_couples */
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    send_buffer[sshift + k] = f1_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            send_buffer[sshift + k] = f1_vertices[k];
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    _periodic_couples[2*(rshift + k)] = f2_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            _periodic_couples[2*(rshift + k)] = f2_vertices[k];
 
-	}
-	else { /* Send f2 and copy f1 in periodic couples */
+        }
+        else { /* Send f2 and copy f1 in periodic couples */
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    send_buffer[sshift + k] = f2_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            send_buffer[sshift + k] = f2_vertices[k];
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    _periodic_couples[2*(rshift + k)] = f1_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            _periodic_couples[2*(rshift + k)] = f1_vertices[k];
 
-	}
+        }
 
-	send_count[shift_key] += n_face_vertices;
-	perio_couple_count[shift_key_couple] += n_face_vertices;
+        send_count[shift_key] += n_face_vertices;
+        perio_couple_count[shift_key_couple] += n_face_vertices;
 
       }
       else { /* local_rank != face_rank */
 
-	if (fac_num < 0) { /* Fill send_buffer with f1 */
+        if (fac_num < 0) { /* Fill send_buffer with f1 */
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    send_buffer[sshift + k] = f1_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            send_buffer[sshift + k] = f1_vertices[k];
 
-	  send_count[shift_key] += n_face_vertices;
+          send_count[shift_key] += n_face_vertices;
 
-	}
-	else { /* Fill _periodic_couples with f1 */
+        }
+        else { /* Fill _periodic_couples with f1 */
 
-	  for (k = 0; k < n_face_vertices; k++)
-	    _periodic_couples[2*(rshift + k)] = f1_vertices[k];
+          for (k = 0; k < n_face_vertices; k++)
+            _periodic_couples[2*(rshift + k)] = f1_vertices[k];
 
-	  perio_couple_count[shift_key_couple] += n_face_vertices;
- 
-	}
+          perio_couple_count[shift_key_couple] += n_face_vertices;
+
+        }
 
       } /* Face_rank != local_rank */
 
@@ -2845,8 +2845,8 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 
       for (perio_id = 0; perio_id < n_perio; perio_id++) {
 
-	send_rank_count[i] += send_count[n_perio*i + perio_id];
-	recv_rank_count[i] += recv_count[n_perio*i + perio_id];
+        send_rank_count[i] += send_count[n_perio*i + perio_id];
+        recv_rank_count[i] += recv_count[n_perio*i + perio_id];
 
       } /* End of loop on periodicities */
 
@@ -2865,32 +2865,32 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* DEBUG */
     for (rank_id = 0; rank_id < n_ranks; rank_id++) {
       bft_printf("RANK_ID: %d - send_count: %d - send_shift: %d\n",
-		 rank_id, send_rank_count[rank_id],
-		 send_rank_shift[rank_id]);
+                 rank_id, send_rank_count[rank_id],
+                 send_rank_shift[rank_id]);
       for (i = 0; i < send_rank_count[rank_id]; i++)
-	bft_printf("\t%5d | %8d | %12u\n",
-		   i, i + send_rank_shift[rank_id],
-		   send_buffer[i + send_rank_shift[rank_id]]);
+        bft_printf("\t%5d | %8d | %12u\n",
+                   i, i + send_rank_shift[rank_id],
+                   send_buffer[i + send_rank_shift[rank_id]]);
       bft_printf_flush();
     }
 #endif
 
 #if defined(_CS_HAVE_MPI)
     MPI_Alltoallv(send_buffer, send_rank_count, send_rank_shift, FVM_MPI_GNUM,
-		  recv_buffer, recv_rank_count, recv_rank_shift, FVM_MPI_GNUM,
-		  cs_glob_base_mpi_comm);
+                  recv_buffer, recv_rank_count, recv_rank_shift, FVM_MPI_GNUM,
+                  cs_glob_base_mpi_comm);
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* DEBUG */
     for (rank_id = 0; rank_id < n_ranks; rank_id++) {
 
       bft_printf("RANK_ID: %d - recv_count: %d - recv_shift: %d\n",
-		 rank_id, recv_rank_count[rank_id],
-		 recv_rank_shift[rank_id]);
+                 rank_id, recv_rank_count[rank_id],
+                 recv_rank_shift[rank_id]);
       for (i = 0; i < recv_rank_count[rank_id]; i++)
-	bft_printf("\t%5d | %8d | %12u\n",
-		   i, i + recv_rank_shift[rank_id],
-		   recv_buffer[i + recv_rank_shift[rank_id]]);
+        bft_printf("\t%5d | %8d | %12u\n",
+                   i, i + recv_rank_shift[rank_id],
+                   recv_buffer[i + recv_rank_shift[rank_id]]);
       bft_printf_flush();
     }
 #endif
@@ -2935,19 +2935,20 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
       n_elts = recv_count[shift_key];
 
       sshift =  perio_couple_shift[shift_key_couple]
-	      - perio_couple_shift[n_ranks*perio_id];
+              - perio_couple_shift[n_ranks*perio_id];
       rshift = recv_shift[shift_key];
 
 #if 0
       bft_printf("\nPERIO: %d - RANK: %d - N_ELTS: %d\n",
-		 perio_id, rank_id, n_elts);
+                 perio_id, rank_id, n_elts);
       bft_printf("shift_key: %d, shift_key_couple: %d\n",
-		 shift_key, shift_key_couple);
+                 shift_key, shift_key_couple);
       bft_printf("SSHIFT: %d - RSHIFT: %d\n", sshift, rshift);
       bft_printf_flush();
 #endif
 
       for (j = 0; j < n_elts; j++)
+        _periodic_couples[2*sshift + 2*j+1] = recv_buffer[rshift + j];
 
     } /* End of loop on ranks */
 
@@ -2973,7 +2974,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
     bft_printf("  Number of couples : %d\n", n_periodic_couples[i]);
     for (j = 0; j < n_periodic_couples[i]; j++)
       bft_printf("%12d --> %12d\n",
-		 periodic_couples[i][2*j], periodic_couples[i][2*j + 1]);
+                 periodic_couples[i][2*j], periodic_couples[i][2*j + 1]);
   }
 #endif
 
