@@ -1086,18 +1086,13 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
 #if 0 /* For debugging purpose */
       for (i = 0; i < n_periodic_lists; i++) {
-
         cs_int_t  j;
-
-        bft_printf("periodicity number: %d\n", periodic_num[i]);
-        bft_printf("number of couples : %d\n", n_periodic_couples[i]);
-
+        bft_printf("\n\n  Periodicity number: %d\n", periodic_num[i]);
+        bft_printf("  Number of couples : %d\n", n_periodic_couples[i]);
         for (j = 0; j < n_periodic_couples[i]; j++)
-          bft_printf("%4d --> %4d\n",
+          bft_printf("%12d --> %12d\n",
                      periodic_couples[i][2*j], periodic_couples[i][2*j + 1]);
-
       }
-
       fvm_periodicity_dump(mesh->periodicity);
 #endif
 
