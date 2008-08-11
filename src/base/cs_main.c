@@ -331,7 +331,7 @@ int main
   if (opts.ifoenv != 0) {
 
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
-                                     "ECS_1.4",
+                                     "Face-based mesh definition, R0",
                                      CS_IO_MODE_READ,
                                      -1);
 

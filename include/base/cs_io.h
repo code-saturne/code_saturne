@@ -88,11 +88,14 @@ typedef struct _cs_io_t cs_io_t;
 
 typedef struct {
 
-  char            sec_name[CS_IO_NAME_LEN + 1];     /* Section name */
-  char            type_read_name[3];                /* Name of type in file */
-  fvm_gnum_t      n_elts;                           /* Number of elements */
-  fvm_datatype_t  elt_type;                         /* Type if n_elts > 0 */
-  fvm_datatype_t  type_read;                        /* Type in file */
+  const char     *sec_name;           /* Pointer to section name */
+  const char     *type_read_name;     /* Pointer to name of type in file */
+  fvm_gnum_t      n_vals;             /* Number of associated values */
+  size_t          location_id;        /* Id of associated location, or 0 */
+  size_t          index_id;           /* Id of associated index, or 0 */
+  size_t          n_location_vals;    /* Number of values per location */
+  fvm_datatype_t  elt_type;           /* Type if n_elts > 0 */
+  fvm_datatype_t  type_read;          /* Type in file */
 
 } cs_io_sec_header_t;
 
@@ -162,13 +165,13 @@ cs_io_get_echo(const cs_io_t  *pp_io);
  * Read a message header.
  *
  * parameters:
- *   header <-- header structure
  *   pp_io  --> preprocessor IO structure
+ *   header <-- header structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_read_header(cs_io_sec_header_t  *header,
-                  cs_io_t             *pp_io);
+cs_io_read_header(cs_io_t             *inp,
+                  cs_io_sec_header_t  *header);
 
 /*----------------------------------------------------------------------------
  * Set a message's final data type to fvm_lnum_t.
@@ -212,10 +215,6 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
 
 /*----------------------------------------------------------------------------
  * Read a message body and replicate it to all processors.
- *
- * If global_num_start and global_num_end are > 0, a different block is
- * assigned to each processor. Otherwise, the full data is replicated
- * for each processor.
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.

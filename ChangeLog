@@ -1,3 +1,13 @@
+* 11/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Modifications related to the Code_Saturne I/O  unification
+  between the preprocessor output and the solver restart files.
+  Only preprocessor output has been modified at the moment.
+  modified routines:
+    include/base/cs_io.h
+    src/base/cs_ecs_messages.c
+    src/base/cs_io.c
+    src/base/cs_main.c
+
 * 11/08/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 584:585, adding patches directory)
 

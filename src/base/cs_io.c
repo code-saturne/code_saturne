@@ -43,10 +43,19 @@
 #include <mpi.h>
 #endif
 
+#undef HAVE_STDINT_H
+#if defined(__STDC_VERSION__)
+#  if (__STDC_VERSION__ >= 199901L)
+#    define HAVE_STDINT_H
+#    include <stdint.h>
+#  endif
+#endif
+
 /*----------------------------------------------------------------------------
  * BFT and FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_file.h>
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
@@ -84,13 +93,36 @@ extern "C" {
 
 struct _cs_io_t {
 
-  char            *name;         /* File name */
+  /* File information */
 
-  fvm_file_t      *f;            /* Pointer to associated file */
+  char            *name;           /* File name */
 
-  cs_io_mode_t     mode;         /* Communication mode */
-  cs_int_t         echo;         /* Data echo level */
+  fvm_file_t      *f;              /* Pointer to associated file */
 
+  cs_io_mode_t     mode;           /* File access mode */
+
+  size_t           header_size;    /* Header default size */
+  size_t           header_align;   /* Header alignment */
+  size_t           body_align;     /* Body alignment */
+
+  /* Current section buffer state */
+
+  size_t           buffer_size;    /* Current size of header buffer */
+  unsigned char   *buffer;         /* Header buffer */
+
+  size_t           n_vals;         /* Number of values in section header */
+  size_t           location_id;    /* Id of location, or 0 */
+  size_t           index_id;       /* Id of index, or 0 */
+  size_t           n_loc_vals;     /* Number of values per location */
+  size_t           type_size;      /* Size of current type */
+  char            *sec_name;       /* Pointer to name in section header */
+  char            *type_name;      /* Pointer to type in section header */
+  void            *data;           /* Pointer to data in section header
+                                      (if embedded; NULL otherwise) */
+
+  /* Other flags */
+
+  cs_int_t         echo;           /* Data echo level (verbosity) */
 };
 
 /*============================================================================
@@ -119,86 +151,171 @@ cs_io_t  *cs_glob_pp_io = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Open the interface file descriptor and initialize the file by writing
- * or reading a "magic string" used to check the file format.
+ * Convert a buffer of type uint64_t to size_t
  *
  * parameters:
- *   pp_io        <-> preprocessor IO structure
- *   name         --> file name
- *   magic_string --> magic string associated with file type
+ *   buf <-- buffer
+ *   val --> array to which values are converted
+ *   n   <-- number of values to convert
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_file_open(cs_io_t     *const pp_io,
+_convert_to_size(const unsigned char  buf[],
+                 size_t               val[],
+                 size_t               n)
+{
+  size_t i;
+
+#if defined(HAVE_STDINT_H)
+
+  for (i = 0; i < n; i++)
+    val[i] = ((const uint64_t *)buf)[i];
+
+#else
+
+  if (sizeof(size_t) == 8) {
+    for (i = 0; i < n; i++)
+      val[i] = ((const size_t *)buf)[i];
+  }
+  else if (sizeof(unsigned long long) == 8) {
+    for (i = 0; i < n; i++)
+      val[i] = ((const unsigned long long *)buf)[i];
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Compilation configuration / porting error:\n"
+                "Unable to determine a 64-bit unsigned int type.\n"
+                "size_t is %d bits, unsigned long long %d bits"),
+              sizeof(size_t)*8, sizeof(unsigned long long)*8);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Open the interface file descriptor and initialize the file by writing
+ * or reading a "magic string" used to check the file content type.
+ *
+ * parameters:
+ *   cs_io        <-> kernel IO structure
+ *   name         --> file name
+ *   magic_string --> magic string associated with file content type
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_io_file_open(cs_io_t     *const cs_io,
                  const char  *const name,
                  const char  *const magic_string)
 {
-  fvm_file_mode_t pp_io_mode;
+  fvm_file_mode_t cs_io_mode;
 
   int hints = 0;
+  unsigned int_endian = 0;
+
+  *((char *)(&int_endian)) = '\1'; /* Determine if we are little-endian */
 
   /* Prepare file open */
 
-  switch(pp_io->mode) {
+  switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    pp_io_mode = FVM_FILE_MODE_READ;
+    cs_io_mode = FVM_FILE_MODE_READ;
     break;
 
   case CS_IO_MODE_WRITE:
-    pp_io_mode = FVM_FILE_MODE_WRITE;
+    cs_io_mode = FVM_FILE_MODE_WRITE;
     break;
 
   default:
-    assert(   pp_io->mode == CS_IO_MODE_READ
-           || pp_io->mode == CS_IO_MODE_WRITE);
+    assert(   cs_io->mode == CS_IO_MODE_READ
+           || cs_io->mode == CS_IO_MODE_WRITE);
   }
 
   /* Create interface file descriptor */
 
-  pp_io->f = fvm_file_open(name, pp_io_mode, FVM_FILE_TYPE_BINARY, hints);
-  fvm_file_set_big_endian(pp_io->f);
+#if defined(_CS_HAVE_MPI)
+
+  cs_io->f = fvm_file_open(name,
+                           cs_io_mode,
+                           FVM_FILE_TYPE_BINARY,
+                           hints,
+                           cs_glob_base_mpi_comm);
+
+#else
+
+  cs_io->f = fvm_file_open(name, cs_io_mode, FVM_FILE_TYPE_BINARY, hints);
+
+#endif
+
+  fvm_file_set_big_endian(cs_io->f);
 
   /* Write or read a magic string */
   /*------------------------------*/
 
-  if (pp_io->mode == CS_IO_MODE_READ) {
+  if (cs_io->mode == CS_IO_MODE_READ) {
 
-    char    *magic_str_read;
-    size_t   magic_str_size = strlen(magic_string);
+    char    expected_header[] = "Code_Saturne I/O, BE, R0";
+    char    header_read[128 + 24];
+    size_t  header_vals[3];
 
-    BFT_MALLOC(magic_str_read, magic_str_size + 1, char);
+    fvm_file_read_global(cs_io->f, header_read, 1, 128 + 24);
 
-    fvm_file_read_global(magic_str_read, 1, strlen(magic_string), pp_io->f);
+    header_read[63] = '\0';
+    header_read[127] = '\0';
 
-    magic_str_read[magic_str_size] = '\0';
+    /* If the format does not correspond, we have an error */
 
-    /* If the magic string does not correspond, we have an error */
-
-    if (strcmp(magic_str_read, magic_string) != 0) {
+    if (strncmp(header_read, expected_header, 64) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier de pré traitement : "
+                _("Erreur à la lecture du fichier : "
                   "\"%s\".\n"
-                  "Le format de l'interface n'est pas à la bonne version.\n"
-                  "La chaîne magique repère la version du format "
-                  "d'interface :\n"
-                  "chaîne magique lue      : \"%s\"\n"
-                  "chaîne magique actuelle : \"%s\"\n"),
-                pp_io->name, magic_str_read, magic_string);
+                  "Le format du fichier n'est pas à la bonne version.\n"
+                  "Les 64 premiers octets attendus contiennent :\n"
+                  "\"%s\"\n"
+                  "Les 64 premiers octets lus contiennent :\n"
+                  "\"%s\"\n"),
+                cs_io->name, expected_header, header_read);
 
     }
 
-    BFT_FREE(magic_str_read);
+    /* If the magic string does not correspond, we have an error */
 
-  }
-  else if (pp_io->mode == CS_IO_MODE_WRITE) {
+    else if (strncmp(header_read +64, magic_string, 64) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à l'écriture du fichier de pré traitement : "
+                _("Erreur à la lecture du fichier : "
                   "\"%s\".\n"
+                  "Le contenu du fichier n'est pas du type attendu.\n"
+                  "On attendait : \"%s\"\n"
+                  "On a :\"%s\"\n"),
+                cs_io->name, magic_string, header_read + 64);
+
+    }
+
+    /* Now decode the sizes */
+
+    else if (int_endian == 1)
+      bft_file_swap_endian(header_read + 128,
+                           header_read + 128,
+                           8,
+                           3);
+
+    _convert_to_size((unsigned char *)(header_read + 128), header_vals, 3);
+
+    cs_io->header_size = header_vals[0];
+    cs_io->header_align = header_vals[1];
+    cs_io->body_align = header_vals[2];
+
+    cs_io->buffer_size = cs_io->header_size;
+    BFT_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
+
+  }
+  else if (cs_io->mode == CS_IO_MODE_WRITE) {
+
+      bft_error(__FILE__, __LINE__, 0,
+                _("Erreur à l'écriture du fichier : \"%s\".\n"
                   "Cette fonctionnalité n'est pas encore implémentée."),
-                pp_io->name);
+                cs_io->name);
 
   }
 
@@ -208,40 +325,40 @@ _cs_io_file_open(cs_io_t     *const pp_io,
  * Close the interface file.
  *
  * parameters:
- *   pp_io <-> preprocessor IO structure
+ *   cs_io <-> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_file_close(cs_io_t  *pp_io)
+_cs_io_file_close(cs_io_t  *cs_io)
 {
-  pp_io->f = fvm_file_free(pp_io->f);
+  cs_io->f = fvm_file_free(cs_io->f);
 }
 
 /*----------------------------------------------------------------------------
  * Echo pending section read or write
  *
  * parameters:
- *   pp_io --> preprocessor IO structure
+ *   cs_io --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_echo_pre(const cs_io_t  *pp_io)
+_cs_io_echo_pre(const cs_io_t  *cs_io)
 {
-  assert(pp_io != NULL);
+  assert(cs_io != NULL);
 
-  switch(pp_io->mode) {
+  switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    bft_printf(_("\nSection lue sur \"%s\" :\n"), pp_io->name);
+    bft_printf(_("\nSection lue sur \"%s\" :\n"), cs_io->name);
     break;
 
   case CS_IO_MODE_WRITE:
-    bft_printf(_("\nSection écrite sur \"%s\" :\n"), pp_io->name);
+    bft_printf(_("\nSection écrite sur \"%s\" :\n"), cs_io->name);
     break;
 
   default:
-    assert(   pp_io->mode == CS_IO_MODE_READ
-           || pp_io->mode == CS_IO_MODE_WRITE);
+    assert(   cs_io->mode == CS_IO_MODE_READ
+           || cs_io->mode == CS_IO_MODE_WRITE);
   }
 
   bft_printf_flush();
@@ -669,7 +786,7 @@ _cs_io_convert_read(void            *buffer,
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   inp              --> input kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -680,23 +797,25 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
                  fvm_gnum_t                 global_num_start,
                  fvm_gnum_t                 global_num_end,
                  void                      *elts,
-                 cs_io_t                   *pp_io)
+                 cs_io_t                   *inp)
 {
   size_t      type_size = 0;
-  fvm_gnum_t  n_elts = header->n_elts;
+  fvm_gnum_t  n_vals = inp->n_vals;
   cs_bool_t   convert_type = CS_FALSE;
   void       *_elts = NULL;
   void       *_buf = NULL;
 
-  assert(pp_io  != NULL);
+  assert(inp  != NULL);
 
-  assert(global_num_end <= header->n_elts + 1);
+  assert(header->n_vals == inp->n_vals);
+
+  assert(global_num_end <= header->n_vals + 1);
 
   /* Choose global or block mode */
 
   if (global_num_start > 0 && global_num_end > 0) {
     assert(global_num_end >= global_num_start);
-    n_elts = global_num_end - global_num_start;
+    n_vals = global_num_end - global_num_start;
   }
 
   /* Datatype size given by FVM datatype, except for character type */
@@ -709,59 +828,96 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   _elts = elts;
 
-  if (_elts == NULL && n_elts != 0) {
+  if (_elts == NULL && n_vals != 0) {
     if (header->elt_type == CS_TYPE_char)
-      BFT_MALLOC(_elts, n_elts + 1, char);
+      BFT_MALLOC(_elts, n_vals + 1, char);
     else
-      BFT_MALLOC(_elts, n_elts*type_size, char);
+      BFT_MALLOC(_elts, n_vals*type_size, char);
   }
 
   /* Element values */
 
-  if (n_elts != 0 && header->elt_type != header->type_read)
+  if (n_vals != 0 && header->elt_type != header->type_read)
     convert_type = CS_TRUE;
 
-  if (convert_type == true
-      && (   fvm_datatype_size[header->type_read]
-          != fvm_datatype_size[header->elt_type]))
-    BFT_MALLOC(_buf, n_elts*type_size, char);
+  if (inp->data != NULL)
+    _buf = NULL;
+  else if (convert_type == true
+           && (   fvm_datatype_size[header->type_read]
+               != fvm_datatype_size[header->elt_type]))
+    BFT_MALLOC(_buf, n_vals*type_size, char);
   else
     _buf = _elts;
 
-  if (global_num_start > 0 && global_num_end > 0)
-    fvm_file_read_block(_buf,
-                        type_size,
-                        global_num_start,
-                        global_num_end,
-                        pp_io->f);
-  else
-    fvm_file_read_global(_buf,
-                         type_size,
-                         n_elts,
-                         pp_io->f);
+  /* Read data from file */
+
+  if (inp->data == NULL) {
+
+    /* Position read pointer if necessary */
+
+    fvm_file_off_t offset = fvm_file_tell(inp->f);
+    size_t ba = inp->body_align;
+    offset += (ba - (offset % ba)) % ba;
+    fvm_file_seek(inp->f, offset, FVM_FILE_SEEK_SET);
+
+    /* Read local or global values */
+
+    if (global_num_start > 0 && global_num_end > 0)
+      fvm_file_read_block(inp->f,
+                          _buf,
+                          type_size,
+                          global_num_start,
+                          global_num_end);
+    else
+      fvm_file_read_global(inp->f,
+                           _buf,
+                           type_size,
+                           n_vals);
+
+  }
+
+  /* If data is embedded in header, simply point to it */
+
+  else {
+
+    if (global_num_start > 0 && global_num_end > 0)
+      _buf =   ((unsigned char *)inp->data)
+             + ((global_num_start - 1) * fvm_datatype_size[header->type_read]);
+    else
+      _buf = inp->data;
+
+  }
 
   /* Convert data if necessary */
 
   if (convert_type == true) {
     _cs_io_convert_read(_buf,
                         _elts,
-                        n_elts,
+                        n_vals,
                         header->type_read,
                         header->elt_type);
-    if (_buf != _elts)
+    if (   inp->data == NULL
+        && _buf != _elts)
       BFT_FREE(_buf);
   }
+  else if (inp->data != NULL) {
+    memcpy(_elts, _buf, n_vals*fvm_datatype_size[header->type_read]);
+    _buf = NULL;
+  }
+
+  if (inp->data != NULL)  /* Reset for next read */
+    inp->data = NULL;
 
   /* Add null character at end of string to ensure C-type string */
 
-  if (n_elts != 0 && header->elt_type == CS_TYPE_char)
-    ((char *)_elts)[header->n_elts] = '\0';
+  if (n_vals != 0 && header->elt_type == CS_TYPE_char)
+    ((char *)_elts)[header->n_vals] = '\0';
 
   /* Optional echo */
 
-  if (header->n_elts != 0 && pp_io->echo > 0)
-    _cs_io_echo_data(pp_io->echo,
-                     n_elts,
+  if (header->n_vals != 0 && inp->echo > 0)
+    _cs_io_echo_data(inp->echo,
+                     n_vals,
                      global_num_start,
                      global_num_end,
                      header->elt_type,
@@ -787,7 +943,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
  *                    n first and last elements if n > 0)
  *
  * returns:
- *   pointer to preprocessor IO structure
+ *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
 cs_io_t *
@@ -796,20 +952,38 @@ cs_io_initialize(const char    *file_name,
                  cs_io_mode_t   mode,
                  size_t         echo)
 {
-  cs_io_t  *pp_io = NULL;
+  cs_io_t  *cs_io = NULL;
 
-  BFT_MALLOC(pp_io, 1, cs_io_t);
+  BFT_MALLOC(cs_io, 1, cs_io_t);
 
   /* Set structure fields */
 
-  BFT_MALLOC(pp_io->name, strlen(file_name) + 1, char);
+  BFT_MALLOC(cs_io->name, strlen(file_name) + 1, char);
 
-  strcpy(pp_io->name, file_name);
+  strcpy(cs_io->name, file_name);
 
-  pp_io->mode = mode;
-  pp_io->echo = echo;
+  cs_io->mode = mode;
 
-  pp_io->f  = NULL;
+  cs_io->f  = NULL;
+
+  cs_io->header_size = 0;
+  cs_io->header_align = 0;
+  cs_io->body_align = 0;
+
+  /* Current section buffer state */
+
+  cs_io->buffer_size = 0;
+  cs_io->buffer = NULL;
+
+  cs_io->n_vals = 0;
+  cs_io->type_size = 0;
+  cs_io->sec_name = NULL;
+  cs_io->type_name = NULL;
+  cs_io->data = NULL;
+
+  /* Verbosity */
+
+  cs_io->echo = echo;
 
   /* Info on interface creation */
 
@@ -818,122 +992,206 @@ cs_io_initialize(const char    *file_name,
 
   /* Create interface file descriptor */
 
-  _cs_io_file_open(pp_io, pp_io->name, magic_string);
+  _cs_io_file_open(cs_io, cs_io->name, magic_string);
 
-  return pp_io;
+  return cs_io;
 }
 
 /*----------------------------------------------------------------------------
  * Free a preprocessor output file structure, closing the associated file.
  *
  * parameters:
- *   pp_io <-> preprocessor IO structure
+ *   cs_io <-> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_finalize(cs_io_t **pp_io)
+cs_io_finalize(cs_io_t **cs_io)
 {
-  cs_io_t *_pp_io = *pp_io;
+  cs_io_t *_cs_io = *cs_io;
 
   /* Info on closing of interface file */
 
-  bft_printf(_("\n Fin de la lecture :  %s\n"), _pp_io->name);
+  bft_printf(_("\n Fin de la lecture :  %s\n"), _cs_io->name);
   bft_printf_flush();
 
-  _cs_io_file_close(_pp_io);
+  _cs_io_file_close(_cs_io);
 
-  BFT_FREE(_pp_io->name);
-  BFT_FREE(*pp_io);
+  _cs_io->buffer_size = 0;
+  BFT_FREE(_cs_io->buffer);
+
+  BFT_FREE(_cs_io->name);
+  BFT_FREE(*cs_io);
 }
 
 /*----------------------------------------------------------------------------
- * Return a pointer to a preprocessor IO structure's name.
+ * Return a pointer to a kernel IO structure's name.
  *
  * parameters:
- *   pp_io --> preprocessor IO structure
+ *   cs_io --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 const char *
-cs_io_get_name(const cs_io_t  *pp_io)
+cs_io_get_name(const cs_io_t  *cs_io)
 {
-  assert(pp_io != NULL);
+  assert(cs_io != NULL);
 
-  return(pp_io->name);
+  return(cs_io->name);
 }
 
 /*----------------------------------------------------------------------------
- * Return a preprocessor IO structure's echo (verbosity) level.
+ * Return a kernel IO structure's echo (verbosity) level.
  *
  * parameters:
- *   pp_io --> preprocessor IO structure
+ *   cs_io --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 size_t
-cs_io_get_echo(const cs_io_t  *pp_io)
+cs_io_get_echo(const cs_io_t  *cs_io)
 {
-  assert(pp_io != NULL);
+  assert(cs_io != NULL);
 
-  return (size_t)(pp_io->echo);
+  return (size_t)(cs_io->echo);
 }
 
 /*----------------------------------------------------------------------------
  * Read a message header.
  *
+ * The header values remain valid until the next message header read
+ * or the file is closed.
+ *
  * parameters:
+ *   inp    --> input kernel IO structure
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_io_read_header(cs_io_sec_header_t  *header,
-                  cs_io_t             *pp_io)
+cs_io_read_header(cs_io_t             *inp,
+                  cs_io_sec_header_t  *header)
 {
-  assert(pp_io != NULL);
+  int type_name_error = 0;
+  size_t body_size = 0;
+  size_t header_vals[6];
+  unsigned int_endian = 0;
 
-  header->n_elts = 0;
+  *((char *)(&int_endian)) = '\1'; /* Determine if we are little-endian */
 
-  if (pp_io->echo >= 0)
-    _cs_io_echo_pre(pp_io);
+  assert(inp != NULL);
 
+  if (inp->echo >= 0)
+    _cs_io_echo_pre(inp);
 
-  /* Read from file */
-  /*----------------*/
+  /* Position read pointer if necessary */
+  /*------------------------------------*/
 
-  /* section type name */
-
-  fvm_file_read_global(header->sec_name, 1, CS_IO_NAME_LEN, pp_io->f);
-
-  header->sec_name[CS_IO_NAME_LEN] = '\0';
-
-  /* No true end-of-file detection with current fvm_file API,
-     so we guess that we are at the end when a header is empty. */
-
-  if (strlen(header->sec_name) == 0) {
-    strcpy(header->sec_name, "EOF");
-    return;
+  {
+    fvm_file_off_t offset = fvm_file_tell(inp->f);
+    size_t ha = inp->header_align;
+    offset += (ha - (offset % ha)) % ha;
+    fvm_file_seek(inp->f, offset, FVM_FILE_SEEK_SET);
   }
 
-  /* number of elements */
+  inp->n_vals = 0;
 
-  if (sizeof(unsigned long) == 8) {
-    unsigned long rec;
-    fvm_file_read_global(&rec, 8, 1, pp_io->f);
-    header->n_elts = rec;
+  /* Read header */
+  /*-------------*/
+
+  fvm_file_read_global(inp->f, inp->buffer, 1, inp->header_size);
+
+  if (int_endian == 1)
+    bft_file_swap_endian(inp->buffer, inp->buffer, 8, 6);
+
+  _convert_to_size(inp->buffer, header_vals, 6);
+
+  if (header_vals[0] > inp->header_size) {
+
+    if (header_vals[0] > inp->buffer_size) {
+      while (header_vals[0] > inp->buffer_size)
+        inp->buffer_size *=2;
+      BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
+    }
+
+    fvm_file_read_global(inp->f,
+                         inp->buffer + inp->header_size,
+                         1,
+                         header_vals[0] - inp->header_size);
+
   }
-  else if (sizeof(unsigned long long) == 8) {
-    unsigned long long rec;
-    fvm_file_read_global(&rec, 8, 1, pp_io->f);
-    header->n_elts = rec;
+
+  /* Set pointers to data fields */
+
+  inp->n_vals = header_vals[1];
+  inp->location_id = header_vals[2];
+  inp->index_id = header_vals[3];
+  inp->n_loc_vals = header_vals[4];
+  inp->type_size = 0;
+  inp->data = NULL;
+  inp->type_name = (char *)(inp->buffer + 48);
+  inp->sec_name = (char *)(inp->buffer + 56);
+
+  if (header_vals[1] > 0 && inp->type_name[7] == 'e')
+    inp->data = inp->buffer + 56 + header_vals[5];
+
+  inp->type_size = 0;
+
+  if (inp->n_vals > 0) {
+
+    /* Check type name and compute size of data */
+
+    if (inp->type_name[0] == 'c') {
+      if (inp->type_name[1] != ' ')
+        type_name_error = 1;
+      else
+        inp->type_size = 1;
+    }
+    else if (   inp->type_name[0] == 'i'
+             || inp->type_name[0] == 'u'
+             || inp->type_name[0] == 'r') {
+
+      if (inp->type_name[1] == '4')
+        inp->type_size = 4;
+      else if (inp->type_name[1] == '8')
+        inp->type_size = 8;
+      else
+        type_name_error = 1;
+
+    }
+    else
+      type_name_error = 1;
+
+    if (type_name_error)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Type \"%s\" is not known\n"
+                  "Known types: \"c \", \"i4\", \"i8\", \"u4\", \"u8\", "
+                  "\"r4\", \"r8\"."), inp->type_name);
+
+    else if (inp->data == NULL)
+      body_size = inp->type_size*inp->n_vals;
+
+    else if (int_endian == 1 && inp->type_size > 1)
+      bft_file_swap_endian(inp->data,
+                           inp->data,
+                           inp->type_size,
+                           inp->n_vals);
   }
+
+  /* Set externally visible header values */
+  /*--------------------------------------*/
+
+  header->sec_name = inp->sec_name;
+  header->type_read_name = inp->type_name;
+  header->n_vals = inp->n_vals;
+  header->location_id = inp->location_id;
+  header->index_id = inp->index_id;
+  header->n_location_vals = inp->n_loc_vals;
+
+  /* Initialize data type */
+  /*----------------------*/
 
   assert(sizeof(unsigned long) == 8 || sizeof(unsigned long long) == 8);
 
-  if (header->n_elts != 0) {
+  if (header->n_vals != 0) {
 
-    char *elt_type_name = header->type_read_name;
-
-    fvm_file_read_global(header->type_read_name, 1, 2, pp_io->f);
-    header->type_read_name[2] = '\0';
+    const char *elt_type_name = header->type_read_name;
 
     if (   strcmp(elt_type_name, _cs_io_type_name_i4) == 0
         || strcmp(elt_type_name, "i ") == 0)
@@ -962,7 +1220,7 @@ cs_io_read_header(cs_io_sec_header_t  *header,
                 _("Erreur à la lecture du fichier de pré traitement : "
                   "\"%s\".\n"
                   "Le type de données \"%s\" n'est pas reconnu."),
-                pp_io->name, elt_type_name);
+                inp->name, elt_type_name);
 
     if (header->type_read == FVM_INT32 || header->type_read == FVM_INT64) {
       assert(sizeof(fvm_lnum_t) == 4 || sizeof(fvm_lnum_t) == 8);
@@ -994,14 +1252,11 @@ cs_io_read_header(cs_io_sec_header_t  *header,
 
   }
 
-  else
-    header->type_read_name[0] = '\0';
-
   /* Affichage eventuel */
 
-  if (pp_io->echo >= 0)
+  if (inp->echo >= 0)
     _cs_io_echo_header(header->sec_name,
-                       header->n_elts,
+                       header->n_vals,
                        header->elt_type);
 }
 
@@ -1012,12 +1267,12 @@ cs_io_read_header(cs_io_sec_header_t  *header,
  *
  * parameters:
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   cs_io  --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
 cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *pp_io)
+                   const cs_io_t       *cs_io)
 {
   assert(header != NULL);
 
@@ -1031,7 +1286,7 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
                 "Le type attendu pour la section : "
                 "\"%s\" est un entier signé.\n"
                 "et n'est pas convertible à partir du type lu \"%s\"."),
-              pp_io->name, header->type_read_name);
+              cs_io->name, header->type_read_name);
 
   assert(sizeof(fvm_lnum_t) == 4 || sizeof(fvm_lnum_t) == 8);
 
@@ -1048,12 +1303,12 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
  *
  * parameters:
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   cs_io  --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
 cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
-                   const cs_io_t       *pp_io)
+                   const cs_io_t       *cs_io)
 {
   assert(header != NULL);
 
@@ -1067,7 +1322,7 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
                 "Le type attendu pour la section : "
                 "\"%s\" est un entier non signé.\n"
                 "et n'est pas convertible à partir du type lu \"%s\"."),
-              pp_io->name, header->type_read_name);
+              cs_io->name, header->type_read_name);
 
   assert(sizeof(fvm_gnum_t) == 4 || sizeof(fvm_gnum_t) == 8);
 
@@ -1082,12 +1337,12 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
  *
  * parameters:
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   cs_io  --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
 cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
-                     const cs_io_t             *pp_io)
+                     const cs_io_t             *cs_io)
 {
   assert(header != NULL);
 
@@ -1099,15 +1354,11 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
                 "Le type attendu pour la section : "
                 "\"%s\".\n"
                 "est \"r4\" ou \"r8\" (réel), et non \"%s\"."),
-              pp_io->name, header->type_read_name);
+              cs_io->name, header->type_read_name);
 }
 
 /*----------------------------------------------------------------------------
  * Read a message body and replicate it to all processors.
- *
- * If global_num_start and global_num_end are > 0, a different block is
- * assigned to each processor. Otherwise, the full data is replicated
- * for each processor.
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.
@@ -1118,7 +1369,7 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
  * parameters:
  *   header           <-- header structure
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   cs_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -1127,9 +1378,9 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
 void *
 cs_io_read_global(const cs_io_sec_header_t  *header,
                   void                      *elts,
-                  cs_io_t                   *pp_io)
+                  cs_io_t                   *cs_io)
 {
-  return _cs_io_read_body(header, 0, 0, elts, pp_io);
+  return _cs_io_read_body(header, 0, 0, elts, cs_io);
 }
 
 /*----------------------------------------------------------------------------
@@ -1147,7 +1398,7 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   cs_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -1158,7 +1409,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
                  fvm_gnum_t                 global_num_start,
                  fvm_gnum_t                 global_num_end,
                  void                      *elts,
-                 cs_io_t                   *pp_io)
+                 cs_io_t                   *cs_io)
 {
   assert(global_num_start > 0);
   assert(global_num_end >= global_num_start);
@@ -1167,7 +1418,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
                           global_num_start,
                           global_num_end,
                           elts,
-                          pp_io);
+                          cs_io);
 }
 
 /*----------------------------------------------------------------------------
@@ -1196,7 +1447,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   cs_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -1207,7 +1458,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                        fvm_gnum_t           global_num_start,
                        fvm_gnum_t           global_num_end,
                        fvm_gnum_t          *elts,
-                       cs_io_t             *pp_io)
+                       cs_io_t             *cs_io)
 {
   fvm_gnum_t _global_num_start = global_num_end;
   fvm_gnum_t _global_num_end = global_num_end;
@@ -1220,11 +1471,11 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   /* Check type */
 
-  cs_io_set_fvm_gnum(header, pp_io);
+  cs_io_set_fvm_gnum(header, cs_io);
 
   /* Increase _global_num_end by 1 for the last rank */
 
-  if (header->n_elts == global_num_end) {
+  if (header->n_vals == global_num_end) {
 
     _global_num_end += 1;
     last_data_rank = true;
@@ -1243,7 +1494,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                             global_num_start,
                             _global_num_end,
                             elts,
-                            pp_io);
+                            cs_io);
 
   /* Exchange past-the-end values */
 
@@ -1329,8 +1580,8 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   }
 
-  if (   header->n_elts != 0 && header->n_elts != global_num_end
-      && pp_io->echo > 0)
+  if (   header->n_vals != 0 && header->n_vals != global_num_end
+      && cs_io->echo > 0)
     bft_printf(_("    premier élement rang suivant :\n"
                  "    %10lu : %12d\n"),
                (unsigned long)(global_num_end),

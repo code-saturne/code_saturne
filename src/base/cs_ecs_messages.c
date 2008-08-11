@@ -350,7 +350,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
   /* Open file */
 
   rank_pp_in = cs_io_initialize(file_name,
-                                "CS_PARTITION_1.4",
+                                "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
                                 echo);
 
@@ -361,20 +361,16 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
   while (rank_pp_in != NULL) {
 
-    /* Receive headers and clean header names */
+    /* Receive headers */
 
-    cs_io_read_header(&header, rank_pp_in);
-
-    for (i = CS_IO_NAME_LEN - 1; header.sec_name[i] == ' '; i--);
-    i++;
-    if (i < CS_IO_NAME_LEN) header.sec_name[i] = '\0';
+    cs_io_read_header(rank_pp_in, &header);
 
     /* Treatment according to the header name */
 
     if (strncmp(header.sec_name, "n_cells",
                 CS_IO_NAME_LEN) == 0) {
 
-      if (header.n_elts != 1)
+      if (header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
@@ -387,15 +383,15 @@ _read_cell_rank(cs_mesh_t       *mesh,
                       "\"%s\" (%lu)\n"
                       "ne correspond pas au nombre à celui du maillage (%lu)."),
                     cs_io_get_name(rank_pp_in),
-                    (unsigned long)(mesh->n_g_cells),
-                    (unsigned long)(n_g_cells));
+                    (unsigned long)(n_g_cells),
+                    (unsigned long)(mesh->n_g_cells));
       }
 
     }
     else if (strncmp(header.sec_name, "n_ranks",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (header.n_elts != 1)
+      if (header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
@@ -416,7 +412,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_g_cells;
-      if (header.n_elts != n_elts)
+      if (header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
@@ -1659,11 +1655,7 @@ void CS_PROCF(ledevi, LEDEVI)
 
     /* Receive headers and clen header names */
 
-    cs_io_read_header(&header, pp_in);
-
-    for (i = CS_IO_NAME_LEN - 1; header.sec_name[i] == ' '; i--);
-    i++;
-    if (i < CS_IO_NAME_LEN) header.sec_name[i] = '\0';
+    cs_io_read_header(pp_in, &header);
 
     /* Treatment according to the header name */
 
@@ -1701,7 +1693,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "ndim",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else
@@ -1711,7 +1703,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_cells",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1723,7 +1715,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_faces",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1735,7 +1727,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_vertices",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1747,7 +1739,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "face_vertices_size",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1758,7 +1750,7 @@ void CS_PROCF(ledevi, LEDEVI)
     }
     else if (strncmp(header.sec_name, "n_group_classes",
                      CS_IO_NAME_LEN) == 0) {
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else
@@ -1768,7 +1760,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_group_class_props_max",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else
@@ -1779,7 +1771,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_groups",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else
@@ -1789,7 +1781,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "group_name_index",
                      CS_IO_NAME_LEN) == 0) {
 
-      if ((cs_int_t)header.n_elts != mesh->n_groups + 1)
+      if ((cs_int_t)header.n_vals != mesh->n_groups + 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1802,11 +1794,11 @@ void CS_PROCF(ledevi, LEDEVI)
                      CS_IO_NAME_LEN) == 0) {
 
       if (   mesh->group_idx == NULL
-          || (cs_int_t)header.n_elts != mesh->group_idx[mesh->n_groups] - 1)
+          || (cs_int_t)header.n_vals != mesh->group_idx[mesh->n_groups] - 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        BFT_MALLOC(mesh->group_lst, header.n_elts, char);
+        BFT_MALLOC(mesh->group_lst, header.n_vals, char);
         cs_io_read_global(&header, (void *) mesh->group_lst, pp_in);
       }
 
@@ -1817,7 +1809,7 @@ void CS_PROCF(ledevi, LEDEVI)
                         CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_families * mesh->n_max_family_items;
-      if (dim_read != true || header.n_elts != n_elts)
+      if (dim_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1834,7 +1826,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_periodic_directions",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1864,7 +1856,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_periodic_rotations",
                      CS_IO_NAME_LEN) == 0) {
 
-      if (dim_read != true || header.n_elts != 1)
+      if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1875,7 +1867,7 @@ void CS_PROCF(ledevi, LEDEVI)
     else if (strncmp(header.sec_name, "n_periodic_faces",
                      CS_IO_NAME_LEN) == 0) {
 
-      if ((cs_int_t)header.n_elts != mesh->n_init_perio)
+      if ((cs_int_t)header.n_vals != mesh->n_init_perio)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1929,7 +1921,7 @@ void
 cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                           cs_mesh_builder_t  *mesh_builder)
 {
-  cs_int_t  i, perio_id, perio_type;
+  cs_int_t  perio_id, perio_type;
   cs_io_sec_header_t  header;
 
   cs_real_t  perio_matrix[3][4];
@@ -1956,11 +1948,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
 
     /* Receive header and clean header name */
 
-    cs_io_read_header(&header, pp_in);
-
-    for (i = CS_IO_NAME_LEN - 1 ; header.sec_name[i] == ' ' ; i--);
-    i++;
-    if (i < CS_IO_NAME_LEN) header.sec_name[i] = '\0';
+    cs_io_read_header(pp_in, &header);
 
     /* Process according to the header name */
 
@@ -1999,7 +1987,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mr->n_g_faces * 2;
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2018,7 +2006,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_g_cells;
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2037,7 +2025,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mr->n_g_faces;
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2056,7 +2044,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mr->n_g_faces + 1;
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2085,7 +2073,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       if (   data_read != true
-          || header.n_elts != mr->n_g_face_connect_size)
+          || header.n_vals != mr->n_g_face_connect_size)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2106,7 +2094,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_g_vertices * 3;
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2128,7 +2116,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
     else if (strncmp(header.sec_name, "periodicity_type_",
                      strlen("periodicity_type_")) == 0) {
 
-      if (data_read != true || header.n_elts != 1)
+      if (data_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2141,7 +2129,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      strlen("periodicity_matrix_")) == 0) {
 
       n_elts = 12; /* 3x4 */
-      if (data_read != CS_TRUE || header.n_elts != n_elts)
+      if (data_read != CS_TRUE || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -2167,7 +2155,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                       + strlen("periodicity_faces_")) - 1;
       n_elts = mr->n_g_per_face_couples[perio_id] * 2;
 
-      if (data_read != true || header.n_elts != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
