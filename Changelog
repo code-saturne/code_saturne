@@ -1,3 +1,12 @@
+* 11/08/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add an untested patch for a potential issue with
+  two periodicities (rarely encountered).
+  modified file:
+    patches/README
+  added file:
+    patches/cs_perio.c
+
 * 11/08/2008 - David Monfort <david.monfort@edf.fr>
   Add a patch directory in which the user can find
   some untested patches fixing tricky issues.
