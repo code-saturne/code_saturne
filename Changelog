@@ -1,3 +1,11 @@
+* 11/08/2008 - David Monfort <david.monfort@edf.fr>
+  Add a patch directory in which the user can find
+  some untested patches fixing tricky issues.
+  added directory:
+    patches
+  added file:
+    patches/README
+
 * 11/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor improvement enabling the coherency check with
   rotation and extended neighborhood.
