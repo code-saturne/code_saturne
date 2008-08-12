@@ -60,6 +60,9 @@ IHM
 
 BASE
 ----
+* Adapter la gestion des familles de faces internes si celles-ci n'existaient pas
+  (notamment en cas de renumerotation ou de decoupages des faces gauches)
+
 * Modifier les commentaires des routines utilisant le selector, rajouter
   MAXELT et LSTELT aux autres routines usts* et traiter proprement usdpst.F
 

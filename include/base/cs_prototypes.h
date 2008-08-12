@@ -203,6 +203,7 @@ extern void CS_PROCF (numvec, NUMVEC)
  cs_int_t         *irvecb,        /* <-- Boundary face vectorization indic. */
  cs_int_t         *ifacel,        /* <-> Interior face->cell connectivity */
  cs_int_t         *ifabor,        /* <-> Boundary face->cell connectivity */
+ cs_int_t         *ifmfac,        /* <-> Interior face group class number */
  cs_int_t         *ifmfbr,        /* <-> Boundary face group class number */
  cs_int_t         *ipnfac,        /* <-> Interior face->vertex index */
  cs_int_t         *nodfac,        /* <-> Interior face->vertex connectivity */

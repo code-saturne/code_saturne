@@ -1,3 +1,12 @@
+* 12/08/2008 - David Monfort <david.monfort@edf.fr>
+  Handle the interior face families when renumbering
+  or cutting warped faces.
+  modified routines:
+    include/base/cs_prototypes.h
+    src/base/cs_mesh_warping.c
+    src/base/cs_renumber.c
+    src/base/numvec.F
+
 * 11/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Temporary fix for rotation periodicity (especially
   with extended neighborhood).

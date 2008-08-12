@@ -32,7 +32,8 @@ C                       *****************
 C     -------------------------------------------------------------
      & ( NCELET , NCEL   , NFAC   , NFABOR , NNOD   , LNDFAC , LNDFBR ,
      &   IRVECI , IRVECB ,
-     &   IFACEL , IFABOR , IFMFBR , IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IFACEL , IFABOR , IFMFAC , IFMFBR ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   INUMFI , INUMFB ,
      &   IWORKF , ISMBS  , ISMBV  ,
      &   IPNFAW , NODFAW , IPNFBW , NODFBW ,
@@ -64,6 +65,8 @@ CARGU ! IFACEL       ! TE ! <-> ! No DES ELTS VOISINS D'UNE FACE INTERN!
 CARGU ! (2, NFAC)    !    !     !                                      !
 CARGU ! IFABOR       ! TE ! <-> ! No DE L'ELT VOISIN D'UNE FACE DE BORD!
 CARGU ! NFABOR  )    !    !     !                                      !
+CARGU ! IFMFAC       ! TE ! <-> ! NUMERO DE LA FAMILLE DES FACES INTERN!
+CARGU ! (NFAC    )   !    !     !                                      !
 CARGU ! IFMFBR       ! TE ! <-> ! NUMERO DE LA FAMILLE DES FACES DE BRD!
 CARGU ! (NFABOR  )   !    !     !                                      !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
@@ -121,7 +124,8 @@ C ARGUMENTS
 C
       INTEGER          NCELET, NCEL, NFAC, NFABOR, NNOD , LNDFAC, LNDFBR
       INTEGER          IRVECI, IRVECB
-      INTEGER          IFACEL(2,NFAC),IFABOR(NFABOR), IFMFBR(NFABOR)
+      INTEGER          IFACEL(2,NFAC),IFABOR(NFABOR)
+      INTEGER          IFMFAC(NFAC), IFMFBR(NFABOR)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          INUMFI(NFAC), INUMFB(NFABOR)
@@ -527,6 +531,15 @@ C --- IFACEL
           DO IFAC = 1, NFAC
             IFACEL(IVOIS,IFAC) = IWORKF(IFAC)
           ENDDO
+        ENDDO
+C
+C --- IFMFAC
+        DO IFAC = 1, NFAC
+          IFAC1 = INUMFI(IFAC)
+          IWORKF(IFAC)         = IFMFAC(IFAC1)
+        ENDDO
+        DO IFAC = 1, NFAC
+          IFMFAC(IFAC)         = IWORKF(IFAC)
         ENDDO
 C
 C --- IPNFAC, NODFAC

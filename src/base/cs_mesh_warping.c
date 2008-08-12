@@ -81,13 +81,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*============================================================================
- * Static global variables
- *============================================================================*/
-
-enum {INTERNAL_FACES,
-      BORDER_FACES};
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -527,14 +520,15 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
 static void
 _cut_warped_faces_perio(cs_mesh_t       *mesh,
-                        double          max_warp_angle,
-                        double          face_warping[],
+                        double           max_warp_angle,
+                        double           face_warping[],
                         cs_int_t        *p_n_cut_faces,
                         cs_int_t        *p_cut_face_lst[],
                         fvm_lnum_t      *p_n_sub_elt_lst[],
                         cs_int_t        *p_n_faces,
                         cs_int_t        *p_face_vtx_connect_size,
                         cs_int_t        *p_face_cells[],
+                        cs_int_t        *p_face_family[],
                         cs_int_t        *p_face_vtx_idx[],
                         cs_int_t        *p_face_vtx_lst[])
 {
@@ -547,7 +541,8 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
   fvm_triangulate_state_t  *triangle_state = NULL;
   cs_int_t  *face_connectivity = NULL, *new_face_connectivity = NULL;
   cs_int_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
-  cs_int_t  *new_face_cells = NULL, *cut_face_lst = NULL;
+  cs_int_t  *new_face_cells = NULL, *new_face_family = NULL;
+  cs_int_t  *cut_face_lst = NULL;
   cs_int_t  *domain_to_c_rank = NULL, *new_face_shift = NULL;
   cs_int_t  *s_rank_index = NULL, *r_rank_index = NULL;
   fvm_lnum_t  *n_sub_elt_lst = NULL;
@@ -603,6 +598,8 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_int_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_int_t);
   BFT_MALLOC(new_face_cells, 2*n_new_faces, cs_int_t);
+  BFT_MALLOC(new_face_family, n_new_faces, cs_int_t);
+
   BFT_MALLOC(cut_face_lst, n_cut_faces, cs_int_t);
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
@@ -661,6 +658,10 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
         for (j = 0; j < 2; j++)
           new_face_cells[2*n_new_faces + j] = (*p_face_cells)[2*face_id + j];
 
+        /* Update family for each face */
+
+        new_face_family[n_new_faces] = (*p_face_family)[face_id];
+
         /* Update "face -> vertices" connectivity */
 
         n_new_faces++;
@@ -677,6 +678,10 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
 
       for (j = 0; j < 2; j++)
         new_face_cells[2*n_new_faces + j] = (*p_face_cells)[2*face_id + j];
+
+      /* Update family for each face */
+
+      new_face_family[n_new_faces] = (*p_face_family)[face_id];
 
       /* Update "face -> vertices" connectivity */
 
@@ -753,12 +758,14 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
   BFT_FREE(r_rank_index);
   BFT_FREE(*p_face_vtx_idx);
   BFT_FREE(*p_face_vtx_lst);
+  BFT_FREE(*p_face_family);
 
   /* Define returned pointers */
 
   *p_face_vtx_idx = new_face_vtx_idx;
   *p_face_vtx_lst = new_face_vtx_lst;
   *p_face_cells = new_face_cells;
+  *p_face_family = new_face_family;
   *p_face_vtx_connect_size = connect_size;
   *p_n_faces = n_new_faces;
   *p_n_cut_faces = n_cut_faces;
@@ -790,19 +797,20 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
 
 static void
 _cut_warped_faces(cs_mesh_t       *mesh,
-                  int             face_type,
-                  double          max_warp_angle,
-                  double          face_warping[],
+                  int              stride,
+                  double           max_warp_angle,
+                  double           face_warping[],
                   cs_int_t        *p_n_cut_faces,
                   cs_int_t        *p_cut_face_lst[],
                   fvm_lnum_t      *p_n_sub_elt_lst[],
                   cs_int_t        *p_n_faces,
                   cs_int_t        *p_face_vtx_connect_size,
                   cs_int_t        *p_face_cells[],
+                  cs_int_t        *p_face_family[],
                   cs_int_t        *p_face_vtx_idx[],
                   cs_int_t        *p_face_vtx_lst[])
 {
-  cs_int_t  i, j, face_id, idx_start, idx_end, shift, stride;
+  cs_int_t  i, j, face_id, idx_start, idx_end, shift;
   cs_int_t  n_triangles;
 
   cs_int_t  n_face_vertices = 0, n_max_face_vertices = 0;
@@ -818,11 +826,7 @@ _cut_warped_faces(cs_mesh_t       *mesh,
   const cs_int_t  dim = mesh->dim;
   const cs_int_t  n_init_faces = *p_n_faces;
 
-  if (face_type == INTERNAL_FACES)
-    stride = 2;
-  else if (face_type == BORDER_FACES)
-    stride = 1;
-
+  assert(stride == 1 || stride ==2);
   assert(dim == CS_DIM_3);
 
   BFT_MALLOC(n_sub_elt_lst, n_init_faces, fvm_lnum_t);
@@ -864,11 +868,9 @@ _cut_warped_faces(cs_mesh_t       *mesh,
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_int_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_int_t);
   BFT_MALLOC(new_face_cells, n_new_faces*stride, cs_int_t);
+  BFT_MALLOC(new_face_family, n_new_faces, cs_int_t);
 
   BFT_MALLOC(cut_face_lst, n_cut_faces, cs_int_t);
-
-  if (face_type == BORDER_FACES)
-    BFT_MALLOC(new_face_family, n_new_faces, cs_int_t);
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
 
@@ -918,10 +920,9 @@ _cut_warped_faces(cs_mesh_t       *mesh,
           new_face_cells[stride*n_new_faces + j] =
             (*p_face_cells)[stride*face_id + j];
 
-        /* Update family for each border faces */
+        /* Update family for each face */
 
-        if (face_type == BORDER_FACES)
-          new_face_family[n_new_faces] = mesh->b_face_family[face_id];
+        new_face_family[n_new_faces] = (*p_face_family)[face_id];
 
         /* Update "face -> vertices" connectivity */
 
@@ -943,10 +944,9 @@ _cut_warped_faces(cs_mesh_t       *mesh,
         new_face_cells[stride*n_new_faces + j] =
           (*p_face_cells)[stride*face_id + j];
 
-      /* Update family for each border faces */
+      /* Update family for each faces */
 
-      if (face_type == BORDER_FACES)
-        new_face_family[n_new_faces] = mesh->b_face_family[face_id];
+      new_face_family[n_new_faces] = (*p_face_family)[face_id];
 
       /* Update "face -> vertices" connectivity */
 
@@ -970,17 +970,14 @@ _cut_warped_faces(cs_mesh_t       *mesh,
   BFT_FREE(*p_face_vtx_idx);
   BFT_FREE(*p_face_vtx_lst);
   BFT_FREE(*p_face_cells);
-
-  if (face_type == BORDER_FACES) {
-    BFT_FREE(mesh->b_face_family);
-    mesh->b_face_family = new_face_family;
-  }
+  BFT_FREE(*p_face_family);
 
   /* Define returned pointers */
 
   *p_face_vtx_idx = new_face_vtx_idx;
   *p_face_vtx_lst = new_face_vtx_lst;
   *p_face_cells = new_face_cells;
+  *p_face_family = new_face_family;
   *p_face_vtx_connect_size = connect_size;
   *p_n_faces = n_new_faces;
   *p_n_cut_faces = n_cut_faces;
@@ -1300,7 +1297,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   if (mesh->n_init_perio == 0)
     _cut_warped_faces(mesh,
-                      INTERNAL_FACES,
+                      2,
                       max_warp_angle,
                       i_face_warping,
                       &n_i_cut_faces,
@@ -1309,6 +1306,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                       &mesh->n_i_faces,
                       &mesh->i_face_vtx_connect_size,
                       &mesh->i_face_cells,
+                      &mesh->i_face_family,
                       &mesh->i_face_vtx_idx,
                       &mesh->i_face_vtx_lst);
 
@@ -1322,6 +1320,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                             &mesh->n_i_faces,
                             &mesh->i_face_vtx_connect_size,
                             &mesh->i_face_cells,
+                            &mesh->i_face_family,
                             &mesh->i_face_vtx_idx,
                             &mesh->i_face_vtx_lst);
 
@@ -1351,7 +1350,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   /* --------------------- */
 
   _cut_warped_faces(mesh,
-                    BORDER_FACES,
+                    1,
                     max_warp_angle,
                     b_face_warping,
                     &n_b_cut_faces,
@@ -1360,6 +1359,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                     &mesh->n_b_faces,
                     &mesh->b_face_vtx_connect_size,
                     &mesh->b_face_cells,
+                    &mesh->b_face_family,
                     &mesh->b_face_vtx_idx,
                     &mesh->b_face_vtx_lst);
 
