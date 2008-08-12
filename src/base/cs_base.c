@@ -130,9 +130,9 @@ bft_error_handler_t  *cs_glob_base_gest_erreur_sauve = NULL;
 
 /* Variables globales statiques (variables privées de cs_base.c) */
 
-static cs_bool_t  cs_glob_base_bft_mem_init = CS_FALSE;
+static cs_bool_t  cs_glob_base_bft_mem_init = false;
 
-static cs_bool_t  cs_glob_base_chaine_init = CS_FALSE;
+static cs_bool_t  cs_glob_base_chaine_init = false;
 static cs_bool_t  cs_glob_base_chaine_libre[CS_BASE_NBR_CHAINE];
 static char       cs_glob_base_chaine[CS_BASE_NBR_CHAINE]
                                      [CS_BASE_LNG_CHAINE + 1];
@@ -298,7 +298,7 @@ static void
 _cs_base_err_vprintf(const char  *format,
                      va_list      arg_ptr)
 {
-  static cs_bool_t  initialise = CS_FALSE;
+  static cs_bool_t  initialise = false;
 
   /* message sur la sortie standard */
 
@@ -319,7 +319,7 @@ _cs_base_err_vprintf(const char  *format,
   /* message sur une sortie erreur spécifique, à n'initialiser
      que si la sortie erreur est effectivement nécessaire */
 
-  if (initialise == CS_FALSE) {
+  if (initialise == false) {
 
     char nom_fic_err[81];
 
@@ -330,7 +330,7 @@ _cs_base_err_vprintf(const char  *format,
 
     freopen(nom_fic_err, "w", stderr);
 
-    initialise = CS_TRUE;
+    initialise = true;
 
   }
 
@@ -1514,10 +1514,10 @@ char  * cs_base_chaine_f_vers_c_cree
 
   /* Initialisation si nécessaire */
 
-  if (cs_glob_base_chaine_init == CS_FALSE) {
+  if (cs_glob_base_chaine_init == false) {
     for (i = 0 ; i < CS_BASE_NBR_CHAINE ; i++)
-      cs_glob_base_chaine_libre[i] = CS_TRUE;
-    cs_glob_base_chaine_init = CS_TRUE;
+      cs_glob_base_chaine_libre[i] = true;
+    cs_glob_base_chaine_init = true;
   }
 
   /* Traitement du nom pour l'API C */
@@ -1536,9 +1536,9 @@ char  * cs_base_chaine_f_vers_c_cree
 
   if (l < CS_BASE_LNG_CHAINE) {
     for (i = 0 ; i < CS_BASE_NBR_CHAINE ; i++) {
-      if (cs_glob_base_chaine_libre[i] == CS_TRUE) {
+      if (cs_glob_base_chaine_libre[i] == true) {
         c_str = cs_glob_base_chaine[i];
-        cs_glob_base_chaine_libre[i] = CS_FALSE;
+        cs_glob_base_chaine_libre[i] = false;
         break;
       }
     }
@@ -1569,7 +1569,7 @@ char  * cs_base_chaine_f_vers_c_detruit
 
   for (ind = 0 ; ind < CS_BASE_NBR_CHAINE ; ind++) {
     if (c_str == cs_glob_base_chaine[ind]) {
-      cs_glob_base_chaine_libre[ind] = CS_TRUE;
+      cs_glob_base_chaine_libre[ind] = true;
       c_str = NULL;
       break;
     }

@@ -839,12 +839,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 {
   cs_int_t  i;
 
-  cs_bool_t  compute_volume = CS_TRUE;
-  cs_bool_t  compute_weighting = CS_TRUE;
-  cs_bool_t  compute_orthogonality = CS_TRUE;
-  cs_bool_t  compute_warping = CS_TRUE;
-  cs_bool_t  vol_fields = CS_FALSE;
-  cs_bool_t  brd_fields = CS_FALSE;
+  cs_bool_t  compute_volume = true;
+  cs_bool_t  compute_weighting = true;
+  cs_bool_t  compute_orthogonality = true;
+  cs_bool_t  compute_warping = true;
+  cs_bool_t  vol_fields = false;
+  cs_bool_t  brd_fields = false;
 
   cs_real_t  *face_to_cell = NULL;
   cs_real_t  *face_to_vtx = NULL;
@@ -876,13 +876,13 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
      define an option to distribute face values to cells, vertices, or both */
 
   if (cs_post_existe_maillage(-1)) {
-    vol_fields = CS_TRUE;
+    vol_fields = true;
     BFT_MALLOC(face_to_cell, CS_MAX(n_cells_wghosts, n_vertices), cs_real_t);
     face_to_vtx = face_to_cell;
   }
 
   if (cs_post_existe_maillage(-2))
-    brd_fields = CS_TRUE;
+    brd_fields = true;
 
   /* TODO
      For the moment, we export the mesh at this stage; this should be moved
@@ -899,7 +899,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   /* Face warping */
   /*--------------*/
 
-  if (compute_warping == CS_TRUE) {
+  if (compute_warping == true) {
 
     double  *i_face_warping = NULL, *b_face_warping = NULL;
 
@@ -931,7 +931,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == CS_TRUE) {
+    if (vol_fields == true) {
 
       if (face_to_cell != NULL) {
 
@@ -944,8 +944,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var(-1,
                           "Face_Warp_c_max",
                           1,
-                          CS_FALSE,
-                          CS_TRUE,
+                          false,
+                          true,
                           CS_POST_TYPE_cs_real_t,
                           -1,
                           0.0,
@@ -965,8 +965,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var_som(-1,
                               "Face_Warp_v_max",
                               1,
-                              CS_FALSE,
-                              CS_TRUE,
+                              false,
+                              true,
                               CS_POST_TYPE_cs_real_t,
                               -1,
                               0.0,
@@ -975,12 +975,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     } /* End of post-processing on volume */
 
-    if (brd_fields == CS_TRUE)
+    if (brd_fields == true)
       cs_post_ecrit_var(-2,
                         "Face_Warp",
                         1,
-                        CS_FALSE,
-                        CS_TRUE,
+                        false,
+                        true,
                         CS_POST_TYPE_cs_real_t,
                         -1,
                         0.0,
@@ -996,7 +996,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   /* Weighting and center offsetting coefficients */
   /*----------------------------------------------*/
 
-  if (compute_weighting == CS_TRUE) {
+  if (compute_weighting == true) {
 
     double  *weighting = NULL, *offsetting = NULL;
 
@@ -1027,7 +1027,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == CS_TRUE) {
+    if (vol_fields == true) {
 
       if (face_to_cell != NULL) {
 
@@ -1035,8 +1035,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var(-1,
                           "Weighting_c_max",
                           1,
-                          CS_FALSE,
-                          CS_TRUE,
+                          false,
+                          true,
                           CS_POST_TYPE_cs_real_t,
                           -1,
                           0.0,
@@ -1051,8 +1051,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var_som(-1,
                               "Weighting_v_max",
                               1,
-                              CS_FALSE,
-                              CS_TRUE,
+                              false,
+                              true,
                               CS_POST_TYPE_cs_real_t,
                               -1,
                               0.0,
@@ -1065,8 +1065,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var(-1,
                           "Offset_c_max",
                           1,
-                          CS_FALSE,
-                          CS_TRUE,
+                          false,
+                          true,
                           CS_POST_TYPE_cs_real_t,
                           -1,
                           0.0,
@@ -1081,8 +1081,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var_som(-1,
                               "Offset_v_max",
                               1,
-                              CS_FALSE,
-                              CS_TRUE,
+                              false,
+                              true,
                               CS_POST_TYPE_cs_real_t,
                               -1,
                               0.0,
@@ -1100,7 +1100,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   /* Angle orthogonality */
   /*---------------------*/
 
-  if (compute_orthogonality == CS_TRUE) {
+  if (compute_orthogonality == true) {
 
     double  *i_face_ortho = NULL, *b_face_ortho = NULL;
 
@@ -1133,7 +1133,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == CS_TRUE) {
+    if (vol_fields == true) {
 
       if (face_to_cell != NULL) {
 
@@ -1141,8 +1141,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var(-1,
                           "Non_Ortho_c_max",
                           1,
-                          CS_FALSE,
-                          CS_TRUE,
+                          false,
+                          true,
                           CS_POST_TYPE_cs_real_t,
                           -1,
                           0.0,
@@ -1157,8 +1157,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
         cs_post_ecrit_var_som(-1,
                               "Non_Ortho_v_max",
                               1,
-                              CS_FALSE,
-                              CS_TRUE,
+                              false,
+                              true,
                               CS_POST_TYPE_cs_real_t,
                               -1,
                               0.0,
@@ -1167,12 +1167,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     } /* End of post-processing on volume */
 
-    if (brd_fields == CS_TRUE)
+    if (brd_fields == true)
       cs_post_ecrit_var(-2,
                         "Non_Ortho",
                         1,
-                        CS_FALSE,
-                        CS_TRUE,
+                        false,
+                        true,
                         CS_POST_TYPE_cs_real_t,
                         -1,
                         0.0,
@@ -1191,7 +1191,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   /* Cell volume */
   /*-------------*/
 
-  if (compute_volume == CS_TRUE) {
+  if (compute_volume == true) {
 
     /* Display histograms */
 
@@ -1200,12 +1200,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Post processing */
 
-    if (vol_fields == CS_TRUE)
+    if (vol_fields == true)
       cs_post_ecrit_var(-1,
                         "Cell_Volume",
                         1,
-                        CS_FALSE,
-                        CS_TRUE,
+                        false,
+                        true,
                         CS_POST_TYPE_cs_real_t,
                         -1,
                         0.0,

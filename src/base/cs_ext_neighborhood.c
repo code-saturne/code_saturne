@@ -267,16 +267,16 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
         cell_num = face_cells[2*face_id + j];
 
-        already_seen = CS_FALSE;
+        already_seen = false;
         idx = vtx_cells_idx[vtx_id] - 1;
 
-        while ((already_seen == CS_FALSE) && (idx < vtx_cells_connect_size)) {
+        while ((already_seen == false) && (idx < vtx_cells_connect_size)) {
           if (cell_num == vtx_cells_lst[idx])
-            already_seen = CS_TRUE;
+            already_seen = true;
           idx++;
         }
 
-        if (already_seen == CS_FALSE) {
+        if (already_seen == false) {
 
           if (vtx_cells_connect_size + 1 > vtx_cells_estimated_connect_size) {
             vtx_cells_estimated_connect_size *= 2;

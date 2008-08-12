@@ -633,7 +633,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var32[],
                            cs_real_t        var33[])
 {
-  cs_bool_t  bool_err = CS_FALSE;
+  cs_bool_t  bool_err = false;
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
 
@@ -641,13 +641,13 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
   /*----------------*/
 
   if (*idimte != 0 && *idimte != 1 && *idimte != 2 && *idimte != 21)
-    bool_err = CS_TRUE;
+    bool_err = true;
 
   if (*itenso != 0 && *itenso != 1 && *itenso != 11 && *itenso != 2)
-    bool_err = CS_TRUE;
+    bool_err = true;
 
 
-  if (bool_err == CS_TRUE)
+  if (bool_err == true)
     bft_error(__FILE__, __LINE__, 0,
               _("IDIMTE et/ou ITENSO ont des valeurs incohérentes."));
 
@@ -775,7 +775,7 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
                            cs_real_t        var32[],
                            cs_real_t        var33[])
 {
-  cs_bool_t  bool_err = CS_FALSE;
+  cs_bool_t  bool_err = false;
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
 
@@ -783,13 +783,13 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
   /*----------------*/
 
   if (*idimte != 0 && *idimte != 1 && *idimte != 2 && *idimte != 21)
-    bool_err = CS_TRUE;
+    bool_err = true;
 
   if (*itenso != 0 && *itenso != 1 && *itenso != 11 && *itenso != 2)
-    bool_err = CS_TRUE;
+    bool_err = true;
 
 
-  if (bool_err == CS_TRUE)
+  if (bool_err == true)
     bft_error(__FILE__, __LINE__, 0,
               _("IDIMTE et/ou ITENSO ont des valeurs incohérentes"));
 

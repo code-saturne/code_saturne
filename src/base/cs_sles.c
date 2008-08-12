@@ -1546,16 +1546,16 @@ void
 cs_sles_initialize(void)
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_bool_t  periodic = CS_FALSE;
+  cs_bool_t  periodic = false;
 
   assert(mesh != NULL);
 
   if (mesh->n_init_perio > 0)
-    periodic = CS_TRUE;
+    periodic = true;
 
   cs_glob_sles_base_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                              CS_FALSE,
-                                              CS_TRUE,
+                                              false,
+                                              true,
                                               periodic,
                                               mesh->n_cells,
                                               mesh->n_cells_with_ghosts,
@@ -1565,8 +1565,8 @@ cs_sles_initialize(void)
                                               mesh->halo);
 
   cs_glob_sles_native_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                                CS_FALSE,
-                                                CS_TRUE,
+                                                false,
+                                                true,
                                                 periodic,
                                                 mesh->n_cells,
                                                 mesh->n_cells_with_ghosts,

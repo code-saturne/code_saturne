@@ -861,8 +861,8 @@ _cs_syr3_coupling_post_function(cs_int_t   coupling_id,
     cs_post_ecrit_var_som(syr_coupling->post_mesh_id,
                           _("T Paroi"),
                           1,
-                          CS_FALSE,
-                          CS_FALSE,
+                          false,
+                          false,
                           CS_POST_TYPE_float,
                           nt_cur_abs,
                           t_cur_abs,
@@ -871,8 +871,8 @@ _cs_syr3_coupling_post_function(cs_int_t   coupling_id,
     cs_post_ecrit_var_som(syr_coupling->post_mesh_id,
                           _("Flux"),
                           1,
-                          CS_FALSE,
-                          CS_FALSE,
+                          false,
+                          false,
                           CS_POST_TYPE_float,
                           nt_cur_abs,
                           t_cur_abs,
@@ -903,7 +903,7 @@ _cs_syr3_coupling_post_init(cs_int_t  coupling_id,
 
   /* Exit silently if associated writer is not available */
 
-  if (cs_post_existe_writer(writer_id) != CS_TRUE)
+  if (cs_post_existe_writer(writer_id) != true)
     return;
 
   /* Initialize post processing flag, and free previous arrays in
@@ -933,7 +933,7 @@ _cs_syr3_coupling_post_init(cs_int_t  coupling_id,
 
   cs_post_ajoute_maillage_existant(mesh_id,
                                    syr_coupling->coupled_mesh,
-                                   CS_FALSE);
+                                   false);
 
   cs_post_associe(mesh_id, writer_id);
 

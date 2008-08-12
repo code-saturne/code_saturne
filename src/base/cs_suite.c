@@ -731,10 +731,10 @@ void CS_PROCF (tstsui, TSTSUI)
                                 &corresp_cel, &corresp_fac,
                                 &corresp_fbr, &corresp_som);
 
-    *indcel = (corresp_cel == CS_TRUE ? 1 : 0);
-    *indfac = (corresp_fac == CS_TRUE ? 1 : 0);
-    *indfbr = (corresp_fbr == CS_TRUE ? 1 : 0);
-    *indsom = (corresp_som == CS_TRUE ? 1 : 0);
+    *indcel = (corresp_cel == true ? 1 : 0);
+    *indfac = (corresp_fac == true ? 1 : 0);
+    *indfbr = (corresp_fbr == true ? 1 : 0);
+    *indsom = (corresp_som == true ? 1 : 0);
 
   }
 
@@ -1018,9 +1018,9 @@ cs_suite_t * cs_suite_cree
 
   if (cs_glob_base_rang <= 0) {
 
-    lit_fichier = CS_TRUE;
+    lit_fichier = true;
 
-    while (lit_fichier == CS_TRUE)
+    while (lit_fichier == true)
       lit_fichier = cs_loc_suite_fic_ajoute(suite);
 
   }
@@ -1116,9 +1116,9 @@ cs_suite_t * cs_suite_detruit
 
 /*----------------------------------------------------------------------------
  *  Fonction qui vérifie les supports de base associé à un fichier suite ;
- *  On renvoie pour chaque type d'entité CS_TRUE si le nombre d'entités
+ *  On renvoie pour chaque type d'entité true si le nombre d'entités
  *  associées au fichier suite correspond au nombre d'entités en cours (et
- *  donc que l'on considère que le support est bien le même), CS_FALSE sinon.
+ *  donc que l'on considère que le support est bien le même), false sinon.
  *----------------------------------------------------------------------------*/
 
 void cs_suite_verif_support_base
@@ -1135,13 +1135,13 @@ void cs_suite_verif_support_base
   assert(suite != NULL);
 
   *corresp_cel
-    = (mesh->n_g_cells == (fvm_gnum_t)suite->nbr_cel ? CS_TRUE : CS_FALSE);
+    = (mesh->n_g_cells == (fvm_gnum_t)suite->nbr_cel ? true : false);
   *corresp_fac
-    = (mesh->n_g_i_faces == (fvm_gnum_t)suite->nbr_fac ? CS_TRUE : CS_FALSE);
+    = (mesh->n_g_i_faces == (fvm_gnum_t)suite->nbr_fac ? true : false);
   *corresp_fbr
-    = (mesh->n_g_b_faces == (fvm_gnum_t)suite->nbr_fbr ? CS_TRUE : CS_FALSE);
+    = (mesh->n_g_b_faces == (fvm_gnum_t)suite->nbr_fbr ? true : false);
   *corresp_som
-    = (mesh->n_g_vertices == (fvm_gnum_t)suite->nbr_som ? CS_TRUE : CS_FALSE);
+    = (mesh->n_g_vertices == (fvm_gnum_t)suite->nbr_som ? true : false);
 
   /* Messages d'avertissement pour listing "maître E/S" */
 
@@ -1939,13 +1939,13 @@ static cs_bool_t cs_loc_suite_fic_ajoute
   bft_file_mode_t fic_mode;
   bft_file_type_t fic_type;
 
-  cs_bool_t autre_partie = CS_FALSE;
+  cs_bool_t autre_partie = false;
 
 
   /* Instructions */
 
   if (cs_glob_base_rang > 0)
-    return CS_FALSE;
+    return false;
 
   /* Incrémentation du compteur */
 
@@ -3051,8 +3051,8 @@ static cs_bool_t cs_loc_suite_analyse_txt
   cs_int_t  num_ligne = 1;
   cs_int_t  ind_fic   = suite->nbr_fic - 1;
 
-  cs_bool_t  err_fmt = CS_FALSE;
-  cs_bool_t  fin_fic = CS_FALSE;
+  cs_bool_t  err_fmt = false;
+  cs_bool_t  fin_fic = false;
 
   /* Initialisations */
 
@@ -3078,32 +3078,32 @@ static cs_bool_t cs_loc_suite_analyse_txt
         else if (strncmp("nbr_som", sub, strlen("nbr_som")) == 0)
           nbr_som = nbr_ent;
         else {
-          err_fmt = CS_TRUE;
+          err_fmt = true;
           break;
         }
 
       }
 
       else {
-        err_fmt = CS_TRUE;
+        err_fmt = true;
         break;
       }
 
     }
     else { /* if (str != NULL) */
 
-      err_fmt = CS_TRUE; /* break; */
+      err_fmt = true; /* break; */
 
     }
 
   }
 
-  if (err_fmt == CS_TRUE) {
+  if (err_fmt == true) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
                suite->nom, suite->nbr_fic);
 
-    return CS_FALSE;
+    return false;
   }
 
   /* Dimensions du support */
@@ -3123,12 +3123,12 @@ static cs_bool_t cs_loc_suite_analyse_txt
                  "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
                suite->nom, suite->nbr_fic);
 
-    return CS_FALSE;
+    return false;
   }
 
   /* Tableaux et champs contenus dans le fichier */
 
-  while (fin_fic == CS_FALSE) {
+  while (fin_fic == false) {
 
     str = bft_file_gets_try(buffer,
                             CS_SUITE_LNG_BUF_ASCII,
@@ -3136,7 +3136,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
                             &num_ligne);
 
     if (str == NULL) {
-      fin_fic = CS_TRUE;
+      fin_fic = true;
       break;
     }
 
@@ -3155,13 +3155,13 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
       if (strncmp(sub, cs_suite_nom_fin_fic,
                   strlen(cs_suite_nom_fin_fic)) == 0)
-        return CS_FALSE;
+        return false;
 
       /* Indicateur de découpage de fichier */
 
       else if (strncmp(sub, cs_suite_nom_decoup_fic,
                        strlen(cs_suite_nom_decoup_fic)) == 0)
-        return CS_TRUE;
+        return true;
 
       /* Numéro de partie de fichier (en cas de découpage) */
 
@@ -3180,7 +3180,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
                        "à la partie <%d> du fichier suite d'origine\n"),
                      suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
 
-          return CS_FALSE;
+          return false;
         }
         continue;
       }
@@ -3195,7 +3195,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
                               &num_ligne);
 
       if (str == NULL) {
-        fin_fic = CS_TRUE;
+        fin_fic = true;
         break;
       }
 
@@ -3212,7 +3212,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
       for (etape = 0 ; etape < 3 ;etape++) {
 
-        if (ind_fin > 0 && err_fmt == CS_FALSE) {
+        if (ind_fin > 0 && err_fmt == false) {
           for ( ; ind > 0 && buffer[ind] != '=' ; ind--);
           for (ind_rub = ind ;
                ind_rub > 0 && buffer[ind_rub] != ',' ;
@@ -3227,17 +3227,17 @@ static cs_bool_t cs_loc_suite_analyse_txt
                         strlen(", typ_val = ")) == 0)
               strcpy(str_typ, buffer+ind);
             else
-              err_fmt = CS_TRUE;
+              err_fmt = true;
             break;
 
           case 1:
             if (strncmp(", nbr_val_ent = ", buffer+ind_rub,
                         strlen(", nbr_val_ent = ")) == 0) {
               if (sscanf(buffer+ind, "%d", &nbr_val_ent) != 1)
-                err_fmt = CS_TRUE;
+                err_fmt = true;
             }
             else
-              err_fmt = CS_TRUE;
+              err_fmt = true;
             break;
 
           case 2:
@@ -3245,7 +3245,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
                         strlen(" support = ")) == 0)
               strcpy(sub, buffer+ind);
             else
-              err_fmt = CS_TRUE;
+              err_fmt = true;
             break;
 
           }
@@ -3255,7 +3255,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
           ind_fin = ind_rub - 1;
         }
         else
-          err_fmt = CS_TRUE;
+          err_fmt = true;
 
       }
 
@@ -3270,7 +3270,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
       if (ind_sup > CS_SUITE_SUPPORT_SOM) {
         ind_sup = atoi(sub);
         if (ind_sup < 5)
-          err_fmt = CS_TRUE;
+          err_fmt = true;
       }
 
       /* Si l'enregistrement définit un support additionnel */
@@ -3287,7 +3287,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
           bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
                        "de support additionnel (%s) incorrecte."),
                      suite->nom);
-          return CS_FALSE;
+          return false;
         }
 
         /* Lecture du nombre global d'entités associé */
@@ -3329,7 +3329,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
           }
         }
         if (ind == 3)
-          err_fmt = CS_TRUE;
+          err_fmt = true;
 
         /* Position dans le fichier */
 
@@ -3338,7 +3338,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
         /* Libération du nom si erreur de format */
 
-        if (   (fin_fic == CS_TRUE || err_fmt == CS_TRUE)
+        if (   (fin_fic == true || err_fmt == true)
                && (suite->tab_rec[ind_rec]).nom != NULL)
           BFT_FREE((suite->tab_rec[ind_rec]).nom);
 
@@ -3368,7 +3368,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
   }
 
-  return CS_FALSE;
+  return false;
 
 }
 
@@ -3392,8 +3392,8 @@ static cs_bool_t cs_loc_suite_analyse_bin
 
   cs_int_t  ind_fic   = suite->nbr_fic - 1;
 
-  cs_bool_t  fic_suiv = CS_FALSE;
-  cs_bool_t  fin_fic  = CS_FALSE;
+  cs_bool_t  fic_suiv = false;
+  cs_bool_t  fin_fic  = false;
 
   /* Initialisations */
 
@@ -3421,7 +3421,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
       bft_printf(_("Les dimensions du support associé au fichier suite <%s>\n"
                    "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
                  suite->nom, suite->nbr_fic);
-      return CS_FALSE;
+      return false;
     }
 
   }
@@ -3429,13 +3429,13 @@ static cs_bool_t cs_loc_suite_analyse_bin
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
                suite->nom, suite->nbr_fic);
-    return CS_FALSE;
+    return false;
   }
 
 
   /* Tableaux et champs contenus dans le fichier */
 
-  while (fin_fic == CS_FALSE) {
+  while (fin_fic == false) {
 
     nbr_lus = bft_file_read_try(buf,
                                 sizeof(cs_int_t),
@@ -3443,7 +3443,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
                                 suite->fic[ind_fic]);
 
     if (nbr_lus < 4) {
-      fin_fic = CS_TRUE;
+      fin_fic = true;
       break;
     }
 
@@ -3466,7 +3466,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
 
     if (strncmp(nom, cs_suite_nom_fin_fic,
                 strlen(cs_suite_nom_fin_fic)) == 0) {
-      fin_fic = CS_TRUE;
+      fin_fic = true;
       break;
     }
 
@@ -3474,8 +3474,8 @@ static cs_bool_t cs_loc_suite_analyse_bin
 
     else if (strncmp(nom, cs_suite_nom_decoup_fic,
                      strlen(cs_suite_nom_decoup_fic)) == 0) {
-      fin_fic  = CS_TRUE;
-      fic_suiv = CS_TRUE;
+      fin_fic  = true;
+      fic_suiv = true;
       break;
     }
 
@@ -3488,7 +3488,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
         bft_printf(_("Le fichier suite <%s_p%02d> ne correspond pas\n"
                      "à la partie <%d> du fichier suite d'origine\n"),
                    suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
-        fin_fic = CS_TRUE;
+        fin_fic = true;
         break;
       }
       continue;
@@ -3506,7 +3506,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
         bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
                      "de support additionnel (%s) incorrecte."),
                    suite->nom);
-        return CS_FALSE;
+        return false;
       }
 
       /* Lecture du nombre global d'entités associé */

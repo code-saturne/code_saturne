@@ -95,7 +95,7 @@ struct _cs_mesh_select_t {
  *   n_groups    --> number of groups
  *   colors      --> color list
  *   groups      --> group name list
- *   invsel      --> invert selection if CS_TRUE
+ *   invsel      --> invert selection if true
  *
  * returns:
  *   pointer to created cs_mesh_select_t structure
@@ -240,7 +240,7 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
   BFT_MALLOC(selected_families, mesh->n_families, cs_bool_t);
 
   for (fam_id = 0; fam_id < mesh->n_families; fam_id++)
-    selected_families[fam_id] = CS_FALSE;
+    selected_families[fam_id] = false;
 
   /* Look for families with criteria present in selection structure */
 
@@ -251,12 +251,12 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
       if (family_item[idx] > 0) { /* Color */
 
         color_id = 0;
-        end = CS_FALSE;
-        while (end == CS_FALSE && color_id < selection->n_colors) {
+        end = false;
+        while (end == false && color_id < selection->n_colors) {
 
           if (family_item[idx] == selection->colors[color_id]) {
-            selected_families[fam_id] = CS_TRUE;
-            end = CS_TRUE;
+            selected_families[fam_id] = true;
+            end = true;
           }
           color_id++;
 
@@ -267,15 +267,15 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
       else if (family_item[idx] < 0) { /* Group  */
 
         grp_id = 0;
-        end = CS_FALSE;
+        end = false;
         grp_num = CS_ABS(family_item[idx]);
         grp_name = &(group_lst[group_idx[grp_num - 1] - 1]);
 
-        while (end == CS_FALSE && grp_id < selection->n_groups) {
+        while (end == false && grp_id < selection->n_groups) {
 
           if (!strcmp(selection->groups[grp_id], grp_name)) {
-            selected_families[fam_id] = CS_TRUE;
-            end = CS_TRUE;
+            selected_families[fam_id] = true;
+            end = true;
           }
           grp_id++;
 
@@ -297,13 +297,13 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
 
   /* If inversion is required */
 
-  if (selection->inv_selection == CS_TRUE) {
+  if (selection->inv_selection == true) {
     for (fam_id = 0;  fam_id < mesh->n_families; fam_id++) {
 
-      if (selected_families[fam_id] == CS_FALSE)
-        selected_families[fam_id] = CS_TRUE;
-      else if (selected_families[fam_id] == CS_TRUE)
-        selected_families[fam_id] = CS_FALSE;
+      if (selected_families[fam_id] == false)
+        selected_families[fam_id] = true;
+      else if (selected_families[fam_id] == true)
+        selected_families[fam_id] = false;
 
     }
   }
@@ -315,7 +315,7 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
   BFT_MALLOC(_selected_lst, mesh->n_b_faces, cs_int_t);
 
   for (i = 0; i < mesh->n_b_faces; i++) {
-    if (selected_families[mesh->b_face_family[i] - 1] == CS_TRUE) {
+    if (selected_families[mesh->b_face_family[i] - 1] == true) {
 
       _selected_lst[*n_selected_b_faces] = i + 1;
       *n_selected_b_faces += 1;
@@ -349,7 +349,7 @@ cs_mesh_select_dump(cs_mesh_select_t  *selection)
 
   assert(selection != NULL);
 
-  if (selection->inv_selection == CS_TRUE)
+  if (selection->inv_selection == true)
     bft_printf(_("Inversion de la sélection demandé\n"));
 
   bft_printf(_("\nCouleur(s) des faces couplées:\n"));

@@ -417,7 +417,7 @@ int main
 
   /* Découpage des faces "gauche" si nécessaire */
 
-  if (opts.cwf == CS_TRUE) {
+  if (opts.cwf == true) {
 
     t1 = bft_timer_wtime();
     cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);

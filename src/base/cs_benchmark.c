@@ -790,8 +790,8 @@ _matrix_creation_test(int                  n_runs,
   for (run_id = 0; run_id < n_runs; run_id++) {
     m = cs_matrix_create(type,
                          symmetric,
-                         CS_TRUE,
-                         CS_FALSE,
+                         true,
+                         false,
                          n_cells,
                          n_cells_ext,
                          n_faces,
@@ -859,8 +859,8 @@ _matrix_assignment_test(int                  n_runs,
 
   m = cs_matrix_create(type,
                        sym_struct,
-                       CS_TRUE,
-                       CS_FALSE,
+                       true,
+                       false,
                        n_cells,
                        n_cells_ext,
                        n_faces,
@@ -950,8 +950,8 @@ _matrix_vector_test(int                  n_runs,
 
   m = cs_matrix_create(type,
                        sym_struct,
-                       CS_TRUE,
-                       CS_FALSE,
+                       true,
+                       false,
                        n_cells,
                        n_cells_ext,
                        n_faces,
@@ -1091,8 +1091,8 @@ _matrix_vector_test(int                  n_runs,
 
   m = cs_matrix_create(type,
                        sym_struct,
-                       CS_FALSE,
-                       CS_FALSE,
+                       false,
+                       false,
                        n_cells,
                        n_cells_ext,
                        n_faces,
@@ -1247,7 +1247,7 @@ cs_benchmark(int  mpi_trace_mode)
 
     _matrix_creation_test(n_runs,
                           _("native"),
-                          CS_MATRIX_NATIVE, CS_FALSE,
+                          CS_MATRIX_NATIVE, false,
                           n_cells, n_cells_ext, n_faces,
                           mesh->global_cell_num, mesh->i_face_cells,
                           mesh->halo);
@@ -1256,14 +1256,14 @@ cs_benchmark(int  mpi_trace_mode)
 
     _matrix_creation_test(n_runs,
                           _("CSR"),
-                          CS_MATRIX_CSR, CS_FALSE,
+                          CS_MATRIX_CSR, false,
                           n_cells, n_cells_ext, n_faces,
                           mesh->global_cell_num, mesh->i_face_cells,
                           mesh->halo);
 
     _matrix_creation_test(n_runs,
                           _("CSR sym"),
-                          CS_MATRIX_CSR, CS_TRUE,
+                          CS_MATRIX_CSR, true,
                           n_cells, n_cells_ext, n_faces,
                           mesh->global_cell_num, mesh->i_face_cells,
                           mesh->halo);
@@ -1274,14 +1274,14 @@ cs_benchmark(int  mpi_trace_mode)
 
     _matrix_assignment_test(n_runs,
                             _("native"),
-                            CS_MATRIX_NATIVE, CS_FALSE, CS_FALSE,
+                            CS_MATRIX_NATIVE, false, false,
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells,
                             mesh->halo, da, xa);
 
     _matrix_assignment_test(n_runs,
                             _("native, sym coeffs"),
-                            CS_MATRIX_NATIVE, CS_FALSE, CS_TRUE,
+                            CS_MATRIX_NATIVE, false, true,
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells,
                             mesh->halo, da, xa);
@@ -1290,21 +1290,21 @@ cs_benchmark(int  mpi_trace_mode)
 
     _matrix_assignment_test(n_runs,
                             _("CSR"),
-                            CS_MATRIX_CSR, CS_FALSE, CS_FALSE,
+                            CS_MATRIX_CSR, false, false,
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells,
                             mesh->halo, da, xa);
 
     _matrix_assignment_test(n_runs,
                             _("CSR, sym coeffs"),
-                            CS_MATRIX_CSR, CS_FALSE, CS_TRUE,
+                            CS_MATRIX_CSR, false, true,
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells,
                             mesh->halo, da, xa);
 
     _matrix_assignment_test(n_runs,
                             _("CSR_sym"),
-                            CS_MATRIX_CSR, CS_TRUE, CS_TRUE,
+                            CS_MATRIX_CSR, true, true,
                             n_cells, n_cells_ext, n_faces,
                             mesh->global_cell_num, mesh->i_face_cells,
                             mesh->halo, da, xa);
@@ -1317,28 +1317,28 @@ cs_benchmark(int  mpi_trace_mode)
 
   _matrix_vector_test(n_runs,
                       _("native"),
-                      CS_MATRIX_NATIVE, CS_FALSE, CS_FALSE,
+                      CS_MATRIX_NATIVE, false, false,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       da, xa, x1, y1);
 
   _matrix_vector_test(n_runs,
                       _("native, sym coeffs"),
-                      CS_MATRIX_NATIVE, CS_FALSE, CS_TRUE,
+                      CS_MATRIX_NATIVE, false, true,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       da, xa, x1, y1);
 
   _matrix_vector_test(n_runs,
                       _("CSR"),
-                      CS_MATRIX_CSR, CS_FALSE, CS_FALSE,
+                      CS_MATRIX_CSR, false, false,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       da, xa, x1, y1);
 
   _matrix_vector_test(n_runs,
                       _("CSR_sym"),
-                      CS_MATRIX_CSR, CS_TRUE, CS_TRUE,
+                      CS_MATRIX_CSR, true, true,
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       da, xa, x1, y1);

@@ -66,7 +66,7 @@ typedef struct _cs_mesh_select_t  cs_mesh_select_t;
  *   n_groups    --> number of groups
  *   colors      --> color list
  *   groups      --> group name list
- *   invsel      --> invert selection if CS_TRUE
+ *   invsel      --> invert selection if true
  *
  * returns:
  *   pointer to created cs_mesh_select_t structure

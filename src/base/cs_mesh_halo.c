@@ -1011,7 +1011,7 @@ _test_loop_continues(cs_mesh_t   *mesh,
                      cs_int_t     face_num)
 {
   cs_int_t  fac_id = face_num - mesh->n_b_faces - 1;
-  cs_bool_t  choice = CS_FALSE;
+  cs_bool_t  choice = false;
 
   /* Face has to be an internal face */
 
@@ -1021,15 +1021,15 @@ _test_loop_continues(cs_mesh_t   *mesh,
 
       if (   mesh->i_face_cells[2*fac_id] < 1
           || mesh->i_face_cells[2*fac_id+1] < 1 )
-        choice = CS_TRUE;
+        choice = true;
       else
-        choice = CS_FALSE;
+        choice = false;
 
     }
     else {
 
       assert(mesh->halo_type == CS_HALO_EXTENDED);
-      choice = CS_TRUE;
+      choice = true;
 
     }
 
@@ -1132,7 +1132,7 @@ _fill_send_halo(cs_mesh_t            *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[i_fac - 1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE) {
+        if (_test_loop_continues(mesh, fac_num) == true) {
 
           fac_id = fac_num - mesh->n_b_faces - 1;
           n_face_vertices = fac_vtx_idx[fac_id + 1] - fac_vtx_idx[fac_id];
@@ -1207,7 +1207,7 @@ _fill_send_halo(cs_mesh_t            *mesh,
 
           fac_num = CS_ABS(cell_faces_lst[i_fac - 1]);
 
-          if (_test_loop_continues(mesh, fac_num) ==  CS_TRUE) {
+          if (_test_loop_continues(mesh, fac_num) ==  true) {
 
             fac_id = fac_num - mesh->n_b_faces - 1;
 
@@ -1959,7 +1959,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE) {
+        if (_test_loop_continues(mesh, fac_num) == true) {
 
           fac_id = fac_num - mesh->n_b_faces - 1;
 
@@ -2083,7 +2083,7 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE) {
+        if (_test_loop_continues(mesh, fac_num) == true) {
 
           fac_id = fac_num - mesh->n_b_faces - 1;
 
@@ -2776,7 +2776,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[j-1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE)
+        if (_test_loop_continues(mesh, fac_num) == true)
           rank_shift[rank_id+1] += 1;
 
       } /* End of loop on faces */
@@ -2849,7 +2849,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[j-1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE) {
+        if (_test_loop_continues(mesh, fac_num) == true) {
 
           fac_id = fac_num - mesh->n_b_faces - 1;
 
@@ -3047,7 +3047,7 @@ _update_gcells_connect(cs_mesh_t       *mesh,
 
         fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
 
-        if (_test_loop_continues(mesh, fac_num) == CS_TRUE) {
+        if (_test_loop_continues(mesh, fac_num) == true) {
 
           fac_id = fac_num - mesh->n_b_faces - 1;
           n_face_vertices = fac_vtx_idx[fac_id+1] - fac_vtx_idx[fac_id];
@@ -3103,7 +3103,7 @@ _update_gcells_connect(cs_mesh_t       *mesh,
                   else
                     glob_face_num = fac_id + 1;
 
-                  ok = CS_FALSE;
+                  ok = false;
                   for (k = gcell_faces_idx[cell_id];
                        k < gcell_faces_idx[cell_id+1]; k++) {
 
@@ -3117,7 +3117,7 @@ _update_gcells_connect(cs_mesh_t       *mesh,
                     }
 
                     if (_glob_face_num == glob_face_num) {
-                      ok = CS_TRUE;
+                      ok = true;
                       break;
                     }
 
@@ -3126,9 +3126,9 @@ _update_gcells_connect(cs_mesh_t       *mesh,
                 } /* End if counter > 1 */
 
                 else if (counter == 1)
-                  ok = CS_TRUE;
+                  ok = true;
 
-                if (ok == CS_TRUE) { /* Update face -> cells connectivity */
+                if (ok == true) { /* Update face -> cells connectivity */
 
                   ghost_cell_num = mesh->n_cells + cell_id + 1;
 

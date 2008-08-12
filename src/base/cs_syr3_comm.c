@@ -132,7 +132,7 @@ static char  cs_syr3_comm_nom_typ_elt_real[] = "r8";  /* Type "réel"    */
 
 #if defined(_CS_HAVE_SOCKET)
 
-static cs_bool_t       cs_glob_comm_little_endian = CS_FALSE;
+static cs_bool_t       cs_glob_comm_little_endian = false;
 
 static char  cs_glob_comm_sock_nom_hote[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 static int   cs_glob_comm_sock_num_port = -1;
@@ -426,13 +426,13 @@ cs_syr3_comm_t * cs_syr3_comm_initialise
 
   /* Test si système "big-endian" ou "little-endian" */
 
-  comm->swap_endian = CS_FALSE;
+  comm->swap_endian = false;
 
   int_endian = 0;
   *((char *)(&int_endian)) = '\1';
 
   if (int_endian == 1)
-    comm->swap_endian = CS_TRUE;
+    comm->swap_endian = true;
 
 #if defined(DEBUG) && !defined(NDEBUG)
 
@@ -1119,13 +1119,13 @@ void cs_syr3_comm_init_socket
 
   /* Test si système "big-endian" (référence réseau) ou "little-endian" */
 
-  cs_glob_comm_little_endian = CS_FALSE;
+  cs_glob_comm_little_endian = false;
 
   int_endian = 0;
   *((char *) (&int_endian)) = '\1';
 
   if (int_endian == 1)
-    cs_glob_comm_little_endian = CS_TRUE;
+    cs_glob_comm_little_endian = true;
 
 #if defined(DEBUG) && !defined(NDEBUG)
   else {
@@ -1154,7 +1154,7 @@ void cs_syr3_comm_init_socket
   addr_sock.sin_addr.s_addr = INADDR_ANY;
   addr_sock.sin_port = 0;
 
-  if (cs_glob_comm_little_endian == CS_TRUE) {
+  if (cs_glob_comm_little_endian == true) {
     bft_file_swap_endian(&(addr_sock.sin_addr.s_addr),
                          &(addr_sock.sin_addr.s_addr),
                          sizeof(addr_sock.sin_addr.s_addr),
@@ -1195,7 +1195,7 @@ void cs_syr3_comm_init_socket
                 "par socket.\n"));
 
   num_port = addr_sock.sin_port;
-  if (cs_glob_comm_little_endian == CS_TRUE) {
+  if (cs_glob_comm_little_endian == true) {
     bft_file_swap_endian(&(addr_sock.sin_port),
                          &(addr_sock.sin_port),
                          sizeof(addr_sock.sin_port), 1);
@@ -2172,7 +2172,7 @@ static void cs_loc_syr3_comm_ecrit_sock
 
   /* Conversion si "little-endian" */
 
-  if (comm->swap_endian == CS_TRUE && taille != 1) {
+  if (comm->swap_endian == true && taille != 1) {
     BFT_MALLOC(rec_tmp, nbr_octet, cs_byte_t);
     bft_file_swap_endian(rec_tmp, rec, taille, nbr);
   }
@@ -2278,7 +2278,7 @@ static void cs_loc_syr3_comm_lit_sock
 
   }
 
-  if (comm->swap_endian == CS_TRUE)
+  if (comm->swap_endian == true)
     bft_file_swap_endian(rec, rec, taille, nbr);
 
 }

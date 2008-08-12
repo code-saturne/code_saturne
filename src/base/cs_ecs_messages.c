@@ -2131,7 +2131,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
                      strlen("periodicity_matrix_")) == 0) {
 
       n_elts = 12; /* 3x4 */
-      if (data_read != CS_TRUE || header.n_vals != n_elts)
+      if (data_read != true || header.n_vals != n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {

@@ -88,8 +88,8 @@ typedef struct {
 
   /* Cut of warped faces */
 
-  cs_bool_t      cwf;            /* CS_TRUE if cut is required */
-  cs_bool_t      cwf_post;       /* CS_TRUE if post-treatment is required */
+  cs_bool_t      cwf;            /* true if cut is required */
+  cs_bool_t      cwf_post;       /* true if post-treatment is required */
   double         cwf_criterion;  /* Criterion to choose which face to cut */
 
   /* Connection with proxy */

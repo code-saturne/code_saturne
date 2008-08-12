@@ -428,7 +428,7 @@ void CS_PROCF (lect1d,LECT1D)
                               &corresp_fbr, &corresp_som );
 
   /* On ne s'intéresse qu'aux faces de bord */
-  indfac = ( corresp_fbr == CS_TRUE ? 1 : 0 );
+  indfac = ( corresp_fbr == true ? 1 : 0 );
   if ( indfac == 0 )
     bft_error( __FILE__, __LINE__, 0 ,
                _("Arret de lecture du fichier suite du module"

@@ -169,12 +169,12 @@ struct _cs_post_maillage_t {
 
 /* Tableau de sauvegarde des coordonnées initiales des sommets */
 
-static cs_bool_t           cs_glob_post_deformable = CS_FALSE;
+static cs_bool_t           cs_glob_post_deformable = false;
 static cs_real_t          *cs_glob_post_coo_som_ini = NULL;
 
 /* Indicateur de sortie du domaine en parallèle */
 
-static cs_bool_t           cs_glob_post_domaine = CS_TRUE;
+static cs_bool_t           cs_glob_post_domaine = true;
 
 
 /* Tableau des maillages externes associés aux post-traitements */
@@ -973,17 +973,17 @@ void CS_PROCF (pstvar, PSTVAR)
 
     maillage_post = cs_glob_post_maillages + i;
 
-    actif = CS_FALSE;
+    actif = false;
 
     for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
       writer = cs_glob_post_writers + maillage_post->ind_writer[j];
       if (writer->actif == 1)
-        actif = CS_TRUE;
+        actif = true;
     }
 
     /* Maillage utilisateur modifiable, non alias, actif à ce pas de temps */
 
-    if (   actif == CS_TRUE
+    if (   actif == true
         && maillage_post->alias < 0
         && maillage_post->id > 0
         && maillage_post->ind_mod_min == FVM_WRITER_TRANSIENT_CONNECT) {
@@ -1131,7 +1131,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
   cs_post_ecrit_maillages(*ntcabs, *ttcabs);
 
-  if (cs_glob_post_deformable == CS_TRUE)
+  if (cs_glob_post_deformable == true)
     _cs_post_ecrit_deplacements(*ntcabs, *ttcabs);
 
 
@@ -1159,18 +1159,18 @@ void CS_PROCF (pstvar, PSTVAR)
 
     maillage_post = cs_glob_post_maillages + i;
 
-    actif = CS_FALSE;
+    actif = false;
 
     for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
       writer = cs_glob_post_writers + maillage_post->ind_writer[j];
       if (writer->actif == 1)
-        actif = CS_TRUE;
+        actif = true;
     }
 
     /* Si le maillage est actif à ce pas de temps */
     /*--------------------------------------------*/
 
-    if (actif == CS_TRUE) {
+    if (actif == true) {
 
       const fvm_nodal_t * maillage_ext = maillage_post->maillage_ext;
 
@@ -1374,18 +1374,18 @@ void CS_PROCF (pstev1, PSTEV1)
   char  *nom_var = NULL;
 
   if (*ivarpr == 1)
-    var_parent = CS_TRUE;
+    var_parent = true;
   else if (*ivarpr == 0)
-    var_parent = CS_FALSE;
+    var_parent = false;
   else
     bft_error(__FILE__, __LINE__, 0,
               _("L'argument IVARPR du sous-programme PSTEVA doit être\n"
                 "égal à 0 ou 1, et non %d.\n"), (int)(*ivarpr));
 
   if (*ientla == 0)
-    entrelace = CS_FALSE;
+    entrelace = false;
   else if (*ientla == 1)
-    entrelace = CS_TRUE;
+    entrelace = true;
   else
     bft_error(__FILE__, __LINE__, 0,
               _("L'argument IENTLA du sous-programme PSTEVA doit être\n"
@@ -1531,11 +1531,11 @@ void cs_post_ajoute_writer
 
   writer->id = id_writer;
   writer->freq_sortie = frequence;
-  writer->ecr_depl = CS_FALSE;
+  writer->ecr_depl = false;
   writer->actif = 0;
 
   if (ind_mod >= 10) {
-    writer->ecr_depl = CS_TRUE;
+    writer->ecr_depl = true;
     ind_mod -= 10;
   }
 
@@ -1641,7 +1641,7 @@ void cs_post_ajoute_maillage_existant
                                        MPI_Allreduce(..., MPI_MIN, ...) */
 
   int         dim_ent = 0;
-  cs_bool_t   maj_ind_ent = CS_FALSE;
+  cs_bool_t   maj_ind_ent = false;
   fvm_lnum_t  nbr_ent = 0;
 
   fvm_lnum_t          *num_ent_parent = NULL;
@@ -1657,7 +1657,7 @@ void cs_post_ajoute_maillage_existant
 
   maillage_post->maillage_ext = maillage_ext;
 
-  if (transferer == CS_TRUE)
+  if (transferer == true)
     maillage_post->_maillage_ext = maillage_ext;
 
 
@@ -1710,10 +1710,10 @@ void cs_post_ajoute_maillage_existant
 
   for (i = 0 ; i < 3 ; i++) {
     if (indic_glob[i] == 0)
-      maj_ind_ent = CS_TRUE;
+      maj_ind_ent = true;
   }
 
-  if (maj_ind_ent == CS_TRUE) {
+  if (maj_ind_ent == true) {
     for (i = 0 ; i < 3 ; i++) {
       if (indic_glob[i] == 0)           /* Logique indic_glob 0 à 2 inversée */
         maillage_post->ind_ent[i] = 1;  /* (c.f. remarque ci-dessus) */
@@ -1825,10 +1825,10 @@ cs_bool_t cs_post_existe_writer
   for (indwri = 0 ; indwri < cs_glob_post_nbr_writers ; indwri++) {
     writer = cs_glob_post_writers + indwri;
     if (writer->id == numwri)
-      return CS_TRUE;
+      return true;
   }
 
-  return CS_FALSE;
+  return false;
 }
 
 
@@ -1853,10 +1853,10 @@ cs_bool_t cs_post_existe_maillage
   for (indmai = 0 ; indmai < cs_glob_post_nbr_maillages ; indmai++) {
     maillage_post = cs_glob_post_maillages + indmai;
     if (maillage_post->id == nummai)
-      return CS_TRUE;
+      return true;
   }
 
-  return CS_FALSE;
+  return false;
 }
 
 
@@ -2015,9 +2015,9 @@ void cs_post_associe
     /* Si l'on doit calculer le champ déplacement des sommets, on devra
        sauvegarder les coordonnées initiales des sommets */
 
-    if (   cs_glob_post_deformable == CS_FALSE
+    if (   cs_glob_post_deformable == false
         && cs_glob_post_coo_som_ini == NULL
-        && writer->ecr_depl == CS_TRUE) {
+        && writer->ecr_depl == true) {
 
       cs_mesh_t *maillage = cs_glob_mesh;
 
@@ -2030,7 +2030,7 @@ void cs_post_associe
                maillage->n_vertices * 3 * sizeof(cs_real_t));
       }
 
-      cs_glob_post_deformable = CS_TRUE;
+      cs_glob_post_deformable = true;
 
     }
 
@@ -2201,7 +2201,7 @@ void cs_post_ecrit_var
   indmai = _cs_post_ind_maillage(id_maillage);
   maillage_post = cs_glob_post_maillages + indmai;
 
-  if (entrelace == CS_TRUE)
+  if (entrelace == true)
     interlace = FVM_INTERLACE;
   else
     interlace = FVM_NO_INTERLACE;
@@ -2216,7 +2216,7 @@ void cs_post_ecrit_var
 
   if (maillage_post->ind_ent[CS_POST_SUPPORT_CEL] == 1) {
 
-    if (var_parent == CS_TRUE) {
+    if (var_parent == true) {
       nbr_listes_parents = 1;
       dec_num_parent[0] = 0;
     }
@@ -2224,8 +2224,8 @@ void cs_post_ecrit_var
       nbr_listes_parents = 0;
 
     var_ptr[0] = var_cel;
-    if (entrelace == CS_FALSE) {
-      if (var_parent == CS_TRUE)
+    if (entrelace == false) {
+      if (var_parent == true)
         dec_ptr = cs_glob_mesh->n_cells_with_ghosts;
       else
         dec_ptr = fvm_nodal_get_n_entities(maillage_post->maillage_ext, 3);
@@ -2243,14 +2243,14 @@ void cs_post_ecrit_var
 
     /* En cas d'indirection, il suffit de positionner les pointeurs */
 
-    if (var_parent == CS_TRUE) {
+    if (var_parent == true) {
 
       nbr_listes_parents = 2;
       dec_num_parent[0] = 0;
       dec_num_parent[1] = cs_glob_mesh->n_b_faces;
 
       if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] == 1) {
-        if (entrelace == CS_FALSE) {
+        if (entrelace == false) {
           dec_ptr = cs_glob_mesh->n_b_faces * fvm_datatype_size[datatype];
           for (i = 0 ; i < dim_var ; i++)
             var_ptr[i] = ((const char *)var_fbr) + i*dec_ptr;
@@ -2260,7 +2260,7 @@ void cs_post_ecrit_var
       }
 
       if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1) {
-        if (entrelace == CS_FALSE) {
+        if (entrelace == false) {
           dec_ptr = cs_glob_mesh->n_i_faces * fvm_datatype_size[datatype];
           for (i = 0 ; i < dim_var ; i++)
             var_ptr[dim_var + i] = ((const char *)var_fac) + i*dec_ptr;
@@ -2314,7 +2314,7 @@ void cs_post_ecrit_var
 
         else {
 
-          if (entrelace == CS_FALSE) {
+          if (entrelace == false) {
             dec_ptr = fvm_datatype_size[datatype] * maillage_post->nbr_fbr;
             for (i = 0 ; i < dim_var ; i++)
               var_ptr[i] = ((const char *)var_fbr) + i*dec_ptr;
@@ -2329,7 +2329,7 @@ void cs_post_ecrit_var
 
       else if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1) {
 
-        if (entrelace == CS_FALSE) {
+        if (entrelace == false) {
           dec_ptr = fvm_datatype_size[datatype] * maillage_post->nbr_fac;
           for (i = 0 ; i < dim_var ; i++)
             var_ptr[i] = ((const char *)var_fac) + i*dec_ptr;
@@ -2418,7 +2418,7 @@ void cs_post_ecrit_var_som
   indmai = _cs_post_ind_maillage(id_maillage);
   maillage_post = cs_glob_post_maillages + indmai;
 
-  if (entrelace == CS_TRUE)
+  if (entrelace == true)
     interlace = FVM_INTERLACE;
   else
     interlace = FVM_NO_INTERLACE;
@@ -2431,14 +2431,14 @@ void cs_post_ecrit_var_som
 
   /* Affectation du tableau approprié à FVM pour la sortie */
 
-  if (var_parent == CS_TRUE)
+  if (var_parent == true)
     nbr_listes_parents = 1;
   else
     nbr_listes_parents = 0;
 
   var_ptr[0] = var_som;
-  if (entrelace == CS_FALSE) {
-    if (var_parent == CS_TRUE)
+  if (entrelace == false) {
+    if (var_parent == true)
       dec_ptr = cs_glob_mesh->n_vertices;
     else
       dec_ptr =   fvm_nodal_get_n_entities(maillage_post->maillage_ext, 0)
@@ -2496,7 +2496,7 @@ void cs_post_renum_faces
 
   cs_int_t  *renum_ent_parent = NULL;
 
-  cs_bool_t  a_traiter = CS_FALSE;
+  cs_bool_t  a_traiter = false;
 
   cs_post_maillage_t   *maillage_post;
   const cs_mesh_t  *maillage = cs_glob_mesh;
@@ -2510,12 +2510,12 @@ void cs_post_renum_faces
 
     if (   maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] > 0
         || maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] > 0) {
-      a_traiter = CS_TRUE;
+      a_traiter = true;
     }
 
   }
 
-  if (a_traiter == CS_TRUE) {
+  if (a_traiter == true) {
 
     /* Préparation de la renumérotation */
 
@@ -3078,7 +3078,7 @@ static void _cs_post_definit_maillage
                                              MPI_Allreduce(..., MPI_MIN, ...) */
 
   fvm_nodal_t  *maillage_ext = NULL;
-  cs_bool_t     maj_ind_ent = CS_FALSE;
+  cs_bool_t     maj_ind_ent = false;
 
 
   /* Indicateurs:
@@ -3160,10 +3160,10 @@ static void _cs_post_definit_maillage
 
   for (i = 0 ; i < 3 ; i++) {
     if (indic_glob[i] == 0)
-      maj_ind_ent = CS_TRUE;
+      maj_ind_ent = true;
   }
 
-  if (maj_ind_ent == CS_TRUE) {
+  if (maj_ind_ent == true) {
     for (i = 0 ; i < 3 ; i++) {
       if (indic_glob[i] == 0)           /* Logique indic_glob 0 à 2 inversée */
         maillage_post->ind_ent[i] = 1;  /* (c.f. remarque ci-dessus) */
@@ -3369,23 +3369,23 @@ static void _cs_post_ecrit_maillage
 
     dep_temps = fvm_writer_get_time_dep(writer->writer);
 
-    ecrire_maillage = CS_FALSE;
+    ecrire_maillage = false;
 
     if (dep_temps == FVM_WRITER_FIXED_MESH) {
       if (maillage_post->nt_ecr < 0)
-        ecrire_maillage = CS_TRUE;
+        ecrire_maillage = true;
     }
     else {
       if (maillage_post->nt_ecr < nt_cur_abs && writer->actif == 1)
-        ecrire_maillage = CS_TRUE;
+        ecrire_maillage = true;
     }
 
-    if (ecrire_maillage == CS_TRUE) {
+    if (ecrire_maillage == true) {
       fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
       fvm_writer_export_nodal(writer->writer, maillage_post->maillage_ext);
     }
 
-    if (ecrire_maillage == CS_TRUE && maillage_post->id == -1)
+    if (ecrire_maillage == true && maillage_post->id == -1)
       _cs_post_ecrit_domaine(writer->writer,
                              maillage_post->maillage_ext,
                              nt_cur_abs,
@@ -3393,7 +3393,7 @@ static void _cs_post_ecrit_maillage
 
   }
 
-  if (ecrire_maillage == CS_TRUE)
+  if (ecrire_maillage == true)
     maillage_post->nt_ecr = nt_cur_abs;
 
   if (   maillage_post->ind_mod_max == FVM_WRITER_FIXED_MESH
@@ -3452,12 +3452,12 @@ static void _cs_post_ecrit_deplacements
   /* Boucle sur les writers pour vérifier si l'on a quelque chose à faire */
   /*----------------------------------------------------------------------*/
 
-  if (cs_glob_post_deformable == CS_FALSE)
+  if (cs_glob_post_deformable == false)
     return;
 
   for (j = 0 ; j < cs_glob_post_nbr_writers ; j++) {
     writer = cs_glob_post_writers + j;
-    if (writer->actif == 1 && writer->ecr_depl == CS_TRUE)
+    if (writer->actif == 1 && writer->ecr_depl == true)
       break;
   }
   if (j == cs_glob_post_nbr_writers)
@@ -3499,7 +3499,7 @@ static void _cs_post_ecrit_deplacements
 
       writer = cs_glob_post_writers + maillage_post->ind_writer[j];
 
-      if (writer->actif == 1 && writer->ecr_depl == CS_TRUE) {
+      if (writer->actif == 1 && writer->ecr_depl == true) {
 
         fvm_writer_export_field(writer->writer,
                                 maillage_post->maillage_ext,
@@ -3550,7 +3550,7 @@ static void _cs_post_ecrit_domaine
 
   const cs_int_t   *var_ptr[1] = {NULL};
 
-  if (cs_glob_base_nbr < 2 || cs_glob_post_domaine == CS_FALSE)
+  if (cs_glob_base_nbr < 2 || cs_glob_post_domaine == false)
     return;
 
   dim_ent = fvm_nodal_get_max_entity_dim(maillage_ext);

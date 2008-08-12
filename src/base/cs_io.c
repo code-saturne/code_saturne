@@ -800,7 +800,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 {
   size_t      type_size = 0;
   fvm_gnum_t  n_vals = inp->n_vals;
-  cs_bool_t   convert_type = CS_FALSE;
+  cs_bool_t   convert_type = false;
   void       *_elts = NULL;
   void       *_buf = NULL;
 
@@ -837,7 +837,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   /* Element values */
 
   if (n_vals != 0 && header->elt_type != header->type_read)
-    convert_type = CS_TRUE;
+    convert_type = true;
 
   if (inp->data != NULL)
     _buf = NULL;

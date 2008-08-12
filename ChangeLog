@@ -1,4 +1,8 @@
 * 12/08/2008 - David Monfort <david.monfort@edf.fr>
+  Replace all occurences of CS_FALSE and CS_TRUE
+  by the standard false and true.
+
+* 12/08/2008 - David Monfort <david.monfort@edf.fr>
   Handle the interior face families when renumbering
   or cutting warped faces.
   modified routines:

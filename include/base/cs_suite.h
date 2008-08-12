@@ -335,9 +335,9 @@ cs_suite_t * cs_suite_detruit
 
 /*----------------------------------------------------------------------------
  *  Fonction qui vérifie les supports de base associé à un fichier suite ;
- *  On renvoie pour chaque type d'entité CS_TRUE si le nombre d'entités
+ *  On renvoie pour chaque type d'entité true si le nombre d'entités
  *  associées au fichier suite correspond au nombre d'entités en cours (et
- *  donc que l'on considère que le support est bien le même), CS_FALSE sinon.
+ *  donc que l'on considère que le support est bien le même), false sinon.
  *----------------------------------------------------------------------------*/
 
 void cs_suite_verif_support_base

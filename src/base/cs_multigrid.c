@@ -631,7 +631,7 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
   if (mg == NULL)
     return;
 
-  if (mg->post_cell_num == NULL || cs_post_existe_maillage(-1) != CS_TRUE)
+  if (mg->post_cell_num == NULL || cs_post_existe_maillage(-1) != true)
     return;
 
   /* Allocate name buffer */
@@ -650,8 +650,8 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
     cs_post_ecrit_var(-1,
                       var_name,
                       1,
-                      CS_FALSE,
-                      CS_TRUE,
+                      false,
+                      true,
                       CS_POST_TYPE_int,
                       -1,
                       0.0,

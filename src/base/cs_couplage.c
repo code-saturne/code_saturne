@@ -854,7 +854,7 @@ void CS_PROCF (tbicpl, TBICPL)
   MPI_Status  status;
 
   cs_int_t  nbr = 0;
-  cs_bool_t  distant = CS_FALSE;
+  cs_bool_t  distant = false;
   cs_couplage_t  *coupl = NULL;
 
   /* Initialisations et vérifications */
@@ -869,7 +869,7 @@ void CS_PROCF (tbicpl, TBICPL)
 
   if (coupl->comm != MPI_COMM_NULL) {
 
-    distant = CS_TRUE;
+    distant = true;
 
     /* Enchanges entre les têtes de groupes */
 
@@ -887,7 +887,7 @@ void CS_PROCF (tbicpl, TBICPL)
 
 #endif /* defined(_CS_HAVE_MPI) */
 
-  if (distant == CS_FALSE) {
+  if (distant == false) {
 
     nbr = CS_MIN(*nbrdis, *nbrloc);
 
@@ -932,7 +932,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
   MPI_Status  status;
 
   cs_int_t  nbr = 0;
-  cs_bool_t  distant = CS_FALSE;
+  cs_bool_t  distant = false;
   cs_couplage_t  *coupl = NULL;
 
   /* Initialisations et vérifications */
@@ -947,7 +947,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
   if (coupl->comm != MPI_COMM_NULL) {
 
-    distant = CS_TRUE;
+    distant = true;
 
     /* Enchanges entre les têtes de groupes */
 
@@ -965,7 +965,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
 #endif /* defined(_CS_HAVE_MPI) */
 
-  if (distant == CS_FALSE) {
+  if (distant == false) {
 
     nbr = CS_MIN(*nbrdis, *nbrloc);
 

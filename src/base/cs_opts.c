@@ -302,11 +302,11 @@ _syr_mpi_rank(int   *arg_id,
   int  ii;
 
   const char  *s = NULL;
-  cs_bool_t    is_end = CS_FALSE;
+  cs_bool_t    is_end = false;
   int          syr_rank = -1;
   int          tmperr = -1;
 
-  for (ii = *arg_id; ii < argc && is_end == CS_FALSE; ii++) {
+  for (ii = *arg_id; ii < argc && is_end == false; ii++) {
     s = argv[ii];
 
     if (strcmp(s, "-2d") == 0 || strcmp(s, "-invsel") == 0)
@@ -314,7 +314,7 @@ _syr_mpi_rank(int   *arg_id,
     else if (strcmp(s, "-socket") == 0)
       continue;
     else if (strcmp(s, "-proc") == 0) {
-      is_end = CS_TRUE;
+      is_end = true;
       syr_rank = _arg_to_int(ii + 1, argc, argv, &tmperr);
       if (tmperr == 0) {
         ii++;
@@ -329,13 +329,13 @@ _syr_mpi_rank(int   *arg_id,
           ii++;
       }
       else {
-        is_end = CS_TRUE;
+        is_end = true;
       }
     }
 
   } /* End of loop on Syrthes related arguments */
 
-  if (is_end == CS_TRUE)
+  if (is_end == true)
     *arg_id = ii - 2;
 
   return syr_rank;
@@ -363,11 +363,11 @@ _syr_read_args(int   *arg_id,
   cs_int_t ii, ii_save, arg_id_first;
 
   const char  *s = NULL;
-  cs_bool_t is_end = CS_FALSE;
+  cs_bool_t is_end = false;
 
   /* Parameters with defaults */
 
-  cs_bool_t invsel = CS_FALSE;
+  cs_bool_t invsel = false;
   cs_int_t  dim = 3;
   cs_int_t  axis_id = 2;
   cs_int_t  n_colors = 0;
@@ -387,7 +387,7 @@ _syr_read_args(int   *arg_id,
 
   /* Loop on options associated to a Syrthes coupling */
 
-  for (ii = *arg_id; ii < argc && is_end == CS_FALSE; ii++) {
+  for (ii = *arg_id; ii < argc && is_end == false; ii++) {
 
     s = argv[ii];
 
@@ -400,7 +400,7 @@ _syr_read_args(int   *arg_id,
     else if (strcmp(s, "-Z") == 0)
       axis_id = 2;
     else if (strcmp(s, "-invsel") == 0)
-      invsel = CS_TRUE;
+      invsel = true;
 #if defined(_CS_HAVE_SOCKET)
     else if (strcmp(s, "-socket") == 0) {
       comm_type = CS_SYR3_COMM_TYPE_SOCKET;
@@ -449,11 +449,11 @@ _syr_read_args(int   *arg_id,
       }
     }
     else
-      is_end = CS_TRUE;
+      is_end = true;
 
   } /* End of loop on options associated to a Syrthes coupling */
 
-  if (is_end == CS_TRUE)
+  if (is_end == true)
     *arg_id = ii - 2;
   else
     *arg_id = --ii;
@@ -621,7 +621,7 @@ cs_opts_mpi_rank(int    * argc,
   int  syr_rank = -1;
   int  syr_rank_max = -1;
 
-  cs_bool_t  use_mpi = CS_FALSE;
+  cs_bool_t  use_mpi = false;
 
   arg_id = 0, argerr = 0;
 
@@ -667,7 +667,7 @@ cs_opts_mpi_rank(int    * argc,
         arg_id++;
         root_rank = _root_rank;
       }
-      use_mpi = CS_TRUE;
+      use_mpi = true;
     }
 
     /* Coupling */
@@ -676,7 +676,7 @@ cs_opts_mpi_rank(int    * argc,
       cs_int_t n1 = 0;
       n1 = (cs_int_t) _arg_to_int(++arg_id, *argc, *argv, &argerr);
       if (argerr == 0)
-        use_mpi = CS_TRUE;
+        use_mpi = true;
     }
 
     /* Syrthes coupling */
@@ -691,7 +691,7 @@ cs_opts_mpi_rank(int    * argc,
 
 
       if (syr_rank > -1) {
-        use_mpi = CS_TRUE;
+        use_mpi = true;
         syr_rank_max = CS_MAX(syr_rank_max, syr_rank);
       }
     }
@@ -704,7 +704,7 @@ cs_opts_mpi_rank(int    * argc,
     if MPI is needed
   */
 
-  if (use_mpi == CS_TRUE) {
+  if (use_mpi == true) {
 
     if (syr_rank_max > -1) {
       if (root_rank == -1)
@@ -752,8 +752,8 @@ cs_opts_define(int         argc,
   opts->iverif = -1;
   opts->benchmark = 0;
 
-  opts->cwf = CS_FALSE;
-  opts->cwf_post = CS_FALSE;
+  opts->cwf = false;
+  opts->cwf_post = false;
   opts->cwf_criterion = 0.01;
 
   opts->proxy_socket = NULL;
@@ -843,7 +843,7 @@ cs_opts_define(int         argc,
 #endif
 
     else if (strcmp(s, "-cwf") == 0) {
-      opts->cwf = CS_TRUE;
+      opts->cwf = true;
       if (arg_id + 1 < argc) {
         if (*(argv[arg_id+1]) != '-') {
           opts->cwf_criterion = _arg_to_double(arg_id + 1, argc, argv, &argerr);
@@ -853,7 +853,7 @@ cs_opts_define(int         argc,
       }
       if (arg_id + 1 < argc) {
         if (strcmp((argv[arg_id+1]), "-post") == 0) {
-          opts->cwf_post = CS_TRUE;
+          opts->cwf_post = true;
           arg_id++;
         }
       }

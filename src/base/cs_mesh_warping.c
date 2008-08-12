@@ -1091,7 +1091,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
 
   const void  *var_ptr[2] = {NULL, NULL};
 
-  if (cs_post_existe_writer(writer_id) == CS_FALSE)
+  if (cs_post_existe_writer(writer_id) == false)
     return;
 
   assert(sizeof(double) == sizeof(cs_real_t));
@@ -1154,7 +1154,7 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
 
   const cs_int_t  writer_id = -1; /* default writer */
 
-  if (cs_post_existe_writer(writer_id) == CS_FALSE)
+  if (cs_post_existe_writer(writer_id) == false)
     return;
 
   fvm_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
@@ -1284,7 +1284,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-processing management */
 
-  if (post_tag == CS_TRUE)
+  if (post_tag == true)
     _post_before_cutting(n_i_warp_faces,
                          n_b_warp_faces,
                          i_face_lst,
@@ -1387,7 +1387,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-treatment of the selected faces */
 
-  if (post_tag == CS_TRUE)
+  if (post_tag == true)
     _post_after_cutting(n_i_cut_faces,
                         n_b_cut_faces,
                         i_face_lst,

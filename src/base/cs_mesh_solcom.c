@@ -382,7 +382,7 @@ void cs_maillage_solcom_lit
 
     cs_post_ajoute_maillage_existant(-1,
                                      maillage_ext,
-                                     CS_TRUE);
+                                     true);
 
   }
   else if (mesh->vtx_coord == NULL) {
