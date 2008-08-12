@@ -167,8 +167,6 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
-      INCLUDE "paramx.h"
-      INCLUDE "pointe.h"
       INCLUDE "vector.h"
       INCLUDE "albase.h"
       INCLUDE "period.h"

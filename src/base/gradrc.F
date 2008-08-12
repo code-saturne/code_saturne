@@ -160,7 +160,6 @@ C***********************************************************************
 C
       INCLUDE "cstnum.h"
       INCLUDE "vector.h"
-      INCLUDE "paramx.h"
       INCLUDE "albase.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"

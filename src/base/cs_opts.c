@@ -62,7 +62,6 @@
 #include "cs_syr3_coupling.h"
 
 #if defined(_CS_HAVE_XML)
-#include "cs_gui.h"
 #include "cs_gui_util.h"
 #endif
 
