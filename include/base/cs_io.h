@@ -118,6 +118,7 @@ extern cs_io_t  *cs_glob_pp_io;
  *   name         --> file name
  *   magic_string --> magic string associated with file type
  *   mode         --> read or write
+ *   hints        --> optional flags for file access method (see fvm_file.h)
  *   echo         --> echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *
@@ -129,6 +130,7 @@ cs_io_t *
 cs_io_initialize(const char    *file_name,
                  const char    *magic_string,
                  cs_io_mode_t   mode,
+                 int            hints,
                  size_t         echo);
 
 /*----------------------------------------------------------------------------

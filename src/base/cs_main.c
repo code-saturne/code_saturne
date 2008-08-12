@@ -333,6 +333,7 @@ int main
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
                                      "Face-based mesh definition, R0",
                                      CS_IO_MODE_READ,
+                                     0,
                                      -1);
 
     /* Initialisation des communications avec Syrthes */

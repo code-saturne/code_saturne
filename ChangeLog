@@ -1,3 +1,12 @@
+* 12/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a hint in cs_io_initialize for the file API,
+  and correct a type error.
+  modified routines:
+    include/base/cs_io.c
+    src/base/cs_ecs_messages.c
+    src/base/cs_io.c
+    src/base/cs_main.c
+
 * 12/08/2008 - David Monfort <david.monfort@edf.fr>
   Replace all occurences of CS_FALSE and CS_TRUE
   by the standard false and true.

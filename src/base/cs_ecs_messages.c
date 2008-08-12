@@ -352,6 +352,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
+                                0,
                                 echo);
 
   if (echo > 0)

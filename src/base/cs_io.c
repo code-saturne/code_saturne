@@ -199,16 +199,17 @@ _convert_to_size(const unsigned char  buf[],
  *   cs_io        <-> kernel IO structure
  *   name         --> file name
  *   magic_string --> magic string associated with file content type
+ *   hints        --> file handling method options (0 for default)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_file_open(cs_io_t     *const cs_io,
-                 const char  *const name,
-                 const char  *const magic_string)
+_cs_io_file_open(cs_io_t     *cs_io,
+                 const char  *name,
+                 const char  *magic_string,
+                 int          hints)
 {
   fvm_file_mode_t cs_io_mode;
 
-  int hints = 0;
   unsigned int_endian = 0;
 
   *((char *)(&int_endian)) = '\1'; /* Determine if we are little-endian */
@@ -374,9 +375,9 @@ _cs_io_echo_pre(const cs_io_t  *cs_io)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_echo_header(const char  *sec_name,
-                   fvm_gnum_t   n_elts,
-                   cs_type_t    type_read)
+_cs_io_echo_header(const char      *sec_name,
+                   fvm_gnum_t       n_elts,
+                   fvm_datatype_t   type_read)
 {
   char sec_name_echo[CS_IO_NAME_LEN + 1];
 
@@ -394,7 +395,7 @@ _cs_io_echo_header(const char  *sec_name,
     char *type_name;
 
     switch(type_read) {
-    case FVM_DATATYPE_NULL:
+    case FVM_CHAR:
       type_name = _cs_io_type_name_char;
       break;
     case FVM_INT32:
@@ -431,7 +432,7 @@ _cs_io_echo_header(const char  *sec_name,
  *
  * FVM datatypes must have been converted to the corresponding
  * Code_Saturne compatible datatype before calling this function:
- *   FVM_DATATYPE_NULL       -> char
+ *   FVM_CHAR                -> char
  *   FVM_INT32 / FVM_INT64   -> fvm_lnum_t / cs_int_t
  *   FVM_UINT32 / FVM_UINT64 -> fvm_gnum_t
  *   FVM_REAL / FVM_FLOAT    -> double / cs_real_t
@@ -451,12 +452,12 @@ _cs_io_echo_header(const char  *sec_name,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_io_echo_data(size_t       echo,
-                 size_t       n_elts,
-                 fvm_gnum_t   global_num_start,
-                 fvm_gnum_t   global_num_end,
-                 cs_type_t    elt_type,
-                 const void  *elts)
+_cs_io_echo_data(size_t           echo,
+                 size_t           n_elts,
+                 fvm_gnum_t       global_num_start,
+                 fvm_gnum_t       global_num_end,
+                 fvm_datatype_t   elt_type,
+                 const void      *elts)
 {
   fvm_gnum_t  i;
   fvm_gnum_t  num_shift = 1;
@@ -535,7 +536,7 @@ _cs_io_echo_data(size_t       echo,
       }
       break;
 
-    case CS_TYPE_char:
+    case FVM_CHAR:
       {
         const char *_elts = elts;
 
@@ -551,10 +552,7 @@ _cs_io_echo_data(size_t       echo,
       break;
 
     default:
-
-      assert(   elt_type == CS_TYPE_cs_int_t
-             || elt_type == CS_TYPE_cs_real_t
-             || elt_type == CS_TYPE_char);
+      assert(0);
 
     }
 
@@ -817,18 +815,16 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
     n_vals = global_num_end - global_num_start;
   }
 
-  /* Datatype size given by FVM datatype, except for character type */
+  /* Datatype size given by FVM datatype */
 
   type_size = fvm_datatype_size[header->type_read];
-  if (type_size == 0)
-    type_size = 1;
 
   /* Assign or allocate */
 
   _elts = elts;
 
   if (_elts == NULL && n_vals != 0) {
-    if (header->elt_type == CS_TYPE_char)
+    if (header->elt_type == FVM_CHAR)
       BFT_MALLOC(_elts, n_vals + 1, char);
     else
       BFT_MALLOC(_elts, n_vals*type_size, char);
@@ -909,7 +905,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   /* Add null character at end of string to ensure C-type string */
 
-  if (n_vals != 0 && header->elt_type == CS_TYPE_char)
+  if (n_vals != 0 && header->elt_type == FVM_CHAR)
     ((char *)_elts)[header->n_vals] = '\0';
 
   /* Optional echo */
@@ -938,6 +934,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
  *   name         --> file name
  *   magic_string --> magic string associated with file type
  *   mode         --> read or write
+ *   hints        --> optional flags for file access method (see fvm_file.h)
  *   echo         --> echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
  *
@@ -949,6 +946,7 @@ cs_io_t *
 cs_io_initialize(const char    *file_name,
                  const char    *magic_string,
                  cs_io_mode_t   mode,
+                 int            hints,
                  size_t         echo)
 {
   cs_io_t  *cs_io = NULL;
@@ -991,7 +989,7 @@ cs_io_initialize(const char    *file_name,
 
   /* Create interface file descriptor */
 
-  _cs_io_file_open(cs_io, cs_io->name, magic_string);
+  _cs_io_file_open(cs_io, cs_io->name, magic_string, hints);
 
   return cs_io;
 }
@@ -1212,7 +1210,7 @@ cs_io_read_header(cs_io_t             *inp,
       header->type_read = FVM_DOUBLE;
 
     else if (strcmp(elt_type_name, _cs_io_type_name_char) == 0)
-      header->type_read = FVM_DATATYPE_NULL;
+      header->type_read = FVM_CHAR;
 
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -1246,8 +1244,8 @@ cs_io_read_header(cs_io_t             *inp,
         header->elt_type = FVM_DOUBLE;
     }
 
-    else if (header->type_read == FVM_DATATYPE_NULL)
-      header->elt_type = FVM_DATATYPE_NULL;
+    else if (header->type_read == FVM_CHAR)
+      header->elt_type = FVM_CHAR;
 
   }
 
