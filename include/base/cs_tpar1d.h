@@ -57,27 +57,27 @@ extern "C" {
  * Creation des maillages de chaque face et initialisation de la temperature
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (mait1d,MAIT1D)(cs_int_t * , cs_int_t *,
-                              cs_real_t *, cs_real_t *, cs_real_t* );
+void CS_PROCF (mait1d, MAIT1D)(cs_int_t *, cs_int_t *,
+                               cs_real_t *, cs_real_t *, cs_real_t*);
 
 
 /*----------------------------------------------------------------------------
  * Resolution de l'equation 1D pour une face donnee
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tpar1d,TPAR1D)(cs_int_t * , cs_int_t * , cs_real_t *,
-                              cs_real_t *, cs_real_t *, cs_real_t *,
-                              cs_real_t *, cs_real_t *, cs_real_t *,
-                              cs_real_t *, cs_real_t *);
+void CS_PROCF (tpar1d, TPAR1D)(cs_int_t *, cs_int_t *, cs_real_t *,
+                               cs_real_t *, cs_real_t *, cs_real_t *,
+                               cs_real_t *, cs_real_t *, cs_real_t *,
+                               cs_real_t *, cs_real_t *);
 
 
 /*----------------------------------------------------------------------------
  * Lecture du fichier suite du module thermique 1D en paroi
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (lect1d,LECT1D)
+void CS_PROCF (lect1d, LECT1D)
 (
- const char       *const nomsui,  /* <- Nom du fichier suite               */
+ const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
  const cs_int_t   *const ifovt1,  /* <- Indicateur binaire (0) / ascii (1)    */
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
@@ -86,9 +86,9 @@ void CS_PROCF (lect1d,LECT1D)
  const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
  const cs_int_t   *const nppt1d,  /* <- Nbr de points de discretisation des
-                                                faces avec module 1D                  */
+                                        faces avec module 1D                  */
  const cs_int_t   *const ifpt1d,  /* <- Tableau d'indirection des faces avec
-                                                module 1D                             */
+                                        module 1D                             */
  const cs_real_t  *const eppt1d,  /* <- Epaisseur de paroi des faces          */
  const cs_real_t  *const rgpt1d,  /* <- Raison geometrique associee aux faces */
        cs_real_t  *const tppt1d   /* -> Température de paroi avec module 1D   */
@@ -102,7 +102,7 @@ void CS_PROCF (lect1d,LECT1D)
  * Ecriture du fichier suite du module thermique 1D en paroi
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (ecrt1d,ECRT1D)
+void CS_PROCF (ecrt1d, ECRT1D)
 (
  const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
@@ -112,7 +112,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
  const cs_real_t  *const tppt1d,  /* <- Température de paroi avec module 1D   */
  const cs_int_t   *const ifpt1d   /* <- Tableau d'indirection des faces avec
-                                     module 1D                                */
+                                        module 1D                             */
  CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
                                   /*     inutilisés lors de l'appel mais      */
                                   /*     placés par de nombreux compilateurs) */
@@ -123,7 +123,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
  * Liberation de la memoire
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (lbrt1d,LBRT1D)(void);
+void CS_PROCF (lbrt1d, LBRT1D)(void);
 
 
 #ifdef __cplusplus
