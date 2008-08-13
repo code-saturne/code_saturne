@@ -1,3 +1,9 @@
+* 13/08/2008 - David Monfort <david.monfort@edf.fr>
+  Update the documentation according to the scripts translation.
+  modified files:
+    doc/USER/latex/saturne1.tex
+    doc/USER/latex/a1_autovalid.tex
+
 * 12/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a hint in cs_io_initialize for the file API,
   and correct a type error.
@@ -957,7 +963,7 @@
 
 * 07/02/2008 - David Monfort <david.monfort@edf.fr>
   Inversion of argument of the user function PHIDAT,
-  accordingly to how it called by the kernel
+  according to how it called by the kernel
   modified routines:
     usvort.F
 

@@ -92,7 +92,7 @@ implementation, please refer to the reports \cite{mechitoua98} and
 which is newer and more detailled
 (the latest updated version of this document
 is available on-line with the version of \CS and accessible through the command
-\texttt{info\_cs noyau}).
+\texttt{cs\_info noyau}).
 
 The present document first
 presents all the necessary elements to run a calculation
@@ -162,7 +162,7 @@ The standard architecture for the simulation studies is:
 \noindent
 A study directory containing:
 \begin{list}{$\bullet$}{}
-\item A directory \texttt{MAILLAGE} containing the mesh(es)
+\item A directory \texttt{MESH} containing the mesh(es)
       necessary for the study
 \item A directory \texttt{POST} for the potential post-processing routines (not
 used directly by the code)
@@ -172,7 +172,7 @@ used directly by the code)
 \noindent
 Every calculation directory contains:
 \begin{list}{$\bullet$}{}
-\item A directory \texttt{FORT} for the potential user subroutines
+\item A directory \texttt{SRC} for the potential user subroutines
       necessary for the calculation
 \item A directory \texttt{DATA} for the calculation data (data
       file from the interface, input profiles, thermo-chemical data, ...)
@@ -189,26 +189,26 @@ calculation started at 14h03 on december 31$^{\text{st}}$ will therefore be inde
 \noindent
 In the standard cases, \texttt{RESU} contains a directory
 \texttt{CHR.ENSIGHT.mmddhhmm} with the post-processing files in {\em EnSight} format,
-a directory \texttt{SUITE.mmddhhmm} for the calculation
+a directory \texttt{RESTART.mmddhhmm} for the calculation
       restart files,
 a directory  \texttt{HIST.mmddhhmm} for the files of chronological
       record of the results at specific locations (probes),\\
 \texttt{listpre.mmddhhmm} and \texttt{listing.mmddhhmm} files reporting the
 Preprocessor and the Kernel execution. For an easier follow-up of the modifications
 in former calculations, the user-subroutines used in a calculation are stored in
-a directory \texttt{FORT.mmddhhmm} in the directory \texttt{RESU}. The {\em Xml}
+a directory \texttt{SRC.mmddhhmm} in the directory \texttt{RESU}. The {\em Xml}
 Interface data file, thermo-chemical data files and launch script are also
 copied into the  directory \texttt{RESU} with the appropriate suffix (whatever
 its name, the launch script appears in the directory \texttt{RESU} as
-\texttt{lance.mmddhhmm}). \texttt{compil.log.mmddhhmm} and
-\texttt{resume.mmddhhmm} are respectively reports of the compilation phase and
+\texttt{runcase.mmddhhmm}). \texttt{compil.log.mmddhhmm} and
+\texttt{summary.mmddhhmm} are respectively reports of the compilation phase and
 general information on the calculation (which kind of machine, which user, which
 version of the code, ...). Eventually, when the user subroutines produce
 specific result files (extraction of 1D profiles for instance), a
 directory \texttt{RES\_USERS.mmddhhmm} is created in the directory \texttt{RESU}
 for these files\footnote{in order for the script to copy them properly, their
-names have to be given in the variable \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}
-of the launch script, see \S\ref{prg_lance}}.
+names have to be given in the variable \texttt{USER\_OUTPUT\_FILES}
+of the launch script, see \S\ref{prg_runcase}}.
 
 
 During calcualtions coupled with \syrthes (option specified in the launch
@@ -218,7 +218,7 @@ files related to \CS. For the files related
 \texttt{syrthes.env} file. Yet, the launch script is built presuming that the
 following organisation is applied:
 \begin{list}{$\bullet$}{}
-\item a directory \texttt{FORT\_SYR} for the potential \syrthes user subroutines
+\item a directory \texttt{SRC\_SYR} for the potential \syrthes user subroutines
 \item a directory \texttt{DATA\_SYR} containing the configuration file \texttt{syrthes.env}
 (localisation of files specific to \syrthes). The file defining the \syrthes
 calculation options (\texttt{syrthes.data}) and the potential restart files can
@@ -232,12 +232,11 @@ restart files and the historic file) are placed in a sub-directory
 
 \noindent
 The \syrthes execution report file is placed in the \texttt{RESU} directory (same as
-for the \CS review) under the name \texttt{listsyr.mmddhhmm}. The compilation
-report file is the same for \syrthes and \CS. It is placed in the \texttt{RESU}
-directory under the name  \texttt{compil.log.mmddhhmm}.
+for the \CS review) under the name \texttt{listsyr.mmddhhmm} and the compilation
+report file is under the name  \texttt{compil\_syrthes.log.mmddhhmm}.
 For an easier follow-up of the modifications
 in former calculations, the potential \syrthes user-subroutines used in a
-calculation are stored in a directory \texttt{FORT\_SYR.mmddhhmm} in the
+calculation are stored in a directory \texttt{SRC\_SYR.mmddhhmm} in the
 directory \texttt{RESU}.
 
 
@@ -257,8 +256,8 @@ directory \texttt{RESU}.
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA\_SYR:}}&{\bf \syrthes data}\\
 &        \texttt{syrthes.data}                  &\syrthes data file \\
 &        \texttt{syrthes.env}                &\syrthes configuration file\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/FORT:}}&{\bf \CS user subroutines }\\
-&        \texttt{USERS}                   &        examples of a user subroutines\\
+\multicolumn{2}{l}{\texttt{STUDY/CASE1/SRC:}}&{\bf \CS user subroutines }\\
+&        \texttt{REFERENCE}                   &        examples of a user subroutines\\
 &        \texttt{usclim.F}                  &user subroutines used for the present the calculation\\
 &        \texttt{usini1.F}  &\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU:}}&{\bf results}\\
@@ -269,31 +268,31 @@ directory \texttt{RESU}.
 &                                        &(contains both volume and boundary results;\\
 &                                        &the contents of the directory are user
                                           modifiable)\\
-&        \texttt{FORT.08211921}              &\CS user subroutines
+&        \texttt{SRC.08211921}              &\CS user subroutines
                                         used for the\\
 &                                      &calculation 08211921\\
-&        \texttt{FORT\_SYR.08211921}   &\syrthes user subroutines
+&        \texttt{SRC\_SYR.08211921}   &\syrthes user subroutines
                                      used in the calculation 08211921\\
 &        \texttt{HIST.08211921}        &directory containing the chronological
                                       records for \CS\\
 &        \texttt{RES\_USERS.08211921}  &optional directroy containing the
                                      user results files\\
-&        \texttt{SUITE.08211921}       &directory containing the \CS restart files \\
+&        \texttt{RESTART.08211921}       &directory containing the \CS restart files \\
 &        \texttt{compil.log.08211921}  &compilation report\\
 &     \texttt{study.xml.08211921}   &Graphical User Interface parameter file
                                     used for the\\
 &                                   &calculation 08211921\\
-&        \texttt{lance.08211921}       &launch script used for the calculation 08211921\\
+&        \texttt{runcase.08211921}       &launch script used for the calculation 08211921\\
 &                                   &(whatever the name given to the file in the
                                      \texttt{SCRIPT} directory,\\
 &                                   & the file will be referred as
-                                      ``\texttt{lance.*}'' in the
+                                      ``\texttt{runcase.*}'' in the
                                        \texttt{RESU} directory)\\
 &        \texttt{listpre.08211921}     &execution report for the Preprocessor module of
                                     \CS\\
 &        \texttt{listing.08211921}     &execution report for the Kernel module of \CS\\
 &        \texttt{listsyr.08211921}     &execution report for \syrthes\\
-&        \texttt{resume.08211921}      &general information (machine, user, version, ...)\\
+&        \texttt{summary.08211921}      &general information (machine, user, version, ...)\\
 &     \texttt{RESU\_SYR.08211921:}  &{\bf \syrthes results (file names given in
 the
                                       \texttt{syrthes.env} file)}\\
@@ -307,7 +306,7 @@ the
 &                                    &into the {\em EnSight} format with the
                                      {\em syrthes2ensight} utility)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf launch script}\\
-&        \texttt{lance}                &launch script (compliant with all
+&        \texttt{runcase}                &launch script (compliant with all
                                      architectures on which \\
 &                                   & \CS has been ported)\\
 \end{tabular}
@@ -322,10 +321,10 @@ the
 \label{prg_library}%
 Below are given information about the content of the \CS base directories. They
 are not of vital interest for the user, but given only as general
-information. Indeed, the case preparer \texttt{cree\_sat} automatically extracts the
+information. Indeed, the case preparer \texttt{cs\_create} automatically extracts the
 necessary files and prepares the launch script without the user having to go
-directly into the \CS base directories (see \S\ref{prg_creesat}).
-The \texttt{info\_cs} gives direct
+directly into the \CS base directories (see \S\ref{prg_cscreate}).
+The \texttt{cs\_info} gives direct
 access to the most needed information (especially the user and progammer's
 guides and the tutorial) without the user having to look for them in the \CS
 directories.
@@ -396,8 +395,8 @@ The user subroutines are available in the directory \texttt{users},
 under similar subdirectories corresponding to each module: \texttt{base},
 \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
 \texttt{fuel}, \texttt{lagr}, \texttt{pprt} and \texttt{rayt}.
-The case preparer \texttt{cree\_sat} copies all these files in the
-user directory \texttt{FORT/USERS} during the case preparation.
+The case preparer \texttt{cs\_create} copies all these files in the
+user directory \texttt{SRC/REFERENCE} during the case preparation.
 
 The ``include'' files are available in the directory
 \texttt{include}, under similar subdirectories corresponding to each module:
@@ -421,17 +420,17 @@ prepare and run a standard case:
 \begin{list}{$\bullet$}{}
 
 \item Check the version of \CS set for use in the environment variables
-(\texttt{info\_cs version}). If it does not correspond to the desired version,
+(\texttt{cs\_info version}). If it does not correspond to the desired version,
 update the \texttt{.profile} file to set the environment
 variables correctly. Log out of the session and
 log in again to take the modifications into account properly (cf.
 \S\ref{prg_environnementCS}).
 
-\item Prepare the different directories using \texttt{cree\_sat}(see
-\S\ref{prg_creesat}) and, when needed, add the directories \texttt{DATA\_SYR}
-and \texttt{FORT\_SYR} which are required to accomodate the \syrthes files.
+\item Prepare the different directories using \texttt{cs\_create}(see
+\S\ref{prg_cscreate}) and, when needed, add the directories \texttt{DATA\_SYR}
+and \texttt{SRC\_SYR} which are required to accomodate the \syrthes files.
 
-\item Place the mesh(es) in the directory \texttt{MAILLAGE}. Make sure they are
+\item Place the mesh(es) in the directory \texttt{MESH}. Make sure they are
 in a format compliant with \CS (see \S\ref{prg_maillages}). There can be
 several meshes in case of mesh pasting or coupling with
 \syrthes\footnote{\syrthes uses meshes composed of 10-node tetrahedra (vertices
@@ -439,9 +438,9 @@ and centers of edges)}.
 
 \item Go to the directory \texttt{DATA} and launch the
       Graphical User Interface using the command \texttt{./SaturneGUI} (see
-\S\ref{prg_ihm}).
+\S\ref{prg_gui}).
 
-\item Place the necessary user subroutines in the directory \texttt{FORT} (see
+\item Place the necessary user subroutines in the directory \texttt{SRC} (see
 \S\ref{prg_ssprgutilis}). When not using the Interface, some subroutines are
 compulsory.
 
@@ -637,13 +636,13 @@ The comprehensive list of the user subroutines and their instructions
 \item If necessary, place in the directory \texttt{DATA} the different
       external data (input profiles, thermochemical data files, ...)
 
-\item Prepare the launch script \texttt{lance}, directly or through the
-      Graphical Interface (see \S\ref{prg_lance})
+\item Prepare the launch script \texttt{runcase}, directly or through the
+      Graphical Interface (see \S\ref{prg_runcase})
 
 \item Run the calculation and analyse the results
 
 \item Purge the temporary files (in the directory \texttt{RUN} defined
-      in the launch script, see \S\ref{prg_lance})
+      in the launch script, see \S\ref{prg_runcase})
 \end{list}
 
 
@@ -656,11 +655,11 @@ the execution, the result files being only copied at the end in the directory
 \texttt{RESU}. This temporary directory is defined in the variable \texttt{RUN}
 of the launch script. This variable is set top a default value in the non-user
 section of the launch script, depending on the architecture:\\
-\texttt{RUN=\$HOME/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm} for stand-alone
+\texttt{RUN=\$HOME/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm} for stand-alone
 workstations or for the Chatou cluster\\
-\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm} for Tantale and
+\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm} for Tantale and
 Platine at the CCRT\\
-where \texttt{\$ETUDE} and \texttt{\$CAS} are the names of the study and the
+where \texttt{\$STUDY} and \texttt{\$CASE} are the names of the study and the
 case. The usual suffix with the date and time is added so that successive
 calculations will not get mixed-up.
 
@@ -669,11 +668,11 @@ stand-alone machine, it might be useful to take advantage of large sized local
 disks on a machine when the \texttt{\$HOME} account is on an NFS disk.
 
 For this matter, the variable \texttt{CS\_TMP\_PREFIX} of the launch script (see
-\S\ref{prg_lance}) allows  the user to change this directory.
+\S\ref{prg_runcase}) allows  the user to change this directory.
 If the variable is empty, the default
 \texttt{RUN} directory will be used. If it is not empty, the launch script will
 set the \texttt{RUN} directory to
-\texttt{\$CS\_TMP\_PREFIX/tmp\_Saturne/\$ETUDE/\$CAS.mmddhhmm}.
+\texttt{\$CS\_TMP\_PREFIX/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm}.
 
 \noindent
 {\em WARNING: in most cases, the temporary directories are not deleted
@@ -702,18 +701,18 @@ large amount of memory. Hence it is sometimes useful to run the Preprocessor
 separately, on a machine or in batch queues with extended memory, and to run the
 proper parallel calculation on another machine or in another batch
 queue. The launch scripts therefore defines three ``execution modes'', that can
-be specified in the variable \texttt{MODE\_EXEC} (see \S\ref{prg_lance}):\\
+be specified in the variable \texttt{MODE\_EXEC} (see \S\ref{prg_runcase}):\\
 \hspace*{0.5cm}\texttt{complet}: complete mode. The Preprocessor module is executed
 for preprocessing, followed by the Kernel for the calculation. The
 \texttt{preprocessor\_output/n*} files are created and left in the
 temporary execution directory.\\
 \hspace*{0.5cm}\texttt{pre-traitement}: only the Preprocessor module is
 executed. The \texttt{preprocessor\_output/n*} files are stored in a directory
-\texttt{PRE\_TRAITEMENT.mmddhhmm} automatically created in the \texttt{RESU}
+\texttt{PREPROCESSOR\_OUTPUT.mmddhhmm} automatically created in the \texttt{RESU}
 directory, for later use.\\
 \hspace*{0.5cm}\texttt{calcul}: only the Kernel is executed. The
 \texttt{preprocessor\_output/n*} files are read from the directory specified
-in the variable \texttt{PRE\_TRAITEMENT\_AMONT} of the launch script.
+in the variable \texttt{PREPROCESSOR\_OUTPUT\_IN} of the launch script.
 
 
 %==================================
@@ -736,56 +735,56 @@ way whenever they wish.
 %==================================
 \subsection{Case preparer}
 %==================================
-\label{prg_creesat}%
-The case preparer \texttt{cree\_sat} automatically creates a
+\label{prg_cscreate}%
+The case preparer \texttt{cs\_create} automatically creates a
 study directory according to the typical architecture and copies and
 pre-fills an example of calculation launch script.
 
-The syntax of \texttt{cree\_sat} is as follows:
+The syntax of \texttt{cs\_create} is as follows:
 
 \noindent
-\texttt{cree\_sat -etude STUDY CASE\_NAME1 CASE\_NAME2...}\\
+\texttt{cs\_create -study STUDY CASE\_NAME1 CASE\_NAME2...}\\
 creates a study directory \texttt{STUDY} with case subdirectories
 \texttt{CASE\_NAME1} and \texttt{CASE\_NAME2}...
-If no case name is given, a default case directory called \texttt{CAS1} is
+If no case name is given, a default case directory called \texttt{CASE1} is
 created.
 
 \noindent
-\texttt{cree\_sat -cas DEBIT3 DEBIT4}\\
+\texttt{cs\_create -case DEBIT3 DEBIT4}\\
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
-An option \texttt{-noihm} is available for the use of \CS
-without Graphic Interface (see \S\ref{prg_ihm}). This option must
+An option \texttt{-nogui} is available for the use of \CS
+without Graphic Interface (see \S\ref{prg_gui}). This option must
 be either the first or the last argument and appear only once.
 
-In the directory \texttt{DATA}, \texttt{cree\_sat} places a
+In the directory \texttt{DATA}, \texttt{cs\_create} places a
 subdirectory \texttt{THCH} containing examples of thermochemical data
 files used for pulverised coal combustion,
 gas combustion or electric arc. The file to be used for the calculation must be
 copied directly in the \texttt{DATA} directory and its name must be referenced
-in the launch script in the variable DONNEES\_THERMOCHIMIE. All other files in
+in the launch script in the variable THERMOCHEMISTRY\_DATA. All other files in
 the \texttt{DATA} or in the \texttt{THCH} will be ignored.\\
-\texttt{cree\_sat} also places in the directory \texttt{DATA} the launch script
+\texttt{cs\_create} also places in the directory \texttt{DATA} the launch script
 for the Graphical User Interface:  \texttt{SaturneGUI}.
 
 
-In the directory \texttt{FORT}, \texttt{cree\_sat} creates a
-subdirectory \texttt{USERS} containing all the user subroutines,
+In the directory \texttt{SRC}, \texttt{cs\_create} creates a
+subdirectory \texttt{REFERENCE} containing all the user subroutines,
 classified by module type:  \texttt{base},
 \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec}, \texttt{fuel},
 \texttt{lagr}, \texttt{pprt} and \texttt{rayt}.
 Only the user subroutines placed directly under
-the directory \texttt{FORT} will be considered. The others will be ignored.
+the directory \texttt{SRC} will be considered. The others will be ignored.
 
-In the directory \texttt{SCRIPTS}, \texttt{cree\_sat} copies and pre-fills an
-example of the launch script: \texttt{lance}.
+In the directory \texttt{SCRIPTS}, \texttt{cs\_create} copies and pre-fills an
+example of the launch script: \texttt{runcase}.
 The study, case and user name are filled
 automatically in the launch script, as are the paths leading to the
 different directories. Other parameters must be specified in the script
-(see \S\ref{prg_lance}),
-especially the mesh file(s) to use (by default a name \texttt{\$ETUDE.unv} is
-put), but everything can be specified throuhg the Graphical Interface.
+(see \S\ref{prg_runcase}),
+especially the mesh file(s) to use
+, but everything can be specified throuhg the Graphical Interface.
 
 
 %==================================
@@ -800,7 +799,7 @@ related through periodicity and creates the corresponding connectivity table.
 
 For a complete information on the Preprocessor module, please refer to the
 corresponding user's guide \cite{ecsmu} (available on-line through the command
-\texttt{info\_cs ecsmu}).
+\texttt{cs\_info ecsmu}).
 
 
 %==================================
@@ -881,7 +880,7 @@ determines the mesh format directly from the file suffix:
 {\em``\texttt{.ngeom}''} for the Comet format,
 {\em``\texttt{.msh}''} for the Gmsh format,
 {\em``\texttt{.neu}''} for the Gambit Neutral format,
-(voir \texttt{info\_cs ecsmu}).\\
+(voir \texttt{cs\_info ecsmu}).\\
 
 
 {\em WARNING: }
@@ -898,12 +897,12 @@ on these constraints, see the keyword \texttt{ITURB}.
 %==================================
 \label{prg_optappelecs}%
 A complete description of the Preprocessor command line options can be found in
-\cite{ecsmu}, accessible by the command \texttt{info\_cs ecsmu}. The executable
+\cite{ecsmu}, accessible by the command \texttt{cs\_info ecsmu}. The executable
 of the Preprocessor module is \texttt{ecs}, accessible directly once the environment
 variables of \CS are set properly. A summary of the command line options is
 also given by the command \texttt{ecs -help}.
 
-For the main options, the launch script \texttt{lance} contains corresponding
+For the main options, the launch script \texttt{runcase} contains corresponding
 environment variables at its beginning, that are used later when the executable
 is called. This way, the user only has to fill these variables and doesn't need
 to search deep in the script for the Preprocessor command line.
@@ -914,20 +913,20 @@ The main options are:
 
 \item \texttt{-m mesh1 mesh2}: used to specify the names of the different meshes
 used. The launch script automatically calls the Preprocessor with the option
-\texttt{-m \$MAILLAGE}, where \texttt{MAILLAGE} is the variable where the user has
+\texttt{-m \$MESH}, where \texttt{MESH} is the variable where the user has
 specified the different meshes to be used.
 
 \item \texttt{-p n}: to trigger the decomposition of the domain into \texttt{n}
 subdomains, for parallel computing. In the launch script, the number of
-processors used is specified in the \texttt{NOMBRE\_DE\_PROCESSEURS} variable,
+processors used is specified in the \texttt{NUMBER\_OF\_PROCESSORS} variable,
 or through the batch headers. If necessary, the launch script then automatically
-passes the \texttt{-p} option to the Preprocessor command line (see \ref{prg_lance}).
+passes the \texttt{-p} option to the Preprocessor command line (see \ref{prg_runcase}).
 
 \item \texttt{-join}: triggers the mesh pasting functions. If nothing more is
 specified, every area of contact between two meshes will be pasted together. The
 pasting can be limited to certain selected faces. For instance, to paste only
-the faces of colors 6 and 7, the full option will be \mbox{\texttt{-rc -color
-6 7}}. These options are to be specified in the \texttt{COMMANDE\_RC} variable in
+the faces of colors 6 and 7, the full option will be \mbox{\texttt{-join -color
+6 7}}. These options are to be specified in the \texttt{COMMAND\_JOIN} variable in
 the launch script, to be automatically passed to the command line.
 
 \item \texttt{-perio}: triggers periodic boundary conditions. Two types of
@@ -959,7 +958,7 @@ indicates the continuation of the command line):\\
 \texttt{-perio -trans -10.2 0 0 -color 2} \verb+\+\\
 \texttt{-perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 -color 3 4} \verb+\+\\
 \texttt{-perio -trans 0 1 0 -rota -matrix 1 0  0 0 0 -1 0 1 0 -invpt 0 0 -0.2}\\
-This option is to be specified in the \texttt{COMMANDE\_PERIO} variable in
+This option is to be specified in the \texttt{COMMAND\_PERIO} variable in
 the launch script, to be automatically passed to the command line.
 
 \item \texttt{-reorient}: try to re-orient badly-oriented cells
@@ -982,8 +981,7 @@ specified in the script.
 
 \begin{list}{$\bullet$}{}
 \item \texttt{-ec n} or \texttt{--echo-comm n}: triggers the display of the
-communications between the
-Preprocessor module and the Kernel.\\
+communications between the Kernel and SYRTHES.\\
 \hspace*{0.5cm}\texttt{n=-1}: display only the error messages\\
 \hspace*{0.5cm}\texttt{n=0}: display the headers of messages\\
  \hspace*{0.5cm}\texttt{n$>$0}: display the headers and the n first and last
@@ -1005,7 +1003,7 @@ IFOENV\index{IFOENV} in the FORTRAN code will be set to 0 if the
 
 \item \texttt{-mpi} or \texttt{--mpi}: specifies that the calculation is running with MPI communications. The number of processors used will be guessed interactively by the Kernel. If necessary, the launch script automatically
 passes the \texttt{-mpi} option to the Kernel command line
-(see \ref{prg_lance}).
+(see \ref{prg_runcase}).
 
 \item \texttt{--coupl-cs}: this option concerns the coupling of different
 executions of \CS. It is still under development. Please refer to \CS
@@ -1025,7 +1023,7 @@ do so, the sub-option \texttt{-2d} must be added, potentially completed by the
 specification of the direction normal to the 2D mesh: \texttt{-X}, \texttt{-Y}
 or \texttt{-Z} (default). For instance:\\
 \texttt{-syrthes -group PAROI -2d -X}\\
-All these options are to be placed in the \texttt{COMMANDE\_SYRTHES} variable of
+All these options are to be placed in the \texttt{COMMAND\_SYRTHES} variable of
 the launch script to be passed automatically to the Kernel command line.\\
 {\footnotesize\it To be thourough, there are two other sub-options to the
 \texttt{-syrthes} option: \texttt{-proc n} the specify that the \syrthes
@@ -1079,7 +1077,7 @@ divided if their warp angle is larger than 0.01 degrees. This default value can
 be changed by adding an optional angle value to the command. For instance, to
 devide faces with a warp angle larger than 0.02 degrees, the full option will
 be \mbox{\texttt{-cwf 0.02}}.\\
-This option is to be specified in the \texttt{COMMANDE\_DF} variable in
+This option is to be specified in the \texttt{COMMAND\_CWF} variable in
 the launch script, to be automatically passed to the command line.
 
 \item \texttt{--benchmark}: triggers the benchmark mode, for a timing
@@ -1128,10 +1126,10 @@ command line options.
 %==================================
 \subsection{Parameters in the launch script}
 %==================================
-\label{prg_lance}%
+\label{prg_runcase}%
 
-The case preparer \texttt{cree\_sat} places an example of launch script,
-\texttt{lance}, in the \texttt{SCRIPTS} directory. This script is quite general
+The case preparer \texttt{cs\_create} places an example of launch script,
+\texttt{runcase}, in the \texttt{SCRIPTS} directory. This script is quite general
 and known to work on every architecture \CS has been tested on. The beginning
 if the script contains the definition of certain parameters (environment
 variables) necessary to set the calculation. The second part of the script
@@ -1171,109 +1169,93 @@ account for non-optimal distribution of the domain among the processors and for
 the presence of phantom cells (see \S\ref{prg_paralperio}).}
 
 \begin{list}{$\bullet$}{}
-\item \texttt{ETUDE}: name of the study directory (automatically set by
-\texttt{cree\_sat}, see \S\ref{prg_architecture})
+\item \texttt{STUDY}: name of the study directory (automatically set by
+\texttt{cs\_create}, see \S\ref{prg_architecture})
 
-\item \texttt{CAS}: name of the case directory (automatically set by
-\texttt{cree\_sat}, see \S\ref{prg_architecture})
+\item \texttt{CASE}: name of the case directory (automatically set by
+\texttt{cs\_create}, see \S\ref{prg_architecture})
 
 \item \texttt{PARAM}: name of the Interface parameter file, if necessary (see
 \ref{prg_optappelnoy})
 
-\item \texttt{MAILLAGE}: name(s) of the mesh(es) used for the calculation (see
+\item \texttt{MESH}: name(s) of the mesh(es) used for the calculation (see
 \ref{prg_optappelecs} and \ref{prg_maillages}). The files will be looked for in
-the directory \texttt{REPMAIL} (see below).
+the directory \texttt{MESHDIR} (see below).
 
-\item \texttt{COMMANDE\_RC}: Preprocessor command line option for mesh pasting (see
+\item \texttt{COMMAND\_JOIN}: Preprocessor command line option for mesh pasting (see
 \ref{prg_optappelecs})
 
-\item \texttt{COMMANDE\_DF}: Kernel command line option for the division of
+\item \texttt{COMMAND\_CWF}: Kernel command line option for the division of
 faces with too large a warp angle (see \ref{prg_optappelnoy})
 
-\item \texttt{COMMANDE\_PERIO}: Preprocessor command line option for the definition
+\item \texttt{COMMAND\_PERIO}: Preprocessor command line option for the definition
 of periodic boundary conditions (see \ref{prg_optappelecs})
 
-\item \texttt{COMMANDE\_SYRTHES}: Kernel command line option for coupling with
+\item \texttt{COMMAND\_SYRTHES}: Kernel command line option for coupling with
 \syrthes (see \ref{prg_optappelnoy})
 
-\item \texttt{DONNEES\_THERMOCHIMIE}: name of the thermochemical data file, if
+\item \texttt{THERMOCHEMISTRY\_DATA}: name of the thermochemical data file, if
 necessary (the file is looked for in the directory \texttt{DATA}, see
 \S\ref{prg_usppmo})
 
-\item \texttt{NOMBRE\_DE\_PROCESSEURS}: number of processors (potentially virtual)
+\item \texttt{NUMBER\_OF\_PROCESSORS}: number of processors (potentially virtual)
 to be used for the calculation.\\
 If the variable is left empty, the launch script
-will fill it automatically: on a batch system, \texttt{NOMBRE\_DE\_PROCESSEURS}
+will fill it automatically: on a batch system, \texttt{NUMBER\_OF\_PROCESSORS}
 will be equal to the number of processors reserved; in case of an
 interactive calculation, it will be set to 1.\\
 When using a batch system,
-\texttt{NOMBRE\_DE\_PROCESSEURS} should ideally be equal to the number of
+\texttt{NUMBER\_OF\_PROCESSORS} should ideally be equal to the number of
 processors reserved, and can never be larger (one executable per
 processor). With an interactive calculation (like a Linux PC),
-\texttt{NOMBRE\_DE\_PROCESSEURS} can be larger than the total number of processors
+\texttt{NUMBER\_OF\_PROCESSORS} can be larger than the total number of processors
 available, although it is not recommended (loss of efficiency because several
 executables share the same processor).\\
 In case of
 coupling with \syrthes, one processor is reserved for \syrthes, and the Kernel
 of \CS will therefore automatically be set to run on
-\texttt{NOMBRE\_DE\_PROCESSEURS-1} processors.
+\texttt{NUMBER\_OF\_PROCESSORS-1} processors.
 
-\item \texttt{LISTE\_PROCESSEURS}: list of nodes on which the calculation is to
+\item \texttt{PROCESSOR\_LIST}: list of nodes on which the calculation is to
 be run. On batch systems, this list is set automatically by the batch
 manager. For calculations on a stand-alone machine, the list is not used. Hence,
 except for very specific test (mainly for developing purposes), it is
 recommended to leave this variable empty.
 
-\item \texttt{FICHIERS\_DONNEES\_UTILISATEUR}: list of the user data files to be
+\item \texttt{USER\_INPUT\_FILES}: list of the user data files to be
 copied in the temporary execution directory before the calculation (input
 profiles for instance). The files will
 be looked for in the directory \texttt{DATA}. The thermochemical data files,
 Interface parameter file and calculation restart files are specified in other
 variables and do not need to appear here. When using the vortex method for LES
 entry conditions, the corresponding data files have to be specified in
-\texttt{FICHIERS\_DONNEES\_UTILISATEUR} (see \S\ref{prg_usvort})
+\texttt{USER\_INPUT\_FILES} (see \S\ref{prg_usvort})
 
-\item \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}: list of user result files to be
+\item \texttt{USER\_OUTPUT\_FILES}: list of user result files to be
 copied in the directory \texttt{RESU} at the end of the calculation. A directory
 \texttt{RES\_USERS.mmddhhmm} will be created in the directory \texttt{RESU} and
 all the files will be stored in it. The files automatically created by the code
 (listings, post-processing, automatic chronological records\footnote{when using
 \texttt{ushist} for user-defined chronological records, the files created need
-to be specified in \texttt{FICHIERS\_RESULTATS\_UTILISATEUR}},
+to be specified in \texttt{USER\_OUTPUT\_FILES}},
 restart files) do not need to be specified in
-\texttt{FICHIERS\_RESULTATS\_UTILISATEUR}.
+\texttt{USER\_OUTPUT\_FILES}.
 
 \item \texttt{CS\_TMP\_PREFIX}: alternate temporary directory for the
 calculation (see \S\ref{prg_temporarydirectory})
 
-\item \texttt{OPTIMISATION}: optimisation level for compilation
+\item \texttt{OPTIMIZATION}: optimisation level for compilation
  (LO, DBG, EF or PROF; see \S\ref{prg_library}). This optimisation
 level will be applied to all the modules of \CS (BASE, CFBL, COGZ, CPLV, ELEC,
 FUEL, LAGR, MATI, RAYT).
 Leaving the variable empty stands for ``standard''
 optimisation.
 
-\item \texttt{LISTE\_LIB\_SAT}: list of \CS module libraries to use (see
-\S\ref{prg_library}). Specifying
-a list allows to use different optimisation options for different modules. If a
-list is
-given, all modules must be referenced once (and only once). Leaving
-the variable empty implies taking the same optimisation for all the
-modules (BASE, COGZ, CFBL, CPLV, ELEC, FUEL, LAGR, MATI, RAYT), corresponding to
-the value of the \texttt{OPTIMISATION} variable (see above). An example of list
-could be:\\
-\texttt{LISTE\_LIB\_SAT=``libsaturneBASEDBG.a libsaturneCFBL.a
-libsaturneCOGZDBG.a}\verb+ \+\\
-\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneCPLV.a libsaturneELECDBG.a
-libsaturneFUELDBG.a}\verb+ \+\\
-\texttt{\phantom{LISTE\_LIB\_SAT=``}libsaturneLAGR.a libsaturneMATI.a
-libsaturneRAYT.a''}
-
-\item \texttt{OPTION\_LIB\_EXT}: additional commands for the link stage of the
+\item \texttt{CS\_LIB\_ADD}: additional commands for the link stage of the
 compilation. This can be especially useful if the user subroutines call routines
 provided by external libraries. To link with an external library ``foo'', the
 variable would be for instance\\
-\texttt{OPTION\_LIB\_EXT=``-L/opt/foo/lib -lfoo''}
+\texttt{CS\_LIB\_ADD=``-L/opt/foo/lib -lfoo''}
 
 \item \texttt{VALGRIND}: command to be placed before the \CS executable name on
 the execution command line ({\em i.e.} the launch script will execute the
@@ -1291,64 +1273,64 @@ output (see \ref{prg_optappelnoy})
 \item \texttt{ECHOCOMM}: level for the \texttt{--echo-comm} option of the Kernel
 command line (see \ref{prg_optappelnoy})
 
-\item \texttt{PILOTAGE\_ADAPTATION}: commands to trigger the automatic mesh
+\item \texttt{ADAPTATION}: commands to trigger the automatic mesh
 adaptation with the software Homard. This option is still under development and
 restricted to developpers use.
 
-\item \texttt{REPBASE}: root directory of the calculation. This variable is
-automatically set by \texttt{cree\_sat} and should not be changed.
+\item \texttt{CASEDIR}: root directory of the calculation. This variable is
+automatically set by \texttt{cs\_create} and should not be changed.
 
 \item \texttt{DATA}: DATA directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cree\_sat} and should not be
+This variable is automatically set by \texttt{cs\_create} and should not be
 changed.
 
 \item \texttt{RESU}: RESU directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cree\_sat} and should not be
+This variable is automatically set by \texttt{cs\_create} and should not be
 changed.
 
-\item \texttt{FORT}: FORT directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cree\_sat} and should not be
+\item \texttt{SRC}: SRC directory of the case (see \ref{prg_architecture}).
+This variable is automatically set by \texttt{cs\_create} and should not be
 changed.
 
 \item \texttt{SCRIPTS}: SCRIPTS directory of the case (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cree\_sat} and should not be changed.
+\texttt{cs\_create} and should not be changed.
 
-\item \texttt{SUITE\_AMONT}: directory containing the files for calculation
+\item \texttt{RESTART\_IN}: directory containing the files for calculation
 restart.
 
-\item \texttt{PRE\_TRAITEMENT\_AMONT}: directory containing the
-\texttt{enveloppe\_vers\_solveur*} files for a calculation in ``calculation''
-mode (see \ref{prg_executionmodes})
+\item \texttt{PREPROCESSOR\_OUTPUT\_IN}: \texttt{preprocessor\_ouput} file for a calculation in ``calculation'' mode (see \ref{prg_executionmodes})
 
-\item \texttt{REPMAIL}: directory containing the mesh files (see
+\item \texttt{MESHDIR}: directory containing the mesh files (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cree\_sat} and should generally not be changed.
+\texttt{cs\_create} and should generally not be changed.
 
 \item \texttt{DATA\_SYR}: directory for the \syrthes data. This directory has
-to be created by the user. It is advised to keep the location proposed in the
-launch script, which complies with the standard architecture of \CS (see
+to be created by the user. It is advised to keep the location proposed
+in the launch script, which complies with the standard architecture
+of \CS (see
 \ref{prg_architecture}).
 
 \item \texttt{SYRTHES\_ENV}: name of the environment file for \syrthes (usually
 \texttt{syrthes.env}, as proposed in the launch script).
 
-\item \texttt{FORT\_SYR}: directory for the \syrthes user subroutines.
+\item \texttt{SRC\_SYR}: directory for the \syrthes user subroutines.
 This directory has to be created by the user. It is advised to keep the location
 proposed in the launch script, which complies with the standard architecture
 of \CS (see \ref{prg_architecture}).
 
-\item \texttt{MODE\_COUPLAGE}: coupling mode between \CS and \syrthes, when
-such coupling is activated (see \texttt{COMMANDE\_SYRTHES}). Three options are
+\item \texttt{COUPLING\_MODE}: coupling mode between \CS and \syrthes, when
+such coupling is activated (see \texttt{COMMAND\_SYRTHES}). Two options are
 available:\\
-\hspace*{0.5cm}\texttt{MPI}: for a coupling based on MPI messages (requires an
+\hspace*{0.5cm}\texttt{MPI}: for a coupling based on MPI messages (requires a
 MPI library)\\
-\hspace*{0.5cm}\texttt{pipes}: for a coupling based on pipe files (on clusters,
-such a coupling is valid only if all the processors are located on the same
-node)\\
 \hspace*{0.5cm}\texttt{sockets}: for a coupling based on sockets
 
-\item \texttt{MODE\_EXEC}: execution mode for \CS (see \ref{prg_executionmodes})
+\item \texttt{EXEC\_PREPROCESSOR}: execution mode for \CS preprocessor (see \ref{prg_executionmodes})
+
+\item \texttt{EXEC\_PARTITION}: execution mode for \CS partitionner (see \ref{prg_executionmodes})
+
+\item \texttt{EXEC\_KERNEL}: execution mode for \CS kernel (see \ref{prg_executionmodes})
 
 \end{list}
 
@@ -1356,10 +1338,10 @@ node)\\
 %==================================
 \subsection{Graphical User Interface}
 %==================================
-\label{prg_ihm}%
-A Graphical User Interface is available with \CS.
-This Interface creates or reads an XML file according to
-a specific \CS syntax which is then interpretated by the code.
+\label{prg_gui}%
+A Graphical User Interface is available with \CS.  This Interface
+creates or reads an XML file according to a specific \CS syntax which
+is then interpretated by the code.
 
 In version \verscs, the Graphical Interface manages calculation parameters,
 standard initialisation values and boundary
@@ -1450,26 +1432,26 @@ up of some simple calculations with the \CS Interface.
 To launch \CS using an XML parameter file,
 the name of the file must
 be given to the variable \texttt{PARAM} in the launch script (see
-\S\ref{prg_lance}). When the launch
+\S\ref{prg_runcase}). When the launch
 script is edited from the Interface (Calculation management $\rightarrow$
 Prepare batch analysis), the PARAM section is filled automatically as are the
 other parameters specified through the Interface.
 
 
-\minititre{Note: option \texttt{-noihm} of cree\_sat}
+\minititre{Note: option \texttt{-nogui} of cs\_create}
 When a calculation is using the Interface but, for some reason, some extra
 parameters need to be specified in the subroutine \texttt{usini1}, the latter
-must be placed in the directory \texttt{FORT}. But, while doing this, all the
+must be placed in the directory \texttt{SRC}. But, while doing this, all the
 parameters appearing in \texttt{usini1} will also be taken into account. In
 order to prevent the user from having to respecify in \texttt{usini1} all that
-he has already specified through the Interface, \texttt{cree\_sat} automatically
+he has already specified through the Interface, \texttt{cs\_create} automatically
 comments out the examples in \texttt{usini1} (\texttt{Cex} at the beginning of
-each line) while copying it in the directory \texttt{USERS}. Therefore, the user
+each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the user
 only needs to uncomment the specific parts of \texttt{usini1} he wants to modify,
 and the rest of the examples will be ignored.\\
 On the contrary, if the Interface will not be used, then all the parameters in
-\texttt{usini1} have to be specified. In that case, using the \texttt{-noihm}
-option of \texttt{cree\_sat} will prevent it from commenting \texttt{usini1}
+\texttt{usini1} have to be specified. In that case, using the \texttt{-nogui}
+option of \texttt{cs\_create} will prevent it from commenting \texttt{usini1}
 out, thus saving the user the tedious task of uncommenting all the lines (and
 the risk of skipping some of them).
 
@@ -2626,33 +2608,33 @@ in the standard cases:
 \item On clusters with PBS batch systems (like the EDF R\&D Chatou cluster),
       the launching of a parallel run
       requires to complete the \texttt{PBS} batch cards located in the
-      beginning of \texttt{lance}, and particularly to set the number of
+      beginning of \texttt{runcase}, and particularly to set the number of
       physical nodes (\texttt{nodes}) and the number of physical
       processors per node (\texttt{ppn}) wanted. This can be done through
-      the Graphical Interface or by editing the \texttt{lance} file directly.
+      the Graphical Interface or by editing the \texttt{runcase} file directly.
       The number of processors used for the calculation will then be set
       automatically to the number of processors reserved and the 
-      variable \texttt{NOMBRE\_DE\_PROCESSEURS} can be left empty
-      (see also \S\ref{prg_lance}).
+      variable \texttt{NUMBER\_OF\_PROCESSORS} can be left empty
+      (see also \S\ref{prg_runcase}).
 
 \item On clusters with LSF batch systems (like the CCRT machines),
       the launching of a parallel run
       requires to complete the \texttt{LSF} batch cards located in the
-      beginning of \texttt{lance}, and particularly to set the
+      beginning of \texttt{runcase}, and particularly to set the
       number of processors (\texttt{\#BSUB -n}) wanted and the limit CPU
       time (\texttt{\#BSUB -W}). As for now, this can only be done
-      by editing the \texttt{lance} file directly.
+      by editing the \texttt{runcase} file directly.
       The number of processors used for the calculation will then be set
       automatically to the number of processors reserved and the 
-      variable \texttt{NOMBRE\_DE\_PROCESSEURS} can be left empty
-      (see also \S\ref{prg_lance}).
+      variable \texttt{NUMBER\_OF\_PROCESSORS} can be left empty
+      (see also \S\ref{prg_runcase}).
 
-\item On clusters with other batch systems, \texttt{lance} file may have to
+\item On clusters with other batch systems, \texttt{runcase} file may have to
       be modified manually. Please do not hesitate to contact the \CS support
       (saturne-support@edf.fr) so that these modifications can be added to
       the standard launch script to make it more general.
 
-\item Although on batch systems the \texttt{NOMBRE\_DE\_PROCESSEURS} variable
+\item Although on batch systems the \texttt{NUMBER\_OF\_PROCESSORS} variable
       in the script (indicating the number of processors used for the
       calculation) is filled automatically to the number of processors
       reserved, the user can still choose to specify another value for it.
@@ -2666,7 +2648,7 @@ in the standard cases:
 
 
 \item Periodicity is activated through the Graphical Interface or by completing
-      the \texttt{COMMANDE\_PERIO} of the launch script \texttt{lance}.
+      the \texttt{COMMAND\_PERIO} of the launch script \texttt{runcase}.
       The transformation
       allowing to pass from a boundary to the other one must be defined
       (the direction does not matter) and the set of periodical faces
@@ -3028,7 +3010,7 @@ variables}
 \subsection{Variables saved to allow calculation restarts}
 %==================================
 
-The directory \texttt{SUITE*} contains:
+The directory \texttt{RESTART*} contains:
 \begin{list}{-}{}
 \item \texttt{suiava}: main restart file,
 \item \texttt{suiavx}: auxiliary restart file (see ILEAUX\index{ILEAUX}, IECAUX\index{IECAUX}),
@@ -3167,8 +3149,8 @@ The parameters can be read in the interface and then in the user
 subroutine. In the case that a parameter is specified in the interdace
  and in the user subroutine, it is the value in the user subroutine that
  is taken into acount. It is for that reason that all the examples of
- user subroutines are placed in the \texttt{USERS} directory by the
- case preparer \texttt{cree\_sat}.
+ user subroutines are placed in the \texttt{REFERENCE} directory by the
+ case preparer \texttt{cs\_create}.
 
 
 
@@ -3287,7 +3269,7 @@ word list (\S\ref{prg_motscles}).
  \texttt{usinsc}, \texttt{usipsc}, \texttt{usipgl},
 \texttt{usipsu}and \texttt{usipes}. Each one controls the management of various
  specific parameters. The key words that dont' feature in the supplied example
-can be provided by the user in  \texttt{FORT/USERS/base}; in this case, understanding
+can be provided by the user in  \texttt{SRC/REFERENCE/base}; in this case, understanding
  of the comments is needed to add the key words in the appropriate subroutine (the most
  widely used is IPHAS, it will assure that the value has been well defined ).
 The modifiable parameters in each of the subroutines of \texttt{usini1.F} are:
@@ -3322,12 +3304,12 @@ $\bullet\ $ When using the interface, only the
 supplementary parameters (which can not be defined in the interface)
 should appear in \texttt{usini1}. To spare the user the necessity to
 delete the other parameters appearing as examples in the subroutine, the
-utility program \texttt{cree\_sat} comments automatically all the
+utility program \texttt{cs\_create} comments automatically all the
 example lines of \texttt{usini1} with a code \texttt{Cex}. The user
 needs then only to uncomment the lines which are useful in his
 case. This function of
-\texttt{cree\_sat} can be inactivated with
-the option \texttt{-noihm} (useful if the user knows that he will not
+\texttt{cs\_create} can be inactivated with
+the option \texttt{-nogui} (useful if the user knows that he will not
 use the interface).
 
 %==================================
@@ -3358,7 +3340,7 @@ For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
-\mbox{\texttt{info\_cs noyau}}).
+\mbox{\texttt{cs\_info noyau}}).
 
 From the user point of view, the boundary conditions are totally
 determined by three arrays\footnote{except with lagrangien}~: ITYPFB(NFABOR,NPHAS)\index{ITYPFB},
@@ -4086,7 +4068,7 @@ files. The user shoud remember to add in the launch script the necessary
 command to copy them in the directory \texttt{RESU} at the end of the
 calculation. The interface allows the specification of the name of the copied
  user results files. For the calculations without interface, the variable must
- be inputted in FICHIERS\_RESULTATS\_UTILISATEUR in the launch script.
+ be inputted in USER\_OUTPUT\_FILES in the launch script.
 
 %==================================
 \subsection{User source terms in Navier-Stokes: \textmd{\texttt{ustsns}}}
@@ -4563,7 +4545,7 @@ precisions concerning the friction velocity and the wall boundary
 conditions, the user may refer to the report \cite{bouckermattei00} and
 to the theoretical and computer documentation \cite{theory} of the
 subroutine \texttt{clptur}. To access to this document from a
-workstation, use the command \texttt{info\_cs noyau}.
+workstation, use the command \texttt{cs\_info noyau}.
 % or refer to \mbox{$_\text{\Large\~~\hspace{-0.2cm}}$\texttt{sc\_doc/saturne.html}}
 
 The subroutine allows in particular to access to the value of $y^+$ at
@@ -4694,7 +4676,7 @@ true when one rescales the mesh.}\\
 %==================================
 
 \noindent
-\textit{Subroutine called every time step(even if the user hasn't moved it to the FORT directroy).}
+\textit{Subroutine called every time step(even if the user hasn't moved it to the SRC directroy).}
 
 This subroutine is used to determine when post-processing outputs will be
 generated. By default, it tests if the current time step number (NTCABS) is a
@@ -4728,89 +4710,6 @@ In any case, a post-processing output is generated after the last time
 step, \texttt{usnpst} being used or not.
 
 \newpage
-%==================================
-\subsection{Definition of sections for outputs in the form of lists of faces: \textmd{\texttt{uslfac}}}
-%==================================
-
-\noindent
-\textit{Subroutine called at the calculation beginning.}
-
-This subroutine gives the possibility to define sections in the form of
-lists of \texttt{NLFAC} internal faces (\texttt{LSTFAC}) and
-\texttt{NLFAB} boundary faces (\texttt{LSTFAB}), in order to generate
-chronological outputs in {\em EnSight}, {\em MED} or {\em CGNS} format.
-
-The given example proposes to define two sections (\texttt{NBCOUP =
-2}). The first one is consituted of internal and boundary faces marked
-out by means of the coordinates of their centers. The second one is constituted
-of internal faces marked out by means of the color of their neighboring
-cells and of boundary faces marked out by means of their color.
-
-It must be noticed that the lists of faces can not be modified during
-the calculation (they are set at the calculation beginning).
-
-In order to ease the post-processing, a distinct name should be given to
-each section (\texttt{COUPE = }): this character string will be the name
-of the corresponding {\em EnSight} ``part'' and will be used in the eventual
-{\em MED} file.
-
-The content of the character string \texttt{CAS = } will be used as a
-prefix in the name of the EnSight directory containing the
-post-processing files and in the eventual MED file. If several sections
-are requested and the user does not wish to post-process the data on each
-one at the same time step (see \texttt{usvfac}), it
-may be useful, in order to ease the post-processing, to specify a
-different value of \texttt{CAS} for each section (for instance
-\texttt{CAS=''CAS\_COUPE1''}, \texttt{CAS=''CAS\_COUPE2''}...), so that
-a distinct {\em EnSight} directory will be generated for each one. If
-\texttt{CAS} is not specified, the post-processing files are stored with
-the usual chronological post-processing files (it is recommended to
-always specify the value of the variable \texttt{CAS}).
-
-The post-processing format is set by means of the variable \texttt{FORMA
-= }. By default, the {\em EnSight} format is generated. Outputs in the
-{\em MED} or {\em CGNS} formats may be also requested.
-
-The values to post-process on the sections are precisely defined in the subroutine \texttt{usvfac}
-
-%==================================
-\subsection{Definition of the data to post-process on the sections:
-  \textmd{\texttt{usvfac}}}
-%==================================
-
-\noindent
-\textit{Subroutine called every time step and for every section.}
-
-For the sections defined in \texttt{uslfac}, the subroutine
-\texttt{usvfac} is used to define the instants at which outputs will
-be generated and to specify which variables have to be
-post-processed. Basically, the communication for the current section is
-initialised by calling \texttt{MSGDSC}, which provides the section number,
-the time step number and the physical time. For this section, the arrays
-of values at internal (\texttt{TRAFAI}) and boundary faces
-(\texttt{TRAFAB}) are sent to the Preprocessor by the subroutine
-\texttt{MSGVAC}, as are the variable name (\texttt{NAMEVR}), the length
-of the character string which contains it (\texttt{LNAME}), the
-dimension of the variable (\texttt{IDIMT}=1 for a scalar and =3 for a
-vector) and the numbers of the section internal (\texttt{NFAICP}) and
-boundary (\texttt{NFABCP}) faces.
-
-More precisely, the user must first define the pairs (section, time
-step) corresponding to expected post-processing outputs. This is the goal
-of the first part of the subroutine: an instruction \texttt{RETURN} is
-placed in the beginning of the subroutine according to the section
-number \texttt{NUMCOU} and the time step number \texttt{NTCABS}. It is
-important to note that the section outputs are independent from the
-other post-processing outputs. In particular, there is no automatically
-generated output after the last calculation time step (if an output
-after the last time step is wanted, this must then be specified).
-
-For each section, the given example proposes then to define the
-variables to post-process. For instance, concerning the section number 1,
-the velocity, the pressure and the temperature at the boundary are
-generated. Concerning the section number 2, all the usually post-processed
-unknowns (according to \texttt{NTCHR} and \texttt{ICHRVR}) are generated.
-
 %==================================
 \subsection{Definition of post-processing and mesh zones:
   \textmd{\texttt{usdpst}}}
@@ -5431,8 +5330,8 @@ The user must not forget to place in the directory DATA the
 thermo-chemical file \texttt{dp\_FCP}, \texttt{dp\_C3P}, \texttt{dp\_C3PSJ} or
 \texttt{dp\_ELE} (depending on the specific physics module he activated)
 and to specify the name of this file in the variable
-DONNEES\_THERMOCHIMIE\index{DONNEES\_THERMOCHIMIE} in the launch script
-(for instance: DONNEES\_THERMOCHIMIE=''dp\_C3P''). Some example files
+THERMOCHEMISTRY\_DATA\index{THERMOCHEMISTRY\_DATA} in the launch script
+(for instance: THERMOCHEMISTRY\_DATA''dp\_C3P''). Some example files
 are placed in the directory \texttt{DATA/THCH} at the creation of the
 study case. Their content is described below.
 
@@ -6313,7 +6212,7 @@ specifically for the electric arc module with IPPMOD(IELARC)=2~:
 \end{list}
 
 If it is convenient for the user, there is no need to add this subroutine into the
- FORT directory: the post-processing will be done automatically (at the same frequency
+ SRC directory: the post-processing will be done automatically (at the same frequency
  (NTCHR) as the other calculation variables)
 
 
