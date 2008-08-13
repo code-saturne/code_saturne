@@ -45,54 +45,49 @@ C
       INTEGER                   IMPGEO
       COMMON / IGEOTL /         IMPGEO
 C
-C --- FICHIER SUITE AMONT (SANS FORMAT)
-C     ---------------------------------
-C     FICAMO,IMPAMO --> fichier suite de base
-C     FICAMX,IMPAMX --> fichier suite auxiliaire
-C     FICMT1,IMPMT1 --> fichier suite module thermique 1D
-C     FICMVO,IMPMVO --> fichier suite methode des vortex (ASCII obligatoirement,
-C                       structure specifique)
-C     IMPDVO        --> fichier de donnees de la methode des vortex (nom FICDAT
-C                       laisse a l'utilisateur dans usvort
+C --- FICHIER SUITE AMONT
+C     -------------------
+C     FICAMO        --> fichier suite de base
+C     FICAMX        --> fichier suite auxiliaire
+C     FICMT1        --> fichier suite module thermique 1D
+C     FICMVO,IMPMVO --> fichier suite methode des vortex (ASCII
+C                       obligatoirement, structure specifique)
+C     IMPDVO        --> fichier de donnees de la methode des vortex
+C                       (nom FICDAT laisse a l'utilisateur dans usvort)
 C
       CHARACTER*13      FICAMO,FICAMX,FICMT1,FICMVO
       COMMON / AFAMON / FICAMO,FICAMX,FICMT1,FICMVO
 C
-      INTEGER                   IMPAMO, IMPAMX, IMPMT1, IMPMVO, IMPDVO
-      COMMON / IFAMON /         IMPAMO, IMPAMX, IMPMT1, IMPMVO, IMPDVO
+      INTEGER                   IMPMVO, IMPDVO
+      COMMON / IFAMON /         IMPMVO, IMPDVO
 C
-C --- FICHIERS SUITE AVAL (AVEC FORMAT)
-C     ---------------------------------
-C     FICAVA,IMPAVA,IFOAVA --> fichier suite de base
-C     FICAVX,IMPAVX,IFOAVX --> fichier suite auxiliaire
-C     FICVT1,IMPVT1,IFOVT1 --> fichier suite module thermique 1D
-C     FICVVO,IMPVVO        --> fichier suite methode des vortex (ASCII obligatoirement,
-C                       structure specifique)
+C --- FICHIERS SUITE AVAL
+C     -------------------
+C     FICAVA        --> fichier suite de base
+C     FICAVX        --> fichier suite auxiliaire
+C     FICVT1        --> fichier suite module thermique 1D
+C     FICVVO,IMPVVO --> fichier suite methode des vortex (ASCII
+C                       obligatoirement, structure specifique)
 C
 C
       CHARACTER*13      FICAVA,FICAVX,FICVT1,FICVVO
       COMMON / AFAVAL / FICAVA,FICAVX,FICVT1,FICVVO
 C
-      INTEGER           IMPAVA, IFOAVA, NTSUIT, IMPAVX, IFOAVX,
-     &                  IMPVT1, IFOVT1, IMPVVO
-      COMMON / IFAVAL / IMPAVA, IFOAVA, NTSUIT, IMPAVX, IFOAVX,
-     &                  IMPVT1, IFOVT1, IMPVVO
+      INTEGER           NTSUIT, IMPVVO
+      COMMON / IFAVAL / NTSUIT, IMPVVO
 C
 C --- FICHIER SUITE AMONT RAYONNEMENT
 C
       CHARACTER*13      FICAMR
       COMMON / AFAMRD / FICAMR
 C
-      INTEGER                   IMPAMR
-      COMMON / IFAMRD /         IMPAMR
-C
-C --- FICHIER SUITE AVAL RAYONNEMENT (AVEC FORMAT)
+C --- FICHIER SUITE AVAL RAYONNEMENT
 C
       CHARACTER*13      FICAVR
       COMMON / AFAVRD / FICAVR
 C
-      INTEGER                   IMPAVR, IFOAVR, NTSUIR
-      COMMON / IFAVRD /         IMPAVR, IFOAVR, NTSUIR
+      INTEGER                   NTSUIR
+      COMMON / IFAVRD /         NTSUIR
 C
 C
 C --- FICHIER NSTOP
@@ -201,19 +196,13 @@ C
       CHARACTER*13      FICAML, FICMLS
       COMMON / AFAMLA / FICAML, FICMLS
 C
-      INTEGER                   IMPAML, IMPMLS
-      COMMON / IFAMLA /         IMPAML, IMPMLS
-C
-C   - FICHIER SUITE ET SUITE STATISTISQUE AVAL LAGRANGIEN (AVEC FORMAT)
+C   - FICHIER SUITE ET SUITE STATISTISQUE AVAL LAGRANGIEN
 C
       CHARACTER*13      FICAVL, FICVLS
       COMMON / AFAVLA / FICAVL, FICVLS
 C
-      INTEGER                   IMPAVL, IMPVLS, IFOAVL, IFOVLS
-      COMMON / IFAVLA /         IMPAVL, IMPVLS, IFOAVL, IFOVLS
 C
-C
-C   - FICHIER LISTING LAGRANGIEN (AVEC FORMAT)
+C   - FICHIER LISTING LAGRANGIEN
 C
 C     FICLAL : Nom du fichier
 C     IMPLAL : Unite du fichier
@@ -229,7 +218,7 @@ C
       INTEGER                   IMPLI1, IMPLI2
       COMMON / IFALAH /         IMPLI1, IMPLI2
 C
-C   - AUTRES FICHIERS LAGRANGIEN (AVEC FORMAT)
+C   - AUTRES FICHIERS LAGRANGIEN
 C
       INTEGER           IMPLA1 , IMPLA2 , IMPLA3 , IMPLA4 , IMPLA5(15)
       COMMON / IFALAG / IMPLA1 , IMPLA2 , IMPLA3 , IMPLA4 , IMPLA5

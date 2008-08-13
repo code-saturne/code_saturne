@@ -108,23 +108,6 @@ C       Non initialise -> standard
         ENDIF
       ENDDO
 C
-C---> Rayonnement
-C       Format des fichiers suite
-C
-      IF(IFOAVR.EQ.-1) THEN
-        IFOAVR = IFOAVA
-      ENDIF
-C
-C---> Lagrangien
-C       Format des fichiers suite
-C
-      IF(IFOAVL.EQ.-1) THEN
-        IFOAVL = IFOAVA
-      ENDIF
-      IF(IFOVLS.EQ.-1) THEN
-        IFOVLS = IFOAVA
-      ENDIF
-C
 C---> Variables de calcul ITRSVR = ivar. Sinon 0 (valeur d'initialisation).
 C
       DO IVAR = 1, NVAR

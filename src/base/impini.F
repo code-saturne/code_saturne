@@ -139,10 +139,6 @@ C
  9900 FORMAT(
      &'                                                             ',/,
      &' ----------------------------------------------------------- ',/)
-C9999 FORMAT(
-C    &'                                                             ',/,
-C    &' =========================================================== ',/)
-C
  1010 FORMAT(
      &'                                                             ',/,
      &' ** PHYSIQUE PARTICULIERE :                                  ',/,
@@ -247,10 +243,8 @@ C
      &/,
      &'       Point de reference initial pour la pression           ',/,
      &'       XYZP0  = ', E14.5, E14.5, E14.5                          )
-C-PP
  2030 FORMAT(
      &'       DIFTL0 = ', E14.5,    ' (Diff. dynam.    de reference)',/)
-C-PP
 C
 C
 C --- Turbulence
@@ -1504,8 +1498,8 @@ C
      &' --- Fichier suite                                           ',/,
      &'       NTSUIT = ',4X,I10,    ' (Periode de sauvegarde)       ',/)
  7520 FORMAT(
-     &' --- Fichiers EnSight                                        ',/,
-     &'       NTCHR  = ',4X,I10,    ' (Periode de sauvegarde)       ',/,
+     &' --- Fichiers EnSight, MED, ou CGNS                          ',/,
+     &'       NTCHR  = ',4X,I10,    ' (Periode de sortie    )       ',/,
      &'                                                             ',/,
      &'       Numero Nom                                            '  )
  7521 FORMAT(
@@ -1547,18 +1541,12 @@ C --- Fichiers
 C
       WRITE(NFECRA,7600)
       WRITE(NFECRA,7610)FICGEO,FICAMO,FICAMX,FICSTP,
-     &                  IMPGEO,IMPAMO,IMPAMX,IMPSTP,
-     &                  1     ,'AUTO','AUTO',1
-      WRITE(NFECRA,7611)FICAVA,FICAVX,
-     &                  IMPAVA,IMPAVX,
-     &                  IFOAVA,IFOAVX
-      WRITE(NFECRA,7612)FICFPP,FICAMR,FICJNF,                  FICAVR,
-     &                  IMPFPP,IMPAMR,IMPJNF,                  IMPAVR,
-     &                  1     ,'AUTO',1     ,                  IFOAVR
-      WRITE(NFECRA,7613)FICAML, FICMLS,       FICAVL , FICVLS, FICLAL,
-     &                  IMPAML, IMPMLS,       IMPAVL , IMPVLS, IMPLAL,
-     &                  IMPLI1, IMPLI2,
-     &                  'AUTO', 'AUTO',       IFOAVL , IFOVLS, 1,0,0
+     &                  IMPGEO,IMPSTP
+      WRITE(NFECRA,7611)FICAVA,FICAVX
+      WRITE(NFECRA,7612)FICFPP,FICAMR,FICJNF,FICAVR,
+     &                  IMPFPP,       IMPJNF
+      WRITE(NFECRA,7613)FICAML, FICMLS, FICAVL, FICVLS, FICLAL,
+     &                  IMPLAL, IMPLI1, IMPLI2
 C
 C Autres fichiers lagrangien
       WRITE(NFECRA,7615) IMPLA1,IMPLA2,IMPLA3,IMPLA4,IMPLA5(1),
@@ -1592,34 +1580,26 @@ C
      &'    --------                                                 ',/)
  7610 FORMAT(
      &' --- Fichiers standard                                       ',/,
-     &'                 Formats : 0=Binaire, 1=ASCII                ',/,
      &'                                                             ',/,
      &'         GEOMETRIE AMONT PPAL  AMONT AUX       STOP          ',/,
      &'Nom    ',     4(5X,A6)                                        ,/,
-     &'Unite  ',     4I11                                            ,/,
-     &'Format ',     I11,      7X,A4,     7X,A4,       I11           ,/)
+     &'Unite  ',     I11,        11X,       11X,       I11           ,/)
  7611 FORMAT(
      &'         AVAL PPAL   AVAL AUX                                ',/,
-     &'Nom    ',     2(5X,A6)                                        ,/,
-     &'Unite  ',     2I11                                            ,/,
-     &'Format ',     2I11                                            ,/)
+     &'Nom    ',     2(5X,A6)                                        ,/)
  7612 FORMAT(
      &' --- Fichiers rayonnement                                    ',/,
-     &'                 Formats : 0=Binaire, 1=ASCII                ',/,
      &'                                                             ',/,
-     &'         DONNEES    AMONT    JANAF                       AVAL',/,
-     &'Nom    ',     3(3X,A6),     9X, 9X, (3X,A6)                   ,/,
-     &'Unite  ',     3    I9 ,     9X, 9X,     I9                    ,/,
-     &'Format ',     I9,3X,A4,2X,      I9,            9X, 9X,     I9 ,/)
+     &'         DONNEES    AMONT    JANAF     AVAL                  ',/,
+     &'Nom    ',     4(3X,A6)                                        ,/,
+     &'Unite  ',     I9,   9X,     I9                                ,/)
  7613 FORMAT(
      &' --- Fichiers Lagrangiens                                    ',/,
-     &'                 Formats : 0=Binaire, 1=ASCII                ',/,
      &'                                                             ',/,
      &'         ---- AMONT ----    ---- AVAL -----    ---- POST ----',/,
      &'         CALCUL    STAT.    CALCUL    STAT.    LISTING  HISTO',/,
      &'Nom   ',     2(3X,A6),  1X,      2(3X,A6),   4X,       A6     ,/,
-     &'Unite ',     2    I9 ,  1X,       2    I9,   6X,     3 I4     ,/,
-     &'Format',5X,A4,5X,A4,2X, 4X,      I4,5X,I4,   6X,     3 I4     ,/)
+     &'Unite ',         18X ,  1X,           18X,   6X,     3 I4     ,/)
  7615 FORMAT(
      &' --- Autres fichiers pour le module Lagrangien               ',/,
      &'                                                             ',/,
@@ -1648,10 +1628,10 @@ C
  7650 FORMAT(
      &'                                                             ',/,
      &' --- Fichiers preprocesseur                                  ',/,
-     &'   Formats : 1=Lecture des fichiers preprocessor_output      ',/,
-     &'             0=Solveur autonome                              ',/,
-     &'                                                             ',/,
-     &'Format ',I10                                                  ,/)
+     &'   Format : 1=Lecture du fichier preprocessor_output'         ,/,
+     &'            0=Solveur autonome'                               ,/,
+     &                                                                /,
+     &' Format ',I10                                                 ,/)
 C
 C
 C=======================================================================
@@ -1891,8 +1871,6 @@ C
 C=======================================================================
 C 13. FIN
 C=======================================================================
-C Les impressions ne seront finies qu'au debut du calcul.
-C     WRITE(NFECRA,9999)
 C
 C
       RETURN

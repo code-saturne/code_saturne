@@ -186,8 +186,9 @@ C
       INTEGER          IOK   , INIFOK, IOKDT
       INTEGER          NCELOK, NFAIOK, NFABOK, NSOMOK
       INTEGER          IERROR, IRTYP,  ITYSUP, NBVAL
-      INTEGER          IBIDON, NBERRO, INIERR, IVERS
+      INTEGER          NBERRO, INIERR, IVERS
       INTEGER          ILU   , ILECEC, IDEBLU, IANNUL, IERRCH
+      INTEGER          IMPAMX
       INTEGER          NFMTPH, NFMTSC, NFMTFL, NFMTMO, NFMTCH, NFMTCL
       INTEGER          NFMTST
       INTEGER          NUMFLU(NVARMX)
@@ -253,7 +254,7 @@ C=======================================================================
 C
 C  ---> Ouverture du fichier (ILECEC = 1 : lecture)
       ILECEC = 1
-      CALL OPNSUI(FICAMX,LEN(FICAMX),ILECEC,IBIDON,IMPAMX,IERROR)
+      CALL OPNSUI(FICAMX,LEN(FICAMX),ILECEC,IMPAMX,IERROR)
 C     ===========
       IF (IERROR.NE.0) THEN
         WRITE(NFECRA,9000) FICAMX

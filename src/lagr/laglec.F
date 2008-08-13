@@ -167,13 +167,14 @@ C
       INTEGER          IDEBIA , IDEBRA
       INTEGER          NCELOK , NFAIOK , NFABOK , NSOMOK
       INTEGER          IERROR , IRTYP  , ITYSUP , NBVAL
-      INTEGER          ILECEC , NBERRO , IVERS  , IBIDON
+      INTEGER          ILECEC , NBERRO , IVERS
       INTEGER          MVLS   , IVAR   , IP     , ICHA
       INTEGER          IFAC   , IEL    , IOK    , IPHAS
       INTEGER          JPHYLA , JTPVAR , JDPVAR , JMPVAR
       INTEGER          JSTTIO , JDSTNT , MSTIST , MVLSTS
       INTEGER          MSTBOR , MUSBOR , MSTITS , JTURB, JTYTUR
       INTEGER          MODE   , IPAS   , IVL    , NCLSTO
+      INTEGER          IMPAML , IMPMLS
 C
 C***********************************************************************
 C=======================================================================
@@ -258,7 +259,7 @@ C
 C
 C     (ILECEC=1:lecture)
       ILECEC = 1
-      CALL OPNSUI(FICAML,LEN(FICAML),ILECEC,IBIDON,IMPAML,IERROR)
+      CALL OPNSUI(FICAML,LEN(FICAML),ILECEC,IMPAML,IERROR)
 C     ===========
       IF(IERROR.NE.0) THEN
         WRITE(NFECRA,9010) FICAML, FICAML
@@ -651,7 +652,7 @@ C
 C
 C     (ILECEC=1:lecture)
         ILECEC = 1
-        CALL OPNSUI(FICMLS,LEN(FICMLS),ILECEC,IBIDON,IMPMLS,IERROR)
+        CALL OPNSUI(FICMLS,LEN(FICMLS),ILECEC,IMPMLS,IERROR)
 C       ===========
         IF(IERROR.NE.0) THEN
           WRITE(NFECRA,9010) FICMLS, FICMLS

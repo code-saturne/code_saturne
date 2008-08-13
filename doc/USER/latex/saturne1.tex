@@ -3088,14 +3088,10 @@ same with the other physical properties (they are stored in the restart
 file only when they are extrapolated in time, or with the Joule effect for the
 specific heat).
 
-When reading \texttt{suiava}, \texttt{suiavx}, \texttt{rayava},
-\texttt{lagava}, \texttt{lasava} or \texttt{t1dava}, the file format (binary or
-ASCII) is automatically determined by the code. When writing these files, the
-format can be specified by the user (see IFOAVA\index{IFOAVA}, IFOAVX\index{IFOAVX},
-IFOAVR\index{IFOAVR}, IFOAVL\index{IFOAVL}, IFOVLS\index{IFOVLS} and
-IFOVT1\index{IFOVT1}). The file \texttt{vorava} has a different structure from
-the other ones and is always in ASCII. Therefore there is no variable to specify
-its format.
+Apart from \texttt{vorava} which has a different structure and is
+always in ASCII format, all the restart files are binary
+files. Nonetheless, they may be dumped by the \texttt{cs\_io\_dump}
+tool provided with the Preprocessor.
 
 In the case of parallel calculations, it should be noted that all the processors
 will write their restart data in the same files. Hence, for instance, there will

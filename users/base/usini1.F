@@ -1025,22 +1025,6 @@ C
 C=======================================================================
 C
 C
-C Format des fichiers
-C ===================
-C
-C --- Amont : automatique
-C
-C ---  Aval  : Pour fichiers suite unformatted (0) ou formatted (1)
-C       IFOAVA Fichier suite principal
-C       IFOAVX Fichier suite auxiliaire
-C
-C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
-C
-      IFOAVA = 0
-      IFOAVX = 0
-C
-C CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
-C
 C Options du calcul (optcal.h)
 C ============================
 C

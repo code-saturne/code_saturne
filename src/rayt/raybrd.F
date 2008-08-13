@@ -269,7 +269,7 @@ C
       ENTETE = ' '
       WRITE(ENTETE,'(A5,I1,A1)')'bord_',IPHAS,'.'
 C
-      IMPRAY = IMPAVR
+      IMPRAY = 20
 C
 C=======================================================================
 C 2.  ECRITURE DU MAILLAGE DE PEAU AU FORMAT ENSIGHT GOLD

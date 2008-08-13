@@ -113,24 +113,6 @@ C=======================================================================
 C 1. ENTREES SORTIES entsor.h : formats 1000
 C=======================================================================
 C
-C --- Fichiers
-C
-C
-      IF (IFOAVA.NE.0.AND.IFOAVA.NE.1) THEN
-        WRITE(NFECRA,1000) IFOAVA
-        IOK = IOK + 1
-      ENDIF
-C
-      IF (IFOAVX.NE.0.AND.IFOAVX.NE.1) THEN
-        WRITE(NFECRA,1000) IFOAVX
-        IOK = IOK + 1
-      ENDIF
-C    Rayonnement
-      IF ( (IFOAVR.NE.0.AND.IFOAVR.NE.1)    ) THEN
-        WRITE(NFECRA,1001) IFOAVR
-        IOK = IOK + 1
-      ENDIF
-C
 C --- Dimension
 C
       IF (NDIM.NE.3) THEN
@@ -1824,40 +1806,6 @@ C=======================================================================
 C 8. FORMATS VERIFICATION
 C=======================================================================
 C
- 1000 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    IFOAVA DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  IFOAVA indique le format (Binaire/ASCII) du               ',/,
-     &'@    fichier suite aval principal.                           ',/,
-     &'@  Verifier les parametres donnes via l''interface ou usini1.',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 1001 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    IFOAVR DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  IFOAVR indique le format (Binaire/ASCII) du fichier suite ',/,
-     &'@    aval rayonnement.                                       ',/,
-     &'@  Verifier les parametres donnes via l''interface ou usini1.',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
  1100 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,

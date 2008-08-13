@@ -235,6 +235,7 @@ C
       INTEGER          ITRAV1 , IP
       INTEGER          IERROR , NBERRO , IRTYP , ITYSUP , NBVAL
       INTEGER          IVERS  , ILECEC , IPHAS
+      INTEGER          IMPAVR
 C
 C***********************************************************************
 C=======================================================================
@@ -264,17 +265,12 @@ C     Codage en chaine de caracteres du numero de la phase
       ENDDO
 C
 C ---> Ouverture (et on saute si erreur)
-C     IFOAVR       =0 --> non formate       =1 --> formate
 C     ILECEC = 2 : ecriture
 C
-      IF(IFOAVR.EQ.0) THEN
-        WRITE(NFECRA,6010)
-      ELSEIF(IFOAVR.EQ.1) THEN
-        WRITE(NFECRA,6020)
-      ENDIF
+      WRITE(NFECRA,6010)
 C
       ILECEC = 2
-      CALL OPNSUI(FICAVR, LEN(FICAVR), ILECEC, IFOAVR, IMPAVR, IERROR)
+      CALL OPNSUI(FICAVR, LEN(FICAVR), ILECEC, IMPAVR, IERROR)
 C     ===========
       IF (IERROR.NE.0) THEN
         WRITE(NFECRA,9020)
@@ -467,11 +463,8 @@ C--------
 C
  6010 FORMAT (/, 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT ',/,
      &           3X,'   ------------------------------------------',/,
-     &           3X,' Ecriture d''un fichier suite binaire        ',/)
+     &           3X,' Ecriture d''un fichier suite                ',/)
 C
- 6020 FORMAT (/, 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT ',/,
-     &           3X,'   ------------------------------------------',/,
-     &           3X,' Ecriture d''un fichier suite formate (ASCII)',/)
  6011 FORMAT (   3X,'   Debut de l''ecriture                      ',/)
  6012 FORMAT (   3X,'   Fin de l''ecriture des dimensions         ',/)
  6013 FORMAT (   3X,'   Fin de l''ecriture des donnees            ',/)

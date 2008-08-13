@@ -59,18 +59,6 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Type de fichier suite
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_SUITE_TYPE_ASCII,           /* Fichier suite ASCII                       */
-  CS_SUITE_TYPE_BINAIRE          /* Fichier suite binaire                     */
-
-} cs_suite_type_t;
-
-
-/*----------------------------------------------------------------------------
  *  Fichier en lecture ou écriture
  *----------------------------------------------------------------------------*/
 
@@ -106,10 +94,10 @@ typedef enum {
 #define CS_SUITE_SUCCES          0 /* Réussite */
 #define CS_SUITE_ERR_NUM_FIC    -1 /* Pas de suite du numéro indiqué */
 #define CS_SUITE_ERR_TYPE_FIC   -2 /* Type de fichier incorrect */
-#define CS_SUITE_ERR_SUPPORT    -3 /* Support indéfini/de dimension différente */
+#define CS_SUITE_ERR_SUPPORT    -3 /* Support indéfini/dimension incorrecte */
 #define CS_SUITE_ERR_TYPE_VAL   -4 /* Type de valeur inconnu ou imprévu */
 #define CS_SUITE_ERR_NBR_VAL    -5 /* Nombre de valeurs ne correspond pas */
-#define CS_SUITE_ERR_MODE       -6 /* Mode d'ouverure du fichier incompatible */
+#define CS_SUITE_ERR_MODE       -6 /* Mode d'ouverture incompatible */
 #define CS_SUITE_ERR_EXISTE     -7 /* Enregistrement non disponible */
 
 
@@ -139,13 +127,12 @@ typedef struct _cs_suite_t cs_suite_t;
  *
  * Interface Fortran :
  *
- * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, IFORMA, NUMSUI)
+ * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, NUMSUI, IERROR)
  * *****************
  *
  * CHARACTER*       NOMSUI      : --> : Nom du fichier suite
  * INTEGER          LNGNOM      : --> : Longueur du nom du fichier suite
  * INTEGER          IREAWR      : --> : 1 pour lecture, 2 pour écriture
- * INTEGER          IFORMA      : --> : 0 pour binaire, 1 pour formaté
  * INTEGER          NUMSUI      : <-- : Numéro du fichier suite ouvert
  * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
  *----------------------------------------------------------------------------*/
@@ -155,9 +142,9 @@ void CS_PROCF (opnsui, OPNSUI)
  const char       *const nomsui,  /* --> Nom du fichier                       */
  const cs_int_t   *const lngnom,  /* --> Longueur du nom                      */
  const cs_int_t   *const ireawr,  /* --> 1 pour lecture, 2 pour écriture      */
- const cs_int_t   *const iforma,  /* --> 0 pour binaire, 1 pour formaté       */
        cs_int_t   *const numsui,  /* <-- Numéro du ficher suite ouvert        */
        cs_int_t   *const ierror   /* <-- 0 pour succès, < 0 pour erreur       */
+                                  /*     (> 0, ou < 0 en cas d'erreur)        */
  CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
                                   /*     inutilisés lors de l'appel mais      */
                                   /*     placés par de nombreux compilateurs) */
@@ -172,13 +159,13 @@ void CS_PROCF (opnsui, OPNSUI)
  * SUBROUTINE CLSSUI (NUMSUI)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : numéro du fichier suite à fermer
+ * INTEGER          NUMSUI      : <-> : numéro du fichier suite à fermer
  * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (clssui, CLSSUI)
 (
- const cs_int_t   *const numsui,  /* --> Numéro du ficher suite à fermer      */
+ const cs_int_t   *const numsui,  /* <-> Numéro du ficher suite à fermer      */
        cs_int_t   *const ierror   /* <-- Numéro du ficher suite ouvert        */
 );
 
@@ -317,8 +304,7 @@ void CS_PROCF (ecrsui, ECRSUI)
 cs_suite_t * cs_suite_cree
 (
  const char             *const nom,         /* --> nom de base du fichier     */
- const cs_suite_mode_t         mode,        /* --> Lecture ou écriture        */
- const cs_suite_type_t         type         /* --> ASCII ou binaire           */
+ const cs_suite_mode_t         mode         /* --> Lecture ou écriture        */
 );
 
 

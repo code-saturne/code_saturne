@@ -1,3 +1,34 @@
+* 13/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Force restart files in binary format, and remove
+  unused commons.
+  modified documentation:
+    doc/USER/latex/saturne1.tex
+    doc/USER/latex/saturne2.tex
+  modified routines:
+    include/base/cs_gui.h
+    include/base/cs_suite.h
+    include/base/cs_tpar1d.h
+    include/base/entsor.h
+    src/base/caltri.F
+    src/base/cs_gui.c
+    src/base/cs_suite.c
+    src/base/cs_tpar1d.c
+    src/base/ecrava.F
+    src/base/impini.F
+    src/base/iniini.F
+    src/base/iniusi.F
+    src/base/lecamp.F
+    src/base/lecamx.F
+    src/base/modini.F
+    src/base/varpos.F
+    src/base/verini.F
+    src/lagr/laglec.F
+    src/lagr/lagout.F
+    src/rayt/raybrd.F
+    src/rayt/raylec.F
+    src/rayt/rayout.F
+    users/base/usini1.F
+
 * 13/08/2008 - David Monfort <david.monfort@edf.fr>
   Update the documentation according to the scripts translation.
   modified files:

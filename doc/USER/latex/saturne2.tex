@@ -136,9 +136,13 @@ useful if and only if IFOENV = 0}
 {name of the geometric file (if the Preprocessor is not used)\\
 useful if and only if IFOENV = 0}
 
-\motcle{IMPAMO}{I}{strictly positive integer}{11}{O}{L3}
-{unit of the upstream restart file\\
-useful if and only if ISUITE = 1}
+\motcle{IMPSTP}{I}{strictly positive integer}{12}{O}{L3}
+{unit of the calculation interactive stop file\\
+always useful (because of the interactive character)}
+
+\motcle{FICSTP}{C}{string of 6 characters}{\tt ficstp}{O}{L3}
+{name of the calculation interactive stop file (see p.\pageref{prg_ficstp})\\
+always useful (because of the interactive characteristic)}
 
 \motcle{FICAMO}{C}{string of 13 characters}{\tt suiamo}{O}{L3}
 {name of the main upstream restart file. Its ``format'' (ASCII or binary)
@@ -150,22 +154,6 @@ useful if and only if ISUITE = 1}
 is automatically determined by the code.\\
 useful if and only if ISUITE = 1}
 
-\motcle{IMPSTP}{I}{strictly positive integer}{12}{O}{L3}
-{unit of the calculation interactive stop file\\
-always useful (because of the interactive character)}
-
-\motcle{FICSTP}{C}{string of 6 characters}{\tt ficstp}{O}{L3}
-{name of the calculation interactive stop file (see p.\pageref{prg_ficstp})\\
-always useful (because of the interactive characteristic)}
-
-\motcle{IMPAVA}{I}{strictly positive integer}{20}{O}{L3}
-{unit of the main downstream restart file\\
-always useful}
-
-\motcle{IMPAVX}{I}{strictly positive integer}{IMPAVA}{O}{L3}
-{unit of the auxiliary downstream restart file\\
-always useful}
-
 \motcle{FICAVA}{C}{string of 13 characters}{\tt suiava}{O}{L3}
 {name of the main downstream restart file\\
 always useful}
@@ -174,36 +162,16 @@ always useful}
 {name of the auxiliary downstream restart file\\
 always useful}
 
-\motcle{IFOAVA}{I}{1 or 0}{0}{O}{L2}
-{indicator (1: formatted, 0: binary main downstream restart file)\\
-always useful}
-
-\motcle{IFOAVX}{I}{1 or 0}{0}{O}{L2}
-{indicator (1: formatted, 0: binary auxiliary downstream restart file)\\
-always useful}
-
 
 \minititre{1D wall thermal module}
-
-\motcle{IMPMT1}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the upstream restart file for the 1D wall thermal module\\
-useful if and only if ISUIT1 = 1 and NFPT1D$>$0}
 
 \motcle{FICMT1}{C}{string of 13 characters}{\tt t1damo}{O}{L3}
 {name of the upstream restart file for the 1D wall thermal module.
 Its ``format'' (ASCII or binary) is  automatically determinedby the code.\\
 useful if and only if ISUIT1 = 1 and NFPT1D$>$0}
 
-\motcle{IMPVT1}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the downstream restart file for the 1D wall thermal module\\
-useful if and only if NFPT1D$>$0}
-
 \motcle{FICVT1}{C}{string of 13 characters}{\tt t1dava}{O}{L3}
 {name of the upstream restart file for the 1D wall thermal module\\
-useful if and only if NFPT1D$>$0}
-
-\motcle{IFOVT1}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
-{indicator (1: formatted, 0: binary downstream restart file for the 1D wall thermal module)\\
 useful if and only if NFPT1D$>$0}
 
 \minititre{Vortex method for LES}
@@ -222,7 +190,7 @@ useful if and only if ISUIVO = 1 et IVRTEX=1}
 {unit of the downstream restart file for the vortex method\\
 useful if and only if IVRTEX=1}
 
-\motcle{FICVT1}{C}{string of 13 characters}{\tt vorava}{O}{L3}
+\motcle{FICVVO}{C}{string of 13 characters}{\tt vorava}{O}{L3}
 {name of the upstream restart file for the vortex method\\
 Its ``format'' is always ASCII (this file has a different structure from the
 other restart files)\\
@@ -239,27 +207,14 @@ useful if and only if IVRTEX=1}
 
 \minititre{Radiation}
 
-\motcle{IMPAMR}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the radiation upstream restart file\\
-useful if and only if ISUIRD = 1}
-
 \motcle{FICAMR}{C}{string of 13 characters}{\tt rayamo}{O}{L3}
 {name of the radiation upstream restart file. Its ``format'' (ASCII or
 binary) is automatically determined by the code.\\
 useful if and only if ISUIRD = 1}
 
-\motcle{IMPAVR}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the radiation downstream restart file\\
-always useful in case of radiation modeling}
-
 \motcle{FICAVR}{C}{string of 13 characters}{\tt rayava}{O}{L3}
 {name of the radiation downstream restart file \\
 always useful in case of radiation modeling}
-
-\motcle{IFOAVR}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
-{indicator (1: formatted, 0:binary radiation downstream restart file)\\
-always useful in case of radiation modeling}
-
 
 
 \minititre{Thermochemistry}
@@ -288,20 +243,11 @@ useful in case of gas or pulverised coal combustion}
 
 \minititre{Lagrangian}
 
-\motcle{IMPAML}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the upstream restart file in case of Lagrangian modeling\\
-useful if and only if ISUILA = 1}
-
 \motcle{FICAML}{C}{string of 6 characters}{\tt lagamo}{O}{L3}
 {name of the upstream restart file in case of Lagrangian modeling.
 Its ``format'' (ASCII or
 binary) is automatically determined by the code.\\
 useful if and only if ISUILA = 1}
-
-\motcle{IMPMLS}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
-{unit of the upstream restart file for the statistics in case of
-Lagrangian modeling\\
-useful if and only if ISUIST = 1}
 
 \motcle{FICMLS}{C}{string of 13 characters}{\tt lasamo}{O}{L3}
 {name of the upstream restart file for the statistics in case of
@@ -309,31 +255,13 @@ Lagrangian modeling. Its ``format'' (ASCII or
 binary) is automatically determined by the code.\\
 useful if and only if ISUIST = 1}
 
-\motcle{IMPAVL}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the downstream restart file in case of Lagrangian modeling\\
-always useful in case of Lagrangian modeling}
-
 \motcle{FICAVL}{C}{string of 13 characters}{\tt lagava}{O}{L3}
 {name of the downstream restart file in case of Lagrangian modeling\\
 always useful in case of Lagrangian modeling}
 
-\motcle{IFOAVL}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
-{indicator (1: formatted, 0: binary Lagrangian downstream restart file)\\
-always useful in case of Lagrangian modeling}
-
-\motcle{IMPVLS}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the downstream restart file for the statistics in case of
-Lagrangian modeling\\
-useful in case of Lagrangian modeling with statistics}
-
 \motcle{FICVLS}{C}{string of 6 characters}{\tt lasava}{O}{L3}
 {name of the downstream restart file for the statistics in case of
 Lagrangian modeling\\
-useful in case of Lagrangian modeling with statistics}
-
-\motcle{IFOVLS}{I}{1 or 0}{\tt IFOAVA}{O}{L2}
-{indicator (1: formatted, 0: binary downstream restart file for the
-statistics in case of Lagrangian modeling)\\
 useful in case of Lagrangian modeling with statistics}
 
 \motcle{IMPLA1}{I}{strictly positive integer}{50}{O}{L3}

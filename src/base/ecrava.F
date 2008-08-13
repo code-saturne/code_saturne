@@ -175,6 +175,7 @@ C
       INTEGER          IFAIT (NVARMX)
       INTEGER          ICDTVU(NBMOM2)
       INTEGER          IW1, IFINRA, IFAC, IEL, ISTR
+      INTEGER          IMPAVA, IMPAVX
       DOUBLE PRECISION TMPSTR(27)
 C
 C***********************************************************************
@@ -287,20 +288,13 @@ C
 C=======================================================================
 C 2. OUVERTURE FICHIER SUITE DE BASE
 C=======================================================================
-C IFORMA       =0 --> non formate       =1 --> formate
 C ILECEC = 2 : ecriture
 C
       WRITE(NFECRA,1000)
 C
-      IF(IFOAVA.EQ.0) THEN
-        WRITE(NFECRA,1010)
-      ELSEIF(IFOAVA.EQ.1) THEN
-        WRITE(NFECRA,1020)
-      ENDIF
-C
       ILECEC = 2
 C
-      CALL OPNSUI(FICAVA, LEN(FICAVA), ILECEC, IFOAVA, IMPAVA, IERROR)
+      CALL OPNSUI(FICAVA, LEN(FICAVA), ILECEC, IMPAVA, IERROR)
 C     ===========
       IF (IERROR.NE.0) THEN
         WRITE(NFECRA,8000) FICAVA
@@ -540,18 +534,11 @@ C     Si  l'ecriture du fichier suite auxiliaire est demandee
 C
 C 5.0. OUVERTURE FICHIER SUITE AUXILIAIRE
 C========================================
-C IFORMA       =0 --> non formate       =1 --> formate
 C
         WRITE(NFECRA,2000)
 C
-        IF(IFOAVX.EQ.0) THEN
-          WRITE(NFECRA,1010)
-        ELSEIF(IFOAVX.EQ.1) THEN
-          WRITE(NFECRA,1020)
-        ENDIF
-C
         ILECEC = 2
-        CALL OPNSUI(FICAVX, LEN(FICAVX), ILECEC, IFOAVX, IMPAVX, IERROR)
+        CALL OPNSUI(FICAVX, LEN(FICAVX), ILECEC, IMPAVX, IERROR)
 C       ===========
         IF (IERROR.NE.0) THEN
           WRITE(NFECRA,8001) FICAVX
@@ -2159,8 +2146,6 @@ C=======================================================================
 C
  1000 FORMAT(3X,'** ECRITURE DU FICHIER SUITE PRINCIPAL',/,
      &       3X,'   ----------------------------------- ',/)
- 1010 FORMAT(3X,'   Ouverture d un fichier binaire',/)
- 1020 FORMAT(3X,'   Ouverture d un fichier ASCII  ',/)
  1100 FORMAT(' Debut de l''ecriture                                   ')
  1110 FORMAT('  ',A54                                                  )
  1200 FORMAT(' Fin de l''ecriture                                     ')

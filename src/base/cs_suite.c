@@ -74,6 +74,13 @@ extern "C" {
  *  Structures locales
  *============================================================================*/
 
+typedef enum {
+
+  CS_SUITE_TYPE_ASCII,           /* Fichier suite ASCII */
+  CS_SUITE_TYPE_BINAIRE          /* Fichier suite binaire */
+
+} cs_suite_type_t;
+
 typedef struct _cs_suite_rec_t {
 
   char            *nom;          /* Nom de l'enregistrement */
@@ -498,13 +505,12 @@ static void cs_loc_suite_init_support
  *
  * Interface Fortran :
  *
- * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, IFORMA, NUMSUI)
+ * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, NUMSUI, IERROR)
  * *****************
  *
  * CHARACTER*       NOMSUI      : --> : Nom du fichier suite
  * INTEGER          LNGNOM      : --> : Longueur du nom du fichier suite
  * INTEGER          IREAWR      : --> : 1 pour lecture, 2 pour écriture
- * INTEGER          IFORMA      : --> : 0 pour binaire, 1 pour formaté
  * INTEGER          NUMSUI      : <-- : Numéro du fichier suite ouvert
  * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
  *----------------------------------------------------------------------------*/
@@ -514,9 +520,9 @@ void CS_PROCF (opnsui, OPNSUI)
  const char       *const nomsui,  /* --> Nom du fichier                       */
  const cs_int_t   *const lngnom,  /* --> Longueur du nom                      */
  const cs_int_t   *const ireawr,  /* --> 1 pour lecture, 2 pour écriture      */
- const cs_int_t   *const iforma,  /* --> 0 pour binaire, 1 pour formaté      */
        cs_int_t   *const numsui,  /* <-- Numéro du ficher suite ouvert        */
        cs_int_t   *const ierror   /* <-- 0 pour succès, < 0 pour erreur       */
+                                  /*     (> 0, ou < 0 en cas d'erreur)        */
  CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
                                   /*     inutilisés lors de l'appel mais      */
                                   /*     placés par de nombreux compilateurs) */
@@ -527,11 +533,11 @@ void CS_PROCF (opnsui, OPNSUI)
   cs_int_t ind;
 
   cs_suite_mode_t suite_mode;
-  cs_suite_type_t suite_type;
 
 
   /* Initialisation */
 
+  *numsui = 0;
   *ierror = CS_SUITE_SUCCES;
 
   /* Traitement du nom pour l'API C */
@@ -556,33 +562,6 @@ void CS_PROCF (opnsui, OPNSUI)
 
       *ierror = CS_SUITE_ERR_MODE;
     }
-
-  }
-
-  if (*ierror == CS_SUITE_SUCCES) {
-
-    if (suite_mode == CS_SUITE_MODE_ECRITURE) {
-
-      switch (*iforma) {
-      case 0:
-        suite_type = CS_SUITE_TYPE_BINAIRE;
-        break;
-      case 1:
-        suite_type = CS_SUITE_TYPE_ASCII;
-        break;
-      default:
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Le type du fichier suite <%s>\n"
-                     "doit être égal à 0 (binaire) ou 1 (formaté) "
-                     "et non <%d>\n(binaire par défaut)"),
-                   nombuf, (int)(*iforma));
-        *ierror = CS_SUITE_ERR_TYPE_FIC;
-      }
-
-    }
-    else
-      suite_type = CS_SUITE_TYPE_BINAIRE; /* Inutile, mais évite warning
-                                             sous Purify */
 
   }
 
@@ -613,9 +592,7 @@ void CS_PROCF (opnsui, OPNSUI)
   /* Création du fichier suite */
 
   if (*ierror == CS_SUITE_SUCCES)
-    cs_glob_suite_ptr_tab[ind] = cs_suite_cree(nombuf,
-                                               suite_mode,
-                                               suite_type);
+    cs_glob_suite_ptr_tab[ind] = cs_suite_cree(nombuf, suite_mode);
 
   /* Libération de mémoire si nécessaire */
 
@@ -642,13 +619,13 @@ void CS_PROCF (opnsui, OPNSUI)
  * SUBROUTINE CLSSUI (NUMSUI)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : numéro du fichier suite à fermer
+ * INTEGER          NUMSUI      : <-> : numéro du fichier suite à fermer
  * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (clssui, CLSSUI)
 (
- const cs_int_t   *const numsui,  /* --> Numéro du ficher suite à fermer      */
+ const cs_int_t   *const numsui,  /* <-> Numéro du ficher suite à fermer      */
        cs_int_t   *const ierror   /* <-- Numéro du ficher suite ouvert        */
 )
 {
@@ -950,8 +927,7 @@ void CS_PROCF (ecrsui, ECRSUI)
 cs_suite_t * cs_suite_cree
 (
  const char             *const nom,         /* --> nom de base du fichier     */
- const cs_suite_mode_t         mode,        /* --> Lecture ou écriture        */
- const cs_suite_type_t         type         /* --> ASCII ou binaire           */
+ const cs_suite_mode_t         mode         /* --> Lecture ou écriture        */
 )
 {
   cs_bool_t     lit_fichier;
@@ -973,8 +949,7 @@ cs_suite_t * cs_suite_cree
   /* Initialisation des autres champs */
 
   suite->mode = mode;
-  suite->type
-    = (mode == CS_SUITE_MODE_LECTURE) ? CS_SUITE_TYPE_BINAIRE : type ;
+  suite->type = CS_SUITE_TYPE_BINAIRE;
 
   suite->nbr_fic = 0;
   suite->fic     = NULL;

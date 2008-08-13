@@ -337,22 +337,6 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iscapp);
 
 /*----------------------------------------------------------------------------
- * Restart files format.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIFOA (IFOAVA, IFOAVX)
- * *****************
- *
- * INTEGER          IFOAVA  <--   main restart file format
- * INTEGER          IFOAVX  <--   auxiliary restart file format
- *----------------------------------------------------------------------------*/
-
-
-void CS_PROCF (csifoa, CSIFOA) (int *const ifoava,
-                                int *const ifoavx);
-
-/*----------------------------------------------------------------------------
  * Restart parameters.
  *
  * Fortran Interface:

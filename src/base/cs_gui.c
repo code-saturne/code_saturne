@@ -3878,31 +3878,6 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 }
 
 /*----------------------------------------------------------------------------
- * Restart files format.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIFOA (IFOAVA, IFOAVX)
- * *****************
- *
- * INTEGER          IFOAVA  <--   main restart file format
- * INTEGER          IFOAVX  <--   auxiliary restart file format
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csifoa, CSIFOA) (int *const ifoava,
-                                int *const ifoavx)
-{
-  cs_gui_restart_parameters_file_format("main_restart",      ifoava);
-  cs_gui_restart_parameters_file_format("auxiliary_restart", ifoavx);
-
-#if _XML_DEBUG_
-  bft_printf(_("==>CSIFOA\n"));
-  bft_printf(_("--ifoava = %i\n"), *ifoava);
-  bft_printf(_("--ifoavx = %i\n"), *ifoavx);
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Restart parameters.
  *
  * Fortran Interface:

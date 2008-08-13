@@ -260,6 +260,7 @@ C
       INTEGER          NFIN   , IFORCE , ICHA   , II
       INTEGER          ITRAV1
       INTEGER          IPAS   , JJ
+      INTEGER          IMPAVL , IMPVLS
 C
 C***********************************************************************
 C=======================================================================
@@ -276,19 +277,12 @@ C
       IPHAS = ILPHAS
 C
 C ---> Ouverture (et on saute si erreur)
-C     IFOAVL   =0 --> non formate       =1 --> formate
 C     ILECEC = 2 : ecriture
 C
-      IF (IFOAVL.EQ.0) THEN
-        WRITE(NFECRA,6010)
-      ELSE IF (IFOAVL.EQ.1) THEN
-        WRITE(NFECRA,6020)
-      ELSE
-        WRITE(NFECRA,9011) FICAVL, 'IFOAVL', IFOAVL
-      ENDIF
+      WRITE(NFECRA,6010)
 C
       ILECEC = 2
-      CALL OPNSUI(FICAVL, LEN(FICAVL), ILECEC, IFOAVL, IMPAVL, IERROR)
+      CALL OPNSUI(FICAVL, LEN(FICAVL), ILECEC, IMPAVL, IERROR)
 C     ===========
       IF (IERROR.NE.0) THEN
         WRITE(NFECRA,9010) FICAVL
@@ -579,19 +573,12 @@ C
 C
 C
 C ---> Ouverture (et on saute si erreur)
-C     IFOVLS    =0 --> non formate       =1 --> formate
 C     ILECEC = 2 : ecriture
 C
-        IF (IFOVLS.EQ.0) THEN
-          WRITE(NFECRA,7010)
-        ELSE IF (IFOVLS.EQ.1) THEN
-          WRITE(NFECRA,7020)
-        ELSE
-          WRITE(NFECRA,9011) FICVLS, 'IFOVLS', IFOVLS
-        ENDIF
+        WRITE(NFECRA,7010)
 C
         ILECEC = 2
-        CALL OPNSUI(FICVLS, LEN(FICVLS), ILECEC, IFOVLS, IMPVLS, IERROR)
+        CALL OPNSUI(FICVLS, LEN(FICVLS), ILECEC, IMPVLS, IERROR)
 C       ===========
         IF (IERROR.NE.0) THEN
           WRITE(NFECRA,9510) FICVLS
@@ -1004,13 +991,9 @@ C--------
 C
  6010 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN       ',/,
      &           3X,'   -------------------------------------       ',/,
-     &           3X,' Ecriture d''un fichier suite binaire          ',/,
+     &           3X,' Ecriture d''un fichier suite                  ',/,
      &           3X,'   sur les variables liees aux particules      ',/)
 C
- 6020 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN       ',/,
-     &           3X,'   -------------------------------------       ',/,
-     &           3X,' Ecriture d''un fichier suite formate (ASCII)  ',/,
-     &           3X,'   sur les variables liees aux particules      ',/)
 C
  6011 FORMAT (   3X,'   Debut de l''ecriture                        '  )
  6012 FORMAT (   3X,'   Fin de l''ecriture des infos sur le calcul  '  )
@@ -1020,17 +1003,11 @@ C
 C
  7010 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN       ',/,
      &           3X,'   -------------------------------------       ',/,
-     &           3X,' Ecriture d''un fichier suite binaire          ',/,
+     &           3X,' Ecriture d''un fichier suite                  ',/,
      &           3X,'   sur les statistiques volumiques et aux      ',/,
      &           3X,'   fontieres, ainsi que les termes sources     ',/,
      &           3X,'   de couplage retour                          ',/)
 C
- 7020 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN       ',/,
-     &           3X,'   -------------------------------------       ',/,
-     &           3X,' Ecriture d''un fichier suite formate (ASCII)  ',/,
-     &           3X,'   sur les statistiques volumiques et aux      ',/,
-     &           3X,'   fontieres, ainsi que les termes sources     ',/,
-     &           3X,'   de couplage retour                          ',/)
 C
  7011 FORMAT (   3X,'   Debut de l''ecriture des stats et TS        '  )
  7013 FORMAT (   3X,'   Fin de l''ecriture des statistiques et TS   '  )
@@ -1046,29 +1023,6 @@ C
      &'@                                                            ',/,
      &'@    ERREUR A L''OUVERTURE EN ECRITURE DU FICHIER SUITE      ',/,
      &'@      (',A13,')                                             ',/,
-     &'@                                                            ',/,
-     &'@  Le calcul se termine mais ne fournira pas de fichier      ',/,
-     &'@    suite sur les caracteristiques des particules.          ',/,
-     &'@                                                            ',/,
-     &'@  Verifier que le repertoire de travail est accessible en   ',/,
-     &'@    ecriture et que le fichier suite peut y etre cree.      ',/,
-     &'@  Voir le sous-programme LAGOUT.                            ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
-C
- 9011 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION: A L''ECRITURE DU FICHIER SUITE LAGRANGIEN    ',/,
-     &'@    *********    SUR LES CARACTERISTIQUES DES PARTICULES    ',/,
-     &'@                                                            ',/,
-     &'@    ERREUR A L''OUVERTURE EN ECRITURE DU FICHIER SUITE      ',/,
-     &'@      (',A13,')                                             ',/,
-     &'@                                                            ',/,
-     &'@  Le type du fichier ',A6,' doit valoir 0 ou 1              ',/,
-     &'@    il vaut ici  ',I3                                         ,/,
      &'@                                                            ',/,
      &'@  Le calcul se termine mais ne fournira pas de fichier      ',/,
      &'@    suite sur les caracteristiques des particules.          ',/,

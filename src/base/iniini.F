@@ -129,42 +129,30 @@ C
       IMPGEO = 10
       FICGEO = 'geomet'
 C
-C ---> Unites de base fichiers suite
-C     Amont
-      IMPAMO = 11
-C     Aval
-      IMPAVA = 20
-C
 C ---> Fichier amont
 C
-      IMPAMX = IMPAMO
       FICAMO = 'suiamo'
       FICAMX = 'suiamx'
 C
-C    Module thermique 1D en paroi : on utilise la meme unite
-      IMPMT1 = IMPAMO
+C    Module thermique 1D en paroi
       FICMT1 = 't1damo'
 C
 C    Methode des vortex : on utilise la meme unite
 C                  Pour le fichier de donnees, on specifie l'unite ici, mais le
-C                  nom est laisse dans usvort. On utilise IMPAVA et pas IMPAMO
+C                  nom est laisse dans usvort. On utilise 20 et pas 11
 C                  car en cas d'entree multiple, les deux fichiers doivent etre
 C                  ouverts en meme temps dans VORINI
-      IMPMVO = IMPAMO
+      IMPMVO = 11
       FICMVO = 'voramo'
-      IMPDVO = IMPAVA
+      IMPDVO = 20
 C
-C    Rayonnement : on utilise la meme unite (pour le moment)
-      IMPAMR = IMPAMO
+C    Rayonnement
       FICAMR = 'rayamo'
 C
-C    Lagrangien : on utilise la meme unite (pour le moment)
-C                  y compris pour le fichiers des statistiques
+C    Lagrangien
 C      Fichier suite calcul
-      IMPAML = IMPAMO
       FICAML = 'lagamo'
 C      Fichier suite statistique
-      IMPMLS = IMPAMO
       FICMLS = 'lasamo'
 C
 C ---> Fichier stop
@@ -174,7 +162,6 @@ C
 C
 C ---> Fichier aval
 C
-C     IFOAVA Pour fichiers suite unformatted (0) ou formatted (1)
 C     NTSUIT : Periode de sauvegarde du fichier suite
 C            (il est de toutes facons ecrit en fin de calcul)
 C              -1   : a la fin seulement
@@ -182,44 +169,29 @@ C              0    : par defaut (4 fois par calcul)
 C              > 0  : periode
 C
 C
-      IMPAVX = IMPAVA
       FICAVA = 'suiava'
       FICAVX = 'suiavx'
 C
-      IFOAVA = 0
-      IFOAVX = 0
-C
       NTSUIT = 0
 C
-C    Module thermique 1D en paroi : on utilise la meme unite
-C                  et le format binaire par defaut
-      IMPVT1 = IMPAVA
+C    Module thermique 1D en paroi
       FICVT1 = 't1dava'
-      IFOVT1 = 0
 C
 C    Methode des vortex : on utilise la meme unite
 C                  et le format ascii obligatoirement
 C                  (pas de detection automatique, fichiers de taille faible)
-      IMPVVO = IMPAVA
+      IMPVVO = 20
       FICVVO = 'vorava'
 C
 C    Rayonnement : on utilise la meme unite (pour le moment)
 C                  et le meme format (voir modini)
-      IMPAVR = IMPAVA
       FICAVR = 'rayava'
-      IFOAVR = -1
 C
-C    Lagrangien : on utilise la meme unite (pour le moment)
-C                  y compris pour le fichiers des statistiques
-C                  et le meme format (voir modini)
+C    Lagrangien
 C      Fichier suite calcul
-      IMPAVL = IMPAVA
       FICAVL = 'lagava'
-      IFOAVL = -1
 C      Fichier suite statistique
-      IMPVLS = IMPAVA
       FICVLS = 'lasava'
-      IFOVLS = -1
 C
 C    Fichier listing Lagrangien
 C

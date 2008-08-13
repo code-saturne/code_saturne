@@ -432,10 +432,6 @@ C       ===========
      &             IALE, IUMA, IVMA, IWMA,
      &             ISCA, ISCAPP)
 C
-C     Format des fichiers aval
-        CALL CSIFOA(IFOAVA, IFOAVX)
-C       ===========
-C
 C     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
         CALL CSISUI(ISUITE, ILEAUX, ICCVFG)
 C       ===========

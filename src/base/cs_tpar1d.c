@@ -114,9 +114,7 @@ static void cs_loc_tpar1d_opnsuite
 (
  const char            *nomsui,  /* :  <-  : nom du fichier suite             */
  const cs_int_t        *lngnom,  /* :  <-  : longueur du nom du fichier       */
- const cs_suite_mode_t  ireawr,  /* :  <-  : 1 pour lecture, 2 pour écriture  */
- const cs_int_t        *iforma,  /* :  <-  : 0 pour binaire, 1 pour ascii     */
-       cs_int_t         ierror   /* :  ->  : 0 pour succes, < 0 pour erreur   */
+ const cs_suite_mode_t  ireawr   /* :  <-  : 1 pour lecture, 2 pour écriture  */
 );
 
 
@@ -354,11 +352,10 @@ void CS_PROCF (tpar1d,TPAR1D)
  *
  * SUBROUTINE  LECT1D
  * *********************
-     &  (NOMSUI,LNGNOM,IFOVT1,NFPT1D,NFPT1T,NMXT1D,NFABOR,TPPT1D,IFPT1D)
+     &  (NOMSUI,LNGNOM,NFPT1D,NFPT1T,NMXT1D,NFABOR,TPPT1D,IFPT1D)
  *
  * CHAR             NOMSUI         : <-  : nom du fichier suite
  * INTEGER          LNGNOM         : <-  : longueur du nom du fichier
- * INTEGER          IFOVT1         : <-  : Indicateur binaire (0) / ascii (1)
  * INTEGER          NFPT1D         : <-  : nombre de faces avec couplage
  * INTEGER          NFPT1T         : <-  : nombre de faces avec couplage,
  *                                 :     : cumule tous les processeurs
@@ -379,7 +376,6 @@ void CS_PROCF (lect1d,LECT1D)
 (
  const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const ifovt1,  /* <- Indicateur binaire (0) / ascii (1)    */
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
  const cs_int_t   *const nfpt1t,  /* <- Nbr de  faces avec couplage cumule sur
                                         tous les processeurs                  */
@@ -414,11 +410,9 @@ void CS_PROCF (lect1d,LECT1D)
   /* Ouverture du fichier suite */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
-                         suite_mode,
-                         ifovt1,
-                         ierror);
+                         suite_mode);
 
-  if (ierror != CS_SUITE_SUCCES)
+  if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0 ,
               _("Arret à l'ouverture en lecture du fichier."
                 "suite du module thermique 1D en paroi.\n"
@@ -778,12 +772,11 @@ void CS_PROCF (lect1d,LECT1D)
  *
  * SUBROUTINE  ECRT1D
  * *********************
-     &  (NOMSUI,LNGNOM,IFOVT1,NFPT1D,NMXT1D,NFABOR,TPPT1D,IFPT1D)
+     &  (NOMSUI,LNGNOM,NFPT1D,NMXT1D,NFABOR,TPPT1D,IFPT1D)
  *
  *
  * CHAR             NOMSUI         : <-  : nom du fichier suite
  * INTEGER          LNGNOM         : <-  : longueur du nom
- * INTEGER          IFOVT1         : <-  : indicateur biunaire / ascii
  * INTEGER          NFPT1D         : <-  : nombre de faces avec couplage
  * INTEGER          NMXT1D         : <-  : discretisation maximale des faces
  * INTEGER          NFABOR         : <-  : nombre de faces de bord
@@ -798,7 +791,6 @@ void CS_PROCF (ecrt1d,ECRT1D)
 (
  const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const ifovt1,  /* <- Indicateur binaire (0) / ascii (1)    */
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
  const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
@@ -825,11 +817,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
   /* Ouverture du fichier suite */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
-                         suite_mode,
-                         ifovt1,
-                         ierror);
+                         suite_mode);
 
-  if (ierror != CS_SUITE_SUCCES)
+  if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0 ,
               _("Arret à l'ouverture en écriture du fichier "
                 "suite du module thermique 1D en paroi.\n"
@@ -1093,43 +1083,15 @@ static void cs_loc_tpar1d_opnsuite
 (
  const char      *const nomsui,  /* :  <-  : nom du fichier suite             */
  const cs_int_t  *const lngnom,  /* :  <-  : longueur du nom du fichier       */
- const cs_suite_mode_t  ireawr,  /* :  <-  : 1 pour lecture, 2 pour écriture  */
- const cs_int_t  *const iforma,  /* :  <-  : 0 pour binaire, 1 pour ascii     */
-       cs_int_t         ierror   /* :  ->  : 0 pour succes, < 0 pour erreur   */
+ const cs_suite_mode_t  ireawr   /* :  <-  : 1 pour lecture, 2 pour écriture  */
 )
 {
   char            *nombuf;
 
-  cs_suite_type_t  suite_type;
-
-
-  ierror = CS_SUITE_SUCCES;
-
   /* Traitement du nom pour l'API C */
   nombuf = cs_base_chaine_f_vers_c_cree(nomsui, *lngnom);
 
-  /* Option de création du fichier */
-  switch (*iforma) {
-  case 0:
-    suite_type = CS_SUITE_TYPE_BINAIRE;
-    break;
-  case 1:
-    suite_type = CS_SUITE_TYPE_ASCII;
-    break;
-  default:
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le type du fichier suite <%s>\n"
-                 "doit être égal à 0 (binaire) ou 1 (formaté) "
-                 "et non <%d>\n(binaire par défaut)"),
-               nombuf, (int)(*iforma));
-
-    ierror = CS_SUITE_ERR_TYPE_FIC;
-  }
-
-  if (ierror == CS_SUITE_SUCCES)
-    cs_glob_tpar1d_suite = cs_suite_cree(nombuf,
-                                         ireawr,
-                                         suite_type);
+  cs_glob_tpar1d_suite = cs_suite_cree(nombuf, ireawr);
 
   /* Libération de mémoire si nécessaire */
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);

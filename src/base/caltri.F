@@ -661,7 +661,7 @@ C
 C
           CALL LECT1D
 C         ===========
-     & ( FICMT1     , LEN(FICMT1), IFOVT1     , NFPT1D     , NFPT1T    ,
+     & ( FICMT1     , LEN(FICMT1), NFPT1D     , NFPT1T    ,
      &   NMXT1D     , NFABOR     , IA(INPPT1) , IA(IIFPT1) , RA(IEPPT1),
      &   RA(IRGPT1) , RA(ITPPT1))
 C
@@ -1316,7 +1316,7 @@ C
         IF (NFPT1T.GT.0) THEN
           CALL ECRT1D
 C         ===========
-     & ( FICVT1   , LEN(FICVT1), IFOVT1    , NFPT1D   ,  NMXT1D  ,
+     & ( FICVT1   , LEN(FICVT1), NFPT1D   ,  NMXT1D  ,
      &   NFABOR   , RA(ITPPT1) , IA(IIFPT1))
         ENDIF
 C
@@ -1606,7 +1606,7 @@ C
 
         CALL ECRT1D
 C       ===========
-     & ( FICVT1   , LEN(FICVT1), IFOVT1    , NFPT1D   ,  NMXT1D  ,
+     & ( FICVT1   , LEN(FICVT1), NFPT1D   ,  NMXT1D  ,
      &   NFABOR   , RA(ITPPT1) , IA(IIFPT1))
       ENDIF
 C

@@ -79,7 +79,6 @@ void CS_PROCF (lect1d, LECT1D)
 (
  const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const ifovt1,  /* <- Indicateur binaire (0) / ascii (1)    */
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
  const cs_int_t   *const nfpt1t,  /* <- Nbr de  faces avec couplage cumule sur
                                         tous les processeurs                  */
@@ -106,7 +105,6 @@ void CS_PROCF (ecrt1d, ECRT1D)
 (
  const char       *const nomsui,  /* <- Nom du fichier suite                  */
  const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const ifovt1,  /* <- Indicateur binaire (0) / ascii (1)    */
  const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
  const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */

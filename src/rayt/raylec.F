@@ -137,8 +137,9 @@ C
 C
       INTEGER          JPHAST
       INTEGER          NCELOK , NFAIOK , NFABOK , NSOMOK
-      INTEGER          IERROR , IRTYP  , ITYSUP , NBVAL , IBIDON
+      INTEGER          IERROR , IRTYP  , ITYSUP , NBVAL
       INTEGER          ILECEC , NBERRO , IVERS
+      INTEGER          IMPAMR
 C
 C***********************************************************************
 C=======================================================================
@@ -175,7 +176,7 @@ C
 C
 C     (ILECEC=1:lecture)
           ILECEC = 1
-          CALL OPNSUI(FICAMR,LEN(FICAMR),ILECEC,IBIDON,IMPAMR,IERROR)
+          CALL OPNSUI(FICAMR,LEN(FICAMR),ILECEC,IMPAMR,IERROR)
 C         ===========
           IF (IERROR.NE.0) THEN
             WRITE(NFECRA,9011) FICAMR

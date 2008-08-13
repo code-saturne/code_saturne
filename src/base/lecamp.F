@@ -139,10 +139,11 @@ C
       INTEGER          IR12IP, IR13IP, IR23IP
       INTEGER          IOK   , NCELOK, NFAIOK, NFABOK, NSOMOK
       INTEGER          IERROR, IRTYP,  ITYSUP, NBVAL
-      INTEGER          IBIDON, NBERRO, ILECEC
+      INTEGER          NBERRO, ILECEC
       INTEGER          ITURPH, JTURPH, ITYTPH, JTYTPH
       INTEGER          NFMTPH, NFMTSC, NFMTRU
       INTEGER          JTURB(NPHSMX), JTYTUR(NPHSMX), JALE
+      INTEGER          IMPAMO
       DOUBLE PRECISION D2S3, D2S3XK
 C
 C***********************************************************************
@@ -193,7 +194,7 @@ C=======================================================================
 C
 C  ---> Ouverture du fichier (ILECEC = 1 : lecture)
       ILECEC = 1
-      CALL OPNSUI(FICAMO,LEN(FICAMO),ILECEC,IBIDON,IMPAMO,IERROR)
+      CALL OPNSUI(FICAMO,LEN(FICAMO),ILECEC,IMPAMO,IERROR)
 C     ===========
       IF (IERROR.NE.0) THEN
         WRITE(NFECRA,9100) FICAMO
