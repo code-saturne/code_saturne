@@ -75,10 +75,10 @@ extern "C" {
 
 struct par1d
 {
-  cs_int_t n;       /* Nombre de pts de discrétisation pour la face couplée */
-  cs_real_t *z;     /* Coordonnées des points de discrétisation             */
-  cs_real_t e;      /* Epaisseur associée à la face couplée                 */
-  cs_real_t *t;     /* Température en chacun des points de discrétisation   */
+  cs_int_t    n;     /* Nombre de pts de discrétisation pour la face couplée */
+  cs_real_t  *z;     /* Coordonnées des points de discrétisation             */
+  cs_real_t   e;     /* Épaisseur associée à la face couplée                 */
+  cs_real_t  *t;     /* Température en chacun des points de discrétisation   */
 };
 
 
@@ -100,9 +100,9 @@ static cs_suite_t   *cs_glob_tpar1d_suite = NULL;
 
 static void cs_loc_tpar1d_cree
 (
- const cs_int_t         nfpt1d,   /* : <-  : nombre de faces de bord couplees */
- const cs_int_t  *const nppt1d    /* : <-  : nombre de pts de discrétisation
-                                     sur chaque face couplée                  */
+       cs_int_t   nfpt1d,         /* : <-  : nombre de faces de bord couplees */
+ const cs_int_t  *nppt1d          /* : <-  : nombre de pts de discrétisation
+                                             sur chaque face couplée          */
 );
 
 /*----------------------------------------------------------------------------
@@ -112,10 +112,10 @@ static void cs_loc_tpar1d_cree
 
 static void cs_loc_tpar1d_opnsuite
 (
- const char      *const nomsui,  /* :  <-  : nom du fichier suite             */
- const cs_int_t  *const lngnom,  /* :  <-  : longueur du nom du fichier       */
+ const char            *nomsui,  /* :  <-  : nom du fichier suite             */
+ const cs_int_t        *lngnom,  /* :  <-  : longueur du nom du fichier       */
  const cs_suite_mode_t  ireawr,  /* :  <-  : 1 pour lecture, 2 pour écriture  */
- const cs_int_t  *const iforma,  /* :  <-  : 0 pour binaire, 1 pour ascii     */
+ const cs_int_t        *iforma,  /* :  <-  : 0 pour binaire, 1 pour ascii     */
        cs_int_t         ierror   /* :  ->  : 0 pour succes, < 0 pour erreur   */
 );
 
@@ -133,20 +133,22 @@ static void cs_loc_tpar1d_opnsuite
  * ******************
  *
  * INTEGER          NFPT1D         : <-  : nombre de faces couplees
- * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de maillage pour chaque face
+ * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de maillage
+ *                                 :     : pour chaque face
  * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : epaisseur de paroi a chaque face
- * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique du maillage de chaque face
- * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la temperature sur
- *                                         sur tout le maillage
+ * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique du maillage de
+ *                                 :     : chaque face
+ * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la
+ *                                 :     : temperature sur tout le maillage
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (mait1d,MAIT1D)
 (
- cs_int_t *nf,
- cs_int_t *n,
- cs_real_t *e,
- cs_real_t *r,
- cs_real_t *tp
+ cs_int_t   *nf,
+ cs_int_t    n[],
+ cs_real_t   e[],
+ cs_real_t   r[],
+ cs_real_t   tp[]
 )
 {
   cs_int_t i, k;
@@ -155,14 +157,15 @@ void CS_PROCF (mait1d,MAIT1D)
 
   /* Allocation de la structure globale: cs_glob_par1d et du nombre de pts de
      discrétisation sur chaque face */
-  cs_loc_tpar1d_cree (*nf, n);
+  cs_loc_tpar1d_cree(*nf, n);
 
   /* Initialisation des épaisseurs e de chaque face couplée */
-  for ( i = 0 ; i < *nf ; i++ ) {
+  for (i = 0; i < *nf; i++) {
     cs_glob_par1d[i].e = e[i];
   }
 
-  for ( i = 0 ; i < *nf ; i++ ) {
+  for (i = 0; i < *nf; i++) {
+
     /* Initialisation de la Temperature */
     for (k = 0; k<n[i]; k++) {
       (cs_glob_par1d[i].t)[k] = tp[i];
@@ -173,7 +176,7 @@ void CS_PROCF (mait1d,MAIT1D)
     rr = r[i];
 
     /* Regulier */
-    if ( fabs(rr-1.0) <= 1.0e-6) {
+    if (fabs(rr-1.0) <= 1.0e-6) {
       zz[0] = e[i]/n[i]/2.;
       for (k = 1; k < n[i]; k++) {
         zz[k]=zz[k-1]+e[i]/n[i];
@@ -210,28 +213,31 @@ void CS_PROCF (mait1d,MAIT1D)
  * INTEGER          ICLT1D : <-  : type de condition a la limite exterieure
  * DOUBLE PRECISION TBORD  : <-  : temperature fluide au bord
  * DOUBLE PRECISION HBORD  : <-  : coefficient d'echange fluide au bord
- * DOUBLE PRECISION TET1D  : <-  : temperature sur le bord exterieur (CL de Dirichlet)
- * DOUBLE PRECISION HET1D  : <-  : coefficient d'echange sur la paroi exterieure
+ * DOUBLE PRECISION TET1D  : <-  : temperature sur le bord exterieur
+ *                         :     : (CL de Dirichlet)
+ * DOUBLE PRECISION HET1D  : <-  : coefficient d'echange sur paroi exterieure
  * DOUBLE PRECISION FET1D  : <-  : flux sur la paroi exterieure (CL de flux)
  * DOUBLE PRECISION LAMT1D : <-  : valeur de la conductivite lambda
  * DOUBLE PRECISION RCPT1D : <-  : valeur du produit rho*Cp
- * DOUBLE PRECISION DTPT1D : <-> : valeur du pas de temps pour la resolution dans le solide
- * DOUBLE PRECISION TPPT1D : <-> : temperature physique a l'interface fluide/solide
+ * DOUBLE PRECISION DTPT1D : <-> : valeur du pas de temps pour la resolution
+ *                         :     : dans le solide
+ * DOUBLE PRECISION TPPT1D : <-> : temperature physique a l'interface
+ *                         :     : fluide/solide
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tpar1d,TPAR1D)
 (
-cs_int_t *ii,
-cs_int_t *icdcle,
-cs_real_t *tf,
-cs_real_t *hf,
-cs_real_t *te,
-cs_real_t *he,
-cs_real_t *fe,
-cs_real_t *lb,
-cs_real_t *rocp,
-cs_real_t *dtf,
-cs_real_t *tp
+ cs_int_t *ii,
+ cs_int_t *icdcle,
+ cs_real_t *tf,
+ cs_real_t *hf,
+ cs_real_t *te,
+ cs_real_t *he,
+ cs_real_t *fe,
+ cs_real_t *lb,
+ cs_real_t *rocp,
+ cs_real_t *dtf,
+ cs_real_t *tp
 )
 {
   cs_int_t k;
@@ -283,52 +289,54 @@ cs_real_t *tp
   }
 
   /*Points internes du maillage*/
-  for ( k=1; k <= n-1; k++) {
+  for (k=1; k <= n-1; k++) {
     al[k] = -(*lb)/(zz[k]-zz[k-1]);
   }
 
   m = 2*zz[0];
-  for ( k=1; k <= n-2; k++) {
+  for (k=1; k <= n-2; k++) {
     m = 2*(zz[k]-zz[k-1])-m;
     bl[k] = (*rocp)/(*dtf)*m +(*lb)/(zz[k+1]-zz[k]) +(*lb)/(zz[k]-zz[k-1]);
   }
 
-  for ( k=0; k <= n-2; k++) {
+  for (k=0; k <= n-2; k++) {
     cl[k] =  -(*lb)/(zz[k+1]-zz[k]);
   }
 
   m = 2*zz[0];
   dl[0] = (*rocp)/(*dtf)*m*(cs_glob_par1d[*ii].t)[0];
 
-  for ( k=1; k <= n-1; k++) {
+  for (k=1; k <= n-1; k++) {
     m = 2*(zz[k]-zz[k-1])-m;
     dl[k] = (*rocp)/(*dtf)*m*(cs_glob_par1d[*ii].t)[k];
   }
 
   /*Points frontieres*/
-  /*On initialise bl[0] et bl[n-1] et on les remplit ensuite, au cas ou 0 = n-1 !!*/
+  /*On initialise bl[0] et bl[n-1] et on les remplit ensuite,
+    au cas ou 0 = n-1 !!*/
   bl[0] = 0.;
   bl[n-1] = 0.;
   al[0] = 0.;
   bl[0] = bl[0] + (*rocp)/(*dtf)*2*zz[0] + (*lb)/(zz[1]-zz[0]) - h2;
-  cl[0] = cl[0] ;
+  cl[0] = cl[0];
   dl[0] = dl[0] +f3;
   al[n-1] = al[n-1];
-  bl[n-1] = bl[n-1] + (*rocp)/(*dtf)*2*(cs_glob_par1d[*ii].e-zz[n-1]) +(*lb)/(zz[n-1]-zz[n-2]) -h5;
+  bl[n-1] =   bl[n-1] + (*rocp)/(*dtf)*2*(cs_glob_par1d[*ii].e-zz[n-1])
+            + (*lb)/(zz[n-1]-zz[n-2]) -h5;
   cl[n-1] = 0.;
   dl[n-1] = dl[n-1] +f6;
 
   /*Resolution du systeme par double balayage*/
-  for ( k=1; k<=n-1; k++) {
+  for (k=1; k<=n-1; k++) {
     bl[k] = bl[k] -al[k]*cl[k-1]/bl[k-1];
     dl[k] = dl[k] -al[k]*dl[k-1]/bl[k-1];
   }
 
   cs_glob_par1d[*ii].t[n-1] = dl[n-1]/bl[n-1];
 
-  for ( k=n-2; k>=0; k-- ) {
-    cs_glob_par1d[*ii].t[k] = ( dl[k] -cl[k]*cs_glob_par1d[*ii].t[k+1] )/bl[k];
-    }
+  for (k=n-2; k>=0; k--) {
+    cs_glob_par1d[*ii].t[k] = (dl[k] -cl[k]*cs_glob_par1d[*ii].t[k+1])/bl[k];
+  }
 
 
   /*Calcul de la nouvelle valeur de tp*/
@@ -336,7 +344,6 @@ cs_real_t *tp
   *tp = 1/(*tp)*((*lb)*cs_glob_par1d[*ii].t[0]/zz[0]+(*hf)*(*tf));
 
   BFT_FREE(al);
-
 }
 
 
@@ -353,20 +360,19 @@ cs_real_t *tp
  * INTEGER          LNGNOM         : <-  : longueur du nom du fichier
  * INTEGER          IFOVT1         : <-  : Indicateur binaire (0) / ascii (1)
  * INTEGER          NFPT1D         : <-  : nombre de faces avec couplage
- * INTEGER          NFPT1T         : <-  : nombre de faces avec couplage, cumule sur
- *                                 :     : tous les processeurs
+ * INTEGER          NFPT1T         : <-  : nombre de faces avec couplage,
+ *                                 :     : cumule tous les processeurs
  * INTEGER          NMXT1D         : <-  : discretisation maximale des faces
  * INTEGER          NFABOR         : <-  : nombre de faces de bord
- * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de discretisation des
- *                                         faces couplees
+ * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de discretisation
+ *                                         des faces couplees
  * INTEGER          IFPT1D(NFPT1D) : <-  : tableau d'indirection des faces
  *                                         couplees
- * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : epaisseur de paroi des faces couplees
- * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique associee aux faces couplees
+ * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : epaisseur de paroi faces couplees
+ * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique associee aux
+ *                                 :     : faces couplees
  * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la
  *                                         temperature sur tout le maillage
-
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lect1d,LECT1D)
@@ -380,7 +386,7 @@ void CS_PROCF (lect1d,LECT1D)
  const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
  const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
  const cs_int_t   *const nppt1d,  /* <- Nbr de points de discretisation des
-                                                faces avec module 1D                  */
+                                        faces avec module 1D                  */
  const cs_int_t   *const ifpt1d,  /* -> Tableau d'indirection des faces avec
                                         module 1D                             */
  const cs_real_t  *const eppt1d,  /* <- Epaisseur de paroi des faces          */
@@ -406,18 +412,18 @@ void CS_PROCF (lect1d,LECT1D)
   suite_mode = CS_SUITE_MODE_LECTURE;
 
   /* Ouverture du fichier suite */
-  cs_loc_tpar1d_opnsuite( nomsui,
-                          lngnom,
-                          suite_mode,
-                          ifovt1,
-                          ierror);
+  cs_loc_tpar1d_opnsuite(nomsui,
+                         lngnom,
+                         suite_mode,
+                         ifovt1,
+                         ierror);
 
-  if ( ierror != CS_SUITE_SUCCES )
-    bft_error( __FILE__, __LINE__, 0 ,
-               _("Arret à l''ouverture en lecture du fichier "
-                 "suite du module thermique 1D en paroi.\n"
-                 "Vérifier l''existence et le nom du fichier suite: %s \n")
-               , *nomsui);
+  if (ierror != CS_SUITE_SUCCES)
+    bft_error(__FILE__, __LINE__, 0 ,
+              _("Arret à l'ouverture en lecture du fichier."
+                "suite du module thermique 1D en paroi.\n"
+                "Vérifier l'existence et le nom du fichier suite: %s"),
+              *nomsui);
 
 
   /* Pointeur vers la structure suite globale */
@@ -425,50 +431,51 @@ void CS_PROCF (lect1d,LECT1D)
 
   /* Vérification du support associé au fichier suite */
   cs_suite_verif_support_base(suite, &corresp_cel, &corresp_fac,
-                              &corresp_fbr, &corresp_som );
+                              &corresp_fbr, &corresp_som);
 
   /* On ne s'intéresse qu'aux faces de bord */
-  indfac = ( corresp_fbr == true ? 1 : 0 );
-  if ( indfac == 0 )
-    bft_error( __FILE__, __LINE__, 0 ,
-               _("Arret de lecture du fichier suite du module"
-                 "thermique 1D en paroi.\n"
-                 "Le nombre de faces de bord a été modifié\n"
-                 "Vérifier que le fichier suite correspond bien au cas traité\n"));
+  indfac = (corresp_fbr == true ? 1 : 0);
+  if (indfac == 0)
+    bft_error
+      (__FILE__, __LINE__, 0 ,
+       _("Arrêt de lecture du fichier suite du module"
+         "thermique 1D en paroi.\n"
+         "Le nombre de faces de bord a été modifié.\n"
+         "Vérifier que le fichier suite correspond bien au cas traité."));
 
 
   { /* Lecture de l'en-tête */
     char       nomrub[] = "version_fichier_suite_module_1d";
     cs_int_t   *tabvar;
 
-    BFT_MALLOC( tabvar, 1, cs_int_t);
+    BFT_MALLOC(tabvar, 1, cs_int_t);
 
     nbvent  = 1;
     support = CS_SUITE_SUPPORT_SCAL;
     typ_val = CS_TYPE_cs_int_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-                   "*********                  MODULE THERMIQUE 1D EN PAROI\n"
-                   "      TYPE DE FICHIER INCORRECT\n\n"
-                   "Le fichier %s ne semble pas etre un fichier\n"
-                   "suite de module thermique 1D en paroi.\n"
-                   "Le calcul ne peut etre execute.\n\n"
-                   "Verifier que le fichier suite utilise correspond bien\n"
-                   "a un fichier suite de module thermique 1D en paroi.\n"), *nomsui );
+    if (ierror < CS_SUITE_SUCCES)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
+                  "*********                  MODULE THERMIQUE 1D EN PAROI\n"
+                  "      TYPE DE FICHIER INCORRECT\n\n"
+                  "Le fichier %s ne semble pas être un fichier\n"
+                  "suite de module thermique 1D en paroi.\n"
+                  "Le calcul ne peut être exécuté.\n\n"
+                  "Vérifier que le fichier suite utilisé correspond bien\n"
+                  "à un fichier suite de module thermique 1D en paroi."),
+                *nomsui);
 
     version = *tabvar;
 
-    BFT_FREE( tabvar);
-
+    BFT_FREE(tabvar);
   }
 
   { /* Lecture du nombre de points de discrétisation et test de coherence avec
@@ -487,76 +494,76 @@ void CS_PROCF (lect1d,LECT1D)
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_int_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("Problème à la lecture de la rubrique dans le"
-                         " fichier suite du module thermique 1D en paroi:\n"
-                         "<%s>\n"
-                   "Le calcul ne sera pas exectue\n"), nomrub);
+    if (ierror < CS_SUITE_SUCCES)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("Problème à la lecture de la rubrique dans le"
+                  " fichier suite du module thermique 1D en paroi :\n"
+                  "<%s>\n"
+                  "Le calcul ne sera pas executé."), nomrub);
 
     /* Test de coherence entre NFPT1T relu et celui de USPT1D */
     mfpt1d = 0;
-    for ( ifac = 0 ; ifac < *nfabor ; ifac++ ) {
-        if ( tabvar[ifac] > 0 ) mfpt1d++;
+    for (ifac = 0; ifac < *nfabor; ifac++) {
+      if (tabvar[ifac] > 0) mfpt1d++;
     }
     mfpt1t = mfpt1d;
     /* si necessaire on somme sur tous les processeurs */
 #if defined(_CS_HAVE_MPI)
-    if ( cs_glob_base_nbr > 1 )
-        MPI_Allreduce (&mfpt1d, &mfpt1t, 1, CS_MPI_INT, MPI_SUM,
-                           cs_glob_base_mpi_comm);
+    if (cs_glob_base_nbr > 1)
+      MPI_Allreduce (&mfpt1d, &mfpt1t, 1, CS_MPI_INT, MPI_SUM,
+                     cs_glob_base_mpi_comm);
 #endif
-    if ( mfpt1t != *nfpt1t )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                   "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                   "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-                   "\n"
-                   "Le nombre de faces avec module thermique 1D a ete\n"
-                   "modifie.\n"
-                   "AMONT  : %d faces de bord au total\n"
-                   "ACTUEL : %d faces de bord au total\n"
-                   "\n"
-                   "Le calcul ne peut etre execute.\n"
-                   "\n"
-                   "Verifier que le fichier suite utilise correspond bien\n"
-                   "au cas traite.\n"
-                   "Verifier uspt1d.\n"), mfpt1t, *nfpt1t );
+    if (mfpt1t != *nfpt1t)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
+                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
+                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+                  "\n"
+                  "Le nombre de faces avec module thermique 1D a été\n"
+                  "modifié.\n"
+                  "AMONT  : %d faces de bord au total\n"
+                  "ACTUEL : %d faces de bord au total\n"
+                  "\n"
+                  "Le calcul ne peut être exécuté.\n"
+                  "\n"
+                  "Vérifier que le fichier suite utilisé correspond bien\n"
+                  "au cas traité.\n"
+                  "Vérifier uspt1d."), mfpt1t, *nfpt1t);
 
     /* Test de coherence entre NFPT1D/IFPT1D relus et ceux de USPT1D */
     iok = 0;
     i = 0;
-    for ( ifac = 0 ; ifac < *nfabor ; ifac++ ) {
-        if ( tabvar[ifac] > 0 ) {
-          if ( ifac != ifpt1d[i]-1 ) iok++;
-          if ( tabvar[ifac] != nppt1d[i] ) iok++;
-          i++;
-        }
+    for (ifac = 0; ifac < *nfabor; ifac++) {
+      if (tabvar[ifac] > 0) {
+        if (ifac != ifpt1d[i]-1) iok++;
+        if (tabvar[ifac] != nppt1d[i]) iok++;
+        i++;
+      }
     }
-    if ( iok > 0 )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                   "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                   "    DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-                   "\n"
-                   "IFPT1D ou NPPT1D a ete modifie par rapport au\n"
-                   "fichier suite sur au moins une face avec module\n"
-                   "thermique 1D.\n"
-                   "\n"
-                   "Le calcul ne peut etre execute.\n"
-                   "\n"
-                   "Verifier que le fichier suite utilise correspond bien\n"
-                   "au cas traite.\n"
-                   "Verifier uspt1d\n"
-                   "(se reporter a la documentation utilisateur pour les\n"
-                   "specificites du test sur IFPT1D)") );
+    if (iok > 0)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
+                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
+                  "    DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+                  "\n"
+                  "IFPT1D ou NPPT1D a ete modifié par rapport au\n"
+                  "fichier suite sur au moins une face avec module\n"
+                  "thermique 1D.\n"
+                  "\n"
+                  "Le calcul ne peut être exécuté.\n"
+                  "\n"
+                  "Vérifier que le fichier suite utilisé correspond bien\n"
+                  "au cas traité.\n"
+                  "Vérifier uspt1d\n"
+                  "(se reporter a la documentation utilisateur pour les\n"
+                  "spécificités du test sur IFPT1D)."));
 
     /* Allocation de la structure cs_glob_par1d */
 
@@ -576,46 +583,46 @@ void CS_PROCF (lect1d,LECT1D)
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("Problème à la lecture de la rubrique dans le"
-                         " fichier suite du module thermique 1D en paroi:\n"
-                         "<%s>\n"
-                   "Le calcul ne sera pas exectue\n"), nomrub);
+    if (ierror < CS_SUITE_SUCCES)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("Problème à la lecture de la rubrique dans le"
+                  " fichier suite du module thermique 1D en paroi:\n"
+                  "<%s>\n"
+                  "Le calcul ne sera pas exécuté."), nomrub);
 
     /* Test de coherence entre EPPT1D relu et celui de USPT1D */
     iok = 0;
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
-        if ( fabs(tabvar[ifac]-eppt1d[i])/eppt1d[i] > 1.e-10 ) iok++;
+      if (fabs(tabvar[ifac]-eppt1d[i])/eppt1d[i] > 1.e-10) iok++;
     }
-    if ( iok > 0 )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                   "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                   "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-                   "\n"
-                   "Le parametre EPPT1D a ete modifie par rapport au fichier\n"
-                   "fichier suite sur au moins une face avec module\n"
-                   "thermique 1D.\n"
-                   "\n"
-                   "Le calcul ne peut etre execute.\n"
-                   "\n"
-                   "Verifier que le fichier suite utilise correspond bien\n"
-                   "au cas traite.\n"
-                   "Verifier uspt1d.\n") );
+    if (iok > 0)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
+                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
+                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+                  "\n"
+                  "Le paramètre EPPT1D a été modifié par rapport au fichier\n"
+                  "fichier suite sur au moins une face avec module\n"
+                  "thermique 1D.\n"
+                  "\n"
+                  "Le calcul ne peut être exécuté.\n"
+                  "\n"
+                  "Vérifier que le fichier suite utilisé correspond bien\n"
+                  "au cas traité.\n"
+                  "Vérifier uspt1d.\n"));
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
-            ifac = ifpt1d[i] - 1 ;
-            cs_glob_par1d[i].e = tabvar[ifac];
-          }
+    for (i = 0; i < *nfpt1d; i++) {
+      ifac = ifpt1d[i] - 1;
+      cs_glob_par1d[i].e = tabvar[ifac];
+    }
 
     BFT_FREE(tabvar);
   }
@@ -630,24 +637,24 @@ void CS_PROCF (lect1d,LECT1D)
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("Problème à la lecture de la rubrique dans le"
-                         " fichier suite du module thermique 1D en paroi:\n"
-                         "<%s>\n"
-                   "Le calcul ne sera pas exectue\n"), nomrub);
+    if (ierror < CS_SUITE_SUCCES)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("Problème à la lecture de la rubrique dans le"
+                  " fichier suite du module thermique 1D en paroi:\n"
+                  "<%s>\n"
+                  "Le calcul ne sera pas exécuté."), nomrub);
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
-            ifac = ifpt1d[i] - 1 ;
-            tppt1d[i] = tabvar[ifac];
-          }
+    for (i = 0; i < *nfpt1d; i++) {
+      ifac = ifpt1d[i] - 1;
+      tppt1d[i] = tabvar[ifac];
+    }
 
     BFT_FREE(tabvar);
   }
@@ -666,58 +673,57 @@ void CS_PROCF (lect1d,LECT1D)
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("Problème à la lecture de la rubrique dans le"
-                         " fichier suite du module thermique 1D en paroi:\n"
-                         "<%s>\n"
-                   "Le calcul ne sera pas exectue\n"), nomrub);
+    if (ierror < CS_SUITE_SUCCES)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("Problème à la lecture de la rubrique dans le"
+                  " fichier suite du module thermique 1D en paroi:\n"
+                  "<%s>\n"
+                  "Le calcul ne sera pas exécuté."), nomrub);
 
     /* Maintenant qu'on a les centres des mailles, on peut tester RGPT1D */
     iok = 0;
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
-        if ( nppt1d[i] > 1 ) {
-          zz1 = tabvar[0 + (*nmxt1d)*ifac];
-          zz2 = tabvar[1 + (*nmxt1d)*ifac];
-          rrgpt1 = (zz2-2.*zz1)/zz1;
-          if ( fabs(rrgpt1-rgpt1d[i])/rgpt1d[i] > 1.e-10 ) iok++;
-        }
+      if (nppt1d[i] > 1) {
+        zz1 = tabvar[0 + (*nmxt1d)*ifac];
+        zz2 = tabvar[1 + (*nmxt1d)*ifac];
+        rrgpt1 = (zz2-2.*zz1)/zz1;
+        if (fabs(rrgpt1-rgpt1d[i])/rgpt1d[i] > 1.e-10) iok++;
+      }
     }
 
-    if ( iok > 0 )
-        bft_error( __FILE__, __LINE__, 0 ,
-                     _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                   "*********   MODULE THERMIQUE 1D EN PAROI \n"
-                   "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-                   "\n"
-                   "Le parametre RGPT1D a ete modifie par rapport au fichier\n"
-                   "fichier suite sur au moins une face avec module\n"
-                   "thermique 1D.\n"
-                   "\n"
-                   "Le calcul ne peut etre execute.\n"
-                   "\n"
-                   "Verifier que le fichier suite utilise correspond bien\n"
-                   "au cas traite.\n"
-                   "Verifier uspt1d.\n") );
+    if (iok > 0)
+      bft_error(__FILE__, __LINE__, 0 ,
+                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
+                  "*********   MODULE THERMIQUE 1D EN PAROI \n"
+                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+                  "\n"
+                  "Le paramètre RGPT1D a été modifié par rapport au fichier\n"
+                  "fichier suite sur au moins une face avec module\n"
+                  "thermique 1D.\n"
+                  "\n"
+                  "Le calcul ne peut être exécuté.\n"
+                  "\n"
+                  "Vérifier que le fichier suite utilisé correspond bien\n"
+                  "au cas traité.\n"
+                  "Vérifier uspt1d."));
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
       /* On remplit jusqu'au nombre de points de discrétisation de
          la face couplée considérée */
-      for ( j = 0 ; j < cs_glob_par1d[i].n ; j++ )
+      for (j = 0; j < cs_glob_par1d[i].n; j++)
         cs_glob_par1d[i].z[j] = tabvar[j + (*nmxt1d)*ifac];
     }
 
     BFT_FREE(tabvar);
-
   }
 
   { /* Lecture de la température dans la paroi */
@@ -732,26 +738,26 @@ void CS_PROCF (lect1d,LECT1D)
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub ( suite,
-                                nomrub,
-                                support,
-                                nbvent,
-                                typ_val,
-                                tabvar);
+    ierror = cs_suite_lit_rub(suite,
+                              nomrub,
+                              support,
+                              nbvent,
+                              typ_val,
+                              tabvar);
 
-    if ( ierror < CS_SUITE_SUCCES ) {
+    if (ierror < CS_SUITE_SUCCES) {
       cs_base_warn(__FILE__,__LINE__);
-      bft_printf ( _("Problème à la lecture de la rubrique dans le"
-                     " fichier suite du module thermique 1D en paroi:\n"
-                     "<%s>\n"), nomrub);
+      bft_printf (_("Problème à la lecture de la rubrique dans le"
+                    " fichier suite du module thermique 1D en paroi:\n"
+                    "<%s>\n"), nomrub);
     }
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
       /* On remplit jusqu'au nombre de points de discrétisation de
          la face couplée considérée */
-      for ( j = 0 ; j < cs_glob_par1d[i].n ; j++ )
+      for (j = 0; j < cs_glob_par1d[i].n; j++)
         cs_glob_par1d[i].t[j] = tabvar[j + (*nmxt1d)*ifac];
 
     }
@@ -762,7 +768,6 @@ void CS_PROCF (lect1d,LECT1D)
   /* Fermeture du fichier et libération des structures */
   cs_suite_detruit(cs_glob_tpar1d_suite);
   cs_glob_tpar1d_suite = NULL;
-
 }
 
 
@@ -818,18 +823,18 @@ void CS_PROCF (ecrt1d,ECRT1D)
   suite_mode = CS_SUITE_MODE_ECRITURE;
 
   /* Ouverture du fichier suite */
-  cs_loc_tpar1d_opnsuite( nomsui,
-                          lngnom,
-                          suite_mode,
-                          ifovt1,
-                          ierror);
+  cs_loc_tpar1d_opnsuite(nomsui,
+                         lngnom,
+                         suite_mode,
+                         ifovt1,
+                         ierror);
 
-  if ( ierror != CS_SUITE_SUCCES )
-    bft_error( __FILE__, __LINE__, 0 ,
-               _("Arret à l''ouverture en écriture du fichier "
-                 "suite du module thermique 1D en paroi.\n"
-                 "Vérifier l''existence et le nom du fichier suite: %s \n")
-               , *nomsui);
+  if (ierror != CS_SUITE_SUCCES)
+    bft_error(__FILE__, __LINE__, 0 ,
+              _("Arret à l'ouverture en écriture du fichier "
+                "suite du module thermique 1D en paroi.\n"
+                "Vérifier l''existence et le nom du fichier suite: %s"),
+              *nomsui);
 
 
   /* Pointeur vers la structure suite globale */
@@ -847,12 +852,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
     support = CS_SUITE_SUPPORT_SCAL;
     typ_val = CS_TYPE_cs_int_t;
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -863,24 +868,24 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
     BFT_MALLOC(tabvar, *nfabor, cs_int_t);
 
-    for ( i = 0 ; i < *nfabor ; i++ )
+    for (i = 0; i < *nfabor; i++)
       tabvar[i] = 0;
 
     nbvent  = 1;
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_int_t;
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
-            ifac = ifpt1d[i] - 1 ;
+    for (i = 0; i < *nfpt1d; i++) {
+            ifac = ifpt1d[i] - 1;
             tabvar[ifac] = cs_glob_par1d[i].n;
           }
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -891,24 +896,24 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
-    for (i = 0 ; i < *nfabor ; i++ )
+    for (i = 0; i < *nfabor; i++)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
-            ifac = ifpt1d[i] - 1 ;
+    for (i = 0; i < *nfpt1d; i++) {
+            ifac = ifpt1d[i] - 1;
             tabvar[ifac] = cs_glob_par1d[i].e;
           }
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -919,24 +924,24 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
-    for (i = 0 ; i < *nfabor ; i++ )
+    for (i = 0; i < *nfabor; i++)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
-            ifac = ifpt1d[i] - 1 ;
-            tabvar[ifac] = tppt1d[i];
-          }
+    for (i = 0; i < *nfpt1d; i++) {
+      ifac = ifpt1d[i] - 1;
+      tabvar[ifac] = tppt1d[i];
+    }
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -949,29 +954,29 @@ void CS_PROCF (ecrt1d,ECRT1D)
     nptmx = (*nfabor) * (*nmxt1d);
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
-    for (i = 0 ; i < nptmx ; i++ )
+    for (i = 0; i < nptmx; i++)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
       /* On remplit jusqu'au nombre de points de discrétisation de
          la face couplée considérée (les cases suivantes jusqu'a nmxt1d
          contiennent deja 0 de par l'initialisation de tabvar */
-      for ( j = 0 ; j < cs_glob_par1d[i].n ; j++ )
+      for (j = 0; j < cs_glob_par1d[i].n; j++)
         tabvar[j + (*nmxt1d)*ifac] = cs_glob_par1d[i].z[j];
     }
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -984,30 +989,30 @@ void CS_PROCF (ecrt1d,ECRT1D)
     nptmx = (*nfabor) * (*nmxt1d);
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
-    for (i = 0 ; i < nptmx ; i++ )
+    for (i = 0; i < nptmx; i++)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
     support = CS_SUITE_SUPPORT_FAC_BRD;
     typ_val = CS_TYPE_cs_real_t;
 
-    for ( i = 0 ; i < *nfpt1d ; i++ ) {
+    for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
       /* On remplit jusqu'au nombre de points de discrétisation de
          la face couplée considérée (les cases suivantes jusqu'a nmxt1d
          contiennent deja 0 de par l'initialisation de tabvar */
-      for ( j = 0 ; j < cs_glob_par1d[i].n ; j++ )
+      for (j = 0; j < cs_glob_par1d[i].n; j++)
         tabvar[j + (*nmxt1d)*ifac] = cs_glob_par1d[i].t[j];
 
     }
 
-    cs_suite_ecr_rub ( suite,
-                       nomrub,
-                       support,
-                       nbvent,
-                       typ_val,
-                       tabvar);
+    cs_suite_ecr_rub(suite,
+                     nomrub,
+                     support,
+                     nbvent,
+                     typ_val,
+                     tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -1061,7 +1066,7 @@ static void cs_loc_tpar1d_cree
      Calcul du nbr total de pts de discrétisation */
   nb_pts_tot = 0;
 
-  for ( i = 0 ; i < nfpt1d ; i++ ) {
+  for (i = 0; i < nfpt1d; i++) {
     cs_glob_par1d[i].n = nppt1d[i];
     nb_pts_tot += nppt1d[i];
   }
@@ -1072,7 +1077,7 @@ static void cs_loc_tpar1d_cree
   BFT_MALLOC(cs_glob_par1d->z, 2 * nb_pts_tot, cs_real_t);
   cs_glob_par1d->t = cs_glob_par1d->z + nb_pts_tot;
 
-  for ( i = 1 ; i < nfpt1d ; i++ ) {
+  for (i = 1; i < nfpt1d; i++) {
     cs_glob_par1d[i].z = cs_glob_par1d[i-1].z + nppt1d[i-1];
     cs_glob_par1d[i].t = cs_glob_par1d[i-1].t + nppt1d[i-1];
   }
@@ -1101,8 +1106,7 @@ static void cs_loc_tpar1d_opnsuite
   ierror = CS_SUITE_SUCCES;
 
   /* Traitement du nom pour l'API C */
-  nombuf = cs_base_chaine_f_vers_c_cree( nomsui,
-                                         *lngnom);
+  nombuf = cs_base_chaine_f_vers_c_cree(nomsui, *lngnom);
 
   /* Option de création du fichier */
   switch (*iforma) {
@@ -1113,23 +1117,22 @@ static void cs_loc_tpar1d_opnsuite
     suite_type = CS_SUITE_TYPE_ASCII;
     break;
   default:
-    cs_base_warn (__FILE__, __LINE__);
-    bft_printf ( _("Le type du fichier suite <%s>\n"
-                   "doit être égal à 0 (binaire) ou 1 (formaté) "
-                   "et non <%d>\n(binaire par défaut)"),
-                 nombuf, (int)(*iforma));
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le type du fichier suite <%s>\n"
+                 "doit être égal à 0 (binaire) ou 1 (formaté) "
+                 "et non <%d>\n(binaire par défaut)"),
+               nombuf, (int)(*iforma));
 
     ierror = CS_SUITE_ERR_TYPE_FIC;
   }
 
   if (ierror == CS_SUITE_SUCCES)
-    cs_glob_tpar1d_suite = cs_suite_cree( nombuf,
-                                          ireawr,
-                                          suite_type);
+    cs_glob_tpar1d_suite = cs_suite_cree(nombuf,
+                                         ireawr,
+                                         suite_type);
 
   /* Libération de mémoire si nécessaire */
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
-
 }
 
 
