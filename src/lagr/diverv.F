@@ -221,6 +221,29 @@ C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
+C En periodique et parallele, echange avant calcul du gradient
+C
+C    Parallele
+      IF(IRANGP.GE.0) THEN
+        CALL PARCOM(UX)
+C       ===========
+        CALL PARCOM(VY)
+C       ===========
+        CALL PARCOM(WZ)
+C       ===========
+      ENDIF
+C
+C    Periodique
+      IF(IPERIO.EQ.1) THEN
+        IDIMTE = 1
+        ITENSO = 0
+        CALL PERCOM
+C       ===========
+     &( IDIMTE , ITENSO ,
+     &  UX     , UX     , UX     ,
+     &  VY     , VY     , VY     ,
+     &  WZ     , WZ     , WZ     )
+      ENDIF
 C
 C  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 C     n'est pas la vitesse ni Rij)
@@ -242,26 +265,6 @@ C
 C=======================================================================
 C 1. Calcul du gradient de UX DANS W1
 C=======================================================================
-C
-C En periodique et parallele, echange avant calcul du gradient
-C
-C    Parallele
-      IF(IRANGP.GE.0) THEN
-        CALL PARCOM(UX)
-C       ===========
-      ENDIF
-C
-C    Periodique
-      IF(IPERIO.EQ.1) THEN
-        IDIMTE = 0
-        ITENSO = 0
-        CALL PERCOM
-C       ===========
-     &( IDIMTE , ITENSO ,
-     &  UX     , UX     , UX     ,
-     &  UX     , UX     , UX     ,
-     &  UX     , UX     , UX     )
-      ENDIF
 C
       CALL GRDCEL
 C     ===========
@@ -285,26 +288,6 @@ C=======================================================================
 C 2. Calcul du gradient de VY DANS W2
 C=======================================================================
 C
-C En periodique et parallele, echange avant calcul du gradient
-C
-C    Parallele
-      IF(IRANGP.GE.0) THEN
-        CALL PARCOM(VY)
-C       ===========
-      ENDIF
-C
-C    Periodique
-      IF(IPERIO.EQ.1) THEN
-        IDIMTE = 0
-        ITENSO = 0
-        CALL PERCOM
-C       ===========
-     &( IDIMTE , ITENSO ,
-     &  VY     , VY     , VY     ,
-     &  VY     , VY     , VY     ,
-     &  VY     , VY     , VY     )
-      ENDIF
-C
       CALL GRDCEL
 C     ===========
      &( IDEBIA , IDEBRA ,
@@ -326,26 +309,6 @@ C
 C=======================================================================
 C 3. Calcul du gradient de VZ DANS W3
 C=======================================================================
-C
-C En periodique et parallele, echange avant calcul du gradient
-C
-C    Parallele
-      IF(IRANGP.GE.0) THEN
-        CALL PARCOM(WZ)
-C       ===========
-      ENDIF
-C
-C    Periodique
-      IF(IPERIO.EQ.1) THEN
-        IDIMTE = 0
-        ITENSO = 0
-        CALL PERCOM
-C       ===========
-     &( IDIMTE , ITENSO ,
-     &  WZ     , WZ     , WZ     ,
-     &  WZ     , WZ     , WZ     ,
-     &  WZ     , WZ     , WZ     )
-      ENDIF
 C
       CALL GRDCEL
 C     ===========

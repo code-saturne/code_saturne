@@ -321,28 +321,32 @@ C
         IPCLIV = ICLRTP(IVIPH,ICOEF)
         IPCLIW = ICLRTP(IWIPH,ICOEF)
 C
-C     COMPOSANTE X
-C     ============
-C
 C ---> TRAITEMENT DU PARALLELISME
 C
         IF(IRANGP.GE.0) THEN
           CALL PARCOM (RTP(1,IUIPH))
+C         ===========
+          CALL PARCOM (RTP(1,IVIPH))
+C         ===========
+          CALL PARCOM (RTP(1,IWIPH))
 C         ===========
         ENDIF
 C
 C ---> TRAITEMENT DE LA PERIODICITE
 C
         IF(IPERIO.EQ.1) THEN
-          IDIMTE = 0
+          IDIMTE = 1
           ITENSO = 0
           CALL PERCOM
 C         ===========
      &    (IDIMTE , ITENSO ,
      &     RTP(1,IUIPH),RTP(1,IUIPH),RTP(1,IUIPH),
-     &     RTP(1,IUIPH),RTP(1,IUIPH),RTP(1,IUIPH),
-     &     RTP(1,IUIPH),RTP(1,IUIPH),RTP(1,IUIPH) )
+     &     RTP(1,IVIPH),RTP(1,IVIPH),RTP(1,IVIPH),
+     &     RTP(1,IWIPH),RTP(1,IWIPH),RTP(1,IWIPH) )
         ENDIF
+C
+C     COMPOSANTE X
+C     ============
 C
 C    Sans prise en compte de la pression hydrostatique
 C
@@ -371,26 +375,6 @@ C
 C     COMPOSANTE Y
 C     ============
 C
-C ---> TRAITEMENT DU PARALLELISME
-C
-        IF(IRANGP.GE.0) THEN
-          CALL PARCOM (RTP(1,IVIPH))
-C         ===========
-        ENDIF
-C
-C ---> TRAITEMENT DE LA PERIODICITE
-C
-        IF(IPERIO.EQ.1) THEN
-          IDIMTE = 0
-          ITENSO = 0
-          CALL PERCOM
-C         ===========
-     &    (IDIMTE , ITENSO ,
-     &     RTP(1,IVIPH),RTP(1,IVIPH),RTP(1,IVIPH),
-     &     RTP(1,IVIPH),RTP(1,IVIPH),RTP(1,IVIPH),
-     &     RTP(1,IVIPH),RTP(1,IVIPH),RTP(1,IVIPH) )
-        ENDIF
-C
 C    Sans prise en compte de la pression hydrostatique
 C
         IPHYDP = 0
@@ -417,27 +401,6 @@ C       ===========
 C
 C     COMPOSANTE Z
 C     ============
-C
-C ---> TRAITEMENT DU PARALLELISME
-C
-        IF(IRANGP.GE.0) THEN
-          CALL PARCOM (RTP(1,IWIPH))
-C         ===========
-        ENDIF
-C
-C ---> TRAITEMENT DE LA PERIODICITE
-C
-        IF(IPERIO.EQ.1) THEN
-          IDIMTE = 0
-          ITENSO = 0
-          CALL PERCOM
-C         ===========
-     &    (IDIMTE , ITENSO ,
-     &     RTP(1,IWIPH),RTP(1,IWIPH),RTP(1,IWIPH),
-     &     RTP(1,IWIPH),RTP(1,IWIPH),RTP(1,IWIPH),
-     &     RTP(1,IWIPH),RTP(1,IWIPH),RTP(1,IWIPH) )
-        ENDIF
-C
 C
 C    Sans prise en compte de la pression hydrostatique
 C

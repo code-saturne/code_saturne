@@ -1,3 +1,10 @@
+* 14/08/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on velocity rotation in case of periodicity
+  in two Lagrangian subroutines.
+  modified routines:
+    src/lagr/diverv.F
+    src/lagr/laggra.F
+
 * 11/08/2008 - Jerome Bonelle <jerome.bonelle@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Add an untested patch for a potential issue with
