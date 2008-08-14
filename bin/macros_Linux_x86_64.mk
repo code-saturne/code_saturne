@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.6/arch/Linux_x86_64
+BFT_HOME        =/home/saturne/opt/bft-1.0.7/arch/Linux_x86_64
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.10.0/arch/Linux_x86_64
+FVM_HOME        =/home/saturne/opt/fvm-0.11.0/arch/Linux_x86_64
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -107,7 +107,7 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -128,7 +128,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -148,13 +148,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/bin/gfortran
+LDEDL           = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.2.3/arch/Linux_x86_64/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/lib64:
 
 
 # Set preprocessor variables
