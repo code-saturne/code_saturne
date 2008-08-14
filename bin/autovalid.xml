@@ -33,7 +33,7 @@
 *===========================================================================-->
 
   <referencepath>/home/saturne/Validation</referencepath>
-  <referenceversion>ncs-1.3.2</referenceversion>
+  <referenceversion>ncs-1.3.3</referenceversion>
 
   <study label='LAPLACIEN' status='on'>
     <variable label='scalaire' status='on'>

@@ -222,7 +222,7 @@ MODE_EXEC=complet
 ########################################################################
 #
 #  Adresse de la bibliotheque du noyau    
-CS_HOME=/home/saturne/Noyau/ncs-1.3.2
+CS_HOME=/home/saturne/Noyau/ncs-1.3.3
 export CS_HOME
 #
 # Parametres d'installation

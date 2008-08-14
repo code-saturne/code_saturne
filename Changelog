@@ -1,5 +1,6 @@
 * 14/08/2008 - David Monfort <david.monfort@edf.fr>
   Upgrade to BFT version 1.0.7 and FVM version 0.11.0.
+  Change each occurence of the version number to 1.3.3.
 
 * 14/08/2008 - David Monfort <david.monfort@edf.fr>
   Correction on velocity rotation in case of periodicity
