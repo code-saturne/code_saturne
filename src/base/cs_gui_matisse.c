@@ -235,13 +235,13 @@ void CS_PROCF (csgein, CSGEIN) (int *const nptran,
   *itypen = cs_gui_warehousing_type();
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSGEIN\n"));
-  bft_printf(_("--nptran = %d\n"), *nptran);
-  bft_printf(_("--nplgrs = %d\n"), *nplgrs);
-  bft_printf(_("--nelgrs = %d\n"), *nelgrs);
-  bft_printf(_("--nchest = %d\n"), *nchest);
-  bft_printf(_("--netran = %d\n"), *netran);
-  bft_printf(_("--itypen = %d\n"), *itypen);
+  bft_printf("==>CSGEIN\n");
+  bft_printf("--nptran = %d\n", *nptran);
+  bft_printf("--nplgrs = %d\n", *nplgrs);
+  bft_printf("--nelgrs = %d\n", *nelgrs);
+  bft_printf("--nchest = %d\n", *nchest);
+  bft_printf("--netran = %d\n", *netran);
+  bft_printf("--itypen = %d\n", *itypen);
 #endif
 }
 
@@ -276,15 +276,15 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
   *hbdtoi = cs_gui_data_matisse_double("mesh", "geometry", "hbdtoi");
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSMHDB\n"));
-  bft_printf(_("--nechrg = %i\n"), *nechrg);
-  bft_printf(_("--nergrs = %i\n"), *nergrs);
-  bft_printf(_("--neclrg = %i\n"), *neclrg);
-  bft_printf(_("--nergch = %i\n"), *nergch);
-  bft_printf(_("--jeuchr = %f\n"), *jeuchr);
-  bft_printf(_("--jeurcl = %f\n"), *jeurcl);
-  bft_printf(_("--jeuclr = %f\n"), *jeuclr);
-  bft_printf(_("--jeurch = %f\n"), *jeurch);
+  bft_printf("==>CSMHDB\n");
+  bft_printf("--nechrg = %i\n", *nechrg);
+  bft_printf("--nergrs = %i\n", *nergrs);
+  bft_printf("--neclrg = %i\n", *neclrg);
+  bft_printf("--nergch = %i\n", *nergch);
+  bft_printf("--jeuchr = %f\n", *jeuchr);
+  bft_printf("--jeurcl = %f\n", *jeurcl);
+  bft_printf("--jeuclr = %f\n", *jeuclr);
+  bft_printf("--jeurch = %f\n", *jeurch);
 #endif
 }
 
@@ -321,19 +321,19 @@ void CS_PROCF (csgedb, CSGEDB) (double *const epregi,
   *dmcont = cs_gui_data_matisse_double("compute", "geometry", "dmcont");
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSGEDB\n"));
-  bft_printf(_("--epregi = %f\n"), *epregi);
-  bft_printf(_("--epchem = %f\n"), *epchem);
-  bft_printf(_("--hconve = %f\n"), *hconve);
-  bft_printf(_("--rconve = %f\n"), *rconve);
-  bft_printf(_("--hchali = %f\n"), *hchali);
-  bft_printf(_("--hcheva = %f\n"), *hcheva);
-  bft_printf(_("--hfttoi = %f\n"), *hfttoi);
-  bft_printf(_("--ptrres = %f\n"), *ptrres);
-  bft_printf(_("--frdtra = %f\n"), *frdtra);
-  bft_printf(_("--plgres = %f\n"), *plgres);
-  bft_printf(_("--epchel = %f\n"), *epchel);
-  bft_printf(_("--dmcont = %f\n"), *dmcont);
+  bft_printf("==>CSGEDB\n");
+  bft_printf("--epregi = %f\n", *epregi);
+  bft_printf("--epchem = %f\n", *epchem);
+  bft_printf("--hconve = %f\n", *hconve);
+  bft_printf("--rconve = %f\n", *rconve);
+  bft_printf("--hchali = %f\n", *hchali);
+  bft_printf("--hcheva = %f\n", *hcheva);
+  bft_printf("--hfttoi = %f\n", *hfttoi);
+  bft_printf("--ptrres = %f\n", *ptrres);
+  bft_printf("--frdtra = %f\n", *frdtra);
+  bft_printf("--plgres = %f\n", *plgres);
+  bft_printf("--epchel = %f\n", *epchel);
+  bft_printf("--dmcont = %f\n", *dmcont);
 #endif
 }
 
@@ -402,35 +402,35 @@ void CS_PROCF (csphdb, CSPHDB) (double *const dtdtmx,
   *dpvent = cs_gui_data_matisse_double("compute", "physical_model", "dpvent");
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSPHDB\n"));
-  bft_printf(_("--dtdtmx = %f\n"), *dtdtmx);
-  bft_printf(_("--puicon = %f\n"), *puicon);
-  bft_printf(_("--tinit  = %f\n"), *tinit);
-  bft_printf(_("--tcrit  = %f\n"), *tcrit);
-  bft_printf(_("--emicon = %f\n"), *emicon);
-  bft_printf(_("--emimur = %f\n"), *emimur);
-  bft_printf(_("--hepcnt = %f\n"), *hepcnt);
-  bft_printf(_("--dhpcnt = %f\n"), *dhpcnt);
-  bft_printf(_("--debmas = %f\n"), *debmas);
-  bft_printf(_("--pdccha = %f\n"), *pdccha);
-  bft_printf(_("--pdcfch = %f\n"), *pdcfch);
-  bft_printf(_("--dhchea = %f\n"), *dhchea);
-  bft_printf(_("--sdchea = %f\n"), *sdchea);
-  bft_printf(_("--pdcche = %f\n"), *pdcche);
-  bft_printf(_("--pdccch = %f\n"), *pdccch);
-  bft_printf(_("--dhches = %f\n"), *dhches);
-  bft_printf(_("--sdches = %f\n"), *sdches);
-  bft_printf(_("--pdcalg = %f\n"), *pdcalg);
-  bft_printf(_("--pdcatv = %f\n"), *pdcatv);
-  bft_printf(_("--argamt = %f\n"), *argamt);
-  bft_printf(_("--pdcslg = %f\n"), *pdcslg);
-  bft_printf(_("--pdcstv = %f\n"), *pdcstv);
-  bft_printf(_("--argavl = %f\n"), *argavl);
-  bft_printf(_("--amppdc = %f\n"), *amppdc);
-  bft_printf(_("--dhalve = %f\n"), *dhalve);
-  bft_printf(_("--hreso  = %f\n"), *hreso);
-  bft_printf(_("--hplen  = %f\n"), *hplen);
-  bft_printf(_("--dpvent = %f\n"), *dpvent);
+  bft_printf("==>CSPHDB\n");
+  bft_printf("--dtdtmx = %f\n", *dtdtmx);
+  bft_printf("--puicon = %f\n", *puicon);
+  bft_printf("--tinit  = %f\n", *tinit);
+  bft_printf("--tcrit  = %f\n", *tcrit);
+  bft_printf("--emicon = %f\n", *emicon);
+  bft_printf("--emimur = %f\n", *emimur);
+  bft_printf("--hepcnt = %f\n", *hepcnt);
+  bft_printf("--dhpcnt = %f\n", *dhpcnt);
+  bft_printf("--debmas = %f\n", *debmas);
+  bft_printf("--pdccha = %f\n", *pdccha);
+  bft_printf("--pdcfch = %f\n", *pdcfch);
+  bft_printf("--dhchea = %f\n", *dhchea);
+  bft_printf("--sdchea = %f\n", *sdchea);
+  bft_printf("--pdcche = %f\n", *pdcche);
+  bft_printf("--pdccch = %f\n", *pdccch);
+  bft_printf("--dhches = %f\n", *dhches);
+  bft_printf("--sdches = %f\n", *sdches);
+  bft_printf("--pdcalg = %f\n", *pdcalg);
+  bft_printf("--pdcatv = %f\n", *pdcatv);
+  bft_printf("--argamt = %f\n", *argamt);
+  bft_printf("--pdcslg = %f\n", *pdcslg);
+  bft_printf("--pdcstv = %f\n", *pdcstv);
+  bft_printf("--argavl = %f\n", *argavl);
+  bft_printf("--amppdc = %f\n", *amppdc);
+  bft_printf("--dhalve = %f\n", *dhalve);
+  bft_printf("--hreso  = %f\n", *hreso);
+  bft_printf("--hplen  = %f\n", *hplen);
+  bft_printf("--dpvent = %f\n", *dpvent);
 #endif
 }
 
@@ -451,11 +451,11 @@ void CS_PROCF (csphat, CSPHAT)(int *const imdcnt,
   *ialveo = cs_gui_data_matisse_att_status("ialveo");
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSPHAT\n"));
-  bft_printf(_("--imdcnt = %d\n"), *imdcnt);
-  bft_printf(_("--icofor = %d\n"), *icofor);
-  bft_printf(_("--iconlg = %d\n"), *iconlg);
-  bft_printf(_("--ialveo = %d\n"), *ialveo);
+  bft_printf("==>CSPHAT\n");
+  bft_printf("--imdcnt = %d\n", *imdcnt);
+  bft_printf("--icofor = %d\n", *icofor);
+  bft_printf("--iconlg = %d\n", *iconlg);
+  bft_printf("--ialveo = %d\n", *ialveo);
 #endif
 }
 
@@ -478,8 +478,8 @@ void CS_PROCF(csmtpr,CSMTPR)(int *imatis)
     *imatis = 0;
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSMTPR\n"));
-  bft_printf(_("--imatis = %d\n"), *imatis);
+  bft_printf("==>CSMTPR\n");
+  bft_printf("--imatis = %d\n", *imatis);
 #endif
 
   BFT_FREE(path);
@@ -512,8 +512,8 @@ void CS_PROCF(csnbmp,CSNBMP) (int *const direction,
   BFT_FREE(path);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSNBMP\n"));
-  bft_printf(_("--Zones number for the map %i in the direction %i: %i\n"),
+  bft_printf("==>CSNBMP\n");
+  bft_printf("--Zones number for the map %i in the direction %i: %i\n",
                 *carte, *direction, *nb);
 #endif
 }
@@ -583,12 +583,12 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
   BFT_FREE(pathtmp);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSDFMP\n"));
+  bft_printf("==>CSDFMP\n");
   if (cs_gui_strcmp(cs_matisse_map_type[icarte], "thermal_capacity"))
-    bft_printf(_("--Zone %i Direction %i Map %i = %f %f %f \n"),
+    bft_printf("--Zone %i Direction %i Map %i = %f %f %f \n",
                   *zone, *direction, *carte, *min, *max, *value);
   else
-    bft_printf(_("--Zone %i Direction %i Map %i = %f %f \n"),
+    bft_printf("--Zone %i Direction %i Map %i = %f %f \n",
                   *zone, *direction, *carte, *min, *max );
 #endif
 }

@@ -3847,18 +3847,18 @@ cs_halo_dump(cs_mesh_t  *mesh,
   const cs_int_t  n_cells = mesh->n_cells;
 
   if (halo == NULL) {
-    bft_printf(_("\n\n  mesh->halo: nil\n"));
+    bft_printf("\n\n  mesh->halo: nil\n");
     return;
   }
 
-  bft_printf(_("\n  halo        : %p\n"
-               "  n_init_perio  : %d\n"
-               "  n_transforms  : %d\n"
-               "  n_c_domains   : %d\n"),
+  bft_printf("\n  halo        : %p\n"
+             "  n_init_perio  : %d\n"
+             "  n_transforms  : %d\n"
+             "  n_c_domains   : %d\n",
              halo, mesh->n_init_perio, mesh->n_transforms,
              halo->n_c_domains);
 
-  bft_printf(_("\nRanks on mesh halo frontier :\n"));
+  bft_printf("\nRanks on mesh halo frontier :\n");
   for (i = 0; i < halo->n_c_domains; i++)
     bft_printf("%5d", halo->c_domain_rank[i]);
 
@@ -3891,8 +3891,8 @@ cs_halo_dump(cs_mesh_t  *mesh,
     }
 
     bft_printf("    ---------\n\n");
-    bft_printf(_("  n_ghost_cells       : %d\n"
-                 "  n_std_ghost_cells   : %d\n"), n_elts[1], n_elts[0]);
+    bft_printf("  n_ghost_cells       : %d\n"
+               "  n_std_ghost_cells   : %d\n", n_elts[1], n_elts[0]);
 
     if (index == NULL)
       return;
@@ -3903,11 +3903,11 @@ cs_halo_dump(cs_mesh_t  *mesh,
 
       for (i = 0; i < mesh->n_transforms; i++) {
 
-        bft_printf(_("\nTransformation n°: %d\n"), i+1);
+        bft_printf("\nTransformation n°: %d\n", i+1);
 
         for (j = 0; j < halo->n_c_domains; j++) {
 
-          bft_printf(_("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n"),
+          bft_printf("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n",
                      halo->c_domain_rank[j],
                      perio_lst[i*stride + 4*j],
                      perio_lst[i*stride + 4*j+1],
@@ -3921,33 +3921,33 @@ cs_halo_dump(cs_mesh_t  *mesh,
 
     for (i = 0; i < halo->n_c_domains; i++) {
 
-      bft_printf(_("\n  rank      %d:\n"), halo->c_domain_rank[i]);
+      bft_printf("\n  rank      %d:\n", halo->c_domain_rank[i]);
 
       if (index[2*i+1] - index[2*i] > 0) {
-        bft_printf(_("\n  Standard halo\n"));
-        bft_printf(_("  idx start %d:          idx end   %d:\n"),
+        bft_printf("\n  Standard halo\n");
+        bft_printf("  idx start %d:          idx end   %d:\n",
                    index[2*i], index[2*i+1]);
       }
 
       if (print_level == 1) {
-        bft_printf(_("\n            id      cell number\n"));
+        bft_printf("\n            id      cell number\n");
         for (j = index[2*i]; j < index[2*i+1]; j++)
-          bft_printf(_("    %10d %10d %10d\n"),
+          bft_printf("    %10d %10d %10d\n",
                      j, list[j]+1, n_cells+j+1);
       }
 
       if (mesh->halo_type == CS_MESH_HALO_EXTENDED) {
 
         if (index[2*i+2] - index[2*i+1] > 0) {
-          bft_printf(_("\n  Extended halo\n"));
-          bft_printf(_("  idx start %d:          idx end   %d:\n"),
+          bft_printf("\n  Extended halo\n");
+          bft_printf("  idx start %d:          idx end   %d:\n",
                      index[2*i+1], index[2*i+2]);
         }
 
         if (print_level == 1) {
-          bft_printf(_("\n            id      cell number\n"));
+          bft_printf("\n            id      cell number\n");
           for (j = index[2*i+1]; j < index[2*i+2]; j++)
-            bft_printf(_("    %10d %10d %10d\n"),
+            bft_printf("    %10d %10d %10d\n",
                        j, list[j]+1, n_cells+j+1);
         }
 

@@ -244,7 +244,7 @@ static void cs_gui_advanced_options_turbulence(const char *const param,
     if (cs_gui_get_int(path, &result)) *keyword = result;
 
   } else
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s \n"), path);
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
   BFT_FREE(path);
 }
@@ -1476,7 +1476,7 @@ static int cs_gui_variable_probe_name (const char *const variable,
   strvalue = cs_gui_get_attribute_value(path);
 
   if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s \n"), path);
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
   intvalue = atoi(strvalue);
 
@@ -3217,13 +3217,13 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
                _("Invalid turbulence model: %s.\n"), model);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSTURB\n"));
-  bft_printf(_("--model: %s\n"), model);
-  bft_printf(_("--iturb = %i\n"), iturb[iphas]);
-  bft_printf(_("--igrake = %i\n"), igrake[iphas]);
-  bft_printf(_("--igrari = %i\n"), igrari[iphas]);
-  bft_printf(_("--ideuch = %i\n"), ideuch[iphas]);
-  bft_printf(_("--xlomlg = %f\n"), xlomlg[iphas]);
+  bft_printf("==>CSTURB\n");
+  bft_printf("--model: %s\n", model);
+  bft_printf("--iturb = %i\n", iturb[iphas]);
+  bft_printf("--igrake = %i\n", igrake[iphas]);
+  bft_printf("--igrari = %i\n", igrari[iphas]);
+  bft_printf("--ideuch = %i\n", ideuch[iphas]);
+  bft_printf("--xlomlg = %f\n", xlomlg[iphas]);
 #endif
 
   BFT_FREE(model);
@@ -3248,8 +3248,8 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp)
   if (cs_gui_properties_choice("specific_heat", &choice)) icp[iphas] = choice;
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSCPVA\n"));
-  bft_printf(_("--icp = %i\n"), icp[iphas]);
+  bft_printf("==>CSCPVA\n");
+  bft_printf("--icp = %i\n", icp[iphas]);
 #endif
 }
 
@@ -3306,10 +3306,10 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSNSCA\n"));
-  bft_printf(_("--user scalars number: %i\n"), vars->nscaus);
+  bft_printf("==>CSNSCA\n");
+  bft_printf("--user scalars number: %i\n", vars->nscaus);
   for (i=0; i<*nscaus; i++)
-    bft_printf(_("--label of scalar[%i]: %s\n"), i, vars->label[i]);
+    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
 #endif
 }
 
@@ -3404,11 +3404,11 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   vars->nscapp = nscapp;
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIPPMO\n"));
+  bft_printf("==>UIPPMO\n");
   if (isactiv) {
-    bft_printf(_("--thermophysical model: %s\n"), vars->model);
-    bft_printf(_("--thermophysical value: %s\n"), vars->model_value);
-    bft_printf(_("--model scalars number: %i\n"), vars->nscapp);
+    bft_printf("--thermophysical model: %s\n", vars->model);
+    bft_printf("--thermophysical value: %s\n", vars->model_value);
+    bft_printf("--model scalars number: %i\n", vars->nscapp);
   }
 #endif
 
@@ -3456,9 +3456,9 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
     }
 
 #if _XML_DEBUG_
-    bft_printf(_("==>CSISCA\n"));
+    bft_printf("==>CSISCA\n");
     for (i = 0 ; i < vars->nscaus ; i++)
-      bft_printf(_("--iscavr[%i] = %i \n"), i, iscavr[i]);
+      bft_printf("--iscavr[%i] = %i \n", i, iscavr[i]);
 #endif
   }
   return;
@@ -3516,9 +3516,9 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     }
 
 #if _XML_DEBUG_
-    bft_printf(_("==>CSIVIS\n"));
+    bft_printf("==>CSIVIS\n");
     for (i=0 ; i < vars->nscaus ; i++)
-      bft_printf(_("--ivisls[%i] = %i\n"), i, ivisls[i]);
+      bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
 #endif
     }
 }
@@ -3550,8 +3550,8 @@ void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSIDTV\n"));
-  bft_printf(_("--idtvar = %i\n"), *idtvar);
+  bft_printf("==>CSIDTV\n");
+  bft_printf("--idtvar = %i\n", *idtvar);
 #endif
 }
 
@@ -3580,8 +3580,8 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
   BFT_FREE(path);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSIPHY\n"));
-  bft_printf(_("--iphydr = %i\n"), *iphydr);
+  bft_printf("==>CSIPHY\n");
+  bft_printf("--iphydr = %i\n", *iphydr);
 #endif
 }
 
@@ -3631,13 +3631,13 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIALIN\n"));
-  bft_printf(_("--iale = %i\n"), *iale);
+  bft_printf("==>UIALIN\n");
+  bft_printf("--iale = %i\n", *iale);
   if (*iale) {
-    bft_printf(_("--nalinf = %i\n"), *nalinf);
-    bft_printf(_("--nalimx = %i\n"), *nalimx);
-    bft_printf(_("--epalim = %g\n"), *epalim);
-    bft_printf(_("--iortvm = %i\n"), *iortvm);
+    bft_printf("--nalinf = %i\n", *nalinf);
+    bft_printf("--nalimx = %i\n", *nalimx);
+    bft_printf("--epalim = %g\n", *epalim);
+    bft_printf("--iortvm = %i\n", *iortvm);
   }
 #endif
 }
@@ -3872,12 +3872,12 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                 *nvar, n);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSVNUM\n"));
-  bft_printf(_("--variables and scalars name: \n"));
+  bft_printf("==>CSVNUM\n");
+  bft_printf("--variables and scalars name: \n");
   for (i=0; i < vars->nvar; i++)
-    bft_printf(_("---name: %s\n"), vars->name[i]);
+    bft_printf("---name: %s\n", vars->name[i]);
   /* for (i=0; i < vars->nscapp+vars->nscaus; i++)
-    bft_printf(_("--scalars: %s\n"), vars->label[i]); */
+    bft_printf("--scalars: %s\n", vars->label[i]); */
 #endif
 
 }
@@ -3901,9 +3901,9 @@ void CS_PROCF (csifoa, CSIFOA) (int *const ifoava,
   cs_gui_restart_parameters_file_format("auxiliary_restart", ifoavx);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSIFOA\n"));
-  bft_printf(_("--ifoava = %i\n"), *ifoava);
-  bft_printf(_("--ifoavx = %i\n"), *ifoavx);
+  bft_printf("==>CSIFOA\n");
+  bft_printf("--ifoava = %i\n", *ifoava);
+  bft_printf("--ifoavx = %i\n", *ifoavx);
 #endif
 }
 
@@ -3929,10 +3929,10 @@ void CS_PROCF (csisui, CSISUI) (int *const isuite,
   cs_gui_restart_parameters_status("frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSISUI\n"));
-  bft_printf(_("--isuite = %i\n"), *isuite);
-  bft_printf(_("--ileaux = %i\n"), *ileaux);
-  bft_printf(_("--iccvfg = %i\n"), *iccvfg);
+  bft_printf("==>CSISUI\n");
+  bft_printf("--isuite = %i\n", *isuite);
+  bft_printf("--ileaux = %i\n", *ileaux);
+  bft_printf("--iccvfg = %i\n", *iccvfg);
 #endif
 }
 
@@ -4004,22 +4004,22 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSTIME\n"));
-  bft_printf(_("--idtvar = %i\n"), *idtvar);
+  bft_printf("==>CSTIME\n");
+  bft_printf("--idtvar = %i\n", *idtvar);
   if (*idtvar == -1){
-    bft_printf(_("--inpdt0 = %i\n"), *inpdt0);
-    bft_printf(_("--relxst = %i\n"), *relxst);
+    bft_printf("--inpdt0 = %i\n", *inpdt0);
+    bft_printf("--relxst = %i\n", *relxst);
   }
   else{
-    bft_printf(_("--inpdt0 = %i\n"), *inpdt0);
-    bft_printf(_("--iptlro = %i\n"), *iptlro);
-    bft_printf(_("--ntmabs = %i\n"), *ntmabs);
-    bft_printf(_("--dtref = %f\n"),  *dtref);
-    bft_printf(_("--dtmin = %f\n"),  *dtmin);
-    bft_printf(_("--dtmax = %f\n"),  *dtmax);
-    bft_printf(_("--coumax = %f\n"), *coumax);
-    bft_printf(_("--foumax = %f\n"), *foumax);
-    bft_printf(_("--varrdt = %f\n"), *varrdt);
+    bft_printf("--inpdt0 = %i\n", *inpdt0);
+    bft_printf("--iptlro = %i\n", *iptlro);
+    bft_printf("--ntmabs = %i\n", *ntmabs);
+    bft_printf("--dtref = %f\n",  *dtref);
+    bft_printf("--dtmin = %f\n",  *dtmin);
+    bft_printf("--dtmax = %f\n",  *dtmax);
+    bft_printf("--coumax = %f\n", *coumax);
+    bft_printf("--foumax = %f\n", *foumax);
+    bft_printf("--varrdt = %f\n", *varrdt);
   }
 #endif
 }
@@ -4049,10 +4049,10 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
   cs_gui_thermal_scalar_number(iscalt, iscsth);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSSCA1\n"));
-  bft_printf(_("--iscalt[0]=%i \n"), iscalt[iphas]);
+  bft_printf("==>CSSCA1\n");
+  bft_printf("--iscalt[0]=%i \n", iscalt[iphas]);
   for (i = 0 ; i < vars->nscaus ; i++)
-    bft_printf(_("--iscsth[%i]=%i \n"), i, iscsth[i]);
+    bft_printf("--iscsth[%i]=%i \n", i, iscsth[i]);
 #endif
 }
 
@@ -4135,26 +4135,26 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UINUM1\n"));
+  bft_printf("==>UINUM1\n");
   for (i=0; i < vars->nvar; i++) {
-    bft_printf(_("-->variable[%i] = %s\n"), i, vars->name[i]);
-    bft_printf(_("--blencv = %f\n"), blencv[vars->rtp[i]]);
-    bft_printf(_("--epsilo = %g\n"), epsilo[vars->rtp[i]]);
-    bft_printf(_("--cdtvar = %g\n"), cdtvar[vars->rtp[i]]);
-    bft_printf(_("--nitmax = %i\n"), nitmax[vars->rtp[i]]);
-    bft_printf(_("--ischcv = %i\n"), ischcv[vars->rtp[i]]);
-    bft_printf(_("--isstpc = %i\n"), isstpc[vars->rtp[i]]);
-    bft_printf(_("--ircflu = %i\n"), ircflu[vars->rtp[i]]);
+    bft_printf("-->variable[%i] = %s\n", i, vars->name[i]);
+    bft_printf("--blencv = %f\n", blencv[vars->rtp[i]]);
+    bft_printf("--epsilo = %g\n", epsilo[vars->rtp[i]]);
+    bft_printf("--cdtvar = %g\n", cdtvar[vars->rtp[i]]);
+    bft_printf("--nitmax = %i\n", nitmax[vars->rtp[i]]);
+    bft_printf("--ischcv = %i\n", ischcv[vars->rtp[i]]);
+    bft_printf("--isstpc = %i\n", isstpc[vars->rtp[i]]);
+    bft_printf("--ircflu = %i\n", ircflu[vars->rtp[i]]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
-    bft_printf(_("-->scalar[%i]: %s\n"), isca[i]-1, vars->label[i]);
-    bft_printf(_("--blencv = %f\n"), blencv[isca[i]-1]);
-    bft_printf(_("--epsilo = %g\n"), epsilo[isca[i]-1]);
-    bft_printf(_("--cdtvar = %g\n"), cdtvar[isca[i]-1]);
-    bft_printf(_("--nitmax = %i\n"), nitmax[isca[i]-1]);
-    bft_printf(_("--ischcv = %i\n"), ischcv[isca[i]-1]);
-    bft_printf(_("--isstpc = %i\n"), isstpc[isca[i]-1]);
-    bft_printf(_("--ircflu = %i\n"), ircflu[isca[i]-1]);
+    bft_printf("-->scalar[%i]: %s\n", isca[i]-1, vars->label[i]);
+    bft_printf("--blencv = %f\n", blencv[isca[i]-1]);
+    bft_printf("--epsilo = %g\n", epsilo[isca[i]-1]);
+    bft_printf("--cdtvar = %g\n", cdtvar[isca[i]-1]);
+    bft_printf("--nitmax = %i\n", nitmax[isca[i]-1]);
+    bft_printf("--ischcv = %i\n", ischcv[isca[i]-1]);
+    bft_printf("--isstpc = %i\n", isstpc[isca[i]-1]);
+    bft_printf("--ircflu = %i\n", ircflu[isca[i]-1]);
   }
 #endif
 }
@@ -4186,12 +4186,12 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSNUM2\n"));
-  bft_printf(_("--ivisse = %i\n"), *ivisse);
-  bft_printf(_("--ipucou = %i\n"), *ipucou);
-  bft_printf(_("--imrgra = %i\n"), *imrgra);
-  bft_printf(_("--extrag = %f\n"), *extrag);
-  bft_printf(_("--relaxp = %f\n"), *relaxp);
+  bft_printf("==>CSNUM2\n");
+  bft_printf("--ivisse = %i\n", *ivisse);
+  bft_printf("--ipucou = %i\n", *ipucou);
+  bft_printf("--imrgra = %i\n", *imrgra);
+  bft_printf("--extrag = %f\n", *extrag);
+  bft_printf("--relaxp = %f\n", *relaxp);
 #endif
 }
 
@@ -4245,15 +4245,15 @@ void CS_PROCF (csphys, CSPHYS)
     cs_gui_reference_temperature(vars->model, t0);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSPHYS\n"));
-  bft_printf(_("--gx = %f \n"),*gx);
-  bft_printf(_("--gy = %f \n"),*gy);
-  bft_printf(_("--gz = %f \n"),*gz);
-  bft_printf(_("--rho = %g , variable %i\n"), ro0[iphas], irovar[iphas]);
-  bft_printf(_("--mu = %g , variable %i \n"), viscl0[iphas], ivivar[iphas]);
-  bft_printf(_("--Cp = %g \n"), cp0[0]);
-  bft_printf(_("--T0 = %f \n"), *t0);
-  bft_printf(_("--P0 = %f \n"), *p0);
+  bft_printf("==>CSPHYS\n");
+  bft_printf("--gx = %f \n",*gx);
+  bft_printf("--gy = %f \n",*gy);
+  bft_printf("--gz = %f \n",*gz);
+  bft_printf("--rho = %g , variable %i\n", ro0[iphas], irovar[iphas]);
+  bft_printf("--mu = %g , variable %i \n", viscl0[iphas], ivivar[iphas]);
+  bft_printf("--Cp = %g \n", cp0[0]);
+  bft_printf("--T0 = %f \n", *t0);
+  bft_printf("--P0 = %f \n", *p0);
 #endif
 }
 
@@ -4289,10 +4289,10 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
     }
 
 #if _XML_DEBUG_
-    bft_printf(_("==>CSSCA2\n"));
+    bft_printf("==>CSSCA2\n");
     for (i=0 ; i < vars->nscaus ; i++) {
-      bft_printf(_("--scamin[%i] = %f\n"), i, scamin[i]);
-      bft_printf(_("--scamax[%i] = %f\n"), i, scamax[i]);
+      bft_printf("--scamin[%i] = %f\n", i, scamin[i]);
+      bft_printf("--scamax[%i] = %f\n", i, scamax[i]);
     }
 #endif
   }
@@ -4358,9 +4358,9 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
       }
     }
 #if _XML_DEBUG_
-    bft_printf(_("==>CSSCA3\n"));
+    bft_printf("==>CSSCA3\n");
     for (i=0 ; i < vars->nscaus; i++)
-      bft_printf(_("--visls0[%i] = %f\n"), i, visls0[i]);
+      bft_printf("--visls0[%i] = %f\n", i, visls0[i]);
 #endif
   }
 }
@@ -4393,9 +4393,9 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
   BFT_FREE(turb_ini_choice);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSTINI\n"));
-  bft_printf(_("--almax = %f\n"), almax[iphas]);
-  bft_printf(_("--uref  = %f\n"), uref[iphas]);
+  bft_printf("==>CSTINI\n");
+  bft_printf("--almax = %f\n", almax[iphas]);
+  bft_printf("--uref  = %f\n", uref[iphas]);
 #endif
 }
 
@@ -4611,11 +4611,11 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
               n, vars->nprop);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIPROP %i\n"),*iappel);
-  bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
+  bft_printf("==>UIPROP %i\n"),*iappel;
+  bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0; i < vars->nprop; i++) {
-    bft_printf(_("-->properties_ipp[%i]: %i propce[%i]: %i "
-                 "properties_name[%i]: %s\n"),
+    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+                 "properties_name[%i]: %s\n",
                  i, vars->properties_ipp[i],
                  i, vars->propce[i],
                  i, vars->properties_name[i]);
@@ -4682,9 +4682,9 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
   }
 #if _XML_DEBUG_
-  bft_printf(_("==>UIMOYT\n"));
+  bft_printf("==>UIMOYT\n");
   for (i=0; i < vars->ntimaver; i++) {
-    bft_printf(_("-->ntdmom =  %i\n"), ntdmom[i]);
+    bft_printf("-->ntdmom =  %i\n", ntdmom[i]);
   }
 #endif
 }
@@ -4798,53 +4798,53 @@ void CS_PROCF (csenso, CSENSO)
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>CSENSO\n"));
-  bft_printf(_("--iecaux = %i\n"), *iecaux);
-  bft_printf(_("--ichrvl = %i\n"), *ichrvl);
-  bft_printf(_("--ichrbo = %i\n"), *ichrbo);
-  bft_printf(_("--ichrsy = %i\n"), *ichrsy);
-  bft_printf(_("--fmtchr = %s\n"), "à vérifier en fortran");
-  bft_printf(_("--optchr = %s\n"), "à vérifier en fortran");
-  bft_printf(_("--ntlist = %i\n"), *ntlist);
-  bft_printf(_("--ntchr  = %i\n"), *ntchr);
-  bft_printf(_("--nthist = %i\n"), *nthist);
-  bft_printf(_("--ncapt  = %i\n"), *ncapt);
+  bft_printf("==>CSENSO\n");
+  bft_printf("--iecaux = %i\n", *iecaux);
+  bft_printf("--ichrvl = %i\n", *ichrvl);
+  bft_printf("--ichrbo = %i\n", *ichrbo);
+  bft_printf("--ichrsy = %i\n", *ichrsy);
+  bft_printf("--fmtchr = %s\n", "à vérifier en fortran");
+  bft_printf("--optchr = %s\n", "à vérifier en fortran");
+  bft_printf("--ntlist = %i\n", *ntlist);
+  bft_printf("--ntchr  = %i\n", *ntchr);
+  bft_printf("--nthist = %i\n", *nthist);
+  bft_printf("--ncapt  = %i\n", *ncapt);
   for (i = 0; i < *ncapt; i++) {
-    bft_printf(_("--xyzcap[%i][0] = %f\n"), i, xyzcap[0 +i*3]);
-    bft_printf(_("--xyzcap[%i][1] = %f\n"), i, xyzcap[1 +i*3]);
-    bft_printf(_("--xyzcap[%i][2] = %f\n"), i, xyzcap[2 +i*3]);
+    bft_printf("--xyzcap[%i][0] = %f\n", i, xyzcap[0 +i*3]);
+    bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);
+    bft_printf("--xyzcap[%i][2] = %f\n", i, xyzcap[2 +i*3]);
   }
   for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
     ipp = ipprtp[vars->rtp[i]];
-    bft_printf(_("-->variable ipprtp[%i] = %s\n"), ipp, vars->name[i]);
-    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
-    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
-    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    bft_printf("-->variable ipprtp[%i] = %s\n", ipp, vars->name[i]);
+    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
+    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
+    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                       ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
     ipp = ipprtp[isca[i] -1];
-    bft_printf(_("-->scalar ipprtp[%i]: %s\n"), ipp, vars->label[i]);
-    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
-    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
-    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, vars->label[i]);
+    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
+    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
+    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                       ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
   for (i=0 ; i<vars->nprop ; i++) {
     ipp = vars->properties_ipp[i];
-    bft_printf(_("-->properties_name[%i]: %s\n"), i, vars->properties_name[i]);
-    bft_printf(_("--ichrvr[%i] = %i \n"), ipp, ichrvr[ipp-1]);
-    bft_printf(_("--ilisvr[%i] = %i \n"), ipp, ilisvr[ipp-1]);
-    bft_printf(_("--ihisvr[0][%i]= %i \n"), ipp, ihisvr[0 + (ipp-1)]);
+    bft_printf("-->properties_name[%i]: %s\n", i, vars->properties_name[i]);
+    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
+    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
+    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf(_("--ihisvr[%i][%i]= %i \n"), j+1, ipp,
+        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                       ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
 #endif
@@ -4875,10 +4875,10 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
 
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIUSAR\n"));
-  bft_printf(_("--icoftu = %i %i %i %i\n"),
+  bft_printf("==>UIUSAR\n");
+  bft_printf("--icoftu = %i %i %i %i\n",
                 icoftu[0],icoftu[1],icoftu[2],icoftu[3]);
-  bft_printf(_("           %i %i %i %i\n"),
+  bft_printf("           %i %i %i %i\n",
                 icoftu[4],icoftu[5],icoftu[6],icoftu[7]);
 #endif
 }
@@ -5032,8 +5032,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
   zones = cs_gui_volumic_zones_number();
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIINIV\n"));
-  bft_printf(_("--initialization zones number: %i\n"), zones);
+  bft_printf("==>UIINIV\n");
+  bft_printf("--initialization zones number: %i\n", zones);
 #endif
 
   for (i=1; i < zones+1; i++) {
@@ -5104,12 +5104,12 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
     BFT_FREE(cells_list);
 
 #if _XML_DEBUG_
-    bft_printf(_("--zone name and description: %s, %s\n"), name, description);
-    bft_printf(_("--zone's element number: %i\n"), cells);
+    bft_printf("--zone name and description: %s, %s\n", name, description);
+    bft_printf("--zone's element number: %i\n", cells);
 
     for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++){
       cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
-      bft_printf(_("--initial value for %s: %f\n"),
+      bft_printf("--initial value for %s: %f\n",
         vars->name[j], initial_value);
     }
 
@@ -5118,7 +5118,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
                                   vars->label[j],
                                   name,
                                   &initial_value);
-      bft_printf(_("--initial value for %s: %f\n"), vars->label[j], initial_value);
+      bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
     }
 #endif
     BFT_FREE(name);
@@ -5510,8 +5510,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
   } /*  for izone */
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UICLIM\n"));
-  bft_printf(_("--boundary zones number: %i\n"), zones);
+  bft_printf("==>UICLIM\n");
+  bft_printf("--boundary zones number: %i\n", zones);
 
   for (izone = 0 ; izone < zones ; izone++) {
 
@@ -5536,17 +5536,17 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
 
-    bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
-    bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
-    bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
-    bft_printf(_("----localization: %s\n"), description);
+    bft_printf("---zone %i label: %s\n", zone_nbr, boundaries->label[izone]);
+    bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
+    bft_printf("---zone %i number of faces: %i\n", zone_nbr, faces);
+    bft_printf("----localization: %s\n", description);
 
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-      bft_printf(_("-----iqimp=%i, qimp=%12.5e \n"),
-                   iqimp[zone_nbr-1], qimp[zone_nbr-1]);
-      bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
+      bft_printf("-----iqimp=%i, qimp=%12.5e \n",
+                   iqimp[zone_nbr-1], qimp[zone_nbr-1];
+      bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
                    icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
     }
 
@@ -5554,8 +5554,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
         ifbr = faces_list[0]-1;
         for (i=0; i<vars->nvar; i++) {
           ivar = vars->rtp[i];
-          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, "
-                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+          bft_printf("-----%s: itypfb=%i, icodcl=%i, "
+                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
                          vars->name[ivar],
                          itypfb[iphas *(*nfabor) + ifbr],
                          icodcl[ivar *(*nfabor) + ifbr ],
@@ -5584,8 +5584,8 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
   cs_gui_numerical_double_parameters("density_relaxation", srrom);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UICPI1\n"));
-  bft_printf(_("--srrom  = %f\n"), *srrom);
+  bft_printf("==>UICPI1\n");
+  bft_printf("--srrom  = %f\n", *srrom);
 #endif
 }
 
@@ -5844,11 +5844,11 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                 n, vars->nsalpp);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UICPPR\n"));
-  bft_printf(_("-->nombre de proprietes = %i\n"), vars->nprop);
+  bft_printf("==>UICPPR\n");
+  bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf(_("-->properties_ipp[%i]: %i propce[%i]: %i "
-                 "properties_name[%i]: %s\n"),
+    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+                 "properties_name[%i]: %s\n",
                  i, vars->properties_ipp[i],
                  i, vars->propce[i],
                  i, vars->properties_name[i]);
@@ -6010,9 +6010,9 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   BFT_FREE(snumsca);
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UICPSC\n"));
+  bft_printf("==>UICPSC\n");
   for (i=0; i< vars->nscaus+vars->nscapp; i++) {
-    bft_printf(_("--label of scalar[%i]: %s\n"), i, vars->label[i]);
+    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
   }
 #endif
 
@@ -6419,8 +6419,8 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
   } /*  for izone */
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UICPCL\n"));
-  bft_printf(_("--boundary zones number: %i\n"), zones);
+  bft_printf("==>UICPCL\n");
+  bft_printf("--boundary zones number: %i\n", zones);
 
   for (izone=0 ; izone < zones ; izone++) {
 
@@ -6444,27 +6444,27 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
 
-    bft_printf(_("---zone %i label: %s\n"), zone_nbr, boundaries->label[izone]);
-    bft_printf(_("---zone %i nature: %s\n"), zone_nbr, boundaries->nature[izone]);
-    bft_printf(_("---zone %i number of faces: %i\n"), zone_nbr, faces);
-    bft_printf(_("----localization: %s\n"), description);
+    bft_printf("---zone %i label: %s\n", zone_nbr, boundaries->label[izone]);
+    bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
+    bft_printf("---zone %i number of faces: %i\n", zone_nbr, faces);
+    bft_printf("----localization: %s\n", description);
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-      bft_printf(_("-----iqimp=%i, qimpat=%12.5e \n"),
+      bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
                    iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
-      bft_printf(_("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
+      bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
                    icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
-      bft_printf(_("-----ientat=%i, ientcp=%i, timpat=%12.5e \n"),
+      bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
                    ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
       for (icharb = 0; icharb < *ncharb; icharb++) {
-        bft_printf(_("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n"),
+        bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
                       icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
                       timpcp[icharb *(*nozppm)+zone_nbr-1]);
 
         for (k = 0; k < nclpch[icharb]; k++)
-          bft_printf(_("-----coal=%i, class=%i, distch=%f \n"),
+          bft_printf("-----coal=%i, class=%i, distch=%f \n",
                        icharb, k,
                        distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
       }
@@ -6474,7 +6474,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         ifbr = faces_list[0]-1;
         for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
           ivar = vars->rtp[i];
-          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+          bft_printf("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
                          vars->name[ivar],
                          itypfb[iphas *(*nfabor) + ifbr],
                          icodcl[ivar *(*nfabor) + ifbr ],
@@ -6484,7 +6484,7 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
         }
 
         for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-          bft_printf(_("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n"),
+          bft_printf("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
                          vars->label[ivar],
                          itypfb[iphas *(*nfabor) + ifbr],
                          icodcl[ivar *(*nfabor) + ifbr ],

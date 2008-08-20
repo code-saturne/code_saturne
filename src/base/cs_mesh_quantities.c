@@ -1188,7 +1188,7 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
   const cs_real_t  *i_fac_cog = mesh_quantities->i_face_cog;
   const cs_real_t  *b_fac_cog = mesh_quantities->b_face_cog;
 
-  bft_printf(_("\n\nDUMP OF A MESH QUANTITIES STRUCTURE: %p\n\n"),
+  bft_printf("\n\nDUMP OF A MESH QUANTITIES STRUCTURE: %p\n\n",
              mesh_quantities);
 
   if (mesh_quantities == NULL)
@@ -1196,57 +1196,57 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   /* Cell data */
 
-  bft_printf(_("\n\n"
-               "    ---------------"
-               "    Cell quantities"
-               "    ---------------\n\n"));
+  bft_printf("\n\n"
+             "    ---------------"
+             "    Cell quantities"
+             "    ---------------\n\n");
 
-  bft_printf(_("Cell center coordinates:\n"));
+  bft_printf("Cell center coordinates:\n");
   for (i = 0; i < n_cells; i++)
     bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
                cell_cen[3*i], cell_cen[3*i+1], cell_cen[3*i+2]);
 
-  bft_printf(_("\nCell volume:\n"));
+  bft_printf("\nCell volume:\n");
   for (i = 0; i < n_cells; i++)
     bft_printf("    < %d >    %.3f\n", i+1, cell_vol[i]);
 
   /* Internal faces data */
 
-  bft_printf(_("\n\n"
-               "    -------------------------"
-               "    Internal faces quantities"
-               "    -------------------------\n\n"));
+  bft_printf("\n\n"
+             "    -------------------------"
+             "    Internal faces quantities"
+             "    -------------------------\n\n");
 
-  bft_printf(_("\nInternal faces area\n"));
+  bft_printf("\nInternal faces area\n");
   for (i = 0; i < n_i_faces; i++)
     bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
                i_fac_area[3*i], i_fac_area[3*i+1], i_fac_area[3*i+2]);
 
 
-  bft_printf(_("\nInternal faces center\n"));
+  bft_printf("\nInternal faces center\n");
   for (i = 0; i < n_i_faces; i++)
     bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
                i_fac_cog[3*i], i_fac_cog[3*i+1], i_fac_cog[3*i+2]);
 
   /* Border faces data */
 
-  bft_printf(_("\n\n"
-               "    -----------------------"
-               "    Border faces quantities"
-               "    -----------------------\n\n"));
+  bft_printf("\n\n"
+             "    -----------------------"
+             "    Border faces quantities"
+             "    -----------------------\n\n");
 
-  bft_printf(_("\nBorder faces area\n"));
+  bft_printf("\nBorder faces area\n");
   for (i = 0; i < n_b_faces; i++)
     bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
                b_fac_area[3*i], b_fac_area[3*i+1], b_fac_area[3*i+2]);
 
 
-  bft_printf(_("\nBorder faces center\n"));
+  bft_printf("\nBorder faces center\n");
   for (i = 0; i < n_b_faces; i++)
     bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
                b_fac_cog[3*i], b_fac_cog[3*i+1], b_fac_cog[3*i+2]);
 
-  bft_printf(_("\n\nEND OF DUMP OF MESH QUANTITIES STRUCTURE\n\n"));
+  bft_printf("\n\nEND OF DUMP OF MESH QUANTITIES STRUCTURE\n\n");
   bft_printf_flush();
 
 }

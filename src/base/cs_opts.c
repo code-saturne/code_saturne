@@ -576,14 +576,14 @@ cs_opts_logfile_head(int    argc,
   for (ii = 0 ; ii < argc ; ii++)
     bft_printf(" %s", argv[ii]);
 
-  bft_printf(_("\n"));
-  bft_printf(_("\n************************************"
-                   "***************************\n\n"));
-  bft_printf(_("                                  (R)\n"
-                   "                      Code_Saturne\n\n"
-                   "                      Version 1.3.3\n\n"));
+  bft_printf("\n");
+  bft_printf("\n************************************"
+                   "***************************\n\n");
+  bft_printf("                                  (R)\n"
+             "                      Code_Saturne\n\n"
+             "                      Version 1.3.3\n\n");
 
-  bft_printf(_("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n"));
+  bft_printf("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n");
 
 
   bft_printf(_("  build %s\n"), str);
@@ -597,21 +597,21 @@ cs_opts_logfile_head(int    argc,
                MPI_VERSION, MPI_SUBVERSION);
 #endif
 
-  bft_printf(_("\n"));
-  bft_printf(_("  The Code_Saturne CFD tool  is free software;\n"
-               "  you can redistribute it and/or modify it under the terms\n"
-               "  of the GNU General Public License as published by the\n"
-               "  Free Software Foundation; either version 2 of the License,\n"
-               "  or (at your option) any later version.\n\n"));
+  bft_printf("\n");
+  bft_printf("  The Code_Saturne CFD tool  is free software;\n"
+             "  you can redistribute it and/or modify it under the terms\n"
+             "  of the GNU General Public License as published by the\n"
+             "  Free Software Foundation; either version 2 of the License,\n"
+             "  or (at your option) any later version.\n\n");
 
-  bft_printf(_("  The Code_Saturne CFD tool is distributed in the hope that\n"
-               "  it will be useful, but WITHOUT ANY WARRANTY; without even\n"
-               "  the implied warranty of MERCHANTABILITY or FITNESS FOR A\n"
-               "  PARTICULAR PURPOSE.  See the GNU General Public License\n"
-               "  for more details.\n"));
+  bft_printf("  The Code_Saturne CFD tool is distributed in the hope that\n"
+             "  it will be useful, but WITHOUT ANY WARRANTY; without even\n"
+             "  the implied warranty of MERCHANTABILITY or FITNESS FOR A\n"
+             "  PARTICULAR PURPOSE.  See the GNU General Public License\n"
+             "  for more details.\n");
 
-  bft_printf(_("\n************************************"
-               "***************************\n\n"));
+  bft_printf("\n************************************"
+             "***************************\n\n");
 }
 
 /*----------------------------------------------------------------------------

@@ -1343,52 +1343,52 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 {
   cs_int_t  i, j;
 
-  bft_printf(_("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n"),mesh);
+  bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n",mesh);
 
-  bft_printf(_("space dim :        %d\n"),mesh->dim);
-  bft_printf(_("n_domains :        %d\n"),mesh->n_domains);
-  bft_printf(_("domain_num:        %d\n"),mesh->domain_num);
+  bft_printf("space dim :        %d\n",mesh->dim);
+  bft_printf("n_domains :        %d\n",mesh->n_domains);
+  bft_printf("domain_num:        %d\n",mesh->domain_num);
 
-  bft_printf(_("\nLocal dimensions:\n"));
-  bft_printf(_("n_cells:                %d\n"),mesh->n_cells);
-  bft_printf(_("n_cells_with_ghosts:        %d\n"),mesh->n_cells_with_ghosts);
-  bft_printf(_("n_vertices:                %d\n"),mesh->n_vertices);
-  bft_printf(_("n_i_faces:                %d\n"),mesh->n_i_faces);
-  bft_printf(_("n_b_faces:                %d\n"),mesh->n_b_faces);
+  bft_printf("\nLocal dimensions:\n");
+  bft_printf("n_cells:                %d\n",mesh->n_cells);
+  bft_printf("n_cells_with_ghosts:        %d\n",mesh->n_cells_with_ghosts);
+  bft_printf("n_vertices:                %d\n",mesh->n_vertices);
+  bft_printf("n_i_faces:                %d\n",mesh->n_i_faces);
+  bft_printf("n_b_faces:                %d\n",mesh->n_b_faces);
 
-  bft_printf(_("\nGlobal dimensions:\n"));
-  bft_printf(_("n_g_cells:        %d\n"),mesh->n_g_cells);
-  bft_printf(_("n_g_vertices:        %d\n"),mesh->n_g_vertices);
-  bft_printf(_("n_g_i_faces:        %d\n"),mesh->n_g_i_faces);
-  bft_printf(_("n_g_b_faces:        %d\n"),mesh->n_g_b_faces);
+  bft_printf("\nGlobal dimensions:\n");
+  bft_printf("n_g_cells:        %d\n",mesh->n_g_cells);
+  bft_printf("n_g_vertices:        %d\n",mesh->n_g_vertices);
+  bft_printf("n_g_i_faces:        %d\n",mesh->n_g_i_faces);
+  bft_printf("n_g_b_faces:        %d\n",mesh->n_g_b_faces);
 
-  bft_printf(_("\n\n        --------"
-               "        Vertices"
-               "        --------\n\n"));
+  bft_printf("\n\n        --------"
+             "        Vertices"
+             "        --------\n\n");
 
-  bft_printf(_("\nVertex coordinates:\n"));
+  bft_printf("\nVertex coordinates:\n");
   for (i = 0; i < mesh->n_vertices; i++)
     bft_printf("<%3d > %10.3f        %10.3f        %10.3f\n",
                i+1, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                mesh->vtx_coord[3*i+2]);
 
   if (mesh->n_domains > 1) {
-    bft_printf(_("\nGlobal vertex numbering:\n"));
+    bft_printf("\nGlobal vertex numbering:\n");
     for (i = 0; i < mesh->n_vertices; i++)
       bft_printf("<%3d > %10u\n",
                  i+1, mesh->global_vtx_num[i]);
   }
 
-  bft_printf(_("\n\n        ---------------------------"
-               "        Internal faces connectivity"
-               "        ---------------------------\n\n"));
+  bft_printf("\n\n        ---------------------------"
+             "        Internal faces connectivity"
+             "        ---------------------------\n\n");
 
-  bft_printf(_("\nInternal faces -> Cells connectivity:\n"));
+  bft_printf("\nInternal faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++)
     bft_printf("        < %d >         %5d    <----> %5d\n", i+1,
                mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
 
-  bft_printf(_("\nInternal faces -> vertices connectivity:\n"));
+  bft_printf("\nInternal faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++) {
     bft_printf("        < %d >", i+1);
     for (j = mesh->i_face_vtx_idx[i]-1; j < mesh->i_face_vtx_idx[i+1]-1; j++)
@@ -1398,7 +1398,7 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   if (mesh->global_i_face_num != NULL) {
 
-    bft_printf(_("\nInternal faces global numbering:\n"));
+    bft_printf("\nInternal faces global numbering:\n");
     for (i = 0; i < mesh->n_i_faces; i++)
       bft_printf("        < %d >         %12d",
                  i+1, mesh->global_i_face_num[i]);
@@ -1406,15 +1406,15 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   }
 
-  bft_printf(_("\n\n        -------------------------"
-               "        Border faces connectivity"
-               "        -------------------------\n\n"));
+  bft_printf("\n\n        -------------------------"
+             "        Border faces connectivity"
+             "        -------------------------\n\n");
 
-  bft_printf(_("\nBorder faces -> Cells connectivity:\n"));
+  bft_printf("\nBorder faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++)
     bft_printf("        < %d >         %5d\n", i+1, mesh->b_face_cells[i]);
 
-  bft_printf(_("\nBorder faces -> vertices connectivity:\n"));
+  bft_printf("\nBorder faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++) {
     bft_printf("        < %d >", i+1);
     for (j = mesh->b_face_vtx_idx[i]-1; j < mesh->b_face_vtx_idx[i+1]-1; j++)
@@ -1422,21 +1422,21 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
     bft_printf("\n");
   }
 
-  bft_printf(_("\n\n        -------------------------"
-               "        Cells"
-               "        -------------------------\n\n"));
+  bft_printf("\n\n        -------------------------"
+             "        Cells"
+             "        -------------------------\n\n");
 
   if (mesh->global_cell_num != NULL) {
 
-    bft_printf(_("\nCell global numbering:\n"));
+    bft_printf("\nCell global numbering:\n");
     for (i = 0; i < mesh->n_cells; i++)
       bft_printf("        < %d >         %12d", i+1, mesh->global_cell_num[i]);
     bft_printf("\n");
 
   }
 
-  bft_printf(_("\nNumber of families: %d\n"),mesh->n_families);
-  bft_printf(_("Family of each cell:\n"));
+  bft_printf("\nNumber of families: %d\n",mesh->n_families);
+  bft_printf("Family of each cell:\n");
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
     bft_printf("< %3d >         %5d\n", i+1, mesh->cell_family[i]);
 
@@ -1444,21 +1444,21 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
     cs_mesh_halo_t  *halo = mesh->halo;
 
-    bft_printf(_("\nHalo information: %p\n"), halo);
+    bft_printf("\nHalo information: %p\n", halo);
 
-    bft_printf(_("n_c_domains:                %d\n"), halo->n_c_domains);
-    bft_printf(_("n_ghost_cells:                %d\n"),mesh->n_ghost_cells);
-    bft_printf(_("n_std_ghost_cells:        %d\n"),
+    bft_printf("n_c_domains:                %d\n", halo->n_c_domains);
+    bft_printf("n_ghost_cells:                %d\n",mesh->n_ghost_cells);
+    bft_printf("n_std_ghost_cells:        %d\n",
                halo->n_elts_out[CS_MESH_HALO_STANDARD]);
-    bft_printf(_("n_ext_ghost_cells:        %d\n"),
+    bft_printf("n_ext_ghost_cells:        %d\n",
                halo->n_elts_out[CS_MESH_HALO_EXTENDED]
                - halo->n_elts_out[CS_MESH_HALO_STANDARD]);
 
     for (i = 0; i < halo->n_c_domains; i++) {
 
-      bft_printf(_("\n\nRank id:        %d\n"
-                   "Index start:        %d        end:        %d\n"
-                   "Cell numbering:        "), halo->c_domain_rank[i],
+      bft_printf("\n\nRank id:        %d\n"
+                 "Index start:        %d        end:        %d\n"
+                 "Cell numbering:        ", halo->c_domain_rank[i],
                  halo->index_out[2*i], halo->index_out[2*i+2]);
       for (j = halo->index_out[2*i]; j < halo->index_out[2*i+2]; j++)
         bft_printf("%3d (%d) ; ",halo->list_out[j]+1, j+1+mesh->n_cells);
@@ -1470,23 +1470,23 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
       const cs_int_t  n_c_domains = halo->n_c_domains;
       const cs_int_t  n_transforms = mesh->n_transforms;
 
-      bft_printf(_("\n\nHalo's data in case of periodicity:\n"));
-      bft_printf(_("n_transforms:                %d\n"),mesh->n_transforms);
+      bft_printf("\n\nHalo's data in case of periodicity:\n");
+      bft_printf("n_transforms:                %d\n",mesh->n_transforms);
 
       bft_printf("\nData in the standard halo\n");
       for (i = 0; i < n_transforms; i++)
         for (j = 0; j < n_c_domains; j++)
-          bft_printf(_("< rank:%3d >< transform:%2d > start_idx: %5d"
-                       "        n_elts: %5d\n"),
+          bft_printf("< rank:%3d >< transform:%2d > start_idx: %5d"
+                     "        n_elts: %5d\n",
                      halo->c_domain_rank[j], i,
                      halo->perio_lst_out[4*n_c_domains*i + 4*j],
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+1]);
 
-      bft_printf(_("\nData in the extended halo\n"));
+      bft_printf("\nData in the extended halo\n");
       for (i = 0; i < n_transforms; i++)
         for (j = 0; j < n_c_domains; j++)
-          bft_printf(_("< rank:%3d >< transform:%2d >        "
-                       "start_idx:  %5d, n_elts:  %5d\n"),
+          bft_printf("< rank:%3d >< transform:%2d >        "
+                     "start_idx:  %5d, n_elts:  %5d\n",
                      halo->c_domain_rank[j], i,
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+2],
                      halo->perio_lst_out[4*n_c_domains*i + 4*j+3]);
@@ -1497,7 +1497,7 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   if (mesh->cell_cells_idx != NULL) {
 
-    bft_printf(_("\n\nCell -> cells connectivity for extended neighborhood\n\n"));
+    bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
     for (i = 0; i < mesh->n_cells; i++) {
       bft_printf("< cell n°:%3d>        ", i+1);
       for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
@@ -1507,7 +1507,7 @@ cs_mesh_dump(const cs_mesh_t  *const mesh)
 
   }
 
-  bft_printf(_("\n\nEND OF DUMP OF MESH STRUCTURE\n\n"));
+  bft_printf("\n\nEND OF DUMP OF MESH STRUCTURE\n\n");
   bft_printf_flush();
 
 }
