@@ -1110,12 +1110,12 @@ _echo_pre(const cs_io_t  *cs_io)
   switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    bft_printf(_("\n  Section read on \"%s\" :\n"),
+    bft_printf(_("\n  Section read on \"%s\":\n"),
                fvm_file_get_name(cs_io->f));
     break;
 
   case CS_IO_MODE_WRITE:
-    bft_printf(_("\n  Section written on \"%s\" :\n"),
+    bft_printf(_("\n  Section written on \"%s\":\n"),
                fvm_file_get_name(cs_io->f));
     break;
 
