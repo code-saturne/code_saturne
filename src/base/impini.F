@@ -216,9 +216,9 @@ C
 #if defined(_CS_LANG_FR)
 C
  1500 FORMAT(
-     &'                                                             ',/,
-     &' ** DIMENSIONS                                               ',/,
-     &'    ----------                                               ',/)
+     &                                                                /,
+     &' ** DIMENSIONS'                                               ,/,
+     &'    ----------'                                               ,/)
  1510 FORMAT(
      &' --- Geometrie'                                               ,/,
      &'       NPRFML = ',4X,I10,    ' (Nb de proprietes de famille )',/,
@@ -239,15 +239,9 @@ C
  1500 FORMAT(
      &                                                                /,
      &' ** DIMENSIONS'                                               ,/,
-     &'    ----------'                                               ,/,
+     &'    ----------'                                               ,/)
  1510 FORMAT(
      &' --- Geometry'                                                ,/,
-     &'       NCEL   = ',4X,I10,    ' (Nb local active cells       )',/,
-     &'       NFAC   = ',4X,I10,    ' (Nb local internal faces     )',/,
-     &'       NFABOR = ',4X,I10,    ' (Nb local boundary faces     )',/,
-     &'       NNOD   = ',4X,I10,    ' (Nb local vertices           )',/,
-     &'       LNDFAC = ',4X,I10,    ' (Loc internal face->vtx size )',/,
-     &'       LNDFBR = ',4X,I10,    ' (Loc boundary face->vtx size )',/,
      &'       NPRFML = ',4X,I10,    ' (Nb max. family properties   )',/,
      &'       NFML   = ',4X,I10,    ' (Nb families                 )',/)
  1520 FORMAT(
@@ -1507,14 +1501,14 @@ C
      &'       IMRGRA = ',4X,I10,    ' (Mode de reconstruction      )',/,
      &'       ANOMAX = ',E14.5 ,    ' (Angle de non ortho. limite  )',/,
      &'                               (pour moindres carres etendu )',/,
-     &'                                                             ',/,
+     &                                                                /,
      &'-----------------------------------------------------------'  ,/,
      &' Variable NSWRGR NSWRSM      EPSRGR      EPSRSM      EXTRAG'  ,/,
      &'-----------------------------------------------------------'    )
  4520 FORMAT(
      & 1X,    A8,    I7,    I7,      E12.4,      E12.4,      E12.4     )
  4511 FORMAT(
-     &'-----------------------------------------------'              ,/,
+     &'-----------------------------------------------------------  ',/,
      &                                                                /,
      &'-----------------------------------'                          ,/,
      &' Variable IRCFLU IMLIGR      CLIMGR'                          ,/,
@@ -1676,7 +1670,7 @@ C
  4520 FORMAT(
      & 1X,    A8,    I7,    I7,      E12.4,      E12.4,      E12.4     )
  4511 FORMAT(
-     &'-----------------------------------------------'              ,/,
+     &'-----------------------------------------------------------  ',/,
      &                                                                /,
      &'-----------------------------------'                          ,/,
      &' Variable IRCFLU IMLIGR      CLIMGR'                          ,/,
@@ -1808,6 +1802,7 @@ C
      &                                                                /,
      &'       BLENCY = ',E14.5 ,    ' (2nd order conv. scheme prop.)',/,
      &'       EPSILY = ',E14.5 ,    ' (Iterative solver precision  )',/,
+     &'       EPSRSY = ',E14.5 ,    ' (rhs reconstruction precision)',/,
      &'       EPSRGY = ',E14.5 ,    ' (Gradient reconstr. precision)',/,
      &'       CLIMGY = ',E14.5 ,    ' (Coeff. for grad. limitation )',/,
      &'       EXTRAY = ',E14.5 ,    ' (Coeff. for grad. extrapolat.)',/,
@@ -1877,7 +1872,7 @@ C
      &'       NITMAX =                (nb d iterations max         )',/,
      &'       EPSILO =                (precision resolution        )',/,
      &'       IDIRCL = 0 ou 1         (decalage de la diagonale si'  ,/,
-     &'                                 ISTAT=0 et pas de Dirichlet)',/)
+     &'                                ISTAT=0 et pas de Dirichlet )',/)
 C
  5510 FORMAT(
      &                                                                /,
@@ -1921,7 +1916,7 @@ C
      &'       NITMAX =                (max number of iterations    )',/,
      &'       EPSILO =                (resolution precision        )',/,
      &'       IDIRCL = 0 ou 1         (shift diagonal if          '  ,/,
-     &'                                 ISTAT=0 and no Dirichlet   )',/)
+     &'                                ISTAT=0 and no Dirichlet    )',/)
 C
  5510 FORMAT(
      &                                                                /,
@@ -2125,8 +2120,8 @@ C
      &'                               (0: explicit                 )',/,
      &'                               (1: n+thetvs with thetvs=1/2 )',/,
      &'                               (2: n+thetvs with thetvs=1   )',/,
-     &'       THETVS =                (theta pour diffusiv. scalaire',/,
-     &'                               ((1+theta)nouveau-theta ancien',/)
+     &'       THETVS =                (theta for scalar diffusivity' ,/,
+     &'                               ((1+theta).new-theta.old     )',/)
 C
 #endif
 C
@@ -2165,58 +2160,57 @@ C
 #if defined(_CS_LANG_FR)
 C
  7000 FORMAT(
-     &                                                                /,
-     &' ** GESTION DU CALCUL'                                        ,/,
-     &'    -----------------'                                        ,/)
+     &'                                                             ',/,
+     &' ** GESTION DU CALCUL                                        ',/,
+     &'    -----------------                                        ',/)
  7010 FORMAT(
-     &' --- Suite de calcul'                                         ,/,
+     &' --- Suite de calcul                                         ',/,
      &'       ISUITE = ',4X,I10,    ' (1 : suite de calcul         )',/,
      &'       ILEAUX = ',4X,I10,    ' (1 : lecture  de suiamx aussi)',/,
      &'       IECAUX = ',4X,I10,    ' (1 : ecriture de suiavx aussi)',/,
-     &                                                                /,
+     &'                                                             ',/,
      &'       suiamx et suiavx sont les fichiers suite auxiliaires.)',/)
  7020 FORMAT(
-     &'       ISCOLD(I) : Dans le calcul precedent, numero du'       ,/,
-     &'                   scalaire correspondant au scalaire I du'   ,/,
-     &'                   calcul courant :'                          ,/,
-     &                                                                /,
-     &'---------------------------------------------------'          ,/,
-     &' Scalaire Numero   <-   Numero de l''ancien scalaire'         ,/,
-     &'---------------------------------------------------'            )
+     &'       ISCOLD(I) : Dans le calcul precedent, numero du       ',/,
+     &'                   scalaire correspondant au scalaire I du   ',/,
+     &'                   calcul courant :                          ',/,
+     &'                                                             ',/,
+     &'---------------------------------------------------          ',/,
+     &' Scalaire Numero   <-   Numero de l''ancien scalaire         ',/,
+     &'---------------------------------------------------          '  )
  7030 FORMAT(
      & 1X,    A8,    I7,    7X,    I7                                  )
  7040 FORMAT(
-     &'---------------------------------------------------'          ,/,
-     &                                                                /,
-     &'   La table precedente (ISCOLD) donne la correspondance des'  ,/,
-     &'     scalaires du calcul courant avec ceux du calcul'         ,/,
+     &'---------------------------------------------------          ',/,
+     &'                                                             ',/,
+     &'   La table precedente (ISCOLD) donne la correspondance des  ',/,
+     &'     scalaires du calcul courant avec ceux du calcul         ',/,
      &'     precedent apres intervention eventuelle de l utilisateur',/,
-     &'   Il s''agit de numeros de 1 a NSCAL qui reperent le'        ,/,
-     &'     scalaire dans la liste de tous les scalaires'            ,/,
-     &'     utilisateur+physique particuliere.'                      ,/,
-     &'     .-999 est la valeur par defaut si l utilisateur n est'   ,/,
-     &'           intervenu. Le numero des correspondant sera'       ,/,
-     &'           complete a la lecture du fichier suite, selon'     ,/,
-     &'           le nombre de scalaires disponibles, en utilisant'  ,/,
+     &'   Il s''agit de numeros de 1 a NSCAL qui reperent le        ',/,
+     &'     scalaire dans la liste de tous les scalaires            ',/,
+     &'     utilisateur+physique particuliere.                      ',/,
+     &'     .-999 est la valeur par defaut si l utilisateur n est   ',/,
+     &'           intervenu. Le numero des correspondant sera       ',/,
+     &'           complete a la lecture du fichier suite, selon     ',/,
+     &'           le nombre de scalaires disponibles, en utilisant  ',/,
      &'           la loi (nouveau scalaire ii <- ancien scalaire ii)',/,
-     &'     .   0 si l utilisateur souhaite que le scalaire du'      ,/,
-     &'           calcul courant n ait pas de correspondant (i.e.'   ,/,
-     &'           soit un nouveau scalaire).'                        ,/,
-     &'     .   n > 0 si l utilisateur souhaite que le scalaire du'  ,/,
-     &'           calcul courant ait pour correspondant le scalaire' ,/,
-     &'           n du calcul precedent.'                            ,/)
+     &'     .   0 si l utilisateur souhaite que le scalaire du      ',/,
+     &'           calcul courant n ait pas de correspondant (i.e.   ',/,
+     &'           soit un nouveau scalaire).                        ',/,
+     &'     .   n > 0 si l utilisateur souhaite que le scalaire du  ',/,
+     &'           calcul courant ait pour correspondant le scalaire ',/,
+     &'           n du calcul precedent.                            ',/)
  7110 FORMAT(
-     &' --- Duree du calcul'                                         ,/,
-     &'     La numerotation des pas de temps et la mesure du temps'  ,/,
-     &'       physique simule sont des valeurs absolues'             ,/,
-     &'       et non pas des valeurs relatives au calcul en cours.'  ,/,
-     &                                                                /,
+     &' --- Duree du calcul                                         ',/,
+     &'     La numerotation des pas de temps et la mesure du temps  ',/,
+     &'       physique simule sont des valeurs absolues             ',/,
+     &'       et non pas des valeurs relatives au calcul en cours.  ',/,
+     &'                                                             ',/,
      &'       INPDT0 = ',4X,I10,    ' (1 : calcul a zero pas de tps)',/,
      &'       NTMABS = ',4X,I10,    ' (Pas de tps final demande    )',/)
  7210 FORMAT(
-     &' --- Marge en temps CPU'                                      ,/,
+     &' --- Marge en temps CPU                                      ',/,
      &'       TMARUS = ', E14.5,    ' (Marge CPU avant arret       )',/)
-C
 #else
 C
  7000 FORMAT(
@@ -2485,7 +2479,7 @@ C
  7612 FORMAT(
      &' --- Fichiers rayonnement'                                    ,/,
      &                                                                /,
-     &'         DONNEES    AMONT    JANAF     AVAL                  ',/,
+     &'         DONNEES    AMONT    JANAF     AVAL'                  ,/,
      &'Nom    ',     4(3X,A6)                                        ,/,
      &'Unite  ',     I9,   9X,     I9                                ,/)
  7613 FORMAT(
@@ -2523,10 +2517,10 @@ C
  7650 FORMAT(
      &                                                                /,
      &' --- Fichiers preprocesseur'                                  ,/,
-     &'   Formats : 1=Lecture dus fichiers preprocessor_output'      ,/,
-     &'             0=Solveur autonome'                              ,/,
+     &'   Format : 1=Lecture du fichier preprocessor_output'         ,/,
+     &'            0=Solveur autonome'                               ,/,
      &                                                                /,
-     &'Format ',I10                                                  ,/)
+     &' Format ',I10                                                 ,/)
 C
 #else
 C
@@ -2539,28 +2533,23 @@ C
      &                                                                /,
      &'         GEOMETRY  MAIN RESTART  AUX RESTART   STOP'          ,/,
      &'Name   ',     4(5X,A6)                                        ,/,
-     &'Unit   ',     4I11                                            ,/,
-     &'Format ',     I11,      7X,A4,     7X,A4,       I11           ,/)
+     &'Unit   ',     I11,        11X,       11X,       I11           ,/)
  7611 FORMAT(
      &'         MAIN CHECKPOINT  AUX CHECKPOINT'                     ,/,
-     &'Name   ',     2(5X,A6)                                        ,/,
-     &'Unit   ',     2I11                                            ,/,
-     &'Format ',     2I11                                            ,/)
+     &'Name   ',     2(5X,A6)                                        ,/)
  7612 FORMAT(
      &' --- Radiative files'                                         ,/,
      &                                                                /,
-     &'         DATA       RESTART  JANAF                 CHECKPOINT',/,
-     &'Name   ',     3(3X,A6),     9X, 9X, (3X,A6)                   ,/,
-     &'Unit   ',     3    I9 ,     9X, 9X,     I9                    ,/,
-     &'Format ',     I9,3X,A4,2X,      I9,            9X, 9X,     I9 ,/)
+     &'         DATA       RESTART  JANAF   CHECKPOINT'              ,/,
+     &'Name   ',     4(3X,A6)                                        ,/,
+     &'Unit   ',     I9,   9X,     I9                                ,/)
  7613 FORMAT(
      &' --- Lagrangian files'                                        ,/,
      &                                                                /,
      &'         --- RESTART ---    -- CHECKPOINT -    ---- POST ----',/,
      &'         CALCUL.   STAT.    CALCUL.   STAT.    LOG      HIST.',/,
      &'Name  ',     2(3X,A6),  1X,      2(3X,A6),   4X,       A6     ,/,
-     &'Unit  ',     2    I9 ,  1X,       2    I9,   6X,     3 I4     ,/,
-     &'Format',5X,A4,5X,A4,2X, 4X,      I4,5X,I4,   6X,     3 I4     ,/)
+     &'Unit  ',         18X ,  1X,           18X,   6X,     3 I4     ,/)
  7615 FORMAT(
      &' --- Other files for Lagrangian module'                       ,/,
      &                                                                /,
@@ -2589,10 +2578,10 @@ C
  7650 FORMAT(
      &                                                                /,
      &' --- Preprocessor files'                                      ,/,
-     &'   Formats: 1=Read preprocessor_output files'                 ,/,
-     &'            0=Standalone solver'                              ,/,
+     &'   Format: 1=Read preprocessor_output file'                   ,/,
+     &'           0=Standalone solver'                               ,/,
      &                                                                /,
-     &'Format ',I10                                                  ,/)
+     &' Format ',I10                                                 ,/)
 C
 #endif
 C
@@ -2987,7 +2976,6 @@ C
 C=======================================================================
 C 13. FIN
 C=======================================================================
-C
 C
       RETURN
       END
