@@ -572,6 +572,11 @@ rmb.sh_lance"
  for fich in $listeaux  ; do 
    chmod    u+x aux/$fich
  done
+# Executable files in sbin
+ listesbin="gettextize"
+ for fich in $listesbin  ; do 
+   chmod    u+x sbin/$fich
+ done
 # Executable files in arch
 find arch -name "*.exe" -exec chmod uog+x {} \;
 # Access to the lib directory
