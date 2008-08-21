@@ -694,7 +694,7 @@ void cs_base_mem_fin
       /* Impressions */
 
       bft_printf (_("  %s %12.3f %co\n"),
-                  type_bil[ind_bil], valreal[ind_bil], unite[itot]);
+                  _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
 #if defined(_CS_HAVE_MPI)
       if (cs_glob_base_nbr > 1 && cs_glob_base_rang == 0) {
@@ -893,15 +893,15 @@ void cs_base_info_systeme
 
   bft_printf("\n%s\n", _("Local case configuration:\n"));
 
-  bft_printf("  %-19s%s\n", _("Date:"), str_date);
+  bft_printf("  %s%s\n", _("Date:              "), str_date);
 
-  bft_printf("  %-19s%s\n", _("System:"),     str_system);
-  bft_printf("  %-19s%s\n", _("Machine:"),     str_machine);
-  bft_printf("  %-19s%s\n", _("Processor:"),  bft_sys_info_cpu());
+  bft_printf("  %s%s\n", _("System:            "),  str_system);
+  bft_printf("  %s%s\n", _("Machine:           "),  str_machine);
+  bft_printf("  %s%s\n", _("Processor:         "),  bft_sys_info_cpu());
   if (ram > 0)
-    bft_printf("  %-19s%s\n", _("Memory:"),   str_ram);
-  bft_printf("  %-19s%s\n", _("User:"), str_user);
-  bft_printf("  %-19s%s\n", _("Directory:"),  str_directory);
+    bft_printf("  %s%s\n", _("Memory:            "),   str_ram);
+  bft_printf("  %s%s\n", _("User:                "), str_user);
+  bft_printf("  %s%s\n", _("Directory:           "),  str_directory);
 
   bft_printf("\n");
 

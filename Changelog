@@ -1,3 +1,9 @@
+* 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correcting some strings for alignement and translation.
+  modified files:
+    po/fr.po
+    src/base/cs_base.c
+
 * 21/08/2008 - David Monfort <david.monfort@edf.fr>
   Add english translation to the BASE module.
   C files and po dictionnary.

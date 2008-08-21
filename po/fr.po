@@ -114,32 +114,32 @@ msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
 #: src/base/cs_base.c:896
-msgid "Date:"
-msgstr "Date :"
+msgid "Date:              "
+msgstr "Date :             "
 
 #: src/base/cs_base.c:898
-msgid "System:"
-msgstr "Système :"
+msgid "System:            "
+msgstr "Système :          "
 
 #: src/base/cs_base.c:899
-msgid "Machine:"
-msgstr "Machine :"
+msgid "Machine:           "
+msgstr "Machine :          "
 
 #: src/base/cs_base.c:900
-msgid "Processor:"
-msgstr "Processeur :"
+msgid "Processor:         "
+msgstr "Processeur :       "
 
 #: src/base/cs_base.c:902
-msgid "Memory:"
-msgstr "Mémoire :"
+msgid "Memory:            "
+msgstr "Mémoire :          "
 
 #: src/base/cs_base.c:903
-msgid "User:"
-msgstr "Utilisateur :"
+msgid "User:              "
+msgstr "Utilisateur :      "
 
 #: src/base/cs_base.c:904
-msgid "Directory:"
-msgstr "Répertoire :"
+msgid "Directory:         "
+msgstr "Répertoire :       "
 
 #: src/base/cs_base.c:938
 #, c-format
