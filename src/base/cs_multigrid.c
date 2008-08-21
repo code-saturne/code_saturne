@@ -279,7 +279,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
   int n_it_e_mean = (int)(this_info->n_iterations_tot[3] / n_solves_denom);
 
   bft_printf(_("\n"
-               "Bilan du multigrille pour \"%s\" :\n\n"),
+               "Summary of multigrid for \"%s\":\n\n"),
                this_info->name);
 
   if (this_info->type[0] != CS_SLES_N_TYPES) {
@@ -288,42 +288,42 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
     const char *ascent_smoother_name = cs_sles_type_name[this_info->type[1]];
 
     if (this_info->type[0] == this_info->type[1])
-      bft_printf(_("  Lisseur : %s\n"), descent_smoother_name);
+      bft_printf(_("  Smoother: %s\n"), descent_smoother_name);
     else
-      bft_printf(_("  Lisseur de descente : %s\n"
-                   "  Lisseur de remontée : %s\n"),
+      bft_printf(_("  Descent smoother:     %s\n"
+                   "  Ascent smoother:      %s\n"),
                  descent_smoother_name, ascent_smoother_name);
 
-    bft_printf(_("  Solveur de niveau grossier : %s\n"),
+    bft_printf(_("  Coarsest level solver:       %s\n"),
                cs_sles_type_name[this_info->type[2]]);
 
   }
 
-  bft_printf(_("  Nombre de constructions :         %d\n"
-               "  Nombre de résolutions :           %d\n"
-               "  Nombre de niveaux :\n"
-               "    minimal :                       %d\n"
-               "    maximal :                       %d\n"
-               "    moyen :                         %d\n"
-               "  Nombre d'itérations :\n"
-               "    sur grille la plus fine :\n"
+  bft_printf(_("  Number of constructions:          %d\n"
+               "  Number of resolutions:            %d\n"
+               "  Number of levels:\n"
+               "    minimum:                        %d\n"
+               "    maximum:                        %d\n"
+               "    mean:                           %d\n"
+               "  Number of iterations:\n"
+               "    on finest grid:\n"
+               "      minimum:                      %d\n"
+               "      maximum:                      %d\n"
+               "      mean:                         %d\n"
+               "    on coarsest grid:\n"
+               "      minimum:                      %d\n"
+               "      maximum:                      %d\n"
+               "      mean:                         %d\n"
+               "    total on grids:\n"
+               "      minimum:                      %d\n"
+               "      maximum:                      %d\n"
+               "      mean:                         %d\n"
+               "    equivalent (total weighted by number of cells) :\n"
                "      minimal :                     %d\n"
                "      maximal :                     %d\n"
                "      moyen :                       %d\n"
-               "    sur grille la plus grossière :\n"
-               "      minimal :                     %d\n"
-               "      maximal :                     %d\n"
-               "      moyen :                       %d\n"
-               "    total sur les grilles :\n"
-               "      minimal :                     %d\n"
-               "      maximal :                     %d\n"
-               "      moyen :                       %d\n"
-               "    équivalent (total pondéré par le nombre de cellules) :\n"
-               "      minimal :                     %d\n"
-               "      maximal :                     %d\n"
-               "      moyen :                       %d\n"
-               "  Temps associés (construction, résolution)\n"
-               "    écoulé cumulé :                 %12.3f  %12.3f\n"),
+               "  Associated times (construction, resolution)\n"
+               "    cumulative elapsed:             %12.3f  %12.3f\n"),
              n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
              n_it_f_min, n_it_f_max, n_it_f_mean,
              n_it_c_min, n_it_c_max, n_it_c_mean,
@@ -346,9 +346,9 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
     MPI_Allreduce(cpu_loc, cpu_tot, 2, MPI_DOUBLE, MPI_SUM,
                   cs_glob_base_mpi_comm);
 
-    bft_printf(_("    CPU cumulé local min :          %12.3f  %12.3f\n"
-                 "    CPU cumulé local max :          %12.3f  %12.3f\n"
-                 "    CPU cumulé total :              %12.3f  %12.3f\n"),
+    bft_printf(_("    Min local total CPU time:       %12.3f  %12.3f\n"
+                 "    Max local total CPU time:       %12.3f  %12.3f\n"
+                 "    Total CPU time:                 %12.3f  %12.3f\n"),
                cpu_min[0], cpu_min[1], cpu_max[0], cpu_max[1],
                cpu_tot[0], cpu_tot[1]);
 
@@ -357,7 +357,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 #endif
 
   if (cs_glob_base_nbr == 1)
-    bft_printf(_("    CPU cumulé :                    %12.3f  %12.3f\n"),
+    bft_printf(_("    Total CPU time:                 %12.3f  %12.3f\n"),
                this_info->cpu_tot[0], this_info->cpu_tot[1]);
 }
 
@@ -734,17 +734,17 @@ _convergence_test(const char         *var_name,
 {
   const char cycle_h_fmt[]
     = N_("  ---------------------------------------------------\n"
-         "    nb.    | Cumul des iterations | Residu norm.\n"
-         "    cycles | sur maillage fin     | maillage fin\n"
+         "    n.     | Cumulative iterations | Norm. residual\n"
+         "    cycles | on fine mesh          | on fine mesh\n"
          "  ---------------------------------------------------\n");
   const char cycle_t_fmt[]
     = N_("  ---------------------------------------------------\n");
   const char cycle_cv_fmt[]
-    = N_("     %4d  |              %6d  |  %12.4e\n");
+    = N_("     %4d  |               %6d  |  %12.4e\n");
 
   const char cycle_fmt[]
-    = N_("   Nb. cycles :%4d ; Cumul iter maillage fin : %5d ;"
-         " Residu norme %12.4e\n");
+    = N_("   N. cycles:%4d; Fine mesh cumulative iter: %5d;"
+         " Norm. residual %12.4e\n");
 
   /* Compute residue */
 
@@ -774,9 +774,9 @@ _convergence_test(const char         *var_name,
                    cycle_id, n_iters, *residue/r_norm);
         bft_printf(_(cycle_t_fmt));
       }
-      bft_printf(_(" @@ Attention : multigrille algébrique pour [%s]\n"
-                   "    *********\n"
-                   "    Nombre de cycles maximal (%d) atteint\n"),
+      bft_printf(_(" @@ Warning: algebraic multigrid for [%s]\n"
+                   "    ********\n"
+                   "    Maximum number of cycles (%d) reached.\n"),
                  var_name, n_max_cycles);
 
     }
@@ -937,7 +937,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   /*---------*/
 
   if (verbosity > 2)
-    bft_printf(_("  Cycle multigrille : descente\n"));
+    bft_printf(_("  Multigrid cycle: descent\n"));
 
   for (level = 0; level < coarsest_level; level++) {
 
@@ -950,7 +950,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     /* Smoother pass */
 
     if (verbosity > 2)
-      bft_printf(_("    niveau %3d : lisseur\n"), level);
+      bft_printf(_("    level %3d: smoother\n"), level);
 
     cs_grid_get_matrix(f, &_da, &_xa, &_matrix);
 
@@ -1043,7 +1043,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     /*---------------------------------------*/
 
     if (verbosity > 2)
-      bft_printf(_("  Résolution sur le niveau le plus grossier\n"));
+      bft_printf(_("  Resolution on coarsest level\n"));
 
     assert(level = coarsest_level);
     assert(c == mg->grid_hierarchy[coarsest_level]);
@@ -1082,7 +1082,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     /*--------*/
 
     if (verbosity > 2)
-      bft_printf(_("  Cycle multigrille : remontée\n"));
+      bft_printf(_("  Multigrid cycle: ascent\n"));
 
     for (level = coarsest_level - 1; level > -1; level--) {
 
@@ -1113,7 +1113,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
       if (level > 0) {
 
         if (verbosity > 2)
-          bft_printf(_("    niveau %3d : lisseur\n"), level);
+          bft_printf(_("    level %3d: smoother\n"), level);
 
         sprintf(var_lv_name, "%s:%04d", var_name, level);
 
@@ -1242,7 +1242,7 @@ _multigrid_solve(const char         *var_name,
   *n_iter = 0;
 
   if (cs_sles_needs_solving(var_name,
-                            _("Multigrille"),
+                            _("Multigrid"),
                             n_cells,
                             verbosity,
                             r_norm,
@@ -1275,14 +1275,14 @@ _multigrid_solve(const char         *var_name,
     n_max_iter[(mg->n_levels-1)*2 + 1] = n_max_iter_coarse;
 
     if (verbosity == 2) /* More detailed headers later if > 2 */
-      bft_printf(_("Multigrille [%s]:\n"), var_name);
+      bft_printf(_("Multigrid [%s]:\n"), var_name);
 
     /* Cycle to solution */
 
     while (end_cycle == false) {
 
       if (verbosity > 2)
-        bft_printf(_("Multigrille [%s] : cycle %4d\n"),
+        bft_printf(_("Multigrid [%s]: cycle %4d\n"),
                    var_name, cycle_id);
 
       end_cycle = _multigrid_cycle(mg,
@@ -1435,7 +1435,7 @@ void CS_PROCF(clmlga, CLMLGA)
   mg = _find_or_add_system(var_name);
 
   if (*iwarnp > 1)
-    bft_printf(_("\n Construction de la hiérarchie de grilles pour \"%s\"\n"),
+    bft_printf(_("\n Construction of grids hierarchy for \"%s\"\n"),
                var_name);
 
   /* Destroy previous hierarchy if necessary */
@@ -1478,8 +1478,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
     else if (grid_lv >= *ngrmax) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_(" CLMLGA : nombre de maillages grossiers maximal (%d)\n"
-                   "          atteint pour \"%s\".\n"),
+      bft_printf(_(" CLMLGA: maximum number of coarse grids (%d)\n"
+                   "         reached for \"%s\".\n"),
                  (int)(*ngrmax), var_name);
       break;
     }
@@ -1489,7 +1489,7 @@ void CS_PROCF(clmlga, CLMLGA)
     grid_lv += 1;
 
     if (*iwarnp > 2)
-      bft_printf(_("\n   construction de la grille de niveau %2d\n"), grid_lv);
+      bft_printf(_("\n   building level %2d grid\n"), grid_lv);
 
     g = cs_grid_coarsen(g, *iwarnp, *nagmax, iagmax);
 
@@ -1526,16 +1526,16 @@ void CS_PROCF(clmlga, CLMLGA)
 
         bft_printf
           (_("                                  total       min        max\n"
-             "     nombre de cellules : %12lu %10d %10d\n"
-             "     nombre de faces :                 %10d %10d\n"),
+             "     number of cells:     %12lu %10d %10d\n"
+             "     number of faces:                  %10d %10d\n"),
            (unsigned long)n_g_cells, n_c_min, n_c_max, n_f_min, n_f_max);
       }
 
 #endif
 
       if (cs_glob_base_nbr == 1)
-        bft_printf(_("     nombre de cellules : %10d\n"
-                     "     nombre de faces :    %10d\n"),
+        bft_printf(_("     number of cells:     %10d\n"
+                     "     number of faces:     %10d\n"),
                    (int)n_cells, (int)n_faces);
 
     }
@@ -1551,8 +1551,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
   if (*iwarnp > 1)
     bft_printf
-      (_("   nombre de maillages grossiers :                        %d\n"
-         "   nombre de cellules dans le maillage le plus grossier : %lu\n\n"),
+      (_("   number of coarse grids:           %d\n"
+         "   number of cells in coarsest grid: %lu\n\n"),
        grid_lv, (unsigned long)n_g_cells);
 
   /* Prepare preprocessing info if necessary */
