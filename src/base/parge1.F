@@ -183,6 +183,8 @@ C
       WRITE(NFECRA,1510) NCELET,NCEL  ,NFAC  ,NFABOR,NNOD,
      &                          NCELGB,NFACGB,NFBRGB,NSOMGB
 C
+#if defined(_CS_LANG_FR)
+C
  1500 FORMAT(
      &'                                                             ',/,
      &' ** DIMENSIONS : Complement pour les calculs paralleles      ',/,
@@ -204,6 +206,31 @@ C
      &'       NFACGB = ',4X,I10,    ' (Nb de faces internes   global',/,
      &'       NFBRGB = ',4X,I10,    ' (Nb de faces de bord    global',/,
      &'       NSOMGB = ',4X,I10,    ' (Nb de sommets          global',/)
+C
+#else
+C
+ 1500 FORMAT(
+     &''                                                             ,/,
+     &' ** DIMENSIONS: Complement for parallel calculations'         ,/,
+     &'    ----------'                                               ,/,
+     &'    For parallel calculations,'                               ,/,
+     &'      ''local''  refers to the current processor.'            ,/,
+     &'      ''global'' refers to the sum over all the processors'   ,/)
+ 1510 FORMAT(
+     &' --- Geometry'                                                ,/,
+     &'       NCELET = ',4X,I10,    ' (Nb of local  cells + halo  )' ,/,
+     &''                                                             ,/,
+     &'       NCEL   = ',4X,I10,    ' (Nb of local  active cells  )' ,/,
+     &'       NFAC   = ',4X,I10,    ' (Nb of local  internal faces)' ,/,
+     &'       NFABOR = ',4X,I10,    ' (Nb of local  boundary faces)' ,/,
+     &'       NNOD   = ',4X,I10,    ' (Nb of local  nodes         )' ,/,
+     &''                                                             ,/,
+     &'       NCELGB = ',4X,I10,    ' (Nb of global active cells  )' ,/,
+     &'       NFACGB = ',4X,I10,    ' (Nb of global internal faces)' ,/,
+     &'       NFBRGB = ',4X,I10,    ' (Nb of global boundary faces)' ,/,
+     &'       NSOMGB = ',4X,I10,    ' (Nb of global nodes         )' ,/)
+C
+#endif
 C
       RETURN
       END

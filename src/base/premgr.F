@@ -202,6 +202,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -222,6 +224,30 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN premgr (multigrid)                    ',/,
+     &'@    ********                                                ',/,
+     &'@    DETECTION OF ',I10   ,' CUT FACES                       ',/,
+     &'@                                                            ',/,
+     &'@  The current mesh has cut faces, i.e. two distinct faces   ',/,
+     &'@    may have the same neighbor cells couple.                ',/,
+     &'@  This configuration is not handled in the current version  ',/,
+     &'@    when the multigrid is activated.                        ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Remove the multigrid option (IMGR=1) in usini1.           ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

@@ -1000,6 +1000,7 @@ C----
 C FORMATS
 C----
 C
+#if defined(_CS_LANG_FR)
 C
  1000 FORMAT(
      &' Nb de clippings de la viscosite totale (mu+mu_t>0) :',I10,/)
@@ -1164,6 +1165,170 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &' Nb of clippings for the effective viscosity (mu+mu_t>0):',I10,/)
+ 3010 FORMAT(
+     &' --- Phase: ',I10                                             ,/,
+     &' ---------------------------------                           ',/,
+     &' Property   Min. value  Max. value                           ',/,
+     &' ---------------------------------                           '  )
+ 3011 FORMAT(
+     & 2X,    A8,      E12.4,      E12.4                               )
+ 3012 FORMAT(
+     &' ---------------------------------                           ',/)
+ 3110 FORMAT(
+     &' --- Diffusivity:                                            ',/,
+     &' ---------------------------------------                     ',/,
+     &' Scalar   Number  Min. value  Max. value                     ',/,
+     &' ---------------------------------------                     '  )
+ 3111 FORMAT(
+     & 1X,    A8,   I7,      E12.4,      E12.4                         )
+ 3112 FORMAT(
+     &' ---------------------------------------                     ',/)
+ 3210 FORMAT(
+     &' --- Mesh viscosity (ALE method)                             ',/,
+     &' ---------------------------------                           ',/,
+     &' Property   Min. value  Max. value                           ',/,
+     &' ---------------------------------                           '  )
+ 3211 FORMAT(
+     & 2X,    A8,      E12.4,      E12.4                               )
+ 3212 FORMAT(
+     &' ---------------------------------                           ',/)
+C
+ 9001  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    INCOHERENCY BETWEEN USPHYV AND USINI1 FOR THE DENSITY   ',/,
+     &'@                                                            ',/,
+     &'@  The density has been declared constant in usini1          ',/,
+     &'@     (IROVAR(IPHAS)=0) but its value has been modified      ',/,
+     &'@     in cells of at boundary faces in usphyv.               ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify usini1 and usphyv.                                 ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9002  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    INCOHERENCY BETWEEN USPHYV AND USINI1 FOR               ',/,
+     &'@                                     THE MOLECULAR VISCOSITY',/,
+     &'@                                                            ',/,
+     &'@  The molecular viscosity has been declared constant in     ',/,
+     &'@     usini1 (IVIVAR(IPHAS)=0) but its value has been        ',/,
+     &'@     modified in cells or at boundary faces in usphyv.      ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify usini1 and usphyv.                                 ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9003  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    INCOHERENCY BETWEEN USCFPV AND USCFX1 FOR               ',/,
+     &'@                                     THE MOLECULAR VISCOSITY',/,
+     &'@                                                            ',/,
+     &'@  In the compressible module, the molecular viscosity is    ',/,
+     &'@     constant by default (IVIVAR(IPHAS)=0) and the value    ',/,
+     &'@     of IVIVAR  has not been modified in uscfx1. Yet, its   ',/,
+     &'@     value has been modified in uscfpv.                     ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify uscfx1 and uscfpv.                                 ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9011  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    THE PHYSICAL PROPERTY ',A8  ,' HAS NOT BEEN             ',/,
+     &'@                                          CORRECTLY DEFINED.',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  The physical property identified is variable and the      ',/,
+     &'@    minimum reached is ',E12.4                               ,/,
+     &'@  Verify that this property has been defined in usphyv and  ',/,
+     &'@    that the chosen law leads to correct values.            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9012  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    THE TURBULENT VISCOSITY OF PHASE ',I10 ,' HAS NOT BEEN  ',/,
+     &'@                                          CORRECTLY DEFINED.',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  The  minimum reached is ',E12.4                            ,/,
+     &'@  Verify the density definition in usphyv and a turbulent   ',/,
+     &'@    viscosity modification in usvist (if any).              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 9111  FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    THE DIFFUSIVITY OF THE SCALAR ',A8                       ,/,
+     &'@       (SCALAR NUMBER ',I10   ,') HAS NOT BEEN              ',/,
+     &'@                                          CORRECTLY DEFINED.',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  The physical property identified is variable and the      ',/,
+     &'@    minimum reached is ',E12.4                               ,/,
+     &'@  Verify that this property has been defined in usphyv and  ',/,
+     &'@    that the chosen law leads to correct values.            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9999 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,
+     &'@    ********                                                ',/,
+     &'@    SOME PHYSICAL QUANTITIES HAVE INCORRECT VALUES          ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run (',I10,' errors).         ',/,
+     &'@                                                            ',/,
+     &'@  Refer to previous warnings for further information.       ',/,
+     &'@  Verify usphyv.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

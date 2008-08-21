@@ -548,6 +548,8 @@ C
 C
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1100 FORMAT(20I10)
  1120 FORMAT(I10, 5E23.15)
 C
@@ -713,6 +715,175 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1100 FORMAT(20I10)
+ 1120 FORMAT(I10, 5E23.15)
+C
+ 2001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE CONNECTIVITY CREATION (LETGEO)    ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    The number of interior faces is NFAC   = ',I10           ,/,
+     &'@    IPNFAC(NFAC  +1) should be ',I10                         ,/,
+     &'@                         it is ',I10                         ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Verify LETGEO.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 2002 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE CONNECTIVITY CREATION (LETGEO)    ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    The number of interior faces is NFABOR = ',I10           ,/,
+     &'@    IPNFAC(NFABOR+1) should be ',I10                         ,/,
+     &'@                         it is ',I10                         ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Verify LETGEO.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2010 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      THERE ARE SOME INCOHERENCIES                          ',/,
+     &'@                                                            ',/,
+     &'@      The dimensions read in letgeo do not comply with      ',/,
+     &'@        the dimensions read in ledgeo.                      ',/,
+     &'@      Reading   ',A6,' = ',I10   ,', ',A6,' = ',I10          ,/,
+     &'@        whereas ',A6,' = ',I10   ,', ',A6,' = ',I10          ,/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run.                      ',/,
+     &'@                                                            ',/,
+     &'@      Contact the support.                                  ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2011 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      THERE ARE SOME INCOHERENCIES                          ',/,
+     &'@                                                            ',/,
+     &'@      The dimensions read in letgeo do not comply with      ',/,
+     &'@        the dimensions read in ledgeo.                      ',/,
+     &'@      Reading   ',A6,' = ',I10                               ,/,
+     &'@        whereas ',A6,' = ',I10                               ,/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run.                      ',/,
+     &'@                                                            ',/,
+     &'@      Contact the support.                                  ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 3001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE CONNECTIVITY CREATION (LETGEO)    ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    The test failed on the interior faces -> vertices       ',/,
+     &'@      connectivity.                                         ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Verify LETGEO.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3002 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE CONNECTIVITY CREATION (LETGEO)    ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    The test failed on the boundary faces -> vertices       ',/,
+     &'@      connectivity.                                         ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Verify LETGEO.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 3011 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: LETGEO - CONNECTIVITY : NODFAC = ',I10          ,/,
+     &'@                   X(',I10,') = ',E23.15                     ,/,
+     &'@                   Y(',I10,') = ',E23.15                     ,/,
+     &'@                   Z(',I10,') = ',E23.15                       )
+ 3012 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: LETGEO - CONNECTIVITY : NODFBR = ',I10          ,/,
+     &'@                   X(',I10,') = ',E23.15                     ,/,
+     &'@                   Y(',I10,') = ',E23.15                     ,/,
+     &'@                   Z(',I10,') = ',E23.15                       )
+C
+ 9100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE MESH                   ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    THE MESH (.slc or .tlc) IS INCOMPLETE                   ',/,
+     &'@                                                            ',/,
+     &'@  The mesh file does not contain the information relative   ',/,
+     &'@    to the face-vertices connectivity, or contains          ',/,
+     &'@    incomplete informations.                                ',/,
+     &'@  These informations are mandatory to run a simulation      ',/,
+     &'@    using the Lagrangian or radiative transfer module.      ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh file.                                     ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9999 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      THERE ARE SOME INCOHERENCIES                          ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run (',I10,' errors).         ',/,
+     &'@                                                            ',/,
+     &'@  Refer to the previous warnings for further informations.  ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

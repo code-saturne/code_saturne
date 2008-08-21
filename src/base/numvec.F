@@ -814,6 +814,8 @@ C=======================================================================
 C 6. FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1100 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -869,7 +871,7 @@ C
      &'@                                                            ',/,
      &'@  Le calcul ne peut pas etre execute.                       ',/,
      &'@                                                            ',/,
-     &'@  Verfier le maillage.                                      ',/,
+     &'@  Verifier le maillage.                                     ',/,
      &'@  Contacter l''assistance.                                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -885,7 +887,7 @@ C
      &'@                                                            ',/,
      &'@  Le calcul ne peut pas etre execute.                       ',/,
      &'@                                                            ',/,
-     &'@  Verfier le maillage.                                      ',/,
+     &'@  Verifier le maillage.                                     ',/,
      &'@  Contacter l''assistance.                                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -901,7 +903,7 @@ C
      &'@                                                            ',/,
      &'@  Le calcul ne peut pas etre execute.                       ',/,
      &'@                                                            ',/,
-     &'@  Verfier le maillage.                                      ',/,
+     &'@  Verifier le maillage.                                     ',/,
      &'@  Contacter l''assistance.                                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -917,7 +919,7 @@ C
      &'@                                                            ',/,
      &'@  Le calcul ne peut pas etre execute.                       ',/,
      &'@                                                            ',/,
-     &'@  Verfier le maillage.                                      ',/,
+     &'@  Verifier le maillage.                                     ',/,
      &'@  Contacter l''assistance.                                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -935,11 +937,142 @@ C
      &'@                                                            ',/,
      &'@  Le calcul ne peut pas etre execute.                       ',/,
      &'@                                                            ',/,
-     &'@  Verfier le maillage.                                      ',/,
+     &'@  Verifier le maillage.                                     ',/,
      &'@  Contacter l''assistance.                                  ',/,
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: FACES RENUMBERING                              ',/,
+     &'@    ********                                                ',/,
+     &'@     PROBLEM IN THE INTERIOR FACES RENUMBERING              ',/,
+     &'@     ',I10   ,' OCCURRENCES OF THE EVENT ',I5                ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will be run.                              ',/,
+     &'@  The vectorization will not be forced.                     ',/,
+     &'@                                                            ',/,
+     &'@  Please contact the support about this message.            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 1200 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: FACES RENUMBERING                              ',/,
+     &'@    ********                                                ',/,
+     &'@     PROBLEM IN THE BOUNDARY FACES RENUMBERING              ',/,
+     &'@     ',I10   ,' OCCURRENCES OF THE EVENT ',I5                ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will be run.                              ',/,
+     &'@  The vectorization will not be forced.                     ',/,
+     &'@                                                            ',/,
+     &'@  Please contact the support about this message.            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 2000 FORMAT(
+     &'                                                             ',/,
+     &' ----------------------------------------------------------- ',/,
+     &'                                                             ',/,
+     &'                                                             ',/,
+     & 3X,'** VECTORIZATION (1: POSSIBLE, 0: IMPOSSIBLE)            ',/,
+     & 3X,'   -------------                                       ',/,/,
+     & 3X,'          Interior faces       Boundary faces            ',/,
+     & 3X,'   IVECTI     ',I10   ,' IVECTB    ',I10                ,/,/,
+     &' ----------------------------------------------------------- ',/)
+C
+ 3101 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN numvec                                ',/,
+     &'@    ********                                                ',/,
+     &'@    PROBLEM IN ASSEMBLING INTEGERS AT THE INTERIOR FACES    ',/,
+     &'@    ',I10   ,' OCCURRENCES OF THE PROBLEM                   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3201 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN numvec                                ',/,
+     &'@    ********                                                ',/,
+     &'@    PROBLEM IN ASSEMBLING INTEGERS AT THE BOUNDARY FACES    ',/,
+     &'@    ',I10   ,' OCCURRENCES OF THE PROBLEM                   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3102 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN numvec                                ',/,
+     &'@    ********                                                ',/,
+     &'@    PROBLEM IN ASSEMBLING REALS AT THE INTERIOR FACES       ',/,
+     &'@    ',I10   ,' OCCURRENCES OF THE PROBLEM                   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3202 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN numvec                                ',/,
+     &'@    ********                                                ',/,
+     &'@    PROBLEM IN ASSEMBLING REALS AT THE BOUNDARY FACES       ',/,
+     &'@    ',I10   ,' OCCURRENCES OF THE PROBLEM                   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN numvec                                ',/,
+     &'@    ********                                                ',/,
+     &'@     UNEXPECTED CONFIGURATION DURING THE FACES RENUMBERING  ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify the mesh.                                          ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
       RETURN
       END

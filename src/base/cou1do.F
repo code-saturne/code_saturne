@@ -275,6 +275,8 @@ C
 C
 C --> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@ @@ ATTENTION : COUPLAGE SYRTHES/MODULE 1D AVEC CALCUL EN   ',/,
@@ -291,6 +293,25 @@ C
      &'@                                                            ',/,
      &'@      Le calcul s''arrete                                   ',/,
      &'@  ')
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: 1D MODULE COUPLING WITH ENTHALPY CALCULATION   ',/,
+     &'@    ********                                                ',/,
+     &'@      OPTION NOT VALIDATED - CONTACT THE SUPPORT            ',/,
+     &'@                                                            ')
+ 2000 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: 1D MODULE COUPLING WITH ENERGY CALCULATION     ',/,
+     &'@    ********                                                ',/,
+     &'@      OPTION NOT AVAILABLE - CONTACT THE SUPPORT            ',/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run                       ',/,
+     &'@  ')
+C
+#endif
 C
       RETURN
       END

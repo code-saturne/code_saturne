@@ -577,6 +577,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1110  FORMAT
      &(1X,
      &'-------------------------------------------------'/,1X,
@@ -599,6 +601,33 @@ C
  1210 FORMAT(' CYCMGR : REMONTEE')
  1220 FORMAT('   PASSAGE DANS LE LISSEUR')
  1230 FORMAT('   RESOLUTION SUR NIVEAU LE + GROSSIER')
+C
+#else
+C
+ 1110  FORMAT
+     &(1X,
+     &'-------------------------------------------------'/,1X,
+     &' NB OF | SUM OF THE TIME STEPS ON | NORMED RESID',/,
+     & 1X,
+     &'CYCLES | THE FINE MESH            | FINE MESH   ',/,
+     & 1X,
+     &'-------|--------------------------|--------------')
+C
+ 1120 FORMAT(2X,I4,'  |',9X,I5,12X,'|  ',E11.4)
+ 1130 FORMAT(1X,
+     &'-------------------------------------------------')
+ 1140 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' ALGEBRIC MULTIGRID                     ',/,
+     &'@    ********                                                ',/,
+     &'@  Maximum number of cycles ',I10   ,' reached               ',/,
+     &'@                                                            '  )
+ 1200 FORMAT(' CYCMGR : DESCENT')
+ 1210 FORMAT(' CYCMGR : ASCENT')
+ 1220 FORMAT('   SMOOTHER PASS')
+ 1230 FORMAT('   RESOLUTION ON THE COARSEST LEVEL')
+C
+#endif
 C
 C----
 C FIN

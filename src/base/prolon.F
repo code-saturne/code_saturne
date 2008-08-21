@@ -122,7 +122,15 @@ C
 C
       ENDIF
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(' PROLON APPELE AVEC IPROL =', I10)
+C
+#else
+C
+ 1000 FORMAT(' PROLON CALLED WITH IPROL =', I10)
+C
+#endif
 C
 C----
 C FIN

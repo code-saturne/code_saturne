@@ -527,8 +527,17 @@ C 7.  FORMATS
 C=======================================================================
 C
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,' LA NORMALE A LA FACE DE BORD DE SYMETRIE ',I10,/,
      &         ' EST NULLE ; COORDONNEES : ',3E12.5)
+C
+#else
+C
+ 1000 FORMAT(/,' THE NORMAL TO THE SYMMETRY BOUNDARY FACE ',I10,/,
+     &         ' IS NULL; COORDINATES: ',3E12.5)
+C
+#endif
 C
 C----
 C FIN

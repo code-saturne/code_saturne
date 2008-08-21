@@ -305,9 +305,19 @@ C
       IF ( MOD(NTCABS,NTLIST).EQ.0 .OR. IWARNI(IU(1)) .GE.0 )
      &     WRITE(NFECRA,1000)
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'  Calcul de la pression hydrostatique : ',/,
      &'         mise a jour des Dirichlets en sortie (CALHYD)',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'  Hydrostatic pressure computation: ',/,
+     &'         updating the Dirichlets at the end (CALHYD)',/)
+C
+#endif
 C
       INDHYD = 1
 C
@@ -548,6 +558,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1400 FORMAT(1X,A8,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
  1600 FORMAT(
      &'@                                                            ',/,
@@ -555,6 +567,18 @@ C
      &'@    *********                                               ',/,
      &'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1400 FORMAT(1X,A8,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+ 1600 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' HYDROSTATIC PRESSURE STEP              ',/,
+     &'@    ********                                                ',/,
+     &'@  Maximum number of iterations ',I10   ,' reached           ',/,
+     &'@                                                            '  )
+C
+#endif
 C
 C----
 C FIN

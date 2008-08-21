@@ -135,12 +135,25 @@ C
 C
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (//,
      & ' SOUS PROGRAMME APPELANT RASIZE            :    ',A6,/,
      & ' MEMOIRE NECESSAIRE RA (EN NBRE DE REELS)  = '   ,I12,/,
      & '         DISPONIBLE                        = '   ,I12,/,
      & ' ----> AUGMENTER LONGRA DANS LE LANCEUR DE = '   ,I12,' REELS'/)
  2000 FORMAT(I12,' REELS   NECESSAIRES : MAXIMUM ATTEINT DANS ', A6)
+C
+#else
+C
+ 1000 FORMAT (//,
+     & ' SUBROUTINE CALLING RASIZE             :    ',A6,/,
+     & ' MEMORY NEEDED    RA (NUMBER OF REALS) = '   ,I12,/,
+     & '        AVAILABLE                      = '   ,I12,/,
+     & ' ----> INCREASE LONGRA IN THE SCRIPT   = '   ,I12,' REALS'/)
+ 2000 FORMAT(I12,' REALS    NEEDED: MAXIMUM REACHED IN ', A6)
+C
+#endif
 C
       END
 c@z

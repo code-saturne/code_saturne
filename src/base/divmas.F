@@ -175,7 +175,15 @@ C
 C
       ENDIF
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT('DIVMAS APPELE AVEC INIT = ',I10)
+C
+#else
+C
+ 1000 FORMAT('DIVMAS CALLED WITH INIT = ',I10)
+C
+#endif
 C
 C----
 C FIN

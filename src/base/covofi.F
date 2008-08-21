@@ -872,6 +872,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &'   ** RESOLUTION POUR LA VARIABLE ',A8                        ,/,
      &'      ---------------------------                            ',/)
@@ -902,6 +904,41 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(/,
+     &'   ** SOLVING VARIABLE ',A8                                   ,/,
+     &'      ----------------'                                       ,/)
+ 1200 FORMAT(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+ 9000 FORMAT(
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ERROR IN COVOFI'                                ,/,
+     &'@    ********'                                                ,/,
+     &'@    IVARSC MUST BE A STRICTLY POSITIVE INTEGER'              ,/,
+     &'@    ITS VALUE IS ',I10                                       ,/,
+     &'@'                                                            ,/,
+     &'@  The calculation will not be run.'                          ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9001 FORMAT(
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ERROR IN COVOFI'                                ,/,
+     &'@    ********'                                                ,/,
+     &'@    RADATIVE TRANSFER AND FUEL COMBUSTION NOT COMPATIBLE'    ,/,
+     &'@    IN THE CURRENT VERSION'                                  ,/,
+     &'@'                                                            ,/,
+     &'@  The calculation will not be run.'                          ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

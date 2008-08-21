@@ -368,6 +368,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,' CONSTRUCTION DES MAILLAGES GROSSIERS      ',/)
  1010 FORMAT('NOMBRE DE MAILLAGES GROSSIERS                  : ',
      & I8,/, 'NOMBRE DE CELLULES DANS MAILLAGE LE + GROSSIER : ',
@@ -381,6 +383,24 @@ C
      &'@    *********                                               ',/,
      &'@  Nombre de maillages grossiers maximal ',I10   ,' atteint. ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT(/,' COARSE MESHES CONSTRUCTION                ',/)
+ 1010 FORMAT('NUMBER OF COARSE MESHES              : ',
+     & I8,/, 'NUMBER OF CELLS IN THE COARSEST MESH : ',
+     & I8)
+ 1020 FORMAT('CONSTRUCTION OF THE COARSE MESH NUMBER: ',I8)
+ 1030 FORMAT('      NUMBER OF COARSE CELLS: ',I8)
+ 1040 FORMAT('      NUMBER OF COARSE FACES: ',I8)
+ 2000 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: clmlga ALGERIC MULTIGRID                       ',/,
+     &'@    ********                                                ',/,
+     &'@  Maximum number of coarse meshes ',I10   ,' reached.       ',/,
+     &'@                                                            '  )
+C
+#endif
 C
 C----
 C FIN

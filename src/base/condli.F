@@ -1803,6 +1803,8 @@ C=======================================================================
 C 15.  FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -1861,6 +1863,69 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE BOUNDARY CONDITIONS SPECIFICATION ',/,
+     &'@    *********                                               ',/,
+     &'@      INCOHERENCY BETWEEN CALCULATION OPTIONS AND BOUND COND',/,
+     &'@                                                            ',/,
+     &'@    For phase ',I10   ,'                                    ',/,
+     &'@      The wall-echo terms of the Rij-epsilon turbulence     ',/,
+     &'@      model are taken into account                          ',/,
+     &'@      IRIJEC(',I10   ,') = ',I10,'                          ',/,
+     &'@      Or the Van Driest damping of the turbulent viscosity  ',/,
+     &'@      is active IDRIES(',I10   ,') = ',I10,'in LES          ',/,
+     &'@    but no wall boundary face is detected.                  ',/,
+     &'@    This incoherency is not blocking but may result from    ',/,
+     &'@      an error during the boundary conditions               ',/,
+     &'@      specification.                                        ',/,
+     &'@                                                            ',/,
+     &'@    By safety, the calculation will not be run.             ',/,
+     &'@                                                            ',/,
+     &'@    Verify the boundary conditions in usclim if the domain  ',/,
+     &'@      has any walls.                                        ',/,
+     &'@    Remove the option IRIJEC from usini1 if the domain does ',/,
+     &'@      not have any wall (or conditions ICODCL = 5 for the   ',/,
+     &'@      velocity).                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3010 FORMAT(
+     & 'Phase ',I4,' incoming flow detained for ', I10   ,
+     &                                          ' outlet faces on ',I10)
+ 8000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: BOUNDARY CONDITIONS                            ',/,
+     &'@    ********                                                ',/,
+     &'@     The scalar ',I10   ,' is coupled with SYRTHES          ',/,
+     &'@     It is relative to phase ',I10                           ,/,
+     &'@      but is not the energy variable                        ',/,
+     &'@         ISCALT(IPHAS) = ',I10                               ,/,
+     &'@                                                            ',/,
+     &'@     The calculation will not be run.                       ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: RADIATIVE TRANSFER                             ',/,
+     &'@    ********                                                ',/,
+     &'@      ERROR ON THE NUMBER OF PHASES IN CONDLI               ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

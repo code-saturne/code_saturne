@@ -1533,6 +1533,8 @@ C
 C--------
 C FORMATS
 C--------
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &'   ** RESOLUTION POUR LA VITESSE                             ',/,
      &'      --------------------------                             ',/)
@@ -1561,6 +1563,39 @@ C--------
      &' Non convergence du couplage vitesse pression par point fixe  ' )
  2001 FORMAT(
      &'-------------------------------------------------------------',/)
+C
+#else
+C
+ 1000 FORMAT(/,
+     &'   ** SOLVING VELOCITY'                                       ,/,
+     &'      ----------------'                                       ,/)
+ 1200 FORMAT(/,
+     &'   ** SOLVING CONTINUITY PRESSURE'                            ,/,
+     &'      ---------------------------'                            ,/)
+ 2000 FORMAT(/,' AFTER CONTINUITY PRESSURE',/,
+     &'  -- Phase : ',I10                                            ,/,
+     &'-------------------------------------------------------------'  )
+ 2100 FORMAT(
+     &' Max. pressure',E12.4   ,' (max. absolute value)'             ,/)
+ 2200 FORMAT(
+     &' Max. velocity',E12.4   ,' en',3E11.3                         ,/)
+ 2300 FORMAT(
+     &' Max. velocity at interior face',E12.4   ,' ; min.',E12.4       )
+ 2400 FORMAT(
+     &' Max. velocity at boundary face',E12.4   ,' ; min.',E12.4       )
+ 2500 FORMAT(
+     &' Mass balance  at boundary  ',E14.6                             )
+ 2600 FORMAT(
+     &' Fixed point informations at iteration:',I10                  ,/)
+ 2601 FORMAT('norm = ',E12.4,' norm 0 = ',E12.4,' toler  = ',E12.4   ,/)
+ 2602 FORMAT(
+     &' Fixed point convergence at iteration ',I10                   ,/)
+ 2603 FORMAT(
+     &' Non convergence of fixed point for velocity pressure coupling' )
+ 2001 FORMAT(
+     &'-------------------------------------------------------------',/)
+C
+#endif
 C
 C----
 C FIN

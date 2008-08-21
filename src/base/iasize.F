@@ -135,6 +135,8 @@ C
 C
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (//,
      & ' SOUS PROGRAMME APPELANT IASIZE            :    ',A6,/,
      & ' MEMOIRE NECESSAIRE IA (EN NBRE D''ENTIERS  = '   ,I12,/,
@@ -142,6 +144,18 @@ C
      & ' ----> AUGMENTER LONGIA DANS LE LANCEUR DE = '   ,I12,
      &                                                     ' ENTIERS'/)
  2000 FORMAT(I12,' ENTIERS NECESSAIRES : MAXIMUM ATTEINT DANS ', A6)
+C
+#else
+C
+ 1000 FORMAT (//,
+     & ' SUBROUTINE CALLING IASIZE                :    ',A6,/,
+     & ' MEMORY NEEDED    IA (NUMBER OF INTEGERS) = '   ,I12,/,
+     & '        AVAILABLE                         = '   ,I12,/,
+     & ' ----> INCREASE LONGIA IN THE SCRIPT      = '   ,I12,
+     & ' INTEGERS'/)
+ 2000 FORMAT(I12,' INTEGERS NEEDED: MAXIMUM REACHED IN ', A6)
+C
+#endif
 C
       END
 c@z

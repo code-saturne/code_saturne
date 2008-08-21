@@ -170,9 +170,19 @@ C=======================================================================
 C ---> Formats
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT('ATTENTION VARIABLE PHI, PHASE ',I3,/,
      &     'VALEUR MAXIMALE PHYSIQUE DE 2 DEPASSEE SUR ',I10,
      &     ' CELLULES')
+C
+#else
+C
+ 1000 FORMAT('WARNING VARIABLE PHI, PHASE ',I3,/,
+     &     'MAXIMUM PHYSICAL VALUE OF 2 EXCEEDED FOR ',I10,
+     &     ' CELLS')
+C
+#endif
 C
       RETURN
 C

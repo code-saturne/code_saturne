@@ -96,6 +96,9 @@ BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas -lg2c
 # gettext support
 NLS				=0
 
+# Set CS_LANG to FR to have French translation
+CS_LANG         =
+
 
 # Preprocessor
 #-------------

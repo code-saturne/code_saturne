@@ -170,6 +170,8 @@ C=======================================================================
 C 5. FIN
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &' --- Information sur les volumes                             ',/,
      &'       Volume de controle minimal = ',4X,E18.9                ,/,
@@ -178,6 +180,19 @@ C
      &         '          VOLUME TOTAL DU DOMAINE        = ',E18.9,/,/)
  1002 FORMAT(/,' CLVOLC : ARRET SUITE A LA DETECTION D''UN',/,
      &         '          VOLUME NEGATIF',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &' --- Information on the volumes                              ',/,
+     &'       Minimum control volume      = ',4X,E18.9               ,/,
+     &'       Total volume for the domain = ',4X,E18.9                 )
+ 1001 FORMAT(/,' CLVOLC : MINIMUM CONTROL VOLUME         = ',E18.9,/,
+     &         '          TOTAL VOLUME FOR THE DOMAIN    = ',E18.9,/,/)
+ 1002 FORMAT(/,' CLVOLC : ABORT DUE TO THE DETECTION OF A ',/,
+     &         '          NEGATIVE VOLUME',/)
+C
+#endif
 C
       RETURN
       END

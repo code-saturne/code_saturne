@@ -563,6 +563,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,
      &          3X,'   -------------------------------')
  1011 FORMAT ('   Variable    Norm 2nd mb.',
@@ -572,14 +574,14 @@ C
 C
 C
  1100 FORMAT (/,3X,'** INFORMATIONS SUR LES VARIABLES',/,
-     &         3X,'   ------------------------------')
+     &          3X,'   ------------------------------')
  1111 FORMAT ('   Variable      Valeur min    Valeur max',
      &        '   Clip min   Clip max')
  1110 FORMAT ('-----------------------------------------',
      &        '----------------------')
 C
  1150 FORMAT (/,3X,'** INFORMATIONS SUR LES CLIPPINGS',/,
-     &         3X,'   ------------------------------')
+     &          3X,'   ------------------------------')
  1161 FORMAT ('   Variable    Min ss clips  Max ss clips',
      &        '   Clip min   Clip max')
  1160 FORMAT ('-----------------------------------------',
@@ -587,7 +589,7 @@ C
 C
 C
  1200 FORMAT (/,3X,'** INFORMATIONS SUR LE PAS DE TEMPS',/,
-     &         3X,'   --------------------------------')
+     &          3X,'   --------------------------------')
  1210 FORMAT ('---------------------------',
      &        '------------------------------------')
  1211 FORMAT ('Critere      Valeur     en         xc',
@@ -596,6 +598,42 @@ C
  3000 FORMAT (E12.5)
  4000 FORMAT (I7)
 C
+#else
+C
+ 1000 FORMAT (/,3X,'** INFORMATIONS ON THE CONVERGENCE',/,
+     &          3X,'   -------------------------------')
+ 1011 FORMAT ('   Variable    Rhs norm    ',
+     &        '  N_iter  Norm. residual      derive')
+ 1010 FORMAT ('---------------------------',
+     &        '------------------------------------')
+C
+C
+ 1100 FORMAT (/,3X,'** INFORMATIONS ON THE VARIABLES',/,
+     &          3X,'   -----------------------------')
+ 1111 FORMAT ('   Variable      Min. value    Max. value',
+     &        '   Min clip   Max clip')
+ 1110 FORMAT ('-----------------------------------------',
+     &        '----------------------')
+C
+ 1150 FORMAT (/,3X,'** INFORMATIONS ON THE CLIPPINGS',/,
+     &          3X,'   -----------------------------')
+ 1161 FORMAT ('   Variable    Min wo clips  Max wo clips',
+     &        '   Min clip   Max clip')
+ 1160 FORMAT ('-----------------------------------------',
+     &        '----------------------')
+C
+C
+ 1200 FORMAT (/,3X,'** INFORMATIONS SUR LE PAS DE TEMPS',/,
+     &         3X,'   --------------------------------')
+ 1210 FORMAT ('---------------------------',
+     &        '------------------------------------')
+ 1211 FORMAT ('Criterion    Value      at         xc',
+     &        '           yc           zc')
+C
+ 3000 FORMAT (E12.5)
+ 4000 FORMAT (I7)
+C
+#endif
       RETURN
       END
 c@z

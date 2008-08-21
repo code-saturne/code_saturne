@@ -222,6 +222,8 @@ C----
 C FORMATS
 C----
 C
+#if defined(_CS_LANG_FR)
+C
  1000   FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -335,6 +337,122 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    NFPT1D MUST BE POSITIVE AND LOWER THAN NFABOR           ',/,
+     &'@    ONE HAS HERE                                            ',/,
+     &'@       NFABOR=',I10                                          ,/,
+     &'@       NFPT1D=',I10                                          ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 1010   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    ISUIT1 MUST BE AN INTEGER EQUAL TO 0 OR 1               ',/,
+     &'@    ITS VALUE IS ',I10                                       ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2000   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    THE ARRAY IFPT1D(II) MUST GIVE A BOUNDARY FACE NUMBER   ',/,
+     &'@    ONE HAS HERE                                            ',/,
+     &'@       NFABOR            =',I10                              ,/,
+     &'@       IFPT1D(',I10,   ')=',I10                              ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2010   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    THE ARRAY NPPT1D(II) MUST GIVE A POSITIVE INTEGER       ',/,
+     &'@    ONE HAS HERE                                            ',/,
+     &'@       NPPT1D(',I10,   ')=',I10                              ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2020   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    THE ARRAY ',A6,' MUST GIVE A POSITIVE REAL              ',/,
+     &'@    ONE HAS HERE                                            ',/,
+     &'@       ',A6,'(',I10,   ')=',E14.5                            ,/,
+     &'@       (BOUNDARY FACE NUMBER ',I10   ,')                    ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3000   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION            ',/,
+     &'@    ********                                                ',/,
+     &'@    1D-WALL THERMAL MODULE                                  ',/,
+     &'@                                                            ',/,
+     &'@    THE ARRAY ',A6,' CAN ONLY TAKE THE VALUES 1 OR 3        ',/,
+     &'@    ONE HAS HERE                                            ',/,
+     &'@       ',A6,'(',I10,   ')=',I10                              ,/,
+     &'@       (BOUNDARY FACE NUMBER ',I10   ,')                    ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify uspt1d.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
       RETURN
 C

@@ -376,6 +376,8 @@ C----
 C FORMATS
 C----
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (
      & '            ALE IMPLICITE : ITER=',I5,' DERIVE=',E12.5     )
  1001 FORMAT (
@@ -387,6 +389,22 @@ C
      &'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,
      &'@  Derive normee :',E12.5                                     ,/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT (
+     & '            IMPLICIT ALE: ITER=',I5,' DERIVE=',E12.5     )
+ 1001 FORMAT (
+     & 'CONVERGENCE IMPLICIT ALE: ITER=',I5,' DERIVE=',E12.5     )
+ 1100 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: IMPLICIT ALE                                   ',/,
+     &'@    ********                                                ',/,
+     &'@  Maximum number of iterations ',I10   ,' reached           ',/,
+     &'@  Normed derive :',E12.5                                     ,/,
+     &'@                                                            '  )
+C
+#endif
 C
 C----
 C FIN

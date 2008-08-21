@@ -169,7 +169,15 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(' PRCPOL APPELE AVEC ISYM =',I10)
+C
+#else
+C
+ 1000 FORMAT(' PRCPOL CALLED WITH ISYM =',I10)
+C
+#endif
 C
 C----
 C FIN

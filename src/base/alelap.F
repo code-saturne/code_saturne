@@ -361,10 +361,21 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000    FORMAT(/,
      &'   ** RESOLUTION DE LA VITESSE DE MAILLAGE                   ',/,
      &'      ------------------------------------                   ',/)
  1100    FORMAT(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+C
+#else
+C
+ 1000    FORMAT(/,
+     &'   ** SOLVING MESH VELOCITY'                                  ,/,
+     &'      ---------------------'                                  ,/)
+ 1100    FORMAT(/,'           SOLVING VARIABLE ',A8           ,/)
+C
+#endif
 C
 C----
 C FIN

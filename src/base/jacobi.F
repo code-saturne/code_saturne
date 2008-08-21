@@ -301,6 +301,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(1X,A8,
      & ' JACOBI: SORTIE IMMEDIATE: RNORM:', E11.4,' RESIDU:',E11.4)
  1100 FORMAT (1X,A8,
@@ -324,6 +326,34 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(1X,A8,
+     & ' JACOBI: IMMEDIATE ABORT: RNORM:', E11.4,' RESIDU:',E11.4)
+ 1100 FORMAT (1X,A8,
+     &  ' : JACOBI NITER: ',I5,' RES ABS:',E11.4,' RES NOR:',E11.4 )
+ 1200 FORMAT (
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ',A8 ,' NON CONVERGENCE IN JACOBI'              ,/,
+     &'@    ********'                                                ,/,
+     &'@'                                                              )
+ 9000 FORMAT(
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT IN jacobi'                                ,/,
+     &'@    ********'                                                ,/,
+     &'@     jacobi CALLED FOR ',A8 ,' WITH ISYM   = ',I10           ,/,
+     &'@'                                                            ,/,
+     &'@  The calculation will not be run.'                          ,/,
+     &'@'                                                            ,/,
+     &'@  Contact support.'                                          ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/)
+C
+#endif
 C
 C12345678 : JACOBI NITER: 10000 RES ABS: 1234567890 RES NOR: 124567890
 C----

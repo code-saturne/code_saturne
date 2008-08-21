@@ -1570,6 +1570,7 @@ C=======================================================================
 C FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
 C
  1010 FORMAT(
      &'@ @@ ATTENTION PHASE ',I3,
@@ -1801,6 +1802,244 @@ C
      &'Faces de bord a Dirichlet de pression impose detectees       ',/,
      &'Mise a jour du point de reference pour la pression totale    ',/,
      &' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
+C
+C-----------------------------------------------------------------------
+C
+#else
+C
+ 1010 FORMAT(
+     &'@ @@ WARNING  PHASE ',I3,
+     &                  ', FACE ',I10,', PROP.No1 ',I5,', BC TYPE ',I4)
+ 1099 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,
+     &'@'                                                            ,/,
+     &'@    Value of type ITYPFB for boundary conditions must be'    ,/,
+     &'@          greater or equal to          1'                    ,/,
+     &'@      and less than or equal to ', I10                       ,/,
+     &'@    One or more errors are listed above.'                    ,/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.'                        ,/,
+     &'@'                                                            ,/,
+     &'@    Verify the boundary condition definitions in the'        ,/,
+     &'@    appropriate user subroutine.'                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/)
+C
+ 2010 FORMAT(/,' PHASE  : ',I10)
+ 2020 FORMAT(/,'   IFINTY : ',I10)
+ 2030 FORMAT(/,'   IDEBTY : ',I10)
+ 2040 FORMAT(/,'   ITYPFB : ',I10)
+ 2098 FORMAT(/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    PROBLEM WITH ORDERING OF BOUNDARY FACES'                 ,/,
+     &'@'                                                            ,/,
+     &'@    IFINTY(',I10   ,') = ',I10                               ,/,
+     &'@      is greater than'                                       ,/,
+     &'@    IDEBTY(',I10   ,') = ',I10                               ,/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.'                        ,/,
+     &'@'                                                            ,/,
+     &'@    Contact support.'                                        ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2099 FORMAT(/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    PROBLEM WITH ORDERING OF BOUNDARY FACES'                 ,/,
+     &'@    ON A DISTANT RANK.'                                      ,/,
+     &'@'                                                            ,/,
+     &'@    IFINTY(',I10   ,')                                      ',/,
+     &'@      is greater than'                                       ,/,
+     &'@    IDEBTY(',I10   ,')                                      ',/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.'                        ,/,
+     &'@'                                                            ,/,
+     &'@    Contact support.'                                        ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 3099 FORMAT(
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    PROBLEM WITH ORDERING OF BOUNDARY FACES'                 ,/,
+     &'@'                                                            ,/,
+     &'@    Phase          ',I10                                     ,/,
+     &'@      number of faces classified by type = ',I10             ,/,
+     &'@      number of boundary faces (NFABOR)  = ',I10             ,/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.'                        ,/,
+     &'@'                                                            ,/,
+     &'@    Contact support.'                                        ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+C
+ 6010 FORMAT ( /,/,
+     & '   ** INFORMATION ON BOUNDARY FACES TYPE',/,
+     & '      ----------------------------------',/)
+ 6011 FORMAT (
+     &'   Phase : ',I4,                                               /,
+     &'---------------------------------------------------------------',
+     &'----------',
+     &                                                                /,
+     &'Boundary type          Code    Nb faces (tot/loc)  ',
+     &' Min index   Max index',
+     &                                                                /,
+     &'---------------------------------------------------------------',
+     &'----------')
+ 6020 FORMAT (
+     & A17,I10,I10,3I12)
+ 6030 FORMAT(
+     &'---------------------------------------------------------------',
+     &'----------'/)
+C
+ 6040 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,
+     &'@'                                                            ,/,
+     &'@    Boundary face ',I10                                      ,/,
+     &'@    Face declared as inlet (or outlet) with prescribed'      ,/,
+     &'@      velocity, but velocity value has not been given for'   ,/,
+     &'@      component ',A8                                         ,/,
+     &'@    (this message is printed only for the first face on'     ,/,
+     &'@      which this problem is detected, but other faces may'   ,/,
+     &'@      be concerned)'                                         ,/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.                        ',/,
+     &'@'                                                            ,/,
+     &'@    Verify the boundary condition definitions in the GUI'    ,/,
+     &'@    or in the appropriate user subroutine.'                  ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6050 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,
+     &'@'                                                            ,/,
+     &'@    Boundary face ',I10                                      ,/,
+     &'@    Face declared as inlet (or outlet) with prescribed'      ,/,
+     &'@      velocity with entering flow.'                          ,/,
+     &'@    Value of variable ',A8  ,' has not been specified'       ,/,
+     &'@      (Dirichlet condition).'                                ,/,
+     &'@    (this message is printed only for the first face on'     ,/,
+     &'@      which this problem is detected, but other faces may'   ,/,
+     &'@      be concerned)'                                         ,/,
+     &'@'                                                            ,/,
+     &'@    The calculation will not be run.                        ',/,
+     &'@'                                                            ,/,
+     &'@    Verify the boundary condition definitions in the GUI'    ,/,
+     &'@    or in the appropriate user subroutine.'                  ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6060 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,
+     &'@'                                                            ,/,
+     &'@    At least one boundary face declared as inlet (or'        ,/,
+     &'@      outlet) with prescribed velocity for which the'        ,/,
+     &'@      velocity value has not been assigned for all'          ,/,
+     &'@      components.'                                           ,/,
+     &'@    The calculation will not be run.                        ',/,
+     &'@'                                                            ,/,
+     &'@    Verify the boundary condition definitions in the GUI'    ,/,
+     &'@    or in the appropriate user subroutine.'                  ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 6070 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,
+     &'@    ********'                                                ,/,
+     &'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,
+     &'@'                                                            ,/,
+     &'@    At least one boundary face declared as inlet (or'        ,/,
+     &'@      outlet) with prescribed velocity with an entering'     ,/,
+     &'@      flow for which the value of a variable has not been'   ,/,
+     &'@      specified (Dirichlet condition).'                      ,/,
+     &'@    The calculation will not be run.                        ',/,
+     &'@'                                                            ,/,
+     &'@    Verify the boundary condition definitions in the GUI'    ,/,
+     &'@    or in the appropriate user subroutine.'                  ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+C
+ 7010 FORMAT ( /,/,
+     & '   ** BOUNDARY MASS FLOW INFORMATION',/,
+     & '      ------------------------------',/)
+ 7011 FORMAT (
+     &'   Phase : ',I4,                                               /,
+     &'---------------------------------------------------------------',
+     &                                                                /,
+     &'Boundary type          Code    Nb faces           Mass flow'   ,
+     &                                                                /,
+     &'---------------------------------------------------------------')
+ 7020 FORMAT (
+     & A17,I10,I12,6X,E18.9)
+ 7030 FORMAT(
+     &'---------------------------------------------------------------',
+     &                                                                /)
+C
+ 8000 FORMAT(/,
+     &'PHASE ',I4,' :'                                               ,/,
+     &'Boundary faces with free inlet/outlet detected'               ,/,
+     &'Update of reference point for total pressure'                 ,/,
+     &' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
+ 8001 FORMAT(/,
+     &'PHASE ',I4,' :'                                               ,/,
+     &'Boundary faces with pressure Dirichlet condition detected'    ,/,
+     &'Update of reference point for total pressure'                 ,/,
+     &' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
+C
+#endif
 C
 C
       RETURN

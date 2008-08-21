@@ -274,6 +274,8 @@ C=======================================================================
 C ---> Formats
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -291,6 +293,28 @@ C
      &'@                                                            ',/)
  1010 FORMAT(
      & I10,' VALEURS DU K-EPS AU DELA DES ECHELLES BASEES SUR ALMAX')
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN clipke                                ',/,
+     &'@    ********                                                ',/,
+     &'@     CALL OF clipke               WITH OPTION = ',I10        ,/,
+     &'@     Phase : ',I10                                           ,/,
+     &'@                                                            ',/,
+     &'@  The calulation will not be run.                           ',/,
+     &'@                                                            ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 1010 FORMAT(
+     & I10,' K-EPS VALUES BEYOND THE SCALES BASED ON ALMAX')
+C
+#endif
 C
       RETURN
 C

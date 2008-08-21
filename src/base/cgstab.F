@@ -303,6 +303,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(1X,A8,
      & ' CGSTAB: SORTIE IMMEDIATE: RNORM:', E11.4,' RESIDU:',E11.4)
  1100 FORMAT (1X,A8,
@@ -333,6 +335,41 @@ C
      &'@                                                            ',/,
      &'@    La matrice ne peut plus etre consideree comme inversible',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT(1X,A8,
+     & ' CGSTAB: IMMEDIATE EXIT: RNORM:', E11.4,' RESIDUAL:',E11.4)
+ 1100 FORMAT (1X,A8,
+     &  ': CGSTAB NITER: ',I5,' ABS RES:',E11.4,' NOR RES:',E11.4 )
+ 1200 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' NON CONVERGENCE OF CGSTAB              ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            '  )
+ 1300 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' NON CONVERGENCE OF CGSTAB              ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    The square of the norm of the descent vector of BiCGSTAB',/,
+     &'@      is lower than ',E12.4                                  ,/,
+     &'@    The resolution does not progress anymore.               ',/,
+     &'@                                                            '  )
+ 1400 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' NON CONVERGENCE OF CGSTAB              ',/,
+     &'@    ********                                                ',/,
+     &'@     ABORT DANS CGSTAB                                      ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@    The coefficient ALPHA of Bi-CGSTAB is                   ',/,
+     &'@      lower than ',E12.4                                     ,/,
+     &'@                                                            ',/,
+     &'@    The matrix cannot be considered as inversible anymore   ',/,
+     &'@                                                            '  )
+C
+#endif
 C
 C----
 C FIN

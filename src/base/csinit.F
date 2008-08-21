@@ -150,9 +150,19 @@ C
 C
  950  CONTINUE
 C
+#if defined(_CS_LANG_FR)
+C
  999  FORMAT(/,
      &'Code_Saturne : Erreur d''initialisation :',/,
      &'Impossible d''ouvrir le fichier : ',A,/)
+C
+#else
+C
+ 999  FORMAT(/,
+     &'Code_Saturne: Initialization error:',/,
+     &'Impossible to open the file: ',A,/)
+C
+#endif
 C
       RETURN
       END

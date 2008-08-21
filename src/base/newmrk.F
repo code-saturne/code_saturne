@@ -201,6 +201,8 @@ C----
 C FORMATS
 C----
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (
      &'@                                                            ',/,
      &'@ @@ ATTENTION : DEPLACEMENT DE STRUCTURES INTERNES ALE      ',/,
@@ -213,6 +215,23 @@ C
      &'@                                                            ',/,
      &'@  Arret du calcul                                           ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ALE DISPLACEMENT OF INTERNAL STRUCTURES        ',/,
+     &'@    ********                                                ',/,
+     &'@  Structure: ',I10                                           ,/,
+     &'@  The absolute value of the discriminant of the             ',/,
+     &'@    displacement matrix is: ',E14.5                          ,/,
+     &'@  The matrix is considered to be not inversible             ',/,
+     &'@    (limit value fixed to ',E14.5     ,')                   ',/,
+     &'@                                                            ',/,
+     &'@  Calculation abort                                         ',/,
+     &'@                                                            '  )
+C
+#endif
 C
 C----
 C FIN

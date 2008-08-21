@@ -1546,6 +1546,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1300 FORMAT(1X,A8,' : RESIDU DE NORMALISATION =', E14.6)
  1400 FORMAT(1X,A8,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
  1600 FORMAT(
@@ -1554,6 +1556,19 @@ C
      &'@    *********                                               ',/,
      &'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1300 FORMAT(1X,A8,' : NORMED RESIDUALS = ', E14.6)
+ 1400 FORMAT(1X,A8,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+ 1600 FORMAT(
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ',A8 ,' PRESSURE STEP '                         ,/,
+     &'@    ********'                                                ,/,
+     &'@  Maximum number of iterations ',I10   ,' reached'           ,/,
+     &'@'                                                              )
+C
+#endif
 C
 C----
 C FIN

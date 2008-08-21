@@ -980,7 +980,15 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+C
+#else
+C
+ 1000 FORMAT(/,'           SOLVING VARIABLE ',A8           ,/)
+C
+#endif
 C
 C12345678 : MAX: 12345678901234 MIN: 12345678901234 NORM: 12345678901234
 C----

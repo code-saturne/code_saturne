@@ -362,6 +362,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(1X,A8,
      & ' GRADCO: SORTIE IMMEDIATE: RNORM:', E11.4,' RESIDU:',E11.4)
  1100 FORMAT (1X,A8,
@@ -371,6 +373,20 @@ C
      &'@ @@ ATTENTION : ',A8 ,' NON CONVERGENCE DE GRADCO           ',/,
      &'@    *********                                               ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT(1X,A8,
+     & ' GRADCO: IMMEDIATE EXIT: RNORM:', E11.4,' RESIDUAL:',E11.4)
+ 1100 FORMAT (1X,A8,
+     &  ': GRADCO NITER: ',I5,' ABS RES:',E11.4,' NOR RES:',E11.4 )
+ 1200 FORMAT(
+     &'@'                                                            ,/,
+     &'@ @@ WARNING:            NON CONVERGENCE OF GRADCO'           ,/,
+     &'@    ********'                                                ,/,
+     &'@'                                                              )
+C
+#endif
 C
 C----
 C FIN

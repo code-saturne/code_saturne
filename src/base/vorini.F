@@ -436,6 +436,8 @@ C=======================================================================
 C
 C FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'                                                             ',/,
      &' ** METHODE DES VORTEX                                       ',/,
@@ -522,6 +524,97 @@ C
 C
  100  FORMAT(I10)
  200  FORMAT(5E13.5)
+C
+#else
+C
+ 1000 FORMAT(
+     &'                                                             ',/,
+     &' ** VORTEX METHOD                                            ',/,
+     &'    -------------                                            ',/,
+     &'       NNENT  = ',4X,I10,    ' (Number of inlets            )',/,
+     &'       ISUIVO = ',4X,I10,    ' (1: calculation restart      )'  )
+C
+ 2000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,
+     &'@    ********                                                ',/,
+     &'@    THE MAX DIMENSIONS OF THE INLET ARE INCOMPATIBLE WITH   ',/,
+     &'@    THE DATA AT THE INLET ',I10                              ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify usvort.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 3000 FORMAT(
+     &'                                                             ',/,
+     &' --  End reading the data file                               ',/)
+ 3100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,
+     &'@    ********                                                ',/,
+     &'@    U, K AND EPSILON ARE QUANTITIES WHICH MUST BE POSITIVE  ',/,
+     &'@    IN THE LOCAL FRAME OF THE INLET                         ',/,
+     &'@                                                            ',/,
+     &'@    VERIFY THE DATA FILE FOR THE INLET ',I10                 ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Verify usvort.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 3200 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING:       IN THE DATA SPECIFICATION                ',/,
+     &'@    ********                                                ',/,
+     &'@    THE MAX DIMENSIONS OF THE INLET ARE INCOMPATIBLE WITH   ',/,
+     &'@    THE ONES FROM THE DATA FILE                             ',/,
+     &'@                                                            ',/,
+     &'@    VERIFY THE DATA FILE FOR THE INLET ',I10                 ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will be run.                              ',/,
+     &'@                                                            ',/,
+     &'@  Verify usvort.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 4000 FORMAT(
+     &' --  End reading the restart file                            ',/)
+C
+ 4500   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING:       IN THE DATA SPECIFICATION                ',/,
+     &'@    ********                                                ',/,
+     &'@  THE NUMBER OF VORTICES HAS CHANGED AT THE INLET ',I10      ,/,
+     &'@    NVORT WAS PREVIOUSLY ',I10                               ,/,
+     &'@    AT THE INLET ',I10                                       ,/,
+     &'@    IT IS CURRENTLY ',I10                                    ,/,
+     &'@                                                            ',/,
+     &'@  THE METHOD IS RE-INITIALIZED AT THIS INLET                ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will be run.                              ',/,
+     &'@                                                            ',/,
+     &'@  Verify usvort.                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 100  FORMAT(I10)
+ 200  FORMAT(5E13.5)
+C
+#endif
 C
       RETURN
       END

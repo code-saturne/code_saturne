@@ -303,6 +303,8 @@ C----
 C FORMATS
 C----
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -369,6 +371,77 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,
+     &'@    ********                                                ',/,
+     &'@    THE TIME MONITORING FILES INDICATOR FOR THE MOBILE      ',/,
+     &'@      STRUCTURES CAN ONLY TAKE THE VALUES 0 OR 1.           ',/,
+     &'@    ITS VALUE IS ',I10                                       ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify the parameters given in usstru.                    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2000 FORMAT(
+     &    /,'ALL PHASES: COUPLING MODE FOR STRUCTURES NOT ACTIVATED ',/,
+     &      '              NBSTRU = ',I10                            ,/)
+ 2001 FORMAT(
+     &      '            NALIMX USELESS AND SET TO 1                ',/)
+ 2010 FORMAT(
+     &    /,'ALL PHASES: COUPLING MODE FOR STRUCTURES ACTIVATED     ',/,
+     &      '              WITH NBSTRU = ',I10   ,' STRUCTURE(S)    ',/,
+     &      '                                                       ',/,
+     &      '            NEWMARK COEFFICIENTS:                      ',/,
+     &      '              ALPNMK = ',E12.4                          ,/,
+     &      '              BETNMK = ',E12.4                          ,/,
+     &      '              GAMNMK = ',E12.4                          ,/,
+     &      '                                                       ',/,
+     &      '            MONITORING FILES FOR STRUCTURES:           ',/,
+     &      '                 IHISTR = ',I4,' ( 1 : activated)      ',/)
+ 2020 FORMAT(
+     &    /,'ALL PHASES: EXPLICIT SCHEME FOR COUPLING ACTIVATED     ',/,
+     &      '                                                       ',/,
+     &      '            SCHEME COEFFICIENTS:                       ',/,
+     &      '              AEXXST = ',E12.4                          ,/,
+     &      '              BEXXST = ',E12.4                          ,/,
+     &      '              CFOPRE = ',E12.4                          ,/)
+ 2030 FORMAT(
+     &    /,'ALL PHASES: IMPLICIT SCHEME FOR COUPING ACTIVATED      ',/,
+     &      '                                                       ',/,
+     &      '            NB OF MAX INNER ITERATIONS : ',I10          ,/,
+     &      '            CONVERGENCE THRESHOLD      : ',E12.4        ,/)
+C
+ 3000 FORMAT(
+     &'-------------------------------------------------------------',/)
+ 4000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN THE MOBILE STRUCTURE SPECIFICATION    ',/,
+     &'@                                                (ALE METHOD)',/,
+     &'@                                                            ',/,
+     &'@    The number of defined structures is different from the  ',/,
+     &'@      previous calculation:                                 ',/,
+     &'@      Number of structures previous calculation: ',I10       ,/,
+     &'@      Number of structures current  calculation: ',I10       ,/,
+     &'@                                                            ',/,
+     &'@    The calculation will not be run.                        ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxilliary restart file or the structures    ',/,
+     &'@      specifications in usstru.                             ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

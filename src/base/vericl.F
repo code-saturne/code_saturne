@@ -1044,6 +1044,8 @@ C=======================================================================
 C 3.  FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@ COND. LIM. NON INITIALISEES                                ',/,
@@ -1145,6 +1147,112 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@ UNINITIALIZED BOUNDARY CONDITIONS                          ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,
+     &'@     ICODCL VARIABLE ', I10                                  ,/,
+     &'@                                                            '  )
+ 1010 FORMAT(
+     &'@                                                            ',/,
+     &'@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,
+     &'@     ICODCL VARIABLE ', I10                                  ,/,
+     &'@                                                            '  )
+ 1015 FORMAT(
+     &'@                                                            ',/,
+     &'@ ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE WITH THE       ',/,
+     &'@ COMPRESSIBLE MODULE                                        ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,
+     &'@     ICODCL VARIABLE =',I10                                  ,/,
+     &'@     IPPMOD(ICOMPF)  =',I10                                  ,/,
+     &'@                                                            '  )
+ 1020 FORMAT(
+     &'@                                                            ',/,
+     &'@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY COMPONENT         ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; PHASE  ',I10      ,/,
+     &'@     ICODCL VELOCITY ',3I10                                  ,/,
+     &'@                                                            '  )
+ 1030 FORMAT(
+     &'@                                                            ',/,
+     &'@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-VARIABLE          ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,
+     &'@                                 PHASE ',I10                 ,/,
+     &'@     ICODCL VARIABLE ', I10                                  ,/,
+     &'@     ICODCL VELOCITY ',3I10                                  ,/,
+     &'@                                                            '  )
+ 1040 FORMAT(
+     &'@                                                            ',/,
+     &'@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-RIJ-EPSILON       ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; RIJ-EPSILON      ',/,
+     &'@                                 PHASE ',I10                 ,/,
+     &'@     ICODCL RIJ-EPS  ',7I5                                   ,/,
+     &'@     ICODCL VELOCITY ',3I5                                   ,/,
+     &'@                                                            '  )
+ 1050 FORMAT(
+     &'@                                                            ',/,
+     &'@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-SCALAR            ',/,
+     &'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; VARIABLE ',A8     ,/,
+     &'@     SCALAR NUMBER ',I10   ,'; PHASE ',I10                   ,/,
+     &'@     ICODCL SCALAR ',I10   ,'; ICODCL VELOCITY ',I10         ,/,
+     &'@                                                            '  )
+ 1901 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS VERIF.    ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@         Uninitialized boundary conditions        : ',I10    ,/,
+     &'@         Unexpected  boundary conditions:                   ',/,
+     &'@             on the scalars                       : ',I10    ,/,
+     &'@             on the scalars representing                    ',/,
+     &'@                                      a variance  : ',I10    ,/,
+     &'@         Incoherencies:                                     ',/,
+     &'@             between velocity and scalars         : ',I10    ,/,
+     &'@                                                            ',/,
+     &'@         The calculation will not be run.                   ',/,
+     &'@                                                            ',/,
+     &'@         Verify the parameters given via the interface or   ',/,
+     &'@           usclim.                                          ',/,
+     &'@                                                            ',/)
+ 1902 FORMAT(
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS VERIF.    ',/,
+     &'@    ********                                                ',/,
+     &'@                 FOR PHASE ',I10                             ,/,
+     &'@                                                            ',/,
+     &'@         Unexpeted boundary conditions:                     ',/,
+     &'@             on the velocity                      : ',I10    ,/,
+     &'@             on the pressure                      : ',I10    ,/,
+     &'@             on k and epsilon                     : ',I10    ,/,
+     &'@             on Rij and epsilon                   : ',I10    ,/,
+     &'@             on k, epsilon, phi and f_barre       : ',I10    ,/,
+     &'@         Incoherencies:                                     ',/,
+     &'@             between the velocity components      : ',I10    ,/,
+     &'@             between velocity and pressure        : ',I10    ,/,
+     &'@             between velocity and k-epsilon       : ',I10    ,/,
+     &'@             between velocity and Rij-epsilon     : ',I10    ,/,
+     &'@             between velocity and v2f             : ',I10    ,/,
+     &'@                                                            ',/,
+     &'@         The calculation will not be run.                   ',/,
+     &'@                                                            ',/,
+     &'@         Verify the parameters given via the interface or   ',/,
+     &'@           usclim.                                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
       RETURN
       END

@@ -291,6 +291,9 @@ privcompil:
 	 if   [ "${NLS}" -eq "1" ] ;\
 	 then cflags="$${cflags} -DENABLE_NLS -DPACKAGE=\\\"$(NOM_PACKAGE)\\\" -DLOCALEDIR=\\\"$(ARCHLOCALE_CS)\\\"" ;\
 	 fi ; \
+	 if   [ "${CS_LANG}" = "FR" ] ;\
+	 then fflags="$${fflags} -D_CS_LANG_FR" ;\
+	 fi ; \
 	 if   [ "$(MYOPT)" = "LO" ] ;\
 	 then make privdependobj OBJECTS="`cat .liste_mkfiles.o`" \
 	                         INC_CS_I="$${dir_inc_cs}" \

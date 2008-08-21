@@ -716,6 +716,8 @@ C----
 C FORMAT
 C----
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &' Nb Clipping Constante Smagorinsky par valeurs maximales ',I10,/)
  2001 FORMAT(
@@ -728,6 +730,23 @@ C
      & E12.4    ,      E12.4,      E12.4                               )
  2003 FORMAT(
      &' ----------------------------------                          ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &' Nb of clipping of the Smagorinsky constant by max values',I10,/)
+ 2001 FORMAT(
+     &' --- Phase: ',I10                                             ,/,
+     &' --- Informations on the squared Smagorinsky constant'        ,/,
+     &' --------------------------------'                            ,/,
+     &' Mean value  Min value  Max value'                            ,/,
+     &' --------------------------------'                              )
+ 2002 FORMAT(
+     & E12.4    ,      E12.4,      E12.4                               )
+ 2003 FORMAT(
+     &' --------------------------------'                            ,/)
+C
+#endif
 C
 C----
 C FIN

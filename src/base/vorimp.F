@@ -136,6 +136,8 @@ C
         WRITE(NFECRA,9140) UDEBIT(IENT),KDEBIT(IENT),EDEBIT(IENT)
       ENDIF
 C
+#if defined(_CS_LANG_FR)
+C
  9010 FORMAT(
      &'-------------                                                ',/,
      &'  -- Entree : ',I10                                            /,
@@ -162,7 +164,7 @@ C
      &' Plan y =  LLY/2 ',4X,I10,    '  3 : periodicite            )',/,
      &' Plan z = -LLZ/2 ',4X,I10,    '                              ',/)
  9040 FORMAT(
-     &' --- Dimentions de l''entree dans le repere local            ',/,
+     &' --- Dimensions de l''entree dans le repere local            ',/,
      &'                  ---- min ----    ---- max ----             ',/,
      &'       Y       = ',E14.5,'  ',E14.5,'                        ',/,
      &'       Z       = ',E14.5,'  ',E14.5,'                        ',/)
@@ -198,6 +200,73 @@ C
      &'       UDEBIT  = ',E14.5,    ' (vitesse debitante imposee)   ',/,
      &'       KDEBIT  = ',E14.5,    ' (energie cinetique imposee)   ',/,
      &'       EDEBIT  = ',E14.5,    ' (dissipation imposee)         ',/)
+C
+#else
+C
+ 9010 FORMAT(
+     &'-----------                                                  ',/,
+     &'  -- Inlet: ',I10                                              /,
+     &'-----------                                                  ',/,
+     &'       NVORT  = ',4X,I10,    ' (Number of vortices          )',/,
+     &'       ICVOR  = ',4X,I10,    ' (Number of faces at the inlet)',/,
+     &'       ICAS   = ',4X,I10,    ' (1 : rectangular duct         ',/,
+     &'                ',14X,       '  2 : pipe                     ',/,
+     &'                ',14X,       '  3 : wo BC but with file      ',/,
+     &'                ',14X,       '  4 : wo BC neither file      )',/)
+ 9020 FORMAT(
+     &' --- Main directions for the local frame                     ',/,
+     &'                  ---- X ----    ---- Y ----    ---- Z ----  ',/,
+     &'       DIR1  = ', E14.5,' ',E14.5,' ',E14.5                    /,
+     &'       DIR2  = ', E14.5,' ',E14.5,' ',E14.5                    /,
+     &'       DIR3  = ', E14.5,' ',E14.5,' ',E14.5                    /,
+     &'                                                             ',/,
+     &' --- Inlet center coordinates                                ',/,
+     &'       CEN   = ', E14.5,' ',E14.5,' ',E14.5,                   /)
+ 9030 FORMAT(
+     &' --- Boundary conditions in the local frame                  ',/,
+     &' Y plane = -LLY/2 ',4X,I10,    ' (1 : wall                   ',/,
+     &' Z plane =  LLZ/2 ',4X,I10,    '  2 : symmetry               ',/,
+     &' Y plane =  LLY/2 ',4X,I10,    '  3 : periodicity           )',/,
+     &' Z plane = -LLZ/2 ',4X,I10,    '                             ',/)
+ 9040 FORMAT(
+     &' --- Inlet dimensions in the local framae                    ',/,
+     &'                  ---- min ----    ---- max ----             ',/,
+     &'       Y       = ',E14.5,'  ',E14.5,'                        ',/,
+     &'       Z       = ',E14.5,'  ',E14.5,'                        ',/)
+ 9050 FORMAT(
+     &'       LLY     = ',E14.5,    ' (duct length in the directions',/,
+     &'       LLZ     = ',E14.5,    '  DIR1 and DIR2              ) ',/)
+ 9060 FORMAT(
+     &'       LLD     = ',E14.5,    ' (pipe diameter              ) ',/)
+ 9070 FORMAT(
+     &' --- Vortices life time                                      ',/,
+     &'       ITLIVO  = ',4X,I10,   ' (1 : constant                 ',/,
+     &'                 ',14X,      '  2 : in k^(3/2).U/epsilon   ) ',/)
+ 9080 FORMAT(
+     &'       TLIMVO  = ',E14.5,    ' (1 : given life time        ) ',/)
+ 9090 FORMAT(
+     &' --- Vortices size                                           ',/,
+     &'       ISGMVO  = ',4X,I10,   ' (1 : constant                 ',/,
+     &'                 ',14X,      '  2 : in k^(3/2)/epsilon       ',/,
+     &'                 ',14X,      '  2 : in max[nu.k/eps,200.Lk]) ',/)
+ 9100 FORMAT(
+     &'       XSGMVO  = ',E14.5,    ' (1 : given size             ) ',/)
+ 9110 FORMAT(
+     &' --- Time marching                                           ',/,
+     &'       IDEPVO  = ',4X,I10,   ' (1 : random displacement      ',/,
+     &'                 ',14X,      '  2 : vortices convection      ',/)
+ 9120 FORMAT(
+     &'       UD      = ',E14.5,    ' (1 : max displacement vel.  ) ',/)
+ 9130 FORMAT(
+     &' --- Data file                                               ',/,
+     &'       NDAT    = ',4X,I10,   ' (Number of lines in the file )',/)
+ 9140 FORMAT(
+     &' --- Inlet date                                              ',/,
+     &'       UDEBIT  = ',E14.5,    ' (given velocity      )        ',/,
+     &'       KDEBIT  = ',E14.5,    ' (given kinetic energy)        ',/,
+     &'       EDEBIT  = ',E14.5,    ' (given dissipation   )        ',/)
+C
+#endif
 C
 C=======================================================================
 C 2. FIN

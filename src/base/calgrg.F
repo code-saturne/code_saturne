@@ -297,6 +297,9 @@ C VERIFICATION DEBUT : a enlever par la suite
         WRITE(NFECRA,1000) ICOMP
         CALL CSEXIT (1)
       ENDIF
+C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -312,6 +315,25 @@ C VERIFICATION DEBUT : a enlever par la suite
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
 C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN calgrg (multigrid)                    ',/,
+     &'@    ********                                                ',/,
+     &'@     THERE ARE ',I10   ,' NON ZERO ELEMENTS IN IRESPR       ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
+C
       DO IEL = 1, NCELF
         IELG = IRESPR(IEL)
         IW(IELG) = IW(IELG) + 1
@@ -324,6 +346,9 @@ C
         WRITE(NFECRA,9000)
         CALL CSEXIT (1)
       ENDIF
+C
+#if defined(_CS_LANG_FR)
+C
  9000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -338,6 +363,25 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN calgrg (multigrid)                    ',/,
+     &'@    ********                                                ',/,
+     &'@     ERROR IN IRESPR (NCELT.NE.NCELF)                       ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C VERIFICATION FIN : a enlever par la suite
 C
 C=======================================================================
