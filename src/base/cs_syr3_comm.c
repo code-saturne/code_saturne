@@ -86,7 +86,6 @@ struct _cs_syr3_comm_t {
 
   char            *nom;          /* Nom du communicateur                      */
 
-  bft_file_t      *fic;          /* Pointeur sur fichier associé              */
   cs_int_t         rang_proc;    /* Rang processus en communication (MPI)     */
   int              sock;         /* Numéro de socket                          */
 
@@ -157,30 +156,6 @@ static int cs_glob_mpe_comm_corps;
 /*============================================================================
  *  Prototypes de fonctions privées
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *  Fonction qui construit le descripteur du fichier d'interface et initialise
- *  ce fichier par l'envoi ou la lecture d'une éventuelle "chaîne magique"
- *  servant a vérifier le bon format des fichiers
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_fic_ouvre
-(
-       cs_syr3_comm_t  *const comm,
- const char            *const  nom,
- const char            *const chaine_magique
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui ferme le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_fic_ferme
-(
- cs_syr3_comm_t  *comm
-);
-
 
 #if defined(_CS_HAVE_MPI)
 
@@ -336,32 +311,6 @@ static void cs_loc_syr3_comm_echo_donnees
 );
 
 
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit un enregistrement dans le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_ecrit_rec
-(
- const cs_syr3_comm_t   *const comm,
- const void             *const rec,
- const size_t                  nbr,
-       cs_type_t               typ
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui lit un enregistrement dans le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_lit_rec
-(
- const cs_syr3_comm_t   *const comm,
-       void             *const rec ,
- const size_t                  nbr,
-       cs_type_t               typ
-);
-
-
 /*============================================================================
  *  Définitions de fonctions publiques
  *============================================================================*/
@@ -414,8 +363,6 @@ cs_syr3_comm_t * cs_syr3_comm_initialise
   comm->mode = mode;
   comm->type = type;
   comm->echo = echo;
-
-  comm->fic  = NULL;
 
 #if defined(_CS_HAVE_MPI)
   comm->rang_proc = rang_proc;
@@ -496,12 +443,8 @@ cs_syr3_comm_t * cs_syr3_comm_initialise
 
     }
 
-    if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
-
-      cs_loc_syr3_comm_fic_ouvre(comm, nom_fic, chaine_magique);
-
 #if defined(_CS_HAVE_SOCKET)
-    else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+    if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
       cs_loc_syr3_comm_sock_ouvre(comm, nom_fic, chaine_magique);
 #endif /* (_CS_HAVE_SOCKET) */
 
@@ -535,12 +478,9 @@ cs_syr3_comm_t * cs_syr3_comm_termine
   bft_printf(_("\n  Fermeture de la communication :  %s\n"), comm->nom);
   bft_printf_flush();
 
-  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
-    cs_loc_syr3_comm_fic_ferme(comm);
-
 #if defined(_CS_HAVE_SOCKET)
 
-  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
     cs_loc_syr3_comm_sock_ferme(comm);
 
 #endif /* (_CS_HAVE_SOCKET) */
@@ -639,61 +579,12 @@ void cs_syr3_comm_envoie_message
     cs_loc_syr3_comm_echo_pre(comm);
 
 
-  /* Communication par fichier */
-  /*---------------------------*/
-
-  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE) {
-
-    /* numéro de type de la rubrique */
-
-    cs_loc_syr3_comm_ecrit_rec(comm,
-                               (const void *)(&num_rub),
-                               1,
-                               CS_TYPE_cs_int_t);
-
-    /* nom de type de la rubrique */
-
-    if (num_rub == 0)
-      cs_loc_syr3_comm_ecrit_rec(comm,
-                                 (const void *) nom_rub_ecr,
-                                 CS_SYR3_COMM_LNG_NOM_RUB,
-                                 CS_TYPE_char);
-
-    /* nombre d'éléments */
-
-    cs_loc_syr3_comm_ecrit_rec(comm,
-                               (const void *)(&nbr_elt),
-                               1,
-                               CS_TYPE_cs_int_t);
-
-    if (nbr_elt != 0) {
-
-      /* nom du type d'éléments */
-
-      cs_loc_syr3_comm_ecrit_rec(comm,
-                                 (const void *) nom_typ_elt_ecr,
-                                 CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-                                 CS_TYPE_char);
-
-      /* valeurs des éléments */
-
-      cs_loc_syr3_comm_ecrit_rec(comm,
-                                 (const void *) elt,
-                                 (size_t) nbr_elt,
-                                 typ_elt);
-
-    } /* Fin : s'il y a des éléments a écrire */
-
-    bft_file_flush(comm->fic);
-
-  }
-
 #if defined(_CS_HAVE_MPI)
 
   /* Communication par MPI */
   /*-----------------------*/
 
-  else if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
+  if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
     cs_int_t  num_rub_ecr     = num_rub;
     cs_int_t  nbr_elt_rub_ecr = nbr_elt;
@@ -719,7 +610,7 @@ void cs_syr3_comm_envoie_message
   /* Communication par socket */
   /*--------------------------*/
 
-  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
+  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
 
     /* numéro de type de la rubrique */
 
@@ -803,53 +694,12 @@ cs_int_t cs_syr3_comm_recoit_entete
     cs_loc_syr3_comm_echo_pre(comm);
 
 
-  /* Communication par fichier */
-  /*---------------------------*/
-
-  if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE) {
-
-    /* numéro de type de la rubrique */
-
-    cs_loc_syr3_comm_lit_rec(comm,
-                             (void *) &(entete->num_rub),
-                             1,
-                             CS_TYPE_cs_int_t);
-
-    /* nom de type de la rubrique */
-
-    if (entete->num_rub == 0)
-      cs_loc_syr3_comm_lit_rec(comm,
-                               (void *) &(entete->nom_rub),
-                               CS_SYR3_COMM_LNG_NOM_RUB,
-                               CS_TYPE_char);
-
-    /* nombre d'éléments */
-
-    cs_loc_syr3_comm_lit_rec(comm,
-                             (void *) &(entete->nbr_elt),
-                             1,
-                             CS_TYPE_cs_int_t);
-
-
-    if (entete->nbr_elt != 0) {
-
-      /* nom du type d'éléments */
-
-      cs_loc_syr3_comm_lit_rec(comm,
-                               (void *) nom_typ_elt,
-                               CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-                               CS_TYPE_char);
-
-    } /* Fin : s'il y a des elements à lire */
-
-  }
-
 #if defined(_CS_HAVE_MPI)
 
   /* Communication par MPI */
   /*-----------------------*/
 
-  else if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
+  if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
     cs_loc_syr3_comm_mpi_entete(&(entete->num_rub),
                                 entete->nom_rub,
@@ -866,7 +716,7 @@ cs_int_t cs_syr3_comm_recoit_entete
   /* Communication par socket */
   /*--------------------------*/
 
-  else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
+  if (comm->type == CS_SYR3_COMM_TYPE_SOCKET) {
 
     /* numéro de type de la rubrique */
 
@@ -1016,19 +866,11 @@ void * cs_syr3_comm_recoit_corps
 
   if (entete->nbr_elt != 0) {
 
-    /* Communication par fichier */
-
-    if (comm->type == CS_SYR3_COMM_TYPE_BINAIRE)
-      cs_loc_syr3_comm_lit_rec(comm,
-                               (void *)_elt_rub,
-                               (size_t) entete->nbr_elt,
-                               entete->typ_elt);
-
 #if defined(_CS_HAVE_MPI)
 
     /* Communication par MPI */
 
-    else if (comm->type == CS_SYR3_COMM_TYPE_MPI)
+    if (comm->type == CS_SYR3_COMM_TYPE_MPI)
       cs_loc_syr3_comm_mpi_corps((void *)_elt_rub,
                                  entete->nbr_elt,
                                  entete->typ_elt,
@@ -1040,7 +882,7 @@ void * cs_syr3_comm_recoit_corps
 
     /* Communication par socket */
 
-    else if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
+    if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
       cs_loc_syr3_comm_lit_sock(comm,
                                 (void *)_elt_rub,
                                 (size_t) entete->nbr_elt,
@@ -1254,128 +1096,6 @@ void cs_syr3_comm_termine_socket
 /*============================================================================
  *  Définitions de fonctions privées
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *  Fonction qui construit le descripteur du fichier d'interface et initialise
- *  ce fichier par l'envoi ou la lecture d'une eventuelle "chaîne magique"
- *  servant a vérifier le bon format des fichiers
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_fic_ouvre
-(
-       cs_syr3_comm_t  *const  comm,
- const char       *const  nom,
- const char       *const  chaine_magique
-)
-{
-
-  bft_file_type_t fic_typ_comm;
-  bft_file_mode_t fic_mod_comm;
-
-
-  /* Préparation de l'ouverture du fichier */
-
-  switch(comm->type) {
-
-  case CS_SYR3_COMM_TYPE_BINAIRE:
-    fic_typ_comm = BFT_FILE_TYPE_BINARY;
-    break;
-
-  default:
-    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
-
-  }
-
-  switch(comm->mode) {
-
-  case CS_SYR3_COMM_MODE_RECEPTION:
-    fic_mod_comm = BFT_FILE_MODE_READ;
-    break;
-
-  case CS_SYR3_COMM_MODE_EMISSION:
-    fic_mod_comm = BFT_FILE_MODE_WRITE;
-    break;
-
-  default:
-    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
-           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
-
-  }
-
-
-  /* Création du descripteur du fichier d'interface */
-
-  comm->fic = bft_file_open(nom,
-                            fic_mod_comm,
-                            fic_typ_comm);
-  bft_file_set_big_endian(comm->fic);
-
-
-  /*-----------------------------------------------------*/
-  /* Écriture ou lecture éventuelle d'une chaine magique */
-  /*-----------------------------------------------------*/
-
-  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
-
-    char      *chaine_magique_lue;
-    cs_int_t   lng_chaine_magique = strlen(chaine_magique);
-
-    BFT_MALLOC(chaine_magique_lue, lng_chaine_magique + 1, char);
-
-    cs_loc_syr3_comm_lit_rec(comm,
-                        (void *)(chaine_magique_lue),
-                        strlen(chaine_magique),
-                        CS_TYPE_char);
-
-    chaine_magique_lue[lng_chaine_magique] = '\0';
-
-    /* Si la chaine magique ne correspond pas, on a une erreur */
-
-    if (strcmp(chaine_magique_lue, chaine_magique) != 0) {
-
-      bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier de communication : "
-                  "\"%s\".\n"
-                  "Le format de l'interface n'est pas à la bonne version.\n"
-                  "La chaîne magique repère la version du format "
-                  "d'interface :\n"
-                  "chaîne magique lue      : \"%s\"\n"
-                  "chaîne magique actuelle : \"%s\"\n"),
-                comm->nom, chaine_magique_lue, chaine_magique);
-
-    }
-
-    BFT_FREE(chaine_magique_lue);
-
-  }
-  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
-
-    cs_loc_syr3_comm_ecrit_rec(comm,
-                          (const void *)(chaine_magique),
-                          strlen(chaine_magique),
-                          CS_TYPE_char);
-
-    bft_file_flush(comm->fic);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui ferme le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_fic_ferme
-(
- cs_syr3_comm_t  *comm
-)
-{
-
-  comm->fic = bft_file_free(comm->fic);
-
-}
-
 
 #if defined(_CS_HAVE_MPI)
 
@@ -2456,108 +2176,6 @@ static void cs_loc_syr3_comm_echo_donnees
   } while (echo_fin <= nbr_elt);
 
   bft_printf_flush();
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit un enregistrement dans le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_ecrit_rec
-(
- const cs_syr3_comm_t   *const comm,
- const void             *const rec,
- const size_t                  nbr,
-       cs_type_t               typ
-)
-{
-  size_t  taille = 0;
-
-  assert(comm != NULL);
-  assert(rec  != NULL);
-
-  switch(comm->type) {
-
-  case CS_SYR3_COMM_TYPE_BINAIRE:
-
-    /* écriture de l'enregistrement dans le fichier */
-
-    switch(typ) {
-    case CS_TYPE_char:
-      taille = sizeof(char);
-      break;
-    case CS_TYPE_cs_int_t:
-      taille = sizeof(cs_int_t);
-      break;
-    case CS_TYPE_cs_real_t:
-      taille = sizeof(cs_real_t);
-      break;
-    default:
-      assert(   typ == CS_TYPE_char
-             || typ == CS_TYPE_cs_int_t
-             || typ == CS_TYPE_cs_real_t);
-    }
-
-    bft_file_write(rec, taille, nbr, comm->fic);
-    break;
-
-  default:
-    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui lit un enregistrement dans le fichier d'interface
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_syr3_comm_lit_rec
-(
- const cs_syr3_comm_t  *const comm,
-       void            *const rec,
- const size_t                 nbr,
-       cs_type_t              typ
-)
-{
-  size_t  taille = 0;
-
-  assert(comm != NULL);
-  assert(rec  != NULL);
-
-
-  switch(comm->type) {
-
-  case CS_SYR3_COMM_TYPE_BINAIRE:
-
-    /* Lecture de l'enregistrement dans le fichier */
-
-    switch (typ) {
-    case CS_TYPE_char:
-      taille = sizeof(char);
-      break;
-    case CS_TYPE_cs_int_t:
-      taille = sizeof(cs_int_t);
-      break;
-    case CS_TYPE_cs_real_t:
-      taille = sizeof(cs_real_t);
-      break;
-    default:
-      assert(   typ == CS_TYPE_char
-             || typ == CS_TYPE_cs_int_t
-             || typ == CS_TYPE_cs_real_t);
-    }
-
-    bft_file_read(rec, taille, nbr, comm->fic);
-    break;
-
-  default:
-
-    assert(comm->type == CS_SYR3_COMM_TYPE_BINAIRE);
-
-  }
 
 }
 

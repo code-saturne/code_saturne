@@ -59,7 +59,7 @@ extern "C" {
 
 typedef enum {
 
-  CS_SYR3_COMM_TYPE_BINAIRE,     /* Messages par fichiers binaires            */
+  CS_SYR3_COMM_TYPE_NONE,        /* Pas de communication (pré-initialisation) */
   CS_SYR3_COMM_TYPE_MPI,         /* Messages MPI                              */
   CS_SYR3_COMM_TYPE_SOCKET       /* Messages par sockets IP                   */
 
@@ -147,8 +147,8 @@ cs_syr3_comm_t * cs_syr3_comm_initialise
  const cs_int_t             rang_proc,      /* --> Rang processus en comm
                                                     (< 0 si comm par fichier) */
 #endif
- const cs_syr3_comm_mode_t       mode,      /* --> Émission ou réception      */
- const cs_syr3_comm_type_t       type,      /* --> Type de communication      */
+ const cs_syr3_comm_mode_t  mode,           /* --> Émission ou réception      */
+ const cs_syr3_comm_type_t  type,           /* --> Type de communication      */
  const cs_int_t             echo            /* --> Écho sur sortie principale
                                                     (< 0 si aucun, entête si 0,
                                                     n premiers et derniers

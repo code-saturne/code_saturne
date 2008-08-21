@@ -374,7 +374,7 @@ _syr_read_args(int   *arg_id,
   cs_int_t *colors = NULL;
   cs_int_t  n_groups = 0;
   char    **groups = NULL;
-  cs_syr3_comm_type_t  comm_type = CS_SYR3_COMM_TYPE_BINAIRE;
+  cs_syr3_comm_type_t  comm_type = CS_SYR3_COMM_TYPE_NONE;
 #if defined (_CS_HAVE_MPI)
   cs_int_t  syr_proc_rank = -1;
 #endif

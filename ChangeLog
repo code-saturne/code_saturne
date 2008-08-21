@@ -1,4 +1,11 @@
 * 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove the pipe communication mode for SYRTHES coupling.
+  modified routines:
+   include/base/cs_syr3_comm.h
+   src/base/cs_syr3_comm.c
+   src/base/cs_opts.c
+
+* 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Change the restart file format to comply with the new common
   format file (with the Preprocessor output).
   modified routines:
