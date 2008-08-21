@@ -40,7 +40,7 @@ BGL_SYS  = /bgsys/drivers/ppcfloor/comm
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/gpfs/home/saturne/opt/bft-1.0.6/arch/bgp
+BFT_HOME        =/gpfs/home/saturne/opt/bft-1.0.7/arch/bgp
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft

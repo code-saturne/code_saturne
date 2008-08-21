@@ -36,7 +36,7 @@ BGL_SYS  = /bgl/BlueLight/ppcfloor/bglsys
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.6/arch/bgl
+BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.7/arch/bgl
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft

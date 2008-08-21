@@ -31,7 +31,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/Users/saturne/opt/bft-1.0.6/arch/Darwin
+BFT_HOME        =/Users/saturne/opt/bft-1.0.7/arch/Darwin
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
