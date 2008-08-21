@@ -354,17 +354,12 @@ cs_base_mpi_init(int     *argc,
                  char  ***argv,
                  int      rang_deb);
 
-/*----------------------------------------------------------------------------
- * Finalize MPI.
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_mpi_fin(void);
-
 #endif /* defined(_CS_HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Exit, with handling for both normal and error cases.
+ *
+ * Finalize MPI if necessary.
  *
  * parameters:
  *   status <-- value to be returned to the parent:
