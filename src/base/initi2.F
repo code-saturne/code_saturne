@@ -141,6 +141,8 @@ C
 C
 C
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'                                                             '  )
  1100 FORMAT(
@@ -151,6 +153,20 @@ C
      &'                                               la turbulence.'  )
  1102 FORMAT(
      &'       ALMAX est la racine cubique du volume du domaine.     ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'                                                             '  )
+ 1100 FORMAT(
+     &' --- Phase: ',I10                                             ,/,
+     &'       ALMAX  = ', E14.5,    ' (Characteristic length       )'  )
+ 1101 FORMAT(
+     &'       ALMAX is the length used to initialize the turbulence.'  )
+ 1102 FORMAT(
+     &'       ALMAX is the cubic root of the domain volume.'         ,/)
+C
+#endif
 C
 C=======================================================================
 C 4. FIN

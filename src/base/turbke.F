@@ -1566,6 +1566,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &'   ** PHASE ',I4,' RESOLUTION DU K-EPSILON                   ',/,
      &'      ------------------------------------                   ',/)
@@ -1576,6 +1578,20 @@ C
      &'   ** PHASE ',I4,' RESOLUTION DU V2F (K ET EPSILON)          ',/,
      &'      ---------------------------------------------          ',/)
  1100 FORMAT(1X,A8,' : BILAN EXPLICITE = ',E14.5)
+C
+#else
+C
+ 1000 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING K-EPSILON'                         ,/,
+     &'      ------------------------------'                         ,/)
+ 1001 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING K-EPSILON WITH LINEAR PROD'        ,/,
+     &'      -----------------------------------------------'        ,/)
+ 1002 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING V2F (K AND EPSILON)'               ,/,
+     &'      ----------------------------------------'               ,/)
+ 1100 FORMAT(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+#endif
 C
 C----
 C FIN

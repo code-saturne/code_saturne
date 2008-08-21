@@ -290,13 +290,15 @@ C
 C----
 C FORMATS
 C----
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'# ---------------------------------------------------',/,
      &'#      FICHIER HISTORIQUE EN TEMPS                   ',/,
      &'#      VARIABLE ',A30                                 ,/,
      &'# ---------------------------------------------------',/,
      &'# ',/,
-     &'#      NOMBRE DE STRUTURES       : ',I8,/,
+     &'#      NOMBRE DE STRUCTURES      : ',I8,/,
      &'# ',/,
      &'#      NOMBRE D''ENREGISTREMENTS  : ',I8,/,
      &'# ',/,
@@ -322,6 +324,43 @@ C----
      &'# ---------------------------------------------------',/,
      &'# ')
  3000 FORMAT ( 1X,I7,1X,21(1X,E14.7))
+C
+#else
+C
+ 1000 FORMAT (
+     &'# ---------------------------------------------------',/,
+     &'#      TIME MONITORING FILE                          ',/,
+     &'#      VARIABLE ',A30                                 ,/,
+     &'# ---------------------------------------------------',/,
+     &'# ',/,
+     &'#      NUMBER OF STRUCTURES  : ',I8,/,
+     &'# ',/,
+     &'#      NUMBER OF RECORDS     : ',I8,/,
+     &'# ',/,
+     &'# ',/,
+     &'# COLUMN 1        : TIME STEP NUMBER ',/,
+     &'#        2        : PHYSICAL TIME (or Nb of time steps*DTREF ',/,
+     &'#                                with non uniform time step)',/,
+     &'#        3 TO ',I4,' : VALUE FOR EACH STRUCTURE              ',/,
+     &'# ',/,
+     &'# ---------------------------------------------------',/,
+     &'# ')
+ 2000 FORMAT('# STRUCTURE    |',20(21X,I3,22X,'|'))
+ 2001 FORMAT('# MASS         |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
+ 2002 FORMAT('# DAMPING      |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
+ 2003 FORMAT('# STIFNESS     |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
+ 2004 FORMAT('#              |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
+ 2005 FORMAT('#')
+ 2006 FORMAT(
+     &'# (in the case where the structures characteristics are      ',/,
+     &'#  variables, these values correspond to the latest time step',/,
+     &'#  written in the file',/,
+     &'#',/,
+     &'# ---------------------------------------------------',/,
+     &'# ')
+ 3000 FORMAT ( 1X,I7,1X,21(1X,E14.7))
+C
+#endif
 C
       RETURN
       END

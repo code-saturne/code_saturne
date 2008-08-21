@@ -330,12 +330,25 @@ C
 C
 C FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@ @@ ATTENTION : COUPLAGE SYRTHES AVEC CALCUL EN ENTHALPIE   ',/,
      &'@    *********                                               ',/,
      &'@      OPTION NON VALIDEE - CONTACTER L''EQUIPE DE DVPT      ',/,
      &'@                                                            ')
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: SYRTHES COUPLING WITH ENTHALPY CALCULATION     ',/,
+     &'@    ********                                                ',/,
+     &'@      OPTION NOT VALIDATED - CONTACT THE SUPPORT            ',/,
+     &'@                                                            ')
+C
+#endif
 C
       END
 c@z

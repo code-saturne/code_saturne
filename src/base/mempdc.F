@@ -193,6 +193,8 @@ C     ==========
 C
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,' SORTIE DANS MEMPDC CAR LES DIMENSIONS DES TABLEAUX ',/,
      &         '   RELATIFS AUX PERTES DE CHARGES SONT INCORRECTES ',/,
      &         '   PHASE ',I10,/,
@@ -216,6 +218,34 @@ C
 C
  3000 FORMAT(
      &'-------------------------------------------------------------',/)
+C
+#else
+C
+ 1000 FORMAT(/,' ABORT IN MEMPDC BECAUSE THE DIMENSION OF THE ARRAYS',/,
+     &         '   RELATIVE TO THE HEAD LOSS IS INCORRECT ',/,
+     &         '   PHASE ',I10,/,
+     &         '     NCEPDC = ',I10,/,
+     &         '     NCKPDC = ',I10)
+C
+ 2000 FORMAT(
+     & /,'PHASE ',I6,' : HEAD LOSS TREATMENT NOT ACTIVATED ',/,
+     &   '                 NCEPDC = ',I10,/)
+ 2001 FORMAT(
+     & /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,
+     & '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/,
+     & '                 WITH A DIAGONAL TENSOR (NCKPDC = ',I1,')',/)
+ 2002 FORMAT(
+     & /,/,
+     & 'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,
+     & '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/,
+     & '                 WITH A COMPLETE SYMMETRIC TENSOR (NCKPDC = ',
+     &  I1,')',/)
+C
+C
+ 3000 FORMAT(
+     &'-------------------------------------------------------------',/)
+C
+#endif
 C
       RETURN
       END

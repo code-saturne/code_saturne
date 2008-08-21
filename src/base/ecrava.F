@@ -321,7 +321,11 @@ C
       CALL ECRSUI(IMPAVA,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,IVERS,
      &            IERROR)
       IF (IERROR.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DE L''ENTETE                     '
+#else
+        CAR54='ERROR WHILE WRITING THE HEADER                        '
+#endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
 C
@@ -362,11 +366,19 @@ C
       NBERRO=NBERRO+IERROR
 C
       IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DES DIMENSIONS                   '
+#else
+        CAR54='ERROR WHILE WRITING THE DIMENSIONS                    '
+#endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
 C
+#if defined(_CS_LANG_FR)
       CAR54 =' Fin de l''ecriture des dimensions                    '
+#else
+      CAR54 =' End writing the dimensions                           '
+#endif
       WRITE(NFECRA,1110)CAR54
 C
 C 3.2 OPTIONS (Celles servant a donner le nombre de tableaux a lire)
@@ -417,11 +429,19 @@ C  ---> Methode ALE
 C
 C
       IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DES OPTIONS                      '
+#else
+        CAR54='ERROR WHILE WRITING THE OPTIONS                       '
+#endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
 C
+#if defined(_CS_LANG_FR)
       CAR54 =' Fin de l''ecriture des options                       '
+#else
+      CAR54 =' End writing the options                              '
+#endif
       WRITE(NFECRA,1110)CAR54
 C
 C 3.3 VARIABLES "PRINCIPALES"
@@ -484,11 +504,19 @@ C
       ENDDO
 C
       IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DES VARIABLES PRINCIPALES        '
+#else
+        CAR54='ERROR WHILE WRITING THE MAIN VARIABLES                '
+#endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
 C
+#if defined(_CS_LANG_FR)
       CAR54 =' Fin de l''ecriture des variables principales         '
+#else
+      CAR54 =' End writing the main variables                       '
+#endif
       WRITE(NFECRA,1110)CAR54
 C
 C
@@ -502,12 +530,20 @@ C
 
 C
       IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DES INFORMATIONS COMPLEMENTAIRES '
+#else
+        CAR54='ERROR WHILE WRITING THE COMPLEMENTARY INFORMATIONS    '
+#endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
 C
       IF(IECR.NE.0) THEN
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des informations complementaires  '
+#else
+        CAR54 =' End writing the complementary informations           '
+#endif
         WRITE(NFECRA,1110)CAR54
       ENDIF
 C
@@ -559,7 +595,11 @@ C
         CALL ECRSUI(IMPAVX,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
      &              IVERS,IERROR)
         IF (IERROR.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DE L''ENTETE                     '
+#else
+          CAR54='ERROR WHILE WRITING THE HEADER                        '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
@@ -619,11 +659,19 @@ C
       NBERRO=NBERRO+IERROR
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES DIMENSIONS ET DES OPTIONS    '
+#else
+          CAR54='ERROR WHILE WRITING THE DIMENSIONS AND OPTIONS        '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des dimensions et des options     '
+#else
+        CAR54 =' End writing the dimensions and options               '
+#endif
         WRITE(NFECRA,1110)CAR54
 C
 C 5.3 ECRITURE DES VARIABLES
@@ -734,11 +782,19 @@ C         Diffusivite - cellules
         ENDIF
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES PROPRIETES PHYSIQUES         '
+#else
+          CAR54='ERROR WHILE WRITING THE PHYSICAL PROPERTIES           '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des proprietes physiques          '
+#else
+        CAR54 =' End writing the physical properties                  '
+#endif
         WRITE(NFECRA,1110)CAR54
 C
 C ---> Pas de temps
@@ -764,11 +820,19 @@ C
         ENDIF
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DU PAS DE TEMPS                  '
+#else
+          CAR54='ERROR WHILE WRITING THE TIME STEP                     '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture du pas de temps                   '
+#else
+        CAR54 =' End writing the time step                            '
+#endif
         WRITE(NFECRA,1110)CAR54
 C
 C ---> Flux de masse
@@ -961,11 +1025,19 @@ C            on ecrit  le lien variable/numero de flux
         ENDDO
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES FLUX DE MASSE                '
+#else
+          CAR54='ERROR WHILE WRITING THE MASS FLUXES                   '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des flux de masse                 '
+#else
+        CAR54 =' End writing the mass fluxes                          '
+#endif
         WRITE(NFECRA,1110)CAR54
 C
 C ---> Conditions aux limites
@@ -1067,11 +1139,19 @@ C
 C
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES CONDITIONS AUX LIMITES       '
+#else
+          CAR54='ERROR WHILE WRITING THE BOUNDARY CONDITIONS           '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
+#if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des conditions aux limites        '
+#else
+        CAR54 =' End writing the boundary conditions                  '
+#endif
         WRITE(NFECRA,1110)CAR54
 C
 C ---> Termes sources
@@ -1236,12 +1316,20 @@ C
 C
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES TERMES SOURCES               '
+#else
+          CAR54='ERROR WHILE WRITING THE SOURCES TERMS                 '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
         IF (IECR.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des termes sources                '
+#else
+          CAR54=' End writing the source terms                         '
+#endif
           WRITE(NFECRA,1110)CAR54
         ENDIF
 C
@@ -1356,12 +1444,20 @@ C            uniforme en espace
         ENDDO
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES MOYENNES TEMPORELLES         '
+#else
+          CAR54='ERROR WHILE WRITING THE TIME AVERAGES                 '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
         IF(NBMOMT.GT.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des moyennes temporelles          '
+#else
+          CAR54=' End writing the time averages                        '
+#endif
           WRITE(NFECRA,1110)CAR54
         ENDIF
 C
@@ -1427,12 +1523,20 @@ C     Nouveau mode de calcul
         ENDIF
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DE LA DISTANCE A LA PAROI        '
+#else
+          CAR54='ERROR WHILE WRITING THE WALL DISTANCE                 '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
         IF(IECR.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture de la distance a la paroi         '
+#else
+          CAR54=' End writing the wall distance                        '
+#endif
           WRITE(NFECRA,1110)CAR54
         ENDIF
 C
@@ -1464,12 +1568,21 @@ C
           ENDDO
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES FORCES EXTERIEURES           '
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING THE EXTERNAL FORCES               '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des forces exterieures            '
+#else
+          CAR54=' End writing the external forces                      '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -1497,8 +1610,13 @@ C
           NBERRO=NBERRO+IERROR
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DU DEPLACEMENT AUX NOEUDS (ALE)  '
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING THE VERTICES DISPLACEMENTS (ALE)  '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
@@ -1533,12 +1651,21 @@ C
           ENDIF
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DE LA VISCOSITE DE MAILLAGE (ALE)'
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING THE MESH VISCOSITY (ALE)          '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des donnees ALE    '
+#else
+          CAR54=' End writing the ALE data              '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
           NBERRO=0
@@ -1586,12 +1713,21 @@ C
             ENDDO
 C
             IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
               CAR54=
      &          'ERREUR A L''ECRITURE DES DONNEES DES STRUCTURES (ALE) '
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING THE STRUCTURES DATE (ALE)         '
+#endif
               WRITE(NFECRA,8101)CAR54
             ENDIF
 C
-            CAR54=' Fin de l''ecriture des donnees des strucutres (ALE)'
+#if defined(_CS_LANG_FR)
+            CAR54=' Fin de l''ecriture des donnees des structures (ALE)'
+#else
+            CAR54=' End writing the structures data (ALE)              '
+#endif
             WRITE(NFECRA,1110)CAR54
 C
           ENDIF
@@ -1667,12 +1803,21 @@ C       Entree oxydant (si ce n'est pas NOZPPM, erreur)
           NBERRO=NBERRO+IERROR
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION COD3P'
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (COD3P)   '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion COD3P'
+#else
+          CAR54=' End writing the combustion informations (COD3P)     '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -1746,12 +1891,21 @@ C       TKENT (si ce n'est pas NOZPPM, erreur)
           NBERRO=NBERRO+IERROR
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION EBU'
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (EBU)   '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion EBU '
+#else
+          CAR54=' End writing the combustion informations (EBU)      '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -1841,12 +1995,21 @@ C       TKENT (si ce n'est pas NOZPPM, erreur)
           NBERRO=NBERRO+IERROR
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION LWC'
+#else
+            CAR54=
+     é          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (LWC)   '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion LWC '
+#else
+          CAR54=' End writing the combustion informations (LWC)      '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -1945,12 +2108,21 @@ C       Temperature
 C
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION CP   '
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (CP)      '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion CP    '
+#else
+          CAR54=' End writing the combustion informations (CP)         '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -2019,12 +2191,21 @@ C       Qimpfl
           NBERRO=NBERRO+IERROR
 C
           IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
             CAR54=
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION FUEL '
+#else
+            CAR54=
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (FUEL)    '
+#endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
 C
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion FUEL  '
+#else
+          CAR54=' End writing the combustion informations (FUEL)      '
+#endif
           WRITE(NFECRA,1110)CAR54
 C
         ENDIF
@@ -2115,12 +2296,20 @@ C
         ENDIF
 C
         IF (NBERRO.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES INFORMATIONS ELECTRIQUES     '
+#else
+          CAR54='ERROR WHILE WRITING ELECTRIC INFORMATIONS             '
+#endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
 C
         IF (IECR.NE.0) THEN
+#if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations electriques      '
+#else
+          CAR54=' End writing the electric informations                '
+#endif
           WRITE(NFECRA,1110)CAR54
         ENDIF
 C
@@ -2143,6 +2332,8 @@ C
 C=======================================================================
 C 6. FORMATS
 C=======================================================================
+C
+#if defined(_CS_LANG_FR)
 C
  1000 FORMAT(3X,'** ECRITURE DU FICHIER SUITE PRINCIPAL',/,
      &       3X,'   ----------------------------------- ',/)
@@ -2249,7 +2440,7 @@ C
      &'@      On a ici un nombre de charbons  maximal superieur     ',/,
      &'@        NCHARM = ',I10                                       ,/,
      &'@      On ne pourra pas relire certaines informations        ',/,
-     &'@        realtives aux charbons dont le numero               ',/,
+     &'@        relatives aux charbons dont le numero               ',/,
      &'@        est superieur                                       ',/,
      &'@                                                            ',/,
      &'@    Le calcul sera execute.                                 ',/,
@@ -2271,7 +2462,7 @@ C
      &'@      On a ici un nombre de classes par charbon superieur   ',/,
      &'@        NCPCMX = ',I10                                       ,/,
      &'@      On ne pourra pas relire certaines informations        ',/,
-     &'@        realtives aux classes  dont le numero               ',/,
+     &'@        relatives aux classes  dont le numero               ',/,
      &'@        est superieur                                       ',/,
      &'@                                                            ',/,
      &'@    Le calcul sera execute.                                 ',/,
@@ -2361,6 +2552,225 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(3X,'** WRITING THE MAIN RESTART FILE',/,
+     &       3X,'   -----------------------------',/)
+ 1010 FORMAT(3X,'   Opening a binary file',/)
+ 1020 FORMAT(3X,'   Opening an ASCII file',/)
+ 1100 FORMAT(' Start writing'                                          )
+ 1110 FORMAT('  ',A54                                                  )
+ 1200 FORMAT(' End writing'                                            )
+ 2000 FORMAT(/,3X,'** WRITING THE AUXILLIARY RESTART FILE',/,
+     &         3X,'   -----------------------------------',/)
+C
+ 7000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of phases NPHSMX handled by the    ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTPH = ',I10                                       ,/,
+     &'@      The current maximum number of phases is greater.      ',/,
+     &'@        NPHSMX = ',I10                                       ,/,
+     &'@      If the effective number of phases is greater, they    ',/,
+     &'@        will not be read.                                   ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 7001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of scalars NSCAMX handled by the   ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTSC = ',I10                                       ,/,
+     &'@      The current maximum number of scalars is greater.     ',/,
+     &'@        NSCAMX = ',I10                                       ,/,
+     &'@      The scalars with a larger number will not be read.    ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 7002 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of mass flux NVARMX handled by the ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTFL = ',I10                                       ,/,
+     &'@      The current maximum number of mass fluxes is greater. ',/,
+     &'@        NVARMX = ',I10                                       ,/,
+     &'@      The fluxes with a larger number will not be read.     ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 7003 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of moments NBMOMX handled by the   ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTMO = ',I10                                       ,/,
+     &'@      The current maximum number of moments is greater.     ',/,
+     &'@        NBMOMX = ',I10                                       ,/,
+     &'@      The moments with a larger number will not be read.    ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 7004 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of coals NCHARM handled by the     ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTCH = ',I10                                       ,/,
+     &'@      The current maximum number of coals is greater.       ',/,
+     &'@        NCHARM = ',I10                                       ,/,
+     &'@      Some informations relative to coals with a greater    ',/,
+     &'@        number will not be read.                            ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 7005 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@      The number of coal classes NCPCMX handled by the      ',/,
+     &'@        restart file writing format is                      ',/,
+     &'@        NFMTCL = ',I10                                       ,/,
+     &'@      The current number of coal classes is greater.        ',/,
+     &'@        NCPCMX = ',I10                                       ,/,
+     &'@      Some informations relative to classes with a greater  ',/,
+     &'@        number will not be read.                            ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    Refer to the subroutine ecrava.                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 8000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ERROR WHILE OPENING THE MAIN RESTART FILE      ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file ',A13,'can be created              ',/,
+     &'@            in the working directory.                       ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ERROR WHILE OPENING THE AUXILIARY RESTART FILE ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file ',A13,'can be created              ',/,
+     &'@            in the working directory.                       ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 8010 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ERROR WHILE CLOSING THE MAIN RESTART FILE      ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    Problem with the file of name (',A13,')                 ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8011 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ERROR WHILE CLOSING THE AUXILIARY RESTART FILE ',/,
+     &'@    ********                                                ',/,
+     &'@                                                            ',/,
+     &'@    Problem with the file of name (',A13,')                 ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+ 8100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE MAIN RESTART FILE            ',/,
+     &'@    ********                                                ',/,
+     &'@      ', A54                                                 ,/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8101 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: WHILE WRITING THE AUXILIARY RESTART FILE       ',/,
+     &'@    ********                                                ',/,
+     &'@      ', A54                                                 ,/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C
       END

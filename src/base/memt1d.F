@@ -203,6 +203,8 @@ C     (flux nul, Timpose=0, coef d'echange infini)
 
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,' SORTIE DANS MEMT1D CAR LA DIMENSIONS DU TABLEAU ',/,
      &         '   RELATIF AUX FACES DE BORD COUPLEES AU MODULE ',/,
      &         '   THERMIQUE 1D DE PAROI EST INCORRECTE ',/,
@@ -218,6 +220,26 @@ C
 C
  3000 FORMAT(
      &'-------------------------------------------------------------',/)
+C
+#else
+C
+ 1000 FORMAT(/,' ABORT IN MEMT1D BECAUSE THE DIMENSION OF THE ARRAY ',/,
+     &         '   RELATIVE TO THE COUPLED FACES OF THE 1D-WALL ',/,
+     &         '   THERMAL MODULE IS INCORRECT ',/,
+     &         '   NFPT1D = ',I10)
+C
+ 2000 FORMAT(
+     & /,'ALL PHASES  : 1D-WALL THERMAL MODULE NOT ACTIVATED ',/,
+     &   '                 NFPT1D = ',I10,/)
+ 2001 FORMAT(
+     & /,'ALL PHASES  : 1D-WALL THERMAL MODULE ACTIVATED ',/,
+     &   '   ON A TOTAL OF ',I10,' BOUNDARY FACES',/,
+     &   '   (',I10,' LOCAL BOUNDARY FACES)',/)
+C
+ 3000 FORMAT(
+     &'-------------------------------------------------------------',/)
+C
+#endif
 C
       RETURN
       END

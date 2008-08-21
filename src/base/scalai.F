@@ -694,6 +694,8 @@ C=======================================================================
 C 4.  FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  9000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -718,6 +720,34 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE SOLVING SCALARS EQUATIONS          ',/,
+     &'@    ********                                                ',/,
+     &'@    SCALAR NUMBER ',I10                                      ,/,
+     &'@    ISCAVR(',I10   ,') MUST BE A POSITIVE OR NULL INTEGER   ',/,
+     &'@      AND LOWER OR EQUAL THAN NSCAL = ', I10                 ,/,
+     &'@    ITS VALUE IS ',I10                                       ,/,
+     &'@                                                            ',/,
+     &'@  The calculaton will not be run.                           ',/,
+     &'@                                                            ',/,
+     &'@  If ISCAVR(I) is null, the scalar I is not a variance      ',/,
+     &'@  If ISCAVR(I) is positive, the scalar I is a variance:     ',/,
+     &'@    it is the variance of the fluctuations of the scalar J  ',/,
+     &'@    whose number is ISCAVR(I)                               ',/,
+     &'@                                                            ',/,
+     &'@  Verify usini1.                                            ',/,
+     &'@  Contact support.                                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

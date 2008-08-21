@@ -163,6 +163,8 @@ C
       ENDIF
 C
 C
+#if defined(_CS_LANG_FR)
+C
  9998 FORMAT(
      &'                                                             ',/,
      &' Pas d erreur detectee lors de la verification des donnees   ',/,
@@ -186,6 +188,33 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 9998 FORMAT(
+     &''                                                             ,/,
+     &' No error detected during the data verification'              ,/,
+     &'                              (interface, usini1 and others).',/)
+ 9999 FORMAT(
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/,
+     &'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION'                ,/,
+     &'@    ********'                                                ,/,
+     &'@    THE CALCULATION PARAMETERS ARE INCOHERENT OR INCOMPLET'  ,/,
+     &'@'                                                            ,/,
+     &'@  The calculation will not be run (',I10,' errors).'         ,/,
+     &'@'                                                            ,/,
+     &'@  See previous impressions for more informations.'           ,/,
+     &'@  Verify the provided data in the interface, usini1 or'      ,/,
+     &'@    the other initialization subroutines.'                   ,/,
+     &'@'                                                            ,/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@'                                                            ,/)
+C
+#endif
 C
 C=======================================================================
 C 5. IMPRESSIONS

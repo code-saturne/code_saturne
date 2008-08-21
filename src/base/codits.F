@@ -704,6 +704,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT (
      & 1X,A8,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORME= ', E12.5)
  1100 FORMAT (
@@ -712,6 +714,19 @@ C
      &'@    *********                                               ',/,
      &'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT (
+     & 1X,A8,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORM= ', E12.5)
+ 1100 FORMAT (
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ',A8 ,' CONVECTION-DIFFUSION-SOURCE TERMS      ',/,
+     &'@    ********                                                ',/,
+     &'@  Maximum number of iterations ',I10   ,' reached           ',/,
+     &'@                                                            '  )
+C
+#endif
 C
 C12345678 : CV-DIF-TS 2000 IT - RES= 1234567890234 NORME= 12345678901234
 CATTENTION 12345678 : NON CONVERGENCE DU SYSTEME CONV-DIFF-TS

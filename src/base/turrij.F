@@ -755,12 +755,25 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &'   ** PHASE ',I4,' RESOLUTION DU Rij-EPSILON LRR             ',/,
      &'      ------------------------------------------             ',/)
  1001 FORMAT(/,
      &'   ** PHASE ',I4,' RESOLUTION DU Rij-EPSILON SSG             ',/,
      &'      ------------------------------------------             ',/)
+C
+#else
+C
+ 1000 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING Rij-EPSILON LRR'                   ,/,
+     &'      ------------------------------------'                   ,/)
+ 1001 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING Rij-EPSILON SSG'                   ,/,
+     &'      ------------------------------------'                   ,/)
+C
+#endif
 C
 C----
 C FIN

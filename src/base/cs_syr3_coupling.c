@@ -968,58 +968,58 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
   assert(syr_coupling != NULL);
 
   bft_printf("\n xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf(_("   DUMP D'UNE STRUCTURE cs_syr3_syr_coupling_t\n"));
+  bft_printf("   DUMP D'UNE STRUCTURE cs_syr3_syr_coupling_t\n");
   bft_printf(" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
   bft_printf_flush();
 
   /* Print selection criteria */
 
-  bft_printf(_("\nCritères de sélection des faces couplées\n"));
+  bft_printf("\nCritères de sélection des faces couplées\n");
   bft_printf("----------------------------------------\n");
 
   cs_mesh_select_dump(syr_coupling->select);
 
-  bft_printf(_("\nDimension du maillage Syrthes: %i\n"),
+  bft_printf("\nDimension du maillage Syrthes: %i\n",
              syr_coupling->dim);
 
-  bft_printf(_("Nombre de faces de bord couplées: %i\n\n"),
+  bft_printf("Nombre de faces de bord couplées: %i\n\n",
              syr_coupling->n_coupl_faces);
 
   if (syr_coupling->n_coupl_faces > comm_echo) {
     for (i = 0; i < (comm_echo + 1)/2; i++)
-      bft_printf(_("Face de bord numéro: %i\n"),
+      bft_printf("Face de bord numéro: %i\n",
                  syr_coupling->coupl_face_list[i]);
     for (i = syr_coupling->n_coupl_faces - comm_echo/2;
          i < syr_coupling->n_coupl_faces ; i++)
-      bft_printf(_("Face de bord numéro: %i\n"),
+      bft_printf("Face de bord numéro: %i\n",
                  syr_coupling->coupl_face_list[i]);
   }
   else
     for (i = 0; i < syr_coupling->n_coupl_faces ; i++)
-      bft_printf(_("Face de bord numéro: %i\n"),
+      bft_printf("Face de bord numéro: %i\n",
                  syr_coupling->coupl_face_list[i]);
 
   /* Print communicator names */
 
   if (syr_coupling->send_comm != NULL) {
-    bft_printf(_("Communicateur en émission: %s\n"),
+    bft_printf("Communicateur en émission: %s\n",
                cs_syr3_comm_ret_nom(syr_coupling->send_comm));
   }
   if (syr_coupling->recv_comm != NULL) {
-    bft_printf(_("Communicateur en réception: %s\n"),
+    bft_printf("Communicateur en réception: %s\n",
                cs_syr3_comm_ret_nom(syr_coupling->recv_comm));
   }
 
-  bft_printf(_("\nType de communication: %i\n"),
+  bft_printf("\nType de communication: %i\n",
              syr_coupling->comm_type);
 
 #if defined (_CS_HAVE_MPI)
-  bft_printf(_("(MPI) rang du processus Syrthes: %i\n"),
+  bft_printf("(MPI) rang du processus Syrthes: %i\n",
              syr_coupling->syr_proc_rank);
 #endif
 
   bft_printf("\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf(_("  FIN DU DUMP DE LA STRUCTURE cs_syr3_coupling_t\n"));
+  bft_printf("  FIN DU DUMP DE LA STRUCTURE cs_syr3_coupling_t\n");
   bft_printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
   bft_printf_flush();
 }

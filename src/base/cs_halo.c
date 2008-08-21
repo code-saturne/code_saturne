@@ -1116,20 +1116,20 @@ cs_halo_dump(const cs_halo_t  *halo,
   cs_int_t  i, j, halo_id;
 
   if (halo == NULL) {
-    bft_printf(_("\n\n  halo: nil\n"));
+    bft_printf("\n\n  halo: nil\n");
     return;
   }
 
-  bft_printf(_("\n  halo:         %p\n"
-               "  n_transforms:   %d\n"
-               "  n_c_domains:    %d\n"
-               "  periodicity:    %p\n"
-               "  n_rotations:    %d\n"
-               "  n_local_elts:   %d\n"),
+  bft_printf("\n  halo:         %p\n"
+             "  n_transforms:   %d\n"
+             "  n_c_domains:    %d\n"
+             "  periodicity:    %p\n"
+             "  n_rotations:    %d\n"
+             "  n_local_elts:   %d\n",
              halo, halo->n_transforms, halo->n_c_domains,
              halo->periodicity, halo->n_rotations, halo->n_local_elts);
 
-  bft_printf(_("\nRanks on halo frontier:\n"));
+  bft_printf("\nRanks on halo frontier:\n");
   for (i = 0; i < halo->n_c_domains; i++)
     bft_printf("%5d", halo->c_domain_rank[i]);
 
@@ -1162,8 +1162,8 @@ cs_halo_dump(const cs_halo_t  *halo,
     }
 
     bft_printf("    ---------\n\n");
-    bft_printf(_("  n_ghost_cells:        %d\n"
-                 "  n_std_ghost_cells:    %d\n"), n_elts[1], n_elts[0]);
+    bft_printf("  n_ghost_cells:        %d\n"
+               "  n_std_ghost_cells:    %d\n", n_elts[1], n_elts[0]);
 
     if (index == NULL)
       return;
@@ -1174,11 +1174,11 @@ cs_halo_dump(const cs_halo_t  *halo,
 
       for (i = 0; i < halo->n_transforms; i++) {
 
-        bft_printf(_("\nTransformation n°: %d\n"), i+1);
+        bft_printf("\nTransformation n°: %d\n", i+1);
 
         for (j = 0; j < halo->n_c_domains; j++) {
 
-          bft_printf(_("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n"),
+          bft_printf("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n",
                      halo->c_domain_rank[j],
                      perio_lst[i*stride + 4*j],
                      perio_lst[i*stride + 4*j+1],
@@ -1192,18 +1192,18 @@ cs_halo_dump(const cs_halo_t  *halo,
 
     for (i = 0; i < halo->n_c_domains; i++) {
 
-      bft_printf(_("\n  rank      %d:\n"), halo->c_domain_rank[i]);
+      bft_printf("\n  rank      %d:\n", halo->c_domain_rank[i]);
 
       if (index[2*i+1] - index[2*i] > 0) {
 
-        bft_printf(_("\n  Standard halo\n"));
-        bft_printf(_("  idx start %d:          idx end   %d:\n"),
+        bft_printf("\n  Standard halo\n");
+        bft_printf("  idx start %d:          idx end   %d:\n",
                    index[2*i], index[2*i+1]);
 
         if (print_level == 1 && list != NULL) {
-          bft_printf(_("\n            id      cell number\n"));
+          bft_printf("\n            id      cell number\n");
           for (j = index[2*i]; j < index[2*i+1]; j++)
-            bft_printf(_("    %10d %10d %10d\n"),
+            bft_printf("    %10d %10d %10d\n",
                        j, list[j]+1, halo->n_local_elts+j+1);
         }
 
@@ -1211,14 +1211,14 @@ cs_halo_dump(const cs_halo_t  *halo,
 
       if (index[2*i+2] - index[2*i+1] > 0) {
 
-        bft_printf(_("\n  Extended halo\n"));
-        bft_printf(_("  idx start %d:          idx end   %d:\n"),
+        bft_printf("\n  Extended halo\n");
+        bft_printf("  idx start %d:          idx end   %d:\n",
                    index[2*i+1], index[2*i+2]);
 
         if (print_level == 1 && list != NULL) {
-          bft_printf(_("\n            id      cell number\n"));
+          bft_printf("\n            id      cell number\n");
           for (j = index[2*i+1]; j < index[2*i+2]; j++)
-            bft_printf(_("    %10d %10d %10d\n"),
+            bft_printf("    %10d %10d %10d\n",
                        j, list[j]+1, halo->n_local_elts+j+1);
         }
 

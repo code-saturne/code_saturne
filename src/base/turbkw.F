@@ -1353,10 +1353,21 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &'   ** PHASE ',I4,' RESOLUTION DU K-OMEGA                     ',/,
      &'      ----------------------------------                     ',/)
  1100 FORMAT(1X,A8,' : BILAN EXPLICITE = ',E14.5)
+C
+#else
+C
+ 1000 FORMAT(/,
+     &'   ** PHASE ',I4,' SOLVING K-OMEGA'                           ,/,
+     &'      ----------------------------'                           ,/)
+ 1100 FORMAT(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+C
+#endif
 C
 C----
 C FIN

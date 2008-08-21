@@ -1129,12 +1129,25 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1001 FORMAT ( /,A8,' MAX= ',E11.4,
      & ' EN ',E11.4,' ',E11.4,' ',E11.4)
  1002 FORMAT (   A8,' MIN= ',E11.4,
      & ' EN ',E11.4,' ',E11.4,' ',E11.4)
  1003 FORMAT ( /,'CLIPPINGS DE DT : ',
      &                             I10,' A ',E11.4,', ',I10,' A ',E11.4)
+C
+#else
+C
+ 1001 FORMAT ( /,A8,' MAX= ',E11.4,
+     & ' IN ',E11.4,' ',E11.4,' ',E11.4)
+ 1002 FORMAT (   A8,' MIN= ',E11.4,
+     & ' IN ',E11.4,' ',E11.4,' ',E11.4)
+ 1003 FORMAT ( /,'DT CLIPPING : ',
+     &                             I10,' A ',E11.4,', ',I10,' A ',E11.4)
+C
+#endif
 C
 C----
 C FIN

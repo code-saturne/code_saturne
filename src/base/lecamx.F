@@ -2598,13 +2598,27 @@ C=======================================================================
 C
 C --- ETAPES
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &     3X,'   LECTURE DU FICHIER SUITE AUXILIAIRE               ',/)
  1100 FORMAT(' Debut de la lecture                                    ')
  1110 FORMAT('  ',A54                                                  )
  1200 FORMAT(' Fin de la lecture                                      ')
 C
+#else
+C
+ 1000 FORMAT(/,
+     &     3X,'      READING THE AUXILIARY FILE SUITE               ',/)
+ 1100 FORMAT(' Start reading                                          ')
+ 1110 FORMAT('  ',A54                                                  )
+ 1200 FORMAT(' End reading                                            ')
+C
+#endif
+C
 C --- INFORMATIONS
+C
+#if defined(_CS_LANG_FR)
 C
  7000 FORMAT(/,
      &'   PHASE ',I4,' :                                            ',/,
@@ -2612,7 +2626,19 @@ C
      &'     par relecture du fichier suite                          ',/,
      &'    XYZP0 = ',       E14.5,        E14.5,        E14.5        ,/)
 C
+#else
+C
+ 7000 FORMAT(/,
+     &'   PHASE ',I4,' :                                            ',/,
+     &'   Apdate of the reference point for the total pressure      ',/,
+     &'       by reading the suite file                             ',/,
+     &'    XYZP0 = ',       E14.5,        E14.5,        E14.5        ,/)
+C
+#endif
+C
 C --- MISES EN GARDE
+C
+#if defined(_CS_LANG_FR)
 C
  8000 FORMAT(
      &'@                                                            ',/,
@@ -2879,8 +2905,279 @@ C
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
 C
+#else
+C
+ 8000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING  :       WHEN READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of phases NPHSMX supported by      ',/,
+     &'@        the writing format of the suite file is             ',/,
+     &'@        NFMTPH = ',I10                                       ,/,
+     &'@      There is here a superior number of phases             ',/,
+     &'@        NPHSMX = ',I10                                       ,/,
+     &'@       If the effectif number of phases is superior, these  ',/,
+     &'@        will not be reread.                                 ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue.                                  ',/,
+     &'@                                                            ',/,
+     &'@    Check the subroutine lecamx.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING  :       WHEN READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of scalars NSCAMX supported by     ',/,
+     &'@        the writing format of the suite file is             ',/,
+     &'@        NFMTSC = ',I10                                       ,/,
+     &'@      There is here a superior number of scalars            ',/,
+     &'@        NSCAMX = ',I10                                       ,/,
+     &'@       It is possible not to read the scalares which have   ',/,
+     &'@        a superior number.                                  ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue.                                  ',/,
+     &'@                                                            ',/,
+     &'@    Check the subroutine lecamx.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8002 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING  :       WHEN READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      The number of the max mass flux NVARMX supported by   ',/,
+     &'@        the writing format of the suite file is             ',/,
+     &'@        NFMTFL = ',I10                                       ,/,
+     &'@      There is here a superior number of flux max           ',/,
+     &'@        NVARMX = ',I10                                       ,/,
+     &'@       It is not possible to read the fluxes which have     ',/,
+     &'@        a superior number.                                  ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue.                                  ',/,
+     &'@                                                            ',/,
+     &'@    Check the subroutine lecamx.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8003 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING  :       WHEN READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      The number of the max moments NBMOMX supported by     ',/,
+     &'@        the writing format of the suite file is             ',/,
+     &'@        NFMTMO = ',I10                                       ,/,
+     &'@      There is here a superior number of moments max        ',/,
+     &'@        NVARMX = ',I10                                       ,/,
+     &'@       It is not possible to read the moments which have    ',/,
+     &'@        a superior number.                                  ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue.                                  ',/,
+     &'@                                                            ',/,
+     &'@    Check the subroutine lecamx.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8004 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING  :       WHEN READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      The number of the max structures NBMOMX supported by  ',/,
+     &'@        the writing format of the suite file is             ',/,
+     &'@        NFMTST = ',I10                                       ,/,
+     &'@      There is here a superior number of structures max     ',/,
+     &'@        NSTRMX = ',I10                                       ,/,
+     &'@       If the effectif of structures is superior, these     ',/,
+     &'@        will not be reread.                                 ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue.                                  ',/,
+     &'@                                                            ',/,
+     &'@    Check the subroutine lecamx.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8200 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@      PREVIOUS and PRESENT INPUT DATA ARE DIFFERENTS        ',/,
+     &'@                                                            ',/,
+     &'@    The number of the faces ',A8  ,' has been modified      ',/,
+     &'@                                                            ',/,
+     &'@    The run can continue but the data on the                ',/,
+     &'@      faces ',A8  ,' will not be reread                     ',/,
+     &'@      in the suite file.                                    ',/,
+     &'@    They will be initialised by the default values.         ',/,
+     &'@                                                            ',/,
+     &'@     This situation can occur when the file                 ',/,
+     &'@      suite is issued from a run using different options    ',/,
+     &'@      to join the grids or when the periodicity boundary    ',/,
+     &'@      conditions have been modified.                        ',/,
+     &'@     This situation can also be generated when the          ',/,
+     &'@      run is conducted on a different machine               ',/,
+     &'@      in which case the precision of the machine modifies   ',/,
+     &'@      the number of faces generated when joinning the grids.',/,
+     &'@                                                            ',/,
+     &'@     Finally, this situation can be due to the fact that    ',/,
+     &'@      the auxiliary file suite does not correspond to       ',/,
+     &'@      the traited case.                                     ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the auxiliary file suite being used         ',/,
+     &'@      corresponds to the present case.                      ',/,
+     &'@                                                            ',/,
+     &'@     The run will continue...                               ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8210 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@      PREVIOUS and PRESENT DATA ARE INCOHERENT              ',/,
+     &'@                                                            ',/,
+     &'@    The number of phases has been modified.                 ',/,
+     &'@    The run can be executed.                                ',/,
+     &'@                                                            ',/,
+     &'@    However, it is advised to verify                        ',/,
+     &'@      the following dimensions in usini1 :                  ',/,
+     &'@                                                            ',/,
+     &'@               NPHAS                                        ',/,
+     &'@  PREVIOUS : ',I10                                           ,/,
+     &'@  PRESENT  : ',I10                                           ,/,
+     &'@                                                            ',/,
+     &'@    Verify that the auxiliary file suite being used         ',/,
+     &'@      corresponds  to the present case.                     ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8220 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@      THE RUN RESTARTED            WITH ITURB(',I3,') = ',I4 ,/,
+     &'@      FROM RUN CONDUCTED WITH           ITURB(',I3,') = ',I4 ,/,
+     &'@                                                            ',/,
+     &'@    The Turbulence model has been modified.                 ',/,
+     &'@                                                            ',/,
+     &'@    It is advised however in this case to                   ',/,
+     &'@      verify the value of ITURB(',I2,') in usini1           ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the auxiliary file suite being used         ',/,
+     &'@      corresponds  to the present case.                     ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8300 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@      ', A54                                                 ,/,
+     &'@                                                            ',/,
+     &'@    It was not possible to read some values from the        ',/,
+     &'@      auxiliary file suite.                                 ',/,
+     &'@    They will be initialised by the defaults values.        ',/,
+     &'@                                                            ',/,
+     &'@     This situation can occur when the file                 ',/,
+     &'@      suite is issued from a run realised with different    ',/,
+     &'@      options or when the file is dammaged.                 ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8400 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@      THE RUN RESTARTED            WITH IDTVAR = ',I10       ,/,
+     &'@      FROM RUN CONDUCTED WITH            IDTVAR = ',I10      ,/,
+     &'@                                                            ',/,
+     &'@    The variable time step method has been modified.        ',/,
+     &'@    The (uniform) value of the time step is                 ',/,
+     &'@      DTREF = ',E12.4   ,' given in usini1.                 ',/,
+     &'@                                                            ',/,
+     &'@    It is advised however in this case to                   ',/,
+     &'@      verify the value of IDTVAR in usini1.                 ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the auxiliary file suite being used         ',/,
+     &'@      corresponds  to the present case.                     ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8611 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : WHEN READING THE AUXILIARY FILE SUITE        ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      The combustion model for pulverised charbon.          ',/,
+     &'@      The volumetric masses of the charbons can not be      ',/,
+     &'@        found in the file suite.This is normal if the       ',/,
+     &'@        previous run did not include the pulvirised charbon.',/,
+     &'@        The default value is used as an initial             ',/,
+     &'@        value :                                             ',/,
+     &'@         Charbon        rho                                 '  )
+ 8612 FORMAT(
+     &'@        ',I10   ,'  ',E14.5                                    )
+ 8613 FORMAT(
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8900 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : ERROR WHEN CLOSING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    Problem in the file named (',A13,')                     ',/,
+     &'@                                                            ',/,
+     &'@    The run will continue...                                ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
+C
 C
 C --- ERREURS
+C
+#if defined(_CS_LANG_FR)
 C
  9000 FORMAT(
      &'@                                                            ',/,
@@ -3091,7 +3388,220 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
-
+C
+#else
+C
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@      ERROR WHEN OPENNING THE FILE SUITE                    ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify the existence and the name (',A13,') of the      ',/,
+     &'@        file suite in the work directory.                   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@      FILE TYPE IS INCORRECT                                ',/,
+     &'@                                                            ',/,
+     &'@    The file ',A13      ,' does not appear to be an         ',/,
+     &'@      auxiliary file.                                       ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file suite used corresponds to          ',/,
+     &'@        an auxiliary file suite.                            ',/,
+     &'@    If necessary, it is possible to desactivate the reading ',/,
+     &'@      of the auxiliary file suite by ILEAUX = 0 (usini1).   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9101 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@      INCOHERENT PREVIOUS NAD ACTUAL DATA                   ',/,
+     &'@                                                            ',/,
+     &'@    The number of cells was modified                        ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file suite used corresponds to          ',/,
+     &'@        the case traited.                                   ',/,
+     &'@    If necessary, it is possible to desactivate the reading ',/,
+     &'@      of the auxiliary file suite by ILEAUX = 0 (usini1).   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9200 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      ', A54                                                 ,/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file suite used was not                 ',/,
+     &'@      dammaged.                                             ',/,
+     &'@    If necessary, it is possible to desactivate the reading ',/,
+     &'@      of the auxiliary file suite by ILEAUX = 0 (usini1).   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9210 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : ERROR WHILE READING THE AUXILIARY FILE       ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      ERROR WHEN READING THE INDICATOR OF THE ALE METHOD    ',/,
+     &'@                                                            ',/,
+     &'@    It is possible that the file read corresponds to an old ',/,
+     &'@      version of Code_Saturne, without the ALEmethod.       ',/,
+     &'@    The run will be executed with reinitialising all        ',/,
+     &'@      ALE data.                                             ',/,
+     &'@    Verify however that the file suite used was not         ',/,
+     &'@        dammaged.                                           ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9300 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    The reading of the previous average ',I10  ,' that will ',/,
+     &'@      allow the initialisation of the new average ',I10      ,/,
+     &'@      has failed                                            ',/
+     &'@                                                            ',/,
+     &'@    The run will not be executed.                           ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxiliary file suite or specify              ',/,
+     &'@      in usini1 that the average has to be reinitialised,   ',/,
+     &'@      by indiquating : IMOOLD(',I10   ,') = -1              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9310 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    The reading of the accumulated period associated with   ',/,
+     &'@                   the previous average ',I10  ,' that will ',/,
+     &'@      allow to initialise the new average ',I10              ,/,
+     &'@      has failed                                            ',/
+     &'@                                                            ',/,
+     &'@    The run will not be executed.                           ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxiliary file suite or specify              ',/,
+     &'@      in usini1 that the average has to be reinitialised,   ',/,
+     &'@      by indiquating : IMOOLD(',I10   ,') = -1              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9320 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      ERROR WHILE READING MOVEMENT ON THE NODES             ',/,
+     &'@        OF THE MESH (ALE METHOD)                            ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file suite used has not been            ',/,
+     &'@        dammaged.                                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9321 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@      ERROR WHILE READING DATA ABOUT MOVING                 ',/,
+     &'@        STRUCTURES (ALE METHOD)                             ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify that the file suite used has not been            ',/,
+     &'@        dammaged.                                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9400 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    The reading of the variable CO3DP                       ',/,
+     &'@                                                            ',/,
+     &'@    The run can not be executed.                            ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxiliary file suite                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9500 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    The reading of the variable EBU                         ',/,
+     &'@                                                            ',/,
+     &'@    The run will not be executed.                           ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxiliary file suite                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9600 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNNING : STOP WHILE READING THE AUXILIARY FILE        ',/,
+     &'@    *********                                     SUITE     ',/,
+     &'@                                                            ',/,
+     &'@    The reading of the variable LWC                         ',/,
+     &'@                                                            ',/,
+     &'@    The run will not be executed.                           ',/,
+     &'@                                                            ',/,
+     &'@    Verify the auxiliary file suite                         ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
       END
 c@z

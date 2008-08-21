@@ -268,7 +268,15 @@ C
       ENDIF
 C
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT('INVERS APPELE POUR ',A8,' AVEC IRESOL = ', I10)
+C
+#else
+C
+ 1000 FORMAT('INVERS CALLED FOR ',A8,' WITH IRESOL = ', I10)
+C
+#endif
 C
 C----
 C FIN

@@ -102,6 +102,9 @@ BLAS_LDFLAGS    =
 # gettext support
 NLS             =0
 
+# Set CS_LANG to FR to have French translation
+CS_LANG         =
+
 
 # Preprocessor
 #-------------

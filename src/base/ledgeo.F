@@ -296,6 +296,8 @@ C
 C
 C FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  8000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -354,5 +356,68 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 8000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE OPENING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      ERROR IN ledgeo FOR FILE ',A6                          ,/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run.                      ',/,
+     &'@                                                            ',/,
+     &'@      Verify the geometry file (existence, access           ',/,
+     &'@        permission, correct copy in the working directory)  ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8002 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      ERROR IN ledgeo FOR FILE ',A6                          ,/,
+     &'@                                                            ',/,
+     &'@      The state of the read dimensions is:                  ',/,
+     &'@        NDIM      NCEL      NFAC    NFABOR                  ',/,
+     &'@  ',4I10                                                     ,/,
+     &'@        NPRFML    NFML      NSOM                            ',/,
+     &'@  ',3I10                                                     ,/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run.                      ',/,
+     &'@                                                            ',/,
+     &'@      Verify the geometry file (existence, access           ',/,
+     &'@        permission, format...)                              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8003 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT WHILE READING THE GEOMETRY FILE          ',/,
+     &'@    ********                                                ',/,
+     &'@      UNEXPECTED END OF FILE in ledgeo FOR FILE ',A6         ,/,
+     &'@                                                            ',/,
+     &'@      The state of the read dimensions is:                  ',/,
+     &'@        NDIM      NCEL      NFAC    NFABOR                  ',/,
+     &'@  ',4I10                                                     ,/,
+     &'@        NPRFML    NFML      NSOM                            ',/,
+     &'@  ',3I10                                                     ,/,
+     &'@                                                            ',/,
+     &'@      The calculation will not be run.                      ',/,
+     &'@                                                            ',/,
+     &'@      Verify the geometry file (existence, access           ',/,
+     &'@        permission, format...)                              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
+C
       END
 c@z

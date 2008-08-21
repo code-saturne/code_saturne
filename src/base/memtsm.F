@@ -169,6 +169,8 @@ C     ==========
 C
 C---> FORMATS
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,' SORTIE DANS MEMTSM CAR LA DIMENSIONS DU TABLEAU ',/,
      &         '   RELATIF AUX SOURCES DE MASSE EST INCORRECTE ',/,
      &         '   PHASE ',I10,/,
@@ -183,6 +185,25 @@ C
 C
  3000 FORMAT(
      &'-------------------------------------------------------------',/)
+C
+#else
+C
+ 1000 FORMAT(/,' ABORT IN MEMTSM BECAUSE THE DIMENSION OF THE ARRAY ',/,
+     &         '   RELATIVE TO THE MASS SOURCE TERMS IS INCORRECT ',/,
+     &         '   PHASE ',I10,/,
+     &         '   NCETSM = ',I10)
+C
+ 2000 FORMAT(
+     & /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT NOT ACTIVATED ',/,
+     &   '                 NCETSM = ',I10,/)
+ 2001 FORMAT(
+     & /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,
+     &   '                 ON A TOTAL OF ',I10,' CELLS')
+C
+ 3000 FORMAT(
+     &'-------------------------------------------------------------',/)
+C
+#endif
 C
       RETURN
       END

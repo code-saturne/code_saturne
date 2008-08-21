@@ -396,7 +396,15 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT('ITRGRP APPELE AVEC INIT = ',I10)
+C
+#else
+C
+ 1000 FORMAT('ITRGRP CALLED WITH INIT = ',I10)
+C
+#endif
 C
 C----
 C FIN

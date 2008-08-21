@@ -382,6 +382,8 @@ C=======================================================================
 C 5. AFFICHAGES
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  100  FORMAT ('# ---------------------------------------------------')
  101  FORMAT ('#      FICHIER HISTORIQUE EN TEMPS')
  102  FORMAT ('#      VARIABLE    ',A16)
@@ -395,6 +397,24 @@ C
      &'#                               en pas de temps non uniforme)',/,
      &'#         3 A 100 : VALEUR AUX CAPTEURS')
  1000 FORMAT ( 1(1X,I7,1X),101(1X,E14.7))
+C
+#else
+C
+ 100  FORMAT ('# ---------------------------------------------------')
+ 101  FORMAT ('#      TIME MONITORING FILE')
+ 102  FORMAT ('#      VARIABLE    ',A16)
+ 103  FORMAT ('# ')
+ 104  FORMAT ('#      MONITORING POINTS COORDINATES (column)')
+ 105  FORMAT ('# ',I6,')',3(1X,E14.7))
+ 106  FORMAT ('#      NUMBER OF RECORDS:',I7)
+ 107  FORMAT (
+     &'# COLUMN 1        : TIME STEP NUMBER ',/,
+     &'#        2        : PHYSICAL TIME (or Nb of time steps*DTREF ',/,
+     &'#                                with non uniform time step)',/,
+     &'#        3 TO 100 : VALUE AT MONITORING POINTS')
+ 1000 FORMAT ( 1(1X,I7,1X),101(1X,E14.7))
+C
+#endif
 C
       RETURN
       END

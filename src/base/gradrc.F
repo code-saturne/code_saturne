@@ -1047,6 +1047,8 @@ C
 C--------
 C FORMATS
 C--------
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(1X,'GRADRC ISWEEP = ',I4,' RESIDU NORME: ',E11.4,
      &         ' NORME: ',E11.4,/,1X,'PARAMETRE IVAR = ',I4 )
  1100 FORMAT(
@@ -1054,6 +1056,18 @@ C--------
      &'@ @@ ATTENTION :         NON CONVERGENCE DE GRADRC           ',/,
      &'@    *********                                               ',/,
      &'@                                                            '  )
+C
+#else
+C
+ 1000 FORMAT(1X,'GRADRC ISWEEP = ',I4,' NORMED RESIDUAL: ',E11.4,
+     &         ' NORM: ',E11.4,/,1X,'PARAMETER IVAR = ',I4 )
+ 1100 FORMAT(
+     &'@'                                                            ,/,
+     &'@ @@ WARNING:            NON CONVERGENCE OF GRADRC'           ,/,
+     &'@    ********'                                                ,/,
+     &'@'                                                              )
+C
+#endif
 C
 C----
 C FIN

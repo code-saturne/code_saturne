@@ -92,6 +92,9 @@ BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/64 -lmkl -lmkl_blacs_intelmpi20 -lmkl_ipf -l
 # gettext support
 NLS             =0
 
+# Set CS_LANG to FR to have French translation
+CS_LANG         =
+
 
 # Preprocessor
 #-------------

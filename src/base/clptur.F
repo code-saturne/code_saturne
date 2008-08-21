@@ -1384,6 +1384,7 @@ C=======================================================================
 C 10.  FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
 C
  1000 FORMAT(/,' LA NORMALE A LA FACE DE BORD DE PAROI ',I10,/,
      &         ' EST NULLE ; COORDONNEES : ',3E12.5)
@@ -1419,7 +1420,7 @@ C
      &'@      grandes valeurs de la distance adimensionnelle a la   ',/,
      &'@      paroi (yplus) est le pas de temps ',I10                ,/,
      &'@                                                            ',/,
-     &'@    La valeur minimale de yplus doit etre superieure a la   ',/,
+     &'@    La valeur minimale de yplus doit etre inferieure a la   ',/,
      &'@      valeur limite YPLULI = ',E14.5                         ,/,
      &'@                                                            ',/,
      &'@    Observer la repartition de yplus en paroi (sous Ensight ',/,
@@ -1440,7 +1441,7 @@ C
      &'@      grandes valeurs de la distance adimensionnelle a la   ',/,
      &'@      paroi (yplus) est le pas de temps ',I10                ,/,
      &'@                                                            ',/,
-     &'@    La valeur minimale de yplus doit etre superieure a la   ',/,
+     &'@    La valeur minimale de yplus doit etre inferieure a la   ',/,
      &'@      valeur limite YPLULI = ',E14.5                         ,/,
      &'@                                                            ',/,
      &'@    Observer la repartition de yplus en paroi (sous Ensight ',/,
@@ -1491,6 +1492,117 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(/,' THE NORMAL TO THE WALL BOUNDARY FACE ',I10,/,
+     &         ' IS NULL; COORDINATES: ',3E12.5)
+C
+ 2010 FORMAT(/,
+     & 3X,'** BOUNDARY CONDITIONS FOR SMOOTH WALLS',/,
+     & '   ---------------------------------------',/,
+     & '------------------------------------------------------------',/,
+     & ' Phase ',I6,'                            Minimum     Maximum',/,
+     & '------------------------------------------------------------',/,
+     & '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,
+     & '   Friction velocity        uet   : ',2E12.5                 ,/,
+     & '   Friction velocity        uk    : ',2E12.5                 ,/,
+     & '   Dimensionless distance   yplus : ',2E12.5                 ,/,
+     & '   ------------------------------------------------------   ',/,
+     & '   Nb of reversal of the velocity at the wall   : ',I10      ,/,
+     & '   Nb of faces within the viscous sub-layer     : ',I10      ,/,
+     & '   Total number of wall faces                   : ',I10      ,/,
+     & '------------------------------------------------------------',
+     & /,/)
+C
+ 2020 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: MESH NOT ENOUGH REFINED AT THE WALL            ',/,
+     &'@    ********                                                ',/,
+     &'@    PHASE ',I10                                              ,/,
+     &'@    The mesh does not seem to be enough refined at the wall ',/,
+     &'@      to be able to run a laminar simulation.               ',/,
+     &'@                                                            ',/,
+     &'@    The last time step at which too large values for the    ',/,
+     &'@      dimensionless distance to the wall (yplus) have been  ',/,
+     &'@      observed is the time step ',I10                        ,/,
+     &'@                                                            ',/,
+     &'@    The minimum value for yplus must be lower than the      ',/,
+     &'@      limit value YPLULI = ',E14.5                           ,/,
+     &'@                                                            ',/,
+     &'@    Have a look at the distribution of yplus at the wall    ',/,
+     &'@      (with EnSight for example) to conclude on the way     ',/,
+     &'@      the results quality might be affected.                ')
+C
+ 2030 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: MESH NOT ENOUGH REFINED AT THE WALL            ',/,
+     &'@    ********                                                ',/,
+     &'@    PHASE ',I10                                              ,/,
+     &'@    The mesh does not seem to be enough refined at the wall ',/,
+     &'@      to be able to run a v2f simulation.                   ',/,
+     &'@                                                            ',/,
+     &'@    The last time step at which too large values for the    ',/,
+     &'@      dimensionless distance to the wall (yplus) have been  ',/,
+     &'@      observed is the time step ',I10                        ,/,
+     &'@                                                            ',/,
+     &'@    The minimum value for yplus must be lower than the      ',/,
+     &'@      limit value YPLULI = ',E14.5                           ,/,
+     &'@                                                            ',/,
+     &'@    Have a look at the distribution of yplus at the wall    ',/,
+     &'@      (with EnSight for example) to conclude on the way     ',/,
+     &'@      the results quality might be affected.                ')
+C
+ 2040 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: MESH TOO REFINED AT THE WALL                   ',/,
+     &'@    ********                                                ',/,
+     &'@    PHASE ',I10                                              ,/,
+     &'@    The mesh seems to be too refined at the wall to use     ',/,
+     &'@      a high-Reynolds turbulence model.                     ',/,
+     &'@                                                            ',/,
+     &'@    The last time step at which too small values for the    ',/,
+     &'@      dimensionless distance to the wall (yplus) have been  ',/,
+     &'@      observed is the time step ',I10                        ,/,
+     &'@                                                            ',/,
+     &'@    The minimum value for yplus must be greater than the    ',/,
+     &'@      limit value YPLULI = ',E14.5                           ,/,
+     &'@                                                            ',/,
+     &'@    Have a look at the distribution of yplus at the wall    ',/,
+     &'@      (with EnSight for example) to conclude on the way     ',/,
+     &'@      the results quality might be affected.                ')
+ 2050 FORMAT(
+     &'@                                                            ',/,
+     &'@    This warning is only printed at the first two           ',/,
+     &'@      occurences of the problem and at the last time step   ',/,
+     &'@      of the calculation. The vanishing of the message does ',/,
+     &'@      not necessarily mean the vanishing of the problem.    ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 2060 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: RADIATIVE TRANSFER                             ',/,
+     &'@    ********                                                ',/,
+     &'@      ERROR ON THE NUMBER OF PHASES IN CONDLI               ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN

@@ -301,6 +301,8 @@ C       ===========
       ENDIF
       NOZAPM = IZONEM
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -341,6 +343,48 @@ C
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
  1002 FORMAT(I10)
+C
+#else
+C
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: THE BOUNDARY CONDITIONS GIVEN BY THE           ',/,
+     &'@    ********                                                ',/,
+     &'@         INTERFACE ARE INCOMPLETE OR NON-EXISTANT           ',/,
+     &'@                                                            ',/,
+     &'@  There are ',I10,' faces for which no zone is defined.     ',/,
+     &'@                                                            ',/,
+     &'@  The calulation will run.                                  ',/,
+     &'@                                                            ',/,
+     &'@  Complete the boundary conditions in the subroutine usclim.',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 1001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : PROBLEME DANS LES CONDITIONS AUX LIMITES    ',/,
+     &'@    *********                                               ',/,
+     &'@                ARRET DANS LE SOUS-PROGRAMME STDTCL         ',/,
+     &'@                                                            ',/,
+     &'@  The maximum number of boundary zones which can be defined ',/,
+     &'@    by the user is NBZPPM = ',I10                            ,/,
+     &'@    It has been exceeded.                                   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify the boundary conditions.                           ',/,
+     &'@                                                            ',/,
+     &'@  The first NBZPPM boundary zones have the following number:',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 1002 FORMAT(I10)
+C
+#endif
 C
 C=======================================================================
 C 2.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
@@ -441,6 +485,8 @@ C       ===========
         ENDIF
       ENDDO
 C
+#if defined(_CS_LANG_FR)
+C
  2001 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -469,6 +515,39 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 2001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: PROBLEM IN THE BOUNDARY CONDITIONS             ',/,
+     &'@    ********                                                ',/,
+     &'@                ABORT IN THE SUBROUTINE STDTCL              ',/,
+     &'@                                                            ',/,
+     &'@  The flow is imposed on the zone IZONE = ', I10             ,/,
+     &'@    since                  IQIMP(IZONE) = ', I10             ,/,
+     &'@  But, on this zone, the integrated product RHO D S is zero:',/,
+     &'@    its value is                        = ',E14.5            ,/,
+     &'@    (D is the direction along which is imposed the flow).   ',/,
+     &'@                                                            ',/,
+     &'@  The calculation will not run.                             ',/,
+     &'@                                                            ',/,
+     &'@  Verify the data in the interface and particularly         ',/,
+     &'@    - that the vector RCODCL(IFAC,IU(IPHAS),1),             ',/,
+     &'@                      RCODCL(IFAC,IV(IPHAS),1),             ',/,
+     &'@                      RCODCL(IFAC,IW(IPHAS),1) which gives  ',/,
+     &'@      the velocity direction is non null and not uniformly  ',/,
+     &'@      perpendicular to the inlet faces                      ',/,
+     &'@    - that the inlet surface is not zero (or that the number',/,
+     &'@      of boundary faces within the zone is not zero)        ',/,
+     &'@    - that the density is not zero                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C=======================================================================
 C 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES

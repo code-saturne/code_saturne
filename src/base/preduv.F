@@ -1940,8 +1940,17 @@ C
 C--------
 C FORMATS
 C--------
+#if defined(_CS_LANG_FR)
+C
  1100 FORMAT(/,
      & 1X,'Phase ',I4,' : Vitesse maximale apres prediction ',E12.4)
+C
+#else
+C
+ 1100 FORMAT(/,
+     & 1X,'Phase ',I4,' : Maximum velocity after prediction ',E12.4)
+C
+#endif
 C
 C----
 C FIN

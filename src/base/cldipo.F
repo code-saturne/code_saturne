@@ -200,8 +200,18 @@ C
         WRITE(NFECRA,1000) IPOND0
       ENDIF
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(' CLDIPO : ',I10,' DISTANCES NULLES ENTRE CENTRES ',/,
      &       '          ON MET POND A 0.5 ')
+C
+#else
+C
+ 1000 FORMAT(' CLDIPO : ',I10,' NULL  DISTANCES BETWEEN CENTRES ',/,
+     &       '          POND IS SET TO 0.5 ')
+C
+#endif
+C
       RETURN
       END
 c@z

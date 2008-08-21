@@ -525,25 +525,25 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIRAY1\n"));
+  bft_printf("==>UIRAY1\n");
   for (iphas=0 ; iphas < *nphas ; iphas++)
-    bft_printf(_("--rayonnement : %s  (irayon = %d)\n"), model, irayon[iphas]);
-  bft_printf(_("--isuird = %d\n"), *isuird);
-  bft_printf(_("--ndirec = %d\n"), *ndirec);
-  bft_printf(_("--nfreqr = %d\n"), *nfreqr);
-  bft_printf(_("--idiver = %d\n"), *idiver);
-  bft_printf(_("--iimpar = %d\n"), *iimpar);
-  bft_printf(_("--iimlum = %d\n"), *iimlum);
+    bft_printf("--rayonnement : %s  (irayon = %d)\n", model, irayon[iphas]);
+  bft_printf("--isuird = %d\n", *isuird);
+  bft_printf("--ndirec = %d\n", *ndirec);
+  bft_printf("--nfreqr = %d\n", *nfreqr);
+  bft_printf("--idiver = %d\n", *idiver);
+  bft_printf("--iimpar = %d\n", *iimpar);
+  bft_printf("--iimlum = %d\n", *iimlum);
   for (i=0 ; i < *nbrayb ; i++) {
     for (iphas=0 ; iphas < *nphas ; iphas++) {
-      bft_printf(_("--output cel: %s value %i \n"),
+      bft_printf("--output cel: %s value %i \n",
                  _cs_gui_var_rayt[i + (*nbrayb)*iphas],
                  irayvp[(*nbrayb)*iphas + i]);
     }
   }
   for (i=0 ; i < *nbrayf ; i++) {
     for (iphas=0 ; iphas < *nphas ; iphas++) {
-      bft_printf(_("--output fb: %s value %i \n"),
+      bft_printf("--output fb: %s value %i \n",
       _cs_gui_var_rayt[i + (*nbrayb)*(*nphas) + (*nbrayf)*iphas],
       irayvf[(*nbrayf)*iphas + i]);
     }
@@ -888,18 +888,18 @@ void CS_PROCF (uiray2, UIRAY2)
   }
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIRAY2\n"));
+  bft_printf("==>UIRAY2\n");
   for (izone = 0; izone < zones; izone++) {
-     bft_printf(_("--label zone = %s\n"), boundary->label[izone]);
+     bft_printf("--label zone = %s\n", boundary->label[izone]);
      if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-       bft_printf(_("----output_zone = %i\n"), boundary->output_zone[izone]);
-       bft_printf(_("----type = %i\n"), boundary->type[izone]);
-       bft_printf(_("----emissivity = %f\n"), boundary->emissivity[izone]);
-       bft_printf(_("----thickness= %f\n"), boundary->thickness[izone]);
-       bft_printf(_("----thermal_conductivity = %f\n"), boundary->thermal_conductivity[izone]);
-       bft_printf(_("----external_temp = %f\n"), boundary->external_temp[izone]);
-       bft_printf(_("----internal_temp = %f\n"), boundary->internal_temp[izone]);
-       bft_printf(_("----conduction_flux= %f\n"), boundary->conduction_flux[izone]);
+       bft_printf("----output_zone = %i\n", boundary->output_zone[izone]);
+       bft_printf("----type = %i\n", boundary->type[izone]);
+       bft_printf("----emissivity = %f\n", boundary->emissivity[izone]);
+       bft_printf("----thickness= %f\n", boundary->thickness[izone]);
+       bft_printf("----thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
+       bft_printf("----external_temp = %f\n", boundary->external_temp[izone]);
+       bft_printf("----internal_temp = %f\n", boundary->internal_temp[izone]);
+       bft_printf("----conduction_flux= %f\n", boundary->conduction_flux[izone]);
     }
   }
 #endif
@@ -928,9 +928,9 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
          ck[(*iph-1) * (*ncelet) + i] = value;
 
 #if _XML_DEBUG_
-  bft_printf(_("==>UIRAY3\n"));
-  bft_printf(_("--absorption coefficient type: %d\n"), type);
-  if (type == 0) bft_printf(_("--absorption coefficient value = %f\n"), value);
+  bft_printf("==>UIRAY3\n");
+  bft_printf("--absorption coefficient type: %d\n", type);
+  if (type == 0) bft_printf("--absorption coefficient value = %f\n", value);
 #endif
 
   }

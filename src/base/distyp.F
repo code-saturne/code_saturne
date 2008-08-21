@@ -815,7 +815,8 @@ C
       ENDIF
 C
 C
-
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'                                                             ',/,
      &' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,
@@ -863,6 +864,58 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'                                                             ',/,
+     &' ** DIMENSIONLESS WALL DISTANCE                              ',/,
+     &'    ---------------------------                              ',/,
+     &'                                                             ',/,
+     &'  Min distance+ = ',E14.5    ,' Max distance+ = ',E14.5       ,/,
+     &'                                                             ',/,
+     &'     (Distance calculation done in ',I10   ,' iterations)'    ,/)
+ 2000 FORMAT(
+     &'                                                             ',/,
+     &' ** DIMENSIONLESS WALL DISTANCE                              ',/,
+     &'    ---------------------------                              ',/,
+     &'                                                             ',/,
+     &' Yplus:  Min dt = ',E14.5    ,'        Max dt = ',E14.5       ,/)
+ 3000 FORMAT(
+     &'                                                             ',/,
+     &' ** DIMENSIONLESS WALL DISTANCE                              ',/,
+     &'    ---------------------------                              ',/,
+     &'                                                             ',/,
+     &' Yplus:  iteration   abs. residu     reference   rel. residu ',/,
+     &' Yplus: ',I10    ,E14.5        ,E14.5        ,E14.5           ,/)
+ 7000 FORMAT(
+     &'                                                             ',/,
+     &' ** DIMENSIONLESS WALL DISTANCE                              ',/,
+     &'    ---------------------------                              ',/,
+     &'                                                             ',/,
+     &'  It is not computed at the first time step                  ',/)
+ 8000   FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: Dimensionless distance to the wall computation ',/,
+     &'@    ********                                                ',/,
+     &'@     The iterative system for the dimensionless distance to ',/,
+     &'@       the wall calculation has not properly converged.     ',/,
+     &'@                                                            ',/,
+     &'@          Residual   Reference            Relative residual ',/,
+     &'@  ',2E14.5,12X,E14.5                                         ,/,
+     &'@                                                            ',/,
+     &'@     Increase the value of NTCMXY in usini1 may solve       ',/,
+     &'@       the problem.                                         ',/,
+     &'@     The current value of this integer is ',I10              ,/,
+     &'@                                                            ',/,
+     &'@     The calculation will be run.                           ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C
 C

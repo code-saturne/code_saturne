@@ -521,6 +521,8 @@ C=======================================================================
 C 7. FORMATS
 C=======================================================================
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(
      &'                                                             ',/,
      &' ** DISTANCE A LA PAROI                                      ',/,
@@ -539,6 +541,29 @@ C
      &'@  La variable associee ne converge pas a la cellule ',I10    ,/,
      &'@       Coord X      Coord Y      Coord Z                    ',/,
      &'@ ',3E13.5                                                    ,/)
+C
+#else
+C
+ 1000 FORMAT(
+     &'                                                             ',/,
+     &' ** WALL DISTANCE                                            ',/,
+     &'    -------------                                            ',/,
+     &'                                                             ',/,
+     &'  Min distance = ',E14.5    ,' Max distance = ',E14.5         ,/,
+     &'                                                             ',/,
+     &'     (Distance calculation done in ',I10   ,' iterations)'    ,/)
+C
+ 5000 FORMAT(1X,A8,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+C
+ 8000   FORMAT(
+     &'@                                                            ',/,
+     &'@ @@ WARNING: Wall distance calculation                      ',/,
+     &'@    ********                                                ',/,
+     &'@  The associated variable does not converge in cell ',I10    ,/,
+     &'@       Coord X      Coord Y      Coord Z                    ',/,
+     &'@ ',3E13.5                                                    ,/)
+C
+#endif
 C
       RETURN
       END

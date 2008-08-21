@@ -1094,6 +1094,8 @@ C=======================================================================
 C
 C --- ETAPES
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(/,
      &     3X,'   LECTURE DU FICHIER SUITE PRINCIPAL                ',/)
  1100 FORMAT(' Debut de la lecture                                  '  )
@@ -1106,7 +1108,24 @@ C
      &       '                                  (methode ALE)       '  )
  1799 FORMAT(' Fin de la lecture                                    '  )
 C
+#else
+C
+ 1000 FORMAT(/,
+     &     3X,'   READING THE MAIN RESTART FILE                     ',/)
+ 1100 FORMAT(' Start reading                                        '  )
+ 1299 FORMAT('   Reading dimensions complete                        '  )
+ 1499 FORMAT('   Reading options complete                           '  )
+ 1598 FORMAT('   Reading the pressure, velocity, turbulent          ',/,
+     &       '        variables complete                            '  )
+ 1599 FORMAT('   Reading scalars complete                           '  )
+ 1600 FORMAT('   Reading the mesh velocity (ALE method) complete    '  )
+ 1799 FORMAT(' Reading complete                                     '  )
+C
+#endif
+C
 C --- INFORMATIONS
+C
+#if defined(_CS_LANG_FR)
 C
  2410 FORMAT
      & ('   Lecture du pas de temps precedent (suite) ',
@@ -1115,8 +1134,21 @@ C
      & ('   Lecture du pas de temps precedent (suite) ',
      &                                                'TTPABS = ',E12.4)
 C
+#else
+C
+ 2410 FORMAT
+     & ('   Reading the previous time step number ',
+     &                      '(restarting computation)  NTPABS =   ',I10)
+ 2411 FORMAT
+     & ('   Reading the previous time step number ',
+     &                      '(restarting computation)  TTPABS = ',E12.4)
+C
+#endif
+C
 C
 C --- MISES EN GARDE
+C
+#if defined(_CS_LANG_FR)
 C
  8000 FORMAT(
      &'@                                                            ',/,
@@ -1213,7 +1245,106 @@ C
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
 C
+#else
+C
+ 8000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING :   WHEN READING THE MAIN RESTART FILE          ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of phases NPHSMX supported         ',/,
+     &'@        by the restart file writing format is               ',/,
+     &'@        NFMTPH = ',I10                                       ,/,
+     &'@      Here is the maximum number of phases larger           ',/,
+     &'@        NPHSMX = ',I10                                       ,/,
+     &'@      If the actual number of phases is more than NFMTPH,   ',/,
+     &'@        some of them might not be read.                     ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    See the sub-routine lecamp.                             ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING :  WHEN READING THE MAIN RESTART FILE        ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      The maximum number of scalars NSCAMX supported        ',/,
+     &'@        by the restart file writing format is               ',/,
+     &'@        NFMTSC = ',I10                                       ,/,
+     &'@      Here is the maximum number of scalars larger          ',/,
+     &'@        NSCAMX = ',I10                                       ,/,
+     &'@      Scalars whose number is larger wont be read.          ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    See the sub-routine lecamp                          ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8210 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : WHEN READING THE MAIN RESTARTING FILE       ',/,
+     &'@    *********                                               ',/,
+     &'@      THE RESTART AND CHECKPOINT DATA ARE DIFFERENT         ',/,
+     &'@                                                            ',/,
+     &'@    The number of variables, scalars or phases has changed. ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@    However, it is strongly advised to check                ',/,
+     &'@      the following dimensions in usini1 :                  ',/,
+     &'@                                                            ',/,
+     &'@                NVAR     NSCAL    NSCAUS    NSCAPP     NPHAS',/,
+     &'@ PREVIOUS:',5I10                                             ,/,
+     &'@ CURRENT :',5I10                                             ,/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8410 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : WHEN READING THE MAIN RESTART FILE            ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@    THE CURRENT CALCULATION USES ITURB(',I3,') = ',I4        ,/,
+     &'@    BUT RESTARTS FROM ANOTHER ONE USING ITURB(',I3,') = ',I4 ,/,
+     &'@                                                            ',/,
+     &'@    The turbulence model has changed.                       ',/,
+     &'@    The computation can be executed.                        ',/,
+     &'@                                                            ',/,
+     &'@    However, it is strongly advised to check                ',/,
+     &'@      the value of the variable ITURB(',I2,') in usini1     ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 8711 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : ERROR AT CLOSING THE MAIN RESTART FILE        ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@    Problem on file called (',A13,')                        ',/,
+     &'@                                                            ',/,
+     &'@    The calculation will be run.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
+C
 C --- ERREURS
+C
+#if defined(_CS_LANG_FR)
 C
  9100 FORMAT(
      &'@                                                            ',/,
@@ -1490,6 +1621,282 @@ C NFMTRU = 36 pour A36
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 9100 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE RESTART FILE READING              ',/,
+     &'@    *********                                               ',/,
+     &'@      ERROR AT OPENING THE MAIN RESTART FILE                ',/,
+     &'@                                                            ',/,
+     &'@    The computation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the existence and the name (',A13,')       ',/,
+     &'@        of the restart file in the working directory.       ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9200 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@      WRONG FILE TYPE                                       ',/,
+     &'@                                                            ',/,
+     &'@    The file ',A13      ,' does not look like a proper      ',/,
+     &'@      main restart file.                                    ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please make sure the file used as a restart file        ',/,
+     &'@        actually is a correct main restart file.            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9201 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@      INCONSISTANT RESTART AND CHECKPOINT DATA              ',/,
+     &'@                                                            ',/,
+     &'@    The number of cells has changed                         ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please make sure the file used as restart file does     ',/,
+     &'@        correspond to your case                             ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9210 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE RESTART FILE READING              ',/,
+     &'@    *********                                               ',/,
+     &'@      ERROR AT READING DIMENSIONS                           ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file                                        ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9320 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@    The scalar ',I10   ,' of the current calculation        ',/,
+     &'@        is attempted to match the scalar      ',I10          ,/,
+     &'@        of the previous one. But the maximum number         ',/,
+     &'@        of scalar read in the restart file is ',I10          ,/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be excuted.                      ',/,
+     &'@                                                            ',/,
+     &'@    Please check the value of ISCOLD in usini1.             ',/,
+     &'@    Please make sure the file used as restart file does     ',/,
+     &'@        correspond to your case                             ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9321 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@    The scalar ',I10   ,' of the current calculation        ',/,
+     &'@        is attempted to match the scalar ',I10               ,/,
+     &'@        of the previous one. But the number                 ',/,
+     &'@        of the previous scalar must be stricly larger       ',/,
+     &'@        than zero and smaller than or equal to     ',I10     ,/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the value of ISCOLD in usini1.             ',/,
+     &'@    Please make sure the file used as restart file does     ',/,
+     &'@        correspond to your case                             ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9330 FORMAT (
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      IMPOSSIBLE MATCHING WITH PREVIOUS SCALAR              ',/,
+     &'@      ',I10,   ' ERRORS REPORTED IN THE ABOVE MESSAGES      ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@      The previous lines identify the scalars defined      ',/,
+     &'@        in the current computation for which the matching   ',/,
+     &'@        defined in usini1 by ISCOLD is not correct          ',/,
+     &'@                                                            ',/,
+     &'@      The computation cannot be executed.                   ',/,
+     &'@                                                            ',/,
+     &'@      Please make sure the file used as restart file does   ',/,
+     &'@          correspond to your case                           ',/,
+     &'@      Please check the value of ISCOLD in usini1.           ',/,
+     &'@        ISCOLD(ISCAL) = 0 means that the scalar ISCAL       ',/,
+     &'@          of the current calculation does not correspond to ',/,
+     &'@          any of the scalars of the previous calculation    ',/,
+     &'@        ISCOLD(ISCAL) > 0 defines the scalar number in the  ',/,
+     &'@          previous calculation ISCAL corresponds to         ',/,
+     &'@      If matching with the previous scalar is unnecessary   ',/,
+     &'@        please delete ISCOLD from usini1.                   ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9400 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      ERROR AT READING THE TEMPORAL INFORMATION OR          ',/,
+     &'@        TURBULENCE MODELS                                   ',/,
+     &'@                                                            ',/,
+     &'@    The computation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file                                        ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9401 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      ERROR AT READING THE INDICATOR OF ALE METHOD          ',/,
+     &'@                                                            ',/,
+     &'@    The read restart file might come from a previous        ',/,
+     &'@      version of Code Saturne, without ALE.                 ',/,
+     &'@    The calculation will be executed but                    ',/,
+     &'@      ALE data will be reset.                               ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file, however.                              ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9402 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@      IALE INDICATOR OF THE PREVIOUS CALCULATION = ',I10     ,/,
+     &'@      IALE INDICATOR OF THE CURRECT CALCULATION  = ',I10     ,/,
+     &'@                                                            ',/,
+     &'@    The coordinates of the mesh nodes need to be read again.',/,
+     &'@      They are stored in the auxiliary restart file.        ',/,
+     &'@    Therefore the ILEAUX indicator needs to be equal to 1.  ',/,
+     &'@    Its current value is ILEAUX = ',I10                     ,/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@                                                            ',/,
+     &'@    Please check the value of ILEAUX in usini1 or in the    ',/,
+     &'@                                   Graphical User Interface ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9410 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@      NUMBER OF THE PREVIOUS TIME STEP  NTPABS = ',I10       ,/,
+     &'@      NUMBER OF TIME STEPS WANTED       NTMABS = ',I10       ,/,
+     &'@                                                            ',/,
+     &'@    The number of time steps (absolute) wanted, NTMABS,     ',/,
+     &'@      has to be larger than the number of time steps        ',/,
+     &'@      (absolute) already done, NTPABS.                      ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check (increase) NTMABS in usini1.               ',/,
+     &'@    Please make sure the file used as restart file does     ',/,
+     &'@          correspond to your case                           ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9510 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      ERROR AT THE READING OF MAIN VARIABLES                ',/,
+     &'@        PRESSURE, VELOCITY, TURBULENCE                      ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file                                        ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9511 FORMAT(
+     &'@ Error at the reading of ',A36                                 )
+ 9512 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      ERROR AT THE READING OF MAIN SCALAR VARIABLES         ',/,
+     &'@                                                            ',/,
+     &'@    The calculation cannot be executed.                     ',/,
+     &'@                                                            ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file                                        ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+ 9513 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,
+     &'@    *********                                               ',/,
+     &'@                                                            ',/,
+     &'@      ERROR AT THE READING OF MESH VELOCITY                 ',/,
+     &'@        (ALE METHOD)                                       ',/,
+     &'@                                                            ',/,
+     &'@    Please check the integrity of the file used as          ',/,
+     &'@        restart file                                        ',/,
+     &'@                                                            ',/,
+     &'@    The calculation can be executed however (mesh           ',/,
+     &'@                                     velocity reset)        ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
       END
 c@z

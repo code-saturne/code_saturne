@@ -1321,6 +1321,8 @@ C--------
 C FORMATS
 C--------
 C
+#if defined(_CS_LANG_FR)
+C
  1000 FORMAT(1X,A8,' : CONVECTION EN ',A11,
      &                               ' BLENDING A ',F4.0,' % D''UPWIND')
  1100 FORMAT(1X,A8,' : ',I10,' FACES UPWIND SUR ',
@@ -1339,6 +1341,29 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+C
+#else
+C
+ 1000 FORMAT(1X,A8,' : CONVECTION IN ',A11,
+     &                            ' BLENDING WITH ',F4.0,' % OF UPWIND')
+ 1100 FORMAT(1X,A8,' : ',I10,' FACES WITH UPWIND ON ',
+     &                               I10,' INTERIOR FACES ')
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ WARNING: ABORT IN bilsc2                                ',/,
+     &'@    ********                                                ',/,
+     &'@     CALL OF bilsc2 FOR ',A8 ,' WITH ISCHCP = ',I10          ,/,
+     &'@                                                            ',/,
+     &'@  The calculation will not be run.                          ',/,
+     &'@                                                            ',/,
+     &'@  Contact the support.                                      ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
+C
+#endif
 C
 C----
 C FIN
