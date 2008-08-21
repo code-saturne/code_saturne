@@ -1,5 +1,45 @@
 * 21/08/2008 - David Monfort <david.monfort@edf.fr>
   Add english translation to the BASE module.
+  C files and po dictionnary.
+  added i18n files:
+    po/fr.po
+    po/Makevars
+    po/Makevars.template
+    po/remove-potcdate.sed
+  modified routines:
+    src/base/cs_base.c
+    src/base/cs_benchmark.c
+    src/base/cs_comm.c
+    src/base/cs_couplage.c
+    src/base/cs_ecs_messages.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_gradient.c
+    src/base/cs_gui.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_halo.c
+    src/base/cs_main.c
+    src/base/cs_matrix.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_mesh_connect.c
+    src/base/cs_mesh_quality.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_select.c
+    src/base/cs_mesh_solcom.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_opts.c
+    src/base/cs_perio.c
+    src/base/cs_post.c
+    src/base/cs_pp_io.c
+    src/base/cs_selector.c
+    src/base/cs_sles.c
+    src/base/cs_suite.c
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_messages.c
+    src/base/cs_tpar1d.c
+
+* 21/08/2008 - David Monfort <david.monfort@edf.fr>
+  Add english translation to the BASE module.
   Fortran files and scripts only.
   modified scripts:
     bin/macros_Blue_Gene_L.mk
