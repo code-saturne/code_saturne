@@ -1991,11 +1991,11 @@ _count_in_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
   const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   const char err_corresp[]
-    = N_("Incohérence repérée lors de la construction du halo.\n"
-         "Plusieurs points locaux ont le même correspondant distant ;\n"
-         "ceci est probablement dû à un effet de bord de la construction\n"
-         "de périodicités multiples par le Préprocesseur.\n"
-         "Coordonnées du premier point impacté: [%12.5e, %12.5e %12.5e].");
+    = N_("Repeated inconsistency in the halo construction.\n"
+         "Several local points have the same distant correspondant;\n"
+         "this is probably due to a multiple-periodicity construction\n"
+         "side effect of the Preprocessor.\n"
+         "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e].");
 
   _define_vtx_interface_idx(ifs,
                             halo->c_domain_rank[rank_id],
@@ -3730,7 +3730,7 @@ cs_halo_define(cs_mesh_t            *mesh,
 
   /* Fill cs_halo_t structure for in_halo  */
 
-  bft_printf(_("    Définition du halo local\n"));
+  bft_printf(_("    Local halo definition\n"));
   bft_printf_flush();
 
   _fill_in_halo(mesh,
@@ -3741,7 +3741,7 @@ cs_halo_define(cs_mesh_t            *mesh,
   /* Clean cs_mesh_halo_t structure.
      Remove communicating ranks with no ghost cells */
 
-  bft_printf(_("    Nettoyage du halo\n"));
+  bft_printf(_("    Cleaning halo\n"));
   bft_printf_flush();
 
 #if 0
@@ -3751,7 +3751,7 @@ cs_halo_define(cs_mesh_t            *mesh,
   /* Fill cs_halo_t structure for out_halo.
      We use the data from in_halo structure */
 
-  bft_printf(_("    Définition du halo distant\n"));
+  bft_printf(_("    Distant halo definition\n"));
   bft_printf_flush();
 
   _fill_out_halo(mesh);
@@ -3785,7 +3785,7 @@ cs_halo_define(cs_mesh_t            *mesh,
        also ghost cells to ghost cells connectivity for standard and extended
        halo if necessary */
 
-    bft_printf(_("    Mise à jour de la connectivité IFACEL\n"));
+    bft_printf(_("    Updating IFACEL connectivity\n"));
     bft_printf_flush();
 
     _update_gcells_connect(mesh,

@@ -167,8 +167,8 @@ _compute_face_normal(cs_int_t         dim,
 
   if (dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Le calcul des grandeurs géométriques associées aux faces\n"
-                "ne sont implantés qu'en 3D."));
+              _("Face geometric quantities computation is only\n"
+                "implemented in 3D."));
 
   assert(face_normal != NULL || n_faces == 0);
 
@@ -332,8 +332,8 @@ _compute_face_quantities(const cs_int_t   dim,
 
   if (dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Le calcul des grandeurs géométriques associées aux faces\n"
-                "ne sont implantés qu'en 3D."));
+              _("Face geometric quantities computation is only\n"
+                "implemented in 3D."));
 
   assert(face_cog != NULL || n_faces == 0);
   assert(face_norm != NULL || n_faces == 0);
@@ -571,8 +571,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *const mesh,
 
   if (mesh->dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Le calcul des centres des cellules\n"
-                "ne sont implantés qu'en 3D."));
+              _("Cell centre computation is only implemented in 3D."));
 
   assert(cell_cen != NULL);
 
@@ -707,8 +706,7 @@ _compute_cell_cen_face(const cs_mesh_t  *const mesh,
 
   if (dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Le calcul des centres des cellules\n"
-                "ne sont implantés qu'en 3D."));
+              _("Cell centre computation is only implemented in 3D."));
 
   assert(cell_cen != NULL);
 
@@ -929,12 +927,11 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice)
 {
   if (algo_choice > 1)
     bft_error(__FILE__, __LINE__,0,
-              _("L'indicateur de choix d'algorithme de calcul du centre "
-                "de gravité\n"
-                "des cellules peut prendre les valeurs suivantes :\n"
-                "  0 : calcul basé sur les centres et surfaces des faces\n"
-                "  1 : calcul basé sur les sommets\n"
-                "et non %d."), cs_glob_mesh_quantities_cell_cen);
+              _("The algorithm selection indicator for the cell centre of gravity computation\n"
+                "can take the following values:\n"
+                "  0: computation based on the face centres and surfaces\n"
+                "  1: computation based on the vertices\n"
+                "and not %d."), cs_glob_mesh_quantities_cell_cen);
 
   else if (algo_choice >= 0)
     cs_glob_mesh_quantities_cell_cen = algo_choice;

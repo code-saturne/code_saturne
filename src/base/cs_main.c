@@ -399,13 +399,13 @@ int main
     cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);
     t2 = bft_timer_wtime();
 
-    bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
+    bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
 
   }
 
   /* Renumérotation en fonction des options du code */
 
-  bft_printf(_("\n Renumerotation du maillage:\n"));
+  bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
@@ -438,7 +438,7 @@ int main
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
   t2 = bft_timer_wtime();
 
-  bft_printf(_("\n Calcul des grandeurs géométriques (%.3g s)\n"), t2-t1);
+  bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
 
   cs_mesh_info(cs_glob_mesh);
 
@@ -454,7 +454,7 @@ int main
   /* Boucle en temps ou critères de qualité selon options de vérification */
 
   if (opts.iverif == 0) {
-    bft_printf(_("\n Calcul des critères de qualité\n"));
+    bft_printf(_("\n Computing quality criteria\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
   }
 
@@ -516,7 +516,7 @@ int main
 
   }
 
-  bft_printf(_("\n Destruction des structures et clôture du calcul\n"));
+  bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
   /* Libération de structures internes de l'API F77 pour fichiers suite */

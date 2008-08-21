@@ -519,9 +519,9 @@ void CS_PROCF (opnsui, OPNSUI)
       break;
     default:
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le mode d'ouverture du fichier suite <%s>\n"
-                   "doit être égal à 1 (lecture) ou 2 (écriture) "
-                   "et non <%d>"), nombuf, (int)(*ireawr));
+      bft_printf(_("The access mode of the restart file <%s>\n"
+                   "must be equal to 1 (read) or 2 (write) and not <%d>."),
+                 nombuf, (int)(*ireawr));
 
       *ierror = CS_SUITE_ERR_MODE;
     }
@@ -541,9 +541,9 @@ void CS_PROCF (opnsui, OPNSUI)
         break;
       default:
         cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Le type du fichier suite <%s>\n"
-                     "doit être égal à 0 (binaire) ou 1 (formaté) "
-                     "et non <%d>\n(binaire par défaut)"),
+        bft_printf(_("The type of the restart file <%s>\n"
+                     "must be equal to 0 (binary) or 1 (formatted) and not <%d>\n"
+                     "(default is binary)."),
                    nombuf, (int)(*iforma));
         *ierror = CS_SUITE_ERR_TYPE_FIC;
       }
@@ -631,8 +631,8 @@ void CS_PROCF (clssui, CLSSUI)
       || indsui > cs_glob_suite_ptr_nbr
       || cs_glob_suite_ptr_tab[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("The restart file number <%d> cannot be closed\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_SUITE_ERR_NUM_FIC;
     return;
@@ -684,8 +684,8 @@ void CS_PROCF (tstsui, TSTSUI)
       || cs_glob_suite_ptr_tab[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("Information on the restart file number <%d> unavailable\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *indcel = 0;
     *indfac = 0;
@@ -735,8 +735,8 @@ void CS_PROCF (infsui, INFSUI)
       || cs_glob_suite_ptr_tab[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("Information on the restart file number <%d> unavailable\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
   }
   else {
 
@@ -1110,26 +1110,26 @@ void cs_suite_verif_support
      */
     if ((fvm_gnum_t)suite->nbr_cel != mesh->n_g_cells) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de cellules associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
+      bft_printf(_("The number of cells associated with the restart file\n"
+                   "<%s> is %d and does not correspond to the current mesh.\n"),
                  suite->nom, (int)suite->nbr_cel);
     }
     if ((fvm_gnum_t)suite->nbr_fac != mesh->n_g_i_faces) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de faces internes associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
+      bft_printf(_("The number of interior faces associated with the restart file\n"
+                   "<%s> is %d and does not correspond to the current mesh.\n"),
                  suite->nom, (int)suite->nbr_fac);
     }
     if ((fvm_gnum_t)suite->nbr_fbr != mesh->n_g_b_faces) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de faces de bord associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
+      bft_printf(_("The number of boundary faces associated with the restart file\n"
+                   "<%s> is %d and does not correspond to the current mesh\n"),
                  suite->nom, (int)suite->nbr_fbr);
     }
     if ((fvm_gnum_t)suite->nbr_som != mesh->n_g_vertices) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de sommets associés au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
+      bft_printf(_("The number of vertices associated with the restart file\n"
+                   "<%s> is %d and does not correspond to the current mesh\n"),
                  suite->nom, (int)suite->nbr_som);
     }
 
@@ -1151,9 +1151,8 @@ void cs_suite_affiche_index
 
   assert(suite != NULL);
 
-  bft_printf(_("  Index associé à la suite : %s\n"
-               "  (support, nbr_val/ent, type_val, [ind_fic, pos_fic], "
-               "nom) : \n"),
+  bft_printf(_("  Index associated to the restart: %s\n"
+               "  (location, n_val/ent, val_type, [file_ind, file_pos], name):\n"),
              suite->nom);
 
   for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++)
@@ -1946,7 +1945,7 @@ static cs_bool_t cs_loc_suite_fic_ajoute
 
       if (suite_type_detect != CS_SUITE_TYPE_ASCII)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Le fichier <%s> n'est pas un fichier suite valide\n"),
+                  _("The file <%s> is not a valid restart file.\n"),
                   nom_fic);
 
     }
@@ -1954,9 +1953,9 @@ static cs_bool_t cs_loc_suite_fic_ajoute
     if (suite->type != suite_type_detect) {
       if (suite->nbr_fic > 1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Le fichier suite <%s> et son prolongement\n"
-                    "<%s> ne sont du même type (texte/binaire) ;\n"
-                    "ils ne correspondent pas au même jeu de données\n"),
+                  _("The restart file <%s> and its extension\n"
+                    "<%s> are not of the same type (text/binary);\n"
+                    "they do not correspond to the same data set.\n"),
                   suite->nom, nom_fic);
       else
         suite->type = suite_type_detect;
@@ -2103,9 +2102,9 @@ static void cs_loc_suite_lit_val
           else {
             if (col_deb != ' ' && col_deb != '\t')
               bft_error(__FILE__, __LINE__, 0,
-                        _("Erreur à la lecture d'un tableau d'entiers dans un "
-                          "fichier suite :\n"
-                          "champs de largeur différente de %d"),
+                        _("The restart file <%s> and its extension\n"
+                          "<%s> are not of the same type (text/binary);\n"
+                          "they do not correspond to the same data set.\n"),
                         CS_SUITE_FMT_ASCII_DIM_COL_INT);
           }
 
@@ -2114,9 +2113,8 @@ static void cs_loc_suite_lit_val
 
           if (sscanf(str, fmt_lec, &(tab_val_int[ind_val])) != 1)
             bft_error(__FILE__, __LINE__, 0,
-                      _("Erreur à la lecture d'un tableau d'entiers dans un "
-                        "fichier suite :\n"
-                        "%ul sur %ul valeurs lues"),
+                      _("Error while reading an array of integers in a restart file:\n"
+                        "%ul on %ul read values"),
                       (unsigned long)ind_val, (unsigned long)nbr_val);
 
           str += CS_SUITE_FMT_ASCII_DIM_COL_INT;
@@ -2124,9 +2122,8 @@ static void cs_loc_suite_lit_val
         }
         if (ind_val < nbr_val)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Erreur à la lecture d'un tableau d'entiers dans un "
-                      "fichier suite :\n"
-                      "%ul sur %ul valeurs lues"),
+                    _("Error while reading an array of integers in a restart file:\n"
+                      "%ul on %ul read values"),
                     (unsigned long)ind_val, (unsigned long)nbr_val);
 
       }
@@ -2161,9 +2158,8 @@ static void cs_loc_suite_lit_val
           else {
             if (col_deb != ' ' && col_deb != '\t')
               bft_error(__FILE__, __LINE__, 0,
-                        _("Erreur à la lecture d'un tableau de réels dans un "
-                          "fichier suite :\n"
-                          "champs de largeur différente de %d"),
+                        _("Error while reading an array of reals in a restart file:\n"
+                          "field of different size than %d"),
                         CS_SUITE_FMT_ASCII_DIM_COL_REAL);
           }
 
@@ -2172,9 +2168,8 @@ static void cs_loc_suite_lit_val
 
           if (sscanf(str, fmt_lec, &(tab_val_real[ind_val])) != 1)
             bft_error(__FILE__, __LINE__, 0,
-                      _("Erreur à la lecture d'un tableau de réels dans un "
-                        "fichier suite :\n"
-                        "%ul sur %ul valeurs lues"),
+                      _("Error while reading an array of reals in a restart file:\n"
+                        "%ul on %ul read values"),
                       (unsigned long)ind_val, (unsigned long)nbr_val);
 
           str += CS_SUITE_FMT_ASCII_DIM_COL_REAL;
@@ -2182,9 +2177,8 @@ static void cs_loc_suite_lit_val
         }
         if (ind_val < nbr_val)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Erreur à la lecture d'un tableau de réels dans un "
-                      "fichier suite :\n"
-                      "%ul sur %ul valeurs lues"),
+                    _("Error while reading an array of reals in a restart file:\n"
+                      "%ul on %ul read values"),
                     (unsigned long)ind_val, (unsigned long)nbr_val);
 
       }
@@ -2973,7 +2967,7 @@ static cs_bool_t cs_loc_suite_analyse_txt
 
   if (err_fmt == CS_TRUE) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
+    bft_printf(_("The restart file <%s> number <%d> does not comply\n"),
                suite->nom, suite->nbr_fic);
 
     return CS_FALSE;
@@ -2992,8 +2986,8 @@ static cs_bool_t cs_loc_suite_analyse_txt
                            || nbr_fbr != suite->nbr_fbr
                            || nbr_som != suite->nbr_som)) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Les dimensions du support associé au fichier suite <%s>\n"
-                 "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
+    bft_printf(_("The dimensions of the mesh associated to the restart file <%s>\n"
+                 "number <%d> does not correspond to the file number <1>\n"),
                suite->nom, suite->nbr_fic);
 
     return CS_FALSE;
@@ -3050,8 +3044,8 @@ static cs_bool_t cs_loc_suite_analyse_txt
         if (   sscanf(sub + ind, "%d", &num_part) !=1
             || num_part != suite->nbr_fic) {
           cs_base_warn(__FILE__, __LINE__);
-          bft_printf(_("Le fichier suite <%s_p%02d> ne correspond pas\n"
-                       "à la partie <%d> du fichier suite d'origine\n"),
+          bft_printf(_("The restart file <%s_p%02d> does not correspond to\n"
+                       "part <%d> of the original restart file\n"),
                      suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
 
           return CS_FALSE;
@@ -3247,8 +3241,8 @@ static cs_bool_t cs_loc_suite_analyse_bin
                              || buf[2] != suite->nbr_fbr
                              || buf[3] != suite->nbr_som)) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Les dimensions du support associé au fichier suite <%s>\n"
-                   "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
+      bft_printf(_("The dimensions of the mesh associated to the restart file <%s>\n"
+                   "number <%d> does not correspond to the file number <1>\n"),
                  suite->nom, suite->nbr_fic);
       return CS_FALSE;
     }
@@ -3314,8 +3308,8 @@ static cs_bool_t cs_loc_suite_analyse_bin
                      strlen(cs_suite_nom_partie_fic)) == 0) {
       if (buf[1] != suite->nbr_fic) {
         cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Le fichier suite <%s_p%02d> ne correspond pas\n"
-                     "à la partie <%d> du fichier suite d'origine\n"),
+        bft_printf(_("The restart file <%s_p%02d> does not correspond to\n"
+                     "part <%d> of the original restart file\n"),
                    suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
         fin_fic = CS_TRUE;
         break;
@@ -3521,8 +3515,8 @@ static void cs_loc_suite_rub_f77_vers_C
       || indsui > cs_glob_suite_ptr_nbr
       || cs_glob_suite_ptr_tab[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("The restart file number <%d> cannot be closed\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_SUITE_ERR_NUM_FIC;
     return;
@@ -3558,8 +3552,8 @@ static void cs_loc_suite_rub_f77_vers_C
 
   default:
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le type de support <%d> indiqué pour une rubrique de\n"
-                 "fichier suite est invalide"), (int)(*itysup));
+    bft_printf(_("The type of location <%d> indicated for a restart file\n"
+                 "section is invalid"), (int)(*itysup));
     *ierror = CS_SUITE_ERR_SUPPORT;
     return;
 
@@ -3580,8 +3574,8 @@ static void cs_loc_suite_rub_f77_vers_C
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Le type de valeur <%d> indiqué pour une rubrique de\n"
-                "fichier suite est invalide"), (int)(*irtype));
+              _("The type of value <%d> indicated for a restart file\n"
+                "section is invalid"), (int)(*irtype));
     *ierror = CS_SUITE_ERR_TYPE_VAL;
     return;
 

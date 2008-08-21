@@ -166,7 +166,7 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
   if (cs_glob_base_nbr < 2)
     return;
 
-  bft_printf(_(" Synchronisation des familles des cellules\n"));
+  bft_printf(_("Synchronizing cell families\n"));
 
   /* We use communication buffer of the halo structure. This buffer
      was initially built to be used with reals. We have to be careful. */
@@ -288,7 +288,7 @@ _display_histograms(cs_int_t        n_vals,
   /* Compute local min and max */
 
   if (n_vals == 0) {
-    bft_printf(_("    aucune valeur\n"));
+    bft_printf(_("    no value\n"));
     return;
   }
 
@@ -296,8 +296,8 @@ _display_histograms(cs_int_t        n_vals,
   val_min = var[0];
   _compute_local_minmax(n_vals, var, &val_min, &val_max);
 
-  bft_printf(_("    valeur minimale =       %10d\n"), (int)val_min);
-  bft_printf(_("    valeur maximale =       %10d\n\n"), (int)val_max);
+  bft_printf(_("    minimum value =         %10d\n"), (int)val_min);
+  bft_printf(_("    maximum value =         %10d\n\n"), (int)val_max);
 
   /* Define axis subdivisions */
 
@@ -370,27 +370,27 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   /* Sum-up of the computional times */
 
-  bft_printf(_("\n Bilan des temps pour la création du halo\n\n"));
+  bft_printf(_("\n Halo creation times summary\n\n"));
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0)
-    bft_printf(_("     Création de l'interface :                  %.3g s\n"),
+    bft_printf(_("     Creating interface:                       %.3g s\n"),
                interface_time);
 
   if (mesh->halo_type == CS_MESH_HALO_EXTENDED)
-    bft_printf(_("     Création de la connectivité étendue :      %.3g s\n"),
+    bft_printf(_("     Creating extended connectivity:            %.3g s\n"),
                ext_neighborhood_time);
 
-  bft_printf(_("     Création du halo :                         %.3g s\n\n"),
+  bft_printf(_("     Creating halo:                             %.3g s\n\n"),
              halo_time);
 
 
-  bft_printf(_("     Temps total de création du halo :          %.3g s\n\n"),
+  bft_printf(_("     Total time for halo creation:              %.3g s\n\n"),
              halo_time + interface_time + ext_neighborhood_time);
   bft_printf(" ----------------------------------------------------------\n\n");
 
   /* Sum-up ghost cell distribution */
 
-  bft_printf(_(" Nombre de cellules standard :                         %d\n"),
+  bft_printf(_(" Number of standard cells:                             %d\n"),
              mesh->n_cells);
 
   if (mesh->n_domains > 1) {
@@ -402,8 +402,7 @@ _print_halo_info(cs_mesh_t  *mesh,
                   rank_buffer     , 1, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
-    bft_printf(_("\n    Histogramme de la distribution du nombre de cellules"
-                 " sur les rangs :\n\n"));
+    bft_printf(_("\n    Histogram of the number of cells per rank:\n\n"));
 
     _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -412,7 +411,7 @@ _print_halo_info(cs_mesh_t  *mesh,
   bft_printf("\n ----------------------------------------------------------\n");
   bft_printf_flush();
 
-  bft_printf(_(" Nombre de cellules + cellules halo :                  %d\n\n"),
+  bft_printf(_(" Number of cells + halo cells:                         %d\n\n"),
              mesh->n_cells_with_ghosts);
 
   if (mesh->n_domains > 1) {
@@ -422,8 +421,8 @@ _print_halo_info(cs_mesh_t  *mesh,
                   rank_buffer, 1, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
-    bft_printf(_("\n    Histogramme de la distribution du nombre de cellules"
-                 "\n    standard + halo (NCELET) sur les rangs :\n\n"));
+    bft_printf(_("\n    Histogram of number of standard + halo cells (NCELET) "
+                 "per rank:\n\n"));
 
     _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -436,11 +435,11 @@ _print_halo_info(cs_mesh_t  *mesh,
 
     cs_int_t  n_std_ghost_cells = halo->n_elts_out[CS_MESH_HALO_STANDARD];
 
-    bft_printf(_("\n Nombre de cellules fantômes locales :          %10d\n"),
+    bft_printf(_("\n Local number of ghost cells:                    %10d\n"),
                mesh->n_ghost_cells);
-    bft_printf(_("     dans le voisinage standard:                %10d\n"),
+    bft_printf(_("     in the standard neighborhood:              %10d\n"),
                n_std_ghost_cells);
-    bft_printf(_("     dans le voisinage etendu:                  %10d\n"),
+    bft_printf(_("     in the extended neighborhood:              %10d\n"),
                mesh->n_ghost_cells - n_std_ghost_cells);
 
     if (mesh->n_domains > 1) {
@@ -452,8 +451,7 @@ _print_halo_info(cs_mesh_t  *mesh,
                     rank_buffer, 1, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
-      bft_printf(_("\n    Histogramme de la distribution des cellules"
-                   " fantômes sur les rangs :\n\n"));
+      bft_printf(_("\n    Histogram of the number of ghost cells per rank:\n\n"));
 
       _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -465,7 +463,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
     /* Sum-up of the number of neighbors */
 
-    bft_printf(_("\n Nombre de domaines voisins :         %d\n"),
+    bft_printf(_("\n Number of neighboring domains:       %d\n"),
                halo->n_c_domains);
 
     if (mesh->n_domains > 1) {
@@ -477,8 +475,8 @@ _print_halo_info(cs_mesh_t  *mesh,
                     rank_buffer , 1, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
-      bft_printf(_("\n    Histogramme de la distribution du nombre de"
-                   " voisins sur les rangs :\n\n"));
+      bft_printf(_("\n    Histogram of the number of neighboring domains "
+                   "per rank:\n\n"));
 
       _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -973,7 +971,7 @@ cs_mesh_info(const cs_mesh_t  *mesh)
 #endif
 
     bft_printf(_("\n"
-                 " Coordonnées du maillage         minimale    et maximale\n"
+                 " Mesh coordinates:               minimum    and maximum\n"
                  "                       X : %14.7e %14.7e\n"
                  "                       Y : %14.7e %14.7e\n"
                  "                       Z : %14.7e %14.7e\n"),
@@ -1004,8 +1002,8 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   if (cs_glob_base_nbr <= 1)
     return;
 
-  bft_printf(_("\n Définition globale du nombre d'éléments "
-               "(cellules, sommets, faces...)\n"));
+  bft_printf(_("\n Global definition of the number of elements "
+               "(cells, vertices, faces...)\n"));
 
   /* Global dimensions of the mesh */
 
@@ -1090,8 +1088,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     if (ivoset == 1) {
 
-      bft_printf(_("\n Construction du halo avec voisinage étendu\n"
-                   " ==========================================\n\n"));
+      bft_printf(_("\n Halo construction with extended neighborhood\n"
+                   " ============================================\n\n"));
 
       mesh->halo_type = CS_MESH_HALO_EXTENDED;
 
@@ -1106,7 +1104,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     }
     else {
 
-      bft_printf(_("\n Construction du halo avec voisinage standard\n"
+      bft_printf(_("\n Halo construction with standard neighborhood\n"
                    " ============================================\n\n"));
 
       mesh->halo_type = CS_MESH_HALO_STANDARD;
@@ -1134,7 +1132,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
       mesh->n_transforms = fvm_periodicity_get_n_transforms(mesh->periodicity);
 
-      bft_printf(_(" Définition des couples périodiques\n"));
+      bft_printf(_(" Definition of periodic couples\n"));
       bft_printf_flush();
 
       cs_perio_define_couples(&n_periodic_lists,
@@ -1157,7 +1155,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     fvm_periodicity_dump(mesh->periodicity);
 #endif
 
-    bft_printf(_(" Création de l'interface\n"));
+    bft_printf(_(" Interface creation\n"));
     bft_printf_flush();
 
     interface_set = fvm_interface_set_create(n_vertices,
@@ -1190,12 +1188,12 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     /* Creation of the cs_mesh_halo_t structure. */
 
-    bft_printf(_(" Création des halos\n"));
+    bft_printf(_(" Halo creation\n"));
     bft_printf_flush();
 
     mesh->halo = cs_halo_create(interface_set);
 
-    bft_printf(_(" Définition des halos\n"));
+    bft_printf(_(" Halo definition\n"));
     bft_printf_flush();
 
     cs_halo_define(mesh,
@@ -1216,7 +1214,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
   if (ivoset == 1) {
 
     t1 = bft_timer_wtime();
-    bft_printf(_(" Définition des structures pour le voisinage étendu\n"));
+    bft_printf(_(" Extended neighborhood structures definition\n"));
     bft_printf_flush();
 
     cs_ext_neighborhood_define(mesh,
@@ -1243,7 +1241,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
                      ext_neighborhood_time);
 
   else if (ivoset == 1)
-    bft_printf(_("\n Création de la connectivité étendue (%.3g s)\n"),
+    bft_printf(_("\n Extended connectivity creation (%.3g s)\n"),
                ext_neighborhood_time);
 }
 

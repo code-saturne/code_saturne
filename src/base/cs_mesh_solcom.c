@@ -349,7 +349,7 @@ void cs_maillage_solcom_lit
     /* Création directe du maillage de post-traitement
        lorsque l'on n'a pas de connectivité faces->sommets */
 
-    maillage_ext = fvm_nodal_create(_("Volume fluide"), 3);
+    maillage_ext = fvm_nodal_create(_("Fluid volume"), 3);
 
     if (cs_glob_ntetra > 0)
       cs_loc_maillage_solcom_ajoute(maillage_ext,

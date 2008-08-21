@@ -109,7 +109,7 @@ static void _add_periodicity(void)
 
   if (mesh_builder->perio_type == FVM_PERIODICITY_TRANSLATION) {
 
-    bft_printf(_(" Ajout d'une périodicité en translation  ..."));
+    bft_printf(_(" Adding a translation periodicity..."));
     bft_printf_flush();
 
     tr_id = fvm_periodicity_add_translation(mesh->periodicity,
@@ -121,7 +121,7 @@ static void _add_periodicity(void)
   }
   else if (mesh_builder->perio_type == FVM_PERIODICITY_ROTATION) {
 
-    bft_printf(_(" Ajout d'une périodicité en rotation  ..."));
+    bft_printf(_(" Adding a rotation periodicity..."));
     bft_printf_flush();
 
     for (i = 0; i < 3; i++)
@@ -214,8 +214,8 @@ void CS_PROCF(ledevi, LEDEVI)
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
 
-  const char  *unexpected_msg = N_("Message de type <%s> sur <%s>\n"
-                                  "inattendu ou de taille incorrecte");
+  const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
+                                   "unexpected or of incorrect size");
 
   /* Initialize parameter values */
 
@@ -398,9 +398,9 @@ void CS_PROCF(ledevi, LEDEVI)
         cs_pp_io_read_body(&header, (void *) &(mesh->n_domains),comm);
         if (mesh->n_domains != cs_glob_base_nbr)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Le nombre de rangs indiqué par le fichier\n"
+                    _("The number of ranks indicated by the file\n"
                       "\"%s\" (%d)\n"
-                      "ne correspond pas au nombre de rangs courant (%d)."),
+                      "does not correspond to the number of current ranks (%d)."),
                     cs_pp_io_get_name(comm), (int)mesh->n_domains,
                     (int)cs_glob_base_nbr);
       }
@@ -544,8 +544,8 @@ cs_ecs_messages_read_data(cs_mesh_t      *const mesh)
   cs_pp_io_t  *comm = cs_glob_pp_io;
   cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
 
-  const char  *unexpected_msg = N_("Message de type <%s> sur <%s>\n"
-                                  "inattendu ou de taille incorrecte");
+  const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
+                                   "unexpected or of incorrect size");
 
   /* Loop on incomming messages */
 

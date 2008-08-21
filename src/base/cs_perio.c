@@ -838,7 +838,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
 
   if (bool_err == CS_TRUE)
     bft_error(__FILE__, __LINE__, 0,
-              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes"));
+              _("IDIMTE and/or ITENSO have incoherent values"));
 
   /* 2. Synchronization  */
   /*---------------------*/
@@ -972,7 +972,7 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
 
   if (bool_err == CS_TRUE)
     bft_error(__FILE__, __LINE__, 0,
-              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes"));
+              _("IDIMTE and/or ITENSO have incoherent values"));
 
   /* 2. Synchronization  */
   /*---------------------*/

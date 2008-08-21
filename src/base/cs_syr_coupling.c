@@ -234,7 +234,7 @@ _define_coupled_mesh(char               *coupled_mesh_name,
                                    &(syr_coupling->coupl_face_list));
 
     if (comm_echo >= 0) {
-      bft_printf(_("\nExtraction du maillage              ..."));
+      bft_printf(_("\nExtracting the mesh                 ..."));
       bft_printf_flush();
     }
 
@@ -249,7 +249,7 @@ _define_coupled_mesh(char               *coupled_mesh_name,
   else {
 
     if (comm_echo >= 0) {
-      bft_printf(_("\nExtraction du maillage              ..."));
+      bft_printf(_("\nExtracting the mesh                 ..."));
       bft_printf_flush();
     }
 
@@ -292,7 +292,7 @@ _renum_faces_list(cs_syr_coupling_t *syr_coupling)
   const cs_int_t  comm_echo = syr_coupling->comm_echo;
 
   if (comm_echo >= 0) {
-    bft_printf(_("\n *** Renumerotation de la liste des faces de bord    ..."));
+    bft_printf(_("\n *** Renumbering of the boundary faces list    ..."));
     bft_printf_flush();
   }
 
@@ -863,7 +863,7 @@ _cs_syr_coupling_post_function(cs_int_t   coupling_id,
   if (syr_coupling->post_mesh_id != 0) {
 
     cs_post_ecrit_var_som(syr_coupling->post_mesh_id,
-                          _("T Paroi"),
+                          _("Wall T"),
                           1,
                           CS_FALSE,
                           CS_FALSE,
@@ -1103,8 +1103,8 @@ void CS_PROCF(nbfsyr, NBFSYR)
 {
   if (*coupl_num < 1 || *coupl_num > cs_glob_syr_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage SYRTHES %d impossible ; "
-                " on a %d couplages"),
+              _("SYRTHES coupling number %d impossible; "
+                "there are %d couplings"),
               *coupl_num, cs_glob_syr_n_couplings);
 
   else
@@ -1138,16 +1138,16 @@ void CS_PROCF(lfasyr, LFASYR)
 
   if (*coupl_num < 1 || *coupl_num > cs_glob_syr_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage SYRTHES %d impossible ; "
-                " on a %d couplages"),
+              _("SYRTHES coupling number %d impossible; "
+                "there are %d couplings"),
               *coupl_num, cs_glob_syr_n_couplings);
   else
     coupling = cs_glob_syr_coupling_array[*coupl_num - 1];
 
   if (*n_coupl_faces != coupling->n_coupl_faces)
     bft_error(__FILE__, __LINE__, 0,
-              _("LFASYR : Nombre de faces indiquées pour le couplage\n"
-                "SYRTHES numéro %d incohérent (erreur interne)."),
+              _("LFASYR: number of faces indicated for the SYRTHES\n"
+                "coupling number %d incoherent (internal error)."),
               *coupl_num);
 
   for (i = 0 ; i < coupling->n_coupl_faces ; i++)
@@ -1503,8 +1503,8 @@ cs_syr_coupling_all_destroy(void)
   cs_glob_syr_n_couplings = 0;
   BFT_FREE(cs_glob_syr_coupling_array);
 
-  bft_printf(_("\nDestruction des structures associées au couplage "
-               "Syrthes.... [ok]\n"));
+  bft_printf(_("\nDestroying the structures associated with the "
+               "SYRTHES coupling.... [ok]\n"));
   bft_printf_flush();
 
 }
@@ -1537,8 +1537,9 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
   const cs_int_t comm_echo = syr_coupling->comm_echo;
 
   if (comm_echo > 0) {
-    bft_printf(_("\n ** Traitement du maillage pour le couplage "
-                 "Syrthes \"%d\"\n\n"), coupl_num);
+    bft_printf(_("\n ** Processing the mesh for the SYRTHES coupling "
+                 "\"%d\"\n\n"),
+                 coupl_num);
     bft_printf_flush();
   }
 
@@ -1558,15 +1559,15 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
 
   if (n_g_vertices == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage avec Syrthes impossible.\n"
-                "Aucune face à coupler.\n"));
+              _("Coupling with SYRTHES impossible.\n"
+                "No face to couple.\n"));
 
   if (elt_dim == 2) {
 
     /* Triangulation of coupled faces */
 
     if (comm_echo >= 0) {
-      bft_printf(_("Triangulation du maillage extrait (%d faces)  ..."),
+      bft_printf(_("Triangulation of the extracted mesh (%d faces)  ..."),
                  syr_coupling->n_coupl_faces);
       bft_printf_flush();
     }
@@ -1579,7 +1580,7 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
     /* Projection of coupled faces to edges */
 
     if (comm_echo >= 0) {
-      bft_printf(_("Décomposition en arêtes du maillage extrait (%d faces)  ..."),
+      bft_printf(_("Splitting the extracted mesh in edges (%d faces)  ..."),
                  syr_coupling->n_coupl_faces);
       bft_printf_flush();
     }
@@ -1594,8 +1595,8 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
 
   if (n_errors > 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Erreur lors du découpage du maillage extrait "
-                "avant envoi à Syrthes\n"));
+              _("Error triangulating the extracted mesh before "
+                "sending to SYRTHES.\n"));
 
   if (comm_echo >= 0) {
     bft_printf(" [ok]\n");
@@ -1688,13 +1689,13 @@ cs_syr_coupling_init_mesh(cs_syr_coupling_t *syr_coupling,
   if (comm_echo >= 0) {
 
     if (elt_dim == 2)
-      bft_printf(_("\nMaillage extrait composé de %d triangles"),n_elts);
+      bft_printf(_("\nExtracted mesh built of %d triangles"),n_elts);
     else if (elt_dim == 1)
-      bft_printf(_("\nMaillage extrait composé de %d arêtes"),n_elts);
+      bft_printf(_("\nExtracted mesh built of %d edges"),n_elts);
     else
       assert(elt_dim == 2 || elt_dim == 1);
 
-    bft_printf(_(" et %d sommets (localement)\n"),n_vertices);
+    bft_printf(_(" and %d vertices (locally)\n"),n_vertices);
     bft_printf_flush();
 
   }
@@ -1774,7 +1775,7 @@ cs_syr_coupling_vtx_to_elt(cs_syr_coupling_t        *syr_coupling,
   }
 
   if (comm_echo >= 0) {
-    bft_printf(_("\tInterpolation des sommets vers les éléments           ..."));
+    bft_printf(_("\tInterpolation from vertices to elements            ..."));
     bft_printf_flush();
   }
 
@@ -1863,7 +1864,7 @@ cs_syr_coupling_elt_to_vtx(cs_syr_coupling_t        *syr_coupling,
   }
 
   if (comm_echo >= 0) {
-    bft_printf(_("\tInterpolation des éléments sur les sommets            ..."));
+    bft_printf(_("\tInterpolation from elements to vertices            ..."));
     bft_printf_flush();
   }
 

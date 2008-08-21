@@ -617,14 +617,14 @@ void cs_base_mem_fin
   cs_int_t   ind_val[4] = {1, 1, 1, 1};
   char       unite[]    = {'k', 'm', 'g', 't', 'p'};
 
-  const char  * type_bil[] = {N_("Consommation mémoire totale mesurée :     "),
-                              N_("Mémoire dynamique d'après la librairie C :"),
-                              N_("Mémoire dynamique dans le tas :           "),
-                              N_("Mémoire dynamique instrumentée théorique :")};
+  const char  * type_bil[] = {N_("Total memory used:                       "),
+                              N_("Memory reported by C library:            "),
+                              N_("Memory allocated in heap:                "),
+                              N_("Theoretical instrumented dynamic memory: ")};
 
   /* Bilan mémoire */
 
-  bft_printf(_("\nBilan de l'occupation mémoire :\n\n"));
+  bft_printf(_("\nMemory use summary:\n\n"));
 
   valreal[0] = (cs_real_t) bft_mem_usage_max_pr_size();
   valreal[1] = (cs_real_t) bft_mem_usage_max_alloc_size();
@@ -699,10 +699,10 @@ void cs_base_mem_fin
 #if defined(_CS_HAVE_MPI)
       if (cs_glob_base_nbr > 1 && cs_glob_base_rang == 0) {
         bft_printf (_("                             "
-                      "minimum local : %12.3f %co  (rang %d)\n"),
+                      "local minimum: %12.3f %co  (rank %d)\n"),
                     val_min[ind_bil].val, unite[imin], val_min[ind_bil].rang);
         bft_printf (_("                             "
-                      "maximum local : %12.3f %co  (rang %d)\n"),
+                      "local maximum: %12.3f %co  (rank %d)\n"),
                     val_max[ind_bil].val, unite[imax], val_max[ind_bil].rang);
       }
 #endif
@@ -737,7 +737,7 @@ void cs_base_bilan_temps
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 
-  bft_printf(_("\nBilan des temps de calcul :\n"));
+  bft_printf(_("\nCalculation time summary:\n"));
 
   bft_timer_cpu_times(&utime, &stime);
 
@@ -751,14 +751,14 @@ void cs_base_bilan_temps
   /* Temps CPU */
 
   if (utime > 0. || stime > 0.) {
-    bft_printf (_("\n  Temps CPU utilisateur : %12.3f s\n"),
+    bft_printf (_("\n  User CPU time:       %12.3f s\n"),
                 (float)utime);
-    bft_printf (_("  Temps CPU système :     %12.3f s\n"),
+    bft_printf (_("  System CPU time:     %12.3f s\n"),
                 (float)stime);
   }
 
   else if (time_cpu > 0.)
-    bft_printf (_("\n  Temps CPU :             %12.3f s\n"),
+    bft_printf (_("\n  CPU time:            %12.3f s\n"),
                 (float)time_cpu);
 
 #if defined(_CS_HAVE_MPI)
@@ -767,7 +767,7 @@ void cs_base_bilan_temps
     MPI_Reduce (&time_cpu, &time_cumul, 1, MPI_DOUBLE, MPI_SUM,
                 0, cs_glob_base_mpi_comm);
     if (cs_glob_base_rang == 0)
-      bft_printf (_("  Temps CPU cumulé :      %12.3f s\n"),
+      bft_printf (_("  Total CPU time:      %12.3f s\n"),
                   time_cumul);
   }
 #endif
@@ -779,10 +779,10 @@ void cs_base_bilan_temps
 
   if (time_tot > 0.) {
 
-    bft_printf (_("\n  Temps écoulé :          %12.3f s\n"),
+    bft_printf (_("\n  Elapsed time:        %12.3f s\n"),
                 time_tot);
 
-    bft_printf (_("  Temps CPU / écoulé      %12.3f\n"),
+    bft_printf (_("  CPU / elapsed time   %12.3f\n"),
                 (float)(time_cpu/time_tot));
 
   }
@@ -891,17 +891,17 @@ void cs_base_info_systeme
   /* Affichage de la configuration locale */
   /*--------------------------------------*/
 
-  bft_printf("\n%s\n", _("Configuration locale du cas :\n"));
+  bft_printf("\n%s\n", _("Local case configuration:\n"));
 
-  bft_printf("  %-19s%s\n", _("Date :"), str_date);
+  bft_printf("  %-19s%s\n", _("Date:"), str_date);
 
-  bft_printf("  %-19s%s\n", _("Système :"),     str_system);
-  bft_printf("  %-19s%s\n", _("Machine :"),     str_machine);
-  bft_printf("  %-19s%s\n", _("Processeur :"),  bft_sys_info_cpu());
+  bft_printf("  %-19s%s\n", _("System:"),     str_system);
+  bft_printf("  %-19s%s\n", _("Machine:"),     str_machine);
+  bft_printf("  %-19s%s\n", _("Processor:"),  bft_sys_info_cpu());
   if (ram > 0)
-    bft_printf("  %-19s%s\n", _("Mémoire :"),   str_ram);
-  bft_printf("  %-19s%s\n", _("Utilisateur :"), str_user);
-  bft_printf("  %-19s%s\n", _("Répertoire :"),  str_directory);
+    bft_printf("  %-19s%s\n", _("Memory:"),   str_ram);
+  bft_printf("  %-19s%s\n", _("User:"), str_user);
+  bft_printf("  %-19s%s\n", _("Directory:"),  str_directory);
 
   bft_printf("\n");
 
@@ -935,7 +935,7 @@ void cs_base_warn
  const int    line_num
 )
 {
-  bft_printf(_("\n\nCode_Saturne: %s:%d : Avertissement\n"),
+  bft_printf(_("\n\nCode_Saturne: %s:%d: Warning\n"),
              file_name, line_num);
 }
 
@@ -1064,7 +1064,7 @@ static int _cs_base_bft_printf
 
   if (msgsize == -1 || msgsize > CS_BUF_PRINT_F_SIZE - 1) {
     _cs_base_err_printf("\nCode_Saturne : %s:%d\n", __FILE__, line);
-    _cs_base_err_printf(_("\nErreur système : %s\n"), strerror(errno));
+    _cs_base_err_printf(_("\nSystem error: %s\n"), strerror(errno));
     cs_exit(EXIT_FAILURE);
   }
 
@@ -1189,9 +1189,9 @@ static void _cs_base_gestion_erreur
   _cs_base_err_printf("\n");
 
   if (code_err_sys != 0)
-    _cs_base_err_printf(_("\nErreur système : %s\n"), strerror(code_err_sys));
+    _cs_base_err_printf(_("\nSystem error: %s\n"), strerror(code_err_sys));
 
-  _cs_base_err_printf(_("\n%s:%d: Erreur fatale.\n\n"), nom_fic, num_ligne);
+  _cs_base_err_printf(_("\n%s:%d: Fatal error.\n\n"), nom_fic, num_ligne);
 
   _cs_base_err_vprintf(format, arg_ptr);
 
@@ -1242,7 +1242,7 @@ static void _cs_base_backtrace_print
     size_t nbr = bft_backtrace_size(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf(_("\nPile d'appels :\n"));
+      _cs_base_err_printf(_("\nCall stack:\n"));
 
     for (ind = niv_debut ; ind < nbr ; ind++) {
 
@@ -1270,7 +1270,7 @@ static void _cs_base_backtrace_print
     bft_backtrace_destroy(tr);
 
     if (nbr > 0)
-      _cs_base_err_printf(_("Fin de la pile\n\n"));
+      _cs_base_err_printf(_("End of stack\n\n"));
   }
 
 }
@@ -1288,40 +1288,40 @@ static void _cs_base_sig_fatal(int  signum)
 
 #if defined(SIGHUP)
   case SIGHUP:
-    _cs_base_err_printf(_("Signal SIGHUP (déconnexion) intercepté.\n"
-                          "--> calcul interrompu.\n"));
+    _cs_base_err_printf(_("SIGHUP signal (hang-up) intercepted.\n"
+                          "--> computation interrupted.\n"));
     break;
 #endif
 
   case SIGINT:
-    _cs_base_err_printf(_("Signal SIGINT (Control+C ou équivalent) reçu.\n"
-                          "--> calcul interrompu par l'utilisateur.\n"));
+    _cs_base_err_printf(_("SIGINT signal (Control+C or equivalent) received.\n"
+                          "--> computation interrupted by user.\n"));
     break;
 
   case SIGTERM:
-    _cs_base_err_printf(_("Signal SIGTERM (terminaison) reçu.\n"
-                          "--> calcul interrompu par l'environnement.\n"));
+    _cs_base_err_printf(_("SIGTERM signal (termination) received.\n"
+                          "--> computation interrupted by environment.\n"));
     break;
 
   case SIGFPE:
-    _cs_base_err_printf(_("Signal SIGFPE (exception en virgule flottante) "
-                          "intercepté !\n"));
+    _cs_base_err_printf(_("SIGFPE signal (floating point exception) "
+                          "intercepted!\n"));
     break;
 
   case SIGSEGV:
-    _cs_base_err_printf(_("Signal SIGSEGV (accès à une zone mémoire "
-                          "interdite) intercepté !\n"));
+    _cs_base_err_printf(_("SIGSEGV signal (forbidden memory area access) "
+                          "intercepted!\n"));
     break;
 
 #if defined(SIGXCPU)
   case SIGXCPU:
-    _cs_base_err_printf(_("Signal SIGXCPU (temps CPU limite atteint) "
-                          "intercepté.\n"));
+    _cs_base_err_printf(_("SIGXCPU signal (CPU time limit reached) "
+                          "intercepted.\n"));
     break;
 #endif
 
   default:
-    _cs_base_err_printf(_("Signal %d intercepté !\n"), signum);
+    _cs_base_err_printf(_("Signal %d intercepted!\n"), signum);
   }
 
   bft_backtrace_print(3);
@@ -1401,10 +1401,10 @@ void _cs_base_erreur_mpi
 #if defined MPI_MAX_OBJECT_NAME
   MPI_Comm_get_name(*comm, comm_name, &name_len);
   comm_name[name_len] = '\0';
-  _cs_base_err_printf(_("\nErreur MPI (communicateur %s):\n"
+  _cs_base_err_printf(_("\nMPI error (communicator %s):\n"
                         "%s\n"), comm_name, err_string);
 #else
-  _cs_base_err_printf(_("\nErreur MPI :\n"
+  _cs_base_err_printf(_("\nMPI error:\n"
                         "%s\n"), err_string);
 #endif
 

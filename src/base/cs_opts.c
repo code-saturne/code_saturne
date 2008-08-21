@@ -126,94 +126,91 @@ _arg_env_help(const char  *name)
   if (cs_glob_base_rang >= 1)
     return;
 
-  fprintf (e, _("Utilisation : %s [options]\n"), name);
+  fprintf (e, _("Usage: %s [options]\n"), name);
 
-  fprintf (e, _("\nOptions de la ligne de commandes :\n\n"));
+  fprintf (e, _("\nCommand line options:\n\n"));
   fprintf
-    (e, _(" -ec, --echo-comm  echo des données issues du Préprocesseur ou\n"
-          "                   des communications avec Syrthes ;\n"
-          "                   -1 : erreur seulement (défaut)\n"
-          "                    0 : impression des entêtes des messages\n"
-          "                    n : impression des entêtes des messages ainsi\n"
-          "                        que des n premiers et derniers éléments\n"));
-
+    (e, _(" -ec, --echo-comm  print received messages from the Preprocessor or\n"
+          "                   SYRTHES communications;\n"
+          "                   -1 : only error (default)\n"
+          "                    0 : print headers of messages only\n"
+          "                    n : print headers of messages and\n"
+          "                        the n first and last elements as well\n"));
   fprintf
-    (e, _(" -solcom           Noyau autonome avec maillage \"geomet\" au\n"
-          "                   format SolCom (obsolète) ;\n"));
+    (e, _(" -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
+          "                   SolCom format (obsolete);\n"));
   fprintf
-    (e, _(" -iasize           taille du tableau de travail entier IA ;\n"
-          "                    n : nombre d'entiers (défaut : automatique)\n"
-          " -rasize           taille du tableau de travail réel RA ;\n"
-          "                    n : nombre de réels (defaut : automatique)\n"));
-
+    (e, _(" -iasize           size of integer work array IA;\n"
+          "                    n: number of integers (default: automatic)\n"
+          " -rasize           size of real    work array RA;\n"
+          "                    n: number of reals (default: automatic)\n"));
 #if defined(_CS_HAVE_MPI)
   fprintf
-    (e, _(" -p, --parallel    activation du parallélisme ;\n"
-          "                    [i] n : rang MPI global du 1er processus\n"
-          "                            noyau (défaut : 0) et nombre\n"
-          "                            de processus noyau\n"));
+    (e, _(" -p, --parallel    parallelism activation;\n"
+          "                    [i] n: global MPI rank of the 1st kernel\n"
+          "                           process (default: 0) and number\n"
+          "                           of kernel processes\n"));
   fprintf
-    (e, _(" --coupl-cs        couplage avec une autre instance du code\n"
-          "                     i : rang MPI global du 1er processus\n"
-          "                         couplé\n"));
+    (e, _(" --coupl-cs        coupling with another instance of the code\n"
+          "                     i: global MPI rank of the 1er coupled\n"
+          "                        process\n"));
 #endif
   fprintf
-    (e, _(" -syrthes          couplage Syrthes aux faces sélectionnées\n"
-          "                   -2d : le maillage Syrthes associé est 2D\n"
-          "                   -X : axe préférentiel de projection\n"
-          "                        pour un maillage Syrthes 2D \n"
-          "                   -Y : axe préférentiel de projection\n"
-          "                        pour un maillage Syrthes 2D \n"
-          "                   -Z : axe préférentiel de projection\n"
-          "                        pour un maillage Syrthes 2D (défaut)\n"));
+    (e, _(" -syrthes          SYRTHES coupling at selected faces\n"
+          "                   -2d : the associated SYRTHES mesh is 2D\n"
+          "                   -X : prefered projection axis\n"
+          "                        for a 2D SYRTHES mesh\n"
+          "                   -Y : prefered projection axis\n"
+          "                        for a 2D SYRTHES mesh\n"
+          "                   -Z : prefered projection axis\n"
+          "                        for a 2D SYRTHES mesh (default)\n"));
 #if defined(_CS_HAVE_MPI)
   fprintf
-    (e, _("                   -proc <numéro> : rang MPI du processus Syrthes"
+    (e, _("                   -proc <number>: MPI rank of the SYRTHES process"
           "\n"));
 #endif
 #if defined(_CS_HAVE_SOCKET)
   fprintf
-    (e, _("                   -socket : communication par socket IP\n"
-          "                             (tubes nommés par défaut)\n"));
+    (e, _("                   -socket: communication with IP socket\n"
+          "                             (named pipes by default)\n"));
 #endif
   fprintf
-    (e, _("                   -color <numéro(s)> : couleurs des faces\n"
-          "                                        à sélectionner\n"
-          "                   -group <nom(s)>    : groupes des faces\n"
-          "                                        à sélectionner\n"
-          "                   -invsel : inversion de la sélection\n"));
+    (e, _("                   -color <number(s)>: color numbers of faces\n"
+          "                                       to select\n"
+          "                   -group <name(s)>:   group names of faces\n"
+          "                                       to select\n"
+          "                   -invsel: invert selection\n"));
   fprintf
-    (e, _(" -q, --quality     vérifications\n"
-          "                   -1 : pas de tests activés (défaut)\n"
-          "                    0 : verification de l'initialisation seule\n"
-          "                    1 à 5 : activation de tests élémentaires\n"));
+    (e, _(" -q, --quality     verifications\n"
+          "                   -1: no tests activated (default)\n"
+          "                    0: only the initialization is tested\n"
+          "                    1 à 5: elementary tests are activated\n"));
   fprintf
-    (e, _(" -cwf              <critere> découpage des faces gauches\n"
-          "                   (cut warped faces)\n"
-          "                    -post : active le post-traitement lié au \n"
-          "                            découpage des faces\n"));
+    (e, _(" -cwf              <criterion> cut warped faces\n"
+          "                    -post: activate the post-processing related\n"
+          "                           to the cutting of warped faces\n"));
   fprintf
-    (e, _(" --benchmark       performance des opérations élémentaires\n"
-          "                   [--mpitrace] opérations effectuées une seule\n"
-          "                                fois pour traces MPI légères\n"));
+    (e, _(" --benchmark       elementary operations performance\n"
+          "                   [--mpitrace] operations done only once\n"
+          "                                for light MPI traces\n"));
   fprintf
-    (e, _(" --log             redirection des sorties de rang -1 ou 0 :\n"
-          "                     0 : sortie standard\n"
-          "                     1 : sorties dans \"listing\" (défaut)\n"));
+    (e, _(" --log             output redirection for rank -1 or 0:\n"
+          "                     0: standard output\n"
+          "                     1: output in \"listing\" (default)\n"));
   fprintf
-    (e, _(" --logp            redirection des sorties de rang > 0 :\n"
-          "                    -1 : sorties supprimees (défaut)\n"
-          "                     0 : aucune redirection (si terminaux\n"
-          "                         indépendants, type deboggeur)\n"
-          "                     1 : sorties dans \"listing_n<rang>\"\n"));
+    (e, _(" --logp            output redirection for rank > 0:\n"
+          "                    -1: remove output (default)\n"
+          "                     0: no redirection (if independant\n"
+          "                        terminals, debugger type)\n"
+          "                     1: output in \"listing_n<rang>\"\n"));
 
 #if defined(_CS_HAVE_XML)
   fprintf
-    (e, _(" -param            [nom_du_fichier] fichier de paramètres\n"));
+    (e, _(" -param            [file_name] parameter file\n"));
 #endif
 
   fprintf
-    (e, _(" -h, --help        appel de l'aide (cet affichage)\n\n"));
+    (e, _(" -h, --help        this help message\n\n"));
 }
 
 /*----------------------------------------------------------------------------
@@ -395,8 +392,8 @@ _syr_read_args(int   *arg_id,
 #endif
 
   const char missing_arg_fmt[]
-    = N_("Erreur dans la spécification de la ligne de commande.\n\n"
-         "L'option \"%s\" nécessite un argument au moins.");
+    = N_("Error in the command line specification.\n\n"
+         "The \"%s\" option needs at least one argument.");
 
   arg_id_first = *arg_id;
 
@@ -571,7 +568,7 @@ cs_opts_logfile_head(int    argc,
 
   /* Now print info */
 
-  bft_printf(_("commande : \n"));
+  bft_printf(_("command: \n"));
 
   for (ii = 0 ; ii < argc ; ii++)
     bft_printf(" %s", argv[ii]);

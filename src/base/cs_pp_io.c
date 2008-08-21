@@ -255,7 +255,7 @@ cs_pp_io_t * cs_pp_io_initialize
 
   /* Info sur la création de l'interface */
 
-  bft_printf(_("\n  Lecture du pré traitement :  %s"), nom_rep);
+  bft_printf(_("\n  Reading pre-preprocessing:  %s"), nom_rep);
   bft_printf_flush();
 
 
@@ -279,7 +279,7 @@ cs_pp_io_t * cs_pp_io_finalize
 
   /* Info sur la fermeture du fichier d'interface */
 
-  bft_printf(_("\n  Fin de la lecture :  %s\n"), pp_io->nom);
+  bft_printf(_("\n  Finished reading:  %s\n"), pp_io->nom);
   bft_printf_flush();
 
   _cs_pp_io_fic_ferme(pp_io);
@@ -398,9 +398,8 @@ void cs_pp_io_read_header
 
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier de pré traitement : "
-                  "\"%s\".\n"
-                  "Le type de données \"%s\" n'est pas reconnu."),
+                _("Error while reading the pre-processing file: \"%s\".\n"
+                  "The data type \"%s\" is unknown."),
                 pp_io->nom, nom_typ_elt);
 
   }
@@ -661,13 +660,11 @@ static void _cs_pp_io_fic_ouvre
     if (strcmp(chaine_magique_lue, chaine_magique) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier de pré traitement : "
-                  "\"%s\".\n"
-                  "Le format de l'interface n'est pas à la bonne version.\n"
-                  "La chaîne magique repère la version du format "
-                  "d'interface :\n"
-                  "chaîne magique lue      : \"%s\"\n"
-                  "chaîne magique actuelle : \"%s\"\n"),
+                _("Error while reading pre-processing file: \"%s\".\n"
+                  "The interface version is not correct.\n"
+                  "The magic string indicates the interface format version:\n"
+                  "magic string read:     \"%s\"\n"
+                  "magic string expected: \"%s\"\n"),
                 pp_io->nom, chaine_magique_lue, chaine_magique);
 
     }
@@ -715,11 +712,11 @@ static void _cs_pp_io_echo_pre
   switch(pp_io->mode) {
 
   case CS_PP_IO_MODE_READ:
-    bft_printf(_("\nMessage lu sur \"%s\" :\n"), pp_io->nom);
+    bft_printf(_("\nMessage read on \"%s\":\n"), pp_io->nom);
     break;
 
   case CS_PP_IO_MODE_WRITE:
-    bft_printf(_("\nMessage écrit sur \"%s\" :\n"), pp_io->nom);
+    bft_printf(_("\nMessage written on \"%s\":\n"), pp_io->nom);
     break;
 
   default:
@@ -752,8 +749,8 @@ static void _cs_pp_io_echo_entete
   strncpy(nom_rub_ecr, nom_rub,  CS_PP_IO_NAME_LEN);
   nom_rub_ecr[CS_PP_IO_NAME_LEN] = '\0';
 
-  bft_printf(_("    nom de la rubrique    : \"%s\"\n"
-               "    nombre d'éléments     : %d\n"),
+  bft_printf(_("    section name         : \"%s\"\n"
+               "    number of elements   : %d\n"),
              nom_rub_ecr, nbr_elt);
 
   if (nbr_elt > 0) {
@@ -786,7 +783,7 @@ static void _cs_pp_io_echo_entete
              || typ_elt == CS_TYPE_cs_real_t);
     }
 
-    bft_printf(_("    nom du type d'élément : \"%s\"\n"), nom_typ);
+    bft_printf(_("    element type name:      \"%s\"\n"), nom_typ);
 
   }
 
@@ -817,11 +814,11 @@ static void _cs_pp_io_echo_donnees
 
   if (echo * 2 < nbr_elt) {
     echo_fin = echo;
-    bft_printf(_("    %d premiers et derniers éléments :\n"), echo);
+    bft_printf(_("    %d first and last elements:\n"), echo);
   }
   else {
     echo_fin = nbr_elt;
-    bft_printf(_("    éléments :\n"));
+    bft_printf(_("    elements:\n"));
   }
 
   do {

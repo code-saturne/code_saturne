@@ -359,16 +359,16 @@ _dot_product_1(int                  global,
 
   if (_global == 0)
     bft_printf(_("\n"
-                 "Produit scalaire local simple %s avec BLAS\n"
-                 "------------------------------------------\n"),
+                 "Simple local dot product %s with BLAS\n"
+                 "-------------------------------------\n"),
                type_name);
   else
     bft_printf(_("\n"
-                 "Produit scalaire global simple %s avec BLAS\n"
-                 "--------------------------------------------\n"),
+                 "Simple global dot product %s with BLAS\n"
+                 "---------------------------------------\n"),
                type_name);
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -396,16 +396,16 @@ _dot_product_1(int                  global,
 
   if (_global == 0)
     bft_printf(_("\n"
-                 "Produit scalaire local simple %s\n"
-                 "---------------------------------\n"),
+                 "Simple local dot product %s\n"
+                 "---------------------------\n"),
                type_name);
   else
     bft_printf(_("\n"
-                 "Produit scalaire global simple %s\n"
-                 "---------------------------------\n"),
+                 "Simple global dot product %s\n"
+                 "----------------------------\n"),
                type_name);
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -458,9 +458,9 @@ _dot_product_2(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit scalaire local double X.X, X.Y avec BLAS\n"
-               "------------------------------------------------\n"));
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+               "Double local dot product X.X, Y.Y with BLAS\n"
+               "-------------------------------------------\n"));
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -482,10 +482,10 @@ _dot_product_2(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit scalaire local double X.X, X.Y\n"
-               "--------------------------------------\n"));
+               "Double local dot product X.X, Y.Y\n"
+               "---------------------------------\n"));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -543,10 +543,10 @@ _axpy_(int                n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Y <- aX + Y avec BLAS\n"
+               "Y <- aX + Y with BLAS\n"
                "---------------------\n"));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -570,7 +570,7 @@ _axpy_(int                n_runs,
                "Y <- aX + Y\n"
                "-----------\n"));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, 0, wt, cpu);
@@ -806,10 +806,10 @@ _matrix_creation_test(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Construction / Destruction d'une matrice (%s)\n"
-               "----------------------------------------\n"), _(type_name));
+               "Matrix construction / destruction (%s)\n"
+               "---------------------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d)\n"), n_runs);
+  bft_printf(_("  (calls: %d)\n"), n_runs);
 
   _print_overhead(wt, cpu);
 
@@ -881,10 +881,10 @@ _matrix_assignment_test(int                  n_runs,
   cs_matrix_destroy(&m);
 
   bft_printf(_("\n"
-               "Affectation de valeurs à une matrice (%s)\n"
-               "------------------------------------\n"), _(type_name));
+               "Matrix value assignment (%s)\n"
+               "-----------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d)\n"), n_runs);
+  bft_printf(_("  (calls: %d)\n"), n_runs);
 
   _print_overhead(wt, cpu);
 
@@ -979,10 +979,10 @@ _matrix_vector_test(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit matrice.vecteur (%s)\n"
-               "-----------------------\n"), _(type_name));
+               "Matrix.vector product (%s)\n"
+               "---------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, n_ops_glob, wt, cpu);
@@ -1005,10 +1005,10 @@ _matrix_vector_test(int                  n_runs,
     _timer_stop(n_runs, &wt, &cpu);
 
     bft_printf(_("\n"
-                 "Produit matrice.vecteur local (%s)\n"
-                 "-----------------------------\n"), _(type_name));
+                 "Local matrix.vector product (%s)\n"
+                 "---------------------------\n"), _(type_name));
 
-    bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+    bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
                n_runs, test_sum);
 
     _print_stats(n_ops, n_ops_glob, wt, cpu);
@@ -1035,10 +1035,10 @@ _matrix_vector_test(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit matrice.vecteur alpha.A.x + beta.y (%s)\n"
-               "------------------------------------------\n"), _(type_name));
+               "Matrix.vector product alpha.A.x + beta.y (%s)\n"
+               "----------------------------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, n_ops_glob, wt, cpu);
@@ -1065,10 +1065,10 @@ _matrix_vector_test(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit (matrice-diagonale).vecteur (%s)\n"
-               "-----------------------------------\n"), _(type_name));
+               "(Matrix-diagonal).vector product (%s)\n"
+               "--------------------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, n_ops_glob, wt, cpu);
@@ -1115,10 +1115,10 @@ _matrix_vector_test(int                  n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Produit (matrice sans diagonale).vecteur (%s)\n"
+               "(Matrix without diagonal).vector product (%s)\n"
                "----------------------------------------\n"), _(type_name));
 
-  bft_printf(_("  (appels : %d;  somme test : %12.5f)\n"),
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
              n_runs, test_sum);
 
   _print_stats(n_ops, n_ops_glob, wt, cpu);
@@ -1200,8 +1200,8 @@ cs_benchmark(int  mpi_trace_mode)
   /*-----------*/
 
   bft_printf(_("\n"
-               "Activation du mode Benchmark\n"
-               "============================\n"));
+               "Benchmark mode activated\n"
+               "========================\n"));
 
   /* Dot product test */
   /*------------------*/

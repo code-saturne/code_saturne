@@ -179,8 +179,8 @@ _display_histograms(int         n_steps,
 
   /* Print base min, max, and increment */
 
-  bft_printf(_("    valeur minimale =       %10.5e\n"), (double)var_min);
-  bft_printf(_("    valeur maximale =       %10.5e\n\n"), (double)var_max);
+  bft_printf(_("    minimum value =         %10.5e\n"), (double)var_min);
+  bft_printf(_("    maximum value =         %10.5e\n\n"), (double)var_max);
 
   var_step = CS_ABS(var_max - var_min) / n_steps;
 
@@ -923,12 +923,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogramme du gauchissement des faces internes :\n\n"));
+    bft_printf(_("\n  Histogram of the interior faces warping:\n\n"));
     _int_face_histogram(mesh, i_face_warping);
 
     if (mesh->n_g_b_faces > 0) {
 
-      bft_printf(_("\n  Histogramme du gauchissement des faces de bord:\n\n"));
+      bft_printf(_("\n  Histogram of the boundary faces warping:\n\n"));
       _histogram(n_b_faces, b_face_warping);
 
     }
@@ -1021,12 +1021,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogramme des coefficients de pondération des"
-               " faces internes :\n\n"));
+    bft_printf(_("\n  Histogram of the interior faces "
+                 "weighting coefficient:\n\n"));
     _int_face_histogram(mesh, weighting);
 
-    bft_printf(_("\n  Histogramme des coefficients de décentrement"
-               " des faces internes :\n\n"));
+    bft_printf(_("\n  Histogram of the interior faces "
+                 "off-centering coefficient:\n\n"));
     _int_face_histogram(mesh, offsetting);
 
     /* Post processing */
@@ -1123,14 +1123,14 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogramme de la non-orthogonalité des"
-               " faces internes (en degrés) :\n\n"));
+    bft_printf(_("\n  Histogram of the interior faces "
+                 "non-orthogonality coefficient (in degrees):\n\n"));
     _int_face_histogram(mesh, i_face_ortho);
 
     if (mesh->n_g_b_faces > 0) {
 
-      bft_printf(_("\n  Histogramme de la non-orthogonalité des"
-                 " faces de bord (en degrés) :\n\n"));
+      bft_printf(_("\n  Histogram of the boundary faces "
+                   "non-orthogonality coefficient (in degrees):\n\n"));
       _histogram(n_b_faces, b_face_ortho);
 
     }
@@ -1199,7 +1199,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogramme du volume des cellules :\n\n")) ;
+    bft_printf(_("\n  Histogram of cell volumes:\n\n"));
     _histogram(n_cells, mesh_quantities->cell_vol);
 
     /* Post processing */

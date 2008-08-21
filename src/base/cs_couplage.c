@@ -240,8 +240,7 @@ void CS_PROCF (defcpl, DEFCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -382,8 +381,7 @@ void CS_PROCF (nbecpl, NBECPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -451,8 +449,7 @@ void CS_PROCF (lelcpl, LELCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -465,9 +462,9 @@ void CS_PROCF (lelcpl, LELCPL)
 
   if (*ncecpl != _ncecpl || *nfbcpl != _nfbcpl)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage %d: arguments incohérents pour LELCPL().\n"
-                "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
-                "On devrait avoir les valeurs %d et %d pour ce couplage."),
+              _("Coupling %d: inconsistent arguments for LELCPL()\n"
+                "NCECPL = %d and NFBCPL = %d are indicated.\n"
+                "The values for this coupling should be %d and %d."),
               *numcpl, (int)(*ncecpl), (int)(*nfbcpl),
               (int)_ncecpl, (int)_nfbcpl);
 
@@ -533,8 +530,7 @@ void CS_PROCF (lencpl, LENCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -547,9 +543,9 @@ void CS_PROCF (lencpl, LENCPL)
 
   if (*ncencp != _ncencp || *nfbncp != _nfbncp)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage %d: arguments incohérents pour LELNCP().\n"
-                "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
-                "On devrait avoir les valeurs %d et %d pour ce couplage."),
+              _("Coupling %d: inconsistent arguments for LELNCP()\n"
+                "NCENCP = %d and NFBNCP = %d are indicated.\n"
+                "The values for this coupling should be %d and %d."),
               *numcpl, (int)(*ncencp), (int)(*nfbncp),
               (int)_ncencp, (int)_nfbncp);
 
@@ -598,8 +594,7 @@ void CS_PROCF (npdcpl, NPDCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -674,8 +669,7 @@ void CS_PROCF (coocpl, COOCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -699,9 +693,9 @@ void CS_PROCF (coocpl, COOCPL)
 
   if (*nbrpts != n_pts_dist)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage %d: arguments incohérents pour COOCPL().\n"
-                "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
-                "On devrait avoir la valeur %d pour NBRPTS."),
+              _("Coupling %d: inconsistent arguments for COOCPL()\n"
+                "ITYDIS = %d and NBRPTS = %d are indicated.\n"
+                "The value for NBRPTS should be %d."),
               *numcpl, (int)(*itydis), (int)(*nbrpts), (int)n_pts_dist);
 
   /* Création des listes locales */
@@ -771,8 +765,7 @@ void CS_PROCF (varcpl, VARCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -789,16 +782,16 @@ void CS_PROCF (varcpl, VARCPL)
 
   if (*nbrdis > 0 && *nbrdis != n_val_dist_ref)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage %d: arguments incohérents pour VARCPL().\n"
-                "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
-                "On devrait avoir la valeur 0 ou %d pour NBRDIS."),
+              _("Coupling %d: inconsistent arguments for VARCPL()\n"
+                "ITYVAR = %d and NBRDIS = %d are indicated.\n"
+                "NBRDIS should be 0 or %d."),
               *numcpl, (int)(*ityvar), (int)(*nbrdis), (int)n_val_dist_ref);
 
   if (*nbrloc > 0 && *nbrloc != n_val_loc_ref)
     bft_error(__FILE__, __LINE__, 0,
-              _("Couplage %d: arguments incohérents pour VARCPL().\n"
-                "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
-                "On devrait avoir la valeur 0 ou %d pour NBRLOC."),
+              _("Coupling %d: inconsistent arguments for VARCPL()\n"
+                "ITYVAR = %d and NBRLOC = %d are indicated.\n"
+                "NBRLOC should be 0 or %d."),
               *numcpl, (int)(*ityvar), (int)(*nbrloc), (int)n_val_loc_ref);
 
   /* Création des listes locales */
@@ -865,8 +858,7 @@ void CS_PROCF (tbicpl, TBICPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -943,8 +935,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage %d impossible ; "
-                " on a %d couplages"),
+              _("Impossible coupling number %d; there are %d couplings"),
               *numcpl, cs_glob_nbr_couplages);
   else
     coupl = cs_glob_couplages[*numcpl - 1];
@@ -1106,16 +1097,16 @@ static cs_couplage_t  * cs_loc_couplage_cree
 
     if (rang_deb > r_loc_min && rang_deb <= r_loc_max)
       bft_error(__FILE__, __LINE__, 0,
-                _("Définition du couplage impossible : on demande un rang de\n"
-                  "tête de groupe distant égal à %d, alors que le groupe\n"
-                  "local correspond aux rangs %d à %d\n"),
+                _("Coupling definition is impossible: a distant root rank equal to\n"
+                  "%d is required, whereas the local group corresponds to\n"
+                  "rank %d to %d\n"),
                 (int)rang_deb, r_loc_min, r_loc_max);
 
     else if (rang_deb < 0 || rang_deb >= nb_rangs_glob)
       bft_error(__FILE__, __LINE__, 0,
-                _("Définition du couplage impossible : on demande un rang de\n"
-                  "tête de groupe distant égal à %d, alors que les rangs\n"
-                  "globaux (MPI_COMM_WORLD) s'étendent de 0 à %d\n"),
+                _("Coupling definition is impossible: a distant root rank equal to\n"
+                  "%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
+                  "range from to 0 to %d\n"),
                 (int)rang_deb, nb_rangs_glob - 1);
 
     /* Cas d'un couplage interne au groupe de processus */
