@@ -439,7 +439,7 @@ _syr_read_args(int   *arg_id,
       /* Check that at least one color has been defined */
       if (ii_save == ii) {
         _arg_env_help(argv[0]);
-        bft_error(__FILE__, __LINE__, 0, missing_arg_fmt, s);
+        bft_error(__FILE__, __LINE__, 0, _(missing_arg_fmt), s);
       }
     }
     else if (strcmp(s, "-group") == 0) {
@@ -457,7 +457,7 @@ _syr_read_args(int   *arg_id,
       /* Check that at least one group has been defined */
       if (ii_save == ii) {
         _arg_env_help(argv[0]);
-        bft_error(__FILE__, __LINE__, 0, missing_arg_fmt, s);
+        bft_error(__FILE__, __LINE__, 0, _(missing_arg_fmt), s);
       }
     }
     else
