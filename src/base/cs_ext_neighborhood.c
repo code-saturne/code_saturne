@@ -975,12 +975,13 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
         || mesh->cell_cells_idx == NULL
         || mesh->halo_type == CS_HALO_STANDARD) {
       bft_printf
-        (_("\nATTENTION\n"
-           "Le voisinage étendu est nul alors que la méthode de calcul\n"
-           "des gradients par moindres carrés sur support étendu est\n"
-           "activée. Ceci peut arriver dans certains cas spécifiques\n"
-           "(maillage 1D). Vérifiez que c'est bien votre cas, sinon\n"
-           "contactez le support.\n"));
+        (_("\n"
+           "WARNING\n"
+           "The extended neighborhood is empty whereas the least-squares\n"
+           "method on extended neighborhood for gradient computation\n"
+           "is activated. This situation can arise in some particular\n"
+           "cases (1D mesh). Verify that it is your case, otherwise\n"
+           "contact support.\n"));
     }
     else {
 
@@ -1114,12 +1115,12 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     bft_printf
       (_("\n"
-         " Limitation du voisinage étendu par non-orthogonalité\n"
-         " ----------------------------------------------------\n"
+         " Extended neighborhood reduced by non-orthogonality\n"
+         " --------------------------------------------------\n"
          "\n"
-         " Taille de la connectivité cellules-cellules complète : %12lu\n"
-         " Taille de la connectivité cellules-cellules filtrée :  %12lu\n"
-         " %lu cellules supprimées soit un ratio de %4.2g %% utilisées\n"),
+         " Size of complete cell-cell connectivity: %12lu\n"
+         " Size of filtered cell-cell conectivity:  %12lu\n"
+         " %lu cells removed, for a ratio of %4.2g %% used\n"),
        (unsigned long)init_cell_cells_connect_size,
        (unsigned long)(init_cell_cells_connect_size - n_deleted_cells),
        (unsigned long)n_deleted_cells,
@@ -1128,7 +1129,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 #if 0 /* For debugging purpose */
       for (i = 0; i < mesh->n_cells ; i++) {
         cs_int_t  j;
-        bft_printf(" cellule %d :: ", i+1);
+        bft_printf(" cell %d :: ", i+1);
         for (j = mesh->cell_cells_idx[i]-1;
              j < mesh->cell_cells_idx[i+1]-1;
              j++)

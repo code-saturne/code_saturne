@@ -155,9 +155,9 @@ void CS_PROCF(tstsyr, TSTSYR)
 
         cs_base_warn(__FILE__, __LINE__);
         bft_printf(_("========================================================\n"
-                     "   ** ARRET PAR DEMANDE DE SYRTHES \n"
+                     "   ** ABORT ON SYRTHES DEMAND\n"
                      "      -------------------------------------- \n"
-                     "      MESSAGE RECU    : \"%s\"\n"
+                     "      RECEIVED MESSAGE    : \"%s\"\n"
                      "========================================================\n"),
                    section_name);
 
@@ -171,9 +171,9 @@ void CS_PROCF(tstsyr, TSTSYR)
         cs_base_warn(__FILE__, __LINE__);
         bft_printf
           (_("========================================================\n"
-             "   ** ARRET PAR DEMANDE DE SYRTHES \n"
+             "   ** ABORT ON SYRTHES DEMAND\n"
              "      -------------------------------------- \n"
-             "      MESSAGE RECU    : \"%s\"\n"
+             "      RECEIVED MESSAGE    : \"%s\"\n"
              "========================================================\n"),
            section_name);
 
@@ -184,10 +184,10 @@ void CS_PROCF(tstsyr, TSTSYR)
         bft_error
           (__FILE__, __LINE__, 0,
            _("========================================================\n"
-             "   ** MESSAGE INATTENDU DANS TSTSYI \n"
+             "   ** UNEXPECTED MESSAGE IN TSTSYI \n"
              "      -------------------------------------- \n"
-             "      MESSAGE RECU    : \"%s\"\n"
-             "      MESSAGE ATTENDU : cmd:iter:deb \n"
+             "      RECEIVED MESSAGE: \"%s\"\n"
+             "      EXPECTED MESSAGE: cmd:iter:deb \n"
              "========================================================\n"),
            section_name);
       }
@@ -259,8 +259,8 @@ void CS_PROCF(itdsyr, ITDSYR)
 
       else
         bft_error(__FILE__, __LINE__, 0,
-                  _("Le numéro d'itération courant \"%d\" est supérieur au "
-                    "numéro d'itération maximal demandé \"%d\" \n"),
+                  _("The current iteration number \"%d\" is greater than the requested\n"
+                    "maximum number iteration \"%d\" \n"),
                   *ntcabs, *ntmabs);
 
     }
@@ -303,8 +303,8 @@ void CS_PROCF (varsyi, VARSYI)
 
   if (*numsyr < 1 || *numsyr > n_coupl)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage SYRTHES %d impossible ; "
-                " on a %d couplages"),
+              _("SYRTHES coupling number %d impossible; "
+                "there are %d couplings"),
               *numsyr, n_coupl);
   else {
 
@@ -335,9 +335,9 @@ void CS_PROCF (varsyi, VARSYI)
         || (header.nbr_elt > 0 && header.typ_elt != CS_TYPE_cs_real_t)
         || header.nbr_elt != n_vertices)
       bft_error(__FILE__, __LINE__, 0,
-                _("Message inatendu dans le couplage SYRTHES %d :\n"
-                  " on attendait \"%s\" (%d éléments, type %d)\n"
-                  " on a ici     \"%s\"(%d éléments, type %d)\n"),
+                _("Unexpected message in the SYRTHES coupling %d:\n"
+                  " it was expected \"%s\" (%d elements, type %d)\n"
+                  " it is received  \"%s\" (%d elements, type %d)\n"),
                 *numsyr, section_name, n_vertices, (int)CS_TYPE_cs_real_t,
                 header.nom_rub, header.nbr_elt, (int)(header.typ_elt));
 
@@ -396,8 +396,8 @@ void CS_PROCF (varsyo, VARSYO)
 
   if (*numsyr < 1 || *numsyr > n_coupl)
     bft_error(__FILE__, __LINE__, 0,
-              _("Numéro de couplage SYRTHES %d impossible ; "
-                " on a %d couplages"),
+              _("SYRTHES coupling number %d impossible; "
+                "there are %d couplings"),
               *numsyr, n_coupl);
   else {
 

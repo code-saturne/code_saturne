@@ -1,3 +1,6 @@
+* 21/08/2008 - David Monfort <david.monfort@edf.fr>
+  Merging from the 1.3 branch (-r 614:622, C output translation)
+
 * 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove the pipe communication mode for SYRTHES coupling.
   modified routines:

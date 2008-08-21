@@ -350,17 +350,17 @@ cs_mesh_select_dump(cs_mesh_select_t  *selection)
   assert(selection != NULL);
 
   if (selection->inv_selection == true)
-    bft_printf(_("Inversion de la sélection demandé\n"));
+    bft_printf(_("Selection inversion requested\n"));
 
-  bft_printf(_("\nCouleur(s) des faces couplées:\n"));
-  bft_printf(_("Nombre de couleur(s): %i\n"),selection->n_colors);
+  bft_printf(_("\nColor(s) of coupled faces:\n"));
+  bft_printf(_("Number of color(s): %i\n"),selection->n_colors);
   for (i = 0; i < selection->n_colors; i++)
-    bft_printf(_("Couleur numéro: %i\n"), selection->colors[i]);
+    bft_printf(_("Color number: %i\n"), selection->colors[i]);
 
-  bft_printf(_("\nGroupes(s) des faces couplées:\n"));
-  bft_printf(_("Nombre de groupe(s): %i\n"),selection->n_groups);
+  bft_printf(_("\nGroup(s) of coupled faces:\n"));
+  bft_printf(_("Number of group(s): %i\n"),selection->n_groups);
   for (i = 0; i < selection->n_groups; i++)
-    bft_printf(_("Groupe: %s\n"), selection->groups[i]);
+    bft_printf(_("Group: %s\n"), selection->groups[i]);
 
   bft_printf_flush();
 }

@@ -140,8 +140,7 @@ static int             cs_glob_comm_socket = 0;
 struct sockaddr_in     cs_glob_comm_addr_sock;
 
 static char  cs_glob_comm_err_socket[]
-  = N_("Erreur pour la communication par socket : "
-       " %s (noeud %4d)\n");
+= N_("Error in socket communication:  %s (node %4d)\n");
 
 #endif /* _CS_HAVE_SOCKET */
 
@@ -393,7 +392,7 @@ cs_syr3_comm_t * cs_syr3_comm_initialise
 
   /* Info sur la création de l'interface */
 
-  bft_printf(_("\n  Ouverture de la communication :  %s ..."), comm->nom);
+  bft_printf(_("\n  Opening communication:  %s..."), comm->nom);
   bft_printf_flush();
 
 #if defined(_CS_HAVE_SOCKET)
@@ -475,7 +474,7 @@ cs_syr3_comm_t * cs_syr3_comm_termine
 
   /* Info sur la fermeture du fichier d'interface */
 
-  bft_printf(_("\n  Fermeture de la communication :  %s\n"), comm->nom);
+  bft_printf(_("\n  Closing communication:  %s\n"), comm->nom);
   bft_printf_flush();
 
 #if defined(_CS_HAVE_SOCKET)
@@ -983,8 +982,7 @@ void cs_syr3_comm_init_socket
 
   if (cs_glob_comm_socket == -1)
     bft_error(__FILE__, __LINE__, errno,
-              _("Erreur d'initialisation du support de communication "
-                "par socket.\n"));
+              _("Initialization error for socket communication support.\n"));
 
   /* Préparation à l'utilisation */
 
@@ -1009,7 +1007,7 @@ void cs_syr3_comm_init_socket
 
   if (gethostname(chaine, CS_LOC_SYR3_COMM_LNG_HOSTNAME) < 0)
     bft_error(__FILE__, __LINE__, errno,
-              _("Erreur de récupération du nom de la machine"));
+              _("Error obtaining computer's name"));
   chaine[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
 
   ent_hote = gethostbyname(chaine);
@@ -1019,13 +1017,11 @@ void cs_syr3_comm_init_socket
            (struct sockaddr *)&addr_sock,
            long_sock) != 0)
     bft_error(__FILE__, __LINE__, errno,
-              _("Erreur d'initialisation du support de communication "
-                "par socket.\n"));
+              _("Initialization error for socket communication support.\n"));
 
   if (listen(cs_glob_comm_socket, nbr_connect_max) < 0)
     bft_error(__FILE__, __LINE__, errno,
-              _("Erreur d'initialisation du support de communication "
-                "par socket.\n"));
+              _("Initialization error for socket communication support.\n"));
 
   /* Récupération du numéro de service affecté */
 
@@ -1033,8 +1029,7 @@ void cs_syr3_comm_init_socket
                   (struct sockaddr *)&addr_sock,
                   &long_sock) != 0)
     bft_error(__FILE__, __LINE__, errno,
-              _("Erreur d'initialisation du support de communication "
-                "par socket.\n"));
+              _("Initialization error for socket communication support.\n"));
 
   num_port = addr_sock.sin_port;
   if (cs_glob_comm_little_endian == true) {
@@ -1058,7 +1053,7 @@ void cs_syr3_comm_init_socket
     /* Impression du message de transfert des caractéristiques
        sur le listing pour le rang "0" */
 
-    bft_printf(_("\n  Communication possible sur %s, port %d\n\n"),
+    bft_printf(_("\n  Available communication on %s, port %d\n\n"),
                chaine, num_port);
     bft_printf_flush();
 
@@ -1085,7 +1080,7 @@ void cs_syr3_comm_termine_socket
 
   close(cs_glob_comm_socket);
 
-  bft_printf(_("\nFermeture du socket ...\t [ok]\n"));
+  bft_printf(_("\nClosing socket...\t [ok]\n"));
   bft_printf_flush();
 
 }
@@ -1128,7 +1123,7 @@ static void cs_loc_syr3_comm_mpi_ouvre
   {
     int rang;
 
-    bft_printf(_("Instrumentation de la communication MPI via MPE\n"));
+    bft_printf(_("MPI communication instrumentation using MPE\n"));
     bft_printf_flush();
 
     cs_glob_mpe_comm_ouvre = MPE_Log_get_event_number();
@@ -1165,9 +1160,9 @@ static void cs_loc_syr3_comm_mpi_ouvre
   if (comm->rang_proc >= comm_size)
 
     bft_error(__FILE__, __LINE__, 0,
-              _("Impossible d'établir la communication : %s\n"
-                "car le rang du processus recherché (%d)\n"
-                "est supérieur ou égal au nombre de processus MPI (%d)."),
+              _("Impossible to establish the communication: %s\n"
+                "because the requested process rank (%d)\n"
+                "is greater than or equal to the number of MPI processes (%d)"),
               comm->nom, comm->rang_proc, comm_size);
 
 
@@ -1579,8 +1574,8 @@ static void cs_loc_syr3_comm_mpi_msg_err
   MPI_Error_string(error, buffer, &buffer_len);
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Erreur MPI pour la communication :  %s\n"
-              "Type d'erreur : %s"), comm->nom, buffer);
+            _("MPI error for communication:  %s\n"
+              "Error type: %s"), comm->nom, buffer);
 
 }
 
@@ -1648,8 +1643,8 @@ static void cs_loc_syr3_comm_sock_connect
 
     if (ierror < 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur lors de l'envoi via MPI du nom de l'hôte "
-                  "en initialisant les sockets.\n"));
+                _("Error while sending the host name through MPI in sockets "
+                  "initialization.\n"));
 
     /* Envoie du numéro de port */
 
@@ -1658,8 +1653,8 @@ static void cs_loc_syr3_comm_sock_connect
 
     if (ierror < 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur lors de l'envoi via MPI du numéro du port "
-                  "en initialisant les sockets.\n"));
+                _("Error while sending the port number through MPI in sockets "
+                  "initialization.\n"));
 
     if (rang != 0)
       comm->sock = accept(cs_glob_comm_socket,
@@ -1668,7 +1663,7 @@ static void cs_loc_syr3_comm_sock_connect
 
 #else
     bft_error(__FILE__, __LINE__, 0,
-              _("Besoin de MPI lors de l'initialisation des sockets.\n"));
+              _("MPI is needed for socket initialization.\n"));
 #endif
 
     /* envoie depuis le rang 0 par les sockets des noms des machines
@@ -1682,7 +1677,7 @@ static void cs_loc_syr3_comm_sock_connect
 
       if (write(comm->sock, str_taille, 4) < 4)
         bft_error(__FILE__, __LINE__, errno,
-                  _("Erreur de communication par socket\n"));
+                  _("Error in socket communication\n"));
 
       for (ind = 1; ind < cs_glob_base_nbr; ind++) {
 
@@ -1691,7 +1686,7 @@ static void cs_loc_syr3_comm_sock_connect
         if (write(comm->sock, &(host_names[lng_hostname*ind]), lng_hostname)
             < lng_hostname)
           bft_error(__FILE__, __LINE__, errno,
-                    _("Erreur de communication par socket\n"));
+                    _("Error in socket communication\n"));
 
         /* Envoi du numéro de port */
 
@@ -1699,7 +1694,7 @@ static void cs_loc_syr3_comm_sock_connect
 
         if (write(comm->sock, str_taille, 6) < 6)
           bft_error(__FILE__, __LINE__, errno,
-                    _("Erreur de communication par socket\n"));
+                    _("Error in socket communication\n"));
 
       }
 
@@ -1741,8 +1736,8 @@ static void cs_loc_syr3_comm_sock_ouvre
 
   if (strncmp(nom_tmp, CS_SYR3_COMM_SOCKET_ENTETE, taille != 0))
     bft_error(__FILE__, __LINE__, 0,
-              _("Tentative de connexion au port de communication avec\n"
-                "un format de message non reconnu\n"));
+              _("Attempt to connect to the communication port with\n"
+                "an unknown message format\n"));
 
   /* Taille du nom du fichier en communication */
 
@@ -1767,16 +1762,15 @@ static void cs_loc_syr3_comm_sock_ouvre
 
     if (strcmp(nom_tmp, nom_fic) != 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Nom du fichier de communication incohérent.\n"
-                  "Nom reçu: \"%s\"\n"
-                  "Nom attendu: \"%s\"\n"),
+                _("Inconsistent name for the communication file.\n"
+                  "Received name: \"%s\"\n"
+                  "Expected name: \"%s\"\n"),
                 nom_tmp, nom_fic);
 
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("La longueur du nom du fichier de communication est "
-                "trop importante\n"));
+              _("The length of the communication file name is too large\n"));
 
   /*-----------------------------------------------------*/
   /* Écriture ou lecture éventuelle d'une chaine magique */
@@ -1801,13 +1795,11 @@ static void cs_loc_syr3_comm_sock_ouvre
     if (strcmp(chaine_magique_lue, chaine_magique) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à l'initialisation de la communication : "
-                  "\"%s\".\n"
-                  "Le format de l'interface n'est pas à la bonne version.\n"
-                  "La chaîne magique repère la version du format "
-                  "d'interface :\n"
-                  "chaîne magique lue      : \"%s\"\n"
-                  "chaîne magique actuelle : \"%s\"\n"),
+                _("Error while initializating communication: \"%s\".\n"
+                  "The interface version is not correct.\n"
+                  "The magic string indicates the interface format version:\n"
+                  "magic string read:     \"%s\"\n"
+                  "magic string expected: \"%s\"\n"),
                 comm->nom, chaine_magique_lue, chaine_magique);
 
     }
@@ -1838,8 +1830,8 @@ static void cs_loc_syr3_comm_sock_ferme
 {
   if (close(comm->sock) != 0)
     bft_error(__FILE__, __LINE__, errno,
-              _("Communication %s) :\n"
-                "Erreur à la fermeture du socket.\n"),
+              _("Communication %s):\n"
+                "Error closing the socket.\n"),
               comm->nom);
 
   comm->sock = -1;
@@ -1917,8 +1909,8 @@ static void cs_loc_syr3_comm_ecrit_sock
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
-                _("Communication %s :\n"
-                  "Erreur d'envoi de données par socket.\n"),
+                _("Communication %s:\n"
+                  "Error sending data by socket.\n"),
                 comm->nom);
 
     ind_deb += ret;
@@ -1990,8 +1982,8 @@ static void cs_loc_syr3_comm_lit_sock
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
-                _("Communication %s :\n"
-                  "Erreur de réception de données par socket.\n"),
+                _("Communication %s:\n"
+                  "Error while receiving data by socket.\n"),
                 comm->nom);
 
     ind_deb += ret;
@@ -2020,11 +2012,11 @@ static void cs_loc_syr3_comm_echo_pre
   switch(comm->mode) {
 
   case CS_SYR3_COMM_MODE_RECEPTION:
-    bft_printf(_("\nMessage reçu sur \"%s\" :\n"), comm->nom);
+    bft_printf(_("\nMessage received on \"%s\":\n"), comm->nom);
     break;
 
   case CS_SYR3_COMM_MODE_EMISSION:
-    bft_printf(_("\nMessage envoyé sur \"%s\" :\n"), comm->nom);
+    bft_printf(_("\nMessage sent on \"%s\":\n"), comm->nom);
     break;
 
   default:
@@ -2057,9 +2049,9 @@ static void cs_loc_syr3_comm_echo_entete
   strncpy(nom_rub_ecr, nom_rub,  CS_SYR3_COMM_LNG_NOM_RUB);
   nom_rub_ecr[CS_SYR3_COMM_LNG_NOM_RUB] = '\0';
 
-  bft_printf(_("    numéro de rubrique    : %d\n"
-               "    nom de la rubrique    : \"%s\"\n"
-               "    nombre d'éléments     : %d\n"),
+  bft_printf(_("    section number:        %d\n"
+               "    section name:          \"%s\"\n"
+               "    number of elements:    %d\n"),
              num_rub, nom_rub_ecr, nbr_elt);
 
   if (nbr_elt > 0) {
@@ -2082,7 +2074,7 @@ static void cs_loc_syr3_comm_echo_entete
              || typ_elt == CS_TYPE_cs_real_t);
     }
 
-    bft_printf(_("    nom du type d'élément : \"%s\"\n"), nom_typ);
+    bft_printf(_("    element type name:      \"%s\"\n"), nom_typ);
 
   }
 
@@ -2113,11 +2105,11 @@ static void cs_loc_syr3_comm_echo_donnees
 
   if (echo * 2 < nbr_elt) {
     echo_fin = echo;
-    bft_printf(_("    %d premiers et derniers éléments :\n"), echo);
+    bft_printf(_("    %d first and last elements:\n"), echo);
   }
   else {
     echo_fin = nbr_elt;
-    bft_printf(_("    éléments :\n"));
+    bft_printf(_("    elements:\n"));
   }
 
   do {

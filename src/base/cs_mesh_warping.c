@@ -1026,15 +1026,15 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
 
   if (fvm_order_local_test(NULL, *p_global_face_num, n_init_faces) == false)
     bft_error(__FILE__, __LINE__, 0,
-              _("On a découpé les faces préalablement renumérotées.\n"
-                "Ce cas ne devrait pas se produire, car on devrait découper\n"
-                "les entités de maillage avant de les renuméroter."));
+              _("The faces have been renumbered before cutting.\n"
+                "This case should not arise, because the mesh entities\n"
+                "should be cut before renumbering."));
 
   /* Update global number of internal faces and its global numbering */
 
   if (mesh->n_domains > 1) {
 
-    bft_printf(_("\t%12d faces globalement avant découpage\n"),
+    bft_printf(_("\t%12d global faces before cutting\n"),
                *n_g_faces);
 
     previous_io_num = fvm_io_num_create(NULL,
@@ -1054,7 +1054,7 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
     size = sizeof(fvm_gnum_t) * n_faces;
     memcpy(*p_global_face_num, global_num, size);
 
-    bft_printf(_("\t%12d faces globalement après découpage\n\n"),
+    bft_printf(_("\t%12d global faces after cutting\n\n"),
                *n_g_faces);
 
     new_io_num = fvm_io_num_destroy(new_io_num);
@@ -1097,7 +1097,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   fvm_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                           _("Faces gauche a decouper"),
+                                           _("Warped faces to cut"),
                                            n_i_warp_faces,
                                            n_b_warp_faces,
                                            i_warp_face_lst,
@@ -1118,7 +1118,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
 
   fvm_writer_export_field(writer,
                           fvm_mesh,
-                          _("Gauchissement des faces"),
+                          _("Face warping"),
                           1,
                           FVM_WRITER_PER_ELEMENT,
                           FVM_INTERLACE,
@@ -1158,7 +1158,7 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
     return;
 
   fvm_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                           _("Faces gauche apres decoupage"),
+                                           _("Warped faces after cutting"),
                                            n_i_cut_faces,
                                            n_b_cut_faces,
                                            i_cut_face_lst,
@@ -1213,9 +1213,9 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   cs_mesh_dump(mesh);
 #endif
 
-  bft_printf(_("\n\n Découpage des faces gauche demandé\n"
-               " ----------------------------------\n\n"
-               " Angle maximal autorisé (rad) :\t%7.4f\n\n"), max_warp_angle);
+  bft_printf(_("\n\n Cutting of warped faces requested\n"
+               " ---------------------------------\n\n"
+               " Maximum allowed angle (rad):\t%7.4f\n\n"), max_warp_angle);
 
   /* Compute face warping */
 
@@ -1276,8 +1276,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
     BFT_FREE(b_face_lst);
     BFT_FREE(working_array);
 
-    bft_printf(_("\n Aucune face à découper. "
-                 " Revoir le critère si nécessaire.\n"));
+    bft_printf(_("\n No face to cut. Verify the criterion if necessary.\n"));
     return;
 
   }
@@ -1324,13 +1323,14 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                             &mesh->i_face_vtx_idx,
                             &mesh->i_face_vtx_lst);
 
-  bft_printf(_(" Faces internes:\n"
-               "\t%12d faces découpées pour respecter le critère\n\n"
-               "\t%12d faces localement avant découpage\n"
-               "\t%12d faces localement après découpage\n\n"),
+  bft_printf(_(" Interior faces:\n"
+               "\t%12d cut faces to respect the criterion\n"
+               "\n"
+               "\t%12d local faces before cutting\n"
+               "\t%12d local faces after cutting\n\n"),
              n_i_warp_faces, n_init_i_faces, mesh->n_i_faces);
 
-  bft_printf(_(" Taille de la nouvelle connectivité face -> sommets :%12d\n\n"),
+  bft_printf(_(" Size of the new face -> vertices connectivity: %12d\n\n"),
              mesh->i_face_vtx_connect_size);
 
   /* Update global number of internal faces and its global numbering */
@@ -1363,13 +1363,14 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                     &mesh->b_face_vtx_idx,
                     &mesh->b_face_vtx_lst);
 
-  bft_printf(_(" Faces de bord:\n"
-               "\t%12d faces découpées pour respecter le critère\n\n"
-               "\t%12d faces localement avant découpage\n"
-               "\t%12d faces localement après découpage\n\n"),
+  bft_printf(_(" Boundary faces:\n"
+               "\t%12d cut faces to respect the criterion\n"
+               "\n"
+               "\t%12d local faces before cutting\n"
+               "\t%12d local faces after cutting\n\n"),
              n_b_warp_faces, n_init_b_faces, mesh->n_b_faces);
 
-  bft_printf(_(" Taille de la nouvelle connectivité face -> sommets :%12d\n\n"),
+  bft_printf(_(" Size of the new face -> vertices connectivity: %12d\n\n"),
              mesh->b_face_vtx_connect_size);
 
   /* Update global number of border faces and its global numbering */

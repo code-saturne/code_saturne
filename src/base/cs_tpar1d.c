@@ -413,10 +413,10 @@ void CS_PROCF (lect1d,LECT1D)
                          suite_mode);
 
   if (cs_glob_tpar1d_suite == NULL)
-    bft_error(__FILE__, __LINE__, 0 ,
-              _("Arret à l'ouverture en lecture du fichier."
-                "suite du module thermique 1D en paroi.\n"
-                "Vérifier l'existence et le nom du fichier suite: %s"),
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while opening the 1D-wall thermal module restart file "
+                "in read mode.\n"
+                "Verify the existence and the name of the restart file: %s\n"),
               *nomsui);
 
 
@@ -430,12 +430,11 @@ void CS_PROCF (lect1d,LECT1D)
   /* On ne s'intéresse qu'aux faces de bord */
   indfac = (corresp_fbr == true ? 1 : 0);
   if (indfac == 0)
-    bft_error
-      (__FILE__, __LINE__, 0 ,
-       _("Arrêt de lecture du fichier suite du module"
-         "thermique 1D en paroi.\n"
-         "Le nombre de faces de bord a été modifié.\n"
-         "Vérifier que le fichier suite correspond bien au cas traité."));
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while reading the 1D-wall thermal module restart file.\n"
+                "The number of boundary faces has been modified\n"
+                "Verify that the restart file corresponds to "
+                "the present study.\n"));
 
 
   { /* Lecture de l'en-tête */
@@ -456,15 +455,17 @@ void CS_PROCF (lect1d,LECT1D)
                               tabvar);
 
     if (ierror < CS_SUITE_SUCCES)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-                  "*********                  MODULE THERMIQUE 1D EN PAROI\n"
-                  "      TYPE DE FICHIER INCORRECT\n\n"
-                  "Le fichier %s ne semble pas être un fichier\n"
-                  "suite de module thermique 1D en paroi.\n"
-                  "Le calcul ne peut être exécuté.\n\n"
-                  "Vérifier que le fichier suite utilisé correspond bien\n"
-                  "à un fichier suite de module thermique 1D en paroi."),
+      bft_error(__FILE__, __LINE__, 0,
+                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                  "********               1D-WALL THERMAL MODULE\n"
+                  "       INCORRECT FILE TYPE\n"
+                  "\n"
+                  "The file %s does not seem to be a restart file\n"
+                  "for the 1D-wall thermal module.\n"
+                  "The calculation will not be run.\n"
+                  "\n"
+                  "Verify that the restart file corresponds to a\n"
+                  "restart file for the 1D-wall thermal module.\n"),
                 *nomsui);
 
     version = *tabvar;
@@ -496,11 +497,11 @@ void CS_PROCF (lect1d,LECT1D)
                               tabvar);
 
     if (ierror < CS_SUITE_SUCCES)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("Problème à la lecture de la rubrique dans le"
-                  " fichier suite du module thermique 1D en paroi :\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("Problem while reading section in the restart file\n"
+                  "for the 1D-wall thermal module:\n"
                   "<%s>\n"
-                  "Le calcul ne sera pas executé."), nomrub);
+                  "The calculation will not be run.\n"), nomrub);
 
     /* Test de coherence entre NFPT1T relu et celui de USPT1D */
     mfpt1d = 0;
@@ -515,21 +516,21 @@ void CS_PROCF (lect1d,LECT1D)
                      cs_glob_base_mpi_comm);
 #endif
     if (mfpt1t != *nfpt1t)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                  "********               1D-WALL THERMAL MODULE\n"
+                  "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
                   "\n"
-                  "Le nombre de faces avec module thermique 1D a été\n"
-                  "modifié.\n"
-                  "AMONT  : %d faces de bord au total\n"
-                  "ACTUEL : %d faces de bord au total\n"
+                  "The number of faces with 1D thermal module has\n"
+                  "been modified.\n"
+                  "PREVIOUS: %d boundary faces (total)\n"
+                  "CURRENT:  %d boundary faces (total)\n"
                   "\n"
-                  "Le calcul ne peut être exécuté.\n"
+                  "The calculation will not be run.\n"
                   "\n"
-                  "Vérifier que le fichier suite utilisé correspond bien\n"
-                  "au cas traité.\n"
-                  "Vérifier uspt1d."), mfpt1t, *nfpt1t);
+                  "Verify that the restart file corresponds to a\n"
+                  "restart file for the 1D-wall thermal module.\n"
+                  "Verify uspt1d.\n"), mfpt1t, *nfpt1t);
 
     /* Test de coherence entre NFPT1D/IFPT1D relus et ceux de USPT1D */
     iok = 0;
@@ -542,22 +543,22 @@ void CS_PROCF (lect1d,LECT1D)
       }
     }
     if (iok > 0)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                  "    DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                  "********               1D-WALL THERMAL MODULE\n"
+                  "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
                   "\n"
-                  "IFPT1D ou NPPT1D a ete modifié par rapport au\n"
-                  "fichier suite sur au moins une face avec module\n"
-                  "thermique 1D.\n"
+                  "IFPT1D or NPPT1D has been modified with respect\n"
+                  "to the restart file on at least on face with\n"
+                  "1D thermal module\n"
                   "\n"
-                  "Le calcul ne peut être exécuté.\n"
+                  "The calculation will not be run.\n"
                   "\n"
-                  "Vérifier que le fichier suite utilisé correspond bien\n"
-                  "au cas traité.\n"
-                  "Vérifier uspt1d\n"
-                  "(se reporter a la documentation utilisateur pour les\n"
-                  "spécificités du test sur IFPT1D)."));
+                  "Verify that the restart file correspond to\n"
+                  "the present study"
+                  "Verify uspt1d\n"
+                  "(refer to the user manual for the specificities\n"
+                  "of the test on IFPT1D)"));
 
     /* Allocation de la structure cs_glob_par1d */
 
@@ -585,11 +586,11 @@ void CS_PROCF (lect1d,LECT1D)
                               tabvar);
 
     if (ierror < CS_SUITE_SUCCES)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("Problème à la lecture de la rubrique dans le"
-                  " fichier suite du module thermique 1D en paroi:\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("Problem while reading section in the restart file\n"
+                  "for the 1D-wall thermal module:\n"
                   "<%s>\n"
-                  "Le calcul ne sera pas exécuté."), nomrub);
+                  "The calculation will not be run.\n"), nomrub);
 
     /* Test de coherence entre EPPT1D relu et celui de USPT1D */
     iok = 0;
@@ -598,20 +599,20 @@ void CS_PROCF (lect1d,LECT1D)
       if (fabs(tabvar[ifac]-eppt1d[i])/eppt1d[i] > 1.e-10) iok++;
     }
     if (iok > 0)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                  "*********   MODULE THERMIQUE 1D EN PAROI\n"
-                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                  "********               1D-WALL THERMAL MODULE\n"
+                  "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
                   "\n"
-                  "Le paramètre EPPT1D a été modifié par rapport au fichier\n"
-                  "fichier suite sur au moins une face avec module\n"
-                  "thermique 1D.\n"
+                  "The parameter EPPT1D has been modified with respect\n"
+                  "to the restart file on at least on face with\n"
+                  "1D thermal module\n"
                   "\n"
-                  "Le calcul ne peut être exécuté.\n"
+                  "The calculation will not be run.\n"
                   "\n"
-                  "Vérifier que le fichier suite utilisé correspond bien\n"
-                  "au cas traité.\n"
-                  "Vérifier uspt1d.\n"));
+                  "Verify that the restart file corresponds to\n"
+                  "the present study.\n"
+                  "Verify uspt1d\n"));
 
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
@@ -639,11 +640,11 @@ void CS_PROCF (lect1d,LECT1D)
                               tabvar);
 
     if (ierror < CS_SUITE_SUCCES)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("Problème à la lecture de la rubrique dans le"
-                  " fichier suite du module thermique 1D en paroi:\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("Problem while reading section in the restart file\n"
+                  "for the 1D-wall thermal module:\n"
                   "<%s>\n"
-                  "Le calcul ne sera pas exécuté."), nomrub);
+                  "The calculation will not be run.\n"), nomrub);
 
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
@@ -675,11 +676,11 @@ void CS_PROCF (lect1d,LECT1D)
                               tabvar);
 
     if (ierror < CS_SUITE_SUCCES)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("Problème à la lecture de la rubrique dans le"
-                  " fichier suite du module thermique 1D en paroi:\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("Problem while reading section in the restart file\n"
+                  "for the 1D-wall thermal module:\n"
                   "<%s>\n"
-                  "Le calcul ne sera pas exécuté."), nomrub);
+                  "The calculation will not be run.\n"), nomrub);
 
     /* Maintenant qu'on a les centres des mailles, on peut tester RGPT1D */
     iok = 0;
@@ -694,20 +695,20 @@ void CS_PROCF (lect1d,LECT1D)
     }
 
     if (iok > 0)
-      bft_error(__FILE__, __LINE__, 0 ,
-                _("ATTENTION : LECTURE DU FICHIER SUITE\n"
-                  "*********   MODULE THERMIQUE 1D EN PAROI \n"
-                  "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
+      bft_error(__FILE__, __LINE__, 0,
+                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                  "********               1D-WALL THERMAL MODULE\n"
+                  "       CURRENT AND OLD DATA ARE DIFFERENT\n"
                   "\n"
-                  "Le paramètre RGPT1D a été modifié par rapport au fichier\n"
-                  "fichier suite sur au moins une face avec module\n"
-                  "thermique 1D.\n"
+                  "The parameter RGPT1D has been modified with respect\n"
+                  "to the restart file on at least on face with\n"
+                  "1D thermal module\n"
                   "\n"
-                  "Le calcul ne peut être exécuté.\n"
+                  "The calculation will not be run.\n"
                   "\n"
-                  "Vérifier que le fichier suite utilisé correspond bien\n"
-                  "au cas traité.\n"
-                  "Vérifier uspt1d."));
+                   "Verify that the restart file correspond to\n"
+                  "the present study\n"
+                  "Verify uspt1d\n"));
 
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
@@ -741,9 +742,9 @@ void CS_PROCF (lect1d,LECT1D)
 
     if (ierror < CS_SUITE_SUCCES) {
       cs_base_warn(__FILE__,__LINE__);
-      bft_printf (_("Problème à la lecture de la rubrique dans le"
-                    " fichier suite du module thermique 1D en paroi:\n"
-                    "<%s>\n"), nomrub);
+      bft_printf(_("Problem while reading the section in the restart file\n"
+                   "for the 1D-wall thermal module:\n"
+                   "<%s>\n"), nomrub);
     }
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -820,10 +821,10 @@ void CS_PROCF (ecrt1d,ECRT1D)
                          suite_mode);
 
   if (cs_glob_tpar1d_suite == NULL)
-    bft_error(__FILE__, __LINE__, 0 ,
-              _("Arret à l'ouverture en écriture du fichier "
-                "suite du module thermique 1D en paroi.\n"
-                "Vérifier l''existence et le nom du fichier suite: %s"),
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while opening the 1D-wall thermal module restart "
+                "file in write mode.\n"
+                "Verify the existence and the name of the restart file: %s\n"),
               *nomsui);
 
 

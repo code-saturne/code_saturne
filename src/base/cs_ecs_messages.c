@@ -241,12 +241,12 @@ _add_periodicity(cs_mesh_t *mesh,
   }
 
   if (_perio_type == FVM_PERIODICITY_TRANSLATION)
-    bft_printf(_(" Ajout de la périodicité %d "
+    bft_printf(_(" Adding periodicity %d "
                  "(translation [%10.4e, %10.4e, %10.4e]).\n"),
                (int)perio_num, _matrix[0][3], _matrix[1][3], _matrix[2][3]);
 
   else if (_perio_type == FVM_PERIODICITY_ROTATION)
-    bft_printf(_(" Ajout de la périodicité %d (rotation).\n"),
+    bft_printf(_(" Adding periodicity %d (rotation).\n"),
                (int)perio_num);
 
   tr_id = fvm_periodicity_add_by_matrix(mesh->periodicity,
@@ -324,8 +324,8 @@ _read_cell_rank(cs_mesh_t       *mesh,
   fvm_gnum_t   n_elts = 0;
   fvm_gnum_t   n_g_cells = 0;
 
-  const char  *unexpected_msg = N_("Message de type <%s> sur <%s>\n"
-                                   "inattendu ou de taille incorrecte");
+  const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
+                                   "unexpected or of incorrect size");
 
   if (n_ranks == 1)
     return;
@@ -341,8 +341,8 @@ _read_cell_rank(cs_mesh_t       *mesh,
   /* Test if file exists */
 
   if (! bft_file_isreg(file_name)) {
-    bft_printf(_(" Pas de fichier \"%s\" disponible ;\n"
-                 "   on utilisera un découpage de domaines non optimisé.\n"),
+    bft_printf(_(" No \"%s\" file available;\n"
+                 "   an unoptimized domain partitioning will be used.\n"),
                file_name);
     return;
   }
@@ -389,9 +389,9 @@ _read_cell_rank(cs_mesh_t       *mesh,
         cs_io_read_global(&header, &n_g_cells, rank_pp_in);
         if (n_g_cells != mesh->n_g_cells)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Le nombre de cellules indiqué par le fichier\n"
+                    _("The number of cells reported by file\n"
                       "\"%s\" (%lu)\n"
-                      "ne correspond pas au nombre à celui du maillage (%lu)."),
+                      "does not correspond the those of the mesh (%lu)."),
                     cs_io_get_name(rank_pp_in),
                     (unsigned long)(n_g_cells),
                     (unsigned long)(mesh->n_g_cells));
@@ -410,9 +410,9 @@ _read_cell_rank(cs_mesh_t       *mesh,
         cs_io_read_global(&header, &n_ranks, rank_pp_in);
         if (n_ranks != cs_glob_base_nbr)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Le nombre de rangs indiqué par le fichier\n"
-                      "\"%s\" (%d)\n"
-                      "ne correspond pas au nombre de rangs courant (%d)."),
+                    _("Le number of ranks reported by file\n"
+                      "\"%s\" (%d) does not\n"
+                      "correspond to the current number of ranks (%d)."),
                     cs_io_get_name(rank_pp_in), (int)n_ranks,
                     (int)cs_glob_base_nbr);
       }
@@ -1646,8 +1646,8 @@ void CS_PROCF(ledevi, LEDEVI)
   cs_mesh_t  *mesh = cs_glob_mesh;
   _mesh_reader_t *mr = NULL;
 
-  const char  *unexpected_msg = N_("Message de type <%s> sur <%s>\n"
-                                  "inattendu ou de taille incorrecte");
+  const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
+                                   "unexpected or of incorrect size");
 
   /* Initialize parameter values */
 
@@ -1947,8 +1947,8 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
   cs_io_t  *pp_in = cs_glob_pp_io;
   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
 
-  const char  *unexpected_msg = N_("Section de type <%s> sur <%s>\n"
-                                   "inattendue ou de taille incorrecte");
+  const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
+                                   "inexpected or of incorrect size.");
 
   echo = cs_io_get_echo(pp_in);
 

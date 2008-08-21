@@ -342,8 +342,8 @@ _test_halo_compatibility(const cs_halo_t  *halo)
 
   if (cs_glob_mesh->n_transforms != halo->n_transforms)
     bft_error(__FILE__, __LINE__, 0,
-              _("Les %d transformations périodiques du halo ne correspondent\n"
-                "pas à celles du maillage principal (au nombre de %d)\n"),
+              _("The %d periodic transformations of the halo do not comply\n"
+                "with the main mesh transformations (in number of %d)\n"),
               halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
 }
 
@@ -649,7 +649,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
 
   if (bool_err == true)
     bft_error(__FILE__, __LINE__, 0,
-              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes."));
+              _("IDIMTE and/or ITENSO have incoherent values"));
 
   /* 2. Synchronization  */
   /*---------------------*/
@@ -791,7 +791,7 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
 
   if (bool_err == true)
     bft_error(__FILE__, __LINE__, 0,
-              _("IDIMTE et/ou ITENSO ont des valeurs incohérentes"));
+              _("IDIMTE and/or ITENSO have incoherent values"));
 
   /* 2. Synchronization  */
   /*---------------------*/
@@ -2521,10 +2521,10 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
 
   if (i >= 3)
     bft_error(__FILE__, __LINE__, 0,
-              _("On cherche à restaurer des éléments de rotation d'un\n"
-                "halo sur la variable définie à partir de l'adresse %p,\n"
-                "alors que les dernières variables dont le halo de rotation\n"
-                "a été sauvegardé sont définies à partir de [%p, %p, %p]."),
+              _("One tries to restore rotation elements of halo on the\n"
+                "variable defined with the adress %p, whereas the last\n"
+                "variables the halo of which has been backed up are defined\n"
+                "with [%p, %p, %p]."),
               var, _cs_glob_perio_last_backup[0],
               _cs_glob_perio_last_backup[1], _cs_glob_perio_last_backup[2]);
 

@@ -433,13 +433,13 @@ int main
     cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);
     t2 = bft_timer_wtime();
 
-    bft_printf(_("\n Découpage des faces gauches (%.3g s)\n"), t2-t1);
+    bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
 
   }
 
   /* Renumérotation en fonction des options du code */
 
-  bft_printf(_("\n Renumerotation du maillage:\n"));
+  bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
@@ -486,7 +486,7 @@ int main
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
   t2 = bft_timer_wtime();
 
-  bft_printf(_("\n Calcul des grandeurs géométriques (%.3g s)\n"), t2-t1);
+  bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
 
   cs_mesh_info(cs_glob_mesh);
 
@@ -502,7 +502,7 @@ int main
   /* Boucle en temps ou critères de qualité selon options de vérification */
 
   if (opts.iverif == 0) {
-    bft_printf(_("\n Calcul des critères de qualité\n"));
+    bft_printf(_("\n Computing quality criteria\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
   }
 
@@ -522,25 +522,25 @@ int main
                              &nideve, &nrdeve, &nituse, &nrtuse);
 
     bft_printf(_("\n"
-                 " --- Tableaux de travail Fortran principaux :\n"
-                 "       LONGIA =   %10d (Nombre d'entiers)\n"
-                 "       LONGRA =   %10d (Nombre de réels)\n"
-                 "       (%d octets/entier, %d octets/réel)\n"),
+                 " --- Main Fortran work arrays:\n"
+                 "       LONGIA =   %10d (Number of integers)\n"
+                 "       LONGRA =   %10d (Number of reals)\n"
+                 "       (%d bytes/integer, %d bytes/real)\n"),
                iasize, rasize,
                sizeof(cs_int_t)/sizeof(char),
                sizeof(cs_real_t)/sizeof(char));
 
     if (nideve > 0 || nrdeve >0)
       bft_printf(_("\n"
-                   " --- Tableaux de travail Fortran développeur :\n"
-                   "       NIDEVE =   %10d (Nombre d'entiers)\n"
-                   "       NRDEVE =   %10d (Nombre de réels)\n"),
+                   " --- Developer Fortran work arrays:\n"
+                   "       NIDEVE =   %10d (Number of integer)\n"
+                   "       NRDEVE =   %10d (Number of reals)\n"),
                  nideve, nrdeve);
 
     bft_printf(_("\n"
-                 " --- Tableaux de travail Fortran utilisateur :\n"
-                 "       NITUSE =   %10d (Nombre d'entiers)\n"
-                 "       NRTUSE =   %10d (Nombre de réels)\n\n"),
+                 " --- User Fortran work arrays:\n"
+                 "       NITUSE =   %10d (Number of integers)\n"
+                 "       NRTUSE =   %10d (Number of reals)\n\n"),
                nituse, nrtuse);
 
     cs_base_mem_init_work(iasize, rasize, &ia, &ra);
@@ -600,7 +600,7 @@ int main
 
   }
 
-  bft_printf(_("\n Destruction des structures et clôture du calcul\n"));
+  bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
   /* Libération de structures internes de l'API F77 pour fichiers suite */

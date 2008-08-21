@@ -319,10 +319,10 @@ const char  *cs_matrix_type_fullname[] = {N_("diagonal + faces"),
 static int _cs_glob_matrix_prefetch_rows = 2048;
 
 static char _cs_glob_perio_ignore_error_str[]
-  = N_("Produit matriciel avec mode de rotation CS_PERIO_IGNORE non encore\n"
-       "implémenté : utiliser dans ce cas cs_matrix_vector_multiply_nosync()\n"
-       "avec une synchronisation de halo externe, précédée d'une sauvegarde\n"
-       "et suivie d'une restoration du halo de rotation.");
+  = N_("Matrix product with CS_PERIO_IGNORE rotation mode not yet\n"
+       "implemented in this case, use cs_matrix_vector_multiply_nosync\n"
+       "with an external halo synchronization, prededed by a backup and\n"
+       "followed by a restoration of the rotation halo.");
 
 /*============================================================================
  * Private function definitions
@@ -1555,8 +1555,8 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
       if (symmetric == false && ms->symmetric == true)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Affectation de coefficients matriciels non symétriques\n"
-                    "à une matrice en stockage CSR symmétrique."));
+                  _("Assigning non-symmetric matrix coefficients to a matrix\n"
+                    "in a symmetric CSR format."));
 
       if (ms->direct_assembly == true)
         _set_xa_coeffs_csr_direct(matrix, symmetric, xa);
@@ -2121,8 +2121,8 @@ cs_matrix_create(cs_matrix_type_t   type,
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("La gestion des matrices au format %s \n"
-                "n'est pas encore opérationnelle."),
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
               _(cs_matrix_type_name[type]));
     break;
   }
@@ -2233,7 +2233,7 @@ cs_matrix_get_n_columns(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("La matrice n'est pas définie."));
+              _("The matrix is not defined."));
 
   return matrix->n_cells_ext;
 }
@@ -2250,7 +2250,7 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("La matrice n'est pas définie."));
+              _("The matrix is not defined."));
 
   return matrix->n_cells;
 }
@@ -2276,7 +2276,7 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 {
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("La matrice n'est pas définie."));
+              _("The matrix is not defined."));
 
   if (matrix->set_coefficients != NULL)
     matrix->set_coefficients(matrix, symmetric, da, xa);
@@ -2296,7 +2296,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
 
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("La matrice n'est pas définie."));
+              _("The matrix is not defined."));
 
   if (matrix->release_coefficients != NULL)
     matrix->release_coefficients(matrix);
@@ -2318,7 +2318,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
 
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("La matrice n'est pas définie."));
+              _("The matrix is not defined."));
 
   if (matrix->get_diagonal != NULL)
     matrix->get_diagonal(matrix, da);

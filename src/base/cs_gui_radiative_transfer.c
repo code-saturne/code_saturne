@@ -283,7 +283,7 @@ static void cs_gui_radiative_transfer_type(const char *const param,
       *keyword = 1;
     else {
       bft_error (__FILE__, __LINE__, 0,
-              _("type inconnu %s \n"), type);
+                 _("unknow type %s\n"), type);
     }
     BFT_FREE(type);
   }

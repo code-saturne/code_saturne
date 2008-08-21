@@ -171,7 +171,7 @@ cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 
 /* Short names for solver types */
 
-const char *cs_sles_type_name[] = {N_("Gradient conjugué"),
+const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
                                    N_("Jacobi"),
                                    N_("Bi-CGstab")};
 
@@ -247,12 +247,13 @@ _sles_info_dump(cs_sles_info_t *this_info)
                         / ((unsigned long long)n_calls));
 
   bft_printf(_("\n"
-               "Bilan des résolutions pour \"%s\" (%s) :\n\n"
-               "  Nombre d'appels :                 %d\n"
-               "  Nombre d'itérations minimal :     %d\n"
-               "  Nombre d'itérations maximal :     %d\n"
-               "  Nombre d'itérations moyen :       %d\n"
-               "  Temps écoulé cumulé :             %12.3f\n"),
+               "Summary of resolutions for %s (%s):\n"
+               "\n"
+               "  Number of calls:                  %d\n"
+               "  Minimum number of iterations:     %d\n"
+               "  Maximum number of iterations:     %d\n"
+               "  Mean number of iterations:        %d\n"
+               "  Total elapsed time:               %12.3f\n"),
              this_info->name, cs_sles_type_name[this_info->type],
              n_calls, n_it_min, n_it_max, n_it_mean,
              this_info->wt_tot);
@@ -271,9 +272,9 @@ _sles_info_dump(cs_sles_info_t *this_info)
     MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
                   cs_glob_base_mpi_comm);
 
-    bft_printf(_("  Temps CPU cumulé local min :      %12.3f\n"
-                 "  Temps CPU cumulé local max :      %12.3f\n"
-                 "  Temps CPU cumulé total :          %12.3f\n"),
+    bft_printf(_("  Min local total CPU time:         %12.3f\n"
+                 "  Max local total CPU time:         %12.3f\n"
+                 "  Total CPU time:                   %12.3f\n"),
                cpu_min, cpu_max, cpu_tot);
 
   }
@@ -281,7 +282,7 @@ _sles_info_dump(cs_sles_info_t *this_info)
 #endif
 
   if (cs_glob_base_nbr == 1)
-    bft_printf(_("  Temps CPU cumulé :                %12.3f\n"),
+    bft_printf(_("  Total CPU time:                   %12.3f\n"),
                this_info->cpu_tot);
 }
 
@@ -447,8 +448,8 @@ _convergence_test(const char             *solver_name,
 #endif
       if (diverges)
         bft_error(__FILE__, __LINE__, 0,
-                  _("%s [%s]: divergence après %u itérations :\n"
-                    "  résidu initial : %11.4e ; résidu courant : %11.4e"),
+                  _("%s [%s]: divergence after %u iterations:\n"
+                    "  initial residual: %11.4e; current residual: %11.4e"),
                   solver_name, var_name,
                   convergence->n_iterations,
                   convergence->initial_residue, residue);
@@ -461,7 +462,7 @@ _convergence_test(const char             *solver_name,
         if (verbosity <= 2) /* Already output if verbosity > 2 */
           bft_printf(_(final_fmt),
                      n_iter, residue, residue/convergence->r_norm);
-        bft_printf(_(" @@ Attention : non convergence\n"));
+        bft_printf(_(" @@ Warning: non convergence\n"));
       }
       return -1;
     }
@@ -1354,10 +1355,11 @@ _bi_cgstab(const char             *var_name,
     if (CS_ABS(alpha) < _epzero) {
       bft_error(__FILE__, __LINE__, 0,
                 _("%s [%s]:\n"
-                  " @@ Attention : non convergence et arrêt\n\n"
-                  "    Le coefficient alpha est inférieur à %12.4e\n\n"
-                  "    La matrice ne peut plus être considérée come "
-                  " inversible."),
+                  " @@ Warning: non convergence and abort\n"
+                  "\n"
+                  "    Alpha coefficient is lower than %12.4e\n"
+                  "\n"
+                  "    The matrix cannot be considered as invertible anymore."),
                 sles_name, var_name, alpha);
     }
 
@@ -1416,10 +1418,12 @@ _bi_cgstab(const char             *var_name,
     if (ro_1 < _epzero) {
       bft_error(__FILE__, __LINE__, 0,
                 _("%s [%s]:\n"
-                  " @@ Attention : non convergence et arrêt\n\n"
-                  "    Le carre de la norme du vecteur de descente\n"
-                  "    est inférieur à %12.4e\n\n"
-                  "    La résolution ne progresse plus."),
+                  " @@ Warning: non convergence and abort\n"
+                  "\n"
+                  "    The square of the norm of the descent vector\n"
+                  "    is lower than %12.4e\n"
+                  "\n"
+                  "    The resolution does not progress anymore."),
                 sles_name, var_name, _epzero);
     }
 
@@ -1641,7 +1645,7 @@ cs_sles_needs_solving(const char        *var_name,
   if (r_norm <= EPZERO || *residue <= EPZERO) {
     if (verbosity > 1)
       bft_printf(_("%s [%s]:\n"
-                   "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"),
+                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
                  solver_name, var_name, r_norm, *residue);
     retval = 0;
   }

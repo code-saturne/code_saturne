@@ -102,7 +102,7 @@ _check_ifacel(void)
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  bft_printf(_("    Test de cohérence de la connectivité faces -> cellules\n"));
+  bft_printf(_("    Checking the face -> cells connectivity coherency\n"));
 
   for (i = 0; i < mesh->n_i_faces; i++) {
 
@@ -145,7 +145,7 @@ cs_mesh_coherency_check(void)
   const cs_int_t  *bfacel = mesh->b_face_cells;
   const cs_real_t  *vtx_coord = mesh->vtx_coord;
 
-  bft_printf(_("\n Tests de cohérence de la structure de maillage :\n"));
+  bft_printf(_("\n Checking the mesh structure coherency:\n"));
 
   /* Check internal face -> cells connectivity coherency */
 
@@ -163,7 +163,7 @@ cs_mesh_coherency_check(void)
 
   /* Loop on coordinates */
 
-  bft_printf(_("    Définition des critères de cohérence\n"));
+  bft_printf(_("    Coherency criteria definition\n"));
 
   for (coord_id = 0; coord_id < 3; coord_id++) {
 
@@ -319,7 +319,7 @@ cs_mesh_coherency_check(void)
 
   for (coord_id = 0; coord_id < 3; coord_id++) {
 
-    bft_printf(_("    Vérification de cohérence sur coordonnées %d\n"),
+    bft_printf(_("    Coherency verification on coordinates %d\n"),
                coord_id+1);
 
     /* Test coherency on the standard neighborhood */
@@ -427,7 +427,7 @@ cs_mesh_coherency_check(void)
   BFT_FREE(compute_buffer);
   BFT_FREE(minmax_buffer);
 
-  bft_printf(_(" Fin des tests de cohérence de la structure de maillage.\n"));
+  bft_printf(_(" End of coherency check of the mesh structure.\n"));
 
 }
 

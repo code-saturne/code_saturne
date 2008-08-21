@@ -5002,9 +5002,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune cellule.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any cell.\n"),
                  missing, description);
     }
 
@@ -5306,9 +5307,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 
@@ -5476,9 +5478,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 
@@ -6207,9 +6210,10 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 
@@ -6384,9 +6388,10 @@ void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 
@@ -6504,9 +6509,10 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le groupe ou attribut \"%s\" figurant dans le\n"
-                   "critère de sélection:\n"
-                   "\"%s\"\n ne correspond à aucune face de bord.\n"),
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 

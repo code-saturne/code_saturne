@@ -1379,8 +1379,8 @@ void CS_PROCF (pstev1, PSTEV1)
     var_parent = false;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("L'argument IVARPR du sous-programme PSTEVA doit être\n"
-                "égal à 0 ou 1, et non %d.\n"), (int)(*ivarpr));
+              _("The PSTEVA sub-routine argument IVARPR must be\n"
+                "equal to 0 or 1, and not %d.\n"), (int)(*ivarpr));
 
   if (*ientla == 0)
     entrelace = false;
@@ -1388,8 +1388,8 @@ void CS_PROCF (pstev1, PSTEV1)
     entrelace = true;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("L'argument IENTLA du sous-programme PSTEVA doit être\n"
-                "égal à 0 ou 1, et non %d.\n"), (int)(*ientla));
+              _("The PSTEVA sub-routine argument IENTLA must be\n"
+                "equal to 0 or 1, and not %d.\n"), (int)(*ientla));
 
 
   /* Conversion des chaînes de caractères Fortran en chaînes C */
@@ -1496,14 +1496,14 @@ void cs_post_ajoute_writer
 
   if (id_writer == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le numéro de gestionnaire de post traitement demandé\n"
-                "doit être < 0 (réservé) ou > 0 (utilisateur).\n"));
+              _("The requested post-processing writer number\n"
+                "must be < 0 (reserved) or > 0 (user).\n"));
 
   for (i = 0 ; i < cs_glob_post_nbr_writers ; i++) {
     if ((cs_glob_post_writers + i)->id == id_writer)
       bft_error(__FILE__, __LINE__, 0,
-                _("Le numéro de gestionnaire de post traitement demandé\n"
-                  "(%d) a déjà été affecté.\n"), (int)id_writer);
+                _("The requested post-processing writer number\n"
+                  "(%d) has already been assigned.\n"), (int)id_writer);
   }
 
 
@@ -1773,8 +1773,8 @@ void cs_post_alias_maillage
 
   if (maillage_ref->alias > -1)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le maillage %d ne peut être un alias du maillage %d,\n"
-                "qui est lui-même déjà un alias du maillage %d.\n"),
+              _("The mesh %d cannot be an alias of mesh %d,\n"
+                "which is itself an alias of mesh %d.\n"),
               (int)id_alias, (int)id_maillage,
               (int)((cs_glob_post_maillages + maillage_ref->alias)->id));
 
@@ -2591,11 +2591,13 @@ void cs_post_detruit
     fvm_writer_get_times((cs_glob_post_writers + i)->writer,
                          &m_wtime, &m_cpu_time, &c_wtime, &c_cpu_time);
     bft_printf(_("\n"
-                 "Bilan des écritures de \"%s\" (%s) :\n\n"
-                 "  Temps CPU pour les maillages :    %12.3f\n"
-                 "  Temps CPU pour les champs :       %12.3f\n\n"
-                 "  Temps écoulé pour les maillages : %12.3f\n"
-                 "  Temps écoulé pour les champs :    %12.3f\n"),
+                 "Writing of \"%s\" (%s) summary:\n"
+                 "\n"
+                 "  CPU time for meshes:              %12.3f\n"
+                 "  CPU time for variables:           %12.3f\n"
+                 "\n"
+                 "  Elapsed time for meshes:          %12.3f\n"
+                 "  Elapsed time for variables:       %12.3f\n"),
                fvm_writer_get_name((cs_glob_post_writers + i)->writer),
                fvm_writer_get_format((cs_glob_post_writers + i)->writer),
                m_cpu_time, c_cpu_time, m_wtime, c_wtime);
@@ -2748,7 +2750,7 @@ void cs_post_init_pcp_maillages
       id_maillage = -1; /* Numéro de maillage réservé */
 
       cs_post_ajoute_maillage(id_maillage,
-                              _("Volume fluide"),
+                              _("Fluid volume"),
                               cs_glob_mesh->n_cells,
                               0,
                               0,
@@ -2765,7 +2767,7 @@ void cs_post_init_pcp_maillages
       id_maillage = -2;  /* Numéro de maillage réservé */
 
       cs_post_ajoute_maillage(id_maillage,
-                              _("Bord"),
+                              _("Boundary"),
                               0,
                               0,
                               cs_glob_mesh->n_b_faces,
@@ -2917,8 +2919,8 @@ static int _cs_post_ind_writer
   }
   if (indgep >= cs_glob_post_nbr_writers)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le gestionnaire de post traitement numéro %d demandé\n"
-                "n'est pas défini.\n"), (int)(id_writer));
+              _("The requested post-processing writer number\n"
+                "%d is not defined.\n"), (int)(id_writer));
 
   return indgep;
 
@@ -2948,8 +2950,8 @@ static int _cs_post_ind_maillage
   }
   if (indmai >= cs_glob_post_nbr_maillages)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le maillage de post traitement numéro %d demandé\n"
-                "n'est pas défini.\n"), (int)nummai);
+              _("The requested post-processing mesh number\n"
+                "%d is not defined.\n"), (int)nummai);
 
   return indmai;
 
@@ -2977,14 +2979,14 @@ static cs_post_maillage_t * _cs_post_ajoute_maillage
 
   if (id_maillage == 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Le numéro de maillage de post traitement demandé\n"
-                  "doit être < 0 (réservé) ou > 0 (utilisateur).\n"));
+                _("The requested post-processing mesh number\n"
+                  "must be < 0 (reserved) or > 0 (user).\n"));
 
   for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
     if ((cs_glob_post_maillages + i)->id == id_maillage)
       bft_error(__FILE__, __LINE__, 0,
-                _("Le numéro de maillage de post traitement demandé\n"
-                  "(%d) a déjà été affecté.\n"), (int)id_maillage);
+                _("The requested post-processing mesh number\n"
+                  "(%d) has already been assigned.\n"), (int)id_maillage);
   }
 
 

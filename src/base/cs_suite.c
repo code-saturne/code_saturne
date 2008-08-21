@@ -163,8 +163,8 @@ _compute_n_ents(const cs_suite_t  *suite,
 
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("Le numéro de support %d indiqué pour le fichier suite\n"
-                "\"%s\" n'est pas valide."),
+              _("Location number %d given for restart file\n"
+                "\"%s\" is not valid."),
               location_id, suite->name);
 
   return retval;
@@ -201,8 +201,8 @@ _locations_from_index(cs_suite_t  *suite)
 
       if (h.location_id != suite->n_locations + 1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Le fichier suite \"%s\" déclare un support numéro %d\n"
-                    "alors qu'aucun support numéro %d n'a été déclaré."),
+                  _("Restart file \"%s\" declares a location number %d\n"
+                    "but no location %d has been declared\n"),
                   suite->name, (int)(h.location_id),
                   (int)(suite->n_locations + 1));
 
@@ -734,8 +734,8 @@ _section_f77_to_c(const cs_int_t   *numsui,
       || indsui > (cs_int_t)_restart_pointer_size
       || _restart_pointer[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("Restart file number <%d> can not be closed\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_SUITE_ERR_NUM_FIC;
     return;
@@ -770,8 +770,8 @@ _section_f77_to_c(const cs_int_t   *numsui,
 
   default:
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le type de support <%d> indiqué pour une rubrique de\n"
-                 "fichier suite est invalide."), (int)(*itysup));
+    bft_printf(_("Location type <%d> given for a restart file section\n"
+                 "is invalid using the Fortran API."), (int)(*itysup));
     *ierror = CS_SUITE_ERR_SUPPORT;
     return;
 
@@ -791,8 +791,8 @@ _section_f77_to_c(const cs_int_t   *numsui,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Le type de valeur <%d> indiqué pour une rubrique de\n"
-                "fichier suite est invalide"), (int)(*irtype));
+              _("Value type <%d> given for a restart file section\n"
+                "is invalid using the Fortran API."), (int)(*irtype));
     *ierror = CS_SUITE_ERR_TYPE_VAL;
     return;
 
@@ -1007,9 +1007,9 @@ void CS_PROCF (opnsui, OPNSUI)
       break;
     default:
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le mode d'ouverture du fichier suite \"%s\"\n"
-                   "doit être égal à 1 (lecture) ou 2 (écriture) "
-                   "et non <%d>"), nombuf, (int)(*ireawr));
+      bft_printf(_("The access mode of the restart file <%s>\n"
+                   "must be equal to 1 (read) or 2 (write) and not <%d>."),
+                 nombuf, (int)(*ireawr));
 
       *ierror = CS_SUITE_ERR_MODE;
     }
@@ -1089,8 +1089,8 @@ void CS_PROCF (clssui, CLSSUI)
       || indsui > (cs_int_t)_restart_pointer_size
       || _restart_pointer[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("The restart file number <%d> cannot be closed\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_SUITE_ERR_NUM_FIC;
     return;
@@ -1141,8 +1141,8 @@ void CS_PROCF (tstsui, TSTSUI)
       || _restart_pointer[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("Information on the restart file number <%d> unavailable\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
 
     *indcel = 0;
     *indfac = 0;
@@ -1192,8 +1192,8 @@ void CS_PROCF (infsui, INFSUI)
       || _restart_pointer[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+    bft_printf(_("Information on the restart file number <%d> unavailable\n"
+                 "(file already closed or invalid number)."), (int)(*numsui));
   }
   else {
 
@@ -1498,9 +1498,9 @@ void cs_suite_verif_support_base
 
     else if (cs_glob_base_rang <= 0) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("La taille du support \"%s\" associée au fichier suite\n"
-                   "\"%s\" vaut %lu et ne correspond pas\n"
-                   "à celle du maillage en cours (%lu)\n"),
+      bft_printf(_("The size of location \"%s\" associated with the restart file\n"
+                   "\"%s\" is %lu and does not correspond\n"
+                   "to that of the current mesh (%lu)\n"),
                  loc->name, suite->name,
                  (unsigned long)loc->n_glob_ents_f,
                  (unsigned long)loc->n_glob_ents);
@@ -1553,8 +1553,8 @@ cs_suite_ajoute_support(cs_suite_t        *suite,
 
     if (loc_id >= ((int)(suite->n_locations)))
       bft_error(__FILE__, __LINE__, 0,
-                _("Le fichier suite \"%s\" ne contient aucun support\n"
-                  " de nom \"%s\"."),
+                _("The restart file \"%s\" references no location "
+                  "named \"%s\"."),
                 suite->name, location_name);
 
   }
@@ -1606,8 +1606,8 @@ void cs_suite_affiche_index
 
   for (loc_id = 0; loc_id < suite->n_locations; loc_id++) {
     const _location_t *loc = &(suite->location[loc_id]);
-    bft_printf(_("  Support : %s\n"
-                 "    (numéro : %03d, n_glob_ents : %lu)\n"),
+    bft_printf(_("  Location: %s\n"
+                 "    (number: %03d, n_glob_ents: %lu)\n"),
                loc->name, (int)(loc->id), (unsigned long)(loc->n_glob_ents));
   }
   if (suite->n_locations > 0)
@@ -1615,7 +1615,7 @@ void cs_suite_affiche_index
 
   /* Dump general file info, including index */
 
-  bft_printf(_("  Informations générales associées au fichier suite :\n"));
+  bft_printf(_("  General information associated with the restart file:\n"));
 
   cs_io_dump(suite->fh);
 }
@@ -1933,7 +1933,6 @@ void cs_suite_f77_api_init
 
   for (ind = 0; ind < _restart_pointer_size; ind++)
     _restart_pointer[ind] = NULL;
-
 }
 
 

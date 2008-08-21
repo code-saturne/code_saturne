@@ -294,9 +294,9 @@ fvm_nodal_t  * cs_maillage_extrait_cel_nodal
 
   if (mesh->b_face_vtx_idx == NULL || mesh->i_face_vtx_idx == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le maillage principal ne contient pas de connectivité\n"
-                "faces->sommets, indispensable à la reconstruction\n"
-                "de la connectivité nodale (cs_maillage_extrait_cel_nodal)."));
+              _("The main mesh does not contain any face -> vertices\n"
+                "connectivity, necessary for the nodal connectivity\n"
+                "reconstruction (cs_maillage_extrait_cel_nodal)."));
 
   /* Comptage du nombre de cellules à convertir */
 
@@ -441,9 +441,9 @@ fvm_nodal_t  * cs_maillage_extrait_fac_nodal
 
   if (mesh->b_face_vtx_idx == NULL || mesh->i_face_vtx_idx == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Le maillage principal ne contient pas de connectivité\n"
-                "faces->sommets, indispensable à la reconstruction\n"
-                "de la connectivité nodale (cs_maillage_extrait_cel_nodal)."));
+              _("The main mesh does not contain any face -> vertices\n"
+                "connectivity, necessary for the nodal connectivity\n"
+                "reconstruction (cs_maillage_extrait_cel_nodal)."));
 
   /* Comptage du nombre de faces à convertir */
 

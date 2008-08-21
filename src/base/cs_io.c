@@ -620,12 +620,11 @@ _file_open(cs_io_t     *cs_io,
     if (strncmp(header_data, base_header, 64) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier : "
-                  "\"%s\".\n"
-                  "Le format du fichier n'est pas à la bonne version.\n"
-                  "Les 64 premiers octets attendus contiennent :\n"
+                _("Error reading file: \"%s\".\n"
+                  "File format is not the correct version.\n"
+                  "The first 64 bytes expected contain:\n"
                   "\"%s\"\n"
-                  "Les 64 premiers octets lus contiennent :\n"
+                  "The first 64 bytes read contain:\n"
                   "\"%s\"\n"),
                 fvm_file_get_name(cs_io->f), base_header, header_data);
 
@@ -641,11 +640,10 @@ _file_open(cs_io_t     *cs_io,
     if (magic_string != NULL) {
       if (strncmp(cs_io->contents, magic_string, 64) != 0)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Erreur à la lecture du fichier : "
-                    "\"%s\".\n"
-                    "Le contenu du fichier n'est pas du type attendu.\n"
-                    "On attendait : \"%s\"\n"
-                    "On a :\"%s\"\n"),
+                  _("Error reading file: \"%s\".\n"
+                    "Le file contents are not of the expected type.\n"
+                    "\"%s\" was expected,\n"
+                    "\"%s\" was read."),
                   fvm_file_get_name(cs_io->f), magic_string, cs_io->contents);
     }
 
@@ -689,7 +687,7 @@ _file_open(cs_io_t     *cs_io,
 
     if (n_written < 128 + 24)
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à l'écriture de l'entête du fichier : \"%s\".\n"),
+                _("Error writing the header of file: \"%s\".\n"),
                  fvm_file_get_name(cs_io->f));
   }
 
@@ -838,8 +836,8 @@ _file_legacy_restart_open(cs_io_t    *inp,
   n_read = fvm_file_read_global(inp->f, sizes, sizeof(fvm_lnum_t), 4);
   if (n_read < 4) {
     bft_error(__FILE__, __LINE__, 0,
-              _("Le fichier suite <%s>\n"
-                "au format 1.1 n'est pas conforme."),
+              _("Restart file \"%s\"\n"
+                "in format 1.1 is not conforming."),
               fvm_file_get_name(inp->f));
 
     /* following code will not be reached as long as errors are fatal */
@@ -887,8 +885,8 @@ _file_legacy_restart_index(cs_io_t     *inp,
   int retval = 0;
 
   const char incorrect_next_file_msg[]
-    = N_("Le fichier suite <%s> ne correspond pas\n"
-         "à la partie <%d> du fichier suite d'origine\n");
+    = N_("Restart file \"%s\" does not correspond\n"
+         "to part %d of the original restart file.");
 
 #if defined(FVM_HAVE_MPI)
   retval = _file_legacy_restart_open(inp, name, sizes, comm);
@@ -1112,12 +1110,12 @@ _echo_pre(const cs_io_t  *cs_io)
   switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    bft_printf(_("\n  Section lue sur \"%s\" :\n"),
+    bft_printf(_("\n  Section read on \"%s\" :\n"),
                fvm_file_get_name(cs_io->f));
     break;
 
   case CS_IO_MODE_WRITE:
-    bft_printf(_("\n  Section écrite sur \"%s\" :\n"),
+    bft_printf(_("\n  Section written on \"%s\" :\n"),
                fvm_file_get_name(cs_io->f));
     break;
 
@@ -1146,8 +1144,8 @@ _echo_header(const char      *sec_name,
 {
   /* Instructions */
 
-  bft_printf(_("    nom de la rubrique    : \"%s\"\n"
-               "    nombre d'éléments     : %lu\n"),
+  bft_printf(_("    section name:           \"%s\"\n"
+               "    number of elements:     %lu\n"),
              sec_name, (unsigned long)n_elts);
 
   if (n_elts > 0) {
@@ -1180,7 +1178,7 @@ _echo_header(const char      *sec_name,
       assert(0);
     }
 
-    bft_printf(_("    nom du type d'élément : \"%s\"\n"), type_name);
+    bft_printf(_("    element type name:      \"%s\"\n"), type_name);
 
   }
 
@@ -1224,7 +1222,7 @@ _echo_data(size_t           echo,
   size_t  _n_elts = n_elts;
   size_t  echo_start = 0;
   size_t  echo_end = 0;
-  const char *_loc_glob[] = {N_(" (locaux)"), ""};
+  const char *_loc_glob[] = {N_(" (local)"), ""};
   const char *loc_glob = _loc_glob[1];
 
   /* Instructions */
@@ -1245,12 +1243,12 @@ _echo_data(size_t           echo,
 
   if (echo * 2 < _n_elts) {
     echo_end = echo;
-    bft_printf(_("    %d premiers et derniers éléments%s :\n"),
+    bft_printf(_("    %d first and last elements%s:\n"),
                echo, loc_glob);
   }
   else {
     echo_end = _n_elts;
-    bft_printf(_("    éléments%s :\n"), loc_glob);
+    bft_printf(_("    elements%s:\n"), _(loc_glob));
   }
 
   /* Note that FVM datatypes will have been converted to
@@ -2072,9 +2070,9 @@ cs_io_initialize(const char    *file_name,
 
   if (echo >= CS_IO_ECHO_OPEN_CLOSE) {
     if (mode == CS_IO_MODE_READ)
-      bft_printf(_("\n Lecture du fichier :  %s\n"), file_name);
+      bft_printf(_("\n Reading file:         %s\n"), file_name);
     else
-      bft_printf(_("\n Écriture du fichier : %s\n"), file_name);
+      bft_printf(_("\n Writing file:         %s\n"), file_name);
     bft_printf_flush();
   }
 
@@ -2128,7 +2126,7 @@ cs_io_initialize_with_index(const char    *file_name,
   /* Info on interface creation */
 
   if (echo >= CS_IO_ECHO_OPEN_CLOSE) {
-    bft_printf(_("\n Lecture du fichier :  %s\n"), file_name);
+    bft_printf(_("\n Reading file:         %s\n"), file_name);
     bft_printf_flush();
   }
 
@@ -2185,10 +2183,10 @@ cs_io_finalize(cs_io_t **cs_io)
 
   if (_cs_io->echo >= CS_IO_ECHO_OPEN_CLOSE) {
     if (_cs_io->mode == CS_IO_MODE_READ)
-      bft_printf(_(" Fin de la lecture :  %s\n"),
+      bft_printf(_(" Finished reading:    %s\n"),
                  fvm_file_get_name(_cs_io->f));
     else
-      bft_printf(_(" Fin de l'écriture :  %s\n"),
+      bft_printf(_(" Finished writing:    %s\n"),
                  fvm_file_get_name(_cs_io->f));
     bft_printf_flush();
   }
@@ -2510,9 +2508,8 @@ cs_io_read_header(cs_io_t             *inp,
 
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur à la lecture du fichier de pré traitement : "
-                  "\"%s\".\n"
-                  "Le type de données \"%s\" n'est pas reconnu."),
+                _("Error reading file: \"%s\".\n"
+                  "Data type \"%s\" is not recognized."),
                 fvm_file_get_name(inp->f), elt_type_name);
 
     header->elt_type = _type_read_to_elt_type(header->type_read);
@@ -2620,11 +2617,10 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
       && header->type_read != FVM_UINT32
       && header->type_read != FVM_UINT64)
     bft_error(__FILE__, __LINE__, 0,
-              _("Erreur à la lecture du fichier : "
-                "\"%s\".\n"
-                "Le type attendu pour la section : "
-                "\"%s\" est un entier signé.\n"
-                "et n'est pas convertible à partir du type lu \"%s\"."),
+              _("Error reading file: \"%s\".\n"
+                "Type expected for section: "
+                "\"%s\" is a signed integer\n"
+                "and is not convertible from type read: \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 
   assert(sizeof(fvm_lnum_t) == 4 || sizeof(fvm_lnum_t) == 8);
@@ -2656,11 +2652,10 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
       && header->type_read != FVM_UINT32
       && header->type_read != FVM_UINT64)
     bft_error(__FILE__, __LINE__, 0,
-              _("Erreur à la lecture du fichier de pré traitement : "
-                "\"%s\".\n"
-                "Le type attendu pour la section : "
-                "\"%s\" est un entier non signé.\n"
-                "et n'est pas convertible à partir du type lu \"%s\"."),
+              _("Error reading file: \"%s\".\n"
+                "Type expected for section: "
+                "\"%s\" is an unsigned integer\n"
+                "and is not convertible from type read: \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 
   assert(sizeof(fvm_gnum_t) == 4 || sizeof(fvm_gnum_t) == 8);
@@ -2688,11 +2683,9 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
   if (   header->elt_type != FVM_FLOAT
       && header->elt_type != FVM_DOUBLE)
     bft_error(__FILE__, __LINE__, 0,
-              _("Erreur à la lecture du fichier de pré traitement : "
-                "\"%s\".\n"
-                "Le type attendu pour la section : "
-                "\"%s\".\n"
-                "est \"r4\" ou \"r8\" (réel), et non \"%s\"."),
+              _("Error reading file: \"%s\".\n"
+                "Type expected for section: \"%s\"\n"
+                "is \"r4\" or \"r8\" (réel), and not \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 }
 
@@ -2926,7 +2919,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   if (   header->n_vals != 0 && header->n_vals != global_num_end
       && cs_io->echo > CS_IO_ECHO_HEADERS)
-    bft_printf(_("    premier élement rang suivant :\n"
+    bft_printf(_("    first element for next rank:\n"
                  "    %10lu : %12d\n"),
                (unsigned long)(global_num_end),
                (unsigned long)retval[global_num_end - global_num_start]);

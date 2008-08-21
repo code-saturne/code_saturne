@@ -596,8 +596,8 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   /* Output warning if necessary */
 
   if (*iwarnp > 1)
-    bft_printf(_(" LIMITATION DE GRADIENT en %10d CELLULES\n"
-                 "    FACTEUR MINIMUM = %14.5e ; FACTEUR MAXIMUM = %14.5e\n"),
+    bft_printf(_(" GRADIENT LIMITATION in %10d cells\n"
+                 "    MINIMUM FACTOR = %14.5e; MAXIMUM FACTOR = %14.5e\n"),
                n_clip, min_factor, max_factor);
 
   /* Synchronize dpdx, dpdy, dpdz */
