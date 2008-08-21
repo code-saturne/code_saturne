@@ -578,42 +578,6 @@ static void cs_gui_time_parameters(const char   *const param,
 }
 
 /*-----------------------------------------------------------------------------
- * Modify restart files format.
- *
- * parameters:
- *   param               -->  restart file name
- *   keyword            <-->  new value of the restart file format
- *----------------------------------------------------------------------------*/
-
-static void cs_gui_restart_parameters_file_format (const char *const param,
-                                                          int *const format)
-{
-  char *path = NULL;
-  char *result = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "calcul_management", "start_restart", param);
-  cs_xpath_add_attribute(&path, "format");
-
-  result = cs_gui_get_attribute_value(path);
-
-  if (result != NULL) {
-    if (cs_gui_strcmp(result, "binary"))
-      *format = 0;
-    else if (cs_gui_strcmp(result, "ascii"))
-      *format = 1;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Restart file format unknown: %s.\nXpath: %s\n"),
-                result, path);
-
-  }
-
-  BFT_FREE(result);
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
  * Modify restart parameters.
  *
  * parameters:
