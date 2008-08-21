@@ -1,3 +1,14 @@
+* 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Change the restart file format to comply with the new common
+  format file (with the Preprocessor output).
+  modified routines:
+    include/base/cs_io.h
+    include/base/cs_suite.h
+    src/base/cs_ecs_messages.c
+    src/base/cs_io.c
+    src/base/cs_main.c
+    src/base/cs_suite.c
+	
 * 21/08/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 611:614, Fortran output translation)
 

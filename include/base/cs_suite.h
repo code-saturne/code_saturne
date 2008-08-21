@@ -337,20 +337,25 @@ void cs_suite_verif_support_base
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ajoute un support supplementaire.
+ * Add a location definition.
  *
- *  Renvoie l'indice associe au support, ou -1 en cas d'erreur.
+ * parameters:
+ *   suite           <-- associated restart file pointer
+ *   location_name   <-- name associated with the location
+ *   n_glob_ents     <-- global number of entities
+ *   n_ents          <-- local number of entities
+ *   ent_global_num  <-- global entity numbers, or NULL
+ *
+ * returns:
+ *   the location id assigned to the location, or -1 in case of error
  *----------------------------------------------------------------------------*/
 
-int cs_suite_ajoute_support
-(
-       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
- const char        *nom_sup,              /* --> Nom de la rubrique           */
-       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entites      */
-       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entites       */
- const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entites  */
-);
-
+int
+cs_suite_ajoute_support(cs_suite_t        *suite,
+                        const char        *location_name,
+                        fvm_gnum_t         n_glob_ents,
+                        fvm_lnum_t         n_ents,
+                        const fvm_gnum_t  *ent_global_num);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui affiche l'index généré lors de l'analyse du fichier
@@ -370,7 +375,7 @@ void cs_suite_affiche_index
 
 cs_int_t cs_suite_lit_rub
 (
- const cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
  const char        *nom_rub,                   /* --> Nom de la rubrique      */
        int          ind_support,               /* --> Support de la variable  */
        cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */

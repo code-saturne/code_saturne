@@ -330,11 +330,20 @@ int main
 
   if (opts.ifoenv != 0) {
 
+#if defined(FVM_HAVE_MPI)
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
                                      "Face-based mesh definition, R0",
                                      CS_IO_MODE_READ,
                                      0,
+                                     CS_IO_ECHO_OPEN_CLOSE,
+                                     cs_glob_base_mpi_comm);
+#else
+    cs_glob_pp_io = cs_io_initialize("preprocessor_output",
+                                     "Face-based mesh definition, R0",
+                                     CS_IO_MODE_READ,
+                                     CS_IO_ECHO_OPEN_CLOSE,
                                      -1);
+#endif
 
     /* Initialisation des communications avec Syrthes */
 

@@ -26,11 +26,11 @@
  *============================================================================*/
 
 /*============================================================================
- *  Gestion des fichiers suite
+ * Manage checkpoint / restart files
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -43,7 +43,7 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie BFT
+ * BFT library headers
  *----------------------------------------------------------------------------*/
 
 #include <bft_file.h>
@@ -52,452 +52,903 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_io.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------
- *  Fichiers  `include' associés au fichier courant
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_suite.h"
 
+/*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
 #endif /* __cplusplus */
 
-
 /*============================================================================
- *  Structures locales
+ * Local macro definitions
  *============================================================================*/
 
-typedef enum {
+/* Fortran API */
+/* ----------- */
 
-  CS_SUITE_TYPE_ASCII,           /* Fichier suite ASCII */
-  CS_SUITE_TYPE_BINAIRE          /* Fichier suite binaire */
+/*
+ * "Usual" max name length (a longer name is possible but will
+ * incur dynamic memory allocation.
+ */
 
-} cs_suite_type_t;
+#define CS_SUITE_NAME_LEN   64
 
-typedef struct _cs_suite_rec_t {
+/*============================================================================
+ * Local type definitions
+ *============================================================================*/
 
-  char            *nom;          /* Nom de l'enregistrement */
-  int              ind_support;  /* Indice du support */
-  cs_int_t         nbr_val_ent;  /* Nombre de valeurs/entité support */
-  cs_type_t        typ_val;      /* Type de variable */
+typedef struct _location_t {
 
-  cs_int_t         ind_fic;      /* Indice du fichier correspondant */
-  bft_file_off_t   pos_fic;      /* Position du début dans le fichier */
+  char              *name;            /* Location name */
+  size_t             id;              /* Associated id in file */
+  fvm_lnum_t         n_ents;          /* Local number of entities */
+  fvm_gnum_t         n_glob_ents_f;   /* Global number of entities by file */
+  fvm_gnum_t         n_glob_ents;     /* Global number of entities */
+  const fvm_gnum_t  *ent_global_num;  /* Global entity numbers, or NULL */
 
-} cs_suite_rec_t;
-
-typedef struct _cs_suite_sup_t {
-
-  char              *nom;             /* Nom du support */
-  char               nom_sup[4];      /* Nom associé pour rubriques */
-  fvm_lnum_t         nbr_ent_loc;     /* Nombre local d'entités */
-  fvm_gnum_t         nbr_ent_glob_f;  /* Nombre global d'entités fichier */
-  fvm_gnum_t         nbr_ent_glob;    /* Nombre global d'entités */
-  const fvm_gnum_t  *num_glob_ent;    /* Numéros globaux des entités, ou NULL */
-
-} cs_suite_sup_t;
+} _location_t;
 
 struct _cs_suite_t {
 
-  char            *nom;          /* Nom du fichier suite */
+  char            *name;         /* Name of restart file */
 
-  cs_int_t         nbr_cel;      /* Nombre de cellules du support en lecture */
-  cs_int_t         nbr_fac;      /* Nb. faces internes du support en lecture */
-  cs_int_t         nbr_fbr;      /* Nb. faces de bord du support en lecture */
-  cs_int_t         nbr_som;      /* Nombre de sommets du support en lecture */
+  cs_io_t         *fh;           /* Pointer to associated file handle */
 
-  cs_int_t         nbr_rec;      /* Nombre d'enregistrements courant */
-  cs_int_t         nbr_rec_max;  /* Nombre d'enregistrements maximal avant
-                                    redimensionnement de tab_rec */
-  cs_suite_rec_t  *tab_rec;      /* Index des enregistrements */
+  size_t           n_locations;  /* Number of locations */
+  _location_t     *location;     /* Location definition array */
 
-  cs_int_t         nbr_fic;      /* Nombre de fichiers associés (un seul en
-                                    écriture, plusieurs possibles en lecture) */
-  bft_file_t     **fic;          /* Pointeurs sur fichiers associés ; tableau
-                                    de taille 1 en écriture (un fichier ouvert
-                                    réutilise la position 0), et de taille
-                                    nbr_fic en lecture (plusieurs fichiers
-                                    peuvent être ouverts si données trop
-                                    volumineuses pour un seul */
-
-  int              nbr_sup_add;  /* Nombre de supports utilisateur */
-  cs_suite_sup_t  *tab_sup_add;  /* Tableau des supports utilisateur */
-
-  cs_suite_type_t  type;         /* Type de codage des données */
-  cs_suite_mode_t  mode;         /* Lecture ou écriture */
-
+  cs_suite_mode_t  mode;         /* Read or write */
 };
 
 
 /*============================================================================
- *  Constantes et Macros
+ * Static global variables
  *============================================================================*/
 
-/* Taille maximale d'un fichier : 0.95 * entier 32 bits max (2147483647) */
-
-#define CS_SUITE_TAILLE_FIC_MAX   2040109464
-
-#define CS_SUITE_LNG_NOM_TYPE_ELT      2    /* Longueur du nom de type     */
-#define CS_SUITE_LNG_BUF_ASCII       120    /* Longueur tampon ligne ASCII */
-
-/*
- * Label MPI (pour distinguer messages associés aux suites des autres,
- * sans passer par un communicateur distinct)
- */
-
-#define CS_SUITE_MPI_TAG     'C'+'S'+'_'+'S'+'U'+'I'+'T'+'E'
-
-/* Formats pour mode texte (voire chaînes globales plus bas) */
-
-#define CS_SUITE_FMT_ASCII_DIM_COL_INT                11 /* %10d    + 1 col */
-#define CS_SUITE_FMT_ASCII_DIM_COL_REAL               24 /* %23.15E + 1 col */
-#define CS_SUITE_FMT_ASCII_NBR_COL_INT                 7
-#define CS_SUITE_FMT_ASCII_NBR_COL_REAL                3
-
-/* API Fortran */
-/* ----------- */
-
-/*
- * (longueur max 'usuelle' de nom ; un nom plus long est possible
- * mais provoquera une allocation de mémoire dynamique).
- */
-
-#define CS_SUITE_LNG_NOM                              64
-
-
-/*============================================================================
- *  Variables globales statiques
- *============================================================================*/
-
-/* Taille minimale d'un buffer sur le rang 0 (pour limiter le
-   nombre de blocs lorsqu'on a un grand nombre de processeurs) */
+/* Minimum buffer size on rank 0 (to limit number of blocks
+   when there is a large number of processors) */
 
 static int cs_suite_taille_buf_def = 1024*1024*8;
 
-/* Chaîne indiquant que la suite continue sur un autre fichier */
+/* Array for Fortran API */
 
-static char const cs_suite_nom_fin_fic[]    = "reprise : fin";
-static char const cs_suite_nom_decoup_fic[] = "reprise : fic suivant";
-static char const cs_suite_nom_partie_fic[] = "reprise : partie num ";
-
-/* Type de valeur (dans l'ordre de définition de cs_type_t dans cs_base.h,
-   seuls les types "principaux étant" traités ici) */
-
-static char const cs_suite_nom_typ_elt[3][4]  = {"c  ",
-                                                 "i32",
-                                                 "r64"};
-
-/* Nom de support (dans l'ordre de définition de cs_suite_support_t) */
-
-static char const *cs_suite_nom_support[5] = {"---",
-                                              "cel",
-                                              "fac",
-                                              "fbr",
-                                              "som"};
-
-/* Formats d'écriture de valeurs */
-
-static char  cs_suite_fmt_ascii_tab_int[]  = " %10d";
-static char  cs_suite_fmt_ascii_tab_real[] = " %23.15E";
-
-/* Tableau pour API Fortran */
-
-static cs_int_t     cs_glob_suite_ptr_nbr = 0;
-static cs_suite_t **cs_glob_suite_ptr_tab = NULL;
+static size_t       _restart_pointer_size = 0;
+static cs_suite_t **_restart_pointer = NULL;
 
 
 /*============================================================================
- *  Prototypes de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Calcul du nombre de valeurs d'un enregistrement
+ * Compute number of values in a record
+ *
+ * parameters:
+ *   suite           <-- associated restart file pointer
+ *   location_id     <-- location id
+ *   n_location_vals <-- number of values per location
  *----------------------------------------------------------------------------*/
 
-static cs_int_t cs_loc_suite_calc_nbr_ent
-(
- const cs_suite_t  *suite,                     /* --> Suite associée          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_val_ent                /* --> Nb. val/point support   */
-);
+static size_t
+_compute_n_ents(const cs_suite_t  *suite,
+                size_t             location_id,
+                size_t             n_location_vals)
+{
+  size_t retval = n_location_vals;
 
+  if (location_id == 0)
+    retval = n_location_vals;
+
+  else if (location_id > 0 && location_id <= suite->n_locations)
+    retval = suite->location[location_id-1].n_glob_ents_f;
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Le numéro de support %d indiqué pour le fichier suite\n"
+                "\"%s\" n'est pas valide."),
+              location_id, suite->name);
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
- *  Calcul du déplacement dans un fichier correspondant aux valeurs
- *  d'une rubrique.
+ * Analyse the content of a restart file to build locations
+ *
+ * parameters:
+ *   suite    <-> associated restart file pointer
  *----------------------------------------------------------------------------*/
 
-static bft_file_off_t cs_loc_suite_calc_avance
-(
- const cs_suite_t  *suite,                     /* --> Suite associée          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
-       cs_type_t    typ_val                    /* --> Type de valeurs         */
-);
+static void
+_locations_from_index(cs_suite_t  *suite)
+{
+  cs_io_sec_header_t h;
 
+  size_t rec_id = 0;
+  size_t index_size = 0;
+
+  /* Initialization */
+
+  index_size = cs_io_get_index_size(suite->fh);
+
+  /* Analyze records to determine locations */
+
+  for (rec_id = 0; rec_id < index_size; rec_id++) {
+
+    h = cs_io_get_indexed_sec_header(suite->fh, rec_id);
+
+    if (h.location_id > suite->n_locations) {
+
+      _location_t  *loc = NULL;
+
+      if (h.location_id != suite->n_locations + 1)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Le fichier suite \"%s\" déclare un support numéro %d\n"
+                    "alors qu'aucun support numéro %d n'a été déclaré."),
+                  suite->name, (int)(h.location_id),
+                  (int)(suite->n_locations + 1));
+
+      BFT_REALLOC(suite->location, suite->n_locations + 1, _location_t);
+
+      loc = suite->location + suite->n_locations;
+      BFT_MALLOC(loc->name, strlen(h.sec_name) + 1, char);
+      strcpy(loc->name, h.sec_name);
+
+      loc->id = h.location_id;
+      loc->n_ents = 0;
+      loc->n_glob_ents = 0;
+
+      cs_io_set_indexed_position(suite->fh, &h, rec_id);
+      cs_io_set_fvm_gnum(&h, suite->fh);
+      cs_io_read_global(&h, &(loc->n_glob_ents_f), suite->fh);
+
+      loc->ent_global_num = NULL;
+
+      suite->n_locations += 1;
+    }
+
+  }
+}
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise une structure fichier àssociée à une suite ;
- *  Le nom de fichier associé correspond au nom de la suite pour le
- *  premier fichier, prolongé éventuellement par '_pxx' pour les fichiers
- *  successifs en cas de découpage du fichier en plusieurs morceaux pour
- *  des gros volumes de données.
- *  On indique en retour si les données se poursuivent sur un autre fichier.
+ * Initialize a checkpoint / restart file management structure;
+ *
+ * parameters:
+ *   suite <-> associated restart file pointer
  *----------------------------------------------------------------------------*/
 
-static cs_bool_t cs_loc_suite_fic_ajoute
-(
- cs_suite_t  *suite                         /* --> Structure suite            */
-);
+static void
+_add_file(cs_suite_t  *suite)
+{
+  const char magic_string[] = "Checkpoint / restart, R0";
+  const long echo = CS_IO_ECHO_NONE;
 
+  /* In read mode, open file to detect header first */
 
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit une définition de support sur fichier suite.
- *----------------------------------------------------------------------------*/
+  if (suite->mode == CS_SUITE_MODE_LECTURE) {
 
-static void cs_loc_suite_ecr_rub_sup
-(
-       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
- const char        *nom_sup,                   /* --> Nom du support          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_ent_glob               /* --> Taille du support       */
- );
+#if defined(FVM_HAVE_MPI)
+    suite->fh = cs_io_initialize_with_index(suite->name,
+                                            magic_string,
+                                            0,
+                                            echo,
+                                            MPI_COMM_NULL);
+#else
+    suite->fh = cs_io_initialize_with_index(suite->name, magic_string,0, echo);
+#endif
 
+    _locations_from_index(suite);
+  }
 
-/*----------------------------------------------------------------------------
- *  Fonction qui lit une liste de valeurs sur un fichier ; on suppose que
- *  l'on est déjà à la bonne position de départ dans le fichier.
- *----------------------------------------------------------------------------*/
+  else {
 
-static void cs_loc_suite_lit_val
-(
-       cs_suite_type_t   type,                 /* --> Structure suite         */
- const bft_file_t       *fic,                  /* --> Fichier associé         */
-       cs_int_t          nbr_val,              /* --> Nb. valeurs à lire      */
-       cs_type_t         typ_val,              /* --> Type de valeurs         */
-       void             *val,                  /* <-- Valeurs à lire          */
-       char              asc_buffer[]          /* <-> Buffer texte            */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit une liste de valeurs sur un fichier
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_val
-(
- const cs_suite_t  *suite,                     /* --> Ptr. fichier suite      */
-       cs_int_t     nbr_val,                   /* --> Nb. valeurs à écrire    */
-       cs_type_t    typ_val,                   /* --> Type de valeurs         */
- const void        *val,                       /* --> Valeurs à écrire        */
-       cs_int_t    *ind_col                    /* <-> Colonne départ/fin      */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui termine l'écriture d'une liste de valeurs sur un fichier
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_val_fin
-(
- const cs_suite_t   * suite,                   /* --> Ptr. fichier suite      */
-       cs_int_t     * ind_col                  /* <-> Colonne départ/fin      */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui analyse le contenu d'un fichier suite en mode texte
- *  On démare en haut de deuxième ligne, ayant lu l'en-tête, et on
- *  indique en retour si la suite continue sur un autre fichier
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t cs_loc_suite_analyse_txt
-(
- cs_suite_t  *const  suite                     /* --> Structure suite         */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui analyse le contenu d'un fichier suite en mode binaire
- *  On démarre à la position suivantl'en-tête, et on indique en retour
- *  si la suite continue sur un autre fichier
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t cs_loc_suite_analyse_bin
-(
- cs_suite_t  *const  suite                     /* --> Structure suite         */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui prépare l'index généré lors de l'analyse du fichier à
- *  l'utilisation par les fonctions de lecture d'enregistrements
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_prepare_index
-(
- cs_suite_t  *const  suite                /* --> Structure suite              */
-);
-
-/*----------------------------------------------------------------------------
- *  Conversion d'arguments de lecture/écriture de l'API Fortran vers l'API C
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_rub_f77_vers_C
-(
- const cs_int_t         *const numsui,      /* --> Numéro du fichier suite    */
- const cs_int_t         *const itysup,      /* --> Code type de support       */
- const cs_int_t         *const irtype,      /* --> Entiers ou réels ?         */
-       cs_suite_t      **const suite,       /* <-- Pointeur structure suite   */
-       int              *const ind_support, /* <-- Type de support            */
-       cs_type_t        *const typ_val,     /* <-- Entiers ou réels           */
-       cs_int_t         *const ierror       /* <-- 0 = succès, < 0 = erreur   */
-);
-
+#if defined(FVM_HAVE_MPI)
+    suite->fh = cs_io_initialize(suite->name,
+                                 magic_string,
+                                 CS_IO_MODE_WRITE,
+                                 0,
+                                 echo,
+                                 cs_glob_base_mpi_comm);
+#else
+    suite->fh = cs_io_initialize(suite->name,
+                                 magic_string,
+                                 CS_IO_MODE_WRITE,
+                                 0,
+                                 echo);
+#endif
+  }
+}
 
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- *  Fonction qui prépare la redistribution des valeurs associées à une
- *  entité de maillage.
+ * Redistribute values based on a mesh location.
  *
- *  Les tableaux alloués doivent être libérés par l'appelant.
+ * Allocated arrays must be freed by the caller.
+ *
+ * parameters:
+ *   n_glob_ents      <-- global number of entities
+ *   n_ents           <-- local number of entities
+ *   n_blocks         <-- number of blocks
+ *   block_size       <-- step (base size) associated with each block
+ *   block_buf_size   --> sum of block array sizes
+ *   owner_buf_size   --> sum of owner (rank) array sizes
+ *   ent_global_num   <-- global entity numbers (1 to n numbering)
+ *   owner_ent_id     --> entity id's for each rank
+ *   block_count      --> number of local entities per block
+ *   owner_count      --> number of distributed (rank) entities per block
+ *   block_disp       --> displacements associated with each block
+ *   owner_disp       --> displacements associated with distriution (ranks)
+ *   block_start      --> shift for each block
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_suite_prep_dist
-(
- const cs_int_t       nbr_ent_glob,    /* --> Nombre global d'entités         */
- const cs_int_t       nbr_ent_loc,     /* --> Nombre local d'entités          */
- const cs_int_t       nbr_bloc,        /* --> Nombre de blocs                 */
- cs_int_t            *block_buf_size,  /* <-- Taille somme tableaux / bloc    */
- cs_int_t            *owner_buf_size,  /* <-- Taille somme tableaux / rang    */
- cs_int_t            *pas_bloc,        /* <-- Pas associé à chaque bloc       */
- const fvm_gnum_t     num_glob_ent[],  /* --> Numéros globaux des entités     */
- int                **owner_ent_id,    /* <-- Id entités de chaque rang       */
- int                **block_count,     /* <-- Nb. entités locales / bloc      */
- int                **owner_count,     /* <-- Nb. entités rang / bloc         */
- int                **block_disp,      /* <-- Positions associés aux blocs    */
- int                **owner_disp,      /* <-- Positions associés aux rangs    */
- int                **block_start      /* <-- Décalage pour chaque bloc       */
-);
+static void
+_prepare_redistribution(fvm_gnum_t           n_glob_ents,
+                        fvm_lnum_t           n_ents,
+                        int                  n_blocks,
+                        fvm_lnum_t          *block_step,
+                        fvm_lnum_t          *block_buf_size,
+                        fvm_lnum_t          *owner_buf_size,
+                        const fvm_gnum_t     ent_global_num[],
+                        int                **owner_ent_id,
+                        int                **block_count,
+                        int                **owner_count,
+                        int                **block_disp,
+                        int                **owner_disp,
+                        int                **block_start)
+{
+  int       block_id;
+  cs_int_t  _block_step, ii;
 
+  int *_block_ent_id = NULL, *_owner_ent_id = NULL;
+  int *_block_count = NULL, *_owner_count = NULL;
+  int *_block_disp = NULL, *_owner_disp = NULL;
+  int *_block_start = NULL;
+
+  /* Initialization */
+
+  /* _block_step = ceil(n_glob_ents/n_blocks) */
+
+  _block_step = n_glob_ents / n_blocks;
+  if (n_glob_ents % n_blocks > 0)
+    _block_step += 1;
+
+  /* Allocation */
+
+  BFT_MALLOC(_block_count, cs_glob_base_nbr, int);
+  BFT_MALLOC(_owner_count, cs_glob_base_nbr, int);
+  BFT_MALLOC(_block_disp, cs_glob_base_nbr, int);
+  BFT_MALLOC(_owner_disp, cs_glob_base_nbr, int);
+  BFT_MALLOC(_block_start, cs_glob_base_nbr, int);
+
+  /* Count */
+
+  for (block_id = 0; block_id < cs_glob_base_nbr; block_id++)
+    _block_count[block_id] = 0;
+
+  for (ii = 0; ii < n_ents; ii++) {
+    block_id = (ent_global_num[ii] - 1) / _block_step;
+    _block_count[block_id] += 1;
+  }
+
+  MPI_Alltoall(_block_count, 1, MPI_INT, _owner_count, 1, MPI_INT,
+               cs_glob_base_mpi_comm);
+
+  /* Create indexes */
+
+  _block_disp[0] = 0;
+  _owner_disp[0] = 0;
+  for (ii = 1; ii < cs_glob_base_nbr; ii++) {
+    _block_disp[ii] = _block_disp[ii-1] + _block_count[ii-1];
+    _owner_disp[ii] = _owner_disp[ii-1] + _owner_count[ii-1];
+  }
+
+  *block_buf_size =   _block_disp[cs_glob_base_nbr - 1]
+                    + _block_count[cs_glob_base_nbr - 1];
+  *owner_buf_size =   _owner_disp[cs_glob_base_nbr - 1]
+                    + _owner_count[cs_glob_base_nbr - 1];
+
+  memcpy(_block_start, _block_disp, sizeof(int)*cs_glob_base_nbr);
+
+  /* Prepare lists */
+
+  BFT_MALLOC(_block_ent_id, *block_buf_size, int);
+  BFT_MALLOC(_owner_ent_id, *owner_buf_size, int);
+
+  for (ii = 0; ii < n_ents; ii++) {
+    block_id = (ent_global_num[ii] - 1) / _block_step;
+    _block_ent_id[_block_start[block_id]]
+      = (ent_global_num[ii] - 1) % _block_step;
+    _block_start[block_id] += 1;
+  }
+
+  MPI_Alltoallv(_block_ent_id, _block_count, _block_disp, MPI_INT,
+                _owner_ent_id, _owner_count, _owner_disp, MPI_INT,
+                cs_glob_base_mpi_comm);
+
+  BFT_FREE(_block_ent_id);
+
+  *block_step = _block_step;
+  *owner_ent_id = _owner_ent_id;
+  *block_count = _block_count;
+  *owner_count = _owner_count;
+  *block_disp = _block_disp;
+  *owner_disp = _owner_disp;
+  *block_start = _block_start;
+}
 
 /*----------------------------------------------------------------------------
- *  Fonction qui lit les valeurs associées à une variable définie sur
- *  une entité de maillage.
+ * Read variable values defined on a mesh location.
+ *
+ * parameters:
+ *   suite           <-> associated restart file pointer
+ *   header          <-- header associated with current position in file
+ *   n_blocks        <-- number of blocks
+ *   n_glob_ents     <-- global number of entities
+ *   n_ents          <-- local number of entities
+ *   ent_global_num  <-- global entity numbers (1 to n numbering)
+ *   n_location_vals <-- number of values par location
+ *   datatype        <-- data type
+ *   vals            --> array of values
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_suite_lit_val_ent
-(
- const cs_suite_t   *const suite,         /* --> Structure suite              */
- const bft_file_t   *const fic,           /* --> Fichier associé aux valeurs  */
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
-       cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-);
+static void
+_read_ent_values(cs_suite_t                *suite,
+                 cs_io_sec_header_t        *header,
+                 int                        n_blocks,
+                 fvm_gnum_t                 n_glob_ents,
+                 fvm_lnum_t                 n_ents,
+                 const fvm_gnum_t          *ent_global_num,
+                 int                        n_location_vals,
+                 cs_type_t                  datatype,
+                 cs_byte_t                 *vals)
+{
+  fvm_lnum_t  block_step, ii, block_id, start_loc;
 
+  cs_byte_t  *buffer = NULL;
+
+  fvm_lnum_t  block_buf_size = 0, owner_buf_size = 0;
+
+  cs_byte_t *block_val = NULL, *owner_val = NULL;
+  int *owner_ent_id = NULL;
+  int *block_count = NULL, *owner_count = NULL;
+  int *block_disp = NULL, *owner_disp = NULL;
+  int *block_start = NULL;
+
+  size_t      byte_id, nbr_byte_ent, nbr_byte_val;
+  fvm_gnum_t  global_num_start, global_num_end;
+
+  MPI_Datatype  mpi_type;
+
+  /* Initialization */
+
+  switch (datatype) {
+  case CS_TYPE_cs_int_t:
+    mpi_type     = CS_MPI_INT;
+    nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
+    nbr_byte_val = sizeof(cs_int_t);
+    cs_io_set_fvm_lnum(header, suite->fh);
+    break;
+  case CS_TYPE_cs_real_t:
+    mpi_type     = CS_MPI_REAL;
+    nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
+    nbr_byte_val = sizeof(cs_real_t);
+    break;
+  default:
+    assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
+  }
+
+  /* Create entity lists associated with redistribution */
+
+  _prepare_redistribution(n_glob_ents,
+                          n_ents,
+                          n_blocks,
+                          &block_step,
+                          &block_buf_size,
+                          &owner_buf_size,
+                          ent_global_num,
+                          &owner_ent_id,
+                          &block_count,
+                          &owner_count,
+                          &block_disp,
+                          &owner_disp,
+                          &block_start);
+
+  /* Read blocks */
+
+  if (owner_buf_size > 0)
+    BFT_MALLOC(buffer, block_step * nbr_byte_ent, cs_byte_t);
+
+  global_num_start = cs_glob_base_rang*block_step + 1;
+  global_num_end = global_num_start + block_step;
+  if (global_num_start > n_glob_ents)
+    global_num_start = n_glob_ents + 1;
+  if (global_num_end > n_glob_ents)
+    global_num_end = n_glob_ents + 1;
+
+  cs_io_read_block(header,
+                   global_num_start,
+                   global_num_end,
+                   buffer,
+                   suite->fh);
+
+  /* Distribute blocks on ranks */
+
+  if (owner_buf_size > 0) {
+
+    BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
+
+    for (ii = 0; ii < owner_buf_size; ii++) {
+      start_loc = owner_ent_id[ii]*nbr_byte_ent;
+      for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
+        owner_val[ii*nbr_byte_ent + byte_id]
+          = buffer[start_loc + byte_id];
+    }
+
+    BFT_FREE(owner_ent_id);
+  }
+
+  for (ii = 0; ii < cs_glob_base_nbr; ii++) {
+    block_count[ii] *= n_location_vals;
+    owner_count[ii] *= n_location_vals;
+    block_disp[ii] *= n_location_vals;
+    owner_disp[ii] *= n_location_vals;
+  }
+
+  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
+
+  MPI_Alltoallv(owner_val, owner_count, owner_disp, mpi_type,
+                block_val, block_count, block_disp, mpi_type,
+                cs_glob_base_mpi_comm);
+
+  /* Free arrays that are not useful anymore */
+
+  if (owner_buf_size > 0)
+    BFT_FREE(owner_val);
+  BFT_FREE(owner_disp);
+  BFT_FREE(owner_count);
+
+  /* Final data distribution */
+
+  for (ii = 0; ii < cs_glob_base_nbr; ii++)
+    block_disp[ii] *= n_location_vals;
+
+  for (ii = 0; ii < n_ents; ii++) {
+    block_id = (ent_global_num[ii] - 1) / block_step;
+    start_loc = block_disp[block_id]*nbr_byte_val;
+    for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
+      vals[ii*nbr_byte_ent + byte_id] = block_val[start_loc + byte_id];
+    block_disp[block_id] += n_location_vals;
+  }
+
+  BFT_FREE(block_val);
+  BFT_FREE(block_count);
+  BFT_FREE(block_disp);
+}
 
 /*----------------------------------------------------------------------------
- *  Fonction qui écrit les valeurs associées à une variable définie sur
- *  une entité de maillage.
+ * Write variable values defined on a mesh location.
+ *
+ * parameters:
+ *   suite           <-> associated restart file pointer
+ *   sec_name        <-- section name
+ *   n_blocks        <-- number of blocks
+ *   n_glob_ents     <-- global number of entities
+ *   n_ents          <-- local number of entities
+ *   ent_global_num  <-- global entity numbers (1 to n numbering)
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values par location
+ *   datatype        <-- data type
+ *   vals            --> array of values
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_suite_ecr_val_ent
-(
- const cs_suite_t  *const  suite,         /* --> Structure suite              */
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
- const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-);
+static void
+_write_ent_values(const cs_suite_t  *suite,
+                  const char        *sec_name,
+                  int                n_blocks,
+                  fvm_gnum_t         n_glob_ents,
+                  fvm_lnum_t         n_ents,
+                  const fvm_gnum_t  *ent_global_num,
+                  int                location_id,
+                  int                n_location_vals,
+                  cs_type_t          datatype,
+                  const cs_byte_t   *vals)
+{
+  fvm_lnum_t  block_step, ii, block_id, start_loc;
 
+  fvm_lnum_t  block_buf_size = 0, owner_buf_size = 0;
 
-/*----------------------------------------------------------------------------
- *  Fonction qui distribue une liste de variables
- *----------------------------------------------------------------------------*/
+  cs_byte_t *block_val = NULL, *owner_val = NULL;
+  int *owner_ent_id = NULL;
+  int *block_count = NULL, *owner_count = NULL;
+  int *block_disp = NULL, *owner_disp = NULL;
+  int *block_start = NULL;
 
-static void cs_loc_suite_distr_val
-(
- const cs_int_t                   nbr_val,     /* --> Nb. valeurs             */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
-       void                *const val          /* <-> Valeurs à lire          */
-) ;
+  fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
+  cs_byte_t  *buffer = NULL;
+
+  size_t      byte_id, nbr_byte_ent;
+  fvm_gnum_t  global_num_start, global_num_end;
+
+  MPI_Datatype  mpi_type;
+
+  /* Initialization */
+
+  switch (datatype) {
+  case CS_TYPE_cs_int_t:
+    mpi_type     = CS_MPI_INT;
+    nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
+    elt_type = (sizeof(cs_int_t) == 8) ? FVM_INT64 : FVM_INT32;
+    break;
+  case CS_TYPE_cs_real_t:
+    mpi_type     = CS_MPI_REAL;
+    nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
+    elt_type =   (sizeof(cs_real_t) == fvm_datatype_size[FVM_DOUBLE])
+               ? FVM_DOUBLE : FVM_FLOAT;
+    break;
+  default:
+    assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
+  }
+
+  /* Create entity lists associated with redistribution */
+
+  _prepare_redistribution(n_glob_ents,
+                          n_ents,
+                          n_blocks,
+                          &block_step,
+                          &block_buf_size,
+                          &owner_buf_size,
+                          ent_global_num,
+                          &owner_ent_id,
+                          &block_count,
+                          &owner_count,
+                          &block_disp,
+                          &owner_disp,
+                          &block_start);
+
+  /* Prepare values to send */
+
+  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
+  BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
+
+  memcpy(block_start, block_disp, sizeof(int)*cs_glob_base_nbr);
+
+  for (ii = 0; ii < n_ents; ii++) {
+    block_id = (ent_global_num[ii] - 1) / block_step;
+    start_loc = block_start[block_id]*nbr_byte_ent;
+    for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
+      block_val[start_loc + byte_id] = vals[ii*nbr_byte_ent + byte_id];
+    block_start[block_id] += 1;
+  }
+
+  BFT_FREE(block_start);
+
+  for (ii = 0; ii < cs_glob_base_nbr; ii++) {
+    block_count[ii] *= n_location_vals;
+    owner_count[ii] *= n_location_vals;
+    block_disp[ii] *= n_location_vals;
+    owner_disp[ii] *= n_location_vals;
+  }
+
+  MPI_Alltoallv(block_val, block_count, block_disp, mpi_type,
+                owner_val, owner_count, owner_disp, mpi_type,
+                cs_glob_base_mpi_comm);
+
+  /* Free arrays that are not useful anymore */
+
+  BFT_FREE(block_val);
+  BFT_FREE(block_count);
+  BFT_FREE(owner_count);
+  BFT_FREE(block_disp);
+  BFT_FREE(owner_disp);
+
+  if (owner_buf_size > 0) {
+
+    BFT_MALLOC(buffer, block_step*nbr_byte_ent, cs_byte_t);
+
+    for (ii = 0; ii < owner_buf_size; ii++) {
+      start_loc = owner_ent_id[ii]*nbr_byte_ent;
+      for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
+        buffer[start_loc + byte_id]
+          = owner_val[ii*nbr_byte_ent + byte_id];
+    }
+
+    BFT_FREE(owner_ent_id);
+    BFT_FREE(owner_val);
+  }
+
+  /* Write to file */
+
+  global_num_start = cs_glob_base_rang*block_step + 1;
+  global_num_end = global_num_start + block_step;
+  if (global_num_start > n_glob_ents)
+    global_num_start = n_glob_ents + 1;
+  if (global_num_end > n_glob_ents)
+    global_num_end = n_glob_ents + 1;
+
+  cs_io_write_block_buffer(sec_name,
+                           n_glob_ents,
+                           global_num_start,
+                           global_num_end,
+                           location_id,
+                           0,
+                           n_location_vals,
+                           elt_type,
+                           buffer,
+                           suite->fh);
+
+  /* Free buffer */
+
+  BFT_FREE(buffer);
+}
 
 #endif /* #if defined(_CS_HAVE_MPI) */
 
-
 /*----------------------------------------------------------------------------
- *  Permutation des valeurs d'un tableau renuméroté en lecture
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_permute_lec
-(
- const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
-       cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Permutation des valeurs d'un tableau renuméroté en écriture
- *----------------------------------------------------------------------------*/
-
-static cs_byte_t * cs_loc_suite_permute_ecr
-(
- const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
- const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui définit un support supplémentaire.
+ * Convert read/write arguments from the Fortran API to the C API.
  *
- *  Renvoie l'indice du support ajouté.
+ * parameters:
+ *   numsui   <-- restart file id
+ *   itysup   <-- location type code
+ *   irtype   <-- integer or real
+ *   suite    <-- pointer to restart file handle
+ *   support  <-- location id
+ *   datatype <-- integer of real
+ *   ierror   <-- 0 = success, < 0 = error
  *----------------------------------------------------------------------------*/
 
-int cs_suite_ajoute_support
-(
-       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
- const char        *nomsup,               /* --> Nom de la rubrique           */
-       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entités      */
-       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entités       */
- const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entités  */
-);
+static void
+_section_f77_to_c(const cs_int_t   *numsui,
+                  const cs_int_t   *itysup,
+                  const cs_int_t   *irtype,
+                  cs_suite_t      **suite,
+                  int              *support,
+                  cs_type_t        *datatype,
+                  cs_int_t         *ierror)
+{
+  cs_int_t indsui = *numsui - 1;
 
+  *ierror = CS_SUITE_SUCCES;
+
+  /* Pointer to associated restart file handle */
+
+  if (   indsui < 0
+      || indsui > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[indsui] == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
+                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
+
+    *ierror = CS_SUITE_ERR_NUM_FIC;
+    return;
+  }
+
+  else
+    *suite = _restart_pointer[indsui];
+
+  /* Location associated with section */
+
+  switch (*itysup) {
+
+  case 0:
+    *support = CS_SUITE_SUPPORT_SCAL;
+    break;
+
+  case 1:
+    *support = CS_SUITE_SUPPORT_CEL;
+    break;
+
+  case 2:
+    *support = CS_SUITE_SUPPORT_FAC_INT;
+    break;
+
+  case 3:
+    *support = CS_SUITE_SUPPORT_FAC_BRD;
+    break;
+
+  case 4:
+    *support = CS_SUITE_SUPPORT_SOM;
+    break;
+
+  default:
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Le type de support <%d> indiqué pour une rubrique de\n"
+                 "fichier suite est invalide."), (int)(*itysup));
+    *ierror = CS_SUITE_ERR_SUPPORT;
+    return;
+
+  }
+
+  /* Datatype associated with section */
+
+  switch (*irtype) {
+
+  case 1:
+    *datatype = CS_TYPE_cs_int_t;
+    break;
+
+  case 2:
+    *datatype = CS_TYPE_cs_real_t;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Le type de valeur <%d> indiqué pour une rubrique de\n"
+                "fichier suite est invalide"), (int)(*irtype));
+    *ierror = CS_SUITE_ERR_TYPE_VAL;
+    return;
+
+  }
+}
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise un support supplémentaire
+ * Swap values of a renumbered array when reading
+ *
+ * parameters:
+ *   n_ents          --> number of local entities
+ *   ini_ent_num     --> initial entity numbers
+ *   n_location_vals --> number of values per entity
+ *   datatype        --> data type
+ *   vals            --> array of values
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_suite_init_support
-(
-       cs_suite_t   *suite,         /* --> Ptr. fichier suite                 */
- const char         *nomrub,        /* --> Nom de la rubrique                 */
- const fvm_gnum_t    nbr_ent_glob   /* --> Nombre global d'entités            */
-);
+static void
+_restart_permute_read(cs_int_t           n_ents,
+                      const fvm_gnum_t  *ini_ent_num,
+                      cs_int_t           n_location_vals,
+                      cs_type_t          datatype,
+                      cs_byte_t         *vals)
+{
+  cs_int_t ent_id, jj;
 
+  cs_int_t ii = 0;
+
+  /* Instructions */
+
+  if (ini_ent_num == NULL)
+    return;
+
+  switch (datatype) {
+
+  case CS_TYPE_cs_int_t:
+    {
+      cs_int_t  *val_ord;
+      cs_int_t  *val_cur = (cs_int_t *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[ii++]
+            = val_cur[(ini_ent_num[ent_id] - 1) * n_location_vals + jj];
+      }
+
+      for (ii = 0; ii < n_ents * n_location_vals; ii++)
+        val_cur[ii] = val_ord[ii];
+
+      BFT_FREE(val_ord);
+    }
+    break;
+
+  case CS_TYPE_cs_real_t:
+    {
+      cs_real_t  *val_ord;
+      cs_real_t  *val_cur = (cs_real_t *)vals;
+
+      BFT_MALLOC (val_ord, n_ents * n_location_vals, cs_real_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[ii++]
+            = val_cur[(ini_ent_num[ent_id] - 1) * n_location_vals + jj];
+      }
+
+      for (ii = 0; ii < n_ents * n_location_vals; ii++)
+        val_cur[ii] = val_ord[ii];
+
+      BFT_FREE(val_ord);
+    }
+    break;
+
+  default:
+    assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Swap values of a renumbered array when writing
+ *
+ * parameters:
+ *   n_ents          --> number of local entities
+ *   ini_ent_num     --> initial entity numbers
+ *   n_location_vals --> number of values per entity
+ *   datatype        --> data type
+ *   vals            --> array of values
+ *
+ * returns:
+ *   pointer to array of values in initial entity order
+ *----------------------------------------------------------------------------*/
+
+static cs_byte_t *
+_restart_permute_write(cs_int_t           n_ents,
+                       const fvm_gnum_t  *ini_ent_num,
+                       cs_int_t           n_location_vals,
+                       cs_type_t          datatype,
+                       const cs_byte_t   *vals)
+{
+  cs_int_t  ent_id, jj;
+
+  cs_int_t  ii = 0;
+
+  /* Instructions */
+
+  if (ini_ent_num == NULL)
+    return NULL;
+
+  switch (datatype) {
+
+  case CS_TYPE_cs_int_t:
+    {
+      cs_int_t  *val_ord;
+      const cs_int_t  *val_cur = (const cs_int_t *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[(ini_ent_num[ent_id] - 1) * n_location_vals + jj]
+            = val_cur[ii++];
+      }
+
+      return (cs_byte_t *)val_ord;
+    }
+    break;
+
+  case CS_TYPE_cs_real_t:
+    {
+      cs_real_t  *val_ord;
+      const cs_real_t  *val_cur = (const cs_real_t *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_real_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[(ini_ent_num[ent_id] - 1) * n_location_vals + jj]
+            = val_cur[ii++];
+      }
+
+      return (cs_byte_t *)val_ord;
+    }
+    break;
+
+  default:
+    assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
+    return NULL;
+
+  }
+}
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ * Public Fortran function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -530,21 +981,21 @@ void CS_PROCF (opnsui, OPNSUI)
 {
   char    *nombuf;
 
-  cs_int_t ind;
+  size_t   id;
 
   cs_suite_mode_t suite_mode;
 
 
-  /* Initialisation */
+  /* Initialization */
 
   *numsui = 0;
   *ierror = CS_SUITE_SUCCES;
 
-  /* Traitement du nom pour l'API C */
+  /* Handle name for C API */
 
   nombuf = cs_base_chaine_f_vers_c_cree(nomsui, *lngnom);
 
-  /* Options de création du fichier */
+  /* File creation options */
 
   {
     switch(*ireawr) {
@@ -556,7 +1007,7 @@ void CS_PROCF (opnsui, OPNSUI)
       break;
     default:
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le mode d'ouverture du fichier suite <%s>\n"
+      bft_printf(_("Le mode d'ouverture du fichier suite \"%s\"\n"
                    "doit être égal à 1 (lecture) ou 2 (écriture) "
                    "et non <%d>"), nombuf, (int)(*ireawr));
 
@@ -565,49 +1016,48 @@ void CS_PROCF (opnsui, OPNSUI)
 
   }
 
-  /* Recherche d'un emplacement disponible */
+  /* Search for an available slot */
 
   if (*ierror == CS_SUITE_SUCCES) {
 
-    for (ind = 0 ;
-         ind < cs_glob_suite_ptr_nbr && cs_glob_suite_ptr_tab[ind] != NULL ;
-         ind++);
+    for (id = 0;
+         id < _restart_pointer_size && _restart_pointer[id] != NULL;
+         id++);
 
-    /* Si aucun emplacement disponible, on autorise plus de fichiers suite */
+    /* If no slot is available, we allow for more restart files */
 
-    if (ind == cs_glob_suite_ptr_nbr) {
+    if (id == _restart_pointer_size) {
 
-      BFT_REALLOC(cs_glob_suite_ptr_tab, cs_glob_suite_ptr_nbr * 2,
+      BFT_REALLOC(_restart_pointer, _restart_pointer_size * 2,
                   cs_suite_t *);
-      for (ind = cs_glob_suite_ptr_nbr ;
-           ind < cs_glob_suite_ptr_nbr * 2 ;
-           ind++)
-        cs_glob_suite_ptr_tab[ind] = NULL;
-      cs_glob_suite_ptr_nbr *= 2;
+      for (id = _restart_pointer_size;
+           id < _restart_pointer_size * 2;
+           id++)
+        _restart_pointer[id] = NULL;
+      _restart_pointer_size *= 2;
 
     }
 
   }
 
-  /* Création du fichier suite */
+  /* Create file */
 
   if (*ierror == CS_SUITE_SUCCES)
-    cs_glob_suite_ptr_tab[ind] = cs_suite_cree(nombuf, suite_mode);
+    _restart_pointer[id] = cs_suite_cree(nombuf, suite_mode);
 
-  /* Libération de mémoire si nécessaire */
+  /* Free memory if necessary */
 
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
 
   /*
-   * On renvoie le numéro de position du pointeur dans le tableau
-   * (indice + 1 pour avoir un numéro de 1 à n, plus classique en F77)
+   * Return the position of the handle in the array
+   * (id + 1 to have a 1 to n numbering, more conventional in F77)
   */
 
   if (*ierror == CS_SUITE_SUCCES)
-    *numsui = ind + 1;
+    *numsui = id + 1;
   else
     *numsui = -1;
-
 }
 
 
@@ -633,11 +1083,11 @@ void CS_PROCF (clssui, CLSSUI)
 
   *ierror = CS_SUITE_SUCCES;
 
-  /* Vérification que le fichier est valide */
+  /* Check that the file is valid */
 
   if (   indsui < 0
-      || indsui > cs_glob_suite_ptr_nbr
-      || cs_glob_suite_ptr_tab[indsui] == NULL) {
+      || indsui > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
                  "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
@@ -646,16 +1096,15 @@ void CS_PROCF (clssui, CLSSUI)
     return;
   }
 
-  /* Fermeture du fichier */
+  /* Close file */
 
-  cs_suite_detruit(cs_glob_suite_ptr_tab[indsui]);
-  cs_glob_suite_ptr_tab[indsui] = NULL;
-
+  cs_suite_detruit(_restart_pointer[indsui]);
+  _restart_pointer[indsui] = NULL;
 }
 
 
 /*----------------------------------------------------------------------------
- *  Vérification du support associé à un fichier suite ;
+ *  Vérification du support associé à un fichier suite;
  *  On renvoie pour chaque type d'entité 1 si le nombre d'entités associées
  *  au fichier suite correspond au nombre d'entités en cours (et donc que
  *  l'on considère que le support est bien le même), 0 sinon.
@@ -685,11 +1134,11 @@ void CS_PROCF (tstsui, TSTSUI)
 
   cs_int_t   indsui   = *numsui - 1;
 
-  /* Pointeur de structure suite associé */
+  /* Associated structure pointer */
 
   if (   indsui < 0
-      || indsui > cs_glob_suite_ptr_nbr
-      || cs_glob_suite_ptr_tab[indsui] == NULL) {
+      || indsui > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
@@ -704,7 +1153,7 @@ void CS_PROCF (tstsui, TSTSUI)
 
   else {
 
-    cs_suite_verif_support_base(cs_glob_suite_ptr_tab[indsui],
+    cs_suite_verif_support_base(_restart_pointer[indsui],
                                 &corresp_cel, &corresp_fac,
                                 &corresp_fbr, &corresp_som);
 
@@ -736,11 +1185,11 @@ void CS_PROCF (infsui, INFSUI)
 {
   cs_int_t   indsui   = *numsui - 1;
 
-  /* Pointeur de structure suite associé */
+  /* Associated structure pointer */
 
   if (   indsui < 0
-      || indsui > cs_glob_suite_ptr_nbr
-      || cs_glob_suite_ptr_tab[indsui] == NULL) {
+      || indsui > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[indsui] == NULL) {
 
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Infomation sur le fichier suite numéro <%d> indisponible\n"
@@ -748,7 +1197,7 @@ void CS_PROCF (infsui, INFSUI)
   }
   else {
 
-    cs_suite_affiche_index(cs_glob_suite_ptr_tab[indsui]);
+    cs_suite_affiche_index(_restart_pointer[indsui]);
 
   }
 }
@@ -794,45 +1243,43 @@ void CS_PROCF (lecsui, LECSUI)
 {
   char    *nombuf;
 
-  cs_type_t   typ_val;
+  cs_type_t   datatype;
 
   cs_suite_t  *suite;
-  int          ind_support;
+  int          location_id;
 
 
   *ierror = CS_SUITE_SUCCES;
 
-  /* Traitement du nom pour l'API C */
+  /* Handle name for C API */
 
-  nombuf = cs_base_chaine_f_vers_c_cree(nomrub,
-                                        *lngnom);
+  nombuf = cs_base_chaine_f_vers_c_cree(nomrub, *lngnom);
 
-  /* Traitement des autres arguments pour l'API C */
+  /* Handle other arguments for C API */
 
-  cs_loc_suite_rub_f77_vers_C(numsui,
-                              itysup,
-                              irtype,
-                              &suite,
-                              &ind_support,
-                              &typ_val,
-                              ierror);
+  _section_f77_to_c(numsui,
+                    itysup,
+                    irtype,
+                    &suite,
+                    &location_id,
+                    &datatype,
+                    ierror);
 
   if (*ierror < CS_SUITE_SUCCES)
     return;
 
-  /* Lecture de la rubrique */
+  /* Read section */
 
   *ierror = cs_suite_lit_rub(suite,
                              nombuf,
-                             ind_support,
+                             location_id,
                              *nbvent,
-                             typ_val,
+                             datatype,
                              tabvar);
 
-  /* Libération de mémoire si nécessaire */
+  /* Free memory if necessary */
 
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
-
 }
 
 
@@ -876,48 +1323,47 @@ void CS_PROCF (ecrsui, ECRSUI)
 {
   char    *nombuf;
 
-  cs_type_t     typ_val;
+  cs_type_t     datatype;
 
   cs_suite_t   *suite;
-  int           ind_support;
+  int           location_id;
 
 
   *ierror = CS_SUITE_SUCCES;
 
-  /* Traitement du nom pour l'API C */
+  /* Handle name for C API */
 
   nombuf = cs_base_chaine_f_vers_c_cree(nomrub, *lngnom);
 
-  /* Traitement des autres arguments pour l'API C */
+  /* Handle other arguments for C API */
 
-  cs_loc_suite_rub_f77_vers_C(numsui,
-                              itysup,
-                              irtype,
-                              &suite,
-                              &ind_support,
-                              &typ_val,
-                              ierror);
+  _section_f77_to_c(numsui,
+                    itysup,
+                    irtype,
+                    &suite,
+                    &location_id,
+                    &datatype,
+                    ierror);
 
   if (*ierror < CS_SUITE_SUCCES)
     return;
 
-  /* Écriture de la rubrique */
+  /* Write section */
 
   cs_suite_ecr_rub(suite,
                    nombuf,
-                   ind_support,
+                   location_id,
                    *nbvent,
-                   typ_val,
+                   datatype,
                    tabvar);
 
-  /* Libération de mémoire si nécessaire */
+  /* Free memory if necessary */
 
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
 }
 
-
 /*============================================================================
- *  Définitions de fonctions publiques
+ * Public Fortran function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -930,89 +1376,55 @@ cs_suite_t * cs_suite_cree
  const cs_suite_mode_t         mode         /* --> Lecture ou écriture        */
 )
 {
-  cs_bool_t     lit_fichier;
   cs_suite_t  * suite;
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  /* Instructions */
+  /* Allocate and initialize base structure */
 
   BFT_MALLOC(suite, 1, cs_suite_t);
 
-  /* Construction du nom du fichier suite */
+  BFT_MALLOC(suite->name, strlen(nom) + 1, char);
 
-  BFT_MALLOC(suite->nom, strlen(nom) + 1, char);
+  strcpy(suite->name, nom);
 
-  strcpy(suite->nom, nom);
-
-
-  /* Initialisation des autres champs */
+  /* Initialize other fields */
 
   suite->mode = mode;
-  suite->type = CS_SUITE_TYPE_BINAIRE;
 
-  suite->nbr_fic = 0;
-  suite->fic     = NULL;
+  suite->fh = NULL;
 
-  /* Initialisation des données du support */
+  /* Initialize location data */
 
-  if (suite->mode == CS_SUITE_MODE_LECTURE) {
-    suite->nbr_cel = 0;
-    suite->nbr_fac = 0;
-    suite->nbr_fbr = 0;
-    suite->nbr_som = 0;
-  }
-  else {
-    suite->nbr_cel = mesh->n_g_cells;
-    suite->nbr_fac = mesh->n_g_i_faces;
-    suite->nbr_fbr = mesh->n_g_b_faces;
-    suite->nbr_som = mesh->n_g_vertices;
-  }
+  suite->n_locations = 0;
+  suite->location = NULL;
 
-  /* Initialisation des supports utilisateurs  */
+  /* Open associated file, and build an index of sections in read mode */
 
-  suite->nbr_sup_add = 0;
-  suite->tab_sup_add = NULL;
+  _add_file(suite);
 
-  /* Initialisation de l'index (pour lecture) */
+  /* Add basic location definitions */
 
-  suite->nbr_rec = 0;
-
-  suite->tab_rec = NULL;
-  suite->nbr_rec_max = 0;
-
-  if (suite->mode == CS_SUITE_MODE_LECTURE && cs_glob_base_rang <= 0) {
-    suite->nbr_rec_max = 1;
-    BFT_MALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
-  }
-
-  /*
-    Ouverture du ou des fichier(s) associé(s) et analyse du contenu
-    en lecture ou écriture de l'en-tête en écriture.
-  */
-
-  if (cs_glob_base_rang <= 0) {
-
-    lit_fichier = true;
-
-    while (lit_fichier == true)
-      lit_fichier = cs_loc_suite_fic_ajoute(suite);
-
-  }
-
-  /* En lecture, nettoyage et distribution de l'index */
-
-  if (suite->mode == CS_SUITE_MODE_LECTURE)
-    cs_loc_suite_prepare_index(suite);
+  cs_suite_ajoute_support(suite, "cells",
+                          mesh->n_g_cells, mesh->n_cells,
+                          mesh->global_cell_num);
+  cs_suite_ajoute_support(suite, "interior_faces",
+                          mesh->n_g_i_faces, mesh->n_i_faces,
+                          mesh->global_i_face_num);
+  cs_suite_ajoute_support(suite, "boundary_faces",
+                          mesh->n_g_b_faces, mesh->n_b_faces,
+                          mesh->global_b_face_num);
+  cs_suite_ajoute_support(suite, "vertices",
+                          mesh->n_g_vertices, mesh->n_vertices,
+                          mesh->global_vtx_num);
 
   return suite;
-
 }
 
 
 /*----------------------------------------------------------------------------
  *  Fonction qui détruit la structure associée à un fichier suite (et ferme
- *  le fichier associé) ; elle renvoie un pointeur NULL.
+ *  le fichier associé); elle renvoie un pointeur NULL.
  *----------------------------------------------------------------------------*/
 
 cs_suite_t * cs_suite_detruit
@@ -1020,77 +1432,32 @@ cs_suite_t * cs_suite_detruit
  cs_suite_t * suite                         /* --> Fichier suite              */
 )
 {
-
   assert(suite != NULL);
 
-  if (suite->fic != NULL) {
+  if (suite->fh != NULL)
+    cs_io_finalize(&(suite->fh));
 
-    cs_int_t ind, nbr_fic;
+  /* Free locations array */
 
-    if (suite->mode == CS_SUITE_MODE_ECRITURE) {
-
-      nbr_fic = 1;
-
-      /* Marquage numéro de suite sur fichier suivant */
-
-      switch(suite->type) {
-      case CS_SUITE_TYPE_ASCII:
-        bft_file_printf(suite->fic[0], "[%s]\n",
-                        cs_suite_nom_fin_fic);
-        break;
-      case CS_SUITE_TYPE_BINAIRE:
-        {
-          cs_int_t  buf[4] = {0, 0, 0, 0};
-          buf[0] = strlen(cs_suite_nom_fin_fic) + 1;
-          bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-          bft_file_write(cs_suite_nom_fin_fic, 1, buf[0], suite->fic[0]);
-        }
-        break;
-      }
-    }
-    else /* if (suite->mode == CS_SUITE_MODE_LECTURE) */
-
-      nbr_fic = suite->nbr_fic;
-
-    /* Fermeture des fichiers et libération structures associées */
-
-    for (ind = 0 ; ind < nbr_fic ; ind++)
-      bft_file_free(suite->fic[ind]);
-
-    BFT_FREE(suite->fic);
-
+  if (suite->n_locations > 0) {
+    size_t loc_id;
+    for (loc_id = 0; loc_id < suite->n_locations; loc_id++)
+      BFT_FREE((suite->location[loc_id]).name);
   }
+  if (suite->location != NULL)
+    BFT_FREE(suite->location);
 
-  /* Libérations de l'index */
+  /* Free remaining memory */
 
-  if (suite->nbr_rec > 0) {
-    cs_int_t ind;
-    for (ind = 0 ; ind < suite->nbr_rec ; ind++)
-      BFT_FREE((suite->tab_rec[ind]).nom);
-  }
-  if (suite->tab_rec != NULL)
-    BFT_FREE(suite->tab_rec);
-
-  if (suite->nbr_sup_add > 0) {
-    int ind_sup;
-    for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++)
-      BFT_FREE((suite->tab_sup_add[ind_sup]).nom);
-  }
-  if (suite->tab_sup_add != NULL)
-    BFT_FREE(suite->tab_sup_add);
-
-  /* Dernières libérations mémoire */
-
-  BFT_FREE(suite->nom);
+  BFT_FREE(suite->name);
   BFT_FREE(suite);
 
   return NULL;
-
 }
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui vérifie les supports de base associé à un fichier suite ;
+ *  Fonction qui vérifie les supports de base associé à un fichier suite;
  *  On renvoie pour chaque type d'entité true si le nombre d'entités
  *  associées au fichier suite correspond au nombre d'entités en cours (et
  *  donc que l'on considère que le support est bien le même), false sinon.
@@ -1105,129 +1472,124 @@ void cs_suite_verif_support_base
        cs_bool_t   *const corresp_som       /* <-- Corresp. sommets           */
 )
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  size_t location_id;
+
+  *corresp_cel = false;
+  *corresp_fac = false;
+  *corresp_fbr = false;
+  *corresp_som = false;
 
   assert(suite != NULL);
 
-  *corresp_cel
-    = (mesh->n_g_cells == (fvm_gnum_t)suite->nbr_cel ? true : false);
-  *corresp_fac
-    = (mesh->n_g_i_faces == (fvm_gnum_t)suite->nbr_fac ? true : false);
-  *corresp_fbr
-    = (mesh->n_g_b_faces == (fvm_gnum_t)suite->nbr_fbr ? true : false);
-  *corresp_som
-    = (mesh->n_g_vertices == (fvm_gnum_t)suite->nbr_som ? true : false);
+  for (location_id = 0; location_id < 4; location_id++) {
 
-  /* Messages d'avertissement pour listing "maître E/S" */
+    const _location_t *loc = suite->location + location_id;
 
-  if (cs_glob_base_rang <= 0) {
-
-    /* Dimensions du support */
-
-    if ((fvm_gnum_t)suite->nbr_cel != mesh->n_g_cells) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de cellules associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
-                 suite->nom, (int)suite->nbr_cel);
+    if (loc->n_glob_ents_f == loc->n_glob_ents) {
+      if (location_id == 0)
+        *corresp_cel = true;
+      else if (location_id == 1)
+        *corresp_fac = true;
+      else if (location_id == 2)
+        *corresp_fbr = true;
+      else if (location_id == 3)
+        *corresp_som = true;
     }
-    if ((fvm_gnum_t)suite->nbr_fac != mesh->n_g_i_faces) {
+
+    else if (cs_glob_base_rang <= 0) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de faces internes associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
-                 suite->nom, (int)suite->nbr_fac);
-    }
-    if ((fvm_gnum_t)suite->nbr_fbr != mesh->n_g_b_faces) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de faces de bord associées au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
-                 suite->nom, (int)suite->nbr_fbr);
-    }
-    if ((fvm_gnum_t)suite->nbr_som != mesh->n_g_vertices) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Le nombre de sommets associés au fichier suite\n"
-                   "<%s> vaut %d et ne correspond pas au maillage en cours\n"),
-                 suite->nom, (int)suite->nbr_som);
+      bft_printf(_("La taille du support \"%s\" associée au fichier suite\n"
+                   "\"%s\" vaut %lu et ne correspond pas\n"
+                   "à celle du maillage en cours (%lu)\n"),
+                 loc->name, suite->name,
+                 (unsigned long)loc->n_glob_ents_f,
+                 (unsigned long)loc->n_glob_ents);
     }
 
   }
-
 }
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ajoute un support supplémentaire.
+ * Add a location definition.
  *
- *  Renvoie l'indice associé au support, ou -1 en cas d'erreur.
+ * parameters:
+ *   suite           <-- associated restart file pointer
+ *   location_name   <-- name associated with the location
+ *   n_glob_ents     <-- global number of entities
+ *   n_ents          <-- local number of entities
+ *   ent_global_num  <-- global entity numbers, or NULL
+ *
+ * returns:
+ *   the location id assigned to the location, or -1 in case of error
  *----------------------------------------------------------------------------*/
 
-int cs_suite_ajoute_support
-(
-       cs_suite_t  *suite,                /* --> Ptr. fichier suite           */
- const char        *nom_sup,              /* --> Nom de la rubrique           */
-       fvm_gnum_t   nbr_ent_glob,         /* --> Nombre global d'entités      */
-       fvm_lnum_t   nbr_ent_loc,          /* --> Nombre local d'entités       */
- const fvm_gnum_t  *num_glob_ent          /* --> Numéros globaux des entités  */
-)
+int
+cs_suite_ajoute_support(cs_suite_t        *suite,
+                        const char        *location_name,
+                        fvm_gnum_t         n_glob_ents,
+                        fvm_lnum_t         n_ents,
+                        const fvm_gnum_t  *ent_global_num)
 {
-  int  ind_sup;
-
-  int errval = -1;
+  int loc_id;
 
   if (suite->mode == CS_SUITE_MODE_LECTURE) {
 
-    /* Recherche d'un support avec le même nom */
+    /* Search for a location with the same name */
 
-    for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++) {
+    for (loc_id = 0; loc_id < (int)(suite->n_locations); loc_id++) {
 
-      if ((strcmp((suite->tab_sup_add[ind_sup]).nom, nom_sup) == 0)) {
+      if ((strcmp((suite->location[loc_id]).name, location_name) == 0)) {
 
-        (suite->tab_sup_add[ind_sup]).nbr_ent_glob = nbr_ent_glob;
+        (suite->location[loc_id]).n_glob_ents = n_glob_ents;
 
-        (suite->tab_sup_add[ind_sup]).nbr_ent_loc  = nbr_ent_loc;
-        (suite->tab_sup_add[ind_sup]).num_glob_ent = num_glob_ent;
+        (suite->location[loc_id]).n_ents  = n_ents;
+        (suite->location[loc_id]).ent_global_num = ent_global_num;
 
-        return ind_sup + 5;
+        return loc_id + 1;
 
       }
     }
+
+    if (loc_id >= ((int)(suite->n_locations)))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le fichier suite \"%s\" ne contient aucun support\n"
+                  " de nom \"%s\"."),
+                suite->name, location_name);
+
   }
 
   else {
 
-    int ind_sup_f = suite->nbr_sup_add + 5;
+    fvm_datatype_t gnum_type
+      = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
 
-    /* Création d'un nouveau support */
+    /* Create a new location */
 
-    suite->nbr_sup_add += 1;
+    suite->n_locations += 1;
 
-    BFT_REALLOC(suite->tab_sup_add, suite->nbr_sup_add, cs_suite_sup_t);
-    BFT_MALLOC((suite->tab_sup_add[suite->nbr_sup_add-1]).nom,
-               strlen(nom_sup)+1,
+    BFT_REALLOC(suite->location, suite->n_locations, _location_t);
+    BFT_MALLOC((suite->location[suite->n_locations-1]).name,
+               strlen(location_name)+1,
                char);
 
-    strcpy((suite->tab_sup_add[suite->nbr_sup_add-1]).nom, nom_sup);
+    strcpy((suite->location[suite->n_locations-1]).name, location_name);
 
-    sprintf((suite->tab_sup_add[suite->nbr_sup_add-1]).nom_sup,
-            "%03i",
-            ind_sup_f);
+    (suite->location[suite->n_locations-1]).id             = suite->n_locations;
+    (suite->location[suite->n_locations-1]).n_glob_ents    = n_glob_ents;
+    (suite->location[suite->n_locations-1]).n_glob_ents_f  = n_glob_ents;
+    (suite->location[suite->n_locations-1]).n_ents         = n_ents;
+    (suite->location[suite->n_locations-1]).ent_global_num = ent_global_num;
 
-    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_glob   = nbr_ent_glob;
-    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_glob_f = nbr_ent_glob;
-    (suite->tab_sup_add[suite->nbr_sup_add-1]).nbr_ent_loc    = nbr_ent_loc;
-    (suite->tab_sup_add[suite->nbr_sup_add-1]).num_glob_ent   = num_glob_ent;
+    cs_io_write_global(location_name, 1, suite->n_locations, 0, 0,
+                       gnum_type, &n_glob_ents,
+                       suite->fh);
 
-    cs_loc_suite_ecr_rub_sup(suite,
-                             nom_sup,
-                             suite->nbr_sup_add + 4,
-                             nbr_ent_glob);
-
-    return ind_sup_f;
-
+    return suite->n_locations;
   }
 
-  return errval;
+  return -1;
 }
-
 
 /*----------------------------------------------------------------------------
  *  Fonction qui affiche l'index généré lors de l'analyse du fichier
@@ -1238,241 +1600,188 @@ void cs_suite_affiche_index
  const cs_suite_t  *const  suite          /* --> Structure suite              */
 )
 {
-  int ind_sup;
-
-  cs_int_t  ind_rec;
+  size_t loc_id;
 
   assert(suite != NULL);
 
-  for (ind_sup = 0; ind_sup < suite->nbr_sup_add; ind_sup++) {
-    const cs_suite_sup_t *spt = &(suite->tab_sup_add[ind_sup]);
-    bft_printf(_("  Support supplémentaire : %s\n"
-                 "    (numéro : %03d, nbr_ent_glob : %lu\n"),
-               spt->nom, (unsigned long)(spt->nbr_ent_glob));
+  for (loc_id = 0; loc_id < suite->n_locations; loc_id++) {
+    const _location_t *loc = &(suite->location[loc_id]);
+    bft_printf(_("  Support : %s\n"
+                 "    (numéro : %03d, n_glob_ents : %lu)\n"),
+               loc->name, (int)(loc->id), (unsigned long)(loc->n_glob_ents));
   }
-  if (suite->nbr_sup_add > 0)
+  if (suite->n_locations > 0)
     bft_printf("\n");
 
-  bft_printf(_("  Index associé à la suite : %s\n"
-               "  (support, nbr_val/ent, type_val, [ind_fic, pos_fic], "
-               "nom) : \n"),
-             suite->nom);
+  /* Dump general file info, including index */
 
-  for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-    char nom_sup[4];
-    if ((suite->tab_rec[ind_rec]).ind_support < CS_SUITE_SUPPORT_SOM)
-      strcpy(nom_sup,
-             cs_suite_nom_support[(suite->tab_rec[ind_rec]).ind_support]);
-    else
-      sprintf(nom_sup, "%03d", (suite->tab_rec[ind_rec]).ind_support);
-    bft_printf("    %s  %d  %s  [%2d %10d]  %s\n",
-               nom_sup,
-               (suite->tab_rec[ind_rec]).nbr_val_ent,
-               cs_suite_nom_typ_elt[(suite->tab_rec[ind_rec]).typ_val],
-               (suite->tab_rec[ind_rec]).ind_fic,
-               (int)(suite->tab_rec[ind_rec]).pos_fic,
-               (suite->tab_rec[ind_rec]).nom);
-  }
+  bft_printf(_("  Informations générales associées au fichier suite :\n"));
 
-  bft_printf("\n");
+  cs_io_dump(suite->fh);
 }
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui lit un enregistrement sur fichier suite ; On renvoie 0
+ *  Fonction qui lit un enregistrement sur fichier suite; On renvoie 0
  *  (CS_SUITE_SUCCES) en cas de succès, une valeur négative (de type
  *  CS_SUITE_ERR_xxx) en cas d'échec.
  *----------------------------------------------------------------------------*/
 
 cs_int_t cs_suite_lit_rub
 (
- const cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
+       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
  const char        *nom_rub,                   /* --> Nom de la rubrique      */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
+       int          location_id,               /* --> Support de la variable  */
+       cs_int_t     n_location_vals,           /* --> Nb. val/point support   */
        cs_type_t    typ_val,                   /* --> Type de valeurs         */
        void        *val                        /* <-- Valeurs à lire          */
 )
 {
+  cs_int_t     nbr_val_tot, n_glob_ents, n_ents;
+  const fvm_gnum_t  *ent_global_num;
 
-  char         buffer_ascii[CS_SUITE_LNG_BUF_ASCII + 1];
+  size_t rec_id;
+  cs_io_sec_header_t header;
 
-  cs_int_t     nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
-  const fvm_gnum_t  *num_glob_ent;
+  size_t index_size = 0;
 
-  cs_int_t     ind_rec;
-  bft_file_t  *fic;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  index_size = cs_io_get_index_size(suite->fh);
 
   assert(suite != NULL);
 
-  buffer_ascii[0] = '\0';
+  /* Check associated location */
 
-  /* Vérification du support associé */
-
-  switch (ind_support) {
-
-  case CS_SUITE_SUPPORT_SCAL:
-    nbr_ent_glob = nbr_val_tot/nbr_val_ent;
-    nbr_ent_loc  = nbr_val_tot/nbr_val_ent;
-    num_glob_ent = NULL;
-    break;
-  case CS_SUITE_SUPPORT_CEL:
-    if (mesh->n_g_cells != (fvm_gnum_t)suite->nbr_cel)
-      return CS_SUITE_ERR_SUPPORT;
-    nbr_ent_glob = mesh->n_g_cells;
-    nbr_ent_loc  = mesh->n_cells;
-    num_glob_ent = mesh->global_cell_num;
-    break;
-  case CS_SUITE_SUPPORT_FAC_INT:
-    if (mesh->n_g_i_faces != (fvm_gnum_t)suite->nbr_fac)
-      return CS_SUITE_ERR_SUPPORT;
-    nbr_ent_glob = mesh->n_g_i_faces;
-    nbr_ent_loc  = mesh->n_i_faces;
-    num_glob_ent = mesh->global_i_face_num;
-    break;
-  case CS_SUITE_SUPPORT_FAC_BRD:
-    if (mesh->n_g_b_faces != (fvm_gnum_t)suite->nbr_fbr)
-      return CS_SUITE_ERR_SUPPORT;
-    nbr_ent_glob = mesh->n_g_b_faces;
-    nbr_ent_loc  = mesh->n_b_faces;
-    num_glob_ent = mesh->global_b_face_num;
-    break;
-  case CS_SUITE_SUPPORT_SOM:
-    if (mesh->n_g_vertices != (fvm_gnum_t)suite->nbr_som)
-      return CS_SUITE_ERR_SUPPORT;
-    nbr_ent_glob = mesh->n_g_vertices;
-    nbr_ent_loc  = mesh->n_vertices;
-    num_glob_ent = mesh->global_vtx_num;
-    break;
-  default:
-    if (ind_support < 0 || (ind_support-5) >= suite->nbr_sup_add)
-      return CS_SUITE_ERR_SUPPORT;
-    if (   (suite->tab_sup_add[ind_support-5]).nbr_ent_glob_f
-        != (suite->tab_sup_add[ind_support-5]).nbr_ent_glob)
-      return CS_SUITE_ERR_SUPPORT;
-    nbr_ent_glob = (suite->tab_sup_add[ind_support-5]).nbr_ent_glob;
-    nbr_ent_loc  = (suite->tab_sup_add[ind_support-5]).nbr_ent_loc;
-    num_glob_ent = (suite->tab_sup_add[ind_support-5]).num_glob_ent;
+  if (location_id == 0) {
+    n_glob_ents = nbr_val_tot/n_location_vals;
+    n_ents  = nbr_val_tot/n_location_vals;
+    ent_global_num = NULL;
   }
 
-  /* On recherche l'enregistrement correspondant dans l'index */
+  else {
+    if (location_id < 0 || location_id > (int)(suite->n_locations))
+      return CS_SUITE_ERR_SUPPORT;
+    if (   (suite->location[location_id-1]).n_glob_ents_f
+        != (suite->location[location_id-1]).n_glob_ents)
+      return CS_SUITE_ERR_SUPPORT;
+    n_glob_ents = (suite->location[location_id-1]).n_glob_ents;
+    n_ents  = (suite->location[location_id-1]).n_ents;
+    ent_global_num = (suite->location[location_id-1]).ent_global_num;
+  }
 
-  for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-    if (strcmp((suite->tab_rec[ind_rec]).nom, nom_rub) == 0)
+  /* Search for the corresponding record in the index */
+
+  for (rec_id = 0; rec_id < index_size; rec_id++) {
+    const char * cmp_name = cs_io_get_indexed_sec_name(suite->fh, rec_id);
+    if (strcmp(cmp_name, nom_rub) == 0)
       break;
   }
 
-  /* Si on n'a pas trouvé l'enregistrement */
+  /* If the record was not found */
 
-  if (ind_rec >= suite->nbr_rec)
+  if (rec_id >= index_size)
     return CS_SUITE_ERR_EXISTE;
 
   /*
-    Si le support ne correspond pas ; on recherche un enregistrement
-    de même nom mais de support approprié.
+    If the location does not fit: we search for a location of same
+    name with the correct location.
   */
 
-  if ((suite->tab_rec[ind_rec]).ind_support != ind_support) {
+  header = cs_io_get_indexed_sec_header(suite->fh, rec_id);
 
-    for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-      if (   (strncmp((suite->tab_rec[ind_rec]).nom,
-                      nom_rub,
-                      strlen((suite->tab_rec[ind_rec]).nom)) == 0)
-          && ((suite->tab_rec[ind_rec]).ind_support == ind_support))
-      break;
+  if (header.location_id != (size_t)location_id) {
+
+    rec_id++;
+
+    while (rec_id < index_size) {
+      header = cs_io_get_indexed_sec_header(suite->fh, rec_id);
+      if (   (strcmp(header.sec_name, nom_rub) == 0)
+          && (header.location_id == (size_t)location_id))
+        break;
+      rec_id++;
     }
 
-    if (ind_rec >= suite->nbr_rec)
+    if (rec_id >= index_size)
       return CS_SUITE_ERR_SUPPORT;
-
   }
 
-  /* Si le nombre de valeurs par entité ne correspond pas */
+  /* If the number of values per location does not match */
 
-  if ((suite->tab_rec[ind_rec]).nbr_val_ent != nbr_val_ent)
-     return CS_SUITE_ERR_NBR_VAL;
+  if (header.n_location_vals != (size_t)n_location_vals)
+    return CS_SUITE_ERR_NBR_VAL;
 
-  /* Si le type de valeurs ne correspond pas */
+  /* If the type of value does not match */
 
-  if ((cs_type_t)((suite->tab_rec[ind_rec]).typ_val) != typ_val)
-    return CS_SUITE_ERR_TYPE_VAL;
-
-   /* Sinon, on se positionne pour effectuer la lecture */
-
-  if (cs_glob_base_rang <= 0) {
-
-    fic = suite->fic[(suite->tab_rec[ind_rec]).ind_fic];
-
-    bft_file_seek(fic, (suite->tab_rec[ind_rec]).pos_fic, BFT_FILE_SEEK_SET);
-
+  if (header.elt_type == FVM_INT32 || header.elt_type == FVM_INT64) {
+    cs_io_set_fvm_lnum(&header, suite->fh);
+    if (typ_val != CS_TYPE_cs_int_t)
+      return CS_SUITE_ERR_TYPE_VAL;
   }
+  else if (header.elt_type == FVM_FLOAT || header.elt_type == FVM_DOUBLE) {
+    if (sizeof(cs_real_t) != fvm_datatype_size[header.elt_type]) {
+      if (sizeof(cs_real_t) == fvm_datatype_size[FVM_FLOAT])
+        header.elt_type = FVM_FLOAT;
+      else
+        header.elt_type = FVM_DOUBLE;
+    }
+    if (typ_val != CS_TYPE_cs_real_t)
+      return CS_SUITE_ERR_TYPE_VAL;
+  }
+
+  /* Now set position in file to read data */
+
+  cs_io_set_indexed_position(suite->fh, &header, rec_id);
 
   /* Contenu de la rubrique */
   /*------------------------*/
 
-  nbr_val_tot = cs_loc_suite_calc_nbr_ent(suite,
-                                          ind_support,
-                                          nbr_val_ent);
+  nbr_val_tot = _compute_n_ents(suite,
+                                location_id,
+                                n_location_vals);
 
-  /* En mode non-parallèle */
+  /* In single processor mode of for global values */
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_base_nbr == 1 || location_id == 0) {
 
-    cs_loc_suite_lit_val(suite->type, fic, nbr_val_tot, typ_val, val,
-                         buffer_ascii);
+    cs_io_read_global(&header, val, suite->fh);
 
-    if (num_glob_ent != NULL)
-      cs_loc_suite_permute_lec(nbr_ent_loc,
-                               num_glob_ent,
-                               nbr_val_ent,
-                               typ_val,
-                               val);
+    if (ent_global_num != NULL)
+      _restart_permute_read(n_ents,
+                            ent_global_num,
+                            n_location_vals,
+                            typ_val,
+                            val);
   }
 
 #if defined(_CS_HAVE_MPI)
 
-  /* Variable indépendante du support et commune aux processus */
-
-  else if (ind_support == CS_SUITE_SUPPORT_SCAL) {
-
-    if (cs_glob_base_rang == 0)
-      cs_loc_suite_lit_val(suite->type, fic, nbr_val_tot, typ_val, val,
-                           buffer_ascii);
-
-    cs_loc_suite_distr_val(nbr_val_tot, typ_val, val);
-
-  }
-
-  /* En mode parallèle sur une entité de maillage */
+  /* In parallel mode for a distributed mesh location */
 
   else {
 
-    cs_int_t  nbr_bloc;
+    cs_int_t  n_blocks;
 
-    nbr_bloc = (  ((sizeof(cs_real_t) * nbr_ent_glob * nbr_val_ent) - 1)
+    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * n_location_vals) - 1)
                 / cs_suite_taille_buf_def) + 1;
-    if (nbr_bloc > cs_glob_base_nbr)
-      nbr_bloc = cs_glob_base_nbr;
-    if (nbr_bloc == 0 )
-      nbr_bloc = 1;
+    if (n_blocks > cs_glob_base_nbr)
+      n_blocks = cs_glob_base_nbr;
+    if (n_blocks == 0 )
+      n_blocks = 1;
 
-    cs_loc_suite_lit_val_ent(suite,
-                             fic,
-                             nbr_bloc,
-                             nbr_ent_glob,
-                             nbr_ent_loc,
-                             num_glob_ent,
-                             nbr_val_ent,
-                             typ_val,
-                             (cs_byte_t *)val);
+    _read_ent_values(suite,
+                     &header,
+                     n_blocks,
+                     n_glob_ents,
+                     n_ents,
+                     ent_global_num,
+                     n_location_vals,
+                     typ_val,
+                     (cs_byte_t *)val);
 
   }
 
 #endif /* #if defined(_CS_HAVE_MPI) */
 
-  /* Retour */
+  /* Return */
 
   return CS_SUITE_SUCCES;
 }
@@ -1486,197 +1795,87 @@ void cs_suite_ecr_rub
 (
        cs_suite_t   *suite,                    /* --> Ptr. structure suite    */
  const char         *nom_rub,                  /* --> Nom de la rubrique      */
-       int           ind_support,              /* --> Support de la variable  */
-       cs_int_t      nbr_val_ent,              /* --> Nb. val/point support   */
+       int           location_id,              /* --> Support de la variable  */
+       cs_int_t      n_location_vals,          /* --> Nb. val/point support   */
        cs_type_t     typ_val,                  /* --> Type de valeurs         */
  const void         *val                       /* --> Valeurs à écrire        */
 )
 {
 
-  cs_int_t         nbr_val_tot, nbr_ent_glob, nbr_ent_loc;
-  bft_file_off_t   taille_rub, pos_fic_cur;
+  cs_int_t         n_tot_vals, n_glob_ents, n_ents;
 
-  cs_int_t         ind_col_0 = 0;
+  fvm_datatype_t   elt_type;
 
-  const fvm_gnum_t  *num_glob_ent;
-
-  cs_mesh_t   *mesh = cs_glob_mesh;
-
+  const fvm_gnum_t  *ent_global_num;
 
   assert(suite != NULL);
-  assert(   suite->type == CS_SUITE_TYPE_ASCII
-         || suite->type == CS_SUITE_TYPE_BINAIRE);
 
+  n_tot_vals = _compute_n_ents(suite, location_id, n_location_vals);
 
-  /* En fonction de la taille max, on bascule ou non sur un nouveau fichier. */
-  /* ----------------------------------------------------------------------- */
+  /* Check associated location */
 
-  if (cs_glob_base_rang <= 0) {
-
-    /* Taille données */
-    taille_rub = cs_loc_suite_calc_avance(suite,
-                                          ind_support,
-                                          nbr_val_ent,
-                                          typ_val);
-
-    /*
-     * Taille en-tête (surestimée : on doit pouvoir contenir l'entête,
-     * et il doit rester assez de place après l'enregistrement pour
-     * écrire un indicateur de poursuite sur fichier suivant, sans
-     * dépasser la taille indiquée)
-     */
-
-    taille_rub += strlen(nom_rub);
-    taille_rub += 200;
-
-    /* Traitement */
-
-    pos_fic_cur = bft_file_tell(suite->fic[0]);
-
-    if (CS_SUITE_TAILLE_FIC_MAX - taille_rub <= pos_fic_cur) {
-
-      switch(suite->type) {
-      case CS_SUITE_TYPE_ASCII:
-        bft_file_printf(suite->fic[0], "[%s]\n", cs_suite_nom_decoup_fic);
-        break;
-      case CS_SUITE_TYPE_BINAIRE:
-        {
-          cs_int_t  buf[4] = {0, 0, 0, 0};
-          buf[0] = strlen(cs_suite_nom_decoup_fic) + 1;
-          bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-          bft_file_write(cs_suite_nom_decoup_fic, 1, buf[0], suite->fic[0]);
-        }
-        break;
-      }
-
-      /* Bascule effective sur fichier suivant */
-
-      cs_loc_suite_fic_ajoute(suite);
-
-      /* Marquage numéro de suite sur fichier suivant */
-
-      switch(suite->type) {
-      case CS_SUITE_TYPE_ASCII:
-        bft_file_printf(suite->fic[0], "[%s%2d]\n",
-                        cs_suite_nom_partie_fic, (int)suite->nbr_fic);
-        break;
-      case CS_SUITE_TYPE_BINAIRE:
-        {
-          cs_int_t  buf[4] = {0, 0, 0, 0};
-          buf[0] = strlen(cs_suite_nom_partie_fic) + 1;
-          buf[1] = suite->nbr_fic;
-          bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-          bft_file_write(cs_suite_nom_partie_fic, 1, buf[0], suite->fic[0]);
-        }
-        break;
-      }
-
-    }
-
+  if (location_id == 0) {
+    n_glob_ents = n_tot_vals/n_location_vals;
+    n_ents  = n_tot_vals/n_location_vals;
+    ent_global_num = NULL;
   }
 
-  /* Entête de la rubrique */
-  /* --------------------- */
-
-  if (cs_glob_base_rang <= 0) {
-
-    switch(suite->type) {
-
-    case CS_SUITE_TYPE_ASCII:
-
-      {
-        char code_support[5];
-        if (ind_support <= 4)
-          strcpy(code_support, cs_suite_nom_support[ind_support]);
-        else
-          strcpy(code_support, suite->tab_sup_add[ind_support-5].nom_sup);
-
-        bft_file_printf(suite->fic[0], "[%s\n", nom_rub);
-        bft_file_printf(suite->fic[0],
-                        " support = %3s, nbr_val_ent = %3d, typ_val = %3s]\n",
-                        code_support,
-                        (int)nbr_val_ent,
-                        cs_suite_nom_typ_elt[(int)typ_val]);
-      }
-      break;
-
-    case CS_SUITE_TYPE_BINAIRE:
-
-      {
-        cs_int_t  buf[4];
-
-        buf[0] = strlen(nom_rub) + 1;
-        buf[1] = ind_support;
-        buf[2] = (int)nbr_val_ent;
-        buf[3] = (int)typ_val;
-
-        bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-        bft_file_write(nom_rub, 1, buf[0], suite->fic[0]);
-      }
-      break;
-
-    }
-
+  else {
+    assert(location_id >= 0 && location_id <= (int)(suite->n_locations));
+    n_glob_ents = (suite->location[location_id-1]).n_glob_ents;
+    n_ents  = (suite->location[location_id-1]).n_ents;
+    ent_global_num = (suite->location[location_id-1]).ent_global_num;
   }
 
-  /* Contenu de la rubrique */
-  /*------------------------*/
+  /* Set datatype */
 
-  nbr_val_tot = cs_loc_suite_calc_nbr_ent(suite,
-                                          ind_support,
-                                          nbr_val_ent);
-
-  switch (ind_support) {
-
-  case CS_SUITE_SUPPORT_SCAL:
-    nbr_ent_glob = nbr_val_tot/nbr_val_ent;
-    nbr_ent_loc  = nbr_val_tot/nbr_val_ent;
-    num_glob_ent = NULL;
+  switch (typ_val) {
+  case CS_TYPE_cs_int_t:
+    elt_type = (sizeof(cs_int_t) == 8) ? FVM_INT64 : FVM_INT32;
     break;
-  case CS_SUITE_SUPPORT_CEL:
-    nbr_ent_glob = mesh->n_g_cells;
-    nbr_ent_loc  = mesh->n_cells;
-    num_glob_ent = mesh->global_cell_num;
-    break;
-  case CS_SUITE_SUPPORT_FAC_INT:
-    nbr_ent_glob = mesh->n_g_i_faces;
-    nbr_ent_loc  = mesh->n_i_faces;
-    num_glob_ent = mesh->global_i_face_num;
-    break;
-  case CS_SUITE_SUPPORT_FAC_BRD:
-    nbr_ent_glob = mesh->n_g_b_faces;
-    nbr_ent_loc  = mesh->n_b_faces;
-    num_glob_ent = mesh->global_b_face_num;
-    break;
-  case CS_SUITE_SUPPORT_SOM:
-    nbr_ent_glob = mesh->n_g_vertices;
-    nbr_ent_loc  = mesh->n_vertices;
-    num_glob_ent = mesh->global_vtx_num;
+  case CS_TYPE_cs_real_t:
+    elt_type =   (sizeof(cs_real_t) == fvm_datatype_size[FVM_DOUBLE])
+               ? FVM_DOUBLE : FVM_FLOAT;
     break;
   default:
-    assert(ind_support >= 0 && (ind_support-5) < suite->nbr_sup_add);
-    nbr_ent_glob = (suite->tab_sup_add[ind_support-5]).nbr_ent_glob;
-    nbr_ent_loc  = (suite->tab_sup_add[ind_support-5]).nbr_ent_loc;
-    num_glob_ent = (suite->tab_sup_add[ind_support-5]).num_glob_ent;
+    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
   }
 
-  /* En mode non-parallèle */
+  /* Section contents */
+  /*------------------*/
 
-  if (cs_glob_base_nbr == 1) {
+  /* In single processor mode of for global values */
+
+  if (location_id == 0)
+    cs_io_write_global(nom_rub,
+                       n_tot_vals,
+                       location_id,
+                       0,
+                       1,
+                       elt_type,
+                       val,
+                       suite->fh);
+
+
+  else if (cs_glob_base_nbr == 1) {
 
     cs_byte_t  *val_tmp = NULL;
 
-    if (num_glob_ent != NULL) /* Traitement des renumérotations éventuelles */
-      val_tmp = cs_loc_suite_permute_ecr(nbr_ent_loc,
-                                         num_glob_ent,
-                                         nbr_val_ent,
-                                         typ_val,
-                                         val);
+    if (ent_global_num != NULL)
+      val_tmp = _restart_permute_write(n_ents,
+                                       ent_global_num,
+                                       n_location_vals,
+                                       typ_val,
+                                       val);
 
-    cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val,
-                         (val_tmp != NULL) ? val_tmp : val,
-                         &ind_col_0);
-    cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
+    cs_io_write_global(nom_rub,
+                       n_tot_vals,
+                       location_id,
+                       0,
+                       n_location_vals,
+                       elt_type,
+                       (val_tmp != NULL) ? val_tmp : val,
+                       suite->fh);
 
     if (val_tmp != NULL)
       BFT_FREE (val_tmp);
@@ -1684,39 +1883,29 @@ void cs_suite_ecr_rub
 
 #if defined(_CS_HAVE_MPI)
 
-  /* Variable indépendante du support et commune aux processus */
-
-  else if (ind_support == CS_SUITE_SUPPORT_SCAL) {
-
-    if (cs_glob_base_rang == 0) {
-      cs_loc_suite_ecr_val(suite, nbr_val_tot, typ_val, val,
-                           &ind_col_0);
-      cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
-    }
-
-  }
-
-  /* En mode parallèle sur une entité de maillage */
+  /* In parallel mode for a distributed mesh location */
 
   else {
 
-    cs_int_t  nbr_bloc;
+    cs_int_t  n_blocks;
 
-    nbr_bloc = (  ((sizeof(cs_real_t) * nbr_ent_glob * nbr_val_ent) - 1)
+    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * n_location_vals) - 1)
                 / cs_suite_taille_buf_def) + 1;
-    if (nbr_bloc > cs_glob_base_nbr)
-      nbr_bloc = cs_glob_base_nbr;
-    if (nbr_bloc == 0 )
-      nbr_bloc = 1;
+    if (n_blocks > cs_glob_base_nbr)
+      n_blocks = cs_glob_base_nbr;
+    if (n_blocks == 0 )
+      n_blocks = 1;
 
-    cs_loc_suite_ecr_val_ent(suite,
-                             nbr_bloc,
-                             nbr_ent_glob,
-                             nbr_ent_loc,
-                             num_glob_ent,
-                             nbr_val_ent,
-                             typ_val,
-                             (const cs_byte_t *)val);
+    _write_ent_values(suite,
+                      nom_rub,
+                      n_blocks,
+                      n_glob_ents,
+                      n_ents,
+                      ent_global_num,
+                      location_id,
+                      n_location_vals,
+                      typ_val,
+                      (const cs_byte_t *)val);
 
   }
 
@@ -1733,17 +1922,17 @@ void cs_suite_f77_api_init
  void
 )
 {
-  cs_int_t ind;
+  size_t ind;
 
   /* Allocation du tableau des pointeurs */
 
-  cs_glob_suite_ptr_nbr = 10;
-  BFT_MALLOC(cs_glob_suite_ptr_tab, cs_glob_suite_ptr_nbr, cs_suite_t *);
+  _restart_pointer_size = 10;
+  BFT_MALLOC(_restart_pointer, _restart_pointer_size, cs_suite_t *);
 
   /* Mise à zéro du tableau des pointeurs */
 
-  for (ind = 0 ; ind < cs_glob_suite_ptr_nbr ; ind++)
-    cs_glob_suite_ptr_tab[ind] = NULL;
+  for (ind = 0; ind < _restart_pointer_size; ind++)
+    _restart_pointer[ind] = NULL;
 
 }
 
@@ -1757,2172 +1946,21 @@ void cs_suite_f77_api_finalize
  void
 )
 {
-  cs_int_t ind;
+  size_t ind;
 
-  /* Fermeture des fichiers qui ne le seraient pas */
+  /* Close files thar are not closed yet */
 
-  for (ind = 0 ; ind < cs_glob_suite_ptr_nbr ; ind++) {
-    if (cs_glob_suite_ptr_tab[ind] != NULL)
-      cs_suite_detruit (cs_glob_suite_ptr_tab[ind]);
+  for (ind = 0; ind < _restart_pointer_size; ind++) {
+    if (_restart_pointer[ind] != NULL)
+      cs_suite_detruit (_restart_pointer[ind]);
   }
 
-  /* Libération du tableau des pointeurs */
+  /* Free array of pointers */
 
-  cs_glob_suite_ptr_nbr = 0;
-  BFT_FREE(cs_glob_suite_ptr_tab);
-
+  _restart_pointer_size = 0;
+  BFT_FREE(_restart_pointer);
 }
 
-
-/*============================================================================
- *  Définitions de fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *  Calcul du nombre de valeurs d'un enregistrement
- *----------------------------------------------------------------------------*/
-
-static cs_int_t cs_loc_suite_calc_nbr_ent
-(
- const cs_suite_t  *suite,                     /* --> Suite associée          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_val_ent                /* --> Nb. val/point support   */
-)
-{
-  switch(ind_support) {
-
-  case CS_SUITE_SUPPORT_SCAL:
-    return (nbr_val_ent);
-  case CS_SUITE_SUPPORT_CEL:
-    return (suite->nbr_cel * nbr_val_ent);
-  case CS_SUITE_SUPPORT_FAC_INT:
-    return (suite->nbr_fac * nbr_val_ent);
-  case CS_SUITE_SUPPORT_FAC_BRD:
-    return (suite->nbr_fbr * nbr_val_ent);
-  case CS_SUITE_SUPPORT_SOM:
-    return (suite->nbr_som * nbr_val_ent);
-  default:
-    if (ind_support < 0 || (ind_support-5) >= suite->nbr_sup_add)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le numéro de support %d indiqué pour le fichier suite\n"
-                  "<%s> n'est pas valide."),
-                ind_support, suite->nom);
-    return (cs_int_t)(suite->tab_sup_add[ind_support-5]).nbr_ent_glob_f;
-  }
-
-  return 0;
-}
-
-
-/*----------------------------------------------------------------------------
- *  Calcul du déplacement dans un fichier correspondant aux valeurs
- *  d'une rubrique.
- *----------------------------------------------------------------------------*/
-
-static bft_file_off_t cs_loc_suite_calc_avance
-(
- const cs_suite_t  *suite,                     /* --> Suite associée          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_val_ent,               /* --> Nb. val/point support   */
-       cs_type_t    typ_val                    /* --> Type de valeurs         */
-)
-{
-  cs_int_t        nbr_val;
-  bft_file_off_t  taille;
-
-  assert(   suite->type == CS_SUITE_TYPE_ASCII
-         || suite->type == CS_SUITE_TYPE_BINAIRE);
-  assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-
-  nbr_val = cs_loc_suite_calc_nbr_ent(suite,
-                                      ind_support,
-                                      nbr_val_ent);
-
-  if (suite->type == CS_SUITE_TYPE_ASCII) {
-
-    cs_int_t     nbr_val_par_ligne, largeur_col;
-    cs_int_t     nbr_ligne_complet, nbr_val_reste;
-
-    switch (typ_val) {
-    case CS_TYPE_cs_int_t:
-      nbr_val_par_ligne = CS_SUITE_FMT_ASCII_NBR_COL_INT;
-      largeur_col       = CS_SUITE_FMT_ASCII_DIM_COL_INT;
-      break;
-    case CS_TYPE_cs_real_t:
-      nbr_val_par_ligne = CS_SUITE_FMT_ASCII_NBR_COL_REAL;
-      largeur_col       = CS_SUITE_FMT_ASCII_DIM_COL_REAL;
-      break;
-    default:
-      return 0;
-    }
-
-    nbr_ligne_complet = nbr_val / nbr_val_par_ligne;
-    nbr_val_reste     = nbr_val % nbr_val_par_ligne;
-
-    /* Nombre valeurs * largeur associée + fins des lignes entières */
-    taille = (nbr_val * largeur_col) + nbr_ligne_complet;
-
-    if (nbr_val_reste > 0)
-    taille += 1;                           /* dernière fin de ligne */
-
-  }
-  else if (suite->type == CS_SUITE_TYPE_BINAIRE) {
-
-    switch (typ_val) {
-    case CS_TYPE_cs_int_t:
-      taille = nbr_val * sizeof(cs_int_t);
-      break;
-    case CS_TYPE_cs_real_t:
-      taille = nbr_val * sizeof(cs_real_t);
-      break;
-    default:
-      return 0;
-    }
-
-  }
-
-  return (taille);
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui initialise une structure fichier associée à une suite ;
- *  Le nom de fichier associé correspond au nom de la suite pour le
- *  premier fichier, prolongé éventuellement par '_pxx' pour les fichiers
- *  successifs en cas de découpage du fichier en plusieurs morceaux pour
- *  des gros volumes de données.
- *  On indique en retour si les données se poursuivent sur un autre fichier.
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t cs_loc_suite_fic_ajoute
-(
- cs_suite_t  *suite                         /* --> Structure suite            */
-)
-{
-  /* On ne change le numero que si les fichiers suite des
-   * versions précédentes ne sont plus compatibles. Ce numéro est en
-   * fait déconnecté du numero de version */
-
-  char entete_txt[] = "Code_Saturne 1.1 (reprise)\n";
-  char entete_bin[] = "Code_Saturne_1.1_bin_reprise\n";
-  char buffer[CS_SUITE_LNG_BUF_ASCII + 1];
-
-  char *nom_fic = NULL;
-
-  cs_int_t ind_fic = 0;
-
-  bft_file_mode_t fic_mode;
-  bft_file_type_t fic_type;
-
-  cs_bool_t autre_partie = false;
-
-
-  /* Instructions */
-
-  if (cs_glob_base_rang > 0)
-    return false;
-
-  /* Incrémentation du compteur */
-
-  suite->nbr_fic += 1;
-
-  /* Construction du nom du fichier suite */
-
-  if (suite->nbr_fic == 1)
-    nom_fic = suite->nom;
-  else {
-    BFT_MALLOC(nom_fic, strlen(suite->nom) + strlen("_pxx") + 1, char);
-    sprintf(nom_fic, "%s_p%02d", suite->nom, suite->nbr_fic);
-  }
-
-
-  /* Création du descripteur de fichier d'interface */
-  /*------------------------------------------------*/
-
-  /*
-    En lecture, on détecte le type binaire/texte automatiquement
-    (en commencant par une tentative en mode binaire) ; en cas de
-    découpage en plusieurs fichiers pour gros volumes de données,
-    tous les fichiers doivent être de même type.
-    En écriture, on choisit le type.
-  */
-
-  if (suite->mode == CS_SUITE_MODE_LECTURE) {
-    fic_mode = BFT_FILE_MODE_READ;
-    fic_type = BFT_FILE_TYPE_BINARY;
-  }
-
-  else {
-    fic_mode = BFT_FILE_MODE_WRITE;
-    if (suite->type == BFT_FILE_TYPE_TEXT)
-      fic_type = BFT_FILE_TYPE_TEXT;
-    else
-      fic_type = BFT_FILE_TYPE_BINARY;
-  }
-
-
-  /* Création du fichier */
-
-  if (suite->mode == CS_SUITE_MODE_LECTURE) {
-    ind_fic = suite->nbr_fic - 1;
-    BFT_REALLOC(suite->fic, suite->nbr_fic, bft_file_t *);
-  }
-
-  else if (suite->mode == CS_SUITE_MODE_ECRITURE) {
-    ind_fic = 0;
-    if (suite->fic == NULL)
-      BFT_MALLOC(suite->fic, 1, bft_file_t *);
-    else if (suite->fic[0] != NULL)
-      bft_file_free(suite->fic[0]);
-  }
-
-  suite->fic[ind_fic] = bft_file_open(nom_fic,
-                                      fic_mode,
-                                      fic_type);
-
-  if (fic_type == BFT_FILE_TYPE_BINARY)
-    bft_file_set_big_endian(suite->fic[ind_fic]);
-
-
-  /* Gestion des en-têtes selon le mode d'ouverture */
-  /*------------------------------------------------*/
-
-  /* Lecture de l'en-tête */
-
-  if (suite->mode == CS_SUITE_MODE_LECTURE) {
-
-    cs_int_t nbr_rec, nbr_lus;
-    cs_int_t num_ligne = 1;
-
-    char     *str;
-
-    cs_suite_type_t suite_type_detect = CS_SUITE_TYPE_BINAIRE;
-
-
-    /* Détection automatique de type de fichier */
-
-    nbr_rec = strlen(entete_bin);
-    nbr_lus = bft_file_read_try(buffer, 1, nbr_rec, suite->fic[ind_fic]);
-
-    if (strncmp(entete_bin, buffer, nbr_rec) != 0) {
-
-      assert(   CS_SUITE_LNG_BUF_ASCII > strlen(entete_txt)
-             && CS_SUITE_LNG_BUF_ASCII > strlen(entete_bin));
-
-      bft_file_free(suite->fic[ind_fic]);
-      fic_type = BFT_FILE_TYPE_TEXT;
-      suite->fic[ind_fic] = bft_file_open(nom_fic,
-                                          fic_mode,
-                                          fic_type);
-
-      nbr_rec = strlen(entete_txt);
-      str = bft_file_gets_try(buffer,
-                              CS_SUITE_LNG_BUF_ASCII,
-                              suite->fic[ind_fic],
-                              &num_ligne);
-
-      if (str != NULL) {
-        nbr_rec = strlen(entete_txt);
-        if (strncmp(entete_txt, buffer, nbr_rec) == 0)
-          suite_type_detect = CS_SUITE_TYPE_ASCII;
-      }
-
-      if (suite_type_detect != CS_SUITE_TYPE_ASCII)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Le fichier <%s> n'est pas un fichier suite valide\n"),
-                  nom_fic);
-
-    }
-
-    if (suite->type != suite_type_detect) {
-      if (suite->nbr_fic > 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Le fichier suite <%s> et son prolongement\n"
-                    "<%s> ne sont du même type (texte/binaire) ;\n"
-                    "ils ne correspondent pas au même jeu de données\n"),
-                  suite->nom, nom_fic);
-      else
-        suite->type = suite_type_detect;
-    }
-
-    if (suite->type == CS_SUITE_TYPE_ASCII)
-      autre_partie = cs_loc_suite_analyse_txt(suite);
-    else if (suite->type == CS_SUITE_TYPE_BINAIRE)
-      autre_partie = cs_loc_suite_analyse_bin(suite);
-
-  }
-
-  /* Écriture de l'en-tête */
-
-  else if (suite->mode == CS_SUITE_MODE_ECRITURE) {
-
-    switch(suite->type) {
-
-    case CS_SUITE_TYPE_ASCII:
-
-      bft_file_printf(suite->fic[0], entete_txt);
-      bft_file_printf(suite->fic[0], "[nbr_cel     = %d]\n",
-                      (int)cs_glob_mesh->n_g_cells);
-      bft_file_printf(suite->fic[0], "[nbr_fac_int = %d]\n",
-                      (int)cs_glob_mesh->n_g_i_faces);
-      bft_file_printf(suite->fic[0], "[nbr_fac_brd = %d]\n",
-                      (int)cs_glob_mesh->n_g_b_faces);
-      bft_file_printf(suite->fic[0], "[nbr_som     = %d]\n",
-                      (int)cs_glob_mesh->n_g_vertices);
-      break;
-
-    case CS_SUITE_TYPE_BINAIRE:
-
-      {
-        cs_int_t  buf[4];
-
-        buf[0] = cs_glob_mesh->n_g_cells;
-        buf[1] = cs_glob_mesh->n_g_i_faces;
-        buf[2] = cs_glob_mesh->n_g_b_faces;
-        buf[3] = cs_glob_mesh->n_g_vertices;
-
-        bft_file_write(entete_bin, 1, strlen(entete_bin),suite->fic[0]);
-        bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-      }
-      break;
-
-    default:
-      assert (   suite->type == CS_SUITE_TYPE_ASCII
-              || suite->type == CS_SUITE_TYPE_BINAIRE);
-
-    }
-
-  }
-
-  /* Libération mémoire */
-
-  if (nom_fic != suite->nom)
-    BFT_FREE(nom_fic);
-
-  /* On indique en retour si le fichier continue */
-
-  return autre_partie;
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit une définition de support sur fichier suite.
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_rub_sup
-(
-       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
- const char        *nom_sup,                   /* --> Nom du support          */
-       int          ind_support,               /* --> Support de la variable  */
-       cs_int_t     nbr_ent_glob               /* --> Taille du support       */
-)
-{
-  cs_int_t         ind_col_0 = 0;
-
-
-  assert(suite != NULL);
-  assert(   suite->type == CS_SUITE_TYPE_ASCII
-         || suite->type == CS_SUITE_TYPE_BINAIRE);
-
-
-  /* Entête de la rubrique */
-  /* --------------------- */
-
-  if (cs_glob_base_rang <= 0) {
-
-    switch(suite->type) {
-
-    case CS_SUITE_TYPE_ASCII:
-
-      {
-        bft_file_printf(suite->fic[0], "[%s\n", nom_sup);
-        bft_file_printf(suite->fic[0],
-                        " support = %3d, nbr_val_ent =   1, typ_val = %3s]\n",
-                        ind_support,
-                        cs_suite_nom_typ_elt[(int)CS_TYPE_cs_int_t]);
-      }
-      break;
-
-    case CS_SUITE_TYPE_BINAIRE:
-
-      {
-        cs_int_t  buf[4];
-
-        buf[0] = strlen(nom_sup) + 1;
-        buf[1] = ind_support;
-        buf[2] = 1;
-        buf[3] = (int)CS_TYPE_cs_int_t;
-
-        bft_file_write(buf, sizeof(cs_int_t), 4, suite->fic[0]);
-        bft_file_write(nom_sup, 1, buf[0], suite->fic[0]);
-      }
-      break;
-
-    }
-
-  }
-
-  /* Contenu de la rubrique */
-  /*------------------------*/
-
-  /* Variable indépendante du support et commune aux processus */
-
-  if (cs_glob_base_rang <= 0) {
-    cs_loc_suite_ecr_val(suite, 1, CS_TYPE_cs_int_t, &nbr_ent_glob, &ind_col_0);
-    cs_loc_suite_ecr_val_fin(suite, &ind_col_0);
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui lit une liste de valeurs sur un fichier ; on suppose que
- *  l'on est déjà à la bonne position de départ dans le fichier.
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_lit_val
-(
-       cs_suite_type_t   type,                 /* --> Structure suite         */
- const bft_file_t       *fic,                  /* --> Fichier associé         */
-       cs_int_t          nbr_val,              /* --> Nb. valeurs à lire      */
-       cs_type_t         typ_val,              /* --> Type de valeurs         */
-       void             *val,                  /* <-- Valeurs à lire          */
-       char              asc_buffer[]          /* <-> Buffer texte            */
-)
-{
-
-  /* Traitement des fichiers binaires (simple) */
-
-  if (type == CS_SUITE_TYPE_BINAIRE) {
-
-    cs_int_t  typ_taille = 1;
-
-    switch (typ_val) {
-    case CS_TYPE_cs_int_t:
-      typ_taille = sizeof(cs_int_t);
-      break;
-    case CS_TYPE_cs_real_t:
-      typ_taille = sizeof(cs_real_t);
-      break;
-    default:
-      assert (   typ_val != CS_TYPE_cs_int_t
-              || typ_val != CS_TYPE_cs_real_t);
-    }
-
-    bft_file_read(val, typ_taille, nbr_val, fic);
-
-  }
-
-  /* Traitement des fichiers formatés (plus complexe) */
-
-  else if (type == CS_SUITE_TYPE_ASCII) {
-
-    char      fmt_lec[4];
-    cs_int_t  ind_val;
-
-    char      *str = asc_buffer;
-    cs_int_t  num_ligne = 1;
-
-    fmt_lec[0] = '%';
-
-    switch (typ_val) {
-
-    case CS_TYPE_cs_int_t:
-      {
-        const cs_int_t *const tab_val_int = (const cs_int_t *)val;
-
-        /* Attention au format de lecture (longueur des types) ! */
-
-        if (sizeof(cs_int_t) == sizeof(int))
-          fmt_lec[1] = 'd', fmt_lec[2] = '\0';
-        else if(sizeof(cs_int_t) == sizeof(long))
-          fmt_lec[1] = 'l', fmt_lec[2] = 'd', fmt_lec[3] = '\0';
-        else
-          fmt_lec[1] = 'L', fmt_lec[2] = 'd', fmt_lec[3] = '\0';
-
-        /* Lecture effective */
-
-        for (ind_val = 0 ; ind_val < nbr_val ; ind_val++) {
-
-          char col_deb = *str;
-
-          if (col_deb == '\n' || col_deb == '\0')
-            str = bft_file_gets(asc_buffer,
-                                CS_SUITE_LNG_BUF_ASCII,
-                                fic,
-                                &num_ligne);
-
-          else {
-            if (col_deb != ' ' && col_deb != '\t')
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Erreur à la lecture d'un tableau d'entiers dans un "
-                          "fichier suite :\n"
-                          "champs de largeur différente de %d"),
-                        CS_SUITE_FMT_ASCII_DIM_COL_INT);
-          }
-
-          if (str == NULL)
-            break;
-
-          if (sscanf(str, fmt_lec, &(tab_val_int[ind_val])) != 1)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Erreur à la lecture d'un tableau d'entiers dans un "
-                        "fichier suite :\n"
-                        "%ul sur %ul valeurs lues"),
-                      (unsigned long)ind_val, (unsigned long)nbr_val);
-
-          str += CS_SUITE_FMT_ASCII_DIM_COL_INT;
-
-        }
-        if (ind_val < nbr_val)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Erreur à la lecture d'un tableau d'entiers dans un "
-                      "fichier suite :\n"
-                      "%ul sur %ul valeurs lues"),
-                    (unsigned long)ind_val, (unsigned long)nbr_val);
-
-      }
-
-      break;
-
-    case CS_TYPE_cs_real_t:
-      {
-        const cs_real_t  *const tab_val_real = (const cs_real_t *)val;
-
-        /* Attention au format de lecture (longueur des types) ! */
-
-        if (sizeof(cs_real_t) == sizeof(float))
-          fmt_lec[1] = 'g', fmt_lec[2] = '\0';
-        else if (sizeof(cs_real_t) == sizeof(double))
-          fmt_lec[1] = 'l', fmt_lec[2] = 'g', fmt_lec[3] = '\0';
-        else
-          fmt_lec[1] = 'L', fmt_lec[2] = 'g', fmt_lec[3] = '\0';
-
-        /* Lecture effective */
-
-        for (ind_val = 0 ; ind_val < nbr_val ; ind_val++) {
-
-          char col_deb = *str;
-
-          if (col_deb == '\n' || col_deb == '\0')
-            str = bft_file_gets(asc_buffer,
-                                CS_SUITE_LNG_BUF_ASCII,
-                                fic,
-                                &num_ligne);
-
-          else {
-            if (col_deb != ' ' && col_deb != '\t')
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Erreur à la lecture d'un tableau de réels dans un "
-                          "fichier suite :\n"
-                          "champs de largeur différente de %d"),
-                        CS_SUITE_FMT_ASCII_DIM_COL_REAL);
-          }
-
-          if (str == NULL)
-            break;
-
-          if (sscanf(str, fmt_lec, &(tab_val_real[ind_val])) != 1)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Erreur à la lecture d'un tableau de réels dans un "
-                        "fichier suite :\n"
-                        "%ul sur %ul valeurs lues"),
-                      (unsigned long)ind_val, (unsigned long)nbr_val);
-
-          str += CS_SUITE_FMT_ASCII_DIM_COL_REAL;
-
-        }
-        if (ind_val < nbr_val)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Erreur à la lecture d'un tableau de réels dans un "
-                      "fichier suite :\n"
-                      "%ul sur %ul valeurs lues"),
-                    (unsigned long)ind_val, (unsigned long)nbr_val);
-
-      }
-      break;
-
-    default:
-
-      assert(   typ_val != CS_TYPE_cs_int_t
-             || typ_val != CS_TYPE_cs_real_t);
-
-    } /* Fin : switch (typ_val) */
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit une liste de valeurs sur un fichier
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_val
-(
- const cs_suite_t  *suite,                     /* --> Ptr. fichier suite      */
-       cs_int_t     nbr_val,                   /* --> Nb. valeurs à écrire    */
-       cs_type_t    typ_val,                   /* --> Type de valeurs         */
- const void        *val,                       /* --> Valeurs à écrire        */
-       cs_int_t    *ind_col                    /* <-> Colonne départ/fin      */
-)
-{
-
-  /* Traitement des fichiers binaires (simple) */
-
-  if (suite->type == CS_SUITE_TYPE_BINAIRE) {
-
-    cs_int_t  typ_taille = 1;
-
-    switch (typ_val) {
-    case CS_TYPE_cs_int_t:
-      typ_taille = sizeof(cs_int_t);
-      break;
-    case CS_TYPE_cs_real_t:
-      typ_taille = sizeof(cs_real_t);
-      break;
-    default:
-      assert(   typ_val != CS_TYPE_cs_int_t
-             || typ_val != CS_TYPE_cs_real_t);
-    }
-
-    bft_file_write(val, typ_taille, nbr_val, suite->fic[0]);
-
-  }
-
-
-  /* Traitement des fichiers formatés (plus complexe) */
-
-  else if (suite->type == CS_SUITE_TYPE_ASCII) {
-
-    cs_int_t ind_val;
-
-    switch (typ_val) {
-
-    case CS_TYPE_cs_int_t:
-      {
-        const cs_int_t *const tab_val_int = (const cs_int_t *)val;
-
-        for (ind_val = 0 ; ind_val < nbr_val ; ind_val++) {
-
-          if (*ind_col == CS_SUITE_FMT_ASCII_NBR_COL_INT) {
-            *ind_col = 0;
-            bft_file_printf(suite->fic[0], "\n");
-          }
-          *ind_col += 1;
-
-          bft_file_printf(suite->fic[0], cs_suite_fmt_ascii_tab_int,
-                          tab_val_int[ind_val]);
-
-        }
-
-      }
-      break;
-
-    case CS_TYPE_cs_real_t:
-      {
-        const cs_real_t  *const tab_val_real = (const cs_real_t *)val;
-
-        for (ind_val = 0 ; ind_val < nbr_val ; ind_val++) {
-
-          if (*ind_col == CS_SUITE_FMT_ASCII_NBR_COL_REAL) {
-            *ind_col = 0;
-            bft_file_printf(suite->fic[0], "\n");
-          }
-          *ind_col += 1;
-
-          bft_file_printf(suite->fic[0], cs_suite_fmt_ascii_tab_real,
-                          tab_val_real[ind_val]);
-
-        }
-
-      }
-      break;
-
-    default:
-
-      assert(   typ_val != CS_TYPE_cs_int_t
-             || typ_val != CS_TYPE_cs_real_t);
-
-    } /* Fin : switch (typ_val) */
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui termine l'écriture d'une liste de valeurs sur un fichier
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_val_fin
-(
- const cs_suite_t   * suite,                   /* --> Ptr. fichier suite      */
-       cs_int_t     * ind_col                  /* <-> Colonne départ/fin      */
-)
-{
-  /* Rien à faire pour les fichiers binaires */
-
-  /* Traitement des fichiers formatés */
-
-  if (suite->type == CS_SUITE_TYPE_ASCII) {
-
-    bft_file_printf(suite->fic[0], "\n");
-
-    *ind_col = 0;
-
-  }
-
-}
-
-
-#if defined(_CS_HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- *  Fonction qui prépare la redistribution des valeurs associées à une
- *  entité de maillage.
- *
- *  Les tableaux alloués doivent être libérés par l'appelant.
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_prep_dist
-(
- const cs_int_t       nbr_ent_glob,    /* --> Nombre global d'entités         */
- const cs_int_t       nbr_ent_loc,     /* --> Nombre local d'entités          */
- const cs_int_t       nbr_bloc,        /* --> Nombre de blocs                 */
- cs_int_t            *pas_bloc,        /* <-- Pas associé à chaque bloc       */
- cs_int_t            *block_buf_size,  /* <-- Taille somme tableaux / bloc    */
- cs_int_t            *owner_buf_size,  /* <-- Taille somme tableaux / rang    */
- const fvm_gnum_t     num_glob_ent[],  /* --> Numéros globaux des entités     */
- int                **owner_ent_id,    /* <-- Id entités de chaque rang       */
- int                **block_count,     /* <-- Nb. entités locales / bloc      */
- int                **owner_count,     /* <-- Nb. entités rang / bloc         */
- int                **block_disp,      /* <-- Positions associés aux blocs    */
- int                **owner_disp,      /* <-- Positions associés aux rangs    */
- int                **block_start      /* <-- Décalage pour chaque bloc       */
-)
-{
-  int       ind_bloc;
-  cs_int_t  _pas_bloc, ind;
-
-  int *_block_ent_id = NULL, *_owner_ent_id = NULL;
-  int *_block_count = NULL, *_owner_count = NULL;
-  int *_block_disp = NULL, *_owner_disp = NULL;
-  int *_block_start = NULL;
-
-  /* Initialisations */
-
-  /* _pas_bloc = ceil(nbr_ent_glob/nbr_bloc) */
-
-  _pas_bloc = nbr_ent_glob / nbr_bloc;
-  if (nbr_ent_glob % nbr_bloc > 0)
-    _pas_bloc += 1;
-
-  /* Allocation */
-
-  BFT_MALLOC(_block_count, cs_glob_base_nbr, int);
-  BFT_MALLOC(_owner_count, cs_glob_base_nbr, int);
-  BFT_MALLOC(_block_disp, cs_glob_base_nbr, int);
-  BFT_MALLOC(_owner_disp, cs_glob_base_nbr, int);
-  BFT_MALLOC(_block_start, cs_glob_base_nbr, int);
-
-  /* Comptage */
-
-  for (ind_bloc = 0 ; ind_bloc < cs_glob_base_nbr ; ind_bloc++)
-    _block_count[ind_bloc] = 0;
-
-  for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
-    ind_bloc = (num_glob_ent[ind] - 1) / _pas_bloc;
-    _block_count[ind_bloc] += 1;
-  }
-
-  MPI_Alltoall(_block_count, 1, MPI_INT, _owner_count, 1, MPI_INT,
-               cs_glob_base_mpi_comm);
-
-  /* Création des index */
-
-  _block_disp[0] = 0;
-  _owner_disp[0] = 0;
-  for (ind = 1; ind < cs_glob_base_nbr; ind++) {
-    _block_disp[ind] = _block_disp[ind-1] + _block_count[ind-1];
-    _owner_disp[ind] = _owner_disp[ind-1] + _owner_count[ind-1];
-  }
-
-  *block_buf_size =   _block_disp[cs_glob_base_nbr - 1]
-                    + _block_count[cs_glob_base_nbr - 1];
-  *owner_buf_size =   _owner_disp[cs_glob_base_nbr - 1]
-                    + _owner_count[cs_glob_base_nbr - 1];
-
-  memcpy(_block_start, _block_disp, sizeof(int)*cs_glob_base_nbr);
-
-  /* Préparation des listes */
-
-  BFT_MALLOC(_block_ent_id, *block_buf_size, int);
-  BFT_MALLOC(_owner_ent_id, *owner_buf_size, int);
-
-  for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
-    ind_bloc = (num_glob_ent[ind] - 1) / _pas_bloc;
-    _block_ent_id[_block_start[ind_bloc]] = (num_glob_ent[ind] - 1) % _pas_bloc;
-    _block_start[ind_bloc] += 1;
-  }
-
-  MPI_Alltoallv(_block_ent_id, _block_count, _block_disp, MPI_INT,
-                _owner_ent_id, _owner_count, _owner_disp, MPI_INT,
-                cs_glob_base_mpi_comm);
-
-  BFT_FREE(_block_ent_id);
-
-  *pas_bloc = _pas_bloc;
-  *owner_ent_id = _owner_ent_id;
-  *block_count = _block_count;
-  *owner_count = _owner_count;
-  *block_disp = _block_disp;
-  *owner_disp = _owner_disp;
-  *block_start = _block_start;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui lit les valeurs associées à une variable définie sur
- *  une entité de maillage.
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_lit_val_ent
-(
- const cs_suite_t  *const  suite,         /* --> Structure suite              */
- const bft_file_t  *const  fic,           /* --> Fichier associé aux valeurs  */
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
-       cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-)
-{
-  char      buffer_ascii[CS_SUITE_LNG_BUF_ASCII + 1];
-
-  cs_int_t  pas_bloc, ind, ind_bloc, start_loc;
-
-  cs_int_t  nbr_ent_bloc = 0;
-
-  cs_byte_t  *buffer = NULL;
-
-  cs_int_t  block_buf_size = 0, owner_buf_size = 0;
-
-  cs_byte_t *block_val = NULL, *owner_val = NULL;
-  int *owner_ent_id = NULL;
-  int *block_count = NULL, *owner_count = NULL;
-  int *block_disp = NULL, *owner_disp = NULL;
-  int *block_start = NULL;
-
-  size_t      ind_byte, nbr_byte_ent, nbr_byte_val;
-
-  MPI_Datatype  mpi_typ;
-  MPI_Status    status;
-
-  /* Initialisations */
-
-  buffer_ascii[0] = '\0';
-
-  switch (typ_val) {
-  case CS_TYPE_cs_int_t:
-    mpi_typ      = CS_MPI_INT;
-    nbr_byte_ent = nbr_val_ent * sizeof(cs_int_t);
-    nbr_byte_val = sizeof(cs_int_t);
-    break;
-  case CS_TYPE_cs_real_t:
-    mpi_typ      = CS_MPI_REAL;
-    nbr_byte_ent = nbr_val_ent * sizeof(cs_real_t);
-    nbr_byte_val = sizeof(cs_real_t);
-    break;
-  default:
-    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-  }
-
-  /* Création des listes d'entités associées à la redistribution */
-  /*-------------------------------------------------------------*/
-
-  cs_loc_suite_prep_dist(nbr_ent_glob,
-                         nbr_ent_loc,
-                         nbr_bloc,
-                         &pas_bloc,
-                         &block_buf_size,
-                         &owner_buf_size,
-                         num_glob_ent,
-                         &owner_ent_id,
-                         &block_count,
-                         &owner_count,
-                         &block_disp,
-                         &owner_disp,
-                         &block_start);
-
-  /* Lecture et répartition des blocs sur les rangs */
-  /*------------------------------------------------*/
-
-  if (owner_buf_size > 0)
-    BFT_MALLOC(buffer, pas_bloc * nbr_byte_ent, cs_byte_t);
-
-  /* Lecture sur fichier */
-
-  if (cs_glob_base_rang == 0) {
-
-    cs_byte_t  *buffer_fic = NULL;
-
-    if (nbr_bloc > 1)
-      BFT_MALLOC(buffer_fic, pas_bloc * nbr_byte_ent, cs_byte_t);
-
-    /* Boucle sur les blocs */
-
-    for (ind_bloc = 0; ind_bloc < nbr_bloc; ind_bloc++) {
-
-      if (ind_bloc < nbr_bloc - 1)
-        nbr_ent_bloc = pas_bloc;
-      else /* if (ind_bloc == nbr_bloc - 1) */
-        nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
-
-      if (ind_bloc == 0)
-        cs_loc_suite_lit_val(suite->type, fic, nbr_ent_bloc * nbr_val_ent,
-                             typ_val, buffer, buffer_ascii);
-
-      else {
-        cs_loc_suite_lit_val(suite->type, fic, nbr_ent_bloc * nbr_val_ent,
-                             typ_val, buffer_fic, buffer_ascii);
-        MPI_Send(buffer_fic, nbr_ent_bloc * nbr_val_ent,
-                 mpi_typ, ind_bloc, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
-      }
-
-    }
-
-    if (nbr_bloc > 1)
-      BFT_FREE(buffer_fic);
-  }
-
-  /* Réception à partir du rang 0 sinon */
-
-  else if (cs_glob_base_rang < nbr_bloc) {
-
-    ind_bloc = cs_glob_base_rang;
-
-    if (ind_bloc < nbr_bloc - 1)
-      nbr_ent_bloc = pas_bloc;
-    else /* if (ind_bloc == nbr_bloc - 1) */
-      nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
-
-    MPI_Recv(buffer,
-             nbr_ent_bloc * nbr_val_ent, mpi_typ,
-             0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
-             &status);
-
-  }
-
-  /* Préparation des valeurs à distribuer */
-
-  if (owner_buf_size > 0) {
-
-    BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
-
-    for (ind = 0; ind < owner_buf_size; ind++) {
-      start_loc = owner_ent_id[ind]*nbr_byte_ent;
-      for (ind_byte = 0; ind_byte < nbr_byte_ent; ind_byte++)
-        owner_val[ind*nbr_byte_ent + ind_byte]
-          = buffer[start_loc + ind_byte];
-    }
-
-    BFT_FREE(owner_ent_id);
-  }
-
-  for (ind = 0; ind < cs_glob_base_nbr; ind++) {
-    block_count[ind] *= nbr_val_ent;
-    owner_count[ind] *= nbr_val_ent;
-    block_disp[ind] *= nbr_val_ent;
-    owner_disp[ind] *= nbr_val_ent;
-  }
-
-  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
-
-  MPI_Alltoallv(owner_val, owner_count, owner_disp, mpi_typ,
-                block_val, block_count, block_disp, mpi_typ,
-                cs_glob_base_mpi_comm);
-
-  /* Libération des tableaux qui ne sont plus utiles */
-
-  if (owner_buf_size > 0)
-    BFT_FREE(owner_val);
-  BFT_FREE(owner_disp);
-  BFT_FREE(owner_count);
-
-  /* Distribution finale des données */
-
-  for (ind = 0; ind < cs_glob_base_nbr; ind++)
-    block_disp[ind] *= nbr_val_ent;
-
-  for (ind = 0; ind < nbr_ent_loc; ind++) {
-    ind_bloc = (num_glob_ent[ind] - 1) / pas_bloc;
-    start_loc = block_disp[ind_bloc]*nbr_byte_val;
-    for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-      tab_val[ind*nbr_byte_ent + ind_byte] = block_val[start_loc + ind_byte];
-    block_disp[ind_bloc] += nbr_val_ent;
-  }
-
-  BFT_FREE(block_val);
-  BFT_FREE(block_count);
-  BFT_FREE(block_disp);
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit les valeurs associées à une variable définie sur
- *  une entité de maillage.
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_ecr_val_ent
-(
- const cs_suite_t  *const  suite,         /* --> Structure suite              */
- const cs_int_t            nbr_bloc,      /* --> Nombre de blocs              */
- const cs_int_t            nbr_ent_glob,  /* --> Nombre global d'entités      */
- const cs_int_t            nbr_ent_loc,   /* --> Nombre local d'entités       */
- const fvm_gnum_t   *const num_glob_ent,  /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
- const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-)
-{
-  cs_int_t  pas_bloc, ind, ind_bloc, start_loc;
-
-  cs_int_t  ind_col = 0;
-  cs_int_t  nbr_ent_bloc = 0;
-
-  cs_int_t  block_buf_size = 0, owner_buf_size = 0;
-
-  cs_byte_t *block_val = NULL, *owner_val = NULL;
-  int *owner_ent_id = NULL;
-  int *block_count = NULL, *owner_count = NULL;
-  int *block_disp = NULL, *owner_disp = NULL;
-  int *block_start = NULL;
-
-  cs_byte_t  *buffer = NULL;
-
-  size_t      ind_byte, nbr_byte_ent;
-
-  MPI_Datatype  mpi_typ;
-  MPI_Status    status;
-
-  /* Initialisations */
-
-  switch (typ_val) {
-  case CS_TYPE_cs_int_t:
-    mpi_typ      = CS_MPI_INT;
-    nbr_byte_ent = nbr_val_ent * sizeof(cs_int_t);
-    break;
-  case CS_TYPE_cs_real_t:
-    mpi_typ      = CS_MPI_REAL;
-    nbr_byte_ent = nbr_val_ent * sizeof(cs_real_t);
-    break;
-  default:
-    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-  }
-
-  /* Création des listes d'entités associées à la redistribution */
-  /*-------------------------------------------------------------*/
-
-  cs_loc_suite_prep_dist(nbr_ent_glob,
-                         nbr_ent_loc,
-                         nbr_bloc,
-                         &pas_bloc,
-                         &block_buf_size,
-                         &owner_buf_size,
-                         num_glob_ent,
-                         &owner_ent_id,
-                         &block_count,
-                         &owner_count,
-                         &block_disp,
-                         &owner_disp,
-                         &block_start);
-
-  /* Préparation des valeurs à envoyer */
-
-  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
-  BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
-
-  memcpy(block_start, block_disp, sizeof(int)*cs_glob_base_nbr);
-
-  for (ind = 0 ; ind < nbr_ent_loc ; ind++) {
-    ind_bloc = (num_glob_ent[ind] - 1) / pas_bloc;
-    start_loc = block_start[ind_bloc]*nbr_byte_ent;
-    for (ind_byte = 0 ; ind_byte < nbr_byte_ent ; ind_byte++)
-      block_val[start_loc + ind_byte] = tab_val[ind*nbr_byte_ent + ind_byte];
-    block_start[ind_bloc] += 1;
-  }
-
-  BFT_FREE(block_start);
-
-  for (ind = 0; ind < cs_glob_base_nbr; ind++) {
-    block_count[ind] *= nbr_val_ent;
-    owner_count[ind] *= nbr_val_ent;
-    block_disp[ind] *= nbr_val_ent;
-    owner_disp[ind] *= nbr_val_ent;
-  }
-
-  MPI_Alltoallv(block_val, block_count, block_disp, mpi_typ,
-                owner_val, owner_count, owner_disp, mpi_typ,
-                cs_glob_base_mpi_comm);
-
-  /* Libération des tableaux liés à l'échange qui ne sont plus utiles */
-
-  BFT_FREE(block_val);
-  BFT_FREE(block_count);
-  BFT_FREE(owner_count);
-  BFT_FREE(block_disp);
-  BFT_FREE(owner_disp);
-
-  if (owner_buf_size > 0) {
-
-    BFT_MALLOC(buffer, pas_bloc*nbr_byte_ent, cs_byte_t);
-
-    for (ind = 0; ind < owner_buf_size; ind++) {
-      start_loc = owner_ent_id[ind]*nbr_byte_ent;
-      for (ind_byte = 0; ind_byte < nbr_byte_ent; ind_byte++)
-        buffer[start_loc + ind_byte]
-          = owner_val[ind*nbr_byte_ent + ind_byte];
-    }
-
-    BFT_FREE(owner_ent_id);
-    BFT_FREE(owner_val);
-  }
-
-  /* Écriture sur fichier */
-
-  if (cs_glob_base_rang == 0) {
-
-    /* Boucle sur les blocs */
-
-    for (ind_bloc = 0; ind_bloc < nbr_bloc; ind_bloc++) {
-
-      if (ind_bloc < nbr_bloc - 1)
-        nbr_ent_bloc = pas_bloc;
-      else /* if (ind_bloc == nbr_bloc - 1) */
-        nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
-
-      /* Valeurs déjà disponibles sur le rang 0 */
-
-      if (ind_bloc > 0)
-        MPI_Recv(buffer,
-                 nbr_ent_bloc * nbr_val_ent, mpi_typ,
-                 ind_bloc, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm,
-                 &status);
-
-      /* Valeurs maintenant disponibles */
-
-      cs_loc_suite_ecr_val(suite, nbr_ent_bloc * nbr_val_ent,
-                           typ_val, (void *)buffer, &ind_col);
-
-    }
-
-  }
-
-  /* Envoi au rang 0 sinon */
-
-  else if (cs_glob_base_rang < nbr_bloc) {
-
-    ind_bloc = cs_glob_base_rang;
-
-    if (ind_bloc < nbr_bloc - 1)
-      nbr_ent_bloc = pas_bloc;
-    else /* if (ind_bloc == nbr_bloc - 1) */
-      nbr_ent_bloc = (nbr_ent_glob - 1)%pas_bloc + 1;
-
-    MPI_Send(buffer, nbr_ent_bloc * nbr_val_ent,
-             mpi_typ, 0, CS_SUITE_MPI_TAG, cs_glob_base_mpi_comm);
-
-  }
-
-  assert(cs_glob_base_rang < nbr_bloc || owner_buf_size == 0);
-
-  /* Retour à la ligne pour fichier ASCII */
-
-  if (cs_glob_base_rang == 0)
-    cs_loc_suite_ecr_val_fin(suite, &ind_col);
-
-  /* Libération des tableaux de travail */
-
-  BFT_FREE(buffer);
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui distribue une liste de variables
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_distr_val
-(
- const cs_int_t                   nbr_val,     /* --> Nb. valeurs             */
- const cs_type_t                  typ_val,     /* --> Type de valeurs         */
-       void                *const val          /* <-> Valeurs à lire          */
-)
-{
-
-  cs_int_t      ind_dom;
-
-  MPI_Datatype  mpi_typ;
-  MPI_Status    status;
-
-  /* Initialisations */
-
-  switch (typ_val) {
-  case CS_TYPE_cs_int_t:
-    mpi_typ      = CS_MPI_INT;
-    break;
-  case CS_TYPE_cs_real_t:
-    mpi_typ      = CS_MPI_REAL;
-    break;
-  default:
-    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-  }
-
-  if (cs_glob_base_rang == 0) {
-
-    for (ind_dom = 1 ; ind_dom < cs_glob_base_nbr ; ind_dom++)
-      MPI_Send((void *)val, nbr_val, mpi_typ, ind_dom, CS_SUITE_MPI_TAG,
-               cs_glob_base_mpi_comm);
-
-  }
-
-  else if (cs_glob_base_rang > 0) {
-
-    MPI_Recv((void *)val, nbr_val, mpi_typ, 0, CS_SUITE_MPI_TAG,
-             cs_glob_base_mpi_comm, &status);
-
-  }
-
-}
-
-#endif /* #if defined(_CS_HAVE_MPI) */
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui analyse le contenu d'un fichier suite en mode texte
- *  On démare en haut de deuxième ligne, ayant lu l'en-tête, et on
- *  indique en retour si la suite continue sur un autre fichier
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t cs_loc_suite_analyse_txt
-(
- cs_suite_t  *const  suite                /* --> Structure suite              */
-)
-{
-  char buffer [CS_SUITE_LNG_BUF_ASCII + 1];
-  char nom_tmp[CS_SUITE_LNG_BUF_ASCII + 1];
-  char sub    [CS_SUITE_LNG_BUF_ASCII + 1];
-  char str_typ[CS_SUITE_LNG_BUF_ASCII + 1];
-  char *str;
-
-  cs_int_t  ind, ind_rec, ind_rub, ind_fin, lng, etape;
-  cs_int_t  nbr_cel, nbr_fac, nbr_fbr, nbr_som;
-
-  int nbr_ent, nbr_val_ent;
-
-  int ind_sup = -1;
-  cs_int_t  num_ligne = 1;
-  cs_int_t  ind_fic   = suite->nbr_fic - 1;
-
-  cs_bool_t  err_fmt = false;
-  cs_bool_t  fin_fic = false;
-
-  /* Initialisations */
-
-  for (ind = CS_SUITE_SUPPORT_CEL ; ind <= CS_SUITE_SUPPORT_SOM ; ind++) {
-
-    str = bft_file_gets_try(buffer,
-                            CS_SUITE_LNG_BUF_ASCII,
-                            suite->fic[ind_fic],
-                            &num_ligne);
-
-    if (str != NULL) {
-
-      /* Décodage en-tête globale */
-
-      if (sscanf(buffer, "[%s = %d]", sub, &nbr_ent) == 2) {
-
-        if (strncmp("nbr_cel", sub, strlen("nbr_cel")) == 0)
-          nbr_cel = nbr_ent;
-        else if (strncmp ("nbr_fac_int", sub, strlen("nbr_fac_int")) == 0)
-          nbr_fac = nbr_ent;
-        else if (strncmp("nbr_fac_brd", sub, strlen("nbr_fac_brd")) == 0)
-          nbr_fbr = nbr_ent;
-        else if (strncmp("nbr_som", sub, strlen("nbr_som")) == 0)
-          nbr_som = nbr_ent;
-        else {
-          err_fmt = true;
-          break;
-        }
-
-      }
-
-      else {
-        err_fmt = true;
-        break;
-      }
-
-    }
-    else { /* if (str != NULL) */
-
-      err_fmt = true; /* break; */
-
-    }
-
-  }
-
-  if (err_fmt == true) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
-               suite->nom, suite->nbr_fic);
-
-    return false;
-  }
-
-  /* Dimensions du support */
-
-  if (ind_fic == 0) {
-    suite->nbr_cel = nbr_cel;
-    suite->nbr_fac = nbr_fac;
-    suite->nbr_fbr = nbr_fbr;
-    suite->nbr_som = nbr_som;
-  }
-  else if (ind_fic > 0 && (   nbr_cel != suite->nbr_cel
-                           || nbr_fac != suite->nbr_fac
-                           || nbr_fbr != suite->nbr_fbr
-                           || nbr_som != suite->nbr_som)) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Les dimensions du support associé au fichier suite <%s>\n"
-                 "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
-               suite->nom, suite->nbr_fic);
-
-    return false;
-  }
-
-  /* Tableaux et champs contenus dans le fichier */
-
-  while (fin_fic == false) {
-
-    str = bft_file_gets_try(buffer,
-                            CS_SUITE_LNG_BUF_ASCII,
-                            suite->fic[ind_fic],
-                            &num_ligne);
-
-    if (str == NULL) {
-      fin_fic = true;
-      break;
-    }
-
-    /* Traitement d'une rubrique */
-
-    else if (buffer[0] == '[') {
-      lng = strlen(buffer);
-      while (   buffer[lng - 1] == '\n' || buffer[lng - 1] == '\r'
-                || buffer[lng - 1] == '\t' || buffer[lng - 1] == ' ') {
-        buffer[lng - 1] = '\0';
-        lng --;
-      }
-      strcpy (sub, buffer + 1);
-
-      /* Indicateur de fin de fichier */
-
-      if (strncmp(sub, cs_suite_nom_fin_fic,
-                  strlen(cs_suite_nom_fin_fic)) == 0)
-        return false;
-
-      /* Indicateur de découpage de fichier */
-
-      else if (strncmp(sub, cs_suite_nom_decoup_fic,
-                       strlen(cs_suite_nom_decoup_fic)) == 0)
-        return true;
-
-      /* Numéro de partie de fichier (en cas de découpage) */
-
-      else if (strncmp(sub, cs_suite_nom_partie_fic,
-                       strlen(cs_suite_nom_partie_fic)) == 0) {
-        int num_part;
-        ind = strlen(cs_suite_nom_partie_fic);
-        for (ind_fin = lng - 1 ;
-             ind_fin >= ind && sub[ind_fin] != ']' ;
-             ind_fin--);
-        sub[ind_fin] = '\0';
-        if (   sscanf(sub + ind, "%d", &num_part) !=1
-            || num_part != suite->nbr_fic) {
-          cs_base_warn(__FILE__, __LINE__);
-          bft_printf(_("Le fichier suite <%s_p%02d> ne correspond pas\n"
-                       "à la partie <%d> du fichier suite d'origine\n"),
-                     suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
-
-          return false;
-        }
-        continue;
-      }
-
-      /* Traitement d'un enregistrement standard */
-
-      strcpy(nom_tmp, sub);
-
-      str = bft_file_gets_try(buffer,
-                              CS_SUITE_LNG_BUF_ASCII,
-                              suite->fic[ind_fic],
-                              &num_ligne);
-
-      if (str == NULL) {
-        fin_fic = true;
-        break;
-      }
-
-      /*
-        Décodage de la deuxième ligne d'entête (avec vérification
-        de la syntaxe) ; on part de la fin, qui doit être caractérisée
-        par le caractère ']', et on progresse vers le début
-      */
-
-      ind_fin = strlen(buffer);
-      for (ind = ind_fin - 1 ; ind > 0 && buffer[ind] != ']' ; ind--);
-      buffer[ind] = '\0';
-      ind_fin = ind - 1;
-
-      for (etape = 0 ; etape < 3 ;etape++) {
-
-        if (ind_fin > 0 && err_fmt == false) {
-          for ( ; ind > 0 && buffer[ind] != '=' ; ind--);
-          for (ind_rub = ind ;
-               ind_rub > 0 && buffer[ind_rub] != ',' ;
-               ind_rub--);
-          ind++;
-          for ( ; ind < ind_fin && buffer[ind] == ' ' ; ind++);
-
-          switch(etape) {
-
-          case 0:
-            if (strncmp(", typ_val = ", buffer+ind_rub,
-                        strlen(", typ_val = ")) == 0)
-              strcpy(str_typ, buffer+ind);
-            else
-              err_fmt = true;
-            break;
-
-          case 1:
-            if (strncmp(", nbr_val_ent = ", buffer+ind_rub,
-                        strlen(", nbr_val_ent = ")) == 0) {
-              if (sscanf(buffer+ind, "%d", &nbr_val_ent) != 1)
-                err_fmt = true;
-            }
-            else
-              err_fmt = true;
-            break;
-
-          case 2:
-            if (strncmp(" support = ", buffer+ind_rub,
-                        strlen(" support = ")) == 0)
-              strcpy(sub, buffer+ind);
-            else
-              err_fmt = true;
-            break;
-
-          }
-
-          ind = ind_rub;
-          buffer[ind_rub] = '\0';
-          ind_fin = ind_rub - 1;
-        }
-        else
-          err_fmt = true;
-
-      }
-
-      /* Détermination du numéro de support associé */
-
-      for (ind_sup = CS_SUITE_SUPPORT_SCAL;
-           ind_sup <= CS_SUITE_SUPPORT_SOM;
-           ind_sup++) {
-        if (strcmp(sub, cs_suite_nom_support[ind_sup]) == 0)
-            break;
-      }
-      if (ind_sup > CS_SUITE_SUPPORT_SOM) {
-        ind_sup = atoi(sub);
-        if (ind_sup < 5)
-          err_fmt = true;
-      }
-
-      /* Si l'enregistrement définit un support additionnel */
-
-      if (ind_sup > (CS_SUITE_SUPPORT_SOM + suite->nbr_sup_add)) {
-
-        char buffer_ascii[80];
-
-        cs_int_t nbr_ent_sup = 0;
-
-        if (   ind_sup != suite->nbr_sup_add + 5
-            || nbr_val_ent != 1
-            || (strcmp(str_typ, cs_suite_nom_typ_elt[1]) != 0)) {
-          bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
-                       "de support additionnel (%s) incorrecte."),
-                     suite->nom);
-          return false;
-        }
-
-        /* Lecture du nombre global d'entités associé */
-
-        buffer_ascii[0] = '\0';
-        cs_loc_suite_lit_val(CS_SUITE_TYPE_ASCII,
-                             suite->fic[ind_fic],
-                             1,
-                             CS_TYPE_cs_int_t,
-                             &nbr_ent_sup,
-                             buffer_ascii);
-
-        cs_loc_suite_init_support(suite,
-                                  nom_tmp,
-                                  nbr_ent_sup);
-      }
-
-      /* Sinon, on a affaire à un enregistrement standard */
-
-      else {
-
-        if (suite->nbr_rec == suite->nbr_rec_max) {
-          suite->nbr_rec_max *= 2;
-          BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
-        }
-
-        ind_rec = suite->nbr_rec;
-
-        (suite->tab_rec[ind_rec]).ind_support = ind_sup;
-
-        BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(nom_tmp) + 1, char);
-        strcpy((suite->tab_rec[ind_rec]).nom, nom_tmp);
-
-        (suite->tab_rec[ind_rec]).nbr_val_ent = (cs_int_t)nbr_val_ent;
-        for (ind = 0 ; ind < 3 ; ind++) {
-          if (strcmp(str_typ, cs_suite_nom_typ_elt[ind]) == 0) {
-            (suite->tab_rec[ind_rec]).typ_val = (cs_type_t)ind;
-            break;
-          }
-        }
-        if (ind == 3)
-          err_fmt = true;
-
-        /* Position dans le fichier */
-
-        (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
-        (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
-
-        /* Libération du nom si erreur de format */
-
-        if (   (fin_fic == true || err_fmt == true)
-               && (suite->tab_rec[ind_rec]).nom != NULL)
-          BFT_FREE((suite->tab_rec[ind_rec]).nom);
-
-        else {
-
-          /* Incrémentation compteur */
-
-          suite->nbr_rec += 1;
-
-          /* Passage rapide à la suite */
-
-          bft_file_seek
-            (suite->fic[ind_fic],
-             (  (suite->tab_rec[ind_rec]).pos_fic
-              + cs_loc_suite_calc_avance
-                  (suite,
-                   ((suite->tab_rec[ind_rec]).ind_support),
-                   (suite->tab_rec[ind_rec]).nbr_val_ent,
-                   (suite->tab_rec[ind_rec]).typ_val)),
-             BFT_FILE_SEEK_SET);
-
-        }
-
-      } /* fin du traitement pour un enregistrement standard */
-
-    }
-
-  }
-
-  return false;
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui analyse le contenu d'un fichier suite en mode binaire
- *  On démarre à la position suivant l'en-tête, et on indique en retour
- *  si la suite continue sur un autre fichier
- *----------------------------------------------------------------------------*/
-
-static cs_bool_t cs_loc_suite_analyse_bin
-(
- cs_suite_t  *const  suite                /* --> Structure suite              */
-)
-{
-  char       buf_nom[CS_SUITE_LNG_NOM + 1];
-  char      *nom = buf_nom;
-  cs_int_t   lng_nom_max = CS_SUITE_LNG_NOM;
-
-  cs_int_t  buf[4], nbr_lus, ind_rec;
-
-  cs_int_t  ind_fic   = suite->nbr_fic - 1;
-
-  cs_bool_t  fic_suiv = false;
-  cs_bool_t  fin_fic  = false;
-
-  /* Initialisations */
-
-  nbr_lus = bft_file_read_try(buf,
-                              sizeof(cs_int_t),
-                              4,
-                              suite->fic[ind_fic]);
-
-  if (nbr_lus == 4) {
-
-    /* Dimensions du support */
-
-    if (ind_fic == 0) {
-      suite->nbr_cel = buf[0];
-      suite->nbr_fac = buf[1];
-      suite->nbr_fbr = buf[2];
-      suite->nbr_som = buf[3];
-    }
-
-    else if (ind_fic > 0 && (   buf[0] != suite->nbr_cel
-                             || buf[1] != suite->nbr_fac
-                             || buf[2] != suite->nbr_fbr
-                             || buf[3] != suite->nbr_som)) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Les dimensions du support associé au fichier suite <%s>\n"
-                   "numéro <%d> ne correspondent pas au fichier numéro <1>\n"),
-                 suite->nom, suite->nbr_fic);
-      return false;
-    }
-
-  }
-  else {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
-               suite->nom, suite->nbr_fic);
-    return false;
-  }
-
-
-  /* Tableaux et champs contenus dans le fichier */
-
-  while (fin_fic == false) {
-
-    nbr_lus = bft_file_read_try(buf,
-                                sizeof(cs_int_t),
-                                4,
-                                suite->fic[ind_fic]);
-
-    if (nbr_lus < 4) {
-      fin_fic = true;
-      break;
-    }
-
-    if (buf[0] > lng_nom_max) {
-      lng_nom_max = buf[0];
-      if (nom == buf_nom)
-        BFT_MALLOC(nom, lng_nom_max, char);
-      else
-        BFT_REALLOC(nom, lng_nom_max, char);
-    }
-
-    bft_file_read(nom,
-                  1,
-                  buf[0],
-                  suite->fic[ind_fic]);
-
-    /* Traitement d'une rubrique */
-
-    /* Indicateur de fin de fichier */
-
-    if (strncmp(nom, cs_suite_nom_fin_fic,
-                strlen(cs_suite_nom_fin_fic)) == 0) {
-      fin_fic = true;
-      break;
-    }
-
-    /* Indicateur de découpage de fichier */
-
-    else if (strncmp(nom, cs_suite_nom_decoup_fic,
-                     strlen(cs_suite_nom_decoup_fic)) == 0) {
-      fin_fic  = true;
-      fic_suiv = true;
-      break;
-    }
-
-    /* Numéro de partie de fichier (en cas de découpage) */
-
-    else if (strncmp(nom, cs_suite_nom_partie_fic,
-                     strlen(cs_suite_nom_partie_fic)) == 0) {
-      if (buf[1] != suite->nbr_fic) {
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Le fichier suite <%s_p%02d> ne correspond pas\n"
-                     "à la partie <%d> du fichier suite d'origine\n"),
-                   suite->nom, (int)suite->nbr_fic, (int)suite->nbr_fic);
-        fin_fic = true;
-        break;
-      }
-      continue;
-    }
-
-    /* Si l'enregistrement définit un support additionnel */
-
-    if (buf[1] > (CS_SUITE_SUPPORT_SOM + suite->nbr_sup_add)) {
-
-      cs_int_t nbr_ent_sup = 0;
-
-      if (   buf[1] != suite->nbr_sup_add + 5
-          || buf[2] != 1
-          || buf[3] != 1) {
-        bft_printf(_("Le fichier suite <%s_p%02d> contient une définition\n"
-                     "de support additionnel (%s) incorrecte."),
-                   suite->nom);
-        return false;
-      }
-
-      /* Lecture du nombre global d'entités associé */
-
-      bft_file_read(&nbr_ent_sup, sizeof(cs_int_t), 1, suite->fic[ind_fic]);
-
-      cs_loc_suite_init_support(suite,
-                                nom,
-                                nbr_ent_sup);
-
-    }
-
-    /* Traitement d'un enregistrement standard */
-
-    else {
-
-      if (suite->nbr_rec == suite->nbr_rec_max) {
-        suite->nbr_rec_max *= 2;
-        BFT_REALLOC(suite->tab_rec, suite->nbr_rec_max, cs_suite_rec_t);
-      }
-
-      ind_rec = suite->nbr_rec;
-
-      BFT_MALLOC((suite->tab_rec[ind_rec]).nom, strlen(nom) + 1, char);
-      strcpy((suite->tab_rec[ind_rec]).nom, nom);
-
-      (suite->tab_rec[ind_rec]).ind_support = buf[1];
-      (suite->tab_rec[ind_rec]).nbr_val_ent = buf[2];
-      (suite->tab_rec[ind_rec]).typ_val     = (cs_type_t)buf[3];
-
-      /* Position dans le fichier */
-
-      (suite->tab_rec[ind_rec]).ind_fic = ind_fic;
-      (suite->tab_rec[ind_rec]).pos_fic = bft_file_tell(suite->fic[ind_fic]);
-
-      /* Incrémentation compteur */
-
-      suite->nbr_rec += 1;
-
-      /* Passage rapide à la suite */
-
-      bft_file_seek
-        (suite->fic[ind_fic],
-         (  (suite->tab_rec[ind_rec]).pos_fic
-          + cs_loc_suite_calc_avance
-              (suite,
-               (cs_suite_support_t)((suite->tab_rec[ind_rec]).ind_support),
-               (suite->tab_rec[ind_rec]).nbr_val_ent,
-               (suite->tab_rec[ind_rec]).typ_val)),
-         BFT_FILE_SEEK_SET);
-
-    }
-  }
-
-  if (nom != buf_nom)
-    BFT_FREE(nom);
-
-  return fic_suiv;
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui prépare l'index généré lors de l'analyse du fichier à
- *  l'utilisation par les fonctions de lecture d'enregistrements
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_prepare_index
-(
- cs_suite_t  *const  suite                /* --> Structure suite              */
-)
-{
-  cs_int_t  ind_rec;
-
-  /* Traitement pour le parallélisme */
-
-#if defined(_CS_HAVE_MPI)
-
-  if (cs_glob_base_rang >= 0) {
-
-    cs_int_t   buf[5];
-    cs_int_t   lng_nom;
-    cs_int_t  *pos_nom = NULL, *buf_idx = NULL;
-    char      *buf_nom = NULL;
-
-    /* Distribution dimensions et index */
-
-    buf[0] = suite->nbr_cel;
-    buf[1] = suite->nbr_fac;
-    buf[2] = suite->nbr_fbr;
-    buf[3] = suite->nbr_som;
-    buf[4] = suite->nbr_rec;
-
-    MPI_Bcast((void *)buf, 5, CS_MPI_INT, 0,
-              cs_glob_base_mpi_comm);
-
-    if (cs_glob_base_rang > 0) {
-
-      suite->nbr_cel = buf[0];
-      suite->nbr_fac = buf[1];
-      suite->nbr_fbr = buf[2];
-      suite->nbr_som = buf[3];
-      suite->nbr_rec = buf[4];
-
-      suite->nbr_rec_max = suite->nbr_rec;
-      BFT_MALLOC(suite->tab_rec, suite->nbr_rec, cs_suite_rec_t);
-
-    }
-
-    /* Noms des enregistrements */
-
-    BFT_MALLOC(pos_nom, suite->nbr_rec + 1, cs_int_t);
-
-    if (cs_glob_base_rang == 0) {
-      pos_nom[0] = 0;
-      for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++)
-        pos_nom[ind_rec + 1] =   pos_nom[ind_rec]
-                               + strlen((suite->tab_rec[ind_rec]).nom);
-    }
-
-    MPI_Bcast((void *)pos_nom, suite->nbr_rec + 1, CS_MPI_INT, 0,
-              cs_glob_base_mpi_comm);
-
-    BFT_MALLOC(buf_nom, pos_nom[suite->nbr_rec], char);
-
-    if (cs_glob_base_rang == 0) {
-      for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-        lng_nom = pos_nom[ind_rec + 1] - pos_nom[ind_rec];
-        strncpy(buf_nom + pos_nom[ind_rec],
-                (suite->tab_rec[ind_rec]).nom, lng_nom);
-      }
-    }
-
-    MPI_Bcast((void *)buf_nom, pos_nom[suite->nbr_rec], MPI_CHAR, 0,
-              cs_glob_base_mpi_comm);
-
-    if (cs_glob_base_rang > 0) {
-      for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-        lng_nom = pos_nom[ind_rec + 1] - pos_nom[ind_rec];
-        BFT_MALLOC ((suite->tab_rec[ind_rec]).nom, lng_nom + 1, char);
-        strncpy((suite->tab_rec[ind_rec]).nom,
-                buf_nom + pos_nom[ind_rec], lng_nom);
-        (suite->tab_rec[ind_rec]).nom[lng_nom] = '\0';
-      }
-    }
-
-    BFT_FREE(buf_nom);
-    BFT_FREE(pos_nom);
-
-    /* Autres parties de l'index */
-
-    BFT_MALLOC(buf_idx, suite->nbr_rec * 3, cs_int_t);
-
-    if (cs_glob_base_rang == 0) {
-      for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-        buf_idx[ind_rec * 3]
-          = (suite->tab_rec[ind_rec]).ind_support;
-        buf_idx[ind_rec * 3 + 1]
-          = (suite->tab_rec[ind_rec]).nbr_val_ent;
-        buf_idx[ind_rec * 3 + 2]
-          = (cs_int_t)(suite->tab_rec[ind_rec]).typ_val;
-      }
-    }
-
-    MPI_Bcast((void *)buf_idx, suite->nbr_rec * 3, CS_MPI_INT, 0,
-              cs_glob_base_mpi_comm);
-
-    if (cs_glob_base_rang > 0) {
-      for (ind_rec = 0 ; ind_rec < suite->nbr_rec ; ind_rec++) {
-        (suite->tab_rec[ind_rec]).ind_support = buf_idx[ind_rec * 3];
-        (suite->tab_rec[ind_rec]).nbr_val_ent = buf_idx[ind_rec * 3 + 1];
-        (suite->tab_rec[ind_rec]).typ_val
-          = (cs_type_t)(buf_idx[ind_rec * 3 + 2]);
-        (suite->tab_rec[ind_rec]).ind_fic = -1;
-        (suite->tab_rec[ind_rec]).pos_fic = -1;
-      }
-    }
-
-    BFT_FREE(buf_idx);
-
-  }
-
-#endif /* defined(_CS_HAVE_MPI) */
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Conversion d'arguments de lecture/écriture de l'API Fortran vers l'API C
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_rub_f77_vers_C
-(
- const cs_int_t             *const numsui,  /* --> Numéro du fichier suite    */
- const cs_int_t             *const itysup,  /* --> Code type de support       */
- const cs_int_t             *const irtype,  /* --> Entiers ou réels ?         */
-       cs_suite_t          **const suite,   /* <-- Pointeur structure suite   */
-       int                  *const support, /* <-- Type de support            */
-       cs_type_t            *const typ_val, /* <-- Entiers ou réels           */
-       cs_int_t             *const ierror   /* <-- 0 = succès, < 0 = erreur   */
-)
-{
-  cs_int_t indsui = *numsui - 1;
-
-
-  *ierror = CS_SUITE_SUCCES;
-
-  /* Pointeur de structure suite associé */
-
-  if (   indsui < 0
-      || indsui > cs_glob_suite_ptr_nbr
-      || cs_glob_suite_ptr_tab[indsui] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite numéro <%d> ne peut être fermé\n"
-                 "(fichier déjà fermé ou numéro invalide)"), (int)(*numsui));
-
-    *ierror = CS_SUITE_ERR_NUM_FIC;
-    return;
-  }
-
-  else
-    *suite = cs_glob_suite_ptr_tab[indsui];
-
-
-  /* Support associé à la rubrique */
-
-  switch (*itysup) {
-
-  case 0:
-    *support = CS_SUITE_SUPPORT_SCAL;
-    break;
-
-  case 1:
-    *support = CS_SUITE_SUPPORT_CEL;
-    break;
-
-  case 2:
-    *support = CS_SUITE_SUPPORT_FAC_INT;
-    break;
-
-  case 3:
-    *support = CS_SUITE_SUPPORT_FAC_BRD;
-    break;
-
-  case 4:
-    *support = CS_SUITE_SUPPORT_SOM;
-    break;
-
-  default:
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le type de support <%d> indiqué pour une rubrique de\n"
-                 "fichier suite est invalide"), (int)(*itysup));
-    *ierror = CS_SUITE_ERR_SUPPORT;
-    return;
-
-  }
-
-
-  /* Type associé à la rubrique */
-
-  switch (*irtype) {
-
-  case 1:
-    *typ_val = CS_TYPE_cs_int_t;
-    break;
-
-  case 2:
-    *typ_val = CS_TYPE_cs_real_t;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Le type de valeur <%d> indiqué pour une rubrique de\n"
-                "fichier suite est invalide"), (int)(*irtype));
-    *ierror = CS_SUITE_ERR_TYPE_VAL;
-    return;
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Permutation des valeurs d'un tableau renuméroté en lecture
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_permute_lec
-(
- const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
-       cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-)
-{
-  cs_int_t  ind_ent, ind_loc;
-
-  cs_int_t  ind = 0;
-
-  /* Instructions */
-
-  if (num_ent_ini == NULL)
-    return;
-
-  switch (typ_val) {
-
-  case CS_TYPE_cs_int_t:
-    {
-      cs_int_t  *val_ord;
-      cs_int_t  *val_cur = (cs_int_t *)tab_val;
-
-      BFT_MALLOC(val_ord, nbr_ent * nbr_val_ent, cs_int_t);
-
-      for (ind_ent = 0 ; ind_ent < nbr_ent ; ind_ent++) {
-        for (ind_loc = 0 ; ind_loc < nbr_val_ent ; ind_loc++)
-          val_ord[ind++]
-            = val_cur[(num_ent_ini[ind_ent] - 1) * nbr_val_ent + ind_loc];
-      }
-
-      for (ind = 0 ; ind < nbr_ent * nbr_val_ent ; ind++)
-        val_cur[ind] = val_ord[ind];
-
-      BFT_FREE(val_ord);
-    }
-    break;
-
-  case CS_TYPE_cs_real_t:
-    {
-      cs_real_t  *val_ord;
-      cs_real_t  *val_cur = (cs_real_t *)tab_val;
-
-      BFT_MALLOC (val_ord, nbr_ent * nbr_val_ent, cs_real_t);
-
-      for (ind_ent = 0 ; ind_ent < nbr_ent ; ind_ent++) {
-        for (ind_loc = 0 ; ind_loc < nbr_val_ent ; ind_loc++)
-          val_ord[ind++]
-            = val_cur[(num_ent_ini[ind_ent] - 1) * nbr_val_ent + ind_loc];
-      }
-
-      for (ind = 0 ; ind < nbr_ent * nbr_val_ent ; ind++)
-        val_cur[ind] = val_ord[ind];
-
-      BFT_FREE(val_ord);
-    }
-    break;
-
-  default:
-    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- *  Permutation des valeurs d'un tableau renuméroté en écriture
- *----------------------------------------------------------------------------*/
-
-static cs_byte_t * cs_loc_suite_permute_ecr
-(
- const cs_int_t            nbr_ent,       /* --> Nombre d'entités             */
- const fvm_gnum_t   *const num_ent_ini,   /* --> Numéros globaux des entités  */
- const cs_int_t            nbr_val_ent,   /* --> Nombre de valeurs/entité     */
- const cs_type_t           typ_val,       /* --> Type de valeur               */
- const cs_byte_t    *const tab_val        /* --> Tableau des valeurs          */
-)
-{
-  cs_int_t  ind_ent, ind_loc;
-
-  cs_int_t  ind = 0;
-
-  /* Instructions */
-
-  if (num_ent_ini == NULL)
-    return NULL;
-
-  switch (typ_val) {
-
-  case CS_TYPE_cs_int_t:
-    {
-      cs_int_t  *val_ord;
-      const cs_int_t  *val_cur = (const cs_int_t *)tab_val;
-
-      BFT_MALLOC(val_ord, nbr_ent * nbr_val_ent, cs_int_t);
-
-      for (ind_ent = 0 ; ind_ent < nbr_ent ; ind_ent++) {
-        for (ind_loc = 0 ; ind_loc < nbr_val_ent ; ind_loc++)
-          val_ord[(num_ent_ini[ind_ent] - 1) * nbr_val_ent + ind_loc]
-            = val_cur[ind++];
-      }
-
-      return (cs_byte_t *)val_ord;
-    }
-    break;
-
-  case CS_TYPE_cs_real_t:
-    {
-      cs_real_t  *val_ord;
-      const cs_real_t  *val_cur = (const cs_real_t *)tab_val;
-
-      BFT_MALLOC(val_ord, nbr_ent * nbr_val_ent, cs_real_t);
-
-      for (ind_ent = 0 ; ind_ent < nbr_ent ; ind_ent++) {
-        for (ind_loc = 0 ; ind_loc < nbr_val_ent ; ind_loc++)
-          val_ord[(num_ent_ini[ind_ent] - 1) * nbr_val_ent + ind_loc]
-            = val_cur[ind++];
-      }
-
-      return (cs_byte_t *)val_ord;
-    }
-    break;
-
-  default:
-    assert(typ_val == CS_TYPE_cs_int_t || typ_val == CS_TYPE_cs_real_t);
-    return NULL;
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui initialise un support supplémentaire
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_suite_init_support
-(
-       cs_suite_t   *suite,         /* --> Ptr. fichier suite                 */
- const char         *nomrub,        /* --> Nom de la rubrique                 */
- const fvm_gnum_t    nbr_ent_glob   /* --> Nombre global d'entités            */
-)
-{
-  int ind_sup;
-
-  suite->nbr_sup_add += 1;
-  BFT_REALLOC(suite->tab_sup_add, suite->nbr_sup_add, cs_suite_sup_t);
-  ind_sup = suite->nbr_sup_add-1;
-
-  BFT_MALLOC((suite->tab_sup_add[ind_sup]).nom, strlen(nomrub) + 1, char);
-  strcpy((suite->tab_sup_add[ind_sup]).nom, nomrub);
-  (suite->tab_sup_add[ind_sup]).nbr_ent_glob_f = nbr_ent_glob;
-}
 
 /*----------------------------------------------------------------------------*/
 

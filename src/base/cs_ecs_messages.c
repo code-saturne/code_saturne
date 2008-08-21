@@ -313,7 +313,7 @@ _set_block_ranges(cs_mesh_t       *mesh,
 static void
 _read_cell_rank(cs_mesh_t       *mesh,
                 _mesh_reader_t  *mr,
-                size_t           echo)
+                long             echo)
 {
   char file_name[32]; /* more than enough for "domain_number_<n_ranks>" */
   size_t  i;
@@ -349,11 +349,20 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
   /* Open file */
 
+#if defined(FVM_HAVE_MPI)
+  rank_pp_in = cs_io_initialize(file_name,
+                                "Domain partitioning, R0",
+                                CS_IO_MODE_READ,
+                                0,
+                                echo,
+                                cs_glob_base_mpi_comm);
+#else
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
                                 0,
                                 echo);
+#endif
 
   if (echo > 0)
     bft_printf("\n");
@@ -1934,7 +1943,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
   fvm_gnum_t face_vertices_idx_shift = 0;
   cs_bool_t  end_read = false;
   cs_bool_t  data_read = false;
-  size_t  echo = 0;
+  long  echo = CS_IO_ECHO_OPEN_CLOSE;
   cs_io_t  *pp_in = cs_glob_pp_io;
   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
 
@@ -1998,9 +2007,10 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
         if (mr->face_bi.gnum_range[0] > 0)
           n_elts = (mr->face_bi.gnum_range[1] - mr->face_bi.gnum_range[0])*2;
         BFT_MALLOC(mr->face_cells, n_elts, fvm_gnum_t);
+        assert(header.n_location_vals == 2);
         cs_io_read_block(&header,
-                         mr->face_bi.gnum_range[0]*2 -1,
-                         mr->face_bi.gnum_range[1]*2 -1,
+                         mr->face_bi.gnum_range[0],
+                         mr->face_bi.gnum_range[1],
                          mr->face_cells, pp_in);
       }
 
@@ -2106,9 +2116,10 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
           n_elts = (  mr->vertex_bi.gnum_range[1]
                     - mr->vertex_bi.gnum_range[0])*3;
         BFT_MALLOC(mr->vertex_coords, n_elts, cs_real_t);
+        assert(header.n_location_vals == 3);
         cs_io_read_block(&header,
-                         mr->vertex_bi.gnum_range[0]*3 - 2,
-                         mr->vertex_bi.gnum_range[1]*3 - 2,
+                         mr->vertex_bi.gnum_range[0],
+                         mr->vertex_bi.gnum_range[1],
                          mr->vertex_coords, pp_in);
       }
 
@@ -2173,9 +2184,10 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
         cs_io_set_fvm_gnum(&header, pp_in);
         n_elts = mr->n_per_face_couples[perio_id]*2;
         BFT_MALLOC(mr->per_face_couples[perio_id], n_elts, fvm_gnum_t);
+        assert(header.n_location_vals == 2);
         cs_io_read_block(&header,
-                         (mr->per_face_bi[perio_id]).gnum_range[0]*2 -1,
-                         (mr->per_face_bi[perio_id]).gnum_range[1]*2 -1,
+                         (mr->per_face_bi[perio_id]).gnum_range[0],
+                         (mr->per_face_bi[perio_id]).gnum_range[1],
                          mr->per_face_couples[perio_id],
                          pp_in);
 

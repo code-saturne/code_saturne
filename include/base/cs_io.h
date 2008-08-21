@@ -44,6 +44,7 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #include <fvm_defs.h>
+#include <fvm_file.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -64,7 +65,11 @@ extern "C" {
  * Local Macro Definitions
  *============================================================================*/
 
-#define CS_IO_NAME_LEN   32    /* Section header nam length */
+#define CS_IO_NAME_LEN   32    /* Section header name length */
+
+#define CS_IO_ECHO_NONE -2        /* No verbosity at all */
+#define CS_IO_ECHO_OPEN_CLOSE -1  /* Echo open or close operations */
+#define CS_IO_ECHO_HEADERS 0      /* Echo headers */
 
 /*============================================================================
  * Type definitions
@@ -89,7 +94,6 @@ typedef struct _cs_io_t cs_io_t;
 typedef struct {
 
   const char     *sec_name;           /* Pointer to section name */
-  const char     *type_read_name;     /* Pointer to name of type in file */
   fvm_gnum_t      n_vals;             /* Number of associated values */
   size_t          location_id;        /* Id of associated location, or 0 */
   size_t          index_id;           /* Id of associated index, or 0 */
@@ -112,32 +116,91 @@ extern cs_io_t  *cs_glob_pp_io;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize a preprocessor output file structure.
+ * Initialize a kernel IO file structure.
+ *
+ * The magic string may be NULL only in read mode;
+ *
+ * If the position of section bodies is already known (after initial
+ * analysis for example), the file may be opened for reading section bodies
+ * only by using "seek_read_section_bodies_only" as a magic string. This may
+ * be used to map another type of file to kernel io files, if header data is
+ * different but body data is similar (binary, using the same datatypes).
  *
  * parameters:
- *   name         --> file name
- *   magic_string --> magic string associated with file type
- *   mode         --> read or write
- *   hints        --> optional flags for file access method (see fvm_file.h)
- *   echo         --> echo on main output (< 0 if none, header if 0,
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file type, or NULL
+ *   mode         <-- read or write
+ *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
+ *   comm         <-- associated MPI communicator
  *
  * returns:
- *   pointer to preprocessor IO structure
+ *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
+
+#if defined(FVM_HAVE_MPI)
 
 cs_io_t *
 cs_io_initialize(const char    *file_name,
                  const char    *magic_string,
                  cs_io_mode_t   mode,
                  int            hints,
-                 size_t         echo);
+                 long           echo,
+                 MPI_Comm       comm);
+
+#else
+
+cs_io_t *
+cs_io_initialize(const char    *file_name,
+                 const char    *magic_string,
+                 cs_io_mode_t   mode,
+                 int            hints,
+                 long           echo);
+
+#endif /* FVM_HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * Initialize a kernel IO file structure in read mode, building an index.
+ *
+ * The magic string may be NULL, if we choose to ignore it.
+ *
+ * parameters:
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file type
+ *   hints        <-- optional flags for file access method (see fvm_file.h)
+ *   echo         <-- echo on main output (< 0 if none, header if 0,
+ *                    n first and last elements if n > 0)
+ *   comm         <-- associated MPI communicator
+ *
+ * returns:
+ *   pointer to kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+#if defined(FVM_HAVE_MPI)
+
+cs_io_t *
+cs_io_initialize_with_index(const char    *file_name,
+                            const char    *magic_string,
+                            int            hints,
+                            long           echo,
+                            MPI_Comm       comm);
+
+#else
+
+cs_io_t *
+cs_io_initialize_with_index(const char    *file_name,
+                            const char    *magic_string,
+                            int            hints,
+                            long           echo);
+
+#endif /* FVM_HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Free a preprocessor output file structure, closing the associated file.
  *
  * parameters:
- *   pp_io <-> preprocessor IO structure
+ *   pp_io <-> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -147,17 +210,60 @@ cs_io_finalize(cs_io_t **pp_io);
  * Return a pointer to a preprocessor IO structure's name.
  *
  * parameters:
- *   pp_io --> preprocessor IO structure
+ *   pp_io <-- kernel IO structure
  *----------------------------------------------------------------------------*/
 
 const char *
 cs_io_get_name(const cs_io_t  *pp_io);
 
 /*----------------------------------------------------------------------------
- * Return a preprocessor IO structure's echo (verbosity) level.
+ * Return the number of indexed entries in a kernel IO structure.
  *
  * parameters:
- *   pp_io --> preprocessor IO structure
+ *   inp <-- input kernel IO structure
+ *
+ * returns:
+ *   size of index if present, 0 otherwise,
+ *----------------------------------------------------------------------------*/
+
+size_t
+cs_io_get_index_size(const cs_io_t  *inp);
+
+/*----------------------------------------------------------------------------
+ * Return the name of an indexed section in a kernel IO structure.
+ *
+ * parameters:
+ *   inp <-- input kernel IO structure
+ *   id  <-- id of section in index (0 to n-1 numbering)
+ *
+ * returns:
+ *   pointer to section name if id in index range, NULL otherwise
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_io_get_indexed_sec_name(const cs_io_t  *inp,
+                           size_t          id);
+
+/*----------------------------------------------------------------------------
+ * Return header data for an indexed section in a kernel IO structure.
+ *
+ * parameters:
+ *   inp <-- input kernel IO structure
+ *   id  <-- id of section in index (0 to n-1 numbering)
+ *
+ * returns:
+ *   section header data (if id not in index range, fields set to zero)
+ *----------------------------------------------------------------------------*/
+
+cs_io_sec_header_t
+cs_io_get_indexed_sec_header(const cs_io_t  *inp,
+                             size_t          id);
+
+/*----------------------------------------------------------------------------
+ * Return a kernel IO structure's echo (verbosity) level.
+ *
+ * parameters:
+ *   pp_io <-- kernel IO structure
  *----------------------------------------------------------------------------*/
 
 size_t
@@ -167,13 +273,36 @@ cs_io_get_echo(const cs_io_t  *pp_io);
  * Read a message header.
  *
  * parameters:
- *   pp_io  --> preprocessor IO structure
- *   header <-- header structure
+ *   pp_io  <-- kernel IO structure
+ *   header --> header structure
+ *
+ * returns:
+ *   0 if a header was read, 1 in case of error or end-of-file
  *----------------------------------------------------------------------------*/
 
-void
+int
 cs_io_read_header(cs_io_t             *inp,
                   cs_io_sec_header_t  *header);
+
+/*----------------------------------------------------------------------------
+ * Set a kernel IO's state so as to be ready to read an indexed section.
+ *
+ * The header values and position in the file are set so as to be equivalent
+ * to those they would have if the corresponding header had just been read.
+ *
+ * parameters:
+ *   inp    <-> input kernel IO structure
+ *   header --> associated header
+ *   id     <-- id of section in index (0 to n-1 numbering)
+ *
+ * returns:
+ *   0 in case of success, 1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_io_set_indexed_position(cs_io_t             *inp,
+                           cs_io_sec_header_t  *header,
+                           size_t               id);
 
 /*----------------------------------------------------------------------------
  * Set a message's final data type to fvm_lnum_t.
@@ -182,7 +311,7 @@ cs_io_read_header(cs_io_t             *inp,
  *
  * parameters:
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   pp_io  --> kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -195,8 +324,8 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
  * It the datatype is not compatible, throw an error.
  *
  * parameters:
- *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   header <-> header structure
+ *   pp_io  <-- kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -208,7 +337,7 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
  *
  * parameters:
  *   header <-- header structure
- *   pp_io  --> preprocessor IO structure
+ *   pp_io  <-- kernel IO structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -227,7 +356,7 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
  * parameters:
  *   header           <-- header structure
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   pp_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -235,11 +364,16 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
 
 void *
 cs_io_read_global(const cs_io_sec_header_t  *header,
-                  void                         *elts,
+                  void                      *elts,
                   cs_io_t                   *pp_io);
 
 /*----------------------------------------------------------------------------
  * Read a message body, assigning a different block to each processor.
+ *
+ * If location_id > 0 and header->n_location_vals > 1, then
+ * global_num_start and global_num_end will be based on location element
+ * numbers, so the total number of values read equals
+ * (global_num_end - global_num_start) * header->n_location_vals.
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.
@@ -253,7 +387,7 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   pp_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -292,7 +426,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
  *   elts             <-> pointer to data array, or NULL
- *   pp_io            --> preprocessor IO structure
+ *   pp_io            --> kernel IO structure
  *
  * returns:
  *   elts if non NULL, or pointer to allocated array otherwise
@@ -304,6 +438,91 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                        fvm_gnum_t           global_num_end,
                        fvm_gnum_t          *elts,
                        cs_io_t             *pp_io);
+
+/*----------------------------------------------------------------------------
+ * Write a global section.
+ *
+ * Under MPI, data is only written by the associated communicator's root
+ * rank. The section data on other ranks is ignored, though the file offset
+ * is updated (i.e. the call to this function is collective).
+ *
+ * parameters:
+ *   section_name     <-- section name
+ *   n_vals           <-- total number of values
+ *   location_id      <-- id of associated location, or 0
+ *   index_id         <-- id of associated index, or 0
+ *   n_location_vals  <-- number of values per location
+ *   elt_type         <-- element type
+ *   elts             <-- pointer to element data
+ *   outp             <-> output kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_write_global(const char      *sec_name,
+                   fvm_gnum_t       n_vals,
+                   size_t           location_id,
+                   size_t           index_id,
+                   size_t           n_location_vals,
+                   fvm_datatype_t   elt_type,
+                   const void      *elts,
+                   cs_io_t         *outp);
+
+/*----------------------------------------------------------------------------
+ * Write a section to file, each associated process providing a contiguous
+ * of the section's body.
+ *
+ * Each process should provide a (possibly empty) block of the body,
+ * and we should have:
+ *   global_num_start at rank 0 = 1
+ *   global_num_start at rank i+1 = global_num_end at rank i.
+ * Otherwise, behavior (especially positioning for future reads) is undefined.
+ *
+ * If location_id > 0 and n_location_vals > 1, then global_num_start
+ * and global_num_end will be based on location element numbers, so the
+ * total number of values read equals
+ * (global_num_end - global_num_start) * header->n_location_vals.
+ *
+ * This function is intended to be used mainly data that is already of
+ * copy of original data (such as data that has been redistributed across
+ * processors just for the sake of output), or that is to be deleted after
+ * writing, so it may modify the values in its input buffer (notably to
+ * convert from little-endian to big-endian of vice-versa if necessary).
+ *
+ * parameters:
+ *   section_name     <-- section name
+ *   n_g_elts         <-- number of global elements (locations)
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *   location_id      <-- id of associated location, or 0
+ *   index_id         <-- id of associated index, or 0
+ *   n_location_vals  <-- number of values per location
+ *   elt_type         <-- element type
+ *                        (1 to n numbering)
+ *   elts             <-- pointer to element data
+ *   outp             <-> output kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_write_block_buffer(const char      *sec_name,
+                         fvm_gnum_t       n_g_elts,
+                         fvm_gnum_t       global_num_start,
+                         fvm_gnum_t       global_num_end,
+                         size_t           location_id,
+                         size_t           index_id,
+                         size_t           n_location_vals,
+                         fvm_datatype_t   elt_type,
+                         void            *elts,
+                         cs_io_t         *outp);
+
+/*----------------------------------------------------------------------------
+ * Dump a kernel IO file handle's metadata.
+ *
+ * parameters:
+ *   cs_io  <-- kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_dump(const cs_io_t  *cs_io);
 
 /*----------------------------------------------------------------------------*/
 
