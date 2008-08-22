@@ -1,7 +1,10 @@
 * 22/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
-  Correction on buffer definition if the code is compiled w/o PI.
+  Correction on buffer definition and prototypes if the code
+  is compiled without MPI or sockets support. 
   modified routines:
     src/base/cs_halo.c
+    src/base/cs_io.c
+    src/base/cs_syr3_comm.c
 
 * 22/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction on __STDC_VERSION__ detection for stdint include.

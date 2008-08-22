@@ -688,7 +688,7 @@ _file_open(cs_io_t     *cs_io,
     if (n_written < 128 + 24)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error writing the header of file: \"%s\".\n"),
-                 fvm_file_get_name(cs_io->f));
+                fvm_file_get_name(cs_io->f));
   }
 
   cs_io->buffer_size = cs_io->header_size;
@@ -799,7 +799,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
 #if defined(_CS_HAVE_MPI)
   inp->f = fvm_file_open(name, inp->mode, FVM_FILE_NO_MPI_IO, comm);
 #else
-  inp->f = fvm_file_open(name, inp->mode, hints);
+  inp->f = fvm_file_open(name, inp->mode, 0);
 #endif
 
   fvm_file_set_big_endian(inp->f);
@@ -873,7 +873,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
                            const char  *name,
                            MPI_Comm     comm)
 #else
-static void
+static int
 _file_legacy_restart_index(cs_io_t     *inp,
                            const char  *name)
 #endif
@@ -1718,6 +1718,7 @@ _cs_io_initialize_with_index(cs_io_t       *inp,
 #else
 static void
 _cs_io_initialize_with_index(cs_io_t       *inp,
+                             const char    *file_name,
                              const char    *magic_string)
 #endif /* FVM_HAVE_MPI */
 {

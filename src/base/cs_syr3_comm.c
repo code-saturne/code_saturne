@@ -41,7 +41,8 @@
 #include <mpi.h>
 #endif
 
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
+#if defined(_CS_HAVE_MPI) \
+ && defined(_CS_HAVE_MPE) && defined(_CS_SYR3_COMM_PROFILING)
 #include <mpe.h>
 #endif
 
@@ -101,7 +102,7 @@ struct _cs_syr3_comm_t {
  *  Constantes et Macros
  *============================================================================*/
 
-#define CS_SYR3_COMM_LNG_NOM_TYPE_ELT         2    /* Longueur du nom de type      */
+#define CS_SYR3_COMM_LNG_NOM_TYPE_ELT        2    /* Longueur du nom de type */
 
 #define CS_SYR3_COMM_SOCKET_ENTETE            "CS_comm_socket"
 
@@ -770,11 +771,9 @@ cs_int_t cs_syr3_comm_recoit_entete
     else if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_char) == 0)
       entete->typ_elt = CS_TYPE_char;
 
-    else
-      assert(   strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_int) == 0
-             || strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_real) == 0
-             || strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_char) == 0);
-
+    else {
+      assert(0);
+    }
   }
 
 
