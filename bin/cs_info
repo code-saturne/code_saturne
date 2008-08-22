@@ -60,9 +60,9 @@
  sortie()
  {
    dir_sortie=`pwd`
-   echo "   Directory : ${dir_sortie}"
+   echo "   Directory: ${dir_sortie}"
    echo
-   echo "   ${BO}Error${NO} : $*"
+   echo "   ${BO}Error${NO}: $*"
    tput init
    echo
    local_exit
@@ -75,11 +75,11 @@
 
  usage() {
     echo
-    echo "   usage : ${BO}info_cs${NO}                      "
-    echo "      or : ${BO}info_cs${NO}  ${SO}<topic>${NO}   "
+    echo "   usage: ${BO}cs_info${NO}                      "
+    echo "      or: ${BO}cs_info${NO}  ${SO}<topic>${NO}   "
     echo
-    echo "        with :                                    "
-    echo "        ${SO}<topic>${NO} : ${BO}version${NO}   : Code_Saturne version"
+    echo "        with:                                    "
+    echo "        ${SO}<topic>${NO}: ${BO}version${NO}   : Code_Saturne version"
     echo "                  ${BO}user${NO}       : user manual (pdf)"
     echo "                  ${BO}theory${NO}     : theory and programmer's guide (pdf)"
     echo "                  ${BO}tutorial${NO}   : Code_Saturne tutorial (pdf)"
@@ -118,7 +118,7 @@ fi
 
  topic=$1
  if   [ "$topic" = "version" ] ; then
-   whichINFOCS=`which info_cs`
+   whichINFOCS=`which cs_info`
    varPATH=$whichINFOCS
    varPATH=`dirname  $varPATH`
    varPATH=`dirname  $varPATH`
@@ -128,7 +128,7 @@ fi
      echo " ${BO}WARNING${NO}               : variable CS_HOME and the UNIX PATH"
      echo "                             do not seem consistent :"
      echo "        ${BO}CS_HOME variable     ${NO} : $CS_HOME"
-     echo "        ${BO}Path of info_cs      ${NO} : $whichINFOCS"
+     echo "        ${BO}Path of cs_info      ${NO} : $whichINFOCS"
      echo
      echo " ${BO}Restart the session of necessary${NO}"
      echo
