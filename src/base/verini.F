@@ -6170,6 +6170,21 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
+ 3001 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,
+     &'@    *********                                               ',/,
+     &'@  The multigrid algorithm for the linear system resolution  ',/,
+     &'@  in only available for the pressure.                       ',/,
+     &'@                                                            ',/,
+     &'@  The calculation could NOT run.                            ',/,
+     &'@                                                            ',/,
+     &'@ Check the input data given via User Interface or in usini1.',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
  3010 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
