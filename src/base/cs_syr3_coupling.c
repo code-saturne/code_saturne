@@ -997,11 +997,12 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
     bft_printf("Boundary face numbers:\n");
     for (i = 0; i < syr_coupling->n_coupl_faces ; i++)
       bft_printf("  %i\n", syr_coupling->coupl_face_list[i]);
+  }
 
   /* Print communicator names */
 
   if (syr_coupling->send_comm != NULL) {
-    bft_printf("Send communiator: %s\n",
+    bft_printf("Send communicator: %s\n",
                cs_syr3_comm_ret_nom(syr_coupling->send_comm));
   }
   if (syr_coupling->recv_comm != NULL) {
