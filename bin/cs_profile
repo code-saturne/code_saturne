@@ -30,8 +30,6 @@
   if [ "$NOM_ARCH" = "Linux" ] ; then
     if [ "`hostname | cut -c1-6`" = "tantal" ] ; then
       NOM_ARCH=Linux_CCRT
-    elif [ "`uname -m`" = "ia64" ] ; then
-      NOM_ARCH=Linux_IA64
     elif [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
       NOM_ARCH=Linux_Ch
     elif [ -d /bgl/BlueLight/ppcfloor ] ; then
