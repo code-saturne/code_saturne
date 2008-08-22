@@ -1481,11 +1481,11 @@ static void cs_loc_comm_mpi_ouvre
     if (strcmp(chaine_magique_comm, chaine_magique) != 0) {
 
       bft_error(__FILE__, __LINE__, 0,
-                _("Erreur pour la communication : \"%s\".\n"
-                  "La chaîne magique indique une mauvaise version du "
-                  "format de l'interface.\n"
-                  "chaîne magique lue      : \"%s\"\n"
-                  "chaîne magique attendue : \"%s\""),
+                _("Error for communication: \"%s\".\n"
+                  "The interface version is not correct.\n"
+                  "The magic string indicates an incorrect interface format version.\n"
+                  "magic string read:     \"%s\"\n"
+                  "magic string expected: \"%s\"\n"),
                 comm->nom, chaine_magique_comm, chaine_magique);
 
     }

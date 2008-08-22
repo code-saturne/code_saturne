@@ -1,5 +1,7 @@
+src/base/cs_ale.c
 src/base/cs_base.c
 src/base/cs_benchmark.c
+src/base/cs_blas.c
 src/base/cs_comm.c
 src/base/cs_couplage.c
 src/base/cs_ecs_messages.c
@@ -21,12 +23,19 @@ src/base/cs_mesh_select.c
 src/base/cs_mesh_solcom.c
 src/base/cs_mesh_warping.c
 src/base/cs_opts.c
+src/base/cs_parall.c
 src/base/cs_perio.c
 src/base/cs_post.c
 src/base/cs_pp_io.c
+src/base/cs_renumber.c
 src/base/cs_selector.c
 src/base/cs_sles.c
 src/base/cs_suite.c
 src/base/cs_syr_coupling.c
 src/base/cs_syr_messages.c
 src/base/cs_tpar1d.c
+src/base/cs_ventil.c
+src/base/tcpumx.c
+src/base/tremai.c
+src/lagr/cs_lagrang.c
+src/lagr/cs_lagr_perio.c

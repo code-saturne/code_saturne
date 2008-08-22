@@ -1,3 +1,15 @@
+* 22/08/2008 - David Monfort <david.monfort@edf.fr>
+  Update some missing strings translation.
+  modified i18n files:
+    po/fr.po
+    po/POTFILES.in
+  modified routines:
+    src/lagr/cs_lagrang.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_comm.c
+    src/base/cs_suite.c
+    src/base/cs_mesh.c
+
 * 21/08/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Correcting some strings for alignement and translation.
   modified files:

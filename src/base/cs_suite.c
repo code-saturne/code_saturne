@@ -3250,7 +3250,7 @@ static cs_bool_t cs_loc_suite_analyse_bin
   }
   else {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Le fichier suite <%s> numéro <%d> n'est pas conforme\n"),
+    bft_printf(_("The restart file <%s> number <%d> does not comply\n"),
                suite->nom, suite->nbr_fic);
     return CS_FALSE;
   }

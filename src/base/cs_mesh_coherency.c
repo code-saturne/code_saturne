@@ -332,24 +332,24 @@ cs_mesh_coherency_check(void)
 
         cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
-        bft_printf(_("\nInfo on cell1: %d\n"
+        bft_printf(_("\nInfo on cell 1: %d\n"
                      " cell center: %12.3g %12.3g %12.3g\n"
-                     " delta      : %12.3g\n"
-                     " mean       : %12.3g\n"),
+                     " delta:       %12.3g\n"
+                     " box center:  %12.3g\n"),
                    cell_id1+1, cell_cen[3*cell_id1], cell_cen[3*cell_id1+1],
                    cell_cen[3*cell_id1+2], delta1, mean1);
 
-        bft_printf(_("\nInfo on cell2: %d\n"
+        bft_printf(_("\nInfo on cell 2: %d\n"
                      " cell center: %12.3g %12.3g %12.3g\n"
-                     " delta      : %12.3g\n"
-                     " mean       : %12.3g\n"),
+                     " delta:       %12.3g\n"
+                     " box center:  %12.3g\n"),
                    cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
                    cell_cen[3*cell_id2+2], delta2, mean2);
         bft_printf_flush();
 
         bft_error(__FILE__, __LINE__, 0,
-                  _("\nCoherency error in standard halo.\n"
-                    "Between cell %d and cell %d : test = %g\n"
+                  _("\nCoherency error in standard halo\n"
+                    "between cells %d and %d: test = %g\n"
                     "(delta = %g, delta_mean = %g)\n"),
                   cell_id1+1, cell_id2+1, test, delta_neighbor, delta_mean);
 
@@ -381,24 +381,24 @@ cs_mesh_coherency_check(void)
 
             cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
-            bft_printf(_("\nInfo on cell1: %d\n"
+            bft_printf(_("\nInfo on cell 1: %d\n"
                          " cell center: %12.3g %12.3g %12.3g\n"
-                         " delta      : %12.3g\n"
-                         " mean       : %12.3g\n"),
+                         " delta:       %12.3g\n"
+                         " box center:  %12.3g\n"),
                        cell_id+1, cell_cen[3*cell_id], cell_cen[3*cell_id+1],
                        cell_cen[3*cell_id+2], delta1, mean1);
 
-            bft_printf(_("\nInfo on cell2: %d\n"
+            bft_printf(_("\nInfo on cell 2: %d\n"
                          " cell center: %12.3g %12.3g %12.3g\n"
-                         " delta      : %12.3g\n"
-                         " mean       : %12.3g\n"),
+                         " delta:       %12.3g\n"
+                         " box center:  %12.3g\n"),
                        cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
                        cell_cen[3*cell_id2+2], delta2, mean2);
             bft_printf_flush();
 
             bft_error(__FILE__, __LINE__, 0,
-                      _("\nCoherency error in extended halo.\n"
-                        "Between cell %d and cell %d : test = %g\n"
+                      _("\nCoherency error in extended halo\n"
+                        "between cells %d and %d: test = %g\n"
                         "(delta = %g, delta_mean = %g)\n"),
                       cell_id+1, cell_id2+1, test, delta_neighbor, delta_mean);
 

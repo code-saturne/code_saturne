@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-08-21 15:43+0200\n"
-"PO-Revision-Date: 2008-08-21 15:44+0200\n"
+"POT-Creation-Date: 2008-08-22 11:53+0200\n"
+"PO-Revision-Date: 2008-08-22 11:55+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -134,12 +134,12 @@ msgid "Memory:            "
 msgstr "Mémoire :          "
 
 #: src/base/cs_base.c:903
-msgid "User:              "
-msgstr "Utilisateur :      "
+msgid "User:                "
+msgstr "Utilisateur :        "
 
 #: src/base/cs_base.c:904
-msgid "Directory:         "
-msgstr "Répertoire :       "
+msgid "Directory:           "
+msgstr "Répertoire :         "
 
 #: src/base/cs_base.c:938
 #, c-format
@@ -677,11 +677,16 @@ msgstr ""
 #: src/base/cs_comm.c:1484
 #, c-format
 msgid ""
+"Error for communication: \"%s\".\n"
+"The interface version is not correct.\n"
+"The magic string indicates an incorrect interface format version.\n"
+"magic string read:     \"%s\"\n"
+"magic string expected: \"%s\"\n"
+msgstr ""
 "Erreur pour la communication : \"%s\".\n"
 "La chaîne magique indique une mauvaise version du format de l'interface.\n"
 "chaîne magique lue      : \"%s\"\n"
-"chaîne magique attendue : \"%s\""
-msgstr ""
+"chaîne magique attendue : \"%s\"\n"
 
 #: src/base/cs_comm.c:1859
 #, c-format
@@ -1655,8 +1660,8 @@ msgstr ""
 "\n"
 
 #: src/base/cs_mesh.c:1098
-msgid " Composition des périodicités\n"
-msgstr ""
+msgid " Periodicities combination\n"
+msgstr "  Composition des périodicités\n"
 
 #: src/base/cs_mesh.c:1107
 msgid ""
@@ -1731,28 +1736,28 @@ msgstr "    Vérification de cohérence sur coordonnées %d\n"
 #, c-format
 msgid ""
 "\n"
-"Info on cell1: %d\n"
+"Info on cell 1: %d\n"
 " cell center: %12.3g %12.3g %12.3g\n"
-" delta      : %12.3g\n"
-" mean       : %12.3g\n"
+" delta:       %12.3g\n"
+" box center:  %12.3g\n"
 msgstr ""
 
 #: src/base/cs_mesh_coherency.c:342 src/base/cs_mesh_coherency.c:391
 #, c-format
 msgid ""
 "\n"
-"Info on cell2: %d\n"
+"Info on cell 2: %d\n"
 " cell center: %12.3g %12.3g %12.3g\n"
-" delta      : %12.3g\n"
-" mean       : %12.3g\n"
+" delta:       %12.3g\n"
+" box center:  %12.3g\n"
 msgstr ""
 
 #: src/base/cs_mesh_coherency.c:351
 #, c-format
 msgid ""
 "\n"
-"Coherency error in standard halo.\n"
-"Between cell %d and cell %d : test = %g\n"
+"Coherency error in standard halo\n"
+"between cells %d and %d: test = %g\n"
 "(delta = %g, delta_mean = %g)\n"
 msgstr ""
 
@@ -1760,8 +1765,8 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"Coherency error in extended halo.\n"
-"Between cell %d and cell %d : test = %g\n"
+"Coherency error in extended halo\n"
+"between cells %d and %d: test = %g\n"
 "(delta = %g, delta_mean = %g)\n"
 msgstr ""
 
@@ -2723,7 +2728,7 @@ msgstr ""
 "Erreur à la lecture d'un tableau de réels dans un fichier suite :\n"
 "%ul sur %ul valeurs lues"
 
-#: src/base/cs_suite.c:2970
+#: src/base/cs_suite.c:2970 src/base/cs_suite.c:3253
 #, c-format
 msgid "The restart file <%s> number <%d> does not comply\n"
 msgstr "Le fichier suite <%s> numéro <%d> n'est pas conforme\n"
@@ -2745,11 +2750,6 @@ msgid ""
 msgstr ""
 "Le fichier suite <%s_p%02d> ne correspond pas\n"
 "à la partie <%d> du fichier suite d'origine\n"
-
-#: src/base/cs_suite.c:3253
-#, c-format
-msgid "Le fichier suite <%s> numéro <%d> n'est pas conforme\n"
-msgstr ""
 
 #: src/base/cs_suite.c:3555
 #, c-format
@@ -3138,3 +3138,16 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
+#: src/lagr/cs_lagrang.c:181
+#, c-format
+msgid ""
+"overflow |%g| > %g\n"
+"Verify the bounding box for your data."
+msgstr ""
+"Dépassement |%g| > %g\\n\n"
+"Vérifiez la boite englobante pour vos données."
+
+#: src/lagr/cs_lagrang.c:420
+msgid "IEEE 754 arithmetic is not supported by the current architecture."
+msgstr ""
+"L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
