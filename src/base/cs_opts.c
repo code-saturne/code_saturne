@@ -564,7 +564,7 @@ cs_opts_logfile_head(int    argc,
              "***************************\n\n");
   bft_printf("                                  (R)\n"
              "                      Code_Saturne\n\n"
-             "                      Version 1.4.a\n\n");
+             "                      Version 1.4.b\n\n");
 
   bft_printf("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n");
 

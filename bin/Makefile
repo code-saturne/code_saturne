@@ -33,7 +33,7 @@
 
 SHELL           =/bin/sh
 
-VERSION         ="1.4.a"
+VERSION         ="1.4.b"
 
 TERM            =xterm
 

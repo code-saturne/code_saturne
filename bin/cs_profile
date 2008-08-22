@@ -59,10 +59,10 @@
     CS_ROOT=/home/saturne
   fi
 #
-  CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.a
+  CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.b
   CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.4.a
   CSGUI_HOME=${CS_ROOT}/Interface/ics-1.4.a
-  SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.0.2
+  SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.0
 #
   if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then
     CSHOMARD_HOME=/home/prevalcs/HOMARD
