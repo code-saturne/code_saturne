@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-08-21 19:33+0200\n"
-"PO-Revision-Date: 2008-08-21 15:44+0200\n"
+"POT-Creation-Date: 2008-08-22 11:53+0200\n"
+"PO-Revision-Date: 2008-08-22 11:55+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -268,14 +268,12 @@ msgid "Memory:            "
 msgstr "Mémoire :          "
 
 #: src/base/cs_base.c:1461
-#, fuzzy
 msgid "User:                "
-msgstr "Utilisateur :      "
+msgstr "Utilisateur :        "
 
 #: src/base/cs_base.c:1462
-#, fuzzy
 msgid "Directory:           "
-msgstr "Répertoire :       "
+msgstr "Répertoire :         "
 
 #: src/base/cs_base.c:1496
 #, c-format
@@ -1758,7 +1756,7 @@ msgstr ""
 
 #: src/base/cs_mesh.c:1044
 msgid " Periodicities combination\n"
-msgstr ""
+msgstr "  Composition des périodicités\n"
 
 #: src/base/cs_mesh.c:1053
 msgid ""
@@ -1843,28 +1841,28 @@ msgstr "    Vérification de cohérence sur coordonnées %d\n"
 #, c-format
 msgid ""
 "\n"
-"Info on cell1: %d\n"
+"Info on cell 1: %d\n"
 " cell center: %12.3g %12.3g %12.3g\n"
-" delta      : %12.3g\n"
-" mean       : %12.3g\n"
+" delta:       %12.3g\n"
+" box center:  %12.3g\n"
 msgstr ""
 
 #: src/base/cs_mesh_coherency.c:352 src/base/cs_mesh_coherency.c:401
 #, c-format
 msgid ""
 "\n"
-"Info on cell2: %d\n"
+"Info on cell 2: %d\n"
 " cell center: %12.3g %12.3g %12.3g\n"
-" delta      : %12.3g\n"
-" mean       : %12.3g\n"
+" delta:       %12.3g\n"
+" box center:  %12.3g\n"
 msgstr ""
 
 #: src/base/cs_mesh_coherency.c:361
 #, c-format
 msgid ""
 "\n"
-"Coherency error in standard halo.\n"
-"Between cell %d and cell %d : test = %g\n"
+"Coherency error in standard halo\n"
+"between cells %d and %d: test = %g\n"
 "(delta = %g, delta_mean = %g)\n"
 msgstr ""
 
@@ -1872,8 +1870,8 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"Coherency error in extended halo.\n"
-"Between cell %d and cell %d : test = %g\n"
+"Coherency error in extended halo\n"
+"between cells %d and %d: test = %g\n"
 "(delta = %g, delta_mean = %g)\n"
 msgstr ""
 
@@ -3622,168 +3620,10 @@ msgid ""
 "overflow |%g| > %g\n"
 "Verify the bounding box for your data\n"
 msgstr ""
+"Dépassement |%g| > %g\\n\n"
+"Vérifiez la boite englobante pour vos données."
 
 #: src/lagr/cs_lagrang.c:415
 msgid "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante"
 msgstr ""
-
-#~ msgid "Memory allocated in heap:                "
-#~ msgstr "Mémoire dynamique dans le tas :           "
-
-#~ msgid "MSR"
-#~ msgstr "MSR"
-
-#~ msgid "MSR sym"
-#~ msgstr "MSR sym"
-
-#~ msgid "MSR, sym coeffs"
-#~ msgstr "MSR, sym coeffs"
-
-#~ msgid "MSR_sym"
-#~ msgstr "MSR_sym"
-
-#~ msgid ""
-#~ "Error while reading communication file: \"%s\".\n"
-#~ "The interface version is not correct.\n"
-#~ "The magic string indicates the interface format version:\n"
-#~ "magic string read:     \"%s\"\n"
-#~ "magic string expected: \"%s\"\n"
-#~ msgstr ""
-#~ "Erreur à la lecture du fichier de communication : \"%s\".\n"
-#~ "Le format de l'interface n'est pas à la bonne version.\n"
-#~ "La chaîne magique repère la version du format d'interface :\n"
-#~ "chaîne magique lue      : \"%s\"\n"
-#~ "chaîne magique actuelle : \"%s\"\n"
-
-#~ msgid " Adding a translation periodicity..."
-#~ msgstr " Ajout d'une périodicité en translation  ..."
-
-#~ msgid " Adding a rotation periodicity..."
-#~ msgstr " Ajout d'une périodicité en rotation  ..."
-
-#~ msgid "    Cleaning halo\n"
-#~ msgstr "    Nettoyage du halo\n"
-
-#~ msgid "    Updating IFACEL connectivity\n"
-#~ msgstr "    Mise à jour de la connectivité IFACEL\n"
-
-#~ msgid ""
-#~ "Affecting non-symmetric matrix coefficient to a matrix\n"
-#~ "in a symmetric MSR format."
-#~ msgstr ""
-#~ "Affectation de coefficients matriciels non symmétriques\n"
-#~ "à une matrice en stockage MSR symmétrique."
-
-#~ msgid "\t%12d global faces after cutting.\n"
-#~ msgstr "\t%12d faces globales après découpage.\n"
-
-#~ msgid ""
-#~ " -iasize           size of integer work array IA;\n"
-#~ "                    n: number of integers (default: automatic)\n"
-#~ " -rasize           size of real    work array RA;\n"
-#~ "                    n: number of reals (default: automatic)\n"
-#~ msgstr ""
-#~ " -iasize           taille du tableau de travail entier IA ;\n"
-#~ "                    n : nombre d'entiers (défaut : automatique)\n"
-#~ " -rasize           taille du tableau de travail réel RA ;\n"
-#~ "                    n : nombre de réels (defaut : automatique)\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "  Reading pre-preprocessing:  %s"
-#~ msgstr ""
-#~ "\n"
-#~ "  Lecture du pré traitement :  %s"
-
-#~ msgid ""
-#~ "Error while reading pre-processing file: \"%s\".\n"
-#~ "The interface version is not correct.\n"
-#~ "The magic string indicates the interface format version:\n"
-#~ "magic string read:     \"%s\"\n"
-#~ "magic string expected: \"%s\"\n"
-#~ msgstr ""
-#~ "Erreur à la lecture du fichier de pré traitement : \"%s\".\n"
-#~ "Le format de l'interface n'est pas à la bonne version.\n"
-#~ "La chaîne magique repère la version du format d'interface :\n"
-#~ "chaîne magique lue      : \"%s\"\n"
-#~ "chaîne magique actuelle : \"%s\"\n"
-
-#~ msgid ""
-#~ "The type of the restart file <%s>\n"
-#~ "must be equal to 0 (binary) or 1 (formatted) and not <%d>\n"
-#~ "(default is binary)."
-#~ msgstr ""
-#~ "Le type du fichier suite <%s>\n"
-#~ "doit être égal à 0 (binaire) ou 1 (formaté) et non <%d>\n"
-#~ "(binaire par défaut)."
-
-#~ msgid ""
-#~ "The number of cells associated with the restart file\n"
-#~ "<%s> is %d and does not correspond to the current mesh.\n"
-#~ msgstr ""
-#~ "Le nombre de cellules associées au fichier suite\n"
-#~ "<%s> vaut %d et ne correspond pas au maillage en cours.\n"
-
-#~ msgid ""
-#~ "The number of interior faces associated with the restart file\n"
-#~ "<%s> is %d and does not correspond to the current mesh.\n"
-#~ msgstr ""
-#~ "Le nombre de faces internes associées au fichier suite\n"
-#~ "<%s> vaut %d et ne correspond pas au maillage en cours.\n"
-
-#~ msgid ""
-#~ "The number of boundary faces associated with the restart file\n"
-#~ "<%s> is %d and does not correspond to the current mesh\n"
-#~ msgstr ""
-#~ "Le nombre de faces de bord associées au fichier suite\n"
-#~ "<%s> vaut %d et ne correspond pas au maillage en cours\n"
-
-#~ msgid ""
-#~ "  Index associated to the restart: %s\n"
-#~ "  (location, n_val/ent, val_type, [file_ind, file_pos], name):\n"
-#~ msgstr ""
-#~ "  Index associé à la suite : %s\n"
-#~ "  (support, nbr_val/ent, type_val, [ind_fic, pos_fic], nom) : \n"
-
-#~ msgid "The file <%s> is not a valid restart file.\n"
-#~ msgstr "Le fichier <%s> n'est pas un fichier suite valide.\n"
-
-#~ msgid ""
-#~ "The restart file <%s> and its extension\n"
-#~ "<%s> are not of the same type (text/binary);\n"
-#~ "they do not correspond to the same data set.\n"
-#~ msgstr ""
-#~ "Le fichier suite <%s> et son prolongement\n"
-#~ "<%s> ne sont du même type (texte/binaire) ;\n"
-#~ "ils ne correspondent pas au même jeu de données\n"
-
-#~ msgid ""
-#~ "Error while reading an array of integers in a restart file:\n"
-#~ "%ul on %ul read values"
-#~ msgstr ""
-#~ "Erreur à la lecture d'un tableau d'entiers dans un fichier suite :\n"
-#~ "%ul sur %ul valeurs lues"
-
-#~ msgid ""
-#~ "Error while reading an array of reals in a restart file:\n"
-#~ "field of different size than %d"
-#~ msgstr ""
-#~ "Erreur à la lecture d'un tableau de réels dans un fichier suite :\n"
-#~ "champs de largeur différente de %d"
-
-#~ msgid ""
-#~ "Error while reading an array of reals in a restart file:\n"
-#~ "%ul on %ul read values"
-#~ msgstr ""
-#~ "Erreur à la lecture d'un tableau de réels dans un fichier suite :\n"
-#~ "%ul sur %ul valeurs lues"
-
-#~ msgid "The restart file <%s> number <%d> does not comply\n"
-#~ msgstr "Le fichier suite <%s> numéro <%d> n'est pas conforme\n"
-
-#~ msgid ""
-#~ "The dimensions of the mesh associated to the restart file <%s>\n"
-#~ "number <%d> does not correspond to the file number <1>\n"
-#~ msgstr ""
-#~ "Les dimensions du support associé au fichier suite <%s>\n"
-#~ "numéro <%d> ne correspondent pas au fichier numéro <1>\n"
+"L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."

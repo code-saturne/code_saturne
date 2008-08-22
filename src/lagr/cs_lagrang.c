@@ -174,7 +174,7 @@ _orient3D_normalize(float  *value)
 
     bft_error(__FILE__, __LINE__, 0,
               _("overflow |%g| > %g\nVerify the bounding box"
-                " for your data\n"), *value, MAX24);
+                " for your data."), *value, MAX24);
 
     *value=0.0;
 
@@ -412,8 +412,8 @@ CS_PROCF (csieee,CSIEEE)(void)
   if (_check_ieee_standard()) {
 
     bft_error(__FILE__, __LINE__, 0,
-              _("L'arithmétique IEEE 754 n'est pas respectée"
-                " par l'architecture courante"));
+              _("IEEE 754 arithmetic is not supported by the "
+                "current architecture."));
 
   }
 
