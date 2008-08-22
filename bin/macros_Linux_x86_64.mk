@@ -82,10 +82,10 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =
-BLAS_INC        =
+BLAS_HOME       =/home/saturne/opt/atlas-3.8.2/arch/Linux_core2duo/
+BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-lcblas -latlas
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 
 # Macros for gettext
 #-------------------
