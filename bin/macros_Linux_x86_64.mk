@@ -217,7 +217,7 @@ LIBEF    =-lefence
 #       with gcc 3.3.2 (resolved with 3.3.3)
 #
 
-LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c
+LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 

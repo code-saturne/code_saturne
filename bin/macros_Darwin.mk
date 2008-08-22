@@ -74,8 +74,8 @@ XML             =0
 
 XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macros for BLAS
 #----------------
@@ -83,9 +83,9 @@ XML_LIB  =-L$(XML_HOME)/lib -lxml2
 # BLAS support
 BLAS            =0
 BLAS_HOME       =
-BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-lcblas -latlas
 
 # Macros for gettext
 #-------------------
