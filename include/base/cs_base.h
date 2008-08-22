@@ -41,7 +41,40 @@ extern "C" {
 
 /*-----------------------------------------------------------------------------*/
 
+/* Definition of the C langage version used (C89 or C99) */
+
+#if defined(__STDC_VERSION__)
+#  define _CS_STDC_VERSION __STDC_VERSION__
+#else
+#  define _CS_STDC_VERSION 1989
+#endif
+
+/*
+ * Redefinition of "inline" et "restrict" qualifiers incompatible with
+ * some C89 compilers (standard in C99)
+ */
+
+#if (_CS_STDC_VERSION < 199901L)
+
+#  if defined(__GNUC__)
+#    define inline __inline__
+#    define restrict __restrict__
+#  else
+#    define inline
+#    define restrict
+#  endif
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
 #include <stddef.h>
+
+#if (_CS_STDC_VERSION >= 199901L)
+#include <stdint.h>
+#endif
 
 #if defined(_CS_HAVE_MPI)
 
@@ -139,31 +172,6 @@ extern "C" {
 #define N_(String) String
 #define textdomain(Domain)
 #define bindtextdomain(Package, Directory)
-
-#endif
-
-/* Definition of the C langage version used (C89 or C99) */
-
-#if defined(__STDC_VERSION__)
-#  define _CS_STDC_VERSION __STDC_VERSION__
-#else
-#  define _CS_STDC_VERSION 1989
-#endif
-
-/*
- * Redefinition of "inline" et "restrict" qualifiers incompatible with
- * some C89 compilers (standard in C99)
- */
-
-#if (_CS_STDC_VERSION < 199901L)
-
-#  if defined(__GNUC__)
-#    define inline __inline__
-#    define restrict __restrict__
-#  else
-#    define inline
-#    define restrict
-#  endif
 
 #endif
 

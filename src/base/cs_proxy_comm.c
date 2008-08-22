@@ -41,10 +41,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if (_CS_STDC_VERSION >= 199901L)
-#include <stdint.h>
-#endif
-
 #if defined(_CS_HAVE_SOCKET)
 #include <netdb.h>
 #include <unistd.h>
