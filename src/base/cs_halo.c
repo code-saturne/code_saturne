@@ -89,11 +89,6 @@ static int _cs_glob_n_halos = 0;
 static size_t _cs_glob_halo_send_buffer_size = 0;
 static void  *_cs_glob_halo_send_buffer = NULL;
 
-/* Buffer to save rotation halo values */
-
-static size_t  _cs_glob_halo_rot_backup_size = 0;
-static cs_real_t  *_cs_glob_halo_rot_backup = NULL;
-
 /* MPI Request and status arrays */
 
 static int           _cs_glob_halo_request_size = 0;
@@ -101,6 +96,11 @@ static MPI_Request  *_cs_glob_halo_request = NULL;
 static MPI_Status   *_cs_glob_halo_status = NULL;
 
 #endif
+
+/* Buffer to save rotation halo values */
+
+static size_t  _cs_glob_halo_rot_backup_size = 0;
+static cs_real_t  *_cs_glob_halo_rot_backup = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -125,6 +125,7 @@ _save_rotation_values(const cs_halo_t  *halo,
   cs_int_t  start_std, end_std, length, start_ext, end_ext;
 
   size_t  save_count = 0;
+
   cs_real_t  *save_buffer = _cs_glob_halo_rot_backup;
 
   const int  n_transforms = halo->n_transforms;
@@ -915,6 +916,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
 
+#if defined(_CS_HAVE_MPI)
+
   const size_t send_buffer_size =   halo->n_elts[sync_mode]
                                   * sizeof(cs_real_t) * stride;
 
@@ -924,6 +927,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                 _cs_glob_halo_send_buffer_size,
                 char);
   }
+
+#endif /* defined(_CS_HAVE_MPI) */
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
