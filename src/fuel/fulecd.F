@@ -660,7 +660,7 @@ C
      &'@      PHYSIQUE PARTICULIERE (FUEL)                          ',/,
      &'@                                                            ',/,
      &'@  Erreur sur la composition du Coke :                       ',/,
-     &'@   la somme des compositions elementaires doit etre egal    ',/, 
+     &'@   la somme des compositions elementaires doit etre egal    ',/,
      &'@   a 1, elle vaut ici : ',G15.7,'                           ',/,
      &'@                                                            ',/,
      &'@  Le calcul ne sera pas execute.                            ',/,
