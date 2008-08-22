@@ -160,7 +160,7 @@ static void _comm_read_sock(const cs_proxy_comm_t  *comm,
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
                 _("Communication %s:\n"
-                  "Error receiving data through socket"),
+                  "Error receiving data through socket."),
                 comm->port_name);
 
     start_id += ret;
@@ -222,7 +222,7 @@ _comm_write_sock(const cs_proxy_comm_t  *comm,
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
                 _("Communication %s:\n"
-                  "Error sending data through socket"),
+                  "Error sending data through socket."),
                 comm->port_name);
 
     start_id += ret;
@@ -242,7 +242,7 @@ _comm_sock_disconnect(cs_proxy_comm_t  *comm)
   if (close(comm->socket) != 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Communication %s:\n"
-                "Error closing socket.\n"),
+                "Error closing socket."),
               comm->port_name);
 
   comm->socket = -1;
@@ -288,7 +288,7 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
 
   if (comm->socket == -1)
     bft_error(__FILE__, __LINE__, errno,
-              _("Error initializing socket communication.\n"));
+              _("Error initializing socket communication."));
 
   /* Prepare connection */
 
@@ -307,7 +307,7 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
 
     if (host_ent == NULL)
       bft_error(__FILE__, __LINE__, 0,
-                _("Socket communication: host \"%s\" unknown\n"),
+                _("Socket communication: host \"%s\" unknown."),
                 host_name);
 
     memcpy(&sock_addr.sin_addr, host_ent->h_addr, host_ent->h_length);
@@ -325,7 +325,7 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
               (struct sockaddr *)&sock_addr, sock_len) < 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Socket communication: error connecting to\n"
-                "%s (port %d)\n"), host_name, port_num);
+                "%s (port %d)."), host_name, port_num);
 
   /* Free temporary string */
 
@@ -446,11 +446,11 @@ _comm_initialize(const char           *port_name,
 
 #else
 
-    bft_printf(_("\n"));
+    bft_printf("\n");
     bft_error
       (__FILE__, __LINE__, 0,
        _("Library compiled without sockets support, so the communicator\n"
-         "type argument to cs_proxy_comm_initialize() must different\n"
+         "type argument to cs_proxy_comm_initialize() must be different\n"
          "from CS_PROXY_COMM_TYPE_SOCKET (%d)."),
        (int)CS_PROXY_COMM_TYPE_SOCKET);
 

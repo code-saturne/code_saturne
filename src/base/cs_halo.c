@@ -1179,7 +1179,7 @@ cs_halo_dump(const cs_halo_t  *halo,
 
       for (i = 0; i < halo->n_transforms; i++) {
 
-        bft_printf("\nTransformation n°: %d\n", i+1);
+        bft_printf("\nTransformation number: %d\n", i+1);
 
         for (j = 0; j < halo->n_c_domains; j++) {
 

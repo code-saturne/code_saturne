@@ -202,7 +202,7 @@ _locations_from_index(cs_suite_t  *suite)
       if (h.location_id != suite->n_locations + 1)
         bft_error(__FILE__, __LINE__, 0,
                   _("Restart file \"%s\" declares a location number %d\n"
-                    "but no location %d has been declared\n"),
+                    "but no location %d has been declared."),
                   suite->name, (int)(h.location_id),
                   (int)(suite->n_locations + 1));
 
@@ -1089,7 +1089,7 @@ void CS_PROCF (clssui, CLSSUI)
       || indsui > (cs_int_t)_restart_pointer_size
       || _restart_pointer[indsui] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The restart file number <%d> cannot be closed\n"
+    bft_printf(_("Restart file number <%d> can not be closed\n"
                  "(file already closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_SUITE_ERR_NUM_FIC;
@@ -1498,9 +1498,9 @@ void cs_suite_verif_support_base
 
     else if (cs_glob_base_rang <= 0) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The size of location \"%s\" associated with the restart file\n"
-                   "\"%s\" is %lu and does not correspond\n"
-                   "to that of the current mesh (%lu)\n"),
+      bft_printf(_("The size of location \"%s\" associated with\n"
+                   "the restart file \"%s\" is %lu and does not\n"
+                   "correspond to that of the current mesh (%lu).\n"),
                  loc->name, suite->name,
                  (unsigned long)loc->n_glob_ents_f,
                  (unsigned long)loc->n_glob_ents);
@@ -1553,8 +1553,8 @@ cs_suite_ajoute_support(cs_suite_t        *suite,
 
     if (loc_id >= ((int)(suite->n_locations)))
       bft_error(__FILE__, __LINE__, 0,
-                _("The restart file \"%s\" references no location "
-                  "named \"%s\"."),
+                _("The restart file \"%s\" references no\n"
+                  "location named \"%s\"."),
                 suite->name, location_name);
 
   }

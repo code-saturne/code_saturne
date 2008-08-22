@@ -323,7 +323,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "      maximal :                     %d\n"
                "      moyen :                       %d\n"
                "  Associated times (construction, resolution)\n"
-               "    cumulative elapsed:             %12.3f  %12.3f\n"),
+               "    total elapsed:                  %12.3f  %12.3f\n"),
              n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
              n_it_f_min, n_it_f_max, n_it_f_mean,
              n_it_c_min, n_it_c_max, n_it_c_mean,
@@ -743,8 +743,8 @@ _convergence_test(const char         *var_name,
     = N_("     %4d  |               %6d  |  %12.4e\n");
 
   const char cycle_fmt[]
-    = N_("   N. cycles:%4d; Fine mesh cumulative iter: %5d;"
-         " Norm. residual %12.4e\n");
+    = N_("   N. cycles: %4d; Fine mesh cumulative iter: %5d; "
+         "Norm. residual %12.4e\n");
 
   /* Compute residue */
 
@@ -1435,7 +1435,7 @@ void CS_PROCF(clmlga, CLMLGA)
   mg = _find_or_add_system(var_name);
 
   if (*iwarnp > 1)
-    bft_printf(_("\n Construction of grids hierarchy for \"%s\"\n"),
+    bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
                var_name);
 
   /* Destroy previous hierarchy if necessary */

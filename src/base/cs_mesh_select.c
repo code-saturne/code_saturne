@@ -330,7 +330,7 @@ cs_mesh_select_extract_b_faces(const cs_mesh_t        *const mesh,
 
   *b_face_select_lst = _selected_lst;
 
-  /* Libération des buffers temporaires */
+  /* Free temporary buffers */
 
   BFT_FREE(selected_families);
 }

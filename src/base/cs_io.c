@@ -641,7 +641,7 @@ _file_open(cs_io_t     *cs_io,
       if (strncmp(cs_io->contents, magic_string, 64) != 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error reading file: \"%s\".\n"
-                    "Le file contents are not of the expected type.\n"
+                    "The file contents are not of the expected type.\n"
                     "\"%s\" was expected,\n"
                     "\"%s\" was read."),
                   fvm_file_get_name(cs_io->f), magic_string, cs_io->contents);
@@ -2686,7 +2686,7 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: \"%s\"\n"
-                "is \"r4\" or \"r8\" (réel), and not \"%s\"."),
+                "is \"r4\" or \"r8\" (real), and not \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 }
 
@@ -3094,7 +3094,7 @@ cs_io_dump(const cs_io_t  *cs_io)
 {
   assert(cs_io != NULL);
 
-  bft_printf(_("\n\n kernel IO file contents:\n\n"));
+  bft_printf(_("\n\n file contents:\n\n"));
 
   if (cs_io->f != NULL)
     bft_printf(_("  file: %s\n"), fvm_file_get_name(cs_io->f));

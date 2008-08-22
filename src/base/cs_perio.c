@@ -343,7 +343,7 @@ _test_halo_compatibility(const cs_halo_t  *halo)
   if (cs_glob_mesh->n_transforms != halo->n_transforms)
     bft_error(__FILE__, __LINE__, 0,
               _("The %d periodic transformations of the halo do not comply\n"
-                "with the main mesh transformations (in number of %d)\n"),
+                "with the main mesh transformations (numbering %d).\n"),
               halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
 }
 
@@ -2521,9 +2521,9 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
 
   if (i >= 3)
     bft_error(__FILE__, __LINE__, 0,
-              _("One tries to restore rotation elements of halo on the\n"
+              _("Attempt to restore halo rotation elements on the\n"
                 "variable defined with the adress %p, whereas the last\n"
-                "variables the halo of which has been backed up are defined\n"
+                "variables of which the halo has been backed up are defined\n"
                 "with [%p, %p, %p]."),
               var, _cs_glob_perio_last_backup[0],
               _cs_glob_perio_last_backup[1], _cs_glob_perio_last_backup[2]);

@@ -135,7 +135,7 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -mpi, --mpi       parallelism activation;\n"
           "                    [i] : global MPI rank of the 1st kernel\n"
-          "                          process (default: 0)"));
+          "                          process (default: 0)\n"));
   fprintf
     (e, _(" --coupl-cs        coupling with another instance of the code\n"
           "                     i: global MPI rank of the 1er coupled\n"
