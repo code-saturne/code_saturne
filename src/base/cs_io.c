@@ -1997,7 +1997,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
   assert(idx != NULL);
 
   bft_printf(_(" %lu indexed records:\n"
-               "   (name, n_vals, location_id, index_id, n_loc_vals type, "
+               "   (name, n_vals, location_id, index_id, n_loc_vals, type, "
                "embed, file_id, offset)\n\n"), (unsigned long)(idx->size));
 
   for (ii = 0; ii < idx->size; ii++) {
