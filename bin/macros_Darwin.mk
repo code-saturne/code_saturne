@@ -78,7 +78,7 @@ XML             =0
 XML_HOME =
 
 XML_INC  =-I/usr/include/libxml2
-XML_LIB  =--lxml2
+XML_LIB  =-lxml2
 
 # Macros for BLAS
 #----------------
