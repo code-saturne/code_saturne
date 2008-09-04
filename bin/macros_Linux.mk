@@ -75,10 +75,10 @@ SOCKET_LIB      =
 # XML support
 XML             =1
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macros for BLAS
 #----------------
