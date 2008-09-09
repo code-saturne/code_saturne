@@ -1722,7 +1722,6 @@ C=======================================================================
 C 26. MEMOIRE UTILISEE
 C=======================================================================
 C
-#if defined(_CS_HAVE_XML)
 C     Libération des structures liées à la lecture du fichier xml
 C
       IF (IIHMPR.EQ.1) THEN
@@ -1734,7 +1733,6 @@ C
 C       ===========
       ENDIF
 C
-#endif
 C
       WRITE(NFECRA,7000)
 C

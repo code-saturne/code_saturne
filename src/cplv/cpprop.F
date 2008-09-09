@@ -293,8 +293,6 @@ C
       NPROFA = IPROP
 C
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C     Construction de l'indirection entre la numerotation du noyau et XML
@@ -305,8 +303,6 @@ C     Construction de l'indirection entre la numerotation du noyau et XML
      &               IGMDV2, IGMHET, IGMSEC, ILUMI)
 
       ENDIF
-
-#endif
 C
       RETURN
       END

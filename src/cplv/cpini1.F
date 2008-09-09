@@ -238,8 +238,6 @@ C          Si = -10000 non modifie par l'utilisateur -> niveau 1
           IWARNI(II) = 1
         ENDIF
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne:
 C     ======================
 C
@@ -247,8 +245,6 @@ C   NOMVAR, ICHRVR,ILISVR, IHISVR are
 C   already filled in UINUM1 routine
 C
         IF (IIHMPR.NE.1) THEN
-C
-#endif
 C
 C ------ Informations relatives a la resolution des scalaires
 C
@@ -274,17 +270,9 @@ C         - Reconstruction des flux de convetion et de diffusion aux faces
 C           = 0 : pas de reconstruction
         IRCFLU(II) = 0
 C
-#if defined(_CS_HAVE_XML)
-C
-C   - Fin Interface Code_Saturne
-C     ======================
-C
         ENDIF
-#endif
 C
       ENDDO
-C
-#if defined(_CS_HAVE_XML)
 C
 C   - Interface Code_Saturne:
 C     ======================
@@ -293,8 +281,6 @@ C   NOMVAR, ICHRVR,ILISVR, IHISVR are
 C   already filled in CSENSO routine
 C
       IF (IIHMPR.NE.1) THEN
-C
-#endif
 C
 C---> Variable courante : nom, sortie chrono, suivi listing, sortie histo
 C
@@ -544,14 +530,7 @@ C
       ILISVR(IPP)   = 1
       IHISVR(IPP,1) = -1
 C
-C
-#if defined(_CS_HAVE_XML)
-C
-C   - Fin Interface Code_Saturne
-C     ======================
-C
       ENDIF
-#endif
 C
 C
 C
@@ -630,21 +609,17 @@ C=======================================================================
 C 4. ON REDONNE LA MAIN A L'UTLISATEUR
 C=======================================================================
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
       IF(IIHMPR.EQ.1) THEN
 C
-      CALL UICPI1(SRROM)
-C     ===========
+        CALL UICPI1(SRROM)
+C       ===========
 C
-      DIFTL0 = 4.25D-5
+        DIFTL0 = 4.25D-5
 C
       ENDIF
-#endif
-C
 C
       CALL USCPI1
 C     ===========

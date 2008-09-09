@@ -951,8 +951,6 @@ C
 C
 C ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE ET PAS DE MATISSE
 C
-#if defined(_CS_HAVE_XML)
-C
 C     - Interface Code_Saturne
 C       ======================
 C
@@ -998,10 +996,8 @@ C         ===========
 C
         ENDIF
 C
-#endif
-C
-C   - Sous-programme utilisateur
-C     ==========================
+C     - Sous-programme utilisateur
+C       ==========================
 C
         ILS    = IFINIA
         IFNIA1 = ILS + MAXELT
@@ -1025,8 +1021,6 @@ C       ===========
      &   RA(ICOEFU)      ,
      &   RDEVEL , RTUSER , RA     )
 C
-#if defined(_CS_HAVE_XML)
-C
 C     - Interface Code_Saturne
 C       ======================
 C
@@ -1038,8 +1032,6 @@ C         ===========
      &   IA(IITYPF), IA(IIZFPP) )
 C
         ENDIF
-C
-#endif
 C
       ELSEIF (IMATIS.EQ.0) THEN
 C

@@ -122,8 +122,6 @@ C 0. INITIALISATION DE L'INFORMATION "FICHIER XML (IHM) REQUIS & EXISTE"
 C=======================================================================
 C
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -133,7 +131,6 @@ C     IIHMPR a ete initialise a 0 juste avant (INIINI)
 C
       CALL CSIHMP(IIHMPR)
 C
-#endif
 C
 C=======================================================================
 C 1. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE PHASES
@@ -162,8 +159,6 @@ C
 C     Turbulence
 C     Chaleur massique variable ou non
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -176,9 +171,6 @@ C
 C       ===========
 C
       ENDIF
-C
-#endif
-C
 C
 C   - Sous-programme utilisateur
 C     ==========================
@@ -197,8 +189,6 @@ C
 C --- Nombre de scalaires utilisateurs
 C
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -208,9 +198,6 @@ C
 C       ===========
 C
       ENDIF
-C
-#endif
-C
 C
 C   - Sous-programme utilisateur
 C     ==========================
@@ -225,8 +212,6 @@ C        specifiques du code tels que charbon, combustion, electrique
 C        le sous-programme USPPMO doit etre complete imperativement
 C        par l'utilisateur
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -240,7 +225,8 @@ C       ===========
 C
       ENDIF
 C
-#endif
+C   - Sous-programme utilisateur
+C     ==========================
 C
       CALL USPPMO
 C     ===========
@@ -257,8 +243,6 @@ C     Moyenne du carre des fluctuations d'un scalaire UTILISATEUR
 C     Diffusivite variable ou non
 C
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -271,9 +255,6 @@ C
 C       ============
 C
       ENDIF
-C
-#endif
-C
 C
 C   - Sous-programme utilisateur
 C     ==========================
@@ -329,8 +310,6 @@ C     Prise en compte de la pression hydrostatique
 C     Estimateurs (pas encore dans l'IHM)
 C
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -343,9 +322,6 @@ C
 C       ===========
 C
       ENDIF
-C
-#endif
-C
 C
 C   - Sous-programme utilisateur
 C     ==========================
@@ -378,8 +354,6 @@ C
 C
 C --- Parametres de la methode ALE
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -389,7 +363,8 @@ C
 C       ===========
       ENDIF
 C
-#endif
+C   - Sous-programme utilisateur
+C     ==========================
 C
       CALL USALIN
 C     ===========
@@ -413,8 +388,6 @@ C --- Format des fichiers aval (entsor.h)
 C --- Options du calcul (optcal.h)
 C --- Constantes physiques (cstphy.h)
 C
-C
-#if defined(_CS_HAVE_XML)
 C
 C   - Interface Code_Saturne
 C     ======================
@@ -507,9 +480,6 @@ C       ===========
 C
       ENDIF
 C
-#endif
-C
-C
 C   - Sous-programme utilisateur
 C     ==========================
 C
@@ -529,8 +499,6 @@ C=======================================================================
 C
 C --- Entree-sorties
 C
-C
-#if defined(_CS_HAVE_XML)
 C
 C   - Interface Code_Saturne
 C     ======================
@@ -572,8 +540,6 @@ C         ===========
         ENDDO
 C
       ENDIF
-C
-#endif
 C
 C   - Sous-programme utilisateur
 C     ==========================

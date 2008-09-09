@@ -29,8 +29,6 @@
  * Reader of the parameters file: radiative transfer
  *============================================================================*/
 
-#if defined(_CS_HAVE_XML)
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -136,8 +134,9 @@ static char  ** _cs_gui_var_rayt = NULL;
  *    keyword  <--   value of parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_radiative_transfer_int(const char *const param,
-                                          int *const keyword)
+static void
+cs_gui_radiative_transfer_int(const char *const param,
+                              int *const keyword)
 {
   char *path;
   int value = 0;
@@ -162,8 +161,9 @@ static void cs_gui_radiative_transfer_int(const char *const param,
  *    keyword  <--   value of parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_radiative_transfer_double(const char   *const param,
-                                            double *const keyword)
+static void
+cs_gui_radiative_transfer_double(const char   *const param,
+                                 double *const keyword)
 {
   char *path;
   double value;
@@ -188,8 +188,9 @@ static void cs_gui_radiative_transfer_double(const char   *const param,
  *    keyword  <--   value of parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_radiative_transfer_char(const char *const param,
-                                          int  *const keyword)
+static void
+cs_gui_radiative_transfer_char(const char *const param,
+                               int  *const keyword)
 {
   char *path;
   int result;
@@ -215,8 +216,9 @@ static void cs_gui_radiative_transfer_char(const char *const param,
  *    value    <--   value of status
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_radiative_transfer_char_post(const char *const name,
-                                                       int  *const value)
+static char *
+cs_gui_radiative_transfer_char_post(const char *const name,
+                                    int  *const value)
 {
   char *path = NULL;
   char *path1 = NULL;
@@ -259,8 +261,9 @@ static char *cs_gui_radiative_transfer_char_post(const char *const name,
  *    keyword  <--   value of the type of the coefficent
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_radiative_transfer_type(const char *const param,
-                                                 int  *const keyword)
+static void
+cs_gui_radiative_transfer_type(const char *const param,
+                               int  *const keyword)
 {
   char *path;
   char *type;
@@ -986,8 +989,3 @@ void CS_PROCF (memui2, MEMUI2) (void)
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* _CS_HAVE_XML */
-
-
-

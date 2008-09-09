@@ -29,10 +29,6 @@
  * Reader of the parameters file: matisse
  *============================================================================*/
 
-
-#if defined(_CS_HAVE_XML)
-
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -594,6 +590,3 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* _CS_HAVE_XML */
-

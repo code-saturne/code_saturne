@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-09-09 11:36+0200\n"
+"POT-Creation-Date: 2008-09-09 14:06+0200\n"
 "PO-Revision-Date: 2008-09-09 11:37+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -892,101 +892,101 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
-#: src/base/cs_gui.c:200 src/base/cs_gui_radiative_transfer.c:425
+#: src/base/cs_gui.c:204 src/base/cs_gui_radiative_transfer.c:428
 #, c-format
 msgid "Variable index %d out of bounds (1 to %d)"
 msgstr ""
 
-#: src/base/cs_gui.c:242 src/base/cs_gui.c:414 src/base/cs_gui.c:479
-#: src/base/cs_gui.c:955 src/base/cs_gui.c:1438 src/base/cs_gui.c:1574
-#: src/base/cs_gui.c:1703 src/base/cs_gui.c:1837 src/base/cs_gui.c:2033
-#: src/base/cs_gui.c:2207 src/base/cs_gui.c:2888 src/base/cs_gui_matisse.c:131
-#: src/base/cs_gui_matisse.c:153 src/base/cs_gui_matisse.c:173
-#: src/base/cs_gui_matisse.c:202 src/base/cs_gui_util.c:509
-#: src/base/cs_gui_util.c:595 src/base/cs_gui_util.c:681
-#: src/base/cs_gui_util.c:818 src/base/cs_gui_util.c:849
+#: src/base/cs_gui.c:247 src/base/cs_gui.c:425 src/base/cs_gui.c:490
+#: src/base/cs_gui.c:966 src/base/cs_gui.c:1449 src/base/cs_gui.c:1585
+#: src/base/cs_gui.c:1714 src/base/cs_gui.c:1848 src/base/cs_gui.c:2045
+#: src/base/cs_gui.c:2219 src/base/cs_gui.c:2900 src/base/cs_gui_matisse.c:127
+#: src/base/cs_gui_matisse.c:149 src/base/cs_gui_matisse.c:169
+#: src/base/cs_gui_matisse.c:198 src/base/cs_gui_util.c:547
+#: src/base/cs_gui_util.c:647 src/base/cs_gui_util.c:744
+#: src/base/cs_gui_util.c:894 src/base/cs_gui_util.c:937
 #, c-format
 msgid "Invalid xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:333
+#: src/base/cs_gui.c:342
 #, c-format
 msgid "Invalid thermal model: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:1375
+#: src/base/cs_gui.c:1386
 #, c-format
 msgid ""
 "Coordinate %s of the monitoring probe number %i not found.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:2529
+#: src/base/cs_gui.c:2541
 #, c-format
 msgid ""
 "Unknown conditions type in this context: %s.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3176
+#: src/base/cs_gui.c:3188
 #, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3253
+#: src/base/cs_gui.c:3265
 msgid "Trouble with the allocated memory for the global variable 'vars'.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3356
+#: src/base/cs_gui.c:3368
 #, c-format
 msgid "Invalid coal model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3408
+#: src/base/cs_gui.c:3420
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3829
+#: src/base/cs_gui.c:3841
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4259
+#: src/base/cs_gui.c:4271
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4279
+#: src/base/cs_gui.c:4291
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4287
+#: src/base/cs_gui.c:4299
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4544 src/base/cs_gui.c:5794
+#: src/base/cs_gui.c:4556 src/base/cs_gui.c:5806
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4827
+#: src/base/cs_gui.c:4839
 #, c-format
 msgid "--icoftu = %i %i %i %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4829
+#: src/base/cs_gui.c:4841
 #, c-format
 msgid "           %i %i %i %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4923 src/base/cs_gui_radiative_transfer.c:645
+#: src/base/cs_gui.c:4935 src/base/cs_gui_radiative_transfer.c:648
 #, c-format
 msgid "Name of variable %d was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5005 src/base/cs_selector.c:216
+#: src/base/cs_gui.c:5017 src/base/cs_selector.c:216
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -999,13 +999,13 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5292
+#: src/base/cs_gui.c:5304
 #, c-format
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:5310 src/base/cs_gui.c:5481 src/base/cs_gui.c:6213
-#: src/base/cs_gui.c:6391 src/base/cs_gui.c:6512 src/base/cs_selector.c:103
+#: src/base/cs_gui.c:5322 src/base/cs_gui.c:5493 src/base/cs_gui.c:6225
+#: src/base/cs_gui.c:6403 src/base/cs_gui.c:6524 src/base/cs_selector.c:103
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1018,17 +1018,17 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui.c:5456 src/base/cs_gui.c:6367 src/base/cs_gui.c:6546
+#: src/base/cs_gui.c:5468 src/base/cs_gui.c:6379 src/base/cs_gui.c:6558
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6195
+#: src/base/cs_gui.c:6207
 #, c-format
 msgid "zone's label number %i is greater than %i the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6554
+#: src/base/cs_gui.c:6566
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1052,7 +1052,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6584
+#: src/base/cs_gui.c:6596
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1076,32 +1076,32 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:554
+#: src/base/cs_gui_matisse.c:550
 #, c-format
 msgid "Missing 'min' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:564
+#: src/base/cs_gui_matisse.c:560
 #, c-format
 msgid "Missing 'max' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:574
+#: src/base/cs_gui_matisse.c:570
 #, c-format
 msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:286
+#: src/base/cs_gui_radiative_transfer.c:289
 #, c-format
 msgid "unknow type %s\n"
 msgstr "type inconnu %s \n"
 
-#: src/base/cs_gui_radiative_transfer.c:373
+#: src/base/cs_gui_radiative_transfer.c:376
 #, c-format
 msgid "Xpath request failed %s \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:823
+#: src/base/cs_gui_radiative_transfer.c:826
 msgid ""
 "One tries to define radiative boundary conditions on boundary which is not a "
 "wall.\n"
@@ -1112,71 +1112,78 @@ msgid ""
 "with these new natures.\n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:872
+#: src/base/cs_gui_radiative_transfer.c:875
 msgid ""
 "Warning: radiative boundary conditions in GUI are not totally defined \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:874
+#: src/base/cs_gui_radiative_transfer.c:877
 msgid "These are radiative boundary conditions defined in GUI: \n"
-msgstr ""
-
-#: src/base/cs_gui_radiative_transfer.c:876
-#, c-format
-msgid "  nature: %s label: %s\n"
-msgstr ""
-
-#: src/base/cs_gui_radiative_transfer.c:878
-#, c-format
-msgid "    output_zone = %i\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:879
 #, c-format
-msgid "    type = %i\n"
-msgstr ""
-
-#: src/base/cs_gui_radiative_transfer.c:880
-#, c-format
-msgid "    emissivity = %f\n"
+msgid "  nature: %s label: %s\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:881
 #, c-format
-msgid "    thickness= %f\n"
+msgid "    output_zone = %i\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:882
 #, c-format
-msgid "    thermal_conductivity = %f\n"
+msgid "    type = %i\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:883
 #, c-format
-msgid "    external_temp = %f\n"
+msgid "    emissivity = %f\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:884
 #, c-format
-msgid "    internal_temp = %f\n"
+msgid "    thickness= %f\n"
 msgstr ""
 
 #: src/base/cs_gui_radiative_transfer.c:885
 #, c-format
+msgid "    thermal_conductivity = %f\n"
+msgstr ""
+
+#: src/base/cs_gui_radiative_transfer.c:886
+#, c-format
+msgid "    external_temp = %f\n"
+msgstr ""
+
+#: src/base/cs_gui_radiative_transfer.c:887
+#, c-format
+msgid "    internal_temp = %f\n"
+msgstr ""
+
+#: src/base/cs_gui_radiative_transfer.c:888
+#, c-format
 msgid "    conduction_flux= %f\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:162
+#: src/base/cs_gui_util.c:169
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:183
+#: src/base/cs_gui_util.c:192
 #, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:229
+#: src/base/cs_gui_util.c:216 src/base/cs_gui_util.c:296
+#: src/base/cs_gui_util.c:579 src/base/cs_gui_util.c:676
+#: src/base/cs_gui_util.c:775 src/base/cs_gui_util.c:905
+#: src/base/cs_gui_util.c:966
+msgid "Code_Saturne has been compiled without Xml support."
+msgstr ""
+
+#: src/base/cs_gui_util.c:248
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1187,7 +1194,7 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:239
+#: src/base/cs_gui_util.c:259
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1200,14 +1207,14 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:527
+#: src/base/cs_gui_util.c:568
 #, c-format
 msgid ""
 "The node type is not XML_ATTRIBUTE_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:558
+#: src/base/cs_gui_util.c:608
 #, c-format
 msgid ""
 "Several attributes found: %i \n"
@@ -1215,14 +1222,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:613
+#: src/base/cs_gui_util.c:665
 #, c-format
 msgid ""
 "The node type is not XML_ELEMENT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:644
+#: src/base/cs_gui_util.c:705
 #, c-format
 msgid ""
 "Several nodes name found: %i \n"
@@ -1230,14 +1237,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:699 src/base/cs_gui_util.c:866
+#: src/base/cs_gui_util.c:764 src/base/cs_gui_util.c:954
 #, c-format
 msgid ""
 "The node type is not XML_TEXT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:729
+#: src/base/cs_gui_util.c:803
 #, c-format
 msgid ""
 "Several text node found: %i \n"
@@ -1245,12 +1252,12 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:855
+#: src/base/cs_gui_util.c:943
 #, c-format
 msgid "No markup found: %s \n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:905
+#: src/base/cs_gui_util.c:1002
 #, c-format
 msgid ""
 "Invalid attribute value: %s \n"
@@ -1532,7 +1539,7 @@ msgstr ""
 "  niveau d'impression :         %ld\n"
 "\n"
 
-#: src/base/cs_main.c:436
+#: src/base/cs_main.c:433
 #, c-format
 msgid ""
 "\n"
@@ -1541,7 +1548,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/base/cs_main.c:442
+#: src/base/cs_main.c:439
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -1549,7 +1556,7 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/base/cs_main.c:489
+#: src/base/cs_main.c:486
 #, c-format
 msgid ""
 "\n"
@@ -1558,7 +1565,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/base/cs_main.c:505
+#: src/base/cs_main.c:502
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -1566,7 +1573,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/base/cs_main.c:524
+#: src/base/cs_main.c:521
 #, c-format
 msgid ""
 "\n"
@@ -1581,7 +1588,7 @@ msgstr ""
 "       LONGRA =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/base/cs_main.c:534
+#: src/base/cs_main.c:531
 #, c-format
 msgid ""
 "\n"
@@ -1594,7 +1601,7 @@ msgstr ""
 "       NIDEVE =   %10d (Nombre d'entiers)\n"
 "       NRDEVE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:540
+#: src/base/cs_main.c:537
 #, c-format
 msgid ""
 "\n"
@@ -1608,7 +1615,7 @@ msgstr ""
 "       NITUSE =   %10d (Nombre d'entiers)\n"
 "       NRTUSE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:603
+#: src/base/cs_main.c:600
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -2537,12 +2544,12 @@ msgstr ""
 "   nombre de cellules dans le maillage le plus grossier : %lu\n"
 "\n"
 
-#: src/base/cs_opts.c:122
+#: src/base/cs_opts.c:118
 #, c-format
 msgid "Usage: %s [options]\n"
 msgstr "Utilisation : %s [options]\n"
 
-#: src/base/cs_opts.c:124
+#: src/base/cs_opts.c:120
 #, c-format
 msgid ""
 "\n"
@@ -2553,7 +2560,7 @@ msgstr ""
 "Options de la ligne de commandes :\n"
 "\n"
 
-#: src/base/cs_opts.c:126
+#: src/base/cs_opts.c:122
 #, c-format
 msgid ""
 " -ec, --echo-comm  print SYRTHES communications;\n"
@@ -2568,7 +2575,7 @@ msgstr ""
 "                    n : impression des entêtes des messages ainsi\n"
 "                        que des n premiers et derniers éléments\n"
 
-#: src/base/cs_opts.c:132
+#: src/base/cs_opts.c:128
 #, c-format
 msgid ""
 " -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
@@ -2577,7 +2584,7 @@ msgstr ""
 " -solcom           Noyau autonome avec maillage \"geomet\" au\n"
 "                   format SolCom (obsolète) ;\n"
 
-#: src/base/cs_opts.c:136
+#: src/base/cs_opts.c:132
 #, c-format
 msgid ""
 " -mpi, --mpi       parallelism activation;\n"
@@ -2588,7 +2595,7 @@ msgstr ""
 "                    [i] : rang MPI global du 1er processus\n"
 "                          noyau (défaut : 0)\n"
 
-#: src/base/cs_opts.c:140
+#: src/base/cs_opts.c:136
 #, c-format
 msgid ""
 " --coupl-cs        coupling with another instance of the code\n"
@@ -2599,7 +2606,7 @@ msgstr ""
 "                     i : rang MPI global du 1er processus\n"
 "                         couplé\n"
 
-#: src/base/cs_opts.c:145
+#: src/base/cs_opts.c:141
 #, c-format
 msgid ""
 " -syrthes          SYRTHES coupling at selected faces\n"
@@ -2620,12 +2627,12 @@ msgstr ""
 "                   -Z : axe préférentiel de projection\n"
 "                        pour un maillage Syrthes 2D (défaut)\n"
 
-#: src/base/cs_opts.c:155
+#: src/base/cs_opts.c:151
 #, c-format
 msgid "                   -proc <number>: MPI rank of the SYRTHES process\n"
 msgstr "                   -proc <numéro> : rang MPI du processus Syrthes\n"
 
-#: src/base/cs_opts.c:160
+#: src/base/cs_opts.c:156
 #, c-format
 msgid ""
 "                   -socket: communication with IP socket\n"
@@ -2634,7 +2641,7 @@ msgstr ""
 "                   -socket : communication par socket IP\n"
 "                             (tubes nommés par défaut)\n"
 
-#: src/base/cs_opts.c:164
+#: src/base/cs_opts.c:160
 #, c-format
 msgid ""
 "                   -color <number(s)>: color numbers of faces\n"
@@ -2649,7 +2656,7 @@ msgstr ""
 "                                        à sélectionner\n"
 "                   -invsel : inversion de la sélection\n"
 
-#: src/base/cs_opts.c:170
+#: src/base/cs_opts.c:166
 #, c-format
 msgid ""
 " -q, --quality     verifications\n"
@@ -2662,7 +2669,7 @@ msgstr ""
 "                    0 : verification de l'initialisation seule\n"
 "                    1 à 5 : activation de tests élémentaires\n"
 
-#: src/base/cs_opts.c:175
+#: src/base/cs_opts.c:171
 #, c-format
 msgid ""
 " -cwf              <criterion> cut warped faces\n"
@@ -2674,7 +2681,7 @@ msgstr ""
 "                    -post : active le post-traitement lié au \n"
 "                            découpage des faces\n"
 
-#: src/base/cs_opts.c:179
+#: src/base/cs_opts.c:175
 #, c-format
 msgid ""
 " --benchmark       elementary operations performance\n"
@@ -2685,7 +2692,7 @@ msgstr ""
 "                   [--mpitrace] opérations effectuées une seule\n"
 "                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:183
+#: src/base/cs_opts.c:179
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -2696,7 +2703,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/base/cs_opts.c:187
+#: src/base/cs_opts.c:183
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -2711,12 +2718,12 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"listing_n<rang>\"\n"
 
-#: src/base/cs_opts.c:195
+#: src/base/cs_opts.c:190
 #, c-format
 msgid " -param            [file_name] parameter file\n"
 msgstr " -param            [nom_du_fichier] fichier de paramètres\n"
 
-#: src/base/cs_opts.c:199
+#: src/base/cs_opts.c:193
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -2725,7 +2732,7 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/base/cs_opts.c:381
+#: src/base/cs_opts.c:375
 #, c-format
 msgid ""
 "Error in the command line specification.\n"
@@ -2736,16 +2743,16 @@ msgstr ""
 "\n"
 "L'option \"%s\" nécessite un argument au moins."
 
-#: src/base/cs_opts.c:557
+#: src/base/cs_opts.c:551
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:571
+#: src/base/cs_opts.c:565
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:575
+#: src/base/cs_opts.c:569
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -2754,7 +2761,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:578
+#: src/base/cs_opts.c:572
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"

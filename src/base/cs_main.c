@@ -63,6 +63,7 @@
 #include "cs_benchmark.h"
 #include "cs_couplage.h"
 #include "cs_ecs_messages.h"
+#include "cs_gui.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -72,16 +73,12 @@
 #include "cs_mesh_coherency.h"
 #include "cs_multigrid.h"
 #include "cs_opts.h"
+#include "cs_post.h"
 #include "cs_proxy_comm.h"
 #include "cs_renumber.h"
 #include "cs_sles.h"
 #include "cs_suite.h"
 #include "cs_syr3_coupling.h"
-#include "cs_post.h"
-
-#if defined(_CS_HAVE_XML)
-#include "cs_gui.h"
-#endif
 
 /*----------------------------------------------------------------------------*/
 

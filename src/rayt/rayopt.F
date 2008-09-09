@@ -184,11 +184,8 @@ C 2. INITIALISATIONS UTILISATEURS
 C                    ^^^^^^^^^^^^
 C=======================================================================
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
-C
 C
       IF (IIHMPR.EQ.1) THEN
 C
@@ -225,8 +222,6 @@ C
         ENDDO
 C
       ENDIF
-C
-#endif
 C
       CALL USRAY1
 C     ===========

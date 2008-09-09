@@ -390,11 +390,8 @@ C
               FLUNET(IFAC,IPH) = ZERO
             ENDDO
 C
-#if defined(_CS_HAVE_XML)
-C
-C   - Interface Code_Saturne
-C     ======================
-C
+C         - Interface Code_Saturne
+C           ======================
 C
             IF (IIHMPR.EQ.1) THEN
 C
@@ -410,8 +407,6 @@ C             ===========
      &         XLAM, RCODCL)
 C
             ENDIF
-C
-#endif
 C
             ILS    = IDEBIA
             IDBIA1 = ILS + MAXELT
@@ -488,11 +483,8 @@ C
           FLUNET(IFAC,IPH) = QINCID(IFAC,IPH)
         ENDDO
 C
-#if defined(_CS_HAVE_XML)
-C
-C   - Interface Code_Saturne
-C     ======================
-C
+C     - Interface Code_Saturne
+C       ======================
 C
         IF (IIHMPR.EQ.1) THEN
 C
@@ -505,8 +497,6 @@ C         ===========
      &    XLAM, RCODCL)
 C
         ENDIF
-C
-#endif
 C
         ILS    = IDEBIA
         IDBIA1 = ILS + MAXELT

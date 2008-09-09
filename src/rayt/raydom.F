@@ -430,11 +430,8 @@ C
 C
 C---> LECTURES DES DONNEES UTILISATEURS
 C
-#if defined(_CS_HAVE_XML)
-C
-C   - Interface Code_Saturne
-C     ======================
-C
+C       - Interface Code_Saturne
+C         ======================
 C
           IF (IIHMPR.EQ.1) THEN
 C
@@ -488,7 +485,6 @@ C     Alerte si epaisseur optique trop grande
             ENDIF
 
           ENDIF
-#endif
 C
           CALL USRAY3
 C         ===========

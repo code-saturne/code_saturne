@@ -120,8 +120,6 @@ C=======================================================================
 C 1. MEMOIRE INITIALE POUR UTILISATEUR, DEVELOPPEUR
 C=======================================================================
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C
@@ -140,8 +138,6 @@ C
      &         + ICOFTU(16)
 C
       ENDIF
-C
-#endif
 C
 C   - Sous-programme utilisateur
 C     ==========================

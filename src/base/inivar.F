@@ -233,20 +233,15 @@ C (mis a 1 si passage dans USINIV ou PPINIV ou dans l'IHM ; a 0 sinon)
 C
       IUSINI = 1
 C
-#if defined(_CS_HAVE_XML)
+C   - Interface Code_Saturne
+C     ======================
 C
-C     - Interface Code_Saturne
-C       ======================
+      IF (ISUITE.EQ.0 .AND. IIHMPR.EQ.1) THEN
 C
-        IF (ISUITE.EQ.0 .AND. IIHMPR.EQ.1) THEN
+        CALL UIINIV (NCELET, ISCA, RTP)
+C       ===========
 C
-          CALL UIINIV (NCELET, ISCA, RTP)
-C         ===========
-C
-        ENDIF
-C
-C
-#endif
+      ENDIF
 C
 C   - Sous-programme utilisateur
 C     ==========================

@@ -157,8 +157,6 @@ C
         IYCO2 = ISCAPP(IS)
       ENDIF
 C
-#if defined(_CS_HAVE_XML)
-C
 C   - Interface Code_Saturne
 C     ======================
 C     Construction de l'indirection entre la numerotation du noyau et XML
@@ -167,8 +165,6 @@ C     Construction de l'indirection entre la numerotation du noyau et XML
      &               IHM, INP, IXCH, IXCK, IXWT, IH2,
      &               IF1M, IF2M, IF3M, IF4P2M, IF5M, IYCO2)
       ENDIF
-
-#endif
 C
 C=======================================================================
 C 2. PROPRIETES PHYSIQUES

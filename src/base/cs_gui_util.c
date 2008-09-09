@@ -29,10 +29,6 @@
  * Reader of the parameters file: xpath request and utilities
  *============================================================================*/
 
-
-#if defined(_CS_HAVE_XML)
-
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -62,12 +58,14 @@
  * libxml2 library headers
  *----------------------------------------------------------------------------*/
 
+#if defined(_CS_HAVE_XML)
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -105,10 +103,12 @@ extern "C" {
  * Global variables
  *----------------------------------------------------------------------------*/
 
+#if defined(_CS_HAVE_XML)
 xmlDocPtr docxml            = NULL;   /* Pointer on the XML document  */
 xmlXPathContextPtr xpathCtx = NULL;   /* Pointer on the XPath Context */
 xmlNodePtr node             = NULL;   /* Pointer on the root node     */
 const char *xmlRootName     = NULL;   /* Name of the root node        */
+#endif
 
 /*============================================================================
  * Fortran API public functions
@@ -119,7 +119,7 @@ const char *xmlRootName     = NULL;   /* Name of the root node        */
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIHMP (ITURB, IDEUCH, IGRAKE, IGRAKI)
+ * SUBROUTINE CSIHMP (IIHMPR)
  * *****************
  *
  * INTEGER          IIHMPR   <--   1 if the file exists, 0 otherwise
@@ -127,10 +127,14 @@ const char *xmlRootName     = NULL;   /* Name of the root node        */
 
 void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
 {
+#if defined(_CS_HAVE_XML)
   if (docxml == NULL)
     *iihmpr = 0;
   else
     *iihmpr = 1;
+#else
+  *iihmpr = 0;
+#endif
 }
 
 /*============================================================================
@@ -147,6 +151,8 @@ void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
 int
 cs_gui_file_loading(const char *const filename)
 {
+#if defined(_CS_HAVE_XML)
+
   int file_descriptor = 0;
   int argerr = 0;
 
@@ -158,12 +164,14 @@ cs_gui_file_loading(const char *const filename)
   file_descriptor = open(filename, O_RDONLY);
 
   if (file_descriptor ==  -1) {
+
     cs_base_warn(__FILE__, __LINE__);
     bft_printf( _("Unable to open the file: %s\n"), filename);
     argerr = 2;
     return argerr;
 
-  } else {
+  }
+  else {
 
   /* Si le fichier existe, on le referme. Il sera réouvert par xmlParseFile */
     close(file_descriptor);
@@ -179,24 +187,37 @@ cs_gui_file_loading(const char *const filename)
 
 
   if (docxml == NULL) {
+
     cs_base_warn(__FILE__, __LINE__);
     bft_printf (_("Unable to parse the file: %s\n"), filename);
     argerr = 2;
 
-  } else {
+  }
+  else {
 
-   /* Contexte definition */
-   xpathCtx = xmlXPathNewContext(docxml);
+    /* Contexte definition */
+    xpathCtx = xmlXPathNewContext(docxml);
 
-   /* Récupération du noeud racine du document xml et
-      plus particulièrement de son label */
-   node = xmlDocGetRootElement(docxml);
-   xmlRootName = (const char*) node->name;
-   }
-   /* Verification de la version de l'interface */
-   cs_gui_get_version();
+    /* Récupération du noeud racine du document xml et
+       plus particulièrement de son label */
+    node = xmlDocGetRootElement(docxml);
+    xmlRootName = (const char*) node->name;
 
-   return argerr;
+  }
+
+  /* Verification de la version de l'interface */
+  cs_gui_get_version();
+
+  return argerr;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return -1;
+
+#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -210,10 +231,8 @@ cs_gui_get_version(void)
   char *version;
   double version_number;
   double version_sat = XML_READER_VERSION;
-  double major;
-  double maj_sat;
-  double min_sat;
-  double minus;
+  double major, minus;
+  double maj_sat, min_sat;
 
   path = cs_xpath_init_path();
   cs_xpath_add_attribute(&path, "version");
@@ -224,7 +243,7 @@ cs_gui_get_version(void)
   minus = modf(version_number, &major);
   min_sat = modf(version_sat, &maj_sat);
 
-  if(major != maj_sat)
+  if (major != maj_sat)
      bft_error(__FILE__, __LINE__, 0,
                _("========================================================\n"
                  "   ** INVALID VERSION OF THE XML FILE\n"
@@ -234,7 +253,8 @@ cs_gui_get_version(void)
                  "========================================================\n"),
                   version_number, version_sat);
 
-  if(minus != min_sat) {
+  if (minus != min_sat) {
+
      cs_base_warn(__FILE__, __LINE__);
      bft_printf(_("========================================================\n"
                  "   ** INCOMPATIBLE VERSION OF THE XML FILE\n"
@@ -245,7 +265,9 @@ cs_gui_get_version(void)
                  "      YOU SHOULD RESTART YOUR CALCUL WITH A NEW XML FILE\n"
                  "========================================================\n"),
                  version_number, version_sat);
+
   }
+
   BFT_FREE(version);
   BFT_FREE(path);
 }
@@ -258,6 +280,8 @@ cs_gui_get_version(void)
 char*
 cs_xpath_init_path(void)
 {
+#if defined(_CS_HAVE_XML)
+
   char *path = NULL;
 
   BFT_MALLOC(path, strlen("/") + strlen(xmlRootName) + 1, char);
@@ -265,6 +289,15 @@ cs_xpath_init_path(void)
   strcat(path, xmlRootName);
 
   return path;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return NULL;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -324,6 +357,7 @@ cs_xpath_add_element(      char **      path,
 
     strcat(*path, "/");
     strcat(*path, element);
+
   }
 }
 
@@ -362,6 +396,7 @@ cs_xpath_add_elements(      char **path,
       strcat(*path, elt);
     }
   }
+
   va_end(list);
 }
 
@@ -397,9 +432,10 @@ cs_xpath_add_attribute(      char      **path,
  *   num                 -->  number of the element's markup
  *----------------------------------------------------------------------------*/
 
-void cs_xpath_add_element_num(      char  **     path,
-                              const char  *const element,
-                              const int          num)
+void
+cs_xpath_add_element_num(      char  **     path,
+                                const char  *const element,
+                         const int          num)
 {
   int   nfigures = 0;
   char *strnum = NULL;
@@ -495,6 +531,8 @@ char**
 cs_gui_get_attribute_values(char *const path,
                             int  *const size)
 {
+#if defined(_CS_HAVE_XML)
+
   char             **nodes_name = NULL;
   xmlNodeSetPtr      nodes;
   xmlNodePtr         cur;
@@ -520,9 +558,12 @@ cs_gui_get_attribute_values(char *const path,
 
       if (nodes->nodeTab[i]->type == XML_ATTRIBUTE_NODE) {
         cur = nodes->nodeTab[i];
-        BFT_MALLOC(nodes_name[i], strlen((char *) cur->children->content)+1, char);
+        BFT_MALLOC(nodes_name[i],
+                   strlen((char *) cur->children->content)+1,
+                   char);
         strcpy(nodes_name[i], (char*) cur->children->content);
-      } else
+      }
+      else
         bft_error(__FILE__, __LINE__, 0,
                   _("The node type is not XML_ATTRIBUTE_NODE.\nXpath: %s\n"),
                   path);
@@ -531,6 +572,15 @@ cs_gui_get_attribute_values(char *const path,
 
   xmlXPathFreeObject(xpathObj);
   return nodes_name;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return NULL;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -581,6 +631,8 @@ char**
 cs_gui_get_nodes_name(char *const path,
                       int  *const size)
 {
+#if defined(_CS_HAVE_XML)
+
   char             **nodes_name = NULL;
   xmlXPathObjectPtr  xpathObj;
   xmlNodeSetPtr      nodes;
@@ -617,6 +669,15 @@ cs_gui_get_nodes_name(char *const path,
 
   xmlXPathFreeObject(xpathObj);
   return nodes_name;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return NULL;
+
+#endif
 }
 
 
@@ -667,6 +728,8 @@ char**
 cs_gui_get_text_values(char   *const path,
                        int    *const size)
 {
+#if defined(_CS_HAVE_XML)
+
   char             **text_name = NULL;
   xmlXPathObjectPtr  xpathObj;
   xmlNodeSetPtr      nodes;
@@ -688,13 +751,15 @@ cs_gui_get_text_values(char   *const path,
     BFT_MALLOC(text_name, *size, char*);
 
     for (i =0; i < *size; i++) {
+
       assert(nodes->nodeTab[0]);
 
       if (nodes->nodeTab[i]->type == XML_TEXT_NODE) {
         cur = nodes->nodeTab[i];
         BFT_MALLOC(text_name[i], strlen((char *) cur->content)+1, char);
         strcpy(text_name[i], (char*) cur->content);
-      } else
+      }
+      else
         bft_error(__FILE__, __LINE__, 0,
                   _("The node type is not XML_TEXT_NODE.\nXpath: %s\n"),
                   path);
@@ -703,6 +768,15 @@ cs_gui_get_text_values(char   *const path,
 
   xmlXPathFreeObject(xpathObj);
   return text_name;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return NULL;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -807,6 +881,8 @@ cs_gui_get_int(char *const path,
 int
 cs_gui_get_nb_element(char *const path)
 {
+#if defined(_CS_HAVE_XML)
+
   xmlXPathObjectPtr xpathObj;
   int nb;
 
@@ -822,6 +898,15 @@ cs_gui_get_nb_element(char *const path)
   xmlXPathFreeObject(xpathObj);
 
   return nb;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return 0;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -832,8 +917,11 @@ cs_gui_get_nb_element(char *const path)
  *   path                -->  path for the xpath request
  *----------------------------------------------------------------------------*/
 
-int cs_gui_get_max_value(char *const path)
+int
+cs_gui_get_max_value(char *const path)
 {
+#if defined(_CS_HAVE_XML)
+
   xmlXPathObjectPtr xpathObj;
   xmlNodeSetPtr     nodes;
   xmlNodePtr        cur;
@@ -871,6 +959,15 @@ int cs_gui_get_max_value(char *const path)
   xmlXPathFreeObject(xpathObj);
 
   return max_val;
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without Xml support."));
+
+  return 0;
+
+#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -1023,5 +1120,3 @@ cs_gui_get_double_values(char    *const path,
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* _CS_HAVE_XML */

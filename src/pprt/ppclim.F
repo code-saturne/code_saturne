@@ -328,8 +328,6 @@ C ---> Combustion charbon pulverise
 C
       IF ( IPPMOD(ICP3PL).GE.0 ) THEN
 C
-#if defined(_CS_HAVE_XML)
-C
 C     - Interface Code_Saturne
 C       ======================
 C
@@ -343,7 +341,6 @@ C          ===========
      &   IENTCP, QIMPCP, TIMPCP, DISTCH, ICALKE, DH, XINTUR, IZFPPP)
 C
         ENDIF
-#endif
 C
         CALL USCPCL
 C       ===========
@@ -362,8 +359,6 @@ C       ===========
      &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
      &   RDEVEL , RTUSER , RA     )
 C
-#if defined(_CS_HAVE_XML)
-C
 C     - Interface Code_Saturne
 C       ======================
 C
@@ -375,7 +370,6 @@ C          ===========
      &   ITYPFB, IZFPPP)
 C
         ENDIF
-#endif
 C
       ENDIF
 C

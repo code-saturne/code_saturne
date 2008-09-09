@@ -29,8 +29,6 @@
  * Reader of the parameters file: main parameters, boundary conditions
  *============================================================================*/
 
-#if defined(_CS_HAVE_XML)
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -55,10 +53,14 @@
  * libxml2 library headers
  *----------------------------------------------------------------------------*/
 
+#if defined(_CS_HAVE_XML)
+
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -156,8 +158,10 @@ typedef struct {
  * Gestion du document xml
  *----------------------------------------------------------------------------*/
 
+#if defined(_CS_HAVE_XML)
 extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Context       */
 extern xmlNodePtr node;               /* Pointer on the root node     */
+#endif
 
 /*============================================================================
  * Private global variables
@@ -219,8 +223,9 @@ static void _gui_copy_varname(const char *varname, int ipp)
  *   keyword             <--   turbulence model parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_advanced_options_turbulence(const char *const param,
-                                                      int *const keyword)
+static void
+cs_gui_advanced_options_turbulence(const char *const param,
+                                   int *const keyword)
 {
   char *path = NULL;
   int  result;
@@ -248,7 +253,8 @@ static void cs_gui_advanced_options_turbulence(const char *const param,
  * Return user scalar number.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_get_number_user_scalar(void)
+static int
+cs_gui_get_number_user_scalar(void)
 {
   char *path = NULL;
   int   nb;
@@ -266,7 +272,8 @@ static int cs_gui_get_number_user_scalar(void)
  * Return the activated particular physics scalar number
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_scalar_number(const char* model)
+static int
+cs_gui_model_scalar_number(const char* model)
 {
   char *path = NULL;
   int   nb;
@@ -290,7 +297,8 @@ static int cs_gui_model_scalar_number(const char* model)
  *   num_sca           -->  scalar number
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_scalar_variance(const int num_sca)
+static char *
+cs_gui_scalar_variance(const int num_sca)
 {
   char *path = NULL;
   char *variance = NULL;
@@ -312,7 +320,8 @@ static char *cs_gui_scalar_variance(const int num_sca)
  * Return the user thermal scalar indicator.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_thermal_scalar(void)
+static int
+cs_gui_thermal_scalar(void)
 {
   char *model_name = NULL;
   int   test;
@@ -346,8 +355,9 @@ static int cs_gui_thermal_scalar(void)
  *   iscsth               <--  nature of the thermal scalar (C, K, J/kg)
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_thermal_scalar_number(int *const iscalt,
-                                         int *const iscsth)
+static void
+cs_gui_thermal_scalar_number(int *const iscalt,
+                             int *const iscsth)
 {
   int ind_thermal;
   int i, index, size;
@@ -384,9 +394,10 @@ static void cs_gui_thermal_scalar_number(int *const iscalt,
  *   choice         --> choice for property
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_scalar_properties_choice(const int         scalar_num,
-                                           const char *const property_name,
-                                                 int  *const choice)
+static int
+cs_gui_scalar_properties_choice(const int         scalar_num,
+                                const char *const property_name,
+                                      int  *const choice)
 {
   char *path = NULL;
   char *buff = NULL;
@@ -1917,14 +1928,15 @@ static void cs_gui_model_property_output_status (const char *const model,
  *----------------------------------------------------------------------------*/
 
 
-static void cs_gui_model_property_post (const char  *const model,
-                                        const int          num_prop,
-                                              int   *const ihisvr,
-                                              int   *const ilisvr,
-                                              int   *const ichrvr,
-                                        const int   *const ipppro,
-                                        const int   *const ipproc,
-                                        const int   *const nvppmx)
+static void
+cs_gui_model_property_post (const char  *const model,
+                            const int          num_prop,
+                                  int   *const ihisvr,
+                                  int   *const ilisvr,
+                                  int   *const ichrvr,
+                            const int   *const ipppro,
+                            const int   *const ipproc,
+                            const int   *const nvppmx)
 {
   int ipp;
   int nb_probes;
@@ -6706,13 +6718,17 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 
   /* clean memory for xml document */
 
+#if defined(_CS_HAVE_XML)
   if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
   if (node != NULL) xmlFreeNode(node);
+#endif
 
   /* Shutdown libxml */
 
+#if defined(_CS_HAVE_XML)
   xmlCleanupParser();
   xmlMemoryDump();
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6720,5 +6736,3 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* _CS_HAVE_XML */

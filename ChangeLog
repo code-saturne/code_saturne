@@ -1,3 +1,30 @@
+* 09/09/2008 - David Monfort <david.monfort@edf.fr>
+  Remove _CS_HAVE_XML dependency in Fortran files.
+  modified files:
+    bin/Makefile
+    ChangeLog
+    po/fr.po
+    src/base/caltri.F
+    src/base/cs_gui.c
+    src/base/cs_gui_matisse.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+    src/base/iniusi.F
+    src/base/inivar.F
+    src/base/memini.F
+    src/base/tridim.F
+    src/cplv/cpini1.F
+    src/cplv/cpprop.F
+    src/cplv/cpvarp.F
+    src/mati/mtimpi.F
+    src/mati/mtini1.F
+    src/pprt/ppclim.F
+    src/rayt/raycli.F
+    src/rayt/raydom.F
+    src/rayt/rayopt.F
+
 * 09/09/2008 - Marc Sakiz <marc.sakiz@edf.fr>
   Minor modifications in runcase output.
   modified script:
@@ -2830,3 +2857,26 @@
 
 ===========================================================================
 ===========================================================================
+    bin/Makefile
+    ChangeLog
+    po/fr.po
+    src/base/caltri.F
+    src/base/cs_gui.c
+    src/base/cs_gui_matisse.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+    src/base/iniusi.F
+    src/base/inivar.F
+    src/base/memini.F
+    src/base/tridim.F
+    src/cplv/cpini1.F
+    src/cplv/cpprop.F
+    src/cplv/cpvarp.F
+    src/mati/mtimpi.F
+    src/mati/mtini1.F
+    src/pprt/ppclim.F
+    src/rayt/raycli.F
+    src/rayt/raydom.F
+    src/rayt/rayopt.F

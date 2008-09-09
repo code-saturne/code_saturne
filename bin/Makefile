@@ -303,7 +303,6 @@ privcompil:
 	 if   [ "${XML}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(XML_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_XML " ;\
-	      fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_HAVE_XML " ;\
 	 fi ; \
 	 if   [ "${NLS}" -eq "1" ] ;\
 	 then cflags="$${cflags} -DENABLE_NLS -DPACKAGE=\\\"$(NOM_PACKAGE)\\\" -DLOCALEDIR=\\\"$(ARCHLOCALE_CS)\\\"" ;\

@@ -56,14 +56,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_syr3_comm.h"
-
 #include "cs_couplage.h"
-#include "cs_syr3_coupling.h"
-
-#if defined(_CS_HAVE_XML)
 #include "cs_gui_util.h"
-#endif
+#include "cs_syr3_comm.h"
+#include "cs_syr3_coupling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -189,12 +185,10 @@ _arg_env_help(const char  *name)
           "                     0: no redirection (if independant\n"
           "                        terminals, debugger type)\n"
           "                     1: output in \"listing_n<rang>\"\n"));
-
 #if defined(_CS_HAVE_XML)
   fprintf
     (e, _(" -param            [file_name] parameter file\n"));
 #endif
-
   fprintf
     (e, _(" -h, --help        this help message\n\n"));
 }
