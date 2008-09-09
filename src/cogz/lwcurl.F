@@ -101,7 +101,6 @@ C
 C
       INCLUDE "paramx.h"
       INCLUDE "pointe.h"
-      INCLUDE "vector.h"
       INCLUDE "entsor.h"
       INCLUDE "cstnum.h"
       INCLUDE "cstphy.h"

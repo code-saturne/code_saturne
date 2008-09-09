@@ -171,7 +171,6 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
-      INCLUDE "dimfbr.h"
       INCLUDE "paramx.h"
       INCLUDE "pointe.h"
       INCLUDE "entsor.h"

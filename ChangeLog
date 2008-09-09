@@ -1,4 +1,34 @@
 * 09/09/2008 - David Monfort <david.monfort@edf.fr>
+  Remove unused headers in Fortran sources.
+  modified routines:
+    src/base/dvvpst.F
+    src/base/iniini.F
+    src/cogz/colecd.F
+    src/cogz/lwcurl.F
+    src/cplv/cplecd.F
+    src/cplv/cprays.F
+    src/cplv/cpthp2.F
+    src/elec/ellecd.F
+    src/fuel/fulecd.F
+    src/fuel/futhp2.F
+    src/lagr/lagaff.F
+    src/lagr/lagcar.F
+    src/lagr/lagcou.F
+    src/lagr/lageqp.F
+    src/lagr/lages1.F
+    src/lagr/lages2.F
+    src/lagr/lagesp.F
+    src/lagr/lagfch.F
+    src/lagr/lagich.F
+    src/lagr/lagitf.F
+    src/lagr/lagpoi.F
+    src/lagr/lagsta.F
+    src/lagr/lagune.F
+    src/mati/mtproj.F
+    src/mati/mttycl.F
+    src/pprt/pplecd.F
+
+* 09/09/2008 - David Monfort <david.monfort@edf.fr>
   Replace deprecated socket structure with standard one.
   modified routines:
     src/base/cs_proxy_comm.c
@@ -2863,26 +2893,3 @@
 
 ===========================================================================
 ===========================================================================
-    bin/Makefile
-    ChangeLog
-    po/fr.po
-    src/base/caltri.F
-    src/base/cs_gui.c
-    src/base/cs_gui_matisse.c
-    src/base/cs_gui_radiative_transfer.c
-    src/base/cs_gui_util.c
-    src/base/cs_main.c
-    src/base/cs_opts.c
-    src/base/iniusi.F
-    src/base/inivar.F
-    src/base/memini.F
-    src/base/tridim.F
-    src/cplv/cpini1.F
-    src/cplv/cpprop.F
-    src/cplv/cpvarp.F
-    src/mati/mtimpi.F
-    src/mati/mtini1.F
-    src/pprt/ppclim.F
-    src/rayt/raycli.F
-    src/rayt/raydom.F
-    src/rayt/rayopt.F

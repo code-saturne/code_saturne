@@ -181,13 +181,8 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
       INCLUDE "entsor.h"
-      INCLUDE "lagpar.h"
-      INCLUDE "lagran.h"
       INCLUDE "parall.h"
       INCLUDE "period.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "ppincl.h"
       INCLUDE "matiss.h"
 C
 C***********************************************************************

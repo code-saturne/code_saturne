@@ -194,11 +194,6 @@ C
       INCLUDE "parall.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagran.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "ppincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "radiat.h"
 C
 C***********************************************************************
 C

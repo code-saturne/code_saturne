@@ -190,13 +190,9 @@ C
       INCLUDE "pointe.h"
       INCLUDE "entsor.h"
       INCLUDE "parall.h"
-      INCLUDE "radiat.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagran.h"
       INCLUDE "cstphy.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "cpincl.h"
 C
 C***********************************************************************
 C

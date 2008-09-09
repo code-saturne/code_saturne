@@ -180,12 +180,6 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
       INCLUDE "pointe.h"
-      INCLUDE "radiat.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "ppincl.h"
       INCLUDE "lagpar.h"
       INCLUDE "lagran.h"
 C

@@ -94,8 +94,6 @@ C
       INCLUDE "numvar.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
 C
 C***********************************************************************

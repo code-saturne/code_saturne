@@ -192,9 +192,6 @@ C
       INCLUDE "entsor.h"
       INCLUDE "pointe.h"
       INCLUDE "parall.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "ppincl.h"
       INCLUDE "matiss.h"
 C
 C***********************************************************************

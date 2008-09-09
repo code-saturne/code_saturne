@@ -69,7 +69,6 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
-      INCLUDE "dimfbr.h"
       INCLUDE "paramx.h"
       INCLUDE "cstnum.h"
       INCLUDE "dimens.h"

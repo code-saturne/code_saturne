@@ -184,7 +184,6 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "cpincl.h"
 C
 C***********************************************************************
 C

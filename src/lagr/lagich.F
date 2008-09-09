@@ -172,7 +172,6 @@ C
       INCLUDE "ppthch.h"
       INCLUDE "ppincl.h"
       INCLUDE "cpincl.h"
-      INCLUDE "radiat.h"
 C
 C***********************************************************************
 C
