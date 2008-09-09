@@ -1,3 +1,10 @@
+* 09/09/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correct wrong test and output string.
+  modified routine:
+    src/base/cs_tpar1d.c
+  modified file:
+    po/fr.po
+
 * 22/08/2008 - David Monfort <david.monfort@edf.fr>
   Tagging of version 1.4.b
 

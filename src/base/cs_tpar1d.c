@@ -474,10 +474,7 @@ void CS_PROCF (lect1d,LECT1D)
   }
 
   { /* Lecture du nombre de points de discrétisation et test de coherence avec
-       les donnees entrees dans USPT1D.
-         Le test sur IFPT1D suppose que les faces ont ete reperees en ordre
-       croissant (IFPT1D(II)>IFPT1D(JJ) si II>JJ). C'est normalement
-       le cas (definition de IFPT1D dans une boucle sur IFAC).  */
+       les donnees entrees dans USPT1D. */
     char       nomrub[] = "nb_pts_discretis";
     cs_int_t   *tabvar;
     cs_int_t   mfpt1d, mfpt1t;
@@ -532,15 +529,14 @@ void CS_PROCF (lect1d,LECT1D)
                   "restart file for the 1D-wall thermal module.\n"
                   "Verify uspt1d.\n"), mfpt1t, *nfpt1t);
 
-    /* Test de coherence entre NFPT1D/IFPT1D relus et ceux de USPT1D */
+    /* Test de coherence entre NFPT1D/IFPT1D relus et ceux de USPT1D
+       On sait déjà que les nombres de faces sont égaux, il suffit
+       de vérifier que toutes les faces sélectionnées dans USPT1D
+       l'étaient dans le calcul précédent */
     iok = 0;
-    i = 0;
-    for (ifac = 0; ifac < *nfabor; ifac++) {
-      if (tabvar[ifac] > 0) {
-        if (ifac != ifpt1d[i]-1) iok++;
+    for (i = 0; i < *nfpt1d; i++){
+        ifac = ifpt1d[i]-1;
         if (tabvar[ifac] != nppt1d[i]) iok++;
-        i++;
-      }
     }
     if (iok > 0)
       bft_error(__FILE__, __LINE__, 0,
@@ -555,7 +551,7 @@ void CS_PROCF (lect1d,LECT1D)
                   "The calculation will not be run.\n"
                   "\n"
                   "Verify that the restart file correspond to\n"
-                  "the present study"
+                  "the present study.\n"
                   "Verify uspt1d\n"
                   "(refer to the user manual for the specificities\n"
                   "of the test on IFPT1D)"));
