@@ -310,7 +310,7 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
                 _("Socket communication: host \"%s\" unknown."),
                 host_name);
 
-    memcpy(&sock_addr.sin_addr, host_ent->h_addr, host_ent->h_length);
+    memcpy(&sock_addr.sin_addr, host_ent->h_addr_list[0], host_ent->h_length);
   }
 
   sock_addr.sin_port = port_num;

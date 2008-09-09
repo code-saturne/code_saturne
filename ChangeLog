@@ -1,4 +1,10 @@
 * 09/09/2008 - David Monfort <david.monfort@edf.fr>
+  Replace deprecated socket structure with standard one.
+  modified routines:
+    src/base/cs_proxy_comm.c
+    src/base/cs_syr3_comm.c
+
+* 09/09/2008 - David Monfort <david.monfort@edf.fr>
   Remove _CS_HAVE_XML dependency in Fortran files.
   modified files:
     bin/Makefile
