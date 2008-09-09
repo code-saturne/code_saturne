@@ -153,13 +153,13 @@ _compute_n_ents(const cs_suite_t  *suite,
                 size_t             location_id,
                 size_t             n_location_vals)
 {
-  size_t retval = n_location_vals;
+  size_t retval = 0;
 
   if (location_id == 0)
     retval = n_location_vals;
 
   else if (location_id > 0 && location_id <= suite->n_locations)
-    retval = suite->location[location_id-1].n_glob_ents_f;
+    retval = suite->location[location_id-1].n_glob_ents_f * n_location_vals;
 
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -252,7 +252,7 @@ _add_file(cs_suite_t  *suite)
                                             echo,
                                             MPI_COMM_NULL);
 #else
-    suite->fh = cs_io_initialize_with_index(suite->name, magic_string,0, echo);
+    suite->fh = cs_io_initialize_with_index(suite->name, magic_string, 0, echo);
 #endif
 
     _locations_from_index(suite);
