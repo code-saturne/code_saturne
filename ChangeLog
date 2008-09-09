@@ -1,3 +1,8 @@
+* 09/09/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Minor modifications in runcase output.
+  modified script:
+    bin/runcase
+
 * 09/09/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug in the new restart files handling.
   modified routine:

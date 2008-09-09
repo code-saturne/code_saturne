@@ -339,7 +339,7 @@ if [ "$RUN" != "$TMPDIR" ] ; then
     mkdir -p $RUN || exit 1
   else
     echo "RUN=$RUN already exists."
-    echo "The simulation may not be run."
+    echo "The simulation will not be run."
     exit 1
   fi
 fi
@@ -737,7 +737,7 @@ echo '  ----------------------------------------------------'  >>$summary
 # Execution
 echo
 echo  "  ********************************************"
-echo  "             Calculation starting"
+echo  "             Starting calculation"
 echo  "  ********************************************"
 echo
 #
