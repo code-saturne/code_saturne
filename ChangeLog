@@ -1,4 +1,9 @@
 * 10/09/2008 - David Monfort <david.monfort@edf.fr>
+  Remove a comma at the end of an enum.
+  modified file:
+    include/base/cs_halo.h
+
+* 10/09/2008 - David Monfort <david.monfort@edf.fr>
   Replace all occurences of #if defined(__cplusplus) ...
   with a macro defined in cs_base.h for all C headers.
   modified routines:

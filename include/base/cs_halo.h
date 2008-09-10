@@ -69,7 +69,7 @@ typedef enum {
 
   CS_HALO_ROTATION_COPY,     /* Copy halo */
   CS_HALO_ROTATION_ZERO,     /* Set rotation halo values to zero */
-  CS_HALO_ROTATION_IGNORE,   /* Do not modify rotation halo values */
+  CS_HALO_ROTATION_IGNORE    /* Do not modify rotation halo values */
 
 } cs_halo_rotation_t ;
 
