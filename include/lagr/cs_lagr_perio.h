@@ -25,6 +25,9 @@
  *
  *============================================================================*/
 
+#ifndef __CS_LAGR_PERIO_H__
+#define __CS_LAGR_PERIO_H__
+
 /*============================================================================
  * Management of the periodicity for particles
  *============================================================================*/
@@ -37,12 +40,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fausse accolade pour ramener l'auto-indentation d'Emacs à la colonne 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Public functions definition for API Fortran
@@ -107,3 +105,9 @@ void
 CS_PROCF (lagvec, LAGVEC)(const cs_int_t   *itrans,
                           const cs_real_t   vecti[],
                                 cs_real_t   vectf[]);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_LAGR_PERIO_H__ */

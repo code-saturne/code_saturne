@@ -43,11 +43,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*============================================================================
  * C API public functions
@@ -136,8 +132,6 @@ void CS_PROCF (memui2, MEMUI2) (void);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_GUI_RADIATIVE_TRANSFER_H__ */

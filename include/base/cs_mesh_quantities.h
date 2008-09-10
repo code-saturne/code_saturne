@@ -41,12 +41,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -188,8 +183,6 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_MESH_QUANTITIES_H__ */

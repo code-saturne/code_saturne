@@ -50,10 +50,9 @@
 
 #include "cs_base.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Définitions d'énumerations
@@ -791,8 +790,6 @@ void cs_post_ajoute_var_temporelle
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_POST_H__ */

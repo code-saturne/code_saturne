@@ -32,14 +32,11 @@
  * Reader of the parameters file: xpath request and utilities
  *============================================================================*/
 
+#include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -361,9 +358,6 @@ cs_gui_get_double_values(char    *const path,
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_GUI_UTIL_H__ */

@@ -44,12 +44,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -128,9 +123,7 @@ CS_PROCF (lbrale, LBRALE)(void);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_ALE_H__ */
 

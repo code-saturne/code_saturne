@@ -38,17 +38,13 @@
 /* includes librairie */
 
 #include "cs_base.h"
+
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-#if 0 /* Fausse "}" pour corriger l'auto-indentation d'Emacs */
-}
-#endif
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Définitions de macros
@@ -288,8 +284,8 @@ void cs_ventil_calcul_force
        cs_real_t           t_source[]           /* --> terme source de vitesse   */
 );
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* __CS_VENTIL_H__ */

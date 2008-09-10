@@ -32,19 +32,16 @@
  * Functions dealing with the selection of cs_mesh_t entities
  *============================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definition
@@ -147,8 +144,6 @@ cs_mesh_select_dump(cs_mesh_select_t  *selection);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_MESH_SELECT_H__ */

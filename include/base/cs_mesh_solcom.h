@@ -32,13 +32,6 @@
  * Fortran interface for reading data with "SolCom" specifications
  *============================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -46,6 +39,10 @@ extern "C" {
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -127,8 +124,6 @@ cs_maillage_solcom_lit(cs_mesh_t             *const mesh,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_MESH_SOLCOM_H__ */

@@ -33,10 +33,9 @@
 
 #include "cs_base.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Prototype de la fonction tremai permettant de connaitre le temps restant
@@ -61,8 +60,8 @@ extern "C" {
 void CS_PROCF (tremai, TREMAI) (double  *tps,
                                 int     *ret);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* _CS_TREMAI_H_ */

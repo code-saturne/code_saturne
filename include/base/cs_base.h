@@ -32,14 +32,6 @@
  * Definitions, global variables, and base functions
  *============================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
-/*-----------------------------------------------------------------------------*/
 
 /* Definition of the C langage version used (C89 or C99) */
 
@@ -174,6 +166,23 @@ extern "C" {
 #define bindtextdomain(Package, Directory)
 
 #endif
+
+/* Macros for compilation with a C++ compiler */
+
+#undef BEGIN_C_DECLS
+#undef   END_C_DECLS
+
+#if defined(__cplusplus)
+#define BEGIN_C_DECLS  extern "C" {
+#define   END_C_DECLS  }
+#else
+#define BEGIN_C_DECLS
+#define   END_C_DECLS
+#endif
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -489,8 +498,6 @@ cs_base_exit_set(cs_exit_t *exit_func);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_BASE_H__ */

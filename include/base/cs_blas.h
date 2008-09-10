@@ -55,12 +55,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -282,8 +277,6 @@ cs_int_t CS_PROCF(idamax, IDAMAX)(const cs_int_t  *n,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_BLAS_H__ */

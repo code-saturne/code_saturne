@@ -40,12 +40,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -208,8 +203,6 @@ cs_proxy_comm_read_response(int        n_ints,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_PROXY_COMM_H__ */

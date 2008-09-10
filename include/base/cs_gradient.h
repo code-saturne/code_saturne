@@ -40,12 +40,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -177,8 +172,6 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_GRADIENT__ */

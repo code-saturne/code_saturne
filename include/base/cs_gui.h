@@ -43,11 +43,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -774,8 +770,6 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_GUI_H__ */

@@ -43,11 +43,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public functions prototypes
@@ -135,10 +131,7 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_GUI_MATISSE_H__ */
 

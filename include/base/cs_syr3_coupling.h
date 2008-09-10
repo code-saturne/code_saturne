@@ -51,12 +51,9 @@
 #include "cs_base.h"
 #include "cs_syr3_comm.h"
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -387,8 +384,6 @@ cs_syr3_coupling_post_id_extents(cs_int_t  *const id_mesh_start,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_SYR3_COUPLING_H__ */

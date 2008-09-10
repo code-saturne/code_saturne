@@ -46,10 +46,9 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Définitions de macros
@@ -146,9 +145,8 @@ fvm_nodal_t  * cs_maillage_extrait_fac_nodal
                                              *     de bord à traiter (1 à n)  */
 );
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_MESH_CONNECT_H__ */

@@ -32,13 +32,6 @@
  *  Low level file I/O utility functions for Preprocessor and restart files
  *============================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
@@ -54,12 +47,7 @@ extern "C" {
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -526,8 +514,6 @@ cs_io_dump(const cs_io_t  *cs_io);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_IO_H__ */

@@ -32,9 +32,16 @@
  * Structure principale associée à un maillage
  *============================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include "cs_base.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ *  Public functions definition for API Fortran
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
  * Give the list of the faces checking the constraint defined by
  * the Fortran string "fstr"
@@ -77,9 +84,8 @@ void CS_PROCF(csgcel, CSGCEL)
  CS_ARGF_SUPP_CHAINE
  );
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __CS_SELECTOR_H__ */
