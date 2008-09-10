@@ -1,4 +1,9 @@
 * 10/09/2008 - David Monfort <david.monfort@edf.fr>
+  Remove unused variable (comm_buffer_size).
+  modified file:
+    src/base/cs_mesh_halo.c
+
+* 10/09/2008 - David Monfort <david.monfort@edf.fr>
   Remove a comma at the end of an enum.
   modified file:
     include/base/cs_halo.h

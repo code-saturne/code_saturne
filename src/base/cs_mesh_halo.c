@@ -3462,8 +3462,6 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
                     cs_int_t             *p_gcell_vtx_idx[],
                     cs_int_t             *p_gcell_vtx_lst[])
 {
-  cs_int_t  comm_buffer_size = 0;
-
   cs_int_t  *send_gcell_vtx_idx = NULL, *send_gcell_vtx_lst = NULL;
   cs_int_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
   cs_int_t  *gcell_faces_idx = NULL, *gcell_faces_lst = NULL;
@@ -3562,9 +3560,6 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
 
   if (mesh->n_ghost_cells > 0)
     BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_int_t);
-
-  comm_buffer_size = CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                            halo->n_elts[CS_HALO_EXTENDED]);
 
   cs_halo_update_buffers(halo);
 
