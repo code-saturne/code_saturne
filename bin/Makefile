@@ -51,6 +51,7 @@ SRC_CS         = $(DIR_CS)/src
 USR_CS         = $(DIR_CS)/users
 ARCH_CS        = $(DIR_CS)/arch/$(NOM_ARCH)
 ARCHBIN_CS     = $(ARCH_CS)/bin
+ARCHINC_CS     = $(ARCH_CS)/include
 ARCHLIB_CS     = $(ARCH_CS)/lib
 ARCHLOCALE_CS  = $(ARCH_CS)/share/locale
 BLD_CS         = $(DIR_CS)/build
@@ -146,7 +147,7 @@ saturne: link
 lib: privtitre privconfig privcompil privlib privfin
 
 
-lib_install: privtitre privconfig privcompil privlib privlibinst privfin
+lib_install: privtitre privconfig privcompil privlib privlibinst privincinst privfin
 
 
 link: privtitre privconfig privcompil privlink privfin
@@ -232,11 +233,11 @@ privcompil:
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/mati" ;\
 	      src_cs_all="$(SRC_CS)/mati" ;\
 	 elif [ "$${modtrav}" = "" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
+	 then inc_cs_all="$(ARCHINC_CS)" ;\
 	      src_cs_all="" ;\
 	 fi ;\
 	 lndirs="" ;\
-	 if   [ "$${modtrav}" != "LINK" ] ;\
+	 if   [ "$${modtrav}" != "LINK" -a "$${modtrav}" != "" ] ;\
 	 then dirtrav=`pwd` ;\
 	      dirprec=`dirname $${dirtrav}` ;\
 	      dirprec1=`dirname $${dirprec}` ;\
@@ -276,6 +277,10 @@ privcompil:
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\
 	 dir_inc_cs="$(BFT_INC) $(FVM_INC)" ;\
+	 if [ "$${modtrav}" = "" ]  ;\
+     then cflags="$${cflags} -I$(ARCHINC_CS)" ;\
+          fflags="$${fflags} -I$(ARCHINC_CS)" ;\
+	 fi ; \
 	 if   [ "${BUILD_SO}" -eq "1" ] ;\
 	 then cflags="$${cflags} $(CCFLAGSSO)" ;\
 	      fflags="$${fflags} $(FTNFLAGSSO)" ;\
@@ -511,6 +516,56 @@ privlibinst:
 	 fi ;\
 	 mv "lib$(NOM_LIB_CS_PRE)$${modtrav}$${opttrav}.a" "$(ARCHLIB_CS)" 
 	@echo "***  Library installation finished" ; echo
+
+
+privincinst:
+	@echo "***  Installing headers"
+	@if [ ! -d "$(DIR_CS)/arch" ] ; \
+	 then mkdir "$(DIR_CS)/arch" ; \
+	 fi ;\
+         if [ ! -d "$(ARCH_CS)" ] ; \
+	 then mkdir "$(ARCH_CS)" ; \
+	 fi ;\
+         if [ ! -d "$(ARCHINC_CS)" ] ; \
+	 then mkdir "$(ARCHINC_CS)" ; \
+	 fi
+	@dirtrav=`pwd` ;\
+	 dirprec=`dirname $${dirtrav}` ;\
+	 if   [ "$${dirprec}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	 then modtrav=`basename $${dirtrav}` ;\
+	 else dirprec1=`dirname $${dirprec}` ;\
+	      if   [ "$${dirprec1}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	      then modtrav=`basename $${dirprec}` ;\
+	      else modtrav="" ;\
+	      fi ;\
+	 fi ;\
+	 if   [ "$${modtrav}" = "BASE" ] ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt" ;\
+         elif [ "$${modtrav}" = "CFBL" ] ;\
+	 then inc_cs_all="$(INC_CS)/cfbl" ;\
+         elif [ "$${modtrav}" = "COGZ" ] ;\
+	 then inc_cs_all="$(INC_CS)/cogz" ;\
+         elif [ "$${modtrav}" = "CPLV" ] ;\
+	 then inc_cs_all="$(INC_CS)/cplv" ;\
+         elif [ "$${modtrav}" = "ELEC" ] ;\
+	 then inc_cs_all="$(INC_CS)/elec" ;\
+         elif [ "$${modtrav}" = "FUEL" ] ;\
+	 then inc_cs_all="$(INC_CS)/fuel" ;\
+         elif [ "$${modtrav}" = "LAGR" ] ;\
+	 then inc_cs_all="$(INC_CS)/lagr" ;\
+         elif [ "$${modtrav}" = "RAYT" ] ;\
+	 then inc_cs_all="$(INC_CS)/rayt" ;\
+         elif [ "$${modtrav}" = "MATI" ] ;\
+	 then inc_cs_all="$(INC_CS)/mati" ;\
+	 fi ;\
+	 for dir in $${inc_cs_all} ;\
+	 do \
+	     for h in $${dir}/*.h ; \
+	     do \
+		     cp -f "$${h}" "$(ARCHINC_CS)" ; \
+		 done ; \
+	 done
+	@echo "***  Headers installation finished" ; echo
 
 
 privmodlink:

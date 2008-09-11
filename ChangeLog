@@ -1,4 +1,10 @@
 * 11/09/2008 - David Monfort <david.monfort@edf.fr>
+  Makefile modification so that one does not need anymore to
+  symlink all the headers in a user directory.
+  modified script:
+    bin/Makefile
+
+* 11/09/2008 - David Monfort <david.monfort@edf.fr>
   Add a potential option for the Fortran preprocessor for CS_LANG.
   modified script:
     bin/Makefile
