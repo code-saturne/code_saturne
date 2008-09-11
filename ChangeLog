@@ -1,3 +1,8 @@
+* 11/09/2008 - David Monfort <david.monfort@edf.fr>
+  Add a potential option for the Fortran preprocessor for CS_LANG.
+  modified script:
+    bin/Makefile
+
 * 10/09/2008 - David Monfort <david.monfort@edf.fr>
   Remove unused variable (comm_buffer_size).
   modified file:
