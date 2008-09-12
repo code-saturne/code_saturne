@@ -1060,7 +1060,7 @@ void cs_base_mem_init
 
   if ((nom_base = getenv("CS_FIC_MEM")) != NULL) {
 
-    nom_complet = malloc((strlen(nom_base) + 6) * sizeof (char));
+    BFT_MALLOC(nom_complet, strlen(nom_base) + 6, char);
 
     if (nom_complet != NULL) {
 

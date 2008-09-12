@@ -1,3 +1,13 @@
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Several corrections found with a C++ compiler (replace malloc
+  function with BFT_MALLOC macro, exchange arguments in function
+  call, replace false by NULL in a comparison). These issues had
+  no impact on the code.
+  modified routines:
+    src/base/cs_base.c
+    src/base/cs_matrix.c
+    src/base/cs_mesh_warping.c
+
 * 11/09/2008 - David Monfort <david.monfort@edf.fr>
   Makefile modification so that one does not need anymore to
   symlink all the headers in a user directory.

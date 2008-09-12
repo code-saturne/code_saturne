@@ -1622,7 +1622,7 @@ _get_diagonal_csr(const cs_matrix_t  *matrix,
 
   if (matrix->have_diag == true) {
 
-    if (ms->symmetric == false && ms->diag_index == false) {
+    if (ms->symmetric == false && ms->diag_index == NULL) {
 
       /* Full rows for non-symmetric structure,
          upper triangular + diagonal part in case of symmetric structure */
