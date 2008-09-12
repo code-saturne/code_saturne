@@ -1,4 +1,13 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Preparation for the cooling tower specific physics.
+  modified script:
+    bin/Makefile
+  added directories:
+    include/ctwr
+    src/ctwr
+    users/ctwr
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Revert to old behaviour when multigrid options were separated
   in two headers in order to use multigrid algorithm in codits
   subroutine.

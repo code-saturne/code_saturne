@@ -206,7 +206,7 @@ privcompil:
 	      fi ;\
 	 fi ;\
 	 if   [ "$${modtrav}" = "BASE" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/ctwr $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
 	      src_cs_all="$(USR_CS)/base $(SRC_CS)/base $(USR_CS)/pprt $(SRC_CS)/pprt" ;\
 	 elif [ "$${modtrav}" = "CFBL" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/cfbl" ;\
@@ -217,6 +217,9 @@ privcompil:
 	 elif [ "$${modtrav}" = "CPLV" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv";\
 	      src_cs_all="$(USR_CS)/cplv $(SRC_CS)/cplv" ;\
+	 elif [ "$${modtrav}" = "CTWR" ] ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/ctwr";\
+	      src_cs_all="$(USR_CS)/ctwr $(SRC_CS)/ctwr" ;\
 	 elif [ "$${modtrav}" = "FUEL" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/cplv $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/fuel";\
 	      src_cs_all="$(USR_CS)/fuel $(SRC_CS)/fuel" ;\
@@ -547,6 +550,8 @@ privincinst:
 	 then inc_cs_all="$(INC_CS)/cogz" ;\
          elif [ "$${modtrav}" = "CPLV" ] ;\
 	 then inc_cs_all="$(INC_CS)/cplv" ;\
+         elif [ "$${modtrav}" = "CTWR" ] ;\
+	 then inc_cs_all="$(INC_CS)/ctwr" ;\
          elif [ "$${modtrav}" = "ELEC" ] ;\
 	 then inc_cs_all="$(INC_CS)/elec" ;\
          elif [ "$${modtrav}" = "FUEL" ] ;\
@@ -578,13 +583,13 @@ privmodlink:
 	 librariesloc=""; \
 	 if   [ "$(MYOPT)" = "EF" ] ;\
 	 then \
-	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}DBG" ;\
 	   done ;\
 	    librariesloc="$${librariesloc} $(LIBRARYEF)" ;\
 	 else \
-	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}$(MYOPT)" ;\
 	   done ;\
