@@ -342,7 +342,7 @@ _comm_sock_handshake(cs_proxy_comm_t  *comm,
                      int               key)
 {
   int   len = strlen(magic_string);
-  char  keybuf[4] = "\0\0\0\0";
+  char  keybuf[4] = {'\0', '\0', '\0', '\0'};
   char *str_cmp = NULL;
 
   /* Send key */

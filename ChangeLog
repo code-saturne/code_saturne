@@ -1,4 +1,9 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Change char array initialization to comply with C++ error.
+  modified routine:
+    src/base/cs_proxy_commm.c
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Revert to malloc call in cs_base.c because memory
   management has not been initialized before this call.
   modified routines:
