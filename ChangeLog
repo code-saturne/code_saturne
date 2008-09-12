@@ -1,4 +1,10 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Revert to malloc call in cs_base.c because memory
+  management has not been initialized before this call.
+  modified routines:
+    src/base/cs_base.c
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Preparation for the cooling tower specific physics.
   modified script:
     bin/Makefile

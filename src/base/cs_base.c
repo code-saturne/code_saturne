@@ -1060,7 +1060,10 @@ void cs_base_mem_init
 
   if ((nom_base = getenv("CS_FIC_MEM")) != NULL) {
 
-    BFT_MALLOC(nom_complet, strlen(nom_base) + 6, char);
+    /* On ne peut pas utiliser BFT_MALLOC ici car la gestion
+       memoire n'a pas encore ete initialisee par bft_mem_init() */
+
+    nom_complet = malloc((strlen(nom_base) + 6) * sizeof (char));
 
     if (nom_complet != NULL) {
 
