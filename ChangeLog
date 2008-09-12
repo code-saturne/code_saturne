@@ -2,6 +2,7 @@
   Preparation for the cooling tower specific physics.
   modified script:
     bin/Makefile
+    sbin/install
   added directories:
     include/ctwr
     src/ctwr
