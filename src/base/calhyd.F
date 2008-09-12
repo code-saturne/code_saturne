@@ -177,6 +177,7 @@ C
       INCLUDE "optcal.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
+      INCLUDE "mltgrd.h"
 C
 C***********************************************************************
 C
@@ -221,6 +222,7 @@ C
 C VARIABLES LOCALES
 C
       CHARACTER*80     CHAINE
+      INTEGER          LCHAIN
       INTEGER          IDEBIA, IDEBRA
       INTEGER          ICCOCG, INC   , INIT  , ISYM  , IPOL  , ISQRT
       INTEGER          IEL   , ICAL
@@ -232,6 +234,7 @@ C
       INTEGER          IINVPE
       INTEGER          IDIFFP, ICONVP, NDIRCP
       INTEGER          NITMAP, IMGRP , NCYMAP, NITMGP
+      INTEGER          IAGMAX, NAGMAX, NPSTMG
       DOUBLE PRECISION RESIDU, RNORM , RNRMF , RNRMDF
       DOUBLE PRECISION EPSRGP, CLIMGP, EXTRAP, EPSILP
       DOUBLE PRECISION PRECRE, PRECAB, THETAP
@@ -403,6 +406,32 @@ C
      &            IFACEL,IFABOR,FLUMAS,FLUMAB,W7)
       CALL PRODSC(NCELET,NCEL,ISQRT,W7,W7,RNORM)
 C
+C
+C=======================================================================
+C 5.  PREPARATION DU MULTIGRILLE ALGEBRIQUE
+C=======================================================================
+C
+      IF (IMGR(IPRIPH).GT.0) THEN
+C
+C   --- Creation de la hierarchie de maillages
+C
+        CHAINE = 'PresHydr'
+        IWARNP = IWARNI(IPRIPH)
+        IAGMAX = IAGMX0(IPRIPH)
+        NAGMAX = NAGMX0(IPRIPH)
+        NPSTMG = NCPMGR(IPRIPH)
+        LCHAIN = 8
+C
+        CALL CLMLGA
+C       ===========
+     & ( CHAINE(1:8) ,     LCHAIN ,
+     &   NCELET , NCEL   , NFAC   ,
+     &   ISYM   , IAGMAX , NAGMAX , NPSTMG , IWARNP ,
+     &   NGRMAX , NCEGRM ,
+     &   DAM    , XAM    )
+C
+      ENDIF
+C
 C=======================================================================
 C 6.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
 C=======================================================================
@@ -543,6 +572,18 @@ C
       ENDIF
 C
  101  CONTINUE
+C
+C
+C=======================================================================
+C 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+C=======================================================================
+C
+      IF (IMGR(IPRIPH).GT.0) THEN
+        CHAINE = 'PresHydr'
+        LCHAIN = 8
+        CALL DSMLGA(CHAINE(1:8), LCHAIN)
+C       ===========
+      ENDIF
 C
 C--------
 C FORMATS

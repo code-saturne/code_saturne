@@ -1,4 +1,20 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Revert to old behaviour when multigrid options were separated
+  in two headers in order to use multigrid algorithm in codits
+  subroutine.
+  modified files:
+    include/base/optcal.h
+    src/base/calhyd.F
+    src/base/codits.F
+    src/base/distpr.F
+    src/base/impini.F
+    src/base/iniini.F
+    src/base/resolp.F
+    src/base/verini.F
+  added header:
+    include/base/mltgrd.h
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Several corrections found with a C++ compiler (replace malloc
   function with BFT_MALLOC macro, exchange arguments in function
   call, replace false by NULL in a comparison). These issues had
@@ -2975,3 +2991,12 @@
 
 ===========================================================================
 ===========================================================================
+    include/base/mltgrd.h
+    include/base/optcal.h
+    src/base/calhyd.F
+    src/base/codits.F
+    src/base/distpr.F
+    src/base/impini.F
+    src/base/iniini.F
+    src/base/resolp.F
+    src/base/verini.F

@@ -82,6 +82,7 @@ C
       INCLUDE "alstru.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
+      INCLUDE "mltgrd.h"
       INCLUDE "ihmpre.h"
       INCLUDE "matiss.h"
 C
