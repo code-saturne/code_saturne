@@ -40,8 +40,8 @@ account. The code includes specific modules, referred to as ``specific physics''
 for the treatment of lagrangian particle tracking, semi-transparent radiative transfer,
 gas combustion, pulverised coal combustion,
 electricity effects (Joule effect and electric arcs) and compressible flows.
-The code also includes an engineering module, Matisse, for the simulation of nuclear waste
-surface storage.
+The code also includes an engineering module, Matisse, for the simulation of
+nuclear waste surface storage.
 
 \CS is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License
@@ -63,16 +63,26 @@ various mesh types which may be hybrid (containing several kinds of
 elements) and may have structural non-conformities (hanging nodes).
 
 
-\CS is composed of two main elements :
+\CS is composed of three main elements and an optional GUI,
+as shown on figure \ref{Fig_elements}:
 \begin{itemize}
 \item the Kernel module is the numerical solver
-\item the Preprocessor module is in charge of mesh
-data reading (many file formats allowed), mesh pasting (arbitrary interfaces),
-domain decomposition for parallel computing and definition of periodicity
-boundary conditions (translation and/or rotation)\\
+\item the Preprocessor module is in charge of mesh import,
+mesh joining (arbitrary interfaces), and definition of periodicity
+boundary conditions (translation and/or rotation)
+\item the Partitioner is in charge of optimizing domain decomposition
+for parallel computing (optional, but highly recommended for parallel
+performance)\\
 \end{itemize}
 
-\indent\CS also relies on two compulsory libraries (under LGPL licence) :
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[width=14cm]{\repgraphics/cs_components.\extgraphics}}
+\caption{\CS elements}\label{Fig_elements}
+\end{figure}
+
+\indent\CS also relies on two libraries (by the same team, under LGPL licence),
+which can also be used independently:
 \begin{itemize}
 \item BFT (Base Functions and Types) for the management of memory and input/output
 as well as specific utilities (estimation of time and memory usage for instance)
@@ -89,10 +99,10 @@ The aim of this document is to give practical information to the users of
 For more details about the algorithms and their numerical
 implementation, please refer to the reports \cite{mechitoua98} and
 \cite{boucker00}, and to the theoretical documentation \cite{theory},
-which is newer and more detailled
+which is newer and more detailed
 (the latest updated version of this document
 is available on-line with the version of \CS and accessible through the command
-\texttt{cs\_info noyau}).
+\texttt{cs\_info kernel}).
 
 The present document first
 presents all the necessary elements to run a calculation
@@ -133,7 +143,7 @@ The current version of \CS (\verscs) is located in the directory
 In order to use \CS, every user must add the following line in their file
 ``\texttt{.profile}''\footnote{or \texttt{.monprofile} if the
  modifications of the \texttt{.profile} file are reserved for the
- administators, as is the case in the MFEE departement of EDF}:
+ administrators, as is the case in the MFEE department of EDF}:
 
 \hspace*{2cm}\texttt{. }\texttt{xxxxxxx/Noyau/ncs-\verscs/bin/cs\_profile},
 where \texttt{xxxxxxx} represents the PATHCS directory where
@@ -182,7 +192,7 @@ To improve the calculation traceability, the files and directories
 sent to \texttt{RESU} after a calculation are given a suffix
 identifying the calculation start date and time by an eight-digit
 number (two digits for each month, day, hour and minute; the result of a
-calculation started at 14h03 on december 31$^{\text{st}}$ will therefore be indexed
+calculation started at 14h03 on December 31$^{\text{st}}$ will therefore be indexed
 12311403)
 \end{list}
 
@@ -211,7 +221,7 @@ names have to be given in the variable \texttt{USER\_OUTPUT\_FILES}
 of the launch script, see \S\ref{prg_runcase}}.
 
 
-During calcualtions coupled with \syrthes (option specified in the launch
+During calculations coupled with \syrthes (option specified in the launch
 script of \CS or {\em via} the Interface) the same organisation is used for the
 files related to \CS. For the files related
  to \syrthes, the localisation of the upstream files is specified in the
@@ -230,6 +240,8 @@ restart files and the historic file) are placed in a sub-directory
 \texttt{RESU\_SYR.mmddhhmm} of the \texttt{RESU} directory, where
 \texttt{mmddhhmm} corresponds to the calculation identification suffix.
 
+\sloppy
+
 \noindent
 The \syrthes execution report file is placed in the \texttt{RESU} directory (same as
 for the \CS review) under the name \texttt{listsyr.mmddhhmm} and the compilation
@@ -238,6 +250,8 @@ For an easier follow-up of the modifications
 in former calculations, the potential \syrthes user-subroutines used in a
 calculation are stored in a directory \texttt{SRC\_SYR.mmddhhmm} in the
 directory \texttt{RESU}.
+
+\fussy
 
 
 \begin{table}[!t]
@@ -275,7 +289,7 @@ directory \texttt{RESU}.
                                      used in the calculation 08211921\\
 &        \texttt{HIST.08211921}        &directory containing the chronological
                                       records for \CS\\
-&        \texttt{RES\_USERS.08211921}  &optional directroy containing the
+&        \texttt{RES\_USERS.08211921}  &optional directory containing the
                                      user results files\\
 &        \texttt{RESTART.08211921}       &directory containing the \CS restart files \\
 &        \texttt{compil.log.08211921}  &compilation report\\
@@ -301,8 +315,8 @@ the
                                       specified probes\\
 &        \hspace*{0.3cm}\texttt{resus1}&\syrthes calculation restart file (1
                                                      time step)\\
-&        \hspace*{0.3cm}\texttt{resusc1}&\syrthes chronolgical solid
-                                      post-processing file (may be tranformed \\
+&        \hspace*{0.3cm}\texttt{resusc1}&\syrthes chronological solid
+                                      post-processing file (may be transformed \\
 &                                    &into the {\em EnSight} format with the
                                      {\em syrthes2ensight} utility)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf launch script}\\
@@ -325,7 +339,7 @@ information. Indeed, the case preparer \texttt{cs\_create} automatically extract
 necessary files and prepares the launch script without the user having to go
 directly into the \CS base directories (see \S\ref{prg_cscreate}).
 The \texttt{cs\_info} gives direct
-access to the most needed information (especially the user and progammer's
+access to the most needed information (especially the user and programmer's
 guides and the tutorial) without the user having to look for them in the \CS
 directories.
 
@@ -336,14 +350,12 @@ The subdirectory \texttt{arch} contains the libraries and compiled executables.
 The environment variable \texttt{NOM\_ARCH} allows to distinguish the different
 architectures:
 \begin{list}{$\bullet$}{}
-\item\texttt{Blue\_Gene\_L} for the EDF BlueGene machine
-\item\texttt{HP-UX} for HP-UX system
-\item\texttt{IRIX64} for SGI Irix system
-\item\texttt{Linux} for general PC machines under Linux
-\item\texttt{Linux\_CCRT} Opteron cluster (Tantale cluster at CCRT)
+\item\texttt{Blue\_Gene\_L} for the EDF BlueGene/L machine
+\item\texttt{Blue\_Gene\_P} for the EDF BlueGene/P machine
+\item\texttt{Linux} for general 32-bit Intel or AMD machines under Linux
+\item\texttt{Linux\_x86\_64} for general 64-bit Intel or AMD machines under Linux
 \item\texttt{Linux\_Ch} for the Chatou cluster
 \item\texttt{Linux\_IA64} for Itanium clusters (Platine cluster at the CCRT)
-\item\texttt{SunOS} for Sun machines
 \end{list}
 
 For each architecture, a subdirectory (named after \texttt{NOM\_ARCH})
@@ -370,7 +382,6 @@ different modules of \CS:
 \noindent Different compilation options are available for each module:
 \begin{list}{$\bullet$}{}
 \item DBG for debugging,
-\item EF for the ``Electric Fence'' utility,
 \item LO for low optimisation,
 \item PROF for profiling,
 \end{list}
@@ -432,7 +443,7 @@ and \texttt{SRC\_SYR} which are required to accomodate the \syrthes files.
 
 \item Place the mesh(es) in the directory \texttt{MESH}. Make sure they are
 in a format compliant with \CS (see \S\ref{prg_maillages}). There can be
-several meshes in case of mesh pasting or coupling with
+several meshes in case of mesh joining or coupling with
 \syrthes\footnote{\syrthes uses meshes composed of 10-node tetrahedra (vertices
 and centers of edges)}.
 
@@ -685,35 +696,43 @@ the machine.\\
 \subsubsection{Execution modes}
 %==================================
 \label{prg_executionmodes}%
-As explained before, \CS is composed of two modules, the Preprocessor and the
-Kernel. The Preprocessor is in charge of the preprocessing. It reads the meshes and
-performs the necessary pastings and domain decompositions. The resulting data
-are transfered to the Kernel through specific files, one for each processor the
-Kernel will be running on. These files are named \texttt{n00001} to
-\texttt{n$N$}, $N$ being the number of processors used for the calculation, and
-stored in a subdirectory \texttt{preprocessor\_output} of the temporary
-execution directory. In a standard calculation, the files are left there as they
-have no interest for data analysis and are too dependent on
-the number of processors or the machine to be kept.
+As explained before, \CS is composed of two main modules, the Preprocessor and the
+Kernel, and an optional Partitioner. The Preprocessor reads the meshes and
+performs the necessary joinings. The Partitioner optimizes domain decomposition
+for parallel runs. The resulting data is transfered to the Kernel through specific
+files, named \texttt{preprocessor\_output} and \texttt{domain\_number\_*}, where
+\texttt{*} is the number of processors used. In a standard calculation, the files
+are not copied from the temporary execution directory to the results directory,
+as they have no interest for data analysis, and are considered ``internal''
+files, whose format or contents is not guaranteed not to change between \CS versions.
 
-Yet, the Preprocessor module does not work in parallel and sometimes requires a
-large amount of memory. Hence it is sometimes useful to run the Preprocessor
+Yet, the Preprocessor and Partitioner do not work in parallel and may require a
+large amount of memory. Hence it is sometimes useful to run them
 separately, on a machine or in batch queues with extended memory, and to run the
 proper parallel calculation on another machine or in another batch
-queue. The launch scripts therefore defines three ``execution modes'', that can
-be specified in the variable \texttt{MODE\_EXEC} (see \S\ref{prg_runcase}):\\
-\hspace*{0.5cm}\texttt{complet}: complete mode. The Preprocessor module is executed
-for preprocessing, followed by the Kernel for the calculation. The
-\texttt{preprocessor\_output/n*} files are created and left in the
-temporary execution directory.\\
-\hspace*{0.5cm}\texttt{pre-traitement}: only the Preprocessor module is
-executed. The \texttt{preprocessor\_output/n*} files are stored in a directory
-\texttt{PREPROCESSOR\_OUTPUT.mmddhhmm} automatically created in the \texttt{RESU}
-directory, for later use.\\
-\hspace*{0.5cm}\texttt{calcul}: only the Kernel is executed. The
-\texttt{preprocessor\_output/n*} files are read from the directory specified
-in the variable \texttt{PREPROCESSOR\_OUTPUT\_IN} of the launch script.
+queue. The launch scripts therefore allows specifically choosing
+which modules to run, using the variables \texttt{EXEC\_PREPROCESS},
+\texttt{EXEC\_PARTITION}, and \texttt{EXEC\_KERNEL} (see \S\ref{prg_runcase}).
 
+\sloppy
+
+\hspace*{0.5cm} If \texttt{EXEC\_PREPROCESS=no}, the Partitioner and Kernel will
+copy or link the file defined by the \texttt{PREPROCESSOR\_OUTPUT\_IN}
+variable to \texttt{preprocessor\_output}.
+
+\hspace*{0.5cm} If \texttt{EXEC\_PARTITION=no}, the Kernel will search for a
+corresponding \texttt{domain\_number\_*} file in the directory defined by
+\texttt{PARTITION\_OUTPUT\_IN}.
+
+\hspace*{0.5cm} If \texttt{EXEC\_KERNEL=no}, the Preprocessor and Partitioner
+output will be saved respectively to a
+\texttt{\$RESU/preprocessor\_output.\$SUFFIX} file
+and to a \texttt{\$RESU/PARTITION\_OUTPUT.\$SUFFIX} directory.
+In this case, the number of processors for which partitioning is required
+is given by the \texttt{PARTITION\_LIST} variable of the launch script
+(multiple partitionings may be done in one run).
+
+\fussy
 
 %==================================
 \subsubsection{Interactive modification of the target time step}
@@ -783,23 +802,23 @@ The study, case and user name are filled
 automatically in the launch script, as are the paths leading to the
 different directories. Other parameters must be specified in the script
 (see \S\ref{prg_runcase}),
-especially the mesh file(s) to use
-, but everything can be specified throuhg the Graphical Interface.
+especially the mesh file(s) to use, but everything can be specified
+through the Graphical Interface.
 
 
 %==================================
 \subsection{Preprocessing}
 %==================================
-The Preprocessor module of \CS is in charge of the preprocessing. It reads the
+The Preprocessor module of \CS reads the
 mesh file(s) (under any supported format) and transfers the necessary
-information to the Kernel. Mesh pasting and domain decomposition for parallel
+information to the Kernel. Mesh joining and domain decomposition for parallel
 calculations are made during this phase. In case of periodic boundary
 conditions, the Preprocessor module also identifies the boundary faces that are
 related through periodicity and creates the corresponding connectivity table.
 
 For a complete information on the Preprocessor module, please refer to the
-corresponding user's guide \cite{ecsmu} (available on-line through the command
-\texttt{cs\_info ecsmu}).
+corresponding user's guide \cite{ecsuser} (available on-line through the command
+\texttt{cs\_info ecs\_user}).
 
 
 %==================================
@@ -846,24 +865,13 @@ tested on polyhedral meshes generated by Comet-Design (now STAR-Design).
 \end{list}
 
 The use of files of the ``Common Solver'' type\footnote{File type specifically
-developped for the early prototype versions of \CS to be read directly by the
-Kernel while the Preprocessor module was under development (extension \texttt{tlc})}
-is still possible but is not maintained anymore. The reading of the mesh
-is done directly from the Kernel, without the Preprocessor module.
+developped for the early prototype versions of \CS (\texttt{tlc}) extension}
+is still possible but is deprecated. Such files are read directly from the
+Kernel, without the Preprocessor.
 The variable SOLCOM must
  be set to 1 in the launch scripts. Many potentialities of \CS are not
-compliant with this file format (mesh pasting with hanging nodes, periodicity,
+compliant with this file format (mesh joining with hanging nodes, periodicity,
 parallel computing, ...).
-The \texttt{slc2ideas} utility can be used to convert the
-'Common Solver' files to the I-deas format. \texttt{slc2ideas}
- is automatically available in the user's PATH (who can therefore enter the
-command \texttt{slc2ideas} directly) when the environment variables for \CS
-have been set correctly. However, not all the files can be converted. In particular,
-they must comply with the initial choice (\texttt{tlc}) according to which
-each internal face possesses two and only two neighboring cells, and each
-boundary face only one neighboring cell. For non-converted,
-or non-convertale meshes of the 'Common Solver' type,
-the calculation must be done without using the Preprocessor (keyword SOLCOM=1).
 For all the other formats, the Preprocessor must be used (SOLCOM=0).
 
 The Preprocessor can also accept zipped mesh files (for Formats other than
@@ -880,7 +888,7 @@ determines the mesh format directly from the file suffix:
 {\em``\texttt{.ngeom}''} for the Comet format,
 {\em``\texttt{.msh}''} for the Gmsh format,
 {\em``\texttt{.neu}''} for the Gambit Neutral format,
-(voir \texttt{cs\_info ecsmu}).\\
+(see \texttt{cs\_info ecs\_user}).\\
 
 
 {\em WARNING: }
@@ -922,9 +930,9 @@ processors used is specified in the \texttt{NUMBER\_OF\_PROCESSORS} variable,
 or through the batch headers. If necessary, the launch script then automatically
 passes the \texttt{-p} option to the Preprocessor command line (see \ref{prg_runcase}).
 
-\item \texttt{-join}: triggers the mesh pasting functions. If nothing more is
+\item \texttt{-join}: triggers the mesh joining functions. If nothing more is
 specified, every area of contact between two meshes will be pasted together. The
-pasting can be limited to certain selected faces. For instance, to paste only
+joining can be limited to certain selected faces. For instance, to paste only
 the faces of colors 6 and 7, the full option will be \mbox{\texttt{-join -color
 6 7}}. These options are to be specified in the \texttt{COMMAND\_JOIN} variable in
 the launch script, to be automatically passed to the command line.
@@ -1182,7 +1190,7 @@ the presence of phantom cells (see \S\ref{prg_paralperio}).}
 \ref{prg_optappelecs} and \ref{prg_maillages}). The files will be looked for in
 the directory \texttt{MESHDIR} (see below).
 
-\item \texttt{COMMAND\_JOIN}: Preprocessor command line option for mesh pasting (see
+\item \texttt{COMMAND\_JOIN}: Preprocessor command line option for mesh joining (see
 \ref{prg_optappelecs})
 
 \item \texttt{COMMAND\_CWF}: Kernel command line option for the division of
@@ -1413,7 +1421,7 @@ followings:
 \item Analysis control: parameters concerning the time averages, time step,
       location of
       the probes where some variables will be monitored over time,
-      definition of the periodicity of the outputs in the calculation
+      definition of the frequency of the outputs in the calculation
       listing and in the chronological records and of the EnSight outputs.
 
 \item Numerical parameters: advanced parameters for the numerical solution of
@@ -1488,7 +1496,7 @@ as colors. Most tools allow only one color per face or element.
             Ensight Gold file, the part number is interpreted as
             a color number by the Preprocessor.
       \item The Comet Design (pro-STAR/STAR4) and NUMECA Hex file
-            formats have an CAD section id that is interpreted
+            formats have a CAD section id that is interpreted
             as a color number. In the latter case, this notion
             only applies to faces, so volume elements are given
             color.
@@ -1504,7 +1512,7 @@ by boolean operations on existing groups).
 In \CS, every group is assigned a group number (base on alphabetical
 ordering of groups).
       \begin{list}{-}{}
-      \item I-deas Master Series assigns a group number with each
+      \item I-deas assigns a group number with each
             group, but by default, this number is just a counter.
             Only the group name is considered by \CS (so that elements
             belonging to two groups with identical names and different
@@ -1818,7 +1826,7 @@ contains the list of all the nodes of all the internal faces; first the nodes of
 the first face, then the nodes of the second face, and so on.
 IPNFAC (dimension: NFAC+1) gives the position IPNFAC(IFAC) in NODFAC of the
 first node of each internal face IFAC. Therefore, the reference numbers of all
-the nodes of the internal face IFAC are : NODFAC(IPNFAC(IFAC)),
+the nodes of the internal face IFAC are: NODFAC(IPNFAC(IFAC)),
 NODFAC(IPNFAC(IFAC)+1), ..., NODFAC(IPNFAC(IFAC+1)-1). In order for this last
 formula to be valid even for IFAC=NFAC, IPNFAC is of dimension NFAC+1 and
 IPNFAC(NFAC+1) is equal to LNDFAC+1.\\
@@ -1885,7 +1893,7 @@ index-number of the first element of these sections is stored in a ``common''
 surface of an internal face IFAC is stored in RA(ISRFAN+IFAC-1). Or, the
 coordinate of vector $\vect{OF}$ (see below for
 definition) in the II$^{th}$ direction for face IFAC is stored in
-RA(IDOFIJ+(IFAC-1)*NDIM+II-1)\footnote{in FORTRAN, a multidimensional
+RA(IDOFIJ+(IFAC-1)*NDIM+II-1)\footnote{in Fortran, a multidimensional
 array A(3,2) is in fact a unidimensional array containing the elements
 A(1,1), A(2,1), A(3,1), A(1,2), A(2,2) and A(3,2) in this order.}.
 
@@ -2175,8 +2183,8 @@ time step ($kg.m^{-1}.s^{-2}$)\\
 stored at the cells}
 
 \variab{IESTIM}{IESTIM(NESTMX,NPHSMX)}{IA}{For each phase, property
-number for the NESTMX error estimators for Navier-Stokes. These are
-currently IESTIM(IESPRE\index{IESPRE},IPHAS),
+number for the NESTMX error estimators for Navier-Stokes. The estimators
+currently available are IESTIM(IESPRE\index{IESPRE},IPHAS),
 IESTIM(IESDER\index{IESDER},IPHAS), IESTIM(IESCOR\index{IESCOR},IPHAS),
 IESTIM(IESTOT\index{IESTOT},IPHAS)\\
 stored at the cells}
@@ -2598,6 +2606,48 @@ during development and test phases}
 %==================================
 \subsection{Parallelism and periodicity}
 %==================================
+
+Parallelism is based on domain partitioning: each processor is assigned
+a part of the domain, and data for cells on parallel boundaries
+is duplicated on neigboring processors in corresponding ``ghost'',
+or ``halo'' cells (both terms are used interchangeably). Values in
+these cells may be accessed just the same as values in regular cells.
+Communication is only required when cell values are modified
+using values from neighboring cells, as the values in the ``halo'' can
+not be computed correctly (since the halo does not have access to all
+its neighbors), so halo values must be updated by copying values from
+the corresponding cells on the neighboring processor.
+
+Compared to other tools using a similar system, a specificity of
+\CS is the separation of the halo in two parts: a standard part,
+containing cells shared through faces on parallel boundaries, and an
+extended part, containing cells shared through vertices, which is
+used mainly for least squares gradient reconstruction using an
+extended neighborhood. Most updates need only operate on the standard
+halo, requiring less data communication than those on the extended halos.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[width=14cm]{\repgraphics/halo.\extgraphics}}
+\caption{Parallel domain partitioning: halos}\label{Fig_haluile}
+\end{figure}
+
+Periodicity is handled using the same halo structures as parallelism,
+with an additional treatment for vector and coordinate values: updating
+coordinates requires applying the periodic transformation to the copied
+values, and in the case of rotation, updating vector and tensor values
+also requires appying the rotation transformation.
+Ghost cells may be parallel, periodic, or both. The example of a pump
+combining parallelism and periodicity is given figure \ref{Fig_parperio_pump}.
+In this example, all periodic boundaries match with boundaries on
+the same domain, so halos are either parallel or periodic.
+
+\begin{figure}[!h]
+\centerline{
+\includegraphics*[width=5.5cm]{\repgraphics/rota_perio_parall.jpg}}
+\caption{Combined parallelism and periodicity}\label{Fig_parperio_pump}
+\end{figure}
+
 \label{prg_paralperio}
 {\bf Activation}
 
@@ -2605,8 +2655,7 @@ Parallelism and periodicity are activated by means of the launch script
 in the standard cases:
 \begin{list}{$\bullet$}{}
 
-\item On clusters with PBS batch systems (like the EDF R\&D Chatou cluster),
-      the launching of a parallel run
+\item On clusters with PBS batch systems, the launching of a parallel run
       requires to complete the \texttt{PBS} batch cards located in the
       beginning of \texttt{runcase}, and particularly to set the number of
       physical nodes (\texttt{nodes}) and the number of physical
@@ -2651,7 +2700,7 @@ in the standard cases:
       the \texttt{COMMAND\_PERIO} of the launch script \texttt{runcase}.
       The transformation
       allowing to pass from a boundary to the other one must be defined
-      (the direction does not matter) and the set of periodical faces
+      (the direction does not matter) and the set of periodic faces
       should be (optional but strongly advised) marked out (for instance
       by means of a color).
 
@@ -2683,7 +2732,7 @@ The user can notice in a subroutine
       (=1 if periodicity is activated);
 \item that the presence of rotation periodicities is tested with the variable
       IPEROT (number of rotation periodicities);
-\item that the parallel running of a calculation is tested with the
+\item that running of a calculation in parallel is tested for with the
       variable IRANGP (IRANGP is worth -1 in the case of a non-parallel
       calculation and N-1 in the case of a parallel calculation, N being
       the number of the current processor)
@@ -2699,7 +2748,7 @@ given in the subroutine \texttt{usproj}.
 When periodicity or parallelism are brought into use, some cells of the
       mesh become physically distant from their neighbors. Concerning
       parallelism, the calculation domain is split and distributed
-      between the processors: a cell located at the ``edge'' of a
+      between the processors: a cell located at the ``boundary'' of a
       given processor may have neighbors on different processors. \\
 In the same way, in case of periodicity, the neighboring cells of cells
       adjacent to a periodic face are generally distant. \\
@@ -2736,21 +2785,21 @@ In parallel mode, the user must pay attention during the realisation of
       \end{list}
 The user may refer to the different examples present in the user
       subroutine \texttt{usproj}. \\
-Care should be taken with the fact that the frontiers between
+Care should be taken with the fact that the boundaries between
       subdomains consist of {\bf internal} faces shared between
       two processors (these are indeed internal faces, even if they are
-      located at a ``processor edge''). They should not be counted twice
-      (once per processor) during global operations about internal faces
+      located at a ``processor boundary''). They should not be counted twice
+      (once per processor) during global operations using internal faces
       (for instance, counting the internal faces per processor and
       summing all the obtained numbers drives into overevaluing the
       number of internal faces of the initial mesh).
 
-\item {\bf The writing ; operations that should be made on one
-      processor in parallel mode}.\\
+\item {\bf Writing; operations that should be made on one
+      processor only in parallel mode}.\\
 In parallel mode, the user must pay attention during the writing of
-      pieces of information. The writing of pieces of information in the
-      listing can be done simply by using the logic unit NFECRA (each
-      processor will write in its own listing file): use
+      pieces of information. Writing to the ``listing'' can be done
+      simply by using the NFECRA logical unit (each processor will write
+      to its own ``listing'' file): use
       \texttt{WRITE(NFECRA,...}. \\
 If the user wants an operation to be done by only one processor (for
       example, open or write a file), the associated instructions must
@@ -2761,14 +2810,7 @@ If the user wants an operation to be done by only one processor (for
 \end{list}
 
 
-\begin{figure}[!h]
-\centerline{
-\includegraphics*[width=17cm]{\repgraphics/halo.\extgraphics}}
-\caption{Periodicity and parallelism: exchange structure.}\label{Fig_haluile}
-\end{figure}
-
-
-{\bf Some notes about the periodicity}
+{\bf Some notes about periodicity}
 
 Some particular points should be reminded:
 \begin{list}{-}{}
@@ -2777,10 +2819,10 @@ Some particular points should be reminded:
   \item semi-transparent radiation,
   \item reinforced velocity-pressure coupling (IPUCOU=1).
   \end{list}
-\item although it has not been the case so far, potential problemes might be met
+\item although it has not been the case so far, potential problems might be met
       in the case of rotation periodicity with the LRR $R_{ij}-\varepsilon$
       model. They would come from the way of taking into account the
-      orthotrope viscosity (however, this term has usually a low influence).
+      orthotropic viscosity (however, this term usually has a low influence).
 \end{list}
 
 %==================================
@@ -3036,7 +3078,7 @@ If the code cannot find one or several pieces of data required for the
 calculation restart in the auxiliary restart file, default values are
 then used. This allows in particular to run calculation restarts even if
 the number of faces has been modified (for instance in case of
-modification of the mesh merging or of the periodicity
+modification of the mesh merging or of periodicity
 conditions\footnote{imposing a periodicity changes boundary faces into
 internal faces}). More precisely, the auxiliary restart file contains
 the following data:
@@ -3115,7 +3157,7 @@ can check the saved copy of the launch script in the \texttt{RESU} directory, or
 the head of the \texttt{listpre} file, which repeats the command line passed to
 the Preprocessor module}.}
 
-{\em NOTE : when meshes are pasted by the Preprocessor module with potential hanging
+{\em NOTE: when meshes are pasted by the Preprocessor module with potential hanging
 nodes, two nodes closer than a certain (small) tolerance will be
 merged. Hence, due to numerical round-up errors, two different machines may
 yield different results. This might change the number of faces in the global
@@ -3738,7 +3780,7 @@ the edge II(1$\leqslant$II$\leqslant$4) of the inlet IENT. The code for the boun
 \begin{list}{*}{}
 \item ICLVOR=1 for a wall
 \item ICLVOR=2 for symmetry
-\item ICLVOR=3 for the periodicity of of transfer (the face corresponding to periodicity will
+\item ICLVOR=3 for periodicity of translation (the face corresponding to periodicity will
 automatically be taken as 3)
 \end{list}
 The 4 edges are numbered relative to the directions DIR1 and DIR2 as shown in figue \ref{Fig_vortex}:

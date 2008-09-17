@@ -1,3 +1,18 @@
+* 12/09/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+               Marc Sakiz <marc.sakiz@edf.fr>
+  Documentation improvement and corrections.
+  modified files:
+    doc/THEORY/latex/Base/introd.tex
+    doc/THEORY/latex/Base/turbke.tex
+    doc/USER/latex/saturne1.tex
+    doc/USER/latex/user.tex
+  removed file:
+    doc/USER/graphics/halo.eps
+  added files:
+    doc/USER/graphics/cs_components.fig
+    doc/USER/graphics/halo.pdf
+    doc/USER/graphics/rota_perio_parall.jpg
+
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Change char array initialization to comply with C++ error.
   modified routine:
