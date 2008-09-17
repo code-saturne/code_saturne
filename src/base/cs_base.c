@@ -67,13 +67,9 @@
 
 #include "cs_base.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fausse accolade pour corriger l'indentation automatique d'Emacs */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Constantes et Macros
@@ -1599,8 +1595,7 @@ cs_base_exit_set(cs_exit_t *exit_func)
 /*============================================================================
  * Fonctions privées
  *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

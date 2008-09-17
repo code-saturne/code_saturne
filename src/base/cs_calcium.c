@@ -53,12 +53,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -1108,7 +1103,4 @@ cs_calcium_set_double_rw_funcs(cs_calcium_read_double_t     *cp_ldb_func,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+END_C_DECLS

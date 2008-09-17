@@ -72,11 +72,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -587,6 +583,4 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

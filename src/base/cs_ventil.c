@@ -46,15 +46,9 @@
 
 #include "cs_ventil.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-#if 0 /* Fausse "}" pour corriger l'auto-indentation d'Emacs */
-}
-#endif
-
+BEGIN_C_DECLS
 
 /*============================================================================
  * Définitions de types
@@ -1050,7 +1044,6 @@ static void cs_loc_ventil_marque_cellules
 
 }
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

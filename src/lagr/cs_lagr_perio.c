@@ -64,12 +64,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fausse accolade pour ramener l'auto-indentation d'Emacs à la colonne 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Public functions definition for API Fortran
@@ -260,7 +255,4 @@ CS_PROCF (lagvec, LAGVEC)(const cs_int_t   *itrans,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+END_C_DECLS

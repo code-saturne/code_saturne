@@ -65,10 +65,9 @@
 #include "cs_mesh_connect.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Définitions d'énumerations
@@ -614,6 +613,6 @@ fvm_nodal_t  * cs_maillage_extrait_fac_nodal
  * Fonctions privées
  *============================================================================*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

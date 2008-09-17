@@ -85,11 +85,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -1117,6 +1113,4 @@ cs_gui_get_double_values(char    *const path,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

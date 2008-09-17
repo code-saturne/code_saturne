@@ -44,12 +44,9 @@
 
 #include "fvm_selector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /* API Fortran : a deplacer */
 
@@ -223,7 +220,6 @@ void CS_PROCF(csgcel, CSGCEL)
   BFT_FREE(cpyfstr);
 }
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

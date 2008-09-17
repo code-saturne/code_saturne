@@ -44,10 +44,9 @@
 #include "tremai.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Calcul du temps restant alloué au process
@@ -110,7 +109,6 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
 
 }
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
+END_C_DECLS

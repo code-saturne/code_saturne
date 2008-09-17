@@ -39,11 +39,9 @@
 #include "cs_base.h"
 #include "tcpumx.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Récuperation du temps cpu alloué au process
@@ -105,7 +103,6 @@ void CS_PROCF (tcpumx, TCPUMX) (double  *tps,
   }
 }
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
+END_C_DECLS

@@ -63,11 +63,9 @@
 
 #include "cs_tpar1d.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Structures locales
@@ -1094,7 +1092,6 @@ static void cs_loc_tpar1d_opnsuite
   nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
 }
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

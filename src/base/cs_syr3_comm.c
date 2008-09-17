@@ -73,11 +73,9 @@
 
 #include "cs_syr3_comm.h"
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
+BEGIN_C_DECLS
 
 /*============================================================================
  *  Structures locales
@@ -2170,7 +2168,6 @@ static void cs_loc_syr3_comm_echo_donnees
 
 }
 
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
