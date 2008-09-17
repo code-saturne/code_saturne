@@ -1,3 +1,8 @@
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Minor correction on the gettextize script (for old gettext tools).
+  modified script:
+    sbin/gettextize
+
 * 12/09/2008 - Yvan Fournier <yvan.fournier@edf.fr>
                Marc Sakiz <marc.sakiz@edf.fr>
   Documentation improvement and corrections.
