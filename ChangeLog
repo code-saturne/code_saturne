@@ -1,3 +1,8 @@
+* 12/09/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor correction on strings translation.
+  modified routine:
+    src/base/cs_multigrid.c
+
 * 12/09/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Correction on periodicity transfer from the preprocessor.
   modified routine:
