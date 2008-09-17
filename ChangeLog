@@ -1,4 +1,10 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Temporary fix to avoid building a void CTWR library.
+  modified scripts:
+    bin/Makefile
+    sbin/install
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Updating french dictionnary.
   modified file:
     po/fr.po

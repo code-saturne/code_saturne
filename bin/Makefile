@@ -583,13 +583,13 @@ privmodlink:
 	 librariesloc=""; \
 	 if   [ "$(MYOPT)" = "EF" ] ;\
 	 then \
-	   for lib in BASE CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}DBG" ;\
 	   done ;\
 	    librariesloc="$${librariesloc} $(LIBRARYEF)" ;\
 	 else \
-	   for lib in BASE CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}$(MYOPT)" ;\
 	   done ;\
