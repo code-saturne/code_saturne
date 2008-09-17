@@ -1,4 +1,16 @@
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
+  Remove all occurences of the CCRT machines "Tantale".
+  modified files:
+    TODO
+    bin/cs_profile
+    doc/USER/latex/saturne1.tex
+    extras/macros_old/README
+  removed file:
+    bin/macros_Linux_CCRT.mk
+  added file:
+    extras/macros_old/macros_Linux_CCRT.mk
+
+* 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Temporary fix to avoid building a void CTWR library.
   modified scripts:
     bin/Makefile

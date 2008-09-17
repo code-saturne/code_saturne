@@ -28,9 +28,7 @@
 # Architecture
   NOM_ARCH=`uname -s`
   if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ "`hostname | cut -c1-6`" = "tantal" ] ; then
-      NOM_ARCH=Linux_CCRT
-    elif [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
+    if [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
       NOM_ARCH=Linux_Ch
     elif [ -d /bgl/BlueLight/ppcfloor ] ; then
       NOM_ARCH=Blue_Gene_L
@@ -49,7 +47,7 @@
 
 # Code_Saturne version
 
-  if [ "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then
+  if [ "$NOM_ARCH" = "Linux_IA64" ] ; then
     CS_ROOT=/home/cont002/saturne
   elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then
     CS_ROOT=/gpfs2/home/saturne

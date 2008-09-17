@@ -668,7 +668,7 @@ of the launch script. This variable is set top a default value in the non-user
 section of the launch script, depending on the architecture:\\
 \texttt{RUN=\$HOME/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm} for stand-alone
 workstations or for the Chatou cluster\\
-\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm} for Tantale and
+\texttt{RUN=\$SCRATCHDIR/tmp\_Saturne/\$STUDY/\$CASE.mmddhhmm} for
 Platine at the CCRT\\
 where \texttt{\$STUDY} and \texttt{\$CASE} are the names of the study and the
 case. The usual suffix with the date and time is added so that successive
@@ -1150,7 +1150,7 @@ Below is a list of the different variables and parameters that might be modified
 for a calculation, in their order of apparition in the script:
 \begin{list}{$\bullet$}{}
 \item LSF headers: definition of the headers for an LSF batch system, as can be
-found on the machines of the CCRT (Tantale/Platine). The data expected are
+found on the machines of the CCRT (Platine). The data expected are
 the number of processors reserved (\texttt{\#BSUB -n}), the CPU time limit
 (\texttt{\#BSUB -W}), the name of the standard output file (\texttt{\#BSUB -o}),
 the name of the standard error file (\texttt{\#BSUB -e}) and the name of

@@ -35,8 +35,7 @@ SCRIPTS ET DOC
  - doc noyau gradients et limitation des gradients
  - doc noyau distance à la paroi + y+
 
-* Le "commente_exemple" de cree_sat est peut etre tres long,
-  notamment sur Tantale
+* Le "commente_exemple" de cree_sat peut etre tres long
 
 * Reorganiser la base des cas tests
 
