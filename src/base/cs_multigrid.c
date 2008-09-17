@@ -283,14 +283,14 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
     const char *ascent_smoother_name = cs_sles_type_name[this_info->type[1]];
 
     if (this_info->type[0] == this_info->type[1])
-      bft_printf(_("  Smoother: %s\n"), descent_smoother_name);
+      bft_printf(_("  Smoother: %s\n"), _(descent_smoother_name));
     else
       bft_printf(_("  Descent smoother:     %s\n"
                    "  Ascent smoother:      %s\n"),
-                 descent_smoother_name, ascent_smoother_name);
+                 _(descent_smoother_name), _(ascent_smoother_name));
 
     bft_printf(_("  Coarsest level solver:       %s\n"),
-               cs_sles_type_name[this_info->type[2]]);
+               _(cs_sles_type_name[this_info->type[2]]));
 
   }
 
