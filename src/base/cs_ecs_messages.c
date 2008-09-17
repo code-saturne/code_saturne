@@ -985,7 +985,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
 
     /* Only count 1 transformation direction when corresponding
        faces are on the same rank (in which case they appear
-       once per oposing direction transforms) */
+       once per opposing direction transforms) */
 
     for (i = 1; i < tr_index_size-1; i++) {
       if ((distant_rank != cs_glob_base_rang) || (i%2 == 1))
@@ -1099,31 +1099,80 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
 
   for (j = 0; j < n_interfaces; j++) {
 
+    fvm_lnum_t  tr_shift = 0;
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
     const int distant_rank = fvm_interface_rank(face_if);
     const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
     for (i = 1; i < tr_index_size - 1; i++) {
 
+      fvm_lnum_t n_elts = tr_index[i+1] - tr_index[i];
+
       if ((distant_rank != cs_glob_base_rang) || (i%2 == 1)) {
 
-        fvm_lnum_t k, l;
+        fvm_lnum_t k, l, send_shift, recv_shift;
 
         int perio_id = (i-1)/2;
         int perio_sgn = (i%2)*2 - 1; /* 1 for odd, -1 for even */
-        fvm_lnum_t tr_start_id = if_index[j] + (tr_index[i] - tr_index[1]);
-        fvm_lnum_t tr_end_id = if_index[j] + (tr_index[i+1] - tr_index[1]);
+        fvm_lnum_t n_dir_elts = tr_index[2*perio_id+2] - tr_index[2*perio_id+1];
+        fvm_lnum_t n_rev_elts = tr_index[2*perio_id+3] - tr_index[2*perio_id+2];
 
-        for (k = tr_start_id; k < tr_end_id; k++) {
+        send_shift = if_index[j] + tr_shift;
+        if (distant_rank != cs_glob_base_rang) {
+          if (perio_sgn > 0)
+            recv_shift = if_index[j] + n_rev_elts + tr_shift;
+          else
+            recv_shift = if_index[j] - n_dir_elts + tr_shift;
+        }
+        else /* if (i%2 == 1) */
+          recv_shift = send_shift;
+
+        for (k = 0; k < n_elts; k++) {
           l = mb->per_face_idx[perio_id] + per_face_count[perio_id];
-          mb->per_face_lst[l*2]     = send_num[k]*perio_sgn;
-          mb->per_face_lst[l*2 + 1] = recv_num[k];
+          mb->per_face_lst[l*2]     = send_num[send_shift + k]*perio_sgn;
+          mb->per_face_lst[l*2 + 1] = recv_num[recv_shift + k];
           mb->per_rank_lst[l] = distant_rank + 1;
           per_face_count[perio_id] += 1;
         }
       }
-    }
-  }
+
+      tr_shift += n_elts;
+
+    } /* End of loop on tr_index */
+
+  } /* End of loop on interfaces */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+ {
+   cs_int_t  perio_id;
+
+   bft_printf("\n  Dump periodic data received from preprocessor\n");
+
+   for (perio_id = 0; perio_id < n_init_perio; perio_id++) {
+
+     cs_int_t  start_id = mb->per_face_idx[perio_id];
+     cs_int_t  end_id = mb->per_face_idx[perio_id+1];
+     const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+
+     bft_printf("\n  Perio id: %4d - Number of elements: %7d "
+                "(start: %7d - end: %7d)\n",
+                perio_id, end_id-start_id, start_id, end_id);
+     bft_printf("   id    | 1st face | 2nd face | associated rank\n");
+
+     for (i = start_id; i < end_id; i++) {
+       if (cs_glob_base_nbr > 1)
+         bft_printf("%10d | %10d | %10d | %6d\n", i, mb->per_face_lst[2*i],
+                    mb->per_face_lst[2*i+1], mb->per_rank_lst[i]-1);
+       else
+         bft_printf("%10d | %10d | %10d | %6d\n",
+                    i, mb->per_face_lst[2*i], mb->per_face_lst[2*i+1], local_rank);
+     }
+     bft_printf_flush();
+
+   }
+
+ }
+#endif
 
   BFT_FREE(per_face_count);
   BFT_FREE(recv_num);
