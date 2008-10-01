@@ -971,14 +971,17 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
                      double          i_face_warping[],
                      double          b_face_warping[])
 {
+  fvm_lnum_t  parent_num_shift[2];
+
   int  n_parent_lists = 2;
-  fvm_lnum_t  parent_num_shift[2]  = {0, cs_glob_mesh->n_b_faces};
   fvm_nodal_t  *fvm_mesh = NULL;
   fvm_writer_t  *writer = NULL;
 
   const cs_int_t  writer_id = -1; /* default writer */
-
   const void  *var_ptr[2] = {NULL, NULL};
+
+  parent_num_shift[0] = 0;
+  parent_num_shift[1] = cs_glob_mesh->n_b_faces;
 
   if (cs_post_existe_writer(writer_id) == CS_FALSE)
     return;
