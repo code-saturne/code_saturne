@@ -1,3 +1,7 @@
+* 01/10/2008 - David Monfort <david.monfort@edf.fr>
+  Merging from the 1.3 branch (-r 701:704, missing argument
+  and C89 syntax)
+
 * 12/09/2008 - David Monfort <david.monfort@edf.fr>
   Remove all occurences of the CCRT machines "Tantale".
   modified files:
