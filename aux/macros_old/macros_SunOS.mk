@@ -29,76 +29,91 @@
 #
 #============================================================================
 #
-# Macros du Makefile Code_Saturne pour SunOS
-############################################
+# Macros for Makefile under Solaris
+###################################
 #
-# Macros pour BFT
-#----------------
-
-BFT_HOME       = /home/saturne/opt/bft-1.0.5/arch/SunOS
-BFT_INC        = -I$(BFT_HOME)/include
-BFT_LDFLAGS    = -L$(BFT_HOME)/lib -lbft
-
-# Macro pour FVM
+# Macros for BFT
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.9.0/arch/SunOS
+BFT_HOME        =/home/saturne/opt/bft-1.0.7/arch/SunOS
+
+BFT_INC         =-I$(BFT_HOME)/include
+BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
+
+# Macros for FVM
+#---------------
+
+FVM_HOME        =/home/saturne/opt/fvm-0.11.0/arch/SunOS
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
 
-# Macro pour MPI
+# Macros for MPI
 #---------------
 
-# Option MPI
-MPI             =0
+# MPI support
+MPI             =1
 MPE             =0
-MPE_COMM        =1
+MPE_COMM        =0
 
-MPI_INC         =
-MPI_LIB         =
+# For Open MPI on saturne
+MPI_HOME        =/home/saturne/opt/openmpi-1.2.7/arch/SunOS
+MPI_INC         =-I$(MPI_HOME)/include
+MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
-
-# Macro pour Sockets
+# Macros for Sockets
 #-------------------
 
-# Option Socket
-SOCKET          =0
+# Sockets support
+SOCKET          =1
 SOCKET_INC      =
 SOCKET_LIB      =
 
-# Macro pour XML
+# Macros for XML
 #---------------
 
 # Option XML
 XML             =1
 
-XML_HOME = /home/saturne/opt/libxml2-2.6.19
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/arch/SunOS/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macro pour BLAS
 #----------------
 
-# Option BLAS
+# BLAS support
 BLAS            =0
-BLAS_INC        =
-BLAS_CFLAGS     =
-BLAS_LDFLAGS    =
+BLAS_HOME       =/home/saturne/opt/atlas-3.8.2/arch/SunOS
+BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
 
-# Preprocesseur
-#--------------
+# Macros for gettext
+#-------------------
+
+# gettext support
+NLS				=0
+
+# Set CS_LANG to FR to have French translation
+CS_LANG         =FR
+
+
+# Preprocessor
+#-------------
 
 PREPROC         =
 PREPROCFLAGS    =
 
-# Compilateur C natif
-#--------------------
-# WorkShop Compilers 5.0 98/12/15 C 5.0
+
+# C compiler
+#-----------
 
 CCOMP                  = $(CC)
-CCOMPFLAGSDEF          = -Xa
+
+CCOMPFLAGSDEF          = -Xa # -Xc99 may be use on up-to-date compiler versions
+
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -xO2
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -xO3 -xinline=Orient3D_split
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -xO2
@@ -109,12 +124,14 @@ CCOMPFLAGSPROF         = -p
 CCOMPFLAGSVERS         = -V
 
 
-
-# Compilateur FORTRAN
-#--------------------
+# Fortran compiler
+#-----------------
+#  Profiling gprof : -pg -a
 
 FTNCOMP                = f77
+
 FTNCOMPFLAGSDEF        = 
+
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O2
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
@@ -131,56 +148,61 @@ FTNPREPROCOPT          =
 
 # Linker
 
-
 LDEDL           = f77
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O
-LDEDLFLAGSEF    = -g
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -G
 LDEDLFLAGSVERS  = -V
 LDEDLRPATH      = -R
 
 
-# Positionnement des variables pour le pre-processeur
-#----------------------------------------------------
+# Set preprocessor variables
+#---------------------------
 #
-# _POSIX_SOURCE          : utilisation des fonctions standard POSIX
+# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
+# Libraries to link against
+#--------------------------
 
-# Librairies a "linker"
-#----------------------
-
-# Librairies de base toujours prises en compte
+# Base libraries (always used)
 
 LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lmalloc 
 
-# Librairies en mode sans option
+# Libraries in production mode
 
 LIBOPT   =
 
-# Librairies en mode optimisation reduite
+# Libraries in reduced optimization mode
 
 LIBLO    =
 
-# Librairies en mode DEBUG
+# Libraries in DEBUG mode
 
 LIBDBG   =
 
-# Librairie en mode ElectricFence (malloc debugger)
+# Library in ElectricFence (malloc debugger) mode
 
 LIBEF    =-lefence
 
-# Liste eventuelle des fichiers a compiler avec des options particulieres
-#------------------------------------------------------------------------
+# Optional lists of files to compile with specific options
+#---------------------------------------------------------
 
-# Sous la forme :
+# In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
 #                fic_3.F
-#  Pour le fichier c, il s'agit de permettre l'inline (non ansi)
+#
+# 70% cpu promav gradrc gradco prodsc
+# 10% cpu jacobi prcpol bilsc2 ;
+#    option O3 recommended for these subroutines
+#    for others, we prefer O2, less risky, but slightly slower
+#
+# The file lists below correspond to different optimization levels
+#
 
-LISTE_OPT_PART1 = cs_lagrang.c cs_matrix.c cs_sles.c cs_blas.c cs_benchmark.c
-LISTE_OPT_PART2 =
-LISTE_OPT_PART3 =
+LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
+LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
+LISTE_OPT_PART3 = gradmc.F
+

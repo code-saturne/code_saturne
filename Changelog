@@ -1,3 +1,9 @@
+* 01/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updating the old macros_SunOS.mk for external use.
+  modified scripts:
+    aux/macros_SunOS.mk
+    README
+
 * 22/08/2008 - David Monfort <david.monfort@edf.fr>
   Update some missing strings translation.
   modified i18n files:
