@@ -1,4 +1,9 @@
 * 01/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of missing argument.
+  modified routine:
+    src/fuel/futsvc.F
+
+* 01/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Updating the old macros_SunOS.mk for external use.
   modified scripts:
     aux/macros_SunOS.mk
