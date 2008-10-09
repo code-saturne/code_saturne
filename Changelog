@@ -1,3 +1,8 @@
+* 10/10/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Minor correction with no impact on the calculation.
+  modified routine:
+    src/lagr/lagopt.F
+
 * 01/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor modification to comply with strict C89 syntax.
   modified routine:
