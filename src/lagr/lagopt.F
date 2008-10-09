@@ -1294,7 +1294,7 @@ C
         JRDCK = IRF   + 1
         JRD0P = JRDCK + 1
         JRR0P = JRD0P + 1
-        IRF   = JRD0P
+        IRF   = JRR0P
       ENDIF
 C
       IF (IRF.GT.NVEP) THEN
