@@ -1,3 +1,10 @@
+* 24/10/2008 - David Monfort <david.monfort@edf.fr>
+  Upgrade SYRTHES to 3.4.2 version (syr_cs 2.1.0).
+  Restarting from SYRTHES 3.3 is not possible due to
+  incompatible format.
+  modified script:
+    bin/cs_profile
+
 * 10/10/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Minor correction with no impact on the calculation.
   modified routine:
