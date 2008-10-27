@@ -156,16 +156,12 @@ link: privtitre privconfig privcompil privlink privfin
 link_shared: privtitre privconfig
 	@if   [ ${BUILD_SO} -ne 1 ] ;\
 	 then echo ;\
-	      echo "$(SO)CONFIGURATION ERROR$(NO)" ;\
-	      echo ;\
 	      echo "$(BO)macros are not configured for shared library$(NO)" ;\
 	      echo ;\
-	      tput init ;\
-	      exit 1 ;\
-	 fi ;
-	@make privcompil
-	@make privlink LINKTARGETTYPE="SO"
-	@make privfin
+	 else make privcompil ;\
+	      make privlink LINKTARGETTYPE="SO" ;\
+	      make privfin ;\
+	 fi
 
 
 compversion: privtitre privcompil privlink privfin
@@ -269,7 +265,6 @@ privcompil:
 			     then fichloc=`basename $${fich}` ;\
 			          if [ ! -h "$${fichloc}" ] ;\
 			          then ln -s $${fich} . ;\
-			               touch -r $${fich} $${fichloc} ;\
 			          fi ;\
 			     fi ;\
 		        done ;\
@@ -598,7 +593,8 @@ privmodlink:
 	 then librariesloc="" ;\
 	 fi ;\
 	 fvm_config="$(FVM_HOME)/bin/fvm-config" ;\
-	 librariessup="$(FVM_LDFLAGS) $(BFT_LDFLAGS)" ;\
+	 librariessup="$(FVM_LDFLAGS)" ;\
+	 librariessup="$${librariessup} $(BFT_LDFLAGS)" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags med`" ;\
