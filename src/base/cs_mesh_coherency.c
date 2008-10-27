@@ -286,7 +286,7 @@ cs_mesh_coherency_check(void)
     else {
 
       for (coord_id = 0; coord_id < 3; coord_id++) {
-        for (cell_id = 0; cell_id < n_cells; cell_id++)
+        for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
           delta_buffer[coord_id*n_cells_with_ghosts + cell_id]
             = delta[3*cell_id + coord_id];
       }

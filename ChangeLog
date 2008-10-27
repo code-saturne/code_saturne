@@ -1,4 +1,9 @@
 * 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+  Fix a bug in the mesh coherency check in case of translation.
+  modified routine:
+    src/base/cs_mesh_coherency.c
+
+* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
   Remove inconsistent comments.
   modified routine:
     src/base/initi1.F
