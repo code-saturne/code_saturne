@@ -82,7 +82,7 @@ typedef struct _cs_io_t cs_io_t;
 typedef struct {
 
   const char     *sec_name;           /* Pointer to section name */
-  fvm_gnum_t      n_vals;             /* Number of associated values */
+  fvm_file_off_t  n_vals;             /* Number of associated values */
   size_t          location_id;        /* Id of associated location, or 0 */
   size_t          index_id;           /* Id of associated index, or 0 */
   size_t          n_location_vals;    /* Number of values per location */
