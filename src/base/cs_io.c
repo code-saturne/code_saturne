@@ -106,7 +106,7 @@ typedef struct {
    *   7: associated file id (in case of multiple files)
    */
 
-  size_t         *h_vals;            /* Base values associated
+  fvm_file_off_t *h_vals;            /* Base values associated
                                         with each header */
 
   fvm_file_off_t *offset;            /* Position of associated data
@@ -152,7 +152,7 @@ struct _cs_io_t {
   size_t              buffer_size;    /* Current size of header buffer */
   unsigned char      *buffer;         /* Header buffer */
 
-  size_t              n_vals;         /* Number of values in section header */
+  fvm_file_off_t      n_vals;         /* Number of values in section header */
   size_t              location_id;    /* Id of location, or 0 */
   size_t              index_id;       /* Id of index, or 0 */
   size_t              n_loc_vals;     /* Number of values per location */
@@ -237,7 +237,7 @@ _type_read_to_elt_type(fvm_datatype_t type_read)
 }
 
 /*----------------------------------------------------------------------------
- * Convert a buffer of type uint64_t to size_t
+ * Convert a buffer of type uint64_t to fvm_file_off_t
  *
  * parameters:
  *   buf <-- buffer
@@ -246,9 +246,9 @@ _type_read_to_elt_type(fvm_datatype_t type_read)
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_to_size(const unsigned char  buf[],
-                 size_t               val[],
-                 size_t               n)
+_convert_to_offset(const unsigned char  buf[],
+                   fvm_file_off_t       val[],
+                   size_t               n)
 {
   size_t i;
 
@@ -278,7 +278,7 @@ _convert_to_size(const unsigned char  buf[],
 }
 
 /*----------------------------------------------------------------------------
- * Convert a buffer of type size_t to uint64_t
+ * Convert a buffer of type fvm_file_off_t to uint64_t
  *
  * parameters:
  *   buf --> buffer
@@ -287,9 +287,9 @@ _convert_to_size(const unsigned char  buf[],
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_from_size(unsigned char  buf[],
-                   const size_t   val[],
-                   size_t         n)
+_convert_from_offset(unsigned char         buf[],
+                     const fvm_file_off_t  val[],
+                     size_t                n)
 {
   size_t i;
 
@@ -389,7 +389,7 @@ _create_index(cs_io_t *inp)
   idx->size = 0;
   idx->max_size = 32;
 
-  BFT_MALLOC(idx->h_vals, idx->max_size*8, size_t);
+  BFT_MALLOC(idx->h_vals, idx->max_size*8, fvm_file_off_t);
   BFT_MALLOC(idx->offset, idx->max_size, fvm_file_off_t);
 
   idx->max_names_size = 256;
@@ -472,7 +472,7 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_size = 32;
     else
       idx->max_size *= 2;
-    BFT_REALLOC(idx->h_vals, idx->max_size*8, size_t);
+    BFT_REALLOC(idx->h_vals, idx->max_size*8, fvm_file_off_t);
     BFT_REALLOC(idx->offset, idx->max_size, fvm_file_off_t);
   };
 
@@ -568,7 +568,7 @@ _file_open(cs_io_t     *cs_io,
 {
   fvm_file_mode_t cs_io_mode;
   char header_data[128 + 24];
-  size_t header_vals[3];
+  fvm_file_off_t header_vals[3];
 
   char  base_header[] = "Code_Saturne I/O, BE, R0";
 
@@ -647,7 +647,7 @@ _file_open(cs_io_t     *cs_io,
     if (fvm_file_get_swap_endian(cs_io->f) == 1)
       bft_file_swap_endian(header_data + 128, header_data + 128, 8, 3);
 
-    _convert_to_size((unsigned char *)(header_data + 128), header_vals, 3);
+    _convert_to_offset((unsigned char *)(header_data + 128), header_vals, 3);
 
     cs_io->header_size = header_vals[0];
     cs_io->header_align = header_vals[1];
@@ -673,7 +673,7 @@ _file_open(cs_io_t     *cs_io,
     header_vals[1] = cs_io->header_align;
     header_vals[2] = cs_io->body_align;
 
-    _convert_from_size((unsigned char *)(header_data + 128), header_vals, 3);
+    _convert_from_offset((unsigned char *)(header_data + 128), header_vals, 3);
 
     if (fvm_file_get_swap_endian(cs_io->f) == 1)
       bft_file_swap_endian(header_data + 128, header_data + 128, 8, 3);
@@ -1209,7 +1209,7 @@ _echo_header(const char      *sec_name,
 
 static void
 _echo_data(size_t           echo,
-           size_t           n_elts,
+           fvm_file_off_t   n_elts,
            fvm_gnum_t       global_num_start,
            fvm_gnum_t       global_num_end,
            fvm_datatype_t   elt_type,
@@ -1218,8 +1218,8 @@ _echo_data(size_t           echo,
   fvm_gnum_t  i;
   fvm_gnum_t  num_shift = 1;
   size_t  _n_elts = n_elts;
-  size_t  echo_start = 0;
-  size_t  echo_end = 0;
+  fvm_file_off_t  echo_start = 0;
+  fvm_file_off_t  echo_end = 0;
   const char *_loc_glob[] = {N_(" (local)"), ""};
   const char *loc_glob = _loc_glob[1];
 
@@ -1348,11 +1348,11 @@ _echo_data(size_t           echo,
 static void
 _cs_io_convert_read(void            *buffer,
                     void            *dest,
-                    size_t           n_elts,
+                    fvm_file_off_t   n_elts,
                     fvm_datatype_t   buffer_type,
                     fvm_datatype_t   dest_type)
 {
-  size_t ii;
+  fvm_file_off_t ii;
   size_t buffer_type_size = fvm_datatype_size[buffer_type];
 
   assert(dest_type != buffer_type);
@@ -1557,12 +1557,12 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
                  void                      *elts,
                  cs_io_t                   *inp)
 {
-  size_t      type_size = 0;
-  fvm_gnum_t  n_vals = inp->n_vals;
-  cs_bool_t   convert_type = false;
-  void       *_elts = NULL;
-  void       *_buf = NULL;
-  size_t      stride = 1;
+  size_t  type_size = 0;
+  fvm_file_off_t  n_vals = inp->n_vals;
+  cs_bool_t  convert_type = false;
+  void  *_elts = NULL;
+  void  *_buf = NULL;
+  size_t  stride = 1;
 
   assert(inp  != NULL);
 
@@ -1831,10 +1831,10 @@ _write_header(const char      *sec_name,
               const void      *elts,
               cs_io_t         *outp)
 {
-  size_t data_size = n_vals * fvm_datatype_size[elt_type];
   size_t name_size = 0, name_pad_size = 0;
-  size_t write_size = 0;
-  size_t header_vals[6];
+  fvm_file_off_t write_size = 0;
+  fvm_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
+  fvm_file_off_t header_vals[6];
   size_t n_written = 0;
 
   cs_bool_t embed = false;
@@ -1870,15 +1870,15 @@ _write_header(const char      *sec_name,
 
   if (   n_vals > 0
       && elts != NULL
-      && (header_vals[0] + data_size <= outp->header_size)) {
+      && (header_vals[0] + data_size <= (fvm_file_off_t)(outp->header_size))) {
     header_vals[0] += data_size;
     embed = true;
   }
 
   /* Ensure buffer is big enough for data */
 
-  if (header_vals[0] > outp->buffer_size) {
-    while (header_vals[0] > outp->buffer_size)
+  if (header_vals[0] > (fvm_file_off_t)(outp->buffer_size)) {
+    while (header_vals[0] > (fvm_file_off_t)(outp->buffer_size))
       outp->buffer_size *=2;
     BFT_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
   }
@@ -1887,7 +1887,7 @@ _write_header(const char      *sec_name,
 
   /* Now build buffer */
 
-  _convert_from_size(outp->buffer, header_vals, 6);
+  _convert_from_offset(outp->buffer, header_vals, 6);
 
   if (fvm_file_get_swap_endian(outp->f) == 1)
     bft_file_swap_endian(outp->buffer, outp->buffer, 8, 6);
@@ -1962,14 +1962,14 @@ _write_header(const char      *sec_name,
 
   /* Now write header data */
 
-  write_size = CS_MAX(outp->header_size, header_vals[0]);
+  write_size = CS_MAX((fvm_file_off_t)(outp->header_size), header_vals[0]);
 
   n_written = fvm_file_write_global(outp->f,
                                     outp->buffer,
                                     1,
                                     write_size);
 
-  if (write_size != n_written)
+  if (write_size != (fvm_file_off_t)n_written)
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %lu bytes to file \"%s\"."),
               (unsigned long)write_size, fvm_file_get_name(outp->f));
@@ -2001,7 +2001,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
   for (ii = 0; ii < idx->size; ii++) {
 
     char embed = 'n';
-    size_t *h_vals = idx->h_vals + ii*8;
+    fvm_file_off_t *h_vals = idx->h_vals + ii*8;
     const char *name = idx->names + h_vals[4];
 
     if (h_vals[5] > 0)
@@ -2345,8 +2345,8 @@ cs_io_read_header(cs_io_t             *inp,
                   cs_io_sec_header_t  *header)
 {
   int type_name_error = 0;
-  size_t body_size = 0;
-  size_t header_vals[6];
+  fvm_file_off_t body_size = 0;
+  fvm_file_off_t header_vals[6];
   size_t n_read = 0;
 
   assert(inp != NULL);
@@ -2382,14 +2382,14 @@ cs_io_read_header(cs_io_t             *inp,
   if (fvm_file_get_swap_endian(inp->f) == 1)
     bft_file_swap_endian(inp->buffer, inp->buffer, 8, 6);
 
-  _convert_to_size(inp->buffer, header_vals, 6);
+  _convert_to_offset(inp->buffer, header_vals, 6);
 
-  if (header_vals[0] > inp->header_size) {
+  if (header_vals[0] > (fvm_file_off_t)(inp->header_size)) {
 
     size_t n_add = header_vals[0] - inp->header_size;
 
-    if (header_vals[0] > inp->buffer_size) {
-      while (header_vals[0] > inp->buffer_size)
+    if (header_vals[0] > (fvm_file_off_t)(inp->buffer_size)) {
+      while (header_vals[0] > (fvm_file_off_t)(inp->buffer_size))
         inp->buffer_size *=2;
       BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
     }

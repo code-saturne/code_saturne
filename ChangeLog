@@ -1,4 +1,10 @@
 * 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+  Change size_t variables to fvm_file_offt in order
+  to bypass some possible limitations on BlueGene systems.
+  modified routine:
+    src/base/cs_io.c
+
+* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
   Fixing a bug when re-opening a file.
   modified routine:
     src/base/cs_io.c
