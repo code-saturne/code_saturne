@@ -38,7 +38,6 @@
 #include <bft_sys_info.h>
 #include <bft_timer.h>
 
-/* pour les API Fortran : a deplacer */
 #include "cs_mesh.h"
 #include "cs_selector.h"
 
@@ -48,163 +47,262 @@
 
 BEGIN_C_DECLS
 
-/* API Fortran : a deplacer */
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+#define CS_SELECTOR_STR_LEN 127
+
+/*=============================================================================
+ * Local Type Definitions
+ *============================================================================*/
+
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*============================================================================
+ *  Public function definitions for Fortran API
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Give the list of the faces checking the constraint defined by
- * the Fortran string "fstr"
+ * Build a list of boundary faces verifying a given selection criteria.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(csgfbr, CSGFBR)
 (
- const char          *const fstr,     /* <-- Fortran string */
- int                 *const len,      /* <-- String Length  */
- int                 *const n_faces,  /* --> number of faces */
- int                 *const faces     /* --> faces */
+ const char   *const fstr,      /* <-- Fortran string */
+ cs_int_t     *const len,       /* <-- String Length  */
+ cs_int_t     *const n_faces,   /* --> number of faces */
+ cs_int_t     *const face_list  /* --> face list  */
  CS_ARGF_SUPP_CHAINE
 )
 {
-  char * cpyfstr;
-  int i, c_id;
-  int lenwithoutblank;
+  char _c_string[CS_SELECTOR_STR_LEN + 1];
+  char *c_string = _c_string;
+  int i;
+  int c_len = *len -1;
 
   /* Initialization */
+
   *n_faces = 0;
 
   /* Copy fstr without last blanks  */
-  lenwithoutblank = *len - 1;
-  while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
+  while(fstr[c_len--] == ' ' &&  c_len >= 0);
 
-  if (lenwithoutblank < -1)
+  if (c_len < -1)
     return;
 
-  lenwithoutblank += 2;
+  c_len += 2;
 
-  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
+  if (c_len > CS_SELECTOR_STR_LEN)
+    BFT_MALLOC(c_string, c_len + 1, char);
 
-  for(i = 0 ; i < lenwithoutblank; i++)
-    cpyfstr[i] = fstr[i];
-  cpyfstr[lenwithoutblank] = '\0';
+  for(i = 0; i < c_len; i++)
+    c_string[i] = fstr[i];
+  c_string[c_len] = '\0';
 
   /* Get faces with C string */
 
+  cs_selector_get_b_face_list(c_string, n_faces, face_list);
+
+  if (c_string != _c_string)
+    BFT_FREE(c_string);
+}
+
+/*----------------------------------------------------------------------------
+ * Build a list of interior faces verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgfac, CSGFAC)
+(
+ const char   *const fstr,      /* <-- Fortran string */
+ cs_int_t     *const len,       /* <-- String Length  */
+ cs_int_t     *const n_faces,   /* --> number of faces */
+ cs_int_t     *const face_list  /* --> face list  */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  char _c_string[CS_SELECTOR_STR_LEN + 1];
+  char *c_string = _c_string;
+  int i;
+  int c_len = *len -1;
+
+  /* Initialization */
+
+  *n_faces = 0;
+
+  /* Copy fstr without last blanks  */
+  while(fstr[c_len--] == ' ' &&  c_len >= 0);
+
+  if (c_len < -1)
+    return;
+
+  c_len += 2;
+
+  if (c_len > CS_SELECTOR_STR_LEN)
+    BFT_MALLOC(c_string, c_len + 1, char);
+
+  for(i = 0; i < c_len; i++)
+    c_string[i] = fstr[i];
+  c_string[c_len] = '\0';
+
+  /* Get faces with C string */
+
+  cs_selector_get_i_face_list(c_string, n_faces, face_list);
+
+  if (c_string != _c_string)
+    BFT_FREE(c_string);
+}
+
+/*----------------------------------------------------------------------------
+ * Build a list of cells verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgcel, CSGCEL)
+(
+ const char   *const fstr,      /* <-- Fortran string */
+ cs_int_t     *const len,       /* <-- String Length  */
+ cs_int_t     *const n_cells,   /* --> number of cells */
+ cs_int_t     *const cell_list  /* --> cell list  */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  char _c_string[CS_SELECTOR_STR_LEN + 1];
+  char *c_string = _c_string;
+  int i;
+  int c_len = *len -1;
+
+  /* Initialization */
+
+  *n_cells = 0;
+
+  /* Copy fstr without last blanks  */
+  while(fstr[c_len--] == ' ' &&  c_len >= 0);
+
+  if (c_len < -1)
+    return;
+
+  c_len += 2;
+
+  if (c_len > CS_SELECTOR_STR_LEN)
+    BFT_MALLOC(c_string, c_len + 1, char);
+
+  for(i = 0; i < c_len; i++)
+    c_string[i] = fstr[i];
+  c_string[c_len] = '\0';
+
+  /* Get cells with C string */
+
+  cs_selector_get_cell_list(c_string, n_cells, cell_list);
+
+  if (c_string != _c_string)
+    BFT_FREE(c_string);
+}
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Fill a list of boundary faces verifying a given selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_b_faces   --> number of selected interior faces
+ *   b_face_list --> list of selected boundary faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_b_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_list(const char  *criteria,
+                            fvm_lnum_t  *n_b_faces,
+                            fvm_lnum_t   b_face_list[])
+{
+  int c_id;
+
+  *n_b_faces = 0;
+
   c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                               cpyfstr,
-                               n_faces,
-                               faces);
+                               criteria,
+                               n_b_faces,
+                               b_face_list);
 
   if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                   "criteria:\n"
-                   "\"%s\"\n"
-                   " does not correspond to any boundary face.\n"),
-               missing, cpyfstr);
+                 "criteria:\n"
+                 "\"%s\"\n"
+                 " does not correspond to any boundary face.\n"),
+               missing, criteria);
   }
-
-  BFT_FREE(cpyfstr);
 }
 
 /*----------------------------------------------------------------------------
- * Give the list of the faces checking the constraint defined by
- * the Fortran string "fstr"
+ * Fill a list of interior faces verifying a given selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_i_faces   --> number of selected interior faces
+ *   i_face_list --> list of selected interior faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_i_faces)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(csgfac, CSGFAC)
-(
- const char          *const fstr,      /* <-- Fortran string */
- int                 *const len,       /* <-- String Length  */
- int                 *const n_faces,   /* --> number of faces */
- int                 *const faces      /* --> faces  */
- CS_ARGF_SUPP_CHAINE
-)
+void
+cs_selector_get_i_face_list(const char  *criteria,
+                            fvm_lnum_t  *n_i_faces,
+                            fvm_lnum_t   i_face_list[])
 {
-  char * cpyfstr;
-  int i, c_id;
-  int lenwithoutblank;
+  int c_id;
 
-  /* Initialization */
-  *n_faces = 0;
-
-  /* Copy fstr without last blanks  */
-  lenwithoutblank = *len - 1;
-  while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
-
-  if (lenwithoutblank < -1)
-    return;
-
-  lenwithoutblank += 2;
-
-  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
-
-  for(i = 0 ; i < lenwithoutblank; i++)
-    cpyfstr[i] = fstr[i];
-  cpyfstr[lenwithoutblank] = '\0';
-
-  /* Get faces with C string */
+  *n_i_faces = 0;
 
   c_id = fvm_selector_get_list(cs_glob_mesh->select_i_faces,
-                               cpyfstr,
-                               n_faces,
-                               faces);
+                               criteria,
+                               n_i_faces,
+                               i_face_list);
 
   if (fvm_selector_n_missing(cs_glob_mesh->select_i_faces, c_id) > 0) {
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_i_faces, c_id, 0);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the\n"
-                 "selection criterion:\n"
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"
                  "\"%s\"\n"
                  " does not correspond to any interior face.\n"),
-               missing, cpyfstr);
+               missing, criteria);
   }
-
-  BFT_FREE(cpyfstr);
 }
 
 /*----------------------------------------------------------------------------
- * Give the list of the faces checking the constraint defined by
- * the Fortran string "fstr"
+ * Fill a list of cells verifying a given selection criteria.
+ *
+ * parameters:
+ *   criteria  <-- selection criteria string
+ *   n_cells   --> number of selected cells
+ *   cell_list --> list of selected cells
+ *                 (1 to n, preallocated to cs_glob_mesh->n_cells)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(csgcel, CSGCEL)
-(
- const char          *const fstr,     /* <-- Fortran string */
- int                 *const len,      /* <-- String Length  */
- int                 *const n_cells,  /* --> number of cells */
- int                 *const cells     /* --> cells  */
- CS_ARGF_SUPP_CHAINE
-)
+void
+cs_selector_get_cell_list(const char  *criteria,
+                          fvm_lnum_t  *n_cells,
+                          fvm_lnum_t   cell_list[])
 {
-  char * cpyfstr;
-  int i, c_id;
-  int lenwithoutblank;
+  int c_id;
 
-  /* Initialization */
   *n_cells = 0;
 
-  /* Copy fstr without last blanks  */
-  lenwithoutblank = *len - 1;
-  while(fstr[lenwithoutblank--] == ' ' &&  lenwithoutblank >= 0);
-
-  if (lenwithoutblank < -1)
-    return;
-
-  lenwithoutblank += 2;
-
-  BFT_MALLOC(cpyfstr, lenwithoutblank + 1, char);
-
-  for(i = 0 ; i < lenwithoutblank; i++)
-    cpyfstr[i] = fstr[i];
-  cpyfstr[lenwithoutblank] = '\0';
-
-  /* Get cells with C string */
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               cpyfstr,
+                               criteria,
                                n_cells,
-                               cells);
+                               cell_list);
 
   if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
     const char *missing
@@ -214,10 +312,8 @@ void CS_PROCF(csgcel, CSGCEL)
                  "criteria:\n"
                  "\"%s\"\n"
                  " does not correspond to any cell.\n"),
-               missing, cpyfstr);
+               missing, criteria);
   }
-
-  BFT_FREE(cpyfstr);
 }
 
 /*----------------------------------------------------------------------------*/
