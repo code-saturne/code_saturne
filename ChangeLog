@@ -1,4 +1,9 @@
 * 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+  Adding some Fortran prototypes for C callers.
+  modified routine:
+    include/base/cs_prototypes.h
+
+* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
   Several Makefile corrections and improvements.
   modified script:
     bin/Makefile
