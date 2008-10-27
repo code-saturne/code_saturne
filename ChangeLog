@@ -1,3 +1,9 @@
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
+  English translation of part of the autovalidation scripts.
+  modified scripts:
+    bin/Autovalidation/Case.py
+    bin/Autovalidation/Study.py
+
 * 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixing a bug in cs_ecs_messages.c where all periodicities
   were added as a rotation.

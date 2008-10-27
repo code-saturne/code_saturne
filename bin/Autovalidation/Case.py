@@ -62,7 +62,7 @@ class Case :
         #
         if not os.path.isdir(self.studyPath+"/"+caseLabel.upper()):
             os.chdir(self.studyPath)
-            proc = os.popen("cree_sat -noihm -cas "+caseLabel)
+            proc = os.popen("cs_create -nogui -case "+caseLabel)
             proc.close()
             os.chdir(Common.localDirectory)
             #
@@ -73,12 +73,12 @@ class Case :
             # ln or cp :
             #    - users
             #    - data.xml
-            refFortPath = Common.referencePath+"/"+studyLabel.upper()+"/"+caseLabel.upper()+"/FORT"
+            refSrcPath = Common.referencePath+"/"+studyLabel.upper()+"/"+caseLabel.upper()+"/SRC"
             try:
-                fortransList = os.listdir(refFortPath)
-                for fortran in fortransList :
-                    if fortran != "USERS" :
-                        shutil.copyfile(refFortPath+"/"+fortran,self.studyPath+"/"+caseLabel.upper()+"/FORT/"+fortran)
+                sourcesList = os.listdir(refSrcPath)
+                for source in sourcesList :
+                    if source != "REFERENCE" :
+                        shutil.copyfile(refSrcPath+"/"+source,self.studyPath+"/"+caseLabel.upper()+"/SRC/"+source)
             except:
                 pass
 
@@ -91,23 +91,23 @@ class Case :
             except:
                 pass
             #
-            # mise a jour du lance
+            # mise a jour du runcase
             refScriptsPath = Common.referencePath+"/"+studyLabel.upper()+"/"+caseLabel.upper()+"/SCRIPTS"
             try:
-                lanceFile = file(refScriptsPath+'/lance', mode='r')
+                runcaseFile = file(refScriptsPath+'/runcase', mode='r')
             except IOError:
-                print "Error : opening "+refScriptsPath+'/lance'
+                print "Error : opening "+refScriptsPath+'/runcase'
                 print sys.exit(1)           
             
-            keywordsLance = ["SOLCOM","LONGIA","LONGRA","PARAM","MAILLAGE",
-                             "COMMANDE_RC","COMMANDE_DF","COMMANDE_PERIO",
-                             "COMMANDE_SYRTHES","DONNEES_THERMOCHIMIE",
-                             "NOMBRE_DE_PROCESSEURS","LISTE_PROCESSEURS",
-                             "FICHIERS_DONNEES_UTILISATEURS",
-                             "FICHIERS_RESULTATS_UTILISATEUR",
-                             "OPTIMISATION","LISTE_LIB_SAT","OPTION_LIB_EXT",
-                             "VALGRIND","ARG_ECS_VERIF","ARG_CS_VERIF","ECHOCOMM",
-                             "PILOTAGE_ADAPTATION"]
+            keywordsRuncase = ["SOLCOM","PARAM","MESH",
+                               "COMMAND_JOIN","COMMAND_CWF","COMMAND_PERIO",
+                               "COMMAND_SYRTHES","THERMOCHEMISTRY_DATA",
+                               "NUMBER_OF_PROCESSORS","PROCESSOR_LIST",
+                               "USER_INPUT_FILES",
+                               "USER_OUTPUT_FILES",
+                               "OPTIMIZATION","CS_LIB_ADD","VALGRIND",
+                               "ARG_CS_VERIF","ARG_CS_OUTPUT","ECHOCOMM",
+                               "ADAPTATION"]
             
             keywordsBsub = ["#BSUB -n","#BSUB -c"]
             
@@ -116,21 +116,21 @@ class Case :
             keywordsValBsub = {}
             
             while 1:
-                line = lanceFile.readline()
+                line = runcaseFile.readline()
                 if (line == ""):
                     break
             
-                for keywordLance in keywordsLance :
-                    kw = re.compile("^"+keywordLance+"=")
+                for keywordRuncase in keywordsRuncase :
+                    kw = re.compile("^"+keywordRuncase+"=")
 
                     lineVar = kw.match(line)
                     if lineVar :
                         tmp = line.split("=")
 
                         try:
-                            keywordsValues[keywordLance] = str(tmp[1])
+                            keywordsValues[keywordRuncase] = str(tmp[1])
                         except:
-                            keywordsValues[keywordLance] = None
+                            keywordsValues[keywordRuncase] = None
 
                 for keywordBsub in keywordsBsub :
                     kw = re.compile("^"+keywordBsub+" ")
@@ -144,29 +144,29 @@ class Case :
                         except:
                             keywordsValBsub[keywordBsub] = None
         
-            lanceFile.close()
+            runcaseFile.close()
 
             testScriptsPath = self.studyPath+"/"+caseLabel.upper()+"/SCRIPTS"
             try:
-                lanceTestFile = file(testScriptsPath+'/lance', mode='r')
+                runcaseTestFile = file(testScriptsPath+'/runcase', mode='r')
             except IOError:
-                print "Error : opening "+testScriptsPath+'/lance'
+                print "Error : opening "+testScriptsPath+'/runcase'
                 print sys.exit(1)
 
-            lanceTmpFile = file(testScriptsPath+'/lance.tmp', mode='w')
+            runcaseTmpFile = file(testScriptsPath+'/runcase.tmp', mode='w')
 
             while 1:
-                line = lanceTestFile.readline()
+                line = runcaseTestFile.readline()
                 if (line == ""):
                     break
 
                 indic = False
-                for keywordLance in keywordsLance :
-                    kw = re.compile("^"+keywordLance+"=")
+                for keywordRuncase in keywordsRuncase :
+                    kw = re.compile("^"+keywordRuncase+"=")
 
                     lineVar = kw.match(line)
                     if lineVar :
-                        lanceTmpFile.write(keywordLance+"="+keywordsValues[keywordLance]+'\n')
+                        runcaseTmpFile.write(keywordRuncase+"="+keywordsValues[keywordRuncase]+'\n')
                         indic = True
 
                 for keywordBsub in keywordsBsub :
@@ -174,7 +174,7 @@ class Case :
 
                     lineVar = kw.match(line)
                     if lineVar :
-                        lanceTmpFile.write(keywordBsub+" "+keywordsValBsub[keywordBsub]+'\n')
+                        runcaseTmpFile.write(keywordBsub+" "+keywordsValBsub[keywordBsub]+'\n')
                         indic = True
 
                 if Common.tmpDirectory != 'Default directory' :
@@ -182,14 +182,14 @@ class Case :
 
                     lineVar = kw.match(line)
                     if lineVar :
-                        lanceTmpFile.write("CS_TMP_PREFIX="+Common.tmpDirectory+'\n')
+                        runcaseTmpFile.write("CS_TMP_PREFIX="+Common.tmpDirectory+'\n')
                         indic = True
 
                 if not indic:
-                    lanceTmpFile.write(line)
+                    runcaseTmpFile.write(line)
 
-            lanceTmpFile.close()
-            os.rename(testScriptsPath+'/lance.tmp',testScriptsPath+'/lance')
+            runcaseTmpFile.close()
+            os.rename(testScriptsPath+'/runcase.tmp',testScriptsPath+'/runcase')
             
 
     def run(self):
@@ -222,16 +222,16 @@ class Case :
             # Ajouter la commande de lancement avec os.system
             testRunPath = self.studyPath+"/"+self.caseLabel.upper()+"/SCRIPTS"
             os.chdir(testRunPath)
-            os.chmod(testRunPath+"/lance",0777)
+            os.chmod(testRunPath+"/runcase",0777)
             arch = os.uname()
             if (arch[0]=='OSF1' or (arch[1].find("tantal") >=0)):
-                proc = os.popen("bsub < lance")
+                proc = os.popen("bsub < runcase")
                 proc.close()
             elif (arch[0]=='Linux_Ch'):
-                proc = os.popen("qsub < lance")
+                proc = os.popen("qsub < runcase")
                 proc.close()
             else:
-                proc = os.popen("nohup ./lance > list&")
+                proc = os.popen("nohup ./runcase > list&")
                 proc.close()
             end = False
             while 1:

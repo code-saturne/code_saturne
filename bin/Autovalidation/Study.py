@@ -64,17 +64,17 @@ class Study:
         fa.close()
 
         if not os.path.isdir(studyLabel.upper()) :
-            proc = os.popen("cree_sat -noihm -etude "+studyLabel)
+            proc = os.popen("cs_create -nogui -study "+studyLabel)
             proc.close()
-            shutil.rmtree(studyPath+"/CAS1")           
+            shutil.rmtree(studyPath+"/CASE1")
         #
         # lien ou copie des maillages et des scripts du cas de reference
         #
-        refMeshPath = Common.referencePath+"/"+studyLabel.upper()+"/MAILLAGE"
+        refMeshPath = Common.referencePath+"/"+studyLabel.upper()+"/MESH"
         try:
             meshesList = os.listdir(refMeshPath)
             for mesh in meshesList :
-                os.symlink(refMeshPath+"/"+mesh,studyPath+"/MAILLAGE/"+mesh)
+                os.symlink(refMeshPath+"/"+mesh,studyPath+"/MESH/"+mesh)
         except:
             pass
 
