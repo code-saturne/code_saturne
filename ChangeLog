@@ -1,3 +1,9 @@
+* 27/10/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Updating the dp_FCP file for coal combustion according
+  to the new oxycombustion model.
+  modified file:
+    data/thch/dp_FCP
+
 * 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Move the autovalidation scripts to the extra directory.
   moved scripts:
