@@ -82,14 +82,14 @@ CARGU ! IFACEF       ! TE !  -> ! ELEMENTS VOISINS D'UNE FACE INTERNE  !
 CARGU !  (2, NFACF)  !    !     ! SUR MAILLAGE FIN                     !
 CARGU ! IFACEG       ! TE !  -> ! ELEMENTS VOISINS D'UNE FACE INTERNE  !
 CARGU !  (2, NFACG)  !    !     ! SUR MAILLAGE GROSSIER                !
-CARGU ! IRSCEL       ! TE ! <-  ! CELLULE FINE -> CELLULE GROSSIERE    !
+CARGU ! IRSCEL       ! TE !  -> ! CELLULE FINE -> CELLULE GROSSIERE    !
 CARGU !  (NCELFE)    !    !     !                                      !
 CARGU ! IRSFAC       ! TE !  -> ! FACE FINE -> FACE GROSSIERE          !
 CARGU !  (NFACF)     !    !     !  = 0 : FACE INTERNE CEL. GROSSIERE   !
 CARGU !              !    !     !  < 0 : ORIENTATION INVERSE           !
 CARGU !              !    !     !  > 0 : ORIENTATION IDENTIQUE         !
 CARGU ! DAF(NCELF)   ! TR !  -> ! DIAGONALE DE LA MATRICE MAIL FIN     !
-CARGU ! XAF          ! TR ! <-  ! EXTRADIAGONALE MATRICE MAILLAGE FIN  !
+CARGU ! XAF          ! TR !  -> ! EXTRADIAGONALE MATRICE MAILLAGE FIN  !
 CARGU !  (NFACF,ISYM)!    !     !                                      !
 CARGU ! DAG(NCELG)   ! TR ! <-  ! DIAGONALE MATRICE MAILLAGE GROSSIER  !
 CARGU ! XAG          ! TR ! <-  ! EXTRADIAGONALE MATRICE MAILLAGE      !

@@ -1385,7 +1385,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
                             f->cell_vol, f->cell_cen, f->face_normal,
                             f->xa0, f->xa0ij, f->da, f->xa,
                             c->cell_vol, c->cell_cen, c->face_normal,
-                            c->xa0, c->xa0ij, c->da, c->xa,
+                            c->_xa0, c->xa0ij, c->_da, c->_xa,
                             rwc1, rwc2, rwc3, rwc4);
 
   /* Synchronize grid's geometric quantities */
@@ -1412,7 +1412,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
                             f->cell_vol, f->cell_cen, f->face_normal,
                             f->xa0, f->xa0ij, f->da, f->xa,
                             c->cell_vol, c->cell_cen, c->face_normal,
-                            c->xa0, c->xa0ij, c->da, c->xa,
+                            c->_xa0, c->xa0ij, c->_da, c->_xa,
                             rwc1, rwc2, rwc3, rwc4);
 
   /* Synchronize matrix's geometric quantities */
