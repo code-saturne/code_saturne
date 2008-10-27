@@ -1,3 +1,14 @@
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixing a bug in cs_ecs_messages.c where all periodicities
+  were added as a rotation.
+  modified routine:
+    src/base/cs_ecs_messages.c
+
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
+  Fixing a bug in cs_io.c where a file is closed twice.
+  modified routine:
+    src/base/cs_io.c
+
 * 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Remove the test on the number of cells in the restart files
   in varpos.F, as it is unknown at this moment.

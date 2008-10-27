@@ -246,7 +246,7 @@ _add_periodicity(cs_mesh_t *mesh,
 
   tr_id = fvm_periodicity_add_by_matrix(mesh->periodicity,
                                         perio_num,
-                                        FVM_PERIODICITY_ROTATION,
+                                        _perio_type,
                                         matrix);
 }
 
