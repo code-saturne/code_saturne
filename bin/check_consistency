@@ -296,7 +296,7 @@ fi
 if [ "${USFUCL_PRESENT}" = "yes" ] ; then
   FUEL=yes
   echo
-  echo ' Use the fule module'
+  echo ' Use the fuel module'
   echo
 else
   FUEL=no
