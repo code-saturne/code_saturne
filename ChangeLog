@@ -1,3 +1,9 @@
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
+  Remove the test on the number of cells in the restart files
+  in varpos.F, as it is unknown at this moment.
+  modified routine:
+    src/base/varpos.F
+
 * 10/10/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 705:706, minor lagopt bug fix)
 

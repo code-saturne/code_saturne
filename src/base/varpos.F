@@ -111,7 +111,6 @@ C
       INTEGER       IDFFIN, IDFMJI, IMOMR , ILECEC
       INTEGER       ILSMOM, IVERS , INMFIN
       INTEGER       IMPAMX
-      INTEGER       NCELOK, NFAIOK, NFABOK, NSOMOK
       INTEGER       NFMTMO, NBERRO
       INTEGER       IDTOLD(NBMOMX)
 C
@@ -1645,20 +1644,6 @@ C
             CALL CSEXIT (1)
           ENDIF
 C
-C     Supports (nombre de cellules)
-C       Ce n'est pas possible de tester ceci en parallele ici
-C       car on n'a pas encore appele parge1
-C
-          IF(IRANGP.LT.0) THEN
-            CALL TSTSUI(IMPAMX,NCELOK,NFAIOK,NFABOK,NSOMOK)
-C           ===========
-            IF (NCELOK.EQ.0) THEN
-              WRITE(NFECRA,8302)
-              CALL CSEXIT (1)
-            ENDIF
-          ENDIF
-C
-C
           NBERRO=0
 C
 C     Nb de moments
@@ -3032,30 +3017,6 @@ C
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
      &'@                                                            ',/)
- 8302 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,
-     &'@    *********                                     AUXILIAIRE',/,
-     &'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,
-     &'@                                                            ',/,
-     &'@    Le nombre de cellules a ete modifie                     ',/,
-     &'@                                                            ',/,
-     &'@    Pour permettre de realiser une suite de calcul en       ',/,
-     &'@      prenant en compte les moyennes temporelles,           ',/,
-     &'@      on cherche a relire le fichier suite auxiliaire.      ',/,
-     &'@    Une erreur se produit a sa lecture.                     ',/,
-     &'@                                                            ',/,
-     &'@    Le calcul ne peut etre execute.                         ',/,
-     &'@                                                            ',/,
-     &'@    Il est possible de s''affranchir du fichier suite       ',/,
-     &'@      auxiliaire en reinitialisant les moyennes (IMOOLD)    ',/,
-     &'@      ou en ne calculant pas de moyennes.                   ',/,
-     &'@      Voir alors usini1.                                    ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
  8311 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -4186,30 +4147,6 @@ C
      &'@                                                            ',/,
      &'@    Verify  that the restarting file corresponds to an      ',/,
      &'@       auxiliary restarting file.                           ',/,
-     &'@    It is possible to liberate the auxiliary restarting     ',/,
-     &'@      file and reinitialise teh averages        (IMOOLD)    ',/,
-     &'@      or not to compute the averages.                       ',/,
-     &'@      Look at    usini1.                                    ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 8302 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ WARNING   : STOP WHILE READING THE AUXILIARY RESTARTING ',/,
-     &'@    *********                                           FILE',/,
-     &'@      PREVIOUS AND ACTUAL DATA ARE INCOHERENT               ',/,
-     &'@                                                            ',/,
-     &'@    The number of cells has been modified                   ',/,
-     &'@                                                            ',/,
-     &'@    In order to restart a calculation taking into account   ',/,
-     &'@      the temporal averages, it is necessary to             ',/,
-     &'@      read the auxiliary restarting file.                   ',/,
-     &'@    An error has occur during while reading it.             ',/,
-     &'@                                                            ',/,
-     &'@  The calculation cannot be executed                        ',/,
-     &'@                                                            ',/,
      &'@    It is possible to liberate the auxiliary restarting     ',/,
      &'@      file and reinitialise teh averages        (IMOOLD)    ',/,
      &'@      or not to compute the averages.                       ',/,
