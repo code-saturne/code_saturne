@@ -2189,8 +2189,8 @@ cs_io_finalize(cs_io_t **cs_io)
 
   if (_cs_io->index != NULL)
     _destroy_index(_cs_io);
-
-  _file_close(_cs_io);
+  else
+    _file_close(_cs_io);
 
   _cs_io->buffer_size = 0;
   BFT_FREE(_cs_io->buffer);
