@@ -1,4 +1,9 @@
 * 27/10/2008 - David Monfort <david.monfort@edf.fr>
+  Remove a redundant verification on the ICHRVR, ... variables.
+  modified routine:
+    src/cplv/cplver.F
+
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Minor corrections in scripts.
   modified scripts:
     bin/check_consistency

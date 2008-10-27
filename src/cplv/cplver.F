@@ -104,176 +104,7 @@ C
 C***********************************************************************
 C
 C=======================================================================
-C 1. ENTREES SORTIES entsor.h : formats 1000
-C    Variables transportees
-C=======================================================================
-C
-C --> Chrono
-C
-      DO ISC = 1, NSCAPP
-        IPP = IPPRTP(ISCA(ISCAPP(ISC)))
-        IF(ICHRVR(IPP).NE.1.AND.ICHRVR(IPP).NE.0) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1000)CHAINE(1:8),IPP,ICHRVR(IPP)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-C --> Historiques
-C
-      DO ISC = 1, NSCAPP
-        IPP = IPPRTP(ISCA(ISCAPP(ISC)))
-        IF( IHISVR(IPP,1).GT.NCAPT.OR.
-     &     (IHISVR(IPP,1).LT.0.AND.IHISVR(IPP,1).NE.-1) ) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1010)CHAINE(1:8),IPP,NCAPT,IHISVR(IPP,1)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-      DO ISC = 1, NSCAPP
-        IPP = IPPRTP(ISCA(ISCAPP(ISC)))
-        IF( (IHISVR(IPP,1).GT.0.AND.IHISVR(IPP,1).LT.NCAPT)) THEN
-          DO JJ = 1, IHISVR(IPP,1)
-            IF(IHISVR(IPP,JJ).LE.0.OR.IHISVR(IPP,JJ).GT.NCAPT) THEN
-              CHAINE=NOMVAR(IPP)
-              WRITE(NFECRA,1020)CHAINE(1:8),IPP,JJ,NCAPT,IHISVR(IPP,JJ)
-              IOK = IOK + 1
-            ENDIF
-          ENDDO
-        ENDIF
-      ENDDO
-C
-C --> Listing
-C
-      DO ISC = 1, NSCAPP
-        IPP = IPPRTP(ISCA(ISCAPP(ISC)))
-        IF( ILISVR(IPP).NE.0.AND.ILISVR(IPP).NE.1) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1030)CHAINE(1:8),IPP,ILISVR(IPP)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-C
-C=======================================================================
-C 2. ENTREES SORTIES entsor.h : formats 1000
-C    Variables transportees
-C=======================================================================
-C
-C --> Chrono
-C
-      IPP = IPPPRO(IPPROC(IMMEL))
-      IF(ICHRVR(IPP).NE.1.AND.ICHRVR(IPP).NE.0) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1000)CHAINE(1:8),IPP,ICHRVR(IPP)
-        IOK = IOK + 1
-      ENDIF
-C
-      IPP = IPPPRO(IPPROC(ITEMP1))
-      IF(ICHRVR(IPP).NE.1.AND.ICHRVR(IPP).NE.0) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1000)CHAINE(1:8),IPP,ICHRVR(IPP)
-        IOK = IOK + 1
-      ENDIF
-      DO IGE = 1, (NGAZE-2*NCHARB)
-        IPP = IPPPRO(IPPROC(IYM1(IGE)))
-        IF(ICHRVR(IPP).NE.1.AND.ICHRVR(IPP).NE.0) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1000)CHAINE(1:8),IPP,ICHRVR(IPP)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-C --> Historiques
-C
-      IPP = IPPPRO(IPPROC(IMMEL))
-      IF( IHISVR(IPP,1).GT.NCAPT.OR.
-     &   (IHISVR(IPP,1).LT.0.AND.IHISVR(IPP,1).NE.-1) ) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1010)CHAINE(1:8),IPP,NCAPT,IHISVR(IPP,1)
-        IOK = IOK + 1
-      ENDIF
-C
-      IPP = IPPPRO(IPPROC(ITEMP1))
-      IF( IHISVR(IPP,1).GT.NCAPT.OR.
-     &   (IHISVR(IPP,1).LT.0.AND.IHISVR(IPP,1).NE.-1) ) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1010)CHAINE(1:8),IPP,NCAPT,IHISVR(IPP,1)
-        IOK = IOK + 1
-      ENDIF
-      DO IGE = 1, (NGAZE-2*NCHARB)
-        IPP = IPPPRO(IPPROC(IYM1(IGE)))
-        IF( IHISVR(IPP,1).GT.NCAPT.OR.
-     &     (IHISVR(IPP,1).LT.0.AND.IHISVR(IPP,1).NE.-1) ) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1010)CHAINE(1:8),IPP,NCAPT,IHISVR(IPP,1)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-C
-      IPP = IPPPRO(IPPROC(IMMEL))
-      IF( (IHISVR(IPP,1).GT.0.AND.IHISVR(IPP,1).LT.NCAPT)) THEN
-        DO JJ = 1, IHISVR(IPP,1)
-          IF(IHISVR(IPP,JJ).LE.0.OR.IHISVR(IPP,JJ).GT.NCAPT) THEN
-            CHAINE=NOMVAR(IPP)
-            WRITE(NFECRA,1020)CHAINE(1:8),IPP,JJ,NCAPT,IHISVR(IPP,JJ)
-            IOK = IOK + 1
-          ENDIF
-        ENDDO
-      ENDIF
-C
-      IPP = IPPPRO(IPPROC(ITEMP1))
-      IF( (IHISVR(IPP,1).GT.0.AND.IHISVR(IPP,1).LT.NCAPT)) THEN
-        DO JJ = 1, IHISVR(IPP,1)
-          IF(IHISVR(IPP,JJ).LE.0.OR.IHISVR(IPP,JJ).GT.NCAPT) THEN
-            CHAINE=NOMVAR(IPP)
-            WRITE(NFECRA,1020)CHAINE(1:8),IPP,JJ,NCAPT,IHISVR(IPP,JJ)
-            IOK = IOK + 1
-          ENDIF
-        ENDDO
-      ENDIF
-      DO IGE = 1, (NGAZE-2*NCHARB)
-        IPP = IPPPRO(IPPROC(IYM1(IGE)))
-        IF( (IHISVR(IPP,1).GT.0.AND.IHISVR(IPP,1).LT.NCAPT)) THEN
-          DO JJ = 1, IHISVR(IPP,1)
-            IF(IHISVR(IPP,JJ).LE.0.OR.IHISVR(IPP,JJ).GT.NCAPT) THEN
-              CHAINE=NOMVAR(IPP)
-              WRITE(NFECRA,1020)CHAINE(1:8),IPP,JJ,NCAPT,IHISVR(IPP,JJ)
-              IOK = IOK + 1
-            ENDIF
-          ENDDO
-        ENDIF
-      ENDDO
-C
-C
-C --> Listing
-C
-      IPP = IPPPRO(IPPROC(IMMEL))
-      IF( ILISVR(IPP).NE.0.AND.ILISVR(IPP).NE.1) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1030)CHAINE(1:8),IPP,ILISVR(IPP)
-        IOK = IOK + 1
-      ENDIF
-      IPP = IPPPRO(IPPROC(ITEMP1))
-      IF( ILISVR(IPP).NE.0.AND.ILISVR(IPP).NE.1) THEN
-        CHAINE=NOMVAR(IPP)
-        WRITE(NFECRA,1030)CHAINE(1:8),IPP,ILISVR(IPP)
-        IOK = IOK + 1
-      ENDIF
-      DO IGE = 1, (NGAZE-2*NCHARB)
-        IPP = IPPPRO(IPPROC(IYM1(IGE)))
-        IF( ILISVR(IPP).NE.0.AND.ILISVR(IPP).NE.1) THEN
-          CHAINE=NOMVAR(IPP)
-          WRITE(NFECRA,1030)CHAINE(1:8),IPP,ILISVR(IPP)
-          IOK = IOK + 1
-        ENDIF
-      ENDDO
-C
-C
-C=======================================================================
-C 3. OPTIONS DU CALCUL : TABLEAUX DE ppincl.h : formats 2000
+C 1. OPTIONS DU CALCUL : TABLEAUX DE ppincl.h : formats 2000
 C=======================================================================
 C
 C --> Coefficient de relaxation de la masse volumique
@@ -284,7 +115,7 @@ C
       ENDIF
 C
 C=======================================================================
-C 4. TABLEAUX DE cstphy.h et ppthch.F : formats 3000
+C 2. TABLEAUX DE cstphy.h et ppthch.F : formats 3000
 C=======================================================================
 C
       IPHAS = 1
@@ -306,93 +137,9 @@ C
       ENDIF
 C
 C=======================================================================
-C 5. FORMATS VERIFICATION
+C 3. FORMATS VERIFICATION
 C=======================================================================
 C
- 1000 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,
-     &'@                                                            ',/,
-     &'@    VARIABLE ',A8                                            ,/,
-     &'@    ICHRVR(',I10   ,') DOIT ETRE UN ENTIER EGAL A 0 OU 1    ',/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  ICHRVR indique si la variable doit etre incluse dans les  ',/,
-     &'@    fichiers de post-traitement                             ',/,
-     &'@  Verifier uscpi1.                                          ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 1010 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,
-     &'@                                                            ',/,
-     &'@    VARIABLE ',A8                                            ,/,
-     &'@    IHISVR(',I10   ,',1) DOIT ETRE UN ENTIER EGAL A -1      ',/,
-     &'@      POSITIF OU NUL ET INFERIEUR OU EGAL A NCAPT =',I10     ,/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute.                           ',/,
-     &'@                                                            ',/,
-     &'@  IHISVR(I,1) indique les sondes a utiliser pour la variable',/,
-     &'@    I (-1 signifiant que toutes sont utilisees)             ',/,
-     &'@  Verifier uscpi1.                                          ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 1020 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,
-     &'@                                                            ',/,
-     &'@    VARIABLE ',A8                                            ,/,
-     &'@    IHISVR(',I10   ,',',I10   ,') DOIT ETRE UN ENTIER       ',/,
-     &'@      STRICTEMENT POSITIF ET                                ',/,
-     &'@      INFERIEUR OU EGAL A NCAPT = ',I10                      ,/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute                            ',/,
-     &'@                                                            ',/,
-     &'@  IHISVR(I,j) indique le numero de la jieme sonde a utiliser',/,
-     &'@    pour la variable I                                      ',/,
-     &'@  Verifier uscpi1.                                          ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 1030 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,
-     &'@    *********                                               ',/,
-     &'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,
-     &'@                                                            ',/,
-     &'@    VARIABLE ',A8                                            ,/,
-     &'@    ILISVR(',I10   ,') DOIT ETRE UN ENTIER EGAL A 0 OU 1    ',/,
-     &'@    IL VAUT ICI ',I10                                        ,/,
-     &'@                                                            ',/,
-     &'@  Le calcul ne peut etre execute                            ',/,
-     &'@                                                            ',/,
-     &'@  ILISVR(I) indique si la variable I sera suivie lors des   ',/,
-     &'@    impressions dans le listing                             ',/,
-     &'@  Verifier uscpi1.                                          ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
-
  2000 FORMAT(
      &'@                                                            ',/,
      &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -448,7 +195,7 @@ C
      &'@                                                            ',/)
 C
 C=======================================================================
-C 6. SORTIE
+C 4. SORTIE
 C=======================================================================
 C
       RETURN
