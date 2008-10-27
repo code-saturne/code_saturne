@@ -1,4 +1,11 @@
 * 27/10/2008 - David Monfort <david.monfort@edf.fr>
+  Move the autovalidation scripts to the extra directory.
+  moved scripts:
+    bin/Autovalidation
+    bin/autovalid
+    bin/autovalid.xml
+
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Remove a redundant verification on the ICHRVR, ... variables.
   modified routine:
     src/cplv/cplver.F
