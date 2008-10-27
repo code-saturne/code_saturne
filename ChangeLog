@@ -1,4 +1,9 @@
 * 27/10/2008 - David Monfort <david.monfort@df.fr>
+  Correction on a warning output (IPERIO instead of IRANGP).
+  modified file:
+    src/base/verini.F
+
+* 27/10/2008 - David Monfort <david.monfort@df.fr>
   Updating the dp_FUE file for fuel combustion to account 
   for the number of fuel classes.
   modified file:

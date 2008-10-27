@@ -1747,7 +1747,7 @@ C
 C --- parallelisme incompatible avec le mode de calcul
 C       direct de la distance a la paroi
       IF(IRANGP.GE.0.AND.INEEDY.EQ.1.AND.ABS(ICDPAR).EQ.2) THEN
-        WRITE(NFECRA,6005)IPERIO, ICDPAR
+        WRITE(NFECRA,6005)IRANGP, ICDPAR
         IOK = IOK + 1
       ENDIF
 C
