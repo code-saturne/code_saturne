@@ -46,10 +46,6 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! LONGIB       ! E  ! <-> ! LONGUEUR DU TABLEAU  DES ENTIERS  IA !
-CARGU ! LONGRB       ! E  ! <-> ! LONGUEUR DU TABLEAU  DES REELS    RA !
-CARGU ! IDBIA0       ! E  ! <-  ! NUMERO DE LA 1ERE CASE LIBRE DANS IA !
-CARGU ! IDBRA0       ! E  ! <-  ! NUMERO DE LA 1ERE CASE LIBRE DANS RA !
 CARGU ! IVERIF       ! E  !  -> ! INDICATEUR DES TESTS ELEMENTAIRES    !
 CARGU !______________!____!_____!______________________________________!
 c@argue
