@@ -131,13 +131,11 @@ C En mode verification, on change IMRGRA en consequence, avant les
 C   impressions dans le listing (on en a besoin dans MODINI pour ANOMAX)
 C Si d'autres tests elementaires viennent se greffer, on pourra faire
 C   une routine specifique d'initialisation des parametres des tests.
-C On met aussi la sortie en ASCII, pour le cas ou on utilise autovalid
         IF (IVERIF.EQ.1) IMRGRA = 0
         IF (IVERIF.EQ.2) IMRGRA = 1
         IF (IVERIF.EQ.3) IMRGRA = 2
         IF (IVERIF.EQ.4) IMRGRA = 3
         IF (IVERIF.EQ.5) IMRGRA = 4
-        IF (IVERIF.GT.0) OPTCHR = "text"
 C
 C=======================================================================
 C 3. MODIFS APRES USINI1

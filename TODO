@@ -41,6 +41,9 @@ SCRIPTS ET DOC
 
 * Script blue gene integre
 
+* Adapter les scripts d'autovalidation pour prendre en compte les fichier
+  de sortie binaire EnSight (changement ASCII => binaire du mode verif)
+
 IHM
 ---
 * Quand on ne visite pas la page des physiques particulieres, meme si on n'a 
