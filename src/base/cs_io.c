@@ -1074,7 +1074,10 @@ _file_reopen_read(cs_io_t   *inp,
       BFT_FREE(tmpname);
   }
 
-  inp->f = NULL;
+  if (inp->index->n_files > 0)
+    inp->f = inp->index->f[0];
+  else
+    inp->f = NULL;
 }
 
 /*----------------------------------------------------------------------------
