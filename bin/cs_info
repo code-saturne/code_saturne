@@ -182,18 +182,10 @@ fi
    echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
    echo
    tput init
- elif [ "$topic" = "ecsmu" ] ; then
+ elif [ "$topic" = "ecs_user" ] ; then
    ecsdocpdf=$CSPP_HOME/doc/mu_ecs.pdf
    echo
    echo " ${BO}Preprocessor module user manual${NO} : $ecsdocpdf"
-   echo
-   tput init
-   $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
-   tput init
- elif [ "$topic" = "ecsmi" ] ; then
-   ecsdocpdf=$CSPP_HOME/doc/mi_ecs.pdf
-   echo
-   echo " ${BO}Preprocessor module theory and programmer's guide${NO} : $ecsdocpdf"
    echo
    tput init
    $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"

@@ -1,3 +1,9 @@
+* 28/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+  Minor corrections and improvement in scripts.
+  modified scripts:
+    bin/cs_info
+    bin/mpi_rank.sh
+
 * 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
   Correction on the use of shared arrays.
   modified routine:

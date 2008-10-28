@@ -63,7 +63,7 @@ elif [ "$PMI_RANK" != "" ] ; then
 elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then
   MPI_RANK="$OMPI_MCA_ns_nds_vpid"
 
-# For LAM 7.1 (an appscheme can also be used)
+# For LAM 7.1 (an appschema can also be used)
 elif [ "$LAMRANK" != "" ] ; then
   MPI_RANK="$LAMRANK"
 
