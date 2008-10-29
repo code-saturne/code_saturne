@@ -1294,7 +1294,7 @@ C
         IRF   = JRR0P
       ENDIF
 C
-      IF (IRF.GT.NVEP) THEN
+      IF (IRF.NE.NVEP) THEN
         WRITE(NFECRA,3005) IRF, NVEP
         CALL CSEXIT(1)
       ENDIF
@@ -1328,7 +1328,7 @@ C
         IRF   = JINCH
       ENDIF
 C
-      IF (IRF.GT.NIVEP) THEN
+      IF (IRF.NE.NIVEP) THEN
         WRITE(NFECRA,3006) IRF, NIVEP
         CALL CSEXIT(1)
       ENDIF
