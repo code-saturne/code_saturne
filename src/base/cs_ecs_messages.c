@@ -684,14 +684,11 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
   mesh->i_face_vtx_idx[0] = 1;
 
-  if (mesh->n_b_faces > 0) {
+  BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_int_t);
+  mesh->b_face_vtx_idx[0] = 1;
 
-    BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_int_t);
+  if (mesh->n_b_faces > 0)
     BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_int_t);
-
-    mesh->b_face_vtx_idx[0] = 1;
-
-  }
 
   /* Now copy face -> vertices connectivity */
 
@@ -732,6 +729,8 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
   }
 }
+
+#if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Build internal and boundary face -> global numberings using a common
@@ -822,6 +821,8 @@ _extract_face_gnum(cs_mesh_t         *mesh,
   BFT_FREE(global_i_face);
   BFT_FREE(global_b_face);
 }
+
+#endif /* defined(_CS_HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Build internal and boundary face -> group class id using a common
@@ -1664,20 +1665,20 @@ _decompose_data_l(cs_mesh_t          *mesh,
  * SUBROUTINE LEDEVI(NOMRUB, TYPENT, NBRENT, TABENT)
  * *****************
  *
- * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
- * INTEGER          IPERIO      : <-- : Indicateur de périodicité
- * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
+ * INTEGER          NDIM        : <-- : Spacial dimension (3)
+ * INTEGER          NFML        : <-- : Number of families (group classes)
+ * INTEGER          NPRFML      : <-- : Number of peroperties per family
+ * INTEGER          IPERIO      : <-- : Periodicity inidcator
+ * INTEGER          IPEROT      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ledevi, LEDEVI)
 (
- cs_int_t   *const ndim,    /* <-- dimension de l'espace                      */
- cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord       */
- cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille       */
- cs_int_t   *const iperio,  /* <-- indicateur de périodicité                  */
- cs_int_t   *const iperot   /* <-- nombre de périodicités de rotation         */
+ cs_int_t   *ndim,
+ cs_int_t   *nfml,
+ cs_int_t   *nprfml,
+ cs_int_t   *iperio,
+ cs_int_t   *iperot
 )
 {
   cs_int_t  i;
