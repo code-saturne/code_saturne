@@ -1,3 +1,10 @@
+* 29/10/2008 - David Monfort <david.monfort@df.fr>
+  Add a COMMAND_REORIENT variable in the runcase in order
+  to simplify the runcase setup by the GUI.
+  modified scritps:
+    bin/runcase
+    bin/runcase.help
+  
 * 28/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
   Minor corrections and improvement in scripts.
   modified scripts:

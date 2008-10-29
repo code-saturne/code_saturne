@@ -154,6 +154,7 @@ STUDY=STUDYNAME
 CASE=CASENAME
 PARAM=
 MESH=
+COMMAND_REORIENT=
 COMMAND_JOIN=
 COMMAND_CWF=
 COMMAND_PERIO=
@@ -769,7 +770,8 @@ fi
 if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
   #
   ${CSPP_PATH}/ecs -mesh $MESH "-case" $CASE \
-                   $COMMAND_JOIN $COMMAND_PERIO > listpre 2>&1
+                   $COMMAND_REORIENT $COMMAND_JOIN $COMMAND_PERIO \
+                   > listpre 2>&1
   if [ $? != 0 ] ; then
     echo "Error running the preprocessor."
     echo "Check preprocessor log (listpre) for details."

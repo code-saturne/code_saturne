@@ -10,6 +10,17 @@ WARNING: .slc and .tlc formats are obsolete and their use is deprecated.
 
                -------------------------------
 
+The variable COMMAND_REORIENT is used by the preprocessor to reorient cells and
+faces in case of incorrect orientation.
+
+    COMMAND_REORIENT="-reorient"
+
+  If no correction is necessary, the variable COMMAND_REORIENT is left emtpy, as:
+
+    COMMAND_REORIENT=
+
+                -------------------------------
+
 To join meshes with the preprocessor, additional options must be defined:
    - assign to the MESH variable the name of the meshes between " ".
    - assign to the COMMAND_JOIN variable the joining option. It is recommended
