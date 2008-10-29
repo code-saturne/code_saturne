@@ -580,11 +580,11 @@ _compute_cell_cen_vertex(const cs_mesh_t  *const mesh,
 
   /* Extract "cell -> faces" connectivity */
 
-  cs_maillage_ret_cel_fac(mesh,
-                          mesh->n_cells,
-                          NULL,
-                          &cell_faces_idx,
-                          &cell_faces_lst);
+  cs_mesh_connect_get_cell_faces(mesh,
+                                 mesh->n_cells,
+                                 NULL,
+                                 &cell_faces_idx,
+                                 &cell_faces_lst);
 
   /* Loop on cells */
   /* ------------- */

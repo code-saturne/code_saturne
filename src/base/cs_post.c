@@ -666,10 +666,10 @@ void CS_PROCF (pstcw1, PSTCW1)
 
   /* Conversion des chaînes de caractères Fortran en chaînes C */
 
-  nom_cas    = cs_base_chaine_f_vers_c_cree(nomcas, *lnmcas);
-  nom_rep    = cs_base_chaine_f_vers_c_cree(nomrep, *lnmrep);
-  nom_format = cs_base_chaine_f_vers_c_cree(nomfmt, *lnmfmt);
-  opt_format = cs_base_chaine_f_vers_c_cree(optfmt, *lopfmt);
+  nom_cas    = cs_base_string_f_to_c_create(nomcas, *lnmcas);
+  nom_rep    = cs_base_string_f_to_c_create(nomrep, *lnmrep);
+  nom_format = cs_base_string_f_to_c_create(nomfmt, *lnmfmt);
+  opt_format = cs_base_string_f_to_c_create(optfmt, *lopfmt);
 
   /* Traitement principal */
 
@@ -683,10 +683,10 @@ void CS_PROCF (pstcw1, PSTCW1)
 
   /* Libération des chaînes C temporaires */
 
-  nom_cas = cs_base_chaine_f_vers_c_detruit(nom_cas);
-  nom_rep = cs_base_chaine_f_vers_c_detruit(nom_rep);
-  nom_format = cs_base_chaine_f_vers_c_detruit(nom_format);
-  opt_format = cs_base_chaine_f_vers_c_detruit(opt_format);
+  cs_base_string_f_to_c_free(&nom_cas);
+  cs_base_string_f_to_c_free(&nom_rep);
+  cs_base_string_f_to_c_free(&nom_format);
+  cs_base_string_f_to_c_free(&opt_format);
 
 }
 
@@ -724,7 +724,7 @@ void CS_PROCF (pstcm1, PSTCM1)
 
   /* Conversion des chaînes de caractères Fortran en chaînes C */
 
-  nom_maillage = cs_base_chaine_f_vers_c_cree(nommai, *lnmmai);
+  nom_maillage = cs_base_string_f_to_c_create(nommai, *lnmmai);
 
   /* Traitement principal */
 
@@ -739,7 +739,7 @@ void CS_PROCF (pstcm1, PSTCM1)
 
   /* Libération des chaînes C temporaires */
 
-  nom_maillage = cs_base_chaine_f_vers_c_detruit(nom_maillage);
+  cs_base_string_f_to_c_free(&nom_maillage);
 
 }
 
@@ -1389,7 +1389,7 @@ void CS_PROCF (pstev1, PSTEV1)
 
   /* Conversion des chaînes de caractères Fortran en chaînes C */
 
-  nom_var = cs_base_chaine_f_vers_c_cree(nomvar, *lnmvar);
+  nom_var = cs_base_string_f_to_c_create(nomvar, *lnmvar);
 
 
   /* Traitement principal */
@@ -1408,7 +1408,7 @@ void CS_PROCF (pstev1, PSTEV1)
 
   /* Libération des tableaux C temporaires */
 
-  nom_var = cs_base_chaine_f_vers_c_detruit(nom_var);
+  cs_base_string_f_to_c_free(&nom_var);
 
 }
 
@@ -3119,33 +3119,33 @@ static void _cs_post_definit_maillage
   if (indic_glob[0] == 0) {
 
     if (indic_glob[3] == 1)
-      maillage_ext = cs_maillage_extrait_cel_nodal(cs_glob_mesh,
-                                                   nom_maillage,
-                                                   cs_glob_mesh->n_cells,
-                                                   NULL);
+      maillage_ext = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                    nom_maillage,
+                                                    cs_glob_mesh->n_cells,
+                                                    NULL);
     else
-      maillage_ext = cs_maillage_extrait_cel_nodal(cs_glob_mesh,
-                                                   nom_maillage,
-                                                   nbr_cel,
-                                                   liste_cel);
+      maillage_ext = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                    nom_maillage,
+                                                    nbr_cel,
+                                                    liste_cel);
 
   }
   else {
 
     if (indic_glob[4] == 1)
-      maillage_ext = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                                   nom_maillage,
-                                                   0,
-                                                   cs_glob_mesh->n_b_faces,
-                                                   NULL,
-                                                   NULL);
+      maillage_ext = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                    nom_maillage,
+                                                    0,
+                                                    cs_glob_mesh->n_b_faces,
+                                                    NULL,
+                                                    NULL);
     else
-      maillage_ext = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                                   nom_maillage,
-                                                   nbr_fac,
-                                                   nbr_fbr,
-                                                   liste_fac,
-                                                   liste_fbr);
+      maillage_ext = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                    nom_maillage,
+                                                    nbr_fac,
+                                                    nbr_fbr,
+                                                    liste_fac,
+                                                    liste_fbr);
 
   }
 

@@ -25,11 +25,9 @@
  *
  *============================================================================*/
 
-/*============================================================================
- * Définitions, variables globales, et fonctions de base
- *============================================================================*/
-
-/* includes système */
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <errno.h>
@@ -47,7 +45,9 @@
 #include <sys/utsname.h>
 #endif
 
-/* Includes librairie BFT et FVM */
+/*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
 
 #include <bft_backtrace.h>
 #include <bft_mem_usage.h>
@@ -56,6 +56,10 @@
 #include <bft_sys_info.h>
 #include <bft_timer.h>
 
+/*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
 #include <fvm_config.h>
 #if !defined(_CS_HAVE_MPI) && defined(FVM_HAVE_MPI)
 #error "Either both or neither Code_Saturne and FVM must be configured with MPI"
@@ -63,7 +67,15 @@
 
 #include <fvm_parall.h>
 
-/* Includes librairie */
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_prototypes.h"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 
@@ -72,22 +84,22 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Constantes et Macros
+ * Local Macro Definitions
  *============================================================================*/
 
-/* API Fortran */
+/* Fortran API */
 /*-------------*/
 
 /*
- * (longueur max 'usuelle' de nom ; un nom plus long est possible,
- * mais provoquera une allocation de mémoire dynamique).
+ * 'usual' maximum name length; a longer name is possible, but will
+ * provoque a dynamic memory allocation.
  */
 
-#define CS_BASE_NBR_CHAINE                               5
-#define CS_BASE_LNG_CHAINE                               64
+#define CS_BASE_N_STRINGS                               5
+#define CS_BASE_STRING_LEN                             64
 
 /*============================================================================
- * Types privés
+ * Local Type Definitions
  *============================================================================*/
 
 #if defined(_CS_HAVE_MPI)
@@ -95,7 +107,7 @@ BEGIN_C_DECLS
 typedef struct
 {
   long val;
-  int  rang;
+  int  rank;
 } _cs_base_mpi_long_int_t;
 
 #endif
@@ -105,35 +117,36 @@ typedef struct
 typedef void (*_cs_base_sighandler_t) (int);
 
 /*----------------------------------------------------------------------------
- * Prototypes de fonctions privées nécessaires aux variables globales.
+ * Private funtion prototypes necessary for global variables.
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_base_exit(int status);
 
 /*============================================================================
- * Variables globales associées a la librairie
+ *  Global variables
  *============================================================================*/
 
-cs_int_t  cs_glob_base_rang = -1;     /* Rang du processus dans le groupe     */
-cs_int_t  cs_glob_base_nbr  =  1;     /* Nombre de processus dans le groupe   */
+cs_int_t  cs_glob_base_rang = -1;     /* Rank of process in communicator */
+cs_int_t  cs_glob_base_nbr  =  1;     /* Number of processes in communicator */
 
 #if defined(_CS_HAVE_MPI)
-MPI_Comm  cs_glob_base_mpi_comm = MPI_COMM_NULL;      /* Intra-communicateur  */
+MPI_Comm  cs_glob_base_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
 #endif
 
 bft_error_handler_t  *cs_glob_base_gest_erreur_sauve = NULL;
 
-/* Variables globales statiques (variables privées de cs_base.c) */
+/* Static (private) global variables */
+/*-----------------------------------*/
 
 static cs_bool_t  cs_glob_base_bft_mem_init = false;
 
-static cs_bool_t  cs_glob_base_chaine_init = false;
-static cs_bool_t  cs_glob_base_chaine_libre[CS_BASE_NBR_CHAINE];
-static char       cs_glob_base_chaine[CS_BASE_NBR_CHAINE]
-                                     [CS_BASE_LNG_CHAINE + 1];
+static cs_bool_t  cs_glob_base_str_init = false;
+static cs_bool_t  cs_glob_base_str_is_free[CS_BASE_N_STRINGS];
+static char       cs_glob_base_str[CS_BASE_N_STRINGS]
+                                     [CS_BASE_STRING_LEN + 1];
 
-/* Variables globales associée à la gestion des signaux */
+/* Global variables associated with signal handling */
 
 #if defined(SIGHUP)
 static _cs_base_sighandler_t cs_glob_base_sighup_sauve = SIG_DFL;
@@ -148,11 +161,11 @@ static _cs_base_sighandler_t cs_glob_base_sigsegv_sauve = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigcpu_sauve = SIG_DFL;
 #endif
 
-/* Variables globales associées à des pointeurs de fonction */
+/* Global variables associated with function pointers */
 
 static cs_exit_t  *_cs_glob_exit = (_cs_base_exit);
 
-/* Variables globales associées à la gestion des tableaux de travail Fortran */
+/* Global variables for handling of Fortran work arrays */
 
 static char      _cs_glob_srt_ia_peak[7] = "------";
 static char      _cs_glob_srt_ra_peak[7] = "------";
@@ -161,7 +174,7 @@ static cs_int_t  _cs_glob_mem_ra_peak = 0;
 static cs_int_t  _cs_glob_mem_ia_size = 0;
 static cs_int_t  _cs_glob_mem_ra_size = 0;
 
-/* Variables globales associées à l'instrumentation */
+/* Global variables for instrumentation */
 
 #if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
 int  cs_glob_mpe_broadcast_a = 0;
@@ -179,46 +192,15 @@ int  cs_glob_mpe_compute_b = 0;
 #endif
 
 /*============================================================================
- * Prototypes de fonctions Fortran associées aux impressions
+ * Prototypes of Fortran functions associated with log printing
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Fonction Fortran d'impression d'un message sur la sortie standard
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csprnt, CSPRNT)
-(
-  char       *cs_buf_print,
-  cs_int_t   *msgsize
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction Fortran de vidage du tampon du fichier d'impression
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csflsh, CSFLSH)
-(
- void
-);
-
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE CSCLLI : sous-programme de CLose LIsting Fortran
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF(csclli, CSCLLI)
-(
- void
-);
-
 
 /*============================================================================
- * Définitions de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur la sortie standard
+ * Print a message to standard output
  *----------------------------------------------------------------------------*/
 
 static int
@@ -228,18 +210,19 @@ _cs_base_bft_printf(const char     *const format,
  cs_int_t  line;
  cs_int_t  msgsize;
 
- /* Tampon pour impressions depuis du code C : on imprime dans un chaîne
-    de caractères, qui sera imprimée vers un fichier par du code Fortran.
-    Une fois les impressions Fortran totalement remplacées par des impressions
-    C, on pourra supprimer cette étape, mais elle est nécessaire pour l'instant
-    afin de pouvoir utiliser les mêmes fichiers de sortie */
+ /* Buffer for printing from C code: print to a character string, which will
+    be printed to file by Fortran code.
+    If Fortran output is completely replaced by C output in the future,
+    we will be able to remove this step, but it is currently necessary
+    so as to ensure that the same output files may be used and output
+    remains ordered. */
 
 #undef CS_BUF_PRINT_F_SIZE
 #define CS_BUF_PRINT_F_SIZE 16384
 
  static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
 
- /* Impression dans le tampon */
+ /* Write to buffer */
 
 #if (_CS_STDC_VERSION < 199901L)
   msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
@@ -265,7 +248,7 @@ _cs_base_bft_printf(const char     *const format,
     cs_exit(EXIT_FAILURE);
   }
 
-  /* Impression effective par le code Fortran */
+  /* Effective output by Fortran code */
 
   CS_PROCF (csprnt, CSPRNT) (cs_buf_print_f, &msgsize);
 
@@ -273,7 +256,7 @@ _cs_base_bft_printf(const char     *const format,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction de vidage du tampon d'impression sur la sortie standard
+ * Flush log output buffer
  *----------------------------------------------------------------------------*/
 
 static int
@@ -285,9 +268,9 @@ _cs_base_bft_printf_flush(void)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur les sorties erreur
+ * Print a message to the error output
  *
- * On répète le message sur la sortie standard et sur un fichier erreur.
+ * The message is repeated on the standard output and an error file.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -296,7 +279,7 @@ _cs_base_err_vprintf(const char  *format,
 {
   static cs_bool_t  initialise = false;
 
-  /* message sur la sortie standard */
+  /* message to the standard output */
 
 #if defined(va_copy) || defined(__va_copy)
   {
@@ -312,8 +295,8 @@ _cs_base_err_vprintf(const char  *format,
   }
 #endif
 
-  /* message sur une sortie erreur spécifique, à n'initialiser
-     que si la sortie erreur est effectivement nécessaire */
+  /* message on a specific error output, initialized only if the
+     error output is really necessary */
 
   if (initialise == false) {
 
@@ -334,9 +317,9 @@ _cs_base_err_vprintf(const char  *format,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur les sorties erreur
+ * Print a message to error output
  *
- * On répète le message sur la sortie standard et sur un fichier erreur.
+ * The message is repeated on the standard output and an error file.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -359,7 +342,7 @@ _cs_base_err_printf(const char  *format,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction de sortie
+ * Exit function
  *----------------------------------------------------------------------------*/
 
 static void
@@ -390,7 +373,7 @@ _cs_base_exit(int status)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'arret du code en cas d'erreur
+ * Stop the code in case of error
  *----------------------------------------------------------------------------*/
 
 static void
@@ -419,7 +402,7 @@ _cs_base_gestion_erreur(const char  *nom_fic,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un "backtrace"
+ * Print a stack trace
  *----------------------------------------------------------------------------*/
 
 static void
@@ -479,7 +462,7 @@ _cs_base_backtrace_print(int  niv_debut)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction de gestion d'un signal fatal (de type SIGFPE ou SIGSEGV)
+ * Handle a fatal signal (such as SIGFPE or SIGSEGV)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -561,7 +544,7 @@ _cs_base_mpi_fin(void)
 #if defined(DEBUG) || !defined(NDEBUG)
 
 /*----------------------------------------------------------------------------
- * Gestionnaire d'erreur MPI
+ * MPI error handler
  *----------------------------------------------------------------------------*/
 
 static void
@@ -608,19 +591,19 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 #if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
 
 /*----------------------------------------------------------------------------
- * Initialisation de l'instrumentation MPE.
+ * Initialize MPE instrumentation
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_base_prof_mpe_init(int  rang)
+_cs_base_prof_mpe_init(int  rank)
 {
   int flag;
 
   MPI_Initialized(&flag);
 
-  /* MPE_Init_log() & MPE_finish_log() ne sont PAS nécessaires si la
-     libraire liblmpe.a est "linkée" avec saturne. Dans ce cas, c'est
-     MPI_Init() qui se charge de l'appel de MPE_Init_log() */
+  /* MPE_Init_log() and MPE_finish_log() are NOT required if the liblmpe.a
+     library is linked with  Code_Saturne. In this case, MPI_Init()
+     handles the call toe MPE_Init_log() */
 
   if (flag) {
 
@@ -639,7 +622,7 @@ _cs_base_prof_mpe_init(int  rang)
     MPE_Log_get_state_eventIDs(&cs_glob_mpe_compute_a,
                                &cs_glob_mpe_compute_b);
 
-    if (rang == 0) {
+    if (rank == 0) {
 
       MPE_Describe_state(cs_glob_mpe_broadcast_a,
                          cs_glob_mpe_broadcast_b,
@@ -670,23 +653,23 @@ _cs_base_prof_mpe_init(int  rang)
 }
 
 /*----------------------------------------------------------------------------
- *  Finalisation de l'instrumentation MPE
+ * Finalize MPE instrumentation
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_base_prof_mpe_fin(void)
 {
-  int flag, rang;
+  int flag, rank;
 
   MPI_Initialized(&flag);
 
   if (flag)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rang);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
   MPE_Log_sync_clocks();
 
-  if (rang == 0)
+  if (rank == 0)
     MPE_Finish_log("Code_Saturne");
 }
 
@@ -712,93 +695,91 @@ _cs_base_work_mem_max(cs_int_t  *mem_peak,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *mem_peak;
-  val_in.rang = cs_glob_base_rang;
+  val_in.rank = cs_glob_base_rang;
 
   MPI_Allreduce(&val_in, &val_max, 1, MPI_LONG_INT, MPI_MAXLOC,
                 cs_glob_base_mpi_comm);
 
   *mem_peak = val_max.val;
 
-  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rang, cs_glob_base_mpi_comm);
+  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rank, cs_glob_base_mpi_comm);
 #endif
 }
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction d'arret depuis du code Fortran
+ * Call exit routine from Fortran code
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE CSEXIT (STATUT)
+ * SUBROUTINE CSEXIT (STATUS)
  * *****************
  *
- * INTEGER          STATUT      : --> : 0 pour succès, 1 ou + pour erreur
+ * INTEGER          STATUS      : --> : 0 for success, 1+ for error
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csexit, CSEXIT)
 (
-  const cs_int_t  *const statut
+  const cs_int_t  *status
 )
 {
-  cs_exit (*statut);
+  cs_exit (*status);
 }
 
-
 /*----------------------------------------------------------------------------
- * Temps CPU écoulé depuis le début de l'exécution
+ * CPU time used since execution start
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE DMTMPS (TCPU)
  * *****************
  *
- * DOUBLE PRECISION TCPU        : --> : temps CPU (utilisateur + système)
+ * DOUBLE PRECISION TCPU        : --> : CPU time (user + system)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dmtmps, DMTMPS)
 (
-  cs_real_t  *const tcpu
+  cs_real_t  *tcpu
 )
 {
   *tcpu = bft_timer_cpu_time();
 }
 
-
 /*----------------------------------------------------------------------------
- * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
- * pas  LONGIA.
+ * Check that main integer working array memory reservation fits within
+ * the allocated size of IA.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE IASIZE (SOUSPG, MEMINT)
+ * SUBROUTINE IASIZE (CALLER, MEMINT)
  * *****************
  *
- * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMINT      : --> : Indice de la dernière case utilisée
- *                              :     : dans IA
+ * CHARACTER*6      CALLER      : --> : Name of calling subroutine
+ * INTEGER          MEMINT      : --> : Last required element in IA
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (iasize, IASIZE)
 (
- const char   souspg[6],
+ const char   caller[6],
  cs_int_t    *memint
 )
 {
   /* Test if enough memory is available */
 
   if (*memint > _cs_glob_mem_ia_size) {
-    char _souspg[7];
-    strncpy(_souspg, souspg, 6);
-    _souspg[6] = '\0';
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Sub-routine calling IASIZE:                %s\n"
-                " Memory needed in IA (number of integers):  %d\n"
-                "         available:                         %d\n\n"
-                " ----> Define IASIZE to a value at least equal to %d integers)."),
-              _souspg, *memint, _cs_glob_mem_ia_size, *memint);
+    char _caller[7];
+    strncpy(_caller, caller, 6);
+    _caller[6] = '\0';
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _(" Sub-routine calling IASIZE:                %s\n"
+         " Memory needed in IA (number of integers):  %d\n"
+         "         available:                         %d\n\n"
+         " ----> Define IASIZE to a value at least equal to %d integers)."),
+       _caller, *memint, _cs_glob_mem_ia_size, *memint);
   }
 
   /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
@@ -806,43 +787,43 @@ void CS_PROCF (iasize, IASIZE)
   else if (*memint > _cs_glob_mem_ia_peak) {
 
     _cs_glob_mem_ia_peak = *memint;
-    strncpy(_cs_glob_srt_ia_peak, souspg, 6);
+    strncpy(_cs_glob_srt_ia_peak, caller, 6);
     _cs_glob_srt_ia_peak[6] = '\0';
   }
 }
 
 /*----------------------------------------------------------------------------
- * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
- * pas  LONGRA.
+ * Check that main floating-point working array memory reservation fits
+ * within the allocated size of RA.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE RASIZE (SOUSPG, MEMINT)
+ * SUBROUTINE RASIZE (CALLER, MEMINT)
  * *****************
  *
- * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMRDP      : --> : Indice de la dernière case utilisée
- *                              :     : dans RA
+ * CHARACTER*6      CALLER      : --> : Name of calling subroutine
+ * INTEGER          MEMRDP      : --> : Last required element in RA
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (rasize, RASIZE)
 (
- const char   souspg[6],
+ const char   caller[6],
  cs_int_t    *memrdp
 )
 {
   /* Test if enough memory is available */
 
   if (*memrdp > _cs_glob_mem_ra_size) {
-    char _souspg[7];
-    strncpy(_souspg, souspg, 6);
-    _souspg[6] = '\0';
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Sub-routine calling RASIZE:             %s\n"
-                " Memory needed in RA (number of reals):  %d\n"
-                "         available:                      %d\n\n"
-                " ----> Define RASIZE to a value at least equal to %d reals)."),
-              _souspg, *memrdp, _cs_glob_mem_ra_size, *memrdp);
+    char _caller[7];
+    strncpy(_caller, caller, 6);
+    _caller[6] = '\0';
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _(" Sub-routine calling RASIZE:             %s\n"
+         " Memory needed in RA (number of reals):  %d\n"
+         "         available:                      %d\n\n"
+         " ----> Define RASIZE to a value at least equal to %d reals)."),
+       _caller, *memrdp, _cs_glob_mem_ra_size, *memrdp);
   }
 
   /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
@@ -850,13 +831,13 @@ void CS_PROCF (rasize, RASIZE)
   else if (*memrdp > _cs_glob_mem_ra_peak) {
 
     _cs_glob_mem_ra_peak = *memrdp;
-    strncpy(_cs_glob_srt_ra_peak, souspg, 6);
+    strncpy(_cs_glob_srt_ra_peak, caller, 6);
     _cs_glob_srt_ra_peak[6] = '\0';
   }
 }
 
 /*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 #if defined(_CS_HAVE_MPI)
@@ -876,7 +857,7 @@ void cs_base_mpi_init
                            *     dans MPI_COMM_WORLD                          */
 )
 {
-  int flag, nbr, rang;
+  int flag, nbr, rank;
 
 #if defined(DEBUG) || !defined(NDEBUG)
   MPI_Errhandler errhandler;
@@ -896,18 +877,18 @@ void cs_base_mpi_init
     (et que ses membres sont contigus dans MPI_COMM_WORLD).
   */
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rang);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  MPI_Comm_split(MPI_COMM_WORLD, rang_deb, rang - rang_deb + 1,
+  MPI_Comm_split(MPI_COMM_WORLD, rang_deb, rank - rang_deb + 1,
                  &cs_glob_base_mpi_comm);
 
   MPI_Comm_size(cs_glob_base_mpi_comm, &nbr);
-  MPI_Comm_rank(cs_glob_base_mpi_comm, &rang);
+  MPI_Comm_rank(cs_glob_base_mpi_comm, &rank);
 
   cs_glob_base_nbr = nbr;
 
   if (cs_glob_base_nbr > 1)
-    cs_glob_base_rang = rang;
+    cs_glob_base_rang = rank;
 
   /* Si l'on n'a besoin que de MPI_COMM_WORLD, il est préférable de
      n'utiliser que ce communicateur (potentillement mieux optimisé
@@ -924,11 +905,11 @@ void cs_base_mpi_init
     cs_glob_base_mpi_comm = MPI_COMM_WORLD;
   }
 
-  /* Initialisation des librairies associées */
+  /* Initialize associated libraries */
 
 #if defined(FVM_HAVE_MPI)
   fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
-  /* IBM Blue Gene ou Cray XT */
+  /* IBM Blue Gene or Cray XT */
 #if   defined(__blrts__) || defined(__bgp__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   fvm_parall_set_safe_gather_mode(1);
@@ -948,30 +929,34 @@ void cs_base_mpi_init
 
 #if defined(_CS_HAVE_MPE)
   if (cs_glob_base_nbr > 1)
-    _cs_base_prof_mpe_init(rang);
+    _cs_base_prof_mpe_init(rank);
 #endif
 }
 
 #endif /* _CS_HAVE_MPI */
 
-
 /*----------------------------------------------------------------------------
- * Fonction d'arrêt
+ * Exit, with handling for both normal and error cases.
+ *
+ * Finalize MPI if necessary.
+ *
+ * parameters:
+ *   status <-- value to be returned to the parent:
+ *              EXIT_SUCCESS / 0 for the normal case,
+ *              EXIT_FAILURE or other nonzero code for error cases.
  *----------------------------------------------------------------------------*/
 
-void cs_exit
-(
-  const cs_int_t  statut
-)
+void
+cs_exit(int  status)
 {
-  if (statut == EXIT_FAILURE) {
+  if (status == EXIT_FAILURE) {
 
     bft_printf_flush();
     bft_backtrace_print(2);
 
   }
 
-  CS_PROCF(csclli, CSCLLI)(); /* Fermeture des listings */
+  CS_PROCF(csclli, CSCLLI)(); /* Close log files */
 
 #if defined(_CS_HAVE_MPI)
 
@@ -982,7 +967,7 @@ void cs_exit
 
     if (mpi_flag != 0) {
 
-      if (statut != EXIT_FAILURE) {
+      if (status != EXIT_FAILURE) {
         _cs_base_mpi_fin();
       }
     }
@@ -990,25 +975,22 @@ void cs_exit
 
 #endif /* _CS_HAVE_MPI */
 
-  _cs_glob_exit(statut);
+  _cs_glob_exit(status);
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction initialisant la gestion des erreurs et des signaux
+ * Initialize error and signal handlers.
  *----------------------------------------------------------------------------*/
 
-void cs_base_erreur_init
-(
- void
-)
+void
+cs_base_error_init(void)
 {
-  /* Gestionnaire d'erreurs */
+  /* Error handler */
 
   cs_glob_base_gest_erreur_sauve = bft_error_handler_get();
   bft_error_handler_set(_cs_base_gestion_erreur);
 
-  /* Gestion des signaux */
+  /* Signal handlers */
 
   bft_backtrace_print_set(_cs_base_backtrace_print);
 
@@ -1031,20 +1013,17 @@ void cs_base_erreur_init
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction initialisant la gestion de contrôle de la mémoire allouée
+ * Initialize management of memory allocated through BFT.
  *----------------------------------------------------------------------------*/
 
-void cs_base_mem_init
-(
- void
-)
+void
+cs_base_mem_init(void)
 {
   char  *nom_base;
   char  *nom_complet = NULL;
 
-  /* Initialisation du comptage mémoire */
+  /* Memory usage measure initialization */
 
 #if defined(_CS_ARCH_Linux)
   bft_mem_usage_set_options(BFT_MEM_USAGE_TRACK_PR_SIZE |
@@ -1052,18 +1031,18 @@ void cs_base_mem_init
 #endif
   bft_mem_usage_init();
 
-  /* Initialisation de la gestion mémoire */
+  /* Memory management initialization */
 
   if ((nom_base = getenv("CS_FIC_MEM")) != NULL) {
 
-    /* On ne peut pas utiliser BFT_MALLOC ici car la gestion
-       memoire n'a pas encore ete initialisee par bft_mem_init() */
+    /* We may not use BFT_MALLOC here as memory management has
+       not yet been initialized using bft_mem_init() */
 
     nom_complet = malloc((strlen(nom_base) + 6) * sizeof (char));
 
     if (nom_complet != NULL) {
 
-      /* En cas de parallélisme, on aura un fichier de trace par processus */
+      /* In parallel, we will have one trace file per MPI process */
       if (cs_glob_base_rang >= 0)
         sprintf(nom_complet, "%s.%04d", nom_base, cs_glob_base_rang + 1);
       else
@@ -1085,20 +1064,23 @@ void cs_base_mem_init
     free (nom_complet);
 }
 
-
 /*----------------------------------------------------------------------------
- * Allocate Fortran work arrays and prepare for their use
+ * Allocate Fortran work arrays and prepare for their use.
+ *
+ * parameters:
+ *   iasize <-- integer working array size (maximum number of values)
+ *   rasize <-- floating-point working array size (maximum number of values)
+ *   ia     --> pointer to integer working array
+ *   ra     --> pointer to floating-point working array
  *----------------------------------------------------------------------------*/
 
-void cs_base_mem_init_work
-(
- size_t       iasize,
- size_t       rasize,
- cs_int_t   **ia,
- cs_real_t  **ra
-)
+void
+cs_base_mem_init_work(size_t       iasize,
+                      size_t       rasize,
+                      cs_int_t   **ia,
+                      cs_real_t  **ra)
 {
-  /* Allocation des tableaux de travail */
+  /* Allocate work arrays */
 
   BFT_MALLOC(*ia, iasize, cs_int_t);
   BFT_MALLOC(*ra, rasize, cs_real_t);
@@ -1107,16 +1089,14 @@ void cs_base_mem_init_work
   _cs_glob_mem_ra_size = rasize;
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction terminant la gestion de contrôle de la mémoire allouée
- * et affichant le bilan de la mémoire consommée.
+ * Finalize management of memory allocated through BFT.
+ *
+ * A summary of the consumed memory is given.
  *----------------------------------------------------------------------------*/
 
-void cs_base_mem_fin
-(
- void
-)
+void
+cs_base_mem_fin(void)
 {
   int        ind_bil, itot;
   cs_real_t  valreal[3];
@@ -1135,7 +1115,7 @@ void cs_base_mem_fin
                               N_("Memory reported by C library:            "),
                               N_("Theoretical instrumented dynamic memory: ")};
 
-  /* Bilan mémoire */
+  /* Memory summary */
 
   bft_printf(_("\nMemory use summary:\n\n"));
 
@@ -1143,7 +1123,7 @@ void cs_base_mem_fin
   valreal[1] = (cs_real_t) bft_mem_usage_max_alloc_size();
   valreal[2] = (cs_real_t) bft_mem_size_max();
 
-  /* On ignorera les mesures non cohérentes */
+  /* Ignore inconsistent measurements */
 
   if (valreal[1] < valreal[2])
     ind_val[1] = 0;
@@ -1161,7 +1141,7 @@ void cs_base_mem_fin
                0, cs_glob_base_mpi_comm);
     for (ind_bil = 0; ind_bil < 3; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
-      val_in[ind_bil].rang = cs_glob_base_rang;
+      val_in[ind_bil].rank = cs_glob_base_rang;
     }
     MPI_Reduce(&val_in, &val_min, 3, CS_MPI_REAL_INT, MPI_MINLOC,
                0, cs_glob_base_mpi_comm);
@@ -1176,13 +1156,12 @@ void cs_base_mem_fin
   }
 #endif
 
-
-  /* Traitement semblable pour les diverses méthodes d'instrumentation */
+  /* Similar handling of several instrumentation methods */
 
   for (ind_bil = 0 ; ind_bil < 3 ; ind_bil++) {
 
-    /* Si une méthode d'instrumentation fournit un résultat
-       qui semble cohérent, on l'affiche */
+    /* If an instrumentation method returns an apparently consistent
+       result, print it. */
 
     if (ind_val[ind_bil] == 1) {
 
@@ -1203,26 +1182,26 @@ void cs_base_mem_fin
       }
 #endif
 
-      /* Impressions */
+      /* Print to log file */
 
-      bft_printf (_("  %s %12.3f %co\n"),
+      bft_printf (_("  %s %12.3f %cb\n"),
                   _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
 #if defined(_CS_HAVE_MPI)
       if (cs_glob_base_nbr > 1 && cs_glob_base_rang == 0) {
         bft_printf (_("                             "
-                      "local minimum: %12.3f %co  (rank %d)\n"),
-                    val_min[ind_bil].val, unite[imin], val_min[ind_bil].rang);
+                      "local minimum: %12.3f %cb  (rank %d)\n"),
+                    val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
         bft_printf (_("                             "
-                      "local maximum: %12.3f %co  (rank %d)\n"),
-                    val_max[ind_bil].val, unite[imax], val_max[ind_bil].rang);
+                      "local maximum: %12.3f %cb  (rank %d)\n"),
+                    val_max[ind_bil].val, unite[imax], val_max[ind_bil].rank);
       }
 #endif
     }
 
   }
 
-  /* Information sur la gestion des tableaux de travail Fortran */
+  /* Information on Fortran working arrays */
 
   if (cs_glob_base_nbr > 1) {
     _cs_base_work_mem_max(&_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak);
@@ -1257,8 +1236,8 @@ void cs_base_mem_fin
                  "  Fortran work arrays memory use:\n"
                  "   %-12lu integers needed (maximum reached in %s)\n"
                  "   %-12lu reals    needed (maximum reached in %s)\n\n"
-                 "   Local maximum work memory requested %12.3f %co\n"
-                 "                                  used %12.3f %co\n"),
+                 "   Local maximum work memory requested %12.3f %cb\n"
+                 "                                  used %12.3f %cb\n"),
                (unsigned long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
                (unsigned long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
                wk_size[0], unite[wk_unit[0]],
@@ -1266,25 +1245,22 @@ void cs_base_mem_fin
 
   }
 
-  /* Arrêt de la gestion mémoire */
+  /* Finalize memory handling */
 
   if (cs_glob_base_bft_mem_init == true)
     bft_mem_end();
 
-  /* Arrêt du comptage mémoire */
+  /* Finalize memory usage count */
 
   bft_mem_usage_end();
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction affichant le bilan du temps de calcul et temps écoulé.
+ * Print summary of running time, including CPU and elapsed times.
  *----------------------------------------------------------------------------*/
 
-void cs_base_bilan_temps
-(
- void
-)
+void
+cs_base_bilan_temps(void)
 {
   double  utime;
   double  stime;
@@ -1292,7 +1268,6 @@ void cs_base_bilan_temps
   double  time_tot;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
 
   bft_printf(_("\nCalculation time summary:\n"));
 
@@ -1305,7 +1280,7 @@ void cs_base_bilan_temps
     time_cpu = bft_timer_cpu_time();
 
 
-  /* Temps CPU */
+  /* CPU time */
 
   if (utime > 0. || stime > 0.) {
     bft_printf (_("\n  User CPU time:       %12.3f s\n"),
@@ -1329,8 +1304,7 @@ void cs_base_bilan_temps
   }
 #endif
 
-
-  /* Durée d'exécution  */
+  /* Elapsed (wall-clock) time */
 
   time_tot = bft_timer_wtime();
 
@@ -1346,15 +1320,12 @@ void cs_base_bilan_temps
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction affichant le bilan du temps de calcul et temps écoulé.
+ * Print available system information.
  *----------------------------------------------------------------------------*/
 
-void cs_base_info_systeme
-(
- void
-)
+void
+cs_base_system_info(void)
 {
 #if defined(_POSIX_SOURCE)
 
@@ -1375,7 +1346,6 @@ void cs_base_info_systeme
   char  str_user     [_CS_INFO_SYS_STR_SIZE + 1];
   char  str_directory[1024];
 
-
   /* Date */
 
   if (time(&date) == -1 ||
@@ -1383,8 +1353,7 @@ void cs_base_info_systeme
                "%c", localtime(&date)) == 0)
     strcpy(str_date, "");
 
-
-  /* Système et machine */
+  /* System and machine */
 
   if (uname(&sys_config) != -1) {
     strcpy(str_system  , sys_config.sysname );
@@ -1397,15 +1366,15 @@ void cs_base_info_systeme
     strcpy(str_machine , "");
   }
 
-  /* Mémoire vive disponible */
+  /* Available memory */
 
   ram = bft_sys_info_mem_ram();
   if (ram > 1)
     sprintf(str_ram, "%lu", (unsigned long)ram);
 
-  /* Utilisateur */
+  /* User */
 
-  /* Fonctions non disponibles sur IBM Blue Gene ou Cray XT */
+  /* Functions not available on IBM Blue Gene or Cray XT */
 #if   defined(__blrts__) || defined(__bgp__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   pwd_user = NULL;
@@ -1439,14 +1408,13 @@ void cs_base_info_systeme
   else
     strcpy(str_user, "");
 
-  /* Répertoire courant */
+  /* Working directory */
 
   if (getcwd(str_directory, 1024) == NULL)
     strcpy(str_directory, "");
 
-
-  /* Affichage de la configuration locale */
-  /*--------------------------------------*/
+  /* Print local configuration */
+  /*---------------------------*/
 
   bft_printf("\n%s\n", _("Local case configuration:\n"));
 
@@ -1467,59 +1435,65 @@ void cs_base_info_systeme
 #endif /* _POSIX_SOURCE */
 }
 
-
 /*----------------------------------------------------------------------------
- * Modification du comportement des fonctions bft_printf() par défaut
+ * Replace default bft_printf() mechanism with internal mechanism.
+ *
+ * This is necessary for good consistency of messages output from C or
+ * from Fortran, and to handle parallel and serial logging options.
  *----------------------------------------------------------------------------*/
 
-void cs_base_bft_printf_set
-(
- void
-)
+void
+cs_base_bft_printf_set(void)
 {
   bft_printf_proxy_set(_cs_base_bft_printf);
   bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
 }
 
-
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message "avertissement"
+ * Print a warning message header.
+ *
+ * parameters:
+ *   file_name <-- name of source file
+ *   line_nume <-- line number in source file
  *----------------------------------------------------------------------------*/
 
-void cs_base_warn
-(
- const char  *file_name,
- const int    line_num
-)
+void
+cs_base_warn(const char  *file_name,
+             int          line_num)
 {
   bft_printf(_("\n\nCode_Saturne: %s:%d: Warning\n"),
              file_name, line_num);
 }
 
-
 /*----------------------------------------------------------------------------
- * Conversion d'une chaîne de l'API Fortran vers l'API C,
- * (avec suppression des blancs en début ou fin de chaîne).
+ * Convert a character string from the Fortran API to the C API.
+ *
+ * Eventual leading and trailing blanks are removed.
+ *
+ * parameters:
+ *   f_str <-- Fortran string
+ *   f_len <-- Fortran string length
+ *
+ * returns:
+ *   pointer to C string
  *----------------------------------------------------------------------------*/
 
-char  * cs_base_chaine_f_vers_c_cree
-(
- const char      * f_str,                   /* --> Chaîne Fortran             */
- int               f_len                    /* --> Longueur de la chaîne      */
-)
+char *
+cs_base_string_f_to_c_create(const char  *f_str,
+                             int          f_len)
 {
   char * c_str = NULL;
   int    i, i1, i2, l;
 
-  /* Initialisation si nécessaire */
+  /* Initialization if necessary */
 
-  if (cs_glob_base_chaine_init == false) {
-    for (i = 0 ; i < CS_BASE_NBR_CHAINE ; i++)
-      cs_glob_base_chaine_libre[i] = true;
-    cs_glob_base_chaine_init = true;
+  if (cs_glob_base_str_init == false) {
+    for (i = 0 ; i < CS_BASE_N_STRINGS ; i++)
+      cs_glob_base_str_is_free[i] = true;
+    cs_glob_base_str_init = true;
   }
 
-  /* Traitement du nom pour l'API C */
+  /* Handle name for C API */
 
   for (i1 = 0 ;
        i1 < f_len && (f_str[i1] == ' ' || f_str[i1] == '\t') ;
@@ -1531,13 +1505,13 @@ char  * cs_base_chaine_f_vers_c_cree
 
   l = i2 - i1 + 1;
 
-  /* Allocation si nécessaire */
+  /* Allocation if necessary */
 
-  if (l < CS_BASE_LNG_CHAINE) {
-    for (i = 0 ; i < CS_BASE_NBR_CHAINE ; i++) {
-      if (cs_glob_base_chaine_libre[i] == true) {
-        c_str = cs_glob_base_chaine[i];
-        cs_glob_base_chaine_libre[i] = false;
+  if (l < CS_BASE_STRING_LEN) {
+    for (i = 0 ; i < CS_BASE_N_STRINGS ; i++) {
+      if (cs_glob_base_str_is_free[i] == true) {
+        c_str = cs_glob_base_str[i];
+        cs_glob_base_str_is_free[i] = false;
         break;
       }
     }
@@ -1554,35 +1528,35 @@ char  * cs_base_chaine_f_vers_c_cree
   return c_str;
 }
 
-
 /*----------------------------------------------------------------------------
- *  Libération d'une chaîne convertie de l'API Fortran vers l'API C
+ * Free a string converted from the Fortran API to the C API.
+ *
+ * parameters:
+ *   str <-> pointer to C string
  *----------------------------------------------------------------------------*/
 
-char  * cs_base_chaine_f_vers_c_detruit
-(
- char  * c_str                              /* --> Chaîne C                   */
-)
+void
+cs_base_string_f_to_c_free(char  **c_str)
 {
   cs_int_t ind;
 
-  for (ind = 0 ; ind < CS_BASE_NBR_CHAINE ; ind++) {
-    if (c_str == cs_glob_base_chaine[ind]) {
-      cs_glob_base_chaine_libre[ind] = true;
-      c_str = NULL;
+  for (ind = 0 ; ind < CS_BASE_N_STRINGS ; ind++) {
+    if (*c_str == cs_glob_base_str[ind]) {
+      cs_glob_base_str_is_free[ind] = true;
+      *c_str = NULL;
       break;
     }
   }
 
-  if (ind == CS_BASE_NBR_CHAINE)
-    BFT_FREE(c_str);
-
-  return c_str;
+  if (ind == CS_BASE_N_STRINGS && *c_str != NULL)
+    BFT_FREE(*c_str);
 }
 
-
 /*----------------------------------------------------------------------------
- * Modification du comportement de sortie du programme par défaut
+ * Modify program exit behavior setting a specific exit function.
+ *
+ * parameters:
+ *   exit_func <-- pointer to exit function which should be used
  *----------------------------------------------------------------------------*/
 
 void
@@ -1590,11 +1564,6 @@ cs_base_exit_set(cs_exit_t *exit_func)
 {
   _cs_glob_exit = exit_func;
 }
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 

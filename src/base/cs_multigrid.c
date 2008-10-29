@@ -1425,7 +1425,7 @@ void CS_PROCF(clmlga, CLMLGA)
   wt_start = bft_timer_wtime();
   cpu_start = bft_timer_cpu_time();
 
-  var_name = cs_base_chaine_f_vers_c_cree(cname, *lname);
+  var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   mg = _find_or_add_system(var_name);
 
@@ -1542,6 +1542,8 @@ void CS_PROCF(clmlga, CLMLGA)
       break;
   }
 
+  cs_base_string_f_to_c_free(&var_name);
+
   /* Print final info */
 
   if (*iwarnp > 1)
@@ -1614,9 +1616,11 @@ void CS_PROCF(dsmlga, DSMLGA)
   wt_start =bft_timer_wtime();
   cpu_start =bft_timer_cpu_time();
 
-  var_name = cs_base_chaine_f_vers_c_cree(cname, *lname);
+  var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   mg = _find_or_add_system(var_name);
+
+  cs_base_string_f_to_c_free(&var_name);
 
   /* Destroy grid hierarchy */
 
@@ -1697,7 +1701,7 @@ void CS_PROCF(resmgr, RESMGR)
   else if (*iinvpe == 3)
     rotation_mode = CS_PERIO_ROTA_IGNORE;
 
-  var_name = cs_base_chaine_f_vers_c_cree(cname, *lname);
+  var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   assert(*iresds > -1 && *iresds < 3);
   assert(*iresas > -1 && *iresas < 3);
@@ -1732,7 +1736,7 @@ void CS_PROCF(resmgr, RESMGR)
                    0,
                    NULL);
 
-  cs_base_chaine_f_vers_c_detruit(var_name);
+  cs_base_string_f_to_c_free(&var_name);
 }
 
 /*============================================================================

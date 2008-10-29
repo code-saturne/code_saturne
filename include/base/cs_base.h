@@ -82,7 +82,12 @@
  * Macro definitions
  *============================================================================*/
 
-/* Nom du système */
+/* Application type name */
+
+#define CS_APP_NAME    "Code_Saturne"  /* PACKAGE_NAME with autoconf */
+#define CS_APP_VERSION "1.4.c"         /* PACKAGE_VERSION with autoconf */
+
+/* System type name */
 
 #if defined(__sgi__) || defined(__sgi) || defined(sgi)
 #define _CS_ARCH_IRIX_64
@@ -221,7 +226,7 @@ typedef enum {                          /* Boolean */
 typedef struct
 {
   cs_real_t val;
-  cs_int_t  rang;
+  cs_int_t  rank;
 } cs_mpi_real_int_t;
 
 #endif /* defined(_CS_HAVE_MPI) */
@@ -274,79 +279,74 @@ extern int  cs_glob_mpe_compute_b;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction d'arret depuis du code Fortran
+ * Call exit routine from Fortran code
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE CSEXIT (STATUT)
+ * SUBROUTINE CSEXIT (STATUS)
  * *****************
  *
- * INTEGER          STATUT      : --> : 0 pour succès, 1 ou + pour erreur
+ * INTEGER          STATUS      : --> : 0 for success, 1+ for error
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csexit, CSEXIT)
 (
-  const cs_int_t  *const statut
+  const cs_int_t  *status
 );
 
-
 /*----------------------------------------------------------------------------
- * Temps CPU écoulé depuis le début de l'exécution
+ * CPU time used since execution start
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE DMTMPS (TCPU)
  * *****************
  *
- * DOUBLE PRECISION TCPU        : --> : temps CPU (utilisateur + système)
+ * DOUBLE PRECISION TCPU        : --> : CPU time (user + system)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dmtmps, DMTMPS)
 (
-  cs_real_t  *const tcpu
+  cs_real_t  *tcpu
 );
 
 /*----------------------------------------------------------------------------
- * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
- * pas  LONGIA.
+ * Check that main integer working array memory reservation fits within
+ * the allocated size of IA.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE IASIZE (SOUSPG, MEMINT)
+ * SUBROUTINE IASIZE (CALLER, MEMINT)
  * *****************
  *
- * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMINT      : --> : Indice de la dernière case utilisée
- *                              :     : dans IA
+ * CHARACTER*6      CALLER      : --> : Name of calling subroutine
+ * INTEGER          MEMINT      : --> : Last required element in IA
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (iasize, IASIZE)
 (
- const char   souspg[6],
+ const char   caller[6],
  cs_int_t    *memint
 );
 
-
 /*----------------------------------------------------------------------------
- * Verifier que la réservation en mémoire effectuée par souspg ne dépasse
- * pas  LONGRA.
+ * Check that main floating-point working array memory reservation fits
+ * within the allocated size of RA.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE RASIZE (SOUSPG, MEMINT)
+ * SUBROUTINE RASIZE (CALLER, MEMINT)
  * *****************
  *
- * CHARACTER*6      SOUSPG      : --> : Nom du sous-programme appelant
- * INTEGER          MEMRDP      : --> : Indice de la dernière case utilisée
- *                              :     : dans RA
+ * CHARACTER*6      CALLER      : --> : Name of calling subroutine
+ * INTEGER          MEMRDP      : --> : Last required element in RA
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (rasize, RASIZE)
 (
- const char   souspg[6],
+ const char   caller[6],
  cs_int_t    *memrdp
 );
-
 
 /*=============================================================================
  * Public function prototypes
@@ -392,7 +392,7 @@ cs_exit(int  status);
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_erreur_init(void);
+cs_base_error_init(void);
 
 /*----------------------------------------------------------------------------
  * Initialize management of memory allocated through BFT.
@@ -438,7 +438,7 @@ cs_base_bilan_temps(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_info_systeme(void);
+cs_base_system_info(void);
 
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
@@ -470,21 +470,24 @@ cs_base_warn(const char  *file_name,
  * parameters:
  *   f_str <-- Fortran string
  *   f_len <-- Fortran string length
+ *
+ * returns:
+ *   pointer to C string
  *----------------------------------------------------------------------------*/
 
 char *
-cs_base_chaine_f_vers_c_cree(const char  *f_str,
-                             int          l_en);
+cs_base_string_f_to_c_create(const char  *f_str,
+                             int          f_len);
 
 /*----------------------------------------------------------------------------
  * Free a string converted from the Fortran API to the C API.
  *
  * parameters:
- *   str <-- C string
+ *   str <-> pointer to C string
  *----------------------------------------------------------------------------*/
 
-char  *
-cs_base_chaine_f_vers_c_detruit(char  *c_str);
+void
+cs_base_string_f_to_c_free(char  **c_str);
 
 /*----------------------------------------------------------------------------
  * Modify program exit behavior setting a specific exit function.

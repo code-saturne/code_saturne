@@ -74,75 +74,234 @@
 
 BEGIN_C_DECLS
 
-#if defined(_CS_HAVE_MPI)
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
 
 struct _cs_couplage_t {
 
-  fvm_locator_t   *localis_cel;  /* Localisateur associé aux cellules */
-  fvm_locator_t   *localis_fbr;  /* Localisateur associé aux faces de bord */
+  fvm_locator_t   *localis_cel;  /* Locator associated with cells */
+  fvm_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
 
-  cs_int_t         nbr_cel_sup;  /* Nombre de cellules support associées */
-  cs_int_t         nbr_fbr_sup;  /* Nombre de faces de bord support associées */
-  fvm_nodal_t     *cells_sup;    /* Cellules locales servant de support
-                                    d'interpolation à des valeurs distantes */
-  fvm_nodal_t     *faces_sup;    /* Faces locales servant de support
-                                    d'interpolation à des valeurs distantes */
+  cs_int_t         nbr_cel_sup;  /* Number of associated cell locations */
+  cs_int_t         nbr_fbr_sup;  /* Number of associated face locations */
+  fvm_nodal_t     *cells_sup;    /* Local cells at which distant values are
+                                    interpolated*/
+  fvm_nodal_t     *faces_sup;    /* Local faces at which distant values are
+                                    interpolated*/
 
 #if defined(_CS_HAVE_MPI)
 
-  MPI_Comm         comm;         /* Communicateur MPI associé */
+  MPI_Comm         comm;         /* Associated MPI communicator */
 
-  cs_int_t         nb_rangs_dist;  /* Nombre de processus distants associés */
-  cs_int_t         rang_deb_dist;  /* Premier rang distant associé */
+  cs_int_t         n_dist_ranks;    /* Number of associated distant ranks */
+  cs_int_t         dist_root_rank;  /* First associated distant rank */
 
 #endif
 
 };
 
 /*============================================================================
- *  Variables globales statiques
+ * Static global variables
  *============================================================================*/
 
-/* Tableau des couplages */
+/* Array of couplings */
 
 static int              cs_glob_nbr_couplages = 0;
 static int              cs_glob_nbr_couplages_max = 0;
 static cs_couplage_t  **cs_glob_couplages = NULL;
 
 /*============================================================================
- * Prototypes de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Création d'un couplage.
+ * Create a coupling.
  *
- * On autorise les couplages soit avec des groupes de processus totalement
- * distincts du groupe principal (correspondant à cs_glob_base_mpi_comm),
- * soit avec ce même groupe.
+ * Couplings are allowed either with process totally distinct from the
+ * application communicator (cs_glob_base_mpi_comm), or within this same
+ * communicator.
+ *
+ * parameters:
+ *   root_rank <-- root rank of distant process leader in MPI_COMM_WORLD
+ *
+ * returns:
+ *   pointer to new coupling structure
  *----------------------------------------------------------------------------*/
 
-static cs_couplage_t  * cs_loc_couplage_cree
-(
- const cs_int_t   rang_deb            /* --> rang du premier processus couplé */
-);
+static cs_couplage_t *
+cs_loc_couplage_cree(cs_int_t  root_rank)
+{
+  int  mpi_flag = 0;
+  int  n_dist_ranks = 0;
+  int  dist_root_rank = 0;
+  cs_couplage_t  *couplage = NULL;
+
+  const double  tolerance = 0.1;
+
+  /* Create associated structure and MPI communicator */
+
+  BFT_MALLOC(couplage, 1, cs_couplage_t);
+
+#if defined(_CS_HAVE_MPI)
+
+  MPI_Initialized(&mpi_flag);
+
+  if (mpi_flag == 0)
+    couplage->comm = MPI_COMM_NULL;
+
+  else {
+
+    int  n_loc_ranks, n_glob_ranks, r_glob, r_loc_min, r_loc_max;
+
+    /* Check that coupled processes overlap exactly or not at all */
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &r_glob);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_glob_ranks);
+    MPI_Comm_size(cs_glob_base_mpi_comm, &n_loc_ranks);
+
+    MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN, cs_glob_base_mpi_comm);
+    MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX, cs_glob_base_mpi_comm);
+
+    if (root_rank > r_loc_min && root_rank <= r_loc_max)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Coupling definition is impossible: a distant root rank equal to\n"
+                  "%d is required, whereas the local group corresponds to\n"
+                  "rank %d to %d\n"),
+                (int)root_rank, r_loc_min, r_loc_max);
+
+    else if (root_rank < 0 || root_rank >= n_glob_ranks)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Coupling definition is impossible: a distant root rank equal to\n"
+                  "%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
+                  "range from to 0 to %d\n"),
+                (int)root_rank, n_glob_ranks - 1);
+
+    /* Case for a coupling internal to the process group */
+
+    if (root_rank == r_loc_min) {
+      if (n_loc_ranks == 1)
+        couplage->comm = MPI_COMM_NULL;
+      else
+        couplage->comm = cs_glob_base_mpi_comm;
+      n_dist_ranks = n_loc_ranks;
+    }
+
+    /* Case for a coupling external to the process group */
+
+    else {
+
+      MPI_Comm  intercomm_tmp;
+      int  r_coupl, r_coupl_min;
+      int  haut = (root_rank > r_loc_max) ? 0 : 1;
+      const int  cs_couplage_tag = 'C'+'S'+'_'+'C'+'O'+'U'+'P'+'L'+'A'+'G'+'E';
+
+      /* Création d'un communicateur réservé */
+
+      MPI_Intercomm_create(cs_glob_base_mpi_comm, 0, MPI_COMM_WORLD,
+                           (int)root_rank, cs_couplage_tag, &intercomm_tmp);
+
+      MPI_Intercomm_merge(intercomm_tmp, haut, &(couplage->comm));
+
+      MPI_Comm_free(&intercomm_tmp);
+
+      /* Calcul du nombre de rangs distants et du premier rang distant */
+
+      MPI_Comm_size(couplage->comm, &n_dist_ranks);
+      n_dist_ranks -= n_loc_ranks;
+
+      /* Vérification du rang dans le nouveau communicateur (ne devrait
+         pas être nécessaire avec valeur "haut" bien positionnée,
+         mais semble l'être avec Open MPI 1.0.1) */
+
+      MPI_Comm_rank(couplage->comm, &r_coupl);
+      MPI_Allreduce(&r_coupl, &r_coupl_min, 1, MPI_INT, MPI_MIN,
+                    cs_glob_base_mpi_comm);
+      haut = (r_coupl_min == 0) ? 0 : 1;
+
+      /* On en déduit la postion du premier rang distant dans le
+       * nouveau communicateur */
+
+      if (haut == 0)
+        dist_root_rank = n_loc_ranks;
+      else
+        dist_root_rank = 0;
+
+      bft_printf("r %d (%d / %d) : nb_rangs_dist = %d, rang_deb_dist = %d\n",
+                 r_glob, haut, r_coupl, n_dist_ranks, dist_root_rank);
+    }
+
+  }
+
+  couplage->n_dist_ranks = n_dist_ranks;
+  couplage->dist_root_rank = dist_root_rank;
+
+#endif
+
+  /* Création des structures de localisation */
+
+#if defined(FVM_HAVE_MPI)
+
+  couplage->localis_cel = fvm_locator_create(tolerance,
+                                             couplage->comm,
+                                             n_dist_ranks,
+                                             dist_root_rank);
+
+  couplage->localis_fbr = fvm_locator_create(tolerance,
+                                             couplage->comm,
+                                             n_dist_ranks,
+                                             dist_root_rank);
+
+#else
+
+  couplage->localis_cel = fvm_locator_create(tolerance);
+  couplage->localis_fbr = fvm_locator_create(tolerance);
+
+#endif
+
+  couplage->nbr_cel_sup = 0;
+  couplage->nbr_fbr_sup = 0;
+  couplage->cells_sup = NULL;
+  couplage->faces_sup = NULL;
+
+  return couplage;
+}
 
 
 /*----------------------------------------------------------------------------
- * Destruction d'un couplage
+ * Destroy a coupling structure
+ *
+ * parameters:
+ *   couplage <-> pointer to coupling structure to destroy
+ *
+ * returns:
+ *   NULL pointer
  *----------------------------------------------------------------------------*/
 
-static cs_couplage_t  * cs_loc_couplage_detruit
-(
- cs_couplage_t  *couplage             /* <-> pointeur sur structure à libérer */
-);
+static cs_couplage_t *
+cs_loc_couplage_detruit(cs_couplage_t  *couplage)
+{
+  fvm_locator_destroy(couplage->localis_cel);
+  fvm_locator_destroy(couplage->localis_fbr);
 
+  if (couplage->cells_sup != NULL)
+    fvm_nodal_destroy(couplage->cells_sup);
+  if (couplage->faces_sup != NULL)
+    fvm_nodal_destroy(couplage->faces_sup);
+
+#if defined(_CS_HAVE_MPI)
+  if (   couplage->comm != MPI_COMM_WORLD
+      && couplage->comm != cs_glob_base_mpi_comm)
+    MPI_Comm_free(&(couplage->comm));
+#endif
+
+  BFT_FREE(couplage);
+
+  return NULL;
+}
 
 /*============================================================================
- * Fonctions Fortran
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -266,17 +425,17 @@ void CS_PROCF (defcpl, DEFCPL)
 #endif
 
   if (indic_glob[0] > 0)
-    coupl->cells_sup = cs_maillage_extrait_cel_nodal(cs_glob_mesh,
-                                                     "cellules_couplees",
-                                                     *ncesup,
-                                                     lcesup);
+    coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                      "cellules_couplees",
+                                                      *ncesup,
+                                                      lcesup);
   if (indic_glob[1] > 0)
-    coupl->faces_sup = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                                     "faces_bord_couplees",
-                                                     0,
-                                                     *nfbsup,
-                                                     NULL,
-                                                     lfbsup);
+    coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                      "faces_bord_couplees",
+                                                      0,
+                                                      *nfbsup,
+                                                      NULL,
+                                                      lfbsup);
 
   /* Initialisation de la localisation des correspondants */
 
@@ -834,15 +993,16 @@ void CS_PROCF (tbicpl, TBICPL)
        cs_int_t  *const varloc        /* <-- variable locale (à recevoir)     */
 )
 {
-#if defined(_CS_HAVE_MPI)
-
   /* Variables locales */
 
   cs_int_t  ind;
-  MPI_Status  status;
-
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
+
+#if defined(_CS_HAVE_MPI)
+
+  MPI_Status  status;
+
   cs_couplage_t  *coupl = NULL;
 
   /* Initialisations et vérifications */
@@ -861,8 +1021,8 @@ void CS_PROCF (tbicpl, TBICPL)
     /* Enchanges entre les têtes de groupes */
 
     if (cs_glob_base_rang < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->rang_deb_dist, 0,
-                   varloc, *nbrloc, CS_MPI_INT, coupl->rang_deb_dist, 0,
+      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->dist_root_rank, 0,
+                   varloc, *nbrloc, CS_MPI_INT, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronisation à l'intérieur d'un groupe */
@@ -911,15 +1071,16 @@ void CS_PROCF (tbrcpl, TBRCPL)
        cs_real_t *const varloc        /* <-- variable locale (à recevoir)     */
 )
 {
-#if defined(_CS_HAVE_MPI)
-
   /* Variables locales */
 
   cs_int_t  ind;
-  MPI_Status  status;
-
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
+
+#if defined(_CS_HAVE_MPI)
+
+  MPI_Status  status;
+
   cs_couplage_t  *coupl = NULL;
 
   /* Initialisations et vérifications */
@@ -938,8 +1099,8 @@ void CS_PROCF (tbrcpl, TBRCPL)
     /* Enchanges entre les têtes de groupes */
 
     if (cs_glob_base_rang < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->rang_deb_dist, 0,
-                   varloc, *nbrloc, CS_MPI_REAL, coupl->rang_deb_dist, 0,
+      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->dist_root_rank, 0,
+                   varloc, *nbrloc, CS_MPI_REAL, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronisation à l'intérieur d'un groupe */
@@ -962,31 +1123,28 @@ void CS_PROCF (tbrcpl, TBRCPL)
 }
 
 /*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Ajout d'un couplage.
+ * Add a coupling.
  *
- * On autorise les couplages soit avec des groupes de processus totalement
- * distincts du groupe principal (correspondant à cs_glob_base_mpi_comm),
- * soit avec ce même groupe.
+ * Couplings are allowed either with process totally distinct from the
+ * application communicator (cs_glob_base_mpi_comm), or within this same
+ * communicator.
+ *
+ * parameters:
+ *   rang_deb <-- root rank of distant process leader in MPI_COMM_WORLD
  *----------------------------------------------------------------------------*/
 
-void  cs_couplage_ajoute
-(
- const cs_int_t   rang_deb            /* --> rang du premier processus couplé */
-)
+void
+cs_couplage_ajoute(cs_int_t   rang_deb)
 {
-    /* variables locales */
-
   cs_couplage_t  *couplage = NULL;
 
-
-  /* Création de la structure associée */
+  /* Create the associated structure */
 
   couplage = cs_loc_couplage_cree(rang_deb);
-
 
   /* Redimensionnement du tableau global des couplages */
 
@@ -1013,15 +1171,12 @@ void  cs_couplage_ajoute
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Suppression des couplages
+ * Destroy all couplings
  *----------------------------------------------------------------------------*/
 
-void cs_couplage_detruit_tout
-(
- void
-)
+void
+cs_couplage_detruit_tout(void)
 {
   cs_int_t  i;
 
@@ -1033,194 +1188,6 @@ void cs_couplage_detruit_tout
   cs_glob_nbr_couplages = 0;
   cs_glob_nbr_couplages_max = 0;
 }
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Création d'un couplage.
- *
- * On autorise les couplages soit avec des groupes de processus totalement
- * distincts du groupe principal (correspondant à cs_glob_base_mpi_comm),
- * soit avec ce même groupe.
- *----------------------------------------------------------------------------*/
-
-static cs_couplage_t  * cs_loc_couplage_cree
-(
- const cs_int_t   rang_deb            /* --> rang du premier processus couplé */
-)
-{
-    /* variables locales */
-
-  int  mpi_flag = 0;
-  int  nb_rangs_dist = 0;
-  int  rang_deb_dist = 0;
-  cs_couplage_t  *couplage = NULL;
-
-  const double  tolerance = 0.1;
-
-  /* Création de la structure associée et association d'un communicateur MPI */
-
-  BFT_MALLOC(couplage, 1, cs_couplage_t);
-
-#if defined(_CS_HAVE_MPI)
-
-  MPI_Initialized(&mpi_flag);
-
-  if (mpi_flag == 0)
-    couplage->comm = MPI_COMM_NULL;
-
-  else {
-
-    int  nb_rangs_loc, nb_rangs_glob, r_glob, r_loc_min, r_loc_max;
-
-    /* Vérification que les processus couplés se chevauchent exactement
-       ou pas du tout */
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &r_glob);
-    MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN, cs_glob_base_mpi_comm);
-    MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX, cs_glob_base_mpi_comm);
-    MPI_Comm_size(MPI_COMM_WORLD, &nb_rangs_glob);
-
-    MPI_Comm_size(cs_glob_base_mpi_comm, &nb_rangs_loc);
-
-    if (rang_deb > r_loc_min && rang_deb <= r_loc_max)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Coupling definition is impossible: a distant root rank equal to\n"
-                  "%d is required, whereas the local group corresponds to\n"
-                  "rank %d to %d\n"),
-                (int)rang_deb, r_loc_min, r_loc_max);
-
-    else if (rang_deb < 0 || rang_deb >= nb_rangs_glob)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Coupling definition is impossible: a distant root rank equal to\n"
-                  "%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
-                  "range from to 0 to %d\n"),
-                (int)rang_deb, nb_rangs_glob - 1);
-
-    /* Cas d'un couplage interne au groupe de processus */
-
-    if (rang_deb == r_loc_min) {
-      if (nb_rangs_loc == 1)
-        couplage->comm = MPI_COMM_NULL;
-      else
-        couplage->comm = cs_glob_base_mpi_comm;
-      nb_rangs_dist = nb_rangs_loc;
-    }
-
-    /* Cas d'un couplage externe au groupe de processus */
-
-    else {
-
-      MPI_Comm  intercomm_tmp;
-      int  r_coupl, r_coupl_min;
-      int  haut = (rang_deb > r_loc_max) ? 0 : 1;
-      const int  cs_couplage_tag = 'C'+'S'+'_'+'C'+'O'+'U'+'P'+'L'+'A'+'G'+'E';
-
-      /* Création d'un communicateur réservé */
-
-      MPI_Intercomm_create(cs_glob_base_mpi_comm, 0, MPI_COMM_WORLD,
-                           (int)rang_deb, cs_couplage_tag, &intercomm_tmp);
-
-      MPI_Intercomm_merge(intercomm_tmp, haut, &(couplage->comm));
-
-      MPI_Comm_free(&intercomm_tmp);
-
-      /* Calcul du nombre de rangs distants et du premier rang distant */
-
-      MPI_Comm_size(couplage->comm, &nb_rangs_dist);
-      nb_rangs_dist -= nb_rangs_loc;
-
-      /* Vérification du rang dans le nouveau communicateur (ne devrait
-         pas être nécessaire avec valeur "haut" bien positionnée,
-         mais semble l'être avec Open MPI 1.0.1) */
-
-      MPI_Comm_rank(couplage->comm, &r_coupl);
-      MPI_Allreduce(&r_coupl, &r_coupl_min, 1, MPI_INT, MPI_MIN,
-                    cs_glob_base_mpi_comm);
-      haut = (r_coupl_min == 0) ? 0 : 1;
-
-      /* On en déduit la postion du premier rang distant dans le
-       * nouveau communicateur */
-
-      if (haut == 0)
-        rang_deb_dist = nb_rangs_loc;
-      else
-        rang_deb_dist = 0;
-
-      bft_printf("r %d (%d / %d) : nb_rangs_dist = %d, rang_deb_dist = %d\n",
-                 r_glob, haut, r_coupl, nb_rangs_dist, rang_deb_dist);
-    }
-
-  }
-
-  couplage->nb_rangs_dist = nb_rangs_dist;
-  couplage->rang_deb_dist = rang_deb_dist;
-
-#endif
-
-  /* Création des structures de localisation */
-
-#if defined(FVM_HAVE_MPI)
-
-  couplage->localis_cel = fvm_locator_create(tolerance,
-                                             couplage->comm,
-                                             nb_rangs_dist,
-                                             rang_deb_dist);
-
-  couplage->localis_fbr = fvm_locator_create(tolerance,
-                                             couplage->comm,
-                                             nb_rangs_dist,
-                                             rang_deb_dist);
-
-#else
-
-  couplage->localis_cel = fvm_locator_create(tolerance);
-  couplage->localis_fbr = fvm_locator_create(tolerance);
-
-#endif
-
-  couplage->nbr_cel_sup = 0;
-  couplage->nbr_fbr_sup = 0;
-  couplage->cells_sup = NULL;
-  couplage->faces_sup = NULL;
-
-  return couplage;
-}
-
-
-/*----------------------------------------------------------------------------
- * Destruction d'un couplage
- *----------------------------------------------------------------------------*/
-
-static cs_couplage_t  * cs_loc_couplage_detruit
-(
- cs_couplage_t  *couplage             /* <-> pointeur sur structure à libérer */
-)
-{
-  fvm_locator_destroy(couplage->localis_cel);
-  fvm_locator_destroy(couplage->localis_fbr);
-
-  if (couplage->cells_sup != NULL)
-    fvm_nodal_destroy(couplage->cells_sup);
-  if (couplage->faces_sup != NULL)
-    fvm_nodal_destroy(couplage->faces_sup);
-
-#if defined(_CS_HAVE_MPI)
-  if (   couplage->comm != MPI_COMM_WORLD
-      && couplage->comm != cs_glob_base_mpi_comm)
-    MPI_Comm_free(&(couplage->comm));
-#endif
-
-  BFT_FREE(couplage);
-
-  return NULL;
-}
-
-
-#endif /* _CS_HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 

@@ -418,14 +418,14 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
-  val_in.rang = cs_glob_base_rang;
+  val_in.rank = cs_glob_base_rang;
 
   MPI_Allreduce(&val_in, &val_max, 1, CS_MPI_REAL_INT, MPI_MAXLOC,
                 cs_glob_base_mpi_comm);
 
   *var = val_max.val;
 
-  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_max.rang, cs_glob_base_mpi_comm);
+  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_max.rank, cs_glob_base_mpi_comm);
 
 #endif
 
@@ -466,14 +466,14 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
-  val_in.rang = cs_glob_base_rang;
+  val_in.rank = cs_glob_base_rang;
 
   MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
                 cs_glob_base_mpi_comm);
 
   *var = val_min.val;
 
-  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_min.rang, cs_glob_base_mpi_comm);
+  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_min.rank, cs_glob_base_mpi_comm);
 
 #endif
 
@@ -990,15 +990,15 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *dis2mn;
-  val_in.rang = cs_glob_base_rang;
+  val_in.rank = cs_glob_base_rang;
 
   MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
                 cs_glob_base_mpi_comm);
 
   *ndrang = cs_glob_base_rang;
 
-  MPI_Bcast(node,   1, CS_MPI_INT, val_min.rang, cs_glob_base_mpi_comm);
-  MPI_Bcast(ndrang, 1, CS_MPI_INT, val_min.rang, cs_glob_base_mpi_comm);
+  MPI_Bcast(node,   1, CS_MPI_INT, val_min.rank, cs_glob_base_mpi_comm);
+  MPI_Bcast(ndrang, 1, CS_MPI_INT, val_min.rank, cs_glob_base_mpi_comm);
 
 #endif
 
@@ -1062,7 +1062,7 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
  * *****************
  *
  * INTEGER          LNUM        : --> : local cell number
- * INTEGER          RANKID      : --> : rank of the domain (0 à N-1)
+ * INTEGER          RANKID      : --> : rank of the domain (0 to N-1)
  * INTEGER          GNUM        : <-- : global cell number
  *
  * Returns:

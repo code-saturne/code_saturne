@@ -161,7 +161,7 @@ _arg_env_help(const char  *name)
     (e, _(" -q, --quality     verifications\n"
           "                   -1: no tests activated (default)\n"
           "                    0: only the initialization is tested\n"
-          "                    1 à 5: elementary tests are activated\n"));
+          "                    1 to 5: elementary tests are activated\n"));
   fprintf
     (e, _(" -cwf              <criterion> cut warped faces\n"
           "                    -post: activate the post-processing related\n"
@@ -182,7 +182,7 @@ _arg_env_help(const char  *name)
           "                     1: output in \"listing_n<rang>\"\n"));
 #if defined(_CS_HAVE_XML)
   fprintf
-    (e, _(" -param            [file_name] parameter file\n"));
+    (e, _(" -p, --param       <file_name> parameter file\n"));
 #endif
   fprintf
     (e, _(" -h, --help        this help message\n\n"));
@@ -553,7 +553,8 @@ cs_opts_logfile_head(int    argc,
              "***************************\n\n");
   bft_printf("                                  (R)\n"
              "                      Code_Saturne\n\n"
-             "                      Version 1.4.b\n\n");
+             "                      Version %s\n\n",
+             CS_APP_VERSION);
 
   bft_printf("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n");
 
@@ -621,7 +622,7 @@ cs_opts_mpi_rank(int    * argc,
     in this case, only rank 0 knows the "user" command line arguments
     at program startup, the other processes obtaining them only upon
     calling  MPI_Init(). In this case, it is thus necessary to initialize
-    MPI before parsing the the command line.
+    MPI before parsing the command line.
   */
 
   for (arg_id = 0 ; arg_id < *argc ; arg_id++) {
@@ -823,7 +824,7 @@ cs_opts_define(int         argc,
     }
 
 #if defined(_CS_HAVE_XML)
-    else if (strcmp(s, "-param") == 0) {
+    else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       s = argv[++arg_id];
       argerr = cs_gui_file_loading(s);
     }

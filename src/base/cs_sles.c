@@ -1438,7 +1438,7 @@ _bi_cgstab(const char             *var_name,
 }
 
 /*============================================================================
- *  Public function definitions for Fortran API
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -1490,7 +1490,7 @@ void CS_PROCF(reslin, RESLIN)
   else if (*iinvpe == 3)
     rotation_mode = CS_PERIO_ROTA_IGNORE;
 
-  var_name = cs_base_chaine_f_vers_c_cree(cname, *lname);
+  var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   switch ((int)(*ireslp)) {
   case 0:
@@ -1530,7 +1530,7 @@ void CS_PROCF(reslin, RESLIN)
 
   *niterf = n_iter;
 
-  cs_base_chaine_f_vers_c_detruit(var_name);
+  cs_base_string_f_to_c_free(&var_name);
 }
 
 /*============================================================================

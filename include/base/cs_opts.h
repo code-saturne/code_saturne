@@ -56,17 +56,15 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  /* Communication with Pre-processor */
-
-  cs_int_t         ifoenv;      /* 0 if not using Preprocessor, 1 otherwise */
-  cs_int_t         echo_comm;   /* Communication verbosity */
+  cs_int_t       ifoenv;        /* 0 if not using Preprocessor, 1 otherwise */
+  cs_int_t       echo_comm;     /* Communication verbosity */
 
   /* Redirection of standard output */
 
-  cs_int_t         ilisr0;      /* Redirection for rank 0
+  cs_int_t       ilisr0;        /* Redirection for rank 0
                                    (0: not redirected;
                                    1: redirected to "listing" file) */
-  cs_int_t         ilisrp;      /* Redirection for ranks > 0
+  cs_int_t       ilisrp;        /* Redirection for ranks > 0
                                    (0: not redirected;
                                    1: redirected to "listing_n*" file;
                                    2: redirected to "/dev/null", suppressed) */
@@ -76,21 +74,21 @@ typedef struct {
   cs_int_t       iverif;        /* Mesh quality verification modes
                                    (-1 for standard mode) */
 
-  int            benchmark;   /* Benchmark mode:
-                                 0: not used;
-                                 1: timing (CPU + Walltime) mode
-                                 2: MPI trace-friendly mode */
+  int            benchmark;     /* Benchmark mode:
+                                   0: not used;
+                                   1: timing (CPU + Walltime) mode
+                                   2: MPI trace-friendly mode */
 
   /* Cut of warped faces */
 
-  cs_bool_t      cwf;            /* true if cut is required */
-  cs_bool_t      cwf_post;       /* true if post-treatment is required */
-  double         cwf_criterion;  /* Criterion to choose which face to cut */
+  cs_bool_t      cwf;           /* true if cut is required */
+  cs_bool_t      cwf_post;      /* true if post-treatment is required */
+  double         cwf_criterion; /* Criterion to choose which face to cut */
 
   /* Connection with proxy */
 
-  char          *proxy_socket;   /* Name of proxy socket */
-  int            proxy_key;      /* Key for connection to proxy */
+  char          *proxy_socket;  /* Name of proxy socket */
+  int            proxy_key;     /* Key for connection to proxy */
 
 } cs_opts_t;
 

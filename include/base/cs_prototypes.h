@@ -83,7 +83,7 @@ extern void CS_PROCF (autmgr, AUTMGR)
  * Main Fortran subroutine
  *----------------------------------------------------------------------------*/
 
-extern void CS_PROCF(caltri, CALTRI)
+extern void CS_PROCF (caltri, CALTRI)
 (
  const cs_int_t   *iverif,   /* <-- activate elementary tests                 */
  const cs_int_t   *nideve,   /* <-- size of IDEVEL integer array              */
@@ -112,22 +112,6 @@ extern void CS_PROCF(caltri, CALTRI)
  cs_real_t        *rdevel,   /* --> RDEVEL floating-point array               */
  cs_real_t        *rtuser,   /* --> RTUSER floating-point array               */
  cs_real_t        *ra        /* --> RA floating-point array                   */
-);
-
-/*----------------------------------------------------------------------------
- * Initialize Fortran log (listing) files
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF(csinit, CSINIT)
-(
- const cs_int_t  *ifoenv,  /* <-- 0: SolCom mesh; 1: Preprocesor mesh         */
- const cs_int_t  *iparal,  /* <-- MPI Rank in parallel, -1 otherwise          */
- const cs_int_t  *nparal,  /* <-- Number of MPI processes, or 1               */
- const cs_int_t  *ilisr0,  /* <-- Output of main log (listing (rank 0):       */
-                           /*     0: non redirected; 1: to 'listing' file     */
- const cs_int_t  *ilisrp   /* <-- Output of logs for ranks > 0:               */
-                           /*     0: non redirected; 1: to 'listing_n*' files */
-                           /*     2: to '/dev/null' (suppressed)              */
 );
 
 /*----------------------------------------------------------------------------
@@ -171,12 +155,47 @@ extern void CS_PROCF (crstgr, CRSTGR)
 );
 
 /*----------------------------------------------------------------------------
- * Close Fortran log (listing) files
+ * Close log (listing) handled by Fortran: (CLose LIsting)
  *----------------------------------------------------------------------------*/
 
-extern void CS_PROCF(csclli, CSCLLI)
+extern void CS_PROCF (csclli, CSCLLI)
 (
  void
+);
+
+/*----------------------------------------------------------------------------
+ * Flush standard output.
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csflsh, CSFLSH)
+(
+ void
+);
+
+/*----------------------------------------------------------------------------
+ * Initialize Fortran log (listing) files
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csinit, CSINIT)
+(
+ const cs_int_t  *ifoenv,  /* <-- 0: SolCom mesh; 1: Preprocesor mesh         */
+ const cs_int_t  *iparal,  /* <-- MPI Rank in parallel, -1 otherwise          */
+ const cs_int_t  *nparal,  /* <-- Number of MPI processes, or 1               */
+ const cs_int_t  *ilisr0,  /* <-- Output of main log (listing (rank 0):       */
+                           /*     0: non redirected; 1: to 'listing' file     */
+ const cs_int_t  *ilisrp   /* <-- Output of logs for ranks > 0:               */
+                           /*     0: non redirected; 1: to 'listing_n*' files */
+                           /*     2: to '/dev/null' (suppressed)              */
+);
+
+/*----------------------------------------------------------------------------
+ * Print a message to standard output.
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csprnt, CSPRNT)
+(
+  char       *cs_buf_print,
+  cs_int_t   *msgsize
 );
 
 /*----------------------------------------------------------------------------
@@ -242,7 +261,7 @@ extern void CS_PROCF (gradmc, GRADMC)
  * Main Fortran options initialization
  *----------------------------------------------------------------------------*/
 
-extern void CS_PROCF(initi1, INITI1)
+extern void CS_PROCF (initi1, INITI1)
 (
  const cs_int_t  *iverif          /* <-- Activate elementary tests            */
 );
@@ -323,7 +342,7 @@ extern void CS_PROCF (numvec, NUMVEC)
  * User subroutine for geometry modification
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (usmodg, USMODG)
+extern void CS_PROCF (usmodg, USMODG)
 (
  const cs_int_t  *ndim,      /* <-- spatial dimension                         */
  const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells   */
@@ -345,15 +364,6 @@ void CS_PROCF (usmodg, USMODG)
  const cs_int_t   ipnfbr[],  /* <-- boundary faces -> vertices connect. index */
  const cs_int_t   nodfbr[],  /* <-- boundary faces -> vertices connectivity   */
        cs_real_t  xyznod[]   /* --> vertex coordinates                        */
-);
-
-/*----------------------------------------------------------------------------
- * User function to define SYRTHES couplings
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (ussyrc, USSYRC)
-(
- void
 );
 
 /*----------------------------------------------------------------------------

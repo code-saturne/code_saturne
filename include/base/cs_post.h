@@ -96,8 +96,8 @@ typedef struct _cs_post_maillage_t cs_post_maillage_t;
  * de la sorte sont appellées automatiquement par PSTVAR. */
 
 typedef void
-(cs_post_var_temporelle_t) (cs_int_t     id_instance,
-                            cs_int_t     nt_cur_abs,
+(cs_post_var_temporelle_t) (int          id_instance,
+                            int          nt_cur_abs,
                             cs_real_t    t_cur_abs);
 
 

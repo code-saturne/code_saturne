@@ -364,7 +364,8 @@ _print_halo_info(cs_mesh_t  *mesh,
                     rank_buffer, 1, CS_MPI_INT, cs_glob_base_mpi_comm);
 #endif
 
-      bft_printf(_("\n    Histogram of the number of ghost cells per rank:\n\n"));
+      bft_printf
+        (_("\n    Histogram of the number of ghost cells per rank:\n\n"));
 
       _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -452,33 +453,31 @@ _update_global_num(size_t              n_elts,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Recherche du numéro de groupe correspondant à un nom donné. Si le groupe
- * existe, le numéro renvoyé correspond au rang du groupe (commençant à 1)
- * dans la liste des groupes du maillage, et multiplié par -1. Cette
- * numérotation est celle utilisée dans le tableau IPRFML(NFML, NPRFML)
- * de description des familles.
+ * Return the group number corresponding to a given name. If the group exists,
+ * the number corresponds to the group rank (starting from 1) in the list of
+ * the meshe's groups, multiplied by -1. This numbering is that used in
+ * family (group class) description array IPRFML(NFML, NPRFML).
  *
- * Si le groupe de nom indiqué n'existe pas, on renvoie 9999.
+ * If the group of the given name is not found, 9999 is returned.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * FUNCTION NUMGRP (NOMGRP, LNGNOM)
+ * FUNCTION NUMGRP (NAME, LEN)
  * ***************
  *
- * CHARACTER*       NOMGRP      : --> : Nom du groupe recherché
- * INTEGER          LNGNOM      : --> : Longueur du nom du groupe
+ * CHARACTER*       NAME        : --> : Name of the group
+ * INTEGER          LEN         : --> : Group name length
  *----------------------------------------------------------------------------*/
 
 cs_int_t CS_PROCF (numgrp, NUMGRP)
 (
- const char       *const nomgrp,  /* --> Nom du groupe                        */
- const cs_int_t   *const lngnom   /* --> Longueur du nom                      */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const char       *name,    /* --> Group name */
+ const cs_int_t   *len      /* --> Name length */
+ CS_ARGF_SUPP_CHAINE        /*     (possible 'length' arguments added
+                                   by many Fortran compilers) */
 )
 {
-  int  i, lngcmp ;
+  int  i, lngcmp;
 
   char  *nomcmp = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -488,57 +487,42 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
     nomcmp = mesh->group_lst + (mesh->group_idx[i] - 1);
     lngcmp = strlen(nomcmp);
 
-    if (lngcmp == *lngnom && strncmp(nomcmp, nomgrp, lngcmp) == 0)
+    if (lngcmp == *len && strncmp(nomcmp, name, lngcmp) == 0)
       return (-(i + 1));
 
   }
 
   return -9999;
-
 }
 
 /*----------------------------------------------------------------------------
- * Sauvegarde des numérotations initiales des faces
+ * Update global face numberings in case of renumbering.
  *
- * Remarque : lorsque des faces sont renumérotées, les connectivités et
- *            variables basées sur les faces sont toutes mises à jour, sauf
- *            les numéros globaux associés à ces faces (en cas de parallélisme)
- *            et conservés dans la structure maillage ('num_fac'et num_fbr') ;
- *            en effet, cette numérotation est destinée à se ramener à la
- *            numérotation initiale, notamment pour l'écriture et la lecture de
- *            fichiers suite indépendants du nombre de domaines en parallélisme
- *            ou d'une renumérotation vectorielle, et il est plus aisé de la
- *            manipuler si elle n'est pas modifiée.
- *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE SAVNUM (IVECTI, IVECTB, INUMFI, INUMFB)
  * *****************
  *
- * INTEGER          IVECTI      : --> : Indicateur renum. faces internes
- * INTEGER          IVECTB      : --> : Indicateur renum. faces de bord
- * INTEGER          INUMFI      : --> : Table de renum. des faces internes
- * INTEGER          INUMFB      : --> : Table de renum. des faces de bord
+ * INTEGER          IVECTI      : --> : Interior faces renumbering indicator
+ * INTEGER          IVECTB      : --> : Boundary faces renumbering indicator
+ * INTEGER          INUMFI      : --> : Interior faces renumbering array
+ * INTEGER          INUMFB      : --> : Boundary faces renumbering array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (savnum, SAVNUM)
 (
- const cs_int_t   *const ivecti,  /* --> Indicateur renum. faces internes     */
- const cs_int_t   *const ivectb,  /* --> Indicateur renum. faces de bord      */
- const cs_int_t   *const inumfi,  /* --> Table de renum. des faces internes   */
- const cs_int_t   *const inumfb   /* --> Table de renum. des faces de bord    */
+ const cs_int_t  *ivecti,
+ const cs_int_t  *ivectb,
+ const cs_int_t   inumfi[],
+ const cs_int_t   inumfb[]
 )
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
-
-  /* Sauvegarde correspondance des faces internes -> faces internes initiales */
 
   if (*ivecti != 0)
     _update_global_num(mesh->n_i_faces,
                        inumfi,
                        &(mesh->global_i_face_num));
-
-  /* Sauvegarde correspondance des faces de bord -> faces de bord initiales */
 
   if (*ivectb != 0)
     _update_global_num(mesh->n_b_faces,
@@ -1496,7 +1480,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
     for (i = 0; i < mesh->n_cells; i++) {
-      bft_printf("< cell n°:%3d>        ", i+1);
+      bft_printf("< cell num:%3d>        ", i+1);
       for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
         bft_printf("%d        ", mesh->cell_cells_lst[j]);
       bft_printf("\n");
@@ -1506,7 +1490,6 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\n\nEND OF DUMP OF MESH STRUCTURE\n\n");
   bft_printf_flush();
-
 }
 
 /*----------------------------------------------------------------------------*/

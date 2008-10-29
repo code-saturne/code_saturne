@@ -60,20 +60,20 @@ BEGIN_C_DECLS
  * SUBROUTINE LEDEVI(NOMRUB, TYPENT, NBRENT, TABENT)
  * *****************
  *
- * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
- * INTEGER          IPERIO      : <-- : Indicateur de périodicité
- * INTEGER          IPEROT      : <-- : Nombre de périodicités de rotation
+ * INTEGER          NDIM        : <-- : Spacial dimension (3)
+ * INTEGER          NFML        : <-- : Number of families (group classes)
+ * INTEGER          NPRFML      : <-- : Number of properties per family
+ * INTEGER          IPERIO      : <-- : Periodicity indicator
+ * INTEGER          IPEROT      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ledevi, LEDEVI)
 (
- cs_int_t   *const ndim,    /* <-- dimension de l'espace                      */
- cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord       */
- cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille       */
- cs_int_t   *const iperio,  /* <-- indicateur de périodicité                  */
- cs_int_t   *const iperot   /* <-- nombre de périodicités de rotation         */
+ cs_int_t   *ndim,
+ cs_int_t   *nfml,
+ cs_int_t   *nprfml,
+ cs_int_t   *iperio,
+ cs_int_t   *iperot
 );
 
 /*============================================================================

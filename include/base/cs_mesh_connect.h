@@ -40,7 +40,7 @@
 #include "fvm_nodal.h"
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
@@ -51,99 +51,101 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Définitions de macros
+ * Macro definitions
  *============================================================================*/
-
 
 /*============================================================================
- * Définitions de types
+ * Type definitions
  *============================================================================*/
-
-
-/*=============================================================================
- * Variables globales_statiques
- *============================================================================*/
-
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ * Static global variables
  *============================================================================*/
-
 
 /*=============================================================================
- * Prototypes de fonctions publiques
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Extraction de la connectivité "cellules -> faces" d'un maillage.
+ * Extract a mesh's "cells -> faces" connectivity.
  *
- * On considère une numérotation commune des faces internes et des
- * faces de bord, dans laquelle les faces de bord sont définies en
- * premier. L'indice commun de la i-ème face de bord est donc égal à i,
- * et celui de la j-ième face interne à nbr_fbr + j.
+ * We consider a common numbering for internal and boundary faces, in which
+ * boundary faces are defined first. The common id for the i-th boundary
+ * face is thus i, and that of the j-th interior face is n_b_faces + j.
  *
- * Si ind_cel_extr != NULL, alors :
- * --- ind_cel_extr[icel] = indice dans la liste à extraire (0 à n-1)
- *     si icel correspond à une cellule à extraire
- * --- ind_cel_extr[icel] = -1 si la cellule icel est à ignorer
+ * If ind_cel_extr != NULL, then:
+ * --- ind_cel_extr[cell_id] = id in the list to extract (0 to n-1)
+ *     if cell cell_id should be extracted
+ * --- ind_cel_extr[cell_id] = -1 if cells cell_id should be ignored
+ *
+ * parameters:
+ *   mesh             <-- pointer to mesh structure
+ *   extr_cell_size   <-- size of extr_cell_id[] array
+ *   extr_cell_id     <-- extr_cell_id = ids of extracted cells, or -1
+ *   p_cell_faces_idx --> cells -> faces index
+ *   p_cell_faces_val --> cells -> faces connectivity
  *----------------------------------------------------------------------------*/
 
-void cs_maillage_ret_cel_fac
-(
- const cs_mesh_t       *const maillage,       /* --> Maillage */
- const cs_int_t               nbr_cel_extr,   /* --> Taille de ind_cel_extr[] */
- const cs_int_t               ind_cel_extr[], /* --> ind_cel_extr[cellule]
-                                               *     = indice cellule extraite
-                                               *       ou -1 */
- cs_int_t            * *const p_pos_cel_fac,  /* <-- idx cellule -> face */
- cs_int_t            * *const p_val_cel_fac   /* <-- val cellule -> face */
-);
-
+void
+cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
+                               fvm_lnum_t                   extr_cell_size,
+                               const fvm_lnum_t             extr_cell_id[],
+                               fvm_lnum_t          * *const p_cell_faces_idx,
+                               fvm_lnum_t          * *const p_cell_faces_val);
 
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
- * des cellules d'un maillage.
+ * Build a nodal connectivity structure from a subset of a mesh's cells.
  *
- * La liste des cellules à traiter est optionnelle ; elle peut ne pas
- * être ordonnée en entrée, elle le sera toujours en sortie (les cellules
- * étant extraites au cours d'un parcours en ordre croissant, la liste
- * est réordonnée pour assurer la cohérence des liens des cellules extraites
- * vers leurs cellules parentes, construits à partir de cette liste).
+ * The list of cells to extract is optional (if none is given, all cells
+ * faces are extracted by default); it does not need to be ordered on input,
+ * but is always ordered on exit (as cells are extracted by increasing number
+ * traversal, the list is reordered to ensure the coherency of the extracted
+ * mesh's link to its parent cells, built using this list).
+ *
+ * parameters:
+ *   mesh           <-- base mesh
+ *   name           <-- extracted mesh name
+ *   cell_list_size <-- size of cell_list[] array
+ *   cell_list      <-> list of cells (1 to n), or NULL
+ *
+ * returns:
+ *   pointer to extracted nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_nodal_t  * cs_maillage_extrait_cel_nodal
-(
- const cs_mesh_t      *const maillage,      /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
- const cs_int_t              nbr_liste_cel, /* --> taille de liste_cel[]      */
-       cs_int_t              liste_cel[]    /* <-> liste optionnelle des
-                                             *     cellules à traiter (1 à n) */
-);
-
+fvm_nodal_t *
+cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
+                               const char       *name,
+                               fvm_lnum_t        cell_list_size,
+                               fvm_lnum_t        cell_list[]);
 
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
- * des faces d'un maillage.
+ * Build a nodal connectivity structure from a subset of a mesh's faces.
  *
- * Les listes des faces à traiter sont optionnelles (si aucune des deux
- * n'est fournie, on extrait les faces de bord par défaut); elle peuvent
- * ne pas être ordonnées en entrée, elle le seront toujours en sortie
- * (les faces étant extraites au cours d'un parcours en ordre croissant,
- * la liste est réordonnée pour assurer la cohérence des liens des faces
- * extraites vers leurs faces parentes, construites à partir de cette liste).
+ * The lists of faces to extract are optional (if none is given, boundary
+ * faces are extracted by default); they do not need to be ordered on input,
+ * but they are always ordered on exit (as faces are extracted by increasing
+ * number traversal, the lists are reordered to ensure the coherency of
+ * the extracted mesh's link to its parent faces, built using these lists).
+ *
+ * parameters:
+ *   mesh             <-- base mesh
+ *   name             <-- extracted mesh name
+ *   i_face_list_size <-- size of i_face_list[] array
+ *   b_face_list_size <-- size of b_face_list[] array
+ *   i_face_list      <-> list of interior faces (1 to n), or NULL
+ *   b_face_list      <-> list of boundary faces (1 to n), or NULL
+ *
+ * returns:
+ *   pointer to extracted nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_nodal_t  * cs_maillage_extrait_fac_nodal
-(
- const cs_mesh_t      *const maillage,      /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
- const cs_int_t              nbr_liste_fac, /* --> taille de liste_fac[]      */
- const cs_int_t              nbr_liste_fbr, /* --> taille de liste_fbr[]      */
-       cs_int_t              liste_fac[],   /* <-> liste optionnelle des faces
-                                             *     internes à traiter (1 à n) */
-       cs_int_t              liste_fbr[]    /* <-> liste optionnelle des faces
-                                             *     de bord à traiter (1 à n)  */
-);
+fvm_nodal_t *
+cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
+                               const char       *name,
+                               fvm_lnum_t        i_face_list_size,
+                               fvm_lnum_t        b_face_list_size,
+                               fvm_lnum_t        i_face_list[],
+                               fvm_lnum_t        b_face_list[]);
 
 /*----------------------------------------------------------------------------*/
 

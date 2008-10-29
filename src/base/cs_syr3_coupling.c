@@ -229,12 +229,12 @@ _define_coupled_mesh(char                *coupled_mesh_name,
       bft_printf_flush();
     }
 
-    coupled_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                                 coupled_mesh_name,
-                                                 0,
-                                                 syr_coupling->n_coupl_faces,
-                                                 NULL,
-                                                 syr_coupling->coupl_face_list);
+    coupled_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                  coupled_mesh_name,
+                                                  0,
+                                                  syr_coupling->n_coupl_faces,
+                                                  NULL,
+                                                  syr_coupling->coupl_face_list);
 
   }
   else {
@@ -244,12 +244,12 @@ _define_coupled_mesh(char                *coupled_mesh_name,
       bft_printf_flush();
     }
 
-    coupled_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                                 coupled_mesh_name,
-                                                 0,
-                                                 cs_glob_mesh->n_b_faces,
-                                                 NULL,
-                                                 NULL);
+    coupled_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                  coupled_mesh_name,
+                                                  0,
+                                                  cs_glob_mesh->n_b_faces,
+                                                  NULL,
+                                                  NULL);
 
   }
 

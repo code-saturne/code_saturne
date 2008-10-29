@@ -1094,12 +1094,12 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-  fvm_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                           _("Warped faces to cut"),
-                                           n_i_warp_faces,
-                                           n_b_warp_faces,
-                                           i_warp_face_lst,
-                                           b_warp_face_lst);
+  fvm_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                            _("Warped faces to cut"),
+                                            n_i_warp_faces,
+                                            n_b_warp_faces,
+                                            i_warp_face_lst,
+                                            b_warp_face_lst);
 
   writer = cs_post_get_writer(writer_id);
 
@@ -1155,12 +1155,12 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
   if (cs_post_existe_writer(writer_id) == false)
     return;
 
-  fvm_mesh = cs_maillage_extrait_fac_nodal(cs_glob_mesh,
-                                           _("Warped faces after cutting"),
-                                           n_i_cut_faces,
-                                           n_b_cut_faces,
-                                           i_cut_face_lst,
-                                           b_cut_face_lst);
+  fvm_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                            _("Warped faces after cutting"),
+                                            n_i_cut_faces,
+                                            n_b_cut_faces,
+                                            i_cut_face_lst,
+                                            b_cut_face_lst);
 
   writer = cs_post_get_writer(writer_id);
 

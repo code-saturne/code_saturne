@@ -26,27 +26,27 @@
  *============================================================================*/
 
 /*============================================================================
- * Passage d'une connectivité noyau à une connecitvité nodale d'une
- * structure principale associée à ou extraite d'un maillage
+ * Extract nodal connectivity mesh representations from a native mesh.
  *============================================================================*/
 
-/* includes système */
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C ou BFT
+ * BFT library headers
  *----------------------------------------------------------------------------*/
 
 #include <bft_error.h>
 #include <bft_mem.h>
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
@@ -57,561 +57,550 @@
 #include <fvm_nodal_from_desc.h>
 #include <fvm_nodal_order.h>
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' associés au fichier courant
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_mesh_connect.h"
-
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*============================================================================
- *  Définitions d'énumerations
+/*=============================================================================
+ * Local Macro Definitions
  *============================================================================*/
 
-
-/*============================================================================
- *  Définition de macros
- *============================================================================*/
-
-
-/*============================================================================
- *  Variables globales statiques
- *============================================================================*/
-
-
-/*============================================================================
- * Prototypes de fonctions privées
+/*=============================================================================
+ * Local Type Definitions
  *============================================================================*/
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ *  Global variables
  *============================================================================*/
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
 
 /*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Extraction de la connectivité "cellules -> faces" d'un maillage.
+ * Extract a mesh's "cells -> faces" connectivity.
  *
- * On considère une numérotation commune des faces internes et des
- * faces de bord, dans laquelle les faces de bord sont définies en
- * premier. L'indice commun de la i-ème face de bord est donc égal à i,
- * et celui de la j-ième face interne à nbr_fbr + j.
+ * We consider a common numbering for internal and boundary faces, in which
+ * boundary faces are defined first. The common id for the i-th boundary
+ * face is thus i, and that of the j-th interior face is n_b_faces + j.
  *
- * Si ind_cel_extr != NULL, alors :
- * --- ind_cel_extr[icel] = indice dans la liste à extraire (0 à n-1)
- *     si icel correspond à une cellule à extraire
- * --- ind_cel_extr[icel] = -1 si la cellule icel est à ignorer
+ * If ind_cel_extr != NULL, then:
+ * --- ind_cel_extr[cell_id] = id in the list to extract (0 to n-1)
+ *     if cell cell_id should be extracted
+ * --- ind_cel_extr[cell_id] = -1 if cells cell_id should be ignored
+ *
+ * parameters:
+ *   mesh             <-- pointer to mesh structure
+ *   extr_cell_size   <-- size of extr_cell_id[] array
+ *   extr_cell_id     <-- extr_cell_id = ids of extracted cells, or -1
+ *   p_cell_faces_idx --> cells -> faces index
+ *   p_cell_faces_val --> cells -> faces connectivity
  *----------------------------------------------------------------------------*/
 
-void cs_maillage_ret_cel_fac
-(
- const cs_mesh_t       *const maillage,       /* --> Maillage */
- const cs_int_t               nbr_cel_extr,   /* --> Taille de ind_cel_extr[] */
- const cs_int_t               ind_cel_extr[], /* --> ind_cel_extr[cellule]
-                                               *     = indice cellule extraite
-                                               *       ou -1 */
- cs_int_t            * *const p_pos_cel_fac,  /* <-- idx cellule -> face */
- cs_int_t            * *const p_val_cel_fac   /* <-- val cellule -> face */
-)
+void
+cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
+                               fvm_lnum_t                   extr_cell_size,
+                               const fvm_lnum_t             extr_cell_id[],
+                               fvm_lnum_t          * *const p_cell_faces_idx,
+                               fvm_lnum_t          * *const p_cell_faces_val)
 {
+  fvm_lnum_t  cell_id, c_id1, c_id2, face_id, n_loc_cells;
 
-  cs_int_t    icel, icel1, icel2, ifac, nbr_cel_loc;
+  fvm_lnum_t  *cell_face_count = NULL;
+  fvm_lnum_t  *cell_faces_idx = NULL;
+  fvm_lnum_t  *cell_faces_val = NULL;
 
-  cs_int_t  * cpt_cel_fac = NULL;
-  cs_int_t  * pos_cel_fac = NULL;
-  cs_int_t  * val_cel_fac = NULL;
+  /* Allocate and initialize cell ->faces index */
 
-  /* Allocation et initialisation de l'indice des positions */
+  n_loc_cells = mesh->n_cells;
+  if (extr_cell_id != NULL)
+    n_loc_cells = extr_cell_size;
 
-  nbr_cel_loc = maillage->n_cells;
-  if (ind_cel_extr != NULL)
-    nbr_cel_loc = nbr_cel_extr;
+  BFT_MALLOC(cell_faces_idx, n_loc_cells + 1, cs_int_t);
 
-  BFT_MALLOC(pos_cel_fac, nbr_cel_loc + 1, cs_int_t);
+  for (cell_id = 0; cell_id < n_loc_cells + 1; cell_id++)
+    cell_faces_idx[cell_id] = 0;
 
-  for (icel = 0 ; icel < nbr_cel_loc + 1 ; icel++)
-    pos_cel_fac[icel] = 0;
+  /* Count number of faces per cell (we assign the temporary counter
+     corresponding to cell_id to cell_faces_idx[cell_id + 1] rather than
+     cell_faces_idx[cell_id] to simplify the next step) */
 
-  /* Comptage du nombre de faces par cellule
-   * (on affecte le compteur temporaire correspondant à icel à
-   * pos_cel_fac[icel + 1] et non pas à pos_cel_fac[icel] pour
-   * faciliter l'étape suivante) */
+  /* Remark: test if cell_id < mesh->n_cells on internal faces so
+     as to ignore ghost cells */
 
-  /* Remarque : test si icel < maillage->n_cells sur faces internes
-     pour ignorer les cellules fantômes parallèles et/ou périodiques */
-
-  for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++) {
-    icel = maillage->b_face_cells[ifac] - 1;
-    if (ind_cel_extr != NULL)
-      icel = ind_cel_extr[icel];
-    if (icel > -1)
-      pos_cel_fac[icel + 1] += 1;
+  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+    cell_id = mesh->b_face_cells[face_id] - 1;
+    if (extr_cell_id != NULL)
+      cell_id = extr_cell_id[cell_id];
+    if (cell_id > -1)
+      cell_faces_idx[cell_id + 1] += 1;
   }
 
-  for (ifac = 0 ; ifac < maillage->n_i_faces ; ifac++) {
-    icel1 = maillage->i_face_cells[ifac*2    ] - 1;
-    icel2 = maillage->i_face_cells[ifac*2 + 1] - 1;
-    if (ind_cel_extr != NULL) {
-      if (icel1 < maillage->n_cells)
-        icel1 = ind_cel_extr[icel1];
+  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+    c_id1 = mesh->i_face_cells[face_id*2    ] - 1;
+    c_id2 = mesh->i_face_cells[face_id*2 + 1] - 1;
+    if (extr_cell_id != NULL) {
+      if (c_id1 < mesh->n_cells)
+        c_id1 = extr_cell_id[c_id1];
       else
-        icel1 = -1;
-      if (icel2 < maillage->n_cells)
-        icel2 = ind_cel_extr[icel2];
+        c_id1 = -1;
+      if (c_id2 < mesh->n_cells)
+        c_id2 = extr_cell_id[c_id2];
       else
-        icel2 = -1;
+        c_id2 = -1;
     }
-    if (icel1 > -1 && icel1 < maillage->n_cells)
-      pos_cel_fac[icel1 + 1] += 1;
-    if (icel2 > -1 && icel2 < maillage->n_cells)
-      pos_cel_fac[icel2 + 1] += 1;
+    if (c_id1 > -1 && c_id1 < mesh->n_cells)
+      cell_faces_idx[c_id1 + 1] += 1;
+    if (c_id2 > -1 && c_id2 < mesh->n_cells)
+      cell_faces_idx[c_id2 + 1] += 1;
   }
 
-  /* Construction de l'indice des positions */
+  /* Build cell -> faces index */
 
-  pos_cel_fac[0] = 1;
-  for (icel = 0 ; icel < nbr_cel_loc ; icel++)
-    pos_cel_fac[icel + 1] = pos_cel_fac[icel] + pos_cel_fac[icel + 1];
+  cell_faces_idx[0] = 1;
+  for (cell_id = 0; cell_id < n_loc_cells; cell_id++)
+    cell_faces_idx[cell_id + 1] += cell_faces_idx[cell_id];
 
-  /* Construction du tableau des valeurs */
+  /* Build array of values */
 
-  BFT_MALLOC(val_cel_fac, pos_cel_fac[nbr_cel_loc] - 1, cs_int_t);
-  BFT_MALLOC(cpt_cel_fac, nbr_cel_loc, cs_int_t);
+  BFT_MALLOC(cell_faces_val, cell_faces_idx[n_loc_cells] - 1, cs_int_t);
+  BFT_MALLOC(cell_face_count, n_loc_cells, cs_int_t);
 
-  for (icel = 0 ; icel < nbr_cel_loc ; icel++)
-    cpt_cel_fac[icel] = 0;
+  for (cell_id = 0; cell_id < n_loc_cells; cell_id++)
+    cell_face_count[cell_id] = 0;
 
-  for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++) {
-    icel = maillage->b_face_cells[ifac] - 1;
-    if (ind_cel_extr != NULL)
-      icel = ind_cel_extr[icel];
-    if (icel > -1) {
-      val_cel_fac[pos_cel_fac[icel] + cpt_cel_fac[icel] - 1] = ifac + 1;
-      cpt_cel_fac[icel] += 1;
-    }
-  }
-
-  for (ifac = 0 ; ifac < maillage->n_i_faces ; ifac++) {
-    icel1 = maillage->i_face_cells[ifac*2    ] - 1;
-    icel2 = maillage->i_face_cells[ifac*2 + 1] - 1;
-    if (ind_cel_extr != NULL) {
-      if (icel1 < maillage->n_cells)
-        icel1 = ind_cel_extr[icel1];
-      else
-        icel1 = -1;
-      if (icel2 < maillage->n_cells)
-        icel2 = ind_cel_extr[icel2];
-      else
-        icel2 = -1;
-    }
-    if (icel1 > -1 && icel1 < maillage->n_cells) {
-      val_cel_fac[pos_cel_fac[icel1] + cpt_cel_fac[icel1] - 1]
-        =   ifac + maillage->n_b_faces + 1;
-      cpt_cel_fac[icel1] += 1;
-    }
-    if (icel2 > -1 && icel2 < maillage->n_cells) {
-      val_cel_fac[pos_cel_fac[icel2] + cpt_cel_fac[icel2] - 1]
-        = -(ifac + maillage->n_b_faces + 1);
-      cpt_cel_fac[icel2] += 1;
+  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+    cell_id = mesh->b_face_cells[face_id] - 1;
+    if (extr_cell_id != NULL)
+      cell_id = extr_cell_id[cell_id];
+    if (cell_id > -1) {
+      cell_faces_val[cell_faces_idx[cell_id] + cell_face_count[cell_id] - 1]
+        = face_id + 1;
+      cell_face_count[cell_id] += 1;
     }
   }
 
-  BFT_FREE(cpt_cel_fac);
+  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+    c_id1 = mesh->i_face_cells[face_id*2    ] - 1;
+    c_id2 = mesh->i_face_cells[face_id*2 + 1] - 1;
+    if (extr_cell_id != NULL) {
+      if (c_id1 < mesh->n_cells)
+        c_id1 = extr_cell_id[c_id1];
+      else
+        c_id1 = -1;
+      if (c_id2 < mesh->n_cells)
+        c_id2 = extr_cell_id[c_id2];
+      else
+        c_id2 = -1;
+    }
+    if (c_id1 > -1 && c_id1 < mesh->n_cells) {
+      cell_faces_val[cell_faces_idx[c_id1] + cell_face_count[c_id1] - 1]
+        =   face_id + mesh->n_b_faces + 1;
+      cell_face_count[c_id1] += 1;
+    }
+    if (c_id2 > -1 && c_id2 < mesh->n_cells) {
+      cell_faces_val[cell_faces_idx[c_id2] + cell_face_count[c_id2] - 1]
+        = -(face_id + mesh->n_b_faces + 1);
+      cell_face_count[c_id2] += 1;
+    }
+  }
 
-  /* Valeurs de retour */
+  BFT_FREE(cell_face_count);
 
-  *p_pos_cel_fac = pos_cel_fac;
-  *p_val_cel_fac = val_cel_fac;
+  /* Return values */
+
+  *p_cell_faces_idx = cell_faces_idx;
+  *p_cell_faces_val = cell_faces_val;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
  {
    cs_int_t ipos, ival;
-   /* Impression des tableaux */
-   bft_printf("dbg : cs_maillage_ret_cel_fac\n"
-              "nombre de cellules extraites = %d\n", nbr_cel_extr);
-   for (ipos = 0 ; ipos < nbr_cel_extr ; ipos++) {
+   /* Print arrays */
+   bft_printf("dbg : cs_mesh_ret_cel_fac\n"
+              "nombre de cellules extraites = %d\n", extr_cell_size);
+   for (ipos = 0; ipos < extr_cell_size; ipos++) {
      bft_printf("  cellule %d\n", ipos);
-     bft_printf("    pos_cel_fac[%d] = %d\n", ipos, pos_cel_fac[ipos]);
-     for (ival = pos_cel_fac[ipos]     - 1;
-          ival < pos_cel_fac[ipos + 1] - 1;
+     bft_printf("    cell_faces_idx[%d] = %d\n", ipos, cell_faces_idx[ipos]);
+     for (ival = cell_faces_idx[ipos]     - 1;
+          ival < cell_faces_idx[ipos + 1] - 1;
           ival++)
-       bft_printf("      val_cel_fac[%d] = %d\n", ival, val_cel_fac[ival]);
+       bft_printf("      cell_faces_val[%d] = %d\n",
+                  ival, cell_faces_val[ival]);
    }
-   bft_printf("  pos_cel_fac[%d] = %d\n", ipos, pos_cel_fac[ipos]);
+   bft_printf("  cell_faces_idx[%d] = %d\n", ipos, cell_faces_idx[ipos]);
  }
 #endif
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
- * des cellules d'un maillage.
+ * Build a nodal connectivity structure from a subset of a mesh's cells.
  *
- * La liste des cellules à traiter est optionnelle ; elle peut ne pas
- * être ordonnée en entrée, elle le sera toujours en sortie (les cellules
- * étant extraites au cours d'un parcours en ordre croissant, la liste
- * est réordonnée pour assurer la cohérence des liens des cellules extraites
- * vers leurs cellules parentes, construits à partir de cette liste).
+ * The list of cells to extract is optional (if none is given, all cells
+ * faces are extracted by default); it does not need to be ordered on input,
+ * but is always ordered on exit (as cells are extracted by increasing number
+ * traversal, the list is reordered to ensure the coherency of the extracted
+ * mesh's link to its parent cells, built using this list).
+ *
+ * parameters:
+ *   mesh           <-- base mesh
+ *   name           <-- extracted mesh name
+ *   cell_list_size <-- size of cell_list[] array
+ *   cell_list      <-> list of cells (1 to n), or NULL
+ *
+ * returns:
+ *   pointer to extracted nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_nodal_t  * cs_maillage_extrait_cel_nodal
-(
- const cs_mesh_t      *const mesh,          /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
- const cs_int_t              nbr_liste_cel, /* --> taille de liste_cel[]      */
-       cs_int_t              liste_cel[]    /* <-> liste optionnelle des
-                                             *     cellules à traiter (1 à n) */
-)
+fvm_nodal_t  *
+cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
+                               const char       *name,
+                               fvm_lnum_t        cell_list_size,
+                               fvm_lnum_t        cell_list[])
 {
+  cs_int_t   cell_id;
 
-  cs_int_t    icel ;
+  cs_int_t   extr_cell_count = 0;
+  cs_int_t  *extr_cell_idx = NULL;
 
-  cs_int_t    nbr_cel_extr = 0 ;
-  cs_int_t  * ind_cel_extr = NULL ;
+  cs_int_t  *cell_face_idx = NULL;
+  cs_int_t  *cell_face_num = NULL;
 
-  cs_int_t  * pos_cel_fac = NULL;
-  cs_int_t  * val_cel_fac = NULL;
+  fvm_lnum_t  face_num_shift[3];
+  fvm_lnum_t  *face_vertices_idx[2];
+  fvm_lnum_t  *face_vertices_num[2];
+  fvm_lnum_t  *polyhedra_faces = NULL;
 
-  fvm_lnum_t  dec_num_faces[3];
-  fvm_lnum_t  *pos_faces_som[2];
-  fvm_lnum_t  *val_faces_som[2];
-  fvm_lnum_t  *faces_polyedres = NULL;
+  fvm_nodal_t  *extr_mesh;
 
-  fvm_nodal_t  *maillage_ext;
-
-  /* Vérification que le maillage contient bien les connectivités
-     faces->sommets */
+  /* Check that the mesh contains face -> vertices connectivity */
 
   if (mesh->b_face_vtx_idx == NULL || mesh->i_face_vtx_idx == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("The main mesh does not contain any face -> vertices\n"
                 "connectivity, necessary for the nodal connectivity\n"
-                "reconstruction (cs_maillage_extrait_cel_nodal)."));
+                "reconstruction (cs_mesh_connect_cells_to_nodal)."));
 
-  /* Comptage du nombre de cellules à convertir */
+  /* Count the number of cells to convert */
 
-  if (liste_cel != NULL) {
+  if (cell_list != NULL) {
 
-    BFT_MALLOC(ind_cel_extr, mesh->n_cells, cs_int_t);
+    BFT_MALLOC(extr_cell_idx, mesh->n_cells, cs_int_t);
 
-    /* Initialisation sous forme de marqueur */
-    for (icel = 0 ; icel < mesh->n_cells ; icel++)
-      ind_cel_extr[icel] = -1;
-    for (icel = 0 ; icel < nbr_liste_cel ; icel++) {
-      if (liste_cel[icel] <= mesh->n_cells)
-        ind_cel_extr[liste_cel[icel] - 1] = 1;
+    /* Initialize index as marker */
+
+    for (cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+      extr_cell_idx[cell_id] = -1;
+    for (cell_id = 0; cell_id < cell_list_size; cell_id++) {
+      if (cell_list[cell_id] <= mesh->n_cells)
+        extr_cell_idx[cell_list[cell_id] - 1] = 1;
     }
 
-    /* conversion indices marqués comme utilisés en pointeurs (1 à n)
-       et reconstruction des valeurs de liste_cel[] de manière à
-       s'assurer qu'elle soit triée */
-    nbr_cel_extr = 0;
-    for (icel = 0 ; icel < mesh->n_cells ; icel++) {
-      if (ind_cel_extr[icel] == 1) {
-        liste_cel[nbr_cel_extr] = icel + 1;
-        ind_cel_extr[icel] = nbr_cel_extr++;
+    /* Convert marked ids to indexes (1 to n) and reconstruct values of
+       cell_list[] to ensure that it is ordered. */
+
+    extr_cell_count = 0;
+    for (cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+      if (extr_cell_idx[cell_id] == 1) {
+        cell_list[extr_cell_count] = cell_id + 1;
+        extr_cell_idx[cell_id] = extr_cell_count++;
       }
     }
 
-    assert(nbr_cel_extr <= nbr_liste_cel);
+    assert(extr_cell_count <= cell_list_size);
 
   }
   else {
-    nbr_cel_extr = CS_MIN(mesh->n_cells, nbr_liste_cel);
-    ind_cel_extr = NULL;
+    extr_cell_count = CS_MIN(mesh->n_cells, cell_list_size);
+    extr_cell_idx = NULL;
   }
 
-  /* Extraction de la connectivité "cellules -> faces" */
+  /* Extract "cells -> faces" connectivity */
 
-  cs_maillage_ret_cel_fac(mesh,
-                          nbr_cel_extr,
-                          ind_cel_extr,
-                          &pos_cel_fac,
-                          &val_cel_fac);
+  cs_mesh_connect_get_cell_faces(mesh,
+                                 extr_cell_count,
+                                 extr_cell_idx,
+                                 &cell_face_idx,
+                                 &cell_face_num);
 
-  if (ind_cel_extr != NULL)
-    BFT_FREE(ind_cel_extr);
+  if (extr_cell_idx != NULL)
+    BFT_FREE(extr_cell_idx);
 
-  /* Construction de la connectivité nodale */
+  /* Build nodal connectivity */
 
-  dec_num_faces[0] = 0;
-  dec_num_faces[1] = mesh->n_b_faces + dec_num_faces[0];
-  dec_num_faces[2] = mesh->n_i_faces + dec_num_faces[1];
+  face_num_shift[0] = 0;
+  face_num_shift[1] = mesh->n_b_faces + face_num_shift[0];
+  face_num_shift[2] = mesh->n_i_faces + face_num_shift[1];
 
-  pos_faces_som[0] = mesh->b_face_vtx_idx;
-  pos_faces_som[1] = mesh->i_face_vtx_idx;
-  val_faces_som[0] = mesh->b_face_vtx_lst;
-  val_faces_som[1] = mesh->i_face_vtx_lst;
+  face_vertices_idx[0] = mesh->b_face_vtx_idx;
+  face_vertices_idx[1] = mesh->i_face_vtx_idx;
+  face_vertices_num[0] = mesh->b_face_vtx_lst;
+  face_vertices_num[1] = mesh->i_face_vtx_lst;
 
-  maillage_ext = fvm_nodal_create(nom, 3);
+  extr_mesh = fvm_nodal_create(name, 3);
 
-  fvm_nodal_from_desc_add_cells(maillage_ext,
-                                nbr_cel_extr,
+  fvm_nodal_from_desc_add_cells(extr_mesh,
+                                extr_cell_count,
                                 NULL,
                                 2,
-                                dec_num_faces,
-                                (const fvm_lnum_t **) pos_faces_som,
-                                (const fvm_lnum_t **) val_faces_som,
-                                pos_cel_fac,
-                                val_cel_fac,
-                                liste_cel,
-                                &faces_polyedres);
+                                face_num_shift,
+                                (const fvm_lnum_t **)face_vertices_idx,
+                                (const fvm_lnum_t **)face_vertices_num,
+                                cell_face_idx,
+                                cell_face_num,
+                                cell_list,
+                                &polyhedra_faces);
 
-  fvm_nodal_set_shared_vertices(maillage_ext,
+  fvm_nodal_set_shared_vertices(extr_mesh,
                                 mesh->vtx_coord);
 
-  /* Libération mémoire */
+  /* Free memory */
 
-  BFT_FREE(faces_polyedres);
+  BFT_FREE(polyhedra_faces);
 
-  BFT_FREE(pos_cel_fac);
-  BFT_FREE(val_cel_fac);
+  BFT_FREE(cell_face_idx);
+  BFT_FREE(cell_face_num);
 
-  /* Tri des cellules par numéro ou indice global croissant */
+  /* Sort cells by increasing global number */
 
-  fvm_nodal_order_cells(maillage_ext, mesh->global_cell_num);
-  fvm_nodal_init_io_num(maillage_ext, mesh->global_cell_num, 3);
+  fvm_nodal_order_cells(extr_mesh, mesh->global_cell_num);
+  fvm_nodal_init_io_num(extr_mesh, mesh->global_cell_num, 3);
 
-  /* Tri des sommets par numéro ou indice global croissant */
+  /* Sort vertices by increasing global number */
 
-  fvm_nodal_order_vertices(maillage_ext, mesh->global_vtx_num);
-  fvm_nodal_init_io_num(maillage_ext, mesh->global_vtx_num, 0);
+  fvm_nodal_order_vertices(extr_mesh, mesh->global_vtx_num);
+  fvm_nodal_init_io_num(extr_mesh, mesh->global_vtx_num, 0);
 
-  /* On a terminé */
+  /* We are done */
 
-  return maillage_ext;
-
+  return extr_mesh;
 }
 
-
 /*----------------------------------------------------------------------------
- * Extraction et conversion en connectivité nodale externe d'un sous-ensemble
- * des faces d'un maillage.
+ * Build a nodal connectivity structure from a subset of a mesh's faces.
  *
- * Les listes des faces à traiter sont optionnelles (si aucune des deux
- * n'est fournie, on extrait les faces de bord par défaut); elle peuvent
- * ne pas être ordonnées en entrée, elle le seront toujours en sortie
- * (les faces étant extraites au cours d'un parcours en ordre croissant,
- * la liste est réordonnée pour assurer la cohérence des liens des faces
- * extraites vers leurs faces parentes, construites à partir de cette liste).
+ * The lists of faces to extract are optional (if none is given, boundary
+ * faces are extracted by default); they do not need to be ordered on input,
+ * but they are always ordered on exit (as faces are extracted by increasing
+ * number traversal, the lists are reordered to ensure the coherency of
+ * the extracted mesh's link to its parent faces, built using these lists).
+ *
+ * parameters:
+ *   mesh             <-- base mesh
+ *   name             <-- extracted mesh name
+ *   i_face_list_size <-- size of i_face_list[] array
+ *   b_face_list_size <-- size of b_face_list[] array
+ *   i_face_list      <-> list of interior faces (1 to n), or NULL
+ *   b_face_list      <-> list of boundary faces (1 to n), or NULL
+ *
+ * returns:
+ *   pointer to extracted nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_nodal_t  * cs_maillage_extrait_fac_nodal
-(
- const cs_mesh_t      *const mesh,          /* --> maillage                   */
- const char           *const nom,           /* --> nom à affecter             */
- const cs_int_t              nbr_liste_fac, /* --> taille de liste_fac[]      */
- const cs_int_t              nbr_liste_fbr, /* --> taille de liste_fbr[]      */
-       cs_int_t              liste_fac[],   /* <-> liste optionnelle des faces
-                                             *     internes à traiter (1 à n) */
-       cs_int_t              liste_fbr[]    /* <-> liste optionnelle des faces
-                                             *     de bord à traiter (1 à n)  */
-)
+fvm_nodal_t *
+cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
+                               const char       *name,
+                               fvm_lnum_t        i_face_list_size,
+                               fvm_lnum_t        b_face_list_size,
+                               fvm_lnum_t        i_face_list[],
+                               fvm_lnum_t        b_face_list[])
 {
+  fvm_lnum_t   face_id, i;
 
-  cs_int_t    ifac, i ;
+  fvm_lnum_t   n_max_faces = 0;
+  fvm_lnum_t   b_face_count = 0;
+  fvm_lnum_t   i_face_count = 0;
+  fvm_lnum_t   extr_face_count = 0;
+  fvm_lnum_t  *extr_face_idx = NULL;
+  fvm_lnum_t  *extr_face_list = NULL;
 
-  cs_int_t    nbr_fac_max = 0;
-  cs_int_t    nbr_fbr_liste = 0 ;
-  cs_int_t    nbr_fac_liste = 0 ;
-  cs_int_t    nbr_fac_extr = 0 ;
-  cs_int_t  * ind_fac_extr = NULL ;
-  cs_int_t  * liste_fac_extr = NULL ;
-
-  fvm_lnum_t  dec_num_faces[3];
-  fvm_lnum_t  *pos_faces_som[2];
-  fvm_lnum_t  *val_faces_som[2];
+  fvm_lnum_t   face_num_shift[3];
+  fvm_lnum_t  *face_vertices_idx[2];
+  fvm_lnum_t  *face_vertices_num[2];
 
   fvm_gnum_t  *num_glob_fac = NULL;
 
-  fvm_nodal_t  *maillage_ext;
+  fvm_nodal_t  *extr_mesh;
 
-  /* Vérification que le maillage contient bien les connectivités
-     faces->sommets */
+  /* Check that the mesh contains face -> vertices connectivity */
 
   if (mesh->b_face_vtx_idx == NULL || mesh->i_face_vtx_idx == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("The main mesh does not contain any face -> vertices\n"
                 "connectivity, necessary for the nodal connectivity\n"
-                "reconstruction (cs_maillage_extrait_cel_nodal)."));
+                "reconstruction (cs_mesh_connect_faces_to_nodal)."));
 
-  /* Comptage du nombre de faces à convertir */
+  /* Count the number of faces to convert */
 
-  nbr_fac_max = mesh->n_i_faces + mesh->n_b_faces;
-  BFT_MALLOC(ind_fac_extr, nbr_fac_max, cs_int_t);
+  n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
+  BFT_MALLOC(extr_face_idx, n_max_faces, cs_int_t);
 
-  /* Initialisation sous forme de marqueur */
+  /* Initialize index as marker */
 
-  for (ifac = 0 ; ifac < nbr_fac_max ; ifac++)
-    ind_fac_extr[ifac] = -1;
+  for (face_id = 0; face_id < n_max_faces; face_id++)
+    extr_face_idx[face_id] = -1;
 
-  if (nbr_liste_fbr == mesh->n_b_faces) {
-    for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-      ind_fac_extr[ifac] = 1;
+  if (b_face_list_size == mesh->n_b_faces) {
+    for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+      extr_face_idx[face_id] = 1;
   }
-  else if (liste_fbr != NULL) {
-    for (ifac = 0 ; ifac < nbr_liste_fbr ; ifac++)
-      ind_fac_extr[liste_fbr[ifac] - 1] = 1;
-  }
-
-  if (nbr_liste_fac == mesh->n_i_faces) {
-    for (ifac = 0 ; ifac < mesh->n_i_faces ; ifac++)
-      ind_fac_extr[ifac + mesh->n_b_faces] = 1;
-  }
-  else if (liste_fac != NULL) {
-    for (ifac = 0 ; ifac < nbr_liste_fac ; ifac++)
-      ind_fac_extr[liste_fac[ifac] - 1 + mesh->n_b_faces] = 1;
+  else if (b_face_list != NULL) {
+    for (face_id = 0; face_id < b_face_list_size; face_id++)
+      extr_face_idx[b_face_list[face_id] - 1] = 1;
   }
 
-  /* conversion indices marqués comme utilisés en pointeurs (1 à n)
-     et reconstruction des valeurs de liste_fbr[] et liste_fac[]
-     de manière à s'assurer qu'elles soient triées */
+  if (i_face_list_size == mesh->n_i_faces) {
+    for (face_id = 0; face_id < mesh->n_i_faces; face_id++)
+      extr_face_idx[face_id + mesh->n_b_faces] = 1;
+  }
+  else if (i_face_list != NULL) {
+    for (face_id = 0; face_id < i_face_list_size; face_id++)
+      extr_face_idx[i_face_list[face_id] - 1 + mesh->n_b_faces] = 1;
+  }
 
-  nbr_fbr_liste = 0;
-  nbr_fac_liste = 0;
+  /* Convert marked ids to indexes (1 to n) and reconstruct values of
+     b_face_list[] and i_face_list[] to ensure that they are ordered. */
 
-  if (liste_fbr != NULL) {
-    for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
-      if (ind_fac_extr[ifac] == 1) {
-        liste_fbr[nbr_fbr_liste] = ifac + 1;
-        nbr_fbr_liste++;
+  b_face_count = 0;
+  i_face_count = 0;
+
+  if (b_face_list != NULL) {
+    for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+      if (extr_face_idx[face_id] == 1) {
+        b_face_list[b_face_count] = face_id + 1;
+        b_face_count++;
       }
     }
   }
   else
-    nbr_fbr_liste = CS_MIN(nbr_liste_fbr, mesh->n_b_faces);
+    b_face_count = CS_MIN(b_face_list_size, mesh->n_b_faces);
 
-  if (liste_fac != NULL) {
-    for (ifac = 0, i = mesh->n_b_faces ;
-         ifac < mesh->n_i_faces ;
-         ifac++, i++) {
-      if (ind_fac_extr[i] == 1) {
-        liste_fac[nbr_fac_liste] = ifac + 1;
-        nbr_fac_liste++;
+  if (i_face_list != NULL) {
+    for (face_id = 0, i = mesh->n_b_faces;
+         face_id < mesh->n_i_faces;
+         face_id++, i++) {
+      if (extr_face_idx[i] == 1) {
+        i_face_list[i_face_count] = face_id + 1;
+        i_face_count++;
       }
     }
   }
   else
-    nbr_fac_liste = CS_MIN(nbr_liste_fac, mesh->n_i_faces);
+    i_face_count = CS_MIN(i_face_list_size, mesh->n_i_faces);
 
-  BFT_FREE(ind_fac_extr);
+  BFT_FREE(extr_face_idx);
 
-  /* Construction d'une liste continue (faces de bord, faces) */
+  /* Build a contiguous list (boundary faces, interior faces) */
 
-  nbr_fac_extr = nbr_fbr_liste + nbr_fac_liste;
+  extr_face_count = b_face_count + i_face_count;
 
-  BFT_MALLOC(liste_fac_extr, nbr_fac_extr, cs_int_t);
+  BFT_MALLOC(extr_face_list, extr_face_count, cs_int_t);
 
-  if (liste_fbr != NULL) {
-    for (ifac = 0 ; ifac < nbr_fbr_liste ; ifac++)
-      liste_fac_extr[ifac] = liste_fbr[ifac];
+  if (b_face_list != NULL) {
+    for (face_id = 0; face_id < b_face_count; face_id++)
+      extr_face_list[face_id] = b_face_list[face_id];
   }
-  else if (liste_fbr == NULL) { /* faces de bord par défaut si aucune liste */
-    for (ifac = 0 ; ifac < nbr_fbr_liste ; ifac++)
-      liste_fac_extr[ifac] = ifac + 1;
-  }
-
-  if (liste_fac != NULL) {
-    for (ifac = 0, i = nbr_fbr_liste ; ifac < nbr_fac_liste ; ifac++, i++)
-      liste_fac_extr[i] = liste_fac[ifac] + mesh->n_b_faces;
-  }
-  else if (liste_fac == NULL) {
-    for (ifac = 0, i = nbr_fbr_liste ; ifac < nbr_fac_liste ; ifac++, i++)
-      liste_fac_extr[i] = ifac + mesh->n_b_faces + 1;
+  else if (b_face_list == NULL) { /* boundary faces by default if no list */
+    for (face_id = 0; face_id < b_face_count; face_id++)
+      extr_face_list[face_id] = face_id + 1;
   }
 
+  if (i_face_list != NULL) {
+    for (face_id = 0, i = b_face_count; face_id < i_face_count; face_id++, i++)
+      extr_face_list[i] = i_face_list[face_id] + mesh->n_b_faces;
+  }
+  else if (i_face_list == NULL) {
+    for (face_id = 0, i = b_face_count; face_id < i_face_count; face_id++, i++)
+      extr_face_list[i] = face_id + mesh->n_b_faces + 1;
+  }
 
-  /* Construction de la connectivité nodale */
+  /* Build the nodal connectivity */
 
-  dec_num_faces[0] = 0;
-  dec_num_faces[1] = mesh->n_b_faces + dec_num_faces[0];
-  dec_num_faces[2] = mesh->n_i_faces + dec_num_faces[1];
+  face_num_shift[0] = 0;
+  face_num_shift[1] = mesh->n_b_faces + face_num_shift[0];
+  face_num_shift[2] = mesh->n_i_faces + face_num_shift[1];
 
-  pos_faces_som[0] = mesh->b_face_vtx_idx;
-  pos_faces_som[1] = mesh->i_face_vtx_idx;
-  val_faces_som[0] = mesh->b_face_vtx_lst;
-  val_faces_som[1] = mesh->i_face_vtx_lst;
+  face_vertices_idx[0] = mesh->b_face_vtx_idx;
+  face_vertices_idx[1] = mesh->i_face_vtx_idx;
+  face_vertices_num[0] = mesh->b_face_vtx_lst;
+  face_vertices_num[1] = mesh->i_face_vtx_lst;
 
-  maillage_ext = fvm_nodal_create(nom, 3);
+  extr_mesh = fvm_nodal_create(name, 3);
 
-  fvm_nodal_from_desc_add_faces(maillage_ext,
-                                nbr_fac_extr,
-                                liste_fac_extr,
+  fvm_nodal_from_desc_add_faces(extr_mesh,
+                                extr_face_count,
+                                extr_face_list,
                                 2,
-                                dec_num_faces,
-                                (const fvm_lnum_t **) pos_faces_som,
-                                (const fvm_lnum_t **) val_faces_som,
+                                face_num_shift,
+                                (const fvm_lnum_t **)face_vertices_idx,
+                                (const fvm_lnum_t **)face_vertices_num,
                                 NULL);
 
-  fvm_nodal_set_shared_vertices(maillage_ext,
+  fvm_nodal_set_shared_vertices(extr_mesh,
                                 mesh->vtx_coord);
 
-  BFT_FREE(liste_fac_extr);
+  BFT_FREE(extr_face_list);
 
-  /* En cas de parallélisme, ou de renumérotation des faces,
-     tri des faces par numéro ou indice global croissant */
+  /* In case of parallelism or face renumbering, sort faces by
+     increasing global number */
 
   if (mesh->global_i_face_num != NULL || mesh->global_b_face_num != NULL) {
 
-    BFT_MALLOC(num_glob_fac, nbr_fac_max, fvm_gnum_t);
+    BFT_MALLOC(num_glob_fac, n_max_faces, fvm_gnum_t);
 
     if (mesh->global_b_face_num == NULL) {
-      for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-        num_glob_fac[ifac] = ifac + 1;
+      for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+        num_glob_fac[face_id] = face_id + 1;
     }
     else {
-      for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++)
-        num_glob_fac[ifac] = mesh->global_b_face_num[ifac];
+      for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+        num_glob_fac[face_id] = mesh->global_b_face_num[face_id];
     }
 
     assert(mesh->n_g_b_faces + mesh->n_g_i_faces > 0);
 
     if (mesh->global_i_face_num == NULL) {
-      for (ifac = 0, i = mesh->n_b_faces ;
-           ifac < mesh->n_i_faces ;
-           ifac++, i++)
-        num_glob_fac[i] = ifac + 1 + mesh->n_g_b_faces;
+      for (face_id = 0, i = mesh->n_b_faces;
+           face_id < mesh->n_i_faces;
+           face_id++, i++)
+        num_glob_fac[i] = face_id + 1 + mesh->n_g_b_faces;
     }
     else {
-      for (ifac = 0, i = mesh->n_b_faces ;
-           ifac < mesh->n_i_faces ;
-           ifac++, i++)
-        num_glob_fac[i] = mesh->global_i_face_num[ifac] + mesh->n_g_b_faces;
+      for (face_id = 0, i = mesh->n_b_faces;
+           face_id < mesh->n_i_faces;
+           face_id++, i++)
+        num_glob_fac[i] = mesh->global_i_face_num[face_id] + mesh->n_g_b_faces;
     }
 
   }
 
+  /* Sort faces by increasing global number */
 
-  fvm_nodal_order_faces(maillage_ext, num_glob_fac);
-  fvm_nodal_init_io_num(maillage_ext, num_glob_fac, 2);
+  fvm_nodal_order_faces(extr_mesh, num_glob_fac);
+  fvm_nodal_init_io_num(extr_mesh, num_glob_fac, 2);
 
   if (num_glob_fac != NULL)
     BFT_FREE(num_glob_fac);
 
-  /* Tri des sommets par numéro ou indice global croissant */
+  /* Sort vertices by increasing global number */
 
-  fvm_nodal_order_vertices(maillage_ext, mesh->global_vtx_num);
-  fvm_nodal_init_io_num(maillage_ext, mesh->global_vtx_num, 0);
+  fvm_nodal_order_vertices(extr_mesh, mesh->global_vtx_num);
+  fvm_nodal_init_io_num(extr_mesh, mesh->global_vtx_num, 0);
 
-  /* On a terminé */
+  /* We are done */
 
-  return maillage_ext;
-
+  return extr_mesh;
 }
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 

@@ -74,6 +74,7 @@
 #include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_post.h"
+#include "cs_prototypes.h"
 #include "cs_proxy_comm.h"
 #include "cs_renumber.h"
 #include "cs_sles.h"
@@ -89,144 +90,16 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE CSINIT : sous-programme d'initialisation Fortran listing
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF(csinit, CSINIT)
-(
- cs_int_t  *ifoenv,    /* Maillage SolCom ou Préprocesseur                    */
- cs_int_t  *iparal,    /* Rang du noyau en cas de parallelisme                */
- cs_int_t  *nparal,    /* Nombre de processus (=1 en sequentiel)              */
- cs_int_t  *ilisr0,    /* Option de sortie du listing principal (rang 0) :    */
-                       /*   0 : non redirigé ; 1 : sur fichier 'listing'      */
- cs_int_t  *ilisrp     /* Option de sortie des listings de rang > 0 :         */
-                       /*   0 : non redirigé ; 1 : sur fichier 'listing_n*' ; */
-                       /*   2 : sur fichier '/dev/null' (suppression)         */
-);
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE INITI1 : sous-programme d'initialisation Fortran
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF(initi1, INITI1)
-(
- cs_int_t  *iverif     /* Activation des tests élémentaires                   */
-);
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE CALTRI : sous-programme principal Fortran
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF(caltri, CALTRI)
-(
- cs_int_t   *iverif,   /* Activation des tests elementaires                   */
- cs_int_t   *nideve,   /* Longueur du tableau d'entiers IDEVEL                */
- cs_int_t   *nrdeve,   /* Longueur du tableau de reels  RDEVEL                */
- cs_int_t   *nituse,   /* Longueur du tableau d'entiers ITUSER                */
- cs_int_t   *nrtuse,   /* Longueur du tableau de reels  RTUSER                */
- cs_int_t   *ifacel,   /* Éléments voisins d'une face interne                 */
- cs_int_t   *ifabor,   /* Élément  voisin  d'une face de bord                 */
- cs_int_t   *ifmfbr,   /* Numéro de famille d'une face de bord                */
- cs_int_t   *ifmcel,   /* Numéro de famille d'une cellule                     */
- cs_int_t   *iprfml,   /* Propriétés d'une famille                            */
- cs_int_t   *ipnfac,   /* Pointeur par sommet dans NODFAC (optionnel)         */
- cs_int_t   *nodfac,   /* Connectivité faces internes/sommets (optionnelle)   */
- cs_int_t   *ipnfbr,   /* Pointeur par sommet dans NODFBR (optionnel)         */
- cs_int_t   *nodfbr,   /* Connectivité faces de bord/sommets (optionnelle)    */
- cs_int_t   *idevel,   /* Pointeur sur le tableau d'entiers IDEVEL            */
- cs_int_t   *ituser,   /* Pointeur sur le tableau d'entiers ITUSER            */
- cs_int_t   *ia,       /* Pointeur sur le tableau d'entiers IA                */
- cs_real_t  *xyzcen,   /* Points associés aux centres des volumes de contrôle */
- cs_real_t  *surfac,   /* Vecteurs surfaces des faces internes                */
- cs_real_t  *surfbo,   /* Vecteurs surfaces des faces de bord                 */
- cs_real_t  *cdgfac,   /* Centres de gravité des faces internes               */
- cs_real_t  *cdgfbr,   /* Centres de gravité des faces de bord                */
- cs_real_t  *xyznod,   /* Coordonnées des sommets (optionnelle)               */
- cs_real_t  *volume,   /* Volumes des cellules                                */
- cs_real_t  *rdevel,   /* Pointeur sur le tableau de reels RDEVEL             */
- cs_real_t  *rtuser,   /* Pointeur sur le tableau de reels RTUSER             */
- cs_real_t  *ra        /* Pointeur sur le tableau de reels RA                 */
-);
-
-/*----------------------------------------------------------------------------
- * Fonction utilisateur pour la modification de la géométrie
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usmodg, USMODG)
-(
- const cs_int_t  *ndim,      /* --> dimension de l'espace                     */
- const cs_int_t  *ncelet,    /* --> nombre de cellules étendu                 */
- const cs_int_t  *ncel,      /* --> nombre de cellules                        */
- const cs_int_t  *nfac,      /* --> nombre de faces internes                  */
- const cs_int_t  *nfabor,    /* --> nombre de faces de bord                   */
- const cs_int_t  *nfml,      /* --> nombre de familles                        */
- const cs_int_t  *nprfml,    /* --> nombre de proprietes des familles         */
- const cs_int_t  *nnod,      /* --> nombre de sommets                         */
- const cs_int_t  *lndfac,    /* --> longueur de nodfac                        */
- const cs_int_t  *lndfbr,    /* --> longueur de nodfbr                        */
- const cs_int_t   ifacel[],  /* --> connectivité faces internes / cellules    */
- const cs_int_t   ifabor[],  /* --> connectivité faces de bord / cellules     */
- const cs_int_t   ifmfbr[],  /* --> liste des familles des faces de bord      */
- const cs_int_t   ifmcel[],  /* --> liste des familles des cellules           */
- const cs_int_t   iprfml[],  /* --> liste des propriétés des familles         */
- const cs_int_t   ipnfac[],  /* --> rang dans nodfac 1er sommet faces int.    */
- const cs_int_t   nodfac[],  /* --> numéro des sommets des faces intérieures  */
- const cs_int_t   ipnfbr[],  /* --> rang dans nodfbr 1er sommet faces bord    */
- const cs_int_t   nodfbr[],  /* --> numéro des sommets des faces de bord      */
-       cs_real_t  xyznod[]   /* --> coordonnées des sommets                   */
-);
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE MAJGEO : sous-progamme de mise a jour des dimensions du maillage
- *                     dans les commons Fortran
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (majgeo, MAJGEO)
-(
- const cs_int_t   *const ncel,    /* --> Number of halo cells             */
- const cs_int_t   *const ncelet,  /* --> Number of halo cells             */
- const cs_int_t   *const nfac,    /* --> Number of internal faces         */
- const cs_int_t   *const nfabor,  /* --> Number of border faces           */
- const cs_int_t   *const nsom,    /* --> Number of vertices               */
- const cs_int_t   *const lndfac,  /* --> Internal face -> vtx array size  */
- const cs_int_t   *const lndfbr,  /* --> Boundary face -> vtx array size  */
- const cs_int_t   *const ncelgb,  /* --> Global number of cells           */
- const cs_int_t   *const nfacgb,  /* --> Global number of internal faces  */
- const cs_int_t   *const nfbrgb,  /* --> Global number of boundary faces  */
- const cs_int_t   *const nsomgb   /* --> Global number of vertices        */
-);
-
-/*----------------------------------------------------------------------------
- * SUBROUTINE MEMINI : sous-progamme d'initialisation memoire Fortran
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (memini, MEMINI)
-(
- cs_int_t  *iasize,    /* Longueur du tableau d'entiers IA                    */
- cs_int_t  *rasize,    /* Longueur du tableau de reels  RA                    */
- cs_int_t  *nideve,    /* Longueur du tableau d'entiers IDEVEL                */
- cs_int_t  *nrdeve,    /* Longueur du tableau de reels  RDEVEL                */
- cs_int_t  *nituse,    /* Longueur du tableau d'entiers ITUSER                */
- cs_int_t  *nrtuse     /* Longueur du tableau de reels  RTUSER                */
-);
-
-/*============================================================================
- * Prototypes de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*============================================================================
- * Programme principal
+ * Main program
  *============================================================================*/
 
-int main
-(
- int    argc,       /* Nombre d'arguments dans la ligne de commandes */
- char  *argv[]      /* Tableau des arguments de la ligne de commandes */
-)
+int
+main(int    argc,
+     char  *argv[])
 {
   double  t1, t2;
 
@@ -235,7 +108,7 @@ int main
 
   cs_opts_t  opts;
 
-  int  rang_deb = -1;
+  int  root_rank = -1;
   int  _verif = -1;
 
   cs_int_t  *ia = NULL;
@@ -246,16 +119,16 @@ int main
   cs_real_t  *rtuser = NULL;
   cs_real_t  *rdevel = NULL;
 
-  /* Première analyse de la ligne de commande pour savoir si l'on a besoin
-     de MPI ou non, et initialisation de MPI le cas échéant */
+  /* First analysis of the command line to determine if MPI is required,
+     and MPI initialization if it is. */
 
 #if defined(_CS_HAVE_MPI)
-  rang_deb = cs_opts_mpi_rank(&argc, &argv);
-  if (rang_deb > -1)
-    cs_base_mpi_init(&argc, &argv, rang_deb);
+  root_rank = cs_opts_mpi_rank(&argc, &argv);
+  if (root_rank > -1)
+    cs_base_mpi_init(&argc, &argv, root_rank);
 #endif
 
-  /* initialisation par défaut */
+  /* Default initialization */
 
 #if defined(_CS_ARCH_Linux)
 
@@ -276,16 +149,16 @@ int main
 
   bft_fp_trap_set();
 
-  /* Initialisation de la gestion mémoire et des signaux */
+  /* Initialize memory management and signals */
 
   cs_base_mem_init();
-  cs_base_erreur_init();
+  cs_base_error_init();
 
-  /* interprétation des arguments de la ligne de commande */
+  /* Parse command line */
 
   cs_opts_define(argc, argv, &opts);
 
-  /* Ouverture des fichiers 'listing' pour les noeuds de rang > 0 */
+  /* Open 'listing' (log) files */
 
   CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
                            &cs_glob_base_rang,
@@ -294,11 +167,11 @@ int main
                            &(opts.ilisrp));
   cs_base_bft_printf_set();
 
-  /* Entête et rappel des options de la ligne de commande */
+  /* Log-file header and command line arguments recap */
 
   cs_opts_logfile_head(argc, argv);
 
-  /* Connexion éventuelle avec le lanceur CFD_Proxy */
+  /* Connection with CFD_Proxy launcher */
 
   if (opts.proxy_socket != NULL) {
     cs_proxy_comm_initialize(opts.proxy_socket,
@@ -308,17 +181,17 @@ int main
     opts.proxy_key = -1;
   }
 
-  /* Infos système */
+  /* System information */
 
-  cs_base_info_systeme();
+  cs_base_system_info();
 
-  /* Initialisation des structures globales liées au maillage principal */
+  /* Initialize global structures for main mesh */
 
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
-  /* Initialisation de la lecture des données Préprocesseur */
+  /* Initialize reading of Preprocessor output */
 
   if (opts.ifoenv != 0) {
 
@@ -337,7 +210,7 @@ int main
                                      -1);
 #endif
 
-    /* Initialisation des communications avec Syrthes */
+    /* Initialize SYRTHES couplings and communication if necessary */
 
     if (cs_syr3_coupling_n_couplings() != 0) {
 
@@ -349,15 +222,15 @@ int main
                                    coupl_id + 1,
                                    opts.echo_comm);
 
-    } /* Couplage Syrthes */
+    }
 
-  } /* Si ifoenv != 0 */
+  }
 
-  /* Allocation de structures internes de l'API F77 pour fichiers suite */
+  /* Allocate internal structures for restart files Fortran 77 API */
 
   cs_suite_f77_api_init();
 
-  /* Appel du sous-programme d'initalisation ou de l'aide */
+  /* Call main calculation initialization function or help */
 
   _verif = opts.iverif;
   if (opts.benchmark > 0 && _verif < 0)
@@ -367,7 +240,7 @@ int main
 
   if (opts.ifoenv == 0) {
 
-    /* Lecture du fichier au format "SolCom" */
+    /* Read file in obsolete "SolCom" format */
 
     cs_maillage_solcom_lit(cs_glob_mesh,
                            cs_glob_mesh_quantities);
@@ -375,26 +248,23 @@ int main
   }
   else {
 
-    /* Lecture des données issues du Préprocesseur */
+    /* Read Preprocessor output */
 
     cs_ecs_messages_read_data(cs_glob_mesh,
                               cs_glob_mesh_builder);
 
-  } /* End if ifoenv != 0 */
+  }
 
-  /* Initialisation des cas du post-traitement principal */
+  /* Initialize main post-processing */
 
   cs_post_init_pcp_writer();
 
-  /* Initialisations liées à la construction des halos */
+  /* Initialize ghost cells and other parallelism-related structures */
 
   cs_mesh_init_halo(cs_glob_mesh);
-
-  /* Initialisations liées au parallélisme */
-
   cs_mesh_init_parall(cs_glob_mesh);
 
-  /* Modification éventuelle de la géométrie */
+  /* Possible geometry modification */
 
   CS_PROCF (usmodg, USMODG)(&(cs_glob_mesh->dim),
                             &(cs_glob_mesh->n_cells_with_ghosts),
@@ -417,7 +287,7 @@ int main
                             cs_glob_mesh->b_face_vtx_lst,
                             cs_glob_mesh->vtx_coord);
 
-  /* Découpage des faces "gauche" si nécessaire */
+  /* Triangulate warped faces if necessary */
 
   if (opts.cwf == true) {
 
@@ -429,18 +299,18 @@ int main
 
   }
 
-  /* Renumérotation en fonction des options du code */
+  /* Renumber mesh based on code options */
 
   bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
 
-  /* Initialisation des maillages du post-traitement principal */
+  /* Initialize meshes for the main post-processing */
 
   cs_post_init_pcp_maillages();
 
-  /* Mise à jour de certaines dimensions du maillage */
+  /* Update some mesh sizes counts and quantities */
 
   {
     cs_int_t  n_g_cells, n_g_i_faces, n_g_b_faces, n_g_vertices;
@@ -465,12 +335,11 @@ int main
 
   cs_mesh_print_info(cs_glob_mesh);
 
-  /* Destruction du la structure temporaire servant à la construction du
-     maillage principal */
+  /* Destroy the temporary structure used to build the main mesh */
 
   cs_glob_mesh_builder = cs_mesh_builder_destroy(cs_glob_mesh_builder);
 
-  /* Calcul des grandeurs géométriques associées au maillage */
+  /* Compute geometric quantities related to the mesh */
 
   bft_printf_flush();
 
@@ -482,7 +351,7 @@ int main
 
   cs_mesh_info(cs_glob_mesh);
 
-  /* Initialisation de la partie selector de la structure maillage */
+  /* Initialize selectors for the mesh */
   cs_mesh_init_selectors();
 
 #if 0
@@ -491,7 +360,7 @@ int main
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
 
-  /* Boucle en temps ou critères de qualité selon options de vérification */
+  /* Compute iterations or quality criteria depending on verification options */
 
   if (opts.iverif == 0) {
     bft_printf(_("\n Computing quality criteria\n"));
@@ -508,7 +377,7 @@ int main
 
   if (opts.iverif != 0 && opts.benchmark <= 0) {
 
-    /* Allocation des tableaux de travail */
+    /* Allocate Fortran working arrays */
 
     CS_PROCF(memini, MEMINI)(&iasize, &rasize,
                              &nideve, &nrdeve, &nituse, &nrtuse);
@@ -543,14 +412,14 @@ int main
     BFT_MALLOC(idevel, nideve, cs_int_t);
     BFT_MALLOC(rdevel, nrdeve, cs_real_t);
 
-    /* Initialisation de la résolution des systèmes linéaires */
+    /* Initialize sparse linear systems resolution */
 
     cs_sles_initialize();
     cs_multigrid_initialize();
 
-    /*------------------------------------------------------------------------
-     *  appel du sous-programme de gestion de calcul (noyau du code)
-     *------------------------------------------------------------------------*/
+    /*----------------------------------------------
+     * Call main calculation function (code Kernel)
+     *----------------------------------------------*/
 
     CS_PROCF(caltri, CALTRI)(&(opts.iverif),
                              &nideve, &nrdeve, &nituse, &nrtuse,
@@ -573,14 +442,13 @@ int main
                              cs_glob_mesh_quantities->cell_vol,
                              rdevel, rtuser, ra);
 
-    /* Fin de la résolution des systèmes linéaires */
+    /* Finalize sparse linear systems resolution */
 
     cs_multigrid_finalize();
     cs_sles_finalize();
 
-    /* les fichiers listing de noeuds > 0 sont fermés dans caltri. */
+    /* Free working arrays */
 
-    /* Libération des tableaux de travail */
     BFT_FREE(ia);
     BFT_FREE(ra);
 
@@ -595,40 +463,40 @@ int main
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
-  /* Libération de structures internes de l'API F77 pour fichiers suite */
+  /* Free internal structures for restart files Fortran 77 API */
 
   cs_suite_f77_api_finalize();
 
-  /* Libération de la mémoire éventuellement affectée aux couplages */
+  /* Free coupling-related data */
 
   cs_syr3_coupling_all_destroy();
 #if defined(_CS_HAVE_MPI)
   cs_couplage_detruit_tout();
 #endif
 
-  /* Libération de la mémoire associée aux post-traitements */
+  /* Free post processing related structures */
 
   cs_post_detruit();
 
-  /* Libération du maillage principal */
+  /* Free main mesh */
 
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);
 
-  /* Fin de communication éventuelle avec un proxy */
+  /* End of possible communication with a proxy */
 
   cs_proxy_comm_finalize();
 
-  /* Temps CPU et finalisation de la gestion mémoire */
+  /* CPU times and memory management finalization */
 
   cs_base_bilan_temps();
   cs_base_mem_fin();
 
-  /* retour */
+  /* Return */
 
   cs_exit(EXIT_SUCCESS);
 
-  /* jamais appelé normalement, mais pour éviter un warning de compilation */
+  /* Never called, but avoids compiler warning */
   return 0;
 }
 

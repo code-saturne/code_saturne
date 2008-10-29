@@ -1084,12 +1084,12 @@ static void cs_loc_tpar1d_opnsuite
   char            *nombuf;
 
   /* Traitement du nom pour l'API C */
-  nombuf = cs_base_chaine_f_vers_c_cree(nomsui, *lngnom);
+  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
 
   cs_glob_tpar1d_suite = cs_suite_cree(nombuf, ireawr);
 
   /* Libération de mémoire si nécessaire */
-  nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
+  cs_base_string_f_to_c_free(&nombuf);
 }
 
 /*----------------------------------------------------------------------------*/

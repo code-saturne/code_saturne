@@ -988,7 +988,7 @@ void CS_PROCF (opnsui, OPNSUI)
 
   /* Handle name for C API */
 
-  nombuf = cs_base_chaine_f_vers_c_cree(nomsui, *lngnom);
+  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
 
   /* File creation options */
 
@@ -1042,7 +1042,7 @@ void CS_PROCF (opnsui, OPNSUI)
 
   /* Free memory if necessary */
 
-  nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
+  cs_base_string_f_to_c_free(&nombuf);
 
   /*
    * Return the position of the handle in the array
@@ -1248,7 +1248,7 @@ void CS_PROCF (lecsui, LECSUI)
 
   /* Handle name for C API */
 
-  nombuf = cs_base_chaine_f_vers_c_cree(nomrub, *lngnom);
+  nombuf = cs_base_string_f_to_c_create(nomrub, *lngnom);
 
   /* Handle other arguments for C API */
 
@@ -1274,7 +1274,7 @@ void CS_PROCF (lecsui, LECSUI)
 
   /* Free memory if necessary */
 
-  nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
+  cs_base_string_f_to_c_free(&nombuf);
 }
 
 
@@ -1328,7 +1328,7 @@ void CS_PROCF (ecrsui, ECRSUI)
 
   /* Handle name for C API */
 
-  nombuf = cs_base_chaine_f_vers_c_cree(nomrub, *lngnom);
+  nombuf = cs_base_string_f_to_c_create(nomrub, *lngnom);
 
   /* Handle other arguments for C API */
 
@@ -1354,11 +1354,11 @@ void CS_PROCF (ecrsui, ECRSUI)
 
   /* Free memory if necessary */
 
-  nombuf = cs_base_chaine_f_vers_c_detruit(nombuf);
+  cs_base_string_f_to_c_free(&nombuf);
 }
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -1733,7 +1733,7 @@ cs_int_t cs_suite_lit_rub
                                 location_id,
                                 n_location_vals);
 
-  /* In single processor mode of for global values */
+  /* In single processor mode or for global values */
 
   if (cs_glob_base_nbr == 1 || location_id == 0) {
 
