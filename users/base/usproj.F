@@ -62,6 +62,8 @@ CFONC
 CFONC   - CALCUL DE BILAN THERMIQUE
 CFONC     (au besoin, voir "ADAPTATION A UN SCALAIRE QUELCONQUE")
 CFONC
+CFONC   - CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
+CFONC
 CFONC   - MODIFICATION ARBITRAIRE D'UNE VARIABLE DE CALCUL
 CFONC
 CFONC   - EXTRACTION D'UN PROFIL 1D
@@ -321,7 +323,7 @@ C
       DOUBLE PRECISION XFLUXF , XGAMMA
       DOUBLE PRECISION DIIPBX, DIIPBY, DIIPBZ, SURFBN, DISTBR
       DOUBLE PRECISION VISCT, FLUMAB , XCP , XVSL, CP0IPH, RRR
-      DOUBLE PRECISION XYZ(3), XABS, XU, XV, XW, XK, XEPS
+      DOUBLE PRECISION XFOR(3), XYZ(3), XABS, XU, XV, XW, XK, XEPS
 C
 C***********************************************************************
 C
@@ -1248,7 +1250,53 @@ C- Fin du test sur INPDT0
       ENDIF
 C
 C=======================================================================
-C 3. EXEMPLE : MISE A 20 DE LA TEMPERATURE DANS UNE ZONE DONNEE
+C 3. EXEMPLE : CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
+C
+C           A FAIRE AVEC PRECAUTIONS ...
+C           L'UTILISATEUR PREND SES RESPONSABILITES.
+C=======================================================================
+C
+C
+C ----------------------------------------------
+C
+C Il est assez courant que l'on oublie d'eliminer cet exemple
+C   de ce sous-programme.
+C On a donc prevu le test suivant pour eviter les mauvaises surprises
+C
+      IUTILE = 0
+C
+      IF(IUTILE.EQ.0) RETURN
+C
+C ----------------------------------------------
+C
+C     Si les efforts ont bien ete calcules :
+      IF (INEEDF.EQ.1) THEN
+C
+        DO II = 1, NDIM
+          XFOR(II) = 0.D0
+        ENDDO
+C
+        CALL GETFBR('2 or 3',NLELT,LSTELT)
+C       ===========
+C
+        DO IELT = 1, NLELT
+C
+          IFAC = LSTELT(IELT)
+C
+          DO II = 1, NDIM
+            XFOR(II) = XFOR(II) + RA(IFORBR + (IFAC-1)*NDIM + II-1)
+          ENDDO
+C
+        ENDDO
+C
+        IF (IRANGP.GE.0) THEN
+          CALL PARRSM(NDIM,XFOR)
+        ENDIF
+C
+      ENDIF
+C
+C=======================================================================
+C 4. EXEMPLE : MISE A 20 DE LA TEMPERATURE DANS UNE ZONE DONNEE
 C              A PARTIR DU TEMPS 12s
 C
 C           A FAIRE AVEC PRECAUTIONS ...
@@ -1289,7 +1337,7 @@ C
      & /)
 C
 C=======================================================================
-C 4. EXEMPLE : EXTRACTION D'UN PROFIL 1D
+C 5. EXEMPLE : EXTRACTION D'UN PROFIL 1D
 C    -----------------------------------
 C
 C    On cherche ici a extraire le profil de U, V, W, k et eps sur une
@@ -1411,7 +1459,7 @@ C
 C
 C
 C=======================================================================
-C 5. EXEMPLE : IMPRESSION DU PREMIER MOMENT CALCULE
+C 6. EXEMPLE : IMPRESSION DU PREMIER MOMENT CALCULE
 C=======================================================================
 C
 C
@@ -1462,7 +1510,7 @@ C
 C
 C
 C=======================================================================
-C 6. EXEMPLE : UTILISATION DES ROUTINES DE CALCUL PARALLELE
+C 7. EXEMPLE : UTILISATION DES ROUTINES DE CALCUL PARALLELE
 C              POUR LES OPERATIONS SUIVANTES~:
 C=======================================================================
 C

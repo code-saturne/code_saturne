@@ -1,4 +1,9 @@
 * 30/10/2008 - David Monfort <david.monfort@edf.fr>
+  Add an example of wall stresses calculation in usproj.F
+  modified routine:
+    users/base/usproj.F
+
+* 30/10/2008 - David Monfort <david.monfort@edf.fr>
   Updating the macros files.
 
 * 30/10/2008 - Alexandre Douce <alexandre.douce@edf.fr>
