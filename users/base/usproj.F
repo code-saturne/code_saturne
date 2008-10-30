@@ -1279,9 +1279,9 @@ C
         CALL GETFBR('2 or 3',NLELT,LSTELT)
 C       ===========
 C
-        DO IELT = 1, NLELT
+        DO ILELT = 1, NLELT
 C
-          IFAC = LSTELT(IELT)
+          IFAC = LSTELT(ILELT)
 C
           DO II = 1, NDIM
             XFOR(II) = XFOR(II) + RA(IFORBR + (IFAC-1)*NDIM + II-1)
