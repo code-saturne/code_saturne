@@ -1,4 +1,10 @@
 * 30/10/2008 - David Monfort <david.monfort@edf.fr>
+  Modification of the example of head loss in uskpdc.F so that
+  they conform to the definition of the head loss tensor.
+  modified routine:
+    users/base/uskpdc.F
+
+* 30/10/2008 - David Monfort <david.monfort@edf.fr>
   Add an example of wall stresses calculation in usproj.F
   modified routine:
     users/base/usproj.F
