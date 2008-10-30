@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-08-22 11:53+0200\n"
+"POT-Creation-Date: 2008-10-30 18:10+0100\n"
 "PO-Revision-Date: 2008-08-22 11:55+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1944,19 +1944,19 @@ msgstr "Groupe: %s\n"
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
-#: src/base/cs_mesh_warping.c:989
+#: src/base/cs_mesh_warping.c:992
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1010
+#: src/base/cs_mesh_warping.c:1013
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1050
+#: src/base/cs_mesh_warping.c:1053
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1109
+#: src/base/cs_mesh_warping.c:1112
 #, c-format
 msgid ""
 "\n"
@@ -1975,7 +1975,7 @@ msgstr ""
 " Angle maximal autorisé (rad) :\t%7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1172
+#: src/base/cs_mesh_warping.c:1175
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -1983,7 +1983,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1224
+#: src/base/cs_mesh_warping.c:1227
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -2000,7 +2000,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1231 src/base/cs_mesh_warping.c:1297
+#: src/base/cs_mesh_warping.c:1234 src/base/cs_mesh_warping.c:1300
 #, c-format
 msgid ""
 " Size of the new face -> vertices connectivity: %12d\n"
@@ -2009,12 +2009,12 @@ msgstr ""
 " Taille de la nouvelle connectivité face -> sommets :%12d\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1238 src/base/cs_mesh_warping.c:1304
+#: src/base/cs_mesh_warping.c:1241 src/base/cs_mesh_warping.c:1307
 #, c-format
 msgid "\t%12d global faces before cutting\n"
 msgstr "\t%12d faces globalement avant découpage\n"
 
-#: src/base/cs_mesh_warping.c:1252
+#: src/base/cs_mesh_warping.c:1255
 #, c-format
 msgid ""
 "\t%12d global faces after cutting\n"
@@ -2023,7 +2023,7 @@ msgstr ""
 "\t%12d faces globalement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1290
+#: src/base/cs_mesh_warping.c:1293
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -2040,7 +2040,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1318
+#: src/base/cs_mesh_warping.c:1321
 #, c-format
 msgid "\t%12d global faces after cutting.\n"
 msgstr "\t%12d faces globales après découpage.\n"
