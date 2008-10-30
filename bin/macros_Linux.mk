@@ -85,16 +85,16 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =/home/saturne/opt/atlas-3.8.0/arch/Linux_P4E
-BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_HOME       =
+BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-lcblas -latlas
 
 # Macros for gettext
 #-------------------
 
 # gettext support
-NLS				=0
+NLS             =0
 
 # Set CS_LANG to FR to have French translation
 CS_LANG         =
@@ -115,7 +115,7 @@ CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gcc
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
                          -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
+                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
@@ -151,7 +151,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gfortran
+LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g

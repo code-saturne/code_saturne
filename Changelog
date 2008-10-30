@@ -1,3 +1,6 @@
+* 30/10/2008 - David Monfort <david.monfort@edf.fr>
+  Updating the macros files.
+
 * 30/10/2008 - Alexandre Douce <alexandre.douce@edf.fr>
   Add a temporary to be able to stop the calculation with Salomé.
   modified script:

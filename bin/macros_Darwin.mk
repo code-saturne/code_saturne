@@ -86,15 +86,15 @@ XML_LIB  =-lxml2
 # BLAS support
 BLAS            =0
 BLAS_HOME       =
-BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib -lcblas -latlas
+BLAS_LDFLAGS    =-lcblas -latlas
 
 # Macros for gettext
 #-------------------
 
 # gettext support
-NLS				=0
+NLS             =0
 
 # Set CS_LANG to FR to have French translation
 CS_LANG         =
@@ -110,12 +110,12 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /Users/saturne/opt/mpich-1.2.7p1/bin/mpicc 
+CCOMP                  = /Users/saturne/opt/mpich-1.2.7p1/bin/mpicc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
                          -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized 
+                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
@@ -131,7 +131,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77 
+FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -151,7 +151,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77 
+LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
