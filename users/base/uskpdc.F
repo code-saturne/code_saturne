@@ -278,7 +278,7 @@ C
       INTEGER          IEL, IELPDC, IPHAS, IKPDC
       INTEGER          ILELT, NLELT
 C
-      DOUBLE PRECISION ALPHA, COSALP, SINALP, VIT1, VIT2, CK1, CK2
+      DOUBLE PRECISION ALPHA, COSALP, SINALP, VIT, CK1, CK2
 C
 C***********************************************************************
 C
@@ -439,9 +439,12 @@ C
           IF(NCKPDP.EQ.3) THEN
             DO IELPDC = 1, NCEPDP
               IEL=ICEPDC(IELPDC)
-              CKUPDC(IELPDC,1) = 10.D0*ABS(RTPA(IEL,IU(IPHAS)))
-              CKUPDC(IELPDC,2) =  0.D0*ABS(RTPA(IEL,IV(IPHAS)))
-              CKUPDC(IELPDC,3) =  0.D0*ABS(RTPA(IEL,IW(IPHAS)))
+              VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
+     &                   + RTPA(IEL,IV(IPHAS))**2
+     &                   + RTPA(IEL,IW(IPHAS))**2)
+              CKUPDC(IELPDC,1) = 10.D0*VIT
+              CKUPDC(IELPDC,2) =  0.D0*VIT
+              CKUPDC(IELPDC,3) =  0.D0*VIT
             ENDDO
 C
 C --- Tenseur 3x3
@@ -468,17 +471,13 @@ C
 C
             DO IELPDC = 1, NCEPDP
               IEL=ICEPDC(IELPDC)
-              VIT1   = COSALP*RTPA(IEL,IU(IPHAS))
-     &                -SINALP*RTPA(IEL,IV(IPHAS))
-              VIT2   = SINALP*RTPA(IEL,IU(IPHAS))
-     &                +COSALP*RTPA(IEL,IV(IPHAS))
-              CKUPDC(IELPDC,1) = COSALP**2*CK1*ABS(VIT1)
-     &                          +SINALP**2*CK2*ABS(VIT2)
-              CKUPDC(IELPDC,2) = SINALP**2*CK1*ABS(VIT1)
-     &                          +COSALP**2*CK2*ABS(VIT2)
+              VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
+     &                   + RTPA(IEL,IV(IPHAS))**2
+     &                   + RTPA(IEL,IW(IPHAS))**2)
+              CKUPDC(IELPDC,1) = (COSALP**2*CK1 + SINALP**2*CK2)*VIT
+              CKUPDC(IELPDC,2) = (SINALP**2*CK1 + COSALP**2*CK2)*VIT
               CKUPDC(IELPDC,3) =  0.D0
-              CKUPDC(IELPDC,4) = COSALP*SINALP*
-     &                          (-CK1*ABS(VIT1)+CK2*ABS(VIT2))
+              CKUPDC(IELPDC,4) = COSALP*SINALP*(-CK1+CK2)*VIT
               CKUPDC(IELPDC,5) =  0.D0
               CKUPDC(IELPDC,6) =  0.D0
             ENDDO
