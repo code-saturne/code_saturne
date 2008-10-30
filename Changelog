@@ -1,4 +1,9 @@
 * 30/10/2008 - David Monfort <david.monfort@edf.fr>
+  Updating french gettext dictionnary.
+  modified file:
+    po/fr.po
+
+* 30/10/2008 - David Monfort <david.monfort@edf.fr>
   Modification of the example of head loss in uskpdc.F so that
   they conform to the definition of the head loss tensor.
   modified routine:
