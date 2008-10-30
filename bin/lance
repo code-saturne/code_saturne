@@ -346,6 +346,13 @@ if [ "$RUN" != "$TMPDIR" ] ; then
   fi
 fi
 #
+# Create a temporary file for Salome (equivalent to "ficstp")
+if [ "$ARG_CS_OUTPUT" == "--log 0" ] ; then
+  echo $RUN > $SCRIPTS/runningstd.$DATE
+else
+  echo $RUN > $SCRIPTS/runningext.$DATE
+fi
+#
 cd $RUN
 #
 ########################################################################
@@ -1370,6 +1377,9 @@ if [ ! -f $ERROR -a $MODE_EXEC != pre_traitement ] ; then
   fi
 #
 fi
+#
+# Remove the Salome temporary files
+rm -f $SCRIPTS/running*.$DATE
 #
 ########################################################################
 #

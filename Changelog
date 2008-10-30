@@ -1,3 +1,8 @@
+* 30/10/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add a temporary to be able to stop the calculation with Salomé.
+  modified script:
+    bin/lance
+
 * 28/10/2008 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Improvement in two tests when the user added arrays in TEPA.
   modified routine:
