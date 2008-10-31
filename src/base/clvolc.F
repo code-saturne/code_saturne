@@ -31,7 +31,7 @@ c@verse
 C                       *****************
 C     -------------------------------------------------------------
      & ( NCELET , NCEL   ,
-     &   VOLTOT , VOLUME )
+     &   VOLMIN , VOLMAX , VOLTOT , VOLUME )
 C     -------------------------------------------------------------
 C***********************************************************************
 C
@@ -51,6 +51,8 @@ CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
 CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
 CARGU ! NCEL         ! E  !  -> ! NOMBRE D'ELEMENTS ACTIFS             !
+CARGU ! VOLMIN       ! R  ! <-  ! VOLUME DE CONTROLE MINIMAL           !
+CARGU ! VOLMAX       ! R  ! <-  ! VOLUME DE CONTROLE MAXIMAL           !
 CARGU ! VOLTOT       ! R  ! <-  ! VOLUME TOTAL DU DOMAINE              !
 CARGU ! VOLUME       ! TR ! <-  ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET)     !    !     !                                      !
@@ -88,11 +90,10 @@ C
 C ARGUMENTS
 C
       INTEGER NCELET, NCEL
-      DOUBLE PRECISION VOLTOT
+      DOUBLE PRECISION VOLMIN, VOLMAX, VOLTOT
       DOUBLE PRECISION VOLUME(NCELET)
 C
       INTEGER IEL, IDIMTE, ITENSO
-      DOUBLE PRECISION VOLMIN
 C
       INTEGER          IPASS
       DATA             IPASS /0/
@@ -108,12 +109,14 @@ C=======================================================================
 C 2. ON PREND LES MIN ET MAX
 C=======================================================================
 C
-      VOLMIN = 1.D+12
+      VOLMIN =  1.D+12
+      VOLMAX = -1.D+12
       VOLTOT = 0.D0
 C
       DO IEL  = 1, NCEL
 C
          VOLMIN = MIN(VOLMIN, VOLUME(IEL))
+         VOLMAX = MAX(VOLMAX, VOLUME(IEL))
          VOLTOT = VOLTOT + VOLUME(IEL)
 C
       ENDDO
@@ -127,6 +130,8 @@ C       pourrait etre optimise)
         CALL PARCOM(VOLUME)
 C       ===========
         CALL PARMIN (VOLMIN)
+C       ===========
+        CALL PARMAX (VOLMAX)
 C       ===========
         CALL PARSOM (VOLTOT)
 C       ===========
@@ -151,14 +156,14 @@ C       si pb.
 C     Aux passages suivants, on n'ecrit pas, on teste et on finit le pas
 C       de temps si pb.
       IF (IPASS.EQ.1) THEN
-        WRITE(NFECRA,1000) VOLMIN, VOLTOT
+        WRITE(NFECRA,1000) VOLMIN, VOLMAX, VOLTOT
         IF (VOLMIN.LE.0.D0) THEN
           WRITE(NFECRA,1002)
           CALL CSEXIT (1)
         ENDIF
       ELSE
         IF (VOLMIN.LE.0.D0) THEN
-          WRITE(NFECRA,1001) VOLMIN, VOLTOT
+          WRITE(NFECRA,1001) VOLMIN, VOLMAX, VOLTOT
           WRITE(NFECRA,1002)
           NTMABS = NTCABS
         ENDIF
@@ -172,8 +177,10 @@ C
  1000 FORMAT(
      &' --- Information sur les volumes                             ',/,
      &'       Volume de controle minimal = ',4X,E18.9                ,/,
+     &'       Volume de controle maximal = ',4X,E18.9                ,/,
      &'       Volume total du domaine    = ',4X,E18.9                 )
  1001 FORMAT(/,' CLVOLC : VOLUME DE CONTROLE MINIMAL     = ',E18.9,/,
+     &         '          VOLUME DE CONTROLE MAXIMAL     = ',E18.9,/,
      &         '          VOLUME TOTAL DU DOMAINE        = ',E18.9,/,/)
  1002 FORMAT(/,' CLVOLC : ARRET SUITE A LA DETECTION D''UN',/,
      &         '          VOLUME NEGATIF',/)
@@ -183,8 +190,10 @@ C
  1000 FORMAT(
      &' --- Information on the volumes                              ',/,
      &'       Minimum control volume      = ',4X,E18.9               ,/,
+     &'       Maximum control volume      = ',4X,E18.9               ,/,
      &'       Total volume for the domain = ',4X,E18.9                 )
  1001 FORMAT(/,' CLVOLC : MINIMUM CONTROL VOLUME         = ',E18.9,/,
+     &         '          MAXIMUM CONTROL VOLUME         = ',E18.9,/,
      &         '          TOTAL VOLUME FOR THE DOMAIN    = ',E18.9,/,/)
  1002 FORMAT(/,' CLVOLC : ABORT DUE TO THE DETECTION OF A ',/,
      &         '          NEGATIVE VOLUME',/)

@@ -1,3 +1,17 @@
+* 31/10/2008 - Richard Howard <richard.howard@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Make the test on the convergence of the gradient reconstruction
+  method dimensionless if the maximum control volume is greater
+  than 1 (useful for some atmospheric simulations).
+  modified routines:
+    include/base/cstphy.h
+    src/base/alemaj.F
+    src/base/calgeo.F
+    src/base/caltri.F
+    src/base/clvolc.F
+    src/base/cregeo.F
+    src/base/gradrc.F
+
 * 31/10/2008 - David Monfort <david.monfort@edf.fr>
   Fix a MPI blocking bug on the BlueGene/P system (from IBM).
   modified file:
@@ -11,6 +25,7 @@
   English translation of code and comments in several files, along
   with some minor improvements.
   modified routines:
+    bin/runcase
     include/base/cs_base.h
     include/base/cs_ecs_messages.h
     include/base/cs_grid.h
@@ -3295,29 +3310,3 @@
 
 ===========================================================================
 ===========================================================================
-include/base/cs_base.h
-include/base/cs_ecs_messages.h
-include/base/cs_grid.h
-include/base/cs_mesh_connect.h
-include/base/cs_mesh.h
-include/base/cs_opts.h
-include/base/cs_parall.h
-include/base/cs_post.h
-include/base/cs_prototypes.h
-src/base/coupbi.F
-src/base/coupbo.F
-src/base/cs_base.c
-src/base/cs_couplage.c
-src/base/cs_main.c
-src/base/cs_mesh.c
-src/base/cs_mesh_connect.c
-src/base/cs_mesh_quantities.c
-src/base/cs_mesh_warping.c
-src/base/cs_multigrid.c
-src/base/cs_opts.c
-src/base/cs_parall.c
-src/base/cs_post.c
-src/base/cs_sles.c
-src/base/cs_suite.c
-src/base/cs_syr3_coupling.c
-src/base/cs_tpar1d.c

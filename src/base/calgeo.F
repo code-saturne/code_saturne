@@ -38,7 +38,7 @@ C     -------------------------------------------------------------
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   VOLTOT ,
+     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -105,6 +105,8 @@ CARGU ! XYZNOD       ! TR !  -> ! COORDONNES DES NOEUDS (OPTIONNEL)    !
 CARGU ! (NDIM,NNOD)  !    !     !                                      !
 CARGU ! VOLUME       ! TR ! <-  ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET      !    !     !                                      !
+CARGU ! VOLMIN       ! R  ! <-  ! VOLUME DE CONTROLE MINIMAL           !
+CARGU ! VOLMAX       ! R  ! <-  ! VOLUME DE CONTROLE MAXIMAL           !
 CARGU ! VOLTOT       ! R  ! <-  ! VOLUME TOTAL DU DOMAINE              !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
@@ -156,7 +158,7 @@ C
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
       DOUBLE PRECISION XYZNOD(NDIM,NNOD), VOLUME(NCELET)
-      DOUBLE PRECISION VOLTOT
+      DOUBLE PRECISION VOLMIN, VOLMAX, VOLTOT
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -177,7 +179,7 @@ C
       CALL CLVOLC
 C     ===========
      &     ( NCELET , NCEL   ,
-     &       VOLTOT , VOLUME )
+     &       VOLMIN , VOLMAX , VOLTOT , VOLUME )
 C
 C=======================================================================
 C 3. ON CALCULE LES SURFACES DES FACES

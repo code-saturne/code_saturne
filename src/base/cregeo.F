@@ -38,7 +38,7 @@ C     -------------------------------------------------------------
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   VOLTOT ,
+     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -158,7 +158,7 @@ C
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
       DOUBLE PRECISION XYZNOD(NDIM,NNOD), VOLUME(NCELET)
-      DOUBLE PRECISION VOLTOT
+      DOUBLE PRECISION VOLMIN, VOLMAX, VOLTOT
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -245,7 +245,7 @@ C     ===========
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   VOLTOT ,
+     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C
       RETURN

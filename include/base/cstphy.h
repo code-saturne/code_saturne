@@ -110,6 +110,8 @@ C   CDRIES
 C       Constante de Van Driest dans (1-exp(-y+/CDRIES))
 C   CE4    : Coefficient du terme interfacial dans k-eps
 C            (Ce coefficient sert en Lagrangien)
+C   VOLMIN : VOLUME DE CONTROLE MINIMAL
+C   VOLMAX : VOLUME DE CONTROLE MAXIMAL
 C   VOLTOT : VOLUME TOTAL DU DOMAINE
 C
       DOUBLE PRECISION  XKAPPA , CSTLOG , YPLULI(NPHSMX)  ,
@@ -124,7 +126,7 @@ C
      &                  CV2FCT , CV2FCL , CV2FET ,
      &                  CKWSK1 , CKWSK2 , CKWSW1 , CKWSW2 , CKWBT1 ,
      &                  CKWBT2 , CKWGM1 , CKWGM2 , CKWA1  , CKWC1  ,
-     &                  VOLTOT ,
+     &                  VOLMIN , VOLMAX , VOLTOT ,
      &                  ALMAX (NPHSMX)  , UREF  (NPHSMX),
      &                  XLOMLG(NPHSMX)  ,
      &                  XLESFL(NPHSMX)  , ALES  (NPHSMX), BLES(NPHSMX),
@@ -142,7 +144,7 @@ C
      &                  CV2FCT , CV2FCL , CV2FET ,
      &                  CKWSK1 , CKWSK2 , CKWSW1 , CKWSW2 , CKWBT1 ,
      &                  CKWBT2 , CKWGM1 , CKWGM2 , CKWA1  , CKWC1  ,
-     &                  VOLTOT ,
+     &                  VOLMIN , VOLMAX , VOLTOT ,
      &                  ALMAX           , UREF            ,
      &                  XLOMLG          ,
      &                  XLESFL          , ALES            , BLES      ,

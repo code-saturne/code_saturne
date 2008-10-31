@@ -270,7 +270,7 @@ C     ===========
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
-     &   VOLTOT ,
+     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C
 C
@@ -487,7 +487,7 @@ C         ===========
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   VOLTOT ,
+     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C
         ENDIF

@@ -158,6 +158,8 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
+      INCLUDE "paramx.h"
+      INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
       INCLUDE "vector.h"
       INCLUDE "albase.h"
@@ -745,6 +747,7 @@ C
       CALL PRODS3(NCELET,NCEL,ISQRT,BX,BX,BY,BY,BZ,BZ,
      &            RNORX,RNORY,RNORZ)
       RNORM = RNORX +RNORY +RNORZ
+      IF (VOLMAX.GT.1.D0) RNORM = RNORM / VOLMAX
       IF( RNORM.LE.EPZERO ) RETURN
 C
 C  LE VECTEUR OijFij EST CALCULE DANS CLDIJP
@@ -1024,6 +1027,7 @@ C
       CALL PRODS3(NCELET,NCEL,ISQRT,BX,BX,BY,BY,BZ,BZ,
      &            RNORX,RNORY,RNORZ)
       RESIDU = RNORX +RNORY +RNORZ
+      IF (VOLMAX.GT.1.D0) RESIDU = RESIDU / VOLMAX
 C
       IF( RESIDU.LE.EPSRGP*RNORM) THEN
         IF( IWARNP.GE.2 ) THEN
