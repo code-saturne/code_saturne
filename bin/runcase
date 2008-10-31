@@ -485,7 +485,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   if [ ! -z "$PARAM" ] ; then
     var=$DATA/$PARAM
     if [ -f $var ] ; then
-      COMMAND_PARAM="-param $PARAM"
+      COMMAND_PARAM="--param $PARAM"
       cp $var .
     else
       echo ' '
