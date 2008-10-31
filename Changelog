@@ -1,3 +1,8 @@
+* 31/10/2008 - David Monfort <david.monfort@edf.fr>
+  Fix a MPI blockin bug on the BlueGene/P system (from IBM).
+  modified file:
+    bin/macros_BlueGene_P.mk
+
 * 30/10/2008 - David Monfort <david.monfort@edf.fr>
   Updating french gettext dictionnary.
   modified file:
