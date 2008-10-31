@@ -1,3 +1,8 @@
+* 31/10/2008 - David Monfort <david.monfort@edf.fr>
+  Fix a MPI blocking bug on the BlueGene/P system (from IBM).
+  modified file:
+    bin/macros_Blue_Gene_P.mk
+
 * 30/10/2008 - David Monfort <david.monfort@df.fr>
   Merging from the 1.3 branch (-r 736:741, updating macros, runcase
   adaptation for Salome, examples in uskpdc and usproj).
