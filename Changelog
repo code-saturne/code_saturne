@@ -1,3 +1,9 @@
+* 03/11/2008 - David Monfort <david.monfort@edf.fr>
+  Change a socket structure access from h_addr to h_addr_list[0]
+  because it is deprecated on some recent systems.
+  modified routine:
+    src/base/cs_comm.c
+
 * 31/10/2008 - David Monfort <david.monfort@edf.fr>
   Fix a MPI blockin bug on the BlueGene/P system (from IBM).
   modified file:

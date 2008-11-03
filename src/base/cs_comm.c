@@ -1173,7 +1173,7 @@ void cs_comm_init_socket
   chaine[CS_LOC_COMM_LNG_HOSTNAME] = '\0';
 
   ent_hote = gethostbyname(chaine);
-  memcpy(ent_hote->h_addr, &addr_sock.sin_addr, ent_hote->h_length);
+  memcpy(ent_hote->h_addr_list[0], &addr_sock.sin_addr, ent_hote->h_length);
 
   if (bind(cs_glob_comm_socket,
            (struct sockaddr *)&addr_sock,
