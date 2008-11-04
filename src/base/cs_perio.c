@@ -1968,6 +1968,7 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
   const cs_int_t  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts   = halo->n_local_elts;
   const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const cs_int_t  have_rotation = cs_glob_mesh->have_rotation_perio;
 
   if (sync_mode == CS_HALO_N_TYPES)
     return;
@@ -1982,6 +1983,7 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
     _sync_loc_var(halo, sync_mode, var_z);
   }
   else if (   rota_mode == CS_PERIO_ROTA_IGNORE
+           && have_rotation
            && cs_glob_base_nbr > 1) {
     cs_perio_restore_rotation_halo(halo, sync_mode, var_x);
     cs_perio_restore_rotation_halo(halo, sync_mode, var_y);
