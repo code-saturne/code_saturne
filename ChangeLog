@@ -1,4 +1,9 @@
-* 04/11/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 04/11/2008 - David Monfort <david.monfort@edf.fr>
+  Ditto for vector synchronization.
+  modified routine:
+    src/base/cs_perio.c
+
+* 04/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug if the simulation has a periodicity of a translation
   (missing test on the presence of rotation).
   modified routine:
@@ -23,11 +28,11 @@
   modified file:
     bin/macros_Blue_Gene_P.mk
 
-* 30/10/2008 - David Monfort <david.monfort@df.fr>
+* 30/10/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 736:741, updating macros, runcase
   adaptation for Salome, examples in uskpdc and usproj).
 
-* 29/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 29/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   English translation of code and comments in several files, along
   with some minor improvements.
   modified routines:
@@ -59,84 +64,84 @@
     src/base/cs_syr3_coupling.c
     src/base/cs_tpar1d.c
 
-* 29/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 29/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug when extracting part of the mesh if there is no
   boundary face.
   modified routine:
     src/base/cs_ecs_messages.c
 
-* 29/10/2008 - David Monfort <david.monfort@df.fr>
+* 29/10/2008 - David Monfort <david.monfort@edf.fr>
   Merging from the 1.3 branch (-r 731:732, minor lagopt bug fix)
 
-* 29/10/2008 - David Monfort <david.monfort@df.fr>
+* 29/10/2008 - David Monfort <david.monfort@edf.fr>
   Add a COMMAND_REORIENT variable in the runcase in order
   to simplify the runcase setup by the GUI.
   modified scritps:
     bin/runcase
     bin/runcase.help
   
-* 28/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 28/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor corrections and improvement in scripts.
   modified scripts:
     bin/cs_info
     bin/mpi_rank.sh
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction on the use of shared arrays.
   modified routine:
     src/base/crstgr.F
     src/base/cs_grid.c
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Add C functions to deal with face/cell selection.
   modified routines:
     include/base/cs_selector.h
     src/base/cs_selector.c
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding some Fortran prototypes for C callers.
   modified routine:
     include/base/cs_prototypes.h
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Several Makefile corrections and improvements.
   modified script:
     bin/Makefile
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug in the mesh coherency check in case of translation.
   modified routine:
     src/base/cs_mesh_coherency.c
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove inconsistent comments.
   modified routine:
     src/base/initi1.F
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Change size_t variables to fvm_file_offt in order
   to bypass some possible limitations on BlueGene systems.
   modified routines:
     include/base/cs_io.h
     src/base/cs_io.c
 
-* 27/10/2008 - Yvan Fournier <yvan.fournier@df.fr>
+* 27/10/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixing a bug when re-opening a file.
   modified routine:
     src/base/cs_io.c
 
-* 27/10/2008 - David Monfort <david.monfort@df.fr>
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Remove the forcing to ASCII mode for post-processing when
   the calculation is in verification mode.
   modified routine:
     src/base/initi1.F
 
-* 27/10/2008 - David Monfort <david.monfort@df.fr>
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Correction on a warning output (IPERIO instead of IRANGP).
   modified file:
     src/base/verini.F
 
-* 27/10/2008 - David Monfort <david.monfort@df.fr>
+* 27/10/2008 - David Monfort <david.monfort@edf.fr>
   Updating the dp_FUE file for fuel combustion to account 
   for the number of fuel classes.
   modified file:
