@@ -1,3 +1,9 @@
+* 04/11/2008 - Yvan Fournier <yvan.fournier@df.fr>
+  Fix a bug if the simulation has a periodicity of a translation
+  (missing test on the presence of rotation).
+  modified routine:
+    src/base/cs_perio.c
+
 * 31/10/2008 - Richard Howard <richard.howard@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Make the test on the convergence of the gradient reconstruction
