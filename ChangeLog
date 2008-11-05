@@ -1,4 +1,10 @@
 * 05/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a bug arising when the ratio between the number of
+  processors and the number of cells is two high.
+  modified routine:
+    src/base/cs_ecs_messages.c
+
+* 05/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Makefile simplifications.
   modified script:
     bin/Makefile

@@ -98,6 +98,7 @@ typedef struct {
 
   /* Temporary mesh data */
 
+  int           read_cell_rank;
   int          *cell_rank;
 
   fvm_gnum_t   *face_cells;
@@ -154,6 +155,8 @@ _mesh_reader_create(void)
 
   mr->n_g_faces = 0;
   mr->n_g_face_connect_size = 0;
+
+  mr->read_cell_rank = 0;
 
   mr->cell_rank = NULL;
   mr->face_cells = NULL;
@@ -422,6 +425,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
       else {
+        mr->read_cell_rank = 1;
         cs_io_set_fvm_lnum(&header, rank_pp_in);
         if (mr->cell_bi.gnum_range[0] > 0)
           n_elts = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
@@ -1307,7 +1311,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   /* Different handling of cells depending on whether decomposition
      data is available or not. */
 
-  if (mr->cell_rank != NULL) {
+  if (mr->read_cell_rank != 0) {
 
     d = fvm_block_to_part_create_by_rank(comm,
                                          mr->cell_bi,
@@ -1342,6 +1346,12 @@ _decompose_data_g(cs_mesh_t          *mesh,
     mesh->cell_family = mr->cell_gc_id;
     mr->cell_gc_id = NULL;
   }
+
+  if (mesh->n_cells == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Number of cells on rank %d is zero.\n"
+                "(number of cells / number of processes ratio too low)."),
+              (int)cs_glob_base_rang);
 
   /* Distribute faces */
   /*------------------*/
