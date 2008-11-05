@@ -33,7 +33,7 @@ C     --------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  , IDIAEX ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
@@ -77,7 +77,6 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NCEPDP       ! E  !  -> ! NOMBRE DE CELLULES AVEC PDC          !
-CARGU ! NCKPDP       ! E  !  -> ! NBR DE COEF DU TENSEUR DE PDC (3 OU 6!
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
 CARGU ! IPHAS        ! E  !  -> ! NUMERO DE PHASE COURANTE             !
@@ -129,8 +128,8 @@ CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
 CARGU ! COEFA, COEFB ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! CKUPDC(NCEPDP! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
-CARGU !     , NCKPDP)!    !     !                                      !
+CARGU ! CKUPDC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
+CARGU !  (NCEPDP,6)  !    !     !                                      !
 CARGU ! W1...6(NCELET! TR !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! TRAV(NCELET,3! TR ! <-> ! TABLEAU DES SECOND MEMBRES           !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
@@ -173,7 +172,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCKPDP
+      INTEGER          NCEPDP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS
       INTEGER          IDIAEX
 C
@@ -193,7 +192,7 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
-      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP)
+      DOUBLE PRECISION CKUPDC(NCEPDP,6)
       DOUBLE PRECISION W1(NCELET),W2(NCELET),W3(NCELET)
       DOUBLE PRECISION W4(NCELET),W5(NCELET),W6(NCELET)
       DOUBLE PRECISION TRAV(NCELET,3)
@@ -224,7 +223,7 @@ C
 C
 C     La diagonale est toujours "implicite"
 C
-      IF(IDIAEX.EQ.1.AND.(NCKPDP.EQ.3.OR.NCKPDP.EQ.6)) THEN
+      IF(IDIAEX.EQ.1) THEN
 C
         DO IELPDC = 1, NCEPDP
 C
@@ -250,7 +249,7 @@ C
 C
 C     L'extradiagonale est explicite mais peut etre extrapolee
 C
-      IF(IDIAEX.EQ.2.AND.NCKPDP.EQ.6) THEN
+      IF(IDIAEX.EQ.2) THEN
 C
         DO IELPDC = 1, NCEPDP
 C

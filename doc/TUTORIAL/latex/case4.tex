@@ -266,10 +266,12 @@ If $XYZCEN(1,IEL) \leq 0.40$ and $XYZCEN(1,IEL) \geq 0.20$ \\
 and $XYZCEN(2,IEL) \geq -0.75$ and $XYZCEN(2,IEL) \leq -0.25$\\
 then an isotropic head loss coefficient $K = 10^{4}$ is applied:\\
 
-$NCKPDP = 3$: the head loss tensor is diagonal \\
 $CKUPDC(IELPDC,1) = K*ABS(RTPA(IEL,IU(IPHAS)))$ \\
 $CKUPDC(IELPDC,2) = K*ABS(RTPA(IEL,IV(IPHAS)))$ \\
-$CKUPDC(IELPDC,3) = K*ABS(RTPA(IEL,IW(IPHAS)))$
+$CKUPDC(IELPDC,3) = K*ABS(RTPA(IEL,IW(IPHAS)))$ \\
+$CKUPDC(IELPDC,4) = 0.$ \\
+$CKUPDC(IELPDC,5) = 0.$ \\
+$CKUPDC(IELPDC,6) = 0.$
 
         \subsection{Output management}
 %-------------------------------------

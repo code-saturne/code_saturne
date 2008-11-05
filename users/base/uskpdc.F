@@ -38,7 +38,7 @@ C     -------------------------------------------------------------
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   NCEPDP , NCKPDP , IPHAS  , IAPPEL ,
+     &   NCEPDP , IPHAS  , IAPPEL ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC ,
      &   IDEVEL , ITUSER , IA     ,
@@ -57,7 +57,6 @@ CFONC                        POUR LA PHASE IPHAS
 CFONC
 CFONC IAPPEL = 1 :
 CFONC              CALCUL DU NOMBRE DE CELLULES OU L'ON IMPOSE UNE PDC
-CFONC              DETERMINATION DU NOMBRE DE COEF DU TENSEUR DE PDC
 CFONC IAPPEL = 2 :
 CFONC              REPERAGE DES CELLULES OU L'ON IMPOSE UNE PDC
 CFONC IAPPEL = 3 :
@@ -149,7 +148,6 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NCEPDP       ! E  ! <-> ! NOMBRE DE CELLULES AVEC PDC          !
-CARGU ! NCKPDP       ! E  ! <-> ! NBR DE COEF DU TENSEUR DE PDC (3 OU 6!
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
 CARGU ! IAPPEL       ! E  !  -> ! INDIQUE LES DONNES A RENVOYER        !
@@ -202,8 +200,8 @@ CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
 CARGU ! COEFA, COEFB ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! CKUPDC(NCEPDP! TR ! <-> ! TABLEAU DE TRAVAIL POUR PDC          !
-CARGU !     , NCKPDP)!    !     !                                      !
+CARGU ! CKUPDC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
+CARGU !  (NCEPDP,6)  !    !     !                                      !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -248,7 +246,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCKPDP
+      INTEGER          NCEPDP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          IAPPEL
 C
@@ -269,7 +267,7 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
-      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP)
+      DOUBLE PRECISION CKUPDC(NCEPDP,6)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
@@ -277,6 +275,7 @@ C
       INTEGER          IDEBIA, IDEBRA
       INTEGER          IEL, IELPDC, IPHAS, IKPDC
       INTEGER          ILELT, NLELT
+      INTEGER          IUTILE
 C
       DOUBLE PRECISION ALPHA, COSALP, SINALP, VIT, CK1, CK2
 C
@@ -295,7 +294,6 @@ C      PREMIER APPEL :
 C
 C        IAPPEL = 1 : NCEPDP : CALCUL DU NOMBRE DE CELLULES
 C                                AVEC PERTES DE CHARGE
-C                     NCKPDP : NOMBRE DE COEFFS DU TENSEUR
 C
 C
 C      DEUXIEME APPEL (POUR LES PHASES AVEC NCEPDP > 0) :
@@ -361,28 +359,6 @@ C
           NCEPDP = IELPDC
         ENDIF
 C
-C ---------------------------------------------------------------------
-C  1.3 A completer par l'utilisateur : nombre de coeffs
-C  -----------------------------------------------------
-C
-C --- Pour IAPPEL = 1,
-C      Renseigner l'entier NCKPDP qui indique si le tenseur de pdc est
-C        diagonal (NCKPDP=3) ou non (NCKPDP=6)
-C      Utile uniquement si NCEPDP > 0. Si NCEPDP = 0, la valeur de
-C        NCKPDP est ignoree.
-C      Le bloc ci dessous est valable pourles 2 exemples ci dessus
-C
-        IF (IAPPEL.EQ.1) THEN
-C
-          NCKPDP = 0
-          IF(IPHAS.EQ.1) THEN
-            NCKPDP = 6
-          ELSE
-            NCKPDP = 3
-          ENDIF
-C
-        ENDIF
-C
 C-----------------------------------------------------------------------
 C
       ELSEIF(IAPPEL.EQ.3) THEN
@@ -422,30 +398,29 @@ C   On les initialise tous par des valeurs nulles.
 C       Et on demande a l'utilisateur de conserver cette initialisation.
 C                                        =========
 C
-        IF(NCKPDP.EQ.3.OR.NCKPDP.EQ.6) THEN
-          DO IKPDC = 1, NCKPDP
-            DO IELPDC = 1, NCEPDP
-              CKUPDC(IELPDC,IKPDC) = 0.D0
-            ENDDO
+        DO IKPDC = 1, 6
+          DO IELPDC = 1, NCEPDP
+            CKUPDC(IELPDC,IKPDC) = 0.D0
           ENDDO
-        ENDIF
+        ENDDO
 C
         IF(IPHAS.EQ.1) THEN
 C
 C --- Tenseur diagonal
 C   Exemple de pertes de charges dans la direction x
 C
+          IUTILE = 0
+          IF (IUTILE.EQ.0) RETURN
 C
-          IF(NCKPDP.EQ.3) THEN
-            DO IELPDC = 1, NCEPDP
-              IEL=ICEPDC(IELPDC)
-              VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
-     &                   + RTPA(IEL,IV(IPHAS))**2
-     &                   + RTPA(IEL,IW(IPHAS))**2)
-              CKUPDC(IELPDC,1) = 10.D0*VIT
-              CKUPDC(IELPDC,2) =  0.D0*VIT
-              CKUPDC(IELPDC,3) =  0.D0*VIT
-            ENDDO
+          DO IELPDC = 1, NCEPDP
+            IEL=ICEPDC(IELPDC)
+            VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
+     &                 + RTPA(IEL,IV(IPHAS))**2
+     &                 + RTPA(IEL,IW(IPHAS))**2)
+            CKUPDC(IELPDC,1) = 10.D0*VIT
+            CKUPDC(IELPDC,2) =  0.D0*VIT
+            CKUPDC(IELPDC,3) =  0.D0*VIT
+          ENDDO
 C
 C --- Tenseur 3x3
 C   Exemple de pertes de charges a ALPHA = 45 degres x,y
@@ -461,28 +436,27 @@ C                   \ / ALPHA
 C                    \
 C                     \ x
 C
-          ELSEIF(NCKPDP.EQ.6) THEN
+          IUTILE = 0
+          IF (IUTILE.EQ.0) RETURN
 C
-            ALPHA  = PI/4.D0
-            COSALP = COS(ALPHA)
-            SINALP = SIN(ALPHA)
-            CK1 = 10.D0
-            CK2 =  0.D0
+          ALPHA  = PI/4.D0
+          COSALP = COS(ALPHA)
+          SINALP = SIN(ALPHA)
+          CK1 = 10.D0
+          CK2 =  0.D0
 C
-            DO IELPDC = 1, NCEPDP
-              IEL=ICEPDC(IELPDC)
-              VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
-     &                   + RTPA(IEL,IV(IPHAS))**2
-     &                   + RTPA(IEL,IW(IPHAS))**2)
-              CKUPDC(IELPDC,1) = (COSALP**2*CK1 + SINALP**2*CK2)*VIT
-              CKUPDC(IELPDC,2) = (SINALP**2*CK1 + COSALP**2*CK2)*VIT
-              CKUPDC(IELPDC,3) =  0.D0
-              CKUPDC(IELPDC,4) = COSALP*SINALP*(-CK1+CK2)*VIT
-              CKUPDC(IELPDC,5) =  0.D0
-              CKUPDC(IELPDC,6) =  0.D0
-            ENDDO
-C
-          ENDIF
+          DO IELPDC = 1, NCEPDP
+            IEL=ICEPDC(IELPDC)
+            VIT = SQRT(  RTPA(IEL,IU(IPHAS))**2
+     &                 + RTPA(IEL,IV(IPHAS))**2
+     &                 + RTPA(IEL,IW(IPHAS))**2)
+            CKUPDC(IELPDC,1) = (COSALP**2*CK1 + SINALP**2*CK2)*VIT
+            CKUPDC(IELPDC,2) = (SINALP**2*CK1 + COSALP**2*CK2)*VIT
+            CKUPDC(IELPDC,3) =  0.D0
+            CKUPDC(IELPDC,4) = COSALP*SINALP*(-CK1+CK2)*VIT
+            CKUPDC(IELPDC,5) =  0.D0
+            CKUPDC(IELPDC,6) =  0.D0
+          ENDDO
 C
         ENDIF
 C

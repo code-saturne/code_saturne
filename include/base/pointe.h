@@ -109,9 +109,8 @@ C        !               !   (SYMETRIES ET PAROIS AVEC CL COUPLEES)
 C        !               ! UN SINON
 C IIFAPA ! NCELET        ! NUMERO DE FACE DE BORD 5 LA PLUS PROCHE
 C NCEPDC !               ! NOMBRE DE CELLULES AVEC PDC
-C NCKPDC !               ! DIMENSION TENSEUR PDC
 C IICEPD ! NCEPDC        ! NUMERO DES CELLULES AVEC PerteDeCharge
-C ICKUPD ! NCEPDC,NCKPDC ! VALEUR DES COEFF DE PDC
+C ICKUPD ! (NCEPDC,6)    ! VALEUR DES COEFF DE PDC
 C NCETSM !               ! NOMBRE DE CELLULES AVEC TSM
 C IICESM ! NCETSM        ! NUMERO DES CELLULES AVEC TSMasse
 C IITPSM ! NCETSM        ! TYPE DE TSM
@@ -121,13 +120,13 @@ C IDVUKW ! NCELET        ! STOCKAGE DE DIVU EN K-OMEGA (EN MEME TEMPS QUE S2KW)
 C
       INTEGER           IITYPF        , IITRIF        ,
      &                  IISYMP        , IYPLBR        ,
-     &                  IIFAPA(NPHSMX), NCEPDC(NPHSMX), NCKPDC(NPHSMX),
+     &                  IIFAPA(NPHSMX), NCEPDC(NPHSMX),
      &                  IICEPD(NPHSMX), ICKUPD(NPHSMX), NCETSM(NPHSMX),
      &                  IICESM(NPHSMX), IITPSM(NPHSMX), ISMACE(NPHSMX),
      &                  IS2KW (NPHSMX), IDVUKW(NPHSMX)
       COMMON / IPOSUP / IITYPF        , IITRIF        ,
      &                  IISYMP        , IYPLBR        ,
-     &                  IIFAPA        , NCEPDC        , NCKPDC        ,
+     &                  IIFAPA        , NCEPDC        ,
      &                  IICEPD        , ICKUPD        , NCETSM        ,
      &                  IICESM        , IITPSM        , ISMACE        ,
      &                  IS2KW         , IDVUKW

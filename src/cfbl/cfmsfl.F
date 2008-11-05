@@ -33,7 +33,7 @@ C     --------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
@@ -190,7 +190,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCKPDP , NCESMP
+      INTEGER          NCEPDP , NCESMP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          ISCAL
 C
@@ -212,7 +212,7 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
-      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP), SMACEL(NCESMP,NVAR)
+      DOUBLE PRECISION CKUPDC(NCEPDP,6), SMACEL(NCESMP,NVAR)
       DOUBLE PRECISION FLUMAS(NFAC), FLUMAB(NFABOR)
       DOUBLE PRECISION W1(NCELET) , W2(NCELET) , W3(NCELET)
       DOUBLE PRECISION W4(NCELET) , W5(NCELET) , W6(NCELET)
@@ -343,7 +343,7 @@ C       ===========
      & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IUIPH  , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
@@ -365,7 +365,7 @@ C       ===========
      & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IVIPH  , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
@@ -387,7 +387,7 @@ C       ===========
      & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IWIPH  , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
@@ -509,7 +509,7 @@ C         ===========
      & ( IDEBIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
@@ -528,7 +528,7 @@ C         ===========
      & ( IDEBIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
@@ -547,7 +547,7 @@ C         ===========
      & ( IDEBIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,

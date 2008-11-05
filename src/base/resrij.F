@@ -33,7 +33,7 @@ C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
@@ -86,7 +86,6 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NCEPDP       ! E  !  -> ! NOMBRE DE CELLULES AVEC PDC          !
-CARGU ! NCKPDP       ! E  !  -> ! NBR DE COEF DU TENSEUR DE PDC (3 OU 6!
 CARGU ! NCESMP       ! E  !  -> ! NOMBRE DE CELLULES A SOURCE DE MASSE !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
@@ -148,8 +147,8 @@ CARGU ! PRODUC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PRODUCTION   !
 CARGU !  (6,NCELET)  !    !     ! (SANS RHO VOLUME)                    !
 CARGU ! GRAROX,Y,Z   ! TR !  -> ! TABLEAU DE TRAVAIL POUR GRAD ROM     !
 CARGU !  (NCELET)    !    !     !                                      !
-CARGU ! CKUPDC(NCEPDP! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
-CARGU !     , NCKPDP)!    !     !                                      !
+CARGU ! CKUPDC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
+CARGU !  (NCEPDP,6)  !    !     !                                      !
 CARGU ! SMCELP(NCESMP! TR !  -> ! VALEUR DE LA VARIABLE ASSOCIEE A LA  !
 CARGU !              !    !     !  SOURCE DE MASSE                     !
 CARGU ! GAMMA(NCESMP)! TR !  -> ! VALEUR DU FLUX DE MASSE              !
@@ -215,7 +214,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCKPDP , NCESMP
+      INTEGER          NCEPDP , NCESMP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          IPHAS  , IVAR   , ISOU   , IPP
 C
@@ -239,7 +238,7 @@ C
       DOUBLE PRECISION COEFA(NDIMFB,*), COEFB(NDIMFB,*)
       DOUBLE PRECISION PRODUC(6,NCELET)
       DOUBLE PRECISION GRAROX(NCELET), GRAROY(NCELET), GRAROZ(NCELET)
-      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP)
+      DOUBLE PRECISION CKUPDC(NCEPDP,6)
       DOUBLE PRECISION SMCELP(NCESMP), GAMMA(NCESMP)
       DOUBLE PRECISION VISCF(NFAC), VISCB(NFABOR), COEFAX(NFABOR)
       DOUBLE PRECISION TSLAGE(NCELET),TSLAGI(NCELET)
@@ -349,7 +348,7 @@ C     ===========
      & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IPHAS  , IVAR   , ISOU   , IPP    ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),

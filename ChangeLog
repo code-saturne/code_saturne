@@ -1,3 +1,67 @@
+* 05/11/2008 - David Monfort <david.monfort@edf.fr>
+  Always set the head loss tensor to be a full symmetric tensor
+  in order to ease the setup within the Graphical User Interface
+  (NCKPDC has been removed and replaced by the constant 6).
+  modified documentation:
+    doc/TUTORIAL/latex/case4.tex
+    doc/USER/latex/saturne1.tex
+  modified routines:
+    include/base/pointe.h
+    src/base/caltri.F
+    src/base/covofi.F
+    src/base/dttvar.F
+    src/base/iniini.F
+    src/base/mempdc.F
+    src/base/navsto.F
+    src/base/phyvar.F
+    src/base/preduv.F
+    src/base/reseps.F
+    src/base/resolp.F
+    src/base/resrij.F
+    src/base/resssg.F
+    src/base/resv2f.F
+    src/base/scalai.F
+    src/base/tridim.F
+    src/base/tsepdc.F
+    src/base/turbke.F
+    src/base/turbkw.F
+    src/base/turrij.F
+    src/base/visdyn.F
+    src/base/vislmg.F
+    src/base/vissec.F
+    src/base/vissma.F
+    src/base/vissst.F
+    src/cfbl/cfdivs.F
+    src/cfbl/cfdttv.F
+    src/cfbl/cfener.F
+    src/cfbl/cfmsfl.F
+    src/cfbl/cfmsgs.F
+    src/cfbl/cfmsvl.F
+    src/cfbl/cfqdmv.F
+    src/cogz/ebutss.F
+    src/cogz/lwctss.F
+    src/cplv/cpltss.F
+    src/cplv/cpltsv.F
+    src/cplv/cptssc.F
+    src/cplv/cptsvc.F
+    src/elec/eltssc.F
+    src/fuel/futssc.F
+    src/fuel/futsvc.F
+    src/mati/mtkpdc.F
+    src/mati/mttsns.F
+    src/mati/mttssc.F
+    src/pprt/pptssc.F
+    users/base/uskpdc.F
+    users/base/ussmag.F
+    users/base/ustske.F
+    users/base/ustskw.F
+    users/base/ustsma.F
+    users/base/ustsns.F
+    users/base/ustsri.F
+    users/base/ustssc.F
+    users/base/ustsv2.F
+    users/base/usvist.F
+
 * 05/11/2008 - Alexandre Douce <alexandre.douce@edf.fr>
                Nicole Picard <nicole-n.picard@edf.fr>
   Modifications in the XML reader related to the upgrade of the

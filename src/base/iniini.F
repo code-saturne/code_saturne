@@ -673,7 +673,6 @@ C
       IDTPT1 = 0
 C
 C --- Autres auxiliaires dependant du nb de phases
-C       On donne sa valeur max par defaut a NCKPDC (dim de tenseur sym)
 C
       IITYPF = 0
       IITRIF = 0
@@ -682,7 +681,6 @@ C
       DO IPHAS = 1, NPHSMX
         IIFAPA(IPHAS) = 0
         NCEPDC(IPHAS) = 0
-        NCKPDC(IPHAS) = 6
         IICEPD(IPHAS) = 0
         ICKUPD(IPHAS) = 0
         NCETSM(IPHAS) = 0

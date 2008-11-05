@@ -2436,22 +2436,18 @@ cells in which a pressure drop is imposed. See IICEPD and the user
 subroutine \texttt{uskpdc}}
 
 \variab{ICKUPD}{ICKUPD(NPHSMX)}{IA}{For each phase IPHAS, pointer in RA to \\
-CKUPDC(NCEPDC(IPHAS),NCKPDC(IPHAS)), array allowing to mark out the\\
-NCKPDC(IPHAS) coefficients of the pressure drop tensor of the
+CKUPDC(NCEPDC(IPHAS),6), array allowing to mark out the\\
+coefficients of the pressure drop tensor of the
 NCEPDC(IPHAS) cells in which a pressure drop is imposed. See the user
 subroutine \texttt{uskpdc}}
 
-\variab{CKUPDC}{CKUPDC(NCEPDC(IPHAS),NCKPDC(IPHAS))}{RA}{Value of the
-NCKPDC(IPHAS) coefficients of the pressure drop tensor of the
+\variab{CKUPDC}{CKUPDC(NCEPDC(IPHAS),6)}{RA}{Value of the
+coefficients of the pressure drop tensor of the
 NCEPDC(IPHAS) cells in which a pressure drop is imposed. See ICKPDC and
 the user subroutine \texttt{uskpdc}}
 
 \variab{NCEPDC}{NCEPDC(NPHSMX)}{IA}{For each phase, number of cells in
 which a pressure drop is imposed. See the user subroutine \texttt{uskpdc}}
-
-\variab{NCKPDC}{NCKPDC(NPHSMX)}{IA}{For each phase, type of the pressure
-drop tensor (NCKPDC=3: diagonal, NCKPDC=6: non-diagonal). See the user
-subroutine \texttt{uskpdc}}
 
 
 \minititre{Mass sources}
@@ -4346,22 +4342,20 @@ and positive.
       complete the array ICEPDP\index{ICEPDP} whose size is
       NCEPDP. \mbox{ICEPDC(IELPDC)} is the number of the
       IELPDC\raisebox{1ex}{\small th} cell containing pressure drops (for
-      the current phase). It is specified if the tensor of pressure
-      drops will be diagonal (3 elements) or not (6 elements), by means
-      of the variable NCKPDP\index{NCKPDP}=NCKPDC(IPHAS), which is worth
-      3 or 6.
+      the current phase).
 
 \item During the third call, all the cells containing pressure drops
       (for the current phase) are checked in order to complete the array
       containing the components of the tensor of pressure drops
-      \mbox{CKUPDC(NCEPDP,NCKPDP)}\index{CKUPDC}. This array is so that
+      \mbox{CKUPDC(NCEPDP,6)}\index{CKUPDC}. This array is so that
       the equation related to the velocity may be written:
 \begin{displaymath}
 \rho\frac{\partial}{\partial t}\vect{u}=\ldots -\rho\tens{K}\ind{pdc}\cdot\vect{u}
 \end{displaymath}
 The tensor components are given in the following order (in the general
-      reference frame):: K11, K22, K33 or K11, K22, K33, K12, K13, K23
-      (depending on wether NCKPDP is worth 3 or 6).
+      reference frame): K11, K22, K33, K12, K13, K23 with K12, K13 and K23
+      being zero if the tensor is diagonal.
+
 \end{list}
 
 

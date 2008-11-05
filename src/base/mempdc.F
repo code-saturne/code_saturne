@@ -109,14 +109,11 @@ C
       DO IPHAS = 1, NPHAS
 C
         IOK = 0
-        IF(NCKPDC(IPHAS).NE.3 .AND. NCKPDC(IPHAS).NE.6) THEN
-          IOK = 1
-        ENDIF
         IF(NCEPDC(IPHAS).GT.NCELET .OR. NCEPDC(IPHAS).LT.0) THEN
           IOK = 1
         ENDIF
         IF(IOK.NE.0) THEN
-          WRITE(NFECRA,1000) IPHAS, NCEPDC(IPHAS), NCKPDC(IPHAS)
+          WRITE(NFECRA,1000) IPHAS, NCEPDC(IPHAS)
           IOK1 = 1
         ENDIF
       ENDDO
@@ -141,13 +138,8 @@ C
           WRITE(NFECRA,2000) IPHAS, NCPDCT(IPHAS)
           WRITE(NFECRA,3000)
         ELSE
-          IF(NCKPDC(IPHAS).EQ.3) THEN
-            WRITE(NFECRA,2001) IPHAS, NCPDCT(IPHAS), NCKPDC(IPHAS)
-            WRITE(NFECRA,3000)
-          ELSEIF(NCKPDC(IPHAS).EQ.6) THEN
-            WRITE(NFECRA,2002) IPHAS, NCPDCT(IPHAS), NCKPDC(IPHAS)
-            WRITE(NFECRA,3000)
-          ENDIF
+          WRITE(NFECRA,2001) IPHAS, NCPDCT(IPHAS)
+          WRITE(NFECRA,3000)
         ENDIF
       ENDDO
 C
@@ -162,7 +154,7 @@ C
         IFINIA        = IICEPD(IPHAS) + NCEPDC(IPHAS)
 C
         ICKUPD(IPHAS) = IFINRA
-        IFINRA        = ICKUPD(IPHAS) + NCEPDC(IPHAS)*NCKPDC(IPHAS)
+        IFINRA        = ICKUPD(IPHAS) + NCEPDC(IPHAS)*6
 C
       ENDDO
 C
@@ -198,8 +190,7 @@ C
  1000 FORMAT(/,' SORTIE DANS MEMPDC CAR LES DIMENSIONS DES TABLEAUX ',/,
      &         '   RELATIFS AUX PERTES DE CHARGES SONT INCORRECTES ',/,
      &         '   PHASE ',I10,/,
-     &         '     NCEPDC = ',I10,/,
-     &         '     NCKPDC = ',I10)
+     &         '     NCEPDC = ',I10)
 C
  2000 FORMAT(/,
      & 'PHASE ',I6,' : TRAITEMENT DES PERTES DE CHARGES NON ACTIVE ',/,
@@ -207,14 +198,7 @@ C
  2001 FORMAT(
      & /,/,
      & 'PHASE ',I6,' : TRAITEMENT DES PERTES DE CHARGES ACTIVE ',/,
-     & '                 SUR  UN TOTAL DE NCEPDC = ',I10,' CELLULES',/,
-     & '                 AVEC UN TENSEUR DIAGONAL (NCKPDC = ',I1,')',/)
- 2002 FORMAT(
-     & /,/,
-     & 'PHASE ',I6,' : TRAITEMENT DES PERTES DE CHARGES ACTIVE ',/,
-     & '                 SUR  UN TOTAL DE NCEPDC = ',I10,' CELLULES',/,
-     & '                 AVEC UN TENSEUR COMPLET SYMETRIQUE (NCKPDC = ',
-     &  I1,')',/)
+     & '                 SUR  UN TOTAL DE NCEPDC = ',I10,' CELLULES',/)
 C
  3000 FORMAT(
      &'-------------------------------------------------------------',/)
@@ -224,22 +208,14 @@ C
  1000 FORMAT(/,' ABORT IN MEMPDC BECAUSE THE DIMENSION OF THE ARRAYS',/,
      &         '   RELATIVE TO THE HEAD LOSS IS INCORRECT ',/,
      &         '   PHASE ',I10,/,
-     &         '     NCEPDC = ',I10,/,
-     &         '     NCKPDC = ',I10)
+     &         '     NCEPDC = ',I10)
 C
  2000 FORMAT(
      & /,'PHASE ',I6,' : HEAD LOSS TREATMENT NOT ACTIVATED ',/,
      &   '                 NCEPDC = ',I10,/)
  2001 FORMAT(
      & /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,
-     & '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/,
-     & '                 WITH A DIAGONAL TENSOR (NCKPDC = ',I1,')',/)
- 2002 FORMAT(
-     & /,/,
-     & 'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,
-     & '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/,
-     & '                 WITH A COMPLETE SYMMETRIC TENSOR (NCKPDC = ',
-     &  I1,')',/)
+     & '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/)
 C
 C
  3000 FORMAT(

@@ -33,7 +33,7 @@ C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
@@ -84,7 +84,6 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NCEPDP       ! E  !  -> ! NOMBRE DE CELLULES AVEC PDC          !
-CARGU ! NCKPDP       ! E  !  -> ! NBR DE COEF DU TENSEUR DE PDC (3 OU 6!
 CARGU ! NCESMP       ! E  !  -> ! NOMBRE DE CELLULES A SOURCE DE MASSE !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
@@ -139,8 +138,8 @@ CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
 CARGU ! COEFA, COEFB ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! CKUPDC(NCEPDP! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
-CARGU !     , NCKPDP)!    !     !                                      !
+CARGU ! CKUPDC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
+CARGU !  (NCEPDP,6)  !    !     !                                      !
 CARGU ! SMACEL       ! TR !  -> ! VALEUR DES VARIABLES ASSOCIEE A LA   !
 CARGU ! (NCESMP,*   )!    !     !  SOURCE DE MASSE                     !
 CARGU !              !    !     !  POUR IVAR=IPR, SMACEL=FLUX DE MASSE !
@@ -187,7 +186,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCKPDP , NCESMP
+      INTEGER          NCEPDP , NCESMP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE , IPHAS
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
@@ -208,7 +207,7 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NDIMFB,*)
       DOUBLE PRECISION COEFA(NDIMFB,*), COEFB(NDIMFB,*)
-      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP), SMACEL(NCESMP,NVAR)
+      DOUBLE PRECISION CKUPDC(NCEPDP,6), SMACEL(NCESMP,NVAR)
       DOUBLE PRECISION W1(NCELET),W2(NCELET),W3(NCELET),W4(NCELET)
       DOUBLE PRECISION W5(NCELET),W6(NCELET),W7(NCELET),W8(NCELET)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
