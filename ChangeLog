@@ -1,3 +1,15 @@
+* 05/11/2008 - David Monfort <david.monfort@edf.fr>
+  Upgrading to FVM version 0.12.0 (fix a bug with MPI/IO).
+  modified routine:
+    src/base/cs_base.c
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux_x86_64.mk
+
 * 04/11/2008 - David Monfort <david.monfort@edf.fr>
   Ditto for vector synchronization.
   modified routine:

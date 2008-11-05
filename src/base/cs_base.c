@@ -909,11 +909,6 @@ void cs_base_mpi_init
 
 #if defined(FVM_HAVE_MPI)
   fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
-  /* IBM Blue Gene or Cray XT */
-#if   defined(__blrts__) || defined(__bgp__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-  fvm_parall_set_safe_gather_mode(1);
-#endif
 #endif
 
 #if defined(DEBUG) || !defined(NDEBUG)
