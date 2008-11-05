@@ -310,6 +310,17 @@ int
 cs_gui_get_status(char *const path,
                   int  *const result);
 
+/*-----------------------------------------------------------------------------
+ * Returns the number of markup described with a path
+ *
+ * parameters:
+ *   markup             -->  path for the markup
+ *   flag               -->  1: initialize the path with the root node;
+ *                           0: initialize the path with a short way
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_get_tag_number(const char *const markup, const int flag);
 
 /*-----------------------------------------------------------------------------
  *  Return the number of sign needed to write an integer number

@@ -420,30 +420,23 @@ C
 C
 C --- Debit calcule
 C
-C    En attendant de modifier  UICLIM on s impose une direction normale
-C
-      DO IZONE = 1, NOZAPM
-        IF ( IQIMP(IZONE).EQ.1 ) THEN
-           DO IFAC = 1,NFABOR
-             IF  (IZNFBR(IFAC).EQ.IZONE) THEN
-               RCODCL(IFAC,IU(IPHAS),1) = -SURFBO(1,IFAC)
-               RCODCL(IFAC,IV(IPHAS),1) = -SURFBO(2,IFAC)
-               RCODCL(IFAC,IW(IPHAS),1) = -SURFBO(3,IFAC)
-             ENDIF
-           ENDDO
-        ENDIF
-      ENDDO
-C
       DO IZONE = 1,NOZFMX
         QCALC(IZONE) = 0.D0
       ENDDO
       DO IFAC = 1,NFABOR
         IZONE = IZNFBR(IFAC)
         IF (IZONE .GT. 0) THEN
-          QCALC(IZONE) = QCALC(IZONE) - PROPFB(IFAC,IPBROM) *
+          IF (IQIMP(IZONE).EQ.2) THEN
+            QCALC(IZONE) = QCALC(IZONE) -
      &         ( RCODCL(IFAC,IU(IPHAS),1)*SURFBO(1,IFAC) +
      &           RCODCL(IFAC,IV(IPHAS),1)*SURFBO(2,IFAC) +
      &           RCODCL(IFAC,IW(IPHAS),1)*SURFBO(3,IFAC) )
+          ELSE
+            QCALC(IZONE) = QCALC(IZONE) - PROPFB(IFAC,IPBROM) *
+     &         ( RCODCL(IFAC,IU(IPHAS),1)*SURFBO(1,IFAC) +
+     &           RCODCL(IFAC,IV(IPHAS),1)*SURFBO(2,IFAC) +
+     &           RCODCL(IFAC,IW(IPHAS),1)*SURFBO(3,IFAC) )
+          ENDIF
         ENDIF
       ENDDO
       IF(IRANGP.GE.0) THEN
@@ -461,7 +454,7 @@ C
       DO II = 1, NZFPPP
         IZONE = ILZFBR(II)
         IF (IZONE .GT. 0) THEN
-          IF ( IQIMP(IZONE).EQ.1 ) THEN
+          IF ( IQIMP(IZONE).EQ.1 .OR.  IQIMP(IZONE).EQ.2) THEN
             IF(QCALC(IZONE).LT.EPZERO) THEN
               WRITE(NFECRA,2001)IZONE,IQIMP(IZONE),QCALC(IZONE)
               IOK = IOK + 1
@@ -476,7 +469,7 @@ C       ===========
       DO IFAC = 1, NFABOR
         IZONE = IZNFBR(IFAC)
         IF (IZONE .GT. 0) THEN
-          IF ( IQIMP(IZONE).EQ.1 ) THEN
+          IF ( IQIMP(IZONE).EQ.1 .OR.  IQIMP(IZONE).EQ.2) THEN
             QISQC = QIMP(IZONE)/QCALC(IZONE)
             RCODCL(IFAC,IU(IPHAS),1) = RCODCL(IFAC,IU(IPHAS),1)*QISQC
             RCODCL(IFAC,IV(IPHAS),1) = RCODCL(IFAC,IV(IPHAS),1)*QISQC

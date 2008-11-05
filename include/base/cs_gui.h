@@ -535,6 +535,11 @@ void CS_PROCF (csenso, CSENSO) (const    int *const nvppmx,
                                          int *const size_opt,
                                          int *const ntchr,
                                          int *const iecaux,
+                                         int *const ipstdv,
+                                         int *const ipstyp,
+                                         int *const ipstcl,
+                                         int *const ipstft,
+                                         int *const ipstfo,
                                          int *const ichrvr,
                                          int *const ilisvr,
                                          int *const ihisvr,
@@ -582,7 +587,7 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu);
  * SUBROUTINE UIINIV (NCELET, ISCA, RTP)
  * *****************
  *
- * INTEGER          ISCAVR   -->  number of cells
+ * INTEGER          NCELET   -->  number of cells with halo
  * INTEGER          ISCA     -->  indirection array for scalar number
  * DOUBLE PRECISION RTP     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
@@ -599,72 +604,64 @@ void CS_PROCF(uiiniv, UIINIV) (const int    *const ncelet,
  * SUBROUTINE UICLIM
  * *****************
  *
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
  * INTEGER          NFABOR  --> number of boundary faces
+ * INTEGER          NOZPPM  --> max number of boundary conditions zone
+ * INTEGER          NCHARM  --> maximal number of coals
+ * INTEGER          NCHARB  --> number of simulated coals
+ * INTEGER          NCLPCH  --> number of simulated class per coals
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IPAROI  --> type of boundary: smooth wall
  * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symmetry
+ * INTEGER          ISYMET  --> type of boundary: symetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          IQIMP   --> 1 if flow rate is applied
  * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
+ * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
+ * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
  * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
+ * INTEGER          IZFPPP  --> zone number for each boundary face
  * INTEGER          ICODCL  --> boundary conditions array type
- * DOUBLE PRECISION QIMP    --> flow rate value if applied
+ * DOUBLE PRECISION SURFBO  --> boundary faces surface
+ * DOUBLE PRECISION QIMP    --> inlet flow rate
+ * DOUBLE PRECISION QIMPAT  --> inlet air flow rate (coal)
+ * DOUBLE PRECISION QIMPCP  --> inlet coal flow rate (coal)
  * DOUBLE PRECISION DH      --> hydraulic diameter
  * DOUBLE PRECISION XINTUR  --> turbulent intensity
+ * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
+ * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
+ * DOUBLE PRECISION DISTCH  --> ratio for each coal
  * DOUBLE PRECISION RCODCL  --> boundary conditions array value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM) (const    int *const nozppm,
-                                const    int *const nfabor,
-                                const    int *const iindef,
-                                const    int *const ientre,
-                                const    int *const iparoi,
-                                const    int *const iparug,
-                                const    int *const isymet,
-                                const    int *const isolib,
-                                         int *const iqimp,
-                                         int *const icalke,
-                                         int *const itypfb,
-                                         int *const izfppp,
-                                         int *const icodcl,
-                                      double *const qimp,
-                                      double *const dh,
-                                      double *const xintur,
-                                      double *const rcodcl);
-
-
-void CS_PROCF (uicpcl, UICPCL) (const    int *const nozppm,
-                                const    int *const ncharm,
-                                const    int *const ncharb,
-                                const    int *const nclpch,
-                                const    int *const nfabor,
-                                const    int *const iindef,
-                                const    int *const ientre,
-                                const    int *const iparoi,
-                                const    int *const iparug,
-                                const    int *const isymet,
-                                const    int *const isolib,
-                                         int *const itypfb,
-                                         int *const icodcl,
-                                      double *const rcodcl,
-                                      double *const surfbo,
-                                         int *const ientat,
-                                         int *const iqimp,
-                                      double *const qimpat,
-                                      double *const timpat,
-                                         int *const ientcp,
-                                      double *const qimpcp,
-                                      double *const timpcp,
-                                      double *const distch,
-                                         int *const icalke,
-                                      double *const dh,
-                                      double *const xintur,
-                                         int *const izfppp);
-
+void CS_PROCF (uiclim, UICLIM)(const    int *const nfabor,
+                               const    int *const nozppm,
+                               const    int *const ncharm,
+                               const    int *const ncharb,
+                               const    int *const nclpch,
+                               const    int *const iindef,
+                               const    int *const ientre,
+                               const    int *const iparoi,
+                               const    int *const iparug,
+                               const    int *const isymet,
+                               const    int *const isolib,
+                                        int *const iqimp,
+                                        int *const icalke,
+                                        int *const ientat,
+                                        int *const ientcp,
+                                        int *const itypfb,
+                                        int *const izfppp,
+                                        int *const icodcl,
+                                     double *const surfbo,
+                                     double *const qimp,
+                                     double *const qimpat,
+                                     double *const qimpcp,
+                                     double *const dh,
+                                     double *const xintur,
+                                     double *const timpat,
+                                     double *const timpcp,
+                                     double *const distch,
+                                     double *const rcodcl);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification
@@ -754,6 +751,51 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmhet,
                                 const int *const igmsec,
                                 const int *const ilumi);
+
+/*----------------------------------------------------------------------------
+ * 1D profile postprocessing
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIPROF
+ * *****************
+ *
+ * INTEGER          NCELET   -->  number of cells with halo
+ * INTEGER          NCEL     -->  number of cells without halo
+ * INTEGER          NTMABS   -->  max iterations numbers
+ * INTEGER          NTCABS   -->  current iteration number
+ * DOUBLE PRECISION TTCABS   -->  current physical time
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ * DOUBLE PRECISION RTP      -->  variables and scalars array
+ * DOUBLE PRECISION PROPCE   -->  property array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
+                               const int    *const ncel,
+                               const int    *const ntmabs,
+                               const int    *const ntcabs,
+                               const double *const ttcabs,
+                               const double *const xyzcen,
+                               const double *const rtp,
+                               const double *const propce);
+
+/*----------------------------------------------------------------------------
+ * 2D or 3D user's postprocessing : output mesh definition
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIDPST
+ * *****************
+ *
+ * INTEGER          NCELET   -->  number of cells with halo
+ * INTEGER          NCEL     -->  number of cells without halo
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uidpst, UIDPST)(const int    *const ncelet,
+                               const int    *const ncel,
+                               const double *const xyzcen);
+
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.

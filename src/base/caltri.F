@@ -1194,6 +1194,16 @@ C
 C
       IF (ITRALE.GT.0) THEN
 C
+C       Sortie postprocessing de profils 1D
+C
+        IF (IIHMPR.EQ.1) THEN
+          CALL UIPROF
+C         ===========
+     &  ( NCELET , NCEL,
+     &    NTMABS, NTCABS, TTCABS,
+     &    XYZCEN, RA(IRTP), RA(IPROPC) )
+        ENDIF
+C
         ILS    = IFINIA
         IFNIA2 = ILS + MAXELT
         CALL IASIZE('CALTRI',IFNIA2)

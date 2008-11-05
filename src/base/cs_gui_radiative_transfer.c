@@ -50,6 +50,12 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+#include "fvm_selector.h"
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -57,7 +63,6 @@
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_mesh.h"
-#include "fvm_selector.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -212,10 +217,12 @@ cs_gui_radiative_transfer_char(const char *const param,
 
 static char *
 cs_gui_radiative_transfer_char_post(const char *const name,
-                                    int  *const value)
+                                          int  *const list_value,
+                                          int  *const record_value)
 {
   char *path = NULL;
   char *path1 = NULL;
+  char *path2 = NULL;
   char *label = NULL;
   int result;
 
@@ -229,19 +236,27 @@ cs_gui_radiative_transfer_char_post(const char *const name,
 
   BFT_MALLOC(path1, strlen(path)+1, char);
   strcpy(path1, path);
+  BFT_MALLOC(path2, strlen(path)+1, char);
+  strcpy(path2, path);
 
   cs_xpath_add_attribute(&path, "label");
-  cs_xpath_add_attribute(&path1, "status");
-
   label = cs_gui_get_attribute_value(path);
 
+  cs_xpath_add_element(&path1, "listing_printing");
+  cs_xpath_add_attribute(&path1, "status");
   if (cs_gui_get_status(path1, &result)) {
-    result = (result ? 1 : -1 );
-    *value = result;
+    *list_value = 1;
+  }
+
+  cs_xpath_add_element(&path2, "postprocessing_recording");
+  cs_xpath_add_attribute(&path2, "status");
+  if (cs_gui_get_status(path2, &result)) {
+    *record_value = -1;
   }
 
   BFT_FREE(path);
   BFT_FREE(path1);
+  BFT_FREE(path2);
 
   return label;
 }
@@ -257,7 +272,7 @@ cs_gui_radiative_transfer_char_post(const char *const name,
 
 static void
 cs_gui_radiative_transfer_type(const char *const param,
-                               int  *const keyword)
+                                     int  *const keyword)
 {
   char *path;
   char *type;
@@ -309,7 +324,7 @@ static void cs_gui_radiative_boundary(const   char *const label,
                         "wall");
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_elements(&path, 2,
-                        "wall_radiative_condition",
+                        "radiative_data",
                         param );
   cs_xpath_add_function_text(&path);
 
@@ -350,7 +365,7 @@ static int cs_gui_radiative_boundary_type(const char *const label,
                         "wall");
   cs_xpath_add_test_attribute(&path, "label", label);
 
-  cs_xpath_add_element(&path, "wall_radiative_condition");
+  cs_xpath_add_element(&path, "radiative_data");
   cs_xpath_add_attribute(&path,"choice");
   type = cs_gui_get_attribute_value(path);
 
@@ -388,7 +403,7 @@ static int cs_gui_radiative_boundary_output_zone_max(void)
   cs_xpath_add_elements(&path, 4,
                         "boundary_conditions",
                         "wall",
-                        "wall_radiative_condition",
+                        "radiative_data",
                         "output_zone" );
 
   nb_zone = cs_gui_get_nb_element(path);
@@ -459,7 +474,8 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
                                 int *const irayvp,
                                 int *const irayvf)
 {
-  int i, ind, iphas = 0;
+  int i, iphas = 0;
+  int list_ind, record_ind = 0;
   char *model = NULL;
   char *label = NULL;
 
@@ -501,20 +517,22 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
     cs_gui_radiative_transfer_int("intensity_resolution_listing_printing", iimlum);
 
     for (i=0 ; i < *nbrayb; i++) {
-      ind = -1;
-      label = cs_gui_radiative_transfer_char_post(_cs_properties_name1[i], &ind);
+      list_ind =  1;
+      record_ind =  1;
+      label = cs_gui_radiative_transfer_char_post(_cs_properties_name1[i], &list_ind, &record_ind);
       for (iphas=0 ; iphas < *nphas ; iphas++) {
-        irayvp[(*nbrayb)*iphas + i] = ind;
+        irayvp[(*nbrayb)*iphas + i] = record_ind;
         if (label) _cs_gui_copy_varname(label, i + 1 + (*nbrayb)*iphas);
       }
       BFT_FREE(label);
     }
 
     for (i=0 ; i < *nbrayf ; i++) {
-      ind = -1;
-      label = cs_gui_radiative_transfer_char_post(_cs_properties_name2[i], &ind);
+      list_ind =  1;
+      record_ind =  1;
+      label = cs_gui_radiative_transfer_char_post(_cs_properties_name2[i],  &list_ind, &record_ind);
       for (iphas=0 ; iphas < *nphas ; iphas++) {
-        irayvf[(*nbrayf)*iphas + i] = ind;
+        irayvf[(*nbrayf)*iphas + i] = record_ind;
         if (label) _cs_gui_copy_varname(label, i + 1 + (*nbrayb)*(*nphas) + (*nbrayf)*iphas);
       }
       BFT_FREE(label);
@@ -524,25 +542,27 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
 #if _XML_DEBUG_
   bft_printf("==>UIRAY1\n");
   for (iphas=0 ; iphas < *nphas ; iphas++)
-    bft_printf("--rayonnement : %s  (irayon = %d)\n", model, irayon[iphas]);
-  bft_printf("--isuird = %d\n", *isuird);
-  bft_printf("--ndirec = %d\n", *ndirec);
-  bft_printf("--nfreqr = %d\n", *nfreqr);
-  bft_printf("--idiver = %d\n", *idiver);
-  bft_printf("--iimpar = %d\n", *iimpar);
-  bft_printf("--iimlum = %d\n", *iimlum);
-  for (i=0 ; i < *nbrayb ; i++) {
-    for (iphas=0 ; iphas < *nphas ; iphas++) {
-      bft_printf("--output cel: %s value %i \n",
-                 _cs_gui_var_rayt[i + (*nbrayb)*iphas],
-                 irayvp[(*nbrayb)*iphas + i]);
+    bft_printf("--rayonnement : %s  (irayon = %i)\n", model, irayon[iphas]);
+  if (irayon[iphas] != 0) {
+    bft_printf("--isuird = %d\n", *isuird);
+    bft_printf("--ndirec = %d\n", *ndirec);
+    bft_printf("--nfreqr = %d\n", *nfreqr);
+    bft_printf("--idiver = %d\n", *idiver);
+    bft_printf("--iimpar = %d\n", *iimpar);
+    bft_printf("--iimlum = %d\n", *iimlum);
+    for (i=0 ; i < *nbrayb ; i++) {
+      for (iphas=0 ; iphas < *nphas ; iphas++) {
+        bft_printf(_("--output cel: %s value %i \n"),
+                   _cs_gui_var_rayt[i + (*nbrayb)*iphas],
+                   irayvp[(*nbrayb)*iphas + i]);
+      }
     }
-  }
-  for (i=0 ; i < *nbrayf ; i++) {
-    for (iphas=0 ; iphas < *nphas ; iphas++) {
-      bft_printf("--output fb: %s value %i \n",
-      _cs_gui_var_rayt[i + (*nbrayb)*(*nphas) + (*nbrayf)*iphas],
-      irayvf[(*nbrayf)*iphas + i]);
+    for (i=0 ; i < *nbrayf ; i++) {
+      for (iphas=0 ; iphas < *nphas ; iphas++) {
+        bft_printf(_("--output fb: %s value %i \n"),
+        _cs_gui_var_rayt[i + (*nbrayb)*(*nphas) + (*nbrayf)*iphas],
+        irayvf[(*nbrayf)*iphas + i]);
+      }
     }
   }
 #endif
@@ -829,23 +849,17 @@ void CS_PROCF (uiray2, UIRAY2)
           epsp[k + ifbr] = boundary->emissivity[izone];
           tintp[k + ifbr] = boundary->internal_temp[izone];
         } else if (isothp[k + ifbr] == *ipgrno) {
-          epsp[k + ifbr] = boundary->emissivity[izone];
           xlamp[k + ifbr] = boundary->thermal_conductivity[izone];
           epap[k + ifbr] = boundary->thickness[izone];
           textp[k + ifbr] = boundary->external_temp[izone];
           tintp[k + ifbr] = boundary->internal_temp[izone];
-        } else if (isothp[k + ifbr] == *iprefl) {
-          xlamp[k + ifbr] = boundary->thermal_conductivity[izone];
-          epap[k + ifbr] = boundary->thickness[izone];
-          textp[k + ifbr] = boundary->external_temp[izone];
-          tintp[k + ifbr] = boundary->internal_temp[izone];
+          if (boundary->emissivity[izone] != 0.)
+             epsp[k + ifbr] = boundary->emissivity[izone];
         } else if (isothp[k + ifbr] == *ifgrno) {
-          epsp[k + ifbr] = boundary->emissivity[izone];
           rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr] = boundary->conduction_flux[izone];
           tintp[k + ifbr] = boundary->internal_temp[izone];
-        } else if (isothp[k + ifbr] == *ifrefl) {
-          rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr] = boundary->conduction_flux[izone];
-          tintp[k + ifbr] = boundary->internal_temp[izone];
+          if (boundary->emissivity[izone] != 0.)
+            epsp[k + ifbr] = boundary->emissivity[izone];
         }
       }
 
@@ -866,20 +880,20 @@ void CS_PROCF (uiray2, UIRAY2)
     if (izfrdp[k + n] == -1) iok = 1;
   }
   if (iok == 1) {
-    bft_printf(_("Warning: radiative boundary conditions in GUI are not totally defined \n"));
+    bft_printf("Warning: radiative boundary conditions in GUI are not totally defined \n");
     if (zones)
-      bft_printf(_("These are radiative boundary conditions defined in GUI: \n"));
+      bft_printf("These are radiative boundary conditions defined in GUI: \n");
     for (izone = 0; izone < zones; izone++) {
-       bft_printf(_("  nature: %s label: %s\n"), boundary->nature[izone], boundary->label[izone]);
+       bft_printf("  nature: %s label: %s\n", boundary->nature[izone], boundary->label[izone]);
        if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-         bft_printf(_("    output_zone = %i\n"), boundary->output_zone[izone]);
-         bft_printf(_("    type = %i\n"), boundary->type[izone]);
-         bft_printf(_("    emissivity = %f\n"), boundary->emissivity[izone]);
-         bft_printf(_("    thickness= %f\n"), boundary->thickness[izone]);
-         bft_printf(_("    thermal_conductivity = %f\n"), boundary->thermal_conductivity[izone]);
-         bft_printf(_("    external_temp = %f\n"), boundary->external_temp[izone]);
-         bft_printf(_("    internal_temp = %f\n"), boundary->internal_temp[izone]);
-         bft_printf(_("    conduction_flux= %f\n"), boundary->conduction_flux[izone]);
+         bft_printf("    output_zone = %i\n", boundary->output_zone[izone]);
+         bft_printf("    type = %i\n", boundary->type[izone]);
+         bft_printf("    emissivity = %f\n", boundary->emissivity[izone]);
+         bft_printf("    thickness= %f\n", boundary->thickness[izone]);
+         bft_printf("    thermal_conductivity = %f\n", boundary->thermal_conductivity[izone]);
+         bft_printf("    external_temp = %f\n", boundary->external_temp[izone]);
+         bft_printf("    internal_temp = %f\n", boundary->internal_temp[izone]);
+         bft_printf("    conduction_flux= %f\n", boundary->conduction_flux[izone]);
        }
     }
   }

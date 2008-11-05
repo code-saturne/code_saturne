@@ -328,20 +328,6 @@ C ---> Combustion charbon pulverise
 C
       IF ( IPPMOD(ICP3PL).GE.0 ) THEN
 C
-C     - Interface Code_Saturne
-C       ======================
-C
-         IF (IIHMPR.EQ.1) THEN
-C
-           CALL UICPCL
-C          ===========
-     & ( NOZPPM, NCHARM, NCHARB, NCLPCH, NFABOR, IINDEF,
-     &   IENTRE, IPAROI, IPARUG, ISYMET, ISOLIB,
-     &   ITYPFB, ICODCL, RCODCL, SURFBO, IENTAT, IQIMP, QIMPAT, TIMPAT,
-     &   IENTCP, QIMPCP, TIMPCP, DISTCH, ICALKE, DH, XINTUR, IZFPPP)
-C
-        ENDIF
-C
         CALL USCPCL
 C       ===========
      & ( IDBIA1 , IDEBRA ,
@@ -358,18 +344,6 @@ C       ===========
      &   COEFA  , COEFB  , RCODCL ,
      &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
      &   RDEVEL , RTUSER , RA     )
-C
-C     - Interface Code_Saturne
-C       ======================
-C
-         IF (IIHMPR.EQ.1) THEN
-C
-           CALL UICLVE
-C          ===========
-     & ( NFABOR, IINDEF, IENTRE, IPAROI, IPARUG,  ISYMET, ISOLIB,
-     &   ITYPFB, IZFPPP)
-C
-        ENDIF
 C
       ENDIF
 C

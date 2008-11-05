@@ -42,14 +42,6 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  * libxml2 library headers
  *----------------------------------------------------------------------------*/
 
@@ -63,13 +55,27 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
+
+#include <bft_mem.h>
+#include <bft_error.h>
+#include <bft_printf.h>
+
+/*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+#include "fvm_selector.h"
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
 #include "cs_mesh.h"
-#include "fvm_selector.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -101,7 +107,7 @@ typedef struct {
   char  *model_value;      /* particular physical model value                 */
   char **head;             /* name of the head                                */
   char **type;             /* type of markup: 'variable' or 'scalar'          */
-  char **name;             /* variables and scalars label                     */
+  char **name;             /* variables name and scalars label                */
   char **label;            /* scalars label                                   */
   int   *rtp;              /* variables position in fortran array RTP         */
   int    nvar;             /* total number of variables and scalars           */
@@ -133,7 +139,6 @@ typedef struct {
   int        *ientcp;      /* 1 if boundary is an inlet for coal              */
   int        *icalke;      /* automatic boundaries for turbulent variables    */
   double     *qimp;        /* inlet flow rate                                 */
-  double     *qimpat;      /* inlet flow rate (coal combustion)               */
   double     *timpat;      /* inlet air temperature (coal combustion)         */
   double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
   double    **timpcp;      /* inlet coal temperature (coal)                   */
@@ -143,6 +148,10 @@ typedef struct {
   cs_val_t  **values;      /* fortran array RCODCL mapping                    */
   double   ***distch;      /* ratio for each coal                             */
   double     *rough;       /* roughness size                                  */
+  double     *norm;        /* norm of velocity vector                         */
+  double     *dirx;        /* directions x inlet velocity                     */
+  double     *diry;        /* directions y inlet velocity                     */
+  double     *dirz;        /* directions z inlet velocity                     */
 } cs_boundary_t;
 
 /*============================================================================
@@ -220,7 +229,7 @@ static void _gui_copy_varname(const char *varname, int ipp)
 
 static void
 cs_gui_advanced_options_turbulence(const char *const param,
-                                   int *const keyword)
+                                         int  *const keyword)
 {
   char *path = NULL;
   int  result;
@@ -242,25 +251,6 @@ cs_gui_advanced_options_turbulence(const char *const param,
     bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
   BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Return user scalar number.
- *----------------------------------------------------------------------------*/
-
-static int
-cs_gui_get_number_user_scalar(void)
-{
-  char *path = NULL;
-  int   nb;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "additional_scalars", "scalar");
-  nb = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return nb;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1147,6 +1137,27 @@ static void cs_gui_output_value(const char *const param,
 }
 
 /*----------------------------------------------------------------------------
+ * Return the output format and options for postprocessing.
+ *
+ * parameters:
+ *   param           -->  "postprocessing_format" or "postprocessing_options"
+ *----------------------------------------------------------------------------*/
+
+static char *
+_output_choice(const char *const param)
+{
+  char *path = NULL;
+  char *choice = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  return choice;
+}
+
+/*----------------------------------------------------------------------------
  * Get the output format and options for postprocessing.
  *
  * parameters:
@@ -1156,51 +1167,48 @@ static void cs_gui_output_value(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_output_choice(const char *const param,
-                                       char *      keyword,
+                                       char *const keyword,
                                  const int  *const size_key)
 {
-  char *path = NULL;
   char *choice = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice != NULL) {
-    if (keyword == NULL && *size_key == 0) {
-      BFT_MALLOC(keyword, strlen(choice)+1 , char);
-      strcpy(keyword, choice);
-    } else {
-      cs_gui_strcpy_c2f(keyword, choice, *size_key);
-    }
-  }
-
+  choice = _output_choice(param);
+  if (choice != NULL) cs_gui_strcpy_c2f(keyword, choice, *size_key);
   BFT_FREE(choice);
-  BFT_FREE(path);
+
 }
 
-/*==================================
- * TRAITMENTS FOR TIME AVERAGES
- *=================================*/
-
-/*-----------------------------------------------------------------------------
- * Return the number of time_averages
+/*----------------------------------------------------------------------------
+ * Get postprocessing value parameters for surfacic variables
+ *
+ * parameters:
+ *   name                -->  name of the parameter
+ *   keyword             <--   output control parameter
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_get_means_number(void)
+static void cs_gui_surfacic_variable_post(const char *const name,
+                                          const int  *const param,
+                                                int  *const ipstdv)
 {
   char *path = NULL;
-  int   number = 0;
+  int   result;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
-  number = cs_gui_get_nb_element(path);
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
 
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_element(&path, "postprocessing_recording");
+  cs_xpath_add_attribute(&path, "status");
+  if (cs_gui_get_status(path, &result)) {
+    if (result == 0)
+      *ipstdv = *ipstdv / *param;
+  }
   BFT_FREE(path);
-
-  return number ;
 }
+
+
+/*==================================
+ * TREATMENTS FOR TIME AVERAGES
+ *=================================*/
 
 /*----------------------------------------------------------------------------
  * Get list of variables or properties or scalar's names for calculation mean
@@ -1328,24 +1336,6 @@ static char *cs_gui_get_mean_label(const int nb)
 /*===================
  * FOR PROBES
  *==================*/
-
-/*-----------------------------------------------------------------------------
- * Return the number of the <probe> markups.
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_probes_number(void)
-{
-  char *path = NULL;
-  int   number = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", "probe");
-  number = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return number ;
-}
 
 /*-----------------------------------------------------------------------------
  * Return a single coordinate of a monitoring probe
@@ -1627,7 +1617,6 @@ static void cs_gui_scalar_post(const  int        num_sca,
 
   /* sondes actives */
   nb_probes = cs_gui_scalar_number_probes(num_sca+1);
-  /*ihisvr[0][ipp - 1] = nb_probes;*/
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
@@ -1760,7 +1749,6 @@ static void cs_gui_model_scalar_post(const char  *const model,
   /* sondes actives */
   nb_probes = cs_gui_model_scalar_number_probes(model, vars->label[num_sca]);
 
-  /* ihisvr[0][ipp - 1] = nb_probes; */
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
@@ -2329,27 +2317,6 @@ static char *cs_gui_scalar_label(const char *const markup,
  *==========================*/
 
 /*-----------------------------------------------------------------------------
- * Return  the number of zones of initialization
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_volumic_zones_number(void)
-{
-  int zones = 0;
-  char *path = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "solution_domain",
-                        "volumic_conditions",
-                        "zone");
-  zones = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return zones;
-}
-
-/*-----------------------------------------------------------------------------
  * Return the name of the volumic zone
  *
  * parameters:
@@ -2573,14 +2540,43 @@ static void cs_gui_boundary_rough(const char *const label,
 }
 
 /*-----------------------------------------------------------------------------
- * Put values of inlet flow'parameters input boundaries.
+ * Put value of inlet norm parameter input boundaries.
  *
  * parameters:
  *   label       -->  label of boundary condition
- *   izone       -->  number of zone
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_boundary_norm(const char *const label,
+                                           double *qimp)
+{
+  char  *path1 = NULL;
+  double result;
+
+  path1 = cs_xpath_init_path();
+  cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path1, "label", label);
+  cs_xpath_add_element(&path1, "velocity_pressure");
+
+  /* norm velocity */
+  cs_xpath_add_element(&path1, "norm");
+  cs_xpath_add_function_text(&path1);
+
+  if (cs_gui_get_double(path1, &result)){
+    *qimp = result;
+  }
+  BFT_FREE(path1);
+}
+
+/*-----------------------------------------------------------------------------
+ * Put values of inlet norm mass or volumic flow'parameters input boundaries.
+ *
+ * parameters:
+ *   label       -->  label of boundary condition
+ *   choice      -->  choice of type of inlet flow (norm, flow1 or flow2)
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_boundary_flow(const char *const label,
+                                 const char *const choice,
                                            double *qimp,
                                            double *timp)
 {
@@ -2598,7 +2594,7 @@ static void cs_gui_boundary_flow(const char *const label,
 
   /* flow rate */
 
-  cs_xpath_add_element(&path1, "flow1");
+  cs_xpath_add_element(&path1, choice);
   cs_xpath_add_function_text(&path1);
 
   if (cs_gui_get_double(path1, &result)){
@@ -2619,6 +2615,63 @@ static void cs_gui_boundary_flow(const char *const label,
 }
 
 /*-----------------------------------------------------------------------------
+ * Put value of inlet direction parameters input boundaries.
+ *
+ * parameters:
+ *   label       -->  label of boundary condition
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_boundary_direction(const char *const label,
+                                                double *dirx,
+                                                double *diry,
+                                                double *dirz)
+{
+  char  *path1 = NULL;
+  char  *path2 = NULL;
+  char  *path3 = NULL;
+  double result;
+
+  path1 = cs_xpath_init_path();
+  cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path1, "label", label);
+  cs_xpath_add_element(&path1, "velocity_pressure");
+
+
+  BFT_MALLOC(path2, strlen(path1)+1, char);
+  strcpy(path2, path1);
+
+  BFT_MALLOC(path3, strlen(path1)+1, char);
+  strcpy(path3, path1);
+
+  /* x direction */
+  cs_xpath_add_element(&path1, "direction_x");
+  cs_xpath_add_function_text(&path1);
+
+  if (cs_gui_get_double(path1, &result)){
+    *dirx = result;
+  }
+  BFT_FREE(path1);
+
+  /* y direction */
+  cs_xpath_add_element(&path2, "direction_y");
+  cs_xpath_add_function_text(&path2);
+
+  if (cs_gui_get_double(path2, &result)){
+    *diry = result;
+  }
+  BFT_FREE(path2);
+
+  /* z direction */
+  cs_xpath_add_element(&path3, "direction_z");
+  cs_xpath_add_function_text(&path3);
+
+  if (cs_gui_get_double(path3, &result)){
+    *dirz = result;
+  }
+  BFT_FREE(path3);
+}
+
+/*-----------------------------------------------------------------------------
  * Put values of inlet turbulence'parameters input boundaries.
  *
  * parameters:
@@ -2627,7 +2680,7 @@ static void cs_gui_boundary_flow(const char *const label,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_boundary_turbulence(const char *const choice,
-                                const  int        izone)
+                                       const  int        izone)
 {
   char *path1 = NULL;
   char *path2 = NULL;
@@ -2759,8 +2812,8 @@ static void cs_gui_boundary_value_scalar(const char *const nature,
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_coal_boundary_coalflow(const int         izone,
-                                   const int  *const ncharb,
-                                   const int  *const nclpch)
+                                          const int  *const ncharb,
+                                          const int  *const nclpch)
 {
   int    icharb;
   int    iratio;
@@ -2800,6 +2853,7 @@ static void cs_gui_coal_boundary_coalflow(const int         izone,
     cs_xpath_add_element(&path3, "flow1");
     cs_xpath_add_function_text(&path3);
     if (cs_gui_get_double(path3, &value)) {
+      boundaries->ientcp[izone] = 1;
       boundaries->qimpcp[izone][icharb] = value;
     }
 
@@ -2916,6 +2970,462 @@ static int _user_array(const char *const keyword1,
   return value;
 }
 
+/*----------------------------------------------------------------------------
+ * Boundary conditions treatment: global structure initialization
+ *
+ * parameters:
+ *   nfabor               -->  number of boundary faces
+ *   nozppm               -->  max number of boundary conditions zone
+ *   ncharb               -->  number of simulated coals
+ *   nclpch               -->  number of simulated class per coals
+ *   izfppp               -->  zone number for each boundary face
+ *----------------------------------------------------------------------------*/
+
+static void _init_boundaries(const int *const nfabor,
+                             const int *const nozppm,
+                             const int *const ncharb,
+                             const int *const nclpch,
+                                   int *const izfppp)
+{
+  int faces = 0;
+  int zones = 0;
+  int ifac, izone, ith_zone, zone_nbr;
+  int ifbr, i, c_id;
+  int ivar, isca, icharb;
+  double qimp = 0.;
+  double timp = 0.;
+  double norm = 0.;
+  double dirx = 0.;
+  double diry = 0.;
+  double dirz = 0.;
+  char *choice = NULL;
+  char *nature = NULL;
+  char *label = NULL;
+  char *description = NULL;
+  int *faces_list = NULL;
+
+  assert(vars != NULL);
+  assert(boundaries == NULL);
+
+  zones = cs_gui_boundary_zones_number();
+
+  BFT_MALLOC(boundaries,            1,          cs_boundary_t);
+  BFT_MALLOC(boundaries->label,     zones,      char*        );
+  BFT_MALLOC(boundaries->nature,    zones,      char*        );
+  BFT_MALLOC(boundaries->type_code, vars->nvar, int*         );
+  BFT_MALLOC(boundaries->values,    vars->nvar, cs_val_t*    );
+  BFT_MALLOC(boundaries->iqimp,     zones,      int          );
+  BFT_MALLOC(boundaries->qimp,      zones,      double       );
+  BFT_MALLOC(boundaries->icalke,    zones,      int          );
+  BFT_MALLOC(boundaries->dh,        zones,      double       );
+  BFT_MALLOC(boundaries->xintur,    zones,      double       );
+  BFT_MALLOC(boundaries->rough,     zones,      double       );
+  BFT_MALLOC(boundaries->norm,      zones,      double       );
+  BFT_MALLOC(boundaries->dirx,      zones,      double       );
+  BFT_MALLOC(boundaries->diry,      zones,      double       );
+  BFT_MALLOC(boundaries->dirz,      zones,      double       );
+
+  if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+
+    BFT_MALLOC(boundaries->ientat,    zones,      int          );
+    BFT_MALLOC(boundaries->timpat,    zones,      double       );
+    BFT_MALLOC(boundaries->ientcp,    zones,      int          );
+    BFT_MALLOC(boundaries->qimpcp,    zones,      double*      );
+    BFT_MALLOC(boundaries->timpcp,    zones,      double*      );
+    BFT_MALLOC(boundaries->distch,    zones,      double**     );
+
+    for (izone = 0; izone < zones; izone++) {
+      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double );
+      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double );
+      BFT_MALLOC(boundaries->distch[izone], *ncharb, double*);
+
+      for (icharb = 0; icharb < *ncharb; icharb++)
+        BFT_MALLOC(boundaries->distch[izone][icharb],
+                   nclpch[icharb],
+                   double);
+    }
+
+  } else {
+
+    boundaries->ientat = NULL;
+    boundaries->timpat = NULL;
+    boundaries->ientcp = NULL;
+    boundaries->qimpcp = NULL;
+    boundaries->timpcp = NULL;
+    boundaries->distch = NULL;
+  }
+
+  for (ivar = 0; ivar < vars->nvar; ivar++) {
+    i = vars->rtp[ivar];
+    BFT_MALLOC(boundaries->type_code[i], zones, int);
+    BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
+  }
+
+  for (izone = 0; izone < zones; izone++) {
+    boundaries->iqimp[izone]  = 0;
+    boundaries->qimp[izone]   = 0;
+    boundaries->norm[izone]   = 0;
+    boundaries->icalke[izone] = 0;
+    boundaries->dh[izone]     = 0;
+    boundaries->xintur[izone] = 0;
+    boundaries->rough[izone]  = -999;
+
+    if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+      boundaries->ientat[izone] = 0;
+      boundaries->ientcp[izone] = 0;
+      boundaries->timpat[izone] = 0;
+
+      for (icharb = 0; icharb < *ncharb; icharb++) {
+        boundaries->qimpcp[izone][icharb] = 0;
+        boundaries->timpcp[izone][icharb] = 0;
+
+        for (ivar = 0; ivar < nclpch[icharb]; ivar++)
+          boundaries->distch[izone][icharb][ivar] = 0;
+      }
+    }
+  }
+
+  /* Initialization of boundary->type_code and boundary->values */
+
+  for (ivar = 0; ivar < vars->nvar; ivar++) {
+    i = vars->rtp[ivar];
+    for (izone = 0; izone < zones; izone++) {
+      boundaries->type_code[i][izone] = -1;
+      boundaries->values[i][izone].val1 = 1.e30;
+      boundaries->values[i][izone].val2 = 1.e30;
+      boundaries->values[i][izone].val3 = 0.;
+    }
+  }
+
+  for (ifac = 0; ifac < *nfabor; ifac++) izfppp[ifac] = 0;
+
+  /* filling of the "boundaries" structure */
+
+  for (izone = 0; izone < zones; izone++) {
+
+   /* nature, label of the ith initialization zone */
+
+    ith_zone = izone + 1;
+    nature = cs_gui_boundary_zone_nature(ith_zone);
+    label = cs_gui_boundary_zone_label(ith_zone);
+
+    BFT_MALLOC(boundaries->label[izone], strlen(label)+1, char);
+    strcpy(boundaries->label[izone], label);
+
+    BFT_MALLOC(boundaries->nature[izone], strlen(nature)+1, char);
+    strcpy(boundaries->nature[izone], nature);
+
+    if (cs_gui_strcmp(nature, "inlet")) {
+
+      /* Inlet: VELOCITY */
+      choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
+
+      if (cs_gui_strcmp(choice, "norm") || cs_gui_strcmp(choice, "norm+direction")) {
+        cs_gui_boundary_flow(label, "norm", &norm, &timp);
+        boundaries->norm[izone] = norm;
+        for (ivar = 1; ivar < 4; ivar++) {
+          boundaries->type_code[vars->rtp[ivar]][izone] = DIRICHLET;
+        }
+      }
+
+      else if (cs_gui_strcmp(choice, "flow1") || cs_gui_strcmp(choice, "flow1+direction")) {
+        boundaries->iqimp[izone] = 1;
+        cs_gui_boundary_flow(label, "flow1", &qimp, &timp);
+        boundaries->qimp[izone] = qimp;
+      }
+
+      else if (cs_gui_strcmp(choice, "flow2") || cs_gui_strcmp(choice, "flow2+direction")) {
+        boundaries->iqimp[izone] = 2;
+        cs_gui_boundary_flow(label, "flow2", &qimp, &timp);
+        boundaries->qimp[izone] = qimp;
+      }
+
+      if (cs_gui_strcmp(choice, "norm+direction") ||
+           cs_gui_strcmp(choice, "flow1+direction") ||
+          cs_gui_strcmp(choice, "flow2+direction")) {
+        cs_gui_boundary_direction(label, &dirx, &diry, &dirz);
+        boundaries->dirx[izone] = dirx;
+        boundaries->diry[izone] = diry;
+        boundaries->dirz[izone] = dirz;
+      }
+
+      BFT_FREE(choice);
+
+      if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+        boundaries->ientat[izone] = 1;
+        boundaries->timpat[izone] = timp;
+        cs_gui_coal_boundary_coalflow(izone, ncharb, nclpch);
+      }
+
+      /* Inlet: TURBULENCE */
+      choice = cs_gui_boundary_choice("inlet", label, "turbulence");
+      cs_gui_boundary_turbulence(choice, izone);
+      BFT_FREE(choice);
+
+      /* Inlet: USER SCALARS */
+      for (isca = 0; isca < vars->nscaus; isca++) {
+        cs_gui_boundary_value_scalar("inlet", izone, isca);
+      }
+
+    } else if (cs_gui_strcmp(nature, "wall")) {
+
+      /* Wall: VELOCITY */
+      choice = cs_gui_boundary_choice("wall", label, "velocity_pressure");
+
+      if (cs_gui_strcmp(choice, "on")) {
+        for (ivar = 1; ivar < 4; ivar++)
+          cs_gui_boundary_dirichlet("wall", label, izone, ivar);
+      }
+      BFT_FREE(choice);
+
+      /* Wall: ROUGH */
+      cs_gui_boundary_rough(label, izone);
+
+      /* Wall: USER SCALARS */
+      for (isca = 0; isca < vars->nscaus; isca++) {
+        cs_gui_boundary_value_scalar("wall", izone, isca);
+      }
+
+    } else if (cs_gui_strcmp(nature, "outlet")) {
+
+      /* Outlet: USER SCALARS */
+      for (isca = 0; isca < vars->nscaus; isca++) {
+        cs_gui_boundary_value_scalar("outlet", izone, isca);
+      }
+
+    }  /* if (cs_gui_strcmp(nature, "outlet")) */
+
+    BFT_FREE(nature);
+    BFT_FREE(label);
+
+  }  /* for izones */
+
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    ith_zone = izone + 1;
+    zone_nbr = cs_gui_boundary_zone_number(ith_zone);
+    if (zone_nbr > *nozppm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("zone's label number %i is greater than %i,"
+                  " the maximum allowed \n"),
+           zone_nbr, *nozppm);
+
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+    /* list of faces building */
+    BFT_MALLOC(faces_list, *nfabor, int);
+
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Le groupe ou attribut \"%s\" figurant dans le\n"
+                  "critère de sélection:\n"
+                  "\"%s\"\n ne correspond à aucune face de bord."),
+                missing, description);
+    }
+
+    BFT_FREE(description);
+
+    /* check if faces are already marked with a zone number */
+
+    for (ifac = 0; ifac < faces; ifac++) {
+
+      ifbr = faces_list[ifac]-1;
+
+      if (izfppp[ifbr] != 0) {
+        bft_error(__FILE__, __LINE__, 0,
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    In the zone %s has a face already marked                \n"
+          "@    with a zone number.                                     \n"
+          "@                                                            \n"
+          "@    new zone number:             %i                         \n"
+          "@    previous zone number:        %i                         \n"
+          "@                                                            \n"
+          "@    It seems that zones definitions are overlapping.        \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          boundaries->label[izone], zone_nbr, izfppp[ifbr]);
+
+      } else {
+
+         izfppp[ifbr] = zone_nbr;
+
+      }
+
+    } /* for ifac */
+
+    BFT_FREE(faces_list);
+
+  } /*  for izone */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Get label of 1D profile file name
+ *
+ * parameters:
+ *   id           -->  number of order in list of 1D profile
+ *----------------------------------------------------------------------------*/
+
+static char *_get_profile_label(const int id)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id+1);
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Get number of variables or properties or scalar for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *----------------------------------------------------------------------------*/
+
+static int _get_profile_names_number(const int id)
+{
+  char *path = NULL;
+  int   number = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id+1);
+  cs_xpath_add_element(&path, "var_prop");
+  number = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return number;
+
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of variables or properties or scalar for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *   nm           -->  number of the variable name of the idst 1D profile
+ *----------------------------------------------------------------------------*/
+
+static char *_get_profile_name(const int id, const int nm)
+{
+  char *path = NULL;
+  char *name = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id+1);
+  cs_xpath_add_element_num(&path, "var_prop", nm+1);
+  cs_xpath_add_attribute(&path, "name");
+
+  name = cs_gui_get_attribute_value(path);
+  if (name == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid xpath: %s\n name not found"), path);
+  BFT_FREE(path);
+
+  return name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the label of variables or properties or scalar for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *   nm           -->  number of the variable name of the idst 1D profile
+ *----------------------------------------------------------------------------*/
+
+static char *_get_profile_label_name(const int id, const int nm)
+{
+  char *path = NULL;
+  char *name = NULL;
+  char *label = NULL;
+  int j, ll;
+
+  name = _get_profile_name(id, nm);
+
+  for (j=0 ; j < (vars->nvar - vars->nscapp - vars->nscaus) ; j++) {
+    if (cs_gui_strcmp(name,  vars->name[j]))
+      label = cs_gui_variable_label(name);
+  }
+
+  if (vars->nscaus > 0 || vars->nscapp > 0) {
+    for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
+      if (cs_gui_strcmp(name,  vars->label[j])) {
+        ll = strlen(vars->label[j])+1;
+        BFT_MALLOC(label, ll, char);
+        strcpy(label, vars->label[j]);
+      }
+    }
+  }
+
+  for (j=0; j < vars->nprop; j++) {
+    if (cs_gui_strcmp(name, vars->properties_name[j]))
+      label = cs_gui_properties_label(vars->properties_name[j]);
+  }
+
+  if (label == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid markup name: %s\n label not found"), name);
+
+  BFT_FREE(path);
+  BFT_FREE(name);
+
+  return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Get coordinates or output frequency for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *    x          <--   name of the coordinate (x1, y1, z1, x2, y2, z2)
+ *                     or the output frequency
+ *----------------------------------------------------------------------------*/
+
+static double _get_profile_coordinate(const int id, const char *const x)
+{
+  char *path = NULL;
+  double coordinate = 0.0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id+1);
+  cs_xpath_add_element(&path, x);
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &coordinate))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+
+  return coordinate;
+}
+
 /*============================================================================
  * C API public functions
  *============================================================================*/
@@ -2998,9 +3508,8 @@ int cs_gui_boundary_zones_number(void)
   char *path = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
-  cs_xpath_add_all_elements(&path);
-  cs_xpath_add_attribute(&path, "label");
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element(&path, "boundary");
 
   zones = cs_gui_get_nb_element(path);
 
@@ -3019,10 +3528,11 @@ char *cs_gui_boundary_zone_nature(const int ith_zone)
   char *nature = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
-  cs_xpath_add_element_num(&path, "*", ith_zone);
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
+  cs_xpath_add_attribute(&path, "nature");
 
-  nature = cs_gui_get_node_name(path);
+  nature = cs_gui_get_attribute_value(path);
 
   BFT_FREE(path);
 
@@ -3040,8 +3550,8 @@ char *cs_gui_boundary_zone_label(const int ith_zone)
   char *label = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
-  cs_xpath_add_element_num(&path, "*", ith_zone);
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
   cs_xpath_add_attribute(&path, "label");
 
   label = cs_gui_get_attribute_value(path);
@@ -3063,9 +3573,9 @@ int cs_gui_boundary_zone_number(const int ith_zone)
   int zone;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary_definition");
-  cs_xpath_add_element_num(&path, "*", ith_zone);
-  cs_xpath_add_attribute(&path, "zone");
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
+  cs_xpath_add_attribute(&path, "name");
 
   czone = cs_gui_get_attribute_value(path);
   zone = atoi(czone);
@@ -3091,9 +3601,8 @@ char *cs_gui_boundary_zone_localization(const char *const nature,
   char *localization = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "boundary_conditions",
-                                  "boundary_definition",
-                                   nature);
+  cs_xpath_add_elements(&path, 2, "boundary_conditions",  "boundary");
+
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_function_text(&path);
 
@@ -3235,7 +3744,7 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
   int   i   = 0;
   char *label = NULL;
 
-  *nscaus = cs_gui_get_number_user_scalar();
+  *nscaus = cs_gui_get_tag_number("/additional_scalars/scalar", 1);
 
   if (vars == NULL) {
     BFT_MALLOC(vars, 1, cs_var_t);
@@ -4107,7 +4616,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  *
  * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA)
  * *****************
- * INTEGER          IVISSE  <--   gradient transpose
+ * INTEGER          IVISSE  <--   gradient transposed
  * DOUBLE PRECISION RELAXP  <--   pressure relaxation
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * DOUBLE PRECISION EXTRAG  <--   wall pressure extrapolation
@@ -4120,7 +4629,7 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
                                double *const extrag,
                                   int *const imrgra)
 {
-  cs_gui_numerical_int_parameters("gradient_transpose", ivisse);
+  cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
   cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
@@ -4552,7 +5061,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
               n, vars->nprop);
 
 #if _XML_DEBUG_
-  bft_printf("==>UIPROP %i\n"),*iappel;
+  bft_printf("==>UIPROP %i\n",*iappel);
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0; i < vars->nprop; i++) {
     bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
@@ -4585,7 +5094,8 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
   assert(vars != NULL);
 
-  vars->ntimaver = cs_gui_get_means_number();
+  vars->ntimaver
+    = cs_gui_get_tag_number("/analysis_control/time_averages/time_average", 1);
 
   /* for each average */
   for (i=0; i < vars->ntimaver; i++) {
@@ -4650,6 +5160,11 @@ void CS_PROCF (csenso, CSENSO)
           int *const size_opt,
           int *const ntchr,
           int *const iecaux,
+          int *const ipstdv,
+          int *const ipstyp,
+          int *const ipstcl,
+          int *const ipstft,
+          int *const ipstfo,
           int *const ichrvr,
           int *const ilisvr,
           int *const ihisvr,
@@ -4676,7 +5191,13 @@ void CS_PROCF (csenso, CSENSO)
   cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
   cs_gui_output_choice("postprocessing_options", optchr, size_opt);
 
-  *ncapt = cs_gui_probes_number();
+  /* Sorties des variables surfaciques */
+  cs_gui_surfacic_variable_post("yplus", ipstyp, ipstdv);
+  cs_gui_surfacic_variable_post("effort", ipstfo, ipstdv);
+  cs_gui_surfacic_variable_post("all_variables",ipstcl,  ipstdv);
+  cs_gui_surfacic_variable_post("input_thermal_flux",ipstft,  ipstdv);
+
+  *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
   for (i=0; i < *ncapt; i++) {
     xyzcap[0 + i*3] = cs_gui_probe_coordinate(i+1, "probe_x");
     xyzcap[1 + i*3] = cs_gui_probe_coordinate(i+1, "probe_y");
@@ -4831,9 +5352,9 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
                 icoftu[0],icoftu[1],icoftu[2],icoftu[3]);
   bft_printf("           %i %i %i %i\n",
                 icoftu[4],icoftu[5],icoftu[6],icoftu[7]);
-  bft_printf(_("--icoftu = %i %i %i %i\n"),
+  bft_printf("--icoftu = %i %i %i %i\n",
                 icoftu[8],icoftu[9],icoftu[10],icoftu[11]);
-  bft_printf(_("           %i %i %i %i\n"),
+  bft_printf("           %i %i %i %i\n",
                 icoftu[12],icoftu[13],icoftu[14],icoftu[15]);
 #endif
 }
@@ -4984,7 +5505,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
 
   /* number of volumic zone */
 
-  zones = cs_gui_volumic_zones_number();
+  zones
+    = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone", 1);
 
 #if _XML_DEBUG_
   bft_printf("==>UIINIV\n");
@@ -5009,10 +5531,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+      bft_printf("The group or attribute \"%s\" in the selection\n"
                    "criteria:\n"
                    "\"%s\"\n"
-                   " does not correspond to any cell.\n"),
+                   " does not correspond to any cell.\n",
                  missing, description);
     }
 
@@ -5092,8 +5614,11 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
  * SUBROUTINE UICLIM
  * *****************
  *
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
  * INTEGER          NFABOR  --> number of boundary faces
+ * INTEGER          NOZPPM  --> max number of boundary conditions zone
+ * INTEGER          NCHARM  --> maximal number of coals
+ * INTEGER          NCHARB  --> number of simulated coals
+ * INTEGER          NCLPCH  --> number of simulated class per coals
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IPAROI  --> type of boundary: smooth wall
@@ -5102,17 +5627,28 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          IQIMP   --> 1 if flow rate is applied
  * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
+ * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
+ * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
  * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
+ * INTEGER          IZFPPP  --> zone number for each boundary face
  * INTEGER          ICODCL  --> boundary conditions array type
- * DOUBLE PRECISION QIMP    --> flow rate value if applied
+ * DOUBLE PRECISION SURFBO  --> boundary faces surface
+ * DOUBLE PRECISION QIMP    --> inlet flow rate
+ * DOUBLE PRECISION QIMPAT  --> inlet air flow rate (coal)
+ * DOUBLE PRECISION QIMPCP  --> inlet coal flow rate (coal)
  * DOUBLE PRECISION DH      --> hydraulic diameter
  * DOUBLE PRECISION XINTUR  --> turbulent intensity
+ * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
+ * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
+ * DOUBLE PRECISION DISTCH  --> ratio for each coal
  * DOUBLE PRECISION RCODCL  --> boundary conditions array value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
-                               const    int *const nfabor,
+void CS_PROCF (uiclim, UICLIM)(const    int *const nfabor,
+                               const    int *const nozppm,
+                               const    int *const ncharm,
+                               const    int *const ncharb,
+                               const    int *const nclpch,
                                const    int *const iindef,
                                const    int *const ientre,
                                const    int *const iparoi,
@@ -5121,174 +5657,48 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
                                const    int *const isolib,
                                         int *const iqimp,
                                         int *const icalke,
+                                        int *const ientat,
+                                        int *const ientcp,
                                         int *const itypfb,
                                         int *const izfppp,
                                         int *const icodcl,
+                                     double *const surfbo,
                                      double *const qimp,
+                                     double *const qimpat,
+                                     double *const qimpcp,
                                      double *const dh,
                                      double *const xintur,
+                                     double *const timpat,
+                                     double *const timpcp,
+                                     double *const distch,
                                      double *const rcodcl)
 {
   int iphas = 0;
   int faces = 0;
   int zones = 0;
-  int ifac, izone, ith_zone, zone_nbr;
-  int ifbr, i, iwall, c_id;
-  int ivar, isca;
-  double qimp2 = 0.;
-  double timp = 0.;
-  char *choice = NULL;
-  char *nature = NULL;
-  char *label = NULL;
+  int izone, ith_zone, zone_nbr;
+  int ifac, ifbr;
+  int i, k, ivar, icharb, iwall, c_id;
+  double norm = 0.;
+
   char *description = NULL;
   int *faces_list = NULL;
+  char *choice = NULL;
+  char *label = NULL;
 
   assert(vars != NULL);
 
-  zones   = cs_gui_boundary_zones_number();
+  zones = cs_gui_boundary_zones_number();
 
   /* First iteration only: memory allocation */
 
-  if (boundaries == NULL) {
+  if (boundaries == NULL)
+    _init_boundaries(nfabor, nozppm, ncharb, nclpch, izfppp);
 
-    BFT_MALLOC(boundaries,            1,          cs_boundary_t);
-    BFT_MALLOC(boundaries->label,     zones,      char*        );
-    BFT_MALLOC(boundaries->nature,    zones,      char*        );
-    BFT_MALLOC(boundaries->type_code, vars->nvar, int*         );
-    BFT_MALLOC(boundaries->values,    vars->nvar, cs_val_t*    );
-    BFT_MALLOC(boundaries->iqimp,     zones,      int          );
-    BFT_MALLOC(boundaries->qimp,      zones,      double       );
-    BFT_MALLOC(boundaries->icalke,    zones,      int          );
-    BFT_MALLOC(boundaries->dh,        zones,      double       );
-    BFT_MALLOC(boundaries->xintur,    zones,      double       );
-    BFT_MALLOC(boundaries->rough,     zones,      double       );
-
-    boundaries->ientat = NULL;
-    boundaries->qimpat = NULL;
-    boundaries->timpat = NULL;
-    boundaries->ientcp = NULL;
-    boundaries->qimpcp = NULL;
-    boundaries->timpcp = NULL;
-    boundaries->distch = NULL;
-
-    for (ivar = 0; ivar < vars->nvar; ivar++) {
-      i = vars->rtp[ivar];
-      BFT_MALLOC(boundaries->type_code[i], zones, int);
-      BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
-    }
-
-    for (izone = 0; izone < zones; izone++) {
-      boundaries->iqimp[izone]  = 0;
-      boundaries->qimp[izone]   = 0;
-      boundaries->icalke[izone] = 0;
-      boundaries->dh[izone]     = 0;
-      boundaries->xintur[izone] = 0;
-      boundaries->rough[izone]  = -999;
-    }
-
-    /* Initialization of boundary->type_code and boundary->values */
-
-    for (ivar = 0; ivar < vars->nvar; ivar++) {
-      i = vars->rtp[ivar];
-      for (izone = 0; izone < zones; izone++) {
-        boundaries->type_code[i][izone] = -1;
-        boundaries->values[i][izone].val1 = 1.e30;
-        boundaries->values[i][izone].val2 = 1.e30;
-        boundaries->values[i][izone].val3 = 0.;
-      }
-    }
-
-   /* First iteration only : filling of the "boundaries" structure */
-
-    for (izone = 0; izone < zones; izone++) {
-
-     /* nature, label of the ith initialization zone */
-
-      ith_zone = izone + 1;
-      nature = cs_gui_boundary_zone_nature(ith_zone);
-      label = cs_gui_boundary_zone_label(ith_zone);
-
-      BFT_MALLOC(boundaries->label[izone], strlen(label)+1, char);
-      strcpy(boundaries->label[izone], label);
-
-      BFT_MALLOC(boundaries->nature[izone], strlen(nature)+1, char);
-      strcpy(boundaries->nature[izone], nature);
-
-      if (cs_gui_strcmp(nature, "inlet")) {
-
-        /* Inlet: VELOCITY */
-        choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
-
-        if (cs_gui_strcmp(choice, "dirichlet")) {
-
-          for (ivar = 1; ivar < 4; ivar++) {
-            boundaries->iqimp[izone] = 0;
-            cs_gui_boundary_dirichlet("inlet", label, izone, ivar);
-          }
-
-        } else if (cs_gui_strcmp(choice, "flow1")) {
-
-          boundaries->iqimp[izone] = 1;
-            cs_gui_boundary_flow(label,&qimp2,&timp);
-            boundaries->qimp[izone] = qimp2;
-          /* TODO : remplir la direction normale a la face */
-          /* boundaries->values[1][izone].val1 = directionU ; */
-          /* boundaries->values[2][izone].val1 = directionV ; */
-          /* boundaries->values[3][izone].val1 = directionW ; */
-        }
-
-        BFT_FREE(choice);
-
-        /* Inlet: TURBULENCE */
-        choice = cs_gui_boundary_choice("inlet", label, "turbulence");
-        cs_gui_boundary_turbulence(choice, izone);
-        BFT_FREE(choice);
-
-        /* Inlet: USER SCALARS */
-        for (isca = 0; isca < vars->nscaus; isca++) {
-          cs_gui_boundary_value_scalar("inlet", izone, isca);
-        }
-
-      } else if (cs_gui_strcmp(nature, "wall")) {
-
-        /* Wall: VELOCITY */
-        choice = cs_gui_boundary_choice("wall", label, "velocity_pressure");
-
-        if (cs_gui_strcmp(choice, "on")) {
-          for (ivar = 1; ivar < 4; ivar++)
-            cs_gui_boundary_dirichlet("wall", label, izone, ivar);
-        }
-        BFT_FREE(choice);
-
-        /* Wall: ROUGH */
-        cs_gui_boundary_rough(label, izone);
-
-        /* Wall: USER SCALARS */
-        for (isca = 0; isca < vars->nscaus; isca++) {
-          cs_gui_boundary_value_scalar("wall", izone, isca);
-        }
-
-      } else if (cs_gui_strcmp(nature, "outlet")) {
-
-        /* Outlet: USER SCALARS */
-        for (isca = 0; isca < vars->nscaus; isca++) {
-          cs_gui_boundary_value_scalar("outlet", izone, isca);
-        }
-
-      }  /* if (cs_gui_strcmp(nature, "outlet")) */
-
-      BFT_FREE(nature);
-      BFT_FREE(label);
-
-    }  /* for izones */
-
-  }  /* if (boundaries == NULL)*/
-
- /* A chaque iteration, boucle sur les faces de bord :
-    on remplit itypfb, rcodcl et icodcl a partir des tableaux
-    de la structures conditions.limites definie
-    dans la premiere partie de la fonction.
-    Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
+  /* A chaque iteration, boucle sur les faces de bord :
+     on remplit itypfb, rcodcl et icodcl a partir des tableaux
+     de la structures conditions.limites definie
+     dans la premiere partie de la fonction. */
 
   for (izone=0 ; izone < zones ; izone++) {
 
@@ -5298,7 +5708,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
       bft_error(__FILE__, __LINE__, 0,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"),
-           zone_nbr, *nozppm);
+                zone_nbr, *nozppm);
 
     description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
                                                     boundaries->label[izone]);
@@ -5325,24 +5735,90 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
 
-      /* Update the depending zone arrays (iqimp, dh, xintur, icalke, qimp)
-         because they are initialized at each time step in PRECLI routine */
+      /* Update the depending zone's arrays (iqimp, dh, xintur, icalke, qimp,...)
+         because they are initialized at each time step
+         in PRECLI and PPPRCL routines */
 
       iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
       dh[zone_nbr-1]     = boundaries->dh[izone];
       xintur[zone_nbr-1] = boundaries->xintur[izone];
       icalke[zone_nbr-1] = boundaries->icalke[izone];
-      qimp[zone_nbr-1]   = boundaries->qimp[izone];
+
+      if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+
+        ientat[zone_nbr-1] = boundaries->ientat[izone];
+        ientcp[zone_nbr-1] = boundaries->ientcp[izone];
+        qimpat[zone_nbr-1] = boundaries->qimp[izone];
+        timpat[zone_nbr-1] = boundaries->timpat[izone];
+
+        for (icharb = 0; icharb < *ncharb; icharb++) {
+          qimpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->qimpcp[izone][icharb];
+          timpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->timpcp[izone][icharb];
+
+          for (k = 0; k < nclpch[icharb]; k++) {
+            distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
+            = boundaries->distch[izone][icharb][k];
+          }
+        }
+      } else {
+
+        qimp[zone_nbr-1] = boundaries->qimp[izone];
+
+      }
 
       for (ifac = 0; ifac < faces; ifac++) {
+
         ifbr = faces_list[ifac]-1;
         izfppp[ifbr] = zone_nbr;
         itypfb[iphas *(*nfabor) +ifbr] = *ientre;
+
         for (i = 0; i < vars->nvar; i++) {
           ivar = vars->rtp[i];
           rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
           = boundaries->values[ivar][izone].val1;
         }
+
+        /* dans ce cas :on prend en compte la norme de la vitesse */
+        label = cs_gui_boundary_zone_label(ith_zone);
+        choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
+
+        if (cs_gui_strcmp(choice, "norm+direction")) {
+            norm = boundaries->norm[izone]  /
+                         ( sqrt( boundaries->dirx[izone] * boundaries->dirx[izone]
+                               + boundaries->diry[izone] * boundaries->diry[izone]
+                               + boundaries->dirz[izone] * boundaries->dirz[izone] ) );
+            rcodcl[0 * (*nfabor * (vars->nvar)) + 1 * (*nfabor) + ifbr] =  boundaries->dirx[izone]*norm;
+            rcodcl[0 * (*nfabor * (vars->nvar)) + 2 * (*nfabor) + ifbr] =  boundaries->diry[izone]*norm;
+            rcodcl[0 * (*nfabor * (vars->nvar)) + 3 * (*nfabor) + ifbr] =  boundaries->dirz[izone]*norm;
+
+        }
+        else  if (cs_gui_strcmp(choice, "norm")){
+            norm = boundaries->norm[izone] /
+                       ( sqrt( surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                           + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                           + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2] ) );
+          for (ivar = 1; ivar < 4; ivar++)
+            rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
+            = -surfbo[3 * ifbr + ivar-1]*norm;
+          }
+
+        else  if (cs_gui_strcmp(choice, "flow1+direction") || cs_gui_strcmp(choice, "flow2+direction") ){
+            norm = 1.0  / ( sqrt( boundaries->dirx[izone] * boundaries->dirx[izone]
+                                + boundaries->diry[izone] * boundaries->diry[izone]
+                                + boundaries->dirz[izone] * boundaries->dirz[izone] ) );
+            rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = boundaries->dirx[izone]*norm;
+            rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = boundaries->diry[izone]*norm;
+            rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = boundaries->dirz[izone]*norm;
+
+        }
+        else if (cs_gui_strcmp(choice, "flow1") || cs_gui_strcmp(choice, "flow2")) {
+            norm = 1.0 / ( sqrt( surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                               + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                               + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2] ) );
+            rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 0]*norm;
+            rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 1]*norm;
+            rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 2]*norm;
+         }
       }
 
     } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
@@ -5502,29 +5978,211 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nozppm,
     BFT_FREE(description);
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-      bft_printf("-----iqimp=%i, qimp=%12.5e \n",
-                   iqimp[zone_nbr-1], qimp[zone_nbr-1];
-      bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n"),
-                   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+
+      if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
+
+        bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
+                     iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
+        bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
+                     icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+        bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
+                     ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
+
+        for (icharb = 0; icharb < *ncharb; icharb++) {
+          bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
+                        icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
+                        timpcp[icharb *(*nozppm)+zone_nbr-1]);
+
+          for (k = 0; k < nclpch[icharb]; k++)
+            bft_printf("-----coal=%i, class=%i, distch=%f \n",
+                         icharb, k,
+                         distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
+        }
+
+      } else {
+
+        bft_printf("-----iqimp=%i, qimp=%12.5e \n",
+                     iqimp[zone_nbr-1], qimp[zone_nbr-1]);
+        bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
+                     icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
+      }
     }
 
-    if (faces>0) {
-        ifbr = faces_list[0]-1;
-        for (i=0; i<vars->nvar; i++) {
-          ivar = vars->rtp[i];
-          bft_printf("-----%s: itypfb=%i, icodcl=%i, "
-                           "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
-                         vars->name[ivar],
-                         itypfb[iphas *(*nfabor) + ifbr],
-                         icodcl[ivar *(*nfabor) + ifbr ],
-                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-        }
+    if (faces > 0) {
+      ifbr = faces_list[0]-1;
+
+      for (i = 0; i < vars->nvar ; i++) {
+        ivar = vars->rtp[i];
+        bft_printf("-----%s: icodcl=%i, "
+                   "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
+                vars->name[ivar],
+                icodcl[ivar *(*nfabor) +ifbr ],
+                rcodcl[0 * (*nfabor * (vars->nvar)) +ivar * (*nfabor) +ifbr],
+                rcodcl[1 * (*nfabor * (vars->nvar)) +ivar * (*nfabor) +ifbr],
+                rcodcl[2 * (*nfabor * (vars->nvar)) +ivar * (*nfabor) +ifbr]);
+      }
+
     }
     BFT_FREE(faces_list);
   }
 #endif
+}
+
+/*----------------------------------------------------------------------------
+ * Boundary conditions input verification
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UICLVE
+ * *****************
+ *
+ * INTEGER          NFABOR  --> number of boundary faces
+ * INTEGER          IINDEF  --> type of boundary: not defined
+ * INTEGER          IENTRE  --> type of boundary: inlet
+ * INTEGER          IPAROI  --> type of boundary: smooth wall
+ * INTEGER          IPARUG  --> type of boundary: rough wall
+ * INTEGER          ISYMET  --> type of boundary: symetry
+ * INTEGER          ISOLIB  --> type of boundary: outlet
+ * INTEGER          ITYPFB  --> type of boundary for each face
+ * INTEGER          IZFPPP  --> zone number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
+                               const int *const iindef,
+                               const int *const ientre,
+                               const int *const iparoi,
+                               const int *const iparug,
+                               const int *const isymet,
+                               const int *const isolib,
+                                     int *const itypfb,
+                                     int *const izfppp)
+{
+  int ifbr, ifac, c_id;
+  int izone, zones, zone_nbr;
+  int inature, inature2;
+  int *faces_list = NULL;
+  int faces = 0, iphas = 0;
+  char *description = NULL;
+
+  zones   = cs_gui_boundary_zones_number();
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    zone_nbr =  cs_gui_boundary_zone_number(izone + 1);
+
+    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
+                                                    boundaries->label[izone]);
+
+    /* build list of faces */
+    BFT_MALLOC(faces_list, *nfabor, int);
+
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 description,
+                                 &faces,
+                                 faces_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
+                 missing, description;
+    }
+
+    BFT_FREE(description);
+
+    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+
+      inature = *ientre;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+
+      inature = *iparug;
+      if (boundaries->rough[izone] <0.)
+        inature = *iparoi;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+
+      inature = *isolib;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
+
+      inature = *isymet;
+
+    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+
+      inature = *iindef;
+
+    } else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("boundary nature %s is unknown \n"),
+                     boundaries->nature[izone]);
+
+    for (ifac = 0; ifac < faces; ifac++) {
+      ifbr = faces_list[ifac]-1;
+
+      if (izfppp[ifbr] != zone_nbr)
+        bft_error(__FILE__, __LINE__, 0,
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same id number            \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone number:             %i                         \n"
+          "@    USER SUBROUTINE zone number: %i                         \n"
+          "@                                                            \n"
+          "@    The id number given in the GUI cannot be modified       \n"
+          "@    in the user subroutine (fortran array IZFPPP).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          boundaries->label[izone], zone_nbr, izfppp[ifbr]);
+
+      inature2 = itypfb[iphas *(*nfabor) +ifbr];
+
+        /* The nature of the boundary can be changed from smooth wall to
+           rough wall or vice-versa between the GUI and the FORTRAN */
+        if (inature2 == *iparug ) inature2 = *iparoi;
+        if (inature == *iparug ) inature = *iparoi;
+
+      if (inature2 != inature)
+        bft_error(__FILE__, __LINE__, 0,
+        _("@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"
+          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+          "@    *******                                                 \n"
+          "@                                                            \n"
+          "@    The zone %s does not have the same nature               \n"
+          "@    in the GUI and in the user subroutine.                  \n"
+          "@                                                            \n"
+          "@    GUI zone nature:             %s                         \n"
+          "@    USER SUBROUTINE ITYPFB:      %i                         \n"
+          "@                                                            \n"
+          "@    The nature given in the GUI cannot be modified          \n"
+          "@    in the user subroutine (fortran array ITYPFB).          \n"
+          "@                                                            \n"
+          "@    The calculation will stop.                              \n"
+          "@                                                            \n"
+          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+          "@                                                            \n"),
+          boundaries->label[izone], boundaries->nature[izone], inature2);
+    }
+
+    BFT_FREE(description);
+    BFT_FREE(faces_list);
+
+  } /*  for izone */
+
 }
 
 /*----------------------------------------------------------------------------
@@ -5977,644 +6635,216 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
 }
 
 /*----------------------------------------------------------------------------
- * Traitement des conditions aux limites pour le charbon
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpcl, UICPCL)(const    int *const nozppm,
-                               const    int *const ncharm,
-                               const    int *const ncharb,
-                               const    int *const nclpch,
-                               const    int *const nfabor,
-                               const    int *const iindef,
-                               const    int *const ientre,
-                               const    int *const iparoi,
-                               const    int *const iparug,
-                               const    int *const isymet,
-                               const    int *const isolib,
-                                        int *const itypfb,
-                                        int *const icodcl,
-                                     double *const rcodcl,
-                                     double *const surfbo,
-                                        int *const ientat,
-                                        int *const iqimp,
-                                     double *const qimpat,
-                                     double *const timpat,
-                                        int *const ientcp,
-                                     double *const qimpcp,
-                                     double *const timpcp,
-                                     double *const distch,
-                                        int *const icalke,
-                                     double *const dh,
-                                     double *const xintur,
-                                        int *const izfppp)
-{
-  int iphas =0;
-  int ivar, ifbr, iwall, c_id;
-  int izone, icharb, isca, ith_zone, zones, ifac, zone_nbr;
-  int i, k;
-  double qimp = 0.;
-  double timp = 0.;
-  double norm = 0.;
-  char *choice = NULL;
-  char *label = NULL;
-  char *nature = NULL;
-  char *description = NULL;
-  int *faces_list = NULL;
-  int faces = 0;
-
-  assert(vars != NULL);
-
-  zones = cs_gui_boundary_zones_number();
-
-  /* First iteration only : memory allocation */
-
-  if (boundaries == NULL){
-
-    BFT_MALLOC(boundaries,            1,          cs_boundary_t);
-    BFT_MALLOC(boundaries->label,     zones,      char*        );
-    BFT_MALLOC(boundaries->nature,    zones,      char*        );
-    BFT_MALLOC(boundaries->type_code, vars->nvar, int*         );
-    BFT_MALLOC(boundaries->values,    vars->nvar, cs_val_t*    );
-    BFT_MALLOC(boundaries->ientat,    zones,      int          );
-    BFT_MALLOC(boundaries->iqimp,     zones,      int          );
-    BFT_MALLOC(boundaries->qimpat,    zones,      double       );
-    BFT_MALLOC(boundaries->timpat,    zones,      double       );
-    BFT_MALLOC(boundaries->ientcp,    zones,      int          );
-    BFT_MALLOC(boundaries->icalke,    zones,      int          );
-    BFT_MALLOC(boundaries->dh,        zones,      double       );
-    BFT_MALLOC(boundaries->xintur,    zones,      double       );
-    BFT_MALLOC(boundaries->qimpcp,    zones,      double*      );
-    BFT_MALLOC(boundaries->timpcp,    zones,      double*      );
-    BFT_MALLOC(boundaries->distch,    zones,      double**     );
-    BFT_MALLOC(boundaries->rough,     zones,      double       );
-
-    boundaries->qimp = NULL;
-
-    for (izone = 0; izone < zones; izone++) {
-      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double );
-      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double );
-      BFT_MALLOC(boundaries->distch[izone], *ncharb, double*);
-
-      for (icharb = 0; icharb < *ncharb; icharb++) {
-        BFT_MALLOC(boundaries->distch[izone][icharb],
-                   nclpch[icharb],
-                   double);
-      }
-    }
-
-    for (ivar = 0; ivar < vars->nvar; ivar++) {
-      i = vars->rtp[ivar];
-      BFT_MALLOC(boundaries->type_code[i], zones, int);
-      BFT_MALLOC(boundaries->values[i], zones, cs_val_t);
-    }
-
-    for (izone = 0; izone < zones; izone++) {
-      boundaries->iqimp[izone]  = 0;
-      boundaries->ientat[izone] = 0;
-      boundaries->ientcp[izone] = 0;
-      boundaries->dh[izone]     = 0;
-      boundaries->xintur[izone] = 0;
-      boundaries->icalke[izone] = 0;
-      boundaries->qimpat[izone] = 0;
-      boundaries->timpat[izone] = 0;
-      boundaries->rough[izone]  = -999;
-
-      for (icharb = 0; icharb < *ncharb; icharb++) {
-        boundaries->qimpcp[izone][icharb] = 0;
-        boundaries->timpcp[izone][icharb] = 0;
-
-        for (k = 0; k < nclpch[icharb]; k++)
-          boundaries->distch[izone][icharb][k] = 0;
-      }
-    }
-
-    /* Initialization of boundary->type_code and boundary->values */
-
-    for (ivar = 0; ivar < vars->nvar; ivar++) {
-      i = vars->rtp[ivar];
-      for (izone = 0; izone < zones; izone++) {
-        boundaries->type_code[i][izone] = -1;
-        boundaries->values[i][izone].val1 = 1.e30;
-        boundaries->values[i][izone].val2 = 1.e30;
-        boundaries->values[i][izone].val3 = 0.;
-      }
-    }
-
-    for (izone = 0; izone < zones; izone++) {
-
-   /* nature, label of the ith initialization zone */
-
-      ith_zone = izone + 1;
-      nature = cs_gui_boundary_zone_nature(ith_zone);
-      label = cs_gui_boundary_zone_label(ith_zone);
-
-      BFT_MALLOC(boundaries->label[izone], strlen(label)+1, char);
-      strcpy(boundaries->label[izone], label);
-
-      BFT_MALLOC(boundaries->nature[izone], strlen(nature)+1, char);
-      strcpy(boundaries->nature[izone], nature);
-
-      if (cs_gui_strcmp(nature, "inlet")) {
-
-        /* INLET: VELOCITY */
-        choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
-
-        if (cs_gui_strcmp(choice, "coal_flow")) {
-
-          boundaries->ientcp[izone] = 1;
-          boundaries->iqimp[izone]  = 1;
-          cs_gui_coal_boundary_coalflow(izone, ncharb, nclpch);
-          cs_gui_boundary_flow(label,&qimp,&timp);
-          boundaries->qimpat[izone] = qimp;
-          boundaries->timpat[izone] = timp;
-
-        } else if (cs_gui_strcmp(choice, "flow1")) {
-
-          boundaries->ientat[izone] = 1;
-          boundaries->iqimp[izone]  = 1;
-          cs_gui_boundary_flow(label,&qimp,&timp);
-          boundaries->qimpat[izone] = qimp;
-          boundaries->timpat[izone] = timp;
-          /* TODO : remplir la direction normale a la face */
-          /* boundaries->values[1][izone].val1 = directionU ; */
-          /* boundaries->values[2][izone].val1 = directionv ; */
-          /* boundaries->values[3][izone].val1 = directionw ; */
-        }
-
-        BFT_FREE(choice);
-
-        /* INLET: TURBULENCE */
-        choice = cs_gui_boundary_choice("inlet", label, "turbulence");
-        cs_gui_boundary_turbulence(choice, izone);
-        BFT_FREE(choice);
-
-        /* INLET: USER SCALARS */
-        for (isca=0 ; isca < vars->nscaus ; isca++) {
-          cs_gui_boundary_value_scalar("inlet", izone, isca);
-        }
-
-      } else if (cs_gui_strcmp(nature, "wall")) {
-
-        /* WALL: VELOCITY */
-        choice = cs_gui_boundary_choice("wall", label, "velocity_pressure");
-
-        if (cs_gui_strcmp(choice, "on")) {
-          for (ivar = 1; ivar < 4; ivar++)
-            cs_gui_boundary_dirichlet("wall", label, izone, ivar);
-        }
-        BFT_FREE(choice);
-
-        /* Wall: ROUGH */
-        cs_gui_boundary_rough(label, izone);
-
-        /* WALL: USER SCALARS */
-        for (isca = 0; isca < vars->nscaus; isca++) {
-          cs_gui_boundary_value_scalar("wall", izone, isca);
-        }
-
-      } else if (cs_gui_strcmp(nature, "outlet")) {
-
-        /* OUTLET: USER SCALARS */
-        for (isca=0; isca < vars->nscaus ; isca++) {
-          cs_gui_boundary_value_scalar("outlet", izone, isca);
-        }
-      } /* if (cs_gui_strcmp(nature, "outlet")) */
-
-      BFT_FREE(nature);
-      BFT_FREE(label);
-
-    } /* for izones */
-
-  }  /* if (boundaries == NULL)*/
-
- /* A chaque iteration, boucle sur les faces de bord :
-    on remplit itypfb, rcodcl et icodcl a partir des tableaux
-    de la structures conditions.limites definie
-    dans la premiere partie de la fonction.
-    Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i] */
-
-  for (izone=0 ; izone < zones ; izone++) {
-
-    ith_zone = izone + 1;
-    zone_nbr = cs_gui_boundary_zone_number(ith_zone);
-    if (zone_nbr > *nozppm)
-      bft_error(__FILE__, __LINE__, 0,
-                _("zone's label number %i is greater than %i the maximum allowed \n"),
-                 zone_nbr, *nozppm);
-
-    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
-                                                    boundaries->label[izone]);
-
-    /* build list of faces */
-    BFT_MALLOC(faces_list, *nfabor, int);
-
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                                 description,
-                                 &faces,
-                                 faces_list);
-
-    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-      const char *missing
-        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                   "criteria:\n"
-                   "\"%s\"\n"
-                   " does not correspond to any boundary face.\n"),
-                 missing, description);
-    }
-
-    BFT_FREE(description);
-
-    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-
-      /* Update the depending zone arrays (iqimp, dh, xintur, icalke,...)
-         because they are initialized at each time step in PPPRCL routine */
-
-      iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
-      ientat[zone_nbr-1] = boundaries->ientat[izone];
-      ientcp[zone_nbr-1] = boundaries->ientcp[izone];
-      dh[zone_nbr-1]     = boundaries->dh[izone];
-      xintur[zone_nbr-1] = boundaries->xintur[izone];
-      icalke[zone_nbr-1] = boundaries->icalke[izone];
-      qimpat[zone_nbr-1] = boundaries->qimpat[izone];
-      timpat[zone_nbr-1] = boundaries->timpat[izone];
-
-      for (icharb = 0; icharb < *ncharb; icharb++) {
-        qimpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->qimpcp[izone][icharb];
-        timpcp[icharb *(*nozppm)+zone_nbr-1] =boundaries->timpcp[izone][icharb];
-
-        for (k = 0; k < nclpch[icharb]; k++) {
-          distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
-          = boundaries->distch[izone][icharb][k];
-        }
-      }
-
-      for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
-        izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *ientre;
-        for (i = 0; i < vars->nvar; i++) {
-          ivar = vars->rtp[i];
-          rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-          = boundaries->values[ivar][izone].val1 ;
-        }
-        norm = 1.0 / ( sqrt( surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
-                           + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
-                           + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2] ) );
-        rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 0]*norm;
-        rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 1]*norm;
-        rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + 2]*norm;
-      }
-
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
-
-      if (boundaries->rough[izone] >= 0.) {
-        iwall = *iparug;
-        /* roughness value is only stored in Velocity_U */
-        ivar = 1;
-        for (ifac = 0; ifac < faces; ifac++) {
-          ifbr = faces_list[ifac]-1;
-          rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-          = boundaries->rough[izone];
-        }
-      } else {
-        iwall = *iparoi;
-      }
-
-      for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
-        izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = iwall;
-      }
-
-      for (i = 0; i < vars->nvar; i++) {
-        ivar = vars->rtp[i];
-
-        switch (boundaries->type_code[ivar][izone]) {
-
-          case NEUMANN :
-
-            for (ifac = 0; ifac < faces; ifac++) {
-              ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr ] = 3 ;
-              rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-              = boundaries->values[ivar][izone].val3 ;
-            }
-          break;
-
-          case DIRICHLET :
-
-            for (ifac = 0; ifac < faces; ifac++) {
-              ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
-              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-              = boundaries->values[ivar][izone].val1 ;
-            }
-          break;
-
-          case COEF_ECHANGE :
-
-            for (ifac = 0; ifac < faces; ifac++) {
-              ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
-              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-              = boundaries->values[ivar][izone].val1 ;
-              rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-              = boundaries->values[ivar][izone].val2 ;
-            }
-          break;
-        }
-      }
-
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
-
-      for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
-        izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *isolib;
-      }
-
-      for (i = 0; i < vars->nvar; i++) {
-        ivar = vars->rtp[i];
-
-        switch (boundaries->type_code[ivar][izone]) {
-
-          case DIRICHLET :
-
-            for (ifac = 0; ifac < faces; ifac++) {
-              ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr ] = 5 ;
-              rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
-              = boundaries->values[ivar][izone].val1 ;
-            }
-          break;
-
-        }
-      }
-
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
-
-      for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
-        izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *isymet;
-      }
-
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
-
-      for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
-        izfppp[ifbr] = zone_nbr;
-        itypfb[iphas *(*nfabor) +ifbr] = *iindef;
-      }
-
-    } else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("boundary nature %s is unknown \n"),
-                    boundaries->nature[izone]);
-
-    BFT_FREE(faces_list);
-  } /*  for izone */
-
-#if _XML_DEBUG_
-  bft_printf("==>UICPCL\n");
-  bft_printf("--boundary zones number: %i\n", zones);
-
-  for (izone=0 ; izone < zones ; izone++) {
-
-    BFT_MALLOC(faces_list, *nfabor, int);
-    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
-                                                    boundaries->label[izone]);
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                                 description,
-                                 &faces,
-                                 faces_list);
-
-    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-      const char *missing
-        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                   "criteria:\n"
-                   "\"%s\"\n"
-                   " does not correspond to any boundary face.\n"),
-                 missing, description);
-    }
-
-    zone_nbr = cs_gui_boundary_zone_number(izone+1);
-
-    bft_printf("---zone %i label: %s\n", zone_nbr, boundaries->label[izone]);
-    bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
-    bft_printf("---zone %i number of faces: %i\n", zone_nbr, faces);
-    bft_printf("----localization: %s\n", description);
-    BFT_FREE(description);
-
-    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
-      bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
-                   iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
-      bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
-                   icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
-      bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
-                   ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
-
-      for (icharb = 0; icharb < *ncharb; icharb++) {
-        bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
-                      icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
-                      timpcp[icharb *(*nozppm)+zone_nbr-1]);
-
-        for (k = 0; k < nclpch[icharb]; k++)
-          bft_printf("-----coal=%i, class=%i, distch=%f \n",
-                       icharb, k,
-                       distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
-      }
-    }
-
-    if (faces>0) {
-        ifbr = faces_list[0]-1;
-        for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp ; i++) {
-          ivar = vars->rtp[i];
-          bft_printf("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
-                         vars->name[ivar],
-                         itypfb[iphas *(*nfabor) + ifbr],
-                         icodcl[ivar *(*nfabor) + ifbr ],
-                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-        }
-
-        for (ivar=0; ivar<vars->nscaus + vars->nscapp ; ivar++) {
-          bft_printf("-----%s: itypfb=%i, icodcl=%i, rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
-                         vars->label[ivar],
-                         itypfb[iphas *(*nfabor) + ifbr],
-                         icodcl[ivar *(*nfabor) + ifbr ],
-                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr],
-                         rcodcl[2 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]);
-        }
-    }
-    BFT_FREE(faces_list);
-
-  }
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Boundary conditions input verification
+ * 1D profile postprocessing
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICLVE
+ * SUBROUTINE UIPROF
  * *****************
  *
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: smooth wall
- * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
+ * INTEGER          NCELET   -->  number of cells with halo
+ * INTEGER          NCEL     -->  number of cells without halo
+ * INTEGER          NTMABS   -->  max iterations numbers
+ * INTEGER          NTCABS   -->  current iteration number
+ * DOUBLE PRECISION TTCABS   -->  current physical time
+ * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ * DOUBLE PRECISION RTP      -->  variables and scalars array
+ * DOUBLE PRECISION PROPCE   -->  property array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
-                               const int *const iindef,
-                               const int *const ientre,
-                               const int *const iparoi,
-                               const int *const iparug,
-                               const int *const isymet,
-                               const int *const isolib,
-                                     int *const itypfb,
-                                     int *const izfppp)
+void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
+                                const int    *const ncel,
+                                const int    *const ntmabs,
+                                const int    *const ntcabs,
+                                const double *const ttcabs,
+                                const double *const xyzcen,
+                                const double *const rtp,
+                                const double *const propce)
 {
-  int ifbr, ifac, c_id;
-  int izone, zones, zone_nbr;
-  int inature, inature2;
-  int *faces_list = NULL;
-  int faces = 0, iphas = 0;
-  char *description = NULL;
+  FILE *file = NULL;
+  char *filename = NULL;
+  char *buffer = NULL;
+  char *name = NULL;
+  char *buf1 = NULL;
+  char *buf2 = NULL;
 
-  zones   = cs_gui_boundary_zones_number();
+  int fic_nbr = 0;
+  int i, ii, iii, j;
+  int npoint, iel1, irang1, iel, irangv;
+  int nvar_prop, nvar_prop4, output_frequency;
+  double x1, x2, y1, y2, z1, z2;
+  double xx, yy, zz, xyz[3];
+  double a, aa;
+  double *array;
 
-  for (izone=0 ; izone < zones ; izone++) {
+  assert(vars != NULL);
 
-    zone_nbr =  cs_gui_boundary_zone_number(izone + 1);
+  /* get the number of 1D profile file to write*/
 
-    description = cs_gui_boundary_zone_localization(boundaries->nature[izone],
-                                                    boundaries->label[izone]);
+  fic_nbr = cs_gui_get_tag_number("/analysis_control/profiles/profile", 1);
 
-    /* build list of faces */
-    BFT_MALLOC(faces_list, *nfabor, int);
+  if (!fic_nbr) return;
 
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                                 description,
-                                 &faces,
-                                 faces_list);
+  for (i = 0 ; i < fic_nbr ; i++) {
 
-    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-      const char *missing
-        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                   "criteria:\n"
-                   "\"%s\"\n"
-                   " does not correspond to any boundary face.\n"),
-                 missing, description);
-    }
+    /* for each profile, check the output frequency */
 
-    BFT_FREE(description);
+    output_frequency = _get_profile_coordinate(i, "output_frequency");
 
-    if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
+    if ((output_frequency == -1 && *ntmabs == *ntcabs) ||
+        (output_frequency > 0 && (*ntcabs % output_frequency) == 0)) {
 
-      inature = *ientre;
+      x1 = _get_profile_coordinate(i, "x1");
+      y1 = _get_profile_coordinate(i, "y1");
+      z1 = _get_profile_coordinate(i, "z1");
+      x2 = _get_profile_coordinate(i, "x2");
+      y2 = _get_profile_coordinate(i, "y2");
+      z2 = _get_profile_coordinate(i, "z2");
 
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+      nvar_prop = _get_profile_names_number(i);
+      nvar_prop4 = nvar_prop + 4;
+      BFT_MALLOC(array, nvar_prop4, double);
 
-      inature = *iparug;
-      if (boundaries->rough[izone] <0.){
-        inature = *iparoi;
+      /* Only the first processor rank opens the file */
+
+      if (cs_glob_base_rang <= 0) {
+
+        filename = _get_profile_label(i);
+
+        if (output_frequency > 0) {
+
+          /* Extension creation : format stored in 'buffer' */
+          j = cs_gui_characters_number(*ntmabs);
+
+          BFT_MALLOC(buffer, 3, char);
+          BFT_MALLOC(buf2, j+1, char);
+          strcpy(buffer, "%.");
+          sprintf(buf2, "%i", j);
+          BFT_REALLOC(buffer, j+1, char);
+          strcat(buffer, buf2);
+          strcat(buffer, "i");
+
+          BFT_MALLOC(buf1, j+1, char);
+          sprintf(buf1, buffer, *ntcabs);
+
+          BFT_REALLOC(filename, j, char);
+          strcat(filename, "_");
+          strcat(filename, buf1);
+
+          BFT_FREE(buf1);
+          BFT_FREE(buf2);
+          BFT_FREE(buffer);
+        }
+
+        file = fopen(filename, "w");
+
+        if (file ==  NULL) {
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf( _("Unable to open the file: %s\n"), filename);
+          break;
+        }
+
+        BFT_FREE(filename);
+
+        fprintf(file, "# Code_Saturne 1D result's profile\n#\n");
+        fprintf(file, "# Iteration output: %i\n", *ntcabs);
+        fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
+        fprintf(file, "# Start point: x = %12.5e y = %12.5e z = %12.5e\n",
+                x1, y1, z1);
+        fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
+                x2, y2, z2);
+        fprintf(file, "# Distance X Y Z ");
+        for (ii = 0 ; ii < nvar_prop ; ii++) {
+          buffer = _get_profile_label_name(i, ii);
+          fprintf(file, "%s ", buffer);
+          BFT_FREE(buffer);
+        }
+        fprintf(file, "\n");
       }
 
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+      npoint = cs_glob_mesh->n_g_cells; /* FIXME: npoint= MPI_MAX(ncel) */
+      iel1   = -999;
+      irang1 = -999;
 
-      inature = *isolib;
+      xx = x2 - x1;
+      yy = y2 - y1;
+      zz = z2 - z1;
+      a = sqrt(xx*xx + yy*yy + zz*zz) / (double) npoint;
 
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
+      for (ii = 0; ii < npoint; ii++) {
 
-      inature = *isymet;
+        aa = ii*a;
+        xyz[0] = aa * (x2 - x1) + x1;
+        xyz[1] = aa * (y2 - y1) + y1;
+        xyz[2] = aa * (z2 - z1) + z1;
 
-    } else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+        CS_PROCF(findpt, FINDPT)(ncelet,  ncel,    xyzcen,
+                                 &xyz[0], &xyz[1], &xyz[2],
+                                 &iel,    &irangv);
 
-      inature = *iindef;
+        if ((iel != iel1) || (irangv != irang1)) {
+          iel1 = iel;
+          irang1 = irangv;
 
-    } else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("boundary nature %s is unknown \n"),
-                     boundaries->nature[izone]);
+          if (cs_glob_base_rang == irangv) {
 
-    for (ifac = 0; ifac < faces; ifac++) {
-      ifbr = faces_list[ifac]-1;
+            iel--;
+            xx = xyzcen[3 * iel + 0];
+            yy = xyzcen[3 * iel + 1];
+            zz = xyzcen[3 * iel + 2];
+            array[0] = sqrt(xx*xx + yy*yy + zz*zz);
+            array[1] = xx;
+            array[2] = yy;
+            array[3] = zz;
 
-      if (izfppp[ifbr] != zone_nbr)
-        bft_error(__FILE__, __LINE__, 0,
-        _("@                                                            \n"
-          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-          "@                                                            \n"
-          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-          "@    *******                                                 \n"
-          "@                                                            \n"
-          "@    The zone %s does not have the same id number            \n"
-          "@    in the GUI and in the user subroutine.                  \n"
-          "@                                                            \n"
-          "@    GUI zone number:             %i                         \n"
-          "@    USER SUBROUTINE zone number: %i                         \n"
-          "@                                                            \n"
-          "@    The id number given in the GUI cannot be modified       \n"
-          "@    in the user subroutine (fortran array IZFPPP).          \n"
-          "@                                                            \n"
-          "@    The calculation will stop.                              \n"
-          "@                                                            \n"
-          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-          "@                                                            \n"),
-          boundaries->label[izone], zone_nbr, izfppp[ifbr]);
+            for (iii=0; iii < nvar_prop; iii++) {
 
-      inature2 = itypfb[iphas *(*nfabor) +ifbr];
+              name = _get_profile_name(i, iii);
 
-        /* The nature of the boundary can be changed from smooth wall to
-           rough wall or vice-versa between the GUI and the FORTRAN */
-        if (inature2 == *iparug ) inature2 = *iparoi;
-        if (inature == *iparug ) inature = *iparoi;
+              for (j=0; j < vars->nvar; j++) {
+                if (cs_gui_strcmp(name,  vars->name[j]))
+                  array[iii+4] = rtp[vars->rtp[j] * (*ncelet) + iel];
+              }
 
-      if (inature2 != inature)
-        bft_error(__FILE__, __LINE__, 0,
-        _("@                                                            \n"
-          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-          "@                                                            \n"
-          "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-          "@    *******                                                 \n"
-          "@                                                            \n"
-          "@    The zone %s does not have the same nature               \n"
-          "@    in the GUI and in the user subroutine.                  \n"
-          "@                                                            \n"
-          "@    GUI zone nature:             %s                         \n"
-          "@    USER SUBROUTINE ITYPFB:      %i                         \n"
-          "@                                                            \n"
-          "@    The nature given in the GUI cannot be modified          \n"
-          "@    in the user subroutine (fortran array ITYPFB).          \n"
-          "@                                                            \n"
-          "@    The calculation will stop.                              \n"
-          "@                                                            \n"
-          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-          "@                                                            \n"),
-          boundaries->label[izone], boundaries->nature[izone], inature2);
+              for (j=0; j < vars->nprop; j++) {
+                if (cs_gui_strcmp(name, vars->properties_name[j]))
+                  array[iii+4]
+                  = propce[(vars->propce[j]-1) * (*ncelet) + iel];
+              }
+
+              BFT_FREE(name);
+            }
+
+          } else {
+
+            for (iii=0; iii < nvar_prop4; iii++)
+              array[iii] = 0.0;
+          }
+
+          /* Send to other processors if parallele */
+          if (cs_glob_base_rang >= 0) {
+#if defined(_CS_HAVE_MPI)
+            MPI_Bcast(array,
+                      nvar_prop4,
+                      CS_MPI_REAL,
+                      irangv,
+                      cs_glob_base_mpi_comm);
+#endif
+          }
+
+          if (cs_glob_base_rang <= 0) {
+            for (iii=0; iii < nvar_prop4; iii++)
+              fprintf(file, "%12.5e ", array[iii]);
+            fprintf(file, "\n");
+          }
+        }
+      }
+
+      if (cs_glob_base_rang <= 0) fclose(file);
+
+      BFT_FREE(array);
     }
-
-    BFT_FREE(description);
-    BFT_FREE(faces_list);
-
-  } /*  for izone */
-
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -6664,7 +6894,6 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
       }
       BFT_FREE(boundaries->ientat);
       BFT_FREE(boundaries->ientcp);
-      BFT_FREE(boundaries->qimpat);
       BFT_FREE(boundaries->timpat);
       BFT_FREE(boundaries->qimpcp);
       BFT_FREE(boundaries->timpcp);
@@ -6680,30 +6909,32 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
     BFT_FREE(boundaries->xintur);
     BFT_FREE(boundaries->type_code);
     BFT_FREE(boundaries->values);
+    BFT_FREE(boundaries->rough);
     BFT_FREE(boundaries);
   }
 
-  if (vars != NULL) {
-
   /* clean memory for global private structure vars */
 
-    for (i=0; i < vars->nvar; i++) {
-      BFT_FREE(vars->type[i]);
-      BFT_FREE(vars->name[i]);
-    }
-    for (i=0; i < vars->nscaus+vars->nscapp; i++)
-      BFT_FREE(vars->label[i]);
-    for (i=0; i < vars->nprop; i++)
-      BFT_FREE(vars->properties_name[i]);
-    BFT_FREE(vars->label);
-    BFT_FREE(vars->model);
-    BFT_FREE(vars->model_value);
-    BFT_FREE(vars->rtp);
-    BFT_FREE(vars->name);
-    BFT_FREE(vars->properties_name);
-    BFT_FREE(vars->properties_ipp);
-    BFT_FREE(vars);
+  for (i=0; i < vars->nvar; i++) {
+    BFT_FREE(vars->type[i]);
+    BFT_FREE(vars->head[i]);
+    BFT_FREE(vars->name[i]);
   }
+  for (i=0; i < vars->nscaus+vars->nscapp; i++)
+    BFT_FREE(vars->label[i]);
+  for (i=0; i < vars->nprop; i++)
+    BFT_FREE(vars->properties_name[i]);
+  BFT_FREE(vars->label);
+  BFT_FREE(vars->model);
+  BFT_FREE(vars->model_value);
+  BFT_FREE(vars->rtp);
+  BFT_FREE(vars->name);
+  BFT_FREE(vars->type);
+  BFT_FREE(vars->head);
+  BFT_FREE(vars->properties_name);
+  BFT_FREE(vars->properties_ipp);
+  BFT_FREE(vars->propce);
+  BFT_FREE(vars);
 
   /* clean memory for fortran name of variables */
 

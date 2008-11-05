@@ -33,7 +33,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -42,17 +41,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
-
-
-/*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
 
 /*----------------------------------------------------------------------------
  * libxml2 library headers
@@ -68,17 +56,22 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
+
+#include <bft_mem.h>
+#include <bft_error.h>
+#include <bft_printf.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_base.h"
-
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
-
 
 #include "cs_gui_util.h"
 
@@ -92,7 +85,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 
-#define XML_READER_VERSION 0.0
+#define XML_READER_VERSION 1.0
 
 
 /*----------------------------------------------------------------------------
@@ -430,7 +423,7 @@ cs_xpath_add_attribute(      char      **path,
 
 void
 cs_xpath_add_element_num(      char  **     path,
-                                const char  *const element,
+                         const char  *const element,
                          const int          num)
 {
   int   nfigures = 0;
@@ -1001,6 +994,35 @@ cs_gui_get_status(char *const path,
   }
 
   return istatus;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the xml markup quantity
+ *
+ * parameters:
+ *   markup             -->  path for the markup
+ *   flag               -->  1: initialize the path with the root node;
+ *                           0: initialize the path with a short way
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_get_tag_number(const char *const markup, const int flag)
+{
+  char *path = NULL;
+  int   number = 0;
+
+  if (flag) {
+    path = cs_xpath_init_path();
+  } else {
+    BFT_MALLOC(path, strlen("/")+1, char);
+    strcpy(path, "/");
+  }
+  cs_xpath_add_element(&path, markup);
+  number = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return number;
 }
 
 /*-----------------------------------------------------------------------------

@@ -947,9 +947,9 @@ C     ===========
      &   RDEVEL , RTUSER , RA     )
 C
 C
-      IF ((NSCAPP.EQ.0).AND.(IMATIS.EQ.0)) THEN
+      IF (IMATIS.EQ.0) THEN
 C
-C ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE ET PAS DE MATISSE
+C ON NE FAIT PAS DE MATISSE
 C
 C     - Interface Code_Saturne
 C       ======================
@@ -962,21 +962,30 @@ C    -> sera modifie lors de la restructuration des zones de bord
 C
           CALL UICLIM
 C         ===========
-     & ( NOZPPM,  NFABOR, IINDEF, IENTRE, IPAROI, IPARUG, ISYMET,
-     &   ISOLIB,  IQIMP,  ICALKE, IA(IITYPF), IA(IIZFPP), IA(IICODC),
-     &   QIMP,   DH,     XINTUR,     RA(IRCODC) )
+     & ( NFABOR,
+     &   NOZPPM, NCHARM, NCHARB, NCLPCH,
+     &   IINDEF, IENTRE, IPAROI, IPARUG, ISYMET, ISOLIB,
+     &   IQIMP,  ICALKE, IENTAT, IENTCP,
+     &   IA(IITYPF), IA(IIZFPP), IA(IICODC),
+     &   SURFBO,
+     &   QIMP,   QIMPAT, QIMPCP, DH,     XINTUR,
+     &   TIMPAT, TIMPCP, DISTCH, RA(IRCODC) )
 C
-        NBZFMX = NBZPPM
-        NOZFMX = NOZPPM
-        IILZFB = IFINIA
-        IFNIA1 = IILZFB + NBZFMX
-        IQCALC = IFINRA
-        IFNRA1 = IQCALC + NOZFMX
-        CALL IASIZE('TRIDIM',IFNIA1)
-        CALL RASIZE('TRIDIM',IFNRA1)
+          IF (NSCAPP.EQ.0) THEN
 C
-          CALL STDTCL
-C         ===========
+C ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE NI DE MATISSE
+C
+            NBZFMX = NBZPPM
+            NOZFMX = NOZPPM
+            IILZFB = IFINIA
+            IFNIA1 = IILZFB + NBZFMX
+            IQCALC = IFINRA
+            IFNRA1 = IQCALC + NOZFMX
+            CALL IASIZE('TRIDIM',IFNIA1)
+            CALL RASIZE('TRIDIM',IFNRA1)
+C
+            CALL STDTCL
+C           ===========
      & ( IFNIA1 , IFNRA1 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
@@ -994,17 +1003,21 @@ C         ===========
      &   RA(ICOEFU)      , RA(IQCALC)      ,
      &   RDEVEL , RTUSER , RA     )
 C
+          ENDIF
+C
         ENDIF
 C
 C     - Sous-programme utilisateur
 C       ==========================
 C
-        ILS    = IFINIA
-        IFNIA1 = ILS + MAXELT
-        CALL IASIZE('TRIDIM',IFNIA1)
+        IF (NSCAPP.EQ.0) THEN
 C
-        CALL USCLIM
-C       ===========
+          ILS    = IFINIA
+          IFNIA1 = ILS + MAXELT
+          CALL IASIZE('TRIDIM',IFNIA1)
+C
+          CALL USCLIM
+C         ===========
      & ( IFNIA1 , IFINRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
@@ -1021,24 +1034,12 @@ C       ===========
      &   RA(ICOEFU)      ,
      &   RDEVEL , RTUSER , RA     )
 C
-C     - Interface Code_Saturne
-C       ======================
-C
-        IF(IIHMPR.EQ.1) THEN
-C
-          CALL UICLVE
-C         ===========
-     & ( NFABOR, IINDEF, IENTRE, IPAROI, IPARUG, ISYMET, ISOLIB,
-     &   IA(IITYPF), IA(IIZFPP) )
-C
-        ENDIF
-C
-      ELSEIF (IMATIS.EQ.0) THEN
+        ELSE
 C
 C ON FAIT DE LA PHYSIQUE PARTICULIERE (MAIS PAS DE MATISSE)
 C
-        CALL PPCLIM
-C       ===========
+          CALL PPCLIM
+C         ===========
      & ( IFINIA , IFINRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
@@ -1054,6 +1055,20 @@ C       ===========
      &   RA(IW1), RA(IW2), RA(IW3), RA(IW4), RA(IW5), RA(IW6),
      &   RA(ICOEFU)      ,
      &   RDEVEL , RTUSER , RA     )
+C
+        ENDIF
+C
+C     - Interface Code_Saturne
+C       ======================
+C
+        IF(IIHMPR.EQ.1) THEN
+C
+          CALL UICLVE
+C         ===========
+     & ( NFABOR, IINDEF, IENTRE, IPAROI, IPARUG, ISYMET, ISOLIB,
+     &   IA(IITYPF), IA(IIZFPP) )
+C
+        ENDIF
 C
       ENDIF
 C

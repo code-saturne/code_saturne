@@ -1,3 +1,24 @@
+* 05/11/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+               Nicole Picard <nicole-n.picard@edf.fr>
+  Modifications in the XML reader related to the upgrade of the
+  Graphical User Interface in version 1.4.c (now written in PyQt).
+  Improvements in some areas but the Interface is not complete yet.
+  modified script:
+    bin/cs_profile
+  modified routines:
+    include/base/cs_gui.h
+    include/base/cs_gui_util.h
+    include/base/cs_prototypes.h
+    src/base/caltri.F
+    src/base/cs_gui.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/iniusi.F
+    src/base/stdtcl.F
+    src/base/tridim.F
+    src/cplv/cpltcl.F
+    src/pprt/ppclim.F
+
 * 05/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug arising when the ratio between the number of
   processors and the number of cells is two high.

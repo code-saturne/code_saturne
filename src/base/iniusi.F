@@ -530,6 +530,7 @@ C       ===========
      &       ICHRVL, ICHRBO, ICHRSY, ICHRMD,
      &       FMTCHR, LEN(FMTCHR), OPTCHR, LEN(OPTCHR),
      &       NTCHR,  IECAUX,
+     &       IPSTDV, IPSTYP, IPSTCL, IPSTFT, IPSTFO,
      &       ICHRVR, ILISVR, IHISVR, ISCA, ISCAPP,
      &       IPPRTP, IPPPRO, IPPROC,
      &       XYZCAP )

@@ -199,6 +199,22 @@ extern void CS_PROCF (csprnt, CSPRNT)
 );
 
 /*----------------------------------------------------------------------------
+ * Find the nearest cell's center from a node
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (findpt, FINDPT)
+(
+ const cs_int_t   *ncelet,      /* <-- number of extended cells               */
+ const cs_int_t   *ncel,        /* <-- number of cells                        */
+ const cs_real_t  *xyzcen,      /* <-- cell centers                           */
+ const cs_real_t  *xx,          /* <-- node coordinate X                      */
+ const cs_real_t  *yy,          /* <-- node coordinate Y                      */
+ const cs_real_t  *zz,          /* <-- node coordinate Z                      */
+       cs_int_t   *node,        /* --> node we are looking for, zero if error */
+       cs_int_t   *ndrang       /* --> rank of associated process             */
+);
+
+/*----------------------------------------------------------------------------
  * Compute gradients using least squares method (standard or extended
  * neighborhood)
  *----------------------------------------------------------------------------*/
