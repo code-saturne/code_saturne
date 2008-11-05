@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.7/arch/Linux_x86_64
+BFT_HOME        =/home/saturne/opt/bft-1.0.8/arch/Linux_x86_64
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft -Wl,-rpath -Wl,$(BFT_HOME)/lib
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft -Wl,-rpath -Wl,$(BFT_HOME)/lib
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.11.0/arch/Linux_x86_64
+FVM_HOME        =/home/saturne/opt/fvm-0.12.0/arch/Linux_x86_64
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm -Wl,-rpath -Wl,$(FVM_HOME)/lib

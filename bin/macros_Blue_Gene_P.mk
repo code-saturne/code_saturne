@@ -40,7 +40,7 @@ BGL_SYS  = /bgsys/drivers/ppcfloor/comm
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/gpfs/home/saturne/opt/bft-1.0.7/arch/bgp
+BFT_HOME        =/gpfs/home/saturne/opt/bft-1.0.8/arch/bgp
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -48,7 +48,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/gpfs/home/saturne/opt/fvm-0.11.0/arch/bgp
+FVM_HOME        =/gpfs/home/saturne/opt/fvm-0.12.0/arch/bgp
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm

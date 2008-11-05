@@ -1,3 +1,15 @@
+* 05/11/2008 - David Monfort <david.monfort@edf.fr>
+  Upgrading to FVM 0.12.0 (fix a bug with MPI/IO) and BFT 1.0.8.
+  modified routine:
+    src/base/cs_base.c
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux_x86_64.mk
+
 * 03/11/2008 - David Monfort <david.monfort@edf.fr>
   Change a socket structure access from h_addr to h_addr_list[0]
   because it is deprecated on some recent systems.

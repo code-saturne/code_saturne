@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/Users/saturne/opt/bft-1.0.7/arch/Darwin
+BFT_HOME        =/Users/saturne/opt/bft-1.0.8/arch/Darwin
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/Users/saturne/opt/fvm-0.11.0/arch/Darwin
+FVM_HOME        =/Users/saturne/opt/fvm-0.12.0/arch/Darwin
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
