@@ -235,42 +235,26 @@ privcompil:
 	 then inc_cs_all="$(ARCHINC_CS)" ;\
 	      src_cs_all="" ;\
 	 fi ;\
-	 lndirs="" ;\
 	 if   [ "$${modtrav}" != "LINK" -a "$${modtrav}" != "" ] ;\
 	 then dirtrav=`pwd` ;\
 	      dirprec=`dirname $${dirtrav}` ;\
 	      dirprec1=`dirname $${dirprec}` ;\
-	      if   [   "$${dirprec}" != "$(BLD_CS)/$(NOM_ARCH)" \
-	           -a "$${dirprec1}" != "$(BLD_CS)/$(NOM_ARCH)" ] ;\
-	      then  lndirs="$${inc_cs_all}" ;\
-	      else  lndirs="$${inc_cs_all} $${src_cs_all}" ;\
-	      fi ;\
-	 fi ;\
-	 for dir in `echo $${lndirs}` ;\
-	 do \
-	      if [ -d "$${dir}" ] ;\
-	      then \
-	           ifich="0" ;\
-	           for fich in $${dir}/*.* ;\
+	      if   [   "$${dirprec}" = "$(BLD_CS)/$(NOM_ARCH)" \
+	           -o "$${dirprec1}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	      then for dir in `echo $${inc_cs_all} $${src_cs_all}` ;\
 	           do \
-		        if [ -f "$${fich}" ] ;\
-		        then ifich="1" ;\
-		        fi ;\
-	           done ;\
-		   if [ "$${ifich}" -eq "1" ] ;\
-		   then \
 		        for fich in $${dir}/*.? ;\
 		        do \
-		             if [ ! -d "$${fich}" ] ;\
+		             if [ ! -d "$${fich}" -a -f $${fich} ] ;\
 			     then fichloc=`basename $${fich}` ;\
 			          if [ ! -h "$${fichloc}" ] ;\
 			          then ln -s $${fich} . ;\
 			          fi ;\
 			     fi ;\
 		        done ;\
-		   fi ;\
+	           done ;\
 	      fi ;\
-	 done ;\
+	 fi ;\
 	 make privdepend ;\
 	 echo "***  Compilation" ;\
 	 cflags="$(VARDEF)" ;\

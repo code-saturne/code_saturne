@@ -1,4 +1,9 @@
-* 04/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+* 05/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Makefile simplifications.
+  modified script:
+    bin/Makefile
+
+* 05/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Major overhauling of the SYRTHES coupling: upgrade to
   FVM 0.12.0 and its coupling library, coupling with SYRTHES 3
   and in the future SYRTHES 4 available, definition of coupling
