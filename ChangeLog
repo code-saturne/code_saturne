@@ -38,7 +38,7 @@
     users/base/ussyrc.F
 
 * 05/11/2008 - David Monfort <david.monfort@edf.fr>
-  Upgrading to FVM version 0.12.0 (fix a bug with MPI/IO).
+  Upgrading to FVM 0.12.0 (fix a bug with MPI/IO) and BFT 1.0.8.
   modified routine:
     src/base/cs_base.c
   modified scripts:
