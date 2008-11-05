@@ -26,7 +26,7 @@
  *============================================================================*/
 
 /*============================================================================
- * Syrthes coupling
+ * SYRTHES 3 coupling
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -68,9 +68,9 @@
 
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
-#include "cs_mesh_select.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_selector.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -107,15 +107,17 @@ enum {X, Y, Z} ;
 
 struct _cs_syr3_coupling_t {
 
-  cs_int_t        dim;              /* Coupled mesh dimension */
-  cs_int_t        ref_axis;         /* Selected axis for edge extraction */
+  int             dim;              /* Coupled mesh dimension */
+  int             ref_axis;         /* Selected axis for edge extraction */
+
+  int             syr_num;          /* SYRTHES number */
 
   /* Boundary faces parameters of coupled mesh */
 
-  cs_mesh_select_t *select;     /* Selection criteria for boundary faces */
+  char           *face_sel;         /* Face selection criteria */
 
-  cs_int_t        n_coupl_faces;    /* Number of selected faces */
-  cs_int_t       *coupl_face_list;  /* Local numbering of selected faces */
+  fvm_lnum_t      n_faces;          /* Number of coupled faces */
+  fvm_lnum_t     *face_list;        /* List of coupled faces */
   cs_real_t      *weighting;        /* Triangle area or edge lengths */
   fvm_nodal_t    *coupled_mesh;     /* Nodal mesh extracted */
 
@@ -123,7 +125,7 @@ struct _cs_syr3_coupling_t {
 
   /* Saved arrays for post processing (float for reduced memory use) */
 
-  cs_int_t        post_mesh_id;     /* 0 if post-processing is not active,
+  int             post_mesh_id;     /* 0 if post-processing is not active,
                                        mesh_id if post-processing is active */
   float          *wall_temp;        /* Wall temperature (received) */
   float          *flux;             /* Flux (calculated) */
@@ -142,14 +144,13 @@ struct _cs_syr3_coupling_t {
 #if defined (_CS_HAVE_MPI)
   cs_int_t        syr_proc_rank;    /* Syrthes rank */
 #endif
-
 };
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-static cs_int_t              cs_glob_syr_n_couplings = 0;
+static int                   cs_glob_syr_n_couplings = 0;
 static cs_syr3_coupling_t  **cs_glob_syr_coupling_array = NULL;
 
 /* Start and end (negative) numbers associated with
@@ -167,9 +168,9 @@ static int  cs_glob_syr_post_maillage_ext[2] = {0, 1};
  * Arrays can use the same memory.
  *
  * parameters:
- *   fvm_data            -->  input data
- *   cs_data             <--  output data
- *   n_elts              -->  numbers of elements to compute
+ *   fvm_data            <--  input data
+ *   cs_data             -->  output data
+ *   n_elts              <--  numbers of elements to compute
  *----------------------------------------------------------------------------*/
 
 static void
@@ -195,68 +196,42 @@ _convert_fvm_gnum(fvm_gnum_t   fvm_data[],
  * faces.
  *
  * parameters:
- *   coupled_mesh_name   -->  name of the coupled mesh
- *   syr_coupling        -->  coupling structure with Syrthes
+ *   coupled_mesh_name   <--  name of the coupled mesh
+ *   syr_coupling        <--  coupling structure with Syrthes
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_t *
 _define_coupled_mesh(char                *coupled_mesh_name,
                      cs_syr3_coupling_t  *syr_coupling)
 {
-  cs_int_t n_colors, n_groups;
-
-  cs_mesh_select_t *selection = syr_coupling->select;
   fvm_nodal_t *coupled_mesh = NULL;
 
   const cs_int_t comm_echo = syr_coupling->comm_echo;
 
-  /* Test if specific criteria exist */
+  /* Creation of a new nodal mesh from selected boundary faces */
 
-  n_colors = cs_mesh_select_get_n_colors(selection);
-  n_groups = cs_mesh_select_get_n_groups(selection);
+  BFT_MALLOC(syr_coupling->face_list,
+             cs_glob_mesh->n_b_faces,
+             fvm_lnum_t);
 
-  /* Creation of a new nodal mesh from selected border faces */
+  cs_selector_get_b_face_list(syr_coupling->face_sel,
+                              &(syr_coupling->n_faces),
+                              syr_coupling->face_list);
 
-  if (n_groups != 0 || n_colors != 0) {
+  BFT_REALLOC(syr_coupling->face_list,
+              syr_coupling->n_faces,
+              fvm_lnum_t);
 
-    cs_mesh_select_extract_b_faces(cs_glob_mesh,
-                                   selection,
-                                   &(syr_coupling->n_coupl_faces),
-                                   &(syr_coupling->coupl_face_list));
+  if (comm_echo >= 0)
+    bft_printf(_("\nExtracting \"%s\" mesh\n"), coupled_mesh_name);
 
-    if (comm_echo >= 0) {
-      bft_printf(_("\nExtracting the mesh                 ..."));
-      bft_printf_flush();
-    }
-
-    coupled_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                  coupled_mesh_name,
-                                                  0,
-                                                  syr_coupling->n_coupl_faces,
-                                                  NULL,
-                                                  syr_coupling->coupl_face_list);
-
-  }
-  else {
-
-    if (comm_echo >= 0) {
-      bft_printf(_("\nExtracting the mesh                 ..."));
-      bft_printf_flush();
-    }
-
-    coupled_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                  coupled_mesh_name,
-                                                  0,
-                                                  cs_glob_mesh->n_b_faces,
-                                                  NULL,
-                                                  NULL);
-
-  }
-
-  if (comm_echo >= 0) {
-    bft_printf(" [ok]\n");
-    bft_printf_flush();
-  }
+  coupled_mesh
+    = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                     coupled_mesh_name,
+                                     0,
+                                     syr_coupling->n_faces,
+                                     NULL,
+                                     syr_coupling->face_list);
 
   return coupled_mesh;
 }
@@ -266,7 +241,7 @@ _define_coupled_mesh(char                *coupled_mesh_name,
  * parent_num from triangulation.
  *
  * parameters:
- *   syr_coupling        -->  coupling structure with Syrthes
+ *   syr_coupling        <--  coupling structure with Syrthes
  *----------------------------------------------------------------------------*/
 
 static void
@@ -276,7 +251,7 @@ _renum_faces_list(cs_syr3_coupling_t *syr_coupling)
   cs_int_t  elt_num, elt_num_prev, n_elts;
 
   cs_int_t  *parent_num = NULL;
-  cs_int_t  *coupl_face_list = syr_coupling->coupl_face_list;
+  cs_int_t  *face_list = syr_coupling->face_list;
   fvm_nodal_t  *coupled_mesh = syr_coupling->coupled_mesh;
 
   const int  elt_dim = syr_coupling->dim - 1;
@@ -307,13 +282,13 @@ _renum_faces_list(cs_syr3_coupling_t *syr_coupling)
     elt_num = parent_num[i];
 
     if (elt_num != elt_num_prev) {
-      coupl_face_list[fac_id++] = elt_num;
+      face_list[fac_id++] = elt_num;
       elt_num_prev = elt_num;
     }
 
   }
 
-  assert(fac_id == syr_coupling->n_coupl_faces);
+  assert(fac_id == syr_coupling->n_faces);
 
   BFT_FREE(parent_num);
 
@@ -330,8 +305,8 @@ _renum_faces_list(cs_syr3_coupling_t *syr_coupling)
  *   - vertex coordinates.
  *
  * parameters:
- *   syr_coupling        -->  coupling structure with Syrthes
- *   n_vertices          -->  number of coupled vertices
+ *   syr_coupling        <--  coupling structure with Syrthes
+ *   n_vertices          <--  number of coupled vertices
  *   coords              <->  vertices's coordinates
  *----------------------------------------------------------------------------*/
 
@@ -350,12 +325,11 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
   fvm_nodal_t  *coupled_mesh = syr_coupling->coupled_mesh;
 
   const cs_int_t  dim = syr_coupling->dim;
-  const cs_int_t  n_coupl_faces = syr_coupling->n_coupl_faces;
+  const cs_int_t  n_faces = syr_coupling->n_faces;
 
   /* Send number of vertices */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:npoinf",
+  cs_syr3_comm_envoie_message("coupl:b:npoinf",
                               1,
                               CS_TYPE_cs_int_t,
                               &n_vertices,
@@ -366,14 +340,13 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
   /* Send global number of vertices */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:g:npoinf",
+  cs_syr3_comm_envoie_message("coupl:b:g:npoinf",
                               1,
                               CS_TYPE_cs_int_t,
                               &_n_g_vertices,
                               syr_coupling->send_comm);
 
-  if (n_coupl_faces > 0) {
+  if (n_faces > 0) {
 
     elt_size = CS_MAX(sizeof(fvm_gnum_t), sizeof(cs_int_t));
     BFT_MALLOC(global_vtx_num_buffer, n_vertices * elt_size, char);
@@ -393,8 +366,7 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
   /* Send global vertex numbering */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:g:vtxnum",
+  cs_syr3_comm_envoie_message("coupl:b:g:vtxnum",
                               n_vertices,
                               CS_TYPE_cs_int_t,
                               global_vtx_num_int,
@@ -410,7 +382,7 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
   /* Get vertices's coordinates */
 
-  if (n_coupl_faces > 0) {
+  if (n_faces > 0) {
 
     /* Checkings */
 
@@ -425,8 +397,7 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
   /* Send vertices's coordinates */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:xyzf",
+  cs_syr3_comm_envoie_message("coupl:b:xyzf",
                               dim * n_vertices,
                               CS_TYPE_cs_real_t,
                               coords,
@@ -438,8 +409,8 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
  * Send to Syrthes elements connectivity.
  *
  * parameters:
- *   syr_coupling        -->  coupling structure with Syrthes
- *   n_elts              -->  number of elements
+ *   syr_coupling        <--  coupling structure with Syrthes
+ *   n_elts              <--  number of elements
  *----------------------------------------------------------------------------*/
 
 static void
@@ -457,12 +428,11 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
   const cs_int_t dim = syr_coupling->dim;
   const cs_int_t elt_dim = syr_coupling->dim - 1;
-  const cs_int_t n_coupl_faces = syr_coupling->n_coupl_faces;
+  const cs_int_t n_faces = syr_coupling->n_faces;
 
   /* Send number of elements */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:nelebf",
+  cs_syr3_comm_envoie_message("coupl:b:nelebf",
                               1,
                               CS_TYPE_cs_int_t,
                               &n_elts,
@@ -470,7 +440,7 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
   /* Get global element num */
 
-  if (n_coupl_faces > 0) {
+  if (n_faces > 0) {
 
     elt_size = CS_MAX(sizeof(fvm_gnum_t), sizeof(cs_int_t));
     BFT_MALLOC(glob_elt_num, n_elts * elt_size, char);
@@ -494,12 +464,11 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
                       (cs_int_t *)glob_elt_num,
                       (fvm_gnum_t)n_elts);
 
-  } /* n_coupl_faces > 0 */
+  } /* n_faces > 0 */
 
   /* Send global element numbering */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:g:eltnum",
+  cs_syr3_comm_envoie_message("coupl:b:g:eltnum",
                               n_elts,
                               CS_TYPE_cs_int_t,
                               (cs_int_t *)glob_elt_num,
@@ -510,7 +479,7 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
   /* Connectivity */
 
-  if (n_coupl_faces > 0) {
+  if (n_faces > 0) {
 
     if (elt_dim == 2) { /*If elements are triangles */
 
@@ -548,18 +517,17 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
     BFT_FREE(connect);
 
-  } /* n_coupl_faces > 0 */
+  } /* n_faces > 0 */
 
   /* Send connectivity */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:nodebf",
+  cs_syr3_comm_envoie_message("coupl:b:nodebf",
                               n_connect,
                               CS_TYPE_cs_int_t,
                               ni_connect,
                               syr_coupling->send_comm);
 
-  if (n_coupl_faces > 0)
+  if (n_faces > 0)
     BFT_FREE(ni_connect);
 
 }
@@ -569,9 +537,9 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
  * interpolation.
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   coords              -->  vertices's coordinates
- *   n_elts              -->  number of elements
+ *   syr_coupling        <--  Syrthes coupling structure
+ *   coords              <--  vertices's coordinates
+ *   n_elts              <--  number of elements
  *----------------------------------------------------------------------------*/
 
 static void
@@ -685,23 +653,23 @@ _compute_weighting(cs_syr3_coupling_t  *syr_coupling,
  * Interpolate a nodal field to an element-centered field for real numbers.
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   elt_values          <->  array of values defined on elements
- *   vtx_values          <->  array of values defined on vertices
- *   n_elts              -->  number of elements
- *   stride              -->  element's stride
- *   parent_num          -->  parent element numbering
- *   connect             -->  local connectivity
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   elt_values   --> array of values defined on elements
+ *   vtx_values   <-> array of values defined on vertices
+ *   n_elts       <-- number of elements
+ *   stride       <-- element's stride
+ *   parent_num   <-- parent element numbering
+ *   connect      <-- local connectivity
  *----------------------------------------------------------------------------*/
 
 static void
-_interpolate_vtx_to_elt(cs_syr3_coupling_t  *syr_coupling,
-                        cs_real_t           *elt_values,
-                        cs_real_t           *vtx_values,
-                        cs_int_t             n_elts,
-                        cs_int_t             stride,
-                        cs_int_t            *parent_num,
-                        cs_int_t            *connect)
+_interpolate_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
+                        cs_real_t                 *elt_values,
+                        const cs_real_t           *vtx_values,
+                        fvm_lnum_t                 n_elts,
+                        int                        stride,
+                        const fvm_lnum_t          *parent_num,
+                        const fvm_lnum_t          *connect)
 {
   cs_int_t  i, j, vtx_id, fac_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -710,14 +678,14 @@ _interpolate_vtx_to_elt(cs_syr3_coupling_t  *syr_coupling,
   cs_real_t  up = 0;
   cs_real_t  stride_inverse = 1./stride;
 
-  const cs_int_t  n_coupl_faces = syr_coupling->n_coupl_faces;
+  const cs_int_t  n_faces = syr_coupling->n_faces;
   const cs_real_t  *weighting = syr_coupling->weighting;
 
-  BFT_MALLOC(down, n_coupl_faces, cs_real_t);
+  BFT_MALLOC(down, n_faces, cs_real_t);
 
   /* Initialize arrays */
 
-  for (i = 0; i < n_coupl_faces; i++) {
+  for (i = 0; i < n_faces; i++) {
     elt_values[i] = 0;
     down[i] = 0;
   }
@@ -748,9 +716,9 @@ _interpolate_vtx_to_elt(cs_syr3_coupling_t  *syr_coupling,
 
   }
 
-  assert(fac_id+1 == n_coupl_faces);
+  assert(fac_id+1 == n_faces);
 
-  for (i = 0; i < n_coupl_faces; i++)
+  for (i = 0; i < n_faces; i++)
     elt_values[i] /= down[i];
 
   BFT_FREE(down);
@@ -765,25 +733,25 @@ _interpolate_vtx_to_elt(cs_syr3_coupling_t  *syr_coupling,
  * The two parts must be contiguous in parallel mode for MPI transfers.
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   elt_values          <->  array of values defined on elements
- *   n_vtx_values        -->  number of values defined on vertices
- *   vtx_values          <->  array of values defined on vertices
- *   n_elts              -->  number of elements
- *   stride              -->  element's stride
- *   parent_num          -->  parent element numbering
- *   connect             -->  local connectivity
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   elt_values   <-> array of values defined on elements
+ *   n_vtx_values <-- number of values defined on vertices
+ *   vtx_values   <-> array of values defined on vertices
+ *   n_elts       <-- number of elements
+ *   stride       <-- element's stride
+ *   parent_num   <-- parent element numbering
+ *   connect      <-- local connectivity
  *----------------------------------------------------------------------------*/
 
 static void
-_interpolate_elt_to_vtx(cs_syr3_coupling_t  *syr_coupling,
-                        cs_real_t           *elt_values,
-                        cs_int_t             n_vertices,
-                        cs_real_t           *vtx_values,
-                        cs_int_t             n_elts,
-                        cs_int_t             stride,
-                        cs_int_t            *parent_num,
-                        cs_int_t            *connect)
+_interpolate_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
+                        const cs_real_t           *elt_values,
+                        fvm_lnum_t                 n_vertices,
+                        cs_real_t                 *vtx_values,
+                        fvm_lnum_t                 n_elts,
+                        int                        stride,
+                        const fvm_lnum_t          *parent_num,
+                        const fvm_lnum_t          *connect)
 {
   cs_int_t  i, j, fac_id, vtx_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -791,7 +759,7 @@ _interpolate_elt_to_vtx(cs_syr3_coupling_t  *syr_coupling,
   cs_real_t *weighting = syr_coupling->weighting;
   cs_real_t *down = vtx_values + n_vertices;
 
-  const  cs_int_t   n_coupl_faces = syr_coupling->n_coupl_faces;
+  const  cs_int_t   n_faces = syr_coupling->n_faces;
 
   /* Initialization of vtx_values and down => 2*n_vertices */
 
@@ -822,7 +790,7 @@ _interpolate_elt_to_vtx(cs_syr3_coupling_t  *syr_coupling,
 
   }
 
-  assert(fac_id+1 == n_coupl_faces);
+  assert(fac_id+1 == n_faces);
 
   /* Sum on parallel domain boundaries ;
      Reminder: we need to have down = vtx_values + n_vtx_values */
@@ -839,13 +807,13 @@ _interpolate_elt_to_vtx(cs_syr3_coupling_t  *syr_coupling,
  * Post process variables associated with Syrthes couplings
  *
  * parameters:
- *   coupling_id         -->  Id of Syrthes coupling
- *   nt_cur_abs          -->  Current time step
- *   t_cur_abs           -->  Current time value
+ *   coupling_id         <--  Id of Syrthes coupling
+ *   nt_cur_abs          <--  Current time step
+ *   t_cur_abs           <--  Current time value
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_syr3_coupling_post_function(cs_int_t   coupling_id,
+_cs_syr3_coupling_post_function(int        coupling_id,
                                 cs_int_t   nt_cur_abs,
                                 cs_real_t  t_cur_abs)
 {
@@ -878,79 +846,10 @@ _cs_syr3_coupling_post_function(cs_int_t   coupling_id,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize post-processing of a Syrthes coupling
- *
- * parameters:
- *   coupling_id         -->  Id of Syrthes coupling
- *   writer_id           -->  Id of associated writer
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_syr3_coupling_post_init(cs_int_t  coupling_id,
-                           cs_int_t  writer_id)
-{
-  cs_int_t  n_vertices = 0;
-  cs_int_t  mesh_id = cs_post_ret_num_maillage_libre();
-
-  cs_syr3_coupling_t  *syr_coupling = cs_syr3_coupling_by_id(coupling_id);
-
-  assert(syr_coupling != NULL);
-
-  /* Exit silently if associated writer is not available */
-
-  if (cs_post_existe_writer(writer_id) != true)
-    return;
-
-  /* Initialize post processing flag, and free previous arrays in
-     case this function is called more than once */
-
-  syr_coupling->post_mesh_id = mesh_id;
-
-  if (syr_coupling->wall_temp != NULL)
-    BFT_FREE(syr_coupling->wall_temp);
-
-  if (syr_coupling->flux != NULL)
-    BFT_FREE(syr_coupling->flux);
-
-  /* Get number of coupled vertices */
-
-  n_vertices = fvm_nodal_get_n_entities(syr_coupling->coupled_mesh, 0);
-
-  /* Allocate arrays */
-
-  if (n_vertices > 0) {
-    BFT_MALLOC(syr_coupling->wall_temp, n_vertices, float);
-    BFT_MALLOC(syr_coupling->flux, n_vertices, float);
-  }
-  syr_coupling->tfluid_tmp = NULL;
-
-  /* Associate external mesh description with post processing subsystem */
-
-  cs_post_ajoute_maillage_existant(mesh_id,
-                                   syr_coupling->coupled_mesh,
-                                   false);
-
-  cs_post_associe(mesh_id, writer_id);
-
-  /* Register post processing function */
-
-  cs_post_ajoute_var_temporelle(_cs_syr3_coupling_post_function,
-                                coupling_id);
-
-  /* Update start and end (negative) numbers associated with
-     dedicated post processing meshes */
-
-  if (cs_glob_syr_post_maillage_ext[0] == 0)
-    cs_glob_syr_post_maillage_ext[0] = mesh_id;
-
-  cs_glob_syr_post_maillage_ext[1] = mesh_id;
-}
-
-/*----------------------------------------------------------------------------
  * Dump of Syrthes coupling structure
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
+ *   syr_coupling        <--  Syrthes coupling structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -962,36 +861,36 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
 
   assert(syr_coupling != NULL);
 
-  bft_printf("\n xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf("   DUMP OF cs_syr3_syr_coupling_t STRUCTURE\n");
-  bft_printf(" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf_flush();
+  bft_printf("\n"
+             "SYRTHES 3 coupling structure dump\n"
+             "---------------------------------\n\n");
+
+  bft_printf("\nSYRTHES coupling number: %d\n",
+             syr_coupling->syr_num);
 
   /* Print selection criteria */
 
-  bft_printf("\nSelection criteria for coupled faces\n");
-  bft_printf("------------------------------------\n");
-
-  cs_mesh_select_dump(syr_coupling->select);
+  bft_printf("\nFaces selection criteria: \"%s\"\n",
+             syr_coupling->face_sel);
 
   bft_printf("\nDimension of SYRTHES mesh: %i\n",
              syr_coupling->dim);
 
   bft_printf("Number of coupled boundary faces: %i\n\n",
-             syr_coupling->n_coupl_faces);
+             syr_coupling->n_faces);
 
-  if (syr_coupling->n_coupl_faces > comm_echo) {
+  if (syr_coupling->n_faces > comm_echo) {
     bft_printf("First and last boundary face numbers:\n");
     for (i = 0; i < (comm_echo + 1)/2; i++)
-      bft_printf("  %i\n", syr_coupling->coupl_face_list[i]);
-    for (i = syr_coupling->n_coupl_faces - comm_echo/2;
-         i < syr_coupling->n_coupl_faces ; i++)
-      bft_printf("  %i\n", syr_coupling->coupl_face_list[i]);
+      bft_printf("  %i\n", syr_coupling->face_list[i]);
+    for (i = syr_coupling->n_faces - comm_echo/2;
+         i < syr_coupling->n_faces ; i++)
+      bft_printf("  %i\n", syr_coupling->face_list[i]);
   }
   else {
     bft_printf("Boundary face numbers:\n");
-    for (i = 0; i < syr_coupling->n_coupl_faces ; i++)
-      bft_printf("  %i\n", syr_coupling->coupl_face_list[i]);
+    for (i = 0; i < syr_coupling->n_faces ; i++)
+      bft_printf("  %i\n", syr_coupling->face_list[i]);
   }
 
   /* Print communicator names */
@@ -1013,179 +912,9 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
              syr_coupling->syr_proc_rank);
 #endif
 
-  bft_printf("\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
-  bft_printf("  END OF cs_syr3_coupling_t STRUCTURE DUMP\n");
-  bft_printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+  bft_printf("End of SYRTHES 3 coupling structure dump\n"
+             "-----------------------------------------\n");
   bft_printf_flush();
-}
-
-/*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get number of Syrthes couplings.
- *
- * Fortran Interface:
- *
- * SUBROUTINE NBCSYR
- * *****************
- *
- * INTEGER          n_couplings     : <-- : number of Syrthes couplings
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(nbcsyr, NBCSYR)
-(
- cs_int_t  *const n_couplings
-)
-{
-  *n_couplings = cs_glob_syr_n_couplings;
-}
-
-/*----------------------------------------------------------------------------
- * Create nodal coupled mesh.
- * Send vertices's coordinates and connectivity of coupled mesh.
- *
- * Fortran Interface:
- *
- * SUBROUTINE GEOSYR
- * *****************
- *
- * INTEGER          n_couplings     : <-- : number of Syrthes couplings
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(geosyr, GEOSYR)
-(
- cs_int_t  *const n_couplings
-)
-{
-  cs_int_t i_coupl;
-
-  assert(*n_couplings > 0);
-
-  for (i_coupl = 0; i_coupl < *n_couplings; i_coupl++) {
-
-    cs_syr3_coupling_t *syr_coupling = cs_glob_syr_coupling_array[i_coupl];
-
-    cs_syr3_coupling_init_mesh(syr_coupling,
-                               i_coupl + 1);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Get number of boundary faces coupled with Syrthes.
- *
- * Fortran Interface:
- *
- * SUBROUTINE NBFSYR
- * *****************
- *
- * INTEGER          coupl_num       : --> : coupling number
- * INTEGER          n_coupl_faces   : <-- : number of coupled boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(nbfsyr, NBFSYR)
-(
- const cs_int_t  *const coupl_num,
-       cs_int_t  *const n_coupl_faces
-)
-{
-  if (*coupl_num < 1 || *coupl_num > cs_glob_syr_n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *coupl_num, cs_glob_syr_n_couplings);
-
-  else
-    *n_coupl_faces
-      = (cs_glob_syr_coupling_array[*coupl_num - 1])->n_coupl_faces;
-}
-
-
-/*----------------------------------------------------------------------------
- * Get local numbering of coupled faces
- *
- * Fortran interface:
- *
- * SUBROUTINE LFASYR
- * *****************
- *
- * INTEGER          coupl_num       : --> : coupling number
- * INTEGER          n_coupl_faces   : --> : number of coupled boundary faces
- * INTEGER          coupl_face_list : <-- : list of coupled boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(lfasyr, LFASYR)
-(
- const cs_int_t  *const coupl_num,
- const cs_int_t  *const n_coupl_faces,
-       cs_int_t  *const coupl_face_list
-)
-{
-  cs_int_t  i;
-  cs_syr3_coupling_t  *coupling = NULL;
-
-  if (*coupl_num < 1 || *coupl_num > cs_glob_syr_n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *coupl_num, cs_glob_syr_n_couplings);
-  else
-    coupling = cs_glob_syr_coupling_array[*coupl_num - 1];
-
-  if (*n_coupl_faces != coupling->n_coupl_faces)
-    bft_error(__FILE__, __LINE__, 0,
-              _("LFASYR: number of faces indicated for the SYRTHES\n"
-                "coupling number %d incoherent (internal error)."),
-              *coupl_num);
-
-  for (i = 0 ; i < coupling->n_coupl_faces ; i++)
-    coupl_face_list[i] = coupling->coupl_face_list[i];
-
-}
-
-/*----------------------------------------------------------------------------
- * Initialize post processing of Syrthes couplings.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PSTISY
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(pstisy, PSTISY)
-(
- void
-)
-{
-  cs_int_t i_coupl;
-
-  for (i_coupl = 0; i_coupl < cs_glob_syr_n_couplings; i_coupl++)
-    _cs_syr3_coupling_post_init(i_coupl, -1);
-}
-
-/*----------------------------------------------------------------------------
- * Get the local (negative) numbers associated with the first and last
- * post processing meshes dedicated to Syrthes couplings
- *
- * Fortran interface:
- *
- * SUBROUTINE PSTESY
- * *****************
- *
- * INTEGER          first_id        : <-- : id of first post processing mesh
- * INTEGER          last_id         : <-- : id of last post processing mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstesy, PSTESY)
-(
- cs_int_t  *const first_id,
- cs_int_t  *const last_id
-)
-{
-  cs_syr3_coupling_post_id_extents(first_id, last_id);
 }
 
 /*============================================================================
@@ -1193,30 +922,30 @@ void CS_PROCF (pstesy, PSTESY)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get number of Syrthes couplings.
+ * Get number of SYRTHES couplings.
  *
  * returns:
- *   number of Syrthes couplings
+ *   number of SYRTHES couplings
  *----------------------------------------------------------------------------*/
 
-cs_int_t
+int
 cs_syr3_coupling_n_couplings(void)
 {
   return cs_glob_syr_n_couplings;
 }
 
 /*----------------------------------------------------------------------------
- * Get pointer to Syrthes coupling.
+ * Get pointer to SYRTHES coupling.
  *
  * parameters:
- *   coupling_id  -->  Id (0 to n-1) of Syrthes coupling
+ *   coupling_id <-- Id (0 to n-1) of SYRTHES coupling
  *
  * returns:
- *   pointer to Syrthes coupling structure
+ *   pointer to SYRTHES coupling structure
  *----------------------------------------------------------------------------*/
 
 cs_syr3_coupling_t *
-cs_syr3_coupling_by_id(cs_int_t coupling_id)
+cs_syr3_coupling_by_id(int coupling_id)
 {
   cs_syr3_coupling_t  *retval = NULL;
 
@@ -1228,10 +957,10 @@ cs_syr3_coupling_by_id(cs_int_t coupling_id)
 }
 
 /*----------------------------------------------------------------------------
- * Get communicator type associated with Syrthes coupling
+ * Get communicator type associated with SYRTHES coupling
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
+ *   syr_coupling <-- SYRTHES coupling structure
  *
  * returns:
  *   communicator type
@@ -1244,17 +973,17 @@ cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t *syr_coupling)
 }
 
 /*----------------------------------------------------------------------------
- * Get sending communicator associated with Syrthes coupling
+ * Get sending communicator associated with SYRTHES coupling
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
+ *   syr_coupling <-- coupling structure associated with SYRTHES
  *
  * returns:
  *   pointer to send communicator
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t *const syr_coupling)
+cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t *syr_coupling)
 {
   assert(syr_coupling != NULL);
 
@@ -1262,17 +991,17 @@ cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t *const syr_coupling)
 }
 
 /*----------------------------------------------------------------------------
- * Get receiving communicator associated with Syrthes coupling
+ * Get receiving communicator associated with SYRTHES coupling
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
+ *   syr_coupling <-- coupling structure associated with SYRTHES
  *
  * returns:
  *   pointer to receive communicator
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t *const syr_coupling)
+cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t *syr_coupling)
 {
   assert(syr_coupling != NULL);
 
@@ -1283,16 +1012,16 @@ cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t *const syr_coupling)
  * Get number of vertices in coupled mesh
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
+ *   syr_coupling <-- SYRTHES coupling structure
  *
  * returns:
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-cs_int_t
-cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *const syr_coupling)
+fvm_lnum_t
+cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *syr_coupling)
 {
-  cs_int_t n_vertices = 0;
+  fvm_lnum_t n_vertices = 0;
 
   assert(syr_coupling != NULL);
 
@@ -1302,32 +1031,68 @@ cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *const syr_coupling)
 }
 
 /*----------------------------------------------------------------------------
- * Create a syr_coupling_t structure
+ * Get number of associated coupled faces in main mesh
  *
  * parameters:
- *   dim                 -->  spatial mesh dimension
- *   ref_axis            -->  reference axis
- *   inv_sel             -->  invert selected faces or not
- *   n_colors            -->  number of colors
- *   colors              -->  color list
- *   n_groups            -->  number of groups
- *   groups              -->  group list
- *   syr_proc_rank       -->  syrthes processus rank
- *   comm_type           -->  communicator type
+ *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   number of vertices in coupled mesh
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t *syr_coupling)
+{
+  fvm_lnum_t n_faces = 0;
+
+  assert(syr_coupling != NULL);
+
+  n_faces = syr_coupling->n_faces;
+
+  return n_faces;
+}
+
+/*----------------------------------------------------------------------------
+ * Get local list of coupled faces
+ *
+ * parameters:
+ *   syr_coupling    <-- SYRTHES coupling structure
+ *   coupl_face_list --> List of coupled faces (1 to n)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_add(cs_int_t       dim,
-                    cs_int_t       ref_axis,
-                    cs_bool_t      inv_sel,
-                    cs_int_t       n_colors,
-                    cs_int_t      *colors,
-                    cs_int_t       n_groups,
-                    char         **groups,
-#if defined (_CS_HAVE_MPI)
-                    cs_int_t       syr_proc_rank,
-#endif
-                    cs_syr3_comm_type_t comm_type)
+cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
+                               fvm_lnum_t                 face_list[])
+{
+  fvm_lnum_t  i;
+
+  assert(syr_coupling != NULL);
+
+  for (i = 0; i < syr_coupling->n_faces; i++)
+    face_list[i] = syr_coupling->face_list[i];
+}
+
+/*----------------------------------------------------------------------------
+ * Create a syr3_coupling_t structure.
+ *
+ * parameters:
+ *   dim                <-- spatial mesh dimension
+ *   ref_axis           <-- reference axis
+ *   face_sel_criterion <-- criterion for selection of boundary faces
+ *   syr_num            <-- SYRTHES number
+ *   syr_proc_rank      <-- SYRTHES process rank for MPI
+ *   comm_type          <-- communicator type
+ *   verbosity          <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr3_coupling_add(int                 dim,
+                     int                 ref_axis,
+                     const char         *face_sel_criterion,
+                     int                 syr_num,
+                     int                 syr_proc_rank,
+                     cs_syr3_comm_type_t comm_type,
+                     int                 verbosity)
 {
   cs_syr3_coupling_t *syr_coupling = NULL;
 
@@ -1337,19 +1102,25 @@ cs_syr3_coupling_add(cs_int_t       dim,
               cs_glob_syr_n_couplings + 1, cs_syr3_coupling_t*);
   BFT_MALLOC(syr_coupling, 1, cs_syr3_coupling_t);
 
+  syr_coupling->syr_num = syr_num;
+
   syr_coupling->dim = dim;
   syr_coupling->ref_axis = ref_axis;
 
-  syr_coupling->n_coupl_faces = 0;
-  syr_coupling->coupl_face_list = NULL;
+  syr_coupling->n_faces = 0;
+  syr_coupling->face_list = NULL;
 
   /* Selection criteria for faces */
 
-  syr_coupling->select = cs_mesh_select_create(n_colors,
-                                               n_groups,
-                                               colors,
-                                               groups,
-                                               inv_sel);
+  if (face_sel_criterion == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Coupling with SYRTHES impossible.\n"
+                "No selection criteria for faces to couple."));
+
+  BFT_MALLOC(syr_coupling->face_sel, strlen(face_sel_criterion) + 1, char);
+  strcpy(syr_coupling->face_sel, face_sel_criterion);
+
+  /* Mesh and interpolation data */
 
   syr_coupling->weighting = NULL;
   syr_coupling->coupled_mesh = NULL;
@@ -1363,7 +1134,7 @@ cs_syr3_coupling_add(cs_int_t       dim,
 
   /* Communicators */
 
-  syr_coupling->comm_echo = -1;
+  syr_coupling->comm_echo = verbosity;
   syr_coupling->comm_type = comm_type;
   syr_coupling->send_comm = NULL;
   syr_coupling->recv_comm = NULL;
@@ -1374,54 +1145,45 @@ cs_syr3_coupling_add(cs_int_t       dim,
 
   cs_glob_syr_coupling_array[cs_glob_syr_n_couplings] = syr_coupling;
   cs_glob_syr_n_couplings++;
-
 }
 
 /*----------------------------------------------------------------------------
  * Initialize communicator for Syrthes coupling
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   num_syr_coupling    -->  syrthes coupling number
- *   comm_echo           -->  optional echo to standard output
+ *   syr_coupling     <-- SYRTHES coupling structure
+ *   syr_id           <-- SYRTHRS coupling id
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_init_comm(cs_syr3_coupling_t *syr_coupling,
-                          cs_int_t           num_syr_coupling,
-                          cs_int_t           comm_echo)
+cs_syr3_coupling_init_comm(cs_syr3_coupling_t  *syr_coupling,
+                           int                  syr_id)
 {
   cs_int_t  i_coupl;
 
-  syr_coupling->comm_echo = comm_echo;
-
   /* Initialize receiving communicator */
 
-  syr_coupling->recv_comm = cs_syr3_comm_initialise("syrthes",
-                                                    "solveur",
-                                                    "SYRTHES_VERS_SATURNE_1.0",
-                                                    num_syr_coupling,
+  syr_coupling->recv_comm
+    = cs_syr3_comm_initialise(syr_id + 1,
 #if defined(_CS_HAVE_MPI)
-                                                    syr_coupling->syr_proc_rank,
+                              syr_coupling->syr_proc_rank,
 #endif
-                                                    CS_SYR3_COMM_MODE_RECEPTION,
-                                                    syr_coupling->comm_type,
-                                                    comm_echo);
+                              CS_SYR3_COMM_MODE_RECEPTION,
+                              syr_coupling->comm_type,
+                              syr_coupling->comm_echo);
 
   /* Initialize sending communicator */
 
-  syr_coupling->send_comm = cs_syr3_comm_initialise("solveur",
-                                                    "syrthes",
-                                                    "SATURNE_VERS_SYRTHES_1.0",
-                                                    num_syr_coupling,
+  syr_coupling->send_comm
+    = cs_syr3_comm_initialise(syr_id + 1,
 #if defined(_CS_HAVE_MPI)
-                                                    syr_coupling->syr_proc_rank,
+                              syr_coupling->syr_proc_rank,
 #endif
-                                                    CS_SYR3_COMM_MODE_EMISSION,
-                                                    syr_coupling->comm_type,
-                                                    comm_echo);
+                              CS_SYR3_COMM_MODE_EMISSION,
+                              syr_coupling->comm_type,
+                              syr_coupling->comm_echo);
 
-  if (comm_echo >= 0) {
+  if (syr_coupling->comm_echo >= 0) {
     for (i_coupl = 0 ; i_coupl < cs_glob_syr_n_couplings; i_coupl++)
       _dump_syr_coupling(cs_glob_syr_coupling_array[i_coupl]);
   }
@@ -1447,16 +1209,15 @@ cs_syr3_coupling_all_destroy(void)
 
     /* Sending "End Of File" message */
 
-    cs_syr3_comm_envoie_message(0,
-                           CS_SYR3_COMM_FIN_FICHIER,
-                           0,
-                           CS_TYPE_void,
-                           NULL,
-                           syr_coupling->send_comm);
+    cs_syr3_comm_envoie_message(CS_SYR3_COMM_FIN_FICHIER,
+                                0,
+                                CS_TYPE_void,
+                                NULL,
+                                syr_coupling->send_comm);
 
     /* Free _cs_syr3_coupling structure */
 
-    BFT_FREE(syr_coupling->coupl_face_list);
+    BFT_FREE(syr_coupling->face_list);
 
     /* Free post processing arrays */
 
@@ -1471,7 +1232,7 @@ cs_syr3_coupling_all_destroy(void)
     syr_coupling->send_comm = cs_syr3_comm_termine(syr_coupling->send_comm);
     syr_coupling->recv_comm = cs_syr3_comm_termine(syr_coupling->recv_comm);
 
-    syr_coupling->select = cs_mesh_select_destroy(syr_coupling->select);
+    BFT_FREE(syr_coupling->face_sel);
 
     if (syr_coupling->weighting != NULL)
       BFT_FREE(syr_coupling->weighting);
@@ -1494,23 +1255,19 @@ cs_syr3_coupling_all_destroy(void)
   cs_glob_syr_n_couplings = 0;
   BFT_FREE(cs_glob_syr_coupling_array);
 
-  bft_printf(_("\nDestroying the structures associated with the "
-               "SYRTHES coupling.... [ok]\n"));
+  bft_printf(_("\nStructures associated with SYRTHES 3 coupling freed.\n"));
   bft_printf_flush();
-
 }
 
 /*----------------------------------------------------------------------------
- * Define coupled mesh and send it to Syrthes
+ * Define coupled mesh and send it to SYRTHES
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   coupl_num           -->  syrthes coupling number
+ *   syr_coupling <-- SYRTHES coupling structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
-                          const cs_int_t       coupl_num)
+cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 {
   cs_int_t  length;
   cs_int_t  dim;
@@ -1528,17 +1285,17 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
   const cs_int_t comm_echo = syr_coupling->comm_echo;
 
   if (comm_echo > 0) {
-    bft_printf(_("\n ** Processing the mesh for the SYRTHES coupling "
+    bft_printf(_("\n ** Processing the mesh for SYRTHES coupling "
                  "\"%d\"\n\n"),
-                 coupl_num);
+                 syr_coupling->syr_num);
     bft_printf_flush();
   }
 
   /* Define coupled mesh name */
 
-  length = strlen("MaillageExtraitSyrthes_") + 1 + 1;
-  BFT_MALLOC(coupled_mesh_name, length, char);
-  sprintf(coupled_mesh_name, "MaillageExtraitSyrthes_%d", coupl_num);
+  length = strlen("SYRTHES_faces_") + 1 + 1;
+  BFT_MALLOC(coupled_mesh_name, length + 1, char);
+  sprintf(coupled_mesh_name, "SYRTHES_faces_%d", syr_coupling->syr_num);
 
   /* Define coupled mesh */
 
@@ -1559,7 +1316,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
     if (comm_echo >= 0) {
       bft_printf(_("Triangulation of the extracted mesh (%d faces)  ..."),
-                 syr_coupling->n_coupl_faces);
+                 syr_coupling->n_faces);
       bft_printf_flush();
     }
 
@@ -1572,7 +1329,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
     if (comm_echo >= 0) {
       bft_printf(_("Splitting the extracted mesh in edges (%d faces)  ..."),
-                 syr_coupling->n_coupl_faces);
+                 syr_coupling->n_faces);
       bft_printf_flush();
     }
 
@@ -1600,14 +1357,14 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
   n_vertices  = (cs_int_t)fvm_nodal_get_n_entities(coupled_mesh, 0);
 
-  if (syr_coupling->n_coupl_faces > 0) {
+  if (syr_coupling->n_faces > 0) {
 
     /* Renumbering of selected border faces in order to be consistent with
        parent_num from triangulation. */
 
     _renum_faces_list(syr_coupling);
 
-  } /* If n_coupl_faces > 0 */
+  } /* If n_faces > 0 */
 
   if (cs_glob_base_nbr > 1) {
 
@@ -1637,8 +1394,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
   /* Spatial dimension */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:ndim_",
+  cs_syr3_comm_envoie_message("coupl:b:ndim_",
                               1,
                               CS_TYPE_cs_int_t,
                               &(syr_coupling->dim),
@@ -1662,7 +1418,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
   _send_connectivity(syr_coupling,
                      n_elts);
 
-  if (syr_coupling->n_coupl_faces > 0) {
+  if (syr_coupling->n_faces > 0) {
 
     /*
       Compute weighting in order to interpolate element-centered values
@@ -1675,7 +1431,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
                        coords,
                        n_elts);
 
-  } /* n_coupl_faces > 0 */
+  } /* n_faces > 0 */
 
   if (comm_echo >= 0) {
 
@@ -1693,8 +1449,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
 
   /* Ready to start time iterations */
 
-  cs_syr3_comm_envoie_message(0,
-                              "coupl:b:debut",
+  cs_syr3_comm_envoie_message("coupl:b:start",
                               0,
                               CS_TYPE_void,
                               NULL,
@@ -1713,15 +1468,15 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t *syr_coupling,
  * Interpolate a vertex field to an element-centered field
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   vtx_values          -->  values defined on vertices
- *   elt_values          <->  values defined on elements
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   vtx_values   <-- values defined on vertices
+ *   elt_values   <-> values defined on elements
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_vtx_to_elt(cs_syr3_coupling_t        *syr_coupling,
-                           cs_real_t          *const vtx_values,
-                           cs_real_t                *elt_values)
+cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
+                            const cs_real_t           *vtx_values,
+                            cs_real_t                 *elt_values)
 {
   cs_int_t n_elts, stride;
 
@@ -1795,19 +1550,19 @@ cs_syr3_coupling_vtx_to_elt(cs_syr3_coupling_t        *syr_coupling,
  *
  * The size of vtx_values array must be twice the number of vertices.
  * The first half gets values and the second half is used as a working array.
- * The two parts have to be contiguous in parallel mode for MPI transfers.
+ * The two parts must be contiguous in parallel mode for MPI transfers.
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   elt_values          <->  array of values defined on elements
- *   n_vtx_values        -->  number of values defined on vertices
- *   vtx_values          <->  array of values defined on vertices
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   elt_values   <-> array of values defined on elements
+ *   n_vtx_values <-- number of values defined on vertices
+ *   vtx_values   <-> array of values defined on vertices
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_elt_to_vtx(cs_syr3_coupling_t        *syr_coupling,
-                            cs_real_t           *const elt_values,
-                            cs_int_t                   n_vertices,
+cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
+                            const cs_real_t           *elt_values,
+                            fvm_lnum_t                 n_vertices,
                             cs_real_t                 *vtx_values)
 {
   cs_int_t n_elts, stride;
@@ -1881,20 +1636,89 @@ cs_syr3_coupling_elt_to_vtx(cs_syr3_coupling_t        *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize post-processing of a Syrthes coupling
+ *
+ * parameters:
+ *   coupling_id <--  Id of SYRTHES coupling
+ *   writer_id   <--  Id of associated writer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr3_coupling_post_init(int       coupling_id,
+                           cs_int_t  writer_id)
+{
+  cs_int_t  n_vertices = 0;
+  cs_int_t  mesh_id = cs_post_ret_num_maillage_libre();
+
+  cs_syr3_coupling_t  *syr_coupling = cs_syr3_coupling_by_id(coupling_id);
+
+  assert(syr_coupling != NULL);
+
+  /* Exit silently if associated writer is not available */
+
+  if (cs_post_existe_writer(writer_id) != true)
+    return;
+
+  /* Initialize post processing flag, and free previous arrays in
+     case this function is called more than once */
+
+  syr_coupling->post_mesh_id = mesh_id;
+
+  if (syr_coupling->wall_temp != NULL)
+    BFT_FREE(syr_coupling->wall_temp);
+
+  if (syr_coupling->flux != NULL)
+    BFT_FREE(syr_coupling->flux);
+
+  /* Get number of coupled vertices */
+
+  n_vertices = fvm_nodal_get_n_entities(syr_coupling->coupled_mesh, 0);
+
+  /* Allocate arrays */
+
+  if (n_vertices > 0) {
+    BFT_MALLOC(syr_coupling->wall_temp, n_vertices, float);
+    BFT_MALLOC(syr_coupling->flux, n_vertices, float);
+  }
+  syr_coupling->tfluid_tmp = NULL;
+
+  /* Associate external mesh description with post processing subsystem */
+
+  cs_post_ajoute_maillage_existant(mesh_id,
+                                   syr_coupling->coupled_mesh,
+                                   false);
+
+  cs_post_associe(mesh_id, writer_id);
+
+  /* Register post processing function */
+
+  cs_post_ajoute_var_temporelle(_cs_syr3_coupling_post_function,
+                                coupling_id);
+
+  /* Update start and end (negative) numbers associated with
+     dedicated post processing meshes */
+
+  if (cs_glob_syr_post_maillage_ext[0] == 0)
+    cs_glob_syr_post_maillage_ext[0] = mesh_id;
+
+  cs_glob_syr_post_maillage_ext[1] = mesh_id;
+}
+
+/*----------------------------------------------------------------------------
  * Update post-processing variables of a Syrthes coupling
  *
  * parameters:
- *   syr_coupling        -->  Syrthes coupling structure
- *   step                -->  0: var = wall temperature
- *                            1: var = fluid temperature
- *                            2: var = exchange coefficient
- *   var                 -->  Pointer to variable values
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   step         <-- 0: var = wall temperature
+ *                    1: var = fluid temperature
+ *                    2: var = exchange coefficient
+ *   var          <-- Pointer to variable values
  *----------------------------------------------------------------------------*/
 
 void
 cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
-                                int                step,
-                                const cs_real_t   *var)
+                                 int                 step,
+                                 const cs_real_t    *var)
 {
   cs_int_t  ii;
   cs_int_t  n_vertices = 0;
@@ -1938,23 +1762,6 @@ cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
     assert(0);
   }
 
-}
-
-/*----------------------------------------------------------------------------
- * Get the local (negative) numbers associated with the first and last
- * post processing meshes dedicated to Syrthes couplings
- *
- * parameters:
- *   first_mesh_id       <--  Id of first post processing mesh
- *   last_mesh_id        <--  Id of last post processing mesh
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_post_id_extents(cs_int_t  *const id_mesh_start,
-                                cs_int_t  *const id_mesh_end)
-{
-  *id_mesh_start = cs_glob_syr_post_maillage_ext[0];
-  *id_mesh_end   = cs_glob_syr_post_maillage_ext[1];
 }
 
 /*----------------------------------------------------------------------------*/

@@ -158,7 +158,6 @@ COMMAND_REORIENT=
 COMMAND_JOIN=
 COMMAND_CWF=
 COMMAND_PERIO=
-COMMAND_SYRTHES=
 THERMOCHEMISTRY_DATA=
 #
 # Choose the total number of processors used (if empty, automatic detection
@@ -275,9 +274,11 @@ fi
 #
 #########################################################################
 #
-#
 N_SYRTHES_COUPLINGS=0
-N_SYRTHES_COUPLINGS=`echo $COMMAND_SYRTHES | grep -c syrthes`
+if [ -f "${SRC}/ussyrc.F" ] ; then
+  N_SYRTHES_COUPLINGS=`grep -e ^' ' ${SRC}/ussyrc.F | grep -i -c defsyr`
+fi
+#
 if [ $N_SYRTHES_COUPLINGS = 0 ] ; then
   SYRTHES_COUPLING=no
 else
@@ -412,9 +413,9 @@ fi
 #
 # In parallel mode, the corresponding argument must be set
 if [ $nproc_kernel -gt 1 ] ; then
-  ARG_CS_PAR=" -mpi"
+  ARG_CS_MPI=" -mpi"
 else
-  ARG_CS_PAR=""
+  ARG_CS_MPI=""
 fi
 #
 #
@@ -422,21 +423,11 @@ fi
 #
 # Communications
 #
-# Socket definition
-if [ $SYRTHES_COUPLING = yes -a "$COUPLING_MODE" = "sockets" ] ; then
-  SOCKETSYR="-comm-socket"
-else
-  SOCKETSYR=""
-fi
 # To help debug coupling problems, make communication more verbose
 if [ ! -z "$ECHOCOMM" ] ; then
-  ECHOCOMMNB="$ECHOCOMM"
-  ECHOCOMMSYR="-echo-comm $ECHOCOMMNB"
-  ECHOCOMMNOY="--echo-comm $ECHOCOMMNB"
+  ECHOCOMMSYR="-echo-comm $ECHOCOMM"
 else
-  ECHOCOMMNB=""
   ECHOCOMMSYR=""
-  ECHOCOMMNOY=""
 fi
 ########################################################################
 # Greeting message
@@ -749,29 +740,6 @@ echo  "             Starting calculation"
 echo  "  ********************************************"
 echo
 #
-# More settings for SYRTHES coupling
-#
-if [ $SYRTHES_COUPLING = yes ] ; then
-  #
-  # If sockets, change COMMAND_SYRTHES
-  #   (add -socket after -syrthes)
-  #
-  if [ "$COUPLING_MODE" = "sockets" ] ; then
-    cmdsyr=""
-    if [ ! -z "$COMMAND_SYRTHES" ] ; then
-      for var in $COMMAND_SYRTHES ; do
-        if [ "$var" = "-syrthes" ] ; then
-          cmdsyr="$cmdsyr $var -socket"
-        else
-          cmdsyr="$cmdsyr $var"
-        fi
-      done
-      COMMAND_SYRTHES="$cmdsyr"
-    fi
-  fi
-  #
-fi
-#
 # Preprocessor start
 #
 if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
@@ -860,11 +828,10 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     echo "MPI_RANK=\`$CS_HOME/bin/mpi_rank.sh \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
-    echo "  $RUN/$EXE_SYR \$@ -comm-mpi 1 -nbr_sat $nproc_kernel $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
+    echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
     echo "else" >> $localexec
-    echo "  $VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMAND_SYRTHES -proc 0 $COMMAND_CWF "\
-         "$ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
-         "$COMMAND_PARAM " >> $localexec
+    echo "  $VALGRIND $RUN/$EXE \$@ -mpi 1 $COMMAND_CWF "\
+         "$ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM " >> $localexec
     echo "fi" >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
@@ -880,8 +847,8 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
     echo cd $RUN >> $localexec
-    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR $COMMAND_SYRTHES $COMMAND_CWF "\
-                 " $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_MPI $COMMAND_CWF "\
+                 " $ARG_CS_VERIF $ARG_CS_OUTPUT "\
                  " $COMMAND_PARAM " >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
@@ -889,20 +856,14 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     $MPIBOOT
     $MPIRUN $localexec || EXECUTION_ERROR=true &
     #
-    if [ "$COUPLING_MODE" = "sockets" ] ; then
-      # We must obtain the machine and port information from the log;
-      #   we sleep to leave enought time to the Kernel to start and print
-      #   this information; we avoid while which could loop endlessly
-      sleep 5
-      MACHPORT=""
-      MACHPORT=`grep 'Communication possible on' listing|sed -e "s/Communication possible sur //g"|sed -e "s/, port /:/g"`
-      SOCKETSYR="$SOCKETSYR $MACHPORT"
-    fi
+    # We must obtain the machine and port information from the log;
+    #   we sleep to leave enough time to the Kernel to start and print
+    #   this information; we avoid while which could loop endlessly
+    sleep 10
+    MACHPORT=`grep "SYRTHES: port" listing | sed -e "s/SYRTHES: port <//" -e "s/>$//"`
+    SOCKETSYR="-comm-socket $MACHPORT"
     #
-    # SYRTHES
-    if [ $SYRTHES_COUPLING = yes ] ; then
-      ./$EXE_SYR -nbr_sat $nproc_kernel $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
-    fi
+    ./$EXE_SYR $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
     #
     $MPIHALT
     #
@@ -911,8 +872,8 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
     echo cd $RUN >> $localexec
-    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_PAR "\
-         " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT $ECHOCOMMNOY "\
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_MPI "\
+         " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT "\
          " $COMMAND_PARAM "  >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec

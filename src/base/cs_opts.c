@@ -114,49 +114,15 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("\nCommand line options:\n\n"));
   fprintf
-    (e, _(" -ec, --echo-comm  print SYRTHES communications;\n"
-          "                   -1 : only error (default)\n"
-          "                    0 : print headers of messages only\n"
-          "                    n : print headers of messages and\n"
-          "                        the n first and last elements as well\n"));
-  fprintf
     (e, _(" -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
           "                   SolCom format (obsolete);\n"));
 #if defined(_CS_HAVE_MPI)
   fprintf
-    (e, _(" -mpi, --mpi       parallelism activation;\n"
-          "                    [i] : global MPI rank of the 1st kernel\n"
-          "                          process (default: 0)\n"));
-  fprintf
-    (e, _(" --coupl-cs        coupling with another instance of the code\n"
-          "                     i: global MPI rank of the 1er coupled\n"
-          "                        process\n"));
+    (e, _(" -mpi, --mpi       use MPI for parallelism or coupling\n"
+          "                   [appnum]: number of this application in\n"
+          "                             case of code coupling (default: 0)\n"));
+
 #endif
-  fprintf
-    (e, _(" -syrthes          SYRTHES coupling at selected faces\n"
-          "                   -2d : the associated SYRTHES mesh is 2D\n"
-          "                   -X : prefered projection axis\n"
-          "                        for a 2D SYRTHES mesh\n"
-          "                   -Y : prefered projection axis\n"
-          "                        for a 2D SYRTHES mesh\n"
-          "                   -Z : prefered projection axis\n"
-          "                        for a 2D SYRTHES mesh (default)\n"));
-#if defined(_CS_HAVE_MPI)
-  fprintf
-    (e, _("                   -proc <number>: MPI rank of the SYRTHES process"
-          "\n"));
-#endif
-#if defined(_CS_HAVE_SOCKET)
-  fprintf
-    (e, _("                   -socket: communication with IP socket\n"
-          "                             (named pipes by default)\n"));
-#endif
-  fprintf
-    (e, _("                   -color <number(s)>: color numbers of faces\n"
-          "                                       to select\n"
-          "                   -group <name(s)>:   group names of faces\n"
-          "                                       to select\n"
-          "                   -invsel: invert selection\n"));
   fprintf
     (e, _(" -q, --quality     verifications\n"
           "                   -1: no tests activated (default)\n"
@@ -262,211 +228,6 @@ _arg_to_double(int    arg_id,
   }
 
   return retval;
-}
-
-#if defined(_CS_HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * First analysis of the command line to determine if Syrthes coupling
- * requires MPI
- *
- * parameters:
- *   arg_id  <-> index of argument in argv
- *   argc    --> number of command line arguments
- *   argv    --> array of command line arguments
- *
- * returns:
- *   -1 if MPI is not needed, or rank of Syrthes process in MPI_COMM_WORLD
- *----------------------------------------------------------------------------*/
-
-static int
-_syr_mpi_rank(int   *arg_id,
-              int    argc,
-              char  *argv[])
-{
-  /* local variables */
-
-  int  ii;
-
-  const char  *s = NULL;
-  cs_bool_t    is_end = false;
-  int          syr_rank = -1;
-  int          tmperr = -1;
-
-  for (ii = *arg_id; ii < argc && is_end == false; ii++) {
-    s = argv[ii];
-
-    if (strcmp(s, "-2d") == 0 || strcmp(s, "-invsel") == 0)
-      continue;
-    else if (strcmp(s, "-socket") == 0)
-      continue;
-    else if (strcmp(s, "-proc") == 0) {
-      is_end = true;
-      syr_rank = _arg_to_int(ii + 1, argc, argv, &tmperr);
-      if (tmperr == 0) {
-        ii++;
-      }
-    }
-    else {
-      /* Check if the current args define face selection options;
-         otherwise, we have reached the end of the Syrthes options */
-
-      if (strcmp(s,"-color") == 0 || strcmp(s,"-group") == 0) {
-        while (ii + 1 < argc && strncmp(argv[ii + 1], "-", 1))
-          ii++;
-      }
-      else {
-        is_end = true;
-      }
-    }
-
-  } /* End of loop on Syrthes related arguments */
-
-  if (is_end == true)
-    *arg_id = ii - 2;
-
-  return syr_rank;
-}
-
-#endif /* defined(_CS_HAVE_MPI) */
-
-/*----------------------------------------------------------------------------
- * First analysis of a Syrthes sub-command line before calling
- * cs_coupl_syr_lit_cmd() to process
- *
- * parameters:
- *   arg_id  <-> index of argument in argv
- *   argc    --> number of command line arguments
- *   argv    --> array of command line arguments
- *   argerr  <-- error indicator
- *----------------------------------------------------------------------------*/
-
-static void
-_syr_read_args(int   *arg_id,
-               int    argc,
-               char  *argv[],
-               int   *argerr)
-{
-  cs_int_t ii, ii_save, arg_id_first;
-
-  const char  *s = NULL;
-  cs_bool_t is_end = false;
-
-  /* Parameters with defaults */
-
-  cs_bool_t invsel = false;
-  cs_int_t  dim = 3;
-  cs_int_t  axis_id = 2;
-  cs_int_t  n_colors = 0;
-  cs_int_t *colors = NULL;
-  cs_int_t  n_groups = 0;
-  char    **groups = NULL;
-  cs_syr3_comm_type_t  comm_type = CS_SYR3_COMM_TYPE_NONE;
-#if defined (_CS_HAVE_MPI)
-  cs_int_t  syr_proc_rank = -1;
-#endif
-
-  const char missing_arg_fmt[]
-    = N_("Error in the command line specification.\n\n"
-         "The \"%s\" option needs at least one argument.");
-
-  arg_id_first = *arg_id;
-
-  /* Loop on options associated to a Syrthes coupling */
-
-  for (ii = *arg_id; ii < argc && is_end == false; ii++) {
-
-    s = argv[ii];
-
-    if (strcmp(s, "-2d") == 0)
-      dim = 2;
-    else if (strcmp(s, "-X") == 0)
-      axis_id = 0;
-    else if (strcmp(s, "-Y") == 0)
-      axis_id = 1;
-    else if (strcmp(s, "-Z") == 0)
-      axis_id = 2;
-    else if (strcmp(s, "-invsel") == 0)
-      invsel = true;
-#if defined(_CS_HAVE_SOCKET)
-    else if (strcmp(s, "-socket") == 0) {
-      comm_type = CS_SYR3_COMM_TYPE_SOCKET;
-      cs_syr3_comm_init_socket();
-    }
-#endif
-#if defined (_CS_HAVE_MPI)
-    else if (strcmp(s, "-proc") == 0) {
-      comm_type = CS_SYR3_COMM_TYPE_MPI;
-      if (ii < argc - 1 && strncmp(argv[ii + 1], "-", 1))
-        syr_proc_rank = atoi(argv[++ii]);
-    }
-#endif
-    else if (strcmp(s, "-color") == 0) {
-      ii_save = ii;
-
-      while (ii + 1 < argc && strncmp(argv[ii + 1], "-", 1)) {
-        ii++;
-        BFT_REALLOC(colors, n_colors + 1, cs_int_t);
-        colors[n_colors] = atoi(argv[ii]);
-        n_colors++;
-      }
-
-      /* Check that at least one color has been defined */
-      if (ii_save == ii) {
-        _arg_env_help(argv[0]);
-        bft_error(__FILE__, __LINE__, 0, _(missing_arg_fmt), s);
-      }
-    }
-    else if (strcmp(s, "-group") == 0) {
-
-      ii_save = ii;
-
-      while (ii + 1 < argc && strncmp(argv[ii + 1], "-", 1)) {
-        ii++;
-        BFT_REALLOC(groups, n_groups + 1, char*);
-        BFT_MALLOC(groups[n_groups], strlen(argv[ii]) + 1, char);
-        strcpy(groups[n_groups],argv[ii]);
-        n_groups++;
-      }
-
-      /* Check that at least one group has been defined */
-      if (ii_save == ii) {
-        _arg_env_help(argv[0]);
-        bft_error(__FILE__, __LINE__, 0, _(missing_arg_fmt), s);
-      }
-    }
-    else
-      is_end = true;
-
-  } /* End of loop on options associated to a Syrthes coupling */
-
-  if (is_end == true)
-    *arg_id = ii - 2;
-  else
-    *arg_id = --ii;
-
-  if (*arg_id <= arg_id_first)
-    *argerr = 1;
-
-  if (*argerr == 0)
-    cs_syr3_coupling_add(dim,
-                         axis_id,
-                         invsel,
-                         n_colors,
-                         colors,
-                         n_groups,
-                         groups,
-#if defined (_CS_HAVE_MPI)
-                         syr_proc_rank,
-#endif
-                         comm_type);
-
-  /* Free temporary memory */
-
-  BFT_FREE(colors);
-  for (ii = 0; ii < n_groups; ii++)
-    BFT_FREE(groups[ii]);
-  BFT_FREE(groups);
 }
 
 /*============================================================================
@@ -587,31 +348,29 @@ cs_opts_logfile_head(int    argc,
 }
 
 /*----------------------------------------------------------------------------
- * First analysis of the command line to determine if we require MPI
+ * First analysis of the command line to determine if we require MPI,
+ * and initialization if necessary
  *
  * parameters:
  *   argc  <-> number of command line arguments
  *   argv  <-> array of command line arguments
  *
  * returns:
- *   -1 if MPI is not needed, or rank in MPI_COMM_WORLD of the first
- *   process associated with this instance of Code_Saturne
+ *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
+ *   processes associated with this instance of Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
-cs_opts_mpi_rank(int    * argc,
-                 char  **argv[])
+cs_opts_mpi_app_num(int    *argc,
+                    char  **argv[])
 {
-  char    *s;
-  int     arg_id, argerr;
+#if defined(_CS_HAVE_MPI)
 
-  int  root_rank = -1;
-  int  syr_rank = -1;
-  int  syr_rank_max = -1;
+  char *s;
 
-  cs_bool_t  use_mpi = false;
-
-  arg_id = 0, argerr = 0;
+  int arg_id = 0, flag = 0;
+  int appnum = -1;
+  cs_int_t use_mpi = false;
 
 #if defined(MPICH_NAME)
 
@@ -626,16 +385,43 @@ cs_opts_mpi_rank(int    * argc,
   */
 
   for (arg_id = 0 ; arg_id < *argc ; arg_id++) {
-
     if (   !strcmp((*argv)[arg_id], "-p4pg")         /* For process 0 */
         || !strcmp((*argv)[arg_id], "-p4rmrank")) {  /* For other processes */
-
-      MPI_Init(argc, argv);
+      use_mpi = true;
       break;
     }
   }
 
-#endif
+  if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
+    use_mpi = true;
+
+#elif   defined(__blrts__) || defined(__bgp__) \
+   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+  use_mpi = true;
+
+#elif defined(LAM_MPI)
+  if (getenv("LAMRANK") != NULL)
+    use_mpi = true;
+
+#elif defined(OPEN_MPI)
+  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)
+    use_mpi = true;
+
+#elif defined(MPICH2)
+  if (getenv("PMI_RANK") != NULL)
+    use_mpi = true;
+
+#endif /* Tests for known MPI variants */
+
+  /* If we have determined from known MPI environment variables
+     of command line arguments that we are running under MPI,
+     initialize MPI */
+
+  if (use_mpi == true) {
+    MPI_Initialized(&flag);
+    if (!flag)
+      MPI_Init(argc, argv);
+  }
 
   /* Loop on command line arguments */
 
@@ -648,62 +434,50 @@ cs_opts_mpi_rank(int    * argc,
     /* Parallel run */
 
     if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
-      int _root_rank = 0;
       cs_int_t tmperr = 0;
-      _root_rank = _arg_to_int(arg_id + 1, *argc, *argv, &tmperr);
+      int _appnum = 0;
+      use_mpi = true;
+      _appnum = _arg_to_int(arg_id + 1, *argc, *argv, &tmperr);
       if (tmperr == 0) {
         arg_id++;
-        root_rank = _root_rank;
-      }
-      use_mpi = true;
-    }
-
-    /* Coupling */
-
-    else if (strcmp (s, "--coupl-cs") == 0) {
-      cs_int_t n1 = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, *argc, *argv, &argerr);
-      if (argerr == 0)
-        use_mpi = true;
-    }
-
-    /* Syrthes coupling */
-
-    else if (strcmp(s, "-syrthes") == 0) {
-      arg_id++;
-#if defined(_CS_HAVE_MPI)
-      syr_rank = _syr_mpi_rank(&arg_id,
-                               *argc,
-                               *argv);
-#endif
-
-
-      if (syr_rank > -1) {
-        use_mpi = true;
-        syr_rank_max = CS_MAX(syr_rank_max, syr_rank);
+        appnum = _appnum;
       }
     }
 
   } /* End of loop on command line arguments */
 
-  /*
-    Return -1 if MPI is not needed, or rank in MPI_COMM_WORLD of
-    the first process associated with this instance of Code_Saturne
-    if MPI is needed
-  */
-
   if (use_mpi == true) {
 
-    if (syr_rank_max > -1) {
-      if (root_rank == -1)
-        root_rank = syr_rank_max + 1;
-    }
-    if (root_rank == -1)
-      root_rank = 0;
+    MPI_Initialized(&flag);
+    if (!flag)
+      MPI_Init(argc, argv);
 
+    /*
+      If appnum was not given through the command line but we
+      are running under MPI-2, appnum may be available through
+      the MPI_APPNUM attribute.
+    */
+
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
+    if (appnum < 0) {
+      void *attp = NULL;
+      MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
+      if (flag != 0)
+        appnum = *(int *)attp;
+    }
+#endif
+
+    if (appnum < 0)
+      appnum = 0;
   }
 
-  return root_rank;
+  return appnum;
+
+#else /* if defined(_CS_HAVE_MPI) */
+
+  return -1;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -732,7 +506,6 @@ cs_opts_define(int         argc,
   /* Default initialization */
 
   opts->ifoenv = 1;
-  opts->echo_comm = -1;
 
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
@@ -756,9 +529,6 @@ cs_opts_define(int         argc,
     if (strcmp(s, "-solcom") == 0)
       opts->ifoenv = 0;
 
-    else if (strcmp(s, "-ec") == 0 || strcmp(s, "--echo-comm") == 0)
-      opts->echo_comm = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
-
 #if defined(_CS_HAVE_MPI)
 
     else if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
@@ -769,19 +539,7 @@ cs_opts_define(int         argc,
       }
     }
 
-    else if (strcmp(s, "--coupl-cs") == 0) {
-      cs_int_t n1 = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (argerr == 0)
-        cs_couplage_ajoute(n1);
-    }
-
 #endif /* defined(_CS_HAVE_MPI) */
-    else if (strcmp(s, "-syrthes") == 0) {
-      arg_id++;
-      _syr_read_args(&arg_id, argc, argv, &argerr);
-    }
-
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0) {
       cs_int_t tmperr = 0;
       opts->iverif = (cs_int_t) _arg_to_int(arg_id + 1, argc, argv, &tmperr);
@@ -876,9 +634,6 @@ cs_opts_define(int         argc,
       argerr = 1;
 
   } /* End parsing command line */
-
-  /* End initialization (sanity check) */
-  if (opts->echo_comm < -1) argerr = 1;
 
   /* Print help and exit if required or in case of command line error */
   if (argerr != 0) {

@@ -51,6 +51,7 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <fvm_coupling.h>
 #include <fvm_locator.h>
 #include <fvm_nodal.h>
 #include <fvm_writer.h>
@@ -191,44 +192,21 @@ cs_loc_couplage_cree(cs_int_t  root_rank)
 
     else {
 
-      MPI_Comm  intercomm_tmp;
-      int  r_coupl, r_coupl_min;
-      int  haut = (root_rank > r_loc_max) ? 0 : 1;
-      const int  cs_couplage_tag = 'C'+'S'+'_'+'C'+'O'+'U'+'P'+'L'+'A'+'G'+'E';
+      int local_range[2] = {-1, -1};
+      int distant_range[2] = {-1, -1};
 
-      /* Création d'un communicateur réservé */
+      fvm_coupling_mpi_intracomm_create(cs_glob_base_mpi_comm,
+                                        root_rank,
+                                        &(couplage->comm),
+                                        local_range,
+                                        distant_range);
 
-      MPI_Intercomm_create(cs_glob_base_mpi_comm, 0, MPI_COMM_WORLD,
-                           (int)root_rank, cs_couplage_tag, &intercomm_tmp);
+      bft_printf(_("coupling: local_ranks = [%d..%d], distant ranks = [%d..%d]\n"),
+                 local_range[0], local_range[1] - 1,
+                 distant_range[0], distant_range[1] - 1);
 
-      MPI_Intercomm_merge(intercomm_tmp, haut, &(couplage->comm));
-
-      MPI_Comm_free(&intercomm_tmp);
-
-      /* Calcul du nombre de rangs distants et du premier rang distant */
-
-      MPI_Comm_size(couplage->comm, &n_dist_ranks);
-      n_dist_ranks -= n_loc_ranks;
-
-      /* Vérification du rang dans le nouveau communicateur (ne devrait
-         pas être nécessaire avec valeur "haut" bien positionnée,
-         mais semble l'être avec Open MPI 1.0.1) */
-
-      MPI_Comm_rank(couplage->comm, &r_coupl);
-      MPI_Allreduce(&r_coupl, &r_coupl_min, 1, MPI_INT, MPI_MIN,
-                    cs_glob_base_mpi_comm);
-      haut = (r_coupl_min == 0) ? 0 : 1;
-
-      /* On en déduit la postion du premier rang distant dans le
-       * nouveau communicateur */
-
-      if (haut == 0)
-        dist_root_rank = n_loc_ranks;
-      else
-        dist_root_rank = 0;
-
-      bft_printf("r %d (%d / %d) : nb_rangs_dist = %d, rang_deb_dist = %d\n",
-                 r_glob, haut, r_coupl, n_dist_ranks, dist_root_rank);
+      n_dist_ranks = distant_range[1] - distant_range[0];
+      dist_root_rank = distant_range[0];
     }
 
   }

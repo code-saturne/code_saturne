@@ -1,3 +1,42 @@
+* 04/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Major overhauling of the SYRTHES coupling: upgrade to
+  FVM 0.12.0 and its coupling library, coupling with SYRTHES 3
+  and in the future SYRTHES 4 available, definition of coupling
+  via a user subroutine instead of a script command, simpler
+  MPI initialization.
+  modified scripts:
+    bin/cs_profile
+    bin/Makefile
+    bin/runcase
+    bin/runcase.help
+    bin/runcase_syrthes
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_opts.h
+    include/base/cs_syr3_comm.h
+    include/base/cs_syr3_coupling.h
+    include/base/cs_syr3_messages.h
+    src/base/coupbi.F
+    src/base/coupbo.F
+    src/base/cregeo.F
+    src/base/cs_base.c
+    src/base/cs_couplage.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+    src/base/cs_syr3_comm.c
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr3_messages.c
+    src/base/initi1.F
+  added routines:
+    include/base/cs_coupling.h
+    include/base/cs_syr4_coupling.h
+    include/base/cs_syr_coupling.h
+    src/base/cs_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_util.F
+    users/base/ussyrc.F
+
 * 05/11/2008 - David Monfort <david.monfort@edf.fr>
   Upgrading to FVM version 0.12.0 (fix a bug with MPI/IO).
   modified routine:

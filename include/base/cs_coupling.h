@@ -25,11 +25,11 @@
  *
  *============================================================================*/
 
-#ifndef __CS_SYR3_MESSAGES_H__
-#define __CS_SYR3_MESSAGES_H__
+#ifndef __CS_COUPLING_H__
+#define __CS_COUPLING_H__
 
 /*============================================================================
- * Manage messages for Syrthes coupling: sending, receiving and interpolation
+ * Common functionnality for various coupling types.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -37,15 +37,13 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <fvm_coupling.h>
+
 /*----------------------------------------------------------------------------
- * Local headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
@@ -55,75 +53,56 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro Definitions
- *============================================================================*/
-
-/*=============================================================================
- * Local Structure Definitions
+ * Macro definitions
  *============================================================================*/
 
 /*============================================================================
- *  Global variables
+ * Type definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Global variable definitions
  *============================================================================*/
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
+#if defined(_CS_HAVE_MPI)
+
 /*----------------------------------------------------------------------------
- * Check if Syrthes coupling continues or if we must finalize communications.
+ * Discover other applications in the same MPI root communicator.
  *
  * parameters:
- *   is_end     --> "end" message indicator
- *   nt_cur_abs <-- current iteration number
- *   nt_max_abs <-> maximum iteration number
+ *   app_num  <-- application number for this instance of Code_Saturne (>= 0)
+ *   app_name <-- optional name of this instance of Code_Saturne, or NULL.
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_messages_test_iter(int  *is_end,
-                           int   nt_cur_abs,
-                           int  *nt_max_abs);
+cs_coupling_discover_mpi_apps(int          app_num,
+                              const char  *app_name);
 
 /*----------------------------------------------------------------------------
- * Synchronize new time step
- *
- * parameters:
- *   nt_cur_abs <-- current iteration number
- *   nt_max_abs --> maximum iteration number
+ * Finalize MPI coupling helper structures.
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_messages_new_time_step(int  nt_cur_abs,
-                               int  nt_max_abs);
+cs_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Receive coupling variables from Syrthes
+ * Return info on other applications in the same MPI root communicator.
  *
- * parameters:
- *   syr_num <-- Syrthes 3 coupling number
- *   twall   --> wall temperature
+ * returns:
+ *   info on other applications structure.
  *----------------------------------------------------------------------------*/
 
-void
-cs_syr3_messages_recv_twall(cs_int_t   syr_num,
-                            cs_real_t  twall[]);
+const fvm_coupling_mpi_world_t *
+cs_coupling_get_mpi_apps(void);
 
-/*----------------------------------------------------------------------------
- * Send coupling variables to Syrthes
- *
- * parameters:
- *   syr_num <-- Syrthes 3 coupling number
- *   tfluid  <-- wall exchange coefficient
- *   hwall   <-- wall exchange coefficient
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_messages_send_tf_hwall(cs_int_t   syr_num,
-                               cs_real_t  tfluid[],
-                               cs_real_t  hwall[]);
+#endif /* _CS_HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_SYR3_MESSAGES_H__ */
+#endif /* __CS_COUPLING_H__ */

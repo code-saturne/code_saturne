@@ -215,7 +215,7 @@ C
 C     ===========
 C
       IF (NBRSYR .GT. 0) THEN
-        CALL GEOSYR(NBRSYR)
+        CALL GEOSYR
 C       ===========
         IF (ICHRSY.GT.0) THEN
           CALL PSTISY

@@ -29,15 +29,11 @@
 #define __CS_SYR3_COMM_H__
 
 /*============================================================================
- *  Communications avec d'autres codes (Syrthes)
+ * Communication with SYRTHES 3
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
@@ -47,195 +43,172 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Définitions d'énumerations
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *  Type de message
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_SYR3_COMM_TYPE_NONE,        /* Pas de communication (pré-initialisation) */
-  CS_SYR3_COMM_TYPE_MPI,         /* Messages MPI                              */
-  CS_SYR3_COMM_TYPE_SOCKET       /* Messages par sockets IP                   */
-
-} cs_syr3_comm_type_t;
-
-
-/*----------------------------------------------------------------------------
- *  Emission ou réception de message
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_SYR3_COMM_MODE_RECEPTION,   /* Communication en réception                */
-  CS_SYR3_COMM_MODE_EMISSION     /* Communication en émission                 */
-
-} cs_syr3_comm_mode_t;
-
-
-/*============================================================================
- *  Définition de macros
+ * Macro definitions
  *============================================================================*/
 
 #define CS_SYR3_COMM_FIN_FICHIER                           "EOF"
-#define CS_SYR3_COMM_CMD_ARRET                        "cmd:stop"
-#define CS_SYR3_COMM_CMD_ITER_DEB                 "cmd:iter:deb"
-#define CS_SYR3_COMM_CMD_ITER_DEB_FIN         "cmd:iter:deb:fin"
 
-#define CS_SYR3_COMM_LNG_NOM_RUB       32   /* Longueur du nom d'une rubrique */
+#define CS_SYR3_COMM_H_LEN       32   /* Length of a header name */
 
-/*
- * Communications par socket : on prévoit pour l'instant 8 codes couplés
-                               au maximum ; cette valeur peut être modifiée
-                               par la variable d'environnement
-                               CS_SYR3_COMM_SOCKET_NBR_MAX
-*/
-
+/* Socket communications: we suppose a maximum of 8 coupled SYRTHES instances;
+   this value may be modified through the CS_SYR3_COMM_SOCKET_NBR_MAX
+   environment variable */
 
 /*============================================================================
- *  Déclaration de structures
+ * Type definitions
  *============================================================================*/
 
-/*
-  Pointeur associé à un communicateur. La structure elle-même est déclarée
-  dans le fichier "cs_comm.c", car elle n'est pas nécessaire ailleurs.
-*/
+/*----------------------------------------------------------------------------
+ * Message type
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_SYR3_COMM_TYPE_NONE,     /* No communication (pre-initialization) */
+  CS_SYR3_COMM_TYPE_MPI,      /* MPI messages */
+  CS_SYR3_COMM_TYPE_SOCKET    /* IP sockets */
+
+} cs_syr3_comm_type_t;
+
+/*----------------------------------------------------------------------------
+ * Send or receive a message
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_SYR3_COMM_MODE_RECEPTION,   /* Receive  */
+  CS_SYR3_COMM_MODE_EMISSION     /* Send */
+
+} cs_syr3_comm_mode_t;
+
+/* Pointer associated with an opaque communicator structure. */
 
 typedef struct _cs_syr3_comm_t cs_syr3_comm_t;
 
-
-/*
-  Structure de sauvegarde des données d'une entête de message, permettant de
-  simplifier le passage de ces données à différentes fonctions de traitement.
-*/
+/* Structure used to save message header data, to simplify its use. */
 
 typedef struct {
 
-  cs_int_t   num_rub;                          /* Numéro de rubrique associée */
-  char       nom_rub[CS_SYR3_COMM_LNG_NOM_RUB + 1]; /* Nom si num_rub = 0     */
-  cs_int_t   nbr_elt;                          /* Nombre d'éléments           */
-  cs_type_t  typ_elt;                          /* Type si nbr_elt > 0         */
+  char       nom_rub[CS_SYR3_COMM_H_LEN + 1];
+  cs_int_t   nbr_elt;
+  cs_type_t  typ_elt;
 
 } cs_syr3_comm_msg_entete_t;
 
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
 
 /*=============================================================================
- * Définitions de variables globales
- *============================================================================*/
-
-
-/*============================================================================
- *  Prototypes de fonctions publiques
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise une communication
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_t * cs_syr3_comm_initialise
-(
- const char          *const nom_emetteur,   /* --> partie "émetteur" du nom   */
- const char          *const nom_recepteur,  /* --> partie "recepteur du nom   */
- const char          *const chaine_magique, /* --> Chaîne de vérif. de type   */
- const cs_int_t             numero,         /* --> Complète le nom si non nul */
-#if defined(_CS_HAVE_MPI)
- const cs_int_t             rang_proc,      /* --> Rang processus en comm
-                                                    (< 0 si comm par fichier) */
-#endif
- const cs_syr3_comm_mode_t  mode,           /* --> Émission ou réception      */
- const cs_syr3_comm_type_t  type,           /* --> Type de communication      */
- const cs_int_t             echo            /* --> Écho sur sortie principale
-                                                    (< 0 si aucun, entête si 0,
-                                                    n premiers et derniers
-                                                    éléments si n)            */
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui termine une communication
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_t * cs_syr3_comm_termine
-(
- cs_syr3_comm_t *comm
-);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie un pointeur sur le nom d'une communication
- *----------------------------------------------------------------------------*/
-
-const char * cs_syr3_comm_ret_nom
-(
- const cs_syr3_comm_t  *const comm
-);
-
-
-/*----------------------------------------------------------------------------
- *  Envoi d'un message
- *----------------------------------------------------------------------------*/
-
-void cs_syr3_comm_envoie_message
-(
- const cs_int_t          num_rub,           /* --> Num. rubrique associée     */
- const char              nom_rub[CS_SYR3_COMM_LNG_NOM_RUB], /* Si num_rub = 0 */
- const cs_int_t          nbr_elt,           /* --> Nombre d'éléments          */
- const cs_type_t         typ_elt,           /* --> Type si nbr_elt > 0        */
-       void       *const elt,               /* --> Éléments si nbr_elt > 0    */
- const cs_syr3_comm_t  *const comm
-);
-
-
-/*----------------------------------------------------------------------------
- *  Réception de l'entete d'un message ; renvoie le nombre d'éléments du
- *  corps du message.
- *----------------------------------------------------------------------------*/
-
-cs_int_t cs_syr3_comm_recoit_entete
-(
-       cs_syr3_comm_msg_entete_t  *const entete,  /* entête du message        */
- const cs_syr3_comm_t             *const comm
-);
-
-
-/*----------------------------------------------------------------------------
- *  Réception du corps d'un message.
+ * Function initializing a communication
  *
- *  Si la zone mémoire destinée à recevoir les données existe deja, on
- *  fournit un pointeur "elt" sur cette zone ; la fonction renvoie alors
- *  ce même pointeur. Sinon (si "elt" est à NULL), la mémoire est allouée
- *  ici, et la fonction renvoie un pointeur sur cette zone.
+ * parameters:
+ *   numero,       <-- coupling number
+ *   rang_proc,    <-- communicating process rank (< 0 if using sockets)
+ *   mode,         <-- send or receive
+ *   type,         <-- communication type
+ *   echo          <-- echo on main output (< 0 if none, header if 0,
+ *                     n first and last elements if n)
+ *
+ * returns:
+ *   pointer to communication structure
  *----------------------------------------------------------------------------*/
 
-void * cs_syr3_comm_recoit_corps
-(
- const cs_syr3_comm_msg_entete_t  *const entete, /* entête du message         */
-       void                       *const elt,    /* Pointeur sur les éléments */
- const cs_syr3_comm_t             *const comm
-);
+cs_syr3_comm_t *
+cs_syr3_comm_initialise(const cs_int_t             numero,
+#if defined(_CS_HAVE_MPI)
+                        const cs_int_t             rang_proc,
+#endif
+                        const cs_syr3_comm_mode_t  mode,
+                        const cs_syr3_comm_type_t  type,
+                        const cs_int_t             echo);
 
+/*----------------------------------------------------------------------------
+ * Function finalizing a communication
+ *----------------------------------------------------------------------------*/
+
+cs_syr3_comm_t *
+cs_syr3_comm_termine(cs_syr3_comm_t *comm);
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to a communicator name
+ *
+ * parameters:
+ *   comm <-- communicator
+ *
+ * returns:
+ *   pointer to communicator name
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_syr3_comm_ret_nom(const cs_syr3_comm_t  *comm);
+
+/*----------------------------------------------------------------------------
+ * Send message
+ *
+ * parameters:
+ *   nom_rub <-- section name
+ *   nbr_elt <-- number of elemeents
+ *   typ_elt <-- element type if nbr_elt > 0
+ *   elt     <-- elements if nbr_elt > 0
+ *   comm    <-- communicator
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
+                            cs_int_t               nbr_elt,
+                            cs_type_t              typ_elt,
+                            void                  *elt,
+                            const cs_syr3_comm_t  *comm);
+
+/*----------------------------------------------------------------------------
+ * Receive message header
+ *
+ * parameters:
+ *   entete --> message header
+ *   comm   <-- communicator
+ *
+ * returns
+ *   number of elements in message body
+ *----------------------------------------------------------------------------*/
+
+cs_int_t
+cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
+                           const cs_syr3_comm_t       *comm);
+
+/*----------------------------------------------------------------------------
+ * Receive a message body
+ *
+ * parameters:
+ *   entete <-- message header
+ *   elt    --> received body values
+ *   comm   <-- communicator
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr3_comm_recoit_corps(const cs_syr3_comm_msg_entete_t  *entete,
+                          void                             *elt,
+                          const cs_syr3_comm_t             *comm);
 
 #if defined(_CS_HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ouvre un "socket" IP pour préparer ce mode de communication
+ * Open an IP socket to prepare for this communication mode
  *----------------------------------------------------------------------------*/
 
-void cs_syr3_comm_init_socket
-(
- void
-);
+void
+cs_syr3_comm_init_socket(void);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ferme le "socket" IP avec ce mode de communication
+ * Close an IP socket associated with this communication mode
  *----------------------------------------------------------------------------*/
 
-void cs_syr3_comm_termine_socket
-(
- void
-);
+void
+cs_syr3_comm_termine_socket(void);
 
 #endif /* _CS_HAVE_SOCKET */
 

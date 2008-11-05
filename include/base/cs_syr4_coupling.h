@@ -25,11 +25,11 @@
  *
  *============================================================================*/
 
-#ifndef __CS_SYR3_COUPLING_H__
-#define __CS_SYR3_COUPLING_H__
+#ifndef __CS_SYR4_COUPLING_H__
+#define __CS_SYR4_COUPLING_H__
 
 /*============================================================================
- * Syrthes 3 coupling
+ * Syrthes 4 coupling
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -44,14 +44,11 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_defs.h>
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_syr3_comm.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,10 +64,14 @@ BEGIN_C_DECLS
 
 /* Structure associated to Syrthes coupling */
 
-typedef struct _cs_syr3_coupling_t  cs_syr3_coupling_t;
+typedef struct _cs_syr4_coupling_t  cs_syr4_coupling_t;
 
 /*============================================================================
  *  Global variables definition
+ *============================================================================*/
+
+/*============================================================================
+ *  Public function prototypes for Fortran API
  *============================================================================*/
 
 /*============================================================================
@@ -85,7 +86,7 @@ typedef struct _cs_syr3_coupling_t  cs_syr3_coupling_t;
  *----------------------------------------------------------------------------*/
 
 int
-cs_syr3_coupling_n_couplings(void);
+cs_syr4_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------
  * Get pointer to SYRTHES coupling.
@@ -97,60 +98,87 @@ cs_syr3_coupling_n_couplings(void);
  *   pointer to SYRTHES coupling structure
  *----------------------------------------------------------------------------*/
 
-cs_syr3_coupling_t *
-cs_syr3_coupling_by_id(int coupling_id);
+cs_syr4_coupling_t *
+cs_syr4_coupling_by_id(cs_int_t coupling_id);
 
 /*----------------------------------------------------------------------------
- * Get communicator type associated with SYRTHES coupling
+ * Create a syr4_coupling_t structure.
+ *
+ * parameters:
+ *   dim                <-- spatial mesh dimension
+ *   ref_axis           <-- reference axis
+ *   face_sel_criterion <-- criterion for selection of boundary faces
+ *   cell_sel_criterion <-- criterion for selection of cells
+ *   app_num            <-- SYRTHES application number, or -1
+ *   app_name           <-- SYRTHES application name, or NULL
+ *   verbosity          <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_add(fvm_lnum_t   dim,
+                     fvm_lnum_t   ref_axis,
+                     const char  *face_sel_criterion,
+                     const char  *cell_sel_criterion,
+                     int          app_num,
+                     const char  *app_name,
+                     int          verbosity);
+
+/*----------------------------------------------------------------------------
+ * Destroy cs_syr4_coupling_t structures
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_all_destroy(void);
+
+/*----------------------------------------------------------------------------
+ * Initialize communicator for SYRTHES coupling
+ *
+ * parameters:
+ *   syr_coupling  <-> Syrthes coupling structure
+ *   syr_root_rank <-- SYRTHES root rank
+ *   n_syr_ranks   <-- Number of ranks associated with SYRTHES
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
+                           int                 syr_root_rank,
+                           int                 n_syr_ranks);
+
+/*----------------------------------------------------------------------------
+ * Check if SYRTHES coupling continues or if we must finalize communications.
+ *
+ * parameters:
+ *   is_end     --> "end" message indicator
+ *   nt_cur_abs <-- current iteration number
+ *   nt_max_abs <-> maximum iteration number
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_test_iter(int  *is_end,
+                           int   nt_cur_abs,
+                           int  *nt_max_abs);
+
+/*----------------------------------------------------------------------------
+ * Synchronize new time step
+ *
+ * parameters:
+ *   nt_cur_abs <-- current iteration number
+ *   nt_max_abs --> maximum iteration number
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_new_time_step(int  nt_cur_abs,
+                               int  nt_max_abs);
+
+/*----------------------------------------------------------------------------
+ * Define coupled mesh and send it to SYRTHES
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
- *
- * returns:
- *   communicator type
  *----------------------------------------------------------------------------*/
 
-cs_syr3_comm_type_t
-cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t  *syr_coupling);
-
-/*----------------------------------------------------------------------------
- * Get sending communicator associated with SYRTHES coupling
- *
- * parameters:
- *   syr_coupling <-- coupling structure associated with SYRTHES
- *
- * returns:
- *   pointer to send communicator
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_t *
-cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t  *syr_coupling);
-
-/*----------------------------------------------------------------------------
- * Get receiving communicator associated with SYRTHES coupling
- *
- * parameters:
- *   syr_coupling <-- coupling structure associated with SYRTHES
- *
- * returns:
- *   pointer to receive communicator
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_t *
-cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t  *syr_coupling);
-
-/*----------------------------------------------------------------------------
- * Get number of vertices in coupled mesh
- *
- * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *
- * returns:
- *   number of vertices in coupled mesh
- *----------------------------------------------------------------------------*/
-
-fvm_lnum_t
-cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t  *syr_coupling);
+void
+cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
  * Get number of associated coupled faces in main mesh
@@ -163,10 +191,10 @@ cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t  *syr_coupling);
  *----------------------------------------------------------------------------*/
 
 fvm_lnum_t
-cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t  *syr_coupling);
+cs_syr4_coupling_get_n_faces(const cs_syr4_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
- * Get local list of coupled faces
+ * Get local numbering of coupled faces
  *
  * parameters:
  *   syr_coupling    <-- SYRTHES coupling structure
@@ -174,124 +202,49 @@ cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t  *syr_coupling);
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
-                               fvm_lnum_t                 coupl_face_list[]);
+cs_syr4_coupling_get_face_list(const cs_syr4_coupling_t  *syr_coupling,
+                               cs_int_t                   coupl_face_list[]);
 
 /*----------------------------------------------------------------------------
- * Create a syr3_coupling_t structure.
- *
- * parameters:
- *   dim                <-- spatial mesh dimension
- *   ref_axis           <-- reference axis
- *   face_sel_criterion <-- criterion for selection of boundary faces
- *   syr_num            <-- SYRTHES number
- *   syr_proc_rank      <-- syrthes process rank for MPI
- *   comm_type          <-- communicator type
- *   verbosity          <-- verbosity level
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_add(int                 dim,
-                     int                 ref_axis,
-                     const char         *face_sel_criterion,
-                     int                 syr_num,
-                     int                 syr_proc_rank,
-                     cs_syr3_comm_type_t comm_type,
-                     int                 verbosity);
-
-/*----------------------------------------------------------------------------
- * Initialize communicator for Syrthes coupling
- *
- * parameters:
- *   syr_coupling     <-- SYRTHES coupling structure
- *   syr_id           <-- SYRTHRS coupling id
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_init_comm(cs_syr3_coupling_t  *syr_coupling,
-                           int                  syr_id);
-
-/*----------------------------------------------------------------------------
- * Destroy cs_syr3_coupling_t structures
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_all_destroy(void);
-
-/*----------------------------------------------------------------------------
- * Define coupled mesh and send it to SYRTHES
+ * Receive coupling variables from SYRTHES
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
+ *   twall        --> wall temperature
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling);
+cs_syr4_coupling_recv_twall(cs_syr4_coupling_t *syr_coupling,
+                            cs_real_t           twall[]);
 
 /*----------------------------------------------------------------------------
- * Interpolate a vertex field to an element-centered field
+ * Send coupling variables to SYRTHES
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
- *   vtx_values   <-- values defined on vertices
- *   elt_values   <-> values defined on elements
+ *   tf           <-- fluid temperature
+ *   hwall        <-- wall heat exchange coefficient (numerical, not physical)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
-                            const cs_real_t           *vtx_values,
-                            cs_real_t                 *elt_values);
+cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t *syr_coupling,
+                               cs_real_t           tf[],
+                               cs_real_t           hwall[]);
 
 /*----------------------------------------------------------------------------
- * Interpolate an element-centered field to a vertex field.
- *
- * The size of vtx_values array must be twice the number of vertices.
- * The first half gets values and the second half is used as a working array.
- * The two parts must be contiguous in parallel mode for MPI transfers.
+ * Initialize post-processing of a SYRTHES coupling
  *
  * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *   elt_values   <-> array of values defined on elements
- *   n_vtx_values <-- number of values defined on vertices
- *   vtx_values   <-> array of values defined on vertices
+ *   coupling_id --> Id of SYRTHES coupling
+ *   writer_id   --> Id of associated writer
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
-                            const cs_real_t           *elt_values,
-                            fvm_lnum_t                 n_vertices,
-                            cs_real_t                 *vtx_values);
-
-/*----------------------------------------------------------------------------
- * Initialize post-processing of a Syrthes coupling
- *
- * parameters:
- *   coupling_id <--  Id of SYRTHES coupling
- *   writer_id   <--  Id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_post_init(int       coupling_id,
+cs_syr4_coupling_post_init(int       coupling_id,
                            cs_int_t  writer_id);
-
-/*----------------------------------------------------------------------------
- * Update post-processing variables of a Syrthes coupling
- *
- * parameters:
- *   syr_coupling <-- SYRTHES coupling structure
- *   step         <-- 0: var = wall temperature
- *                    1: var = fluid temperature
- *                    2: var = exchange coefficient
- *   var          <-- Pointer to variable values
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_post_var_update(cs_syr3_coupling_t *syr_coupling,
-                                 int                 step,
-                                 const cs_real_t    *var);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_SYR3_COUPLING_H__ */
+#endif /* __CS_SYR4_COUPLING_H__ */

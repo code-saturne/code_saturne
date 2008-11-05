@@ -355,21 +355,22 @@ void CS_PROCF (rasize, RASIZE)
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Initialize MPI.
+ * Complete MPI initialization.
  *
  * Global variables `cs_glob_base_nbr' (number of Code_Saturne processes)
  * and `cs_glob_base_rang' (rank of local process) are set by this function.
  *
  * parameters:
- *   argc     <-- pointer to number of command line arguments.
- *   argv     <-- pointer to command line arguments array.
- *   rang_deb <-- rank of the first process of this group in MPI_COMM_WORLD.
+ *   argc    <-- pointer to number of command line arguments.
+ *   argv    <-- pointer to command line arguments array.
+ *   app_num <-- -1 if MPI is not needed, or application number in
+ *               MPI_COMM_WORLD of this instance of Code_Saturne.
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_mpi_init(int     *argc,
                  char  ***argv,
-                 int      rang_deb);
+                 int      app_num);
 
 #endif /* defined(_CS_HAVE_MPI) */
 

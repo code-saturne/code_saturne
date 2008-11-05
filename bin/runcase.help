@@ -115,12 +115,8 @@ When periodicity applies, COMMAND_PERIO is used by the preprocessor,
                -------------------------------
 
 If coupling with SYRTHES applies, (only one fluid simulation coupled
-  with only one solid simulation), the variable COMMAND_SYRTHES
-  is used. When there is no coupling, COMMAND_SYRTHES is left empty.
-  In the following example, the fluid boundary faces of color 2 and 3
-    are coupled:
-
-    COMMAND_SYRTHES="-syrthes -color 2 3"
+  with only one solid simulation), the necessary information is determined
+  automatically by inspecting the user subroutines.
 
   For more complex (multiple) couplings, the script will have to be changed.
 

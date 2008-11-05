@@ -192,10 +192,6 @@ int  cs_glob_mpe_compute_b = 0;
 #endif
 
 /*============================================================================
- * Prototypes of Fortran functions associated with log printing
- *============================================================================*/
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -843,21 +839,26 @@ void CS_PROCF (rasize, RASIZE)
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- *  Initialisation MPI ; les variables globales `cs_glob_base_nbr' indiquant
- *  le nombre de processus Code_Saturne et `cs_glob_base_rang' indiquant le
- *  rang du processus courant parmi les processus Code_Saturne sont
- *  (re)positionnées par cette fonction.
+ * Complete MPI initialization.
+ *
+ * Global variables `cs_glob_base_nbr' (number of Code_Saturne processes)
+ * and `cs_glob_base_rang' (rank of local process) are set by this function.
+ *
+ * parameters:
+ *   argc    <-- pointer to number of command line arguments.
+ *   argv    <-- pointer to command line arguments array.
+ *   app_num <-- -1 if MPI is not needed, or application number in
+ *               MPI_COMM_WORLD of this instance of Code_Saturne.
  *----------------------------------------------------------------------------*/
 
-void cs_base_mpi_init
-(
- int      *argc,          /* --> Nombre d'arguments ligne de commandes        */
- char   ***argv,          /* --> Tableau des arguments ligne de commandes     */
- int       rang_deb       /* --> Rang du premier processus du groupe
-                           *     dans MPI_COMM_WORLD                          */
-)
+void
+cs_base_mpi_init(int     *argc,
+                 char  ***argv,
+                 int      app_num)
 {
   int flag, nbr, rank;
+
+  int app_num_l = app_num, app_num_max = -1;
 
 #if defined(DEBUG) || !defined(NDEBUG)
   MPI_Errhandler errhandler;
@@ -868,19 +869,23 @@ void cs_base_mpi_init
     MPI_Init(argc, argv);
 
   /*
-    Création si nécessaire d'un groupe interne au noyau et éventuellement
-    de groupes internes à d'autres processus reliés (opération collective,
-    comme toute opération de création de communicateur MPI).
+    If necessary, split MPI_COMM_WORLD to separate different coupled
+    applications (collective operation, like all MPI communicator
+    creation operations).
 
-    On suppose que le deuxième argument de MPI_Comm_split (la couleur) est
-    égal au rang du premier processus de ce communicateur dans MPI_COMM_WORLD
-    (et que ses membres sont contigus dans MPI_COMM_WORLD).
+    We suppose the color argument to MPI_Comm_split is equal to the
+    application number, given through the command line or through
+    mpiexec and passed here as an argument.
   */
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  MPI_Comm_split(MPI_COMM_WORLD, rang_deb, rank - rang_deb + 1,
-                 &cs_glob_base_mpi_comm);
+  MPI_Allreduce(&app_num_l, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  if (app_num_max > 0)
+    MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_base_mpi_comm);
+  else
+    cs_glob_base_mpi_comm = MPI_COMM_WORLD;
 
   MPI_Comm_size(cs_glob_base_mpi_comm, &nbr);
   MPI_Comm_rank(cs_glob_base_mpi_comm, &rank);
@@ -890,19 +895,9 @@ void cs_base_mpi_init
   if (cs_glob_base_nbr > 1)
     cs_glob_base_rang = rank;
 
-  /* Si l'on n'a besoin que de MPI_COMM_WORLD, il est préférable de
-     n'utiliser que ce communicateur (potentillement mieux optimisé
-     sous certaines architectures) */
-
-  MPI_Comm_size(MPI_COMM_WORLD, &nbr);
-
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_base_nbr == 1 && app_num_max > 0) {
     MPI_Comm_free(&cs_glob_base_mpi_comm);
     cs_glob_base_mpi_comm = MPI_COMM_NULL;
-  }
-  else if (nbr == cs_glob_base_nbr) {
-    MPI_Comm_free(&cs_glob_base_mpi_comm);
-    cs_glob_base_mpi_comm = MPI_COMM_WORLD;
   }
 
   /* Initialize associated libraries */

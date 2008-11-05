@@ -594,6 +594,9 @@ privmodlink:
 	 fi ;\
 	 fvm_config="$(FVM_HOME)/bin/fvm-config" ;\
 	 librariessup="$(FVM_LDFLAGS)" ;\
+	 if [ "${MPI}" -eq "1" ] ;\
+	   then librariessup="$${librariessup} -lfvm_coupl" ;\
+	 fi ;\
 	 librariessup="$${librariessup} $(BFT_LDFLAGS)" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --ldflags cgns`" ;\
 	 librariessup="$${librariessup} `$${fvm_config} --libs cgns`" ;\

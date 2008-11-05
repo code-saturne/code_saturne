@@ -57,7 +57,6 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_int_t       ifoenv;        /* 0 if not using Preprocessor, 1 otherwise */
-  cs_int_t       echo_comm;     /* Communication verbosity */
 
   /* Redirection of standard output */
 
@@ -109,20 +108,21 @@ cs_opts_logfile_head(int    argc,
                      char  *argv[]);
 
 /*----------------------------------------------------------------------------
- * First analysis of the command line to determine if we require MPI
+ * First analysis of the command line to determine if we require MPI,
+ * and initialization if necessary
  *
  * parameters:
  *   argc  <-> number of command line arguments
  *   argv  <-> array of command line arguments
  *
  * returns:
- *   -1 if MPI is not needed, or rank in MPI_COMM_WORLD of the first
- *   process associated with this instance of Code_Saturne
+ *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
+ *   processes associated with this instance of Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
-cs_opts_mpi_rank(int    * argc,
-                 char  **argv[]);
+cs_opts_mpi_app_num(int    *argc,
+                    char  **argv[]);
 
 /*----------------------------------------------------------------------------
  * Define options and call some associated initializations

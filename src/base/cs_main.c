@@ -62,6 +62,7 @@
 #include "cs_base.h"
 #include "cs_benchmark.h"
 #include "cs_couplage.h"
+#include "cs_coupling.h"
 #include "cs_ecs_messages.h"
 #include "cs_gui.h"
 #include "cs_io.h"
@@ -79,7 +80,7 @@
 #include "cs_renumber.h"
 #include "cs_sles.h"
 #include "cs_suite.h"
-#include "cs_syr3_coupling.h"
+#include "cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -108,7 +109,7 @@ main(int    argc,
 
   cs_opts_t  opts;
 
-  int  root_rank = -1;
+  int  app_num = -1;
   int  _verif = -1;
 
   cs_int_t  *ia = NULL;
@@ -123,9 +124,9 @@ main(int    argc,
      and MPI initialization if it is. */
 
 #if defined(_CS_HAVE_MPI)
-  root_rank = cs_opts_mpi_rank(&argc, &argv);
-  if (root_rank > -1)
-    cs_base_mpi_init(&argc, &argv, root_rank);
+  app_num = cs_opts_mpi_app_num(&argc, &argv);
+  if (app_num > -1)
+    cs_base_mpi_init(&argc, &argv, app_num);
 #endif
 
   /* Default initialization */
@@ -194,7 +195,6 @@ main(int    argc,
   /* Initialize reading of Preprocessor output */
 
   if (opts.ifoenv != 0) {
-
 #if defined(FVM_HAVE_MPI)
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
                                      "Face-based mesh definition, R0",
@@ -209,21 +209,6 @@ main(int    argc,
                                      CS_IO_ECHO_OPEN_CLOSE,
                                      -1);
 #endif
-
-    /* Initialize SYRTHES couplings and communication if necessary */
-
-    if (cs_syr3_coupling_n_couplings() != 0) {
-
-      cs_int_t coupl_id;
-      cs_int_t n_coupl = cs_syr3_coupling_n_couplings();
-
-      for (coupl_id = 0; coupl_id < n_coupl; coupl_id++)
-        cs_syr3_coupling_init_comm(cs_syr3_coupling_by_id(coupl_id),
-                                   coupl_id + 1,
-                                   opts.echo_comm);
-
-    }
-
   }
 
   /* Allocate internal structures for restart files Fortran 77 API */
@@ -237,6 +222,18 @@ main(int    argc,
     _verif = 0;
 
   CS_PROCF(initi1, INITI1)(&_verif);
+
+  /* Discover applications visible through MPI (requires communication);
+     this is done after main calculation initialization so that the user
+     may have the option of assigning a name to this instance. */
+
+#if defined(_CS_HAVE_MPI)
+  cs_coupling_discover_mpi_apps(app_num, NULL);
+#endif
+
+  /* Initialize SYRTHES couplings and communication if necessary */
+
+  cs_syr_coupling_all_init();
 
   if (opts.ifoenv == 0) {
 
@@ -469,9 +466,10 @@ main(int    argc,
 
   /* Free coupling-related data */
 
-  cs_syr3_coupling_all_destroy();
+  cs_syr_coupling_all_finalize();
 #if defined(_CS_HAVE_MPI)
   cs_couplage_detruit_tout();
+  cs_coupling_finalize();
 #endif
 
   /* Free post processing related structures */

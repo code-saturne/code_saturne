@@ -133,15 +133,26 @@ C   une routine specifique d'initialisation des parametres des tests.
         IF (IVERIF.EQ.4) IMRGRA = 3
         IF (IVERIF.EQ.5) IMRGRA = 4
 C
+C
 C=======================================================================
-C 3. MODIFS APRES USINI1
+C 3. DEFINITION DES COUPLAGES AVEC SYRTHES
+C=======================================================================
+C
+C Le nombre de couplage SYRTHES doit etre connu avant MODINI a des fins
+C de verification de coherence avec la definition des scalaires
+C
+      CALL USSYRC
+C     ===========
+C
+C=======================================================================
+C 4. MODIFS APRES USINI1
 C=======================================================================
 C
       CALL MODINI
 C     ===========
 C
 C=======================================================================
-C 4. VERIFS APRES USINI1
+C 5. VERIFS APRES USINI1
 C=======================================================================
 C
       IOK = 0
@@ -211,7 +222,7 @@ C
 #endif
 C
 C=======================================================================
-C 5. IMPRESSIONS
+C 6. IMPRESSIONS
 C=======================================================================
 C
       CALL IMPINI
