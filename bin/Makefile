@@ -285,7 +285,6 @@ privcompil:
 	 if   [ "${BLAS}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(BLAS_INC)" ;\
 	      cflags="$${cflags} $(BLAS_CFLAGS) " ;\
-	      fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_HAVE_BLAS " ;\
 	 fi ; \
 	 if   [ "${XML}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(XML_INC)" ;\

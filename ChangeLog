@@ -11,6 +11,8 @@
 * 07/11/2008 - David Monfort <david.monfort@edf.fr>
   Remove the dependency to BLAS in the Fortran dot products
   because one always provides Fortran wrappers in the C code.
+  modified script:
+    bin/Makefile
   modified routines:
     src/base/prodsc.F
     src/base/prods2.F
