@@ -86,26 +86,16 @@ C
 C
 C VARIABLES LOCALES
 C
-#if defined(_CS_HAVE_BLAS)
       INTEGER INCX, INCY
       DOUBLE PRECISION DDOT
       EXTERNAL         DDOT
-#else
-      INTEGER IEL
-#endif
 C
 C***********************************************************************
 C
-#if defined(_CS_HAVE_BLAS)
       INCX = 1
       INCY = 1
       VAVB = DDOT(NCEL, VA, INCX, VB, INCY)
-#else
-      VAVB = 0.D0
-      DO IEL=1,NCEL
-        VAVB = VAVB +VA(IEL)*VB(IEL)
-      ENDDO
-#endif
+C
       IF (IRANGP.GE.0) CALL PARSOM (VAVB)
 C                      ===========
       IF( ISQRT.EQ.1 ) VAVB= SQRT(VAVB)

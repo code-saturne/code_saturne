@@ -1,4 +1,12 @@
 * 07/11/2008 - David Monfort <david.monfort@edf.fr>
+  Remove the dependency to BLAS in the Fortran dot products
+  because one always provides Fortran wrappers in the C code.
+  modified routines:
+    src/prodsc.F
+    src/prods2.F
+    src/prods3.F
+
+* 07/11/2008 - David Monfort <david.monfort@edf.fr>
   Replace depecrated references to Tcl/Tk/Tix by PyQt ones.
   Update the wrapper around the Graphical User Interface.
   modified files:

@@ -99,32 +99,17 @@ C
       INTEGER NVAVB
       DOUBLE PRECISION VAVB(3)
 C
-#if defined(_CS_HAVE_BLAS)
       INTEGER INCX, INCY
       DOUBLE PRECISION DDOT
       EXTERNAL         DDOT
-#else
-      INTEGER IEL
-#endif
 C
 C***********************************************************************
 C
-#if defined(_CS_HAVE_BLAS)
       INCX = 1
       INCY = 1
       VAVB(1) = DDOT(NCEL, VA1, INCX, VB1, INCY)
       VAVB(2) = DDOT(NCEL, VA2, INCX, VB2, INCY)
       VAVB(3) = DDOT(NCEL, VA3, INCX, VB3, INCY)
-#else
-      VAVB(1) = 0.D0
-      VAVB(2) = 0.D0
-      VAVB(3) = 0.D0
-      DO IEL=1,NCEL
-        VAVB(1) = VAVB(1) + VA1(IEL)*VB1(IEL)
-        VAVB(2) = VAVB(2) + VA2(IEL)*VB2(IEL)
-        VAVB(3) = VAVB(3) + VA3(IEL)*VB3(IEL)
-      ENDDO
-#endif
 C
       IF (IRANGP.GE.0) THEN
         NVAVB = 3
