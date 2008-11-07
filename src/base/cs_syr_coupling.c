@@ -728,6 +728,8 @@ void CS_PROCF(tstsyr, TSTSYR)
  cs_int_t *ntcabs
 )
 {
+  *imsfin = 0;
+
   if (cs_syr3_coupling_n_couplings() > 0) {
     int is_end = *imsfin;
     int nt_max_abs = *ntmabs;
