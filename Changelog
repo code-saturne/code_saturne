@@ -1,3 +1,8 @@
+* 07/11/2008 - David Monfort <david.monfort@edf.fr>
+  Updating the french dictionnary.
+  modified file:
+    po/fr.po
+
 * 05/11/2008 - David Monfort <david.monfort@edf.fr>
   Upgrading to FVM 0.12.0 (fix a bug with MPI/IO) and BFT 1.0.8.
   modified routine:

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-10-30 18:10+0100\n"
+"POT-Creation-Date: 2008-11-07 20:06+0100\n"
 "PO-Revision-Date: 2008-08-22 11:55+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -18,23 +18,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/base/cs_base.c:620
+#: src/base/cs_base.c:615
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:621
+#: src/base/cs_base.c:616
 msgid "Memory reported by C library:            "
 msgstr "Mémoire dynamique d'après la librairie C :"
 
-#: src/base/cs_base.c:622
+#: src/base/cs_base.c:617
 msgid "Memory allocated in heap:                "
 msgstr "Mémoire dynamique dans le tas :           "
 
-#: src/base/cs_base.c:623
+#: src/base/cs_base.c:618
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:627
+#: src/base/cs_base.c:622
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -44,22 +44,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:696
+#: src/base/cs_base.c:691
 #, c-format
 msgid "  %s %12.3f %co\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:701
+#: src/base/cs_base.c:696
 #, c-format
 msgid "                             local minimum: %12.3f %co  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:704
+#: src/base/cs_base.c:699
 #, c-format
 msgid "                             local maximum: %12.3f %co  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:740
+#: src/base/cs_base.c:735
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -67,7 +67,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:754
+#: src/base/cs_base.c:749
 #, c-format
 msgid ""
 "\n"
@@ -76,12 +76,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:756
+#: src/base/cs_base.c:751
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:761
+#: src/base/cs_base.c:756
 #, c-format
 msgid ""
 "\n"
@@ -90,12 +90,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:770
+#: src/base/cs_base.c:765
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:782
+#: src/base/cs_base.c:777
 #, c-format
 msgid ""
 "\n"
@@ -104,44 +104,44 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:785
+#: src/base/cs_base.c:780
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:894
+#: src/base/cs_base.c:889
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:896
+#: src/base/cs_base.c:891
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:898
+#: src/base/cs_base.c:893
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:899
+#: src/base/cs_base.c:894
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:900
+#: src/base/cs_base.c:895
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:902
+#: src/base/cs_base.c:897
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:903
+#: src/base/cs_base.c:898
 msgid "User:                "
 msgstr "Utilisateur :        "
 
-#: src/base/cs_base.c:904
+#: src/base/cs_base.c:899
 msgid "Directory:           "
 msgstr "Répertoire :         "
 
-#: src/base/cs_base.c:938
+#: src/base/cs_base.c:933
 #, c-format
 msgid ""
 "\n"
@@ -152,7 +152,7 @@ msgstr ""
 "\n"
 "Code_Saturne : %s:%d : Avertissement\n"
 
-#: src/base/cs_base.c:1067 src/base/cs_base.c:1192
+#: src/base/cs_base.c:1062 src/base/cs_base.c:1187
 #, c-format
 msgid ""
 "\n"
@@ -161,7 +161,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:1194
+#: src/base/cs_base.c:1189
 #, c-format
 msgid ""
 "\n"
@@ -172,7 +172,7 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:1245
+#: src/base/cs_base.c:1240
 msgid ""
 "\n"
 "Call stack:\n"
@@ -180,7 +180,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:1273
+#: src/base/cs_base.c:1268
 msgid ""
 "End of stack\n"
 "\n"
@@ -188,7 +188,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:1291
+#: src/base/cs_base.c:1286
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -196,7 +196,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:1297
+#: src/base/cs_base.c:1292
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -204,7 +204,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:1302
+#: src/base/cs_base.c:1297
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -212,24 +212,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:1307
+#: src/base/cs_base.c:1302
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:1312
+#: src/base/cs_base.c:1307
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:1318
+#: src/base/cs_base.c:1313
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:1324
+#: src/base/cs_base.c:1319
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:1404
+#: src/base/cs_base.c:1399
 #, c-format
 msgid ""
 "\n"
@@ -240,7 +240,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:1407
+#: src/base/cs_base.c:1402
 #, c-format
 msgid ""
 "\n"
