@@ -1,3 +1,10 @@
+* 07/11/2008 - David Monfort <david.monfort@edf.fr>
+  Replace depecrated references to Tcl/Tk/Tix by PyQt ones.
+  Update the wrapper around the Graphical User Interface.
+  modified files:
+    COMPATIBILITY
+    bin/SaturneGUI
+
 * 05/11/2008 - David Monfort <david.monfort@edf.fr>
   Always set the head loss tensor to be a full symmetric tensor
   in order to ease the setup within the Graphical User Interface
