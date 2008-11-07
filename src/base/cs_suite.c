@@ -1632,12 +1632,13 @@ cs_int_t cs_suite_lit_rub
        void        *val                        /* <-- Valeurs à lire          */
 )
 {
-  cs_int_t     nbr_val_tot, n_glob_ents, n_ents;
+  cs_int_t   n_glob_ents, n_ents;
   const fvm_gnum_t  *ent_global_num;
 
   size_t rec_id;
   cs_io_sec_header_t header;
 
+  cs_int_t _n_location_vals = n_location_vals;
   size_t index_size = 0;
 
   index_size = cs_io_get_index_size(suite->fh);
@@ -1647,8 +1648,9 @@ cs_int_t cs_suite_lit_rub
   /* Check associated location */
 
   if (location_id == 0) {
-    n_glob_ents = nbr_val_tot/n_location_vals;
-    n_ents  = nbr_val_tot/n_location_vals;
+    n_glob_ents = n_location_vals;
+    n_ents  = n_location_vals;
+    _n_location_vals = 1;
     ent_global_num = NULL;
   }
 
@@ -1701,7 +1703,9 @@ cs_int_t cs_suite_lit_rub
 
   /* If the number of values per location does not match */
 
-  if (header.n_location_vals != (size_t)n_location_vals)
+  if (   (   header.location_id > 0
+          && header.n_location_vals != (size_t)n_location_vals)
+      || header.n_vals != n_ents)
     return CS_SUITE_ERR_NBR_VAL;
 
   /* If the type of value does not match */
@@ -1729,10 +1733,6 @@ cs_int_t cs_suite_lit_rub
   /* Contenu de la rubrique */
   /*------------------------*/
 
-  nbr_val_tot = _compute_n_ents(suite,
-                                location_id,
-                                n_location_vals);
-
   /* In single processor mode or for global values */
 
   if (cs_glob_base_nbr == 1 || location_id == 0) {
@@ -1742,7 +1742,7 @@ cs_int_t cs_suite_lit_rub
     if (ent_global_num != NULL)
       _restart_permute_read(n_ents,
                             ent_global_num,
-                            n_location_vals,
+                            _n_location_vals,
                             typ_val,
                             val);
   }
@@ -1755,7 +1755,7 @@ cs_int_t cs_suite_lit_rub
 
     cs_int_t  n_blocks;
 
-    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * n_location_vals) - 1)
+    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * _n_location_vals) - 1)
                 / cs_suite_taille_buf_def) + 1;
     if (n_blocks > cs_glob_base_nbr)
       n_blocks = cs_glob_base_nbr;
@@ -1768,7 +1768,7 @@ cs_int_t cs_suite_lit_rub
                      n_glob_ents,
                      n_ents,
                      ent_global_num,
-                     n_location_vals,
+                     _n_location_vals,
                      typ_val,
                      (cs_byte_t *)val);
 
@@ -1798,10 +1798,11 @@ void cs_suite_ecr_rub
 {
 
   cs_int_t         n_tot_vals, n_glob_ents, n_ents;
-
   fvm_datatype_t   elt_type;
 
   const fvm_gnum_t  *ent_global_num;
+
+  cs_int_t _n_location_vals = n_location_vals;
 
   assert(suite != NULL);
 
@@ -1810,8 +1811,9 @@ void cs_suite_ecr_rub
   /* Check associated location */
 
   if (location_id == 0) {
-    n_glob_ents = n_tot_vals/n_location_vals;
-    n_ents  = n_tot_vals/n_location_vals;
+    n_glob_ents = n_location_vals;
+    n_ents  = n_location_vals;
+    _n_location_vals = 1;
     ent_global_num = NULL;
   }
 
@@ -1859,7 +1861,7 @@ void cs_suite_ecr_rub
     if (ent_global_num != NULL)
       val_tmp = _restart_permute_write(n_ents,
                                        ent_global_num,
-                                       n_location_vals,
+                                       _n_location_vals,
                                        typ_val,
                                        val);
 
@@ -1867,7 +1869,7 @@ void cs_suite_ecr_rub
                        n_tot_vals,
                        location_id,
                        0,
-                       n_location_vals,
+                       _n_location_vals,
                        elt_type,
                        (val_tmp != NULL) ? val_tmp : val,
                        suite->fh);
@@ -1884,7 +1886,7 @@ void cs_suite_ecr_rub
 
     cs_int_t  n_blocks;
 
-    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * n_location_vals) - 1)
+    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * _n_location_vals) - 1)
                 / cs_suite_taille_buf_def) + 1;
     if (n_blocks > cs_glob_base_nbr)
       n_blocks = cs_glob_base_nbr;
@@ -1898,7 +1900,7 @@ void cs_suite_ecr_rub
                       n_ents,
                       ent_global_num,
                       location_id,
-                      n_location_vals,
+                      _n_location_vals,
                       typ_val,
                       (const cs_byte_t *)val);
 
