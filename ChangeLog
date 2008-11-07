@@ -1,3 +1,8 @@
+* 07/11/2008 - David Monfort <david.monfort@edf.fr>
+  Updating the french dictionnary.
+  modified file:
+    po/fr.po
+
 * 07/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Bug correction in the restart file reading.
   modified routine:
