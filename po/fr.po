@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-05 19:43+0100\n"
+"POT-Creation-Date: 2008-11-13 10:45+0100\n"
 "PO-Revision-Date: 2008-11-07 20:04+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3059,7 +3059,7 @@ msgstr ""
 "Le fichier suite \"%s\" déclare un support numéro %d\n"
 "alors qu'aucun support numéro %d n'a été déclaré."
 
-#: src/base/cs_suite.c:732 src/base/cs_suite.c:1087
+#: src/base/cs_suite.c:732 src/base/cs_suite.c:1085
 #, c-format
 msgid ""
 "Restart file number <%d> can not be closed\n"
@@ -3086,7 +3086,7 @@ msgstr ""
 "Le type de valeur <%d> indiqué pour une rubrique de\n"
 "fichier suite est invalide pour l'interface Fortran."
 
-#: src/base/cs_suite.c:1005
+#: src/base/cs_suite.c:1003
 #, c-format
 msgid ""
 "The access mode of the restart file <%s>\n"
@@ -3095,7 +3095,7 @@ msgstr ""
 "Le mode d'ouverture du fichier suite <%s>\n"
 "doit être égal à 1 (lecture) ou 2 (écriture) et non <%d>."
 
-#: src/base/cs_suite.c:1139 src/base/cs_suite.c:1190
+#: src/base/cs_suite.c:1138 src/base/cs_suite.c:1189
 #, c-format
 msgid ""
 "Information on the restart file number <%d> unavailable\n"
@@ -3104,7 +3104,7 @@ msgstr ""
 "Infomation sur le fichier suite numéro <%d> indisponible\n"
 "(fichier déjà fermé ou numéro invalide)."
 
-#: src/base/cs_suite.c:1496
+#: src/base/cs_suite.c:1505
 #, c-format
 msgid ""
 "The size of location \"%s\" associated with\n"
@@ -3115,7 +3115,7 @@ msgstr ""
 "\"%s\" vaut %lu et ne correspond pas\n"
 "à celle du maillage en cours (%lu).\n"
 
-#: src/base/cs_suite.c:1551
+#: src/base/cs_suite.c:1559
 #, c-format
 msgid ""
 "The restart file \"%s\" references no\n"
@@ -3124,7 +3124,7 @@ msgstr ""
 "\"Le fichier suite \\\"%s\\\" ne contient \\n\"\n"
 "\" aucun support de nom \\\"%s\\\".\""
 
-#: src/base/cs_suite.c:1604
+#: src/base/cs_suite.c:1613
 #, c-format
 msgid ""
 "  Location: %s\n"
@@ -3133,7 +3133,7 @@ msgstr ""
 "  Support : %s\n"
 "    (numéro : %03d, n_glob_ents : %lu)\n"
 
-#: src/base/cs_suite.c:1613
+#: src/base/cs_suite.c:1622
 msgid "  General information associated with the restart file:\n"
 msgstr "  Informations générales associées au fichier suite :\n"
 
