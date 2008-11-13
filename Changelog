@@ -1,4 +1,8 @@
 * 13/11/2008 - David Monfort <david.monfort@edf.fr>
+  Tagging version 1.3.3
+
+* 13/11/2008 - David Monfort <david.monfort@edf.fr>
+               Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Update the theory and user documentation for the rough walls
   boundary conditions and the free inlet/outlet boundary conditions.
   Add the english translation of part of the theory manual (written
