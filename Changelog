@@ -1,4 +1,9 @@
 * 07/11/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on a string comparison.
+  modified script:
+    bin/lance
+
+* 07/11/2008 - David Monfort <david.monfort@edf.fr>
   Updating the french dictionnary.
   modified file:
     po/fr.po
