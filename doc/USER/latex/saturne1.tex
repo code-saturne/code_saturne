@@ -224,13 +224,13 @@ of the launch script, see \S\ref{prg_runcase}}.
 During calculations coupled with \syrthes (option specified in the launch
 script of \CS or {\em via} the Interface) the same organisation is used for the
 files related to \CS. For the files related
- to \syrthes, the localisation of the upstream files is specified in the
+ to \syrthes, the location of the upstream files is specified in the
 \texttt{syrthes.env} file. Yet, the launch script is built presuming that the
 following organisation is applied:
 \begin{list}{$\bullet$}{}
 \item a directory \texttt{SRC\_SYR} for the potential \syrthes user subroutines
 \item a directory \texttt{DATA\_SYR} containing the configuration file \texttt{syrthes.env}
-(localisation of files specific to \syrthes). The file defining the \syrthes
+(location of files specific to \syrthes). The file defining the \syrthes
 calculation options (\texttt{syrthes.data}) and the potential restart files can
 also be placed in this directory.
 \end{list}
@@ -3201,7 +3201,7 @@ define a subset of the mesh, for example:
 \item boundary regions (cf. \texttt{usclim}, \texttt{uscpcl},
 \texttt{usray2}, \texttt{uslag2},...),
 \item volumic initialization (cf. \texttt{usiniv},...),
-\item porosity region (cf. \texttt{uskpdc}),
+\item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{ustsns}, \texttt{ustssc}),
 \item advanced post-processing (cf. \texttt{usdpst}), \texttt{usproj}, ...),
 \end{list}

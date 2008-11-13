@@ -141,12 +141,12 @@ if [ "$1" = "-compile" ] ; then
   fi
 
   ln -s $SYRCS_HOME/bin/Makefile .
-  make syrthes NOM_ARCH=${NOM_ARCH} > $cur_dir/compil.log 2>&1
+  make syrthes NOM_ARCH=${NOM_ARCH} > ./compil.log 2>&1
   make_ret=$?
   make clean > /dev/null 2>&1
 
   if [ "${LOG_COPY}" != "" ] ; then
-    cp $cur_dir/compil.log ${LOG_COPY}
+    cp ./compil.log ${LOG_COPY}
   fi
 
   if [ $user_files = yes -a "${SRC_COPY}" != "" ] ; then

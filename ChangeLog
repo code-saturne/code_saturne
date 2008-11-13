@@ -1,4 +1,14 @@
 * 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Minor modifications in scripts, macros and docs.
+  modified docs:
+    doc/USER/latex/saturne1.tex
+  modified scripts:
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+    bin/runcase_syrthes
+
+* 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction of the outputs english translation.
   modified routine:
     src/base/lecamx.F
