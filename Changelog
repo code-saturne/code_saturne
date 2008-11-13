@@ -2,6 +2,13 @@
   Tagging version 1.3.3
 
 * 13/11/2008 - David Monfort <david.monfort@edf.fr>
+  Update Code_Saturne version numbers in the COMPATIBILITY file.
+  Upgrade to SYR_CS 2.1.1
+  modified files:
+    bin/cs_profile
+    COMPATIBILITY
+
+* 13/11/2008 - David Monfort <david.monfort@edf.fr>
                Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Update the theory and user documentation for the rough walls
   boundary conditions and the free inlet/outlet boundary conditions.
