@@ -166,7 +166,7 @@ _compute_n_ents(const cs_suite_t  *suite,
 }
 
 /*----------------------------------------------------------------------------
- * Analyse the content of a restart file to build locations
+ * Analyze the content of a restart file to build locations
  *
  * parameters:
  *   suite    <-> associated restart file pointer
@@ -245,7 +245,7 @@ _add_file(cs_suite_t  *suite)
                                             magic_string,
                                             0,
                                             echo,
-                                            MPI_COMM_NULL);
+                                            cs_glob_base_mpi_comm);
 #else
     suite->fh = cs_io_initialize_with_index(suite->name, magic_string, 0, echo);
 #endif
@@ -947,31 +947,29 @@ _restart_permute_write(cs_int_t           n_ents,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Ouverture d'un fichier suite
+ * Open a restart file
  *
- * Interface Fortran :
+ * Fortran interface
  *
  * SUBROUTINE OPNSUI (NOMSUI, LNGNOM, IREAWR, NUMSUI, IERROR)
  * *****************
  *
- * CHARACTER*       NOMSUI      : --> : Nom du fichier suite
- * INTEGER          LNGNOM      : --> : Longueur du nom du fichier suite
- * INTEGER          IREAWR      : --> : 1 pour lecture, 2 pour écriture
- * INTEGER          NUMSUI      : <-- : Numéro du fichier suite ouvert
- * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
+ * CHARACTER*       NOMSUI      : --> : Restart file name
+ * INTEGER          LNGNOM      : --> : Restart file name length
+ * INTEGER          IREAWR      : --> : 1: read; 2: write
+ * INTEGER          NUMSUI      : <-- : Number of opened restart file
+ * INTEGER          IERROR      : <-- : 0: success; < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (opnsui, OPNSUI)
 (
- const char       *const nomsui,  /* --> Nom du fichier                       */
- const cs_int_t   *const lngnom,  /* --> Longueur du nom                      */
- const cs_int_t   *const ireawr,  /* --> 1 pour lecture, 2 pour écriture      */
-       cs_int_t   *const numsui,  /* <-- Numéro du ficher suite ouvert        */
-       cs_int_t   *const ierror   /* <-- 0 pour succès, < 0 pour erreur       */
-                                  /*     (> 0, ou < 0 en cas d'erreur)        */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const char       *nomsui,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *ireawr,
+       cs_int_t   *numsui,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
 )
 {
   char    *nombuf;
@@ -1057,21 +1055,21 @@ void CS_PROCF (opnsui, OPNSUI)
 
 
 /*----------------------------------------------------------------------------
- * Fermeture d'un fichier suite
+ * Close a restart file
  *
- * Interface Fortran :
+ * Fortran interface
  *
  * SUBROUTINE CLSSUI (NUMSUI)
  * *****************
  *
- * INTEGER          NUMSUI      : <-> : numéro du fichier suite à fermer
- * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
+ * INTEGER          NUMSUI      : <-> : number of restart file to close
+ * INTEGER          IERROR      : <-- : 0: success; < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (clssui, CLSSUI)
 (
- const cs_int_t   *const numsui,  /* <-> Numéro du ficher suite à fermer      */
-       cs_int_t   *const ierror   /* <-- Numéro du ficher suite ouvert        */
+ const cs_int_t   *numsui,
+       cs_int_t   *ierror
 )
 {
   cs_int_t indsui = *numsui - 1;
@@ -1099,30 +1097,31 @@ void CS_PROCF (clssui, CLSSUI)
 
 
 /*----------------------------------------------------------------------------
- *  Vérification du support associé à un fichier suite;
- *  On renvoie pour chaque type d'entité 1 si le nombre d'entités associées
- *  au fichier suite correspond au nombre d'entités en cours (et donc que
- *  l'on considère que le support est bien le même), 0 sinon.
+ * Check the locations associated with a restart file.
  *
- * Interface Fortran :
+ * For each type of entity, return 1 if the associated number of entities
+ * matches the current value (and so that we consider the mesh locations are
+ * the same), 0 otherwise.
+ *
+ * Fortran interface
  *
  * SUBROUTINE TSTSUI (NUMSUI, INDCEL, INDFAC, INDFBR, INDSOM)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Numéro du fichier suite
- * INTEGER          INDCEL      : <-- : Indicateur corresp. cellules
- * INTEGER          INDFAC      : <-- : Indicateur corresp. faces internes
- * INTEGER          INDFBR      : <-- : Indicateur corresp. faces de bord
- * INTEGER          INDSOM      : <-- : Indicateur corresp. sommets
+ * INTEGER          NUMSUI      : --> : Restart file number
+ * INTEGER          INDCEL      : <-- : Matching cells flag
+ * INTEGER          INDFAC      : <-- : Matching interior faces flag
+ * INTEGER          INDFBR      : <-- : Matching boundary faces flag
+ * INTEGER          INDSOM      : <-- : Matching vertices flag
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tstsui, TSTSUI)
 (
- const cs_int_t  *const numsui,   /* --> Numéro du fichier suite              */
-       cs_int_t  *const indcel,   /* <-- Indicateur corresp. cellules         */
-       cs_int_t  *const indfac,   /* <-- Indicateur corresp. faces internes   */
-       cs_int_t  *const indfbr,   /* <-- Indicateur corresp. faces de bord    */
-       cs_int_t  *const indsom    /* <-- Indicateur corresp. sommets          */
+ const cs_int_t  *numsui,
+       cs_int_t  *indcel,
+       cs_int_t  *indfac,
+       cs_int_t  *indfbr,
+       cs_int_t  *indsom
 )
 {
   cs_bool_t  corresp_cel, corresp_fac, corresp_fbr, corresp_som;
@@ -1163,19 +1162,19 @@ void CS_PROCF (tstsui, TSTSUI)
 
 
 /*----------------------------------------------------------------------------
- *  Affichage de l'index associé à un fichier suite
+ * Print index associated with a restart file in read mode
  *
- * Interface Fortran :
+ * Fortran interface
  *
  * SUBROUTINE INFSUI (NUMSUI)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Numéro du fichier suite
+ * INTEGER          NUMSUI      : --> : Restart file number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (infsui, INFSUI)
 (
- const cs_int_t  *const numsui    /* --> Numéro du fichier suite              */
+ const cs_int_t  *numsui
 )
 {
   cs_int_t   indsui   = *numsui - 1;
@@ -1199,41 +1198,40 @@ void CS_PROCF (infsui, INFSUI)
 
 
 /*----------------------------------------------------------------------------
- * Lecture d'une rubrique sur fichier suite
+ * Read a section from a restart file
  *
- * Interface Fortran :
+ * Fortran interface
  *
  * SUBROUTINE LECSUI (NUMSUI, NOMRUB, LNGNOM, ITYSUP, NBVENT, IRTYPE, TABVAR)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Numéro du fichier suite
- * CHARACTER*       NOMRUB      : --> : Nom de la rubrique
- * INTEGER          LNGNOM      : --> : Longueur du nom de la rubrique
- * INTEGER          ITYSUP      : --> : Type de support :
- *                              :     :  0 : scalaire (pas de support)
- *                              :     :  1 : cellules
- *                              :     :  2 : faces internes
- *                              :     :  3 : faces de bord
- *                              :     :  4 : sommets (si disponibles)
- * INTEGER          NBVENT      : --> : Nb. valeurs par entité de support
- * INTEGER          IRTYPE      : --> : 1 pour entiers, 2 pour double précision
- * (?)              TABVAR      : <-> : Tableau des valeurs à lire
- * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
+ * INTEGER          NUMSUI      : --> : Restart file number
+ * CHARACTER*       NOMRUB      : --> : Section name
+ * INTEGER          LNGNOM      : --> : Section name length
+ * INTEGER          ITYSUP      : --> : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * INTEGER          NBVENT      : --> : N. values per location entity
+ * INTEGER          IRTYPE      : --> : 1 for integers, 2 for double precision
+ * (?)              TABVAR      : <-> : Array of values to read
+ * INTEGER          IERROR      : <-- : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lecsui, LECSUI)
 (
- const cs_int_t   *const numsui,  /* --> Numéro du fichier suite              */
- const char       *const nomrub,  /* --> Nom de la rubrique                   */
- const cs_int_t   *const lngnom,  /* --> Longueur du nom de la rubrique       */
- const cs_int_t   *const itysup,  /* --> Type de support (voir ci-dessus)     */
- const cs_int_t   *const nbvent,  /* --> Nb. valeurs par entité du support    */
- const cs_int_t   *const irtype,  /* --> 1 pour entiers, 2 pour double préc.  */
-       void       *const tabvar,  /* <-- Tableur des valeurs à lire           */
-       cs_int_t   *const ierror   /* <-- 0 pour succès, < 0 pour erreur       */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *nbvent,
+ const cs_int_t   *irtype,
+       void       *tabvar,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
 )
 {
   char    *nombuf;
@@ -1279,41 +1277,40 @@ void CS_PROCF (lecsui, LECSUI)
 
 
 /*----------------------------------------------------------------------------
- * Écriture d'une rubrique sur fichier suite
+ * Write a section to a restart file
  *
- * Interface Fortran :
+ * Fortran interface
  *
  * SUBROUTINE ECRSUI (NUMSUI, NOMRUB, LNGNOM, ITYSUP, NBVENT, IRTYPE, TABVAR)
  * *****************
  *
- * INTEGER          NUMSUI      : --> : Numéro du fichier suite
- * CHARACTER*       NOMRUB      : --> : Nom de la rubrique
- * INTEGER          LNGNOM      : --> : Longueur du nom de la rubrique
- * INTEGER          ITYSUP      : --> : Type de support :
- *                              :     :  0 : scalaire (pas de support)
- *                              :     :  1 : cellules
- *                              :     :  2 : faces internes
- *                              :     :  3 : faces de bord
- *                              :     :  4 : sommets (si disponibles)
- * INTEGER          NBVENT      : --> : Nb. valeurs par entité de support
- * INTEGER          IRTYPE      : --> : 1 pour entiers, 2 pour double précision
- * (?)              TABVAR      : --> : Tableau des valeurs fournies
- * INTEGER          IERROR      : <-- : 0 pour succès, < 0 pour erreur
+ * INTEGER          NUMSUI      : --> : Restart file number
+ * CHARACTER*       NOMRUB      : --> : Section name
+ * INTEGER          LNGNOM      : --> : Section name length
+ * INTEGER          ITYSUP      : --> : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * INTEGER          NBVENT      : --> : N. values per location entity
+ * INTEGER          IRTYPE      : --> : 1 for integers, 2 for double precision
+ * (?)              TABVAR      : --> : Array of values to write
+ * INTEGER          IERROR      : <-- : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrsui, ECRSUI)
 (
- const cs_int_t   *const numsui,  /* --> Numéro du fichier suite              */
- const char       *const nomrub,  /* --> Nom de la rubrique                   */
- const cs_int_t   *const lngnom,  /* --> Longueur du nom de la rubrique       */
- const cs_int_t   *const itysup,  /* --> Type de support (voir ci-dessus)     */
- const cs_int_t   *const nbvent,  /* --> Nb. valeurs par entité du support    */
- const cs_int_t   *const irtype,  /* --> 1 pour entiers, 2 pour double préc.  */
- const void       *const tabvar,  /* --> Tableur des valeurs fournies         */
-       cs_int_t   *const ierror   /* <-- 0 pour succès, < 0 pour erreur       */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *nbvent,
+ const cs_int_t   *irtype,
+ const void       *tabvar,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
 )
 {
   char    *nombuf;
@@ -1362,14 +1359,19 @@ void CS_PROCF (ecrsui, ECRSUI)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise un fichier suite
+ * Initialize a restart file
+ *
+ * parameters:
+ *   nom  <-- file name
+ *   mode <-- read or write
+ *
+ * returns:
+ *   pointer to initialized restart file structure
  *----------------------------------------------------------------------------*/
 
-cs_suite_t * cs_suite_cree
-(
- const char             *const nom,         /* --> nom de base du fichier     */
- const cs_suite_mode_t         mode         /* --> Lecture ou écriture        */
-)
+cs_suite_t *
+cs_suite_cree(const char             *nom,
+              cs_suite_mode_t         mode)
 {
   cs_suite_t  * suite;
 
@@ -1416,16 +1418,18 @@ cs_suite_t * cs_suite_cree
   return suite;
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui détruit la structure associée à un fichier suite (et ferme
- *  le fichier associé); elle renvoie un pointeur NULL.
+ * Destroy structure associated with a restart file (and close the file).
+ *
+ * parameters:
+ *   suite <-- pointer to restart file structure
+ *
+ * returns:
+ *   NULL pointer
  *----------------------------------------------------------------------------*/
 
-cs_suite_t * cs_suite_detruit
-(
- cs_suite_t * suite                         /* --> Fichier suite              */
-)
+cs_suite_t *
+cs_suite_detruit(cs_suite_t  *suite)
 {
   assert(suite != NULL);
 
@@ -1450,22 +1454,27 @@ cs_suite_t * cs_suite_detruit
   return NULL;
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui vérifie les supports de base associé à un fichier suite;
- *  On renvoie pour chaque type d'entité true si le nombre d'entités
- *  associées au fichier suite correspond au nombre d'entités en cours (et
- *  donc que l'on considère que le support est bien le même), false sinon.
+ * Check the locations associated with a restart file.
+ *
+ * For each type of entity, the correspondinf flag is set to true if the
+ * associated number of entities matches the current value (and so that we
+ * consider the mesh locations are the same), false otherwise.
+ *
+ * parameters:
+ *   suite        <-- associated restart file pointer
+ *   corresp_cell <-- matching cells flag
+ *   corresp_fac  <-- matching interior faces flag
+ *   corresp_fbr  <-- matching boundary faces flag
+ *   corresp_som  <-- matching vertices flag
  *----------------------------------------------------------------------------*/
 
-void cs_suite_verif_support_base
-(
- const cs_suite_t  *const suite,            /* --> Fichier suite              */
-       cs_bool_t   *const corresp_cel,      /* <-- Corresp. cellules          */
-       cs_bool_t   *const corresp_fac,      /* <-- Corresp. faces internes    */
-       cs_bool_t   *const corresp_fbr,      /* <-- Corresp. faces de bord     */
-       cs_bool_t   *const corresp_som       /* <-- Corresp. sommets           */
-)
+void
+cs_suite_verif_support_base(const cs_suite_t  *suite,
+                            cs_bool_t         *corresp_cel,
+                            cs_bool_t         *corresp_fac,
+                            cs_bool_t         *corresp_fbr,
+                            cs_bool_t         *corresp_som)
 {
   size_t location_id;
 
@@ -1503,7 +1512,6 @@ void cs_suite_verif_support_base
 
   }
 }
-
 
 /*----------------------------------------------------------------------------
  * Add a location definition.
@@ -1587,13 +1595,14 @@ cs_suite_ajoute_support(cs_suite_t        *suite,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui affiche l'index généré lors de l'analyse du fichier
+ * Print the index associated with a restart file in read mode
+ *
+ * parameters:
+ *   suite <-- associated restart file pointer
  *----------------------------------------------------------------------------*/
 
-void cs_suite_affiche_index
-(
- const cs_suite_t  *const  suite          /* --> Structure suite              */
-)
+void
+cs_suite_affiche_index(const cs_suite_t  *suite)
 {
   size_t loc_id;
 
@@ -1617,20 +1626,27 @@ void cs_suite_affiche_index
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui lit un enregistrement sur fichier suite; On renvoie 0
- *  (CS_SUITE_SUCCES) en cas de succès, une valeur négative (de type
- *  CS_SUITE_ERR_xxx) en cas d'échec.
+ * Read a section from a restart file.
+ *
+ * parameters:
+ *   suite           <-- associated restart file pointer
+ *   nom_rub         <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   typ_val         <-- value type
+ *   val             --> array of values
+ *
+ * returns: 0 (CS_SUITE_SUCCES) in case of success,
+ *          or error code (CS_SUITE_ERR_xxx) in case of error
  *----------------------------------------------------------------------------*/
 
-cs_int_t cs_suite_lit_rub
-(
-       cs_suite_t  *suite,                     /* --> Ptr. structure suite    */
- const char        *nom_rub,                   /* --> Nom de la rubrique      */
-       int          location_id,               /* --> Support de la variable  */
-       cs_int_t     n_location_vals,           /* --> Nb. val/point support   */
-       cs_type_t    typ_val,                   /* --> Type de valeurs         */
-       void        *val                        /* <-- Valeurs à lire          */
-)
+int
+cs_suite_lit_rub(cs_suite_t  *suite,
+                 const char  *nom_rub,
+                 int          location_id,
+                 cs_int_t     n_location_vals,
+                 cs_type_t    typ_val,
+                 void        *val)
 {
   cs_int_t   n_glob_ents, n_ents;
   const fvm_gnum_t  *ent_global_num;
@@ -1705,7 +1721,7 @@ cs_int_t cs_suite_lit_rub
 
   if (   (   header.location_id > 0
           && header.n_location_vals != (size_t)n_location_vals)
-      || header.n_vals != n_ents)
+      || (   header.location_id == 0 && header.n_vals != n_ents))
     return CS_SUITE_ERR_NBR_VAL;
 
   /* If the type of value does not match */
@@ -1730,8 +1746,8 @@ cs_int_t cs_suite_lit_rub
 
   cs_io_set_indexed_position(suite->fh, &header, rec_id);
 
-  /* Contenu de la rubrique */
-  /*------------------------*/
+  /* Section contents */
+  /*------------------*/
 
   /* In single processor mode or for global values */
 
@@ -1781,22 +1797,26 @@ cs_int_t cs_suite_lit_rub
   return CS_SUITE_SUCCES;
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui écrit un enregistrement sur fichier suite
+ * Write a section to a restart file.
+ *
+ * parameters:
+ *   suite           <-- associated restart file pointer
+ *   nom_rub         <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   typ_val         <-- value type
+ *   val             <-- array of values
  *----------------------------------------------------------------------------*/
 
-void cs_suite_ecr_rub
-(
-       cs_suite_t   *suite,                    /* --> Ptr. structure suite    */
- const char         *nom_rub,                  /* --> Nom de la rubrique      */
-       int           location_id,              /* --> Support de la variable  */
-       cs_int_t      n_location_vals,          /* --> Nb. val/point support   */
-       cs_type_t     typ_val,                  /* --> Type de valeurs         */
- const void         *val                       /* --> Valeurs à écrire        */
-)
+void
+cs_suite_ecr_rub(cs_suite_t   *suite,
+                 const char   *nom_rub,
+                 int           location_id,
+                 cs_int_t      n_location_vals,
+                 cs_type_t     typ_val,
+                 const void   *val)
 {
-
   cs_int_t         n_tot_vals, n_glob_ents, n_ents;
   fvm_datatype_t   elt_type;
 
@@ -1909,15 +1929,12 @@ void cs_suite_ecr_rub
 #endif /* #if defined(_CS_HAVE_MPI) */
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise l'API Fortran
+ * Initialize the restart file Fortran API
  *----------------------------------------------------------------------------*/
 
-void cs_suite_f77_api_init
-(
- void
-)
+void
+cs_suite_f77_api_init(void)
 {
   size_t ind;
 
@@ -1926,7 +1943,7 @@ void cs_suite_f77_api_init
   _restart_pointer_size = 10;
   BFT_MALLOC(_restart_pointer, _restart_pointer_size, cs_suite_t *);
 
-  /* Mise à zéro du tableau des pointeurs */
+  /* Set pointers array to NULL */
 
   for (ind = 0; ind < _restart_pointer_size; ind++)
     _restart_pointer[ind] = NULL;
@@ -1934,17 +1951,15 @@ void cs_suite_f77_api_init
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui termine l'API Fortran
+ * Finalize the restart file Fortran API
  *----------------------------------------------------------------------------*/
 
-void cs_suite_f77_api_finalize
-(
- void
-)
+void
+cs_suite_f77_api_finalize(void)
 {
   size_t ind;
 
-  /* Close files thar are not closed yet */
+  /* Close files that are not closed yet */
 
   for (ind = 0; ind < _restart_pointer_size; ind++) {
     if (_restart_pointer[ind] != NULL)

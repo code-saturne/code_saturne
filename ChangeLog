@@ -1,3 +1,11 @@
+* 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bug correction and english translation in the restart file code.
+  modified file:
+    po/fr.po
+  modified routines:
+    include/base/cs_suite.h
+    src/base/cs_suite.c
+
 * 07/11/2008 - David Monfort <david.monfort@edf.fr>
   Updating the french dictionnary.
   modified file:
