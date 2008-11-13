@@ -1,4 +1,9 @@
 * 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction of the outputs english translation.
+  modified routine:
+    src/base/lecamx.F
+
+* 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Bug correction and english translation in the restart file code.
   modified file:
     po/fr.po
