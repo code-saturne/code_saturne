@@ -57,8 +57,8 @@
     CS_ROOT=/home/saturne
   fi
 #
-  CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.b
-  CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.4.a
+  CS_HOME=${CS_ROOT}/Noyau/ncs-1.4.c
+  CSPP_HOME=${CS_ROOT}/Enveloppe/ecs-1.4.b
   CSGUI_HOME=${CS_ROOT}/Interface/ics-1.4.c
   SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.2.0
 #

@@ -1,3 +1,13 @@
+* 13/11/2008 - David Monfort <david.monfort@edf.fr>
+  Updating Code_Saturne version number to 1.4.c and prerequisites.
+  modified files:
+    doc/style/csdoc.sty
+    doc/THEORY/latex/theory.tex
+    bin/cs_profile
+    bin/Makefile
+    bin/macros_Blue_Gene_P.mk
+    COMPATIBILITY
+
 * 13/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Minor modifications in scripts, macros and docs.
