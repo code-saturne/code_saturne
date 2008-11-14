@@ -29,7 +29,7 @@
 #define __CS_MESH_SOLCOM_H__
 
 /*============================================================================
- * Fortran interface for reading data with "SolCom" specifications
+ * Read a mesh in "SolCom" format
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -45,11 +45,11 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Local macro definitions
  *============================================================================*/
 
 /*============================================================================
- * Type definition
+ * Local type definitions
  *============================================================================*/
 
 /*============================================================================
@@ -57,70 +57,68 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Public functions definition for API Fortran
+ * Public functions prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Mise à jour des informations de dimensionnement maillage après la lecture
- * de l'entête du fichier de maillage en mode IFOENV = 0
+ * Update mesh size information after reading a "SolCom" format file header.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE DIMGEO (NDIM  , NCELET, NCEL  , NFAC  , NFABOR, NSOM  ,
  * *****************
  *                    LNDFAC, LNDFBR, NFML  , NPRFML,
  *                    NTETRA, NPYRAM, NPRISM, NHEXAE )
  *
- * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NCELET      : <-- : Nombre d'éléments halo compris
- * INTEGER          NCEL        : <-- : Nombre d'éléments actifs
- * INTEGER          NFAC        : <-- : Nombre de faces internes
- * INTEGER          NFABOR      : <-- : Nombre de faces de bord
- * INTEGER          NSOM        : <-- : Nombre de sommets (optionnel)
- * INTEGER          LNDFAC      : <-- : Longueur de SOMFAC (optionnel)
- * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
- * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
- * INTEGER          NTETRA      : <-- : Nombre de tétraèdres
- * INTEGER          NPYRAM      : <-- : Nombre de pyramides
- * INTEGER          NPRISM      : <-- : Nombre de prismes
- * INTEGER          NHEXAE      : <-- : Nombre d'hexaèdres
+ * INTEGER          NDIM        : <-- : spatial dimension (3)
+ * INTEGER          NCELET      : <-- : number of extended cells
+ * INTEGER          NCEL        : <-- : number of true cells
+ * INTEGER          NFAC        : <-- : number of interior faces
+ * INTEGER          NFABOR      : <-- : number of boundary faces
+ * INTEGER          NSOM        : <-- : number of vertices (optional)
+ * INTEGER          LNDFAC      : <-- : length of SOMFAC (optional)
+ * INTEGER          LNDFBR      : <-- : length of SOMFBR (optional)
+ * INTEGER          NFML        : <-- : number of families
+ * INTEGER          NPRFML      : <-- : max. number of properties per family
+ * INTEGER          NTETRA      : <-- : number of tetrahedra
+ * INTEGER          NPYRAM      : <-- : number of pyramids
+ * INTEGER          NPRISM      : <-- : number of prisms
+ * INTEGER          NHEXAE      : <-- : number of hexahedra
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dimgeo, DIMGEO)
 (
- const cs_int_t   *const ndim,    /* <-- dimension de l'espace                */
- const cs_int_t   *const ncelet,  /* <-- nombre d'éléments halo compris       */
- const cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs             */
- const cs_int_t   *const nfac,    /* <-- nombre de faces internes             */
- const cs_int_t   *const nfabor,  /* <-- nombre de faces de bord              */
- const cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)        */
- const cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)       */
- const cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)       */
- const cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord */
- const cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille */
- const cs_int_t   *const ntetra,  /* <-- nombre de tétraèdres                 */
- const cs_int_t   *const npyram,  /* <-- nombre de pyramides                  */
- const cs_int_t   *const nprism,  /* <-- nombre de prismes                    */
- const cs_int_t   *const nhexae   /* <-- nombre d'hexaèdres                   */
+ const cs_int_t   *ndim,
+ const cs_int_t   *ncelet,
+ const cs_int_t   *ncel,
+ const cs_int_t   *nfac,
+ const cs_int_t   *nfabor,
+ const cs_int_t   *nsom,
+ const cs_int_t   *lndfac,
+ const cs_int_t   *lndfbr,
+ const cs_int_t   *nfml,
+ const cs_int_t   *nprfml,
+ const cs_int_t   *ntetra,
+ const cs_int_t   *npyram,
+ const cs_int_t   *nprism,
+ const cs_int_t   *nhexae
 );
 
 /*=============================================================================
- * Public function definitions
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Lecture d'un maillage au format "SolCom"
+ * Read a mesh in "SolCom" format (prior to Code_Saturne 1.0)
  *
- * mesh               <-> maillage associé
- * mesh_quantities    <-> grandeurs associés
- *
- * Retour:
+ * parameters:
+ *   mesh            <-- associated mesh
+ *   mesh_quantities <-- associated quantities
  *----------------------------------------------------------------------------*/
 
 void
-cs_maillage_solcom_lit(cs_mesh_t             *const mesh,
-                       cs_mesh_quantities_t  *const mesh_quantities);
+cs_maillage_solcom_lit(cs_mesh_t             *mesh,
+                       cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 

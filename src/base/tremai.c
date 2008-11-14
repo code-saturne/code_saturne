@@ -25,11 +25,16 @@
  *
  *============================================================================*/
 
-#undef _POSIX_SOURCE /* Sinon, problème de compilation sur VPP 5000 */
-#undef _XOPEN_SOURCE /* Sinon, problème de compilation sur SunOS    */
+#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
+#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
 
+/*============================================================================
+ * Compute remaining time allocated to this process
+ *============================================================================*/
 
-/* includes système */
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <errno.h>
@@ -37,34 +42,34 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-
-/* Includes librairie */
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "tremai.h"
-
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Calcul du temps restant alloué au process
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Calcul du temps restant alloué au process
+ * Compute remaining time allocated to this process
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TREMAI (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
- * INTEGER          RET        : <-- : Code de retour ;
- *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette méthode
- *                             :     :   1 : limite de temps CPU déterminée
+ * DOUBLE PRECISION TPS        : <-- : remaining time (default: 7 days)
+ * INTEGER          RET        : <-- : return code:
+ *                             :     :  -1: error
+ *                             :     :   0: no limit using this method
+ *                             :     :   1: CPU limit determined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tremai, TREMAI) (double  *tps,
@@ -74,9 +79,9 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
   struct rusage buf_time;
   struct rusage buf_time1;
 
-  *tps = 3600.0 * 24.0 * 7; /* valeur "illimitée" par défaut */
+  *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
 
-/* Architectures hors IBM Blue Gene ou Cray XT */
+/* Architectures other than IBM Blue Gene or Cray XT */
 #if   !defined(__blrts__) && !defined(__bgp__) \
    && !defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
@@ -87,11 +92,10 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
   else if ((*ret = getrlimit(RLIMIT_CPU, &ressources)) < 0)
     fprintf(stderr, "getrlimit(RLIMIT_CPU) error:\n%s\n", strerror(errno));
 
-  /* Si aucune erreur (le plus probable) et limitation de temps CPU
-     indiquée par getrlimit (normalement le cas avec système de batch LSF
-     sous OSF1 ou Linux par exemple), on calcule le temps restant réel,
-     et on met le code retour à 1 pour indiquer que le temps restant
-     est effectivement limité */
+  /* If no error encountered (most probable case), use CPU limit returned by
+     getrlimit (works at least with LSF batch systems under OSF1 or Linux),
+     compute true remaining time, and put return code to 1 to indicate
+     thet the remaining time is indeed limited. */
 
   if (*ret == 0 && ressources.rlim_cur != RLIM_INFINITY) {
     *tps = (double)((int)ressources.rlim_cur
@@ -100,10 +104,10 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
     *ret = 1;
   }
 
-#else /* IBM Blue Gene ou Cray XT */
+#else /* IBM Blue Gene or Cray XT */
 
-  *ret = -1; /* getrusage(RUSAGE_SELF, ...) et getrlimit(RLIMIT_CPU, ...)
-                non disponibles sur cette architecture */
+  *ret = -1; /* getrusage(RUSAGE_SELF, ...) and getrlimit(RLIMIT_CPU, ...)
+                not available on this architecture */
 
 #endif
 

@@ -26,7 +26,7 @@
  *============================================================================*/
 
 /*============================================================================
- * Fortran interface for reading data with "SolCom" specifications
+ * Read a mesh in "SolCom" format
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -53,13 +53,14 @@
 #include <fvm_nodal_append.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_post.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_mesh_solcom.h"
@@ -69,14 +70,14 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Local structure definitions
+ * Local type definitions
  *============================================================================*/
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-/* Nombre de sommets, tétraèdres, pyramides, prismes, et hexaèdres */
+/* Number of vertices, tetrahedra, pyramids, prisms, and hexahedra */
 
 static cs_int_t  cs_glob_nsom = 0;
 static cs_int_t  cs_glob_ntetra = 0;
@@ -85,129 +86,166 @@ static cs_int_t  cs_glob_nprism = 0;
 static cs_int_t  cs_glob_nhexae = 0;
 
 /*============================================================================
- * Prototypes de fonctions privées
+ * Private function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Allocation de mémoire pour la lecture d'un fichier au format "SolCom" ;
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_maillage_solcom_alloc_mem
-(
- cs_mesh_t             *const mesh,             /* <-> maillage associé       */
- cs_mesh_quantities_t  *const mesh_quantities   /* <-> grandeurs associés     */
-);
-
-
-/*----------------------------------------------------------------------------
- * Transfert d'une partie de la connectivité nodale à une structure FVM ;
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_maillage_solcom_ajoute
-(
- fvm_nodal_t    *maillage_ext,            /* <-> maillage à compléter         */
- cs_int_t        nbr_elt,                 /* --> nombre d'élements à ajouter  */
- fvm_element_t   type,                    /* --> type de section à ajouter    */
- cs_int_t       *connect,                 /* --> connectivité à transférer    */
- cs_int_t       *cpt_elt_tot              /* <-> compteur total d'éléments    */
-);
-
-
-/*============================================================================
- * Prototypes de fonctions Fortran appellées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Lecture des tableaux entités géométriques
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (letgeo, LETGEO)
-(
- const cs_int_t  *ndim,      /* --> dimension de l'espace                     */
- const cs_int_t  *ncelet,    /* --> nombre de cellules étendu                 */
- const cs_int_t  *ncel,      /* --> nombre de cellules                        */
- const cs_int_t  *nfac,      /* --> nombre de faces internes                  */
- const cs_int_t  *nfabor,    /* --> nombre de faces de bord                   */
- const cs_int_t  *nfml,      /* --> nombre de familles                        */
- const cs_int_t  *nprfml,    /* --> nombre de proprietes des familles         */
- const cs_int_t  *nnod,      /* --> nombre de sommets                         */
- const cs_int_t  *lndfac,    /* --> longueur de nodfac                        */
- const cs_int_t  *lndfbr,    /* --> longueur de nodfbr                        */
- const cs_int_t  *ntetra,    /* --> nombre de tetraèdres du maillage          */
- const cs_int_t  *npyram,    /* --> nombre de pyramides du maillage           */
- const cs_int_t  *nprism,    /* --> nombre de prismes du maillage             */
- const cs_int_t  *nhexae,    /* --> nombre d'hexaèdres du maillage            */
-       cs_int_t  *inodal,    /* <-- indique si l'on doit lire la connectivite */
-                             /*     nodale pour le post traitement            */
-       cs_int_t   ifacel[],  /* <-- connect. faces internes / cellules        */
-       cs_int_t   ifabor[],  /* <-- connect. faces de bord / cellules         */
-       cs_int_t   ifmfbr[],  /* <-- liste des familles des faces bord         */
-       cs_int_t   ifmcel[],  /* <-- liste des familles des cellules           */
-       cs_int_t   iprfml[],  /* <-- liste des propriétés des familles         */
-       cs_int_t   icotet[],  /* <-- connectivité nodale des tétraèdres        */
-       cs_int_t   icopyr[],  /* <-- connectivité nodale des pyramides         */
-       cs_int_t   icopri[],  /* <-- connectivité nodale des prismes           */
-       cs_int_t   icohex[],  /* <-- connectivité nodale des hexaèdres         */
-       cs_int_t   ipnfac[],  /* <-- rang ds nodfac 1er sommet faces int       */
-       cs_int_t   nodfac[],  /* <-- numéro des sommets des faces int          */
-       cs_int_t   ipnfbr[],  /* <-- rang ds nodfbr 1er sommt faces brd        */
-       cs_int_t   nodfbr[],  /* <-- numéro des sommets des faces bord         */
-       cs_real_t  xyzcen[],  /* <-- c.d.g. des cellules                       */
-       cs_real_t  surfac[],  /* <-- surfaces des faces internes               */
-       cs_real_t  surfbo[],  /* <-- surfaces des faces de bord                */
-       cs_real_t  cdgfac[],  /* <-- c.d.g. des faces internes                 */
-       cs_real_t  cdgfbo[],  /* <-- c.d.g. des faces de bord                  */
-       cs_real_t  xyznod[]   /* <-- coordonnées des sommets                   */
-);
-
-
-/*============================================================================
- *  Fonctions publiques pour API Fortran
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Mise à jour des informations de dimensionnement maillage après la lecture
- * de l'entête du fichier de maillage en mode IFOENV = 0
+ * Allocate memory for a mesh in "SolCom" format.
  *
- * Interface Fortran :
+ * parameters:
+ *   mesh            <-- associated mesh
+ *   mesh_quantities <-- associated quantities
+ *----------------------------------------------------------------------------*/
+
+static void
+cs_loc_maillage_solcom_alloc_mem(cs_mesh_t             *mesh,
+                                 cs_mesh_quantities_t  *mesh_quantities)
+{
+  cs_int_t  nbr_elt;
+
+  /* Allocation */
+  /*------------*/
+
+  /* Faces / cells connectivity*/
+  BFT_MALLOC(mesh->i_face_cells, mesh->n_i_faces * 2, cs_int_t);
+  BFT_MALLOC(mesh->b_face_cells, mesh->n_b_faces, cs_int_t);
+
+  /* Cell centers (sized for true + ghost cells, but there should be no
+     ghost cells here) */
+  nbr_elt = mesh->dim * mesh->n_cells_with_ghosts;
+  BFT_MALLOC(mesh_quantities->cell_cen, nbr_elt, cs_real_t);
+
+  /* Face surfaces */
+  BFT_MALLOC(mesh_quantities->i_face_normal, mesh->dim * mesh->n_i_faces,
+            cs_real_t);
+  BFT_MALLOC(mesh_quantities->b_face_normal, mesh->dim * mesh->n_b_faces,
+            cs_real_t);
+
+  /* Face centers */
+  BFT_MALLOC(mesh_quantities->i_face_cog, mesh->dim * mesh->n_i_faces,
+            cs_real_t);
+  BFT_MALLOC(mesh_quantities->b_face_cog, mesh->dim * mesh->n_b_faces,
+            cs_real_t);
+
+  /* Cell and boundary face families */
+  BFT_MALLOC(mesh->b_face_family, mesh->n_b_faces, cs_int_t);
+  BFT_MALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_int_t);
+
+  /* Family properties */
+  nbr_elt = mesh->n_families * mesh->n_max_family_items;
+  BFT_MALLOC(mesh->family_item, nbr_elt, cs_int_t);
+
+
+  if (mesh->n_vertices > 0) {
+
+    /* Vertex coordinates */
+    nbr_elt = mesh->dim * mesh->n_vertices;
+    BFT_MALLOC(mesh->vtx_coord, nbr_elt, cs_real_t);
+
+    /* Faces / vertices connectivity */
+    BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_int_t);
+    BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_int_t);
+    BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces + 1, cs_int_t);
+    BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_int_t);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Transfer a part of the nodal connectivity to an FVM structure.
+ *
+ * parameters:
+ *   maillage_ext <-> mesh to complete
+ *   nbr_elt      <-- number of elements to add
+ *   type         <-- type of section to add
+ *   connect      <-- connectivity to transfer
+ *   cpt_elt_tot  <-> total element counter
+ *----------------------------------------------------------------------------*/
+
+static void
+cs_loc_maillage_solcom_ajoute(fvm_nodal_t    *maillage_ext,
+                              cs_int_t        nbr_elt,
+                              fvm_element_t   type,
+                              cs_int_t       *connect,
+                              cs_int_t       *cpt_elt_tot)
+{
+  cs_int_t   ind_elt = 0;
+  cs_int_t   cpt_elt = 0;
+
+  fvm_lnum_t   *parent_element_num = NULL;
+
+  if (nbr_elt == 0)
+    return;
+
+  /* Parent element numbers if necessary */
+
+  if (cpt_elt > 0) {
+    BFT_MALLOC(parent_element_num, nbr_elt, fvm_lnum_t);
+    for (ind_elt = 0 ; ind_elt < nbr_elt ; ind_elt++)
+      parent_element_num[ind_elt] = ind_elt + (*cpt_elt_tot + 1);
+  }
+
+  /* Transfer connectivity and parent numbers */
+
+  fvm_nodal_append_by_transfer(maillage_ext,
+                               nbr_elt,
+                               type,
+                               NULL,
+                               NULL,
+                               NULL,
+                               connect,
+                               parent_element_num);
+
+  *cpt_elt_tot = *cpt_elt_tot + nbr_elt;
+}
+
+/*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Update mesh size information after reading a "SolCom" format file header.
+ *
+ * Fortran interface:
  *
  * SUBROUTINE DIMGEO (NDIM  , NCELET, NCEL  , NFAC  , NFABOR, NSOM  ,
  * *****************
  *                    LNDFAC, LNDFBR, NFML  , NPRFML,
  *                    NTETRA, NPYRAM, NPRISM, NHEXAE )
  *
- * INTEGER          NDIM        : <-- : Dimension de l'espace (3)
- * INTEGER          NCELET      : <-- : Nombre d'éléments halo compris
- * INTEGER          NCEL        : <-- : Nombre d'éléments actifs
- * INTEGER          NFAC        : <-- : Nombre de faces internes
- * INTEGER          NFABOR      : <-- : Nombre de faces de bord
- * INTEGER          NSOM        : <-- : Nombre de sommets (optionnel)
- * INTEGER          LNDFAC      : <-- : Longueur de SOMFAC (optionnel)
- * INTEGER          LNDFBR      : <-- : Longueur de SOMFBR (optionnel)
- * INTEGER          NFML        : <-- : Nombre de familles des faces de bord
- * INTEGER          NPRFML      : <-- : Nombre de propriétés max par famille
- * INTEGER          NTETRA      : <-- : Nombre de tétraèdres
- * INTEGER          NPYRAM      : <-- : Nombre de pyramides
- * INTEGER          NPRISM      : <-- : Nombre de prismes
- * INTEGER          NHEXAE      : <-- : Nombre d'hexaèdres
+ * INTEGER          NDIM        : <-- : spatial dimension (3)
+ * INTEGER          NCELET      : <-- : number of extended cells
+ * INTEGER          NCEL        : <-- : number of true cells
+ * INTEGER          NFAC        : <-- : number of interior faces
+ * INTEGER          NFABOR      : <-- : number of boundary faces
+ * INTEGER          NSOM        : <-- : number of vertices (optional)
+ * INTEGER          LNDFAC      : <-- : length of SOMFAC (optional)
+ * INTEGER          LNDFBR      : <-- : length of SOMFBR (optional)
+ * INTEGER          NFML        : <-- : number of families
+ * INTEGER          NPRFML      : <-- : max. number of properties per family
+ * INTEGER          NTETRA      : <-- : number of tetrahedra
+ * INTEGER          NPYRAM      : <-- : number of pyramids
+ * INTEGER          NPRISM      : <-- : number of prisms
+ * INTEGER          NHEXAE      : <-- : number of hexahedra
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dimgeo, DIMGEO)
 (
- const cs_int_t   *const ndim,    /* <-- dimension de l'espace                */
- const cs_int_t   *const ncelet,  /* <-- nombre d'éléments halo compris       */
- const cs_int_t   *const ncel,    /* <-- nombre d'éléments actifs             */
- const cs_int_t   *const nfac,    /* <-- nombre de faces internes             */
- const cs_int_t   *const nfabor,  /* <-- nombre de faces de bord              */
- const cs_int_t   *const nsom,    /* <-- nombre de sommets (optionnel)        */
- const cs_int_t   *const lndfac,  /* <-- longueur de somfac (optionnel)       */
- const cs_int_t   *const lndfbr,  /* <-- longueur de somfbr (optionnel)       */
- const cs_int_t   *const nfml,    /* <-- nombre de familles des faces de bord */
- const cs_int_t   *const nprfml,  /* <-- nombre de propriétés max par famille */
- const cs_int_t   *const ntetra,  /* <-- nombre de tétraèdres                 */
- const cs_int_t   *const npyram,  /* <-- nombre de pyramides                  */
- const cs_int_t   *const nprism,  /* <-- nombre de prismes                    */
- const cs_int_t   *const nhexae   /* <-- nombre d'hexaèdres                   */
+ const cs_int_t   *ndim,
+ const cs_int_t   *ncelet,
+ const cs_int_t   *ncel,
+ const cs_int_t   *nfac,
+ const cs_int_t   *nfabor,
+ const cs_int_t   *nsom,
+ const cs_int_t   *lndfac,
+ const cs_int_t   *lndfbr,
+ const cs_int_t   *nfml,
+ const cs_int_t   *nprfml,
+ const cs_int_t   *ntetra,
+ const cs_int_t   *npyram,
+ const cs_int_t   *nprism,
+ const cs_int_t   *nhexae
 )
 {
   cs_mesh_t *mesh = cs_glob_mesh;
@@ -247,22 +285,22 @@ void CS_PROCF (dimgeo, DIMGEO)
 
 }
 
-
 /*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Lecture d'un maillage au format "SolCom"
+ * Read a mesh in "SolCom" format (prior to Code_Saturne 1.0)
+ *
+ * parameters:
+ *   mesh            <-- associated mesh
+ *   mesh_quantities <-- associated quantities
  *----------------------------------------------------------------------------*/
 
-void cs_maillage_solcom_lit
-(
- cs_mesh_t      *const mesh,      /* <-> maillage associé             */
- cs_mesh_quantities_t  *const mesh_quantities   /* <-> grandeurs associés           */
-)
+void
+cs_maillage_solcom_lit(cs_mesh_t             *mesh,
+                       cs_mesh_quantities_t  *mesh_quantities)
 {
-
   cs_int_t   indic_nodal = 0;
   cs_int_t   cpt_elt_tot = 0;
 
@@ -274,15 +312,13 @@ void cs_maillage_solcom_lit
 
   fvm_nodal_t  *maillage_ext = NULL;
 
-
-  /* Allocations pour maillage principal */
+  /* Allocations for main mesh */
 
   cs_loc_maillage_solcom_alloc_mem(mesh,
                                    mesh_quantities);
 
-
-  /* Allocations pour maillage de post traitement
-     quand on n'a pas de connectivité faces -> sommets */
+  /* Allocations for post-processing mesh when we do not have
+     a faces -> vertices connectivity */
 
   if (mesh->vtx_coord != NULL)
     vtx_coord = mesh->vtx_coord;
@@ -297,7 +333,7 @@ void cs_maillage_solcom_lit
 
   }
 
-  /* Lecture effective du corps du maillage */
+  /* Read mesh body */
 
   CS_PROCF (letgeo, LETGEO) (&(mesh->dim),
                              &(mesh->n_cells_with_ghosts),
@@ -337,8 +373,8 @@ void cs_maillage_solcom_lit
 
   if (indic_nodal > 0) {
 
-    /* Création directe du maillage de post-traitement
-       lorsque l'on n'a pas de connectivité faces->sommets */
+    /* Direct creation of the  post-processing mesh when we
+       do not have a faces -> vertices connectivity */
 
     maillage_ext = fvm_nodal_create(_("Fluid volume"), 3);
 
@@ -373,7 +409,7 @@ void cs_maillage_solcom_lit
     fvm_nodal_transfer_vertices(maillage_ext,
                                 vtx_coord);
 
-    /* Transfert de la structure au post-traitement */
+    /* Transfer structure to post-processing */
 
     cs_post_ajoute_maillage_existant(-1,
                                      maillage_ext,
@@ -389,119 +425,6 @@ void cs_maillage_solcom_lit
     BFT_FREE(connect_hexae);
 
   }
-
-}
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Allocation de mémoire pour la lecture d'un fichier au format "SolCom" ;
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_maillage_solcom_alloc_mem
-(
- cs_mesh_t             *const mesh,             /* <-> maillage associé       */
- cs_mesh_quantities_t  *const mesh_quantities   /* <-> grandeurs associés     */
-)
-{
-  cs_int_t               nbr_elt;
-
-  /* Allocation */
-  /*------------*/
-
-  /* Connectivités faces / cellules*/
-  BFT_MALLOC(mesh->i_face_cells, mesh->n_i_faces * 2, cs_int_t);
-  BFT_MALLOC(mesh->b_face_cells, mesh->n_b_faces, cs_int_t);
-
-  /* CDG cellules (surdimensionnement usuel pour cellules fantômes,
-     normalement inexistantes ici) */
-  nbr_elt = mesh->dim * mesh->n_cells_with_ghosts;
-  BFT_MALLOC(mesh_quantities->cell_cen, nbr_elt, cs_real_t);
-
-  /* Surfaces faces */
-  BFT_MALLOC(mesh_quantities->i_face_normal, mesh->dim * mesh->n_i_faces,
-            cs_real_t);
-  BFT_MALLOC(mesh_quantities->b_face_normal, mesh->dim * mesh->n_b_faces,
-            cs_real_t);
-
-  /* CDG faces */
-  BFT_MALLOC(mesh_quantities->i_face_cog, mesh->dim * mesh->n_i_faces,
-            cs_real_t);
-  BFT_MALLOC(mesh_quantities->b_face_cog, mesh->dim * mesh->n_b_faces,
-            cs_real_t);
-
-  /* Familles faces de bord et cellules */
-  BFT_MALLOC(mesh->b_face_family, mesh->n_b_faces, cs_int_t);
-  BFT_MALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_int_t);
-
-  /* Propriétés des familles */
-  nbr_elt = mesh->n_families * mesh->n_max_family_items;
-  BFT_MALLOC(mesh->family_item, nbr_elt, cs_int_t);
-
-
-  if (mesh->n_vertices > 0) {
-
-    /* Coordonnées des sommets */
-    nbr_elt = mesh->dim * mesh->n_vertices;
-    BFT_MALLOC(mesh->vtx_coord, nbr_elt, cs_real_t);
-
-    /* Connectivités faces / sommets */
-    BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_int_t);
-    BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_int_t);
-    BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces + 1, cs_int_t);
-    BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_int_t);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Transfert d'une partie de la connectivité nodale à une structure FVM ;
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_maillage_solcom_ajoute
-(
- fvm_nodal_t    *maillage_ext,            /* <-> maillage à compléter         */
- cs_int_t        nbr_elt,                 /* --> nombre d'élements à ajouter  */
- fvm_element_t   type,                    /* --> type de section à ajouter    */
- cs_int_t       *connect,                 /* --> connectivité à transférer    */
- cs_int_t       *cpt_elt_tot              /* <-> compteur total d'éléments    */
-)
-{
-
-  cs_int_t   ind_elt = 0;
-  cs_int_t   cpt_elt = 0;
-
-  fvm_lnum_t   *parent_element_num = NULL;
-
-  if (nbr_elt == 0)
-    return;
-
-  /* Numéros d'éléments parents à si nécessaire */
-
-  if (cpt_elt > 0) {
-    BFT_MALLOC(parent_element_num, nbr_elt, fvm_lnum_t);
-    for (ind_elt = 0 ; ind_elt < nbr_elt ; ind_elt++)
-      parent_element_num[ind_elt] = ind_elt + (*cpt_elt_tot + 1);
-  }
-
-
-  /* Transfert de la connectivité et des numéros de parents */
-
-  fvm_nodal_append_by_transfer(maillage_ext,
-                               nbr_elt,
-                               type,
-                               NULL,
-                               NULL,
-                               NULL,
-                               connect,
-                               parent_element_num);
-
-  *cpt_elt_tot = *cpt_elt_tot + nbr_elt;
 
 }
 

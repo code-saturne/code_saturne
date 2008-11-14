@@ -25,16 +25,23 @@
  *
  *============================================================================*/
 
-/*#undef _POSIX_SOURCE / * Sinon, problème de compilation sur VPP 5000 * /
-#undef _XOPEN_SOURCE / * Sinon, problème de compilation sur SunOS    */
+#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
+#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
 
+/*============================================================================
+ * Query time allocated to this process (useful mainly under PBS)
+ *============================================================================*/
 
-/* includes système */
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Includes librairie */
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "tcpumx.h"
@@ -44,23 +51,22 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Récuperation du temps cpu alloué au process
- *  (utile notamment pour cluster sous PBS)
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Récuperation du temps cpu alloué au process
+ * Query CPU time allocated to this process
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TCPUMX (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
- * INTEGER          RET        : <-- : Code de retour ;
- *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette méthode
- *                             :     :   1 : limite de temps CPU déterminée
+ * DOUBLE PRECISION TPS        : <-- : remaining time (default: 7 days)
+ * INTEGER          RET        : <-- : return code:
+ *                             :     :  -1: error
+ *                             :     :   0: no limit using this method
+ *                             :     :   1: CPU limit determined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tcpumx, TCPUMX) (double  *tps,
@@ -71,24 +77,24 @@ void CS_PROCF (tcpumx, TCPUMX) (double  *tps,
   int    hrs, min, sec;
   int    nchamps = 0;
 
-  *tps = 3600.0 * 24.0 * 7; /* valeur "illimitée" par défaut */
+  *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
   *ret = 0;
 
-  /* Récuperation de la variable d'environnement ; ex : 100:10:10 */
+  /* Get environment variable; for example, 100:10:10 */
 
   if ((cs_maxtime = getenv("CS_MAXTIME")) != NULL) {;
 
     nchamps = sscanf (cs_maxtime,"%d:%d:%d",&hrs,&min,&sec);
 
-    /* Si on n'a que 2 champs ce sont les heures et les minutes (avec PBS) ;
-     * sinon si l'on n'a pas 3 champs l'information n'est pas exploitable */
+    /* If we only have 2 fields, they are hours and minutes (under PBS);
+     * otherwise, if we do not have 3 fields, the information is unusable */
 
     if (nchamps == 2) {
       sec = 0;
       nchamps = 3;
     }
 
-    /* Calcul du temps CPU alloué en secondes */
+    /* Compute allocated CPU time in seconds */
     if (nchamps == 3) {
       *tps = ((double)hrs)*3600. + ((double)min)*60. + ((double)sec);
       *ret = 1;

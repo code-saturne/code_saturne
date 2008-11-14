@@ -28,7 +28,13 @@
 #ifndef __CS_TCPUMX_H__
 #define __CS_TCPUMX_H__
 
-/* Includes librairie */
+/*============================================================================
+ * Query time allocated to this process (useful mainly under PBS)
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 
@@ -37,23 +43,22 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Récuperation du temps cpu alloué au process
- *  (utile notamment pour cluster sous PBS)
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Récuperation du temps cpu alloué au process
+ * Query CPU time allocated to this process
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TCPUMX (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
- * INTEGER          RET        : <-- : Code de retour ;
- *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette méthode
- *                             :     :   1 : limite de temps CPU déterminée
+ * DOUBLE PRECISION TPS        : <-- : remaining time (default: 7 days)
+ * INTEGER          RET        : <-- : return code:
+ *                             :     :  -1: error
+ *                             :     :   0: no limit using this method
+ *                             :     :   1: CPU limit determined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tcpumx, TCPUMX) (double  *tps,

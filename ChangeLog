@@ -1,4 +1,16 @@
 * 14/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
+  Reformating comments and english translation.
+  modified routines:
+    include/base/cs_mesh_connect.h
+    include/base/cs_mesh_solcom.h
+    include/base/cs_prototypes.h
+    include/base/tcpumx.h
+    include/base/tremai.h
+    src/base/cs_mesh_solcom.c
+    src/base/tcpumx.c
+    src/base/tremai.c
+
+* 14/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a backup script for developpers.
   added script:
     sbin/backup

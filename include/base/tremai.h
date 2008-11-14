@@ -28,8 +28,13 @@
 #ifndef __CS_TREMAI_H__
 #define __CS_TREMAI_H__
 
+/*============================================================================
+ * Compute remaining time allocated to this process
+ *============================================================================*/
 
-/* Includes librairie */
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 
@@ -38,23 +43,22 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Prototype de la fonction tremai permettant de connaitre le temps restant
- *  alloue au process
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Calcul du temps restant alloué au process
+ * Compute remaining time allocated to this process
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TREMAI (TPS   , RET)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : Temps restant (défaut : 7 jours)
- * INTEGER          RET        : <-- : Code de retour ;
- *                             :     :  -1 : erreur
- *                             :     :   0 : pas de limite via cette méthode
- *                             :     :   1 : limite de temps CPU déterminée
+ * DOUBLE PRECISION TPS        : <-- : remaining time (default: 7 days)
+ * INTEGER          RET        : <-- : return code:
+ *                             :     :  -1: error
+ *                             :     :   0: no limit using this method
+ *                             :     :   1: CPU limit determined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tremai, TREMAI) (double  *tps,

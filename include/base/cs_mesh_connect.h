@@ -29,8 +29,7 @@
 #define __CS_MESH_CONNECT_H__
 
 /*============================================================================
- * Passage d'une connectivité noyau à une connecitvité nodale de la
- * structure principale associée à un maillage
+ * Extract nodal connectivity mesh representations from a native mesh.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
