@@ -102,7 +102,7 @@ implementation, please refer to the reports \cite{mechitoua98} and
 which is newer and more detailed
 (the latest updated version of this document
 is available on-line with the version of \CS and accessible through the command
-\texttt{cs\_info kernel}).
+\texttt{cs\_info theory}).
 
 The present document first
 presents all the necessary elements to run a calculation
@@ -1346,10 +1346,10 @@ MPI library)\\
 %==================================
 \subsection{Graphical User Interface}
 %==================================
-\label{prg_gui}%
-A Graphical User Interface is available with \CS.  This Interface
-creates or reads an XML file according to a specific \CS syntax which
-is then interpretated by the code.
+\label{prg_ihm}%
+A Graphical User Interface is available with \CS.
+This Interface creates or reads an XML file according to
+a specific \CS syntax which is then interpreted by the code.
 
 In version \verscs, the Graphical Interface manages calculation parameters,
 standard initialisation values and boundary
@@ -2345,7 +2345,7 @@ geometrical variables, some variables may be accessed to directly in
 sections of the unidimensional macro-arrays IA (for the integers) and RA
 (for the real numbers) which are present as arguments in every
 subroutine (apart from a few ones of very low level). The number of the
-first box of these sections in IA and RA is indicated by an integer
+first position of these sections in IA and RA is indicated by an integer
 stored in a ``common''. These integers are called ``pointers''} are
 displayed below.
 
@@ -2374,7 +2374,7 @@ families of referenced entities. See note 1}
 
 
 \variab{IISYMP}{IISYMP}{I}{Integer giving the rank in IA of the first
-element of the section allowing to mark out the ``wall'' (ITYPFB=IPAROI)
+element of the section allowing to mark out the ``wall'' (ITYPFB=IPAROI or IPARUG)
 or ``symmetry'' (ITYPFB=ISYMET) boundary faces in order to prevent the
 mass flow (these faces are impermeable). For instance, for the phase
 IPHAS, if the face IFAC is a wall or symmetry face, IA(IISMPH+IFAC-1)=0 (with
@@ -2401,7 +2401,7 @@ Driest-wall damping}
 \minititre{Distance to the wall}
 
 \variab{IIFAPA}{IIFAPA(NPHSMX)}{IA}{For each phase, the pointer in IA which
- marks out the number of the wall face(type ITYPFB=IPAROI) which is closest
+ marks out the number of the wall face(type ITYPFB=IPAROI or IPARUG) which is closest
  to the center of a given volume when necessary ($R_{ij}-\varepsilon$ with
  wall echo, LES with van Driest-wall damping,
 or SST $k-\omega$ turbulence model) and when ICDPAR=2. The number of the wall
@@ -2584,7 +2584,7 @@ post-processor at the end of the time step (user subroutine \texttt{usvpst}).
 The code allows to define two developer arrays (similar to the user
 arrays ITUSER and RTUSER), one integer array a one real array. The
 default size of these arrays is zero, and may be changed in
-\texttt{usini1}. The two arrays are then passed as arguments in the rest
+\texttt{ustbus}. The two arrays are then passed as arguments in the rest
 of the code. They are designed to be used during the transitory
 development phases, in order to ease the tests (transfer of pieces of
 informations without consequence on the arguments of the subroutines).
@@ -2704,7 +2704,7 @@ in the standard cases:
 
 \item Periodicity can also work when the periodic boundaries are meshed
       differently (periodicity of non-conforming faces), {\it apart} from
-      the case of a 180 degree rotation periodicity with faces couples
+      the case of a 180 degree rotation periodicity with faces coupled
       on the rotation axis.
 
 \item A parallel calculation may be stopped in the same manner as a
@@ -2822,7 +2822,7 @@ Some particular points should be reminded:
 \end{list}
 
 %==================================
-\subsection{Geometric and particulate arrays
+\subsection{Geometry and particule  arrays
       related to lagrangian modeling}
 %==================================
 
@@ -3180,7 +3180,7 @@ The user can run the calculations with or without an interface, with or
  are needed. With interface, all the user subroutines are optional.
 
 The parameters can be read in the interface and then in the user
-subroutine. In the case that a parameter is specified in the interdace
+subroutine. In the case that a parameter is specified in the interface
  and in the user subroutine, it is the value in the user subroutine that
  is taken into acount. It is for that reason that all the examples of
  user subroutines are placed in the \texttt{REFERENCE} directory by the
@@ -3374,7 +3374,7 @@ For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
-\mbox{\texttt{cs\_info noyau}}).
+\mbox{\texttt{cs\_info theory}}).
 
 From the user point of view, the boundary conditions are totally
 determined by three arrays\footnote{except with lagrangien}~: ITYPFB(NFABOR,NPHAS)\index{ITYPFB},
@@ -3383,9 +3383,9 @@ ICODCL(NFABOR,NVAR)\index{ICODCL} and RCODCL(NFABOR,NVAR,3)\index{RCODCL}.
 \item ITYPFB(IFAC,IPHAS) defines the type of the face IFAC (input, wall
       ...) for the phase IPHAS.
 \item ICODCL(IFAC,IVAR) defines the type of boundary
-      condition for the variable IVAR at the face IFAC (Dirichlet, flow ...).
+      condition for the variable IVAR at the face IFAC (Dirichlet, flux ...).
 \item RCODCL(IFAC,IVAR,.) gives the numerical values associated with the
-      type of boundary condition (value of the Dirichlet, of the flow ...).
+      type of boundary condition (value of the Dirichlet, of the flux ...).
 \end{list}
 
 In the case of standard boundary conditions (see
@@ -3399,21 +3399,21 @@ must be totally completed.
 \subsubsection{Coding of standard boundary conditions}
 %==================================
 \label{prg_clstandard}%
-The standard values taken by the indicator ITYPFB are: IENTRE\index{IENTRE},
-IPAROI\index{IPAROI}, ISYMET\index{ISYMET}, ISOR09\index{ISOR09},
-ISOR10\index{ISOR10} and IINDEF\index{IINDEF}.
+The standard values taken by the indicator ITYPFB are:
+IENTRE\index{IENTRE}, IPAROI\index{IPAROI}, IPARUG\index{IPARUG},
+ISYMET\index{ISYMET}, ISOLIB\index{ISOLIB} and IINDEF\index{IINDEF}.
 
 \begin{list}{$\bullet$}{}
 \item If ITYPFB=IENTRE: inlet face.
 
 \begin{list}{$\rightarrow$}{}
-\item Zero flow condition for pressure and Dirichlet condition for all
+\item Zero-flux condition for pressure and Dirichlet condition for all
       other variables. The value of the Dirichlet must be given in
       RCODCL(IFAC,IVAR,1) for every value of IVAR, apart from
       IVAR=IPR(IPHAS). The other boxes of RCODCL and ICODCL are completed automatically.
 \end{list}
 
-\item If ITYPFB=IPAROI: solid wall face, impermeable and with friction.
+\item If ITYPFB=IPAROI: smooth solid wall face, impermeable and with friction.
 
 \begin{list}{$\rightarrow$}{}
 \item the eventual moving velocity of the wall tangent to the face is
@@ -3433,50 +3433,73 @@ ISOR10\index{ISOR10} and IINDEF\index{IINDEF}.
 \item Imposed value at the wall. The user must write\\
 \hspace*{1cm}ICODCL(IFAC,IVAR)=5\\
 \hspace*{1cm}RCODCL(IFAC,IVAR,1)=imposed value\\
-\item Imposed flow at the wall. The user must write\\
+\item Imposed flux at the wall. The user must write\\
 \hspace*{1cm}ICODCL(IFAC,IVAR)=3\\
-\hspace*{1cm}RCODCL(IFAC,IVAR,3)=flow imposed value (for the flow
+\hspace*{1cm}RCODCL(IFAC,IVAR,3)=flux imposed value (for the flux
       definition according to the variable, the user may refer to the
       case ICODCL=3 of the paragraph \ref{prg_clnonstandard}).
 \item If the user does not complete these arrays, the default condition
-      is zero flow.
+      is zero flux.
 \end{list}
 \end{list}
+
+\item If ITYPFB=IPARUG: rough solid wall face, impermeable and with friction.
+
+\begin{list}{$\rightarrow$}{}
+\item the eventual moving velocity of the wall tangent to the face is
+      given by RCODCL(IFAC,IVAR,1) (IVAR being IU(IPHAS), IV(IPHAS) or
+      IW(IPHAS)). The initial value of RCODCL(IFAC,IVAR,1) is zero for
+      the three velocity components (and therefore needs to be specified
+      only in the case of the existence of a slipping velocity). \\
+{\em WARNING: the wall moving velocity must be in the boundary face
+      plane. By security, the code uses only the projection of this
+      velocity on the face. As a consequence, if the velocity specified
+      by the user is not in the face plane, the wall moving velocity really
+      taken into account will be different.}
+\item The dynamic roughness must be specified in RCDOCL(IFAC,IU(IPHAS),3).
+      The value of RCDOCL(IFAC,IV(IPHAS),3) and RCDOCL(IFAC,IW(IPHAS),3)
+      are not used.
+\item Concerning the scalars, two kinds of boundary conditions can be
+      defined:
+\begin{list}{$\rightsquigarrow$}{}
+\item Imposed value at the wall. The user must write\\
+\hspace*{1cm}ICODCL(IFAC,IVAR)=6\\
+\hspace*{1cm}RCODCL(IFAC,IVAR,1)=imposed value\\
+\hspace*{1cm}RCODCL(IFAC,IVAR,3)=thermal roughness value\\
+\item Imposed flux at the wall. The user must write\\
+\hspace*{1cm}ICODCL(IFAC,IVAR)=3\\
+\hspace*{1cm}RCODCL(IFAC,IVAR,3)=flux imposed value (for the flux
+      definition according to the variable, the user may refer to the
+      case ICODCL=3 of the paragraph \ref{prg_clnonstandard}).
+\item If the user does not complete these arrays, the default condition
+      is zero flux.
+\end{list}
+\end{list}
+
+
 
 \item If ITYPFB=ISYMET: symmetry face (or wall without friction)
 \begin{list}{$\rightarrow$}{}
 \item Nothing to write in ICODCL and  RCODCL.
 \end{list}
 
-\item If ITYPFB=ISOR09: ''zero flow'' outlet face
+\item If ITYPFB=ISOLIB: free outlet face (or more precisely free inlet/outlet
+      with forced pressure)
 \begin{list}{$\rightarrow$}{}
-\item If the mass flow is going out, zero flow condition for the scalars
-      (apart from pressure) and the velocity.
-\item If the mass flow is coming in, zero flow condition for the scalars
-      (apart from pressure) and the value zero is imposed to the
-      velocity at the face (but not to the mass flow).
-\item In both cases the boundary condition type for pressure is a
-      Dirichlet, calculated in order to have $\displaystyle \frac{d}{dn}\left(\frac{dP}{d\tau}\right)=0$. The pressure is given the value $P_0$ at the first face ISOR09 met(the fixed reference is always linked to just 1 face, even if there are several exits).
-\item Nothing to write in ICODCL or RCODCL.
+\item The pressure is always treated with a Dirichlet condition, calculated
+      in order to have $\displaystyle \frac{d}{dn}\left(\frac{dP}{d\tau}\right)=0$.
+      The pressure is given the value $P_0$ at the first face ISOLIB met.
+      The pressure drop is always linked to just one face, even if there are
+      several outlets.
+\item If the mass flow is coming in, the ``infinite'' velocity is retained
+      and Dirichlet condition for the scalars and the turbulent quantities is used
+      (or zero-flux condition if no Dirichlet value has been specified).
+\item If the mass flow is going out, zero-flux condition for the velocity,
+      the scalars and the turbulent quantities.
+\item Nothing to write in ICODCL or RCODCL for the pressure or the velocity.
+      An optional Dirichlet condition can be specified for the scalars and turbulent
+      quantities.
 \end{list}
-
-\item If ITYPFB=ISOR10: ``entering Dirichlet'' outlet face
-\begin{list}{$\rightarrow$}{}
-\item If the mass flow is going out, zero flow condition for the scalars
-      (apart from pressure) and the velocity.
-\item If the mass flow is coming in, Dirichlet condition for the scalars
-      and the value zero is imposed to the velocity at the face (but not
-      to the mass flow).
-\item In both cases, the boundary condition type for pressure is a
-      Dirichlet, calculated in order to have $\displaystyle \frac{d}{dn}\left(\frac{dP}{d\tau}\right)=0$.
-The pressure is given the value $P_0$ at the first face ISOR09 met. The pressure drop is always linked
- to just 1 face, even is there are several exits.
-\item  RCODCL(IFAC,IVAR,1) must be completed to give the value of the
-      Dirichlet for every scalar apart from pressure. In the case of the
-      $R_{ij}-\varepsilon$ model, the value zero will be given to the
-      extra-diagonal terms of the stress tensor.
-\end{list}
-
 
 \item Si ITYPFB=IINDEF: non-defined type face (non-standard case)
 \begin{list}{$\rightarrow$}{}
@@ -3510,7 +3533,7 @@ corresponding to this new wall face type (see
 \S\ref{prg_clnonstandard}). He must then specify
 ITYPFB(IFAC,IPHAS)=$N$. The value of $N$ must be between 1 and
 NTYPMX\index{NTYPMX} (maximum number of boundary face types), and of
-course different from the values IENTRE, IPAROI, ISYMET, ISOR09, ISOR10
+course different from the values IENTRE, IPAROI, IPARUG, ISYMET, ISOLIB
 and IINDEF (the value of these variables is given in the file
 \texttt{paramx.h}). This allows to isolate easily some boundary faces,
 in order to calculate balances.
@@ -3561,7 +3584,7 @@ arrays ICODCL and RCODCL must be completed as follows:
 
 \item RCODCL(IFAC,IVAR,2) is expressed in the following unit (defined so
       that by multiplying the exchange coefficient and the variable, the
-      obtained flow has the same unit as the flow defined below for ICODCL=3):
+      obtained flux has the same unit as the flux defined below for ICODCL=3):
 
 \begin{list}{$\rightsquigarrow$}{}
 \item $kg.m^{-2}.s^{-1}$ for the velocity
@@ -3577,14 +3600,14 @@ arrays ICODCL and RCODCL must be completed as follows:
 
 \end{list}
 
-\item If ICODCL(IFAC,IVAR)=3: flow condition at the face IFAC for the
+\item If ICODCL(IFAC,IVAR)=3: flux condition at the face IFAC for the
       variable IVAR.
 
 \begin{list}{$\rightarrow$}{}
 \item RCODCL(IFAC,IVAR,1) and RCODCL(IFAC,IVAR,2) are not used.
 
-\item RCODCL(IFAC,IVAR,3) is the flow value of IVAR at the wall. This
-      flow is negative if it is a source for the fluid. It corresponds to:
+\item RCODCL(IFAC,IVAR,3) is the flux value of IVAR at the wall. This
+      flux is negative if it is a source for the fluid. It corresponds to:
 \begin{list}{$\rightsquigarrow$}{}
 \item
 $\displaystyle -C_p(\frac{\lambda_T}{C_p}+\frac{\mu_t}{\sigma_T})\grad T\cdot\vect{n}$ in the case of a temperature (in $W/m^2$).
@@ -3606,10 +3629,10 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
 \item If ICODCL(IFAC,IVAR)=4: symmetry condition, for the symmetry
       faces or wall faces without friction. This condition can only be
       used for the velocity components ($\vect{U}\cdot\vect{n}=0$) and
-      the $R_{ij}$ tensor components (for the other variables, a zero
-      flow condition type is generally used).\\
+      the $R_{ij}$ tensor components (for the other variables, a zero-flux
+      condition type is generally used).\\
 
-\item If ICODCL(IFAC,IVAR)=5: friction condition, for the wall faces
+\item If ICODCL(IFAC,IVAR)=5: friction condition, for the smooth-wall faces
       with friction. This condition can not be applied to the pressure.
 \begin{list}{$\rightsquigarrow$}{}
 \item For the velocity and (if necessary) the turbulent variables, the
@@ -3629,33 +3652,45 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
       RCODCL(IFAC,IVAR,2) must therefore be specified: see \cite{theory}.
 \end{list}
 
+\item If ICODCL(IFAC,IVAR)=6: friction condition, for the rough-wall faces
+      with friction. This condition can not be applied to the pressure.
+\begin{list}{$\rightsquigarrow$}{}
+\item For the velocity and (if necessary) the turbulent variables, the
+      values at the wall are calculated from theoretical profiles. In
+      the case of a moving wall, the three components of the slipping
+      velocity are given by (RCODCL(IFAC,IU(IPHAS),1),
+      RCODCL(IFAC,IV(IPHAS),1), and RCODCL(IFAC,IW(IPHAS),1)).\\
+{\em WARNING: the wall moving velocity must be in the boundary face
+      plane. By security, the code uses only the projection of this
+      velocity on the face. As a consequence, if the velocity specified
+      by the user is not in the face plane, the wall moving velocity really
+      taken into account will be different.}\\
+      The dynamic roughness height is given by RCODCL(IFAC,IU(IPHAS),3) only.
+
+\item For the other scalars, the condition ICODCL=6 is similar to
+      ICODCL=1, but with a wall exchange coefficient calculated from a
+      theoretical law. The values of RCODCL(IFAC,IVAR,1) and
+      RCODCL(IFAC,IVAR,2) must therefore be specified: see \cite{theory}.
+      The thermal roughness height is then given by RCODCL(IFAC,IVAR,3).
+\end{list}
+
 \item If ICODCL(IFAC,IVAR)=9: free outlet condition for the
       velocity. This condition can only be applied to the velocity
       components.\\
 If the mass flow at the face is going out, this condition is equivalent
-      to a zero flow condition.\\
+      to a zero-flux condition.\\
 If the mass flow at the face is coming in, the value zero is imposed to
       the velocity at the face (but not to the mass flow).\\
 RCODCL is not used.
 
-\item If ICODCL(IFAC,IVAR)=10: free outlet condition for the other
-      variables. This condition can be applied to every variable apart
-      from the velocity components and the pressure.\\
-If the mass flow at the face is going out, this condition is equivalent
-      to a zero flow condition.\\
-If the mass flow at the face is coming in, this condition is equivalent
-      to a Dirichlet condition. The array RCODCL(IFAC,IVAR,1) must
-      therefore be completed in order to set the value of this Dirichlet.
-
 \end{list}
 
 \minititre{Note}
-$\bullet\ $A standard ISOR09 outlet face amounts to a Dirichlet condition
-(ICODCL=1) for the pressure, a free outlet condition (ICODCL=9) for the
-velocity and a zero flow condition (ICODCL=3) for the other variables.\\
-$\bullet\ $A standard ISOR10 outlet face amounts to a Dirichlet condition
-(ICODCL=1) for the pressure, a free outlet condition (ICODCL=9) for the
-velocity and a free outlet condition (ICODCL=10) for the other variables.
+$\bullet\ $A standard ISOLIB outlet face amounts to a Dirichlet
+condition (ICODCL=1) for the pressure, a free outlet condition
+(ICODCL=9) for the velocity and a Dirichlet condition (ICODCL=1) if
+the user has specified a Dirichlet value or a zero-flux condition
+(ICODCL=3) for the other variables.\\
 
 %==================================
 \subsubsection{Checking of the boundary conditions}
@@ -3670,7 +3705,7 @@ $\bullet\ $If the boundary conditions for the velocity belong to the
 ``slipping'' type (ICODCL=4), the conditions for $R_{ij}$ must belong to
 the ``symmetry'' type (ICODCL=4), and vice versa.\\
 $\bullet\ $If the boundary conditions for the velocity belong to the
-``friction'' type (ICODCL=5), the conditions for the turbulent variables
+``friction'' type (ICODCL=5 or 6), the conditions for the turbulent variables
 must belong to the ``friction'' type, too.\\
 $\bullet\ $If the boundary condition for a scalar belongs to the
 ``friction'' type, the boundary condition for the velocity must belong to
@@ -3717,10 +3752,10 @@ code execution listing.
 \label{prg_usvort}%
 This subroutine allows to generate the non-stationary inlet boundary
 conditions for the LES by the vortex method. The method is based on
- the generation of vortices in the inlet 2D inlet plane with help from
+ the generation of vortices in the 2D inlet plane with help from
 the pre-defined functions. The fluctuation normal to the inlet plane
 is generated by a Langevin equation. It is in the subroutine \texttt{usvort}
- where the parametres of this method of given.
+ where the parametres of this method are given.
 
 \noindent
 \textit{subroutine called for each time step}
@@ -3732,47 +3767,53 @@ The subroutine \texttt{usvort} contains 3 seperate parts:
 
 \begin{list}{-}{}
 \item The 1st part defines the number of inlets concerned with the vortex
-method(NNENTT\index{NNENT}) and them number of vortex for each inlet (NVORT\index{NVORT}),
+method(NNENTT\index{NNENT}) and the number of vortex for each inlet (NVORT\index{NVORT}),
 where IENT represents the number of inlets.
 \item The 2nd part (IAPPEL=1) defines the boundary faces at which the vortex method
  is applicable. The IREPVO\index{IREPVO} array is informed by IENT which defines
  the number of inlets concerned with the vortex (essentially, the vortex
  method can be applied with many independant inlets).
 \item The 3rd section defines the main parameters of the method at each inlet.
- With the complexity of any given geometry, 4 cases are distinguished ( the
-first 3 use the data file FIDCAT and in the final case only 1 initial velocity and
- energy are imposed.):
+ With the complexity of any given geometry, 4 cases are distinguished
+( the first 3 use the data file FICDAT and in the final case only 1
+initial velocity and energy are imposed.):
 
 \begin{list}{*}{}
 \item ICAS=1, For the outlet of a rectangluar pipe; 1 boundary condition is defined
-for each side of the rectangle takin ginto account their interaction with the vortex.
-\item ICAS=2, For the outllet of a circular pipe; the entry face is considered as a
+for each side of the rectangle taking into account their interaction
+with the vortex.
+\item ICAS=2, For the outlet of a circular pipe; the entry face is considered as a
  wall (as far as interaction with the vortex is concerned)
 \item ICAS=3, For inlets of any geometry; no boundary conditions are defined at the
- inlet face (i.e no specific treatment on the interation between the vortex and the boundary)
+ inlet face (i.e no specific treatment on the interation between the
+ vortex and the boundary)
 \item ICAS=4, similar to ICAS=3 except the data file is not used (FIDCAT); the outflow
- parameters are estimated  by the code from the global data (initial velocity, level
- of turbulence and dissipation), information which is supplied by the user.
+ parameters are estimated by the code from the global data (initial
+ velocity, level of turbulence and dissipation), information which is
+ supplied by the user.
 \end{list}
 
-When the geometry allows, cases 1 and 2 are used. Case 4 is only used if it is not possible
- to use the other 3.
+When the geometry allows, cases 1 and 2 are used. Case 4 is only used
+ if it is not possible to use the other 3.
 
-In the first 3 cases, the 2 base vectors in the plane of each inlet must be defined
-(vectors DIR1 and DIR2). The 3rd vector is automatically calculated by the code,
-defined as a product of DIR1 and DIR2. DIR1 and DIR2 must be chosen impreitavely to
- give (CEN, DIR1, DIR2) an orthoganol reference of the inlet plane and so DIR3 is
- orientated in the entry domain.If ICAS=2, the position CEN has to be the center of
- gravity of the rectangle or disc.
+In the first 3 cases, the 2 base vectors in the plane of each inlet
+must be defined (vectors DIR1 and DIR2). The 3rd vector is
+automatically calculated by the code, defined as a product of DIR1 and
+DIR2. DIR1 and DIR2 must be chosen imperatively to give (CEN, DIR1,
+DIR2) an orthogonal reference of the inlet plane and so DIR3 is
+orientated in the entry domain.If ICAS=2, the position CEN has to be
+the center of gravity of the rectangle or disc.
 
-The reference points (CEN, DIR1, DIR2, DIR3) wihch define the values of the variable in the FIDCAT file.\\
-In the case where  ICAS=4, the vectors DIR1 and
-DIR2 are generated by the code.
+The reference points (CEN, DIR1, DIR2, DIR3) wihch define the values
+of the variable in the FIDCAT file.\\
+In the case where ICAS=4, the vectors DIR1 and DIR2 are generated by
+the code.
 
-If ICAS=1, The boundary condtions at the rectangle's edges must be defined. They are defined in
-the array ICLVOR\index{ICLVOR}. ICLVOR(II,IENT) represents the standard boundary conditions at
-the edge II(1$\leqslant$II$\leqslant$4) of the inlet IENT. The code for the boundary conditions
- is as follows:
+If ICAS=1, the boundary conditions at the rectangle's edges must be
+defined. They are defined in the array
+ICLVOR\index{ICLVOR}. ICLVOR(II,IENT) represents the standard boundary
+conditions at the edge II(1$\leqslant$II$\leqslant$4) of the inlet
+IENT. The code for the boundary conditions is as follows:
 \begin{list}{*}{}
 \item ICLVOR=1 for a wall
 \item ICLVOR=2 for symmetry
@@ -3862,7 +3903,7 @@ turbulent dissipation and the convective velocity in the direction normal to the
 \item XSIGMA represents the support functions used in the vortex method. They are representative
  of the eddy sizes entered in the vortex method. ISIGMA is used to define their size: if ISIGMA=1,nction with the co-ordinates XDAT and YDAT (given in the FIDCAT file). Note that using an indicator III to accelerate the calculations
  XSIGMA will be constant across the inlet face and is defined in \texttt{usvort}, if ISIGMA=2,
-nction with the co-ordinates XDAT and YDAT (given in the FIDCAT file). Note that using an indicator III to accelerate the calculationsXSIGMA will be variable and equal to the mixing length of the standard $k-\varepsilon$ model
+nction with the co-ordinates XDAT and YDAT (given in the FIDCAT file). Note that using an indicator III to accelerate the calculations, XSIGMA will be variable and equal to the mixing length of the standard $k-\varepsilon$ model
 ($\displaystyle {C_\mu}^{\frac{3}{4}} \displaystyle \frac{k^{\frac{3}{2}}}{\varepsilon}$), if
  ISIGMA=3, XSIGMA will be equal to the maximum of $L_t$ et $L_K$ where $L_t$ and $L_K$ are the $\displaystyle \frac{\partial U}{\partial y}$  $\displaystyle \frac{\partial U}{\partial y}$
  Taylor and Kolmogrov co-efficients
@@ -3898,7 +3939,7 @@ increases the computing time per iteration and so it decreases the random sampli
 interpolation required. In the PHIDAT function, XX and YY are the co-ordinates by which the valu
 e of PHIDAT is calculated. XDAT and YDAT are the co-ordinates in the FIDCAT file. VARDAT is the
 value of the PHIDAT function with the co-ordinates XDAT and YDAT (given in the FIDCAT file). Note
- that using an indicator III accelerateas the calculations(the user need not modify or delete).
+ that using an indicator III accelerates the calculations(the user need not modify or delete).
  The user must also define the parameter ISUIVO wich indicates if the vortex were started at 0
  or if the file must be re-read (FICMVO).
 
@@ -4169,7 +4210,7 @@ source terms\footnote{indicator \texttt{ISNO2T} for the velocity,
 is activated, it is no longer possible to test the sign of $S_{impl,i}$,
 because of coherence reasons (for more details, the user may refer to
 the theoretical and computer documentation \cite{theory} of the
-subroutine {texttt{preduv}}). The user must therefore make sure it is
+subroutine \texttt{preduv}). The user must therefore make sure it is
 always positive.}
 
 \minititre{Particular case of a linearised source term}
@@ -4453,7 +4494,7 @@ $\bullet$ If $\Gamma$=SMACEL(IELTSM,IPR(IPHAS))$<$0, mass is removed from
 The three calls are made every time step, so that variable mass source
 zones or values may be treated.\\
 
-For the variance, do not take into account the scalar $\varphi_i$ in the envronment
+For the variance, do not take into account the scalar $\varphi_i$ in the environment
 where $\varphi\ne\varphi_i$ generates a variance source.
 
 %========================================
@@ -4470,8 +4511,8 @@ This subroutine takes into account the affected thermal inertia by a wall.
  the coupling with the \syrthes . In construction, the user is not able to
  account for the heat transfer between different parts of the wall. A physical
  analysis of each problem, case by case is required to evaluate the relevance
- of its usage by way of a report of the simple conditions (temperature, zero
- flow) or a coupling with \syrthes.\\
+ of its usage by way of a report of the simple conditions (temperature, zero-flux
+ ) or a coupling with \syrthes.\\
 
 The use of this code requires that theres is only 1 phase (NPHAS=1) and that
  the thermal scalar is defined as (ISCALT$>0$).
@@ -4499,7 +4540,7 @@ of the subroutine is not used in this case).  The parameter ISUIT1 also need to
  the IFPT1D array of dimension NFPT1D.  \mbox{IFPT1D(IFBT1D)}is the number
 IFBT1D\raisebox{1ex}{\small th} boundary faces coupled with the thermal module
  of a 1D wall. The discretional parameters are then completed for a pseudo
- wall accosiated to each face
+ wall associated to each face
 \begin{list}{-}{}
 \item NPPT1D(NFPT1D)\index{NPPT1D}: number of cells in the 1D mesh associated
  to the pseudo wall.
@@ -4507,7 +4548,7 @@ IFBT1D\raisebox{1ex}{\small th} boundary faces coupled with the thermal module
 \item RGPT1D(NFPT1D)\index{RGPT1D}: geometery of the pseudo wall mesh (refined
  as a fluid if RGT1D is smaller than 1)
 \item TPPT1D(NFPT1D)\index{TPPT1D}: initialisation temperature of the wall
-(uniform in thckness). In the course of the calculation, the array stores the
+(uniform in thickness). In the course of the calculation, the array stores the
  temperature of the solid at the fluid/solid interface.
 \end{list}
 
@@ -4525,20 +4566,20 @@ boundary faces (as in the example). If this is not the case, contact the develop
  involving physical parameter and external boundary conditions have been completed.
 \begin{list}{-}{}
 \item ICLT1D(NFPT1D)\index{ICLT1D}:Typical boundary condition at the external
- (pseudo) wall: Dirichlet condition (ICLT1D=1) or flow condition (ICLT1D=3)
+ (pseudo) wall: Dirichlet condition (ICLT1D=1) or flux condition (ICLT1D=3)
 \item TEPT1D(NFPT1D)\index{TEPT1D}: External temperature of the pseudo wall in the
  Dirichlet case.
 \item HEPT1D(NFPT1D)\index{HEPT1D}: External coefficient of transfer in the pseudo
  wall under Dirichlet conditions(en $W.m^{-2}.K^.$).
-\item FEPT1D(NFPT1D)\index{NFPT1D}: External heat flow in the pseado wall  under
- the flow conditions(en $W.m^{-2}$,negative value for energy entering the wall)
+\item FEPT1D(NFPT1D)\index{NFPT1D}: External heat flux in the pseudo wall  under
+ the flux conditions(en $W.m^{-2}$,negative value for energy entering the wall)
 \item XLMT1D(NFPT1D)\index{XLMT1D}: Conductivity$\lambda$ of the wall uniform
 in thickness, (in $W.m^{-1}.K^{-1}$).
 \item RCPT1D(NFPT1D)\index{RCPT1D}: Volumetric heat capacity $\rho C_p$ of the
 wall uniform in thickness in $J.m^{-3}.K^{-1}$)
 \item DTPT1D(NFPT1D)\index{DTPT1D}: Physical time step ascociated with the solved
  1D equation of the pseudo wall(which can be different from the time step in the
- calcualtion)
+ calculation)
 \end{list}
 
 \end{list}
@@ -4562,7 +4603,7 @@ calculation of the physical parameters of the flow and of the
 model (indicator ITURB(IPHAS)).\\
 {\em WARNING: The calculation of the turbulent viscosity being a
 particularly sensible stage, a wrong use of {\em\texttt{usvist}} may
-distort seriously the results.}
+seriously distort the results.}
 
 %==================================
 \subsection{Modification of the friction velocity: \textmd{\texttt{usruet}}}
@@ -4577,7 +4618,7 @@ precisions concerning the friction velocity and the wall boundary
 conditions, the user may refer to the report \cite{bouckermattei00} and
 to the theoretical and computer documentation \cite{theory} of the
 subroutine \texttt{clptur}. To access to this document from a
-workstation, use the command \texttt{cs\_info noyau}.
+workstation, use the command \texttt{cs\_info theory}.
 % or refer to \mbox{$_\text{\Large\~~\hspace{-0.2cm}}$\texttt{sc\_doc/saturne.html}}
 
 The subroutine allows in particular to access to the value of $y^+$ at
@@ -5111,7 +5152,7 @@ solving implicit at the first time step. The zone number allows to assign
 an arbitrary integer to a set of boundary faces having the same
 radiation boundary condition type. This gathering is used by the
 calculation, and in the listing to print some physical values (mean
-temperature, net radiative flow ...). An independent graphic output in
+temperature, net radiative flux ...). An independent graphic output in
 {\em EnSight} format is associated with each zone and allows the display on
 the boundary faces of the variables selected in the third heading of the
 subroutine \texttt{usray1}.\\
@@ -5288,11 +5329,11 @@ initialised at -1, which means that no specific physics is activated.
          \end{list}
         \item Libby-Williams pre-mixed flame: indicator {\bf IPPMOD(ICOLWC\index{ICOLWC})}
          \begin{list}{$\rightarrow$}{}
-               \item IPPMOD(ICOLWC)=0 two peak model with adibiatic conditions.
+               \item IPPMOD(ICOLWC)=0 two peak model with adiabiatic conditions.
                \item IPPMOD(ICOLWC)=1 two peak model with permeatic conditions.
-               \item IPPMOD(ICOLWC)=2 three peak model with adibiatic conditions.
+               \item IPPMOD(ICOLWC)=2 three peak model with adiabiatic conditions.
                \item IPPMOD(ICOLWC)=3 three peak model with permeatic conditions.
-               \item IPPMOD(ICOLWC)=4 four peak model with adibiatic conditions.
+               \item IPPMOD(ICOLWC)=4 four peak model with adiabiatic conditions.
                \item IPPMOD(ICOLWC)=5 four peak model with permeatic condintions.
                \item IPPMOD(ICOLWC)=-1 module not activated.
           \end{list}
@@ -6055,7 +6096,7 @@ effect) or the current (electric arc module) from the imposed values(PUISMP\inde
  for example, the cathode can be fixed at 0 and the potential at the anode
  contains the variable DPOT. This variable is initialised in \texttt{useli1}
  by an estimated potential difference. If IELCOR=1(see \texttt{useli1}),
-DPOT is updated automatically during the calcualtion to obtain the required
+DPOT is updated automatically during the calculation to obtain the required
 current.
 \item For the Joule module effect, DPOT is again used with the same significane
  as it held in the electric arc module. If DPOT is not wanted in the setting of the

@@ -31,75 +31,77 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Il est n\'ecessaire de disposer de conditions aux limites dans au moins
-trois cas principaux~:
+Boundary conditions are required in at least three principal cases~: 
 \begin{itemize}
-\item calcul de termes convectifs (diff\'erentiels d'ordre un en espace) au
-bord~:  le calcul fait intervenir un flux au bord et demande
-la donn\'ee au bord de la variable convect\'ee lorsque la fronti\`ere est
-``entrante'' au sens des courbes caract\'eristiques du syst\`eme
-(au sens de la vitesse, dans le cas d'une \'equation isol\'ee portant
-sur un simple scalaire~: interpr\'etation suffisante dans le cadre actuel de
-\CS\footnote{sauf en module compressible, cf. \fort{cfxtcl}})~;
-\item calcul de termes de diffusion (diff\'erentiels d'ordre deux en espace)~:
-il est alors n\'ecessaire de disposer d'un moyen de conna\^\i
-tre la valeur
-de d\'eriv\'ees spatiales d'ordre un au bord (plus exactement, il est
-n\'ecessaire de disposer d'information permettant de calculer les termes qui en
-d\'ependent, comme les contraintes ou les flux thermiques en paroi)~;
-\item calcul de gradient ``cellules'' plus standard~: il est n\'ecessaire de disposer de la
-donn\'ee de la variable aux faces de bord (plus g\'en\'eralement, il est n\'ecessaire
-de disposer d'un moyen de calculer les termes discrets des \'equations
-lorsqu'ils font intervenir le gradient dans les cellules de bord, comme par
-exemple les termes de gradient transpos\'e des \'equations de Navier-Stokes).
+\item calculation of the convection terms (first order derivative in space) at
+the boundary~: the calculation uses a flux at the boundary and requires the 
+value of the convected variable at the boundary when the latter is entering 
+the domain in the sens of the characteristic curves of the system (in the sens
+of the velocity, in the case of the single equation of a simple scalar~: 
+ sufficient interpretation in the current framework of 
+\CS\footnote{except with the compressible module, see. \fort{cfxtcl}})~;
+\item calculation of the diffusion terms (second order derivative
+in space)~:
+a method to determine the value of the first order spatial derivatives 
+at the boundary is then required 
+ (more exactly, the terms that depend upon it are required,
+ such as the stresses of the thermal fluxes at the wall)~:
+\item calculation of the cell  gradients~: the variable at the boundary faces
+ are required (more generally, the discrete terms of the equations which depend
+upon the gradient inside boundary cells are required, such as the transpose
+gradient terms in the Navier-Stokes equations). 
 \end{itemize}
+These considerations only concern the computation variables  
+(velocity, pressure, Reynolds tensor, 
+scalars solution of a convection-diffussion equation). For these variables
 
 Les consid\'erations pr\'esentes concernent uniquement les variables de calcul
 (vitesse, pression, tenseur de Reynolds, scalaires solution d'une \'equation
-de convection-diffusion). Pour ces grandeurs\footnote{
-Les autres grandeurs
-(propri\'et\'es physiques par
-exemple) font l'objet d'un traitement diff\'erent qui ne sera pas d\'etaill\'e
-ici (par exemple, pour la masse volumique, l'utilisateur d\'efinit directement
-les valeurs aux bord, information qui est conserv\'ee telle quelle~; on pourra
-se reportera \`a \fort{usphyv} ou \fort{phyvar}).
+de convection-diffusion). Pour ces grandeurs
+\footnote{
+The other variables 
+(the physical properties for instance) have a different treatment which will 
+not be detailed here (for instance, for the density, the user defines 
+directly the values at the boundary. This information is then stored~; one 
+is referred to \fort{usphyv} or \fort{phyvar} for more information).
 },
-l'utilisateur doit d\'efinir
-les conditions aux limites en chaque face de bord (\fort{usclim}).
+the user has to define the boundary conditions at every boundary face 
+(\fort{usclim}).
 
 
-Le sous-programme \fort{condli} permet de traduire les donn\'ees utilisateur
-(fournies dans \fort{usclim}) au format interne de repr\'esentation des conditions
-aux limites. Des v\'erifications de compl\'etude et de coh\'erence sont
-\'egalement men\'ees (dans \fort{vericl}). Sont en particulier trait\'ees les conditions aux limites
-de paroi (\fort{clptur})
-et de sym\'etrie pour les vitesses et le tenseur de Reynolds (\fort{clsyvt}).
+The subroutine \fort{condli} transforms the data provided by the user
+(in \fort{usclim}) into an internal format of representation of the boundary 
+ conditions. Verifications of the completeness and coherence are also 
+performed (in \fort{vericl}). More particularly, the smooth-wall boundary conditions
+ (\fort{clptur}), the rough-wall boundary conditions (\fort{clptrg})
+and the symmetry boundary conditions for the velocities and 
+the Reynolds stress tensor (\fort{clsyvt}) are treated in dedicated subroutines.
 
-Le sous-programme \fort{condli} fournit en sortie des couples de coefficients
-$A_b$ et $B_b$
-pour chaque variable~$f$ et chaque face  de bord. Ils sont utilis\'es pour le calcul des
-termes discr\'etis\'es intervenant dans les \'equations \`a r\'esoudre et
-permettent en particulier de d\'eterminer une valeur de face
-de bord $f_{b,int}$ (localis\'ee au ``centre'' de la face de bord,
-barycentre de ses sommets) par la
-relation $f_{b,int} = A_b+B_b\,f_{I'}$ o\`u $f_{I'}$ est la valeur de
-la variable au point
-$I'$, projet\'e du centre de la cellule jouxtant le bord sur la droite
-normale \`a
-la face de bord et passant par son centre
-(voir la figure~\ref{Base_Condli_fig_flux_condli}).
+The subroutine \fort{condli} 
+provides as an output pairs of coefficients
+$A_b$ and $B_b$
+for each variable~$f$ and for each boudary face.
+These are used for the calculation of the discrete terms in the equations 
+to be solved. More specifically, these coefficients are used to calculate
+a value at the boundary faces $f_{b,int}$ (localised at the centre of the
+boundary face, barycentre of its vertices) by the relation  
+ $f_{b,int} = A_b+B_b\,f_{I'}$, where $f_{I'}$ is the value of the variable 
+at point $I'$. $I'$ is the projection onto the centre of the cell 
+adjoin to the boundary on the line normal to the boundary face and passing
+by its centre 
+(see figure~\ref{Base_Condli_fig_flux_condli}).
 
 \begin{figure}[h]
 \centerline{\includegraphics[height=8cm]{\repgraphics/fluxbord}}
-\caption{\label{Base_Condli_fig_flux_condli}Cellule de bord.}
+\caption{\label{Base_Condli_fig_flux_condli}Boundary cell.}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discr\'etisation}
+\section{Discretisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -163,24 +165,24 @@ le domaine.
 on impose une condition de
 Dirichlet homog\`ene sur la vitesse (pas sur le flux de masse),
 \`a d\'efaut de conna\^\i tre sa valeur en aval du domaine. La pression est
-trait\'ee comme dans le cas pr\'ec\'edent o\`u le flux de masse est dirig\'e
-vers l'ext\'erieur du domaine. Pour les variables
-autres que la vitesse et la pression,
-deux cas se pr\'esentent~:
-                \begin{itemize}
-                \item [-] dans le cas de sorties de type ``10''
-(\var{ISOR10} dans \fort{usclim}), on
-impose une condition de Dirichlet (valeur fournie par l'utilisateur et nulle par
-d\'efaut) pour repr\'esenter la valeur du scalaire introduit dans le domaine
-par les faces de bord concern\'ees.
-                \item[-] dans le cas des sorties de type ``9''
-(\var{ISOR09} dans \fort{usclim}), on
-impose, comme lorsque le flux de masse est sortant, une condition de Neumann
-homog\`ene (ceci n'est pas une situation souhaitable, puisque l'information
-port\'ee sur les faces de bord provient alors de {\it l'aval} de l'\'ecoulement local).
-                \end{itemize}
+trait\'ee comme dans le cas pr\'ec\'edent o\`u le flux de masse est
+dirig\'e vers l'ext\'erieur du domaine. Pour les variables autres que
+la vitesse et la pression, deux cas se
+pr\'esentent~:
+        \begin{itemize}
+        \item[-] on peut imposer une condition de Dirichlet
+                 pour repr\'esenter la valeur du scalaire introduit dans le domaine par
+                 les faces de bord concern\'ees.
+        \item[-] on peut imposer, comme lorsque
+                 le flux de masse est sortant, une condition de Neumann homog\`ene
+                 (ceci n'est pas une situation souhaitable, puisque l'information
+                 port\'ee sur les faces de bord provient alors de {\it l'aval} de
+                 l'\'ecoulement local). C'est le cas par d\'efaut si l'on ne donne pas
+                 de valeur pour le Dirichlet.
         \end{itemize}
-\item [$\bullet$] {\bf Paroi}~: on se reportera \`a \fort{clptur} pour une description du
+\end{itemize}
+\item [$\bullet$] {\bf Paroi}~: on se reportera \`a \fort{clptur} (ou \`a \fort{clptrg} pour les
+parois rugueuses) pour une description du
 traitement des conditions aux limites de paroi (suppos\'ees imperm\'eables au
 fluide). Bri\`evement, on peut dire ici
 qu'une approche par lois de paroi est utilis\'ee afin d'imposer la contrainte
@@ -651,20 +653,21 @@ conditions aux limites par d\'efaut. Les faces de bord ainsi
 rep\'er\'ees sont cependant trait\'ees comme un ensemble particulier
 lors de l'impression
 d'informations de type flux de masse par exemple.}~:
-\var{IENTRE} (entr\'ee), \var{ISOR09}
-(sortie de type 9), \var{ISOR10} (sortie de type 10), \var{ISYMET} (sym\'etrie),
-\var{IPAROI} (paroi). Dans le cas des entr\'ees (et des sorties de type 10), il
+\var{IENTRE} (entr\'ee), \var{ISOLIB}
+(sortie libre), \var{ISYMET} (sym\'etrie),
+\var{IPAROI} (paroi lisse), \var{IPARUG} (paroi rugueuse). Dans le cas des entr\'ees (et des sorties de type 10), il
 est n\'ecessaire de fournir une valeur de Dirichlet.
 
-L'utilisateur peut \'egalement renseigner un entier (tableau \var{ICODCL}
-de dimension \var{NFABOR}$\times$\var{NVAR}) d\'esignant le type de
-condition \`a appliquer \`a une variable donn\'ee~: les valeurs 1 (pour
-Dirichlet) et 3 (pour Neumann) sont souvent utilis\'ees,
-plus rarement 5 (pour les conditions de paroi) et exceptionnellement 4
-(pour la sym\'etrie d'une
-vitesse ou du tenseur de Reynolds), 9 ou 10 (pour les sorties de type 9 ou
-10). Lorsque \var{ICODCL} est renseign\'e pour une variable donn\'ee,
-il prend alors le pas sur
+L'utilisateur peut \'egalement renseigner un entier
+(tableau \var{ICODCL} de dimension \var{NFABOR}$\times$\var{NVAR})
+d\'esignant le type de condition \`a appliquer \`a une variable
+donn\'ee~: les valeurs 1 (pour Dirichlet) et 3 (pour Neumann) sont
+souvent utilis\'ees, plus rarement 5 (pour les conditions de paroi
+lisse) ou 6 (pour les conditions de paroi rugueuse) et
+exceptionnellement 4 (pour la sym\'etrie d'une vitesse ou du tenseur
+de Reynolds), 9 (pour la sortie libre, uniquement pour les
+vitesses). Lorsque \var{ICODCL} est renseign\'e pour une variable
+donn\'ee, il prend alors le pas sur
 \var{ITYPFB} sur la face consid\'er\'ee.
 L'utilisateur doit dans ce cas \'egalement fournir, suivant les
 cas, z\'ero, un ou deux r\'eels (dans le tableau \var{RCODCL}
@@ -718,7 +721,7 @@ calcul.
                                 &Neumann homog\`ene$^{a}$
                                         &             &                 &           \\
 \cline{3-7}
-              &                & vitesses
+              & lisse          & vitesses
                                 &lois de paroi (Dirichlet)$^{b}$
                                         &RCODCL(.,.,1)&vitesse de d\'efilement & nulle par d\'efaut\\
 \cline{3-7}
@@ -734,39 +737,34 @@ calcul.
                                         &             &                 &           \\
 \hline
 \hline
-\var{ISOR09}  & sortie         & pression
-                                &$\displaystyle\frac{\partial^2P}{\partial
-\vect{n}\partial\vect{\tau}_i}=0$
+\var{IPARUG}  & paroi          & pression
+                                &Neumann homog\`ene$^{a}$
                                         &             &                 &           \\
 \cline{3-7}
-              &                & vitesses
-                                &Neumann homog\`ene
-                                        &             &                 &           \\
+              & rugueuse       & vitesses
+                                &lois de paroi (Dirichlet)$^{b}$
+                                        &RCODCL(.,.,1)&vitesse de d\'efilement & nulle par d\'efaut\\
               &                &
-                                &\ \ (flux de masse sortant)
-                                        &             &                 &           \\
-\cline{4-7}
-              &                &
-                                &Dirichlet homog\`ene
-                                        &             &                 &           \\
-              &                &
-                                &\ \ (flux de masse entrant)
+                                &       &RCODCL(.,.,3)$^{f}$&hauteur de rugosit\'e & nulle par d\'efaut\\
+\cline{3-7}
+              &                & grandeurs turbulentes
+                                &lois de paroi$^{c}$
                                         &             &                 &           \\
 \cline{3-7}
               &                & autres variables
                                 &
                                         &             &                 &           \\
-              &                &\ \            transport\'ees
-                                &Neumann homog\`ene
+              &                &\ \           transport\'ees
+                                &Neumann homog\`ene$^{d}$
                                         &             &                 &           \\
 \hline
 \hline
-\var{ISOR10}  & sortie         & pression
+\var{ISOLIB}  & sortie         & pression
                                 &$\displaystyle\frac{\partial^2P}{\partial
 \vect{n}\partial\vect{\tau}_i}=0$
                                         &             &                 &           \\
 \cline{3-7}
-              &                & vitesses
+              & libre          & vitesses
                                 &Neumann homog\`ene
                                         &             &                 &           \\
               &                &
@@ -784,9 +782,8 @@ calcul.
                                 &Neumann homog\`ene
                                         &             &                 &           \\
               &                &\ \            transport\'ees
-                                &\ \ (flux de masse sortant)
-                                        &             &                 &           \\
-\cline{4-7}
+                                &\ \ ou
+                                        &             &                 &            \\
               &                &
                                 &Dirichlet$^{e}$
                                         &RCODCL(.,.,1)&valeur d'entr\'ee& nulle par d\'efaut\\
@@ -798,14 +795,15 @@ calcul.
 \end{center}
 $^{a}$Le gradient peut \^etre
 extrapol\'e en paroi selon les valeurs de \var{EXTRAP}~: voir \fort{gradrc}\\
-$^{b}$voir \fort{clptur}\\
-$^{c}$voir \'egalement \fort{clptur}\\
+$^{b}$voir \fort{clptur} pour une paroi lisse ou \fort{clptrg} pour une paroi rugueuse\\
+$^{c}$voir \'egalement \fort{clptur} ou \fort{clptrg}\\
 $^{d}$La condition de Neumann
 homog\`ene est obtenue lorsque l'utilisateur ne pr\'ecise rien d'autre que le
-type de fronti\`ere \var{IPAROI}~; d'autres conditions sont possibles~: le
+type de fronti\`ere \var{IPAROI} ou \var{IPARUG}~; d'autres conditions sont possibles~: le
 tableau \ref{Base_Condli_table_ICODCL_condli} les pr\'ecise.\\
 $^{e}$La valeur est impos\'ee par l'utilisateur. Il n'y a pas d'implicitation
-temporelle.
+temporelle.\\
+$^{f}$Seule la valeur pour IU(IPHAS) est utilis\'ee.
 }
 \caption{Conditions aux limites standards.}\label{Base_Condli_table_ITYPFB_condli}
 \end{table}
@@ -851,6 +849,24 @@ temporelle.
         &\var{RCODCL(.,.,2)} &$h_{imp,ext}$ & coef. d'\'echange&=\var{RINFIN}$=10^{30}$ par d\'efaut\\
 \hline
 \hline
+6             & vitesse                 & Loi de paroi rugueuse
+        &\var{RCODCL(.,.,1)} &            & vitesse de d\'efilement &nulle par d\'efaut\\
+              &                         &                          
+        &\var{RCODCL(.,.,3)} &            & rugosit\'e dynamique &nulle par d\'efaut\\
+\cline{2-7}
+              & $k$, $R_{ij}$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$ & Loi de paroi rugueuse    
+        &                    &            &                         & \\
+              &                         &                          
+        &\var{RCODCL(.,.,3)} &            & rugosit\'e dynamique &nulle par d\'efaut\\
+\cline{2-7}
+              & {\it VarScalaire}             & Loi de paroi rugueuse
+        &\var{RCODCL(.,.,1)} &$f_{imp,ext}$ & valeur en paroi       &nulle par d\'efaut\\
+              & \ (sauf variance)   &
+        &\var{RCODCL(.,.,2)} &$h_{imp,ext}$ & coef. d'\'echange&=\var{RINFIN}$=10^{30}$ par d\'efaut\\
+              &                         &                          
+        &\var{RCODCL(.,.,3)} &            & rugosit\'e thermique &nulle par d\'efaut\\
+\hline
+\hline
 9             & vitesse                 & Neumann homog\`ene
         &                    &            &                         & \\
               &                         & \ \ (flux de masse sortant)
@@ -859,17 +875,6 @@ temporelle.
               &                         & Dirichlet homog\`ene
         &                    &            &                         & \\
               &                         & \ \ (flux de masse entrant)
-        &                    &            &                         & \\
-\hline
-\hline
-10            & $k$, $R_{ij}$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$ &  Dirichlet
-        &\var{RCODCL(.,.,1)} &$f_{imp,ext}$ & valeur   &nulle par d\'efaut\\
-              & {\it VarScalaire}                & \ \ (flux de masse entrant)
-        &\var{RCODCL(.,.,2)} &$h_{imp,ext}$ & coef. d'\'echange&=\var{RINFIN}$=10^{30}$ par d\'efaut\\
-\cline{3-7}
-              &                         & Neumann
-        &\var{RCODCL(.,.,3)} &$\phi_{imp,ext}$ &valeur &nulle par d\'efaut\\
-              &                         &  \ \ (flux de masse sortant)
         &                    &            &                         & \\
 \hline
 \end{tabular}
@@ -892,12 +897,12 @@ temporelle.
 %        &          &
 %1& 3& 4& 5& 9& 10 \\
 \hline
-Vitesse                                 & $U$                 &  1& 3& 4& 5& 9&  \\
-Pression                                 & $p$                 &  1& 3&  &  &  &  \\
-Variable scalaire de turbulence & $k$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$        &  1& 3&  & 5& &10 \\
-Tenseur de Reynolds                 & $R_{ij}$                 &  1& 3& 4& 5& &10 \\
-{\it VarScalaire} (hormis variances) &                  &  1& 3&  & 5& &10 \\
-Variance des fluctuations d'une {\it VarScalaire} & &  1& 3&  &  & &10 \\
+Vitesse                                 & $U$                 &  1& 3& 4& 5& 6& 9 \\
+Pression                                 & $p$                 &  1& 3&  &  & & \\
+Variable scalaire de turbulence & $k$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$        &  1& 3&  & 5& 6& \\
+Tenseur de Reynolds                 & $R_{ij}$                 &  1& 3& 4& 5& 6& \\
+{\it VarScalaire} (hormis variances) &                  &  1& 3&  & 5& 6& \\
+Variance des fluctuations d'une {\it VarScalaire} & &  1& 3&  &  & & \\
 \hline
 \end{tabular}
 \end{center}
@@ -920,12 +925,13 @@ la valeur de \var{ICODCL} associ\'ee \`a la pression doit \^etre 1 (sortie libre
 $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$ ou pour une des composantes du
 tenseur de Reynolds $R_{ij}$,
 la valeur de \var{ICODCL} associ\'ee \`a toutes ces variables doit \^etre 5 (paroi).
+La m\^eme remarque vaut pour \var{ICODCL} \'egal \`a 6.
 \item [-] Si \var{ICODCL} vaut 4 pour une composante de la vitesse
 ou pour une des composantes du tenseur de Reynolds $R_{ij}$,
 la valeur de \var{ICODCL} associ\'ee \`a toutes ces variables doit \^etre 4 (sym\'etrie).
 \item [-] Si \var{ICODCL} vaut 5 pour une variable {\it VarScalaire},
 la valeur de \var{ICODCL} associ\'ee \`a toutes les composantes de la vitesse
-doit \^etre 5 (paroi).
+doit \^etre 5 (paroi lisse),  idem si \var{ICODCL} vaut 6 (paroi rugueuse).
 \end{itemize}
 
 \etape{Conversion des donn\'ees utilisateur}

@@ -1,3 +1,19 @@
+* 14/11/2008 - David Monfort <david.monfort@edf.fr>
+  Merge documentation changes form the 1.3 branch (-r 777:778).
+  modified documentation:
+    THEORY/latex/Base/bilsc2.tex
+    THEORY/latex/Base/clptrg.tex
+    THEORY/latex/Base/clptur.tex
+    THEORY/latex/Base/clsyvt.tex
+    THEORY/latex/Base/condli.tex
+    THEORY/latex/summary.tex
+    THEORY/latex/theory.tex
+    USER/latex/a1_autovalid.tex
+    USER/latex/saturne1.tex
+    USER/latex/saturne2.tex
+  added documentation:
+    THEORY/latex/Base/clptrg.tex
+
 * 13/11/2008 - David Monfort <david.monfort@edf.fr>
   Updating Code_Saturne version number to 1.4.c and prerequisites.
   modified files:
