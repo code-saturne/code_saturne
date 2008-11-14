@@ -1,0 +1,53 @@
+#!/bin/sh
+
+PREFIX=`dirname $0`
+PREFIX=`cd "$PREFIX/.." ; pwd`
+SUBDIR=`basename $PREFIX`
+
+ARCHNAME=${SUBDIR}.tar
+\rm -f $ARCHNAME.gz
+
+RUNDIR=`pwd`
+
+if [ `uname -s` = Linux ] ; then
+  TMPDIR=`mktemp -d /tmp/cs_backup.XXXXXX`
+else
+  TMPDIR=/tmp/ncs_`basename $0`
+  mkdir $TMPDIR
+fi
+if [ $? -ne 0 ]; then
+  echo "$0: Error creating temporary directory..."
+  exit 1
+fi
+
+cp -p -r $PREFIX $TMPDIR/
+cd $TMPDIR || exit 1
+
+# Clean copy
+
+find "$TMPDIR" -name .svn -exec \rm -rf {} \;
+find "$TMPDIR" -name *~ -exec \rm {} \;
+find "$TMPDIR" -name \#* -exec \rm {} \;
+find "$TMPDIR" -name \.\#* -exec \rm {} \;
+
+cd `basename "$PREFIX"`/doc 
+if [ $? = 0 ]; then
+  make distclean
+  cd $TMPDIR || exit 1
+fi
+
+PREFIX_BASE=`basename $PREFIX`
+
+tar cvf $ARCHNAME $PREFIX_BASE/ChangeLog $PREFIX_BASE/COPYING \
+                  $PREFIX_BASE/COMPATIBILITY $PREFIX_BASE/TODO \
+                  $PREFIX_BASE/bin $PREFIX_BASE/data $PREFIX_BASE/doc \
+                  $PREFIX_BASE/extras $PREFIX_BASE/include $PREFIX_BASE/patches \
+                  $PREFIX_BASE/po $PREFIX_BASE/sbin $PREFIX_BASE/src \
+                  $PREFIX_BASE/users
+
+gzip $ARCHNAME
+mv $ARCHNAME.gz $RUNDIR
+
+cd $RUNDIR
+\rm -rf $TMPDIR
+
