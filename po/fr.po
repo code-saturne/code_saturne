@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-13 10:45+0100\n"
+"POT-Creation-Date: 2008-11-14 13:50+0100\n"
 "PO-Revision-Date: 2008-11-07 20:04+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2209,7 +2209,7 @@ msgstr "Nombre de groupe(s): %i\n"
 msgid "Group: %s\n"
 msgstr "Groupe: %s\n"
 
-#: src/base/cs_mesh_solcom.c:343 src/base/cs_post.c:2748
+#: src/base/cs_mesh_solcom.c:379 src/base/cs_post.c:2748
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
