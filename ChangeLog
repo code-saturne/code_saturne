@@ -1,3 +1,10 @@
+* 14/11/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Minor corrections and improvements.
+  modified routines:
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_ecs_messages.c
+    src/base/cs_mesh.c
+
 * 14/11/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Reformating comments and english translation.
   modified routines:

@@ -1347,14 +1347,14 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\nVertex coordinates:\n");
   for (i = 0; i < mesh->n_vertices; i++)
-    bft_printf("<%3d > %10.3f        %10.3f        %10.3f\n",
+    bft_printf("   <%3d >  %10.3f        %10.3f        %10.3f\n",
                i+1, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                mesh->vtx_coord[3*i+2]);
 
   if (mesh->n_domains > 1) {
     bft_printf("\nGlobal vertex numbering:\n");
     for (i = 0; i < mesh->n_vertices; i++)
-      bft_printf("<%3d > %10u\n",
+      bft_printf("   <%7d >  %10u\n",
                  i+1, mesh->global_vtx_num[i]);
   }
 
@@ -1364,14 +1364,14 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\nInternal faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++)
-    bft_printf("        < %d >         %5d    <----> %5d\n", i+1,
+    bft_printf("   < %7d >  %7d  <---->  %7d\n", i+1,
                mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
 
   bft_printf("\nInternal faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++) {
-    bft_printf("        < %d >", i+1);
+    bft_printf("    < %7d >", i+1);
     for (j = mesh->i_face_vtx_idx[i]-1; j < mesh->i_face_vtx_idx[i+1]-1; j++)
-      bft_printf("         %5d ",mesh->i_face_vtx_lst[j]);
+      bft_printf("  %7d ",mesh->i_face_vtx_lst[j]);
     bft_printf("\n");
   }
 
@@ -1379,7 +1379,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nInternal faces global numbering:\n");
     for (i = 0; i < mesh->n_i_faces; i++)
-      bft_printf("        < %d >         %12d",
+      bft_printf("   < %7d >  %12d",
                  i+1, mesh->global_i_face_num[i]);
     bft_printf("\n");
 
@@ -1391,13 +1391,13 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\nBorder faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++)
-    bft_printf("        < %d >         %5d\n", i+1, mesh->b_face_cells[i]);
+    bft_printf("   < %7d >  %7d\n", i+1, mesh->b_face_cells[i]);
 
   bft_printf("\nBorder faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++) {
-    bft_printf("        < %d >", i+1);
+    bft_printf("   < %7d >", i+1);
     for (j = mesh->b_face_vtx_idx[i]-1; j < mesh->b_face_vtx_idx[i+1]-1; j++)
-      bft_printf("         %5d ",mesh->b_face_vtx_lst[j]);
+      bft_printf("  %7d ",mesh->b_face_vtx_lst[j]);
     bft_printf("\n");
   }
 
@@ -1409,15 +1409,15 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nCell global numbering:\n");
     for (i = 0; i < mesh->n_cells; i++)
-      bft_printf("        < %d >         %12d", i+1, mesh->global_cell_num[i]);
+      bft_printf("   < %7d >  %12d", i+1, mesh->global_cell_num[i]);
     bft_printf("\n");
 
   }
 
-  bft_printf("\nNumber of families: %d\n",mesh->n_families);
+  bft_printf("\nNumber of families: %3d\n",mesh->n_families);
   bft_printf("Family of each cell:\n");
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
-    bft_printf("< %3d >         %5d\n", i+1, mesh->cell_family[i]);
+    bft_printf("   < %3d >  %5d\n", i+1, mesh->cell_family[i]);
 
   if (mesh->halo != NULL) {
 

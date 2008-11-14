@@ -1168,6 +1168,8 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  assert(cell_cells_idx != NULL);
+
   /* Synchronize variable */
 
   if (mesh->halo != NULL) {

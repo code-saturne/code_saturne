@@ -1863,7 +1863,7 @@ void CS_PROCF(ledevi, LEDEVI)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        BFT_MALLOC(mesh->group_lst, header.n_vals, char);
+        BFT_MALLOC(mesh->group_lst, header.n_vals + 1, char);
         cs_io_read_global(&header, (void *) mesh->group_lst, pp_in);
       }
 
