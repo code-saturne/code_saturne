@@ -871,7 +871,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   coarsest_level = mg->n_levels - 1;
 
-  c_precision = precision * 0.01; /* Increase precision on coarsest mesh */
+  /* In theory, one should increase precision on coarsest mesh,
+     but in practice, it more efficient to have a lower precision */
+  /* c_precision = precision * 0.01; */
+  c_precision = precision;
 
   f = mg->grid_hierarchy[0];
 

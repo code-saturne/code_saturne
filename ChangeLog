@@ -1,3 +1,10 @@
+* 14/11/2008 - David Monfort <david.monfort@edf.fr>
+  Set the precision on coarsest mesh equal to the one
+  on finest mesh in the multigrid algorithm for better
+  efficiency (and scalability).
+  modified routine:
+    src/base/cs_multigrid.c
+
 * 14/11/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Minor corrections and improvements.
   modified routines:
