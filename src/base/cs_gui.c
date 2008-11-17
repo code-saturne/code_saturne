@@ -3224,11 +3224,12 @@ static void _init_boundaries(const int *const nfabor,
     if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Le groupe ou attribut \"%s\" figurant dans le\n"
-                  "critère de sélection:\n"
-                  "\"%s\"\n ne correspond à aucune face de bord."),
-                missing, description);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                   "criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
+                 missing, description);
     }
 
     BFT_FREE(description);
@@ -5531,10 +5532,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf("The group or attribute \"%s\" in the selection\n"
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
                    "criteria:\n"
                    "\"%s\"\n"
-                   " does not correspond to any cell.\n",
+                   " does not correspond to any boundary face.\n"),
                  missing, description);
     }
 
@@ -6085,11 +6086,11 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
       const char *missing
         = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf("The group or attribute \"%s\" in the selection\n"
+      bft_printf(_("The group or attribute \"%s\" in the selection\n"
                    "criteria:\n"
                    "\"%s\"\n"
                    " does not correspond to any boundary face.\n"),
-                 missing, description;
+                 missing, description);
     }
 
     BFT_FREE(description);

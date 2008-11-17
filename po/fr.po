@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-14 13:50+0100\n"
+"POT-Creation-Date: 2008-11-17 15:31+0100\n"
 "PO-Revision-Date: 2008-11-07 20:04+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -914,7 +914,7 @@ msgstr ""
 #: src/base/cs_gui.c:251 src/base/cs_gui.c:410 src/base/cs_gui.c:475
 #: src/base/cs_gui.c:951 src/base/cs_gui.c:1434 src/base/cs_gui.c:1570
 #: src/base/cs_gui.c:1698 src/base/cs_gui.c:1831 src/base/cs_gui.c:2028
-#: src/base/cs_gui.c:2202 src/base/cs_gui.c:2949 src/base/cs_gui.c:3422
+#: src/base/cs_gui.c:2202 src/base/cs_gui.c:2949 src/base/cs_gui.c:3423
 #: src/base/cs_gui_matisse.c:123 src/base/cs_gui_matisse.c:145
 #: src/base/cs_gui_matisse.c:165 src/base/cs_gui_matisse.c:194
 #: src/base/cs_gui_util.c:536 src/base/cs_gui_util.c:636
@@ -943,25 +943,26 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3210 src/base/cs_gui.c:5709
+#: src/base/cs_gui.c:3210 src/base/cs_gui.c:5710
 #, c-format
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3228
+#: src/base/cs_gui.c:3228 src/base/cs_gui.c:5535 src/base/cs_gui.c:5728
+#: src/base/cs_gui.c:5965 src/base/cs_gui.c:6089 src/base/cs_selector.c:239
 #, c-format
 msgid ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
 "\"%s\"\n"
-" ne correspond à aucune face de bord."
+" does not correspond to any boundary face.\n"
 msgstr ""
 "Le groupe ou attribut \"%s\" figurant dans le\n"
 "critère de sélection:\n"
 "\"%s\"\n"
-" ne correspond à aucune face de bord."
+" ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui.c:3244
+#: src/base/cs_gui.c:3245
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -984,87 +985,74 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3348
+#: src/base/cs_gui.c:3349
 #, c-format
 msgid ""
 "Invalid xpath: %s\n"
 " name not found"
 msgstr ""
 
-#: src/base/cs_gui.c:3393
+#: src/base/cs_gui.c:3394
 #, c-format
 msgid ""
 "Invalid markup name: %s\n"
 " label not found"
 msgstr ""
 
-#: src/base/cs_gui.c:3692
+#: src/base/cs_gui.c:3693
 #, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3769
+#: src/base/cs_gui.c:3770
 msgid "Trouble with the allocated memory for the global variable 'vars'.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3872
+#: src/base/cs_gui.c:3873
 #, c-format
 msgid "Invalid coal model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3924
+#: src/base/cs_gui.c:3925
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4345
+#: src/base/cs_gui.c:4346
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4775
+#: src/base/cs_gui.c:4776
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4795
+#: src/base/cs_gui.c:4796
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4803
+#: src/base/cs_gui.c:4804
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5060 src/base/cs_gui.c:6459
+#: src/base/cs_gui.c:5061 src/base/cs_gui.c:6460
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5451 src/base/cs_gui_radiative_transfer.c:662
+#: src/base/cs_gui.c:5452 src/base/cs_gui_radiative_transfer.c:662
 #, c-format
 msgid "Name of variable %d was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5727 src/base/cs_gui.c:5964 src/base/cs_selector.c:239
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any boundary face.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune face de bord.\n"
-
-#: src/base/cs_gui.c:5939 src/base/cs_gui.c:6121
+#: src/base/cs_gui.c:5940 src/base/cs_gui.c:6122
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6129
+#: src/base/cs_gui.c:6130
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1088,7 +1076,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6159
+#: src/base/cs_gui.c:6160
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1112,7 +1100,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6743 src/base/cs_gui_util.c:158
+#: src/base/cs_gui.c:6744 src/base/cs_gui_util.c:158
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -2459,38 +2447,38 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-#: src/base/cs_multigrid.c:935
+#: src/base/cs_multigrid.c:938
 msgid "  Multigrid cycle: descent\n"
 msgstr "  Cycle multigrille : descente\n"
 
-#: src/base/cs_multigrid.c:948 src/base/cs_multigrid.c:1111
+#: src/base/cs_multigrid.c:951 src/base/cs_multigrid.c:1114
 #, c-format
 msgid "    level %3d: smoother\n"
 msgstr "    niveau %3d : lisseur\n"
 
-#: src/base/cs_multigrid.c:1041
+#: src/base/cs_multigrid.c:1044
 msgid "  Resolution on coarsest level\n"
 msgstr "  Résolution sur le niveau le plus grossier\n"
 
-#: src/base/cs_multigrid.c:1080
+#: src/base/cs_multigrid.c:1083
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
 
-#: src/base/cs_multigrid.c:1240
+#: src/base/cs_multigrid.c:1243
 msgid "Multigrid"
 msgstr "Multigrille"
 
-#: src/base/cs_multigrid.c:1273
+#: src/base/cs_multigrid.c:1276
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
 
-#: src/base/cs_multigrid.c:1280
+#: src/base/cs_multigrid.c:1283
 #, c-format
 msgid "Multigrid [%s]: cycle %4d\n"
 msgstr "Multigrille [%s] : cycle %4d\n"
 
-#: src/base/cs_multigrid.c:1433
+#: src/base/cs_multigrid.c:1436
 #, c-format
 msgid ""
 "\n"
@@ -2499,7 +2487,7 @@ msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
 
-#: src/base/cs_multigrid.c:1476
+#: src/base/cs_multigrid.c:1479
 #, c-format
 msgid ""
 " CLMLGA: maximum number of coarse grids (%d)\n"
@@ -2508,7 +2496,7 @@ msgstr ""
 " CLMLGA : nombre de maillages grossiers maximal (%d)\n"
 "          atteint pour \"%s\".\n"
 
-#: src/base/cs_multigrid.c:1487
+#: src/base/cs_multigrid.c:1490
 #, c-format
 msgid ""
 "\n"
@@ -2517,7 +2505,7 @@ msgstr ""
 "\n"
 "   construction de la grille de niveau %2d\n"
 
-#: src/base/cs_multigrid.c:1523
+#: src/base/cs_multigrid.c:1526
 #, c-format
 msgid ""
 "                                  total       min        max\n"
@@ -2528,7 +2516,7 @@ msgstr ""
 "     nombre de cellules : %12lu %10d %10d\n"
 "     nombre de faces :                 %10d %10d\n"
 
-#: src/base/cs_multigrid.c:1532
+#: src/base/cs_multigrid.c:1535
 #, c-format
 msgid ""
 "     number of cells:     %10d\n"
@@ -2537,7 +2525,7 @@ msgstr ""
 "     nombre de cellules : %10d\n"
 "     nombre de faces :    %10d\n"
 
-#: src/base/cs_multigrid.c:1551
+#: src/base/cs_multigrid.c:1554
 #, c-format
 msgid ""
 "   number of coarse grids:           %d\n"
@@ -3694,3 +3682,14 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+#~ msgid ""
+#~ "Le groupe ou attribut \"%s\" figurant dans le\n"
+#~ "critère de sélection:\n"
+#~ "\"%s\"\n"
+#~ " ne correspond à aucune face de bord."
+#~ msgstr ""
+#~ "Le groupe ou attribut \"%s\" figurant dans le\n"
+#~ "critère de sélection:\n"
+#~ "\"%s\"\n"
+#~ " ne correspond à aucune face de bord."

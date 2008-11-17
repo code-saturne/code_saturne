@@ -1,3 +1,9 @@
+* 17/11/2008 - David Monfort <david.monfort@edf.fr>
+  Small correction on some output in cs_gui.c
+  modified files:
+    po/fr.po
+    src/base/cs_gui.c
+
 * 14/11/2008 - David Monfort <david.monfort@edf.fr>
   Set the precision on coarsest mesh equal to the one
   on finest mesh in the multigrid algorithm for better
