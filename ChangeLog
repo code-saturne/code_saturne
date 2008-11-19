@@ -1,3 +1,15 @@
+* 19/11/2008 - David Monfort <david.monfort@edf.fr>
+  Rename cs_couplage* sources to cs_sat_coupling*
+  deleted routines:
+    cs_couplage.h
+    cs_couplage.c
+  added routines:
+    cs_sat_coupling.h
+    cs_sat_coupling.c
+  modified routines:
+    cs_main.c
+    cs_opts.c
+
 * 17/11/2008 - David Monfort <david.monfort@edf.fr>
   Small correction on some output in cs_gui.c
   modified files:

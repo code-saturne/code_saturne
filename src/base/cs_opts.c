@@ -56,10 +56,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_couplage.h"
 #include "cs_gui_util.h"
-#include "cs_syr3_comm.h"
-#include "cs_syr3_coupling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

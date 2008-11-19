@@ -61,7 +61,6 @@
 
 #include "cs_base.h"
 #include "cs_benchmark.h"
-#include "cs_couplage.h"
 #include "cs_coupling.h"
 #include "cs_ecs_messages.h"
 #include "cs_gui.h"
@@ -80,6 +79,7 @@
 #include "cs_renumber.h"
 #include "cs_sles.h"
 #include "cs_suite.h"
+#include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------*/

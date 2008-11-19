@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_COUPLAGE_H__
-#define __CS_COUPLAGE_H__
+#ifndef __CS_SAT_COUPLING_H__
+#define __CS_SAT_COUPLING_H__
 
 /*============================================================================
  * Définitions, variables globales, et fonctions associées aux couplages
@@ -424,4 +424,4 @@ void cs_couplage_detruit_tout
 
 END_C_DECLS
 
-#endif /* __CS_COUPLAGE_H__ */
+#endif /* __CS_SAT_COUPLING_H__ */
