@@ -5535,7 +5535,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
       bft_printf(_("The group or attribute \"%s\" in the selection\n"
                    "criteria:\n"
                    "\"%s\"\n"
-                   " does not correspond to any boundary face.\n"),
+                   " does not correspond to any cell.\n"),
                  missing, description);
     }
 
