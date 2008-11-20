@@ -111,11 +111,11 @@ typedef struct {
   char **label;            /* scalars label                                   */
   int   *rtp;              /* variables position in fortran array RTP         */
   int    nvar;             /* total number of variables and scalars           */
-  int    nscaus;           /* user scalar number                              */
-  int    nscapp;           /* predifined physics scalar number                */
-  int    nprop;            /* proprietes number                               */
-  int    nsalpp;           /* particular physical proprietes number           */
-  int    ntimaver;         /* time averages number                            */
+  int    nscaus;           /* number of user scalars                          */
+  int    nscapp;           /* number of predefined specfic physics scalars    */
+  int    nprop;            /* number of properties                            */
+  int    nsalpp;           /* number of specific physics properties           */
+  int    ntimaver;         /* number of tme averages                          */
   char **properties_name;  /* label of properties                             */
   int   *properties_ipp;   /* properties position for post-processing         */
   int   *propce;           /* properties position in fortran array PROPCE     */
@@ -155,11 +155,11 @@ typedef struct {
 } cs_boundary_t;
 
 /*============================================================================
- *  External global variables
+ * External global variables
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Gestion du document xml
+ * Management of the XML document
  *----------------------------------------------------------------------------*/
 
 #if defined(_CS_HAVE_XML)
@@ -199,7 +199,8 @@ static cs_var_t *vars = NULL;
  *   ipp            -->  index from the fortran array associated to varname
  *----------------------------------------------------------------------------*/
 
-static void _gui_copy_varname(const char *varname, int ipp)
+static void
+_gui_copy_varname(const char *varname, int ipp)
 {
   size_t l;
 
@@ -426,8 +427,9 @@ cs_gui_scalar_properties_choice(const int         scalar_num,
  *   value   <--  value of diffusion coefficient
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_diffusion_value(const int           num_sca,
-                                                double *const value)
+static void
+cs_gui_scalar_diffusion_value(const int           num_sca,
+                                    double *const value)
 {
   char  *path = NULL;
   double result;
@@ -453,8 +455,9 @@ static void cs_gui_scalar_diffusion_value(const int           num_sca,
  *   keyword             <--  value of the iale parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_iale_parameter(const char   *const param,
-                                        double *const keyword)
+static void
+cs_gui_iale_parameter(const char   *const param,
+                            double *const keyword)
 {
   char   *path   = NULL;
   char   *type = NULL;
@@ -491,7 +494,8 @@ static void cs_gui_iale_parameter(const char   *const param,
  *   keyword         <--  if 1 unsteady management else steady management
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_get_steady_status(int *const keyword)
+static void
+cs_gui_get_steady_status(int *const keyword)
 {
   char *path = NULL;
   int   result;
@@ -516,8 +520,9 @@ static void cs_gui_get_steady_status(int *const keyword)
  *   keyword         <--  new value for the steady parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_steady_parameters(const char   *const param,
-                                           double *const keyword)
+static void
+cs_gui_steady_parameters(const char   *const param,
+                               double *const keyword)
 {
   char   *path   = NULL;
   double  result = 0.0;
@@ -548,8 +553,9 @@ static void cs_gui_steady_parameters(const char   *const param,
  *   keyword            <--  new value of the time parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_time_parameters(const char   *const param,
-                                         double *const keyword)
+static void
+cs_gui_time_parameters(const char   *const param,
+                             double *const keyword)
 {
   char   *path   = NULL;
   double  result = 0.0;
@@ -581,8 +587,9 @@ static void cs_gui_time_parameters(const char   *const param,
  *   keyword            <-->  new value of the restart parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_restart_parameters_status(const char *const param,
-                                                    int *const keyword)
+static void
+cs_gui_restart_parameters_status(const char *const param,
+                                       int *const keyword)
 {
   int   result;
   char *path = NULL;
@@ -606,9 +613,10 @@ static void cs_gui_restart_parameters_status(const char *const param,
  *   value          <-- value of numerical parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_variable_value(const char   *const variable_type,
-                                  const char   *const value_type,
-                                        double *const value)
+static void
+cs_gui_variable_value(const char   *const variable_type,
+                      const char   *const value_type,
+                            double *const value)
 {
   char  *path = NULL;
   double result;
@@ -633,9 +641,10 @@ static void cs_gui_variable_value(const char   *const variable_type,
  *   keyword      <--  value of attribute node
  *----------------------------------------------------------------------------*/
 
-static void _attribute_value(      char *      path,
-                             const char *const child,
-                                   int  *const keyword)
+static void
+_attribute_value(      char *      path,
+                 const char *const child,
+                       int  *const keyword)
 {
   char *choice = NULL;
   int   result;
@@ -685,9 +694,10 @@ static void _attribute_value(      char *      path,
  *   keyword      <--   value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_variable_attribute(const char *const name,
-                                      const char *const child,
-                                            int  *const keyword)
+static void
+cs_gui_variable_attribute(const char *const name,
+                          const char *const child,
+                                int  *const keyword)
 {
   char *path = NULL;
 
@@ -708,9 +718,10 @@ static void cs_gui_variable_attribute(const char *const name,
  *   value               <--   value of text node contained in the child markup
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_value(const char   *const label,
-                                const char   *const child,
-                                      double *const value)
+static void
+cs_gui_scalar_value(const char   *const label,
+                    const char   *const child,
+                          double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -735,9 +746,10 @@ static void cs_gui_scalar_value(const char   *const label,
  *   keyword      <--   value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_attribute(const char *const label,
-                                    const char *const child,
-                                          int  *const keyword)
+static void
+cs_gui_scalar_attribute(const char *const label,
+                        const char *const child,
+                              int  *const keyword)
 {
   char *path = NULL;
 
@@ -750,17 +762,20 @@ static void cs_gui_scalar_attribute(const char *const label,
 }
 
 /*-----------------------------------------------------------------------------
- * Donne les valeurs liees aux scalaire model : min, max ...
- *       La fonction retourne 1 si la valeur existe
- *                            0 sinon
- * le resultat est stocke dans value
+ * Get values related the modelling scalar: min, max ...
+ *
+ * returns:
+ *    1 if value exists
+ *    0 otherwise
+ *    the result is stored in "value"
  *----------------------------------------------------------------------------*/
 
 
-static void cs_gui_model_scalar_value(const   char *const model,
-                                      const   char *const name,
-                                      const   char *const keyword,
-                                            double *const value)
+static void
+cs_gui_model_scalar_value(const   char *const model,
+                          const   char *const name,
+                          const   char *const keyword,
+                                  double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -789,10 +804,11 @@ static void cs_gui_model_scalar_value(const   char *const model,
  *   keyword      <--   value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_model_scalar_output_status(const char *const model,
-                                              const char *const name,
-                                              const char *const child,
-                                                    int  *const keyword)
+static void
+cs_gui_model_scalar_output_status(const char *const model,
+                                  const char *const name,
+                                  const char *const child,
+                                        int  *const keyword)
 {
   char *path = NULL;
 
@@ -814,8 +830,9 @@ static void cs_gui_model_scalar_output_status(const char *const model,
  *   keyword            <-->  value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_numerical_double_parameters(const char   *const param,
-                                                     double *const keyword)
+static void
+cs_gui_numerical_double_parameters(const char   *const param,
+                                         double *const keyword)
 {
   char  *path = NULL;
   double result;
@@ -839,8 +856,9 @@ static void cs_gui_numerical_double_parameters(const char   *const param,
  *   keyword            <-->  value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_numerical_int_parameters(const char *const param,
-                                                  int  *const keyword)
+static void
+cs_gui_numerical_int_parameters(const char *const param,
+                                      int  *const keyword)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -874,8 +892,9 @@ static void cs_gui_numerical_int_parameters(const char *const param,
  *   keyword            <-->  new value of the gravity parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_gravity_value(const char   *const param,
-                                       double *const value)
+static void
+cs_gui_gravity_value(const char   *const param,
+                           double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -1092,7 +1111,7 @@ static char *cs_gui_turbulence_initialization_choice(void)
 }
 
 /*================================
- * Entrees-sorties
+ * Input / Output
  *===============================*/
 
 /*----------------------------------------------------------------------------
@@ -1466,13 +1485,12 @@ static char *cs_gui_variable_label (const char *const variable)
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour les variables
- *  (Vitesse, Pression...)
- *    le tableau "globale" est construit dans CSENSO
+ * Post-processing options for variables (velocity, pressure, ...)
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *      ou num_saturne_probe est le numero de la sonde dans le code
- *      num_probe et num_saturne_probe different lorsque des sondes
- *                                    sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_thermophysical_post(const char *const variable,
@@ -1515,7 +1533,7 @@ static void cs_gui_thermophysical_post(const char *const variable,
 }
 
 /*-----------------------------------------------------------------------------
- * Nombre de sous-balise "probe_recording" pour les scalaires utilisateurs
+ * Number of sub-headers "probe_recording" for the user scalars
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_scalar_number_probes(const int scalar_num)
@@ -1578,12 +1596,12 @@ static int cs_gui_scalar_probe_name(const int scalar_num,
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour les scalaires
- *    utilisateurs, le tableau "globale" est construit dans CSENSO
+ * Post-processing options for scalars
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *                 ou num_saturne_probe est le numero de la sonde dans le code
- *                 num_probe et num_saturne_probe different lorsque des sondes
- *                 sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_scalar_post(const  int        num_sca,
@@ -1605,17 +1623,17 @@ static void cs_gui_scalar_post(const  int        num_sca,
 
   if (ipp == 1) return;
 
-  /* frequence des sorties ensight */
+  /* EnSight outputs frequency */
   cs_gui_scalar_attribute(vars->label[num_sca],
                           "postprocessing_recording",
                           &ichrvr[ipp - 1]);
 
-  /* frequence des sorties listing */
+  /* Listing output frequency */
   cs_gui_scalar_attribute(vars->label[num_sca],
                           "listing_printing",
                           &ilisvr[ipp - 1]);
 
-  /* sondes actives */
+  /* Activated probes */
   nb_probes = cs_gui_scalar_number_probes(num_sca+1);
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
@@ -1681,7 +1699,7 @@ static int cs_gui_model_scalar_probe_name (const char *const model,
   char *strvalue = NULL;
   int   value;
 
-/* Construction de la requete */
+  /* Build the request */
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
@@ -1691,7 +1709,7 @@ static int cs_gui_model_scalar_probe_name (const char *const model,
   cs_xpath_add_element_num(&path, "probe_recording", num_probe);
   cs_xpath_add_attribute(&path, "name");
 
-/* Evaluation de la requete */
+  /* Evaluate the request */
   strvalue = cs_gui_get_attribute_value(path);
 
   if (strvalue == NULL)
@@ -1706,13 +1724,12 @@ static int cs_gui_model_scalar_probe_name (const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour
- *   les scalaires thermiques et model
- *    le tableau "globale" est construit dans CSENSO
+ * Post-processing options for thermal and modelling scalars
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *                 ou num_saturne_probe est le numero de la sonde dans le code
- *                 num_probe et num_saturne_probe different lorsque des sondes
- *                 sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 
@@ -1736,17 +1753,17 @@ static void cs_gui_model_scalar_post(const char  *const model,
 
   if (ipp == 1) return;
 
-  /* frequence des sorties ensight */
+  /* EnSight outputs frequency */
   cs_gui_model_scalar_output_status(model, vars->label[num_sca],
                                     "postprocessing_recording",
                                     &ichrvr[ipp - 1]);
 
-  /* frequence des sorties listing */
+  /* Listing output frequency */
   cs_gui_model_scalar_output_status(model, vars->label[num_sca],
                                     "listing_printing",
                                     &ilisvr[ipp - 1]);
 
-  /* sondes actives */
+  /* Activated probes */
   nb_probes = cs_gui_model_scalar_number_probes(model, vars->label[num_sca]);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
@@ -1814,7 +1831,7 @@ static int cs_gui_model_property_probe_name(const char *const model,
   char *strvalue = NULL;
   int   value;
 
-/* Construction de la requete */
+  /* Build the request */
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
@@ -1824,7 +1841,7 @@ static int cs_gui_model_property_probe_name(const char *const model,
   cs_xpath_add_element_num(&path, "probe_recording", num_probe);
   cs_xpath_add_attribute(&path, "name");
 
-/* Evaluation de la requete */
+  /* Evaluate the request */
   strvalue = cs_gui_get_attribute_value(path);
 
   if (strvalue == NULL)
@@ -1859,7 +1876,7 @@ static char *cs_gui_get_model_property_label(const char *const model,
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_attribute(&path, "label");
 
-/* Evaluation de la requete */
+  /* Evaluate the request */
   label_name = cs_gui_get_attribute_value(path);
 
   BFT_FREE(path);
@@ -1901,13 +1918,12 @@ static void cs_gui_model_property_output_status (const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour
- *   les scalaires thermiques et model
- *    le tableau "globale" est construit dans CSENSO
+ * Post-processing options for properties
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *                 ou num_saturne_probe est le numero de la sonde dans le code
- *                 num_probe et num_saturne_probe different lorsque des sondes
- *                 sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 
@@ -1933,20 +1949,20 @@ cs_gui_model_property_post (const char  *const model,
 
   if (ipp == 1) return;
 
-  /* frequence des sorties ensight */
+  /* EnSight outputs frequency */
   cs_gui_model_property_output_status(model,
                                       vars->properties_name[num_prop],
                                       "postprocessing_recording",
                                       &ichrvr[ipp - 1]);
 
-  /* frequence des sorties listing */
+  /* Listing output frequency */
   cs_gui_model_property_output_status(model,
                                       vars->properties_name[num_prop],
                                       "listing_printing",
                                       &ilisvr[ipp - 1]);
 
 
-  /* sondes actives */
+  /* Activated probes */
   nb_probes = cs_gui_model_property_number_probes(model,
                                                   vars->properties_name[num_prop]);
 
@@ -1961,7 +1977,7 @@ cs_gui_model_property_post (const char  *const model,
     }
   }
 
-  /* prise en compte du label */
+  /* Take into account labels */
 
   varname = cs_gui_get_model_property_label(model, vars->properties_name[num_prop]);
   _gui_copy_varname(varname, ipp);
@@ -2090,12 +2106,12 @@ static void cs_gui_properties_status(const char *const property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour les proprietes physiques
- *    le tableau "globale" est construit dans CSENSO
+ * Post-processing options for physical properties
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *                 ou num_saturne_probe est le numero de la sonde dans le code
- *                 num_probe et num_saturne_probe different lorsque des sondes
- *                 sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 
@@ -2241,12 +2257,12 @@ static void cs_gui_time_average_status(const char *const property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Prise en compte des options de post-traitement pour les moyennes temporelles
- *    le tableau "globale" est construit dans CSENSO
+ * Post-processing options for temporal averaging
+ *    the "globale" array is built in CSENSO
  *          globale[num_probe] = num_saturne_probe
- *                 ou num_saturne_probe est le numero de la sonde dans le code
- *                 num_probe et num_saturne_probe different lorsque des sondes
- *                 sont desactivees dans le fichier XML
+ *      where num_saturne_probe is the probe number in the code
+ *      num_probe and num_saturne_probe are different when some probes
+ *        are de-activated in the XML file
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_time_average_post (const char *const property_name,
@@ -2312,7 +2328,7 @@ static char *cs_gui_scalar_label(const char *const markup,
   return strvalue;
 }
 
-/*===============================
+/*==========================
  * FOR VOLUMICS ZONES
  *==========================*/
 
@@ -3798,8 +3814,8 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
  * *****************
  *
  * INTEGER          IPPMOD <--  predefined physics indicator array
- * INTEGER          ICOD3P  --> diffusion flame en chimie complete rapide
- * INTEGER          ICODEQ  --> diffusion flame en chimie rapide vers l'equilibre
+ * INTEGER          ICOD3P  --> diffusion flame in fast complete chemistry
+ * INTEGER          ICODEQ  --> diffusion flame in fast chemistry towards balance
  * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
  * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
  * INTEGER          ICOLWC  --> Libby Williams premixing flame
@@ -3854,8 +3870,8 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   *indjon = 1;
   *ieqco2 = 0;
 
-  /* cherche la physique particuliere active et donne la valeur de
-     l'attribut model associe */
+  /* Look for the active specific physics and give the value of the associated
+     model attribute */
   isactiv = cs_gui_get_activ_thermophysical_model();
 
   if (isactiv) {
@@ -3873,7 +3889,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                   _("Invalid coal model: %s.\n"), vars->model_value);
       }
     }
-    /* si le model est actif on prend les scalaires physique particuliere */
+    /* If the model is active, one only takes the specific physics scalars */
     nscapp = cs_gui_model_scalar_number(vars->model);
   }
 
@@ -4508,7 +4524,7 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
 }
 
 /*----------------------------------------------------------------------------
- * Traitement des aspects numeriques locaux :
+ * Treatment of local numerical aspects:
  *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
  *----------------------------------------------------------------------------*/
 
@@ -4647,8 +4663,8 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
 }
 
 /*----------------------------------------------------------------------------
- * Traitement de la gravite et des proprietes physiques du fluide
- * Initialisation de la pression de reference et de la temperature si thermique
+ * Treatment of gravity and fluid physical properties
+ * Initialize reference pressure and temperature if present
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csphys, CSPHYS)
@@ -4681,7 +4697,7 @@ void CS_PROCF (csphys, CSPHYS)
 
   cs_gui_reference_pressure(p0);
 
-  /* rho et viscl variables */
+  /* Varaible rho and viscl */
   if (*nmodpp == 0) {
     if (cs_gui_properties_choice("density", &choice))
       irovar[iphas] = choice;
@@ -4690,7 +4706,7 @@ void CS_PROCF (csphys, CSPHYS)
       ivivar[iphas] = choice;
   }
 
-  /* T0 si nécessaire */
+  /* T0 if necessary */
 
   if (vars->model != NULL)
     cs_gui_reference_temperature(vars->model, t0);
@@ -4751,7 +4767,7 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
 
 
 /*----------------------------------------------------------------------------
- * Lecture de la viscosite dynamique de reference des scalaires utilisateurs
+ * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
 
@@ -4780,15 +4796,16 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
       visls0[i] = visls0[i]/result;
     }
 
-  /* Scalaires utilisateurs */
-  /* Dans l'interface, l'utilisateur donne le coefficient de diffusion, alors */
-  /* que dans Saturne on parle de la diffusivite, donc il faut multiplier */
-  /* ce coefficient par la masse volumique pour etre cohérent */
+    /* User scalar
+       In the interface, the user gives the diffusion coefficient, whereas in
+       the solver, one sets the diffusivity, thus one need to multiply
+       this coefficient by the density to remain coherent */
 
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 && i != iscalt[iphas]-1) {
 
         if (vars->model != NULL) {
+          /* Air molar mass */
           result = 0.028966;
           cs_gui_reference_mass_molar(vars->model, &result);
           if (!result)
@@ -4851,7 +4868,7 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
 }
 
 /*----------------------------------------------------------------------------
- * Tableau des propriétés utilisées dans le calcul
+ * Properties array used in the calculation
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprop, UIPROP) (const int *const irom,
@@ -5075,7 +5092,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 }
 
 /*----------------------------------------------------------------------------
- * Traitement des moyennes temporelles
+ * Temporal averaging treatment
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
@@ -5142,7 +5159,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 }
 
 /*----------------------------------------------------------------------------
- * Traitement des entrees-sorties
+ * Input/output treatment
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csenso, CSENSO)
@@ -5192,7 +5209,7 @@ void CS_PROCF (csenso, CSENSO)
   cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
   cs_gui_output_choice("postprocessing_options", optchr, size_opt);
 
-  /* Sorties des variables surfaciques */
+  /* Surfacic variables output */
   cs_gui_surfacic_variable_post("yplus", ipstyp, ipstdv);
   cs_gui_surfacic_variable_post("effort", ipstfo, ipstdv);
   cs_gui_surfacic_variable_post("all_variables",ipstcl,  ipstdv);
@@ -5205,7 +5222,7 @@ void CS_PROCF (csenso, CSENSO)
     xyzcap[2 + i*3] = cs_gui_probe_coordinate(i+1, "probe_z");
   }
 
-  /* Sorties des variables vitesses et turbulence */
+  /* Velocity and turbulence output */
   for (i=0; i<vars->nvar - vars->nscaus - vars->nscapp; i++) {
      ipp = ipprtp[vars->rtp[i]];
      cs_gui_thermophysical_post(vars->name[i],
@@ -5222,7 +5239,7 @@ void CS_PROCF (csenso, CSENSO)
     }
   }
 
-  /* Scalaire model */
+  /* Specific physics scalars */
   if (vars->nscapp > 0) {
     for (i=0 ; i < vars->nscapp; i++) {
       j = iscapp[i]-1 ;
@@ -5232,7 +5249,7 @@ void CS_PROCF (csenso, CSENSO)
     }
   }
 
-  /* Proprietes physiques */
+  /* Physical properties */
 
   if (vars->nsalpp > 0) {
     for (i=0 ; i < vars->nsalpp; i++) {
@@ -5266,8 +5283,8 @@ void CS_PROCF (csenso, CSENSO)
   bft_printf("--ichrvl = %i\n", *ichrvl);
   bft_printf("--ichrbo = %i\n", *ichrbo);
   bft_printf("--ichrsy = %i\n", *ichrsy);
-  bft_printf("--fmtchr = %s\n", "à vérifier en fortran");
-  bft_printf("--optchr = %s\n", "à vérifier en fortran");
+  bft_printf("--fmtchr = %s\n", "need to be checked in Fortran");
+  bft_printf("--optchr = %s\n", "need to be checked in Fortran");
   bft_printf("--ntlist = %i\n", *ntlist);
   bft_printf("--ntchr  = %i\n", *ntchr);
   bft_printf("--nthist = %i\n", *nthist);
@@ -5696,10 +5713,10 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nfabor,
   if (boundaries == NULL)
     _init_boundaries(nfabor, nozppm, ncharb, nclpch, izfppp);
 
-  /* A chaque iteration, boucle sur les faces de bord :
-     on remplit itypfb, rcodcl et icodcl a partir des tableaux
-     de la structures conditions.limites definie
-     dans la premiere partie de la fonction. */
+  /* At each time-step, loop on boundary faces:
+     One sets itypfb, rcodcl and icodcl thanks to the arrays
+     of the structures "conditions.limites" defined
+     in the first part ofthe function */
 
   for (izone=0 ; izone < zones ; izone++) {
 
@@ -5779,7 +5796,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const nfabor,
           = boundaries->values[ivar][izone].val1;
         }
 
-        /* dans ce cas :on prend en compte la norme de la vitesse */
+        /* In this case: one take into account the velocity norm */
         label = cs_gui_boundary_zone_label(ith_zone);
         choice = cs_gui_boundary_choice("inlet", label, "velocity_pressure");
 
@@ -6207,8 +6224,8 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom)
 }
 
 /*-----------------------------------------------------------------------------
- *  Indirection entre la numérotation noyau et la numérotation XML
- *  des propriétés physiques de la physique particulière active
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
@@ -6308,7 +6325,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   BFT_MALLOC(vars->properties_name[n], strlen("XM")+1, char);
   strcpy(vars->properties_name[n++], "XM");
 
- /* ITEMP2 boucle sur les classes */
+  /* ITEMP2 loop on classes */
   BFT_MALLOC(name, strlen("Temp_CP")+1 + 2, char);
   BFT_MALLOC(snumpp, 1 + 2, char);
   strcpy(name, "Temp_CP");
@@ -6324,7 +6341,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Temp_CP");
   }
 
- /* IX2 boucle sur les classes */
+ /* IX2 loop on classes */
   BFT_REALLOC(name, strlen("Frm_CP")+1 + 2, char);
   strcpy(name, "Frm_CP");
   for (i = 0; i < *nclass; i++) {
@@ -6339,7 +6356,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Frm_CP");
   }
 
- /* IROM2 boucle sur les classes */
+ /* IROM2 loop on classes */
   BFT_REALLOC(name, strlen("Rho_CP")+1 + 2, char);
   strcpy(name, "Rho_CP");
   for (i = 0; i < *nclass; i++) {
@@ -6354,7 +6371,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Rho_CP");
   }
 
- /* IDIAM2 boucle sur les classes */
+ /* IDIAM2 loop on classes */
   BFT_REALLOC(name, strlen("Dia_CK")+1 + 2, char);
   strcpy(name, "Dia_CK");
   for (i = 0; i < *nclass; i++) {
@@ -6369,7 +6386,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Dia_CK");
   }
 
- /* IGMDCH boucle sur les classes */
+ /* IGMDCH loop on classes */
   BFT_REALLOC(name, strlen("Ga_DCH")+1 + 2, char);
   strcpy(name, "Ga_DCH");
   for (i = 0; i < *nclass; i++) {
@@ -6384,7 +6401,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Ga_DCH");
   }
 
- /* IGMDV1 boucle sur les classes */
+ /* IGMDV1 loop on classes */
   BFT_REALLOC(name, strlen("Ga_DV1")+1 + 2, char);
   strcpy(name, "Ga_DV1");
   for (i = 0; i < *nclass; i++) {
@@ -6399,7 +6416,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Ga_DV1");
   }
 
- /* IGMDV2 boucle sur les classes */
+ /* IGMDV2 loop on classes */
   BFT_REALLOC(name, strlen("Ga_DV2")+1 + 2, char);
   strcpy(name, "Ga_DV2");
   for (i = 0; i < *nclass; i++) {
@@ -6414,7 +6431,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Ga_DV2");
   }
 
- /* IGMHET boucle sur les classes */
+ /* IGMHET loop on classes */
   BFT_REALLOC(name, strlen("Ga_HET")+1 + 2, char);
   strcpy(name, "Ga_HET");
   for (i = 0; i < *nclass; i++) {
@@ -6430,7 +6447,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   }
 
   if (ippmod[*icp3pl -1] == 1) {
-   /* IGMSEC boucle sur les classes */
+   /* IGMSEC loop on classes */
     BFT_REALLOC(name, strlen("Ga_SEC")+1 + 2, char);
     strcpy(name, "Ga_SEC");
     for (i = 0; i < *nclass; i++) {
@@ -6473,8 +6490,8 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 }
 
 /*------------------------------------------------------------------------------
- *  Indirection entre la numérotation noyau et
- *  la numérotation XML des scalaires model
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
@@ -6511,7 +6528,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
   strcpy(vars->label[*ihm -1], "Enthalpy");
 
-  /* Boucle sur les classes IH2, INP, IXCH, IXCK */
+  /* Loop on classes IH2, INP, IXCH, IXCK */
   BFT_MALLOC(snumsca, 1 + 2, char);
 
   /* IH2 */
@@ -6566,7 +6583,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     strcpy(name, "XCK_CP");
   }
 
-  /* Boucle sur les charbons  IFM1 IFM2 */
+  /* Loop on coals IFM1 IFM2 */
 
   BFT_REALLOC(name, strlen("Fr_MV1")+1 + 2, char);
   strcpy(name, "Fr_MV1");
@@ -6822,7 +6839,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               array[iii] = 0.0;
           }
 
-          /* Send to other processors if parallele */
+          /* Send to other processors if parallel */
           if (cs_glob_base_rang >= 0) {
 #if defined(_CS_HAVE_MPI)
             MPI_Bcast(array,

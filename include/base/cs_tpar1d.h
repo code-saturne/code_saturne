@@ -29,15 +29,23 @@
 #define __CS_TPAR1D_H__
 
 /*============================================================================
- *  Gestion des fichiers suite
+ * Modelling the thermal wall with 1D approach
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
@@ -47,75 +55,143 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Prototype de fonctions publiques pour API Fortran
+ *  Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Creation des maillages de chaque face et initialisation de la temperature
+ * Create the 1D mesh for each face and initialize the temperature
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE  MAIT1D
+ * ******************
+ *
+ * INTEGER          NFPT1D         : <-  : number of coupled faces
+ * INTEGER          NPPT1D(NFPT1D) : <-  : number of mesh points for each face
+ * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : wall thickness for each face
+ * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : mesh geometric ratio for each face
+ * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : temperature initizalition value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (mait1d, MAIT1D)(cs_int_t *, cs_int_t *,
-                               cs_real_t *, cs_real_t *, cs_real_t*);
-
+void CS_PROCF (mait1d,MAIT1D)
+(
+ cs_int_t   *nf,
+ cs_int_t    n[],
+ cs_real_t   e[],
+ cs_real_t   r[],
+ cs_real_t   tp[]
+);
 
 /*----------------------------------------------------------------------------
- * Resolution de l'equation 1D pour une face donnee
+ * Solve the 1D equation for a given face
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE  TPAR1D
+ * ******************
+ *
+ * INTEGER          II     : <-  : face number
+ * INTEGER          ICLT1D : <-  : type of exterior boundary condition
+ * DOUBLE PRECISION TBORD  : <-  : fluid temperature at the boundary
+ * DOUBLE PRECISION HBORD  : <-  : exchange coefficient for the fluid
+ *                         :     : at the boundary
+ * DOUBLE PRECISION TET1D  : <-  : temperature on the exterior boundary
+ *                         :     : (Dirichlet boundary condition)
+ * DOUBLE PRECISION HET1D  : <-  : exchange coefficient on the exterior wall
+ * DOUBLE PRECISION FET1D  : <-  : flux on the exterior wall
+ *                         :     : (Neumann boundary condition)
+ * DOUBLE PRECISION LAMT1D : <-  : conductivity (lambda)
+ * DOUBLE PRECISION RCPT1D : <-  : rho*Cp product
+ * DOUBLE PRECISION DTPT1D : <-> : time-step for the solid resolution
+ * DOUBLE PRECISION TPPT1D : <-> : physical temperature at the fluid/solid
+ *                         :     : interface
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tpar1d, TPAR1D)(cs_int_t *, cs_int_t *, cs_real_t *,
-                               cs_real_t *, cs_real_t *, cs_real_t *,
-                               cs_real_t *, cs_real_t *, cs_real_t *,
-                               cs_real_t *, cs_real_t *);
-
+void CS_PROCF (tpar1d,TPAR1D)
+(
+ cs_int_t *ii,
+ cs_int_t *icdcle,
+ cs_real_t *tf,
+ cs_real_t *hf,
+ cs_real_t *te,
+ cs_real_t *he,
+ cs_real_t *fe,
+ cs_real_t *lb,
+ cs_real_t *rocp,
+ cs_real_t *dtf,
+ cs_real_t *tp
+);
 
 /*----------------------------------------------------------------------------
- * Lecture du fichier suite du module thermique 1D en paroi
+ * Read the restart file of the 1D-wall thermal module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECT1D
+ * *****************
+ *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ * INTEGER          NFPT1D : <-- : Number of coupled faces
+ * INTEGER          NFPT1T : <-- : Total number of coupled faces
+ * INTEGER          NMXT1D : <-- : Max number of points on the 1D meshes
+ * INTEGER          NFABOR : <-- : Number of boundary faces
+ * INTEGER          NPPT1D : <-- : Number of points of each face 1D-mesh
+ * INTEGER          IFPT1D : <-- : Indirection array for 1D-module faces
+ * DOUBLE PRECISION EPPT1D : <-- : Wall thickness of each face
+ * DOUBLE PRECISION RGPT1D : <-- : Geometric reason associated to faces
+ * DOUBLE PRECISION TPPT1D : --> : Wall temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lect1d, LECT1D)
 (
- const char       *const nomsui,  /* <- Nom du fichier suite                  */
- const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
- const cs_int_t   *const nfpt1t,  /* <- Nbr de  faces avec couplage cumule sur
-                                        tous les processeurs                  */
- const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
- const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
- const cs_int_t   *const nppt1d,  /* <- Nbr de points de discretisation des
-                                        faces avec module 1D                  */
- const cs_int_t   *const ifpt1d,  /* <- Tableau d'indirection des faces avec
-                                        module 1D                             */
- const cs_real_t  *const eppt1d,  /* <- Epaisseur de paroi des faces          */
- const cs_real_t  *const rgpt1d,  /* <- Raison geometrique associee aux faces */
-       cs_real_t  *const tppt1d   /* -> Température de paroi avec module 1D   */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
- );
-
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom,
+ const cs_int_t   *const nfpt1d,
+ const cs_int_t   *const nfpt1t,
+ const cs_int_t   *const nmxt1d,
+ const cs_int_t   *const nfabor,
+ const cs_int_t   *const nppt1d,
+ const cs_int_t   *const ifpt1d,
+ const cs_real_t  *const eppt1d,
+ const cs_real_t  *const rgpt1d,
+       cs_real_t  *const tppt1d
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
 
 /*----------------------------------------------------------------------------
- * Ecriture du fichier suite du module thermique 1D en paroi
+ * Write the restart file of the 1D-wall thermal module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECT1D
+ * *****************
+ *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ * INTEGER          NFPT1D : <-- : Number of coupled faces
+ * INTEGER          NMXT1D : <-- : Max number of points on the 1D meshes
+ * INTEGER          NFABOR : <-- : Number of boundary faces
+ * DOUBLE PRECISION TPPT1D : --> : Wall temperature
+ * INTEGER          IFPT1D : <-- : Indirection array for 1D-module faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrt1d, ECRT1D)
 (
- const char       *const nomsui,  /* <- Nom du fichier suite                  */
- const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
- const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
- const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
- const cs_real_t  *const tppt1d,  /* <- Température de paroi avec module 1D   */
- const cs_int_t   *const ifpt1d   /* <- Tableau d'indirection des faces avec
-                                        module 1D                             */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
- );
-
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom,
+ const cs_int_t   *const nfpt1d,
+ const cs_int_t   *const nmxt1d,
+ const cs_int_t   *const nfabor,
+ const cs_real_t  *const tppt1d,
+ const cs_int_t   *const ifpt1d
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
 
 /*----------------------------------------------------------------------------
- * Liberation de la memoire
+ * Free allocated memory
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lbrt1d, LBRT1D)(void);

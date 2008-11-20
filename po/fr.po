@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-19 11:36+0100\n"
-"PO-Revision-Date: 2008-11-07 20:04+0100\n"
+"POT-Creation-Date: 2008-11-20 18:28+0100\n"
+"PO-Revision-Date: 2008-11-20 18:39+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -692,96 +692,25 @@ msgstr ""
 msgid "[ok]\n"
 msgstr "[ok]\n"
 
-#: src/base/cs_couplage.c:169
+#: src/base/cs_coupling.c:119
+msgid ""
+"\n"
+"Applications accessible through MPI:\n"
+"------------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Applications accessibles grâce à MPI :\n"
+"--------------------------------------\n"
+
+#: src/base/cs_coupling.c:146
 #, c-format
 msgid ""
-"Coupling definition is impossible: a distant root rank equal to\n"
-"%d is required, whereas the local group corresponds to\n"
-"rank %d to %d\n"
+"  %d; type:      \"%s\"%s\n"
+"     case name: \"%s\"\n"
+"     lead rank: %d; n_ranks: %d\n"
+"\n"
 msgstr ""
-"Définition du couplage impossible : on demande un rang de\n"
-"tête de groupe distant égal à %d, alors que le groupe\n"
-"local correspond aux rangs %d à %d\n"
-
-#: src/base/cs_couplage.c:176
-#, c-format
-msgid ""
-"Coupling definition is impossible: a distant root rank equal to\n"
-"%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
-"range from to 0 to %d\n"
-msgstr ""
-"Définition du couplage impossible : on demande un rang de\n"
-"tête de groupe distant égal à %d, alors que les rangs\n"
-"globaux (MPI_COMM_WORLD) s'étendent de 0 à %d\n"
-
-#: src/base/cs_couplage.c:204
-#, c-format
-msgid "coupling: local_ranks = [%d..%d], distant ranks = [%d..%d]\n"
-msgstr "couplage : rangs locaux = [%d..%d], rangs distants = [%d..%d]\n"
-
-#: src/base/cs_couplage.c:371 src/base/cs_couplage.c:512
-#: src/base/cs_couplage.c:580 src/base/cs_couplage.c:661
-#: src/base/cs_couplage.c:725 src/base/cs_couplage.c:800
-#: src/base/cs_couplage.c:896 src/base/cs_couplage.c:990
-#: src/base/cs_couplage.c:1068
-#, c-format
-msgid "Impossible coupling number %d; there are %d couplings"
-msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
-
-#: src/base/cs_couplage.c:593
-#, c-format
-msgid ""
-"Coupling %d: inconsistent arguments for LELCPL()\n"
-"NCECPL = %d and NFBCPL = %d are indicated.\n"
-"The values for this coupling should be %d and %d."
-msgstr ""
-"Couplage %d: arguments incohérents pour LELCPL().\n"
-"On a indiqué NCECPL = %d et NFBCPL = %d.\n"
-"On devrait avoir les valeurs %d et %d pour ce couplage."
-
-#: src/base/cs_couplage.c:674
-#, c-format
-msgid ""
-"Coupling %d: inconsistent arguments for LELNCP()\n"
-"NCENCP = %d and NFBNCP = %d are indicated.\n"
-"The values for this coupling should be %d and %d."
-msgstr ""
-"Couplage %d: arguments incohérents pour LELNCP().\n"
-"On a indiqué NCENCP = %d et NFBNCP = %d.\n"
-"On devrait avoir les valeurs %d et %d pour ce couplage."
-
-#: src/base/cs_couplage.c:824
-#, c-format
-msgid ""
-"Coupling %d: inconsistent arguments for COOCPL()\n"
-"ITYDIS = %d and NBRPTS = %d are indicated.\n"
-"The value for NBRPTS should be %d."
-msgstr ""
-"Couplage %d: arguments incohérents pour COOCPL().\n"
-"On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
-"On devrait avoir la valeur %d pour NBRPTS."
-
-#: src/base/cs_couplage.c:913
-#, c-format
-msgid ""
-"Coupling %d: inconsistent arguments for VARCPL()\n"
-"ITYVAR = %d and NBRDIS = %d are indicated.\n"
-"NBRDIS should be 0 or %d."
-msgstr ""
-"Couplage %d: arguments incohérents pour VARCPL().\n"
-"On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
-"On devrait avoir la valeur 0 ou %d pour NBRDIS."
-
-#: src/base/cs_couplage.c:920
-#, c-format
-msgid ""
-"Coupling %d: inconsistent arguments for VARCPL()\n"
-"ITYVAR = %d and NBRLOC = %d are indicated.\n"
-"NBRLOC should be 0 or %d."
-msgstr ""
-"Couplage %d: arguments incohérents pour VARCPL().\n"
-"On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
-"On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
 #: src/base/cs_ecs_messages.c:242
 #, c-format
@@ -906,50 +835,50 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
-#: src/base/cs_gui.c:208 src/base/cs_gui_radiative_transfer.c:437
+#: src/base/cs_gui.c:209 src/base/cs_gui_radiative_transfer.c:436
 #, c-format
 msgid "Variable index %d out of bounds (1 to %d)"
 msgstr ""
 
-#: src/base/cs_gui.c:251 src/base/cs_gui.c:410 src/base/cs_gui.c:475
-#: src/base/cs_gui.c:951 src/base/cs_gui.c:1434 src/base/cs_gui.c:1570
-#: src/base/cs_gui.c:1698 src/base/cs_gui.c:1831 src/base/cs_gui.c:2028
-#: src/base/cs_gui.c:2202 src/base/cs_gui.c:2949 src/base/cs_gui.c:3423
-#: src/base/cs_gui_matisse.c:123 src/base/cs_gui_matisse.c:145
-#: src/base/cs_gui_matisse.c:165 src/base/cs_gui_matisse.c:194
-#: src/base/cs_gui_util.c:536 src/base/cs_gui_util.c:636
-#: src/base/cs_gui_util.c:733 src/base/cs_gui_util.c:883
-#: src/base/cs_gui_util.c:926
+#: src/base/cs_gui.c:252 src/base/cs_gui.c:411 src/base/cs_gui.c:478
+#: src/base/cs_gui.c:970 src/base/cs_gui.c:1453 src/base/cs_gui.c:1588
+#: src/base/cs_gui.c:1716 src/base/cs_gui.c:1848 src/base/cs_gui.c:2044
+#: src/base/cs_gui.c:2218 src/base/cs_gui.c:2965 src/base/cs_gui.c:3439
+#: src/base/cs_gui_matisse.c:116 src/base/cs_gui_matisse.c:139
+#: src/base/cs_gui_matisse.c:159 src/base/cs_gui_matisse.c:189
+#: src/base/cs_gui_util.c:535 src/base/cs_gui_util.c:635
+#: src/base/cs_gui_util.c:732 src/base/cs_gui_util.c:882
+#: src/base/cs_gui_util.c:925
 #, c-format
 msgid "Invalid xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:327
+#: src/base/cs_gui.c:328
 #, c-format
 msgid "Invalid thermal model: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:1371
+#: src/base/cs_gui.c:1390
 #, c-format
 msgid ""
 "Coordinate %s of the monitoring probe number %i not found.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:2503
+#: src/base/cs_gui.c:2519
 #, c-format
 msgid ""
 "Unknown conditions type in this context: %s.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3210 src/base/cs_gui.c:5710
+#: src/base/cs_gui.c:3226 src/base/cs_gui.c:5727
 #, c-format
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3228 src/base/cs_gui.c:5728 src/base/cs_gui.c:5965
-#: src/base/cs_gui.c:6089 src/base/cs_selector.c:239
+#: src/base/cs_gui.c:3244 src/base/cs_gui.c:5745 src/base/cs_gui.c:5982
+#: src/base/cs_gui.c:6106 src/base/cs_selector.c:239
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -962,7 +891,7 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui.c:3245
+#: src/base/cs_gui.c:3261
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -985,69 +914,69 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3349
+#: src/base/cs_gui.c:3365
 #, c-format
 msgid ""
 "Invalid xpath: %s\n"
 " name not found"
 msgstr ""
 
-#: src/base/cs_gui.c:3394
+#: src/base/cs_gui.c:3410
 #, c-format
 msgid ""
 "Invalid markup name: %s\n"
 " label not found"
 msgstr ""
 
-#: src/base/cs_gui.c:3693
+#: src/base/cs_gui.c:3709
 #, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3770
+#: src/base/cs_gui.c:3786
 msgid "Trouble with the allocated memory for the global variable 'vars'.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3873
+#: src/base/cs_gui.c:3889
 #, c-format
 msgid "Invalid coal model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3925
+#: src/base/cs_gui.c:3941
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4346
+#: src/base/cs_gui.c:4362
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4776
+#: src/base/cs_gui.c:4792
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4796
+#: src/base/cs_gui.c:4813
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4804
+#: src/base/cs_gui.c:4821
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5061 src/base/cs_gui.c:6460
+#: src/base/cs_gui.c:5078 src/base/cs_gui.c:6477
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5452 src/base/cs_gui_radiative_transfer.c:662
+#: src/base/cs_gui.c:5469 src/base/cs_gui_radiative_transfer.c:656
 #, c-format
 msgid "Name of variable %d was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5535 src/base/cs_selector.c:311
+#: src/base/cs_gui.c:5552 src/base/cs_selector.c:311
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1060,12 +989,12 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5940 src/base/cs_gui.c:6122
+#: src/base/cs_gui.c:5957 src/base/cs_gui.c:6139
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6130
+#: src/base/cs_gui.c:6147
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1089,7 +1018,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6160
+#: src/base/cs_gui.c:6177
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1113,47 +1042,47 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6744 src/base/cs_gui_util.c:158
+#: src/base/cs_gui.c:6761 src/base/cs_gui_util.c:157
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:546
+#: src/base/cs_gui_matisse.c:536
 #, c-format
 msgid "Missing 'min' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:556
+#: src/base/cs_gui_matisse.c:546
 #, c-format
 msgid "Missing 'max' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:566
+#: src/base/cs_gui_matisse.c:556
 #, c-format
 msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:298
+#: src/base/cs_gui_radiative_transfer.c:297
 #, c-format
 msgid "unknow type %s\n"
 msgstr "type inconnu %s \n"
 
-#: src/base/cs_gui_radiative_transfer.c:385
+#: src/base/cs_gui_radiative_transfer.c:384
 #, c-format
 msgid "Xpath request failed %s \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:555
+#: src/base/cs_gui_radiative_transfer.c:550
 #, c-format
 msgid "--output cel: %s value %i \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:562
+#: src/base/cs_gui_radiative_transfer.c:557
 #, c-format
 msgid "--output fb: %s value %i \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:840
+#: src/base/cs_gui_radiative_transfer.c:833
 msgid ""
 "One tries to define radiative boundary conditions on boundary which is not a "
 "wall.\n"
@@ -1164,19 +1093,19 @@ msgid ""
 "with these new natures.\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:181
+#: src/base/cs_gui_util.c:180
 #, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:205 src/base/cs_gui_util.c:285
-#: src/base/cs_gui_util.c:568 src/base/cs_gui_util.c:665
-#: src/base/cs_gui_util.c:764 src/base/cs_gui_util.c:894
-#: src/base/cs_gui_util.c:955
+#: src/base/cs_gui_util.c:204 src/base/cs_gui_util.c:284
+#: src/base/cs_gui_util.c:567 src/base/cs_gui_util.c:664
+#: src/base/cs_gui_util.c:763 src/base/cs_gui_util.c:893
+#: src/base/cs_gui_util.c:954
 msgid "Code_Saturne has been compiled without Xml support."
 msgstr ""
 
-#: src/base/cs_gui_util.c:237
+#: src/base/cs_gui_util.c:236
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1187,7 +1116,7 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:248
+#: src/base/cs_gui_util.c:247
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1200,14 +1129,14 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:557
+#: src/base/cs_gui_util.c:556
 #, c-format
 msgid ""
 "The node type is not XML_ATTRIBUTE_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:597
+#: src/base/cs_gui_util.c:596
 #, c-format
 msgid ""
 "Several attributes found: %i \n"
@@ -1215,14 +1144,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:654
+#: src/base/cs_gui_util.c:653
 #, c-format
 msgid ""
 "The node type is not XML_ELEMENT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:694
+#: src/base/cs_gui_util.c:693
 #, c-format
 msgid ""
 "Several nodes name found: %i \n"
@@ -1230,14 +1159,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:753 src/base/cs_gui_util.c:943
+#: src/base/cs_gui_util.c:752 src/base/cs_gui_util.c:942
 #, c-format
 msgid ""
 "The node type is not XML_TEXT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:792
+#: src/base/cs_gui_util.c:791
 #, c-format
 msgid ""
 "Several text node found: %i \n"
@@ -1245,12 +1174,12 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:932
+#: src/base/cs_gui_util.c:931
 #, c-format
 msgid "No markup found: %s \n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:991
+#: src/base/cs_gui_util.c:990
 #, c-format
 msgid ""
 "Invalid attribute value: %s \n"
@@ -2549,12 +2478,12 @@ msgstr ""
 "   nombre de cellules dans le maillage le plus grossier : %lu\n"
 "\n"
 
-#: src/base/cs_opts.c:113
+#: src/base/cs_opts.c:110
 #, c-format
 msgid "Usage: %s [options]\n"
 msgstr "Utilisation : %s [options]\n"
 
-#: src/base/cs_opts.c:115
+#: src/base/cs_opts.c:112
 #, c-format
 msgid ""
 "\n"
@@ -2565,7 +2494,7 @@ msgstr ""
 "Options de la ligne de commandes :\n"
 "\n"
 
-#: src/base/cs_opts.c:117
+#: src/base/cs_opts.c:114
 #, c-format
 msgid ""
 " -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
@@ -2574,7 +2503,7 @@ msgstr ""
 " -solcom           Noyau autonome avec maillage \"geomet\" au\n"
 "                   format SolCom (obsolète) ;\n"
 
-#: src/base/cs_opts.c:121
+#: src/base/cs_opts.c:118
 #, c-format
 msgid ""
 " -mpi, --mpi       use MPI for parallelism or coupling\n"
@@ -2585,7 +2514,7 @@ msgstr ""
 "                   [appnum] : numéro de cette application en cas de\n"
 "                              couplage de codes (défaut : 0)\n"
 
-#: src/base/cs_opts.c:127
+#: src/base/cs_opts.c:124
 #, c-format
 msgid ""
 " -q, --quality     verifications\n"
@@ -2598,7 +2527,7 @@ msgstr ""
 "                    0 : verification de l'initialisation seule\n"
 "                    1 à 5 : activation de tests élémentaires\n"
 
-#: src/base/cs_opts.c:132
+#: src/base/cs_opts.c:129
 #, c-format
 msgid ""
 " -cwf              <criterion> cut warped faces\n"
@@ -2610,7 +2539,7 @@ msgstr ""
 "                    -post : active le post-traitement lié au \n"
 "                            découpage des faces\n"
 
-#: src/base/cs_opts.c:136
+#: src/base/cs_opts.c:133
 #, c-format
 msgid ""
 " --benchmark       elementary operations performance\n"
@@ -2621,7 +2550,7 @@ msgstr ""
 "                   [--mpitrace] opérations effectuées une seule\n"
 "                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:140
+#: src/base/cs_opts.c:137
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -2632,7 +2561,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/base/cs_opts.c:144
+#: src/base/cs_opts.c:141
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -2647,12 +2576,12 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"listing_n<rang>\"\n"
 
-#: src/base/cs_opts.c:151
+#: src/base/cs_opts.c:148
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:154
+#: src/base/cs_opts.c:151
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -2661,16 +2590,16 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/base/cs_opts.c:307
+#: src/base/cs_opts.c:304
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:322
+#: src/base/cs_opts.c:319
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:326
+#: src/base/cs_opts.c:323
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -2679,7 +2608,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:329
+#: src/base/cs_opts.c:326
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -2899,6 +2828,97 @@ msgstr ""
 #, c-format
 msgid "Closing communication: %s\n"
 msgstr "Fermeture de la communication : %s\n"
+
+#: src/base/cs_sat_coupling.c:171
+#, c-format
+msgid ""
+"Coupling definition is impossible: a distant root rank equal to\n"
+"%d is required, whereas the local group corresponds to\n"
+"rank %d to %d\n"
+msgstr ""
+"Définition du couplage impossible : on demande un rang de\n"
+"tête de groupe distant égal à %d, alors que le groupe\n"
+"local correspond aux rangs %d à %d\n"
+
+#: src/base/cs_sat_coupling.c:178
+#, c-format
+msgid ""
+"Coupling definition is impossible: a distant root rank equal to\n"
+"%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
+"range from to 0 to %d\n"
+msgstr ""
+"Définition du couplage impossible : on demande un rang de\n"
+"tête de groupe distant égal à %d, alors que les rangs\n"
+"globaux (MPI_COMM_WORLD) s'étendent de 0 à %d\n"
+
+#: src/base/cs_sat_coupling.c:206
+#, c-format
+msgid "coupling: local_ranks = [%d..%d], distant ranks = [%d..%d]\n"
+msgstr "couplage : rangs locaux = [%d..%d], rangs distants = [%d..%d]\n"
+
+#: src/base/cs_sat_coupling.c:365 src/base/cs_sat_coupling.c:503
+#: src/base/cs_sat_coupling.c:570 src/base/cs_sat_coupling.c:645
+#: src/base/cs_sat_coupling.c:706 src/base/cs_sat_coupling.c:771
+#: src/base/cs_sat_coupling.c:864 src/base/cs_sat_coupling.c:955
+#: src/base/cs_sat_coupling.c:1031
+#, c-format
+msgid "Impossible coupling number %d; there are %d couplings"
+msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
+
+#: src/base/cs_sat_coupling.c:583
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for LELCPL()\n"
+"NCECPL = %d and NFBCPL = %d are indicated.\n"
+"The values for this coupling should be %d and %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour LELCPL().\n"
+"On a indiqué NCECPL = %d et NFBCPL = %d.\n"
+"On devrait avoir les valeurs %d et %d pour ce couplage."
+
+#: src/base/cs_sat_coupling.c:658
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for LELNCP()\n"
+"NCENCP = %d and NFBNCP = %d are indicated.\n"
+"The values for this coupling should be %d and %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour LELNCP().\n"
+"On a indiqué NCENCP = %d et NFBNCP = %d.\n"
+"On devrait avoir les valeurs %d et %d pour ce couplage."
+
+#: src/base/cs_sat_coupling.c:795
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for COOCPL()\n"
+"ITYDIS = %d and NBRPTS = %d are indicated.\n"
+"The value for NBRPTS should be %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour COOCPL().\n"
+"On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
+"On devrait avoir la valeur %d pour NBRPTS."
+
+#: src/base/cs_sat_coupling.c:881
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for VARCPL()\n"
+"ITYVAR = %d and NBRDIS = %d are indicated.\n"
+"NBRDIS should be 0 or %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour VARCPL().\n"
+"On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
+"On devrait avoir la valeur 0 ou %d pour NBRDIS."
+
+#: src/base/cs_sat_coupling.c:888
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for VARCPL()\n"
+"ITYVAR = %d and NBRLOC = %d are indicated.\n"
+"NBRLOC should be 0 or %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour VARCPL().\n"
+"On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
+"On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
 #: src/base/cs_selector.c:275
 #, c-format
@@ -3317,11 +3337,11 @@ msgstr ""
 "\n"
 " *** Renumerotation de la liste des faces de bord    ..."
 
-#: src/base/cs_syr3_coupling.c:825
+#: src/base/cs_syr3_coupling.c:825 src/base/cs_syr4_coupling.c:589
 msgid "Wall T"
 msgstr "T Paroi"
 
-#: src/base/cs_syr3_coupling.c:835
+#: src/base/cs_syr3_coupling.c:835 src/base/cs_syr4_coupling.c:589
 msgid "Flux"
 msgstr "Flux"
 
@@ -3341,7 +3361,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1288
+#: src/base/cs_syr3_coupling.c:1288 src/base/cs_syr4_coupling.c:974
 #, c-format
 msgid ""
 "\n"
@@ -3406,6 +3426,7 @@ msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
 #: src/base/cs_syr3_messages.c:146 src/base/cs_syr3_messages.c:162
+#: src/base/cs_syr4_coupling.c:889
 #, c-format
 msgid ""
 "========================================================\n"
@@ -3437,7 +3458,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr3_messages.c:242
+#: src/base/cs_syr3_messages.c:242 src/base/cs_syr4_coupling.c:951
 #, c-format
 msgid ""
 "The current iteration number \"%d\" is greater than the requested\n"
@@ -3447,6 +3468,8 @@ msgstr ""
 "maximal demandé \"%d\" \n"
 
 #: src/base/cs_syr3_messages.c:279 src/base/cs_syr3_messages.c:362
+#: src/base/cs_syr_coupling.c:803 src/base/cs_syr_coupling.c:844
+#: src/base/cs_syr_coupling.c:883 src/base/cs_syr_coupling.c:922
 #, c-format
 msgid "SYRTHES coupling number %d impossible; there are %d couplings"
 msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
@@ -3462,7 +3485,175 @@ msgstr ""
 " on attendait \"%s\" (%d éléments, type %d)\n"
 " on a reçu    \"%s\"(%d éléments, type %d)\n"
 
-#: src/base/cs_tpar1d.c:415
+#: src/base/cs_syr4_coupling.c:199
+#, c-format
+msgid ""
+"SYRTHES coupling: local_ranks   = [%d..%d]\n"
+"                  distant ranks = [%d..%d]\n"
+msgstr ""
+"Couplage SYRTHES : rangs locaux   = [%d..%d]\n"
+"                   rangs distants = [%d..%d]\n"
+
+#: src/base/cs_syr4_coupling.c:337
+msgid ""
+"\n"
+"Extracting coupled mesh             ..."
+msgstr "\nExtraction du maillage couplé           ..."
+
+#: src/base/cs_syr4_coupling.c:345
+#, c-format
+msgid "SYRTHES_cells_%d"
+msgstr ""
+
+#: src/base/cs_syr4_coupling.c:366
+#, c-format
+msgid "SYRTHES_faces_%d"
+msgstr ""
+
+#: src/base/cs_syr4_coupling.c:392
+#, c-format
+msgid ""
+" Selection criteria:\n"
+" \"%s\"\n"
+" leads to an empty mesh for SYRTHES coupling.\n"
+msgstr ""
+
+#: src/base/cs_syr4_coupling.c:404
+msgid "Projecting the extracted mesh to 2D  ..."
+msgstr "Projection 2D du maillage extrait  ..."
+
+#: src/base/cs_syr4_coupling.c:412
+msgid "Error projecting the extracted mesh."
+msgstr "Erreur lors de la projection du maillage extrait."
+
+#: src/base/cs_syr4_coupling.c:426
+#, c-format
+msgid ""
+"\n"
+"Extracted mesh built of %lu elements.\n"
+msgstr "\nMaillage extrait composé de %lu éléments.\n"
+
+#: src/base/cs_syr4_coupling.c:475
+#, c-format
+msgid ""
+"Coupling with SYRTHES impossible:\n"
+"%lu element centers from mesh \"%s\"\n"
+"not located on SYRTHES mesh."
+msgstr ""
+"Couplage avec SYRTHES impossible :\n"
+"%lu centres d'éléments du maillage \"%s\"\n"
+"non localisés sur le maillage SYRTHES."
+
+#: src/base/cs_syr4_coupling.c:728
+msgid ""
+"Coupling with SYRTHES impossible.\n"
+"No selection criteria for faces or cells to couple."
+msgstr ""
+"Couplage avec SYRTHES impossible.\n"
+"Aucun critère de sélection pour les faces ou les cellules à coupler."
+
+#: src/base/cs_syr4_coupling.c:796
+msgid ""
+"\n"
+"Structures associated with SYRTHES 4 coupling freed.\n"
+msgstr "\nLibération des structures associées au couplage avec SYRTHES 4.\n"
+
+#: src/base/cs_syr4_coupling.c:841
+#, c-format
+msgid ""
+"========================================================\n"
+"   ** Incompatible SYRTHES coupling options:\n"
+"      ------------------------------------------------\n"
+"      Code_Saturne options: \"%s\"\n"
+"      SYRTHES options:      \"%s\"\n"
+"========================================================\n"
+msgstr ""
+"========================================================\n"
+"   ** Options de couplage avec SYRTHES incompatibles :\n"
+"      ------------------------------------------------ \n"
+"      Options Code_Saturne : \"%s\"\n"
+"      Options SYRTHES      : \"%s\"\n"
+"========================================================\n"
+
+#: src/base/cs_syr4_coupling.c:906
+#, c-format
+msgid ""
+"========================================================\n"
+"   ** Unexpected message in cs_syr4_messages_test_iter\n"
+"      ------------------------------------------------\n"
+"      received message: \"%s\"\n"
+"      expected message: cmd:iter:start \n"
+"========================================================\n"
+msgstr ""
+"========================================================\n"
+"   ** Message inattendu dans cs_syr4_messages_test_iter\n"
+"      -------------------------------------------------\n"
+"      message reçu :    \"%s\"\n"
+"      message attendu : cmd:iter:start\n"
+"========================================================\n"
+
+#: src/base/cs_syr4_coupling.c:1005
+#, c-format
+msgid ""
+" Message received from SYRTHES: \"%s\"\n"
+" indicates an error or is unexpected."
+msgstr ""
+
+#: src/base/cs_syr4_coupling.c:1010
+#, c-format
+msgid ""
+"\n"
+" ** Mesh located for SYRTHES coupling \"%d\".\n"
+"\n"
+msgstr "\n ** Localisation du maillage pour le couplage SYRTHES \"%d\".\n\n"
+
+#: src/base/cs_syr_coupling.c:191
+#, c-format
+msgid ""
+"  SYRTHES coupling:\n"
+"    coupling id:              %d\n"
+"    local name:               \"%s\"\n"
+"    local number:             %d\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_syr_coupling.c:237 src/base/cs_syr_coupling.c:271
+#, c-format
+msgid "  SYRTHES coupling %d: initializing MPI comunication ..."
+msgstr "  Couplage SYRTHES %d : initialisation de la communication MPI ..."
+
+#: src/base/cs_syr_coupling.c:244 src/base/cs_syr_coupling.c:279
+#: src/base/cs_syr_coupling.c:526
+msgid " [ok]\n"
+msgstr "[ok]\n"
+
+#: src/base/cs_syr_coupling.c:320
+#, c-format
+msgid ""
+"  SYRTHES coupling:\n"
+"    coupling id:              %d\n"
+"    version:                  \"%s\"\n"
+"    local name:               \"%s\"\n"
+"    distant application name: \"%s\"\n"
+"    local number:             %d\n"
+"    MPI application number:   %d\n"
+"    MPI root rank:            %d\n"
+"    number of MPI ranks:      %d\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_syr_coupling.c:518
+#, c-format
+msgid "  SYRTHES coupling %d: initializing socket comunication ..."
+msgstr "Couplage SYRTHES %d : initialisation de la communication par sockets ..."
+
+#: src/base/cs_syr_coupling.c:1086
+msgid ""
+"At least 1 SYRTHES coupling was defined for which\n"
+"no communication with a SYRTHES instance is possible."
+msgstr ""
+
+#: src/base/cs_tpar1d.c:438
 #, c-format
 msgid ""
 "Abort while opening the 1D-wall thermal module restart file in read mode.\n"
@@ -3472,7 +3663,7 @@ msgstr ""
 "paroi.\n"
 "Vérifier l'existence et le nom du fichier suite: %s \n"
 
-#: src/base/cs_tpar1d.c:432
+#: src/base/cs_tpar1d.c:455
 msgid ""
 "Abort while reading the 1D-wall thermal module restart file.\n"
 "The number of boundary faces has been modified\n"
@@ -3482,7 +3673,7 @@ msgstr ""
 "Le nombre de faces de bord a été modifié\n"
 "Vérifier que le fichier suite correspond bien au cas traité.\n"
 
-#: src/base/cs_tpar1d.c:457
+#: src/base/cs_tpar1d.c:480
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -3507,8 +3698,8 @@ msgstr ""
 "Verifier que le fichier suite utilise correspond bien\n"
 "a un fichier suite de module thermique 1D en paroi.\n"
 
-#: src/base/cs_tpar1d.c:496 src/base/cs_tpar1d.c:584 src/base/cs_tpar1d.c:638
-#: src/base/cs_tpar1d.c:674
+#: src/base/cs_tpar1d.c:519 src/base/cs_tpar1d.c:607 src/base/cs_tpar1d.c:661
+#: src/base/cs_tpar1d.c:697
 #, c-format
 msgid ""
 "Problem while reading section in the restart file\n"
@@ -3521,7 +3712,7 @@ msgstr ""
 "<%s>\n"
 "Le calcul ne sera pas executé.\n"
 
-#: src/base/cs_tpar1d.c:515
+#: src/base/cs_tpar1d.c:538
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -3554,7 +3745,7 @@ msgstr ""
 "au cas traité.\n"
 "Vérifier uspt1d.\n"
 
-#: src/base/cs_tpar1d.c:541
+#: src/base/cs_tpar1d.c:564
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
 "********               1D-WALL THERMAL MODULE\n"
@@ -3588,7 +3779,7 @@ msgstr ""
 "(se reporter à la documentation utilisateur pour les\n"
 "spécificités du test sur IFPT1D)"
 
-#: src/base/cs_tpar1d.c:597
+#: src/base/cs_tpar1d.c:620
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
 "********               1D-WALL THERMAL MODULE\n"
@@ -3618,7 +3809,7 @@ msgstr ""
 "au cas traité.\n"
 "Vérifier uspt1d.\n"
 
-#: src/base/cs_tpar1d.c:693
+#: src/base/cs_tpar1d.c:716
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
 "********               1D-WALL THERMAL MODULE\n"
@@ -3648,7 +3839,7 @@ msgstr ""
 "au cas traité.\n"
 "Verifier uspt1d.\n"
 
-#: src/base/cs_tpar1d.c:739
+#: src/base/cs_tpar1d.c:762
 #, c-format
 msgid ""
 "Problem while reading the section in the restart file\n"
@@ -3659,7 +3850,7 @@ msgstr ""
 "thermique 1D en paroi:\n"
 "<%s>\n"
 
-#: src/base/cs_tpar1d.c:819
+#: src/base/cs_tpar1d.c:833
 #, c-format
 msgid ""
 "Abort while opening the 1D-wall thermal module restart file in write mode.\n"

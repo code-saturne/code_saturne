@@ -1,3 +1,26 @@
+* 20/11/2008 - David Monfort <david.monfort@edf.fr>
+  English translation of most of the missing C sources.
+  modified routines:
+    include/base/cs_gui.h
+    include/base/cs_post.h
+    include/base/cs_sat_coupling.h
+    include/base/cs_tpar1d.h
+    include/base/cs_ventil.h
+    include/base/entsor.h
+    include/fuel/fuincl.h
+    include/mati/matiss.h
+    src/base/cs_gui.c
+    src/base/cs_gui_matisse.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/cs_main.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_tpar1d.c
+    src/base/cs_ventil.c
+  updated french dictionnary:
+    po/fr.po
+    po/POTFILES.in
+
 * 19/11/2008 - David Monfort <david.monfort@edf.fr>
   Rename cs_couplage* sources to cs_sat_coupling*
   deleted routines:

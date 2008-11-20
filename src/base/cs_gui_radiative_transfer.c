@@ -208,7 +208,7 @@ cs_gui_radiative_transfer_char(const char *const param,
 
 
 /*-----------------------------------------------------------------------------
- * Return status and label of the property for post traitment of radiation
+ * Return status and label of the property for post treatment of radiation
  *
  *   parameters:
  *    name     -->   name of property
@@ -262,7 +262,6 @@ cs_gui_radiative_transfer_char_post(const char *const name,
 }
 
 /*-----------------------------------------------------------------------------
- * Retourne  la valeur du type de coeff d'absorption (rayonnement)
  * Return value of the type of absorption coefficient for radiation
  *
  *   parameters:
@@ -447,10 +446,6 @@ static void _cs_gui_copy_varname(const char *varname,
 
   strcpy(_cs_gui_var_rayt[ipp-1], varname);
 }
-
-/*============================================================================
- * C API public functions
- *============================================================================*/
 
 /*============================================================================
  * Fortran API public functions
@@ -642,7 +637,6 @@ void CS_PROCF(fcnmra, FCNMRA)
  * Copy variable name from C to Fortran
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF(cfnmra, CFNMRA)
 (
  char          *const fstr,    /* --> Fortran string */
@@ -685,7 +679,7 @@ void CS_PROCF(cfnmra, CFNMRA)
 }
 
 /*----------------------------------------------------------------------------
- *  Modele de rayonnement usray2.F
+ *  Radiative transfer model usray2.F
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiray2, UIRAY2)
@@ -780,10 +774,9 @@ void CS_PROCF (uiray2, UIRAY2)
 
         BFT_FREE(description);
 
-        /*Initialisation par defaut : ces valeurs sont les memes que
-        dans raycli, mais elles sont donnees par face dans raycli
-        et ici on n'a pas forcement de face de bord (parallele)
-          -> on duplique */
+        /* Default initialization: these values are the same that in raycli
+           but given on each face in raycli whereas here one does not
+           necessarily have boundary faces (parallism) -> duplication */
         boundary->type[izone] = -1;
         boundary->output_zone[izone] = -1;
         boundary->emissivity[izone] = -1.e12;
@@ -917,7 +910,7 @@ void CS_PROCF (uiray2, UIRAY2)
 }
 
 /*----------------------------------------------------------------------------
- *  Modele de rayonnement usray3.F
+ *  Radiative transfer model usray3.F
  *----------------------------------------------------------------------------*/
 
 

@@ -147,9 +147,8 @@ cs_gui_file_loading(const char *const filename)
 
   assert(filename);
 
-  /* printf("numero rang proc = %i\n", (int)cs_glob_base_rang); */
+  /* Verification of the existence of the file while opening it */
 
-  /* Vérification de l'existence du fichier par son ouverture */
   file_descriptor = open(filename, O_RDONLY);
 
   if (file_descriptor ==  -1) {
@@ -162,7 +161,7 @@ cs_gui_file_loading(const char *const filename)
   }
   else {
 
-  /* Si le fichier existe, on le referme. Il sera réouvert par xmlParseFile */
+    /* If file exists, close it. It will be reopen by xmlParseFile */
     close(file_descriptor);
 
   }
@@ -187,14 +186,14 @@ cs_gui_file_loading(const char *const filename)
     /* Contexte definition */
     xpathCtx = xmlXPathNewContext(docxml);
 
-    /* Récupération du noeud racine du document xml et
-       plus particulièrement de son label */
+    /* Get the root node of the xml document and more particularly
+       of its label */
     node = xmlDocGetRootElement(docxml);
     xmlRootName = (const char*) node->name;
 
   }
 
-  /* Verification de la version de l'interface */
+  /* Check the Interface version */
   cs_gui_get_version();
 
   return argerr;
@@ -1092,46 +1091,6 @@ cs_gui_strcpy_c2f(      char *const chainef,
   for (i = strlen(chainec); i < lstrF ; i++)
     chainef[i] = ' ';
 }
-
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * Stocke dans values le resultat de la requete path
- * Exemple pour :
- *                             <balise>3</balise>
- *                             <balise>4</balise>
- * stocke dans le tableau de flottant values les valeurs 3 et 4
- *
- * retourne 0 ou le nombre de balises
- *----------------------------------------------------------------------------*/
-
-/*
-int
-cs_gui_get_double_values(char    *const path,
-                         double **const values)
-{
-  char **text_name;
-  int    size;
-  int    i;
-  int    test = 0;
-
-  cs_gui_get_text_values(path, &text_name, &size);
-
-  BFT_MALLOC(*values, size, double);
-
-  if (text_name == NULL)
-    test= 0;
-  else {
-    for (i=0 ; i < size ; i++){
-      (*values)[i]=atof(text_name[i]);
-      BFT_FREE(text_name[i]);
-    }
-    BFT_FREE(text_name);
-    test = size;
-  }
-  return test;
-}
-*/
 
 /*----------------------------------------------------------------------------*/
 

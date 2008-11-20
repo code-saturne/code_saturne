@@ -26,12 +26,11 @@
  *============================================================================*/
 
 /*============================================================================
- *  Gestion du module de calcul thermique en paroi 1D
+ * Modelling the thermal wall with 1D approach
  *============================================================================*/
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
@@ -39,26 +38,27 @@
 #include <stdio.h>
 #include <string.h>
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie BFT
+ * BFT library headers
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
 
+/*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' locaux
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "cs_suite.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers  `include' associés au fichier courant
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_tpar1d.h"
@@ -68,20 +68,20 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Structures locales
+ * Local structure definitions
  *============================================================================*/
 
 struct par1d
 {
-  cs_int_t    n;     /* Nombre de pts de discrétisation pour la face couplée */
-  cs_real_t  *z;     /* Coordonnées des points de discrétisation             */
-  cs_real_t   e;     /* Épaisseur associée à la face couplée                 */
-  cs_real_t  *t;     /* Température en chacun des points de discrétisation   */
+  cs_int_t    n;     /* Number of discretization points on the coupled face */
+  cs_real_t  *z;     /* Discretization points coordinates                   */
+  cs_real_t   e;     /* Thickness associated to the coupled face            */
+  cs_real_t  *t;     /* Temperature at each point of discretization         */
 };
 
 
 /*============================================================================
- *  Variables globales statiques
+ * Static global variable
  *============================================================================*/
 
 static struct par1d *cs_glob_par1d = NULL;
@@ -89,53 +89,92 @@ static cs_suite_t   *cs_glob_tpar1d_suite = NULL;
 
 
 /*============================================================================
- *  Prototype de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Allocation de la structure cs_glob_par1d
+ * Allocate the cs_glob_par1d structure
+ *
+ * parameters:
+ *   nfpt1d <- number of coupled boundary faces
+ *   nppt1d <- number of discretization points on each coupled faces
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_tpar1d_cree
-(
-       cs_int_t   nfpt1d,         /* : <-  : nombre de faces de bord couplees */
- const cs_int_t  *nppt1d          /* : <-  : nombre de pts de discrétisation
-                                             sur chaque face couplée          */
-);
+static void
+cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
+                   const cs_int_t  *nppt1d)
+{
+  cs_int_t   nb_pts_tot;
+  cs_int_t   i;
+
+  /* Allocate the cs_glob_par1d structure */
+  BFT_MALLOC(cs_glob_par1d, nfpt1d, struct par1d);
+
+  /* Initialization of the number of discretization points in each structure
+     Computation of the toatl number of discretization points */
+  nb_pts_tot = 0;
+
+  for (i = 0; i < nfpt1d; i++) {
+    cs_glob_par1d[i].n = nppt1d[i];
+    nb_pts_tot += nppt1d[i];
+  }
+
+  /* Allocate the "t" arrays: Temperature in each point of discretization
+          and the "z" arrays: Coordonnates of each point of discretization */
+
+  BFT_MALLOC(cs_glob_par1d->z, 2 * nb_pts_tot, cs_real_t);
+  cs_glob_par1d->t = cs_glob_par1d->z + nb_pts_tot;
+
+  for (i = 1; i < nfpt1d; i++) {
+    cs_glob_par1d[i].z = cs_glob_par1d[i-1].z + nppt1d[i-1];
+    cs_glob_par1d[i].t = cs_glob_par1d[i-1].t + nppt1d[i-1];
+  }
+
+}
 
 /*----------------------------------------------------------------------------
- * Ouverture du fichier suite associé à cs_tpar1d
- * Allocation de cs_glob_tpar1d_suite
+ * Open the restart file associated to cs_tpar1d
+ * Allocate cs_glob_tpar1d_suite
+ *
+ * parameters:
+ *   nomsui <- name of the restart file
+ *   lngnom <- name length
+ *   ireawr <- 1 for reading, 2 for writing
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_tpar1d_opnsuite
-(
- const char            *nomsui,  /* :  <-  : nom du fichier suite             */
- const cs_int_t        *lngnom,  /* :  <-  : longueur du nom du fichier       */
- const cs_suite_mode_t  ireawr   /* :  <-  : 1 pour lecture, 2 pour écriture  */
-);
+static void
+cs_loc_tpar1d_opnsuite(const char            *nomsui,
+                       const cs_int_t        *lngnom,
+                       const cs_suite_mode_t  ireawr)
+{
+  char            *nombuf;
 
+  /* Name treatment for the C API */
+  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
+
+  cs_glob_tpar1d_suite = cs_suite_cree(nombuf, ireawr);
+
+  /* Free the memory if necessary */
+  cs_base_string_f_to_c_free(&nombuf);
+}
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ *  Public functions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Creation des maillages de chaque face et initialisation de la temperature
+ * Create the 1D mesh for each face and initialize the temperature
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE  MAIT1D(NFPT1D, NPPT1D, EPPT1D, RGPT1D, TPPT1D)
+ * SUBROUTINE  MAIT1D
  * ******************
  *
- * INTEGER          NFPT1D         : <-  : nombre de faces couplees
- * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de maillage
- *                                 :     : pour chaque face
- * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : epaisseur de paroi a chaque face
- * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique du maillage de
- *                                 :     : chaque face
- * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la
- *                                 :     : temperature sur tout le maillage
+ * INTEGER          NFPT1D         : <-  : number of coupled faces
+ * INTEGER          NPPT1D(NFPT1D) : <-  : number of mesh points for each face
+ * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : wall thickness for each face
+ * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : mesh geometric ratio for each face
+ * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : temperature initizalition value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (mait1d,MAIT1D)
@@ -151,27 +190,27 @@ void CS_PROCF (mait1d,MAIT1D)
   cs_real_t m, rr;
   cs_real_t *zz;
 
-  /* Allocation de la structure globale: cs_glob_par1d et du nombre de pts de
-     discrétisation sur chaque face */
+  /* Allocate the global structure: cs_glob_par1d and the number of
+     discretization points on each face */
   cs_loc_tpar1d_cree(*nf, n);
 
-  /* Initialisation des épaisseurs e de chaque face couplée */
+  /* Initialization of each coupled face thickness */
   for (i = 0; i < *nf; i++) {
     cs_glob_par1d[i].e = e[i];
   }
 
   for (i = 0; i < *nf; i++) {
 
-    /* Initialisation de la Temperature */
+    /* Initialization of the Temperature */
     for (k = 0; k<n[i]; k++) {
       (cs_glob_par1d[i].t)[k] = tp[i];
     }
 
-    /* Maillage */
+    /* Mesh */
     zz = cs_glob_par1d[i].z;
     rr = r[i];
 
-    /* Regulier */
+    /* Regular */
     if (fabs(rr-1.0) <= 1.0e-6) {
       zz[0] = e[i]/n[i]/2.;
       for (k = 1; k < n[i]; k++) {
@@ -179,7 +218,7 @@ void CS_PROCF (mait1d,MAIT1D)
       }
     }
 
-    /* Geometrique */
+    /* Geometric */
     else {
       m = e[i]*(1.0-rr)/(1.0-pow(rr,n[i]));
       *zz = m/2.;
@@ -193,32 +232,29 @@ void CS_PROCF (mait1d,MAIT1D)
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Resolution de l'equation 1D pour une face donnee
+ * Solve the 1D equation for a given face
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE  TPAR1D
  * ******************
-     &  (II, ICLT1D, TBORD, HBORD, TET1D,
-     &   HET1D, FET1D, LAMT1D,
-     &   RCPT1D, DTPT1D, TPPT1D)
  *
- * INTEGER          II     : <-  : numero de la face traitee
- * INTEGER          ICLT1D : <-  : type de condition a la limite exterieure
- * DOUBLE PRECISION TBORD  : <-  : temperature fluide au bord
- * DOUBLE PRECISION HBORD  : <-  : coefficient d'echange fluide au bord
- * DOUBLE PRECISION TET1D  : <-  : temperature sur le bord exterieur
- *                         :     : (CL de Dirichlet)
- * DOUBLE PRECISION HET1D  : <-  : coefficient d'echange sur paroi exterieure
- * DOUBLE PRECISION FET1D  : <-  : flux sur la paroi exterieure (CL de flux)
- * DOUBLE PRECISION LAMT1D : <-  : valeur de la conductivite lambda
- * DOUBLE PRECISION RCPT1D : <-  : valeur du produit rho*Cp
- * DOUBLE PRECISION DTPT1D : <-> : valeur du pas de temps pour la resolution
- *                         :     : dans le solide
- * DOUBLE PRECISION TPPT1D : <-> : temperature physique a l'interface
- *                         :     : fluide/solide
+ * INTEGER          II     : <-  : face number
+ * INTEGER          ICLT1D : <-  : type of exterior boundary condition
+ * DOUBLE PRECISION TBORD  : <-  : fluid temperature at the boundary
+ * DOUBLE PRECISION HBORD  : <-  : exchange coefficient for the fluid
+ *                         :     : at the boundary
+ * DOUBLE PRECISION TET1D  : <-  : temperature on the exterior boundary
+ *                         :     : (Dirichlet boundary condition)
+ * DOUBLE PRECISION HET1D  : <-  : exchange coefficient on the exterior wall
+ * DOUBLE PRECISION FET1D  : <-  : flux on the exterior wall
+ *                         :     : (Neumann boundary condition)
+ * DOUBLE PRECISION LAMT1D : <-  : conductivity (lambda)
+ * DOUBLE PRECISION RCPT1D : <-  : rho*Cp product
+ * DOUBLE PRECISION DTPT1D : <-> : time-step for the solid resolution
+ * DOUBLE PRECISION TPPT1D : <-> : physical temperature at the fluid/solid
+ *                         :     : interface
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tpar1d,TPAR1D)
@@ -238,12 +274,12 @@ void CS_PROCF (tpar1d,TPAR1D)
 {
   cs_int_t k;
 
-  cs_real_t a1; /*coefficient d'extrapolation de la temperature1*/
-  cs_real_t h2; /*coefficient d'echange thermique sur T(1)*/
-  cs_real_t f3; /*flux thermique sur Tfluide*/
-  cs_real_t a4; /*coefficient d'extrapolation de la temperature4*/
-  cs_real_t h5; /*coefficient d'echange thermique sur T(n)*/
-  cs_real_t f6; /*flux thermique sur Text*/
+  cs_real_t a1; /* extrapolation coefficient for temperature1 */
+  cs_real_t h2; /* thermal exchange coefficient on T(1) */
+  cs_real_t f3; /* thermal flux on Tfluide */
+  cs_real_t a4; /* extrapolation coefficient for temperature4 */
+  cs_real_t h5; /* thermal exchange coefficient on T(n) */
+  cs_real_t f6; /* thermal flux on Text */
 
   cs_real_t m;
 
@@ -260,31 +296,30 @@ void CS_PROCF (tpar1d,TPAR1D)
 
   zz = cs_glob_par1d[*ii].z;
 
-  /*construction de la matrice tridiagonale*/
+  /* Build the tri-diagonal matrix */
 
-  /*Conditions limites cote fluide Conservation du flux*/
-  /*flux dans le fluide = flux dans le solide = f3 + h2*T1*/
+  /* Boundary conditions on the fluid side: flux conservation */
+  /*   flux in the fluid = flux in the solid = f3 + h2*T1 */
   a1 = 1./(*hf)+zz[0]/(*lb);
   h2 = -1./a1;
   f3 = -h2*(*tf);
 
-  /*Conditions limites cote exterieur*/
-  /*flux dans le fluide = flux dans le solide = f6 + h5*T(n-1)*/
+  /* Boundary conditions on the exterior */
+  /*   flux in the fluid = flux in the solid = f6 + h5*T(n-1) */
 
-
-  /*Condition de type dirichlet */
+  /* Dirichlet condition */
   if (*icdcle == 1) {
     a4 = 1./(*he)+(cs_glob_par1d[*ii].e - zz[n-1])/(*lb);
     h5 = -1./a4;
     f6 = -h5*(*te);
   }
-  /*Condition de type Flux impose*/
+  /* Forced flux condition */
   else if (*icdcle == 3) {
     h5 = 0.;
     f6 = *fe;
   }
 
-  /*Points internes du maillage*/
+  /* Mesh interior points */
   for (k=1; k <= n-1; k++) {
     al[k] = -(*lb)/(zz[k]-zz[k-1]);
   }
@@ -307,9 +342,9 @@ void CS_PROCF (tpar1d,TPAR1D)
     dl[k] = (*rocp)/(*dtf)*m*(cs_glob_par1d[*ii].t)[k];
   }
 
-  /*Points frontieres*/
-  /*On initialise bl[0] et bl[n-1] et on les remplit ensuite,
-    au cas ou 0 = n-1 !!*/
+  /* Boundary points */
+  /* bl[0] and bl[n-1] are initialized here and set later,
+     in the case where 0 = n-1 */
   bl[0] = 0.;
   bl[n-1] = 0.;
   al[0] = 0.;
@@ -322,7 +357,7 @@ void CS_PROCF (tpar1d,TPAR1D)
   cl[n-1] = 0.;
   dl[n-1] = dl[n-1] +f6;
 
-  /*Resolution du systeme par double balayage*/
+  /* System resolution by a Cholesky method ("dual-scan") */
   for (k=1; k<=n-1; k++) {
     bl[k] = bl[k] -al[k]*cl[k-1]/bl[k-1];
     dl[k] = dl[k] -al[k]*dl[k-1]/bl[k-1];
@@ -335,66 +370,54 @@ void CS_PROCF (tpar1d,TPAR1D)
   }
 
 
-  /*Calcul de la nouvelle valeur de tp*/
+  /* Compute the new value of tp */
   *tp = (*hf)+(*lb)/zz[0];
   *tp = 1/(*tp)*((*lb)*cs_glob_par1d[*ii].t[0]/zz[0]+(*hf)*(*tf));
 
   BFT_FREE(al);
 }
 
-
 /*----------------------------------------------------------------------------
- * Lecture du fichier suite du module thermique 1D en paroi
+ * Read the restart file of the 1D-wall thermal module
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE  LECT1D
- * *********************
-     &  (NOMSUI,LNGNOM,NFPT1D,NFPT1T,NMXT1D,NFABOR,TPPT1D,IFPT1D)
+ * SUBROUTINE LECT1D
+ * *****************
  *
- * CHAR             NOMSUI         : <-  : nom du fichier suite
- * INTEGER          LNGNOM         : <-  : longueur du nom du fichier
- * INTEGER          NFPT1D         : <-  : nombre de faces avec couplage
- * INTEGER          NFPT1T         : <-  : nombre de faces avec couplage,
- *                                 :     : cumule tous les processeurs
- * INTEGER          NMXT1D         : <-  : discretisation maximale des faces
- * INTEGER          NFABOR         : <-  : nombre de faces de bord
- * INTEGER          NPPT1D(NFPT1D) : <-  : nombre de points de discretisation
- *                                         des faces couplees
- * INTEGER          IFPT1D(NFPT1D) : <-  : tableau d'indirection des faces
- *                                         couplees
- * DOUBLE PRECISION EPPT1D(NFPT1D) : <-  : epaisseur de paroi faces couplees
- * DOUBLE PRECISION RGPT1D(NFPT1D) : <-  : raison geometrique associee aux
- *                                 :     : faces couplees
- * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la
- *                                         temperature sur tout le maillage
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ * INTEGER          NFPT1D : <-- : Number of coupled faces
+ * INTEGER          NFPT1T : <-- : Total number of coupled faces
+ * INTEGER          NMXT1D : <-- : Max number of points on the 1D meshes
+ * INTEGER          NFABOR : <-- : Number of boundary faces
+ * INTEGER          NPPT1D : <-- : Number of points of each face 1D-mesh
+ * INTEGER          IFPT1D : <-- : Indirection array for 1D-module faces
+ * DOUBLE PRECISION EPPT1D : <-- : Wall thickness of each face
+ * DOUBLE PRECISION RGPT1D : <-- : Geometric reason associated to faces
+ * DOUBLE PRECISION TPPT1D : --> : Wall temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lect1d,LECT1D)
 (
- const char       *const nomsui,  /* <- Nom du fichier suite                  */
- const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
- const cs_int_t   *const nfpt1t,  /* <- Nbr de  faces avec couplage cumule sur
-                                        tous les processeurs                  */
- const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
- const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
- const cs_int_t   *const nppt1d,  /* <- Nbr de points de discretisation des
-                                        faces avec module 1D                  */
- const cs_int_t   *const ifpt1d,  /* -> Tableau d'indirection des faces avec
-                                        module 1D                             */
- const cs_real_t  *const eppt1d,  /* <- Epaisseur de paroi des faces          */
- const cs_real_t  *const rgpt1d,  /* <- Raison geometrique associee aux faces */
-       cs_real_t  *const tppt1d   /* <- Température de paroi avec module 1D   */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom,
+ const cs_int_t   *const nfpt1d,
+ const cs_int_t   *const nfpt1t,
+ const cs_int_t   *const nmxt1d,
+ const cs_int_t   *const nfabor,
+ const cs_int_t   *const nppt1d,
+ const cs_int_t   *const ifpt1d,
+ const cs_real_t  *const eppt1d,
+ const cs_real_t  *const rgpt1d,
+       cs_real_t  *const tppt1d
+ CS_ARGF_SUPP_CHAINE
 )
 {
   cs_bool_t           corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   cs_int_t            nbvent;
   cs_int_t            i, j, ifac, indfac, ierror;
-  cs_int_t            version;    /* N'est pas utilisé pour l'instant */
+  cs_int_t            version;    /* Not used at the moment */
 
   cs_suite_t          *suite;
   cs_suite_mode_t     suite_mode;
@@ -405,7 +428,7 @@ void CS_PROCF (lect1d,LECT1D)
   ierror = CS_SUITE_SUCCES;
   suite_mode = CS_SUITE_MODE_LECTURE;
 
-  /* Ouverture du fichier suite */
+  /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
                          suite_mode);
@@ -418,14 +441,14 @@ void CS_PROCF (lect1d,LECT1D)
               *nomsui);
 
 
-  /* Pointeur vers la structure suite globale */
+  /* Pointer to the global restart structure */
   suite = cs_glob_tpar1d_suite;
 
-  /* Vérification du support associé au fichier suite */
+  /* Verification of the associated "support" to the restart file */
   cs_suite_verif_support_base(suite, &corresp_cel, &corresp_fac,
                               &corresp_fbr, &corresp_som);
 
-  /* On ne s'intéresse qu'aux faces de bord */
+  /* Only boundary faces are of interest */
   indfac = (corresp_fbr == true ? 1 : 0);
   if (indfac == 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -435,7 +458,7 @@ void CS_PROCF (lect1d,LECT1D)
                 "the present study.\n"));
 
 
-  { /* Lecture de l'en-tête */
+  { /* Read the header */
     char       nomrub[] = "version_fichier_suite_module_1d";
     cs_int_t   *tabvar;
 
@@ -471,8 +494,8 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Lecture du nombre de points de discrétisation et test de coherence avec
-       les donnees entrees dans USPT1D. */
+  { /* Read the number of discretiaztion points and coherency checks
+       with the input data of USPT1D */
     char       nomrub[] = "nb_pts_discretis";
     cs_int_t   *tabvar;
     cs_int_t   mfpt1d, mfpt1t;
@@ -498,13 +521,13 @@ void CS_PROCF (lect1d,LECT1D)
                   "<%s>\n"
                   "The calculation will not be run.\n"), nomrub);
 
-    /* Test de coherence entre NFPT1T relu et celui de USPT1D */
+    /* Coherency checks between the read NFPT1T and the one from USPT1D */
     mfpt1d = 0;
     for (ifac = 0; ifac < *nfabor; ifac++) {
       if (tabvar[ifac] > 0) mfpt1d++;
     }
     mfpt1t = mfpt1d;
-    /* si necessaire on somme sur tous les processeurs */
+    /* if necessary, sum over all the processors */
 #if defined(_CS_HAVE_MPI)
     if (cs_glob_base_nbr > 1)
       MPI_Allreduce (&mfpt1d, &mfpt1t, 1, CS_MPI_INT, MPI_SUM,
@@ -527,10 +550,10 @@ void CS_PROCF (lect1d,LECT1D)
                   "restart file for the 1D-wall thermal module.\n"
                   "Verify uspt1d.\n"), mfpt1t, *nfpt1t);
 
-    /* Test de coherence entre NFPT1D/IFPT1D relus et ceux de USPT1D
-       On sait déjà que les nombres de faces sont égaux, il suffit
-       de vérifier que toutes les faces sélectionnées dans USPT1D
-       l'étaient dans le calcul précédent */
+    /* Coherency check between read NFPT1D/IFPT1D and the ones from USPT1D
+       One already knows that the number of faces are equal, it is then
+       enough to check that all selected faces in USPT1D were also
+       selected in the previous calculation */
     iok = 0;
     for (i = 0; i < *nfpt1d; i++){
         ifac = ifpt1d[i]-1;
@@ -554,14 +577,14 @@ void CS_PROCF (lect1d,LECT1D)
                   "(refer to the user manual for the specificities\n"
                   "of the test on IFPT1D)"));
 
-    /* Allocation de la structure cs_glob_par1d */
+    /* Allocate the cs_glob_par1d structure */
 
     cs_loc_tpar1d_cree (*nfpt1d, nppt1d);
 
     BFT_FREE(tabvar);
   }
 
-  { /* Lecture de l'épaisseur en paroi et test de coherence avec USPT1D*/
+  { /* Read the wall thickness and check the coherency with USPT1D*/
     char        nomrub[] = "epaisseur_paroi";
     cs_real_t   *tabvar;
     cs_int_t    iok;
@@ -586,7 +609,7 @@ void CS_PROCF (lect1d,LECT1D)
                   "<%s>\n"
                   "The calculation will not be run.\n"), nomrub);
 
-    /* Test de coherence entre EPPT1D relu et celui de USPT1D */
+    /* Coherence check between the read EPPT1D and the one from USPT1D */
     iok = 0;
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
@@ -616,7 +639,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Lecture de la température de bord interne */
+  { /* Read the interior boundary temperature */
     char       nomrub[] = "temperature_bord_int";
     cs_real_t  *tabvar;
 
@@ -648,7 +671,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Lecture des coordonnées du maillage 1D */
+  { /* Read the 1D-mesh coordinates */
     char        nomrub[] = "coords_maillages_1d";
     cs_int_t    nptmx;
     cs_int_t    iok;
@@ -676,7 +699,7 @@ void CS_PROCF (lect1d,LECT1D)
                   "<%s>\n"
                   "The calculation will not be run.\n"), nomrub);
 
-    /* Maintenant qu'on a les centres des mailles, on peut tester RGPT1D */
+    /* Now one have the cell centers, RGPT1D can be tested */
     iok = 0;
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
@@ -706,8 +729,8 @@ void CS_PROCF (lect1d,LECT1D)
 
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i]-1;
-      /* On remplit jusqu'au nombre de points de discrétisation de
-         la face couplée considérée */
+      /* The array is filled until the number of discretization points of
+         the given face is reached */
       for (j = 0; j < cs_glob_par1d[i].n; j++)
         cs_glob_par1d[i].z[j] = tabvar[j + (*nmxt1d)*ifac];
     }
@@ -715,7 +738,7 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Lecture de la température dans la paroi */
+  { /* Read the wall temperature */
     char        nomrub[] = "temperature_interne";
     cs_int_t    nptmx;
     cs_real_t   *tabvar;
@@ -744,8 +767,8 @@ void CS_PROCF (lect1d,LECT1D)
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
-      /* On remplit jusqu'au nombre de points de discrétisation de
-         la face couplée considérée */
+      /* The array is filled until the number of discretization points of
+         the given face is reached */
       for (j = 0; j < cs_glob_par1d[i].n; j++)
         cs_glob_par1d[i].t[j] = tabvar[j + (*nmxt1d)*ifac];
 
@@ -754,47 +777,38 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_FREE(tabvar);
   }
 
-  /* Fermeture du fichier et libération des structures */
+  /* Close the restart file and free structures */
   cs_suite_detruit(cs_glob_tpar1d_suite);
   cs_glob_tpar1d_suite = NULL;
 }
 
-
 /*----------------------------------------------------------------------------
- * Ecriture du fichier suite du module thermique 1D en paroi
+ * Write the restart file of the 1D-wall thermal module
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE  ECRT1D
- * *********************
-     &  (NOMSUI,LNGNOM,NFPT1D,NMXT1D,NFABOR,TPPT1D,IFPT1D)
+ * SUBROUTINE LECT1D
+ * *****************
  *
- *
- * CHAR             NOMSUI         : <-  : nom du fichier suite
- * INTEGER          LNGNOM         : <-  : longueur du nom
- * INTEGER          NFPT1D         : <-  : nombre de faces avec couplage
- * INTEGER          NMXT1D         : <-  : discretisation maximale des faces
- * INTEGER          NFABOR         : <-  : nombre de faces de bord
- * DOUBLE PRECISION TPPT1D(NFPT1D) : <-  : valeur d'initialisation de la
- *                                         temperature sur tout le maillage
- * INTEGER          IFPT1D(NFPT1D) : <-  : tableau d'indirection des faces
- *                                         couplees
- *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ * INTEGER          NFPT1D : <-- : Number of coupled faces
+ * INTEGER          NMXT1D : <-- : Max number of points on the 1D meshes
+ * INTEGER          NFABOR : <-- : Number of boundary faces
+ * DOUBLE PRECISION TPPT1D : --> : Wall temperature
+ * INTEGER          IFPT1D : <-- : Indirection array for 1D-module faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrt1d,ECRT1D)
 (
- const char       *const nomsui,  /* <- Nom du fichier suite                  */
- const cs_int_t   *const lngnom,  /* <- Longueur du nom                       */
- const cs_int_t   *const nfpt1d,  /* <- Nbr de  faces avec couplage           */
- const cs_int_t   *const nmxt1d,  /* <- Nbr max de pts sur les maillages 1D   */
- const cs_int_t   *const nfabor,  /* <- Nbr de faces de bord                  */
- const cs_real_t  *const tppt1d,  /* <- Température de paroi avec module 1D   */
- const cs_int_t   *const ifpt1d   /* <- Tableau d'indirection des faces avec
-                                     module 1D                                */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels F77, */
-                                  /*     inutilisés lors de l'appel mais      */
-                                  /*     placés par de nombreux compilateurs) */
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom,
+ const cs_int_t   *const nfpt1d,
+ const cs_int_t   *const nmxt1d,
+ const cs_int_t   *const nfabor,
+ const cs_real_t  *const tppt1d,
+ const cs_int_t   *const ifpt1d
+ CS_ARGF_SUPP_CHAINE
 )
 {
   cs_int_t            nbvent, ierror;
@@ -809,7 +823,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
   ierror = CS_SUITE_SUCCES;
   suite_mode = CS_SUITE_MODE_ECRITURE;
 
-  /* Ouverture du fichier suite */
+  /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
                          suite_mode);
@@ -822,10 +836,10 @@ void CS_PROCF (ecrt1d,ECRT1D)
               *nomsui);
 
 
-  /* Pointeur vers la structure suite globale */
+  /* Pointer to the global restart structure */
   suite = cs_glob_tpar1d_suite;
 
-  { /* Ecriture de l'en-tête */
+  { /* Write the header */
     char       nomrub[] = "version_fichier_suite_module_1d";
     cs_int_t   *tabvar;
 
@@ -847,7 +861,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Ecriture du nombre de points de discrétisation */
+  { /* Write the number of discretization points */
     char       nomrub[] = "nb_pts_discretis";
     cs_int_t   *tabvar;
 
@@ -875,7 +889,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Ecriture de l'épaisseur en paroi */
+  { /* Write the wall thickness */
     char        nomrub[] = "epaisseur_paroi";
     cs_real_t   *tabvar;
 
@@ -903,7 +917,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Ecriture de la température de bord interne */
+  { /* Write the internal wall-boundary temperature */
     char       nomrub[] = "temperature_bord_int";
     cs_real_t  *tabvar;
 
@@ -931,7 +945,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Ecriture des coordonnées du maillage 1D */
+  { /* Write the 1D-mesh coordinates */
     char        nomrub[] = "coords_maillages_1d";
     cs_int_t    nptmx;
     cs_real_t   *tabvar;
@@ -949,9 +963,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
-      /* On remplit jusqu'au nombre de points de discrétisation de
-         la face couplée considérée (les cases suivantes jusqu'a nmxt1d
-         contiennent deja 0 de par l'initialisation de tabvar */
+      /* The array is filled until the number of discretization points of
+         the given face is reached (the following cases, up to nmxt1d, are
+         already set to 0 during the initalization of tabvar */
       for (j = 0; j < cs_glob_par1d[i].n; j++)
         tabvar[j + (*nmxt1d)*ifac] = cs_glob_par1d[i].z[j];
     }
@@ -966,7 +980,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  { /* Ecriture de la température dans la paroi */
+  { /* Write the wall-interior temperature */
     char        nomrub[] = "temperature_interne";
     cs_int_t    nptmx;
     cs_real_t   *tabvar;
@@ -984,9 +998,9 @@ void CS_PROCF (ecrt1d,ECRT1D)
     for (i = 0; i < *nfpt1d; i++) {
       ifac = ifpt1d[i] - 1;
 
-      /* On remplit jusqu'au nombre de points de discrétisation de
-         la face couplée considérée (les cases suivantes jusqu'a nmxt1d
-         contiennent deja 0 de par l'initialisation de tabvar */
+      /* The array is filled until the number of discretization points of
+         the given face is reached (the following cases, up to nmxt1d, are
+         already set to 0 during the initalization of tabvar */
       for (j = 0; j < cs_glob_par1d[i].n; j++)
         tabvar[j + (*nmxt1d)*ifac] = cs_glob_par1d[i].t[j];
 
@@ -1002,7 +1016,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
     BFT_FREE(tabvar);
   }
 
-  /* Fermeture du fichier et libération des structures */
+  /* Close the restart file and free structures */
   cs_suite_detruit(cs_glob_tpar1d_suite);
   cs_glob_tpar1d_suite = NULL;
 
@@ -1010,7 +1024,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
 
 /*----------------------------------------------------------------------------
- * Liberation de la memoire
+ * Free memory
  *
  * Interface Fortran :
  *
@@ -1023,73 +1037,6 @@ void CS_PROCF (lbrt1d,LBRT1D)(void)
 {
   BFT_FREE(cs_glob_par1d->z);
   BFT_FREE(cs_glob_par1d);
-}
-
-
-/*============================================================================
- *  Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Allocation de la structure cs_glob_par1d
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_tpar1d_cree
-(
- const cs_int_t         nfpt1d,   /* : <-  : nombre de faces de bord couplees */
- const cs_int_t  *const nppt1d    /* : <-  : nombre de pts de discrétisation
-                                     sur chaque face couplée                  */
-)
-{
-  cs_int_t   nb_pts_tot;
-  cs_int_t   i;
-
-  /* Allocation de la structure cs_glob_par1d */
-  BFT_MALLOC(cs_glob_par1d, nfpt1d, struct par1d);
-
-  /* Initialisation du nombre de pts de discrétisation dans chaque structure
-     Calcul du nbr total de pts de discrétisation */
-  nb_pts_tot = 0;
-
-  for (i = 0; i < nfpt1d; i++) {
-    cs_glob_par1d[i].n = nppt1d[i];
-    nb_pts_tot += nppt1d[i];
-  }
-
-  /* Allocation des tableaux t: Température en chaque pts de discrétisation
-     et z: Coordonnée de chaque pts de discrétisation */
-
-  BFT_MALLOC(cs_glob_par1d->z, 2 * nb_pts_tot, cs_real_t);
-  cs_glob_par1d->t = cs_glob_par1d->z + nb_pts_tot;
-
-  for (i = 1; i < nfpt1d; i++) {
-    cs_glob_par1d[i].z = cs_glob_par1d[i-1].z + nppt1d[i-1];
-    cs_glob_par1d[i].t = cs_glob_par1d[i-1].t + nppt1d[i-1];
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Ouverture du fichier suite associé à cs_tpar1d
- * Allocation de cs_glob_tpar1d_suite
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_tpar1d_opnsuite
-(
- const char      *const nomsui,  /* :  <-  : nom du fichier suite             */
- const cs_int_t  *const lngnom,  /* :  <-  : longueur du nom du fichier       */
- const cs_suite_mode_t  ireawr   /* :  <-  : 1 pour lecture, 2 pour écriture  */
-)
-{
-  char            *nombuf;
-
-  /* Traitement du nom pour l'API C */
-  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
-
-  cs_glob_tpar1d_suite = cs_suite_cree(nombuf, ireawr);
-
-  /* Libération de mémoire si nécessaire */
-  cs_base_string_f_to_c_free(&nombuf);
 }
 
 /*----------------------------------------------------------------------------*/

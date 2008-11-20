@@ -3,7 +3,7 @@ src/base/cs_base.c
 src/base/cs_benchmark.c
 src/base/cs_blas.c
 src/base/cs_calcium.c
-src/base/cs_couplage.c
+src/base/cs_coupling.c
 src/base/cs_ecs_messages.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_gradient.c
@@ -32,12 +32,15 @@ src/base/cs_perio.c
 src/base/cs_post.c
 src/base/cs_proxy_comm.c
 src/base/cs_renumber.c
+src/base/cs_sat_coupling.c
 src/base/cs_selector.c
 src/base/cs_sles.c
 src/base/cs_suite.c
 src/base/cs_syr3_comm.c
 src/base/cs_syr3_coupling.c
 src/base/cs_syr3_messages.c
+src/base/cs_syr4_coupling.c
+src/base/cs_syr_coupling.c
 src/base/cs_tpar1d.c
 src/base/cs_ventil.c
 src/base/tcpumx.c

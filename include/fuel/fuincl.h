@@ -71,7 +71,7 @@ C        Fractions massiques dans les vapeurs
 C        HSFOV     --> H2S
 C        COFOV     --> CO
 C        CHFOV     --> CHn
-C        nHCFOV    --> n dans la formule CHn (un réel, car formule molaire moyenne)
+C        nHCFOV    --> n dans la formule CHn (un reel, car formule molaire moyenne)
 C
 C        DFOL      --> densite du fuel liquide
 C
@@ -139,14 +139,14 @@ C                        aux matieres volatiles
 C        A,     --> Coefficients stoechiometriques molaires pour
 C        B          la reaction d'evaporation
 C
-C        Concentrations dans les espèces globales
-C        AFOVF1         nb de moles de vapeur associées à un kg de traceur 1
+C        Concentrations dans les especes globales
+C        AFOVF1         nb de moles de vapeur associees a un kg de traceur 1
 C        ACOF1                          CO
 C        AH2SF1                         H2S
 C        AH2SF3                         H2S
 C        AH2OF3                         H2O
 C        FF3MAX fraction massqique maximale du traceur F3
-C               (correspondant à la masse libérée par combustion hétérogène il
+C               (correspondant a la masse liberee par combustion heterogene il
 C                ne peut exister pur)
 C
 C

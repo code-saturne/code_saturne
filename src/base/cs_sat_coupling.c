@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
-struct _cs_couplage_t {
+struct _cs_sat_coupling_t {
 
   fvm_locator_t   *localis_cel;  /* Locator associated with cells */
   fvm_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
@@ -108,9 +108,9 @@ struct _cs_couplage_t {
 
 /* Array of couplings */
 
-static int              cs_glob_nbr_couplages = 0;
-static int              cs_glob_nbr_couplages_max = 0;
-static cs_couplage_t  **cs_glob_couplages = NULL;
+static int                  cs_glob_nbr_couplages = 0;
+static int                  cs_glob_nbr_couplages_max = 0;
+static cs_sat_coupling_t  **cs_glob_couplages = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -130,19 +130,19 @@ static cs_couplage_t  **cs_glob_couplages = NULL;
  *   pointer to new coupling structure
  *----------------------------------------------------------------------------*/
 
-static cs_couplage_t *
-cs_loc_couplage_cree(cs_int_t  root_rank)
+static cs_sat_coupling_t *
+_sat_coupling_create(cs_int_t  root_rank)
 {
   int  mpi_flag = 0;
   int  n_dist_ranks = 0;
   int  dist_root_rank = 0;
-  cs_couplage_t  *couplage = NULL;
+  cs_sat_coupling_t  *couplage = NULL;
 
   const double  tolerance = 0.1;
 
   /* Create associated structure and MPI communicator */
 
-  BFT_MALLOC(couplage, 1, cs_couplage_t);
+  BFT_MALLOC(couplage, 1, cs_sat_coupling_t);
 
 #if defined(_CS_HAVE_MPI)
 
@@ -161,8 +161,10 @@ cs_loc_couplage_cree(cs_int_t  root_rank)
     MPI_Comm_size(MPI_COMM_WORLD, &n_glob_ranks);
     MPI_Comm_size(cs_glob_base_mpi_comm, &n_loc_ranks);
 
-    MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN, cs_glob_base_mpi_comm);
-    MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX, cs_glob_base_mpi_comm);
+    MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX,
+                  cs_glob_base_mpi_comm);
 
     if (root_rank > r_loc_min && root_rank <= r_loc_max)
       bft_error(__FILE__, __LINE__, 0,
@@ -216,7 +218,7 @@ cs_loc_couplage_cree(cs_int_t  root_rank)
 
 #endif
 
-  /* Création des structures de localisation */
+  /* Creation of the localization structures */
 
 #if defined(FVM_HAVE_MPI)
 
@@ -245,7 +247,6 @@ cs_loc_couplage_cree(cs_int_t  root_rank)
   return couplage;
 }
 
-
 /*----------------------------------------------------------------------------
  * Destroy a coupling structure
  *
@@ -256,8 +257,8 @@ cs_loc_couplage_cree(cs_int_t  root_rank)
  *   NULL pointer
  *----------------------------------------------------------------------------*/
 
-static cs_couplage_t *
-cs_loc_couplage_detruit(cs_couplage_t  *couplage)
+static cs_sat_coupling_t *
+_sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 {
   fvm_locator_destroy(couplage->localis_cel);
   fvm_locator_destroy(couplage->localis_fbr);
@@ -283,19 +284,19 @@ cs_loc_couplage_detruit(cs_couplage_t  *couplage)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Récupération du nombre de cas de couplage
+ * Get number of code coupling
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE NBCCPL
  * *****************
  *
- * INTEGER          NBRCPL         : <-- : nombre de couplages
+ * INTEGER          NBRCPL         : <-- : number of code couplings
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (nbccpl, NBCCPL)
 (
- cs_int_t  *const nbrcpl              /* <-- nombre de couplages              */
+ cs_int_t  *nbrcpl
 )
 {
   *nbrcpl = cs_glob_nbr_couplages;
@@ -303,68 +304,61 @@ void CS_PROCF (nbccpl, NBCCPL)
 
 
 /*----------------------------------------------------------------------------
- * Affectation des listes de cellules et de faces de bord associées à
- * un couplage, ainsi que d'un ensemble de points.
+ * Set the list of cells and boundary faces associated to a coupling
+ * and a cloud of point.
  *
- * Les cellules et faces de bord locales "support" servent de base de
- * localisation des valeurs aux cellules et faces "couplée" distantes.
- * Selon le rôle émetteur et/ou destinataire du processus courant dans le
- * couplage, certains de ces ensembles peuvent être vides ou non.
+ * The local "support" cells and boundary faces are used to localize
+ * the values in the distant "coupled" cells and faces.
+ * Depending on the role of sender and/or receiver of the current process
+ * in the coupling, some of these sets can be empty or not.
  *
- * Les valeurs aux cellules seront toujours localisées et interpolées
- * par rapport au support "cellules" distant. Les valeurs aux faces
- * de bord seront localisées et interpolées par rapport au support
- * "faces de bord" s'il existe, et par rapport au support "cellules"
- * sinon. Vu du processeur local, on affecte (généralement par
- * interpolation) des valeurs à 0 à 2 ensembles de points distants,
- * dont l'un prendra les valeurs basées sur les cellules, et l'autre
- * soit sur les cellules, soit sur les faces de bord (selon si l'on
- * a défini les faces de bord comme support ou non).
+ * The cell values are always localized and interpolated on the distant
+ * "cells" support. The face values are localized and interpolated on
+ * the distant "face" support if present, or on the distant "cell" support
+ * if not.
  *
- * Si les tableaux LCESUP et LFBSUP ne sont pas triés en entrée, ils
- * le seront en sortie
+ * If the input arrays LCESUP and LFBSUP are not ordered, they will be
+ * orderd in output.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE DEFCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NCESUP         : --> : nombre de cellules support
- * INTEGER          NFBSUP         : --> : nombre de faces de bord support
- * INTEGER          NCECPL         : --> : nombre de cellules couplées
- * INTEGER          NFBCPL         : --> : nombre de faces de bord couplées
- * INTEGER          LCESUP(NCESUP) : --> : liste des cellules support
- * INTEGER          LFBSUP(NFBSUP) : --> : liste des faces de bord support
- * INTEGER          LCECPL(NCECPL) : --> : liste des cellules couplées
- * INTEGER          LFBCPL(NFBCPL) : --> : liste des faces de bord couplées
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NCESUP         : --> : number of "support" cells
+ * INTEGER          NFBSUP         : --> : number of "support" boundary faces
+ * INTEGER          NCECPL         : --> : number of coupled cells
+ * INTEGER          NFBCPL         : --> : number of coupled boundary faces
+ * INTEGER          LCESUP(NCESUP) : <-> : list of "support" cells
+ * INTEGER          LFBSUP(NFBSUP) : <-> : list of "support" boundary faces
+ * INTEGER          LCECPL(NCECPL) : --> : list of coupled cells
+ * INTEGER          LFBCPL(NFBCPL) : --> : list of coupled boundary faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (defcpl, DEFCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
- const cs_int_t  *const ncesup,       /* --> nombre de cellules support       */
- const cs_int_t  *const nfbsup,       /* --> nombre de faces de bord support  */
- const cs_int_t  *const ncecpl,       /* --> nombre de cellules couplées      */
- const cs_int_t  *const nfbcpl,       /* --> nombre de faces de bord couplées */
-       cs_int_t         lcesup[],     /* <-> liste des cellules support       */
-       cs_int_t         lfbsup[],     /* <-> liste des faces de bord support  */
- const cs_int_t         lcecpl[],     /* --> liste des cellules couplées      */
- const cs_int_t         lfbcpl[]      /* --> liste des faces de bord couplées */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *ncesup,
+ const cs_int_t  *nfbsup,
+ const cs_int_t  *ncecpl,
+ const cs_int_t  *nfbcpl,
+       cs_int_t   lcesup[],
+       cs_int_t   lfbsup[],
+ const cs_int_t   lcecpl[],
+ const cs_int_t   lfbcpl[]
 )
 {
-  /* Variables locales */
-
   cs_int_t  ind;
 
   int  indic_glob[2] = {0, 0};
   int  indic_loc[2] = {0, 0};
 
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
   fvm_nodal_t  *support_fbr = NULL;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -373,20 +367,20 @@ void CS_PROCF (defcpl, DEFCPL)
   else
     coupl = cs_glob_couplages[*numcpl - 1];
 
-  /* Suppression des informations de connectivite et localisation en
-   * cas de mise à jour du couplage */
+  /* Removing the connectivity and localization informations in case of
+     coupling update */
 
   if (coupl->cells_sup != NULL)
     fvm_nodal_destroy(coupl->cells_sup);
   if (coupl->faces_sup != NULL)
     fvm_nodal_destroy(coupl->faces_sup);
 
-  /* Création des listes locales */
+  /* Create the local lists */
 
   coupl->nbr_cel_sup = *ncesup;
   coupl->nbr_fbr_sup = *nfbsup;
 
-  /* Création des structures fvm correspondantes */
+  /* Create the corresponding FVM structures */
 
   if (*ncesup > 0)
     indic_loc[0] = 1;
@@ -404,18 +398,18 @@ void CS_PROCF (defcpl, DEFCPL)
 
   if (indic_glob[0] > 0)
     coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                      "cellules_couplees",
+                                                      "coupled_cells",
                                                       *ncesup,
                                                       lcesup);
   if (indic_glob[1] > 0)
     coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                      "faces_bord_couplees",
+                                                      "coupled_boundary_faces",
                                                       0,
                                                       *nfbsup,
                                                       NULL,
                                                       lfbsup);
 
-  /* Initialisation de la localisation des correspondants */
+  /* Initialization of the distant point localization */
 
   fvm_locator_set_nodal(coupl->localis_cel,
                         coupl->cells_sup,
@@ -439,11 +433,11 @@ void CS_PROCF (defcpl, DEFCPL)
                         mesh_quantities->b_face_cog);
 
 #if 0
-  /* TODO : permettre l'association des maillages fvm au post traitement,
-     via une fonction fournissant un pointeur sur les structures fvm
-     associées, et une autre permettant leur reduction ou suppression */
+  /* TODO: associate the FVM meshes to the post-processing,
+     with a fonction giving a pointer to the associated FVM structures,
+     and another enabling its compacting or removing */
   {
-    fvm_writer_t *w = fvm_writer_init("maillage_coupl",
+    fvm_writer_t *w = fvm_writer_init("coupled_mesh",
                                       NULL,
                                       "EnSight Gold",
                                       "binary",
@@ -455,7 +449,7 @@ void CS_PROCF (defcpl, DEFCPL)
   }
 #endif
 
-  /* Réduction des supports d'interpolation (pourraient être supprimés) */
+  /* Compacting the interpolation support (could be removed) */
 
   if (coupl->cells_sup != NULL)
     fvm_nodal_reduce(coupl->cells_sup, 1);
@@ -469,43 +463,40 @@ void CS_PROCF (defcpl, DEFCPL)
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Récupération des nombres de cellules et faces de bord support, couplées,
- * et non localisées associées à un couplage
+ * Get the number of cells and boundary faces, "support", coupled and not
+ * localized associated to a given coupling
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE NBECPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NCESUP         : <-- : nombre de cellules support
- * INTEGER          NFBSUP         : <-- : nombre de faces de bord support
- * INTEGER          NCECPL         : <-- : nombre de cellules couplées
- * INTEGER          NFBCPL         : <-- : nombre de faces de bord couplées
- * INTEGER          NCENCP         : <-- : nombre de cellules non couplées
- *                                 :     : car non localisées
- * INTEGER          NFBNCP         : <-- : nombre de faces de bord non
- *                                 :     : couplées car non localisées
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NCESUP         : <-- : number of "support" cells
+ * INTEGER          NFBSUP         : <-- : number of "support" boundary faces
+ * INTEGER          NCECPL         : <-- : number of coupled cells
+ * INTEGER          NFBCPL         : <-- : number of coupled boundary faces
+ * INTEGER          NCENCP         : <-- : number of not coupled cells
+ *                                 :     : (since not localized)
+ * INTEGER          NFBNCP         : <-- : number of not coupled boundary faces
+ *                                 :     : (since not localized)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (nbecpl, NBECPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
-       cs_int_t  *const ncesup,       /* <-- nombre de cellules support       */
-       cs_int_t  *const nfbsup,       /* <-- nombre de faces de bord support  */
-       cs_int_t  *const ncecpl,       /* <-- nombre de cellules couplées      */
-       cs_int_t  *const nfbcpl,       /* <-- nombre de faces de bord couplées */
-       cs_int_t  *const ncencp,       /* <-- nombre de cellules non couplées
-                                       *     car non localisées               */
-       cs_int_t  *const nfbncp        /* <-- nombre de faces de bord non
-                                       *     couplées car non localisées      */
+ const cs_int_t  *numcpl,
+       cs_int_t  *ncesup,
+       cs_int_t  *nfbsup,
+       cs_int_t  *ncecpl,
+       cs_int_t  *nfbcpl,
+       cs_int_t  *ncencp,
+       cs_int_t  *nfbncp
 )
 {
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -535,33 +526,32 @@ void CS_PROCF (nbecpl, NBECPL)
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Récupération des listes de cellules et de faces de bord couplées
- * (i.e. réceptrices) associées à un couplage
+ * Get the lists of coupled cells and boundary faces (i.e. receiving)
+ * associated to a given coupling
  *
- * Le nombre de cellules et faces de bord, obtenus via NBECPL(), sont
- * fournis à des fins de vérification de cohérence des arguments.
+ * The number of cells and boundary faces, got with NBECPL(), are used
+ * for arguments coherency checks.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE LELCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NCECPL         : --> : nombre de cellules couplées
- * INTEGER          NFBCPL         : --> : nombre de faces de bord couplées
- * INTEGER          LCECPL(*)      : <-- : liste des cellules couplées
- * INTEGER          LFBCPL(*)      : <-- : liste des faces de bord couplées
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NCECPL         : --> : number of coupled cells
+ * INTEGER          NFBCPL         : --> : number of coupled boundary faces
+ * INTEGER          LCECPL(*)      : <-- : list of coupled cells
+ * INTEGER          LFBCPL(*)      : <-- : list of coupled boundary faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lelcpl, LELCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du cas de couplage        */
- const cs_int_t  *const ncecpl,       /* --> nombre de cellules couplées      */
- const cs_int_t  *const nfbcpl,       /* --> nombre de faces de bord couplées */
-       cs_int_t  *const lcecpl,       /* <-- liste des cellules couplées      */
-       cs_int_t  *const lfbcpl        /* <-- liste des faces de bord couplées */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *ncecpl,
+ const cs_int_t  *nfbcpl,
+       cs_int_t  *lcecpl,
+       cs_int_t  *lfbcpl
 )
 {
   cs_int_t  ind;
@@ -569,11 +559,11 @@ void CS_PROCF (lelcpl, LELCPL)
   cs_int_t  _ncecpl = 0;
   cs_int_t  _nfbcpl = 0;
 
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
 
   const cs_int_t  *lst = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -596,7 +586,7 @@ void CS_PROCF (lelcpl, LELCPL)
               *numcpl, (int)(*ncecpl), (int)(*nfbcpl),
               (int)_ncecpl, (int)_nfbcpl);
 
-  /* Copie des listes (serait inutile avec un API C pure) */
+  /* Copy lists (would be useless with a pure C API) */
 
   if (_ncecpl > 0) {
     lst = fvm_locator_get_interior_list(coupl->localis_cel);
@@ -611,50 +601,44 @@ void CS_PROCF (lelcpl, LELCPL)
   }
 }
 
-
 /*----------------------------------------------------------------------------
- * Récupération des listes de cellules et de faces de bord non couplées
- * (i.e. réceptrices mais non localisées) associées à un couplage
+ * Get the lists of not coupled cells and boundary faces (i.e. receiving but
+ * not localized) associated to a given coupling
  *
- * Le nombre de cellules et faces de bord, obtenus via NBECPL(), sont
- * fournis à des fins de vérification de cohérence des arguments.
+ * The number of cells and boundary faces, got with NBECPL(), are used
+ * for arguments coherency checks.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE LENCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NCENCP         : <-- : nombre de cellules non couplées
- *                                 :     : car non localisées
- * INTEGER          NFBNCP         : <-- : nombre de faces de bord non
- *                                 :     : couplées car non localisées
- * INTEGER          LCENCP(*)      : <-- : liste des cellules non couplées
- * INTEGER          LFBNCP(*)      : <-- : liste des faces de bord non couplées
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NCENCP         : --> : number of not coupled cells
+ * INTEGER          NFBNCP         : --> : number of not coupled boundary faces
+ * INTEGER          LCENCP(*)      : <-- : list of not coupled cells
+ * INTEGER          LFBNCP(*)      : <-- : list of not coupled boundary faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lencpl, LENCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du cas de couplage        */
- const cs_int_t  *const ncencp,       /* --> nombre de cellules non couplées
-                                       *     car non localisées               */
- const cs_int_t  *const nfbncp,       /* --> nombre de faces de bord non
-                                       *     couplées car non localisées      */
-       cs_int_t  *const lcencp,       /* <-- liste des cellules non couplées  */
-       cs_int_t  *const lfbncp        /* <-- liste des faces de bord non
-                                       *     couplées                         */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *ncencp,
+ const cs_int_t  *nfbncp,
+       cs_int_t  *lcencp,
+       cs_int_t  *lfbncp
 )
 {
   cs_int_t  ind;
 
   cs_int_t  _ncencp = 0;
   cs_int_t  _nfbncp = 0;
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
 
   const cs_int_t  *lst = NULL;
 
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -677,7 +661,7 @@ void CS_PROCF (lencpl, LENCPL)
               *numcpl, (int)(*ncencp), (int)(*nfbncp),
               (int)_ncencp, (int)_nfbncp);
 
-  /* Copie des listes (serait inutile avec un API C pure) */
+  /* Copy lists (would be useless with a pure C API) */
 
   if (_ncencp > 0) {
     lst = fvm_locator_get_exterior_list(coupl->localis_cel);
@@ -692,33 +676,30 @@ void CS_PROCF (lencpl, LENCPL)
   }
 }
 
-
 /*----------------------------------------------------------------------------
- * Récupération du nombre de points distants associés à un couplage
- * et localisés par rapport au domaine local
+ * Get the number of distant point associated to a given coupling
+ * and localized on the local domain
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE NPDCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NCEDIS         : <-- : nombre de cellules distantes
- * INTEGER          NFBDIS         : <-- : nombre de faces de bord distantes
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NCEDIS         : <-- : number of distant cells
+ * INTEGER          NFBDIS         : <-- : numbre de distant boundary faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (npdcpl, NPDCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
-       cs_int_t  *const ncedis,       /* <-- nombre de cellules distantes     */
-       cs_int_t  *const nfbdis        /* <-- nombre de faces de bord dist.    */
+ const cs_int_t  *numcpl,
+       cs_int_t  *ncedis,
+       cs_int_t  *nfbdis
 )
 {
-  /* Variables locales */
+  cs_sat_coupling_t  *coupl = NULL;
 
-  cs_couplage_t  *coupl = NULL;
-
-  /* Vérifications */
+  /* Verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -727,7 +708,7 @@ void CS_PROCF (npdcpl, NPDCPL)
   else
     coupl = cs_glob_couplages[*numcpl - 1];
 
-  /* Récupération du nombre de points */
+  /* Get the number of points */
 
   *ncedis = 0;
   *nfbdis = 0;
@@ -741,59 +722,49 @@ void CS_PROCF (npdcpl, NPDCPL)
 }
 
 /*----------------------------------------------------------------------------
- * Récupération des coordonnées des points distants affectés à un
- * couplage et une liste de points, ainsi que les numéros et le
- * type d'élément (cellules ou faces) "contenant" ces points.
+ * Get the distant points coordinates associated to a given coupling
+ * and a list of points, and the elements number and type (cell or face)
+ * "containing" this points.
  *
- * Le nombre de points distants NBRPTS doit être égal à l'un des arguments
- * NCEDIS ou NFBDIS retournés par NPDCPL(), et est fourni ici à des fins
- * de vérification de cohérence avec les arguments NUMCPL et ITYSUP.
+ * The number of distant points NBRPTS must be equal to one the arguments
+ * NCEDIS or NFBDIS given by NPDCPL(), and is given here for coherency checks
+ * between the arguments NUMCPL and ITYSUP.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE COOCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NBRPTS         : --> : nombre de points distants
- * INTEGER          ITYDIS         : --> : 1 : accès aux points affectés
- *                                 :     :     aux cellules distantes
- *                                 :     : 2 : accès aux points affectés
- *                                 :     :     aux faces de bord distantes
- * INTEGER          ITYLOC         : <-- : 1 : localisation par rapport
- *                                 :     :     aux cellules locales
- *                                 :     : 2 : localisation par rapport
- *                                 :     :     aux faces de bord locales
- * INTEGER          LOCPTS(*)      : <-- : numéro du "contenant" associé à
- *                                 :     :   chaque point
- * DOUBLE PRECISION COOPTS(3,*)    : <-- : coordonnées des points distants
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRPTS         : --> : number of distant points
+ * INTEGER          ITYDIS         : --> : 1 : access to the points associated
+ *                                 :     :     to the distant cells
+ *                                 :     : 2 : access to the points associated
+ *                                 :     :     to the distant boundary faces
+ * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
+ *                                 :     : 2 : localization on the local faces
+ * INTEGER          LOCPTS(*)      : <-- : "containing" number associated to
+ *                                 :     :   each point
+ * DOUBLE PRECISION COOPTS(3,*)    : <-- : distant point coordinates
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (coocpl, COOCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
- const cs_int_t  *const nbrpts,       /* --> nombre de points distants        */
- const cs_int_t  *const itydis,       /* --> 1 : accès aux points affectés
-                                       *         aux cellules distantes
-                                       *     2 : accès aux points affectés
-                                       *         aux faces de bord distantes  */
-       cs_int_t  *const ityloc,       /* <-- 1 : localisation par rapport
-                                       *         aux cellules locales
-                                       *     2 : localisation par rapport
-                                       *         aux faces de bord locales    */
-       cs_int_t  *const locpts,       /* <-- liste des mailles associées      */
-       cs_real_t *const coopts        /* <-- coord. des points à localiser    */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *nbrpts,
+ const cs_int_t  *itydis,
+       cs_int_t  *ityloc,
+       cs_int_t  *locpts,
+       cs_real_t *coopts
 )
 {
-  /* Variables locales */
-
   cs_int_t  ind, icoo;
 
   cs_int_t  n_pts_dist = 0;
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
   fvm_locator_t  *localis = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -826,7 +797,7 @@ void CS_PROCF (coocpl, COOCPL)
                 "The value for NBRPTS should be %d."),
               *numcpl, (int)(*itydis), (int)(*nbrpts), (int)n_pts_dist);
 
-  /* Création des listes locales */
+  /* Creation the local lists */
 
   if (localis != NULL) {
 
@@ -853,43 +824,40 @@ void CS_PROCF (coocpl, COOCPL)
 }
 
 /*----------------------------------------------------------------------------
- * Echange d'une variable associée à un ensemble de points et à un couplage.
+ * Exchange a variable associated to a set of point and a coupling.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE VARCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NBRDIS         : --> : Nombre de valeurs à envoyer
- * INTEGER          NBRLOC         : --> : Nombre de valeurs à recevoir
- * INTEGER          ITYVAR         : --> : 1 : variables aux cellules
- *                                 :     : 2 : variables aux faces de bord
- * DOUBLE PRECISION VARDIS(*) )    : --> : variable distante (à envoyer)
- * DOUBLE PRECISION VARLOC(*) )    : <-- : variable locale (à recevoir)
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRDIS         : --> : number of values to send
+ * INTEGER          NBRLOC         : --> : number of values to receive
+ * INTEGER          ITYVAR         : --> : 1 : variables defined at cells
+ *                                 :     : 2 : variables defined at faces
+ * DOUBLE PRECISION VARDIS(*)      : --> : distant variable(to send)
+ * DOUBLE PRECISION VARLOC(*)      : <-- : local variable (to receive)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varcpl, VARCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
- const cs_int_t  *const nbrdis,       /* --> nombre de valeurs à envoyer      */
- const cs_int_t  *const nbrloc,       /* --> nombre de valeurs à recevoir     */
- const cs_int_t  *const ityvar,       /* --> 1 : variables aux cellules
-                                       *     2 : variables aux faces de bord  */
-       cs_real_t *const vardis,       /* --> variable distante (à envoyer)    */
-       cs_real_t *const varloc        /* <-- variable locale (à recevoir)     */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *nbrdis,
+ const cs_int_t  *nbrloc,
+ const cs_int_t  *ityvar,
+       cs_real_t *vardis,
+       cs_real_t *varloc
 )
 {
-  /* Variables locales */
-
   cs_int_t  n_val_dist_ref = 0;
   cs_int_t  n_val_loc_ref = 0;
   cs_real_t  *val_dist = NULL;
   cs_real_t  *val_loc = NULL;
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
   fvm_locator_t  *localis = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -922,7 +890,7 @@ void CS_PROCF (varcpl, VARCPL)
                 "NBRLOC should be 0 or %d."),
               *numcpl, (int)(*ityvar), (int)(*nbrloc), (int)n_val_loc_ref);
 
-  /* Création des listes locales */
+  /* Create the local lists */
 
   if (localis != NULL) {
 
@@ -943,36 +911,33 @@ void CS_PROCF (varcpl, VARCPL)
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Echange de tableaux d'entiers associés à un couplage.
+ * Array of integers exchange, associated to a given coupling.
  *
- * On suppose que les tableaux à échanger sont de même taille et contiennent
- * les mêmes valeurs sur chaque groupe de processus (locaux et distants).
+ * It is assumed that the arrays have the same size and the same values on
+ * each group of processus (local and distant).
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TBICPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NBRDIS         : --> : Nombre de valeurs à envoyer
- * INTEGER          NBRLOC         : --> : Nombre de valeurs à recevoir
- * INTEGER          TABDIS(*) )    : --> : valeurs distantes (à envoyer)
- * INTEGER          TABLOC(*) )    : --> : valeurs locales (à recevoir)
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRDIS         : --> : number of values to send
+ * INTEGER          NBRLOC         : --> : number of values to receive
+ * INTEGER          TABDIS(*)      : --> : distant values (to send)
+ * INTEGER          TABLOC(*)      : <-- : local values (to receive)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tbicpl, TBICPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
- const cs_int_t  *const nbrdis,       /* --> nombre de valeurs à envoyer      */
- const cs_int_t  *const nbrloc,       /* --> nombre de valeurs à recevoir     */
-       cs_int_t  *const vardis,       /* --> variable distante (à envoyer)    */
-       cs_int_t  *const varloc        /* <-- variable locale (à recevoir)     */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *nbrdis,
+ const cs_int_t  *nbrloc,
+       cs_int_t  *vardis,
+       cs_int_t  *varloc
 )
 {
-  /* Variables locales */
-
   cs_int_t  ind;
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
@@ -981,9 +946,9 @@ void CS_PROCF (tbicpl, TBICPL)
 
   MPI_Status  status;
 
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -996,14 +961,14 @@ void CS_PROCF (tbicpl, TBICPL)
 
     distant = true;
 
-    /* Enchanges entre les têtes de groupes */
+    /* Exchange between the groups master node */
 
     if (cs_glob_base_rang < 1)
       MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->dist_root_rank, 0,
                    varloc, *nbrloc, CS_MPI_INT, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
-    /* Synchronisation à l'intérieur d'un groupe */
+    /* Synchronization inside a group */
 
     if (cs_glob_base_nbr > 1)
       MPI_Bcast (varloc, *nbrloc, CS_MPI_INT, 0, cs_glob_base_mpi_comm);
@@ -1023,34 +988,32 @@ void CS_PROCF (tbicpl, TBICPL)
 }
 
 /*----------------------------------------------------------------------------
- * Echange de tableaux de réels associés à un couplage.
+ * Array of reals exchange, associated to a given coupling.
  *
- * On suppose que les tableaux à échanger sont de même taille et contiennent
- * les mêmes valeurs sur chaque groupe de processus (locaux et distants).
+ * It is assumed that the arrays have the same size and the same values on
+ * each group of processus (local and distant).
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TBRCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : numéro du couplage
- * INTEGER          NBRDIS         : --> : Nombre de valeurs à envoyer
- * INTEGER          NBRLOC         : --> : Nombre de valeurs à recevoir
- * DOUBLE PRECISION TABDIS(*) )    : --> : valeurs distantes (à envoyer)
- * DOUBLE PRECISION TABLOC(*) )    : --> : valeurs locales (à recevoir)
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRDIS         : --> : number of values to send
+ * INTEGER          NBRLOC         : --> : number of values to receive
+ * DOUBLE PRECISION TABDIS(*)      : --> : distant values (to send)
+ * DOUBLE PRECISION TABLOC(*)      : <-- : local values (to receive)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tbrcpl, TBRCPL)
 (
- const cs_int_t  *const numcpl,       /* --> numéro du couplage               */
- const cs_int_t  *const nbrdis,       /* --> nombre de valeurs à envoyer      */
- const cs_int_t  *const nbrloc,       /* --> nombre de valeurs à recevoir     */
-       cs_real_t *const vardis,       /* --> variable distante (à envoyer)    */
-       cs_real_t *const varloc        /* <-- variable locale (à recevoir)     */
+ const cs_int_t  *numcpl,
+ const cs_int_t  *nbrdis,
+ const cs_int_t  *nbrloc,
+       cs_real_t *vardis,
+       cs_real_t *varloc
 )
 {
-  /* Variables locales */
-
   cs_int_t  ind;
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
@@ -1059,9 +1022,9 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
   MPI_Status  status;
 
-  cs_couplage_t  *coupl = NULL;
+  cs_sat_coupling_t  *coupl = NULL;
 
-  /* Initialisations et vérifications */
+  /* Initializations and verifications */
 
   if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
     bft_error(__FILE__, __LINE__, 0,
@@ -1074,14 +1037,14 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
     distant = true;
 
-    /* Enchanges entre les têtes de groupes */
+    /* Exchange between the groups master node */
 
     if (cs_glob_base_rang < 1)
       MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->dist_root_rank, 0,
                    varloc, *nbrloc, CS_MPI_REAL, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
-    /* Synchronisation à l'intérieur d'un groupe */
+    /* Synchronization inside a group */
 
     if (cs_glob_base_nbr > 1)
       MPI_Bcast(varloc, *nbrloc, CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
@@ -1116,15 +1079,15 @@ void CS_PROCF (tbrcpl, TBRCPL)
  *----------------------------------------------------------------------------*/
 
 void
-cs_couplage_ajoute(cs_int_t   rang_deb)
+cs_sat_coupling_add(cs_int_t   rang_deb)
 {
-  cs_couplage_t  *couplage = NULL;
+  cs_sat_coupling_t  *couplage = NULL;
 
   /* Create the associated structure */
 
-  couplage = cs_loc_couplage_cree(rang_deb);
+  couplage = _sat_coupling_create(rang_deb);
 
-  /* Redimensionnement du tableau global des couplages */
+  /* Increase the couplings global array if necessary */
 
   if (cs_glob_nbr_couplages == cs_glob_nbr_couplages_max) {
 
@@ -1135,11 +1098,11 @@ cs_couplage_ajoute(cs_int_t   rang_deb)
 
     BFT_REALLOC(cs_glob_couplages,
                 cs_glob_nbr_couplages_max,
-                cs_couplage_t *);
+                cs_sat_coupling_t *);
 
   }
 
-  /* Affectation du couplage nouvellement crée à la structure */
+  /* Associate the new coupling to the structure */
 
   cs_glob_couplages[cs_glob_nbr_couplages] = couplage;
 
@@ -1154,12 +1117,12 @@ cs_couplage_ajoute(cs_int_t   rang_deb)
  *----------------------------------------------------------------------------*/
 
 void
-cs_couplage_detruit_tout(void)
+cs_sat_coupling_all_finalize(void)
 {
-  cs_int_t  i;
+  int  i;
 
   for (i = 0 ; i < cs_glob_nbr_couplages ; i++)
-    cs_loc_couplage_detruit(cs_glob_couplages[i]);
+    _sat_coupling_destroy(cs_glob_couplages[i]);
 
   BFT_FREE(cs_glob_couplages);
 

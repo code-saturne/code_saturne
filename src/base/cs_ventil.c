@@ -26,10 +26,12 @@
  *============================================================================*/
 
 /*============================================================================
- * Définitions, variables globales, et fonctions associées aux ventilateurs
+ * Management of fans
  *============================================================================*/
 
-/* includes système */
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
@@ -37,12 +39,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-/* Includes librairie BFT */
+/*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
 
-/* Includes librairie */
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_base.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
 
 #include "cs_ventil.h"
 
@@ -51,50 +62,50 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Définitions de types
+ * Local Type Definitions
  *============================================================================*/
 
-/* Structure associée à un ventilateur */
+/* Structure associated to a fan */
 
 struct _cs_ventil_t {
 
-  int                 num;              /* Numéro du ventilateur */
-  int                 dim_modele;       /* Modèle 1D, 2D, ou 3D */
-  int                 dim_ventil;       /* Géométrie 2D ou 3D */
+  int                 num;              /* Fan number */
+  int                 dim_modele;       /* 1D, 2D, or 3D modelling */
+  int                 dim_ventil;       /* 2D or 3D geometry */
 
-  cs_real_t           coo_axe_amont[3]; /* Coordonnées du point de l'axe
-                                           de la face amont */
-  cs_real_t           coo_axe_aval[3];  /* Coordonnées du point de l'axe
-                                           de la face amont */
-  cs_real_t           dir_axe[3];       /* Vecteur directeur unitaire de
-                                           l'axe (amont vers aval) */
-  cs_real_t           epaisseur;        /* Épaisseur du ventilateur */
-  cs_real_t           surface;          /* Surface totale du ventilateur */
+  cs_real_t           coo_axe_amont[3]; /* Axis point coordinates of the
+                                           upstream face */
+  cs_real_t           coo_axe_aval[3];  /* Axis point coordinates of the
+                                           downstrem face */
+  cs_real_t           dir_axe[3];       /* Unit vector of the axis
+                                           (upstream to downstream) */
+  cs_real_t           epaisseur;        /* Fan thickness */
+  cs_real_t           surface;          /* Fan total surface */
 
-  cs_real_t           ray_ventil;       /* Rayon du ventilateur */
-  cs_real_t           ray_pales;        /* Rayon des pales */
-  cs_real_t           ray_moyeu;        /* Rayon du moyeu */
-  cs_real_t           coeff_carac[3];   /* Coefficients des termes de
-                                           degré 0, 1, et 2 de la courbe
-                                           caractéristique */
-  cs_real_t           couple_axial;     /* Couple axial du ventilateur*/
+  cs_real_t           ray_ventil;       /* Fan radius */
+  cs_real_t           ray_pales;        /* Blades radius */
+  cs_real_t           ray_moyeu;        /* Hub radius */
+  cs_real_t           coeff_carac[3];   /* Coefficients of the terms of
+                                           degree 0, 1 and 2 of the
+                                           characteristic curve */
+  cs_real_t           couple_axial;     /* Fan axial couple */
 
-  cs_int_t            nbr_cel;
+  cs_int_t            nbr_cel;          /* Number of cells */
 
-  cs_int_t           *lst_cel;          /* Liste des cellules appartenant au
-                                           ventilateur */
+  cs_int_t           *lst_cel;          /* List of the cells belonging
+                                           to the fan */
 
-  cs_real_t           debit_entrant;    /* Débit entrant courant */
-  cs_real_t           debit_sortant;    /* Débit sortant courant */
+  cs_real_t           debit_entrant;    /* Current inlet flow */
+  cs_real_t           debit_sortant;    /* Current outlet flow */
 
 } ;
 
 
 /*============================================================================
- *  Variables globales statiques
+ * Global variables
  *============================================================================*/
 
-/* Tableau des ventilateurs */
+/* Fans array */
 
 cs_int_t         cs_glob_ventil_nbr_max = 0;
 
@@ -103,10 +114,8 @@ cs_ventil_t  * * cs_glob_ventil_tab = NULL;
 
 
 /*============================================================================
- *  Définitions de macros
+ * Macro definitions
  *============================================================================*/
-
-/* Définition de macros locales */
 
 enum {X, Y, Z} ;
 
@@ -123,85 +132,106 @@ enum {X, Y, Z} ;
 
 
 /*============================================================================
- * Prototypes de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Marquage des cellules appartenant aux différents ventilateurs
- * (par le numéro de ventilateur, 0 sinon)
+ * Mark the cells belonging to the different fans
+ * (by the fan number, 0 otherwise)
+ *
+ * parameters:
+ *   mesh        <-- associated mesh structure
+ *   num_vtl_cel --> indicator by cell
  *----------------------------------------------------------------------------*/
 
-static void cs_loc_ventil_marque_cellules
-(
- const cs_mesh_t  *const mesh,     /* <-- structure maillage associée */
-       cs_int_t          num_vtl_cel[] /* --> indicateur par cellule      */
-);
+static void
+cs_loc_ventil_marque_cellules(const cs_mesh_t  *const mesh,
+                              cs_int_t          num_vtl_cel[])
+{
+  cs_int_t   icel;
+  cs_int_t   ivtl;
+  cs_int_t   iloc;
 
+  cs_ventil_t  *ventil;
+
+  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
+
+  /* Mark the cells */
+
+  for (icel = 0 ; icel < nbr_cel_et ; icel++)
+    num_vtl_cel[icel] = 0;
+
+  for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
+
+    ventil = cs_glob_ventil_tab[ivtl];
+
+    for (iloc = 0 ; iloc < ventil->nbr_cel ; iloc++) {
+      icel = ventil->lst_cel[iloc] - 1;
+      num_vtl_cel[icel] = ivtl + 1;
+    }
+
+  }
+
+}
 
 /*============================================================================
- *  Fonctions publiques pour API Fortran
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Récupération du nombre de ventilateurs
+ * Get the number of fans.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE TSTVTL
  * *****************
  *
- * INTEGER          NBRVTL         : --> : nombre de ventilateurs
+ * INTEGER          NBRVTL         : --> : number of fans
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tstvtl, TSTVTL)
 (
- cs_int_t  *const nbrvtl              /* <-- nombre de ventilateurs           */
+ cs_int_t  *const nbrvtl
 )
 {
-  *nbrvtl = cs_glob_ventil_nbr ;
+  *nbrvtl = cs_glob_ventil_nbr;
 }
 
-
 /*----------------------------------------------------------------------------
- * Ajout d'un ventilateur
+ * Adds a fan.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE DEFVTL (XYZVT1, XYZVT2, RVVT  , RPVT  , RMVT  ,
+ * SUBROUTINE DEFVTL
  * *****************
- *                    CCARAC, TAUVT)
  *
- * INTEGER          DIMMOD     : <-- : Dimension du modèle de ventilateur :
- *                             :     : f_constante ; 2 : profil_force ;
- *                             :     : 3 : profil_force + couple tangentiel
- *                  DIMVTL     : <-- : Dimension du ventilateur :
- *                             :     : 2 : pseudo-2D (maillage extrudé)
- *                             :     : 3 : 3D (standard)
- * DOUBLE PRECISION XYZVT1(3)  : <-- : Coord. point de l'axe en face amont
- * DOUBLE PRECISION XYZVT2(3)  : <-- : Coord. point de l'axe en face aval
- * DOUBLE PRECISION RVVT       : <-- : Rayon du ventilateur
- * DOUBLE PRECISION RPVT       : <-- : Rayon des pales
- * DOUBLE PRECISION RMVT       : <-- : Rayon du moyeu
- * DOUBLE PRECISION CCARAC(3)  : <-- : Coefficients de degré 0, 1, et 2
- *                             :     : de la courbe caractéristique
- * DOUBLE PRECISION TAUVT      : <-- : Couple axial du ventilateur
+ * INTEGER          DIMMOD     : <-- : Fan model dimension:
+ *                             :     : 1: constant_f; 2: force_profile;
+ *                             :     : 3: force_profile + tangential couple
+ *                  DIMVTL     : <-- : Fan dimension:
+ *                             :     : 2: pseudo-2D (extruded mesh)
+ *                             :     : 3: 3D (standard)
+ * DOUBLE PRECISION XYZVT1(3)  : <-- : Coo. of the axis point in upstream face
+ * DOUBLE PRECISION XYZVT2(3)  : <-- : Coo. of the axis point in downstream face
+ * DOUBLE PRECISION RVVT       : <-- : Fan radius
+ * DOUBLE PRECISION RPVT       : <-- : Blades radius
+ * DOUBLE PRECISION RMVT       : <-- : Hub radius
+ * DOUBLE PRECISION CCARAC(3)  : <-- : Coefficients of degre 0, 1 and 2
+ *                             :     : of the characteristic curve
+ * DOUBLE PRECISION TAUVT      : <-- : Fan axial couple
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (defvtl, DEFVTL)
 (
- const cs_int_t   *const dimmod,     /* Dimension du modèle de ventilateur :
-                                        1 : f_constante ; 2 : profil_force ;
-                                        3 : profil_force + couple tangentiel */
- const cs_int_t   *const dimvtl,     /* Dimension du ventilateur :
-                                        2 : pseudo-2D (maillage extrudé)
-                                        3 : 3D (standard) */
- const cs_real_t         xyzvt1[3],  /* Coord. point de l'axe en face amont */
- const cs_real_t         xyzvt2[3],  /* Coord. point de l'axe en face aval */
- const cs_real_t  *const rvvt,       /* Rayon du ventilateur */
- const cs_real_t  *const rpvt,       /* Rayon des pales */
- const cs_real_t  *const rmvt,       /* Rayon du moyeu */
- const cs_real_t         ccarac[3],  /* Coefficients courbe caractéristique */
- const cs_real_t  *const tauvt       /* Couple axial du ventilateur*/
+ const cs_int_t   *const dimmod,
+ const cs_int_t   *const dimvtl,
+ const cs_real_t         xyzvt1[3],
+ const cs_real_t         xyzvt2[3],
+ const cs_real_t  *const rvvt,
+ const cs_real_t  *const rpvt,
+ const cs_real_t  *const rmvt,
+ const cs_real_t         ccarac[3],
+ const cs_real_t  *const tauvt
 )
 {
   cs_ventil_definit(*dimmod,
@@ -215,11 +245,10 @@ void CS_PROCF (defvtl, DEFVTL)
                     *tauvt);
 }
 
-
 /*----------------------------------------------------------------------------
- * Construction des listes de cellules associées aux ventilateurs
+ * Build the list of cells associated to the fans
  *
- * Interface Fortran :
+ * Fotrtran interface:
  *
  * SUBROUTINE INIVTL
  * *****************
@@ -234,54 +263,51 @@ void CS_PROCF (inivtl, INIVTL)
                         cs_glob_mesh_quantities);
 }
 
-
 /*----------------------------------------------------------------------------
- * Marquage des ventilateurs ; affecte le numéro de ventilateur aux cellules
- * appartenant à un ventilateur, 0 sinon
+ * Mark the fans and associate the fan number to the cells belonging to
+ * thus fan, 0 otherwise.
  *
- * Interface Fortran :
+ * Fortran interface:
  *
  * SUBROUTINE NUMVTL (INDIC)
  * *****************
  *
- * INTEGER INDIC(NCELET)       : --> : Numéro du ventilateur d'appartenance
- *                             :     : de la cellule (0 si hors ventilateur)
+ * INTEGER INDIC(NCELET)       : --> : Fan number (0 if outside the fan)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (numvtl, NUMVTL)
 (
- cs_int_t  indic[]              /* Numéro de ventilateur d'appartenance, ou 0 */
+ cs_int_t  indic[]
 )
 {
   cs_loc_ventil_marque_cellules(cs_glob_mesh,
                                 indic);
 }
 
-
 /*----------------------------------------------------------------------------
- * Calcul des débits à travers les ventilateurs
+ * Calculate the flows through the fans
  *
- * Interface Fortran :
+ * Fortran interface:
  *
- * SUBROUTINE DEBVTL (NBRVTL, FLUMAS, FLUMAB, RHO, RHOFAB, DEBENT, DEBSOR)
+ * SUBROUTINE DEBVTL
  * *****************
  *
- * DOUBLE PRECISION FLUMAS(*)      : <-- : Flux de masse aux faces intérieures
- * DOUBLE PRECISION FLUMAB(*)      : <-- : Flux de masse aux faces de bord
- * DOUBLE PRECISION RHO   (*)      : <-- : Densité aux cellules
- * DOUBLE PRECISION RHOFAB(*)      : <-- : Densité aux faces de bord
- * DOUBLE PRECISION DEBENT(NBRVTL) : --> : Débit entrant par ventilateur
- * DOUBLE PRECISION DEBSOR(NBRVTL) : --> : Débit sortant par ventilateur
+ * DOUBLE PRECISION FLUMAS(*)      : <-- : Interior faces mass flux
+ * DOUBLE PRECISION FLUMAB(*)      : <-- : Boundary faces mass flux
+ * DOUBLE PRECISION RHO   (*)      : <-- : Density at cells
+ * DOUBLE PRECISION RHOFAB(*)      : <-- : Density at boundary faces
+ * DOUBLE PRECISION DEBENT(NBRVTL) : --> : Inlet flow through the fan
+ * DOUBLE PRECISION DEBSOR(NBRVTL) : --> : Outlet flow through the fan
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (debvtl, DEBVTL)
 (
- cs_real_t  flumas[],           /* <-- Flux de masse aux faces intérieures    */
- cs_real_t  flumab[],           /* <-- Flux de masse aux faces de bord        */
- cs_real_t  rho[],              /* <-- Densité aux cellules                   */
- cs_real_t  rhofab[],           /* <-- Densité aux faces de bord              */
- cs_real_t  debent[],           /* <-- Débit entrant par ventilateur          */
- cs_real_t  debsor[]            /* <-- Débit sortant par ventilateur          */
+ cs_real_t  flumas[],
+ cs_real_t  flumab[],
+ cs_real_t  rho[],
+ cs_real_t  rhofab[],
+ cs_real_t  debent[],
+ cs_real_t  debsor[]
 )
 {
   int i;
@@ -300,29 +326,27 @@ void CS_PROCF (debvtl, DEBVTL)
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Calcul de la force induite par les ventilateurs (nécessite le
- * calcul préalable des débits à travers chaque ventilateur) ;
- * La force induite est ajoutée au tableau CRVXEP (qui peut contenir
- * d'autres contributions)
+ * Calculate the force induced by the fans (needs a previous calculation
+ * of the flows through each fan).
  *
- * Interface Fortran :
+ * The induced force is added to the array CRVXEP (which can have other
+ * other contributions).
+ *
+ * Fortran interface:
  *
  * SUBROUTINE TSVVTL (DEBENT, DEBSOR)
  * *****************
  *
- * INTEGER          IDIMTS         : <-- : Dimension associée au terme source
- *                                 :     : de vitesse (1 : X ; 2 : Y ; 3 : Z)
- * DOUBLE PRECISION CRVEXP(NCELET) : <-> : Terme source explicite de vitesse
+ * INTEGER          IDIMTS         : <-- : Dimension associated to the source
+ *                                 :     : term of velocity (1: X; 2: Y; 3: Z)
+ * DOUBLE PRECISION CRVEXP(NCELET) : <-> : Explicit source term (velocity)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tsvvtl, TSVVTL)
 (
- cs_int_t  *idimts,             /* <-- dimension associée au
-                                 *     terme source de vitesse :
-                                 *     0 (X), 1 (Y), ou 2 (Z)                 */
- cs_real_t  crvexp[]            /* <-- Terme source explicite de vitesse      */
+ cs_int_t  *idimts,
+ cs_real_t  crvexp[]
 )
 {
   cs_ventil_calcul_force(cs_glob_mesh_quantities,
@@ -330,38 +354,47 @@ void CS_PROCF (tsvvtl, TSVVTL)
                          crvexp);
 }
 
-
 /*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Définition d'un ventilateur (qui est ajouté à ceux déjà définis)
+ * Fan definition (added to the ones previously defined)
+ *
+ * parameters:
+ *   dim_modele    <-- Fan model dimension:
+ *                     1: constant_f
+ *                     2: force_profile
+ *                     3: force_profile + tangential couple
+ *   dim_ventil    <-- Fan dimension:
+ *                     2: pseudo-2D (extruded mesh)
+ *                     3: 3D (standard)
+ *   coo_axe_amont <-- Coo. of the axis point in upstream face
+ *   coo_axe_aval  <-- Coo. of the axis point in downstream face
+ *   ray_ventil    <-- Fan radius
+ *   ray_pales     <-- Blades radius
+ *   ray_moyeu     <-- Hub radius
+ *   coeff_carac   <-- Coefficients of degre 0, 1 and 2 of
+                       the characteristic curve
+ *   couple_axial  <-- Fan axial couple
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_definit
-(
- const cs_int_t   dim_modele,       /* Dimension du modèle de ventilateur :
-                                       1 : f_constante ; 2 : profil_force ;
-                                       3 : profil_force + couple tangentiel */
- const cs_int_t   dim_ventil,       /* Dimension du ventilateur :
-                                       2 : pseudo-2D (maillage extrudé)
-                                       3 : 3D (standard) */
- const cs_real_t  coo_axe_amont[3], /* Coord. point de l'axe en face amont */
- const cs_real_t  coo_axe_aval[3],  /* Coord. point de l'axe en face aval */
- const cs_real_t  ray_ventil,       /* Rayon du ventilateur */
- const cs_real_t  ray_pales,        /* Rayon des pales */
- const cs_real_t  ray_moyeu,        /* Rayon du moyeu */
- const cs_real_t  coeff_carac[3],   /* Coefficients des termes de degré 0,
-                                       1, et 2 de la caractéristique */
- const cs_real_t  couple_axial      /* Couple axial du ventilateur*/
-)
+void
+cs_ventil_definit(const cs_int_t   dim_modele,
+                  const cs_int_t   dim_ventil,
+                  const cs_real_t  coo_axe_amont[3],
+                  const cs_real_t  coo_axe_aval[3],
+                  const cs_real_t  ray_ventil,
+                  const cs_real_t  ray_pales,
+                  const cs_real_t  ray_moyeu,
+                  const cs_real_t  coeff_carac[3],
+                  const cs_real_t  couple_axial)
 {
   int  i;
 
   cs_ventil_t  *ventil = NULL;
 
-  /* Définition d'un nouveau ventilateur */
+  /* Define a new fan */
 
   BFT_MALLOC(ventil, 1, cs_ventil_t);
 
@@ -386,7 +419,7 @@ void cs_ventil_definit
   ventil->nbr_cel = 0;
   ventil->lst_cel = NULL;
 
-  /* Calcul de la normale directrice de l'axe */
+  /* Compute the axis vector */
 
   ventil->epaisseur = 0.0;
 
@@ -399,38 +432,35 @@ void cs_ventil_definit
   for (i = 0 ; i < 3 ; i++)
     ventil->dir_axe[i] /= ventil->epaisseur;
 
-  /* Surface initialisée à 0, sera initialisée par cs_ventil_cree_listes */
+  /* Surface initialized to 0, will be set by cs_ventil_cree_listes */
 
   ventil->surface = 0.0;
 
-  /* Débits initialisés à 0 */
+  /* Flows initialized to 0 */
 
   ventil->debit_entrant = 0.0;
   ventil->debit_sortant = 0.0;
 
-  /* Redimensionnement du tableau des ventilateurs si nécessaire */
+  /* Increase the fans array if necessary */
 
   if (cs_glob_ventil_nbr == cs_glob_ventil_nbr_max) {
     cs_glob_ventil_nbr_max = (cs_glob_ventil_nbr_max + 1) * 2;
     BFT_REALLOC(cs_glob_ventil_tab, cs_glob_ventil_nbr_max, cs_ventil_t *);
   }
 
-  /* Ajout dans le tableau des ventilateurs */
+  /* Adds in the fans array */
 
   cs_glob_ventil_tab[cs_glob_ventil_nbr] = ventil;
   cs_glob_ventil_nbr += 1;
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Destruction des structures associées aux ventilateurs
+ * Destroy the structures associated to fans
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_detruit_tous
-(
- void
-)
+void
+cs_ventil_detruit_tous(void)
 {
   int i;
 
@@ -452,16 +482,17 @@ void cs_ventil_detruit_tous
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Recherche des cellules appartenant aux différents ventilateurs
+ * Looks for the cells belonging to the different fans.
+ *
+ * parameters:
+ *   mesh            <-- associated mesh structure
+ *   mesh_quantities <-- mesh quantities
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_cree_listes
-(
- const cs_mesh_t              *mesh,             /* <-- structure maillage associée  */
- const cs_mesh_quantities_t   *mesh_quantities   /* <-- grandeurs du maillage        */
-)
+void
+cs_ventil_cree_listes(const cs_mesh_t              *mesh,
+                      const cs_mesh_quantities_t   *mesh_quantities)
 {
   cs_int_t  icel, icel_1, icel_2;
   cs_int_t  ifac;
@@ -484,56 +515,55 @@ void cs_ventil_cree_listes
   const cs_real_t  *surf_fac = mesh_quantities->i_face_normal;
   const cs_real_t  *surf_fbr = mesh_quantities->b_face_normal;
 
-  /* Création d'un tableau de marquage des cellules */
-  /*------------------------------------------------*/
+  /* Create an array for cells marking */
+  /*-----------------------------------*/
 
   BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
 
   for (icel = 0 ; icel < nbr_cel_et ; icel++)
     num_vtl_cel[icel] = 0;
 
-  /* Boucle principale sur les cellules */
+  /* Main loop on cells */
 
   for (icel = 0 ; icel < nbr_cel_et ; icel++) {
 
-    /* Boucle sur les ventilateurs */
+    /* Loop on fans */
 
     for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
 
       ventil = cs_glob_ventil_tab[ivtl];
 
-      /* Vecteur allant du point de l'axe face amont au centre cellule */
+      /* Vector from the downstream face axis point to the cell centre */
 
       for (idim = 0 ; idim < 3 ; idim++) {
         d_cel_axe[idim] =   (coo_cen[icel*3 + idim])
                           - ventil->coo_axe_amont[idim];
       }
 
-      /* Produit scalaire avec le vecteur directeur de l'axe */
+      /* Dot product with the axis vector */
 
       coo_axe = (  d_cel_axe[0] * ventil->dir_axe[0]
                  + d_cel_axe[1] * ventil->dir_axe[1]
                  + d_cel_axe[2] * ventil->dir_axe[2]);
 
-      /* Cellule potentiellement dans le ventilateur si la
-         projection de son centre sur l'axe est bien dans l'épaisseur */
+      /* Cell potentially in the fan if its centre projection on the axis
+         is within the thickness */
 
       if (coo_axe >= 0.0 && coo_axe <= ventil->epaisseur) {
 
-        /* Projection du vecteur allant du point de l'axe face amont au
-           centre cellule dans le plan du ventilateur */
+        /* Projection of the vector from the downstream face axis point
+           to the cell centre in the fan plane */
 
         for (idim = 0 ; idim < 3 ; idim++)
           d_cel_axe[idim] -= coo_axe * ventil->dir_axe[idim];
 
-        /* Distance au carré à l'axe (carrés moins chers à calculer
-           que racines carrés, donc on passe tout au carré) */
+        /* Square distance to the axis */
 
         d_2_axe = (  d_cel_axe[0] * d_cel_axe[0]
                    + d_cel_axe[1] * d_cel_axe[1]
                    + d_cel_axe[2] * d_cel_axe[2]);
 
-        /* Si la cellule est dans le ventilateur */
+        /* If the cell is in the fan */
 
         if (d_2_axe <= ventil->ray_ventil * ventil->ray_ventil) {
 
@@ -545,12 +575,12 @@ void cs_ventil_cree_listes
 
       }
 
-    } /* Fin de la boucle sur les ventilateurs */
+    } /* End of loop on fans */
 
-  } /* Fin de la boucle principale sur les cellules */
+  } /* End of main loop on cells */
 
-  /* Création des listes de cellules appartenant à chaque ventilateur */
-  /*------------------------------------------------------------------*/
+  /* Create the lists of cells belonging to each fan */
+  /*-------------------------------------------------*/
 
   BFT_MALLOC(cpt_cel_vtl, cs_glob_ventil_nbr, cs_int_t);
 
@@ -580,17 +610,17 @@ void cs_ventil_cree_listes
   }
 #endif
 
-  /* Calcul de la surface de chaque ventilateur */
-  /*--------------------------------------------*/
+  /* Compute each fan surface */
+  /*--------------------------*/
 
-  /* Contribution à l'intérieur du domaine */
+  /* Contribution to the domain interior */
 
   for (ifac = 0 ; ifac < mesh->n_i_faces ; ifac++) {
 
     icel_1 = fac_cel[ifac * 2]     - 1;
     icel_2 = fac_cel[ifac * 2 + 1] - 1;
 
-    if (   icel_1 < mesh->n_cells /* Assure contrib. par un seul domaine */
+    if (   icel_1 < mesh->n_cells /* Make sure the contrib is from one domain */
         && num_vtl_cel[icel_1] != num_vtl_cel[icel_2]) {
 
       surf_loc = CS_LOC_MODULE((surf_fac + 3*ifac));
@@ -608,7 +638,7 @@ void cs_ventil_cree_listes
 
   }
 
-  /* Contribution au bord du domaine */
+  /* Contribution to the domain boundary */
 
   for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
 
@@ -636,7 +666,7 @@ void cs_ventil_cree_listes
   }
 #endif
 
-  /* Libération mémoire */
+  /* Free memory */
 
   BFT_FREE(cpt_cel_vtl);
   BFT_FREE(num_vtl_cel);
@@ -645,13 +675,14 @@ void cs_ventil_cree_listes
 
 #if 0
 /*----------------------------------------------------------------------------
- * Création d'une coupe correspondant aux faces de bord des ventilateurs
+ * Creates a post-processing mesh corresponding to the fans boundary faces
+ *
+ * parameters:
+ *   mesh <-- mesh structure
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_cree_coupe
-(
- const cs_mesh_t      *mesh          /* <-- structure maillage        */
-)
+void
+cs_ventil_cree_coupe(const cs_mesh_t  *mesh)
 {
   cs_int_t   icel_1, icel_2;
   cs_int_t   ifac;
@@ -669,7 +700,7 @@ void cs_ventil_cree_coupe
   const cs_int_t  *fac_cel = mesh->i_face_cells;
   const cs_int_t  *fbr_cel = mesh->b_face_cells;
 
-  /* Marquage des cellules et faces */
+  /* Mark cells and faces */
 
   BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
   BFT_MALLOC(liste_fac, nbr_fac, cs_int_t);
@@ -678,7 +709,7 @@ void cs_ventil_cree_coupe
   cs_loc_ventil_marque_cellules(mesh,
                                 num_vtl_cel);
 
-  /* Contribution à l'intérieur du domaine */
+  /* Contribution to the domain interior */
 
   for (ifac = 0 ; ifac < nbr_fac ; ifac++) {
 
@@ -690,7 +721,7 @@ void cs_ventil_cree_coupe
 
   }
 
-  /* Contribution au bord du domaine */
+  /* Contribution to the domain boundary */
 
   for (ifac = 0 ; ifac < nbr_fbr ; ifac++) {
 
@@ -699,7 +730,7 @@ void cs_ventil_cree_coupe
 
   }
 
-  /* Libération mémoire */
+  /* Free memory */
 
   BFT_FREE(num_vtl_cel);
   BFT_FREE(liste_fac);
@@ -707,20 +738,25 @@ void cs_ventil_cree_coupe
 }
 #endif
 
-
 /*----------------------------------------------------------------------------
- * Calcul des debits à travers les ventilateurs
+ * Calculate the flows through the fans
+ *
+ * parameters:
+ *   mesh           <-- mesh structure
+ *   mesh_qantities <-- mesh quantities
+ *   flux_masse_fac <-- interior faces mass flux
+ *   flux_masse_fbr <-- boundary faces mass flux
+ *   densite_cel    <-- density at cells
+ *   densite_fbr    <-- density at boundary faces
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_calcul_debits
-(
- const cs_mesh_t      *mesh,         /* <-- structure maillage        */
- const cs_mesh_quantities_t  *mesh_quantities,     /* <-- grandeurs du maillage     */
- const cs_real_t           flux_masse_fac[], /* <-- flux masse faces internes */
- const cs_real_t           flux_masse_fbr[], /* <-- flux masse faces de bord  */
- const cs_real_t           densite_cel[],    /* <-- densité aux cellules      */
- const cs_real_t           densite_fbr[]     /* <-- densité aux faces de bord */
-)
+void
+cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
+                        const cs_mesh_quantities_t  *mesh_quantities,
+                        const cs_real_t              flux_masse_fac[],
+                        const cs_real_t              flux_masse_fbr[],
+                        const cs_real_t              densite_cel[],
+                        const cs_real_t              densite_fbr[])
 {
   cs_int_t   icel, icel_1, icel_2;
   cs_int_t   ifac;
@@ -741,14 +777,14 @@ void cs_ventil_calcul_debits
   const cs_int_t   *fac_cel = mesh->i_face_cells;
   const cs_int_t   *fbr_cel = mesh->b_face_cells;
 
-  /* Marquage des cellules */
+  /* Mark the cells */
 
   BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
 
   cs_loc_ventil_marque_cellules(mesh,
                                 num_vtl_cel);
 
-  /* Mise à zéro des débits par ventilateur */
+  /* Set the fans flows to zero */
 
   for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
     ventil = cs_glob_ventil_tab[ivtl];
@@ -756,14 +792,14 @@ void cs_ventil_calcul_debits
     ventil->debit_sortant = 0.0;
   }
 
-  /* Contribution à l'intérieur du domaine */
+  /* Contribution to the domain interior */
 
   for (ifac = 0 ; ifac < nbr_fac ; ifac++) {
 
     icel_1 = fac_cel[ifac * 2]     - 1;
     icel_2 = fac_cel[ifac * 2 + 1] - 1;
 
-    if (   icel_1 < mesh->n_cells /* Assure contrib. par un seul domaine */
+    if (   icel_1 < mesh->n_cells /* Make sure the contrib is from one domain */
         && num_vtl_cel[icel_1] != num_vtl_cel[icel_2]) {
 
       for (idim = 0 ; idim < 3 ; idim++)
@@ -790,7 +826,7 @@ void cs_ventil_calcul_debits
 
   }
 
-  /* Contribution au bord du domaine */
+  /* Contribution to the domain boundary */
 
   for (ifac = 0 ; ifac < nbr_fbr ; ifac++) {
 
@@ -837,7 +873,7 @@ void cs_ventil_calcul_debits
   }
 #endif
 
-  /* En 2D, on ramène le débit a l'unité de longueur */
+  /* In 2D, the flow is normalized by the surface */
 
   if (ventil->dim_ventil == 2) {
     cs_real_t  surf_2d;
@@ -847,27 +883,29 @@ void cs_ventil_calcul_debits
     ventil->debit_entrant = ventil->debit_entrant / surf_2d;
   }
 
-  /* Libération mémoire */
+  /* Free memory */
 
   BFT_FREE(num_vtl_cel);
 }
 
-
 /*----------------------------------------------------------------------------
- * Calcul de la force induite par les ventilateurs (nécessite le
- * calcul préalable des débits à travers chaque ventilateur).
- * La force induite est ajoutée au tableau t_source (qui peut contenir
- * d'autres contributions)
+ * Calculate the force induced by the fans (needs a previous calculation
+ * of the flows through each fan).
+ *
+ * The induced force is added to the array CRVXEP (which can have other
+ * other contributions).
+ *
+ * parameters:
+ *   mesh_quantities <-- mesh quantities
+ *   idim_source     <-- Dimension associated to the source term of velocity
+ *                       (1: X; 2: Y; 3: Z)
+ *   t_source        <-> Explicit source term for the velocity
  *----------------------------------------------------------------------------*/
 
-void cs_ventil_calcul_force
-(
- const cs_mesh_quantities_t  *mesh_quantities,  /* <-- grandeurs du maillage     */
- const cs_int_t            idim_source,         /* --> dimension associée au
-                                                 *     terme source de vitesse :
-                                                 *     0 (X), 1 (Y), ou 2 (Z)    */
-       cs_real_t           t_source[]           /* --> terme source de vitesse   */
-)
+void
+cs_ventil_calcul_force(const cs_mesh_quantities_t  *mesh_quantities,
+                       const cs_int_t               idim_source,
+                       cs_real_t                    t_source[])
 {
   cs_int_t  icel, iloc;
   cs_int_t  ivtl;
@@ -879,10 +917,10 @@ void cs_ventil_calcul_force
   const cs_real_t  *coo_cen = mesh_quantities->cell_cen;
   const cs_real_t  pi = 3.14159265358979323846;
 
-  /* Calcul de la force induite par les ventilateurs */
+  /* Compute the force induced by fans */
 
-  /* Boucle sur les ventilateurs */
-  /*-----------------------------*/
+  /* Loop on fans */
+  /*--------------*/
 
   for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
 
@@ -899,8 +937,8 @@ void cs_ventil_calcul_force
                                + (ventil->coeff_carac[1] * debit_moy)
                                + (ventil->coeff_carac[0]);
 
-    /* Boucle sur les cellules du ventilateur */
-    /*----------------------------------------*/
+    /* Loop on fan cells */
+    /*-------------------*/
 
     for (iloc = 0 ; iloc < ventil->nbr_cel ; iloc++) {
 
@@ -942,26 +980,26 @@ void cs_ventil_calcul_force
           aux_2 = f_base * ventil->couple_axial;
         }
 
-        /* Vecteur allant du point de l'axe face amont au centre cellule */
+        /* Vector from the downstream face axis point to the cell centre */
 
         for (idim = 0 ; idim < 3 ; idim++) {
           d_cel_axe[idim] =   (coo_cen[icel*3 + idim])
                             - ventil->coo_axe_amont[idim];
         }
 
-        /* Projection du centre de la cellule sur l'axe du ventilateur */
+        /* Projection of the cell centre on the fan axis */
 
         coo_axe = (  d_cel_axe[0] * ventil->dir_axe[0]
                    + d_cel_axe[1] * ventil->dir_axe[1]
                    + d_cel_axe[2] * ventil->dir_axe[2]);
 
-        /* Projection du vecteur allant du point de l'axe face amont au
-           centre cellule dans le plan du ventilateur */
+        /* Projection of the vector from the downstream face axis point
+           to the cell centre in the fan plane */
 
         for (idim = 0 ; idim < 3 ; idim++)
           d_cel_axe[idim] -= coo_axe * ventil->dir_axe[idim];
 
-        d_axe = CS_LOC_MODULE(d_cel_axe); /* Distance à l'axe */
+        d_axe = CS_LOC_MODULE(d_cel_axe); /* Distance to the axis */
 
         CS_LOC_PRODUIT_VECTORIEL(f_rot, ventil->dir_axe, d_cel_axe);
 
@@ -995,52 +1033,9 @@ void cs_ventil_calcul_force
       t_source[icel] +=   (f_z * ventil->dir_axe[idim_source])
                         + (f_theta * f_rot[idim_source]);
 
-    }  /* Fin de la boucle sur les cellules du ventilateur */
+    }  /* End of loop on fan cells */
 
-  } /* Fin de la boucle sur les ventilateurs */
-
-}
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Marquage des cellules appartenant aux différents ventilateurs
- * (par le numéro de ventilateur, 0 sinon)
- *----------------------------------------------------------------------------*/
-
-static void cs_loc_ventil_marque_cellules
-(
- const cs_mesh_t  *const mesh,     /* <-- structure maillage associée */
-       cs_int_t          num_vtl_cel[] /* --> indicateur par cellule      */
-)
-{
-  cs_int_t   icel;
-  cs_int_t   ivtl;
-  cs_int_t   iloc;
-
-  cs_ventil_t  *ventil;
-
-  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
-
-  /* Marquage des cellules */
-  /*-----------------------*/
-
-  for (icel = 0 ; icel < nbr_cel_et ; icel++)
-    num_vtl_cel[icel] = 0;
-
-  for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
-
-    ventil = cs_glob_ventil_tab[ivtl];
-
-    for (iloc = 0 ; iloc < ventil->nbr_cel ; iloc++) {
-      icel = ventil->lst_cel[iloc] - 1;
-      num_vtl_cel[icel] = ivtl + 1;
-    }
-
-  }
+  } /* End of loop on fans */
 
 }
 

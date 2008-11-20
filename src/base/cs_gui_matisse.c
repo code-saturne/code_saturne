@@ -33,7 +33,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -42,33 +41,26 @@
 #include <unistd.h>
 #include <assert.h>
 
-
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
-
 
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
 
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_base.h"
 #include "cs_gui_util.h"
-
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_gui_matisse.h"
-
 
 /*----------------------------------------------------------------------------*/
 
@@ -105,12 +97,13 @@ static const char *const cs_matisse_map_axis[3]=
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type double
+ * Return a Matisse value of type "double"
  *----------------------------------------------------------------------------*/
 
-static double cs_gui_data_matisse_double(const char *const markup1,
-                                         const char *const markup2,
-                                         const char *const data)
+static double
+cs_gui_data_matisse_double(const char *const markup1,
+                           const char *const markup2,
+                           const char *const data)
 {
   char   *path;
   double  result;
@@ -128,11 +121,12 @@ static double cs_gui_data_matisse_double(const char *const markup1,
 
 
 /*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type entier
+ * Return a Matisse value of type "integer"
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_data_matisse_int(const char *const markup,
-                                   const char *const data)
+static int
+cs_gui_data_matisse_int(const char *const markup,
+                        const char *const data)
 {
   char *path;
   int   result;
@@ -149,7 +143,7 @@ static int cs_gui_data_matisse_int(const char *const markup,
 }
 
 /*-----------------------------------------------------------------------------
- * Retourne une donnee matisse de type entier (attribut status XML)
+ * Return a Matisse value of type "integer" (XML status attribute)
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_data_matisse_att_status(const char *const data)
@@ -169,10 +163,11 @@ static int cs_gui_data_matisse_att_status(const char *const data)
 }
 
 /*-----------------------------------------------------------------------------
- * Retourne Le type d'entreposage (1 pour Emm, 0 pour Vault)
+ * Return the type of warehousing (1 pour Emm, 0 pour Vault)
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_warehousing_type(void)
+static int
+cs_gui_warehousing_type(void)
 {
   char *path;
   char *value;
@@ -205,7 +200,7 @@ static int cs_gui_warehousing_type(void)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Traitement des parametres geometriques de type entier de Matisse
+ * Treatment of geometric "integer" parameters in the Matisse module
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csgein, CSGEIN) (int *const nptran,
@@ -235,10 +230,9 @@ void CS_PROCF (csgein, CSGEIN) (int *const nptran,
 
 
 /*----------------------------------------------------------------------------
- * Traitement des parametres geometriques de type réel de Matisse
- * non stockés dans les COMMON
+ * Treatment of geometric "real" parameters in the Matisse module
+ * not keeped in the COMMON blocks
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
                                 double *const jeurcl,
@@ -265,6 +259,7 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
 
 #if _XML_DEBUG_
   bft_printf("==>CSMHDB\n");
+
   bft_printf("--nechrg = %i\n", *nechrg);
   bft_printf("--nergrs = %i\n", *nergrs);
   bft_printf("--neclrg = %i\n", *neclrg);
@@ -278,9 +273,8 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
 
 
 /*----------------------------------------------------------------------------
- * Traitement des parametres geometriques de type réel de Matisse
+ * Treatment of geometric "real" parameters in the Matisse module
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csgedb, CSGEDB) (double *const epregi,
                                 double *const epchem,
@@ -327,9 +321,8 @@ void CS_PROCF (csgedb, CSGEDB) (double *const epregi,
 
 
 /*----------------------------------------------------------------------------
- * Traitement des parametres physiques de type double precision de Matisse
+ * Treatment of physical "double precision" parameters in the Matisse module
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csphdb, CSPHDB) (double *const dtdtmx,
                                 double *const puicon,
@@ -422,11 +415,9 @@ void CS_PROCF (csphdb, CSPHDB) (double *const dtdtmx,
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
- * Traitement des parametres physiques de type attribut (sens XML) de Matisse
+ * Treatment of the physical "XML attribute" parameters in the Matisse module
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (csphat, CSPHAT)(int *const imdcnt,
                                int *const icofor,
@@ -449,9 +440,8 @@ void CS_PROCF (csphat, CSPHAT)(int *const imdcnt,
 
 
 /*----------------------------------------------------------------------------
- * Test si la balise Matisse se trouve dans le fichier XML
+ * Test if the Matisse header is in the XML file
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF(csmtpr,CSMTPR)(int *imatis)
 {
@@ -475,7 +465,7 @@ void CS_PROCF(csmtpr,CSMTPR)(int *imatis)
 
 
 /*----------------------------------------------------------------------------
- * Calcul le nombre de zones d'une carte et d'une direction donnée
+ * Compute the number of zone for given map and direction
  *----------------------------------------------------------------------------*/
 
 
@@ -508,7 +498,7 @@ void CS_PROCF(csnbmp,CSNBMP) (int *const direction,
 
 
 /*----------------------------------------------------------------------------
- * Rempli les cartes 2D et 3D de pertes de charge et de puissance thermique
+ * Fill the 2D and 3D maps for head loss and thermal power
  *----------------------------------------------------------------------------*/
 
 
@@ -525,7 +515,7 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
   int idirec = (*direction)-1;
   int izone  = (*zone)-1;
 
-  /* Construction de la requete */
+  /* Build the request */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "matisse", "compute", "map");
   if (!cs_gui_strcmp(cs_matisse_map_type[icarte], "thermal_capacity"))
@@ -535,7 +525,7 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
   cs_xpath_add_element_num(&path, "area" , izone+1);
 
 
-  /* Détermination de min */
+  /* Retrieve the minimum */
   BFT_MALLOC(pathtmp, strlen(path)+1, char);
   strcpy(pathtmp, path);
   cs_xpath_add_element(&path, "min");
@@ -546,7 +536,7 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
               _("Missing 'min' markup for xpath : %s\n"), path);
 
 
-  /* Détermination de max */
+  /* Retrieve the maximum */
   strcpy(path, pathtmp);
   cs_xpath_add_element(&path, "max");
   cs_xpath_add_function_text(&path);
@@ -555,7 +545,7 @@ void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
     bft_error (__FILE__, __LINE__, 0,
               _("Missing 'max' markup for xpath : %s\n"), path);
 
-  /* Détermination de value */
+  /* Retrieve the value */
   if (cs_gui_strcmp(cs_matisse_map_type[icarte], "thermal_capacity")) {
     strcpy(path, pathtmp);
     cs_xpath_add_element(&path, "value");

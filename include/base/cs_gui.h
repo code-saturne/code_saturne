@@ -32,14 +32,11 @@
  * Reader of the parameters file: main parameters, boundary conditions
  *============================================================================*/
 
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_base.h"
-
 
 /*----------------------------------------------------------------------------*/
 
@@ -60,17 +57,16 @@ typedef enum {
   WALL_FUNCTION
 } cs_boundary_value_t;
 
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables
  *----------------------------------------------------------------------------*/
 
-void cs_gui_clean_memory(void);
+void
+cs_gui_clean_memory(void);
 
 /*-----------------------------------------------------------------------------
  * Return the name of a thermophysical model.
@@ -79,31 +75,36 @@ void cs_gui_clean_memory(void);
  *   model_thermo          -->  thermophysical model
  *----------------------------------------------------------------------------*/
 
-char *cs_gui_get_thermophysical_model(const char *const model_thermo);
+char *
+cs_gui_get_thermophysical_model(const char *const model_thermo);
 
 /*-----------------------------------------------------------------------------
  * Return if a particular physics model is activated.
  *----------------------------------------------------------------------------*/
 
-int cs_gui_get_activ_thermophysical_model(void);
+int
+cs_gui_get_activ_thermophysical_model(void);
 
 /*-----------------------------------------------------------------------------
  * Return number of boundary regions definition
  *----------------------------------------------------------------------------*/
 
-int cs_gui_boundary_zones_number(void);
+int
+cs_gui_boundary_zones_number(void);
 
 /*-----------------------------------------------------------------------------
  * Return the nature of boundary condition for the given zone
  *----------------------------------------------------------------------------*/
 
-char *cs_gui_boundary_zone_nature(const int ith_zone);
+char *
+cs_gui_boundary_zone_nature(const int ith_zone);
 
 /*-----------------------------------------------------------------------------
  * Return the label of boundary condition for the given zone
  *----------------------------------------------------------------------------*/
 
-char *cs_gui_boundary_zone_label(const int ith_zone);
+char *
+cs_gui_boundary_zone_label(const int ith_zone);
 
 
 /*-----------------------------------------------------------------------------
@@ -120,20 +121,20 @@ int cs_gui_boundary_zone_number(const int ith_zone);
  *   label                 -->  label of boundary zone
  *----------------------------------------------------------------------------*/
 
-char *cs_gui_boundary_zone_localization(const char *const nature,
-                                        const char *const label);
+char *
+cs_gui_boundary_zone_localization(const char *const nature,
+                                  const char *const label);
 
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
-
 
 /*----------------------------------------------------------------------------
  * Turbulence model.
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTURB (ITURB, IDEUCH, IGRAKE, IGRAKI, XLOMLG)
+ * SUBROUTINE CSTURB
  * *****************
  *
  * INTEGER          ITURB   <--   turbulence model
@@ -143,19 +144,18 @@ char *cs_gui_boundary_zone_localization(const char *const nature,
  * DOUBLE PRECISION XLOMLG  <--   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (csturb, CSTURB) (int *const iturb,
                                 int *const ideuch,
                                 int *const igrake,
                                 int *const igrari,
-                             double *const xlomlg);
+                                double *const xlomlg);
 
 /*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCPVA (ICP)
+ * SUBROUTINE CSCPVA
  * *****************
  *
  * INTEGER          ICP     <--   Specific heat variable or constant indicator
@@ -168,7 +168,7 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp);
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNSCA (NSCAUS)
+ * SUBROUTINE CSNSCA
  * *****************
  *
  * INTEGER          NSCAUS     <--   user scalars number
@@ -185,8 +185,8 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
  * *****************
  *
  * INTEGER          IPPMOD <--  predefined physics indicator array
- * INTEGER          ICOD3P  --> diffusion flame en chimie complete rapide
- * INTEGER          ICODEQ  --> diffusion flame en chimie rapide vers l'equilibre
+ * INTEGER          ICOD3P  --> diffusion flame in fast complete chemistry
+ * INTEGER          ICODEQ  --> diffusion flame in fast chemistry to equilibrium
  * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
  * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
  * INTEGER          ICOLWC  --> Libby Williams premixing flame
@@ -279,7 +279,7 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
 
 
 /*----------------------------------------------------------------------------
- * Est appele juste avant le 3eme appel a VARPOS
+ * ALE method.
  *
  * Fortran Interface:
  *
@@ -337,7 +337,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSISUI (ISUITE, ILEAUX, ICCVFG)
+ * SUBROUTINE CSISUI
  * *****************
  *
  * INTEGER          ISUITE  <--   restart
@@ -355,8 +355,8 @@ void CS_PROCF (csisui, CSISUI) (int *const isuite,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTIME (INPDT0, IPTLTO, NTMABS, DTREF,
- * *****************  DTMIN, DTMAX, COUMAX, FOUMAX, VARRDT)
+ * SUBROUTINE CSTIME
+ * *****************
  *
  * INTEGER          INPDT0  <--   zero tim step
  * INTEGER          IPTLTO  <--   thermal time step control
@@ -388,7 +388,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSSCA1 (ISCALT, ISCSTH)
+ * SUBROUTINE CSSCA1
  * *****************
  *
  * INTEGER          ISCALT  <--   number of the user thermal scalar if any
@@ -398,6 +398,14 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
 void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
                                 int *const iscsth);
 
+/*----------------------------------------------------------------------------
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UINUM1
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                 const    int *const iscapp,
@@ -414,7 +422,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA)
+ * SUBROUTINE CSNUM2
  * *****************
  *
  * INTEGER          IVISSE  <--   gradient transpose
@@ -447,7 +455,7 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSSCA2 (ISCAVR, SCAMIN, SCAMAX)
+ * SUBROUTINE CSSCA2
  * *****************
  *
  * INTEGER          ISCAVR   -->  number of the related variance if any
@@ -465,9 +473,8 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
                                       double *const t0,
                                       double *const p0);
 
-
 /*----------------------------------------------------------------------------
- * Tableau des propriétés utilisées dans le calcul
+ * Array of properties used in the calculation
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprop, UIPROP) (const int *const irom,
@@ -493,7 +500,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const iappel);
 
 /*----------------------------------------------------------------------------
- * Traitement des moyennes temporelles
+ * Temporal averaging treatment
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
@@ -510,7 +517,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTINI (UREF, ALMAX)
+ * SUBROUTINE CSTINI
  * *****************
  *
  * INTEGER          UREF   <--   reference velocity
@@ -705,7 +712,7 @@ void CS_PROCF (uiclve, UICLVE) (const int *const nfabor,
 void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
 
 /*----------------------------------------------------------------------------
- * Defintion des pointeurs des scalaires model pour le charbon
+ * Pointers definition for scalars and coal combustion
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,

@@ -468,7 +468,7 @@ main(int    argc,
 
   cs_syr_coupling_all_finalize();
 #if defined(_CS_HAVE_MPI)
-  cs_couplage_detruit_tout();
+  cs_sat_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
 
