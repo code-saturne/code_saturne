@@ -1,4 +1,11 @@
 * 20/11/2008 - David Monfort <david.monfort@edf.fr>
+  Remove the -fbounds-check option (gfortran compiler)
+  as it seems to corrupt the stack.
+  modified scripts:
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+
+* 20/11/2008 - David Monfort <david.monfort@edf.fr>
   English translation of most of the missing C sources.
   modified routines:
     include/base/cs_gui.h
