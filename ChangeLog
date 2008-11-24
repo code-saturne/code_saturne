@@ -1,3 +1,6 @@
+* 24/11/2008 - David Monfort <david.monfort@edf.fr>
+  Upgrade to GUI 1.4.d
+
 * 24/11/2008 - Alexandre Douce <alexandre.douce@edf.fr>
   Add an option for the multigrid algorithm in the GUI.
   modified routines:
