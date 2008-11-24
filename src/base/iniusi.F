@@ -111,7 +111,7 @@ C
       INTEGER          II, IPHAS , ISCAL , NMODPP, IIIIII
       INTEGER          NPHMAX, NSCMAX, NESMAX, NPHUSI, NSCUSI
       INTEGER          IEEPRE, IEEDER, IEECOR, IEETOT, IIHMPU
-      INTEGER          IALGCE
+      INTEGER          IALGCE, IMGRPR
       INTEGER          IAPPEL
       DOUBLE PRECISION RELAXP, EXTRAP
 C
@@ -432,11 +432,13 @@ C
 C     Options numériques globales
         RELAXP = -999.D0
         EXTRAP = 0.D0
-        CALL CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAP, IMRGRA)
+        IMGRPR = 0
+        CALL CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAP, IMRGRA, IMGRPR)
 C       ===========
         IPHAS = 1
         EXTRAG(IPR(IPHAS)) = EXTRAP
         IF (IDTVAR.GE.0) RELAXV(IPR(IPHAS)) = RELAXP
+        IMGR(IPR(IPHAS)) = IMGRPR
 C
 C     Gravite, prop. phys
         CALL CSPHYS

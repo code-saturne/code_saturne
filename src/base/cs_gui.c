@@ -4631,24 +4631,27 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA)
+ * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA, IMGRPR)
  * *****************
  * INTEGER          IVISSE  <--   gradient transposed
  * DOUBLE PRECISION RELAXP  <--   pressure relaxation
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * DOUBLE PRECISION EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
+ * INTEGER          IMGRPR  <--   multigrid algorithm for pressure
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
                                double *const relaxp,
                                   int *const ipucou,
                                double *const extrag,
-                                  int *const imrgra)
+                                  int *const imrgra,
+                                  int *const imgrpr)
 {
   cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
   cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
+  cs_gui_numerical_int_parameters("multigrid", imgrpr);
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
 
@@ -4659,6 +4662,7 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
   bft_printf("--imrgra = %i\n", *imrgra);
   bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
+  bft_printf("--imgrpr = %i\n", *imgrpr);
 #endif
 }
 

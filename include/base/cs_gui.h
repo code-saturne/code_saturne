@@ -430,13 +430,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * INTEGER          EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
+ * INTEGER          IMGR    <--   multigrid algorithm for pressure
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
                                 double *const relaxp,
                                    int *const ipucou,
                                 double *const extrag,
-                                   int *const imrgra);
+                                   int *const imrgra,
+                                   int *const imgrpr);
 
 void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                          int *const irovar,

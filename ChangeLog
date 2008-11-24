@@ -1,3 +1,10 @@
+* 24/11/2008 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add an option for the multigrid algorithm in the GUI.
+  modified routines:
+    include/base/cs_gui.h
+    src/base/cs_gui.c
+    src/base/iniusi.F
+
 * 20/11/2008 - David Monfort <david.monfort@edf.fr>
   Remove the -fbounds-check option (gfortran compiler)
   as it seems to corrupt the stack.
