@@ -1,3 +1,30 @@
+* 25/11/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Add a common whose value depends whether the simulation
+  uses a specific physics and if the radiative transfer
+  modelling is enabled with a parametric file or not,
+  preparing for the integration of the atmospheric modelling.
+  modified routines:
+    include/base/cs_gui.h
+    include/pprt/ppincl.h
+    src/base/caltri.F
+    src/base/condli.F
+    src/base/covofi.F
+    src/base/cs_gui.c
+    src/base/impini.F
+    src/base/inivar.F
+    src/base/memtri.F
+    src/base/phyvar.F
+    src/base/precli.F
+    src/base/scalai.F
+    src/base/tridim.F
+    src/base/varpos.F
+    src/base/verini.F
+    src/rayt/raycli.F
+    src/rayt/raydom.F
+    src/rayt/rayopt.F
+    users/rayt/usray1.F
+    users/rayt/usray3.F
+
 * 25/11/2008 - David Monfort <david.monfort@edf.fr>
   Update AUTHORS file.
 
@@ -3648,3 +3675,23 @@
 
 ===========================================================================
 ===========================================================================
+    include/base/cs_gui.h
+    include/pprt/ppincl.h
+    src/base/caltri.F
+    src/base/condli.F
+    src/base/covofi.F
+    src/base/cs_gui.c
+    src/base/impini.F
+    src/base/inivar.F
+    src/base/memtri.F
+    src/base/phyvar.F
+    src/base/precli.F
+    src/base/scalai.F
+    src/base/tridim.F
+    src/base/varpos.F
+    src/base/verini.F
+    src/rayt/raycli.F
+    src/rayt/raydom.F
+    src/rayt/rayopt.F
+    users/rayt/usray1.F
+    users/rayt/usray3.F

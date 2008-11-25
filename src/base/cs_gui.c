@@ -103,8 +103,8 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  char  *model;            /* particular physical model                       */
-  char  *model_value;      /* particular physical model value                 */
+  char  *model;            /* specific physics model                          */
+  char  *model_value;      /* specific physics model value                    */
   char **head;             /* name of the head                                */
   char **type;             /* type of markup: 'variable' or 'scalar'          */
   char **name;             /* variables name and scalars label                */
@@ -255,7 +255,7 @@ cs_gui_advanced_options_turbulence(const char *const param,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the activated particular physics scalar number
+ * Return the activated specific physics scalar number
  *----------------------------------------------------------------------------*/
 
 static int
@@ -3472,7 +3472,7 @@ char *cs_gui_get_thermophysical_model(const char *const model_thermo)
 }
 
 /*-----------------------------------------------------------------------------
- * Return 1 if a particular physics model is activated. Store in the global
+ * Return 1 if a specific physics model is activated. Store in the global
  * structure vars:
  *   vars->model         <= thermophysical model
  *   vars->model_value   <= related model name

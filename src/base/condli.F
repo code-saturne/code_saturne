@@ -335,7 +335,7 @@ C 2.  TRAITEMENT DES CONDITIONS DONNES PAR ITYPFB
 C=======================================================================
 C
 C
-      IF(NSCAPP.GT.0) THEN
+      IF(IPPMOD(IPHPAR).GE.1) THEN
         CALL PPTYCL
 C       ===========
      & ( IDEBIA , IDEBRA ,

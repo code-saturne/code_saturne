@@ -235,10 +235,11 @@ C
 C
 C--> IRAYON
 C
-C     Si physique classique et IRAYON pas modifie dans USRAY1
+C     Si physique classique ou particuliere sans fichier paramétrique
+C       et IRAYON pas modifie dans USRAY1
 C       IRAYON(IPHAS) = 0 (pas de rayonnement).
 C
-      IF(NSCAPP.LE.0) THEN
+      IF( IPPMOD(IPHPAR).EQ.0 .OR. IPPMOD(ICOMPF).NE.-1 ) THEN
 C
         DO IPHAS = 1, NPHAS
           IF(IRAYON(IPHAS).EQ.-1) THEN
@@ -247,7 +248,7 @@ C
         ENDDO
 C
 C
-C     Si physique particuliere, IRAYON doit etre issu du fichier
+C     Sinon, IRAYON doit etre issu du fichier
 C       parametrique ; IMODAK aussi.
 C
       ELSE
@@ -284,13 +285,14 @@ C
 C
 C--> ISCSTH
 C
-C     Si physique particuliere, ISCSTH a ete renseigne
+C     Si physique particuliere avec fichier parametrique,
+C       ISCSTH a ete renseigne
 C       dans ppini1 ou coini1 (a verifier en elec).
 C     Si physique classique et ISCSTH pas modifie dans USRAY1
 C                           ou pas de variable thermique
 C       STOP.
 C
-      IF(NSCAPP.GT.0) THEN
+      IF(IPPMOD(IPHPAR).LE.1) THEN
 C
 C     Il y a une seule phase ; si on rayonne
         DO IPHAS = 1, NPHAS

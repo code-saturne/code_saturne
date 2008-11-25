@@ -251,7 +251,7 @@ C    On donne un exemple qui n'est que la recopie (a ISCAPP pres) de
 C      la section 3 sur les scalaires utilisateurs.
 C=======================================================================
 C
-      IF (NSCAPP.GT.0) THEN
+      IF (IPPMOD(IPHPAR).GE.1) THEN
 C
 C ---> Initialisation des RTP  a partir des CL
 C

@@ -286,42 +286,42 @@ C
 C=======================================================================
 C   COEFFICIENT D'ABSORPTION DU MILIEU (m-1)
 C
-C     DANS LE CAS DES PHYSIQUES "CLASSIQUES"
-C         CK DOIT ETRE COMPLETE (IL EST NUL PAR DEFAUT)
-C
-C
-C     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION/CHARBON/ELEC)
+C     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION GAZ/CHARBON/ELEC/FIOUL)
 C
 C         CK NE DOIT PAS ETRE FOURNI
 C            ===========
 C         (il est determine automatiquement, eventuellement a partir
 C          du fichier parametrique)
+C
+C     DANS LES AUTRES CAS
+C         CK DOIT ETRE COMPLETE (IL EST NUL PAR DEFAUT)
+C
+C
 C=======================================================================
 C
 C
 C
 C
-        IF(NSCAPP.LE.0) THEN
-          DO IEL = 1, NCEL
-            CK(IEL) = 0.D0
-          ENDDO
-        ENDIF
+      IF( IPPMOD(IPHPAR).LE.1 ) THEN
+        DO IEL = 1, NCEL
+          CK(IEL) = 0.D0
+        ENDDO
 C
 C--> MODELE P1 : Controle standard des valeurs du coefficient
 C                d'absorption. Ce coefficient doit assurer une
 C                longueur optique au minimum de l'ordre de l'unite.
 C
-        IF (IRAYON(IPHAS).EQ.2 .AND. NSCAPP.LE.0) THEN
+        IF (IRAYON(IPHAS).EQ.2) THEN
           SF = 0.D0
           VV = 0.D0
 C
 C         Calcul de la longueur caractéristique du domaine de calcul
 C
           DO IFAC = 1,NFABOR
-             SF = SF + SQRT(
-     &               SURFBO(1,IFAC)**2 +
-     &               SURFBO(2,IFAC)**2 +
-     &               SURFBO(3,IFAC)**2 )
+            SF = SF + SQRT(
+     &                SURFBO(1,IFAC)**2 +
+     &                SURFBO(2,IFAC)**2 +
+     &                SURFBO(3,IFAC)**2 )
           ENDDO
           IF (IRANGP.GE.0) THEN
             CALL PARSOM(SF)
@@ -329,7 +329,7 @@ C           ===========
           ENDIF
 C
           DO IEL = 1,NCEL
-             VV = VV + VOLUME(IEL)
+            VV = VV + VOLUME(IEL)
           ENDDO
           IF (IRANGP.GE.0) THEN
             CALL PARSOM(VV)
@@ -355,14 +355,15 @@ C       (ISTPP1 = 1 permet d'arreter proprement a la fin du pas de temps
 C        courant).
           PP = XNP1MX/100.0D0
           IF (DBLE(IOK).GT.PP*DBLE(NCEL)) THEN
-             WRITE(NFECRA,3000) XKMIN, DBLE(IOK)/DBLE(NCEL)*100.D0,
-     &                          XNP1MX
-             ISTPP1 = 1
-C             CALL CSEXIT (1)
+            WRITE(NFECRA,3000) XKMIN, DBLE(IOK)/DBLE(NCEL)*100.D0,
+     &                         XNP1MX
+            ISTPP1 = 1
+C            CALL CSEXIT (1)
 C            ===========
           ENDIF
         ENDIF
 C
+      ENDIF
 C -------
 C FORMATS
 C -------

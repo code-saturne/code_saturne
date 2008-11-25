@@ -195,7 +195,7 @@ C     Rq : ATTENTION il faudrait renforcer le blindage
 C
         IOK   = 0
         NMODPP = 0
-        DO IPP = 1, NMODMX
+        DO IPP = 2, NMODMX
           IF ( IPPMOD(IPP).NE.-1 ) THEN
             NMODPP = NMODPP+1
             IPPOK = IPP
@@ -218,6 +218,17 @@ C
 C         ===========
         ENDIF
 C
+C ---> On positionne l'indicateur global IPPMOD(IPHPAR)
+C         0 : pas de physique particuliere
+C         1 : physique particuliere enclenchee
+C         2 : physique particuliere avec pilotage du rayonnement par
+C               fichier parametrique
+        IPPMOD(IPHPAR) = 0
+        IF (NMODPP.GT.0) THEN
+          IPPMOD(IPHPAR) = 1
+          IF (IPPMOD(ICOMPF).EQ.-1)
+     &         IPPMOD(IPHPAR) = 2
+        ENDIF
 C
 C ---> Lecture donnees thermochimie
 C
@@ -3261,9 +3272,9 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@     TOO MANY PARTICULAR PHYSICS MODULES ACTIVATED          ',/,
+     &'@     TOO MANY SPECIFIC PHYSICS MODULES ACTIVATED            ',/,
      &'@                                                            ',/,
-     &'@  Only one particlar physics module can be active at one    ',/,
+     &'@  Only one specific physics module can be active for one    ',/,
      &'@    given calculation.                                      ',/,
      &'@                                                            ',/,
      &'@  The calculation will not be run.                          ',/,
@@ -3278,7 +3289,7 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@     WRONG SELLECTION OF THE MODEL FOR PARTICULAR PHYSICS   ',/,
+     &'@     WRONG SELLECTION OF THE MODEL FOR SPECIFIC PHYSICS     ',/,
      &'@                                                            ',/,
      &'@  The values of the indices of the array IPPMOD are not     ',/,
      &'@    admissible                                              ',/,
@@ -3340,12 +3351,12 @@ C
      &'@                                                            ',/,
      &'@  The number of users scalars                               ',/,
      &'@     requested in   usini1           is   NSCAUS = ',I10     ,/,
-     &'@  The number of scalars necessary for the particular physics',/,
+     &'@  The number of scalars necessary for the specific physics'  ,/,
      &'@    with the chosen model is              NSCAPP = ',I10     ,/,
      &'@  The total number of scalars                               ',/,
      &'@    allowed    in   paramx.h         est  NSCAMX = ',I10     ,/,
      &'@                                                            ',/,
-     &'@  The maximmum value allowed for  NSCAUS                    ',/,
+     &'@  The maximum value allowed for  NSCAUS                     ',/,
      &'@    with the chosen model is       NSCAMX-NSCAPP = ',I10     ,/,
      &'@                                                            ',/,
      &'@  The calculation will not be run.                          ',/,
@@ -3514,7 +3525,7 @@ C
      &'@  The scalar  ',I10                                          ,/,
      &'@    (user scalar                    ',I10   ,') represents  ',/,
      &'@    the variance of fluctuations of a scalar ',I10           ,/,
-     &'@    (scalar of a particular physics ',I10   ,') since       ',/,
+     &'@    (scalar of a specific physics ',I10   ,') since         ',/,
      &'@    ISCAVR(',I10   ,') has a value ',I10   ,' (non-zero)    ',/,
      &'@                                                            ',/,
      &'@  The diffusivity index        IVISLS(',I10  ,')            ',/,
@@ -3537,7 +3548,7 @@ C
      &'@    SCALAR   ',I10                                           ,/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
-     &'@    (scalar of a particular physics ',I10   ,') represents  ',/,
+     &'@    (scalar of a specific physics ',I10   ,') represents    ',/,
      &'@    the variance of fluctuations of a scalar ',I10           ,/,
      &'@    (user scalar                    ',I10   ,') since       ',/,
      &'@ ISCAVR(ISCAPP(',I10   ,')) has a value ',I10   ,'(non-zero)',/,
@@ -3562,9 +3573,9 @@ C
      &'@    SCALAR   ',I10                                           ,/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
-     &'@    (scalar of a particular physics ',I10   ,') represents  ',/,
+     &'@    (scalar of a specific physics ',I10   ,') represents    ',/,
      &'@    the variance of fluctuations of a scalar ',I10           ,/,
-     &'@    (scalar of a particular physics ',I10   ,') since       ',/,
+     &'@    (scalar of a specific physics ',I10   ,') since         ',/,
      &'@ ISCAVR(ISCAPP(',I10   ,')) has a value',I10   ,' (non-zero)',/,
      &'@                                                            ',/,
      &'@  The diffusivity index        IVISLS(ISCAPP(',I10  ,'))    ',/,
@@ -3607,7 +3618,7 @@ C
      &'@    SCALAR   ',I10                                           ,/,
      &'@                                                            ',/,
      &'@  The variable diffusivity index of the                     ',/,
-     &'@    scalar of a particular physics    ',I10                  ,/,
+     &'@    scalar of a specific physics    ',I10                    ,/,
      &'@    IVISLS(ISCAPP(',I10   ,'))                              ',/,
      &'@    must be set equal to 0 or 1.                            ',/,
      &'@    Here it is  ',I10                                        ,/,
@@ -3624,7 +3635,7 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@    SCALAR   ',I10   ,' CANNOT MODIFY THE CARRIER PHASE     ',/,
+     &'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
      &'@    (user scalar                    ',I10   ,') represents  ',/,
@@ -3649,12 +3660,12 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@    SCALAR   ',I10   ,' CANNOT MODIFY THE CARRIER PHASE     ',/,
+     &'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
      &'@    (user scalar                    ',I10   ,') represents  ',/,
      &'@    the variance of fluctuations of the scalar',I10          ,/,
-     &'@    (scalar of particular physics   ',I10   ,') since       ',/,
+     &'@    (scalar of specific physics   ',I10   ,') since         ',/,
      &'@    ISCAVR(',I10   ,')has a value ',I10   ,' (non-zero)     ',/,
      &'@                                                            ',/,
      &'@  The carrier phase IPHSCA(',I10   ,') of the scalar        ',/,
@@ -3674,12 +3685,12 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@    SCALAR   ',I10   ,' CANNOT MODIFY THE CARRIER PHASE     ',/,
+     &'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
-     &'@    (scalar of particular physics   ',I10   ,') since       ',/,
+     &'@    (scalar of specific physics   ',I10   ,') represents    ',/,
      &'@    the variance of fluctuations of the scalar',I10          ,/,
-     &'@    (scalaire utilisateur           ',I10   ,') puisque     ',/,
+     &'@    (user scalar                    ',I10   ,') since       ',/,
      &'@ ISCAVR(ISCAPP(',I10   ,'))has a value ',I10   ,' (non-zero)',/,
      &'@                                                            ',/,
      &'@  The carrier phase IPHSCA(ISCAPP(',I10   ,')) of the scalar',/,
@@ -3699,12 +3710,12 @@ C
      &'@                                                            ',/,
      &'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,
      &'@    *********                                               ',/,
-     &'@    SCALAR   ',I10   ,' CANNOT MODIFY THE CARRIER PHASE     ',/,
+     &'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,
      &'@                                                            ',/,
      &'@  The scalar  ',I10                                          ,/,
-     &'@    (scalaire physique particuliere ',I10   ,') represente  ',/,
+     &'@    (scalar of specific physics   ',I10   ,') represents    ',/,
      &'@    the variance of fluctuations of the scalar',I10          ,/,
-     &'@    (scalar of particular physics   ',I10   ,') since       ',/,
+     &'@    (scalar of specific physics   ',I10   ,') since         ',/,
      &'@ ISCAVR(ISCAPP(',I10   ,'))has a value ',I10   ,' (non-zero)',/,
      &'@                                                            ',/,
      &'@  The carrier phase IPHSCA(ISCAPP(',I10   ,')) of the scalar',/,

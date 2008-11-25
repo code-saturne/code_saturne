@@ -304,7 +304,7 @@ C
       ENDDO
 C
 C
-      IF (NSCAPP.GT.0) THEN
+      IF (IPPMOD(IPHPAR).GE.1) THEN
         CALL PPPHYV
 C       ===========
      & ( IDEBIA , IDEBRA ,

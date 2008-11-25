@@ -1882,9 +1882,6 @@ C
  4010 FORMAT(                                                         /,
      & 3X,'** CPU TIME FOR FINAL WRITING: ',E14.5                    ,/,
      & 3X,'   ---------------------------                           ',/)
- 5000 FORMAT(/,
-     & 3X,'** FORTRAN WORK ARRAYS MEMORY USED                       ',/,
-     & 3X,'   -------------------------------                       ',/)
  7000 FORMAT(/,/,
      &' =========================================================== ',/,
      &                                                              /,/,
@@ -1895,27 +1892,6 @@ C
      &                                                                /,
      &                                                                /,
      &'***************************************************************')
- 8000 FORMAT(
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/,
-     &'@ @@ WARNING: ABORT IN DATA SPECIFICATION                    ',/,
-     &'@    ********                                                ',/,
-     &'@    ',A6,' MUST BE A POSITIVE OR ZERO INTERGER              ',/,
-     &'@    ITS VALUE IS ',I10                                       ,/,
-     &'@                                                            ',/,
-     &'@  The calculation will not be run                           ',/,
-     &'@                                                            ',/,
-     &'@  Verify the parameters given with the interface or ustbus. ',/,
-     &'@                                                            ',/,
-     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-     &'@                                                            ',/)
- 8010 FORMAT(/,
-     &' --- Size of work arrays                                     ',/,
-     &'       NIDEVE = ',4X,I10,    ' (Nb of integers - dev  access)',/,
-     &'       NRDEVE = ',4X,I10,    ' (Nb of reals    - dev  acesss)',/,
-     &'       NITUSE = ',4X,I10,    ' (Nb of integers - user access)',/,
-     &'       NRTUSE = ',4X,I10,    ' (Nb of reals    - user access)',/)
 C
 #endif
 C

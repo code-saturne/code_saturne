@@ -44,6 +44,13 @@ C
       INTEGER           IPPMOD(NMODMX)
       COMMON / IIPPMD / IPPMOD
 C
+C ---- Indicateur global de physique particuliere
+C        IPPMOD(IPHPAR) = 0 : pas de physique particuliere
+C                         1 : physique particuliere enclenchee
+C                         2 : physique particuliere avec pilotage du
+C                             rayonnement par fichier parametrique
+      INTEGER IPHPAR
+C
 C ---- Modeles propres a la combustion gaz ICO...
       INTEGER ICOD3P, ICODEQ, ICOEBU, ICOBML, ICOLWC
 C
@@ -61,10 +68,11 @@ C
 C ---- Modele compressible
       INTEGER  ICOMPF
 C
-      PARAMETER       (ICOD3P = 1 , ICODEQ = 2 , ICOEBU = 3 ,
-     &                 ICOBML = 4 , ICOLWC = 5 , ICP3PL = 6 ,
-     &                 ICPL3C = 7 , ICFUEL = 8 , IELJOU = 9 ,
-     &                 IELARC = 10, IELION = 11, ICOMPF = 12)
+      PARAMETER       (IPHPAR = 1 , ICOD3P = 2 , ICODEQ = 3 ,
+     &                 ICOEBU = 4 , ICOBML = 5 , ICOLWC = 6 ,
+     &                 ICP3PL = 7 , ICPL3C = 8 , ICFUEL = 9 ,
+     &                 IELJOU = 10, IELARC = 11, IELION = 12,
+     &                 ICOMPF = 13)
 C
 C--> MODULE RAYONNEMEMT
 C    IRAYPP =  0 : pas de rayonnement

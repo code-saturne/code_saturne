@@ -446,7 +446,7 @@ C
 C --> Physique particulieres
 C     Ordre 2 non pris en compte
 C
-      IF ( NSCAPP.GT.0 ) THEN
+      IF (IPPMOD(IPHPAR).GE.1) THEN
         CALL PPTSSC
 C       ===========
      & ( IDEBIA , IDEBRA ,

@@ -373,7 +373,7 @@ C  ATTENTION  : DANS LE CAS DE L'APPROXIMATION P-1, LE COEFFICIENT
 C    D'ABSORPTION EST UTILISE POUR CALCULER LES CONDITIONS AUX
 C    LIMITES DE L'EQUATION A RESOUDRE.
 C
-        IF (NSCAPP.GT.0) THEN
+        IF (IPPMOD(IPHPAR).GE.2) THEN
 C
           CALL PPCABS
 C         ===========
@@ -438,7 +438,7 @@ C
             CALL UIRAY3 (CK, IPH, NCELET, NCEL)
 C           ===========
 C
-            IF (IRAYON(IPHAS).EQ.2 .AND. NSCAPP.LE.0
+            IF (IRAYON(IPHAS).EQ.2 .AND. IPPMOD(IPHPAR).LE.1
      &          .AND. IPADOM.LE.3) THEN
               SF = 0.D0
               VV = 0.D0
@@ -668,7 +668,7 @@ C
 C
             MODE = 1
 C
-            IF (NSCAPP.EQ.0) THEN
+            IF (IPPMOD(IPHPAR).LE.1) THEN
 C
               CALL USRAY4
 C             ===========

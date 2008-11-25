@@ -120,9 +120,13 @@ C
       INCLUDE "numvar.h"
       INCLUDE "entsor.h"
       INCLUDE "optcal.h"
+      INCLUDE "cstphy.h"
       INCLUDE "parall.h"
       INCLUDE "period.h"
       INCLUDE "radiat.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "ppincl.h"
 C
 C***********************************************************************
 C
@@ -148,15 +152,17 @@ C=======================================================================
 C 1. UTILISATION DU MODULE DE TRANSFERTS RADIATIFS
 C
 C
-C     DANS LE CAS DES PHYSIQUES "CLASSIQUES"
-C         LES RENSEIGNEMENTS SUIVANTS SONT OBLIGATOIRES
-C
-C
-C     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION/CHARBON/ELEC)
+C     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION/CHARBON/
+C                                                            ELEC/FIOUL)
 C
 C         LES RENSEIGNEMENTS NE DOIVENT PAS ETRE FOURNIS
 C                            ==============
 C         (ils sont completes dans le fichiers de donnees)
+C
+C     DANS LES AUTRES CAS
+C         LES RENSEIGNEMENTS SUIVANTS SONT OBLIGATOIRES
+C
+C
 C
 C=======================================================================
 C
@@ -165,7 +171,7 @@ C
       IPHAS = 1
 C
 C
-      IF(NSCAPP.LE.0) THEN
+      IF( IPPMOD(IPHPAR).LE.1 ) THEN
 C
 C-->  IRAYON = 0 : PAS DE TRANSFERTS RADIATIFS (PAR DEFAUT)
 C            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES

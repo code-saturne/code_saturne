@@ -190,6 +190,9 @@ C
       INCLUDE "entsor.h"
       INCLUDE "pointe.h"
       INCLUDE "albase.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "ppincl.h"
 C
 C***********************************************************************
 C
@@ -274,7 +277,7 @@ C En ALE, on initialise aussi le tableau IALTYB
 C
 C POUR LES PHYSIQUES PARTICULIERES
 C
-      IF (NSCAPP.GT.0) THEN
+      IF (IPPMOD(IPHPAR).GE.1) THEN
         CALL PPPRCL
 C       ===========
      & ( IDEBIA , IDEBRA ,

@@ -289,7 +289,7 @@ C  Zones de face de bord : on utilise provisoirement les zones des physiques
 C    particulieres, meme sans physique particuliere
 C    -> sera modifie lors de la restructuration des zones de bord
       IIZFPP = IFINIA
-      IF(NSCAPP.GT.0 .OR. IIHMPR.EQ.1) THEN
+      IF(IPPMOD(IPHPAR).GE.1 .OR. IIHMPR.EQ.1) THEN
         IFINIA = IIZFPP + NFABOR
       ELSE
         IFINIA = IIZFPP

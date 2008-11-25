@@ -277,7 +277,7 @@ C   On pourrait remonter la partie init non utilisateur de ppiniv avant lecamo
 C     dans iniva0, mais il faudrait quand meme conserver ici l'appel a
 C     ppiniv car il encapsule les appels aux ss pgm utilisateur similaires a
 C     usiniv.
-      IF (NSCAPP.GT.0) THEN
+      IF (IPPMOD(IPHPAR).GE.1) THEN
 C
         IUSINI = 1
 C

@@ -102,7 +102,7 @@ C
       INTEGER          ISCAL , IEST  , IIESCA, IVAR
       INTEGER          IUIPH , IVIPH , IWIPH, IKIPH, IEIPH
       INTEGER          ITRBPH, NBSCCP
-      INTEGER          IPP   , IPPM  , IMGROK, NBCCOU
+      INTEGER          IPP   , IMGROK, NBCCOU
       INTEGER          IOKPRE, INDEST, ITESTS, IIIDEF, ISTOP
       INTEGER          IRESOP, IPOLOP
       DOUBLE PRECISION TESTTH
@@ -584,14 +584,7 @@ C       (rho, visc, cp, termes sources N.S., Turb., Scal., theta)
 C     est incompatible avec les physiques particulieres
 C     Ici on s'arrete si on n'est pas dans le cas du schema std
 C
-      IPPM = 0
-      DO IPP = 1, NMODMX
-        IF(IPPMOD(IPP).NE.-1) THEN
-          IPPM = 1
-        ENDIF
-      ENDDO
-C
-      IF(IPPM.GT.0) THEN
+      IF(IPPMOD(IPHPAR).GT.0) THEN
         ISTOP = 0
         DO IVAR = 1, NVAR
           IF( (ABS(THETAV(IVAR)-1.0D0).GT.1.D-3) ) ISTOP = 1
@@ -5042,8 +5035,8 @@ C
      &'@  Computation CAN NOT run                                   ',/,
      &'@                                                            ',/,
      &'@  The current version does not allow changing the time      ',/,
-     &'@  discretisation scheme when particular physics is active   ',/,
-     &'@    (combustion, coal, electrical   ).                      ',/,
+     &'@  discretisation scheme when a specific physics is active   ',/,
+     &'@    (combustion, coal, electrical, ...).                    ',/,
      &'@                                                            ',/,
      &'@  Verify   the parameters given  via interface, usini1      ',/,
      &'@  and  usppmo.                                              ',/,

@@ -277,7 +277,7 @@ C
      &                       (XYZP0(II,IPHAS),II=1,3)
       ENDDO
 C
-      IF (NSCAPP.GT.0) WRITE(NFECRA,2030) DIFTL0
+      IF (IPPMOD(IPHPAR).GE.2) WRITE(NFECRA,2030) DIFTL0
 C
 C
       WRITE(NFECRA,9900)
@@ -1030,7 +1030,7 @@ C
 C
 C   - Coefficient de relaxation de la masse volumique
 C
-        IF (NSCAPP.GT.0) WRITE(NFECRA,3050) SRROM
+        IF (IPPMOD(IPHPAR).GE.2) WRITE(NFECRA,3050) SRROM
 C
 C   - Ordre du schema en temps
 C

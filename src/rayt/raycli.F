@@ -234,6 +234,9 @@ C
       INCLUDE "parall.h"
       INCLUDE "radiat.h"
       INCLUDE "ihmpre.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "ppincl.h"
 C
 C***********************************************************************
 C
@@ -756,7 +759,7 @@ C---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
 C
           MODE = 1
 C
-          IF (NSCAPP.EQ.0) THEN
+          IF (IPPMOD(IPHPAR).LE.1) THEN
 C
             CALL USRAY4
 C           ===========
@@ -947,7 +950,7 @@ C
 C
           IF (MODE.EQ.-1) THEN
 C
-            IF (NSCAPP.EQ.0) THEN
+            IF (IPPMOD(IPHPAR).LE.1) THEN
 C
               CALL USRAY4
 C             ===========
@@ -1011,7 +1014,7 @@ C
 C
           IF (MODE.EQ.-1) THEN
 C
-            IF (NSCAPP.EQ.0) THEN
+            IF (IPPMOD(IPHPAR).LE.1) THEN
 C
               CALL USRAY4
 C             ===========

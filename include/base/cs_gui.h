@@ -79,7 +79,7 @@ char *
 cs_gui_get_thermophysical_model(const char *const model_thermo);
 
 /*-----------------------------------------------------------------------------
- * Return if a particular physics model is activated.
+ * Return if a specific physics model is activated.
  *----------------------------------------------------------------------------*/
 
 int
