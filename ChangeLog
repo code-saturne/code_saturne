@@ -1,3 +1,8 @@
+* 25/11/2008 - David Monfort <david.monfort@edf.fr>
+  Activate the multigrid algorithm for pressure by default.
+  modified routine:
+    users/base/usini1.F
+
 * 24/11/2008 - David Monfort <david.monfort@edf.fr>
   Upgrade to GUI 1.4.d
 
