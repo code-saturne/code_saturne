@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,19 +30,23 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPINIV
+                        SUBROUTINE USATIV
 C                       *****************
 C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
+     &   NBMETD , NBMETT , NBMETM ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
+     &   TMPROM , ZTPROM , ZDPROM , XMET   , YMET   , PMER   ,
+     &   TTPROM , QVPROM , UPROM  , VPROM  , EKPROM , EPPROM ,
+     &   RPROM  , TPPROM , PHPROM ,
      &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -47,8 +54,9 @@ C FONCTION :
 C --------
 c@foncb
 CFONC
-CFONC INITIALISATION DES VARIABLES DE CALCUL POUR
-CFONC       LA PHYSIQUE PARTICULIERE
+CFONC ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
+CFONC      POUR LA PHYSIQUE PARTICULIERE: VERSION ATMOSPHERIQUE
+CFONC      PENDANT DE USINIV
 CFONC
 CFONC  Cette routine est appelee en debut de calcul (suite ou non)
 CFONC      avant le debut de la boucle en temps
@@ -64,7 +72,7 @@ CFONC  On ne dispose des variables VISCLS, CP (quand elles sont
 CFONC      definies) que si elles ont pu etre relues dans un fichier
 CFONC      suite de calcul
 CFONC
-CFONC  Les proprietes physiques sont accessibles dans le tableau
+CFONC  Les proprietes physiaues sont accessibles dans le tableau
 CFONC      PROPCE (prop au centre), PROPFA (aux faces internes),
 CFONC      PROPFB (prop aux faces de bord)
 CFONC      Ainsi,
@@ -78,9 +86,41 @@ CFONC
 CFONC       PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
 CFONC       PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 CFONC
+CFONC
+CFONC
+CFONC
+CFONC
 CFONC  LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-CFONC      SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
+CFONC      SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
 CFONC      ET PAS ICI
+CFONC
+CFONC
+CFONC
+CFONC  POUR LA COMBUSTION, LE CHARBON, L'INITIALISATION EST FAITE
+CFONC    PAR DEFAUT : IL EST CONSEILLE DE LA CONSERVER.
+CFONC
+CFONC L'identification des cellules concernees peut s'appuyer sur la
+CFONC commande GETCEL.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
 CFONC
 c@fonce
 C                             ARGUMENTS
@@ -182,17 +222,13 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
+      INCLUDE "pointe.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
       INCLUDE "cstphy.h"
-      INCLUDE "cstnum.h"
       INCLUDE "entsor.h"
       INCLUDE "parall.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "ppincl.h"
+      INCLUDE "period.h"
 C
 C***********************************************************************
 C
@@ -201,6 +237,7 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
+      INTEGER          NBMETD , NBMETT , NBMETM
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
@@ -217,14 +254,37 @@ C
       DOUBLE PRECISION DT(NCELET), RTP(NCELET,*), PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
+      DOUBLE PRECISION TMPROM(NBMETM)
+      DOUBLE PRECISION ZTPROM(NBMETT) , ZDPROM(NBMETD)
+      DOUBLE PRECISION XMET(NBMETM)   , YMET(NBMETM)  , PMER(NBMETM)
+      DOUBLE PRECISION TTPROM(NBMETT,NBMETM) , QVPROM(NBMETT,NBMETM)
+      DOUBLE PRECISION UPROM(NBMETD,NBMETM)  , VPROM(NBMETD,NBMETM)
+      DOUBLE PRECISION EKPROM(NBMETD,NBMETM) , EPPROM(NBMETD,NBMETM)
+      DOUBLE PRECISION RPROM(NBMETT,NBMETM)  , TPPROM(NBMETT,NBMETM)
+      DOUBLE PRECISION PHPROM(NBMETT,NBMETM)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
-C
+      INTEGER          IEL, IUTILE,IPHAS
+      DOUBLE PRECISION D2S3
+      DOUBLE PRECISION ZENT,XUENT,XVENT,XKENT,XEENT,TPENT
 C
 C***********************************************************************
+C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+C=======================================================================
+C
+      IF(1.EQ.1) THEN
+C       Indicateur de non passage dans le sous-programme
+        IUSINI = 0
+        RETURN
+      ENDIF
+C
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+C
 C
 C=======================================================================
 C 1.  INITIALISATION VARIABLES LOCALES
@@ -232,182 +292,92 @@ C=======================================================================
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
+      D2S3 = 2.D0/3.D0
 C
 C=======================================================================
-C 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+C 2. INITIALISATION DES INCONNUES :
+C      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
 C=======================================================================
 C
+C --- INCONNUES
+C     Exemple : Initialisation a partir des profils meteo
 C
-C ---> Combustion gaz
-C      Flamme de diffusion : chimie 3 points
 C
-       IF ( IPPMOD(ICOD3P).GE.0 ) THEN
-        CALL D3PINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-        ENDIF
+      IF (ISUITE.EQ.0) THEN
 C
-C ---> Combustion gaz
-C      Flamme de premelange : modele EBU
+C Initialisation with the input meteo profile
+
+        IPHAS=1
 C
-       IF ( IPPMOD(ICOEBU).GE.0 ) THEN
-        CALL EBUINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+        DO IEL = 1, NCEL
 C
-C ---> Combustion gaz
-C      Flamme de premelange : modele LWC
+          ZENT=XYZCEN(3,IEL)
 C
-       IF ( IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL LWCINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+          CALL INTPRF
+C         ===========
+     &   (NBMETD, NBMETM,
+     &    ZDPROM, TMPROM, UPROM , ZENT  , TTCABS, XUENT )
 C
-C ---> Combustion charbon pulverise
+          CALL INTPRF
+C         ===========
+     &   (NBMETD, NBMETM,
+     &    ZDPROM, TMPROM, VPROM , ZENT  , TTCABS, XVENT )
 C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+          CALL INTPRF
+C         ===========
+     &   (NBMETD, NBMETM,
+     &    ZDPROM, TMPROM, EKPROM, ZENT  , TTCABS, XKENT )
 C
-C ---> Combustion charbon pulverise couples Lagrangien
+          CALL INTPRF
+C         ===========
+     &   (NBMETD, NBMETM,
+     &    ZDPROM, TMPROM, EPPROM, ZENT  , TTCABS, XEENT )
 C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+          RTP(IEL,IU(IPHAS))=XUENT
+          RTP(IEL,IV(IPHAS))=XVENT
+          RTP(IEL,IW(IPHAS))=0.D0
 C
-C ---> Combustion fuel
+C     ITYTUR est un indicateur qui vaut ITURB/10
+          IF    (ITYTUR(IPHAS).EQ.2) THEN
 C
-      IF  (IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+            RTP(IEL,IK(IPHAS))  = XKENT
+            RTP(IEL,IEP(IPHAS)) = XEENT
 C
-C ---> Compressible
+          ELSEIF(ITYTUR(IPHAS).EQ.3) THEN
 C
-      IF ( IPPMOD(ICOMPF).GE.0 ) THEN
-        CALL CFINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+            RTP(IEL,IR11(IPHAS)) = D2S3*XKENT
+            RTP(IEL,IR22(IPHAS)) = D2S3*XKENT
+            RTP(IEL,IR33(IPHAS)) = D2S3*XKENT
+            RTP(IEL,IR12(IPHAS)) = 0.D0
+            RTP(IEL,IR13(IPHAS)) = 0.D0
+            RTP(IEL,IR23(IPHAS)) = 0.D0
+            RTP(IEL,IEP(IPHAS))  = XEENT
 C
-C ---> Version electrique
-C      Effet Joule
-C      Conduction ionique
+          ELSEIF(ITURB(IPHAS).EQ.50) THEN
 C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
+            RTP(IEL,IK(IPHAS))   = XKENT
+            RTP(IEL,IEP(IPHAS))  = XEENT
+            RTP(IEL,IPHI(IPHAS)) = D2S3
+            RTP(IEL,IFB(IPHAS))  = 0.D0
 C
-        CALL ELINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
+          ELSEIF(ITURB(IPHAS).EQ.60) THEN
 C
-      ENDIF
+            RTP(IEL,IK(IPHAS))   = XKENT
+            RTP(IEL,IOMG(IPHAS)) = XEENT/CMU/XKENT
 C
-C ---> Ecoulements atmospheriques
+          ENDIF
 C
-      IF ( IPPMOD(IATMOS).GE.0 ) THEN
+          IF (NSCAL.GE.1) THEN
+C On suppose que le scalaire est la temperature potentielle :
+            CALL INTPRF
+C           ===========
+     &   (NBMETT, NBMETM,
+     &    ZTPROM, TMPROM, TPPROM, ZENT  , TTCABS, TPENT )
 C
-        CALL ATINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
+            RTP(IEL,ISCA(1))=TPENT
+C
+          ENDIF
+        ENDDO
 C
       ENDIF
 C

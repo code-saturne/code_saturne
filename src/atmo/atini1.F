@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,7 +30,7 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPINI1
+                        SUBROUTINE ATINI1
 C                       *****************
 C     -------------------------------------------------------------
 C     -------------------------------------------------------------
@@ -36,9 +39,8 @@ C  FONCTION  :
 C  ---------
 c@foncb
 CFONC
-CFONC  INIT DES OPTIONS DES VARIABLES SELON
-CFONC    LE TYPE DE PHYSIQUE PARTICULIERE
-CFONC    EN COMPLEMENT DE CE QUI A ETTE DEJA FAIT DANS USINI1
+CFONC    INIT DES OPTIONS DES VARIABLES POUR LA VERSION ATMOSPHERIQUE
+CFONC       EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -74,78 +76,32 @@ C
       INCLUDE "dimens.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
-      INCLUDE "cstphy.h"
-      INCLUDE "entsor.h"
-      INCLUDE "cstnum.h"
-      INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "ppincl.h"
 C
 C***********************************************************************
 C
+C VARIABLES LOCALES
+C
+      INTEGER          IPHAS
 C
 C***********************************************************************
 C
 C=======================================================================
-C 1. VARIABLES TRANSPORTEES
+C 1. INFORMATIONS GENERALES
 C=======================================================================
 C
-C ---> Combustion gaz : Flamme de diffusion  (Chimie 3 points)
-C                       Flamme de premelange (Modele EBU)
-C                       Flamme de premelange (Modele LWC)
+C ---> Initialisation
+      IPHAS = 1
 C
-      IF ( IPPMOD(ICOD3P).GE.0 .OR. IPPMOD(ICOEBU).GE.0
-     &                         .OR. IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL COINI1
-C       ===========
-      ENDIF
+C ---> Masse volumique et viscosite
+      IROVAR(IPHAS) = 0
+      IVIVAR(IPHAS) = 0
 C
-C ---> Physique particuliere : Combustion Charbon Pulverise
+C=======================================================================
+C 2. ON DONNE LA MAIN A L'UTLISATEUR
+C=======================================================================
 C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
-C                              Couplee Transport Lagrangien
-C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLIN1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion fuel
-C
-      IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Compressible
-C
-      IF ( IPPMOD(ICOMPF).GE.0) THEN
-        CALL CFINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Versions electriques
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-        CALL ELINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Ecoulements atmospheriques
-C
-      IF ( IPPMOD(IATMOS).GE.0 ) THEN
-        CALL ATINI1
-C       ===========
-      ENDIF
+      CALL USATI1
+C     ===========
 C
       RETURN
       END

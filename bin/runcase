@@ -159,6 +159,7 @@ COMMAND_JOIN=
 COMMAND_CWF=
 COMMAND_PERIO=
 THERMOCHEMISTRY_DATA=
+METEO_DATA=
 #
 # Choose the total number of processors used (if empty, automatic detection
 # through the batch system if possible, set to 1 otherwise).
@@ -642,6 +643,23 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     fi
   fi
   #
+  if [ "$METEO_DATA" != "" ] ; then
+    var=$DATA/$METEO_DATA
+    if [ -f $var ] ; then
+      cp $var meteo
+      # Copy so as to have correct name upon backup
+      if [ "$METEO_DATA" != "meteo" ] ; then
+        cp meteo $METEO_DATA
+      fi
+    else
+      echo ' '
+      echo ' -- ERROR -- '
+      echo ' The meteo profile file ' $var
+      echo ' can not be accessed. '
+      exit 1
+    fi
+  fi
+  #
   for f in uscpcl.F usd3pc.F usebuc.F uslwcc.F usfucl.F
   do
     if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
@@ -962,7 +980,7 @@ if [ $EXEC_KERNEL = yes ] ; then
     fi
   fi
 
-  for f in $PARAM $THERMOCHEMISTRY_DATA ; do
+  for f in $PARAM $THERMOCHEMISTRY_DATA $METEO_DATA ; do
     if [ -f $f ] ; then
       cp $f $RESU/$f.$SUFFIX
     fi

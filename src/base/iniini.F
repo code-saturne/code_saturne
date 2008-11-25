@@ -278,6 +278,10 @@ C
 C
       INDJON = 1
 C
+C ---> Fichiers module atmospherique
+      IMPMET = 26
+      FICMET = 'meteo'
+C
 C ---> Fichier resuMatisse
       IMPMAT = 28
 C

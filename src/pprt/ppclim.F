@@ -456,7 +456,29 @@ C          ===========
      &   RDEVEL , RTUSER , RA     )
 C
         ENDIF
-
+C
+      ENDIF
+C
+C  ------> Version ecoulements atmospheriques
+C
+      IF ( IPPMOD(IATMOS).GE.0 ) THEN
+C
+          CALL USATCL
+C         ===========
+     & ( IDBIA1 , IDEBRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , IA(ILS),
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   ICODCL , ITRIFB , ITYPFB , IZFPPP ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
+     &   COEFA  , COEFB  , RCODCL ,
+     &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
+     &   RDEVEL , RTUSER , RA     )
 C
       ENDIF
 C

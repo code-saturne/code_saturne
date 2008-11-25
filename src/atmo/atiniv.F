@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,7 +30,7 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPINIV
+                        SUBROUTINE ATINIV
 C                       *****************
 C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
@@ -47,8 +50,9 @@ C FONCTION :
 C --------
 c@foncb
 CFONC
-CFONC INITIALISATION DES VARIABLES DE CALCUL POUR
-CFONC       LA PHYSIQUE PARTICULIERE
+CFONC  INITIALISATION DES VARIABLES DE CALCUL
+CFONC     POUR LA PHYSIQUE PARTICULIERE : ECOULEMENTS ATMOSPHERIQUES
+CFONC     PENDANT DE USINIV.F
 CFONC
 CFONC  Cette routine est appelee en debut de calcul (suite ou non)
 CFONC      avant le debut de la boucle en temps
@@ -64,7 +68,7 @@ CFONC  On ne dispose des variables VISCLS, CP (quand elles sont
 CFONC      definies) que si elles ont pu etre relues dans un fichier
 CFONC      suite de calcul
 CFONC
-CFONC  Les proprietes physiques sont accessibles dans le tableau
+CFONC  Les proprietes physiaues sont accessibles dans le tableau
 CFONC      PROPCE (prop au centre), PROPFA (aux faces internes),
 CFONC      PROPFB (prop aux faces de bord)
 CFONC      Ainsi,
@@ -187,12 +191,10 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
       INCLUDE "entsor.h"
-      INCLUDE "parall.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "ppincl.h"
+      INCLUDE "atincl.h"
+
 C
 C***********************************************************************
 C
@@ -221,11 +223,9 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
-C
+      INTEGER          IDEBIA, IDEBRA, IMODE
 C
 C***********************************************************************
-C
 C=======================================================================
 C 1.  INITIALISATION VARIABLES LOCALES
 C=======================================================================
@@ -234,182 +234,49 @@ C
       IDEBRA = IDBRA0
 C
 C=======================================================================
-C 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+C 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
 C=======================================================================
 C
 C
-C ---> Combustion gaz
-C      Flamme de diffusion : chimie 3 points
+      IF (IMETEO.GT.0) THEN
 C
-       IF ( IPPMOD(ICOD3P).GE.0 ) THEN
-        CALL D3PINI
+        IMODE = 1
+        CALL ATLECM
 C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-        ENDIF
-C
-C ---> Combustion gaz
-C      Flamme de premelange : modele EBU
-C
-       IF ( IPPMOD(ICOEBU).GE.0 ) THEN
-        CALL EBUINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
+     & ( IMODE      ,
+     &   RA(ITMMET) , RA(IZTMET) , RA(IZDMET) ,
+     &   RA(IXMET)  , RA(IYMET)  , RA(IPMER)  ,
+     &   RA(ITTMET) , RA(IQVMET) ,
+     &   RA(IUMET)  , RA(IVMET)  ,
+     &   RA(IEKMET) , RA(IEPMET) ,
+     &   RA(IRMET)  , RA(ITPMET) , RA(IPHMET) )
+
       ENDIF
 C
-C ---> Combustion gaz
-C      Flamme de premelange : modele LWC
+C=======================================================================
+C 3. USER  OPTIONS
+C=======================================================================
 C
-       IF ( IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL LWCINI
-C       ===========
+      CALL USATIV
+C     ===========
      & ( IDEBIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
+     &   NBMETD , NBMETT , NBMETM ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Combustion charbon pulverise
-C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Combustion charbon pulverise couples Lagrangien
-C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLINI
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Combustion fuel
-C
-      IF  (IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Compressible
-C
-      IF ( IPPMOD(ICOMPF).GE.0 ) THEN
-        CALL CFINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Version electrique
-C      Effet Joule
-C      Conduction ionique
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-C
-        CALL ELINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
+     &   RA(ITMMET)      , RA(IZTMET)      , RA(IZDMET)      ,
+     &   RA(IXMET)       , RA(IYMET)       , RA(IPMER)       ,
+     &   RA(ITTMET)      , RA(IQVMET)      , RA(IUMET)       ,
+     &   RA(IVMET)       , RA(IEKMET)      , RA(IEPMET)      ,
+     &   RA(IRMET)       , RA(ITPMET)      , RA(IPHMET)      ,
      &   RDEVEL , RTUSER , RA     )
 C
-      ENDIF
-C
-C ---> Ecoulements atmospheriques
-C
-      IF ( IPPMOD(IATMOS).GE.0 ) THEN
-C
-        CALL ATINIV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
-     &   RDEVEL , RTUSER , RA     )
-C
-      ENDIF
 C
 C----
 C FORMATS
@@ -420,5 +287,6 @@ C FIN
 C----
 C
       RETURN
+C
       END
 c@z

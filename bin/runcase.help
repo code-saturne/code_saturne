@@ -128,6 +128,12 @@ If thermochemistry applies, the name of the thermochemistry data file
 
                -------------------------------
 
+If meteo profiles are used, the name of the meteo data file
+  may be specified through METEO_DATA. For example:
+    METEO_DATA="meteo"
+
+               -------------------------------
+
 
 User input files can be specified with the USER_INPUT_FILE variable
   (left empty if none are used) and the files are located in DATA.

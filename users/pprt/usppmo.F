@@ -239,6 +239,11 @@ C       ==========
 C
       IPPMOD(IELION) = -1
 C
+C----- ATMOS ecoulements atmospheriques
+C      ==========
+C        si = -1   modele non utilise
+C        si = 0    modele active
+      IPPMOD(IATMOS) = -1
 C
 C=======================================================================
 C 2.  CHOIX DU FICHIER THERMOCHIMIE DANS LE CAS DE LA COMBUSTION GAZ

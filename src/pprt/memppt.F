@@ -2,10 +2,13 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS                  Code_Saturne version 1.3
+C                      ------------------------
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2008 EDF S.A., France
+C     Copyright (C) 1998-2007 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -27,28 +30,44 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPINI1
+                        SUBROUTINE MEMPPT
 C                       *****************
-C     -------------------------------------------------------------
-C     -------------------------------------------------------------
+C     --------------------------------------------------------------
+     & ( IDBIA0 , IDBRA0 ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR ,
+     &   NVAR   , NSCAL  , NPHAS  ,
+     &   IFINIA , IFINRA )
+C     --------------------------------------------------------------
 C***********************************************************************
 C  FONCTION  :
 C  ---------
 c@foncb
 CFONC
-CFONC  INIT DES OPTIONS DES VARIABLES SELON
-CFONC    LE TYPE DE PHYSIQUE PARTICULIERE
-CFONC    EN COMPLEMENT DE CE QUI A ETTE DEJA FAIT DANS USINI1
+CFONC  MEMORY MANAGEMENT FOR THE SPECIFIC PHYSICS MODULES
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
-C                             ARGUMENTS
+C-----------------------------------------------------------------------
+C                                  ARGUMENTS
 c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU !______________!____!_____!______________________________________!
-c@argue
+CARGU ! IDBIA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS IA !
+CARGU ! IDBRA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS RA !
+CARGU ! NDIM         ! E  !  -> ! DIMENSION DE L'ESPACE                !
+CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
+CARGU ! NCEL         ! E  !  -> ! NOMBRE D'ELEMENTS ACTIFS             !
+CARGU ! NFAC         ! E  !  -> ! NOMBRE DE FACES INTERNES             !
+CARGU ! NFABOR       ! E  !  -> ! NOMBRE DE FACES DE BORD              !
+CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
+CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
+CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
+CARGU ! IFINIA       ! E  ! <-  ! POINTEUR DE LA PREMIERE CAS LIBRE DAN!
+CARGU !              !    !     !  DANS IA EN SORTIE                   !
+CARGU ! IFINRA       ! E  ! <-  ! POINTEUR DE LA PREMIERE CAS LIBRE DAN!
+CARGU !              !    !     !  DANS IA EN SORTIE                   !
+CARGU .______________.____._____.______________________________________.
 C
 c@commb
 CCOMM                             COMMONS
@@ -71,12 +90,11 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
-      INCLUDE "dimens.h"
-      INCLUDE "numvar.h"
-      INCLUDE "optcal.h"
-      INCLUDE "cstphy.h"
+      INCLUDE "pointe.h"
+      INCLUDE "vector.h"
       INCLUDE "entsor.h"
       INCLUDE "cstnum.h"
+      INCLUDE "cstphy.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
       INCLUDE "coincl.h"
@@ -85,68 +103,41 @@ C
 C
 C***********************************************************************
 C
+C ARGUMENTS
+C
+      INTEGER          IDBIA0 , IDBRA0
+      INTEGER          NDIM   , NCELET , NCEL   , NFAC   , NFABOR
+      INTEGER          NVAR   , NSCAL  , NPHAS
+      INTEGER          IFINIA , IFINRA
+C
+C
+C VARIABLES LOCALES
+C
+      INTEGER          IDEBIA, IDEBRA
 C
 C***********************************************************************
 C
+      IDEBIA = IDBIA0
+      IDEBRA = IDBRA0
+C
 C=======================================================================
-C 1. VARIABLES TRANSPORTEES
+C 1. AIGUILLAGE VERS LE MODELE ADEQUAT (pour l'instant seulement atmo)
 C=======================================================================
 C
-C ---> Combustion gaz : Flamme de diffusion  (Chimie 3 points)
-C                       Flamme de premelange (Modele EBU)
-C                       Flamme de premelange (Modele LWC)
-C
-      IF ( IPPMOD(ICOD3P).GE.0 .OR. IPPMOD(ICOEBU).GE.0
-     &                         .OR. IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL COINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion Charbon Pulverise
-C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
-C                              Couplee Transport Lagrangien
-C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLIN1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion fuel
-C
-      IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Compressible
-C
-      IF ( IPPMOD(ICOMPF).GE.0) THEN
-        CALL CFINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Versions electriques
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-        CALL ELINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Ecoulements atmospheriques
+C ---> Atmospheric module
 C
       IF ( IPPMOD(IATMOS).GE.0 ) THEN
-        CALL ATINI1
+        CALL MEMATM
 C       ===========
+     & ( IDEBIA , IDEBRA , IFINIA , IFINRA )
+
       ENDIF
+C
+C----
+C FIN
+C----
 C
       RETURN
       END
+C
 c@z

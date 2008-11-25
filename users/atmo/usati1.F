@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,7 +30,7 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPINI1
+                        SUBROUTINE USATI1
 C                       *****************
 C     -------------------------------------------------------------
 C     -------------------------------------------------------------
@@ -36,9 +39,9 @@ C  FONCTION  :
 C  ---------
 c@foncb
 CFONC
-CFONC  INIT DES OPTIONS DES VARIABLES SELON
-CFONC    LE TYPE DE PHYSIQUE PARTICULIERE
-CFONC    EN COMPLEMENT DE CE QUI A ETTE DEJA FAIT DANS USINI1
+CFONC     INIT DES OPTIONS DE CALCUL NON STANDARD
+CFONC             POUR LA VERSION ATMOSPHERIQUE
+CFONC
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -78,74 +81,46 @@ C
       INCLUDE "entsor.h"
       INCLUDE "cstnum.h"
       INCLUDE "ppppar.h"
-      INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "ppincl.h"
+      INCLUDE "atincl.h"
+
 C
 C***********************************************************************
 C
+      INTEGER          IPHAS
+
 C
 C***********************************************************************
 C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
 C=======================================================================
-C 1. VARIABLES TRANSPORTEES
+C
+      IF(1.EQ.1) RETURN
+C
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+C
+C
+C=======================================================================
+C 1. EXEMPLE D'OPTIONS DE CALCUL A MODIFIER
 C=======================================================================
 C
-C ---> Combustion gaz : Flamme de diffusion  (Chimie 3 points)
-C                       Flamme de premelange (Modele EBU)
-C                       Flamme de premelange (Modele LWC)
+C     Pour chaque phase
 C
-      IF ( IPPMOD(ICOD3P).GE.0 .OR. IPPMOD(ICOEBU).GE.0
-     &                         .OR. IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL COINI1
-C       ===========
-      ENDIF
+      DO IPHAS = 1, NPHAS
 C
-C ---> Physique particuliere : Combustion Charbon Pulverise
+C --> Masse volumique et viscosite
 C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPINI1
-C       ===========
-      ENDIF
+      IROVAR(IPHAS) = 0
+      IVIVAR(IPHAS) = 0
+
+C ---> lecture du fichier meteo
+      IMETEO = 1
 C
-C ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
-C                              Couplee Transport Lagrangien
+      ENDDO
 C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLIN1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Combustion fuel
-C
-      IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Compressible
-C
-      IF ( IPPMOD(ICOMPF).GE.0) THEN
-        CALL CFINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Versions electriques
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-        CALL ELINI1
-C       ===========
-      ENDIF
-C
-C ---> Physique particuliere : Ecoulements atmospheriques
-C
-      IF ( IPPMOD(IATMOS).GE.0 ) THEN
-        CALL ATINI1
-C       ===========
-      ENDIF
+C----
+C FIN
+C----
 C
       RETURN
       END

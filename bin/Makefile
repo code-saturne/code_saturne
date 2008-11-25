@@ -202,34 +202,37 @@ privcompil:
 	      fi ;\
 	 fi ;\
 	 if   [ "$${modtrav}" = "BASE" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/ctwr $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/atmo $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/ctwr $(INC_CS)/elec $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/mati" ;\
 	      src_cs_all="$(USR_CS)/base $(SRC_CS)/base $(USR_CS)/pprt $(SRC_CS)/pprt" ;\
+	 elif [ "$${modtrav}" = "ATMO" ] ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/atmo" ;\
+	      src_cs_all="$(USR_CS)/atmo $(SRC_CS)/atmo" ;\
 	 elif [ "$${modtrav}" = "CFBL" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/cfbl" ;\
 	      src_cs_all="$(USR_CS)/cfbl $(SRC_CS)/cfbl" ;\
 	 elif [ "$${modtrav}" = "COGZ" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/rayt" ;\
 	      src_cs_all="$(USR_CS)/cogz $(SRC_CS)/cogz" ;\
 	 elif [ "$${modtrav}" = "CPLV" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv";\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt";\
 	      src_cs_all="$(USR_CS)/cplv $(SRC_CS)/cplv" ;\
 	 elif [ "$${modtrav}" = "CTWR" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt $(INC_CS)/ctwr";\
 	      src_cs_all="$(USR_CS)/ctwr $(SRC_CS)/ctwr" ;\
 	 elif [ "$${modtrav}" = "FUEL" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/cplv $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/fuel";\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt";\
 	      src_cs_all="$(USR_CS)/fuel $(SRC_CS)/fuel" ;\
 	 elif [ "$${modtrav}" = "ELEC" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/elec $(INC_CS)/pprt $(INC_CS)/rayt" ;\
 	      src_cs_all="$(USR_CS)/elec $(SRC_CS)/elec" ;\
 	 elif [ "$${modtrav}" = "LAGR" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt" ;\
 	      src_cs_all="$(USR_CS)/lagr $(SRC_CS)/lagr" ;\
 	 elif [ "$${modtrav}" = "RAYT" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/fuel $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt" ;\
 	      src_cs_all="$(USR_CS)/rayt $(SRC_CS)/rayt" ;\
 	 elif [ "$${modtrav}" = "MATI" ] ;\
-	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/lagr $(INC_CS)/pprt $(INC_CS)/rayt $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/mati" ;\
+	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/cfbl $(INC_CS)/cogz $(INC_CS)/cplv $(INC_CS)/lagr $(INC_CS)/mati $(INC_CS)/pprt $(INC_CS)/rayt" ;\
 	      src_cs_all="$(SRC_CS)/mati" ;\
 	 elif [ "$${modtrav}" = "" ] ;\
 	 then inc_cs_all="$(ARCHINC_CS)" ;\
@@ -561,13 +564,13 @@ privmodlink:
 	 librariesloc=""; \
 	 if   [ "$(MYOPT)" = "EF" ] ;\
 	 then \
-	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE ATMO CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}DBG" ;\
 	   done ;\
 	    librariesloc="$${librariesloc} $(LIBRARYEF)" ;\
 	 else \
-	   for lib in BASE CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
+	   for lib in BASE ATMO CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT ;\
 	   do \
 	       librariesloc="$${librariesloc} -l$(NOM_LIB_CS_PRE)$${lib}$(MYOPT)" ;\
 	   done ;\

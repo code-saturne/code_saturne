@@ -80,6 +80,7 @@ C
       INCLUDE "ppincl.h"
       INCLUDE "elincl.h"
       INCLUDE "ppcpfu.h"
+      INCLUDE "atincl.h"
 C
 C***********************************************************************
 C
@@ -590,6 +591,19 @@ C
       DO IESP=1,NGAZGM
         QESPEL(IESP) = 0.D0
         SUSCEP(IESP) = 0.D0
+      ENDDO
+C
+C=======================================================================
+C 7. REMPLISSAGE INCLUDE atincl.h
+C                INCLUDE POUR LA VERSION ATMOSPHERIQUE
+C=======================================================================
+C
+      IMETEO = 1
+      NBMETD = 0
+      NBMETT = 0
+      NBMETM = 0
+      DO IZONE = 1, NOZPPM
+        IPROFM(IZONE) = 0
       ENDDO
 C
       RETURN

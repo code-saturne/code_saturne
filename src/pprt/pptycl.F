@@ -199,6 +199,7 @@ C
       INCLUDE "coincl.h"
       INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
+      INCLUDE "atincl.h"
 C
 C***********************************************************************
 C
@@ -510,18 +511,34 @@ C       ===========
      &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
      &   RDEVEL , RTUSER , RA     )
 C
+C ---> Ecoulements atmospheriques
+C
+      ELSEIF ( IPPMOD(IATMOS).GE.0 ) THEN
+C
+        CALL ATTYCL
+C       ===========
+     & ( IDEBIA , IDEBRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  ,
+     &   NBMETD , NBMETT , NBMETM ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   ICODCL , ITRIFB , ITYPFB , IZFPPP , IPROFM ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
+     &   COEFA  , COEFB  , RCODCL ,
+     &   RA(ITMMET)      , RA(IZTMET)      , RA(IZDMET)      ,
+     &   RA(IXMET)       , RA(IYMET)       , RA(IPMER)       ,
+     &   RA(ITTMET)      , RA(IQVMET)      , RA(IUMET)       ,
+     &   RA(IVMET)       , RA(IEKMET)      , RA(IEPMET)      ,
+     &   RA(IRMET)       , RA(ITPMET)      , RA(IPHMET)      ,
+     &   W1     , W2     , W3     , W4     , W5     , W6     , COEFU  ,
+     &   RDEVEL , RTUSER , RA     )
+C
       ENDIF
-C
-C
-C ---> Version electrique
-C      Effet Joule
-C      Conduction ionique
-C
-C      IF ( IPPMOD(IJOULE).GE.0 .OR. IPPMOD(IIONIQ).GE.0 ) THEN
-C        CALL
-C        ===========
-C      ENDIF
-C
 C----
 C FORMATS
 C----

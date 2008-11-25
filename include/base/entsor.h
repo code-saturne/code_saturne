@@ -130,7 +130,7 @@ C
       CHARACTER*96      OPTCHR
       COMMON / AEPOST / FMTCHR, OPTCHR
 C
-C --- FICHIER SPECIFIQUE PHYSIQUE PARTICULIERE
+C --- FICHIER THERMOPHYSIQUE SPECIFIQUE PHYSIQUE PARTICULIERE
 C
 C     IMP    --> Unite logique du fichier
 C     FPP    --> Fichier utilisateur lorsqu'on utilise Janaf
@@ -143,6 +143,16 @@ C
 C
       INTEGER           IMPFPP, IMPJNF, INDJON
       COMMON / IFCPPP / IMPFPP, IMPJNF, INDJON
+C
+C --- INPUT FILES FOR THE ATMOSPHERIC SPECIFIC PHYSICS
+C        IMPMET --> logical unit of the meteo profile file
+C        FICMET --> name of the meteo profile file
+C
+        INTEGER IMPMET
+        COMMON / IFCMET / IMPMET
+C
+        CHARACTER*10 FICMET
+        COMMON / AFCMET / FICMET
 C
 C --- FICHIERS HISTORIQUES
 C

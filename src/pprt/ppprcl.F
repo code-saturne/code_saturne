@@ -195,6 +195,7 @@ C
       INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
       INCLUDE "cfpoin.h"
+      INCLUDE "atincl.h"
 C
 C***********************************************************************
 C
@@ -400,6 +401,26 @@ C
 C
         DO IFAC = 1, NFABOR
           IZFPPP(IFAC) = 0
+        ENDDO
+C
+C ---> Version ecoulements atmospheriques
+C
+      ELSEIF ( IPPMOD(IATMOS).GE.0  ) THEN
+C
+        DO IFAC = 1, NFABOR
+          IZFPPP(IFAC) = 0
+        ENDDO
+        DO IZONE = 1, NOZPPM
+          IPROFM(IZONE) = 0
+        ENDDO
+C
+C     Initialisation des RCODCL(IFAC,.,1) à RINFIN
+C       pour savoir si l'utilisateur les a modifies (ils sont
+C       initialises par defaut à 0)
+        DO IVAR = 1, NVAR
+          DO IFAC = 1, NFABOR
+            RCODCL(IFAC,IVAR,1) = RINFIN
+          ENDDO
         ENDDO
 C
       ENDIF
