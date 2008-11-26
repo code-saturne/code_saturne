@@ -1,3 +1,8 @@
+* 26/11/2008 - David Monfort <david.monfort@edf.fr>
+  Replace a test by an equivalent but simpler one.
+  modified routine:
+    src/rayt/rayopt.F
+
 * 26/11/2008 - Marc Sakiz <marc.sakiz@edf.fr>
   Change the behaviour of the boundary conditions handling
   for the atmospheric module (let the user change the type
