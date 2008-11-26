@@ -269,9 +269,10 @@ C
       TPENT = 0.D0
 C
 C=======================================================================
-C 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO
+C 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI
+C                       ITYPFB N'A PAS ETE MODIFIE
 C                     VARIABLES TIREES DU PROFIL METEO SI
-C                     RCODCL(IFAC,IVAR,1) N'A PAS ETE MODIFIE
+C                       RCODCL(IFAC,IVAR,1) N'A PAS ETE MODIFIE
 C
 C       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 C                     =========================
@@ -284,6 +285,9 @@ C
 C
         IF (IPROFM(IZONE).EQ.1) THEN
 C
+C     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
+C       ete modifie. Il servira si la face est une face d'entree ou si c'est une
+C       face de sortie (si le flux est rentrant).
           ZENT=CDGFBO(3,IFAC)
 C
           CALL INTPRF
@@ -296,97 +300,96 @@ C         ===========
      &   (NBMETD, NBMETM,
      &    ZDPROM, TMPROM, VPROM , ZENT  , TTCABS, XVENT )
 C
-          VS = XUENT*SURFBO(1,IFAC) + XVENT*SURFBO(2,IFAC)
-C
-          IF (VS.GT.0) THEN
-C
-            DO IPHAS = 1, NPHAS
-C
-              ITYPFB(IFAC,IPHAS) = ISOLIB
-C
-            ENDDO
-C
-          ELSE
-C
-            CALL INTPRF
-C           ===========
+          CALL INTPRF
+C         ===========
      &   (NBMETD, NBMETM,
      &    ZDPROM, TMPROM, EKPROM, ZENT  , TTCABS, XKENT )
 C
-            CALL INTPRF
-C           ===========
+          CALL INTPRF
+C         ===========
      &   (NBMETD, NBMETM,
      &    ZDPROM, TMPROM, EPPROM, ZENT  , TTCABS, XEENT )
 
-            CALL INTPRF
-C           ===========
+          CALL INTPRF
+C         ===========
      &   (NBMETT, NBMETM,
      &    ZTPROM, TMPROM, TPPROM, ZENT  , TTCABS, TPENT )
 C
-            DO IPHAS = 1, NPHAS
+          DO IPHAS = 1, NPHAS
 C
-              ITYPFB(IFAC,IPHAS) = IENTRE
+            IF (RCODCL(IFAC,IU(IPHAS),1).GT.RINFIN*0.5D0)
+     &           RCODCL(IFAC,IU(IPHAS),1) = XUENT
+            IF (RCODCL(IFAC,IV(IPHAS),1).GT.RINFIN*0.5D0)
+     &           RCODCL(IFAC,IV(IPHAS),1) = XVENT
+            IF (RCODCL(IFAC,IW(IPHAS),1).GT.RINFIN*0.5D0)
+     &           RCODCL(IFAC,IW(IPHAS),1) = 0.D0
 C
-              IF (RCODCL(IFAC,IU(IPHAS),1).GT.RINFIN*0.5D0)
-     &             RCODCL(IFAC,IU(IPHAS),1) = XUENT
-              IF (RCODCL(IFAC,IV(IPHAS),1).GT.RINFIN*0.5D0)
-     &             RCODCL(IFAC,IV(IPHAS),1) = XVENT
-              IF (RCODCL(IFAC,IW(IPHAS),1).GT.RINFIN*0.5D0)
-     &             RCODCL(IFAC,IW(IPHAS),1) = 0.D0
+            IF    (ITYTUR(IPHAS).EQ.2) THEN
 C
-              IF    (ITYTUR(IPHAS).EQ.2) THEN
+              IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IK(IPHAS),1) = XKENT
+              IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IEP(IPHAS),1) = XEENT
 C
-                IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IK(IPHAS),1) = XKENT
-                IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IEP(IPHAS),1) = XEENT
+            ELSEIF(ITYTUR(IPHAS).EQ.3) THEN
 C
-              ELSEIF(ITYTUR(IPHAS).EQ.3) THEN
+              IF (RCODCL(IFAC,IR11(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR11(IPHAS),1) = D2S3*XKENT
+              IF (RCODCL(IFAC,IR22(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR22(IPHAS),1) = D2S3*XKENT
+              IF (RCODCL(IFAC,IR33(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR33(IPHAS),1) = D2S3*XKENT
+              IF (RCODCL(IFAC,IR12(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR12(IPHAS),1) = 0.D0
+              IF (RCODCL(IFAC,IR13(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR13(IPHAS),1) = 0.D0
+              IF (RCODCL(IFAC,IR23(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IR23(IPHAS),1) = 0.D0
+              IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IEP(IPHAS),1) = XEENT
 C
-                IF (RCODCL(IFAC,IR11(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR11(IPHAS),1) = D2S3*XKENT
-                IF (RCODCL(IFAC,IR22(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR22(IPHAS),1) = D2S3*XKENT
-                IF (RCODCL(IFAC,IR33(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR33(IPHAS),1) = D2S3*XKENT
-                IF (RCODCL(IFAC,IR12(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR12(IPHAS),1) = 0.D0
-                IF (RCODCL(IFAC,IR13(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR13(IPHAS),1) = 0.D0
-                IF (RCODCL(IFAC,IR23(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IR23(IPHAS),1) = 0.D0
-                IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IEP(IPHAS),1) = XEENT
+            ELSEIF(ITURB(IPHAS).EQ.50) THEN
 C
-              ELSEIF(ITURB(IPHAS).EQ.50) THEN
+              IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IK(IPHAS),1) = XKENT
+              IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IEP(IPHAS),1) = XEENT
+              IF (RCODCL(IFAC,IPHI(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IPHI(IPHAS),1) = D2S3
+              IF (RCODCL(IFAC,IFB(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IFB(IPHAS),1) = 0.D0
 C
-                IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IK(IPHAS),1) = XKENT
-                IF (RCODCL(IFAC,IEP(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IEP(IPHAS),1) = XEENT
-                IF (RCODCL(IFAC,IPHI(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IPHI(IPHAS),1) = D2S3
-                IF (RCODCL(IFAC,IFB(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IFB(IPHAS),1) = 0.D0
+            ELSEIF(ITURB(IPHAS).EQ.60) THEN
 C
-              ELSEIF(ITURB(IPHAS).EQ.60) THEN
-C
-                IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IK(IPHAS),1) = XKENT
-                IF (RCODCL(IFAC,IOMG(IPHAS),1).GT.RINFIN*0.5D0)
-     &               RCODCL(IFAC,IOMG(IPHAS),1) = XEENT/CMU/XKENT
-C
-              ENDIF
-C
-            ENDDO
-C
-            IF (NSCAL.GE.1) THEN
-C
-              IF (RCODCL(IFAC,ISCA(1),1).GT.RINFIN*0.5D0)
-     &             RCODCL(IFAC,ISCA(1),1) = TPENT
+              IF (RCODCL(IFAC,IK(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IK(IPHAS),1) = XKENT
+              IF (RCODCL(IFAC,IOMG(IPHAS),1).GT.RINFIN*0.5D0)
+     &             RCODCL(IFAC,IOMG(IPHAS),1) = XEENT/CMU/XKENT
 C
             ENDIF
 C
+          ENDDO
+C
+          IF (NSCAL.GE.1) THEN
+C
+            IF (RCODCL(IFAC,ISCA(1),1).GT.RINFIN*0.5D0)
+     &           RCODCL(IFAC,ISCA(1),1) = TPENT
+C
+          ENDIF
+C
+C     On met a jour le type de face de bord s'il n'a pas ete specifie
+C       par l'utilisateur
+C
+          VS = XUENT*SURFBO(1,IFAC) + XVENT*SURFBO(2,IFAC)
+C
+          IF (VS.GT.0) THEN
+            DO IPHAS = 1, NPHAS
+              IF (ITYPFB(IFAC,IPHAS).EQ.0) ITYPFB(IFAC,IPHAS) = ISOLIB
+            ENDDO
+          ELSE
+            DO IPHAS = 1, NPHAS
+              IF (ITYPFB(IFAC,IPHAS).EQ.0) ITYPFB(IFAC,IPHAS) = IENTRE
+            ENDDO
           ENDIF
 C
         ENDIF

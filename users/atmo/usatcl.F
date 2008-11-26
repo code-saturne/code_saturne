@@ -618,6 +618,7 @@ C=======================================================================
 C
 C
 C --- On impose en couleur 11 une condition basee sur le profil meteo
+C       avec choix automatique entre entree et sortie a partir du profil
 C
       CALL GETFBR('11',NLELT,LSTELT)
 C
@@ -637,16 +638,40 @@ C         du profil meteo
 C
       ENDDO
 C
-C --- On impose en couleur 21 une condition basee sur le profil meteo
-C       sauf pour les variables dynamiques sur lesquelles on impose un
-C       profil analytique rugueux
-C       (le profil meteo sera neanmoins utilise pour differencier les
-C        faces d'entree des faces de sortie)
+C --- On impose en couleur 21 une condition d'entree avec des valeurs
+C       tirees du profil meteo
 C
       CALL GETFBR('21',NLELT,LSTELT)
 C
 C   - Numero de zone (on numerote de 1 a n)
       IZONE = 2
+C
+      DO ILELT = 1, NLELT
+C
+        IFAC = LSTELT(ILELT)
+C
+C     - Reperage de la zone a laquelle appartient la face
+        IZFPPP(IFAC) = IZONE
+C
+C     - On indique que les conditions a la limite seront tirees
+C         du profil meteo
+        IPROFM(IZONE) = 1
+C
+C     - On force les faces a etre des faces d'entree
+        DO IPHAS = 1, NPHAS
+          ITYPFB(IFAC,IPHAS) = IENTRE
+        ENDDO
+C
+      ENDDO
+C
+C --- On impose en couleur 31 une condition d'entree avec des valeurs
+C       tirees du profil meteo, sauf pour les variables dynamiques sur
+C       lesquelles on impose un profil analytique rugueux
+C
+      CALL GETFBR('31',NLELT,LSTELT)
+C
+C   - Numero de zone (on numerote de 1 a n)
+      IZONE = 3
 C
       DO ILELT = 1, NLELT
 C
@@ -666,6 +691,8 @@ C
 C
 
         DO IPHAS = 1, NPHAS
+C
+          ITYPFB(IFAC,IPHAS) = IENTRE
 C
           RCODCL(IFAC,IU(IPHAS),1) = XUENT
           RCODCL(IFAC,IV(IPHAS),1) = XVENT
@@ -710,7 +737,7 @@ C --- On impose en couleur 12 une sortie pour toutes les phases
 C     ===========
 C
 C   - Numero de zone (on numerote de 1 a n)
-      IZONE = 3
+      IZONE = 4
 C
       DO ILELT = 1, NLELT
 C
@@ -735,7 +762,7 @@ C --- On impose en couleur 15 une paroi rugueuse pour toutes les phases
 C     ===========
 C
 C   - Numero de zone (on numerote de 1 a n)
-      IZONE = 4
+      IZONE = 5
 C
       DO ILELT = 1, NLELT
 C
@@ -778,7 +805,7 @@ C --- On impose en couleur 4 une symetrie pour toutes les phases
 C     ===========
 C
 C   - Numero de zone (on numerote de 1 a n)
-      IZONE = 5
+      IZONE = 6
 C
       DO ILELT = 1, NLELT
 C

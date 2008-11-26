@@ -1,3 +1,12 @@
+* 26/11/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Change the behaviour of the boundary conditions handling
+  for the atmospheric module (let the user change the type
+  of boundary condition even when a meteo profile file is
+  read).
+  modified routines:
+    src/atmo/attycl.F
+    users/atmo/usatcl.F
+
 * 26/11/2008 - David Monfort <david.monfort@edf.fr>
   Add missing modifications for the atmospheric modelling.
   Without this patch, the code does not compile.
