@@ -2,9 +2,6 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
-CVERS
-C
-C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
