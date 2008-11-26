@@ -228,7 +228,9 @@ C       ICHRVL : Post traitement du domaine fluide
 C         (1 oui, 0 non)
 C       ICHRBO : Post traitement du bord du domaine
 C         (1 oui, 0 non)
-C       ICHRSY : Post traitement des zones couplees avec Syrthes
+C       ICHRSY : Post traitement des zones couplees avec SYRTHES
+C         (1 oui, 0 non)
+C       ICHRZE: Post traitement des zones d'échange aerorefrigerants
 C         (1 oui, 0 non)
 C
 C       ICHRMD : indique si les maillages ecrits seront :
@@ -249,6 +251,7 @@ C
       ICHRVL = 1
       ICHRBO = 0
       ICHRSY = 0
+      ICHRZE = 0
 C
       ICHRMD = 0
       NTCHR  = -1

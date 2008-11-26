@@ -223,7 +223,13 @@ C
       IF ( IPPMOD(IATMOS).GE.0 ) NSCAPP = 0
 C
 C=======================================================================
-C 7. VERIFICATION : UNE SEULE PHASE
+C 8. MODELISATION DES AEROREFRIGERANTS (IAEROS)
+C=======================================================================
+C
+      IF ( IPPMOD(IAEROS).GE.0 ) NSCAPP = 2
+C
+C=======================================================================
+C 9. VERIFICATION : UNE SEULE PHASE
 C=======================================================================
 C
       IOK = 0

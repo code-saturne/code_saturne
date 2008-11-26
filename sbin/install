@@ -244,8 +244,8 @@ Macro_readme_comp=$2
 # ==========================================
 #
 # List of all the modules (Special treatment for DOC)
- listemodall="BASE ATMO CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
- listemoddef="BASE ATMO CFBL COGZ CPLV ELEC FUEL LAGR MATI RAYT"
+ listemodall="BASE ATMO CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT"
+ listemoddef="BASE ATMO CFBL COGZ CPLV CTWR ELEC FUEL LAGR MATI RAYT"
 #
 # List of all the options
  listeoptall="LO DBG PROF"

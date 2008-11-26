@@ -27,19 +27,17 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE  INIPST
-C                       ******************
+                        SUBROUTINE CTVARP
+C                       *****************
 C     -------------------------------------------------------------
-     & ( IPSTVL , IPSTBO , IPSTSY , IPSTZE,
-     &   IPSTMD , NTPST  , FMTPST , OPTPST )
 C     -------------------------------------------------------------
 C***********************************************************************
-C FONCTION :
-C --------
+C  FONCTION  :
+C  ---------
 c@foncb
 CFONC
-CFONC  RENVOIE LES PARAMETRES CONTENUS DANS LES COMMONS ET UTILES
-CFONC  A L'INITIALISATION DU POST-TRAITEMENT
+CFONC       INIT DES POSITIONS DES VARIABLES POUR LE MODULE AEROS
+CFONC  REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -48,25 +46,6 @@ c@argub
 CARGU .______________.____._____.______________________________________.
 CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
-CARGU ! IPSTVL       ! E  ! <-  ! INDICATEUR POUR LE MAILLAGE VOLUMIQUE!
-CARGU ! IPSTBO       ! E  ! <-  ! INDICATEUR POUR LE MAILLAGE DE PEAU  !
-CARGU ! IPSTSY       ! E  ! <-  ! INDICATEUR POUR LES MAILLAGES DE     !
-CARGU !              !    !     !  PEAU COUPLES AVEC SYRTHES           !
-CARGU ! IPSTZE       ! E  ! <-  ! INDICATEUR POUR LES MAILLAGES DE     !
-CARGU !              !    !     !  ZONE D'ECHANGE AERO                 !
-CARGU ! IPSTMD       ! E  ! <-  ! INDICATEUR DE MAILLAGE DEFORMABLE :  !
-CARGU !              !    !     !  0 : PAS DE DEFORMATION ;            !
-CARGU !              !    !     !  1 : DEFORMATION A TOPOLOGIE CSTE    !
-CARGU !              !    !     !  2 : TOPOLOGIE VARIABLE              !
-CARGU !              !    !     ! 10 : IDEM QUE 0 AVEC ECRITURE D'UN   !
-CARGU !              !    !     !                      CHAMP DE DEPLACT!
-CARGU !              !    !     ! 11 : IDEM QUE 1 AVEC ECRITURE D'UN   !
-CARGU !              !    !     !                      CHAMP DE DEPLACT!
-CARGU !              !    !     ! 12 : IDEM QUE 2 AVEC ECRITURE D'UN   !
-CARGU !              !    !     !                      CHAMP DE DEPLACT!
-CARGU ! NTPST        ! E  ! <-  ! FREQUENCE DES SORTIES POST-TRAITEMENT!
-CARGU ! FMTPST       ! A  ! <-  ! NOM DU FORMAT DE POST-TRAITEMENT     !
-CARGU ! FMTPST       ! A  ! <-  ! OPTIONS DU FORMAT DE POST-TRAITEMENT !
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
@@ -87,50 +66,64 @@ C
       IMPLICIT NONE
 C
 C***********************************************************************
-C
-C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
+      INCLUDE "dimens.h"
+      INCLUDE "numvar.h"
+      INCLUDE "optcal.h"
+      INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
+      INCLUDE "cstnum.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "ppincl.h"
+      INCLUDE "ctincl.h"
 C
 C***********************************************************************
-C
-C ARGUMENTS
-C
-      INTEGER          IPSTVL , IPSTBO , IPSTSY , IPSTZE
-      INTEGER          IPSTMD , NTPST
-C
-      CHARACTER        FMTPST(32)
-      CHARACTER        OPTPST(96)
 C
 C VARIABLES LOCALES
 C
-      INTEGER          II
+      INTEGER        ISC, IPHAS
 C
 C***********************************************************************
+C=======================================================================
+C 1. DEFINITION DES POINTEURS
+C=======================================================================
 C
-C Transmission des paramètres du common Fortran à la partie C.
+C ---- Temperature
+      ITEMP4 = ISCAPP(1)
 C
-      IPSTVL = ICHRVL
-      IPSTBO = ICHRBO
-      IPSTSY = ICHRSY
-      IPSTZE = ICHRZE
+C ---- Humidite
+      IHUMID = ISCAPP(2)
 C
-      IPSTMD = ICHRMD
-      NTPST = NTCHR
 C
-      DO II = 1, LEN(FMTCHR)
-        FMTPST(II) = FMTCHR(II:II)
+C=======================================================================
+C 2. PROPRIETES PHYSIQUES
+C    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
+C      IPHSCA, IVISLS, ICP
+C=======================================================================
+C
+      DO ISC = 1, NSCAPP
+C
+        IF ( ISCAVR(ISCAPP(ISC)).LE.0 ) THEN
+C
+C ---- Notre physique particuliere est monophasique
+          IPHSCA(ISCAPP(ISC)) = 1
+C
+C ---- Viscosite dynamique moleculaire variable pour les
+C                                              scalaires ISCAPP(ISC)
+          IVISLS(ISCAPP(ISC)) = 0
+C
+        ENDIF
+C
       ENDDO
-      DO II = 1, LEN(OPTCHR)
-        OPTPST(II) = OPTCHR(II:II)
-      ENDDO
 C
-C***********************************************************************
+      IPHAS      = IPHSCA(ITEMP4)
+      ICP(IPHAS) = 1
 C
       RETURN
-C
       END
+C
 c@z

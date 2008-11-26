@@ -3827,6 +3827,7 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
  * INTEGER          IELION  --> ionique mobility
  * INTEGER          ICOMPF  --> compressible without shock
  * INTEGER          IATMOS  --> atmospheric flows
+ * INTEGER          IAEROS  --> cooling tower
  * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
  *                              tabulation is used. INDJON=1: users tabulation
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
@@ -3847,6 +3848,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const ielion,
                                int *const icompf,
                                int *const iatmos,
+                               int *const iaeros,
                                int *const indjon,
                                int *const ieqco2)
 {
@@ -3869,6 +3871,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   ippmod[*ielion - 1] = -1;
   ippmod[*icompf - 1] = -1;
   ippmod[*iatmos - 1] = -1;
+  ippmod[*iaeros - 1] = -1;
 
   *indjon = 1;
   *ieqco2 = 0;

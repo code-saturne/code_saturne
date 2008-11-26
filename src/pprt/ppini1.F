@@ -147,6 +147,13 @@ C
 C       ===========
       ENDIF
 C
+C ---> Physique particuliere : Aerorefrigerants
+C
+      IF ( IPPMOD(IAEROS).GE.0) THEN
+        CALL CTINI1
+C       ===========
+      ENDIF
+C
       RETURN
       END
 c@z

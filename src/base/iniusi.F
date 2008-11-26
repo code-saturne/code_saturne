@@ -222,7 +222,7 @@ C       ===========
      & ( IPPMOD, ICOD3P, ICODEQ, ICOEBU, ICOBML,
      &   ICOLWC, ICP3PL, ICPL3C, ICFUEL,
      &   IELJOU, IELARC, IELION, ICOMPF, IATMOS,
-     &   INDJON, IEQCO2)
+     &   IAEROS, INDJON, IEQCO2)
 C
       ENDIF
 C

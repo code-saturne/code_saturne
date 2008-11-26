@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,7 +30,7 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPVARP
+                        SUBROUTINE USCTI1
 C                       *****************
 C     -------------------------------------------------------------
 C     -------------------------------------------------------------
@@ -36,9 +39,6 @@ C  FONCTION  :
 C  ---------
 c@foncb
 CFONC
-CFONC  INIT DES POSITIONS DES VARIABLES SELON
-CFONC    LE TYPE DE PHYSIQUE PARTICULIERE
-CFONC  REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -77,70 +77,86 @@ C
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
       INCLUDE "cstnum.h"
+      INCLUDE "parall.h"
+      INCLUDE "period.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
-      INCLUDE "elincl.h"
+      INCLUDE "ctincl.h"
 C
 C***********************************************************************
 C
+      INTEGER          IPHAS
 C
 C***********************************************************************
 C
-C ---> Physique particuliere : Combustion Gaz
+C***********************************************************************
 C
-      IF (  IPPMOD(ICOD3P).GE.0 .OR. IPPMOD(ICOEBU).GE.0
-     &                          .OR. IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL COVARP
-C       ===========
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+C=======================================================================
+C 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
+C       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
+C       ET NON CELLE DE LA BIBLIOTHEQUE
+C=======================================================================
+C
+      IF(1.EQ.1) THEN
+        WRITE(NFECRA,9000)
+        CALL CSEXIT (1)
       ENDIF
 C
-C ---> Physique particuliere :  Combustion Charbon Pulverise
+ 9000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,
+     &'@    *********                                               ',/,
+     &'@                      MODULE AEROREFRIGERANTS               ',/,
+     &'@                                                            ',/,
+     &'@     LE SOUS-PROGRAMME UTILISATEUR usctin DOIT ETRE COMPLETE',/,
+     &'@                                                            ',/,
+     &'@     Ce sous-programme utilisateur permet de definir les    ',/,
+     &'@       options generales. Il est indispensable.             ',/,
+     &'@                                                            ',/,
+     &'@  Le calcul ne sera pas execute.                            ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
 C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPVARP
-C       ===========
-      ENDIF
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 C
-C ---> Physique particuliere :  Combustion Charbon Pulverise
-C      Couplee Transport Lagrangien des particules de charbon
+C=======================================================================
+C 1.  PARAMETRES POUR L'ECART DE TEMPERATURE IMPOSE
+C=======================================================================
 C
-      IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-        CALL CPLVAR
-C       ===========
-      ENDIF
+C     ACTIVATION
+      IAEERI = 0
 C
-C ---> Physique particuliere :  Combustion Fuel
+C     ECART DE REFRIGERATION A IMPOSER
+      VAEERI = 13.D0
 C
-      IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUVARP
-C       ===========
-      ENDIF
+C     FREQUENCE DE MODIFICATION DE LA TEMPERATURE
+      IAEERP = 5
 C
-C ---> Physique particuliere : Compressible
+C     PAS DE TEMPERATURE POUR LE CALCUL DE LA PENTE DE ECARTREF(TEAU)
+      PASERI = 0.015D0
 C
-      IF ( IPPMOD(ICOMPF).GE.0) THEN
-        CALL CFVARP
-C       ===========
-      ENDIF
+C     MAXIMUM DE LA TEMPERATURE D'EAU CHAUDE MOYENNE PONDEREE
+      AETEMX = 80.D0
 C
-C ---> Physique particuliere : Versions Electriques
+C     MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
+      AETEMN = 10.D0
 C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-        CALL ELVARP
-C       ===========
-      ENDIF
+C=======================================================================
+C 2.  POST-PROCESSING DES ZONES D'ECHANGES
+C=======================================================================
 C
-C ---> Physique particuliere : Aerorefrigerants
+      ICHRZE = 1
 C
-      IF ( IPPMOD(IAEROS).GE.0 ) THEN
-        CALL CTVARP
-C       ===========
-      ENDIF
+C
+C----
+C FIN
+C----
 C
       RETURN
       END

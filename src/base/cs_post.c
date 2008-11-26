@@ -615,6 +615,8 @@ void CS_PROCF (inipst, INIPST)
  const cs_int_t  *const ichrbo,    /* --> indic. de post des faces de bord    */
  const cs_int_t  *const ichrsy,    /* --> indic. de post des faces de bord    */
                                    /*     couplées avec Syrthes               */
+ const cs_int_t  *const ichrze,    /* --> indic. de post des faces de bord    */
+                                   /*     zones d'echange aero    */
  const cs_int_t  *const ipstmd,    /* --> indic. de maillage déformable       */
                                    /*     0 : pas de déformation              */
                                    /*     1 : déformation des maillages post  */
@@ -2649,7 +2651,7 @@ void cs_post_init_pcp_writer
 {
   /* Valeurs par défaut */
 
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -2667,6 +2669,7 @@ void cs_post_init_pcp_writer
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
                            &indic_syr,
+                           &indic_ze,
                            &indic_mod,
                            &ntchr,
                            fmtchr,
@@ -2707,7 +2710,7 @@ void cs_post_init_pcp_maillages
 {
   /* Valeurs par défaut */
 
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -2722,6 +2725,7 @@ void cs_post_init_pcp_maillages
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
                            &indic_syr,
+                           &indic_ze,
                            &indic_mod,
                            &ntchr,
                            fmtchr,

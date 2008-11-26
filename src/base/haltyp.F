@@ -71,7 +71,11 @@ C***********************************************************************
 C
       INCLUDE "dimens.h"
       INCLUDE "paramx.h"
+      INCLUDE "cstphy.h"
       INCLUDE "optcal.h"
+      INCLUDE "ppppar.h"
+      INCLUDE "ppthch.h"
+      INCLUDE "ppincl.h"
 C
 C ARGUMENTS
 C
@@ -87,6 +91,8 @@ C
       DO II = 1, NPHSMX
         IF (ITURB(II).EQ.41) IVOSET = 1
       ENDDO
+C
+      IF (IPPMOD(IAEROS).GE.0) IVOSET = 1
 C
       RETURN
       END

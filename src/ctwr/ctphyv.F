@@ -27,7 +27,7 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPPHYV
+                        SUBROUTINE CTPHYV
 C                       *****************
 C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
@@ -36,7 +36,7 @@ C     -------------------------------------------------------------
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IZFPPP ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
@@ -50,8 +50,7 @@ C FONCTION :
 C --------
 c@foncb
 CFONC
-CFONC ROUTINE PHYSIQUE PARTICULIERE : REMPLISSAGE DES VARIABLES PHYSIQUES
-CFONC
+CFONC    REMPLISSAGE DES VARIABLES PHYSIQUES : Version Aerorefrigerants
 CFONC
 CFONC
 CFONC  ATTENTION :
@@ -60,7 +59,7 @@ CFONC
 CFONC
 CFONC  Il est INTERDIT de modifier la viscosite turbulente VISCT ici
 CFONC         ========
-CFONC   (une routine specifique ppvist devra etre creee)
+CFONC   (une routine specifique est dediee a cela : usvist)
 CFONC
 CFONC
 CFONC   Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
@@ -87,7 +86,7 @@ CFONC     grandeurs initialisees avant appel sont celles donnees
 CFONC       - dans usini1 :
 CFONC          . la masse volumique (initialisee a RO0(IPHAS))
 CFONC          . la viscosite       (initialisee a VISCL0(IPHAS))
-CFONC       - dans usppiv :
+CFONC       - dans usiniv :
 CFONC          . les variables de calcul  (initialisees a 0 par defaut
 CFONC              ou a la valeur donnee dans usiniv)
 CFONC
@@ -102,6 +101,8 @@ CFONC
 CFONC  On dispose des types de faces de bord au pas de temps
 CFONC    precedent (sauf au premier pas de temps, ou les tableaux
 CFONC    ITYPFB et ITRIFB n'ont pas ete renseignes)
+CFONC
+CFONC
 CFONC
 CFONC
 c@fonce
@@ -150,6 +151,8 @@ CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (NFABOR+1) !    !     !  (OPTIONNEL)                         !
 CARGU ! IBROM        ! TE !  -> ! INDICATEUR DE REMPLISSAGE DE ROMB    !
 CARGU !   (NPHMX   ) !    !     !                                      !
+CARGU ! IZFPPP       ! TE !  -> ! NUMERO DE ZONE DE LA FACE DE BORD    !
+CARGU ! (NFABOR)     !    !     !  POUR LE MODULE PHYS. PART.          !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -208,13 +211,11 @@ C
       INCLUDE "paramx.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
+      INCLUDE "cstnum.h"
       INCLUDE "cstphy.h"
       INCLUDE "entsor.h"
-      INCLUDE "pointe.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
 C
 C***********************************************************************
@@ -233,6 +234,7 @@ C
       INTEGER          IPRFML(NFML,NPRFML)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR), IBROM(NPHMX)
+      INTEGER          IZFPPP(NFABOR)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE), IA(*)
 C
       DOUBLE PRECISION XYZCEN(NDIM,NCELET)
@@ -249,13 +251,27 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA , IFINIA , IFINRA
-      INTEGER          IF3MAX, IW9    , IW10
+      INTEGER          IDEBIA, IDEBRA, IFINIA
+      INTEGER          IEL   , IPHAS
+      INTEGER          IPCROM, IPCVIS, IPCCP , IPCRAY
+      INTEGER          IPCVSL, ITH   , ISCAL , IVART, II
+      INTEGER          ICLVAR
+      INTEGER          IIII  , IPCSIG, IT
+      INTEGER          IESP  , IESP1 , IESP2 , MODE , ISRROM
+      INTEGER          MAXELT, ILS
+C
+      DOUBLE PRECISION TP    , DELT  , SOMPHI, VAL
+      DOUBLE PRECISION RHO   , R     , CPA   , CPE , CPV , DEL
+      DOUBLE PRECISION HV0 , HVTI , RHOJ , TTI , XXI,  XSATI , DXSATI
+      DOUBLE PRECISION RHO0 , T00 , P00 , T1
+C
+      INTEGER          IPASS
+      DATA             IPASS /0/
+      SAVE             IPASS
 C
 C***********************************************************************
-C
 C=======================================================================
-C 1. INITIALISATIONS
+C 0 - INITIALISATIONS A CONSERVER
 C=======================================================================
 C
 C --- Initialisation memoire
@@ -263,244 +279,51 @@ C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
+      IPASS = IPASS + 1
 C
 C=======================================================================
-C 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+C 1 - MASSE VOLUMIQUE
 C=======================================================================
 C
-C ---> Flamme de diffusion chimie 3 points
-C
-        IF ( IPPMOD(ICOD3P).GE.0 ) THEN
-C
-          CALL D3PPHY
-C         ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-        ENDIF
-C
-C ---> Flamme de diffusion chimie equilibre
-C
-C        IF ( IPPMOD(ICODEQ).GE.0 )
 C
 C
-C ---> Flamme de premelange : Modele EBU
+C=======================================================================
+C 2 - CHALEUR SPECIFIQUE
+C=======================================================================
 C
-        IF ( IPPMOD(ICOEBU).GE.0 ) THEN
 C
-          CALL EBUPHY
-C         ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RDEVEL , RTUSER , RA     )
-        ENDIF
+C=======================================================================
+C 3 - ON PASSE LA MAIN A L'UTILISATEUR
+C=======================================================================
 C
-C ---> Flamme de premelange : Modele BML
 C
-C        IF ( IPPMOD(ICOBML).GE.0 )
-C     &     CALL BMLPHY
 C
-C ---> Flamme de premelange : Modele LWC
+C La masse volumique au bord est traitee dans phyvar (recopie de la valeur
+C     de la cellule de bord).
 C
-        IF ( IPPMOD(ICOLWC).GE.0 ) THEN
+C--------
+C FORMATS
+C--------
 C
-           CALL LWCPHY
-C          ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET,NCEL,NFAC,NFABOR,NFML, NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR, NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS ,
-     &   NIDEVE , NRDEVE , NITUSE, NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR, IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR, NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER, IA     ,
-     &   XYZCEN, SURFAC, SURFBO,CDGFAC, CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA  , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3    , W4     ,
-     &   W5     , W6     , W7    , W8     ,
-     &   RDEVEL , RTUSER, RA     )
-        ENDIF
-C
-C ---> Flamme charbon pulverise
-C
-        IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-C
-          IFINIA = IDEBIA
-C
-          IF3MAX = IDEBRA
-          IW9    = IF3MAX + NCELET
-          IW10   = IW9    + NCELET
-          IFINRA = IW10   + NCELET
-          CALL RASIZE('PPPPHY',IFINRA)
-C
-           CALL CPPHYV
-C          ===========
-     & ( IFINIA , IFINRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   RA(IF3MAX),
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RA(IW9), RA(IW10),
-     &   RDEVEL , RTUSER , RA     )
-C
-         ENDIF
-C
-C ---> Flamme charbon pulverise couplee Transport Lagrangien
-C      des particules de charbon
-C
-        IF ( IPPMOD(ICPL3C).GE.0 ) THEN
-C
-           CALL CPLPHY
-C          ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-         ENDIF
-C
-C ---> Flamme fuel
-C
-        IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-C
-           CALL FUPHYV
-C          ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-         ENDIF
-C
-C ---> Compressible
-C
-        IF ( IPPMOD(ICOMPF).GE.0 ) THEN
-C
-           CALL CFPHYV
-C          ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-         ENDIF
-C
-C ---> Physique particuliere : Versions electriques
-C          Effet Joule
-C          Arc electrique
-C          Conduction ionique
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-C
-C     En Joule, on impose a l'utilisateur de programmer ses lois
-C        sur les proprietes (masse volumique , ...)
-C        Des exemples physiques sont fournis dans uselph.
-C     En arc electrique, on lit un fichier de donnees et on interpole.
-C
-        CALL ELPHYV
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     , W4     ,
-     &   W5     , W6     , W7     , W8     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-      ENDIF
-C
-C ---> Aerorefrigerants
-C
-      IF ( IPPMOD(IAEROS).GE.0 ) THEN
-C
-         CALL CTPHYV
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , NPHMX  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IBROM  , IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   W1     , W2     , W3     ,
-     &   RDEVEL , RTUSER , RA     )
-C
-      ENDIF
+ 1000 FORMAT(
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/,
+     &'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,
+     &'@    *********                                               ',/,
+     &'@    DONNEES DE CALCUL INCOHERENTES                          ',/,
+     &'@                                                            ',/,
+     &'@    Pour la phase ',I10                                      ,/,
+     &'@      usini1 indique que la chaleur specifique est uniforme ',/,
+     &'@        ICP(',I10   ,') = ',I10   ,' alors que              ',/,
+     &'@      usphyv impose une chaleur specifique variable.        ',/,
+     &'@                                                            ',/,
+     &'@    Le calcul ne sera pas execute.                          ',/,
+     &'@                                                            ',/,
+     &'@    Modifier usini1 ou usphyv.                              ',/,
+     &'@                                                            ',/,
+     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
+     &'@                                                            ',/)
 C
 C----
 C FIN

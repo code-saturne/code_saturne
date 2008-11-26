@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-20 18:28+0100\n"
+"POT-Creation-Date: 2008-11-26 19:13+0100\n"
 "PO-Revision-Date: 2008-11-20 18:39+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -630,20 +630,20 @@ msgstr "CSR, sym coeffs"
 msgid "CSR_sym"
 msgstr "CSR_sym"
 
-#: src/base/cs_calcium.c:163 src/base/cs_syr3_comm.c:893
+#: src/base/cs_calcium.c:175 src/base/cs_syr3_comm.c:893
 #, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
 
-#: src/base/cs_calcium.c:169 src/base/cs_syr3_comm.c:897
+#: src/base/cs_calcium.c:181 src/base/cs_syr3_comm.c:897
 msgid "    elements:\n"
 msgstr "    éléments :\n"
 
-#: src/base/cs_calcium.c:228
+#: src/base/cs_calcium.c:240
 msgid "    ..........   ............\n"
 msgstr "    ..........   ............\n"
 
-#: src/base/cs_calcium.c:276 src/base/cs_calcium.c:346
+#: src/base/cs_calcium.c:288 src/base/cs_calcium.c:358
 #, c-format
 msgid ""
 "\n"
@@ -652,7 +652,7 @@ msgstr ""
 "\n"
 "Composant %d [%p]:\n"
 
-#: src/base/cs_calcium.c:279 src/base/cs_calcium.c:349
+#: src/base/cs_calcium.c:291 src/base/cs_calcium.c:361
 #, c-format
 msgid ""
 "\n"
@@ -661,7 +661,7 @@ msgstr ""
 "\n"
 "Composant %d:\n"
 
-#: src/base/cs_calcium.c:281
+#: src/base/cs_calcium.c:293
 #, c-format
 msgid ""
 "Reading up to %d values of type %s, time_dependency %s\n"
@@ -670,7 +670,7 @@ msgstr ""
 "Lecture d'au plus %d valeurs de type %s, dep_temps %s\n"
 "              (temps min/max %f/%f, itération %d) ..."
 
-#: src/base/cs_calcium.c:311
+#: src/base/cs_calcium.c:323
 #, c-format
 msgid ""
 "[ok]\n"
@@ -679,7 +679,7 @@ msgstr ""
 "[ok]\n"
 "Lu            %d valeurs (temps min %f, itération %d).\n"
 
-#: src/base/cs_calcium.c:351
+#: src/base/cs_calcium.c:363
 #, c-format
 msgid ""
 "Writing %d values of type %s, time_dependency %s\n"
@@ -688,7 +688,7 @@ msgstr ""
 "Écriture de %d valeurs de type %s, dep_temps %s\n"
 "        (temps %f, itération %d) ..."
 
-#: src/base/cs_calcium.c:376
+#: src/base/cs_calcium.c:388
 msgid "[ok]\n"
 msgstr "[ok]\n"
 
@@ -872,13 +872,13 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3226 src/base/cs_gui.c:5727
+#: src/base/cs_gui.c:3226 src/base/cs_gui.c:5737
 #, c-format
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3244 src/base/cs_gui.c:5745 src/base/cs_gui.c:5982
-#: src/base/cs_gui.c:6106 src/base/cs_selector.c:239
+#: src/base/cs_gui.c:3244 src/base/cs_gui.c:5755 src/base/cs_gui.c:5992
+#: src/base/cs_gui.c:6116 src/base/cs_selector.c:239
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -937,46 +937,46 @@ msgstr ""
 msgid "Trouble with the allocated memory for the global variable 'vars'.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3889
+#: src/base/cs_gui.c:3895
 #, c-format
 msgid "Invalid coal model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3941
+#: src/base/cs_gui.c:3947
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4362
+#: src/base/cs_gui.c:4368
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4792
+#: src/base/cs_gui.c:4802
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4813
+#: src/base/cs_gui.c:4823
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4821
+#: src/base/cs_gui.c:4831
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5078 src/base/cs_gui.c:6477
+#: src/base/cs_gui.c:5088 src/base/cs_gui.c:6487
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5469 src/base/cs_gui_radiative_transfer.c:656
+#: src/base/cs_gui.c:5479 src/base/cs_gui_radiative_transfer.c:656
 #, c-format
 msgid "Name of variable %d was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:5552 src/base/cs_selector.c:311
+#: src/base/cs_gui.c:5562 src/base/cs_selector.c:311
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -989,12 +989,12 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5957 src/base/cs_gui.c:6139
+#: src/base/cs_gui.c:5967 src/base/cs_gui.c:6149
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6147
+#: src/base/cs_gui.c:6157
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1018,7 +1018,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6177
+#: src/base/cs_gui.c:6187
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1042,7 +1042,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6761 src/base/cs_gui_util.c:157
+#: src/base/cs_gui.c:6771 src/base/cs_gui_util.c:157
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -2139,7 +2139,7 @@ msgstr "Nombre de groupe(s): %i\n"
 msgid "Group: %s\n"
 msgstr "Groupe: %s\n"
 
-#: src/base/cs_mesh_solcom.c:379 src/base/cs_post.c:2748
+#: src/base/cs_mesh_solcom.c:379 src/base/cs_post.c:2752
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -2643,7 +2643,7 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
-#: src/base/cs_post.c:1377
+#: src/base/cs_post.c:1379
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -2652,7 +2652,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1386
+#: src/base/cs_post.c:1388
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -2661,7 +2661,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1494
+#: src/base/cs_post.c:1496
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -2669,7 +2669,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1500
+#: src/base/cs_post.c:1502
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -2678,7 +2678,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:1771
+#: src/base/cs_post.c:1773
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -2687,7 +2687,7 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:2588
+#: src/base/cs_post.c:2590
 #, c-format
 msgid ""
 "\n"
@@ -2708,11 +2708,11 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:2765
+#: src/base/cs_post.c:2769
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_post.c:2917
+#: src/base/cs_post.c:2921
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -2721,7 +2721,7 @@ msgstr ""
 "Le gestionnaire de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:2948
+#: src/base/cs_post.c:2952
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -2730,7 +2730,7 @@ msgstr ""
 "Le maillage de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:2977
+#: src/base/cs_post.c:2981
 msgid ""
 "The requested post-processing mesh number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -2738,7 +2738,7 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:2983
+#: src/base/cs_post.c:2987
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -2747,11 +2747,11 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:3503
+#: src/base/cs_post.c:3507
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:3580
+#: src/base/cs_post.c:3584
 msgid "parallel domain"
 msgstr ""
 
@@ -3498,7 +3498,9 @@ msgstr ""
 msgid ""
 "\n"
 "Extracting coupled mesh             ..."
-msgstr "\nExtraction du maillage couplé           ..."
+msgstr ""
+"\n"
+"Extraction du maillage couplé           ..."
 
 #: src/base/cs_syr4_coupling.c:345
 #, c-format
@@ -3531,7 +3533,9 @@ msgstr "Erreur lors de la projection du maillage extrait."
 msgid ""
 "\n"
 "Extracted mesh built of %lu elements.\n"
-msgstr "\nMaillage extrait composé de %lu éléments.\n"
+msgstr ""
+"\n"
+"Maillage extrait composé de %lu éléments.\n"
 
 #: src/base/cs_syr4_coupling.c:475
 #, c-format
@@ -3556,7 +3560,9 @@ msgstr ""
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
-msgstr "\nLibération des structures associées au couplage avec SYRTHES 4.\n"
+msgstr ""
+"\n"
+"Libération des structures associées au couplage avec SYRTHES 4.\n"
 
 #: src/base/cs_syr4_coupling.c:841
 #, c-format
@@ -3605,7 +3611,10 @@ msgid ""
 "\n"
 " ** Mesh located for SYRTHES coupling \"%d\".\n"
 "\n"
-msgstr "\n ** Localisation du maillage pour le couplage SYRTHES \"%d\".\n\n"
+msgstr ""
+"\n"
+" ** Localisation du maillage pour le couplage SYRTHES \"%d\".\n"
+"\n"
 
 #: src/base/cs_syr_coupling.c:191
 #, c-format
@@ -3645,7 +3654,8 @@ msgstr ""
 #: src/base/cs_syr_coupling.c:518
 #, c-format
 msgid "  SYRTHES coupling %d: initializing socket comunication ..."
-msgstr "Couplage SYRTHES %d : initialisation de la communication par sockets ..."
+msgstr ""
+"Couplage SYRTHES %d : initialisation de la communication par sockets ..."
 
 #: src/base/cs_syr_coupling.c:1086
 msgid ""

@@ -107,7 +107,8 @@ C --- SORTIES POST TRAITEMENT (via FVM)
 C
 C     ICHRVL : Post traitement du domaine fluide
 C     ICHRBO : Post traitement du bord du domaine
-C     ICHRSY : Post traitement des zones de bord couplees avec Syrthes
+C     ICHRSY : Post traitement des zones de bord couplees avec SYRTHES
+C     ICHRZE : Post traitement des zones d'echange aerorefrigerants
 C     ICHRMD : Indique si les maillages ecrits seront :
 C               0 : fixes,
 C               1 : deformables a topologie constante,
@@ -121,9 +122,9 @@ C     ICHRVR : on sort la variable (1) ou non (0) ou non initialise
 C     FMTCHR : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
 C     OPTCHR : options associees au format de sortie
 C
-      INTEGER           ICHRVL, ICHRBO, ICHRSY,
+      INTEGER           ICHRVL, ICHRBO, ICHRSY, ICHRZE,
      &                  ICHRMD, NTCHR , ICHRVR(NVPPMX)
-      COMMON / IEPOST / ICHRVL, ICHRBO, ICHRSY,
+      COMMON / IEPOST / ICHRVL, ICHRBO, ICHRSY, ICHRZE,
      &                  ICHRMD, NTCHR, ICHRVR
 C
       CHARACTER*32      FMTCHR

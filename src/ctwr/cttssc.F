@@ -27,21 +27,21 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPTSSC
+                        SUBROUTINE CTTSSC
 C                       *****************
 C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
+     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCKPDP , NCESMP ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , ITYPFB ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IDEVEL , ITUSER , IA     ,
+     &   IZFPPP , IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT , TSLAGR ,
+     &   SMBRS  , ROVSDT ,
      &   VISCF  , VISCB  , XAM    ,
      &   W1     , W2     , W3     , W4     , W5     ,
      &   W6     , W7     , W8     , W9     , W10    , W11    ,
@@ -52,34 +52,6 @@ C FONCTION :
 C ----------
 c@foncb
 CFONC
-CFONC ROUTINE PHYSIQUE PARTICULIERE
-CFONC ON PRECISE LES TERMES SOURCES POUR UN SCALAIRE PP
-CFONC    SUR UN PAS DE TEMPS
-CFONC
-CFONC ATTENTION : LE TRAITEMENT DES TERMES SOURCES EST DIFFERENT
-CFONC ---------   DE CELUI DE USTSSC.F
-CFONC
-CFONC ON RESOUT ROVSDT*D(VAR) = SMBRS
-CFONC
-CFONC ROVSDT ET SMBRS CONTIENNENT DEJA D'EVENTUELS TERMES SOURCES
-CFONC   UTILISATEUR. IL FAUT DONC LES INCREMENTER ET PAS LES
-CFONC   ECRASER
-CFONC
-CFONC POUR DES QUESTIONS DE STABILITE, ON NE RAJOUTE DANS ROVSDT
-CFONC   QUE DES TERMES POSITIFS. IL N'Y A PAS DE CONTRAINTE POUR
-CFONC   SMBRS
-CFONC
-CFONC DANS LE CAS D'UN TERME SOURCE EN CEXP + CIMP*VAR ON DOIT
-CFONC ECRIRE :
-CFONC           SMBRS  = SMBRS  + CEXP + CIMP*VAR
-CFONC           ROVSDT = ROVSDT + MAX(-CIMP,ZERO)
-CFONC
-CFONC ON FOURNIT ICI ROVSDT ET SMBRS (ILS CONTIENNENT RHO*VOLUME)
-CFONC     SMBRS en kg variable/s :
-CFONC      ex : pour la vitesse            kg m/s2
-CFONC           pour les temperatures      kg degres/s
-CFONC           pour les enthalpies        Joules/s
-CFONC     ROVSDT en kg /s
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -106,6 +78,7 @@ CARGU ! NVAR         ! E  !  -> ! NOMBRE TOTAL DE VARIABLES            !
 CARGU ! NSCAL        ! E  !  -> ! NOMBRE TOTAL DE SCALAIRES            !
 CARGU ! NPHAS        ! E  !  -> ! NOMBRE DE PHASES                     !
 CARGU ! NCEPDP       ! E  !  -> ! NOMBRE DE CELLULES AVEC PDC          !
+CARGU ! NCKPDP       ! E  !  -> ! NBR DE COEF DU TENSEUR DE PDC (3 OU 6!
 CARGU ! NCESMP       ! E  !  -> ! NOMBRE DE CELLULES A SOURCE DE MASSE !
 CARGU ! NIDEVE NRDEVE! E  !  -> ! LONGUEUR DE IDEVEL RDEVEL            !
 CARGU ! NITUSE NRTUSE! E  !  -> ! LONGUEUR DE ITUSER RTUSER            !
@@ -119,6 +92,7 @@ CARGU ! (NFABOR)     !    !     !                                      !
 CARGU ! IFMCEL       ! TE !  -> ! NUMERO DE FAMILLE D'UNE CELLULE      !
 CARGU ! (NCELET)     !    !     !                                      !
 CARGU ! IPRFML       ! TE !  -> ! PROPRIETES D'UNE FAMILLE             !
+CARGU ! ITYPFB(NFABOR! TE ! <-  ! TYPE DES FACES DE BORD               !
 CARGU ! NFML  ,NPRFML!    !     !                                      !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFAC)   !    !     !  FACE INTERNE DANS NODFAC (OPTIONNEL)!
@@ -132,6 +106,8 @@ CARGU ! ICEPDC(NCELET! TE !  -> ! NUMERO DES NCEPDP CELLULES AVEC PDC  !
 CARGU ! ICETSM(NCESMP! TE !  -> ! NUMERO DES CELLULES A SOURCE DE MASSE!
 CARGU ! ITYPSM       ! TE !  -> ! TYPE DE SOURCE DE MASSE POUR LES     !
 CARGU ! (NCESMP,NVAR)!    !     !  VARIABLES (cf. USTSMA)              !
+CARGU ! IZFPPP       ! TE ! <-  ! NUMERO DE ZONE DE LA FACE DE BORD    !
+CARGU ! (NFABOR)     !    !     !  POUR LE MODULE PHYS. PART.          !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -160,15 +136,13 @@ CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
 CARGU ! COEFA, COEFB ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! CKUPDC       ! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
-CARGU !  (NCEPDP,6)  !    !     !                                      !
+CARGU ! CKUPDC(NCEPDP! TR !  -> ! TABLEAU DE TRAVAIL POUR PDC          !
+CARGU !     , NCKPDP)!    !     !                                      !
 CARGU ! SMACEL       ! TR !  -> ! VALEUR DES VARIABLES ASSOCIEE A LA   !
 CARGU ! (NCESMP,*   )!    !     !  SOURCE DE MASSE                     !
 CARGU !              !    !     !  POUR IVAR=IPR, SMACEL=FLUX DE MASSE !
 CARGU ! SMBRS(NCELET)! TR ! <-  ! SECOND MEMBRE EXPLICITE              !
 CARGU ! ROVSDT(NCELET! TR ! <-  ! PARTIE DIAGONALE IMPLICITE           !
-CARGU ! TSLAGR       ! TR !  -> ! TERME DE COUPLAGE RETOUR DU          !
-CARGU !(NCELET,*)    !    !     !     LAGRANGIEN                       !
 CARGU ! VISCF(NFAC)  ! TR !  -  ! TABLEAU DE TRAVAIL    FACES INTERNES !
 CARGU ! VISCB(NFABOR ! TR !  -  ! TABLEAU DE TRAVAIL    FACES DE BORD  !
 CARGU ! XAM(NFAC,2)  ! TR !  -  ! TABLEAU DE TRAVAIL    FACES DE BORD  !
@@ -206,14 +180,12 @@ C
       INCLUDE "optcal.h"
       INCLUDE "cstphy.h"
       INCLUDE "cstnum.h"
-      INCLUDE "pointe.h"
+      INCLUDE "parall.h"
+      INCLUDE "period.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
       INCLUDE "ppincl.h"
-      INCLUDE "lagpar.h"
-      INCLUDE "lagran.h"
+      INCLUDE "ctincl.h"
 C
 C***********************************************************************
 C
@@ -224,17 +196,18 @@ C
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
       INTEGER          NVAR   , NSCAL  , NPHAS
-      INTEGER          NCEPDP , NCESMP
+      INTEGER          NCEPDP , NCKPDP , NCESMP
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
       INTEGER          ISCAL
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
       INTEGER          IFMFBR(NFABOR) , IFMCEL(NCELET)
-      INTEGER          IPRFML(NFML,NPRFML)
+      INTEGER          IPRFML(NFML,NPRFML) , ITYPFB(NFABOR,NPHAS)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
       INTEGER          ICEPDC(NCEPDP)
       INTEGER          ICETSM(NCESMP), ITYPSM(NCESMP,NVAR)
+      INTEGER          IZFPPP(NFABOR)
       INTEGER          IDEVEL(NIDEVE)
       INTEGER          ITUSER(NITUSE), IA(*)
 C
@@ -246,9 +219,8 @@ C
       DOUBLE PRECISION PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
-      DOUBLE PRECISION CKUPDC(NCEPDP,6), SMACEL(NCESMP,NVAR)
+      DOUBLE PRECISION CKUPDC(NCEPDP,NCKPDP), SMACEL(NCESMP,NVAR)
       DOUBLE PRECISION SMBRS(NCELET), ROVSDT(NCELET)
-      DOUBLE PRECISION TSLAGR(NCELET,*)
       DOUBLE PRECISION VISCF(NFAC), VISCB(NFABOR)
       DOUBLE PRECISION XAM(NFAC,2)
       DOUBLE PRECISION W1(NCELET), W2(NCELET), W3(NCELET)
@@ -259,10 +231,14 @@ C
 C
 C VARIABLES LOCALES
 C
+      CHARACTER*80     CHAINE
       INTEGER          IDEBIA, IDEBRA
+      INTEGER          IVAR , IEL
+      INTEGER          IPCDC1, IPCDC2, IPCDC3
+      INTEGER          IPCEFJ
+      DOUBLE PRECISION VALMIN,VALMAX
 C
 C***********************************************************************
-C
 C=======================================================================
 C 1. INITIALISATION
 C=======================================================================
@@ -270,196 +246,33 @@ C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
+C --- Numero du scalaire a traiter : ISCAL
+C
+C --- Numero de la variable associee au scalaire a traiter ISCAL
+      IVAR = ISCA(ISCAL)
+C
+C --- Nom de la variable associee au scalaire a traiter ISCAL
+      CHAINE = NOMVAR(IPPRTP(IVAR))
+C
 C
 C=======================================================================
-C 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+C 2. PRISE EN COMPTE DES TERMES SOURCES ET VARIABLES STANDARDS
 C=======================================================================
 C
-C ---> Flamme de premelange : Modele EBU
 C
-      IF ( IPPMOD(ICOEBU).GE.0 ) THEN
-        CALL EBUTSS
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
+C--------
+C FORMATS
+C--------
+C
+ 1000 FORMAT(
+     &'  Calcul des termes sources pour la variable : ',A8             )
 C
 C
-C ---> Flamme de premelange : Modele BML
-C
-C      IF ( IPPMOD(ICOBML).GE.0 )
-C           CALL BMLTSS
-C
-C ---> Flamme de premelange : Modele LWC
-C
-      IF ( IPPMOD(ICOLWC).GE.0 ) THEN
-        CALL LWCTSS
-C       ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Flamme charbon pulverise
-C
-      IF ( IPPMOD(ICP3PL).GE.0 ) THEN
-        CALL CPTSSC
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , IA(IITYPF)      ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Flamme charbon pulverise couplee Transport Lagrangien
-C      des particules de charbon
-C
-      IF ( IPPMOD(ICPL3C).GE.0 .AND. IILAGR.EQ.2 ) THEN
-        CALL CPLTSS
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , IA(IITYPF)      ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT , TSLAGR ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Flamme fuel
-C
-      IF ( IPPMOD(ICFUEL).GE.0 ) THEN
-        CALL FUTSSC
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , IA(IITYPF)      ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Versions electriques :
-C             Effet Joule
-C             Arc Electrique
-C             Conduction ionique
-C
-      IF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-         CALL ELTSSC
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , IA(IITYPF)      ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
-C
-C ---> Version aerorefrigerant :
-C
-      IF ( IPPMOD(IAEROS).GE.0 ) THEN
-         CALL CTTSSC
-C        ===========
-     & ( IDEBIA , IDEBRA ,
-     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
-     &   NVAR   , NSCAL  , NPHAS  , NCEPDP , NCESMP ,
-     &   NIDEVE , NRDEVE , NITUSE , NRTUSE , ISCAL  ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , IA(IITYPF)      ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , ICEPDC , ICETSM , ITYPSM ,
-     &   IA(IIZFPP) ,
-     &   IDEVEL , ITUSER , IA     ,
-     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTPA   , RTP    , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  , CKUPDC , SMACEL ,
-     &   SMBRS  , ROVSDT ,
-     &   VISCF  , VISCB  , XAM    ,
-     &   W1     , W2     , W3     , W4     , W5     ,
-     &   W6     , W7     , W8     , W9     , W10    , W11    ,
-     &   RDEVEL , RTUSER , RA     )
-      ENDIF
 C
 C----
 C FIN
 C----
 C
       RETURN
-C
       END
 c@z

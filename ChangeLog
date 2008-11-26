@@ -1,4 +1,43 @@
 * 26/11/2008 - David Monfort <david.monfort@edf.fr>
+  Add stubs for cooling towers subroutines and preparation
+  of the cooling towers modelling integration.
+  added routines:
+    include/ctwr/ctincl.h
+    src/ctwr/ctini1.F
+    src/ctwr/ctiniv.F
+    src/ctwr/ctphyv.F
+    src/ctwr/cttssc.F
+    src/ctwr/ctvarp.F
+    users/ctwr/usctcl.F
+    users/ctwr/uscti1.F
+    users/ctwr/usctiv.F
+  modified scripts:
+    bin/Makefile
+    sbin/install
+  updated dictionnary:
+    po/fr.po
+  modified routines:
+    include/base/cs_gui.h
+    include/base/entsor.h
+    include/pprt/ppincl.h
+    src/base/cs_gui.c
+    src/base/cs_post.c
+    src/base/haltyp.F
+    src/base/iniini.F
+    src/base/inipst.F
+    src/base/iniusi.F
+    src/base/varpos.F
+    src/pprt/ppclim.F
+    src/pprt/ppcsca.F
+    src/pprt/ppini1.F
+    src/pprt/ppiniv.F
+    src/pprt/ppphyv.F
+    src/pprt/ppprcl.F
+    src/pprt/pptssc.F
+    src/pprt/ppvarp.F
+    users/pprt/usppmo.F
+
+* 26/11/2008 - David Monfort <david.monfort@edf.fr>
   Replace a test by an equivalent but simpler one.
   modified routine:
     src/rayt/rayopt.F
@@ -3738,3 +3777,34 @@
 
 ===========================================================================
 ===========================================================================
+    include/ctwr/ctincl.h
+    src/ctwr/ctini1.F
+    src/ctwr/ctiniv.F
+    src/ctwr/ctphyv.F
+    src/ctwr/cttssc.F
+    src/ctwr/ctvarp.F
+    users/ctwr/usctcl.F
+    users/ctwr/uscti1.F
+    users/ctwr/usctiv.F
+    bin/Makefile
+    include/base/cs_gui.h
+    include/base/entsor.h
+    include/pprt/ppincl.h
+    po/fr.po
+    sbin/install
+    src/base/cs_gui.c
+    src/base/cs_post.c
+    src/base/haltyp.F
+    src/base/iniini.F
+    src/base/inipst.F
+    src/base/iniusi.F
+    src/base/varpos.F
+    src/pprt/ppclim.F
+    src/pprt/ppcsca.F
+    src/pprt/ppini1.F
+    src/pprt/ppiniv.F
+    src/pprt/ppphyv.F
+    src/pprt/ppprcl.F
+    src/pprt/pptssc.F
+    src/pprt/ppvarp.F
+    users/pprt/usppmo.F

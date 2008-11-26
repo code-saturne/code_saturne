@@ -226,7 +226,8 @@ C               fichier parametrique
         IPPMOD(IPHPAR) = 0
         IF (NMODPP.GT.0) THEN
           IPPMOD(IPHPAR) = 1
-          IF (IPPMOD(ICOMPF).EQ.-1 .AND. IPPMOD(IATMOS).EQ.-1)
+          IF (IPPMOD(ICOMPF).EQ.-1 .AND. IPPMOD(IATMOS).EQ.-1
+     &                             .AND. IPPMOD(IAEROS).EQ.-1)
      &         IPPMOD(IPHPAR) = 2
         ENDIF
 C

@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -27,37 +30,95 @@ C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
 c@verse
-                        SUBROUTINE PPPRCL
+                        SUBROUTINE USCTIV
 C                       *****************
-C     --------------------------------------------------------------
+C     -------------------------------------------------------------
      & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NVAR   , NSCAL  , NPHAS  ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
      &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   ICODCL , IZFPPP ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   RCODCL , COEFU  ,
-     &   W1     , W2     , W3     , W4     , W5     , W6     ,
+     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
      &   RDEVEL , RTUSER , RA     )
-C     --------------------------------------------------------------
+C     -------------------------------------------------------------
 C***********************************************************************
 C FONCTION :
 C --------
 c@foncb
 CFONC
-CFONC     PREPARATION DU REMPLISSAGE DES CONDITIONS AUX LIMITES
+CFONC ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
+CFONC      POUR LA PHYSIQUE PARTICULIERE: VERSION ATMOSPHERIQUE
+CFONC      PENDANT DE USINIV
 CFONC
-CFONC            AIGUILLAGE SPECIFIQUE AUX PHYSIQUES PARTICULIERES
+CFONC  Cette routine est appelee en debut de calcul (suite ou non)
+CFONC      avant le debut de la boucle en temps
 CFONC
+CFONC  Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
+CFONC      les variables de calcul,
+CFONC      les valeurs du pas de temps
+CFONC
+CFONC
+CFONC  On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
+CFONC      ou relues d'un fichier suite
+CFONC  On ne dispose des variables VISCLS, CP (quand elles sont
+CFONC      definies) que si elles ont pu etre relues dans un fichier
+CFONC      suite de calcul
+CFONC
+CFONC  Les proprietes physiaues sont accessibles dans le tableau
+CFONC      PROPCE (prop au centre), PROPFA (aux faces internes),
+CFONC      PROPFB (prop aux faces de bord)
+CFONC      Ainsi,
+CFONC       PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
+CFONC       PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
+CFONC       PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
+CFONC       PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
+CFONC
+CFONC       PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
+CFONC
+CFONC       PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
+CFONC       PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
+CFONC
+CFONC
+CFONC
+CFONC
+CFONC
+CFONC  LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
+CFONC      SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
+CFONC      ET PAS ICI
+CFONC
+CFONC
+CFONC
+CFONC  POUR LA COMBUSTION, LE CHARBON, L'INITIALISATION EST FAITE
+CFONC    PAR DEFAUT : IL EST CONSEILLE DE LA CONSERVER.
+CFONC
+CFONC L'identification des cellules concernees peut s'appuyer sur la
+CFONC commande GETCEL.
+CFONC
+CFONC   GETCEL(CHAINE,NLELT,LSTELT) :
+CFONC   - CHAINE est une chaine de caractere fournie par l'utilisateur
+CFONC     qui donne les criteres de selection
+CFONC   - NLTELT est renvoye par la commande. C'est un entier qui
+CFONC     correspond au nombre de cellules trouveees repondant au
+CFONC     critere
+CFONC   - LSTELT est renvoye par la commande. C'est un tableau d'entiers
+CFONC     de taille NLTELT donnant la liste des cellules trouvees
+CFONC     repondant au critere.
+CFONC
+CFONC   CHAINE peut etre constitue de :
+CFONC   - references de couleurs (ex. : 1, 8, 26, ...
+CFONC   - references de groupes (ex. : entrees, groupe1, ...)
+CFONC   - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
+CFONC   Ces criteres peuvent etre combines par des operateurs logiques
+CFONC   (AND et OR) et des parentheses
+CFONC   ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
+CFONC   les cellules de couleur 1, appartenant aux groupes 'groupe2'
+CFONC   ou 'groupe3' et de coordonnee Y inferieure a 1.
 CFONC
 c@fonce
-C-----------------------------------------------------------------------
 C                             ARGUMENTS
 c@argub
 CARGU .______________.____._____.______________________________________.
@@ -92,6 +153,8 @@ CARGU ! IFMCEL       ! TE !  -> ! NUMERO DE FAMILLE D'UNE CELLULE      !
 CARGU ! (NCELET)     !    !     !                                      !
 CARGU ! IPRFML       ! TE !  -> ! PROPRIETES D'UNE FAMILLE             !
 CARGU ! NFML  ,NPRFML!    !     !                                      !
+CARGU ! MAXELT       !  E !  -> ! NB MAX D'ELEMENTS (CELL,FAC,FBR)     !
+CARGU ! LSTELT(MAXELT) TE !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFAC)   !    !     !  FACE INTERNE DANS NODFAC (OPTIONNEL)!
 CARGU ! NODFAC       ! TE !  -> ! CONNECTIVITE FACES INTERNES/NOEUDS   !
@@ -100,17 +163,6 @@ CARGU ! IPNFBR       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (LNDFBR)   !    !     !  FACE DE BORD DANS NODFBR (OPTIONNEL)!
 CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (NFABOR+1) !    !     !  (OPTIONNEL)                         !
-CARGU ! ICODCL       ! TE ! <-  ! CODE DE CONDITION LIMITES AUX FACES  !
-CARGU !  (NFABOR,NVAR!    !     !  DE BORD                             !
-CARGU !              !    !     ! = 1   -> DIRICHLET                   !
-CARGU !              !    !     ! = 3   -> DENSITE DE FLUX             !
-CARGU !              !    !     ! = 4   -> GLISSEMT ET U.n=0 (VITESSE) !
-CARGU !              !    !     ! = 5   -> FROTTEMT ET U.n=0 (VITESSE) !
-CARGU !              !    !     ! = 6   -> RUGOSITE ET U.n=0 (VITESSE) !
-CARGU !              !    !     ! = 9   -> ENTREE/SORTIE LIBRE (VITESSE!
-CARGU !              !    !     !  ENTRANTE EVENTUELLE     BLOQUEE     !
-CARGU ! IZFPPP       ! TE ! <-  ! NUMERO DE ZONE DE LA FACE DE BORD    !
-CARGU ! (NFABOR)     !    !     !  POUR LE MODULE PHYS. PART.          !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
@@ -128,33 +180,17 @@ CARGU ! XYZNOD       ! TR !  -> ! COORDONNES DES NOEUDS (OPTIONNEL)    !
 CARGU ! (NDIM,NNOD)  !    !     !                                      !
 CARGU ! VOLUME       ! TR !  -> ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET      !    !     !                                      !
-CARGU ! DT(NCELET)   ! TR !  -> ! PAS DE TEMPS                         !
-CARGU ! RTP, RTPA    ! TR !  -> ! VARIABLES DE CALCUL AU CENTRE DES    !
-CARGU ! (NCELET,*)   !    !     !    CELLULES (INSTANT COURANT OU PREC)!
+CARGU ! DT(NCELET)   ! TR ! <-> ! VALEUR DU PAS DE TEMPS               !
+CARGU ! RTP          ! TR ! <-> ! VARIABLES DE CALCUL AU CENTRE DES    !
+CARGU ! (NCELET,*)   !    !     !    CELLULES                          !
 CARGU ! PROPCE       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU ! (NCELET,*)   !    !     !    CELLULES                          !
-CARGU ! PROPFA       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
+CARGU ! PROPFA       ! TR ! <-> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFAC,*)    !    !     !    FACES INTERNES                    !
-CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
+CARGU ! PROPFB       ! TR ! <-> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! COEFA, COEFB ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
+CARGU ! COEFA COEFB  ! TR !  -> ! CONDITIONS AUX LIMITES AUX           !
 CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! RCODCL       ! TR ! <-  ! VALEUR DES CONDITIONS AUX LIMITES    !
-CARGU !  (NFABOR,NVAR!    !     !  AUX FACES DE BORD                   !
-CARGU !              !    !     ! RCODCL(1) = VALEUR DU DIRICHLET      !
-CARGU !              !    !     ! RCODCL(2) = VALEUR DU COEF. D'ECHANGE!
-CARGU !              !    !     !  EXT. (INFINIE SI PAS D'ECHANGE)     !
-CARGU !              !    !     ! RCODCL(3) = VALEUR DE LA DENSITE DE  !
-CARGU !              !    !     !  FLUX (NEGATIF SI GAIN) W/m2 OU      !
-CARGU !              !    !     !  HAUTEUR DE RUGOSITE (m) si ICODCL=6 !
-CARGU !              !    !     ! POUR LES VITESSES (VISTL+VISCT)*GRADU!
-CARGU !              !    !     ! POUR LA PRESSION             DT*GRADP!
-CARGU !              !    !     ! POUR LES SCALAIRES                   !
-CARGU !              !    !     !        CP*(VISCLS+VISCT/SIGMAS)*GRADT!
-CARGU ! COEFU        ! TR !  -  ! TAB DE TRAV                          !
-CARGU !  NFABOR,3    !    !     !  (VITESSE EN I'                 )    !
-CARGU ! W1,2,3,4,5,6 ! TR !  -  ! TABLEAUX DE TRAVAIL                  !
-CARGU !  (NCELET     !    !     !  (CALCUL DU GRADIENT DE PRESSION)    !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -182,24 +218,19 @@ C     DONNEES EN COMMON
 C***********************************************************************
 C
       INCLUDE "paramx.h"
+      INCLUDE "pointe.h"
       INCLUDE "numvar.h"
       INCLUDE "optcal.h"
       INCLUDE "cstphy.h"
-      INCLUDE "cstnum.h"
       INCLUDE "entsor.h"
-      INCLUDE "pointe.h"
+      INCLUDE "parall.h"
+      INCLUDE "period.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
-      INCLUDE "coincl.h"
-      INCLUDE "cpincl.h"
-      INCLUDE "fuincl.h"
       INCLUDE "ppincl.h"
-      INCLUDE "cfpoin.h"
-      INCLUDE "atincl.h"
+      INCLUDE "ctincl.h"
 C
 C***********************************************************************
-C
-C ARGUMENTS
 C
       INTEGER          IDBIA0 , IDBRA0
       INTEGER          NDIM   , NCELET , NCEL   , NFAC   , NFABOR
@@ -210,225 +241,89 @@ C
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
       INTEGER          IFMFBR(NFABOR) , IFMCEL(NCELET)
-      INTEGER          IPRFML(NFML,NPRFML)
+      INTEGER          IPRFML(NFML,NPRFML), MAXELT, LSTELT(MAXELT)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
-      INTEGER          ICODCL(NFABOR,NVAR)
-      INTEGER          IZFPPP(NFABOR)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE), IA(*)
 C
       DOUBLE PRECISION XYZCEN(NDIM,NCELET)
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
       DOUBLE PRECISION XYZNOD(NDIM,NNOD), VOLUME(NCELET)
-      DOUBLE PRECISION DT(NCELET), RTP(NCELET,*), RTPA(NCELET,*)
-      DOUBLE PRECISION PROPCE(NCELET,*)
+      DOUBLE PRECISION DT(NCELET), RTP(NCELET,*), PROPCE(NCELET,*)
       DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
       DOUBLE PRECISION COEFA(NFABOR,*), COEFB(NFABOR,*)
-      DOUBLE PRECISION RCODCL(NFABOR,NVAR,3)
-      DOUBLE PRECISION COEFU(NFABOR,3)
-      DOUBLE PRECISION W1(NCELET),W2(NCELET),W3(NCELET)
-      DOUBLE PRECISION W4(NCELET),W5(NCELET),W6(NCELET)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
 C
       INTEGER          IDEBIA, IDEBRA
-      INTEGER          IFAC, IZONE, ICHA, ICLAPC
-      INTEGER          IPHAS, IVAR
+      INTEGER          IEL, IUTILE, IPHAS
+      INTEGER          ILELT, NLELT
+C
+      DOUBLE PRECISION D2S3
 C
 C***********************************************************************
+C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
 C=======================================================================
-C 1.  INITIALISATIONS
+C
+      IF(1.EQ.1) THEN
+C       Indicateur de non passage dans le sous-programme
+        IUSINI = 0
+        RETURN
+      ENDIF
+C
+C=======================================================================
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+C
+C
+C=======================================================================
+C 1.  INITIALISATION VARIABLES LOCALES
 C=======================================================================
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
-C ---> Combustion gaz USEBUC
-C      Flamme de diffusion : chimie 3 points
+      D2S3 = 2.D0/3.D0
 C
-      IF ( IPPMOD(ICOD3P).GE.0 ) THEN
+C=======================================================================
+C 2. INITIALISATION DES INCONNUES :
+C      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+C=======================================================================
 C
-        DO IZONE = 1, NOZPPM
-          QIMP(IZONE)   = ZERO
-          IQIMP(IZONE)  = 0
-          IENTOX(IZONE) = 0
-          IENTFU(IZONE) = 0
+      IPHAS = 1
+C
+      IF (ISUITE.EQ.0) THEN
+C
+C   --- Initialisation de la temperature de l'air a 11 deg Celsius
+C                      de l'humidite de l'air a 0.0063
+C       pour toutes les cellules
+C
+        DO IEL = 1, NCEL
+C
+          RTP(IEL,ISCA(ITEMP4)) = 11.D0
+          RTP(IEL,ISCA(IHUMID)) = 0.0063D0
+C
         ENDDO
 C
-        TINOXY        = ZERO
-        TINFUE        = ZERO
+C   --- Initialisation de la temperature de l'air a 20 deg Celsius
+C                      de l'humidite de l'air a 0.012
+C                      de la vitesse
+C       uniquement pour les cellules de couleur 6
 C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
+        CALL GETCEL('6',NLELT,LSTELT)
+C       ===========
 C
-C ---> Combustion gaz USEBUC
-C      Flamme de premelange : modele EBU
+        DO ILELT = 1, NLELT
 C
-      ELSEIF ( IPPMOD(ICOEBU).GE.0 ) THEN
+          IEL = LSTELT(ILELT)
 C
-        DO IZONE = 1, NOZPPM
-          IQIMP(IZONE)  = 0
-          QIMP(IZONE)   = ZERO
-          ICALKE(IZONE) = 0
-          DH(IZONE)     = ZERO
-          XINTUR(IZONE) = ZERO
-          FMENT(IZONE)  = ZERO
-          TKENT(IZONE)  = ZERO
-          IENTGF(IZONE) = 0
-          IENTGB(IZONE) = 0
-        ENDDO
+          RTP(IEL,IU(IPHAS)) = -0.5D0
 C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
+          RTP(IEL,ISCA(ITEMP4)) = 20.D0
+          RTP(IEL,ISCA(IHUMID)) = 0.012D0
 C
-C
-C ---> Combustion charbon pulverise USCPCL
-C
-      ELSEIF ( IPPMOD(ICP3PL).GE.0 ) THEN
-C
-        DO IZONE = 1, NOZPPM
-          IQIMP(IZONE)  = 0
-          ICALKE(IZONE) = 0
-          IENTCP(IZONE) = 0
-          IENTAT(IZONE) = 0
-          DH(IZONE)     = ZERO
-          XINTUR(IZONE) = ZERO
-          QIMPAT(IZONE) = ZERO
-          TIMPAT(IZONE) = ZERO
-          DO ICHA = 1, NCHARM
-            QIMPCP(IZONE,ICHA) = ZERO
-            TIMPCP(IZONE,ICHA) = ZERO
-            DO ICLAPC = 1, NCPCMX
-              DISTCH(IZONE,ICHA,ICLAPC) = ZERO
-            ENDDO
-          ENDDO
-        ENDDO
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-C
-C ---> Combustion charbon pulverise couple Lagrangien USCPLC
-C
-      ELSEIF ( IPPMOD(ICPL3C).GE.0 ) THEN
-C
-        DO IZONE = 1, NOZPPM
-          IQIMP(IZONE)  = 0
-          ICALKE(IZONE) = 0
-          IENTAT(IZONE) = 0
-          DH(IZONE)     = ZERO
-          XINTUR(IZONE) = ZERO
-          QIMPAT(IZONE) = ZERO
-          TIMPAT(IZONE) = ZERO
-          DO ICHA = 1, NCHARM
-            QIMPCP(IZONE,ICHA) = ZERO
-          ENDDO
-        ENDDO
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-C
-C ---> Combustion fuel  USFUCL
-C
-      ELSEIF ( IPPMOD(ICFUEL).GE.0 ) THEN
-C
-        DO IZONE = 1, NOZPPM
-          IQIMP(IZONE)  = 0
-          ICALKE(IZONE) = 0
-          IENTAT(IZONE) = 0
-          DH(IZONE)     = ZERO
-          XINTUR(IZONE) = ZERO
-          QIMPAT(IZONE) = ZERO
-          TIMPAT(IZONE) = ZERO
-          IENTFL(IZONE) = 0
-          QIMPFL(IZONE) = ZERO
-          TIMPFL(IZONE) = ZERO
-        ENDDO
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-C
-C ---> Compressible
-C
-      ELSEIF ( IPPMOD(ICOMPF).GE.0 ) THEN
-C
-C     Zones
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-C
-C     Marqueur d'utilisation de Rusanov au bord (0 = non)
-C     Marqueur de flux conductif impose au bord (0 = non)
-        DO IPHAS = 1, NPHAS
-          DO IFAC = 1, NFABOR
-            IA(IIFBRU+IFAC-1+(IPHAS-1)*NFABOR) = 0
-            IA(IIFBET+IFAC-1+(IPHAS-1)*NFABOR) = 0
-          ENDDO
-        ENDDO
-C
-C     Flux de Rusanov au bord pour Qdm et E
-        DO IPHAS = 1, NPHAS
-          DO IFAC = 1, NFABOR
-            PROPFB(IFAC,IPPROB(IFBRHU(IPHAS))) = 0.D0
-            PROPFB(IFAC,IPPROB(IFBRHV(IPHAS))) = 0.D0
-            PROPFB(IFAC,IPPROB(IFBRHW(IPHAS))) = 0.D0
-            PROPFB(IFAC,IPPROB(IFBENE(IPHAS))) = 0.D0
-          ENDDO
-        ENDDO
-C
-C     Initialisation des RCODCL(IFAC,.,1) à -RINFIN
-C       pour savoir si l'utilisateur les a modifies (ils sont
-C       initialises par defaut à 0)
-        DO IVAR = 1, NVAR
-          DO IFAC = 1, NFABOR
-            RCODCL(IFAC,IVAR,1) =-RINFIN
-          ENDDO
-        ENDDO
-C
-C ---> Version electrique
-C      Effet Joule
-C      Conduction ionique
-C
-      ELSEIF ( IPPMOD(IELJOU).GE.1 .OR.
-     &     IPPMOD(IELARC).GE.1 .OR.
-     &     IPPMOD(IELION).GE.1       ) THEN
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-C
-C ---> Version ecoulements atmospheriques
-C
-      ELSEIF ( IPPMOD(IATMOS).GE.0  ) THEN
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
-        ENDDO
-        DO IZONE = 1, NOZPPM
-          IPROFM(IZONE) = 0
-        ENDDO
-C
-C     Initialisation des RCODCL(IFAC,.,1) à RINFIN
-C       pour savoir si l'utilisateur les a modifies (ils sont
-C       initialises par defaut à 0)
-        DO IVAR = 1, NVAR
-          DO IFAC = 1, NFABOR
-            RCODCL(IFAC,IVAR,1) = RINFIN
-          ENDDO
-        ENDDO
-C
-C ---> Version aerorefrigerants
-C
-      ELSEIF ( IPPMOD(IAEROS).GE.0 ) THEN
-C
-        DO IFAC = 1, NFABOR
-          IZFPPP(IFAC) = 0
         ENDDO
 C
       ENDIF
@@ -436,7 +331,6 @@ C
 C----
 C FORMATS
 C----
-C
 C
 C----
 C FIN

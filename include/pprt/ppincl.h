@@ -71,11 +71,14 @@ C
 C ---- Modele atmospherique
       INTEGER  IATMOS
 C
+C ---- Modele aerorefrigerants
+      INTEGER  IAEROS
+C
       PARAMETER       (IPHPAR = 1 , ICOD3P = 2 , ICODEQ = 3 ,
      &                 ICOEBU = 4 , ICOBML = 5 , ICOLWC = 6 ,
      &                 ICP3PL = 7 , ICPL3C = 8 , ICFUEL = 9 ,
      &                 IELJOU = 10, IELARC = 11, IELION = 12,
-     &                 ICOMPF = 13, IATMOS = 14)
+     &                 ICOMPF = 13, IATMOS = 14, IAEROS = 15)
 C
 C--> MODULE RAYONNEMEMT
 C    IRAYPP =  0 : pas de rayonnement
@@ -229,9 +232,17 @@ C
       COMMON / IPOBCF/  IFBRHU         , IFBRHV         ,
      &                  IFBRHW         , IFBENE
 C
+C
+C--> POINTEURS AEROREFRIGERANTS
+C
+C ---- Variables transportees
+      INTEGER ITEMP4, IHUMID
+C
+C
 C--> POINTEUR RELATIF A LA VARIABLE ENTHALPIE
 C
       INTEGER IHM
+C
 C
 C--> REMPLISSAGE COMMON RAYONNEMENT
 C
@@ -283,7 +294,9 @@ C ---- Rayonnement
      &                  ILUMI,
 C ---- Versions electriques
      &                  IEFJOU, ILAPLA , IQELEC ,
-     &                  IDJR  , IDJI   , IDRAD
+     &                  IDJR  , IDJI   , IDRAD  ,
+C ---- Version aerorefrigerant
+     &                  ITEMP4, IHUMID
 C
 C--> Modele de flamme de premelange LWC
 C

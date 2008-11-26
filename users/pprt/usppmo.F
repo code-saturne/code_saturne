@@ -240,10 +240,16 @@ C
       IPPMOD(IELION) = -1
 C
 C----- ATMOS ecoulements atmospheriques
-C      ==========
 C        si = -1   modele non utilise
 C        si = 0    modele active
       IPPMOD(IATMOS) = -1
+C 
+C----- Aerorefrigerants (cooling tower)
+C        si = -1   non utilise
+C        si = 0    active sans modele
+C        si = 1    active avec modele de Poppe
+C        si = 2    active avec modele de Merkel
+      IPPMOD(IAEROS) = -1
 C
 C=======================================================================
 C 2.  CHOIX DU FICHIER THERMOCHIMIE DANS LE CAS DE LA COMBUSTION GAZ

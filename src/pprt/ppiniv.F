@@ -411,6 +411,26 @@ C       ===========
 C
       ENDIF
 C
+C ---> Ecoulements aerorefrigerants
+C
+      IF ( IPPMOD(IAEROS).GE.0 ) THEN
+C
+        CALL CTINIV
+C       ===========
+     & ( IDEBIA , IDEBRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
+     &   NVAR   , NSCAL  , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   DT     , RTP    , PROPCE , PROPFA , PROPFB , COEFA  , COEFB  ,
+     &   RDEVEL , RTUSER , RA     )
+C
+      ENDIF
+C
 C----
 C FORMATS
 C----
