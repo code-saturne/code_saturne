@@ -239,7 +239,8 @@ C     Si physique classique ou particuliere sans fichier paramétrique
 C       et IRAYON pas modifie dans USRAY1
 C       IRAYON(IPHAS) = 0 (pas de rayonnement).
 C
-      IF( IPPMOD(IPHPAR).EQ.0 .OR. IPPMOD(ICOMPF).NE.-1 ) THEN
+      IF( IPPMOD(IPHPAR).EQ.0 .OR. IPPMOD(ICOMPF).NE.-1 .OR.
+     &     IPPMOD(IATMOS).NE.-1) THEN
 C
         DO IPHAS = 1, NPHAS
           IF(IRAYON(IPHAS).EQ.-1) THEN

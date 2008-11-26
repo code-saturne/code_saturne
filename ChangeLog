@@ -1,3 +1,12 @@
+* 26/11/2008 - David Monfort <david.monfort@edf.fr>
+  Add missing modifications for the atmospheric modelling.
+  Without this patch, the code does not compile.
+  modified routines:
+    include/pprt/ppincl.h
+    src/base/caltri.F
+    src/base/varpos.F
+    src/rayt/rayopt.F
+
 * 25/11/2008 - Maya Milliez <maya.milliez@edf.fr>
                Bertrand Carissimo <bertrand.carissimo@edf.fr>
                Marc Sakiz <marc.sakiz@edf.fr>

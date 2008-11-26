@@ -68,11 +68,14 @@ C
 C ---- Modele compressible
       INTEGER  ICOMPF
 C
+C ---- Modele atmospherique
+      INTEGER  IATMOS
+C
       PARAMETER       (IPHPAR = 1 , ICOD3P = 2 , ICODEQ = 3 ,
      &                 ICOEBU = 4 , ICOBML = 5 , ICOLWC = 6 ,
      &                 ICP3PL = 7 , ICPL3C = 8 , ICFUEL = 9 ,
      &                 IELJOU = 10, IELARC = 11, IELION = 12,
-     &                 ICOMPF = 13)
+     &                 ICOMPF = 13, IATMOS = 14)
 C
 C--> MODULE RAYONNEMEMT
 C    IRAYPP =  0 : pas de rayonnement

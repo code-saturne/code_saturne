@@ -363,6 +363,20 @@ C       ===========
 C
       ENDIF
 C
+C     Reservations memoire pour les tableaux complémentaires
+C         nécesaires pour les physiques particulieres
+C
+      IDBIA1 = IFINIA
+      IDBRA1 = IFINRA
+
+      CALL MEMPPT
+C     ===========
+     & ( IDBIA1 , IDBRA1 ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR ,
+     &   NVAR   , NSCAL  , NPHAS  ,
+     &   IFINIA , IFINRA )
+
+C
 C=======================================================================
 C 4.1 RESERVATION DE LA MEMOIRE POUR LE RAYONNEMENT SEMI-TRANSPARENT
 C=======================================================================
