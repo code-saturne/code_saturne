@@ -35,7 +35,7 @@ else
   CS_PYTHON=python
 fi
 
-$CS_PYTHON NOMCSGUIHOME/ics $*
+$CS_PYTHON NOMCSGUIHOME/ics --no-splash $*
 
 exit
 

@@ -1,4 +1,9 @@
 * 26/11/2008 - David Monfort <david.monfort@edf.fr>
+  Remove the splash screen at the GUI launch.
+  modified script:
+    bin/SaturneGUI
+
+* 26/11/2008 - David Monfort <david.monfort@edf.fr>
   Add a QUALITY_ASSURANCE file which precises if the current
   version of Code_Saturne is validated under EDF quality
   assurance.
