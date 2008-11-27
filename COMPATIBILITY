@@ -1,11 +1,11 @@
 CODE_SATURNE VERSION 1.4
 ========================
 
-This is version 1.4.c of the Code_Saturne CFD tool. It is composed of
+This is version 1.4.0 of the Code_Saturne CFD tool. It is composed of
 the following elements :
-* Code_Saturne Kernel version 1.4.b
-* Code_Saturne Preprocessor version 1.4.b
-* Code_Saturne Graphical User Interface version 1.4.d
+* Code_Saturne Kernel version 1.4.0
+* Code_Saturne Preprocessor version 1.4.0
+* Code_Saturne Graphical User Interface version 1.4.0
 Other versions of these elements might not be compatible.
 
 
@@ -13,7 +13,7 @@ Compulsory libraries
 --------------------
 The BFT (Base Functions and Types) and FVM (Finite Volume Mesh) libraries
 are compulsory. They are distributed under the LGPL licence
-(copyright EDF S.A., France). Code_Saturne version 1.4.c is compliant with
+(copyright EDF S.A., France). Code_Saturne version 1.4.0 is compliant with
 the following versions:
 * BFT 1.0.8 or newer
 * FVM 0.12.0 or newer
@@ -24,7 +24,7 @@ Optionnal libraries
 -------------------
 Here is given the list of optionnal libraries that can be linked to
 Code_Saturne. The version number is the one used for developping and
-testing version 1.4.c of Code_Saturne. Other versions (newer or older)
+testing version 1.4.0 of Code_Saturne. Other versions (newer or older)
 might still be compatible.
 * python: > 2.3     - (necessary for the Code_Saturne GUI)
 * pyqt: > 4.3       - (necessary for the Code_Saturne GUI)

@@ -29,7 +29,7 @@
 *===========================================================================-->
 
   <referencepath>/home/saturne/Validation</referencepath>
-  <referenceversion>ncs-1.4.b</referenceversion>
+  <referenceversion>ncs-1.4.0</referenceversion>
 
   <study label='LAPLACIEN' status='on'>
     <variable label='scalaire' status='on'>
