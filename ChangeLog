@@ -1,4 +1,11 @@
 * 26/11/2008 - David Monfort <david.monfort@edf.fr>
+  Add a QUALITY_ASSURANCE file which precises if the current
+  version of Code_Saturne is validated under EDF quality
+  assurance.
+  added file:
+    QUALITY_ASSURANCE
+
+* 26/11/2008 - David Monfort <david.monfort@edf.fr>
   Add stubs for cooling towers subroutines and preparation
   of the cooling towers modelling integration.
   added routines:
