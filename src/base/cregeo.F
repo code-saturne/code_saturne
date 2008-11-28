@@ -103,7 +103,6 @@ CARGU ! XYZNOD       ! TR !  -> ! COORDONNES DES NOEUDS (OPTIONNEL)    !
 CARGU ! (NDIM,NNOD)  !    !     !                                      !
 CARGU ! VOLUME       ! TR ! <-  ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET      !    !     !                                      !
-CARGU ! VOLTOT       ! R  ! <-  ! VOLUME TOTAL DU DOMAINE              !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
