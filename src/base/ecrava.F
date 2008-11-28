@@ -119,6 +119,7 @@ C
       INCLUDE "optcal.h"
       INCLUDE "albase.h"
       INCLUDE "alstru.h"
+      INCLUDE "alaste.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
       INCLUDE "ppincl.h"
@@ -174,6 +175,7 @@ C
       INTEGER          NBFLU , ILECEC, IECR
       INTEGER          IFAIT (NVARMX)
       INTEGER          ICDTVU(NBMOM2)
+      INTEGER          NGBSTR(2)
       INTEGER          IW1, IFINRA, IFAC, IEL, ISTR
       INTEGER          IMPAVA, IMPAVX
       DOUBLE PRECISION TMPSTR(27)
@@ -1668,13 +1670,16 @@ C
 #endif
           WRITE(NFECRA,1110)CAR54
 C
+          NGBSTR(1) = NBSTRU
+          NGBSTR(2) = NBASTE
+C
           NBERRO=0
           RUBRIQ = 'nombre_structures'
           ITYSUP = 0
-          NBVAL  = 1
+          NBVAL  = 2
           IRTYP  = 1
           CALL ECRSUI(IMPAVX,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
-     &         NBSTRU,IERROR)
+     &         NGBSTR,IERROR)
           NBERRO=NBERRO+IERROR
 C
           IF (NBSTRU.GT.0) THEN

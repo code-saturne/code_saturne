@@ -80,6 +80,7 @@ C
       INCLUDE "vector.h"
       INCLUDE "albase.h"
       INCLUDE "alstru.h"
+      INCLUDE "alaste.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
       INCLUDE "mltgrd.h"
@@ -1460,9 +1461,16 @@ C
 C --- Type de viscosite de maillage (isotrope par defaut)
       IORTVM = 0
 C
-C --- Nombre de structures
+C --- Nombre de structures internes
 C     (sera relu ou recalcule)
       NBSTRU = -999
+C
+C --- Nombre de structures externes
+C     (sera relu ou recalcule)
+      NBASTE = -999
+C
+C --- Numero d'iteration de couplage externe
+      NTCAST = 0
 C
 C --- Parametres du couplage implicite
       NALIMX = -999

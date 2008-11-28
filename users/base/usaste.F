@@ -2,6 +2,9 @@ c@a
 c@versb
 C-----------------------------------------------------------------------
 C
+CVERS
+C
+C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
@@ -26,30 +29,32 @@ C     51 Franklin St, Fifth Floor,
 C     Boston, MA  02110-1301  USA
 C
 C-----------------------------------------------------------------------
-c@verse
-                        SUBROUTINE STRPRE
+C-----------------------------------------------------------------------
+c@a
+                        SUBROUTINE USASTE
 C                       *****************
 C     -------------------------------------------------------------
-     & ( IDBIA0 , IDBRA0 , ITRALE , ITALIM , INEEFL ,
+     & ( IDBIA0 , IDBRA0 ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-     &   IMPALE ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML , MAXELT , LSTELT ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IDFSTR ,
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-     &   RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
-     &   COEFA  , COEFB  ,
-     &   FLMALF , FLMALB , XPRALE , COFALE , DEPALE , RDEVEL , RTUSER ,
-     &   RA     )
+     &   RDEVEL , RTUSER , RA     )
 C     -------------------------------------------------------------
+
+C
 C***********************************************************************
 C FONCTION :
 C ----------
 c@foncb
 CFONC
-CFONC  PREDICTION DU DEPLACEMENT DES STRUCTURES EN ALE
+CFONC  GESTION DES STRUCTURES MOBILES EN ALE AVEC COUPLAGE EXTERNE
+CFONC
+CFONC    DEFINITION DES STRUCTURES
+CFONC    DEPLACEMENT ET VITESSE INITIAUX
 CFONC
 c@fonce
 C-----------------------------------------------------------------------
@@ -60,9 +65,6 @@ CARGU !    NOM       !TYPE!MODE !                   ROLE               !
 CARGU !______________!____!_____!______________________________________!
 CARGU ! IDBIA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS IA !
 CARGU ! IDBRA0       ! E  !  -> ! NUMERO DE LA 1ERE CASE LIBRE DANS RA !
-CARGU ! ITRALE       ! E  !  -> ! NUMERO D'ITERATION POUR L'ALE        !
-CARGU ! ITALIM       ! E  !  -> ! NUMERO D'ITERATION COUPLAGE IMPLICITE!
-CARGU ! INEEDF       ! E  !  -> ! INDICATEUR DE SAUVEGARDE DES FLUX    !
 CARGU ! NDIM         ! E  !  -> ! DIMENSION DE L'ESPACE                !
 CARGU ! NCELET       ! E  !  -> ! NOMBRE D'ELEMENTS HALO COMPRIS       !
 CARGU ! NCEL         ! E  !  -> ! NOMBRE D'ELEMENTS ACTIFS             !
@@ -90,6 +92,8 @@ CARGU ! IFMCEL       ! TE !  -> ! NUMERO DE FAMILLE D'UNE CELLULE      !
 CARGU ! (NCELET)     !    !     !                                      !
 CARGU ! IPRFML       ! TE !  -> ! PROPRIETES D'UNE FAMILLE             !
 CARGU ! NFML  ,NPRFML!    !     !                                      !
+CARGU ! MAXELT       !  E !  -> ! NB MAX D'ELEMENTS (CELL,FAC,FBR)     !
+CARGU ! LSTELT(MAXELT) TE !  -  ! TABLEAU DE TRAVAIL                   !
 CARGU ! IPNFAC       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (NFAC+1)   !    !     !  FACE INTERNE DANS NODFAC (OPTIONNEL)!
 CARGU ! NODFAC       ! TE !  -> ! CONNECTIVITE FACES INTERNES/NOEUDS   !
@@ -98,9 +102,12 @@ CARGU ! IPNFBR       ! TE !  -> ! POSITION DU PREMIER NOEUD DE CHAQUE  !
 CARGU !   (NFABOR+1) !    !     !  FACE DE BORD DANS NODFBR (OPTIONNEL)!
 CARGU ! NODFBR       ! TE !  -> ! CONNECTIVITE FACES DE BORD/NOEUDS    !
 CARGU !   (LNDFBR)   !    !     !  (OPTIONNEL)                         !
+CARGU ! IDFSTR(NFABOR! TE !  -> ! DEFINITION DES STRUCTURES            !
 CARGU ! IDEVEL(NIDEVE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE DEVELOPEMT !
 CARGU ! ITUSER(NITUSE! TE ! <-> ! TAB ENTIER COMPLEMENTAIRE UTILISATEUR!
 CARGU ! IA(*)        ! TR !  -  ! MACRO TABLEAU ENTIER                 !
+CARGU ! AEXXST,BEXXST! R  !  -> ! COEFFICIENTS DE PREDICTION DU DEPLACT!
+CARGU ! CFOPRE       ! R  !  -> ! COEFF DE PREDICTION DES EFFORTS      !
 CARGU ! XYZCEN       ! TR !  -> ! POINT ASSOCIES AUX VOLUMES DE CONTROL!
 CARGU ! (NDIM,NCELET !    !     !                                      !
 CARGU ! SURFAC       ! TR !  -> ! VECTEUR SURFACE DES FACES INTERNES   !
@@ -115,23 +122,12 @@ CARGU ! XYZNOD       ! TR !  -> ! COORDONNES DES NOEUDS (OPTIONNEL)    !
 CARGU ! (NDIM,NNOD)  !    !     !                                      !
 CARGU ! VOLUME       ! TR !  -> ! VOLUME D'UN DES NCELET ELEMENTS      !
 CARGU ! (NCELET      !    !     !                                      !
-CARGU ! RTP, RTPA    ! TR !  -> ! VARIABLES DE CALCUL AU CENTRE DES    !
-CARGU ! (NCELET,*)   !    !     !    CELLULES (INSTANT COURANT OU PREC)!
-CARGU ! PROPCE       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
-CARGU ! (NCELET,*)   !    !     !    CELLULES                          !
-CARGU ! PROPFA       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
-CARGU !  (NFAC,*)    !    !     !    FACES INTERNES                    !
-CARGU ! PROPFB       ! TR !  -> ! PROPRIETES PHYSIQUES AU CENTRE DES   !
-CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! COEFA, COEFB ! TR ! <-> ! CONDITIONS AUX LIMITES AUX           !
-CARGU !  (NFABOR,*)  !    !     !    FACES DE BORD                     !
-CARGU ! FLMALF(NFAC) ! TR ! <-  ! SAUVEGARDE DU FLUX DE MASSE FACES INT!
-CARGU ! FLMALB(NFABOR! TR ! <-  ! SAUVEGARDE DU FLUX DE MASSE FACES BRD!
-CARGU ! COFALE       ! TR ! <-  ! SAUVEGARDE DES CL DE P ET U          !
-CARGU !    (NFABOR,8)!    !     !                                      !
-CARGU ! XPRALE(NCELET! TR ! <-  ! SAUVEGARDE DE LA PRESSION, SI NTERUP !
-CARGU !              !    !     !    EST >1                            !
-CARGU ! DEPALE(NNOD,3! TR !  -> ! DEPLACEMENT AUX NOEUDS               !
+CARGU ! XSTR0(NDIM,  ! TR !  -> ! DEPLACEMENT INITIAL DES STRUCTURES   !
+CARGU !       NBSTRU)!    !     !                                      !
+CARGU ! VSTR0(NDIM,  ! TR !  -> ! VITESSE INITIALE DES STRUCTURES      !
+CARGU !       NBSTRU)!    !     !                                      !
+CARGU ! XSTREQ(NDIM, ! TR !  -> ! DEPLACEMENT DU MAILLAGE INITIAL PAR  !
+CARGU !       NBSTRU)!    !     ! RAPPORT A L'EQUILIBRE                !
 CARGU ! RDEVEL(NRDEVE! TR ! <-> ! TAB REEL COMPLEMENTAIRE DEVELOPEMT   !
 CARGU ! RTUSER(NRTUSE! TR ! <-> ! TAB REEL COMPLEMENTAIRE UTILISATEUR  !
 CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
@@ -159,34 +155,34 @@ C***********************************************************************
 C     DONNEES EN COMMON
 C***********************************************************************
 C
-      INCLUDE "dimfbr.h"
       INCLUDE "paramx.h"
+      INCLUDE "cstnum.h"
       INCLUDE "optcal.h"
-      INCLUDE "numvar.h"
+      INCLUDE "entsor.h"
       INCLUDE "pointe.h"
       INCLUDE "albase.h"
-      INCLUDE "alstru.h"
-      INCLUDE "alaste.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
-      INCLUDE "entsor.h"
+      INCLUDE "alaste.h"
 C
 C***********************************************************************
 C
 C ARGUMENTS
 C
-      INTEGER          IDBIA0 , IDBRA0 , ITRALE , ITALIM , INEEFL
+      INTEGER          IDBIA0 , IDBRA0
       INTEGER          NDIM   , NCELET , NCEL   , NFAC   , NFABOR
       INTEGER          NFML   , NPRFML
       INTEGER          NNOD   , LNDFAC , LNDFBR , NCELBR
+      INTEGER          NBSTRU
       INTEGER          NIDEVE , NRDEVE , NITUSE , NRTUSE
 C
       INTEGER          IFACEL(2,NFAC) , IFABOR(NFABOR)
       INTEGER          IFMFBR(NFABOR) , IFMCEL(NCELET)
       INTEGER          IPRFML(NFML,NPRFML)
+      INTEGER          MAXELT, LSTELT(MAXELT)
       INTEGER          IPNFAC(NFAC+1), NODFAC(LNDFAC)
       INTEGER          IPNFBR(NFABOR+1), NODFBR(LNDFBR)
-      INTEGER          IMPALE(NNOD)
+      INTEGER          IDFSTR(NFABOR)
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
@@ -194,175 +190,90 @@ C
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
       DOUBLE PRECISION XYZNOD(NDIM,NNOD), VOLUME(NCELET)
-      DOUBLE PRECISION RTP(NCELET,*), RTPA(NCELET,*)
-      DOUBLE PRECISION PROPCE(NCELET,*)
-      DOUBLE PRECISION PROPFA(NFAC,*), PROPFB(NFABOR,*)
-      DOUBLE PRECISION COEFA(NDIMFB,*), COEFB(NDIMFB,*)
-      DOUBLE PRECISION FLMALF(NFAC), FLMALB(NFABOR), XPRALE(NCELET)
-      DOUBLE PRECISION COFALE(NFABOR,8)
-      DOUBLE PRECISION DEPALE(NNOD,3)
       DOUBLE PRECISION RDEVEL(NRDEVE), RTUSER(NRTUSE), RA(*)
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA, IFINIA
-      INTEGER          ISTR, II, IFAC, INOD, IEL, INDAST
-      INTEGER          IFLMAS, IFLMAB,ICLP,ICLU,ICLV,ICLW
-      INTEGER          ILSTFA
+      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IFAC
+      INTEGER          ILELT, NLELT
 C
 C***********************************************************************
 C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+C
+C
+      IF(1.EQ.1) THEN
+        NBASTE = 0
+        RETURN
+      ENDIF
+C
+C TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 C
 C=======================================================================
-C 1. INITIALISATION
+C 1.  INITIALISATIONS
+C
 C=======================================================================
 C
       IDEBIA = IDBIA0
       IDEBRA = IDBRA0
 C
-      IFLMAS = IPPROF(IFLUMA(IU(1)))
-      IFLMAB = IPPROB(IFLUMA(IU(1)))
-      ICLP = ICLRTP(IPR(1),ICOEF)
-      ICLU = ICLRTP(IU(1),ICOEF)
-      ICLV = ICLRTP(IV(1),ICOEF)
-      ICLW = ICLRTP(IW(1),ICOEF)
-C
 C=======================================================================
-C 2. PREDICTION DU DEPLACEMENT DES STRUCTURES
+C 2.  DEFINITION DES STRUCTURES (appel a l'initialisation)
 C=======================================================================
 C
-C 2.1 STRUCTURES INTERNES :
-C -----------------------
+C     On remplit le tableau IDFSTR(NFABOR)
+C     IDFSTR(IFAC) est le numero de la structure a laquelle appartient
+C       la face de bord IFAC (0 si elle n'appartient a aucune structure)
+C     Le nombre de structure est automatiquement determine a partir du
+C       plus grand element de IDFSTR (les numeros des structures doivent
+C       donc etre affectes de maniere sequentielle sans trou en commencant
+C       par 1).
+
+C Dans l'exemple ci-dessous la structure 1 est bordee par les faces de
+C   couleur 4, la structure 2 par les faces de couleur 6
 C
-C Lors de la phase d'initialisation de l'ALE (ITRALE=0), XSTP contient
-C    - la valeur du deplacement initial des structures si l'utilisateur
-C        les a touchees (suite ou pas)
-C    - 0 si debut de calcul avec les structures
-C    - le deplacement utilise pour le calcul precedent si suite sans
-C        modification utilisateur
-C   Il faut cependant transferer sa valeur dans XSTR (qui est utilise
-C   par Newmark)
-C Lors des iterations suivantes (ITRALE>0) on utilise les schemas standard
-C   de calcul de XSTP
 C
-      IF (ITRALE.EQ.0) THEN
+      CALL GETFBR('2 and X < 2.0',NLELT,LSTELT)
+C     ===========
 C
-        DO ISTR = 1, NBSTRU
-          DO II = 1, NDIM
-            XSTR(II,ISTR) = XSTP(II,ISTR)
-          ENDDO
-        ENDDO
+      DO ILELT = 1, NLELT
 C
-      ELSE
+        IFAC = LSTELT(ILELT)
 C
-C 2.1.1 : SCHEMA DE COUPLAGE EXPLICITE
-C-------------------------------------
-        IF (NALIMX.EQ.1) THEN
-          DO ISTR = 1, NBSTRU
-            DO II = 1, 3
-              XSTP(II,ISTR) = XSTR(II,ISTR)
-     &             + AEXXST*DTSTR(ISTR)*XPSTR(II,ISTR)
-     &             + BEXXST*DTSTR(ISTR)*(XPSTR(II,ISTR)-XPSTA(II,ISTR))
-            ENDDO
-          ENDDO
+        IDFSTR(IFAC) = -1
 C
-C 2.1.2 : SCHEMA DE COUPLAGE IMPLICITE
-C-------------------------------------
-        ELSE
-          DO ISTR = 1, NBSTRU
-            DO II = 1, 3
-              XSTP(II,ISTR)  = XSTR(II,ISTR)
-            ENDDO
-          ENDDO
-        ENDIF
-C
-      ENDIF
-C
-      DO IFAC = 1, NFABOR
-        ISTR = IA(IIDFST+IFAC-1)
-        IF (ISTR.GT.0) THEN
-          DO II = IPNFBR(IFAC), IPNFBR(IFAC+1)-1
-            INOD = NODFBR(II)
-            IMPALE(INOD) = 1
-            DEPALE(INOD,1) = XSTP(1,ISTR)
-            DEPALE(INOD,2) = XSTP(2,ISTR)
-            DEPALE(INOD,3) = XSTP(3,ISTR)
-          ENDDO
-        ENDIF
       ENDDO
 C
 C
-C 2.2 STRUCTURES EXTERNES (COUPLAGE CODE_ASTER) :
-C -----------------------
+      CALL GETFBR('2 and X > 2.0',NLELT,LSTELT)
+C     ===========
+C
+      DO ILELT = 1, NLELT
+C
+        IFAC = LSTELT(ILELT)
+C
+        IDFSTR(IFAC) = -2
+C
+      ENDDO
+C
+C     On bloque les efforts selon Z des structures 1 et 2
+C
+      ASDDLF(3,1) = 0
+      ASDDLF(3,2) = 0
 C
 C
-      IF(NBASTE.GT.0) THEN
 C
-        NTCAST = NTCAST + 1
+C --- Indicateur d'impression au meme instant des sorties
+C     Code_Saturne et Code_Aster (sortie EnSight pour Code_Aster)
+C     (1: OUI, 0: NON)
 C
-C Reception des deplacements predits et remplissage de depale
+C     Si 0, aucune sortie Code_Aster n'est enclenchee
+C     l'utilisateur doit le specifie lui-meme dans le fichier de commande
 C
-        ILSTFA = IDEBIA
-        IFINIA = ILSTFA + NBFAST
-        CALL IASIZE('STRPRE',IFINIA)
+      ISYNCP = 1
 C
-        INDAST = 0
-        DO IFAC = 1, NFABOR
-          ISTR = IA(IIDFST+IFAC-1)
-          IF (ISTR.LT.0) THEN
-            INDAST = INDAST + 1
-            IA(ILSTFA + INDAST-1) = IFAC
-          ENDIF
-        ENDDO
-C
-        CALL ASTCIN(NTCAST, NBFAST, IA(ILSTFA), IMPALE, DEPALE)
-C       ===========
-C
-      ENDIF
-C
-C=======================================================================
-C 3. DEPLACEMENT AU PAS DE TEMPS PRECEDENT ET SAUVEGARDE FLUX ET DE P
-C=======================================================================
-      IF (ITALIM.EQ.1) THEN
-        DO ISTR = 1, NBSTRU
-          DO II = 1, 3
-            XSTA(II,ISTR)   = XSTR(II,ISTR)
-            XPSTA(II,ISTR)  = XPSTR(II,ISTR)
-            XPPSTA(II,ISTR) = XPPSTR(II,ISTR)
-          ENDDO
-        ENDDO
-        IF (INEEFL.EQ.1) THEN
-          DO IFAC = 1, NFAC
-            FLMALF(IFAC) = PROPFA(IFAC,IFLMAS)
-          ENDDO
-          DO IFAC = 1, NFABOR
-            FLMALB(IFAC) = PROPFB(IFAC,IFLMAB)
-            COFALE(IFAC,1) = COEFA(IFAC,ICLP)
-            COFALE(IFAC,2) = COEFA(IFAC,ICLU)
-            COFALE(IFAC,3) = COEFA(IFAC,ICLV)
-            COFALE(IFAC,4) = COEFA(IFAC,ICLW)
-            COFALE(IFAC,5) = COEFB(IFAC,ICLP)
-            COFALE(IFAC,6) = COEFB(IFAC,ICLU)
-            COFALE(IFAC,7) = COEFB(IFAC,ICLV)
-            COFALE(IFAC,8) = COEFB(IFAC,ICLW)
-          ENDDO
-          IF (NTERUP.GT.1) THEN
-            DO IEL = 1, NCELET
-              XPRALE(IEL) = RTPA(IEL,IPR(1))
-            ENDDO
-          ENDIF
-        ENDIF
-      ENDIF
-C
-C----
-C FORMATS
-C----
-C
-
-C
-C----
-C FIN
-C----
+      RETURN
 C
       END
 c@z

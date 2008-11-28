@@ -40,7 +40,7 @@ C     -------------------------------------------------------------
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
-     &   FLMALF , FLMALB , COFALE , XPRALE , RDEVEL , RTUSER ,
+     &   FLMALF , FLMALB , COFALE , XPRALE , DEPALE , RDEVEL , RTUSER ,
      &   RA     )
 C     -------------------------------------------------------------
 C***********************************************************************
@@ -166,6 +166,7 @@ C
       INCLUDE "pointe.h"
       INCLUDE "albase.h"
       INCLUDE "alstru.h"
+      INCLUDE "alaste.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
 C
@@ -188,6 +189,7 @@ C
       INTEGER          IDEVEL(NIDEVE), ITUSER(NITUSE)
       INTEGER          IA(*)
 C
+      DOUBLE PRECISION DEPALE(NNOD,3)
       DOUBLE PRECISION XYZCEN(NDIM,NCELET)
       DOUBLE PRECISION SURFAC(NDIM,NFAC), SURFBO(NDIM,NFABOR)
       DOUBLE PRECISION CDGFAC(NDIM,NFAC), CDGFBO(NDIM,NFABOR)
@@ -202,9 +204,12 @@ C
 C
 C VARIABLES LOCALES
 C
-      INTEGER          IDEBIA, IDEBRA
+      INTEGER          IDEBIA, IDEBRA, IFINRA
       INTEGER          ISTR, II, IEL, IFAC, IPHAS, NTAB
       INTEGER          IFLMAS, IFLMAB, ICLP, ICLU, ICLV, ICLW
+      INTEGER          INDAST
+      INTEGER          ICVEXT, ICVINT, ICV
+C
       DOUBLE PRECISION DELTA
 C
 C***********************************************************************
@@ -224,7 +229,7 @@ C
       ICLW = ICLRTP(IW(1),ICOEF)
 C
 C=======================================================================
-C 2.  CALCUL DES EFFORTS SUR LA STRUCTURE
+C 2.  CALCUL DES EFFORTS SUR LES STRUCTURES
 C=======================================================================
 C
       DO ISTR = 1, NBSTRU
@@ -235,12 +240,24 @@ c-a tester          FORSTA(II,ISTR) = FORSTP(II,ISTR)
         ENDDO
       ENDDO
 C
+      IFORAS = IDEBRA
+      IFINRA = IFORAS + 3*NBFAST
+      CALL RASIZE('STRDEP',IFINRA)
+C     ===========
+C
+      INDAST = 0
       DO IFAC = 1, NFABOR
         ISTR = IA(IIDFST+IFAC-1)
         IF (ISTR.GT.0) THEN
           DO II = 1, 3
             FORSTR(II,ISTR) = FORSTR(II,ISTR)
      &           + RA(IFORBR+(IFAC-1)*NDIM+II-1)
+          ENDDO
+        ELSE IF (ISTR.LT.0) THEN
+          INDAST = INDAST + 1
+          DO II = 1, 3
+            RA(IFORAS+(INDAST-1)*NDIM+II-1) = ASDDLF(II,-ISTR)
+     &           * RA(IFORBR+(IFAC-1)*NDIM+II-1)
           ENDDO
         ENDIF
       ENDDO
@@ -250,12 +267,19 @@ C
         CALL PARRSM(NTAB,FORSTR)
       ENDIF
 C
+C     Calcul de l'effort envoye au structures internes
       DO ISTR = 1, NBSTRU
         DO II = 1, NDIM
           FORSTP(II,ISTR) = CFOPRE*FORSTR(II,ISTR)+
      &         (1.D0-CFOPRE)*FORSTA(II,ISTR)
         ENDDO
       ENDDO
+C
+C     Envoi de l'effort applique aux structures externes
+      IF (NBASTE.GT.0) THEN
+        CALL ASTFOR(NTCAST, NBFAST, RA(IFORAS))
+C       ===========
+      ENDIF
 C
 C     Si on est en phase d'initialisation du fluide
       IF (ITRALE.LE.NALINF) THEN
@@ -268,8 +292,9 @@ C 3.  DEFINITION UTILISATEUR DES CARACTERISTIQUES DE LA STRUCTURE
 C=======================================================================
 C
 C
-      CALL USSTR2
-C     ===========
+      IF (NBSTRU.GT.0) THEN
+        CALL USSTR2
+C       ===========
      & ( IDEBIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
      &   NNOD   , LNDFAC , LNDFBR , NCELBR , NBSTRU ,
@@ -283,9 +308,10 @@ C     ===========
      &   DTSTR  ,
      &   RDEVEL , RTUSER ,
      &   RA     )
+      ENDIF
 C
 C=======================================================================
-C 4.  DEPLACEMENT DES STRUCTURES
+C 4.  DEPLACEMENT DES STRUCTURES INTERNES
 C=======================================================================
 C
 C
@@ -306,26 +332,48 @@ C=======================================================================
 C 5.  TEST DE CONVERGENCE
 C=======================================================================
 C
+      ICVEXT = 0
+      ICVINT = 0
+      ICV    = 0
+C
       IPHAS = 1
+C
       DELTA = 0.D0
       DO ISTR = 1, NBSTRU
         DO II = 1, 3
           DELTA = DELTA + (XSTR(II,ISTR)-XSTP(II,ISTR))**2
         ENDDO
       ENDDO
-      DELTA = SQRT(DELTA)/ALMAX(IPHAS)/NBSTRU
+      IF (NBSTRU.GT.0) THEN
+        DELTA = SQRT(DELTA)/ALMAX(IPHAS)/NBSTRU
+        IF (DELTA.LT.EPALIM) ICVINT = 1
+      ENDIF
+C
+      IF (NBASTE.GT.0) CALL ASTCV1(NTCAST, ICVEXT)
+C                      ===========
+C
+C
+      IF (NBSTRU.GT.0.AND.NBASTE.GT.0) THEN
+         ICV = ICVEXT*ICVINT
+      ELSEIF (NBSTRU.GT.0.AND.NBASTE.EQ.0) THEN
+         ICV = ICVINT
+      ELSEIF (NBASTE.GT.0.AND.NBSTRU.EQ.0) THEN
+         ICV = ICVEXT
+      ENDIF
 C
       IF (IWARNI(IUMA).GE.2) WRITE(NFECRA,1000) ITALIM, DELTA
 C
 C     si convergence
-      IF (DELTA.LT.EPALIM) THEN
+      IF (ICV.EQ.1) THEN
         IF (ITRFIN.EQ.1) THEN
 C       si ITRFIN=1 on sort
           IF (IWARNI(IUMA).GE.1) WRITE(NFECRA,1001) ITALIM, DELTA
           ITRFIN = -1
         ELSE
-C       sinon on refait une derniere iteration pour Syrthes/T1D/rayonnement
+C       sinon on refait une derniere iteration pour SYRTHES/T1D/rayonnement
+C        et on remet ICV a 0 pour que Code_Aster refasse une iteration aussi
           ITRFIN = 1
+          ICV = 0
         ENDIF
       ELSEIF (ITRFIN.EQ.0 .AND. ITALIM.EQ.NALIMX-1) THEN
 C       ce sera la derniere iteration
@@ -335,6 +383,10 @@ C       on a forcement ITRFIN=1 et on sort
         IF (NALIMX.GT.1) WRITE(NFECRA,1100) ITALIM, DELTA
         ITRFIN = -1
       ENDIF
+C
+C     On renvoie l'indicateur de convergence final a Code_Aster
+      CALL ASTCV2(NTCAST, ICV)
+C     ===========
 C
 C=======================================================================
 C 6.  RETOUR AUX VALEURS ANTERIEURES SI NECESSAIRE

@@ -1,3 +1,26 @@
+* 28/11/2008 - François Jusserand <francois.jusserand@edf.fr>
+               Marc Sakiz <marc.sakiz@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  First integration of the Code_Aster coupling capability.
+  Not yet tested! Not ye compatible with parallelism.
+  added routines:
+    include/base/alaste.h
+    include/base/cs_ast_coupling.h
+    src/base/cs_ast_coupling.c
+    users/base/usaste.F
+  modified routines:
+    include/base/paramx.h
+    src/base/lecamx.F
+    src/base/ecrava.F
+    src/base/strdep.F
+    src/base/strini.F
+    src/base/iniini.F
+    src/base/strpre.F
+    src/base/tridim.F
+
+* 28/11/2008 - David Monfort <david.monfort@edf.fr>
+  Update french dictionnary.
+
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
   Correction on a wrong test for boundary conditions settings
   with specific physics.

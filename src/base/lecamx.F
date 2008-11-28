@@ -137,6 +137,7 @@ C
       INCLUDE "numvar.h"
       INCLUDE "albase.h"
       INCLUDE "alstru.h"
+      INCLUDE "alaste.h"
       INCLUDE "parall.h"
       INCLUDE "ppppar.h"
       INCLUDE "ppthch.h"
@@ -193,6 +194,7 @@ C
       INTEGER          NFMTST
       INTEGER          NUMFLU(NVARMX)
       INTEGER          JTURB (NPHSMX), JTYTUR(NPHSMX), JALE
+      INTEGER          NGBSTR(2)
       DOUBLE PRECISION D2S3  , TSRII , CDTCM
       DOUBLE PRECISION TMPSTR(27)
 
@@ -1865,11 +1867,14 @@ C
         NBERRO=0
         RUBRIQ = 'nombre_structures'
         ITYSUP = 0
-        NBVAL  = 1
+        NBVAL  = 2
         IRTYP  = 1
         CALL LECSUI(IMPAMX,RUBRIQ,LEN(RUBRIQ),ITYSUP,NBVAL,IRTYP,
-     &       NBSTRU,IERROR)
+     &       NGBSTR,IERROR)
         NBERRO=NBERRO+IERROR
+C
+        NBSTRU = NGBSTR(1)
+        NBASTE = NGBSTR(2)
 C
         IF (NBSTRU.GT.0) THEN
 C

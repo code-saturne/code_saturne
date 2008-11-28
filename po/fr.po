@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2008-11-26 19:13+0100\n"
+"POT-Creation-Date: 2008-11-28 14:01+0100\n"
 "PO-Revision-Date: 2008-11-20 18:39+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1461,7 +1461,7 @@ msgstr ""
 "  niveau d'impression :         %ld\n"
 "\n"
 
-#: src/base/cs_main.c:295
+#: src/base/cs_main.c:296
 #, c-format
 msgid ""
 "\n"
@@ -1470,7 +1470,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/base/cs_main.c:301
+#: src/base/cs_main.c:302
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -1478,7 +1478,7 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/base/cs_main.c:347
+#: src/base/cs_main.c:348
 #, c-format
 msgid ""
 "\n"
@@ -1487,7 +1487,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/base/cs_main.c:363
+#: src/base/cs_main.c:364
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -1495,7 +1495,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/base/cs_main.c:382
+#: src/base/cs_main.c:383
 #, c-format
 msgid ""
 "\n"
@@ -1510,7 +1510,7 @@ msgstr ""
 "       LONGRA =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/base/cs_main.c:392
+#: src/base/cs_main.c:393
 #, c-format
 msgid ""
 "\n"
@@ -1523,7 +1523,7 @@ msgstr ""
 "       NIDEVE =   %10d (Nombre d'entiers)\n"
 "       NRDEVE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:398
+#: src/base/cs_main.c:399
 #, c-format
 msgid ""
 "\n"
@@ -1537,7 +1537,7 @@ msgstr ""
 "       NITUSE =   %10d (Nombre d'entiers)\n"
 "       NRTUSE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:460
+#: src/base/cs_main.c:461
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"

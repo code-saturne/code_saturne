@@ -167,6 +167,7 @@ C
       INCLUDE "pointe.h"
       INCLUDE "albase.h"
       INCLUDE "alstru.h"
+      INCLUDE "alaste.h"
       INCLUDE "radiat.h"
       INCLUDE "period.h"
       INCLUDE "parall.h"
@@ -239,6 +240,7 @@ C
       INTEGER          ITRAVA, IXIMPA, IUVWK
       INTEGER          NBCCOU
       INTEGER          ICOFBR
+      INTEGER          NTRELA
 C
       INTEGER          ISVHB , ISVTB
       INTEGER          IPHAS , KPHAS , II    , IPPCP , IENTHA, IPPCV
@@ -817,6 +819,11 @@ C     ===========
      &   RA(IWCF),
      &   RDEVEL , RTUSER , RA     )
 C
+      IF (NBASTE.GT.0.AND.ITRALE.GT.NALINF) THEN
+        NTRELA = NTCABS - NTPABS
+        CALL ASTPDT(DT, NCELET, NTRELA)
+C       ===========
+      ENDIF
 C=======================================================================
 C 9.  CHARGEMENT ET TRADUCTION DES CONDITIONS AUX LIMITES
 C=======================================================================
@@ -1142,7 +1149,7 @@ C       remet le deplacement initial
         ENDDO
 C
 C     En cas de couplage de structures, on calcule un deplacement predit
-        IF (NBSTRU.GT.0) THEN
+        IF (NBSTRU.GT.0.OR.NBASTE.GT.0) THEN
 C
           CALL STRPRE
 C         ===========
@@ -1846,7 +1853,7 @@ C=======================================================================
 C 14.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
 C=======================================================================
 C
-      IF (NBSTRU.GT.0) THEN
+      IF (NBSTRU.GT.0.OR.NBASTE.GT.0) THEN
 C
         CALL STRDEP
 C       ===========
@@ -1860,7 +1867,7 @@ C       ===========
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     , RTP    , RTPA   , PROPCE , PROPFA , PROPFB ,
      &   COEFA  , COEFB  ,
-     &   RA(IFLALF), RA(IFLALB), RA(ICOALE), RA(IPRALE),
+     &   RA(IFLALF), RA(IFLALB), RA(ICOALE), RA(IPRALE), RA(IDEPAL),
      &   RDEVEL , RTUSER ,
      &   RA     )
 C
