@@ -285,11 +285,167 @@ C=======================================================================
 C 1 - MASSE VOLUMIQUE
 C=======================================================================
 C
+C --- Boucle sur les phases : debut
+      DO IPHAS = 1, NPHAS
+C
+C
+C   Positions des variables, coefficients
+C   -------------------------------------
+C
+C --- Numero de variable thermique pour la phase courante iphas
+C       (et de ses conditions limites)
+C
+        IVART = ISCA(ITEMP4)
+C
+C --- Position des conditions limites de la variable IVART
+C
+        ICLVAR = ICLRTP(IVART,ICOEF)
+C
+C --- Rang de la masse volumique de la phase courante IPHAS
+C     dans PROPCE, prop. physiques au centre des elements       : IPCROM
+C
+        IPCROM = IPPROC(IROM(IPHAS))
+C
+C --- Coefficients des lois choisis et imposes par l'utilisateur
+C       Les valeurs donnees ici sont fictives
+C
+        RHO0 = 1.293D0
+        T00  = 273.15D0
+        P00  = 101325.D0
+        DEL  = 0.622D0
+        T1   = 273.15D0
+        R    = 8.3143D0
+C
+C
+C   Masse volumique au centre des cellules
+C   ---------------------------------------
+C
+        DO IEL = 1, NCEL
+C
+          TTI = RTP(IEL,ISCA(ITEMP4))
+          XXI = RTP(IEL,ISCA(IHUMID))
+C
+          CALL XSATH(TTI,XSATI)
+C         ==========
+C
+          IF (XXI .LE. XSATI) THEN
+C
+            RHO = RHO0*T00/(TTI+T1)*DEL/(DEL+XXI)
+C
+          ELSE
+C
+            IF (TTI.LE.0.D0) THEN
+              RHOJ = 917.0D0
+            ELSE
+              RHOJ = 998.36D0 - 0.4116D0*(TTI-20.D0)
+     &               - 2.24D0*(TTI-20.D0)*(TTI-70.D0)/625.D0
+            ENDIF
+C
+            RHO = 1.0D0/((TTI+T1)*P00/(T00*P00*RHO0*DEL)
+     &            *(DEL+XSATI)+(XXI-XSATI)/RHOJ)
+C
+          ENDIF
+C
+            IF (RHO .LT. 0.1D0) RHO = 0.1D0
+            PROPCE(IEL,IPCROM) = RHO
+C
+        ENDDO
+C
+C
+      ENDDO
+C --- Boucle sur les phases : fin
+C
 C
 C
 C=======================================================================
 C 2 - CHALEUR SPECIFIQUE
 C=======================================================================
+C
+C --- Boucle sur les phases : debut
+      DO IPHAS = 1, NPHAS
+C
+C
+C   Positions des variables, coefficients
+C   -------------------------------------
+C
+C --- Numero de variable thermique pour la phase courante iphas
+C
+        IVART = ISCA(ITEMP4)
+C
+C --- Rang de la chaleur specifique de la phase courante IPHAS
+C     dans PROPCE, prop. physiques au centre des elements       : IPCCP
+C
+        IF(ICP(IPHAS).GT.0) THEN
+          IPCCP  = IPPROC(ICP   (IPHAS))
+        ELSE
+          IPCCP  = 0
+        ENDIF
+C
+C --- Stop si CP n'est pas variable
+C
+        IF(IPCCP.LE.0) THEN
+          WRITE(NFECRA,1000) IPHAS, IPHAS, ICP(IPHAS)
+          CALL CSEXIT (1)
+        ENDIF
+C
+C
+C --- Coefficients des lois choisis et imposes par l'utilisateur
+C       Les valeurs donnees ici sont fictives
+C
+        CPA    = 1006.0D0
+        CPV    = 1831.0D0
+        CPE    = 4179.0D0
+        HV0    = 2501600.0D0
+C
+C
+C   Chaleur specifique J/(kg degres) au centre des cellules
+C   --------------------------------------------------------
+C
+        IF (IPPMOD(IAEROS).EQ.1) THEN
+C
+          DO IEL = 1, NCEL
+C
+            TTI = RTP(IEL,ISCA(ITEMP4))
+            XXI = RTP(IEL,ISCA(IHUMID))
+C
+            CALL XSATH(TTI,XSATI)
+C           ==========
+C
+            IF (XXI .LE. XSATI) THEN
+              PROPCE(IEL,IPCCP) = CPA + XXI*CPV
+            ELSE
+              HVTI = (CPV-CPE)*TTI + HV0
+              CALL DXSATH(TTI,DXSATI)
+C             ===========
+              PROPCE(IEL,IPCCP) = CPA + XSATI*CPV +
+     &                            (XXI-XSATI)*CPE + DXSATI*HVTI
+            ENDIF
+C
+          ENDDO
+C
+        ELSEIF (IPPMOD(IAEROS).EQ.2) THEN
+C
+          DO IEL = 1, NCEL
+C
+            TTI = RTP(IEL,ISCA(ITEMP4))
+C
+            CALL XSATH(TTI,XSATI)
+C           ==========
+C
+            HVTI = CPV*TTI + HV0
+C
+            CALL DXSATH(TTI,DXSATI)
+C           ===========
+C
+            PROPCE(IEL,IPCCP) = CPA + XSATI*CPV + DXSATI*HVTI
+C
+          ENDDO
+C
+        ENDIF
+C
+C
+      ENDDO
+C --- Boucle sur les phases : fin
 C
 C
 C=======================================================================

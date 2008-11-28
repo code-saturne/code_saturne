@@ -62,6 +62,7 @@
 #include "cs_base.h"
 #include "cs_benchmark.h"
 #include "cs_coupling.h"
+#include "cs_ctwr.h"
 #include "cs_ecs_messages.h"
 #include "cs_gui.h"
 #include "cs_io.h"
@@ -471,6 +472,10 @@ main(int    argc,
   cs_sat_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
+
+  /* Free cooling towers related structures */
+
+  cs_ctwr_all_destroy();
 
   /* Free post processing related structures */
 

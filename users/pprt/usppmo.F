@@ -243,7 +243,7 @@ C----- ATMOS ecoulements atmospheriques
 C        si = -1   modele non utilise
 C        si = 0    modele active
       IPPMOD(IATMOS) = -1
-C 
+C
 C----- Aerorefrigerants (cooling tower)
 C        si = -1   non utilise
 C        si = 0    active sans modele
