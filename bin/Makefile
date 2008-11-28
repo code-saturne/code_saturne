@@ -525,6 +525,8 @@ privincinst:
 	 fi ;\
 	 if   [ "$${modtrav}" = "BASE" ] ;\
 	 then inc_cs_all="$(INC_CS)/base $(INC_CS)/pprt" ;\
+         elif [ "$${modtrav}" = "ATMO" ] ;\
+	 then inc_cs_all="$(INC_CS)/atmo" ;\
          elif [ "$${modtrav}" = "CFBL" ] ;\
 	 then inc_cs_all="$(INC_CS)/cfbl" ;\
          elif [ "$${modtrav}" = "COGZ" ] ;\
