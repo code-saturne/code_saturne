@@ -1,4 +1,13 @@
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
+  Add a second routine for a second pass of initialization when
+  modelling gas combustion in order to avoid mis-understanding
+  of "variable initialization"...
+  added routine:
+    src/pprt/ppinv2.F
+  modified routine:
+    scr/base/scalai.F
+
+* 28/11/2008 - David Monfort <david.monfort@edf.fr>
   Add the cstphy.h header in cregeo.F in order to ease
   the cooling towers integration.
   modified routines:

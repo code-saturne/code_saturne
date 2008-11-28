@@ -263,7 +263,7 @@ C
       IFINIA = ILS + MAXELT
       CALL IASIZE('SCALAI',IFINIA)
 C
-        CALL PPINIV
+        CALL PPINV2
 C       ===========
      & ( IFINIA , IDEBRA ,
      &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
