@@ -1010,7 +1010,7 @@ C
 C     - Sous-programme utilisateur
 C       ==========================
 C
-        IF (NSCAPP.EQ.0) THEN
+        IF (IPPMOD(IPHPAR).EQ.0) THEN
 C
           ILS    = IFINIA
           IFNIA1 = ILS + MAXELT

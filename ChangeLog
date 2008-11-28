@@ -1,4 +1,10 @@
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
+  Correction on a wrong test for boundary conditions settings
+  with specific physics.
+  modified routine:
+    src/base/tridim.F
+
+* 28/11/2008 - David Monfort <david.monfort@edf.fr>
                Jérôme Lucas <jerome.lucas@incka.fr>
   Complete the cooling towers feature.
   Still not complet and no restarting or parallelism.
