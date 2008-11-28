@@ -270,7 +270,6 @@ C     ===========
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO ,
      &   XYZNOD , VOLUME ,
-     &   VOLMIN , VOLMAX , VOLTOT ,
      &   RDEVEL , RTUSER , RA     )
 C
 C

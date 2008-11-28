@@ -1,3 +1,10 @@
+* 28/11/2008 - David Monfort <david.monfort@edf.fr>
+  Add the cstphy.h header in cregeo.F in order to ease
+  the cooling towers integration.
+  modified routines:
+    src/base/caltri.F
+    src/base/cregeo.F
+
 * 27/11/2008 - David Monfort <david.monfort@edf.fr>
   Increase Code_Saturne version number to 1.4.0
 
