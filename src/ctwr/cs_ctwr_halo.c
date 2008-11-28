@@ -52,6 +52,7 @@
 
 #include <fvm_periodicity.h>
 #include <fvm_interface.h>
+#include <fvm_nodal_extract.h>
 #include <fvm_order.h>
 #include <fvm_parall.h>
 
