@@ -107,6 +107,9 @@ cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
   cs_int_t   nb_pts_tot;
   cs_int_t   i;
 
+  if (nfpt1d == 0)
+    return;
+
   /* Allocate the cs_glob_par1d structure */
   BFT_MALLOC(cs_glob_par1d, nfpt1d, struct par1d);
 

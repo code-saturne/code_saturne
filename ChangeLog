@@ -1,3 +1,9 @@
+* 02/02/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+  Fix a bug when no wall is present on a domain for the 1D
+  wall thermal module.
+  modified routine:
+    src/base/cs_tpar1d.c
+
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne version 1.4.0
 
