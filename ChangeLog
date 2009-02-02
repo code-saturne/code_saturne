@@ -1,4 +1,9 @@
-* 02/02/2008 - Marc Sakiz <marc.sakiz@edf.fr>
+* 02/02/2009 - David Monfort <david.monfort@edf.fr>
+  Minor correction in help output.
+  modified script:
+    bin/cs_create
+
+* 02/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Fix a bug when no wall is present on a domain for the 1D
   wall thermal module.
   modified routine:
