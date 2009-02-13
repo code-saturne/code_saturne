@@ -1,4 +1,12 @@
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Documentation update (mainly the mesh formats documentation
+  that have been removed from the preprocessor manual).
+  modified files:
+    doc/style/csdoc.sty
+    doc/USER/saturne1.tex
+    doc/USER/user.tex
+
+* 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   From now on, use fvm_part_to_block/fvm_block_to_part
   for restart files writing/reading.
   Upgrade to FVM version 0.13.0

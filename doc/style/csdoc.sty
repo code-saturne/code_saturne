@@ -37,8 +37,8 @@
 % IDENTIFICATION DE noteEDF.sty
 \NeedsTeXFormat {LaTeX2e}[2003/05/01]
 \def \filename {csdoc.sty}
-\def \filedate {2003/05/01}
-\def \fileversion {0.4}
+\def \filedate {2009/01/16}
+\def \fileversion {0.5}
 \ProvidesPackage {csdoc}[\filedate\space\fileversion\space
   EDF R&D report format package]
 \typeout {Package: `csdoc' \fileversion\space <\filedate>}
@@ -172,6 +172,10 @@
                            {12pt plus2pt minus1pt}
                            {6pt}
                            {\bfseries\fontsize{12}{14}\polsssec}}
+\newcommand{\subsubsubsection}{\@startsection {paragraph}{3}{-5mm}
+                             {12pt plus2pt minus1pt}
+                             {6pt}
+                             {\bfseries\fontsize{10}{12}\polsssec}}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -189,6 +193,27 @@
 \newcommand{\CS}{%
 {\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
 \newcommand{\syrthes}{SYRTHES\xspace}
+%
+\newcommand{\ensight}{EnSight\xspace}
+\newcommand{\ensightg}{EnSight Gold\xspace}
+\newcommand{\fluent}{FLUENT\xspace}
+\newcommand{\fvm}{FVM\xspace}
+\newcommand{\gambit}{GAMBIT\xspace}
+\newcommand{\gmsh}{Gmsh\xspace}
+\newcommand{\harpoon}{Harpoon\xspace}
+\newcommand{\hexpress}{\emph{HexPress}\xspace}
+\newcommand{\icemcfd}{ICEM~CFD\xspace}
+\newcommand{\ideas}{I-deas\xspace}
+\newcommand{\med}{MED\xspace}
+\newcommand{\Metis}{METIS\xspace}
+\newcommand{\nopo}{{\sc nopp}\xspace}
+\newcommand{\pcs}{Preprocessor\xspace}
+\newcommand{\paraview}{ParaView\xspace}
+\newcommand{\salome}{SALOME\xspace}
+\newcommand{\simail}{S\textsc{IMAIL}\xspace}
+\newcommand{\starcd}{\textbf{STAR-CD}\xspace}
+\newcommand{\starccmp}{\textbf{STAR-CCM+}\xspace}
+\newcommand{\vtk}{VTK\xspace}
 %
 \newcommand{\tildeunix}{%
 {\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
