@@ -895,15 +895,21 @@ cs_base_mpi_init(int     *argc,
   if (cs_glob_base_nbr > 1)
     cs_glob_base_rang = rank;
 
-  if (cs_glob_base_nbr == 1 && app_num_max > 0) {
-    MPI_Comm_free(&cs_glob_base_mpi_comm);
-    cs_glob_base_mpi_comm = MPI_COMM_NULL;
-  }
+  /* cs_glob_base_mpi_comm may not be freed at this stage, as it
+     it may be needed to build intercommunicators for couplings,
+     but we may set cs_glob_base_rang to its serial value if
+     we are only using MPI for coupling. */
+
+  if (cs_glob_base_nbr == 1 && app_num_max > 0)
+    cs_glob_base_rang = -1;
 
   /* Initialize associated libraries */
 
 #if defined(FVM_HAVE_MPI)
-  fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
+  if (cs_glob_base_rang > -1)
+    fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
+  else
+    fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
 
 #if defined(DEBUG) || !defined(NDEBUG)
