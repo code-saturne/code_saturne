@@ -1,4 +1,9 @@
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor correction and new matrix.vector product tests.
+  modified routines:
+    src/base/cs_benchmark.c
+
+* 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction in the MPI initialization in case of coupling.
   modified routines:
     src/base/cs_base.c

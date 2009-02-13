@@ -293,6 +293,7 @@ _print_stats(long    n_ops,
  *   n_runs          --> number of operation runs
  *   n_cells         --> number of cells (array size)
  *   x               --> Vector
+ *   y               --> Vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -333,7 +334,7 @@ _dot_product_1(int                  global,
   test_sum = 0.0;
 
   for (run_id = 0; run_id < n_runs; run_id++) {
-    double s1 = cblas_ddot(n_cells, x, 1, x, 1);
+    double s1 = cblas_ddot(n_cells, x, 1, y, 1);
 #if defined(_CS_HAVE_MPI)
     if (_global) {
       double s1_glob = 0.0;
@@ -370,7 +371,7 @@ _dot_product_1(int                  global,
   for (run_id = 0; run_id < n_runs; run_id++) {
     double s1 = 0.0;
     for (ii = 0; ii < n_cells; ii++)
-      s1 += x[ii] * x[ii];
+      s1 += x[ii] * y[ii];
 #if defined(_CS_HAVE_MPI)
     if (_global) {
       double s1_glob = 0.0;
@@ -1127,6 +1128,270 @@ _matrix_vector_test(int                  n_runs,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Measure matrix.vector product extradiagonal terms related performance
+ * (symmetric matrix case).
+ *
+ * parameters:
+ *   n_faces         --> local number of internal faces
+ *   face_cell       --> face -> cells connectivity (1 to n)
+ *   xa              --> extradiagonal values
+ *   x               --> vector
+ *   y               <-> vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_exdiag_native(cs_int_t             n_faces,
+                       const cs_int_t      *face_cell,
+                       const cs_real_t     *restrict xa,
+                       cs_real_t           *restrict x,
+                       cs_real_t           *restrict y)
+{
+  cs_int_t  ii, jj, face_id;
+
+  /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *xa)
+#endif
+
+  const cs_int_t *restrict face_cel_p = face_cell;
+
+  for (face_id = 0; face_id < n_faces; face_id++) {
+    ii = *face_cel_p++ - 1;
+    jj = *face_cel_p++ - 1;
+    y[ii] += xa[face_id] * x[jj];
+    y[jj] += xa[face_id] * x[ii];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Measure matrix.vector product extradiagonal terms related performance
+ * (symmetric matrix case, variant 1).
+ *
+ * parameters:
+ *   n_faces         --> local number of internal faces
+ *   face_cell       --> face -> cells connectivity (1 to n)
+ *   xa              --> extradiagonal values
+ *   x               --> vector
+ *   y               <-> vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_exdiag_native_v1(cs_int_t             n_faces,
+                          const cs_int_t      *face_cell,
+                          const cs_real_t     *restrict xa,
+                          cs_real_t           *restrict x,
+                          cs_real_t           *restrict y)
+{
+  cs_int_t  ii, ii_prev, kk, face_id, kk_max;
+  cs_real_t y_it, y_it_prev;
+
+  const int l1_cache_size = 508;
+
+  /*
+   * 1/ Split y[ii] and y[jj] computation into 2 loops to remove compiler
+   *    data dependency assertion between y[ii] and y[jj].
+   * 2/ keep index (*face_cel_p) in L1 cache from y[ii] loop to y[jj] loop
+   *    and xa in L2 cache.
+   * 3/ break high frequency occurence of data dependency from one iteration
+   *    to another in y[ii] loop (nonzero matrix value on the same line ii).
+   */
+
+  const cs_int_t *restrict face_cel_p = face_cell;
+
+  for (face_id = 0;
+       face_id < n_faces;
+       face_id += l1_cache_size) {
+
+    kk_max = CS_MIN((n_faces - face_id), l1_cache_size);
+
+    /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
+
+    ii_prev = face_cel_p[0] - 1;
+    y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1] - 1];
+
+    for (kk = 1; kk < kk_max; ++kk) {
+      ii = face_cel_p[2*kk] - 1;
+      /* y[ii] += xa[face_id+kk] * x[jj]; */
+      if(ii == ii_prev) {
+        y_it = y_it_prev;
+      }
+      else {
+        y_it = y[ii];
+        y[ii_prev] = y_it_prev;
+      }
+      ii_prev = ii;
+      y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+    }
+    y[ii] = y_it_prev;
+
+    /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
+
+    for (kk = 0; kk < kk_max; ++kk) {
+      y[face_cel_p[2*kk+1] - 1]
+        += xa[face_id+kk] * x[face_cel_p[2*kk] - 1];
+    }
+    face_cel_p += 2 * l1_cache_size;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Measure matrix.vector product extradiagonal terms related performance
+ * with contribution to face-based array instead of cell-based array
+ * (symmetric matrix case).
+ *
+ * parameters:
+ *   n_faces         --> local number of internal faces
+ *   face_cell       --> face -> cells connectivity (1 to n)
+ *   xa              --> extradiagonal values
+ *   x               --> vector
+ *   ya              <-> vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_exdiag_part_p1(cs_int_t             n_faces,
+                        const cs_int_t      *face_cell,
+                        const cs_real_t     *restrict xa,
+                        cs_real_t           *restrict x,
+                        cs_real_t           *restrict ya)
+{
+  cs_int_t  ii, jj, face_id;
+
+  /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *xa, *ya)
+#endif
+
+  const cs_int_t *restrict face_cel_p = face_cell;
+
+  for (face_id = 0; face_id < n_faces; face_id++) {
+    ii = *face_cel_p++ - 1;
+    jj = *face_cel_p++ - 1;
+    ya[face_id] += xa[face_id] * x[ii];
+    ya[face_id] += xa[face_id] * x[jj];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Measure matrix.vector product local extradiagonal part related performance.
+ *
+ * parameters:
+ *   n_runs          --> number of operation runs
+ *   n_cells         --> number of cells
+ *   n_cells_ext     --> number of cells including ghost cells (array size)
+ *   n_faces         --> local number of internal faces
+ *   face_cell       --> face -> cells connectivity (1 to n)
+ *   xa              --> extradiagonal values
+ *   x               <-> vector
+ *   y               <-- vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_sub_matrix_vector_test(int                  n_runs,
+                        cs_int_t             n_cells,
+                        cs_int_t             n_cells_ext,
+                        cs_int_t             n_faces,
+                        const cs_int_t      *face_cell,
+                        const cs_real_t     *restrict xa,
+                        cs_real_t           *restrict x,
+                        cs_real_t           *restrict y)
+{
+  double wt, cpu;
+  int    run_id;
+  long   n_ops, n_ops_glob;
+  double *ya = NULL;
+
+  double test_sum = 0.0;
+
+  if (n_runs < 1)
+    return;
+
+  n_ops = n_faces*2;
+
+  if (cs_glob_base_nbr == 1)
+    n_ops_glob = n_ops;
+  else
+    n_ops_glob = (  cs_glob_mesh->n_g_cells
+                  + cs_glob_mesh->n_g_i_faces*2);
+
+  for (int jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
+
+  /* Matrix.vector product, variant 0 */
+
+  _timer_start(&wt, &cpu);
+
+  for (run_id = 0; run_id < n_runs; run_id++) {
+    _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
+    test_sum += y[n_cells-1];
+  }
+
+  _timer_stop(n_runs, &wt, &cpu);
+
+  bft_printf(_("\n"
+               "Matrix.vector product, extradiagonal part, variant 0\n"
+               "---------------------\n"));
+
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
+             n_runs, test_sum);
+
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
+
+  for (int jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
+
+  test_sum = 0.0;
+
+  /* Matrix.vector product, variant 1 */
+
+  _timer_start(&wt, &cpu);
+
+  for (run_id = 0; run_id < n_runs; run_id++) {
+    _mat_vec_exdiag_native_v1(n_faces, face_cell, xa, x, y);
+    test_sum += y[n_cells-1];
+  }
+
+  _timer_stop(n_runs, &wt, &cpu);
+
+  bft_printf(_("\n"
+               "Matrix.vector product, extradiagonal part, variant 1\n"
+               "---------------------\n"));
+
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
+             n_runs, test_sum);
+
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
+
+  /* Matrix.vector product, contribute to faces only */
+
+  BFT_MALLOC(ya, n_faces, cs_real_t);
+  for (int jj = 0; jj < n_faces; jj++)
+    ya[jj] = 0.0;
+
+  test_sum = 0.0;
+
+  _timer_start(&wt, &cpu);
+
+  for (run_id = 0; run_id < n_runs; run_id++) {
+    _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
+    test_sum += y[n_faces-1];
+  }
+
+  _timer_stop(n_runs, &wt, &cpu);
+
+  BFT_FREE(ya);
+
+  bft_printf(_("\n"
+               "Matrix.vector product, face values only\n"
+               "---------------------\n"));
+
+  bft_printf(_("  (calls: %d;  test sum: %12.5f)\n"),
+             n_runs, test_sum);
+
+  _print_stats(n_ops, n_ops_glob, wt, cpu);
+
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1337,6 +1602,15 @@ cs_benchmark(int  mpi_trace_mode)
                       n_cells, n_cells_ext, n_faces,
                       mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
                       da, xa, x1, y1);
+
+  _sub_matrix_vector_test(n_runs,
+                          n_cells,
+                          n_cells_ext,
+                          n_faces,
+                          mesh->i_face_cells,
+                          xa,
+                          x1,
+                          y1);
 
   /* Free working arrays */
   /*---------------------*/
