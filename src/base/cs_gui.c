@@ -6790,14 +6790,11 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         fprintf(file, "\n");
       }
 
-      npoint = cs_glob_mesh->n_g_cells; /* FIXME: npoint= MPI_MAX(ncel) */
+            npoint = 200;
       iel1   = -999;
       irang1 = -999;
 
-      xx = x2 - x1;
-      yy = y2 - y1;
-      zz = z2 - z1;
-      a = sqrt(xx*xx + yy*yy + zz*zz) / (double) npoint;
+      a = 1. / (double) (npoint-1);
 
       for (ii = 0; ii < npoint; ii++) {
 
@@ -6820,10 +6817,13 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
             xx = xyzcen[3 * iel + 0];
             yy = xyzcen[3 * iel + 1];
             zz = xyzcen[3 * iel + 2];
-            array[0] = sqrt(xx*xx + yy*yy + zz*zz);
             array[1] = xx;
             array[2] = yy;
             array[3] = zz;
+                    xx = xx - x1;
+                      yy = yy - y1;
+                    zz = zz - z1;
+                    array[0] = sqrt(xx*xx + yy*yy + zz*zz);
 
             for (iii=0; iii < nvar_prop; iii++) {
 
