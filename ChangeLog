@@ -1,4 +1,10 @@
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  CS_MIN/MAX macros are now consistant with Bull's ones.
+  modified routines:
+    include/base/cs_base.h
+    src/base/cs_matrix.c
+
+* 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Code_Aster coupling update (YACS side).
   modified routines:
     include/base/cs_calcium.h

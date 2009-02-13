@@ -122,7 +122,6 @@ BEGIN_C_DECLS
 
 #define IA64_OPTIM
 #define IA64_OPTIM_L1_CACHE_SIZE (508)
-#define IA64_OPTIM_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 #endif
 
@@ -760,8 +759,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
            face_id < ms->n_faces;
            face_id += IA64_OPTIM_L1_CACHE_SIZE) {
 
-        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
-                                IA64_OPTIM_L1_CACHE_SIZE);
+        kk_max = CS_MIN((ms->n_faces - face_id),
+                        IA64_OPTIM_L1_CACHE_SIZE);
 
         /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
 
@@ -801,8 +800,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
            face_id < ms->n_faces;
            face_id+=IA64_OPTIM_L1_CACHE_SIZE) {
 
-        kk_max = IA64_OPTIM_MIN((ms->n_faces - face_id),
-                                IA64_OPTIM_L1_CACHE_SIZE);
+        kk_max = CS_MIN((ms->n_faces - face_id),
+                        IA64_OPTIM_L1_CACHE_SIZE);
 
         /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
 

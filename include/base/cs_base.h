@@ -148,8 +148,8 @@
 /* "Classical" macros */
 
 #define CS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
-#define CS_MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum of a et b */
-#define CS_MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum of a et b */
+#define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))  /* Minimum of a et b */
+#define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /* Maximum of a et b */
 
 /*
  * Macros for future internationalization via gettext() or a similar
