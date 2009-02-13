@@ -171,8 +171,8 @@ C
       INTEGER          IIII
 C
       INTEGER          MODHIS, IAPPEL, MODNTL, IISUIT, IWARN0
-      INTEGER          NTSDEF, NTHDEF, NTCREL
-      INTEGER          IMSFIN, IPHAS , IVAR
+      INTEGER          NTSDEF, NTHDEF, NTCREL, NTCAM1
+      INTEGER          IPHAS , IVAR
 C
       INTEGER          IICOCE , IITYCE
       INTEGER          IIITEP , IITEPA , ISTATC , ISTATF
@@ -1008,17 +1008,6 @@ C
 C -- Fin de zone Structures mobiles en ALE
 C
 C
-C     EN CAS DE COUPLAGE, ON LIT DES MAINTENANT L'ENTETE DU PREMIER
-C     MESSAGE, AU CAS OU IL S'AGISSE D'UN MESSAGE DE TERMINAISON
-C
-      CALL TSTSYR (IMSFIN, NTMABS, NTCABS)
-C     ===========
-C
-      IF (IMSFIN.EQ.1) THEN
-        CALL CSEXIT (0)
-C       ===========
-      ENDIF
-C
 C=======================================================================
 C 10. DEBUT DE LA BOUCLE EN TEMPS
 C=======================================================================
@@ -1053,6 +1042,24 @@ C      d'un calcul sans ALE)
         WRITE(NFECRA,3002) TTCABS
       ENDIF
 C
+C     En cas de couplage avec SYRTHES, on lit des maintenant l'entete
+C     du premier message, au cas ou il s'agisse d'un message de
+C     terminaison.
+C
+      IF (ITRALE.GT.0) THEN
+C
+        NTCAM1 = NTCABS - 1
+C
+        CALL TSTSYR (NTMABS, NTCAM1)
+C       ===========
+C
+        IF (NTMABS .EQ. NTCAM1) THEN
+          CALL CSEXIT (0)
+C         ===========
+        ENDIF
+C
+      ENDIF
+C
  100  CONTINUE
 C
       IF(INPDT0.EQ.0 .AND. ITRALE.GT.0) THEN
@@ -1080,7 +1087,7 @@ C
       CALL DMTMPS(TITER1)
 C     ===========
 C
-C     Synchronisation Syrthes, si ITRALE>0
+C     Synchronisation Syrthes 3, si ITRALE>0
       IF (ITRALE.GT.0) THEN
         CALL ITDSYR(NTCABS,NTMABS)
 C       ===========
@@ -1292,13 +1299,13 @@ C=======================================================================
 C 18. TEST D'ARRET PAR DEMANDE DE SYRTHES
 C=======================================================================
 C
-C     EN CAS DE COUPLAGE, ON LIT DES MAINTENANT L'ENTETE DU PREMIER
-C     MESSAGE, AU CAS OU IL S'AGISSE D'UN MESSAGE DE TERMINAISON
+C     En cas de couplage, on lit des maintenant l'entete du premier
+C     message du pas de temps suivant, au cas ou il s'agisse d'un
+C     message de terminaison (pas de test sur ITRALE ici, car
+C     il serait sur ITRALE + 1, toujours > 0).
 C
-      IF (NTCABS.LT.NTMABS) THEN
-        CALL TSTSYR (IMSFIN, NTMABS, NTCABS)
-C       ===========
-      ENDIF
+      CALL TSTSYR (NTMABS, NTCABS)
+C     ===========
 C
 C=======================================================================
 C 19. SORTIE EVENTUELLE DU FICHIER SUITE

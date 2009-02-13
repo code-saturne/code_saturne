@@ -81,13 +81,12 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define CS_SYR3_COMM_LNG_NOM_TYPE_ELT        2    /* Length of type name */
+#define CS_SYR3_COMM_ELT_TYPE_NAME_LEN       2    /* Length of type name */
 
-#define CS_SYR3_COMM_SOCKET_ENTETE            "CS_comm_socket"
+#define CS_SYR3_COMM_SOCKET_HEADER            "CS_comm_socket"
 
-#define CS_SYR3_COMM_SOCKET_NBR_MAX          8
+#define CS_SYR3_COMM_SOCKET_N_MAX            8
 #define CS_LOC_SYR3_COMM_LNG_HOSTNAME      256
-#define CS_LOC_SYR3_COMM_LNG_NOM_MAX       256
 
 /*
   If SSIZE_MAX has not been defined through system headers, we take the
@@ -98,6 +97,17 @@ BEGIN_C_DECLS
 #define SSIZE_MAX  32767
 #endif
 
+/*----------------------------------------------------------------------------
+ * Send or receive a message
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_SYR3_COMM_MODE_RECEIVE,  /* Receive  */
+  CS_SYR3_COMM_MODE_SEND      /* Send */
+
+} _cs_syr3_comm_mode_t;
+
 /*============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -106,10 +116,9 @@ struct _cs_syr3_comm_t {
 
   char                 *nom;          /* Communicator name */
 
-  cs_int_t              rang_proc;    /* Communication process name */
+  cs_int_t              proc_rank;    /* Communication process name */
   int                   sock;         /* Socket number */
 
-  cs_syr3_comm_mode_t   mode;         /* Communication mode */
   cs_syr3_comm_type_t   type;         /* Type of data encoding */
   cs_bool_t             swap_endian;  /* Swap bytes ? */
   cs_int_t              echo;         /* Data transfer verbosity level */
@@ -120,21 +129,21 @@ struct _cs_syr3_comm_t {
  *  Global variables
  *============================================================================*/
 
-static char  cs_syr3_comm_nom_typ_elt_char[] = "c ";  /* String */
-static char  cs_syr3_comm_nom_typ_elt_int[]  = "i ";  /* Integer */
-static char  cs_syr3_comm_nom_typ_elt_real[] = "r8";  /* Real */
+static char  cs_syr3_comm_elt_type_name_char[] = "c ";  /* String */
+static char  cs_syr3_comm_elt_type_name_int[]  = "i ";  /* Integer */
+static char  cs_syr3_comm_elt_type_name_real[] = "r8";  /* Real */
 
 #if defined(_CS_HAVE_SOCKET)
 
-static cs_bool_t       cs_glob_comm_little_endian = false;
+static cs_bool_t  cs_glob_comm_little_endian = false;
 
-static char  cs_glob_comm_sock_nom_hote[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
-static int   cs_glob_comm_sock_num_port = -1;
+static char  cs_glob_comm_sock_hostname[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
+static int   cs_glob_comm_sock_port_num = -1;
 
 static int             cs_glob_comm_socket = 0;
-struct sockaddr_in     cs_glob_comm_addr_sock;
+struct sockaddr_in     cs_glob_comm_sock_addr;
 
-static char  cs_glob_comm_err_socket[]
+static char  cs_glob_comm_socket_err[]
 = N_("Error in socket communication:  %s (node %4d)\n");
 
 #endif /* _CS_HAVE_SOCKET */
@@ -150,8 +159,8 @@ static char  cs_glob_comm_err_socket[]
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_mpi_msg_err(const cs_syr3_comm_t  *comm,
-                             int                    error)
+_comm_mpi_error_msg(const cs_syr3_comm_t  *comm,
+                    int                    error)
 {
   char buffer[MPI_MAX_ERROR_STRING];
   int  buffer_len;
@@ -164,84 +173,74 @@ cs_loc_syr3_comm_mpi_msg_err(const cs_syr3_comm_t  *comm,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize an MPI communication by sending or receiving an eventual
- * "magic string" used to check the correct data format.
+ * Initialize an MPI communication by receiving then sending a "magic string"
+ * to check the correct data format.
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_mpi_ouvre(cs_syr3_comm_t  *const  comm,
-                           const char      *const  chaine_magique)
+_comm_mpi_open(cs_syr3_comm_t  *comm,
+               const char      *magic_string)
 {
   int ierror, comm_size;
 
   MPI_Status status;
 
-  char * chaine_magique_comm;
+  char * comm_magic_string;
 
-  cs_int_t lng_chaine_magique = strlen(chaine_magique);
+  cs_int_t magic_string_len = strlen(magic_string);
 
-  /*--------------------------*/
   /* Initialize communication */
   /*--------------------------*/
 
-  assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
-         || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
-
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  if (comm->rang_proc >= comm_size)
+  if (comm->proc_rank >= comm_size)
 
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible to establish the communication: %s\n"
                 "because the requested process rank (%d)\n"
                 "is greater than or equal to the number of MPI processes (%d)"),
-              comm->nom, comm->rang_proc, comm_size);
+              comm->nom, comm->proc_rank, comm_size);
 
-  BFT_MALLOC(chaine_magique_comm, lng_chaine_magique + 1, char);
+  BFT_MALLOC(comm_magic_string, magic_string_len + 1, char);
 
-  /*------------------------------*/
-  /* Receive or send magic string */
-  /*------------------------------*/
+  /* Receive magic string */
+  /*----------------------*/
 
-  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
+  ierror = MPI_Recv(comm_magic_string, magic_string_len, MPI_CHAR,
+                    comm->proc_rank,
+                    MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-    ierror = MPI_Recv(chaine_magique_comm, lng_chaine_magique, MPI_CHAR,
-                      comm->rang_proc,
-                      MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+  if (ierror != MPI_SUCCESS)
+    _comm_mpi_error_msg(comm, ierror);
 
-    if (ierror != MPI_SUCCESS)
-      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
+  comm_magic_string[magic_string_len] = '\0';
 
-    chaine_magique_comm[lng_chaine_magique] = '\0';
+  /* If the magic string does not match, we have an error */
 
-    /* If the magic string does not match, we have an error */
+  if (strcmp(comm_magic_string, magic_string) != 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error for communication: \"%s\".\n"
+         "The interface version is not correct.\n"
+         "The magic string indicates an incorrect interface format version.\n"
+         "magic string read:     \"%s\"\n"
+         "magic string expected: \"%s\"\n"),
+       comm->nom, comm_magic_string, magic_string);
 
-    if (strcmp(chaine_magique_comm, chaine_magique) != 0)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("Error for communication: \"%s\".\n"
-           "The interface version is not correct.\n"
-           "The magic string indicates an incorrect interface format version.\n"
-           "magic string read:     \"%s\"\n"
-           "magic string expected: \"%s\"\n"),
-         comm->nom, chaine_magique_comm, chaine_magique);
+  /* Send magic string */
+  /*-------------------*/
 
-  }
-  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
+  strncpy(comm_magic_string, magic_string, magic_string_len);
 
-    strncpy(chaine_magique_comm, chaine_magique, lng_chaine_magique);
+  ierror = MPI_Send(comm_magic_string, magic_string_len, MPI_CHAR,
+                    comm->proc_rank,
+                    0, MPI_COMM_WORLD);
 
-    ierror = MPI_Send(chaine_magique_comm, lng_chaine_magique, MPI_CHAR,
-                      comm->rang_proc,
-                      0, MPI_COMM_WORLD);
+  if (ierror != MPI_SUCCESS)
+    _comm_mpi_error_msg(comm, ierror);
 
-    if (ierror != MPI_SUCCESS)
-      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
-
-  }
-
-  BFT_FREE(chaine_magique_comm);
-
+  BFT_FREE(comm_magic_string);
 }
 
 /*----------------------------------------------------------------------------
@@ -249,14 +248,15 @@ cs_loc_syr3_comm_mpi_ouvre(cs_syr3_comm_t  *const  comm,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_mpi_entete(char                  *nom_rub,
-                            cs_int_t              *nbr_elt_rub,
-                            char                  *nom_typ_elt,
-                            const cs_syr3_comm_t  *comm)
+_comm_mpi_header(char                  *sec_name,
+                 cs_int_t              *n_sec_elts,
+                 char                  *elt_type_name,
+                 _cs_syr3_comm_mode_t   mode,
+                 const cs_syr3_comm_t  *comm)
 {
 #undef  CS_SYR3_COMM_MPI_PACK_SIZE
 #define CS_SYR3_COMM_MPI_PACK_SIZE    CS_SYR3_COMM_H_LEN \
-                                    + CS_SYR3_COMM_LNG_NOM_TYPE_ELT \
+                                    + CS_SYR3_COMM_ELT_TYPE_NAME_LEN \
                                     + (sizeof(int) * 2)
 
   char buffer[CS_SYR3_COMM_MPI_PACK_SIZE];
@@ -268,70 +268,66 @@ cs_loc_syr3_comm_mpi_entete(char                  *nom_rub,
   /* Instructions */
 
   assert(comm != NULL);
-  assert(*nbr_elt_rub >= 0);
+  assert(*n_sec_elts >= 0);
   assert(sizeof(int) == sizeof(cs_int_t));
 
   /* Receive mode */
   /*--------------*/
 
-  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
+  if (mode == CS_SYR3_COMM_MODE_RECEIVE) {
 
     /* Receive message */
 
     ierror = MPI_Recv(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, MPI_PACKED,
-                      comm->rang_proc,
+                      comm->proc_rank,
                       MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
+      _comm_mpi_error_msg(comm, ierror);
 
     /* Extract buffer elements */
 
     position = 0;
 
-    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nom_rub,
+    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, sec_name,
                CS_SYR3_COMM_H_LEN, MPI_CHAR, MPI_COMM_WORLD);
 
-    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nbr_elt_rub,
+    MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, n_sec_elts,
                1, CS_MPI_INT, MPI_COMM_WORLD);
 
-    if (*nbr_elt_rub > 0)
-      MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, nom_typ_elt,
-                 CS_SYR3_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, MPI_COMM_WORLD);
+    if (*n_sec_elts > 0)
+      MPI_Unpack(buffer, CS_SYR3_COMM_MPI_PACK_SIZE, &position, elt_type_name,
+                 CS_SYR3_COMM_ELT_TYPE_NAME_LEN, MPI_CHAR, MPI_COMM_WORLD);
 
   }
 
   /* Send mode */
   /*-----------*/
 
-  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
+  else { /* if (mode == CS_SYR3_COMM_MODE_SEND) */
 
     /* Pack buffer */
 
     position = 0;
 
-    MPI_Pack(nom_rub, CS_SYR3_COMM_H_LEN, MPI_CHAR, buffer,
+    MPI_Pack(sec_name, CS_SYR3_COMM_H_LEN, MPI_CHAR, buffer,
              CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
 
-    MPI_Pack(nbr_elt_rub, 1, CS_MPI_INT, buffer, CS_SYR3_COMM_MPI_PACK_SIZE,
+    MPI_Pack(n_sec_elts, 1, CS_MPI_INT, buffer, CS_SYR3_COMM_MPI_PACK_SIZE,
              &position, MPI_COMM_WORLD);
 
-    if (*nbr_elt_rub > 0)
-      MPI_Pack(nom_typ_elt, CS_SYR3_COMM_LNG_NOM_TYPE_ELT, MPI_CHAR, buffer,
+    if (*n_sec_elts > 0)
+      MPI_Pack(elt_type_name, CS_SYR3_COMM_ELT_TYPE_NAME_LEN, MPI_CHAR, buffer,
                CS_SYR3_COMM_MPI_PACK_SIZE, &position, MPI_COMM_WORLD);
 
     /* Send message */
 
-    ierror = MPI_Send(buffer, position, MPI_PACKED, comm->rang_proc,
+    ierror = MPI_Send(buffer, position, MPI_PACKED, comm->proc_rank,
                       0, MPI_COMM_WORLD);
 
     if (ierror != MPI_SUCCESS)
-      cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
+      _comm_mpi_error_msg(comm, ierror);
   }
-
-  else
-    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
-           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
 }
 
 /*----------------------------------------------------------------------------
@@ -339,51 +335,52 @@ cs_loc_syr3_comm_mpi_entete(char                  *nom_rub,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_mpi_corps(void                  *elt_rub,
-                           cs_int_t               nbr_elt_rub,
-                           cs_type_t              typ_elt,
-                           const cs_syr3_comm_t  *comm)
+_comm_mpi_body(void                  *sec_elts,
+               cs_int_t               n_sec_elts,
+               cs_type_t              elt_type,
+               _cs_syr3_comm_mode_t   mode,
+               const cs_syr3_comm_t  *comm)
 {
   int ierror;
-  int nbr_elt = nbr_elt_rub;
+  int n_elts = n_sec_elts;
 
   MPI_Status  status;
 
   /* Instructions */
 
   assert(comm != NULL);
-  assert(nbr_elt_rub >= 0);
+  assert(n_sec_elts >= 0);
 
   /* Receive mode */
   /*--------------*/
 
-  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
+  if (mode == CS_SYR3_COMM_MODE_RECEIVE) {
 
-    switch (typ_elt) {
+    switch (elt_type) {
 
     case CS_TYPE_cs_int_t:
 
-      ierror = MPI_Recv(elt_rub, nbr_elt, CS_MPI_INT,
-                        comm->rang_proc,
+      ierror = MPI_Recv(sec_elts, n_elts, CS_MPI_INT,
+                        comm->proc_rank,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       break;
 
     case CS_TYPE_cs_real_t:
-      ierror = MPI_Recv(elt_rub, nbr_elt, CS_MPI_REAL,
-                        comm->rang_proc,
+      ierror = MPI_Recv(sec_elts, n_elts, CS_MPI_REAL,
+                        comm->proc_rank,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       break;
 
     case CS_TYPE_char:
-      ierror = MPI_Recv(elt_rub, nbr_elt, MPI_CHAR,
-                        comm->rang_proc,
+      ierror = MPI_Recv(sec_elts, n_elts, MPI_CHAR,
+                        comm->proc_rank,
                         MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       break;
 
     default:
-      assert (   typ_elt == CS_TYPE_char
-              || typ_elt == CS_TYPE_cs_int_t
-              || typ_elt == CS_TYPE_cs_real_t);
+      assert (   elt_type == CS_TYPE_char
+              || elt_type == CS_TYPE_cs_int_t
+              || elt_type == CS_TYPE_cs_real_t);
     }
 
   }
@@ -391,42 +388,38 @@ cs_loc_syr3_comm_mpi_corps(void                  *elt_rub,
   /* Send mode */
   /*-----------*/
 
-  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION) {
+  else { /* if (mode == CS_SYR3_COMM_MODE_SEND) */
 
-    switch (typ_elt) {
+    switch (elt_type) {
 
     case CS_TYPE_cs_int_t:
-      ierror = MPI_Send(elt_rub, nbr_elt, CS_MPI_INT,
-                        comm->rang_proc,
+      ierror = MPI_Send(sec_elts, n_elts, CS_MPI_INT,
+                        comm->proc_rank,
                         0, MPI_COMM_WORLD);
       break;
 
     case CS_TYPE_cs_real_t:
-      ierror = MPI_Send(elt_rub, nbr_elt, CS_MPI_REAL,
-                        comm->rang_proc,
+      ierror = MPI_Send(sec_elts, n_elts, CS_MPI_REAL,
+                        comm->proc_rank,
                         0, MPI_COMM_WORLD);
       break;
 
     case CS_TYPE_char:
-      ierror = MPI_Send(elt_rub, nbr_elt, MPI_CHAR,
-                        comm->rang_proc,
+      ierror = MPI_Send(sec_elts, n_elts, MPI_CHAR,
+                        comm->proc_rank,
                         0, MPI_COMM_WORLD);
       break;
 
     default:
-      assert(   typ_elt == CS_TYPE_char
-             || typ_elt == CS_TYPE_cs_int_t
-             || typ_elt == CS_TYPE_cs_real_t);
+      assert(   elt_type == CS_TYPE_char
+             || elt_type == CS_TYPE_cs_int_t
+             || elt_type == CS_TYPE_cs_real_t);
     }
 
   }
 
-  else
-    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
-           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
-
   if (ierror != MPI_SUCCESS)
-    cs_loc_syr3_comm_mpi_msg_err(comm, ierror);
+    _comm_mpi_error_msg(comm, ierror);
 }
 
 #endif /* (_CS_HAVE_MPI) */
@@ -438,16 +431,16 @@ cs_loc_syr3_comm_mpi_corps(void                  *elt_rub,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_lit_sock(const cs_syr3_comm_t  *comm,
-                          cs_byte_t             *rec,
-                          const size_t           nbr,
-                          cs_type_t              type)
+_comm_read_sock(const cs_syr3_comm_t  *comm,
+                cs_byte_t             *rec,
+                const size_t           nbr,
+                cs_type_t              type)
 {
-  size_t   ind_deb;
-  size_t   ind_fin;
-  size_t   nbr_loc;
-  size_t   nbr_octet;
-  size_t   taille;
+  size_t   start_id;
+  size_t   end_id;
+  size_t   n_loc;
+  size_t   n_bytes;
+  size_t   count;
   ssize_t  ret;
 
   assert(rec  != NULL);
@@ -457,13 +450,13 @@ cs_loc_syr3_comm_lit_sock(const cs_syr3_comm_t  *comm,
 
   switch(type) {
   case CS_TYPE_cs_int_t:
-    taille = sizeof(cs_int_t);
+    count = sizeof(cs_int_t);
     break;
   case CS_TYPE_cs_real_t:
-    taille = sizeof(cs_real_t);
+    count = sizeof(cs_real_t);
     break;
   case CS_TYPE_char:
-    taille = sizeof(char);
+    count = sizeof(char);
     break;
   default:
     assert(type == CS_TYPE_cs_int_t  ||
@@ -471,20 +464,20 @@ cs_loc_syr3_comm_lit_sock(const cs_syr3_comm_t  *comm,
            type == CS_TYPE_char);
   }
 
-  nbr_octet = taille * nbr;
+  n_bytes = count * nbr;
 
   /* Read data from socket */
   /*-----------------------*/
 
-  ind_deb = 0;
+  start_id = 0;
 
-  while (ind_deb < nbr_octet) {
+  while (start_id < n_bytes) {
 
-    ind_fin = CS_MIN(ind_deb + SSIZE_MAX, nbr_octet);
+    end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
 
-    nbr_loc = ind_fin - ind_deb;
+    n_loc = end_id - start_id;
 
-    ret = read(comm->sock, (void *)(rec + ind_deb), nbr_loc);
+    ret = read(comm->sock, (void *)(rec + start_id), n_loc);
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
@@ -492,12 +485,12 @@ cs_loc_syr3_comm_lit_sock(const cs_syr3_comm_t  *comm,
                   "Error while receiving data by socket.\n"),
                 comm->nom);
 
-    ind_deb += ret;
+    start_id += ret;
 
   }
 
   if (comm->swap_endian == true)
-    bft_file_swap_endian(rec, rec, taille, nbr);
+    bft_file_swap_endian(rec, rec, count, nbr);
 
 }
 
@@ -506,16 +499,16 @@ cs_loc_syr3_comm_lit_sock(const cs_syr3_comm_t  *comm,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
-                            const cs_byte_t       *rec,
-                            const size_t           nbr,
-                            cs_type_t              type)
+_comm_write_sock(const cs_syr3_comm_t  *comm,
+                 const cs_byte_t       *rec,
+                 size_t                 nbr,
+                 cs_type_t              type)
 {
-  size_t   ind_deb;
-  size_t   ind_fin;
-  size_t   nbr_loc;
-  size_t   nbr_octet;
-  size_t   taille;
+  size_t   start_id;
+  size_t   end_id;
+  size_t   n_loc;
+  size_t   n_bytes;
+  size_t   count;
   ssize_t  ret;
 
   cs_byte_t   * rec_tmp;
@@ -527,13 +520,13 @@ cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
 
   switch(type) {
   case CS_TYPE_cs_int_t:
-    taille = sizeof(cs_int_t);
+    count = sizeof(cs_int_t);
     break;
   case CS_TYPE_cs_real_t:
-    taille = sizeof(cs_real_t);
+    count = sizeof(cs_real_t);
     break;
   case CS_TYPE_char:
-    taille = sizeof(char);
+    count = sizeof(char);
     break;
   default:
     assert(type == CS_TYPE_cs_int_t  ||
@@ -541,13 +534,13 @@ cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
            type == CS_TYPE_char);
   }
 
-  nbr_octet = taille * nbr;
+  n_bytes = count * nbr;
 
   /* Convert to "big-endian" */
 
-  if (comm->swap_endian == true && taille != 1) {
-    BFT_MALLOC(rec_tmp, nbr_octet, cs_byte_t);
-    bft_file_swap_endian(rec_tmp, rec, taille, nbr);
+  if (comm->swap_endian == true && count != 1) {
+    BFT_MALLOC(rec_tmp, n_bytes, cs_byte_t);
+    bft_file_swap_endian(rec_tmp, rec, count, nbr);
   }
   else
     rec_tmp = NULL;
@@ -555,18 +548,18 @@ cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
   /* write data to socket */
   /*----------------------*/
 
-  ind_deb = 0;
+  start_id = 0;
 
-  while (ind_deb < nbr_octet) {
+  while (start_id < n_bytes) {
 
-    ind_fin = CS_MIN(ind_deb + SSIZE_MAX, nbr_octet);
+    end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
 
-    nbr_loc = ind_fin - ind_deb;
+    n_loc = end_id - start_id;
 
     if (rec_tmp == NULL)
-      ret = write(comm->sock, (const void *)(rec + ind_deb), nbr_loc);
+      ret = write(comm->sock, (const void *)(rec + start_id), n_loc);
     else
-      ret = write(comm->sock, (const void *)(rec_tmp + ind_deb), nbr_loc);
+      ret = write(comm->sock, (const void *)(rec_tmp + start_id), n_loc);
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
@@ -574,7 +567,7 @@ cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
                   "Error sending data by socket.\n"),
                 comm->nom);
 
-    ind_deb += ret;
+    start_id += ret;
 
   }
 
@@ -587,44 +580,44 @@ cs_loc_syr3_comm_ecrit_sock(const cs_syr3_comm_t  *comm,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
+_comm_sock_connect(cs_syr3_comm_t  *comm)
 {
-  int ind;
+  int ii;
 
 #if defined(_CS_ARCH_Linux)
-  socklen_t long_sock;
+  socklen_t sock_len;
 #else
-  int       long_sock;  /* size_t according to SUS-v2 standard, but acording
-                           to "man gethostbyname" under Linux, the standard
-                           is bad, and we should have an int (or socklen_t) */
+  int       sock_len;  /* size_t according to SUS-v2 standard, but acording
+                          to "man gethostbyname" under Linux, the standard
+                          is bad, and we should have an int (or socklen_t) */
 #endif
 
-  char   str_taille[6] = "     ";
+  char   size_str[6] = "     ";
   char  *host_names = NULL;
-  int   *tab_num_port = NULL;
+  int   *port_num_array = NULL;
 
 #if defined (_CS_HAVE_MPI)
   int ierror = MPI_SUCCESS;
 #endif
-  int rang = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
 
   const int lng_hostname = CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1;
 
   /* Connect to server socket */
 
-  long_sock = sizeof(cs_glob_comm_addr_sock);
+  sock_len = sizeof(cs_glob_comm_sock_addr);
 
-  if (rang == 0) {
+  if (rank == 0) {
 
     comm->sock = accept(cs_glob_comm_socket,
-                        (struct sockaddr *)&cs_glob_comm_addr_sock,
-                        &long_sock);
+                        (struct sockaddr *)&cs_glob_comm_sock_addr,
+                        &sock_len);
 
     /* Send number of ranks */
 
-    sprintf(str_taille, "%5d", (int)cs_glob_base_nbr);
+    sprintf(size_str, "%5d", (int)cs_glob_base_nbr);
 
-    if (write(comm->sock, str_taille, 6) < 6)
+    if (write(comm->sock, size_str, 6) < 6)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error in socket communication\n"));
   }
@@ -637,10 +630,10 @@ cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
                lng_hostname * cs_glob_base_nbr,
                char);
 
-    BFT_MALLOC(tab_num_port, cs_glob_base_nbr, int);
+    BFT_MALLOC(port_num_array, cs_glob_base_nbr, int);
 
 #if defined(_CS_HAVE_MPI)
-    ierror = MPI_Gather(cs_glob_comm_sock_nom_hote, lng_hostname, MPI_CHAR,
+    ierror = MPI_Gather(cs_glob_comm_sock_hostname, lng_hostname, MPI_CHAR,
                         host_names, lng_hostname, MPI_CHAR, 0,
                         cs_glob_base_mpi_comm);
 
@@ -651,18 +644,18 @@ cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
 
     /* Send the port number */
 
-    ierror = MPI_Gather(&cs_glob_comm_sock_num_port, 1, MPI_INT,
-                        tab_num_port, 1, MPI_INT, 0, cs_glob_base_mpi_comm);
+    ierror = MPI_Gather(&cs_glob_comm_sock_port_num, 1, MPI_INT,
+                        port_num_array, 1, MPI_INT, 0, cs_glob_base_mpi_comm);
 
     if (ierror < 0)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error while sending the port number through MPI in sockets "
                   "initialization.\n"));
 
-    if (rang != 0)
+    if (rank != 0)
       comm->sock = accept(cs_glob_comm_socket,
-                          (struct sockaddr *)&cs_glob_comm_addr_sock,
-                          &long_sock);
+                          (struct sockaddr *)&cs_glob_comm_sock_addr,
+                          &sock_len);
 
 #else
     bft_error(__FILE__, __LINE__, 0,
@@ -671,30 +664,30 @@ cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
 
     /* rank 0 sends the number of ranks, hostnames, and port numbers */
 
-    if (rang == 0) {
+    if (rank == 0) {
 
       /* Send max hostname size */
 
-      sprintf(str_taille, "%3d", lng_hostname);
+      sprintf(size_str, "%3d", lng_hostname);
 
-      if (write(comm->sock, str_taille, 4) < 4)
+      if (write(comm->sock, size_str, 4) < 4)
         bft_error(__FILE__, __LINE__, errno,
                   _("Error in socket communication\n"));
 
-      for (ind = 1; ind < cs_glob_base_nbr; ind++) {
+      for (ii = 1; ii < cs_glob_base_nbr; ii++) {
 
         /* Send host machine name */
 
-        if (write(comm->sock, &(host_names[lng_hostname*ind]), lng_hostname)
+        if (write(comm->sock, &(host_names[lng_hostname*ii]), lng_hostname)
             < lng_hostname)
           bft_error(__FILE__, __LINE__, errno,
                     _("Error in socket communication\n"));
 
         /* Send port number */
 
-        sprintf(str_taille, "%5d", tab_num_port[ind]);
+        sprintf(size_str, "%5d", port_num_array[ii]);
 
-        if (write(comm->sock, str_taille, 6) < 6)
+        if (write(comm->sock, size_str, 6) < 6)
           bft_error(__FILE__, __LINE__, errno,
                     _("Error in socket communication\n"));
 
@@ -703,7 +696,7 @@ cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
     } /* End of rank-0 specific operations */
 
     BFT_FREE(host_names);
-    BFT_FREE(tab_num_port);
+    BFT_FREE(port_num_array);
 
   } /* End for cs_glob_base_nbr > 1 */
 
@@ -714,66 +707,61 @@ cs_loc_syr3_comm_sock_connect(cs_syr3_comm_t  *comm)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_sock_ouvre(cs_syr3_comm_t   *comm,
-                            const char       *chaine_magique)
+_comm_sock_open(cs_syr3_comm_t   *comm,
+                const char       *magic_string)
 {
   char nom_tmp[32 + 1];
-  int taille;
 
-  int rang = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  char *magic_string_read = NULL;
 
-  taille = strlen(CS_SYR3_COMM_SOCKET_ENTETE);
+  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int len = strlen(CS_SYR3_COMM_SOCKET_HEADER);
+  int magic_string_len = strlen(magic_string);
 
-  if (read(comm->sock, nom_tmp, taille) < taille)
+  if (read(comm->sock, nom_tmp, len) < len)
     bft_error(__FILE__, __LINE__, errno,
-              _(cs_glob_comm_err_socket), comm->nom,
-              rang + 1);
+              _(cs_glob_comm_socket_err), comm->nom,
+              rank + 1);
 
   /* Check that the connection is from the correct application type */
 
-  if (strncmp(nom_tmp, CS_SYR3_COMM_SOCKET_ENTETE, taille != 0))
+  if (strncmp(nom_tmp, CS_SYR3_COMM_SOCKET_HEADER, len != 0))
     bft_error(__FILE__, __LINE__, 0,
               _("Attempt to connect to the communication port with\n"
                 "an unknown message format\n"));
 
-  /*----------------------------*/
-  /* Write or read magic string */
-  /*----------------------------*/
+  /* Read magic string */
+  /*-------------------*/
 
-  if (comm->mode == CS_SYR3_COMM_MODE_RECEPTION) {
+  BFT_MALLOC(magic_string_read, magic_string_len + 1, char);
 
-    char      *chaine_magique_lue;
-    cs_int_t   lng_chaine_magique = strlen(chaine_magique);
+  _comm_read_sock(comm,
+                  (void *)(magic_string_read),
+                  strlen(magic_string),
+                  CS_TYPE_char);
 
-    BFT_MALLOC(chaine_magique_lue, lng_chaine_magique + 1, char);
+  magic_string_read[magic_string_len] = '\0';
 
-    cs_loc_syr3_comm_lit_sock(comm,
-                         (void *)(chaine_magique_lue),
-                         strlen(chaine_magique),
-                         CS_TYPE_char);
+  /* If the magic string does not match, we have an error */
 
-    chaine_magique_lue[lng_chaine_magique] = '\0';
+  if (strcmp(magic_string_read, magic_string) != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error while initializating communication: \"%s\".\n"
+                "The interface version is not correct.\n"
+                "The magic string indicates the interface format version:\n"
+                "magic string read:     \"%s\"\n"
+                "magic string expected: \"%s\"\n"),
+              comm->nom, magic_string_read, magic_string);
 
-    /* If the magic string does not match, we have an error */
+  BFT_FREE(magic_string_read);
 
-    if (strcmp(chaine_magique_lue, chaine_magique) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error while initializating communication: \"%s\".\n"
-                  "The interface version is not correct.\n"
-                  "The magic string indicates the interface format version:\n"
-                  "magic string read:     \"%s\"\n"
-                  "magic string expected: \"%s\"\n"),
-                comm->nom, chaine_magique_lue, chaine_magique);
+  /* Write magic string */
+  /*--------------------*/
 
-    BFT_FREE(chaine_magique_lue);
-
-  }
-  else if (comm->mode == CS_SYR3_COMM_MODE_EMISSION)
-
-    cs_loc_syr3_comm_ecrit_sock(comm,
-                           (const void *)(chaine_magique),
-                           strlen(chaine_magique),
-                           CS_TYPE_char);
+  _comm_write_sock(comm,
+                   (const void *)(magic_string),
+                   strlen(magic_string),
+                   CS_TYPE_char);
 }
 
 /*----------------------------------------------------------------------------
@@ -781,7 +769,7 @@ cs_loc_syr3_comm_sock_ouvre(cs_syr3_comm_t   *comm,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_sock_ferme(cs_syr3_comm_t  *comm)
+_comm_sock_close(cs_syr3_comm_t  *comm)
 {
   if (close(comm->sock) != 0)
     bft_error(__FILE__, __LINE__, errno,
@@ -799,24 +787,16 @@ cs_loc_syr3_comm_sock_ferme(cs_syr3_comm_t  *comm)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_echo_pre(const cs_syr3_comm_t  *comm)
+_comm_echo_pre(const cs_syr3_comm_t  *comm,
+               _cs_syr3_comm_mode_t   mode)
 {
   assert(comm != NULL);
 
-  switch(comm->mode) {
-
-  case CS_SYR3_COMM_MODE_RECEPTION:
+  if (mode == CS_SYR3_COMM_MODE_RECEIVE)
     bft_printf(_("\nMessage received on \"%s\":\n"), comm->nom);
-    break;
 
-  case CS_SYR3_COMM_MODE_EMISSION:
+  else /* if (mode == CS_SYR3_COMM_MODE_SEND) */
     bft_printf(_("\nMessage sent on \"%s\":\n"), comm->nom);
-    break;
-
-  default:
-    assert(   comm->mode == CS_SYR3_COMM_MODE_RECEPTION
-           || comm->mode == CS_SYR3_COMM_MODE_EMISSION);
-  }
 
   bft_printf_flush();
 }
@@ -826,40 +806,40 @@ cs_loc_syr3_comm_echo_pre(const cs_syr3_comm_t  *comm)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_echo_entete(const char  *nom_rub,
-                             cs_int_t     nbr_elt,
-                             cs_type_t    typ_elt
+_comm_echo_header(const char  *sec_name,
+                  cs_int_t     n_elts,
+                  cs_type_t    elt_type
 )
 {
-  char nom_rub_ecr[CS_SYR3_COMM_H_LEN + 1];
+  char sec_name_write[CS_SYR3_COMM_H_LEN + 1];
 
   /* instructions */
 
-  strncpy(nom_rub_ecr, nom_rub,  CS_SYR3_COMM_H_LEN);
-  nom_rub_ecr[CS_SYR3_COMM_H_LEN] = '\0';
+  strncpy(sec_name_write, sec_name,  CS_SYR3_COMM_H_LEN);
+  sec_name_write[CS_SYR3_COMM_H_LEN] = '\0';
 
   bft_printf(_("    section name:          \"%s\"\n"
                "    number of elements:    %d\n"),
-             nom_rub_ecr, nbr_elt);
+             sec_name_write, n_elts);
 
-  if (nbr_elt > 0) {
+  if (n_elts > 0) {
 
     char *nom_typ;
 
-    switch(typ_elt) {
+    switch(elt_type) {
     case CS_TYPE_char:
-      nom_typ = cs_syr3_comm_nom_typ_elt_char;
+      nom_typ = cs_syr3_comm_elt_type_name_char;
       break;
     case CS_TYPE_cs_int_t:
-      nom_typ = cs_syr3_comm_nom_typ_elt_int;
+      nom_typ = cs_syr3_comm_elt_type_name_int;
       break;
     case CS_TYPE_cs_real_t:
-      nom_typ = cs_syr3_comm_nom_typ_elt_real;
+      nom_typ = cs_syr3_comm_elt_type_name_real;
       break;
     default:
-      assert(   typ_elt == CS_TYPE_char
-             || typ_elt == CS_TYPE_cs_int_t
-             || typ_elt == CS_TYPE_cs_real_t);
+      assert(   elt_type == CS_TYPE_char
+             || elt_type == CS_TYPE_cs_int_t
+             || elt_type == CS_TYPE_cs_real_t);
     }
 
     bft_printf(_("    element type name:      \"%s\"\n"), nom_typ);
@@ -874,83 +854,83 @@ cs_loc_syr3_comm_echo_entete(const char  *nom_rub,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_syr3_comm_echo_donnees(cs_int_t     echo,
-                              cs_int_t     nbr_elt,
-                              cs_type_t    typ_elt,
-                              const void  *elt_rub
+_comm_echo_body(cs_int_t     echo,
+                cs_int_t     n_elts,
+                cs_type_t    elt_type,
+                const void  *sec_elts
 )
 {
-  cs_int_t  echo_deb = 0;
-  cs_int_t  echo_fin;
-  cs_int_t  ind;
+  cs_int_t  echo_start = 0;
+  cs_int_t  echo_end;
+  cs_int_t  ii;
 
   /* Instructions */
 
-  if (nbr_elt == 0) return;
+  if (n_elts == 0) return;
 
-  if (echo * 2 < nbr_elt) {
-    echo_fin = echo;
+  if (echo * 2 < n_elts) {
+    echo_end = echo;
     bft_printf(_("    %d first and last elements:\n"), echo);
   }
   else {
-    echo_fin = nbr_elt;
+    echo_end = n_elts;
     bft_printf(_("    elements:\n"));
   }
 
   do {
 
-    switch (typ_elt) {
+    switch (elt_type) {
 
     case CS_TYPE_cs_int_t:
       {
-        const cs_int_t *elt_rub_int = (const cs_int_t *) elt_rub;
+        const cs_int_t *sec_elts_int = (const cs_int_t *) sec_elts;
 
-        for (ind = echo_deb ; ind < echo_fin ; ind++)
-          bft_printf("    %10d : %12d\n", ind + 1, *(elt_rub_int + ind));
+        for (ii = echo_start ; ii < echo_end ; ii++)
+          bft_printf("    %10d : %12d\n", ii + 1, *(sec_elts_int + ii));
       }
       break;
 
     case CS_TYPE_cs_real_t:
       {
-        const cs_real_t *elt_rub_real = (const cs_real_t *) elt_rub;
+        const cs_real_t *sec_elts_real = (const cs_real_t *) sec_elts;
 
-        for (ind = echo_deb ; ind < echo_fin ; ind++)
-          bft_printf("    %10d : %12.5e\n", ind + 1, *(elt_rub_real + ind));
+        for (ii = echo_start ; ii < echo_end ; ii++)
+          bft_printf("    %10d : %12.5e\n", ii + 1, *(sec_elts_real + ii));
       }
       break;
 
     case CS_TYPE_char:
       {
-        const char *elt_rub_char = (const char *) elt_rub;
+        const char *sec_elts_char = (const char *) sec_elts;
 
-        for (ind = echo_deb ; ind < echo_fin ; ind++) {
-          if (*(elt_rub_char + ind) != '\0')
-            bft_printf("    %10d : '%c'\n", ind + 1, *(elt_rub_char + ind));
+        for (ii = echo_start ; ii < echo_end ; ii++) {
+          if (*(sec_elts_char + ii) != '\0')
+            bft_printf("    %10d : '%c'\n", ii + 1, *(sec_elts_char + ii));
           else
-            bft_printf("    %10d : '\\0'\n", ind + 1);
+            bft_printf("    %10d : '\\0'\n", ii + 1);
         }
       }
       break;
 
     default:
 
-      assert(   typ_elt == CS_TYPE_cs_int_t
-             || typ_elt == CS_TYPE_cs_real_t
-             || typ_elt == CS_TYPE_char);
+      assert(   elt_type == CS_TYPE_cs_int_t
+             || elt_type == CS_TYPE_cs_real_t
+             || elt_type == CS_TYPE_char);
 
     }
 
-    if (echo_fin < nbr_elt) {
+    if (echo_end < n_elts) {
       bft_printf("    ..........   ............\n");
-      echo_deb = nbr_elt - echo;
-      echo_fin = nbr_elt;
+      echo_start = n_elts - echo;
+      echo_end = n_elts;
     }
     else {
-      assert(echo_fin == nbr_elt);
-      echo_fin = nbr_elt + 1;
+      assert(echo_end == n_elts);
+      echo_end = n_elts + 1;
     }
 
-  } while (echo_fin <= nbr_elt);
+  } while (echo_end <= n_elts);
 
   bft_printf_flush();
 
@@ -961,11 +941,11 @@ cs_loc_syr3_comm_echo_donnees(cs_int_t     echo,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Function initializing a communication
+ * Initialize a communication
  *
  * parameters:
- *   numero,       <-- coupling number
- *   rang_proc,    <-- communicating process rank (< 0 if using sockets)
+ *   number,       <-- coupling number
+ *   proc_rank,    <-- communicating process rank (< 0 if using sockets)
  *   mode,         <-- send or receive
  *   type,         <-- communication type
  *   echo          <-- echo on main output (< 0 if none, header if 0,
@@ -976,40 +956,36 @@ cs_loc_syr3_comm_echo_donnees(cs_int_t     echo,
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_comm_initialise(const cs_int_t             numero,
+cs_syr3_comm_initialize(int                  number,
 #if defined(_CS_HAVE_MPI)
-                        const cs_int_t             rang_proc,
+                        int                  proc_rank,
 #endif
-                        const cs_syr3_comm_mode_t  mode,
-                        const cs_syr3_comm_type_t  type,
-                        const cs_int_t             echo)
+                        cs_syr3_comm_type_t  type,
+                        cs_int_t             echo)
 {
   unsigned    int_endian;
 
-  const char *base_name[] = {"receive_from_SYRTHES_",
-                             "send_to_SYRTHES_"};
-  const char *chaine_magique[] = {"SYRTHES_TO_SATURNE_2.2",
-                                  "SATURNE_TO_SYRTHES_2.2"};
+  const char base_name[] = "SYRTHES_";
+  const char magic_string[] = "CFD_SYRTHES_COUPLING_2.2";
   cs_syr3_comm_t  *comm = NULL;
 
   BFT_MALLOC(comm, 1, cs_syr3_comm_t);
 
   /* Build communicator name */
 
-  BFT_MALLOC(comm->nom, strlen(base_name[mode]) + 4 + 1, char);
+  BFT_MALLOC(comm->nom, strlen(base_name) + 4 + 1, char);
 
-  sprintf(comm->nom, "%s%04d", base_name[mode], numero);
+  sprintf(comm->nom, "%s%04d", base_name, number);
 
   /* Initialize other fields */
 
-  comm->mode = mode;
   comm->type = type;
   comm->echo = echo;
 
 #if defined(_CS_HAVE_MPI)
-  comm->rang_proc = rang_proc;
+  comm->proc_rank = proc_rank;
 #else
-  comm->rang_proc = -1;
+  comm->proc_rank = -1;
 #endif
 
   /* Test if system is "big-endian" or "little-endian" */
@@ -1034,12 +1010,12 @@ cs_syr3_comm_initialise(const cs_int_t             numero,
 
   /* Information on interface creation */
 
-  bft_printf(_("\n  Opening communication:  %s..."), comm->nom);
+  bft_printf(_("\n  Opening communication:  %s ..."), comm->nom);
   bft_printf_flush();
 
 #if defined(_CS_HAVE_SOCKET)
   if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-    cs_loc_syr3_comm_sock_connect(comm);
+    _comm_sock_connect(comm);
 #endif /* (_CS_HAVE_SOCKET) */
 
   /* Create interface file descriptor */
@@ -1048,9 +1024,9 @@ cs_syr3_comm_initialise(const cs_int_t             numero,
   if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
 #if defined(_CS_HAVE_MPI)
-    cs_loc_syr3_comm_mpi_ouvre(comm, chaine_magique[mode]);
+    _comm_mpi_open(comm, magic_string);
 #else
-    assert(comm->rang_proc < 0);
+    assert(comm->proc_rank < 0);
 #endif
 
   }
@@ -1058,7 +1034,7 @@ cs_syr3_comm_initialise(const cs_int_t             numero,
 
 #if defined(_CS_HAVE_SOCKET)
     if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-      cs_loc_syr3_comm_sock_ouvre(comm, chaine_magique[mode]);
+      _comm_sock_open(comm, magic_string);
 #endif
 
   }
@@ -1076,7 +1052,7 @@ cs_syr3_comm_initialise(const cs_int_t             numero,
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_comm_termine(cs_syr3_comm_t *comm)
+cs_syr3_comm_finalize(cs_syr3_comm_t *comm)
 {
   /* Info on interface finalization */
 
@@ -1086,7 +1062,7 @@ cs_syr3_comm_termine(cs_syr3_comm_t *comm)
 #if defined(_CS_HAVE_SOCKET)
 
   if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-    cs_loc_syr3_comm_sock_ferme(comm);
+    _comm_sock_close(comm);
 
 #endif /* (_CS_HAVE_SOCKET) */
 
@@ -1107,7 +1083,7 @@ cs_syr3_comm_termine(cs_syr3_comm_t *comm)
  *----------------------------------------------------------------------------*/
 
 const char *
-cs_syr3_comm_ret_nom(const cs_syr3_comm_t  *comm)
+cs_syr3_comm_get_name(const cs_syr3_comm_t  *comm)
 {
   assert(comm != NULL);
 
@@ -1118,72 +1094,72 @@ cs_syr3_comm_ret_nom(const cs_syr3_comm_t  *comm)
  * Send message
  *
  * parameters:
- *   nom_rub <-- section name
- *   nbr_elt <-- number of elemeents
- *   typ_elt <-- element type if nbr_elt > 0
- *   elt     <-- elements if nbr_elt > 0
- *   comm    <-- communicator
+ *   sec_name  <-- section name
+ *   n_elts    <-- number of elements
+ *   elt_type  <-- element type if n_elts > 0
+ *   elts      <-- elements if n_elts > 0
+ *   comm      <-- communicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
-                            cs_int_t               nbr_elt,
-                            cs_type_t              typ_elt,
-                            void                  *elt,
-                            const cs_syr3_comm_t  *comm)
+cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
+                          cs_int_t               n_elts,
+                          cs_type_t              elt_type,
+                          void                  *elts,
+                          const cs_syr3_comm_t  *comm)
 {
-  char   nom_rub_ecr[CS_SYR3_COMM_H_LEN + 1];
+  char   sec_name_write[CS_SYR3_COMM_H_LEN + 1];
 
-  char  *nom_typ_elt;
-  char   nom_typ_elt_ecr[CS_SYR3_COMM_LNG_NOM_TYPE_ELT + 1];
+  char  *elt_type_name;
+  char   elt_type_name_write[CS_SYR3_COMM_ELT_TYPE_NAME_LEN + 1];
 
 
   assert(comm != NULL);
-  assert(nbr_elt >= 0);
+  assert(n_elts >= 0);
 
   /* section name */
 
-  sprintf(nom_rub_ecr,
+  sprintf(sec_name_write,
           "%-*.*s",
           CS_SYR3_COMM_H_LEN,
           CS_SYR3_COMM_H_LEN,
-          nom_rub);
+          sec_name);
 
   /* element type name */
 
-  if (nbr_elt != 0) {
+  if (n_elts != 0) {
 
-    switch(typ_elt) {
+    switch(elt_type) {
 
     case CS_TYPE_cs_int_t:
-      nom_typ_elt = cs_syr3_comm_nom_typ_elt_int;
+      elt_type_name = cs_syr3_comm_elt_type_name_int;
       break;
 
     case CS_TYPE_cs_real_t:
-      nom_typ_elt = cs_syr3_comm_nom_typ_elt_real;
+      elt_type_name = cs_syr3_comm_elt_type_name_real;
       break;
 
     case CS_TYPE_char:
-      nom_typ_elt = cs_syr3_comm_nom_typ_elt_char;
+      elt_type_name = cs_syr3_comm_elt_type_name_char;
       break;
 
     default:
-      assert(   typ_elt == CS_TYPE_cs_int_t
-             || typ_elt == CS_TYPE_cs_real_t
-             || typ_elt == CS_TYPE_char);
+      assert(   elt_type == CS_TYPE_cs_int_t
+             || elt_type == CS_TYPE_cs_real_t
+             || elt_type == CS_TYPE_char);
 
     }
 
-    sprintf(nom_typ_elt_ecr,
+    sprintf(elt_type_name_write,
             "%-*.*s",
-            CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-            CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-            nom_typ_elt);
+            CS_SYR3_COMM_ELT_TYPE_NAME_LEN,
+            CS_SYR3_COMM_ELT_TYPE_NAME_LEN,
+            elt_type_name);
 
   }
 
   if (comm->echo  >= 0)
-    cs_loc_syr3_comm_echo_pre(comm);
+    _comm_echo_pre(comm, CS_SYR3_COMM_MODE_SEND);
 
 
 #if defined(_CS_HAVE_MPI)
@@ -1193,18 +1169,20 @@ cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
 
   if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
-    cs_int_t  nbr_elt_rub_ecr = nbr_elt;
+    cs_int_t  n_sec_elts_ecr = n_elts;
 
-    cs_loc_syr3_comm_mpi_entete(nom_rub_ecr,
-                                &nbr_elt_rub_ecr,
-                                nom_typ_elt_ecr,
-                                comm);
+    _comm_mpi_header(sec_name_write,
+                     &n_sec_elts_ecr,
+                     elt_type_name_write,
+                     CS_SYR3_COMM_MODE_SEND,
+                     comm);
 
-    if (nbr_elt > 0)
-      cs_loc_syr3_comm_mpi_corps((void *) elt,
-                                 nbr_elt,
-                                 typ_elt,
-                                 comm);
+    if (n_elts > 0)
+      _comm_mpi_body((void *) elts,
+                     n_elts,
+                     elt_type,
+                     CS_SYR3_COMM_MODE_SEND,
+                     comm);
 
   }
 
@@ -1219,33 +1197,33 @@ cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
 
     /* section name */
 
-    cs_loc_syr3_comm_ecrit_sock(comm,
-                                (const void *) nom_rub_ecr,
-                                CS_SYR3_COMM_H_LEN,
-                                CS_TYPE_char);
+    _comm_write_sock(comm,
+                     (const void *) sec_name_write,
+                     CS_SYR3_COMM_H_LEN,
+                     CS_TYPE_char);
 
     /* number of elements */
 
-    cs_loc_syr3_comm_ecrit_sock(comm,
-                                (const void *)(&nbr_elt),
-                                1,
-                                CS_TYPE_cs_int_t);
+    _comm_write_sock(comm,
+                     (const void *)(&n_elts),
+                     1,
+                     CS_TYPE_cs_int_t);
 
-    if (nbr_elt != 0) {
+    if (n_elts != 0) {
 
       /* element type name */
 
-      cs_loc_syr3_comm_ecrit_sock(comm,
-                                  (const void *) nom_typ_elt_ecr,
-                                  CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-                                  CS_TYPE_char);
+      _comm_write_sock(comm,
+                       (const void *) elt_type_name_write,
+                       CS_SYR3_COMM_ELT_TYPE_NAME_LEN,
+                       CS_TYPE_char);
 
       /* element values */
 
-      cs_loc_syr3_comm_ecrit_sock(comm,
-                                  (const void *) elt,
-                                  (size_t) nbr_elt,
-                                  typ_elt);
+      _comm_write_sock(comm,
+                       (const void *) elts,
+                       (size_t) n_elts,
+                       elt_type);
 
     }
 
@@ -1256,22 +1234,22 @@ cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
   /* Possibly print to log file */
 
   if (comm->echo  >= 0)
-    cs_loc_syr3_comm_echo_entete(nom_rub,
-                                 nbr_elt,
-                                 typ_elt);
+    _comm_echo_header(sec_name,
+                      n_elts,
+                      elt_type);
 
   if (comm->echo > 0)
-    cs_loc_syr3_comm_echo_donnees(comm->echo,
-                                  nbr_elt,
-                                  typ_elt,
-                                  elt);
+    _comm_echo_body(comm->echo,
+                    n_elts,
+                    elt_type,
+                    elts);
 }
 
 /*----------------------------------------------------------------------------
  * Receive message header
  *
  * parameters:
- *   entete --> message header
+ *   header --> message header
  *   comm   <-- communicator
  *
  * returns
@@ -1279,17 +1257,17 @@ cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
  *----------------------------------------------------------------------------*/
 
 cs_int_t
-cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
-                           const cs_syr3_comm_t       *comm)
+cs_syr3_comm_receive_header(cs_syr3_comm_msg_header_t  *header,
+                            const cs_syr3_comm_t       *comm)
 {
-  char   nom_typ_elt[CS_SYR3_COMM_LNG_NOM_TYPE_ELT + 1];
+  char   elt_type_name[CS_SYR3_COMM_ELT_TYPE_NAME_LEN + 1];
 
   assert(comm  != NULL);
 
-  entete->nbr_elt = 0;
+  header->n_elts = 0;
 
   if (comm->echo >= 0)
-    cs_loc_syr3_comm_echo_pre(comm);
+    _comm_echo_pre(comm, CS_SYR3_COMM_MODE_RECEIVE);
 
 
 #if defined(_CS_HAVE_MPI)
@@ -1299,10 +1277,11 @@ cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
 
   if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
-    cs_loc_syr3_comm_mpi_entete(entete->nom_rub,
-                                &(entete->nbr_elt),
-                                nom_typ_elt,
-                                comm);
+    _comm_mpi_header(header->sec_name,
+                     &(header->n_elts),
+                     elt_type_name,
+                     CS_SYR3_COMM_MODE_RECEIVE,
+                     comm);
 
   }
 
@@ -1317,27 +1296,27 @@ cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
 
     /* section type name */
 
-    cs_loc_syr3_comm_lit_sock(comm,
-                              (void *) &(entete->nom_rub),
-                              CS_SYR3_COMM_H_LEN,
-                              CS_TYPE_char);
+    _comm_read_sock(comm,
+                    (void *) &(header->sec_name),
+                    CS_SYR3_COMM_H_LEN,
+                    CS_TYPE_char);
 
     /* number of elements */
 
-    cs_loc_syr3_comm_lit_sock(comm,
-                              (void *) &(entete->nbr_elt),
-                              1,
-                              CS_TYPE_cs_int_t);
+    _comm_read_sock(comm,
+                    (void *) &(header->n_elts),
+                    1,
+                    CS_TYPE_cs_int_t);
 
 
-    if (entete->nbr_elt != 0) {
+    if (header->n_elts != 0) {
 
       /* element type name */
 
-      cs_loc_syr3_comm_lit_sock(comm,
-                                (void *) nom_typ_elt,
-                                CS_SYR3_COMM_LNG_NOM_TYPE_ELT,
-                                CS_TYPE_char);
+      _comm_read_sock(comm,
+                      (void *) elt_type_name,
+                      CS_SYR3_COMM_ELT_TYPE_NAME_LEN,
+                      CS_TYPE_char);
 
     }
 
@@ -1345,20 +1324,20 @@ cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
 
 #endif /* (_CS_HAVE_SOCKET) */
 
-  entete->nom_rub[CS_SYR3_COMM_H_LEN] = '\0';
+  header->sec_name[CS_SYR3_COMM_H_LEN] = '\0';
 
-  if (entete->nbr_elt != 0) {
+  if (header->n_elts != 0) {
 
-    nom_typ_elt[CS_SYR3_COMM_LNG_NOM_TYPE_ELT] = '\0';
+    elt_type_name[CS_SYR3_COMM_ELT_TYPE_NAME_LEN] = '\0';
 
-    if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_int) == 0)
-      entete->typ_elt = CS_TYPE_cs_int_t;
+    if (strcmp(elt_type_name, cs_syr3_comm_elt_type_name_int) == 0)
+      header->elt_type = CS_TYPE_cs_int_t;
 
-    else if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_real) == 0)
-      entete->typ_elt = CS_TYPE_cs_real_t;
+    else if (strcmp(elt_type_name, cs_syr3_comm_elt_type_name_real) == 0)
+      header->elt_type = CS_TYPE_cs_real_t;
 
-    else if (strcmp(nom_typ_elt, cs_syr3_comm_nom_typ_elt_char) == 0)
-      entete->typ_elt = CS_TYPE_char;
+    else if (strcmp(elt_type_name, cs_syr3_comm_elt_type_name_char) == 0)
+      header->elt_type = CS_TYPE_char;
 
     else {
       assert(0);
@@ -1368,116 +1347,117 @@ cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
   /* Possibly print to log file */
 
   if (comm->echo >= 0)
-    cs_loc_syr3_comm_echo_entete(entete->nom_rub,
-                                 entete->nbr_elt,
-                                 entete->typ_elt);
+    _comm_echo_header(header->sec_name,
+                      header->n_elts,
+                      header->elt_type);
 
   /* Return number of elements to read */
 
-  return entete->nbr_elt;
+  return header->n_elts;
 }
 
 /*----------------------------------------------------------------------------
  * Receive a message body
  *
  * parameters:
- *   entete <-- message header
+ *   header <-- message header
  *   elt    --> received body values
  *   comm   <-- communicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_recoit_corps(const cs_syr3_comm_msg_entete_t  *entete,
+cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                           void                             *elt,
                           const cs_syr3_comm_t             *comm)
 {
-  cs_int_t    ind;
-  void      *_elt_rub;
+  cs_int_t    ii;
+  void      *_sec_elts;
 
   assert(comm  != NULL);
-  assert(entete->nbr_elt >= 0);
+  assert(header->n_elts >= 0);
 
-  _elt_rub = elt;
+  _sec_elts = elt;
 
-  if (_elt_rub == NULL && entete->nbr_elt != 0) {
+  if (_sec_elts == NULL && header->n_elts != 0) {
 
-    switch(entete->typ_elt) {
+    switch(header->elt_type) {
 
     case CS_TYPE_cs_int_t:
       {
-        cs_int_t  *elt_rub_int;
+        cs_int_t  *sec_elts_int;
 
-        BFT_MALLOC(elt_rub_int, entete->nbr_elt, cs_int_t);
-        _elt_rub = (void *) elt_rub_int;
+        BFT_MALLOC(sec_elts_int, header->n_elts, cs_int_t);
+        _sec_elts = (void *) sec_elts_int;
       }
       break;
 
     case CS_TYPE_cs_real_t:
       {
-        cs_real_t  *elt_rub_rea;
+        cs_real_t  *sec_elts_rea;
 
-        BFT_MALLOC(elt_rub_rea, entete->nbr_elt, cs_real_t);
-        _elt_rub = (void *)elt_rub_rea;
+        BFT_MALLOC(sec_elts_rea, header->n_elts, cs_real_t);
+        _sec_elts = (void *)sec_elts_rea;
       }
       break;
 
     case CS_TYPE_char:
       {
-        char  *elt_rub_cha;
+        char  *sec_elts_cha;
 
-        BFT_MALLOC(elt_rub_cha, entete->nbr_elt + 1, char);
-        _elt_rub = (void *)elt_rub_cha;
+        BFT_MALLOC(sec_elts_cha, header->n_elts + 1, char);
+        _sec_elts = (void *)sec_elts_cha;
       }
       break;
 
     default:
-      assert(   entete->typ_elt == CS_TYPE_cs_int_t
-             || entete->typ_elt == CS_TYPE_cs_real_t
-             || entete->typ_elt == CS_TYPE_char);
+      assert(   header->elt_type == CS_TYPE_cs_int_t
+             || header->elt_type == CS_TYPE_cs_real_t
+             || header->elt_type == CS_TYPE_char);
     }
 
   }
 
   /* element values */
 
-  if (entete->nbr_elt != 0) {
+  if (header->n_elts != 0) {
 
 #if defined(_CS_HAVE_MPI)
 
     if (comm->type == CS_SYR3_COMM_TYPE_MPI)
-      cs_loc_syr3_comm_mpi_corps((void *)_elt_rub,
-                                 entete->nbr_elt,
-                                 entete->typ_elt,
-                                 comm);
+      _comm_mpi_body((void *)_sec_elts,
+                     header->n_elts,
+                     header->elt_type,
+                     CS_SYR3_COMM_MODE_RECEIVE,
+                     comm);
 
 #endif /* (_CS_HAVE_MPI) */
 
 #if defined(_CS_HAVE_SOCKET)
 
     if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
-      cs_loc_syr3_comm_lit_sock(comm,
-                                (void *)_elt_rub,
-                                (size_t) entete->nbr_elt,
-                                entete->typ_elt);
+      _comm_read_sock(comm,
+                      (void *)_sec_elts,
+                      (size_t) header->n_elts,
+                      header->elt_type);
 
 #endif /* (_CS_HAVE_SOCKET) */
 
     /* Verification */
 
-    if (entete->typ_elt == CS_TYPE_char) {
-      for (ind = 0 ;
-           ind < entete->nbr_elt && ((char *)_elt_rub)[ind] != '\0' ;
-           ind++);
-      ((char *)_elt_rub)[ind] = '\0';
+    if (header->elt_type == CS_TYPE_char) {
+      for (ii = 0 ;
+           ii < header->n_elts && ((char *)_sec_elts)[ii] != '\0' ;
+           ii++);
+      ((char *)_sec_elts)[ii] = '\0';
     }
 
     /* Possibly print to log file */
 
     if (comm->echo > 0)
-      cs_loc_syr3_comm_echo_donnees(comm->echo,
-                                    entete->nbr_elt,
-                                    entete->typ_elt,
-                                    _elt_rub);
+      _comm_echo_body(comm->echo,
+                      header->n_elts,
+                      header->elt_type,
+                      _sec_elts);
 
   }
 
@@ -1492,36 +1472,36 @@ cs_syr3_comm_recoit_corps(const cs_syr3_comm_msg_entete_t  *entete,
 void
 cs_syr3_comm_init_socket(void)
 {
-  char       chaine[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
+  char       s[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 
-  int        nbr_connect_max;
-  int        num_port;
+  int        n_connect_max;
+  int        port_num;
 
 #if defined(_CS_ARCH_Linux)
-  socklen_t long_sock;
+  socklen_t sock_len;
 #else
-  int       long_sock;  /* size_t according to SUS-v2 standard, but acording
-                           to "man gethostbyname" under Linux, the standard
-                           is bad, and we should have an int (or socklen_t) */
+  int       sock_len;  /* size_t according to SUS-v2 standard, but acording
+                          to "man gethostbyname" under Linux, the standard
+                          is bad, and we should have an int (or socklen_t) */
 #endif
 
   unsigned  int_endian;
 
-  struct sockaddr_in   addr_sock;
-  struct hostent      *ent_hote;
+  struct sockaddr_in   sock_addr;
+  struct hostent      *host_ent;
 
 
-  int rang = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
 
   /* Initialization */
 
-  nbr_connect_max = 0;
+  n_connect_max = 0;
 
-  if (getenv("CS_SYR3_COMM_SOCKET_NBR_MAX") != NULL)
-    nbr_connect_max = atoi(getenv("CS_SYR3_COMM_SOCKET_NBR_MAX"));
+  if (getenv("CS_SYR3_COMM_SOCKET_N_MAX") != NULL)
+    n_connect_max = atoi(getenv("CS_SYR3_COMM_SOCKET_N_MAX"));
 
-  if (nbr_connect_max == 0)
-    nbr_connect_max = CS_SYR3_COMM_SOCKET_NBR_MAX;
+  if (n_connect_max == 0)
+    n_connect_max = CS_SYR3_COMM_SOCKET_N_MAX;
 
   /* Test if system is "big-endian" (network reference) or "little-endian" */
 
@@ -1551,82 +1531,82 @@ cs_syr3_comm_init_socket(void)
 
   /* Prepare for use */
 
-  long_sock = sizeof(addr_sock);
+  sock_len = sizeof(sock_addr);
 
-  memset((char *) &addr_sock, 0, long_sock);
+  memset((char *) &sock_addr, 0, sock_len);
 
-  addr_sock.sin_family = AF_INET;
-  addr_sock.sin_addr.s_addr = INADDR_ANY;
-  addr_sock.sin_port = 0;
+  sock_addr.sin_family = AF_INET;
+  sock_addr.sin_addr.s_addr = INADDR_ANY;
+  sock_addr.sin_port = 0;
 
   if (cs_glob_comm_little_endian == true) {
-    bft_file_swap_endian(&(addr_sock.sin_addr.s_addr),
-                         &(addr_sock.sin_addr.s_addr),
-                         sizeof(addr_sock.sin_addr.s_addr),
+    bft_file_swap_endian(&(sock_addr.sin_addr.s_addr),
+                         &(sock_addr.sin_addr.s_addr),
+                         sizeof(sock_addr.sin_addr.s_addr),
                          1);
-    bft_file_swap_endian(&(addr_sock.sin_port),
-                         &(addr_sock.sin_port),
-                         sizeof(addr_sock.sin_port),
+    bft_file_swap_endian(&(sock_addr.sin_port),
+                         &(sock_addr.sin_port),
+                         sizeof(sock_addr.sin_port),
                          1);
   }
 
-  if (gethostname(chaine, CS_LOC_SYR3_COMM_LNG_HOSTNAME) < 0)
+  if (gethostname(s, CS_LOC_SYR3_COMM_LNG_HOSTNAME) < 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Error obtaining computer's name"));
-  chaine[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
+  s[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
 
-  ent_hote = gethostbyname(chaine);
-  memcpy(ent_hote->h_addr_list[0], &addr_sock.sin_addr, ent_hote->h_length);
+  host_ent = gethostbyname(s);
+  memcpy(host_ent->h_addr_list[0], &sock_addr.sin_addr, host_ent->h_length);
 
   if (bind(cs_glob_comm_socket,
-           (struct sockaddr *)&addr_sock,
-           long_sock) != 0)
+           (struct sockaddr *)&sock_addr,
+           sock_len) != 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Initialization error for socket communication support.\n"));
 
-  if (listen(cs_glob_comm_socket, nbr_connect_max) < 0)
+  if (listen(cs_glob_comm_socket, n_connect_max) < 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Initialization error for socket communication support.\n"));
 
   /* Obtain assigned service number */
 
   if (getsockname(cs_glob_comm_socket,
-                  (struct sockaddr *)&addr_sock,
-                  &long_sock) != 0)
+                  (struct sockaddr *)&sock_addr,
+                  &sock_len) != 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Initialization error for socket communication support.\n"));
 
-  num_port = addr_sock.sin_port;
+  port_num = sock_addr.sin_port;
   if (cs_glob_comm_little_endian == true) {
-    bft_file_swap_endian(&(addr_sock.sin_port),
-                         &(addr_sock.sin_port),
-                         sizeof(addr_sock.sin_port), 1);
-    num_port = addr_sock.sin_port;
-    bft_file_swap_endian(&(addr_sock.sin_port),
-                         &(addr_sock.sin_port),
-                         sizeof(addr_sock.sin_port), 1);
+    bft_file_swap_endian(&(sock_addr.sin_port),
+                         &(sock_addr.sin_port),
+                         sizeof(sock_addr.sin_port), 1);
+    port_num = sock_addr.sin_port;
+    bft_file_swap_endian(&(sock_addr.sin_port),
+                         &(sock_addr.sin_port),
+                         sizeof(sock_addr.sin_port), 1);
   }
 
   /* Save the structure in the associated global variable */
 
-  cs_glob_comm_addr_sock = addr_sock;
+  cs_glob_comm_sock_addr = sock_addr;
 
   /* Write host and port names in process order */
 
-  if (rang == 0) {
+  if (rank == 0) {
 
     /* Print available socket information to log for rank  0
        (do not internationalize this string so that scripts
        my use it more easily). */
 
-    bft_printf("\n  SYRTHES: port <%s:%d>\n\n", chaine, num_port);
+    bft_printf("\n  SYRTHES: port <%s:%d>\n\n", s, port_num);
     bft_printf_flush();
 
   }
 
-  memcpy(cs_glob_comm_sock_nom_hote, chaine, CS_LOC_SYR3_COMM_LNG_HOSTNAME);
-  cs_glob_comm_sock_nom_hote[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
-  cs_glob_comm_sock_num_port = num_port;
+  memcpy(cs_glob_comm_sock_hostname, s, CS_LOC_SYR3_COMM_LNG_HOSTNAME);
+  cs_glob_comm_sock_hostname[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
+  cs_glob_comm_sock_port_num = port_num;
 }
 
 /*----------------------------------------------------------------------------
@@ -1634,7 +1614,7 @@ cs_syr3_comm_init_socket(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_termine_socket(void)
+cs_syr3_comm_finalize_socket(void)
 {
   if (cs_glob_comm_socket == 0)
     return;

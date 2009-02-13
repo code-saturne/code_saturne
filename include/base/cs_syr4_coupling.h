@@ -135,27 +135,32 @@ cs_syr4_coupling_all_destroy(void);
  *
  * parameters:
  *   syr_coupling  <-> Syrthes coupling structure
+ *   coupling_id   <-- id of this coupling (for log file message)
  *   syr_root_rank <-- SYRTHES root rank
  *   n_syr_ranks   <-- Number of ranks associated with SYRTHES
  *----------------------------------------------------------------------------*/
 
 void
 cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
+                           int                 coupling_id,
                            int                 syr_root_rank,
                            int                 n_syr_ranks);
 
 /*----------------------------------------------------------------------------
- * Check if SYRTHES coupling continues or if we must finalize communications.
+ * Exchange new iteration or stop message with SYRTHES.
+ *
+ * If nt_cur_abs < nt_max_abs, a new iteration message is sent;
+ * otherwise, a stop message is sent. A corresponding message
+ * is received, and if it is a stop message, nt_max_abs is
+ * set to nt_cur_abs.
  *
  * parameters:
- *   is_end     --> "end" message indicator
  *   nt_cur_abs <-- current iteration number
  *   nt_max_abs <-> maximum iteration number
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_test_iter(int  *is_end,
-                           int   nt_cur_abs,
+cs_syr4_coupling_sync_iter(int   nt_cur_abs,
                            int  *nt_max_abs);
 
 /*----------------------------------------------------------------------------

@@ -188,10 +188,10 @@ _print_all_unmatched_syr(void)
       if (scb->app_name != NULL)
         local_name = scb->app_name;
 
-      bft_printf(_("  SYRTHES coupling:\n"
-                   "    coupling id:              %d\n"
-                   "    local name:               \"%s\"\n"
-                   "    local number:             %d\n\n"),
+      bft_printf(_(" SYRTHES coupling:\n"
+                   "   coupling id:              %d\n"
+                   "   local name:               \"%s\"\n"
+                   "   local number:             %d\n\n"),
                  i, local_name, scb->app_num);
     }
   }
@@ -234,15 +234,10 @@ _syr4_add_mpi(int builder_id,
 
   syr_coupling = cs_syr4_coupling_by_id(cs_syr4_coupling_n_couplings() - 1);
 
-  bft_printf(_("  SYRTHES coupling %d: initializing MPI comunication ..."),
-             builder_id);
-  bft_printf_flush();
-
   cs_syr4_coupling_init_comm(syr_coupling,
+                             builder_id,
                              syr_root_rank,
                              n_syr_ranks);
-  bft_printf(_(" [ok]\n"));
-  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------
@@ -268,16 +263,9 @@ _syr3_add_mpi(int builder_id,
                        CS_SYR3_COMM_TYPE_MPI,
                        scb->verbosity);
 
-  bft_printf(_("  SYRTHES coupling %d: initializing MPI comunication ..."),
-             builder_id);
-  bft_printf_flush();
-
   syr_coupling = cs_syr3_coupling_by_id(cs_syr3_coupling_n_couplings() - 1);
 
   cs_syr3_coupling_init_comm(syr_coupling, builder_id);
-
-  bft_printf(_(" [ok]\n"));
-  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------
@@ -317,15 +305,15 @@ _print_all_mpi_syr(void)
       if (ai.app_name != NULL)
         distant_name = ai.app_name;
 
-      bft_printf(_("  SYRTHES coupling:\n"
-                   "    coupling id:              %d\n"
-                   "    version:                  \"%s\"\n"
-                   "    local name:               \"%s\"\n"
-                   "    distant application name: \"%s\"\n"
-                   "    local number:             %d\n"
-                   "    MPI application number:   %d\n"
-                   "    MPI root rank:            %d\n"
-                   "    number of MPI ranks:      %d\n\n"),
+      bft_printf(_(" SYRTHES coupling:\n"
+                   "   coupling id:              %d\n"
+                   "   version:                  \"%s\"\n"
+                   "   local name:               \"%s\"\n"
+                   "   distant application name: \"%s\"\n"
+                   "   local number:             %d\n"
+                   "   MPI application number:   %d\n"
+                   "   MPI root rank:            %d\n"
+                   "   number of MPI ranks:      %d\n\n"),
                  i, syr_version, local_name, distant_name,
                  scb->app_num, ai.app_num, ai.root_rank, ai.n_ranks);
     }
@@ -515,16 +503,9 @@ _syr3_add_socket(int builder_id)
                        CS_SYR3_COMM_TYPE_SOCKET,
                        scb->verbosity);
 
-  bft_printf(_("  SYRTHES coupling %d: initializing socket comunication ..."),
-             builder_id);
-  bft_printf_flush();
-
   syr_coupling = cs_syr3_coupling_by_id(cs_syr3_coupling_n_couplings() - 1);
 
   cs_syr3_coupling_init_comm(syr_coupling, builder_id);
-
-  bft_printf(_(" [ok]\n"));
-  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------
@@ -628,9 +609,14 @@ void CS_PROCF(defsy1, DEFSY1)
   if (boundary_criteria != NULL && *boundary_c_len > 0)
     _boundary_criteria = cs_base_string_f_to_c_create(boundary_criteria,
                                                       *boundary_c_len);
+  if (_boundary_criteria != NULL && strlen(_boundary_criteria) == 0)
+    cs_base_string_f_to_c_free(&_boundary_criteria);
+
   if (volume_criteria != NULL && *volume_c_len > 0)
     _volume_criteria = cs_base_string_f_to_c_create(volume_criteria,
                                                     *volume_c_len);
+  if (_volume_criteria != NULL && strlen(_volume_criteria) == 0)
+    cs_base_string_f_to_c_free(&_volume_criteria);
 
   cs_syr_coupling_define(*syrthes_app_num,
                          _syrthes_name,
@@ -709,50 +695,52 @@ void CS_PROCF(geosyr, GEOSYR)
 }
 
 /*----------------------------------------------------------------------------
- * Check if SYRTHES coupling continues or if we must finalize communications.
+ * Check if SYRTHES coupling continues or if we must stop.
+ *
+ * For SYRTHES 4 couplings, if nt_cur_abs < nt_max_abs, a new iteration
+ * message is sent; otherwise, a stop message is sent. A corresponding
+ * message is received, and if it is a stop message, nt_max_abs is
+ * set to nt_cur_abs.
+ *
+ * For SYRTHES 3 couplings, A message (stop or new iteration) is
+ * received. No iteration start message is sent, as this is done
+ * by ITDSYR.
  *
  * Fortran Interface:
  *
  * SUBROUTINE TSTSYR (IMSFIN)
  * *****************
  *
- * INTEGER          IMSFIN      : <-- : Indicates "end" message
  * INTEGER          NTMABS      : <-> : Maximum iteration number
- * INTEGER          NTCABS      : --> : Current iteration numbern
+ * INTEGER          NTCABS      : --> : Current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(tstsyr, TSTSYR)
 (
- cs_int_t *imsfin,
  cs_int_t *ntmabs,
  cs_int_t *ntcabs
 )
 {
-  *imsfin = 0;
+  int nt_max_abs = *ntmabs;
 
-  if (cs_syr3_coupling_n_couplings() > 0) {
-    int is_end = *imsfin;
-    int nt_max_abs = *ntmabs;
-    cs_syr3_messages_test_iter(&is_end,
-                               *ntcabs,
-                               &nt_max_abs);
-    *imsfin = is_end;
-    *ntmabs = nt_max_abs;
-  }
+  if ((*ntcabs < *ntmabs) && cs_syr3_coupling_n_couplings() > 0)
+    cs_syr3_messages_test_iter(*ntcabs, &nt_max_abs);
 
-  if (cs_syr4_coupling_n_couplings() > 0) {
-    int is_end = *imsfin;
-    int nt_max_abs = *ntmabs;
-    cs_syr4_coupling_test_iter(&is_end,
-                               *ntcabs,
-                               &nt_max_abs);
-    *imsfin = is_end;
-    *ntmabs = nt_max_abs;
-  }
+  if (cs_syr4_coupling_n_couplings() > 0)
+    cs_syr4_coupling_sync_iter(*ntcabs, &nt_max_abs);
+
+  *ntmabs = nt_max_abs;
 }
 
 /*----------------------------------------------------------------------------
- * Synchronize new time step message.
+ * Synchronize new time step message for SYRTHES 3 couplings.
+ *
+ * This function is not necessary for SYRTHES 4, as all synchronization
+ * is done by TSTSYR. For SYRTHES 3, it is necessary to distinguish
+ * the last iteration from other iterations (to allow for SYRTHES 3 to
+ * determine in advance that it will need to output postprocessing/restart
+ * data), so using this separate function allows it to be placed after
+ * MODPAR in the main time loop, in case NTMABS is changed by that function.
  *
  * Fortran Interface:
  *
@@ -769,13 +757,11 @@ void CS_PROCF(itdsyr, ITDSYR)
  cs_int_t   *ntmabs
 )
 {
-  if (cs_syr3_coupling_n_couplings() > 0)
-    cs_syr3_messages_new_time_step(*ntcabs,
-                                   *ntmabs);
+  /* No call is necessary for SYRTHES 4, as all is done in
+     cs_syr4_coupling_sync_iter(), call by TSTSYR in this case. */
 
-  if (cs_syr4_coupling_n_couplings() > 0)
-    cs_syr4_coupling_new_time_step(*ntcabs,
-                                   *ntmabs);
+  if (cs_syr3_coupling_n_couplings() > 0)
+    cs_syr3_messages_new_time_step(*ntcabs, *ntmabs);
 }
 
 /*----------------------------------------------------------------------------
@@ -852,7 +838,7 @@ void CS_PROCF(lfasyr, LFASYR)
     }
     else {
       cs_syr4_coupling_t *syr_coupling
-        = cs_syr4_coupling_by_id(*coupl_num - 1);
+        = cs_syr4_coupling_by_id(*coupl_num - _cs_glob_n_syr3_cp - 1);
       cs_syr4_coupling_get_face_list(syr_coupling, coupl_face_list);
     }
   }
@@ -889,7 +875,7 @@ void CS_PROCF (varsyi, VARSYI)
     }
     else {
       cs_syr4_coupling_t *syr_coupling
-        = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp);
+        = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp -1);
       cs_syr4_coupling_recv_twall(syr_coupling, twall);
     }
   }
@@ -927,7 +913,7 @@ void CS_PROCF (varsyo, VARSYO)
       cs_syr3_messages_send_tf_hwall(*numsyr, tfluid, hwall);
     else {
       cs_syr4_coupling_t *syr_coupling
-        = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp);
+        = cs_syr4_coupling_by_id(*numsyr - _cs_glob_n_syr3_cp - 1);
       cs_syr4_coupling_send_tf_hwall(syr_coupling, tfluid, hwall);
     }
   }

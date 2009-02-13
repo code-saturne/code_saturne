@@ -26,7 +26,7 @@
  *============================================================================*/
 
 /*============================================================================
- * Manage messages for Syrthes coupling: sending, receiving and interpolation
+ * Manage messages for SYRTHES coupling: sending, receiving and interpolation
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -95,76 +95,69 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check if Syrthes coupling continues or if we must finalize communications.
+ * Check if SYRTHES coupling continues or if we must finalize communications.
  *
  * parameters:
- *   is_end     --> "end" message indicator
  *   nt_cur_abs <-- current iteration number
  *   nt_max_abs <-> maximum iteration number
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_messages_test_iter(int  *is_end,
-                           int   nt_cur_abs,
+cs_syr3_messages_test_iter(int   nt_cur_abs,
                            int  *nt_max_abs)
 {
   cs_int_t  ii, i_coupl;
-  cs_syr3_comm_msg_entete_t  header;
+  cs_syr3_comm_msg_header_t  header;
   char  section_name[32 + 1];
 
   cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
   cs_syr3_coupling_t *syr_coupling = NULL;
   cs_syr3_comm_t  *comm = NULL;
 
-  *is_end = 0;
-
   if (n_coupl > 0) {
+
+    section_name[32] = '\0';
 
     for (i_coupl = 0; i_coupl < n_coupl; i_coupl++) {
 
-      *is_end = 0;
-
       syr_coupling = cs_syr3_coupling_by_id(i_coupl);
-      comm = cs_syr3_coupling_get_recv_comm(syr_coupling);
+      comm = cs_syr3_coupling_get_comm(syr_coupling);
 
-      cs_syr3_comm_recoit_entete(&header, comm);
+      if (cs_glob_base_rang < 1) {
 
-      for (ii = 0 ; ii < 32 ; ii++)
-        section_name[ii] = header.nom_rub[ii];
-      section_name[32] = '\0';
+        cs_syr3_comm_receive_header(&header, comm);
+        assert(header.n_elts == 0);
+
+        for (ii = 0 ; ii < 32 ; ii++)
+          section_name[ii] = header.sec_name[ii];
+      }
+
+#if defined(_CS_HAVE_MPI)
+      if (cs_glob_base_nbr > 1)
+        MPI_Bcast(section_name, 32, MPI_CHAR, 0, cs_glob_base_mpi_comm);
+#endif
 
       /* Treatment according to the received header */
 
-      if (!strncmp("cmd:stop", section_name,
-                   strlen("cmd:stop"))) {
+      if (   (!strncmp("cmd:stop", section_name,
+                       strlen("cmd:stop")))
+          || (!strncmp(CS_SYR3_COMM_FIN_FICHIER, section_name,
+                       strlen(CS_SYR3_COMM_FIN_FICHIER)))) {
 
-        *nt_max_abs = nt_cur_abs;
-        *is_end = 1;
+        if (*nt_max_abs != nt_cur_abs) {
 
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf
-          (_("========================================================\n"
-             "   ** Abort on SYRTHES request\n"
-             "      ------------------------\n"
-             "      received message: \"%s\"\n"
-             "========================================================\n"),
-                   section_name);
+          *nt_max_abs = nt_cur_abs;
 
-      }
-      else if (!strncmp(CS_SYR3_COMM_FIN_FICHIER, section_name,
-                        strlen(CS_SYR3_COMM_FIN_FICHIER))) {
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf
+            (_("========================================================\n"
+               "   ** Stop on SYRTHES request\n"
+               "      -----------------------\n"
+               "      received message: \"%s\"\n"
+               "========================================================\n"),
+             section_name);
 
-        *nt_max_abs = nt_cur_abs;
-        *is_end = 1;
-
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf
-          (_("========================================================\n"
-             "   ** Abort on SYRTHES request\n"
-             "      ------------------------\n"
-             "      received message: \"%s\"\n"
-             "========================================================\n"),
-           section_name);
+        }
 
       }
       else if (strncmp("cmd:iter:start", section_name,
@@ -181,11 +174,9 @@ cs_syr3_messages_test_iter(int  *is_end,
            section_name);
       }
 
-      assert(header.nbr_elt == 0);
+    } /* End of loop on SYRTHES couplings */
 
-    } /* End of loop on Syrthes couplings */
-
-  } /* If there is at least one Syrthes coupling */
+  } /* If there is at least one SYRTHES coupling */
 
   else
     return;
@@ -208,12 +199,12 @@ cs_syr3_messages_new_time_step(int  nt_cur_abs,
   cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
   cs_syr3_comm_t *comm = NULL;
 
-  /* If there is at least one syrthes coupling */
+  /* If there is at least one SYRTHES coupling */
 
-  if (n_coupl > 0) {
+  if (n_coupl > 0 && cs_glob_base_rang < 1) {
 
     /*
-       Code_Saturne tells Syrthes when we are ready to begin a new
+       Code_Saturne tells SYRTHES when we are ready to begin a new
        time step, also specifying if it is the last time step.
     */
 
@@ -221,28 +212,30 @@ cs_syr3_messages_new_time_step(int  nt_cur_abs,
 
       cs_syr3_coupling_t *coupl = cs_syr3_coupling_by_id(i_coupl);
 
-      comm = cs_syr3_coupling_get_send_comm(coupl);
+      comm = cs_syr3_coupling_get_comm(coupl);
 
       if (nt_cur_abs == nt_max_abs)
-        cs_syr3_comm_envoie_message("cmd:iter:start:last",
-                                    0,
-                                    CS_TYPE_char,
-                                    NULL,
-                                    comm);
+        cs_syr3_comm_send_message("cmd:iter:start:last",
+                                  0,
+                                  CS_TYPE_char,
+                                  NULL,
+                                  comm);
 
       else if (nt_cur_abs < nt_max_abs)
-        cs_syr3_comm_envoie_message("cmd:iter:start",
-                                    0,
-                                    CS_TYPE_char,
-                                    NULL,
-                                    comm);
+        cs_syr3_comm_send_message("cmd:iter:start",
+                                  0,
+                                  CS_TYPE_char,
+                                  NULL,
+                                  comm);
 
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The current iteration number \"%d\" is greater than "
-                    "the requested\n"
-                    "maximum number iteration \"%d\" \n"),
-                  nt_cur_abs, nt_max_abs);
+      else { /* We should not go through this path */
+        cs_syr3_comm_send_message("cmd:stop",
+                                  0,
+                                  CS_TYPE_char,
+                                  NULL,
+                                  comm);
+        assert(nt_cur_abs <= nt_max_abs);
+      }
 
     }
 
@@ -251,10 +244,10 @@ cs_syr3_messages_new_time_step(int  nt_cur_abs,
 }
 
 /*----------------------------------------------------------------------------
- * Receive coupling variables from Syrthes
+ * Receive coupling variables from SYRTHES
  *
  * parameters:
- *   syr_num <-- Syrthes 3 coupling number
+ *   syr_num <-- SYRTHES 3 coupling number
  *   twall   --> wall temperature
  *----------------------------------------------------------------------------*/
 
@@ -262,8 +255,8 @@ void
 cs_syr3_messages_recv_twall(cs_int_t   syr_num,
                             cs_real_t  twall[])
 {
-  cs_int_t  ii;
-  cs_syr3_comm_msg_entete_t  header;
+  size_t  ii;
+  cs_syr3_comm_msg_header_t  header;
 
   char  section_name[CS_SYR3_COMM_H_LEN + 1];
 
@@ -282,52 +275,52 @@ cs_syr3_messages_recv_twall(cs_int_t   syr_num,
   else {
 
     syr_coupling = cs_syr3_coupling_by_id(syr_num - 1);
-    comm = cs_syr3_coupling_get_recv_comm(syr_coupling);
+    comm = cs_syr3_coupling_get_comm(syr_coupling);
 
     n_vertices = cs_syr3_coupling_get_n_vertices(syr_coupling);
 
   }
 
-  if (n_vertices > 0) {
+  if (n_vertices == 0)
+    return;
 
-    /* Expected section name definition */
+  /* Expected section name definition */
 
-    sprintf(section_name, "coupl:b:tparoi");
+  sprintf(section_name, "coupl:b:tparoi");
 
-    for (ii = strlen(section_name); ii < CS_SYR3_COMM_H_LEN; ii++)
-      section_name[ii] = ' ';
-    section_name[CS_SYR3_COMM_H_LEN] = '\0';
+  for (ii = strlen(section_name); ii < CS_SYR3_COMM_H_LEN; ii++)
+    section_name[ii] = ' ';
+  section_name[CS_SYR3_COMM_H_LEN] = '\0';
 
-    /* Receive header and check consistency */
+  /* Receive header and check consistency */
 
-    cs_syr3_comm_recoit_entete(&header, comm);
+  cs_syr3_comm_receive_header(&header, comm);
 
-    if (   strncmp(header.nom_rub, section_name, CS_SYR3_COMM_H_LEN) != 0
-        || (header.nbr_elt > 0 && header.typ_elt != CS_TYPE_cs_real_t)
-        || header.nbr_elt != n_vertices)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Unexpected message in the SYRTHES coupling %d:\n"
-                  " expected \"%s\" (%d elements, type %d)\n"
-                  " received \"%s\" (%d elements, type %d)\n"),
-                syr_num, section_name, n_vertices, (int)CS_TYPE_cs_real_t,
-                header.nom_rub, header.nbr_elt, (int)(header.typ_elt));
+  if (   strncmp(header.sec_name, section_name, CS_SYR3_COMM_H_LEN) != 0
+      || (header.n_elts > 0 && header.elt_type != CS_TYPE_cs_real_t)
+      || header.n_elts != n_vertices)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unexpected message in the SYRTHES coupling %d:\n"
+                " expected \"%s\" (%d elements, type %d)\n"
+                " received \"%s\" (%d elements, type %d)\n"),
+              syr_num, section_name, n_vertices, (int)CS_TYPE_cs_real_t,
+              header.sec_name, header.n_elts, (int)(header.elt_type));
 
-    /* Receive data */
+  /* Receive data */
 
-    BFT_MALLOC(syr_data, header.nbr_elt, cs_real_t);
+  BFT_MALLOC(syr_data, header.n_elts, cs_real_t);
 
-    cs_syr3_comm_recoit_corps(&header,
+  cs_syr3_comm_receive_body(&header,
+                            syr_data,
+                            comm);
+
+  /* Transfer received fields from vertices to faces */
+
+  cs_syr3_coupling_post_var_update(syr_coupling, 0, syr_data);
+
+  cs_syr3_coupling_vtx_to_elt(syr_coupling,
                               syr_data,
-                              comm);
-
-    /* Transfer received fields from vertices to faces */
-
-    cs_syr3_coupling_post_var_update(syr_coupling, 0, syr_data);
-
-    cs_syr3_coupling_vtx_to_elt(syr_coupling,
-                                syr_data,
-                                twall);
-  }
+                              twall);
 
   if (syr_data != NULL)
     BFT_FREE(syr_data);
@@ -335,10 +328,10 @@ cs_syr3_messages_recv_twall(cs_int_t   syr_num,
 }
 
 /*----------------------------------------------------------------------------
- * Send coupling variables to Syrthes
+ * Send coupling variables to SYRTHES
  *
  * parameters:
- *   syr_num <-- Syrthes 3 coupling number
+ *   syr_num <-- SYRTHES 3 coupling number
  *   tfluid  <-- wall exchange coefficient
  *   hwall   <-- wall exchange coefficient
  *----------------------------------------------------------------------------*/
@@ -348,7 +341,7 @@ cs_syr3_messages_send_tf_hwall(cs_int_t   syr_num,
                                cs_real_t  tfluid[],
                                cs_real_t  hwall[])
 {
-  cs_int_t  ii, var_id;
+  size_t  ii, var_id;
   char  section_name[CS_SYR3_COMM_H_LEN + 1];
 
   cs_int_t  n_coupl = cs_syr3_coupling_n_couplings();
@@ -365,7 +358,7 @@ cs_syr3_messages_send_tf_hwall(cs_int_t   syr_num,
   else {
 
     syr_coupling = cs_syr3_coupling_by_id(syr_num - 1);
-    comm = cs_syr3_coupling_get_send_comm(syr_coupling);
+    comm = cs_syr3_coupling_get_comm(syr_coupling);
 
     n_syr_values = cs_syr3_coupling_get_n_vertices(syr_coupling);
 
@@ -402,13 +395,13 @@ cs_syr3_messages_send_tf_hwall(cs_int_t   syr_num,
 
     cs_syr3_coupling_post_var_update(syr_coupling, 1 + var_id, syr_data);
 
-    /* Send data to Syrthes */
+    /* Send data to SYRTHES */
 
-    cs_syr3_comm_envoie_message(section_name,
-                                n_syr_values,
-                                CS_TYPE_cs_real_t,
-                                syr_data,
-                                comm);
+    cs_syr3_comm_send_message(section_name,
+                              n_syr_values,
+                              CS_TYPE_cs_real_t,
+                              syr_data,
+                              comm);
 
     BFT_FREE(syr_data);
 

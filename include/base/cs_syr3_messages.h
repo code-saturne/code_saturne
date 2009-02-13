@@ -74,14 +74,12 @@ BEGIN_C_DECLS
  * Check if Syrthes coupling continues or if we must finalize communications.
  *
  * parameters:
- *   is_end     --> "end" message indicator
  *   nt_cur_abs <-- current iteration number
  *   nt_max_abs <-> maximum iteration number
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_messages_test_iter(int  *is_end,
-                           int   nt_cur_abs,
+cs_syr3_messages_test_iter(int   nt_cur_abs,
                            int  *nt_max_abs);
 
 /*----------------------------------------------------------------------------

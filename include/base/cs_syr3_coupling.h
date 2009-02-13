@@ -114,30 +114,17 @@ cs_syr3_comm_type_t
 cs_syr3_coupling_get_comm_type(const cs_syr3_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
- * Get sending communicator associated with SYRTHES coupling
+ * Get communicator associated with SYRTHES coupling
  *
  * parameters:
  *   syr_coupling <-- coupling structure associated with SYRTHES
  *
  * returns:
- *   pointer to send communicator
+ *   pointer to communicator
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_coupling_get_send_comm(const cs_syr3_coupling_t  *syr_coupling);
-
-/*----------------------------------------------------------------------------
- * Get receiving communicator associated with SYRTHES coupling
- *
- * parameters:
- *   syr_coupling <-- coupling structure associated with SYRTHES
- *
- * returns:
- *   pointer to receive communicator
- *----------------------------------------------------------------------------*/
-
-cs_syr3_comm_t *
-cs_syr3_coupling_get_recv_comm(const cs_syr3_coupling_t  *syr_coupling);
+cs_syr3_coupling_get_comm(const cs_syr3_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
  * Get number of vertices in coupled mesh

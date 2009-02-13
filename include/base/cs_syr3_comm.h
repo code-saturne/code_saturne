@@ -70,17 +70,6 @@ typedef enum {
 
 } cs_syr3_comm_type_t;
 
-/*----------------------------------------------------------------------------
- * Send or receive a message
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_SYR3_COMM_MODE_RECEPTION,   /* Receive  */
-  CS_SYR3_COMM_MODE_EMISSION     /* Send */
-
-} cs_syr3_comm_mode_t;
-
 /* Pointer associated with an opaque communicator structure. */
 
 typedef struct _cs_syr3_comm_t cs_syr3_comm_t;
@@ -89,11 +78,11 @@ typedef struct _cs_syr3_comm_t cs_syr3_comm_t;
 
 typedef struct {
 
-  char       nom_rub[CS_SYR3_COMM_H_LEN + 1];
-  cs_int_t   nbr_elt;
-  cs_type_t  typ_elt;
+  char       sec_name[CS_SYR3_COMM_H_LEN + 1];
+  cs_int_t   n_elts;
+  cs_type_t  elt_type;
 
-} cs_syr3_comm_msg_entete_t;
+} cs_syr3_comm_msg_header_t;
 
 /*============================================================================
  *  Global variables
@@ -104,12 +93,11 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Function initializing a communication
+ * Initialize a communication
  *
  * parameters:
- *   numero,       <-- coupling number
- *   rang_proc,    <-- communicating process rank (< 0 if using sockets)
- *   mode,         <-- send or receive
+ *   number,       <-- coupling number
+ *   proc_rank,    <-- communicating process rank (< 0 if using sockets)
  *   type,         <-- communication type
  *   echo          <-- echo on main output (< 0 if none, header if 0,
  *                     n first and last elements if n)
@@ -119,20 +107,19 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_comm_initialise(const cs_int_t             numero,
+cs_syr3_comm_initialize(int                  number,
 #if defined(_CS_HAVE_MPI)
-                        const cs_int_t             rang_proc,
+                        int                  proc_rank,
 #endif
-                        const cs_syr3_comm_mode_t  mode,
-                        const cs_syr3_comm_type_t  type,
-                        const cs_int_t             echo);
+                        cs_syr3_comm_type_t  type,
+                        cs_int_t             echo);
 
 /*----------------------------------------------------------------------------
- * Function finalizing a communication
+ * Finalize a communication
  *----------------------------------------------------------------------------*/
 
 cs_syr3_comm_t *
-cs_syr3_comm_termine(cs_syr3_comm_t *comm);
+cs_syr3_comm_finalize(cs_syr3_comm_t *comm);
 
 /*----------------------------------------------------------------------------
  * Return a pointer to a communicator name
@@ -145,31 +132,31 @@ cs_syr3_comm_termine(cs_syr3_comm_t *comm);
  *----------------------------------------------------------------------------*/
 
 const char *
-cs_syr3_comm_ret_nom(const cs_syr3_comm_t  *comm);
+cs_syr3_comm_get_name(const cs_syr3_comm_t  *comm);
 
 /*----------------------------------------------------------------------------
  * Send message
  *
  * parameters:
- *   nom_rub <-- section name
- *   nbr_elt <-- number of elemeents
- *   typ_elt <-- element type if nbr_elt > 0
- *   elt     <-- elements if nbr_elt > 0
- *   comm    <-- communicator
+ *   nom_rub  <-- section name
+ *   n_elts   <-- number of elements
+ *   elt_type <-- element type if n_elts > 0
+ *   elts     <-- elements if n_elts > 0
+ *   comm     <-- communicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
-                            cs_int_t               nbr_elt,
-                            cs_type_t              typ_elt,
-                            void                  *elt,
-                            const cs_syr3_comm_t  *comm);
+cs_syr3_comm_send_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
+                          cs_int_t               n_elts,
+                          cs_type_t              elt_type,
+                          void                  *elts,
+                          const cs_syr3_comm_t  *comm);
 
 /*----------------------------------------------------------------------------
  * Receive message header
  *
  * parameters:
- *   entete --> message header
+ *   header --> message header
  *   comm   <-- communicator
  *
  * returns
@@ -177,20 +164,20 @@ cs_syr3_comm_envoie_message(const char             nom_rub[CS_SYR3_COMM_H_LEN],
  *----------------------------------------------------------------------------*/
 
 cs_int_t
-cs_syr3_comm_recoit_entete(cs_syr3_comm_msg_entete_t  *entete,
-                           const cs_syr3_comm_t       *comm);
+cs_syr3_comm_receive_header(cs_syr3_comm_msg_header_t  *header,
+                            const cs_syr3_comm_t       *comm);
 
 /*----------------------------------------------------------------------------
  * Receive a message body
  *
  * parameters:
- *   entete <-- message header
+ *   header <-- message header
  *   elt    --> received body values
  *   comm   <-- communicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_recoit_corps(const cs_syr3_comm_msg_entete_t  *entete,
+cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                           void                             *elt,
                           const cs_syr3_comm_t             *comm);
 
@@ -208,7 +195,7 @@ cs_syr3_comm_init_socket(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_termine_socket(void);
+cs_syr3_comm_finalize_socket(void);
 
 #endif /* _CS_HAVE_SOCKET */
 

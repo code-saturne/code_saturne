@@ -174,10 +174,13 @@ static int  cs_glob_syr4_post_mesh_ext[2] = {0, 1};
  *
  * parameters:
  *   syr_coupling  <-> Syrthes coupling structure
+ *   coupling_id   <-- id of this coupling (for log file message)
  *----------------------------------------------------------------------------*/
 
 static void
-_init_comm(cs_syr4_coupling_t *syr_coupling)
+_init_comm(cs_syr4_coupling_t *syr_coupling,
+           int                 coupling_id)
+
 {
 #if defined(_CS_HAVE_MPI)
 
@@ -190,16 +193,21 @@ _init_comm(cs_syr4_coupling_t *syr_coupling)
   if (mpi_flag == 0)
     return;
 
+  bft_printf(_(" SYRTHES coupling %d: initializing MPI communication ... "),
+             coupling_id);
+  bft_printf_flush();
+
   fvm_coupling_mpi_intracomm_create(cs_glob_base_mpi_comm,
                                     syr_coupling->syr_root_rank,
                                     &(syr_coupling->comm),
                                     local_range,
                                     distant_range);
 
-  bft_printf(_("SYRTHES coupling: local_ranks   = [%d..%d]\n"
-               "                  distant ranks = [%d..%d]\n"),
+  bft_printf(_("[ok]\n"));
+  bft_printf(_("  Local ranks = [%d..%d], distant ranks = [%d..%d].\n\n"),
              local_range[0], local_range[1] - 1,
              distant_range[0], distant_range[1] - 1);
+  bft_printf_flush();
 
   syr_coupling->n_syr_ranks = distant_range[1] - distant_range[0];
   syr_coupling->syr_root_rank = distant_range[0];
@@ -246,7 +254,7 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
 {
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_rang == 0) {
+  if (cs_glob_base_rang < 1) {
 
     MPI_Status status;
 
@@ -280,7 +288,7 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
 
   }
 
-  if (op_name_recv != NULL) {
+  if (op_name_recv != NULL && cs_glob_base_rang > -1) {
     MPI_Bcast(op_name_recv, 32, MPI_CHAR, 0, cs_glob_base_mpi_comm);
     op_name_recv[32] = '\0';
   }
@@ -310,8 +318,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   char coupled_mesh_name[64];
   fvm_gnum_t n_exterior = 0;
   fvm_lnum_t *elt_list = NULL;
-  double *elt_centers = NULL;
+  fvm_coord_t *elt_centers = NULL;
   const double tolerance = 0.1;
+  fvm_nodal_t *location_elts = NULL;
 
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
 
@@ -380,6 +389,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        elt_list);
 
     BFT_FREE(elt_list);
+
   }
 
   if (syr_coupling->verbosity > 0) {
@@ -396,12 +406,15 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* In case of 2D coupling, project coupled elements to 2D */
 
+  location_elts = coupling_ent->elts;
+
   if (syr_coupling->dim == 2) {
 
+    double      a[6];
     fvm_lnum_t  n_errors = 0;
 
     if (syr_coupling->verbosity > 0) {
-      bft_printf(_("Projecting the extracted mesh to 2D  ..."));
+      bft_printf(_("Projecting the extracted mesh to 2D ..."));
       bft_printf_flush();
     }
 
@@ -416,6 +429,19 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
       bft_printf_flush();
     }
 
+    location_elts = fvm_nodal_copy(coupling_ent->elts);
+
+    if (syr_coupling->ref_axis == 0) {
+      a[0] = 0.; a[1] = 1.; a[2] = 0.; a[3] = 0.; a[4] = 0.; a[5] = 1.;
+    }
+    else if (syr_coupling->ref_axis == 1) {
+      a[0] = 1.; a[1] = 0.; a[2] = 0.; a[3] = 0.; a[4] = 0.; a[5] = 1.;
+    }
+    else if (syr_coupling->ref_axis == 2) {
+      a[0] = 1.; a[1] = 0.; a[2] = 0.; a[3] = 0.; a[4] = 1.; a[5] = 0.;
+    }
+
+    fvm_nodal_project_coords(location_elts, a);
   }
 
   /* Element information */
@@ -444,8 +470,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
      in 2D. */
 
   if (coupling_ent->n_elts > 0) {
-    BFT_MALLOC(elt_centers, coupling_ent->n_elts*syr_coupling->dim, double);
-    fvm_nodal_get_element_centers(coupling_ent->elts,
+    BFT_MALLOC(elt_centers,
+               coupling_ent->n_elts*syr_coupling->dim,
+               fvm_coord_t);
+    fvm_nodal_get_element_centers(location_elts,
                                   FVM_INTERLACE,
                                   coupling_ent->elt_dim,
                                   elt_centers);
@@ -454,7 +482,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   /* Locate entities */
 
   fvm_locator_set_nodal(coupling_ent->locator,
-                        coupling_ent->elts,
+                        location_elts,
                         0, /* do not locate on parents */
                         syr_coupling->dim,
                         coupling_ent->n_elts,
@@ -476,6 +504,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                 "%lu element centers from mesh \"%s\"\n"
                 "not located on SYRTHES mesh."),
               (unsigned long)n_exterior, coupled_mesh_name);
+
+  if (location_elts != coupling_ent->elts)
+    fvm_nodal_destroy(location_elts);
 
   return coupling_ent;
 }
@@ -802,12 +833,14 @@ cs_syr4_coupling_all_destroy(void)
  *
  * parameters:
  *   syr_coupling  <-> SYRTHES coupling structure
+ *   coupling_id   <-- id of this coupling (for log file message)
  *   syr_root_rank <-- SYRTHES root rank
  *   n_syr_ranks   <-- Number of ranks associated with SYRTHES
  *----------------------------------------------------------------------------*/
 
 void
 cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
+                           int                 coupling_id,
                            int                 syr_root_rank,
                            int                 n_syr_ranks)
 {
@@ -821,7 +854,7 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
   syr_coupling->n_syr_ranks = n_syr_ranks;
   syr_coupling->syr_root_rank = syr_root_rank;
 
-  _init_comm(syr_coupling);
+  _init_comm(syr_coupling, coupling_id);
 
   /* Exchange coupling options */
 
@@ -850,56 +883,62 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
- * Check if Syrthes coupling continues or if we must finalize communications.
+ * Exchange new iteration or stop message with SYRTHES.
+ *
+ * If nt_cur_abs < nt_max_abs, a new iteration message is sent;
+ * otherwise, a stop message is sent. A corresponding message
+ * is received, and if it is a stop message, nt_max_abs is
+ * set to nt_cur_abs.
  *
  * parameters:
- *   is_end     --> "end" message indicator
  *   nt_cur_abs <-- current iteration number
  *   nt_max_abs <-> maximum iteration number
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_test_iter(int  *is_end,
-                           int   nt_cur_abs,
+cs_syr4_coupling_sync_iter(int   nt_cur_abs,
                            int  *nt_max_abs)
 {
   cs_int_t  coupl_id;
+  char  op_name_send[32 + 1];
   char  op_name_recv[32 + 1];
 
   cs_int_t  n_coupl = cs_syr4_coupling_n_couplings();
   cs_syr4_coupling_t *syr_coupling = NULL;
 
-  *is_end = 0;
+  if (nt_cur_abs < *nt_max_abs)
+    strcpy(op_name_send, "cmd:iter:start");
+  else
+    strcpy(op_name_send, "cmd:stop");
 
   for (coupl_id = 0; coupl_id < n_coupl; coupl_id++) {
 
     syr_coupling = cs_syr4_coupling_by_id(coupl_id);
 
-    _exchange_sync(syr_coupling, NULL, op_name_recv);
+    _exchange_sync(syr_coupling, op_name_send, op_name_recv);
 
     /* Treatment according to the received header */
 
     if (!strcmp(op_name_recv, "cmd:stop")) {
 
-      *is_end = 1;
-      *nt_max_abs = nt_cur_abs;
+      if (*nt_max_abs != nt_cur_abs) {
 
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf
-        (_("========================================================\n"
-           "   ** Abort on SYRTHES request\n"
-           "      ------------------------\n"
-           "      received message: \"%s\"\n"
-           "========================================================\n"),
-         op_name_recv);
+        *nt_max_abs = nt_cur_abs;
+
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf
+          (_("========================================================\n"
+             "   ** Stop on SYRTHES request\n"
+             "      -----------------------\n"
+             "      received message: \"%s\"\n"
+             "========================================================\n"),
+           op_name_recv);
+
+      }
 
     }
 
-    /* Allow for both cmd:iter:start and cmd:iter:start:last */
-
-    else if (strncmp(op_name_recv,
-                     "cmd:iter:start",
-                     strlen("cmd:iter:start"))) {
+    else if (strcmp(op_name_recv, "cmd:iter:start")) {
 
       bft_error
         (__FILE__, __LINE__, 0,
@@ -913,46 +952,6 @@ cs_syr4_coupling_test_iter(int  *is_end,
     }
 
   } /* End of loop on Syrthes couplings */
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize new time step
- *
- * parameters:
- *   nt_cur_abs <-- current iteration number
- *   nt_max_abs --> maximum iteration number
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr4_coupling_new_time_step(int  nt_cur_abs,
-                               int  nt_max_abs)
-{
-  cs_int_t  coupl_id;
-
-  cs_int_t  n_coupl = cs_syr4_coupling_n_couplings();
-
-  /*
-    Code_Saturne tells Syrthes when we are ready to begin a new
-    time step, also specifying if it is the last time step.
-  */
-
-  for (coupl_id = 0; coupl_id < n_coupl; coupl_id++) {
-
-    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
-
-    if (nt_cur_abs == nt_max_abs)
-      _exchange_sync(syr_coupling, "cmd:iter:start:last", NULL);
-
-    else if (nt_cur_abs < nt_max_abs)
-      _exchange_sync(syr_coupling, "cmd:iter:start", NULL);
-
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("The current iteration number \"%d\" is greater than "
-                  "the requested\n"
-                  "maximum number iteration \"%d\" \n"),
-                nt_cur_abs, nt_max_abs);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1117,7 +1116,7 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
 
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 
-  cs_real_t *send_var = NULL;
+  double *send_var = NULL;
 
   coupling_ent = syr_coupling->faces;
 
@@ -1129,28 +1128,19 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
 
   /* Prepare and send data */
 
-  BFT_MALLOC(send_var, coupling_ent->n_elts, cs_real_t);
+  BFT_MALLOC(send_var, coupling_ent->n_elts*2, double);
 
-  for (ii = 0; ii < n_dist; ii++)
-    send_var[ii] = tf[dist_loc[ii] - 1];
-
-  fvm_locator_exchange_point_var(coupling_ent->locator,
-                                 send_var,
-                                 NULL,
-                                 NULL,
-                                 sizeof(cs_real_t),
-                                 1,
-                                 0);
-
-  for (ii = 0; ii < n_dist; ii++)
-    send_var[ii] = hwall[dist_loc[ii] - 1];
+  for (ii = 0; ii < n_dist; ii++) {
+    send_var[ii*2]     = tf[dist_loc[ii] - 1];
+    send_var[ii*2 + 1] = hwall[dist_loc[ii] - 1];
+  }
 
   fvm_locator_exchange_point_var(coupling_ent->locator,
                                  send_var,
                                  NULL,
                                  NULL,
-                                 sizeof(cs_real_t),
-                                 1,
+                                 sizeof(double),
+                                 2,
                                  0);
 
   BFT_FREE(send_var);
