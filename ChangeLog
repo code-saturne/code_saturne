@@ -1,6 +1,9 @@
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   SYRTHES coupling change set. Correction for SYRTHES 4 coupling
   and corresponding modifications for SYRTHES 3 coupling).
+  Upgrade to syr_cs 2.3.0
+  modified script:
+    bin/cs_profile
   modified routines
     include/base/cs_syr3_comm.h
     include/base/cs_syr3_coupling.h
