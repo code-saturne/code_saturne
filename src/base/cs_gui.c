@@ -1193,7 +1193,6 @@ static void cs_gui_output_choice(const char *const param,
   choice = _output_choice(param);
   if (choice != NULL) cs_gui_strcpy_c2f(keyword, choice, *size_key);
   BFT_FREE(choice);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3394,15 +3393,18 @@ static char *_get_profile_label_name(const int id, const int nm)
     for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
       if (cs_gui_strcmp(name,  vars->label[j])) {
         ll = strlen(vars->label[j])+1;
-        BFT_MALLOC(label, ll, char);
+        BFT_REALLOC(label, ll, char);
         strcpy(label, vars->label[j]);
       }
     }
   }
 
   for (j=0; j < vars->nprop; j++) {
-    if (cs_gui_strcmp(name, vars->properties_name[j]))
+    if (cs_gui_strcmp(name, vars->properties_name[j])) {
+      if (label != NULL)
+        BFT_FREE(label);
       label = cs_gui_properties_label(vars->properties_name[j]);
+    }
   }
 
   if (label == NULL)
@@ -6938,6 +6940,10 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
     BFT_FREE(boundaries->type_code);
     BFT_FREE(boundaries->values);
     BFT_FREE(boundaries->rough);
+    BFT_FREE(boundaries->norm);
+    BFT_FREE(boundaries->dirx);
+    BFT_FREE(boundaries->diry);
+    BFT_FREE(boundaries->dirz);
     BFT_FREE(boundaries);
   }
 
