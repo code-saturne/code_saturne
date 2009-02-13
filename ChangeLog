@@ -1,3 +1,8 @@
+* 13/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
+  Minor changes in the 1D-profile generation iva the GUI.
+  modified routines:
+    src/base/cs_gui.c
+
 * 13/02/2009 - David Monfort <david.monfort@edf.fr>
   Upgrade to new compilers, drivers and librairies on BG/L
   and BG/P architecture.
