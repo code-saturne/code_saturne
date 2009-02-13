@@ -19,6 +19,7 @@
     include/base/cs_syr4_coupling.h
     include/base/cs_syr_coupling.h
     src/base/caltri.F
+    src/base/cs_coupling.c
     src/base/cs_syr3_comm.c
     src/base/cs_syr3_coupling.c
     src/base/cs_syr3_messages.c

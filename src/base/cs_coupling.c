@@ -115,7 +115,7 @@ cs_coupling_discover_mpi_apps(int          app_num,
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
-    if (cs_glob_base_rang == 0) {
+    if (cs_glob_base_rang < 1) {
       bft_printf(_("\n"
                    "Applications accessible through MPI:\n"
                    "------------------------------------\n\n"));
