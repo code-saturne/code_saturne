@@ -1,16 +1,33 @@
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  From now on, use fvm_part_to_block/fvm_block_to_part
+  for restart files writing/reading.
+  Upgrade to FVM version 0.13.0
+  modified macros:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+  modified file:
+    COMPATIBILITY
+  modified routine:
+    src/base/cs_suite.c
+
+* 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Free more memory (less valgrind errors...).
-  modified routines:
+  modified routine:
     src/base/cs_gui.c
 
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor correction and new matrix.vector product tests.
-  modified routines:
+  modified routine:
     src/base/cs_benchmark.c
 
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction in the MPI initialization in case of coupling.
-  modified routines:
+  modified routine:
     src/base/cs_base.c
 
 * 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
@@ -35,7 +52,7 @@
 
 * 13/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Minor changes in the 1D-profile generation iva the GUI.
-  modified routines:
+  modified routine:
     src/base/cs_gui.c
 
 * 13/02/2009 - David Monfort <david.monfort@edf.fr>

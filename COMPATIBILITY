@@ -16,7 +16,7 @@ are compulsory. They are distributed under the LGPL licence
 (copyright EDF S.A., France). Code_Saturne version 1.4.0 is compliant with
 the following versions:
 * BFT 1.0.8 or newer
-* FVM 0.12.0 or newer
+* FVM 0.13.0 or newer
 Older versions might yet be compatible, possibly with limited features.
 
 

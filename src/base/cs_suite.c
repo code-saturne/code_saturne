@@ -55,6 +55,9 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <fvm_block_to_part.h>
+#include <fvm_part_to_block.h>
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -275,128 +278,11 @@ _add_file(cs_suite_t  *suite)
 #if defined(_CS_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Redistribute values based on a mesh location.
- *
- * Allocated arrays must be freed by the caller.
- *
- * parameters:
- *   n_glob_ents      <-- global number of entities
- *   n_ents           <-- local number of entities
- *   n_blocks         <-- number of blocks
- *   block_size       <-- step (base size) associated with each block
- *   block_buf_size   --> sum of block array sizes
- *   owner_buf_size   --> sum of owner (rank) array sizes
- *   ent_global_num   <-- global entity numbers (1 to n numbering)
- *   owner_ent_id     --> entity id's for each rank
- *   block_count      --> number of local entities per block
- *   owner_count      --> number of distributed (rank) entities per block
- *   block_disp       --> displacements associated with each block
- *   owner_disp       --> displacements associated with distriution (ranks)
- *   block_start      --> shift for each block
- *----------------------------------------------------------------------------*/
-
-static void
-_prepare_redistribution(fvm_gnum_t           n_glob_ents,
-                        fvm_lnum_t           n_ents,
-                        int                  n_blocks,
-                        fvm_lnum_t          *block_step,
-                        fvm_lnum_t          *block_buf_size,
-                        fvm_lnum_t          *owner_buf_size,
-                        const fvm_gnum_t     ent_global_num[],
-                        int                **owner_ent_id,
-                        int                **block_count,
-                        int                **owner_count,
-                        int                **block_disp,
-                        int                **owner_disp,
-                        int                **block_start)
-{
-  int       block_id;
-  cs_int_t  _block_step, ii;
-
-  int *_block_ent_id = NULL, *_owner_ent_id = NULL;
-  int *_block_count = NULL, *_owner_count = NULL;
-  int *_block_disp = NULL, *_owner_disp = NULL;
-  int *_block_start = NULL;
-
-  /* Initialization */
-
-  /* _block_step = ceil(n_glob_ents/n_blocks) */
-
-  _block_step = n_glob_ents / n_blocks;
-  if (n_glob_ents % n_blocks > 0)
-    _block_step += 1;
-
-  /* Allocation */
-
-  BFT_MALLOC(_block_count, cs_glob_base_nbr, int);
-  BFT_MALLOC(_owner_count, cs_glob_base_nbr, int);
-  BFT_MALLOC(_block_disp, cs_glob_base_nbr, int);
-  BFT_MALLOC(_owner_disp, cs_glob_base_nbr, int);
-  BFT_MALLOC(_block_start, cs_glob_base_nbr, int);
-
-  /* Count */
-
-  for (block_id = 0; block_id < cs_glob_base_nbr; block_id++)
-    _block_count[block_id] = 0;
-
-  for (ii = 0; ii < n_ents; ii++) {
-    block_id = (ent_global_num[ii] - 1) / _block_step;
-    _block_count[block_id] += 1;
-  }
-
-  MPI_Alltoall(_block_count, 1, MPI_INT, _owner_count, 1, MPI_INT,
-               cs_glob_base_mpi_comm);
-
-  /* Create indexes */
-
-  _block_disp[0] = 0;
-  _owner_disp[0] = 0;
-  for (ii = 1; ii < cs_glob_base_nbr; ii++) {
-    _block_disp[ii] = _block_disp[ii-1] + _block_count[ii-1];
-    _owner_disp[ii] = _owner_disp[ii-1] + _owner_count[ii-1];
-  }
-
-  *block_buf_size =   _block_disp[cs_glob_base_nbr - 1]
-                    + _block_count[cs_glob_base_nbr - 1];
-  *owner_buf_size =   _owner_disp[cs_glob_base_nbr - 1]
-                    + _owner_count[cs_glob_base_nbr - 1];
-
-  memcpy(_block_start, _block_disp, sizeof(int)*cs_glob_base_nbr);
-
-  /* Prepare lists */
-
-  BFT_MALLOC(_block_ent_id, *block_buf_size, int);
-  BFT_MALLOC(_owner_ent_id, *owner_buf_size, int);
-
-  for (ii = 0; ii < n_ents; ii++) {
-    block_id = (ent_global_num[ii] - 1) / _block_step;
-    _block_ent_id[_block_start[block_id]]
-      = (ent_global_num[ii] - 1) % _block_step;
-    _block_start[block_id] += 1;
-  }
-
-  MPI_Alltoallv(_block_ent_id, _block_count, _block_disp, MPI_INT,
-                _owner_ent_id, _owner_count, _owner_disp, MPI_INT,
-                cs_glob_base_mpi_comm);
-
-  BFT_FREE(_block_ent_id);
-
-  *block_step = _block_step;
-  *owner_ent_id = _owner_ent_id;
-  *block_count = _block_count;
-  *owner_count = _owner_count;
-  *block_disp = _block_disp;
-  *owner_disp = _owner_disp;
-  *block_start = _block_start;
-}
-
-/*----------------------------------------------------------------------------
  * Read variable values defined on a mesh location.
  *
  * parameters:
  *   suite           <-> associated restart file pointer
  *   header          <-- header associated with current position in file
- *   n_blocks        <-- number of blocks
  *   n_glob_ents     <-- global number of entities
  *   n_ents          <-- local number of entities
  *   ent_global_num  <-- global entity numbers (1 to n numbering)
@@ -408,42 +294,32 @@ _prepare_redistribution(fvm_gnum_t           n_glob_ents,
 static void
 _read_ent_values(cs_suite_t                *suite,
                  cs_io_sec_header_t        *header,
-                 int                        n_blocks,
                  fvm_gnum_t                 n_glob_ents,
                  fvm_lnum_t                 n_ents,
-                 const fvm_gnum_t          *ent_global_num,
+                 const fvm_gnum_t           ent_global_num[],
                  int                        n_location_vals,
                  cs_type_t                  datatype,
-                 cs_byte_t                 *vals)
+                 cs_byte_t                  vals[])
 {
-  fvm_lnum_t  block_step, ii, block_id, start_loc;
-
   cs_byte_t  *buffer = NULL;
 
-  fvm_lnum_t  block_buf_size = 0, owner_buf_size = 0;
+  fvm_lnum_t  block_buf_size = 0;
 
-  cs_byte_t *block_val = NULL, *owner_val = NULL;
-  int *owner_ent_id = NULL;
-  int *block_count = NULL, *owner_count = NULL;
-  int *block_disp = NULL, *owner_disp = NULL;
-  int *block_start = NULL;
+  size_t  nbr_byte_ent, nbr_byte_val;
 
-  size_t      byte_id, nbr_byte_ent, nbr_byte_val;
-  fvm_gnum_t  global_num_start, global_num_end;
+  fvm_block_to_part_info_t bi;
 
-  MPI_Datatype  mpi_type;
+  fvm_block_to_part_t *d = NULL;
 
   /* Initialization */
 
   switch (datatype) {
   case CS_TYPE_cs_int_t:
-    mpi_type     = CS_MPI_INT;
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     nbr_byte_val = sizeof(cs_int_t);
     cs_io_set_fvm_lnum(header, suite->fh);
     break;
   case CS_TYPE_cs_real_t:
-    mpi_type     = CS_MPI_REAL;
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
     nbr_byte_val = sizeof(cs_real_t);
     break;
@@ -451,92 +327,38 @@ _read_ent_values(cs_suite_t                *suite,
     assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
   }
 
-  /* Create entity lists associated with redistribution */
+  bi = fvm_block_to_part_compute_sizes(cs_glob_base_rang,
+                                       cs_glob_base_nbr,
+                                       cs_suite_taille_buf_def / nbr_byte_ent,
+                                       n_glob_ents);
 
-  _prepare_redistribution(n_glob_ents,
-                          n_ents,
-                          n_blocks,
-                          &block_step,
-                          &block_buf_size,
-                          &owner_buf_size,
-                          ent_global_num,
-                          &owner_ent_id,
-                          &block_count,
-                          &owner_count,
-                          &block_disp,
-                          &owner_disp,
-                          &block_start);
+  d = fvm_block_to_part_create_strided(cs_glob_base_mpi_comm,
+                                       bi,
+                                       n_ents,
+                                       ent_global_num);
 
   /* Read blocks */
 
-  if (owner_buf_size > 0)
-    BFT_MALLOC(buffer, block_step * nbr_byte_ent, cs_byte_t);
+  block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]) * nbr_byte_ent;
 
-  global_num_start = cs_glob_base_rang*block_step + 1;
-  global_num_end = global_num_start + block_step;
-  if (global_num_start > n_glob_ents)
-    global_num_start = n_glob_ents + 1;
-  if (global_num_end > n_glob_ents)
-    global_num_end = n_glob_ents + 1;
+  if (block_buf_size > 0)
+    BFT_MALLOC(buffer, block_buf_size, cs_byte_t);
 
   cs_io_read_block(header,
-                   global_num_start,
-                   global_num_end,
+                   bi.gnum_range[0],
+                   bi.gnum_range[1],
                    buffer,
                    suite->fh);
 
-  /* Distribute blocks on ranks */
+ /* Distribute blocks on ranks */
 
-  if (owner_buf_size > 0) {
+  fvm_block_to_part_copy_array(d,
+                               header->elt_type,
+                               n_location_vals,
+                               buffer,
+                               vals);
 
-    BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
-
-    for (ii = 0; ii < owner_buf_size; ii++) {
-      start_loc = owner_ent_id[ii]*nbr_byte_ent;
-      for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
-        owner_val[ii*nbr_byte_ent + byte_id]
-          = buffer[start_loc + byte_id];
-    }
-
-    BFT_FREE(owner_ent_id);
-  }
-
-  for (ii = 0; ii < cs_glob_base_nbr; ii++) {
-    block_count[ii] *= n_location_vals;
-    owner_count[ii] *= n_location_vals;
-    block_disp[ii] *= n_location_vals;
-    owner_disp[ii] *= n_location_vals;
-  }
-
-  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
-
-  MPI_Alltoallv(owner_val, owner_count, owner_disp, mpi_type,
-                block_val, block_count, block_disp, mpi_type,
-                cs_glob_base_mpi_comm);
-
-  /* Free arrays that are not useful anymore */
-
-  if (owner_buf_size > 0)
-    BFT_FREE(owner_val);
-  BFT_FREE(owner_disp);
-  BFT_FREE(owner_count);
-
-  /* Final data distribution */
-
-  for (ii = 0; ii < cs_glob_base_nbr; ii++)
-    block_disp[ii] *= n_location_vals;
-
-  for (ii = 0; ii < n_ents; ii++) {
-    block_id = (ent_global_num[ii] - 1) / block_step;
-    start_loc = block_disp[block_id]*nbr_byte_val;
-    for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
-      vals[ii*nbr_byte_ent + byte_id] = block_val[start_loc + byte_id];
-    block_disp[block_id] += n_location_vals;
-  }
-
-  BFT_FREE(block_val);
-  BFT_FREE(block_count);
-  BFT_FREE(block_disp);
+  BFT_FREE(buffer);
 }
 
 /*----------------------------------------------------------------------------
@@ -545,7 +367,6 @@ _read_ent_values(cs_suite_t                *suite,
  * parameters:
  *   suite           <-> associated restart file pointer
  *   sec_name        <-- section name
- *   n_blocks        <-- number of blocks
  *   n_glob_ents     <-- global number of entities
  *   n_ents          <-- local number of entities
  *   ent_global_num  <-- global entity numbers (1 to n numbering)
@@ -558,7 +379,6 @@ _read_ent_values(cs_suite_t                *suite,
 static void
 _write_ent_values(const cs_suite_t  *suite,
                   const char        *sec_name,
-                  int                n_blocks,
                   fvm_gnum_t         n_glob_ents,
                   fvm_lnum_t         n_ents,
                   const fvm_gnum_t  *ent_global_num,
@@ -567,34 +387,25 @@ _write_ent_values(const cs_suite_t  *suite,
                   cs_type_t          datatype,
                   const cs_byte_t   *vals)
 {
-  fvm_lnum_t  block_step, ii, block_id, start_loc;
+  fvm_lnum_t  block_buf_size = 0;
 
-  fvm_lnum_t  block_buf_size = 0, owner_buf_size = 0;
-
-  cs_byte_t *block_val = NULL, *owner_val = NULL;
-  int *owner_ent_id = NULL;
-  int *block_count = NULL, *owner_count = NULL;
-  int *block_disp = NULL, *owner_disp = NULL;
-  int *block_start = NULL;
 
   fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
+  size_t      nbr_byte_ent;
   cs_byte_t  *buffer = NULL;
 
-  size_t      byte_id, nbr_byte_ent;
-  fvm_gnum_t  global_num_start, global_num_end;
+  fvm_part_to_block_info_t bi;
 
-  MPI_Datatype  mpi_type;
+  fvm_part_to_block_t *d = NULL;
 
   /* Initialization */
 
   switch (datatype) {
   case CS_TYPE_cs_int_t:
-    mpi_type     = CS_MPI_INT;
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     elt_type = (sizeof(cs_int_t) == 8) ? FVM_INT64 : FVM_INT32;
     break;
   case CS_TYPE_cs_real_t:
-    mpi_type     = CS_MPI_REAL;
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
     elt_type =   (sizeof(cs_real_t) == fvm_datatype_size[FVM_DOUBLE])
                ? FVM_DOUBLE : FVM_FLOAT;
@@ -603,86 +414,37 @@ _write_ent_values(const cs_suite_t  *suite,
     assert(datatype == CS_TYPE_cs_int_t || datatype == CS_TYPE_cs_real_t);
   }
 
-  /* Create entity lists associated with redistribution */
+  bi = fvm_part_to_block_compute_sizes(cs_glob_base_rang,
+                                       cs_glob_base_nbr,
+                                       cs_suite_taille_buf_def / nbr_byte_ent,
+                                       n_glob_ents);
 
-  _prepare_redistribution(n_glob_ents,
-                          n_ents,
-                          n_blocks,
-                          &block_step,
-                          &block_buf_size,
-                          &owner_buf_size,
-                          ent_global_num,
-                          &owner_ent_id,
-                          &block_count,
-                          &owner_count,
-                          &block_disp,
-                          &owner_disp,
-                          &block_start);
+  d = fvm_part_to_block_create_strided(cs_glob_base_mpi_comm,
+                                       bi,
+                                       n_ents,
+                                       ent_global_num);
 
-  /* Prepare values to send */
+  /* Distribute to blocks */
 
-  BFT_MALLOC(block_val, block_buf_size*nbr_byte_ent, cs_byte_t);
-  BFT_MALLOC(owner_val, owner_buf_size*nbr_byte_ent, cs_byte_t);
+  block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]) * nbr_byte_ent;
 
-  memcpy(block_start, block_disp, sizeof(int)*cs_glob_base_nbr);
+  if (block_buf_size > 0)
+    BFT_MALLOC(buffer, block_buf_size, cs_byte_t);
 
-  for (ii = 0; ii < n_ents; ii++) {
-    block_id = (ent_global_num[ii] - 1) / block_step;
-    start_loc = block_start[block_id]*nbr_byte_ent;
-    for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
-      block_val[start_loc + byte_id] = vals[ii*nbr_byte_ent + byte_id];
-    block_start[block_id] += 1;
-  }
+  /* Distribute blocks on ranks */
 
-  BFT_FREE(block_start);
+  fvm_part_to_block_copy_array(d,
+                               elt_type,
+                               n_location_vals,
+                               vals,
+                               buffer);
 
-  for (ii = 0; ii < cs_glob_base_nbr; ii++) {
-    block_count[ii] *= n_location_vals;
-    owner_count[ii] *= n_location_vals;
-    block_disp[ii] *= n_location_vals;
-    owner_disp[ii] *= n_location_vals;
-  }
-
-  MPI_Alltoallv(block_val, block_count, block_disp, mpi_type,
-                owner_val, owner_count, owner_disp, mpi_type,
-                cs_glob_base_mpi_comm);
-
-  /* Free arrays that are not useful anymore */
-
-  BFT_FREE(block_val);
-  BFT_FREE(block_count);
-  BFT_FREE(owner_count);
-  BFT_FREE(block_disp);
-  BFT_FREE(owner_disp);
-
-  if (owner_buf_size > 0) {
-
-    BFT_MALLOC(buffer, block_step*nbr_byte_ent, cs_byte_t);
-
-    for (ii = 0; ii < owner_buf_size; ii++) {
-      start_loc = owner_ent_id[ii]*nbr_byte_ent;
-      for (byte_id = 0; byte_id < nbr_byte_ent; byte_id++)
-        buffer[start_loc + byte_id]
-          = owner_val[ii*nbr_byte_ent + byte_id];
-    }
-
-    BFT_FREE(owner_ent_id);
-    BFT_FREE(owner_val);
-  }
-
-  /* Write to file */
-
-  global_num_start = cs_glob_base_rang*block_step + 1;
-  global_num_end = global_num_start + block_step;
-  if (global_num_start > n_glob_ents)
-    global_num_start = n_glob_ents + 1;
-  if (global_num_end > n_glob_ents)
-    global_num_end = n_glob_ents + 1;
+  /* Write blocks */
 
   cs_io_write_block_buffer(sec_name,
                            n_glob_ents,
-                           global_num_start,
-                           global_num_end,
+                           bi.gnum_range[0],
+                           bi.gnum_range[1],
                            location_id,
                            0,
                            n_location_vals,
@@ -693,6 +455,8 @@ _write_ent_values(const cs_suite_t  *suite,
   /* Free buffer */
 
   BFT_FREE(buffer);
+
+  fvm_part_to_block_destroy(&d);
 }
 
 #endif /* #if defined(_CS_HAVE_MPI) */
@@ -1767,28 +1531,15 @@ cs_suite_lit_rub(cs_suite_t  *suite,
 
   /* In parallel mode for a distributed mesh location */
 
-  else {
-
-    cs_int_t  n_blocks;
-
-    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * _n_location_vals) - 1)
-                / cs_suite_taille_buf_def) + 1;
-    if (n_blocks > cs_glob_base_nbr)
-      n_blocks = cs_glob_base_nbr;
-    if (n_blocks == 0 )
-      n_blocks = 1;
-
+  else
     _read_ent_values(suite,
                      &header,
-                     n_blocks,
                      n_glob_ents,
                      n_ents,
                      ent_global_num,
                      _n_location_vals,
                      typ_val,
                      (cs_byte_t *)val);
-
-  }
 
 #endif /* #if defined(_CS_HAVE_MPI) */
 
@@ -1902,20 +1653,9 @@ cs_suite_ecr_rub(cs_suite_t   *suite,
 
   /* In parallel mode for a distributed mesh location */
 
-  else {
-
-    cs_int_t  n_blocks;
-
-    n_blocks = (  ((sizeof(cs_real_t) * n_glob_ents * _n_location_vals) - 1)
-                / cs_suite_taille_buf_def) + 1;
-    if (n_blocks > cs_glob_base_nbr)
-      n_blocks = cs_glob_base_nbr;
-    if (n_blocks == 0 )
-      n_blocks = 1;
-
+  else
     _write_ent_values(suite,
                       nom_rub,
-                      n_blocks,
                       n_glob_ents,
                       n_ents,
                       ent_global_num,
@@ -1923,8 +1663,6 @@ cs_suite_ecr_rub(cs_suite_t   *suite,
                       _n_location_vals,
                       typ_val,
                       (const cs_byte_t *)val);
-
-  }
 
 #endif /* #if defined(_CS_HAVE_MPI) */
 }
