@@ -1,3 +1,11 @@
+* 13/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code_Aster coupling update (YACS side).
+  modified routines:
+    include/base/cs_calcium.h
+    src/base/cs_ast_coupling.c
+    src/base/cs_calcium.c
+    src/base/cs_main.c
+
 * 13/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Minor corrections and updates in the documentation.
   modified files:

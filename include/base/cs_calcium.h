@@ -129,39 +129,6 @@ typedef int
                            double   val[]);
 
 typedef int
-(cs_calcium_nb_read_int_t)(void    *component,
-                           int      time_dep,
-                           float   *min_time,
-                           float   *max_time,
-                           int     *iteration,
-                           char    *var_name,
-                           int      n_val_max,
-                           int     *n_val_read,
-                           int      val[]);
-
-typedef int
-(cs_calcium_nb_read_float_t)(void    *component,
-                             int      time_dep,
-                             float   *min_time,
-                             float   *max_time,
-                             int     *iteration,
-                             char    *var_name,
-                             int      n_val_max,
-                             int     *n_val_read,
-                             float    val[]);
-
-typedef int
-(cs_calcium_nb_read_double_t)(void    *component,
-                              int      time_dep,
-                              double  *min_time,
-                              double  *max_time,
-                              int     *iteration,
-                              char    *var_name,
-                              int      n_val_max,
-                              int     *n_val_read,
-                              double   val[]);
-
-typedef int
 (cs_calcium_write_int_t)(void    *component,
                          int      time_dep,
                          float    cur_time,
@@ -364,13 +331,11 @@ cs_calcium_set_connection_funcs(cs_calcium_connect_t     *cp_cd_func,
  *
  * parameters:
  *   cp_len_func  <-- pointer to cp_len function or equivalent
- *   cp_nlen_func <-- pointer to cp_nlen function or equivalent
  *   cp_een_func  <-- pointer to cp_een function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
-                            cs_calcium_nb_read_int_t  *cp_nlen_func,
                             cs_calcium_write_int_t    *cp_een_func);
 
 /*----------------------------------------------------------------------------
@@ -378,13 +343,11 @@ cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
  *
  * parameters:
  *   cp_lre_func  <-- pointer to cp_lre function or equivalent
- *   cp_nlre_func <-- pointer to cp_nlre function or equivalent
  *   cp_ere_func  <-- pointer to cp_ere function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
-                              cs_calcium_nb_read_float_t  *cp_nlre_func,
                               cs_calcium_write_float_t    *cp_ere_func);
 
 /*----------------------------------------------------------------------------
@@ -392,13 +355,11 @@ cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
  *
  * parameters:
  *   cp_ldb_func  <-- pointer to cp_ldb function or equivalent
- *   cp_nldb_func <-- pointer to cp_nldb function or equivalent
  *   cp_edb_func  <-- pointer to cp_edb function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_double_rw_funcs(cs_calcium_read_double_t     *cp_ldb_func,
-                               cs_calcium_nb_read_double_t  *cp_nldb_func,
                                cs_calcium_write_double_t    *cp_edb_func);
 
 /*----------------------------------------------------------------------------*/

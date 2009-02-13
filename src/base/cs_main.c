@@ -61,6 +61,8 @@
 
 #include "cs_base.h"
 #include "cs_benchmark.h"
+#include "cs_base.h"
+#include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_ecs_messages.h"
@@ -181,6 +183,7 @@ main(int    argc,
                              CS_PROXY_COMM_TYPE_SOCKET);
     BFT_FREE(opts.proxy_socket);
     opts.proxy_key = -1;
+    cs_calcium_set_comm_proxy();
   }
 
   /* System information */

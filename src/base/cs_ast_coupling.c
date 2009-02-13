@@ -207,10 +207,10 @@ void CS_PROCF(astgeo, ASTGEO)
   assert(sizeof(fvm_coord_t)==sizeof(cs_real_t));
 
   fvm_nodal_get_vertex_coords(ifs_mesh, FVM_INTERLACE,
-			      (fvm_coord_t *) nodes_coords);
+                              (fvm_coord_t *) nodes_coords);
 
   for (j = 0; j < n_faces; j++) {
-    
+
     faces_coords[3*j]   = b_face_cog[3*(lstfac[j]-1)];
     faces_coords[3*j+1] = b_face_cog[3*(lstfac[j]-1)+1];
     faces_coords[3*j+2] = b_face_cog[3*(lstfac[j]-1)+2];
@@ -220,7 +220,7 @@ void CS_PROCF(astgeo, ASTGEO)
   }
 
   for (j = 0; j < n_nodes; j++) {
-    
+
     nodes_color[j]      = idnast[j];
 
   }

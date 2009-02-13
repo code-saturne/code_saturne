@@ -134,9 +134,6 @@ static cs_calcium_disconnect_t      *_cs_glob_calcium_disconnect = NULL;
 static cs_calcium_read_int_t        *_cs_glob_calcium_read_int = NULL;
 static cs_calcium_read_float_t      *_cs_glob_calcium_read_float = NULL;
 static cs_calcium_read_double_t     *_cs_glob_calcium_read_double = NULL;
-static cs_calcium_nb_read_int_t     *_cs_glob_calcium_nb_read_int = NULL;
-static cs_calcium_nb_read_float_t   *_cs_glob_calcium_nb_read_float = NULL;
-static cs_calcium_nb_read_double_t  *_cs_glob_calcium_nb_read_double = NULL;
 static cs_calcium_write_int_t       *_cs_glob_calcium_write_int = NULL;
 static cs_calcium_write_float_t     *_cs_glob_calcium_write_float = NULL;
 static cs_calcium_write_double_t    *_cs_glob_calcium_write_double = NULL;
@@ -1061,17 +1058,14 @@ cs_calcium_set_connection_funcs(cs_calcium_connect_t     *cp_cd_func,
  *
  * parameters:
  *   cp_len_func  <-- pointer to cp_len function or equivalent
- *   cp_nlen_func <-- pointer to cp_nlen function or equivalent
  *   cp_een_func  <-- pointer to cp_een function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
-                            cs_calcium_nb_read_int_t  *cp_nlen_func,
                             cs_calcium_write_int_t    *cp_een_func)
 {
   _cs_glob_calcium_read_int = cp_len_func;
-  _cs_glob_calcium_nb_read_int = cp_nlen_func;
   _cs_glob_calcium_write_int = cp_een_func;
 }
 
@@ -1080,17 +1074,14 @@ cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
  *
  * parameters:
  *   cp_lre_func  <-- pointer to cp_lre function or equivalent
- *   cp_nlre_func <-- pointer to cp_nlre function or equivalent
  *   cp_ere_func  <-- pointer to cp_ere function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
-                              cs_calcium_nb_read_float_t  *cp_nlre_func,
                               cs_calcium_write_float_t    *cp_ere_func)
 {
   _cs_glob_calcium_read_float = cp_lre_func;
-  _cs_glob_calcium_nb_read_float = cp_nlre_func;
   _cs_glob_calcium_write_float = cp_ere_func;
 }
 
@@ -1099,17 +1090,14 @@ cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
  *
  * parameters:
  *   cp_ldb_func  <-- pointer to cp_ldb function or equivalent
- *   cp_nldb_func <-- pointer to cp_nldb function or equivalent
  *   cp_edb_func  <-- pointer to cp_edb function or equivalent
  *----------------------------------------------------------------------------*/
 
 void
 cs_calcium_set_double_rw_funcs(cs_calcium_read_double_t     *cp_ldb_func,
-                               cs_calcium_nb_read_double_t  *cp_nldb_func,
                                cs_calcium_write_double_t    *cp_edb_func)
 {
   _cs_glob_calcium_read_double = cp_ldb_func;
-  _cs_glob_calcium_nb_read_double = cp_nldb_func;
   _cs_glob_calcium_write_double = cp_edb_func;
 }
 
