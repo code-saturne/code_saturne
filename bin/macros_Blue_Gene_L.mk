@@ -112,7 +112,7 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = blrts_xlc
+CCOMP                  = /opt/ibmcmp/vac/bg/9.0/bin/blrts_xlc
 
 CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=440d -qtune=440
 #CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
@@ -132,7 +132,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = blrts_xlf
+FTNCOMP                = /opt/ibmcmp/xlf/bg/11.1/bin/blrts_xlf
 
 FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname
 #FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
@@ -154,7 +154,7 @@ FTNPREPROCOPT          = -WF,
 
 # Linker
 
-LDEDL           = blrts_xlf -qflttrap=enable:overflow:zerodivide
+LDEDL           = /opt/ibmcmp/xlf/bg/11.1/bin/blrts_xlf -qflttrap=enable:overflow:zerodivide
 #LDEDL          = blrts_xlf -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 LDEDLFLAGS      = -O3
 LDEDLFLAGSLO    = -O0
@@ -178,7 +178,7 @@ VARDEF          = -D_POSIX_SOURCE
 ZLIB     = -L/gpfs2/home/saturne/opt/zlib-1.2.1/arch/bgl/lib -lz
 
 # IBM libraries
-MASS     = -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -lmass -lmassv
+MASS     = -L/opt/ibmcmp/xlmass/bg/4.4/blrts_lib -lmass -lmassv
 LIBMAT   = /bgl/local/lib/libmpitrace.a
 ESSL     = /opt/ibmmath/essl/4.2/lib/libesslbg.a
 EXIT     = /bgl/local/lib/libexit.a

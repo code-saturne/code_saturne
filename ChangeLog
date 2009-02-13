@@ -1,4 +1,11 @@
 * 13/02/2009 - David Monfort <david.monfort@edf.fr>
+  Upgrade to new compilers, drivers and librairies on BG/L
+  and BG/P architecture.
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+
+* 13/02/2009 - David Monfort <david.monfort@edf.fr>
   Add consistency checks for the atmospheric and cooling
   towers modules.
   modified script:
