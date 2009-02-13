@@ -314,9 +314,9 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "      maximum:                      %d\n"
                "      mean:                         %d\n"
                "    equivalent (total weighted by number of cells) :\n"
-               "      minimal :                     %d\n"
-               "      maximal :                     %d\n"
-               "      moyen :                       %d\n"
+               "      minimum:                      %d\n"
+               "      maximum:                      %d\n"
+               "      mean:                         %d\n"
                "  Associated times (construction, resolution)\n"
                "    total elapsed:                  %12.3f  %12.3f\n"),
              n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,

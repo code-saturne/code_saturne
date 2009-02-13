@@ -535,7 +535,7 @@ C
 #if defined(_CS_LANG_FR)
         CAR54='ERREUR A L''ECRITURE DES INFORMATIONS COMPLEMENTAIRES '
 #else
-        CAR54='ERROR WHILE WRITING THE COMPLEMENTARY INFORMATIONS    '
+        CAR54='ERROR WHILE WRITING THE COMPLEMENTARY INFORMATION    '
 #endif
         WRITE(NFECRA,8100)CAR54
       ENDIF
@@ -544,7 +544,7 @@ C
 #if defined(_CS_LANG_FR)
         CAR54 =' Fin de l''ecriture des informations complementaires  '
 #else
-        CAR54 =' End writing the complementary informations           '
+        CAR54 =' End writing the complementary information           '
 #endif
         WRITE(NFECRA,1110)CAR54
       ENDIF
@@ -1813,7 +1813,7 @@ C
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION COD3P'
 #else
             CAR54=
-     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (COD3P)   '
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATION (COD3P)   '
 #endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
@@ -1821,7 +1821,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion COD3P'
 #else
-          CAR54=' End writing the combustion informations (COD3P)     '
+          CAR54=' End writing combustion information (COD3P)         '
 #endif
           WRITE(NFECRA,1110)CAR54
 C
@@ -1901,7 +1901,7 @@ C
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION EBU'
 #else
             CAR54=
-     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (EBU)   '
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATION (EBU)   '
 #endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
@@ -1909,7 +1909,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion EBU '
 #else
-          CAR54=' End writing the combustion informations (EBU)      '
+          CAR54=' End writing the combustion information (EBU)      '
 #endif
           WRITE(NFECRA,1110)CAR54
 C
@@ -2005,7 +2005,7 @@ C
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION LWC'
 #else
             CAR54=
-     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (LWC)   '
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATION (LWC)   '
 #endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
@@ -2013,7 +2013,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion LWC '
 #else
-          CAR54=' End writing the combustion informations (LWC)      '
+          CAR54=' End writing combustion information (LWC)          '
 #endif
           WRITE(NFECRA,1110)CAR54
 C
@@ -2118,7 +2118,7 @@ C
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION CP   '
 #else
             CAR54=
-     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (CP)      '
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATION (CP)     '
 #endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
@@ -2126,7 +2126,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion CP    '
 #else
-          CAR54=' End writing the combustion informations (CP)         '
+          CAR54=' End writing combustion information (CP)            '
 #endif
           WRITE(NFECRA,1110)CAR54
 C
@@ -2201,7 +2201,7 @@ C
      &          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION FUEL '
 #else
             CAR54=
-     &          'ERROR WHILE WRITING COMBUSTION INFORMATIONS (FUEL)    '
+     &          'ERROR WHILE WRITING COMBUSTION INFORMATION (FUEL)    '
 #endif
             WRITE(NFECRA,8101)CAR54
           ENDIF
@@ -2209,7 +2209,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations combustion FUEL  '
 #else
-          CAR54=' End writing the combustion informations (FUEL)      '
+          CAR54=' End writing combustion information (FUEL)           '
 #endif
           WRITE(NFECRA,1110)CAR54
 C
@@ -2304,7 +2304,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54='ERREUR A L''ECRITURE DES INFORMATIONS ELECTRIQUES     '
 #else
-          CAR54='ERROR WHILE WRITING ELECTRIC INFORMATIONS             '
+          CAR54='ERROR WHILE WRITING ELECTRIC INFORMATION             '
 #endif
           WRITE(NFECRA,8101)CAR54
         ENDIF
@@ -2313,7 +2313,7 @@ C
 #if defined(_CS_LANG_FR)
           CAR54=' Fin de l''ecriture des informations electriques      '
 #else
-          CAR54=' End writing the electric informations                '
+          CAR54=' End writing the electric information                '
 #endif
           WRITE(NFECRA,1110)CAR54
         ENDIF
@@ -2663,7 +2663,7 @@ C
      &'@        NFMTCH = ',I10                                       ,/,
      &'@      The current maximum number of coals is greater.       ',/,
      &'@        NCHARM = ',I10                                       ,/,
-     &'@      Some informations relative to coals with a greater    ',/,
+     &'@      Some information relative to coals with a greater     ',/,
      &'@        number will not be read.                            ',/,
      &'@                                                            ',/,
      &'@    The calculation will be run.                            ',/,
@@ -2684,7 +2684,7 @@ C
      &'@        NFMTCL = ',I10                                       ,/,
      &'@      The current number of coal classes is greater.        ',/,
      &'@        NCPCMX = ',I10                                       ,/,
-     &'@      Some informations relative to classes with a greater  ',/,
+     &'@      Some information relative to classes with a greater   ',/,
      &'@        number will not be read.                            ',/,
      &'@                                                            ',/,
      &'@    The calculation will be run.                            ',/,

@@ -597,31 +597,31 @@ C
 C
 #else
 C
- 1000 FORMAT (/,3X,'** INFORMATIONS ON THE CONVERGENCE',/,
-     &          3X,'   -------------------------------')
+ 1000 FORMAT (/,3X,'** INFORMATION ON CONVERGENCE',/,
+     &          3X,'   --------------------------')
  1011 FORMAT ('   Variable    Rhs norm    ',
      &        '  N_iter  Norm. residual      derive')
  1010 FORMAT ('---------------------------',
      &        '------------------------------------')
 C
 C
- 1100 FORMAT (/,3X,'** INFORMATIONS ON THE VARIABLES',/,
-     &          3X,'   -----------------------------')
+ 1100 FORMAT (/,3X,'** INFORMATION ON VARIABLES',/,
+     &          3X,'   ------------------------')
  1111 FORMAT ('   Variable      Min. value    Max. value',
      &        '   Min clip   Max clip')
  1110 FORMAT ('-----------------------------------------',
      &        '----------------------')
 C
- 1150 FORMAT (/,3X,'** INFORMATIONS ON THE CLIPPINGS',/,
-     &          3X,'   -----------------------------')
+ 1150 FORMAT (/,3X,'** INFORMATION ON CLIPPINGS',/,
+     &          3X,'   ------------------------')
  1161 FORMAT ('   Variable    Min wo clips  Max wo clips',
      &        '   Min clip   Max clip')
  1160 FORMAT ('-----------------------------------------',
      &        '----------------------')
 C
 C
- 1200 FORMAT (/,3X,'** INFORMATIONS SUR LE PAS DE TEMPS',/,
-     &         3X,'   --------------------------------')
+ 1200 FORMAT (/,3X,'** INFORMATION ON THE TIME STEP',/,
+     &         3X,'   -----------------------------')
  1210 FORMAT ('---------------------------',
      &        '------------------------------------')
  1211 FORMAT ('Criterion    Value      at         xc',

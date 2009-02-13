@@ -576,7 +576,7 @@ C
 C       Valeurs non entrelacées
         IENTLA = 0
 C
-C       On utilise directement le tableau propfb definit sur le
+C       On utilise directement le tableau propfb defini sur le
 C         maillage parent
         IVARPR = 1
 C
