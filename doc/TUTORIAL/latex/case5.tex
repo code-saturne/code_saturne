@@ -24,13 +24,13 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-\section{General}
-%----------------
+\section{General description}
+%----------------------------
 
         \subsection{Objective}
 %-----------------------------
 
-The aim of this case is to train the user of \CS on a simplified but real 3D
+The aim of this case is to train the \CS user on a simplified but real 3D
 computation. It corresponds to a stratified flow in a T-junction. The test case
 will be used to present some advanced post-processing techniques.
 
@@ -76,9 +76,9 @@ Characteristics of flow:
 \begin{center}
 \begin{tabular}{|l|c|}
 \hline
-Cold branch volume flow rate & $Dv_{cb} = 4\ l.m^{-1}$ \\
+Cold branch volume flow rate & $Dv_{cb} = 4\ l.s^{-1}$ \\
 \hline
-Hot branch volume flow rate & $Dv_{hb} = 4\ l.m^{-1}$ \\
+Hot branch volume flow rate & $Dv_{hb} = 4\ l.s^{-1}$ \\
 \hline
 Cold branch temperature & $T_{cb} = 18.26$\degresC \\
 \hline
@@ -146,8 +146,7 @@ The following options are considered for the case:
         \item Scalar(s): temperature
         \item Physical properties: uniform and constant for specific heat and
 thermal conductivity and variable for density and dynamic viscosity
-        \item Specific treatment of hydrostatic pressure: activated
-        \item Time step limitation by gravity effects
+        \item Pressure interpolation in stratified fows : improved
 \end{itemize}
 
 
@@ -203,23 +202,22 @@ All the parameter necessary to this study can be defined through the Graphical
 Interface, except the variable fluid characteristics and the advanced
 post-processing features that have to be specified in user routines.
 
-
 \begin{center}
 \begin{tabular}{|l|c|}
 \hline
 \multicolumn{2}{|c|}{Parameters of calculation control} \\
 \hline
-Number of iterations & 100 \\
-\hline
 Reference time step & $1\ s $ \\
+\hline
+Number of iterations & 100 \\
 \hline
 Maximal CFL number & 20 \\
 \hline
 Maximal Fourier number & 60 \\
 \hline
-Minimal time step & $0.01\ s$ \\
+Minimal time step factor & $0.01\ s$ \\
 \hline
-Maximal time step & $70\ s$ \\
+Maximal time step factor & $70\ s$ \\
 \hline
 Time step maximal variation & $0.1$ \\
 \hline
@@ -228,6 +226,7 @@ Period of output chronological files & $10$ \\
 \end{tabular}\\
 \end{center}
 
+The time step limitation by gravity effects will also be activated.
 
 
         \subsection{Output management}
@@ -252,12 +251,18 @@ Points & X(m) & Y(m) & Z(m)\\
 \end{center}
 
 
+Two vertical temperature profiles will be extracted, at the following locations:\\
+\begin{tabular}{llll}
+profil16: & $x=1.6\qquad$ & $y=0\qquad$ & $-0.2 \leqslant z \leqslant 0.2$ ($m$)\\
+profil32: & $x=3.2\qquad$ & $y=0\qquad$ & $-0.2 \leqslant z \leqslant 0.2$ ($m$)
+\end{tabular}
+
 
         \subsection{User routines}
 %---------------------------------
 
-The following routines have to be copied from the folder FORT/USER/base into the
-folder FORT\footnote{only when they appear in the FORT directory will they be
+The following routines have to be copied from the folder SRC/REFERENCE/base into the
+folder SRC\footnote{only when they appear in the SRC directory will they be
 taken into account by the code}: usphyv.F, usdpst.F, usvpst.F and usmpst.F
 
 

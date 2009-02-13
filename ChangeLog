@@ -1,4 +1,10 @@
 * 13/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
+  Minor corrections and updates in the documentation.
+  modified files:
+    doc/style/csdoc.sty
+    doc/TUTORIAL/latex/case5.tex
+
+* 13/02/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Minor changes in the 1D-profile generation iva the GUI.
   modified routines:
     src/base/cs_gui.c
