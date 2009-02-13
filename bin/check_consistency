@@ -134,6 +134,12 @@ USCFCL_PRESENT=`presence "${cur_dir}/uscfcl.F"`
 # Fuel
 USFUCL_PRESENT=`presence "${cur_dir}/usfucl.F"`
 
+# Atmospheric
+USATCL_PRESENT=`presence "${cur_dir}/usatcl.F"`
+
+# Cooling towers
+USCTCL_PRESENT=`presence "${cur_dir}/usctcl.F"`
+
 # Compatibility tests
 
 if [ "${USCPCL_PRESENT}" = "yes" ] ; then
@@ -221,6 +227,30 @@ if [ "${USFUCL_PRESENT}" = "yes" ] ; then
   fi
 fi
 
+if [ "${USATCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When usatcl is used, usclim must not be'
+    echo '  (Atmospheric model)'
+    echo '  Boundary conditions are defined in usatcl.'
+    echo
+    exit 1
+  fi
+fi
+
+if [ "${USCTCL_PRESENT}" = "yes" ] ; then
+  if [ "${USCLIM_PRESENT}" = "yes" ] ; then
+    echo
+    echo ' -- ERROR -- '
+    echo ' When usctcl is used, usclim must not be'
+    echo '  (Cooling towers model)'
+    echo '  Boundary conditions are defined in usctcl.'
+    echo
+    exit 1
+  fi
+fi
+
 # Translation
 if [ "${USLAG2_PRESENT}" = "yes" ] ; then
   LAGRANGIEN=yes
@@ -300,6 +330,24 @@ if [ "${USFUCL_PRESENT}" = "yes" ] ; then
   echo
 else
   FUEL=no
+fi
+
+if [ "${USATCL_PRESENT}" = "yes" ] ; then
+  ATMOSPHERIC=yes
+  echo
+  echo ' Use the atmospheric module'
+  echo
+else
+  ATMOSPHERIC=no
+fi
+
+if [ "${USCTCL_PRESENT}" = "yes" ] ; then
+  COOLING_TOWERS=yes
+  echo
+  echo ' Use the cooling towers module'
+  echo
+else
+  COOLING_TOWERS=no
 fi
 
 # No Lagrangian in parallel

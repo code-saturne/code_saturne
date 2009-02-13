@@ -1,4 +1,10 @@
 * 13/02/2009 - David Monfort <david.monfort@edf.fr>
+  Add consistency checks for the atmospheric and cooling
+  towers modules.
+  modified script:
+    bin/check_consistency
+
+* 13/02/2009 - David Monfort <david.monfort@edf.fr>
   Add the executable bit for runcase_syrthes.
   modified script:
     bin/runcase_syrthes
