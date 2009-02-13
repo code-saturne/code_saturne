@@ -1,3 +1,8 @@
+* 13/02/2009 - David Monfort <david.monfort@edf.fr>
+  Add the executable bit for runcase_syrthes.
+  modified script:
+    bin/runcase_syrthes
+
 * 02/02/2009 - David Monfort <david.monfort@edf.fr>
   Minor correction in help output.
   modified script:
