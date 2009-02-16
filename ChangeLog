@@ -1,3 +1,9 @@
+* 16/02/2009 - David Monfort <david.monfort@edf.fr>
+  Update of french dictionnary and list of gettextized files.
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+
 * 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Bug correction in the MPI environment guess script.
   modified script:
