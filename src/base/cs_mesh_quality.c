@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -870,22 +870,22 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   /* TODO:
      define an option to distribute face values to cells, vertices, or both */
 
-  if (cs_post_existe_maillage(-1)) {
+  if (cs_post_mesh_exists(-1)) {
     vol_fields = true;
     BFT_MALLOC(face_to_cell, CS_MAX(n_cells_wghosts, n_vertices), cs_real_t);
     face_to_vtx = face_to_cell;
   }
 
-  if (cs_post_existe_maillage(-2))
+  if (cs_post_mesh_exists(-2))
     brd_fields = true;
 
   /* TODO
      For the moment, we export the mesh at this stage; this should be moved
      once PSTEMA has been moved from CALTRI to an earlier step. */
 
-  cs_post_ecrit_maillages(1,0);
+  cs_post_write_meshes(1,0);
 
-  cs_post_activer_writer(0, 1);
+  cs_post_activate_writer(0, 1);
 
   /* Evaluate mesh quality criteria */
   /*--------------------------------*/
@@ -936,7 +936,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                             b_face_warping,
                             face_to_cell);
 
-        cs_post_ecrit_var(-1,
+        cs_post_write_var(-1,
                           "Face_Warp_c_max",
                           1,
                           false,
@@ -957,21 +957,21 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                            b_face_warping,
                            face_to_vtx);
 
-        cs_post_ecrit_var_som(-1,
-                              "Face_Warp_v_max",
-                              1,
-                              false,
-                              true,
-                              CS_POST_TYPE_cs_real_t,
-                              -1,
-                              0.0,
-                              face_to_vtx);
+        cs_post_write_vertex_var(-1,
+                                 "Face_Warp_v_max",
+                                 1,
+                                 false,
+                                 true,
+                                 CS_POST_TYPE_cs_real_t,
+                                 -1,
+                                 0.0,
+                                 face_to_vtx);
       }
 
     } /* End of post-processing on volume */
 
     if (brd_fields == true)
-      cs_post_ecrit_var(-2,
+      cs_post_write_var(-2,
                         "Face_Warp",
                         1,
                         false,
@@ -1027,7 +1027,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_cell != NULL) {
 
         _cell_from_max_face(mesh, 0.5, weighting, NULL, face_to_cell);
-        cs_post_ecrit_var(-1,
+        cs_post_write_var(-1,
                           "Weighting_c_max",
                           1,
                           false,
@@ -1043,21 +1043,21 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_vtx != NULL) {
 
         _vtx_from_max_face(mesh, 0.5, weighting, NULL, face_to_vtx);
-        cs_post_ecrit_var_som(-1,
-                              "Weighting_v_max",
-                              1,
-                              false,
-                              true,
-                              CS_POST_TYPE_cs_real_t,
-                              -1,
-                              0.0,
-                              face_to_vtx);
+        cs_post_write_vertex_var(-1,
+                                 "Weighting_v_max",
+                                 1,
+                                 false,
+                                 true,
+                                 CS_POST_TYPE_cs_real_t,
+                                 -1,
+                                 0.0,
+                                 face_to_vtx);
 
       }
       if (face_to_cell != NULL) {
 
         _cell_from_max_face(mesh, 0., offsetting, NULL, face_to_cell);
-        cs_post_ecrit_var(-1,
+        cs_post_write_var(-1,
                           "Offset_c_max",
                           1,
                           false,
@@ -1073,15 +1073,15 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_vtx != NULL) {
 
         _vtx_from_max_face(mesh, 0., offsetting, NULL, face_to_vtx);
-        cs_post_ecrit_var_som(-1,
-                              "Offset_v_max",
-                              1,
-                              false,
-                              true,
-                              CS_POST_TYPE_cs_real_t,
-                              -1,
-                              0.0,
-                              face_to_vtx);
+        cs_post_write_vertex_var(-1,
+                                 "Offset_v_max",
+                                 1,
+                                 false,
+                                 true,
+                                 CS_POST_TYPE_cs_real_t,
+                                 -1,
+                                 0.0,
+                                 face_to_vtx);
 
       }
 
@@ -1133,7 +1133,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_cell != NULL) {
 
         _cell_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_cell);
-        cs_post_ecrit_var(-1,
+        cs_post_write_var(-1,
                           "Non_Ortho_c_max",
                           1,
                           false,
@@ -1149,21 +1149,21 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_vtx != NULL) {
 
         _vtx_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_vtx);
-        cs_post_ecrit_var_som(-1,
-                              "Non_Ortho_v_max",
-                              1,
-                              false,
-                              true,
-                              CS_POST_TYPE_cs_real_t,
-                              -1,
-                              0.0,
-                              face_to_vtx);
+        cs_post_write_vertex_var(-1,
+                                 "Non_Ortho_v_max",
+                                 1,
+                                 false,
+                                 true,
+                                 CS_POST_TYPE_cs_real_t,
+                                 -1,
+                                 0.0,
+                                 face_to_vtx);
       }
 
     } /* End of post-processing on volume */
 
     if (brd_fields == true)
-      cs_post_ecrit_var(-2,
+      cs_post_write_var(-2,
                         "Non_Ortho",
                         1,
                         false,
@@ -1196,7 +1196,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     /* Post processing */
 
     if (vol_fields == true)
-      cs_post_ecrit_var(-1,
+      cs_post_write_var(-1,
                         "Cell_Volume",
                         1,
                         false,

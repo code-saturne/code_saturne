@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -1089,7 +1089,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
   parent_num_shift[0] = 0;
   parent_num_shift[1] = cs_glob_mesh->n_b_faces;
 
-  if (cs_post_existe_writer(writer_id) == false)
+  if (cs_post_writer_exists(writer_id) == false)
     return;
 
   assert(sizeof(double) == sizeof(cs_real_t));
@@ -1152,7 +1152,7 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
 
   const cs_int_t  writer_id = -1; /* default writer */
 
-  if (cs_post_existe_writer(writer_id) == false)
+  if (cs_post_writer_exists(writer_id) == false)
     return;
 
   fvm_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,

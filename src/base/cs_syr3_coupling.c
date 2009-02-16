@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -819,25 +819,25 @@ _cs_syr3_coupling_post_function(int        coupling_id,
 
   if (syr_coupling->post_mesh_id != 0) {
 
-    cs_post_ecrit_var_som(syr_coupling->post_mesh_id,
-                          _("Wall T"),
-                          1,
-                          false,
-                          false,
-                          CS_POST_TYPE_float,
-                          nt_cur_abs,
-                          t_cur_abs,
-                          syr_coupling->wall_temp);
+    cs_post_write_vertex_var(syr_coupling->post_mesh_id,
+                             _("Wall T"),
+                             1,
+                             false,
+                             false,
+                             CS_POST_TYPE_float,
+                             nt_cur_abs,
+                             t_cur_abs,
+                             syr_coupling->wall_temp);
 
-    cs_post_ecrit_var_som(syr_coupling->post_mesh_id,
-                          _("Flux"),
-                          1,
-                          false,
-                          false,
-                          CS_POST_TYPE_float,
-                          nt_cur_abs,
-                          t_cur_abs,
-                          syr_coupling->flux);
+    cs_post_write_vertex_var(syr_coupling->post_mesh_id,
+                             _("Flux"),
+                             1,
+                             false,
+                             false,
+                             CS_POST_TYPE_float,
+                             nt_cur_abs,
+                             t_cur_abs,
+                             syr_coupling->flux);
 
   }
 
@@ -1611,7 +1611,7 @@ cs_syr3_coupling_post_init(int       coupling_id,
                            cs_int_t  writer_id)
 {
   cs_int_t  n_vertices = 0;
-  cs_int_t  mesh_id = cs_post_ret_num_maillage_libre();
+  cs_int_t  mesh_id = cs_post_get_free_mesh_id();
 
   cs_syr3_coupling_t  *syr_coupling = cs_syr3_coupling_by_id(coupling_id);
 
@@ -1619,7 +1619,7 @@ cs_syr3_coupling_post_init(int       coupling_id,
 
   /* Exit silently if associated writer is not available */
 
-  if (cs_post_existe_writer(writer_id) != true)
+  if (cs_post_writer_exists(writer_id) != true)
     return;
 
   /* Initialize post processing flag, and free previous arrays in
@@ -1647,16 +1647,16 @@ cs_syr3_coupling_post_init(int       coupling_id,
 
   /* Associate external mesh description with post processing subsystem */
 
-  cs_post_ajoute_maillage_existant(mesh_id,
-                                   syr_coupling->coupled_mesh,
-                                   false);
+  cs_post_add_existing_mesh(mesh_id,
+                            syr_coupling->coupled_mesh,
+                            false);
 
-  cs_post_associe(mesh_id, writer_id);
+  cs_post_associate(mesh_id, writer_id);
 
   /* Register post processing function */
 
-  cs_post_ajoute_var_temporelle(_cs_syr3_coupling_post_function,
-                                coupling_id);
+  cs_post_add_time_dep_var(_cs_syr3_coupling_post_function,
+                           coupling_id);
 
   /* Update start and end (negative) numbers associated with
      dedicated post processing meshes */

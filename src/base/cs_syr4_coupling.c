@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -643,7 +643,7 @@ _cs_syr4_coupling_post_function(int        coupling_id,
         }
 
         for (var_id = 0; var_id < 2; var_id++)
-          cs_post_ecrit_var(coupling_ent->post_mesh_id,
+          cs_post_write_var(coupling_ent->post_mesh_id,
                             _(var_name[var_id]),
                             1,
                             false,
@@ -1172,7 +1172,7 @@ cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
 
   /* Exit silently if associated writer is not available */
 
-  if (cs_post_existe_writer(writer_id) != true)
+  if (cs_post_writer_exists(writer_id) != true)
     return;
 
   /* Initialize post processing flag, and free previous arrays in
@@ -1187,7 +1187,7 @@ cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
 
     if (coupling_ent != NULL) {
 
-      coupling_ent->post_mesh_id = cs_post_ret_num_maillage_libre();
+      coupling_ent->post_mesh_id = cs_post_get_free_mesh_id();
 
       if (coupling_ent->wall_temp != NULL)
         BFT_FREE(coupling_ent->wall_temp);
@@ -1206,16 +1206,16 @@ cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
 
       /* Associate external mesh description with post processing subsystem */
 
-      cs_post_ajoute_maillage_existant(coupling_ent->post_mesh_id,
-                                       coupling_ent->elts,
-                                       false);
+      cs_post_add_existing_mesh(coupling_ent->post_mesh_id,
+                                coupling_ent->elts,
+                                false);
 
-      cs_post_associe(coupling_ent->post_mesh_id, writer_id);
+      cs_post_associate(coupling_ent->post_mesh_id, writer_id);
 
       /* Register post processing function */
 
-      cs_post_ajoute_var_temporelle(_cs_syr4_coupling_post_function,
-                                    coupling_id);
+      cs_post_add_time_dep_var(_cs_syr4_coupling_post_function,
+                               coupling_id);
 
       /* Update start and end (negative) numbers associated with
          dedicated post processing meshes */

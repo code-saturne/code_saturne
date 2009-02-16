@@ -254,7 +254,7 @@ main(int    argc,
 
   /* Initialize main post-processing */
 
-  cs_post_init_pcp_writer();
+  cs_post_init_main_writer();
 
   /* Initialize ghost cells and other parallelism-related structures */
 
@@ -305,7 +305,7 @@ main(int    argc,
 
   /* Initialize meshes for the main post-processing */
 
-  cs_post_init_pcp_maillages();
+  cs_post_init_main_meshes();
 
   /* Update some mesh sizes counts and quantities */
 
@@ -474,7 +474,7 @@ main(int    argc,
 
   /* Free post processing related structures */
 
-  cs_post_detruit();
+  cs_post_finalize();
 
   /* Free main mesh */
 

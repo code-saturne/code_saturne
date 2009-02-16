@@ -61,6 +61,7 @@
 #include "cs_base.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -73,2820 +74,131 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- *  Définitions d'énumerations
+ * Local types and structures
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- *  Type de support de maillage
- *----------------------------------------------------------------------------*/
+/* Mesh location type */
+/*--------------------*/
 
 typedef enum {
 
-  CS_POST_SUPPORT_CEL,           /* Valeurs associées aux cellules            */
-  CS_POST_SUPPORT_FAC_INT,       /* Valeurs associées aux faces internes      */
-  CS_POST_SUPPORT_FAC_BRD,       /* Valeurs associées aux faces de bord       */
-  CS_POST_SUPPORT_SOM            /* Valeurs associées aux sommets             */
+  CS_POST_LOCATION_CELL,         /* Values located at cells */
+  CS_POST_LOCATION_I_FACE,       /* Values located at interior faces */
+  CS_POST_LOCATION_B_FACE,       /* Values located at boundary faces */
+  CS_POST_LOCATION_VERTEX        /* Values located at vertices */
 
 } cs_post_support_t;
 
+/* Writer structure */
+/*------------------*/
 
+/* This object is based on a choice of a case, directory, and format,
+   as well as a flag for associated meshe's time dependency, and the default
+   output frequency for associated variables. */
+
+typedef struct {
+
+  int            id;           /* Identifier (< 0 for "reservable" writer,
+                                * > 0 for user writer */
+  int            frequency;    /* Default output frequency */
+  cs_bool_t      write_displ;  /* Write displacement field if true */
+
+  int            active;       /* 0 if no output at current time step,
+                                  1 in case of output */
+
+  fvm_writer_t  *writer;       /* Associated FVM writer */
+
+} cs_post_writer_t;
+
+/* Post-processing mesh structure */
+/*--------------------------------*/
+
+/* This object manages the link between an exportable mesh and
+   associated writers. */
+
+typedef struct {
+
+  int                     id;            /* Identifier (< 0 for "reservable"
+                                            mesh, > 0 for user mesh */
+
+  int                     ent_flag[3];   /* Presence of cells (ent_flag[0],
+                                            interior faces (ent_flag[1]),
+                                            or boundary faces (ent_flag[2])
+                                            on one processor at least */
+
+  int                     alias;         /* If > -1, index in array of
+                                            post-processing meshes of the
+                                            first mesh sharing the same
+                                            exportable mesh */
+
+  int                     n_writers;     /* Number of associated writers */
+  int                    *writer_id;     /* Array of associated writer ids */
+  int                     nt_last;       /* Time step number for the last
+                                            output (-1 before first output) */
+
+  cs_int_t                n_i_faces;     /* N. associated interior faces */
+  cs_int_t                n_b_faces;     /* N. associated boundary faces */
+
+  const fvm_nodal_t      *exp_mesh;      /* Associated exportable mesh */
+  fvm_nodal_t            *_exp_mesh;     /* Associated exportble mesh,
+                                            if owner */
+
+  fvm_writer_time_dep_t   mod_flag_min;  /* Minimum mesh time dependency */
+  fvm_writer_time_dep_t   mod_flag_max;  /* Maximum mesh time dependency */
+
+} cs_post_mesh_t;
 
 /*============================================================================
- *  Structures locales
+ * Static global variables
  *============================================================================*/
 
-/* Structure définissant un "writer" : cet objet correspond au choix d'un
- * nom de cas, de répertoire, et de format, ainsi qu'un indicateur précisant
- * si les maillages associés doivent dépendre ou non du temps, et la
- * fréquence de sortie par défaut pour les variables associées. */
+/* Backup of initial vertex coordinates */
 
-struct _cs_post_writer_t {
+static cs_bool_t   _cs_post_deformable = false;
+static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
 
-  cs_int_t                 id;           /* Identificateur (< 0 pour writer
-                                            standard ou développeur, > 0 pour
-                                            writer utilisateur */
-  cs_int_t                 freq_sortie;  /* Fréquence de sortie par défaut
-                                            associée */
-  cs_bool_t                ecr_depl;     /* Ecriture d'un champ déplacement
-                                            si vrai */
+/* Flag to indicate output of domain number in parallel mode */
 
-  int                      actif;        /* 0 si pas de sortie au pas de
-                                            temps courant, 1 en cas de sortie */
+static cs_bool_t        _cs_post_domain = true;
 
-  fvm_writer_t            *writer;       /* Gestionnaire d'écriture associé */
+/* Array of exportable meshes associated with post-processing */
+/* (meshes -1 and -2 reserved, so free ids start at -2)*/
 
-};
+static int              _cs_post_min_mesh_id = -2;
+static int              _cs_post_n_meshes = 0;
+static int              _cs_post_n_meshes_max = 0;
+static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
+/* Array of writers for post-processing */
 
-/* Structure définissant un maillage de post traitement ; cet objet
- * gère le lien entre un tel maillage et les "writers" associés. */
+static int                _cs_post_n_writers = 0;
+static int                _cs_post_n_writers_max = 0;
+static cs_post_writer_t  *_cs_post_writers = NULL;
 
-struct _cs_post_maillage_t {
+/* Array of registered functions and instances */
 
-  int                     id;            /* Identificateur (< 0 pour maillage
-                                            standard ou développeur, > 0 pour
-                                            maillage utilisateur */
+static int                _cs_post_nbr_var_tp = 0;
+static int                _cs_post_nbr_var_tp_max = 0;
 
-  int                     ind_ent[3];    /* Présence de cellules (ind_ent[0],
-                                            de faces internes (ind_ent[1]),
-                                            ou de faces de bord (ind_ent[2])
-                                            sur un processeur au moins */
-
-  int                     alias;         /* Si > -1, indice dans le tableau
-                                            des maillages de post traitement
-                                            du premier maillage partageant
-                                            le même maillage externe */
-
-  int                     nbr_writers;   /* Nombre de gestionnaires de sortie */
-  int                    *ind_writer;    /* Tableau des indices des
-                                          * gestionnaires de sortie associés */
-  int                     nt_ecr;        /* Numéro du pas de temps de la
-                                            dernière écriture (-1 avant la
-                                            première écriture) */
-
-  cs_int_t                nbr_fac;       /* Nombre de faces internes associées */
-  cs_int_t                nbr_fbr;       /* Nombre de faces de bord associées */
-
-  const fvm_nodal_t      *maillage_ext;  /* Maillage externe associé */
-  fvm_nodal_t            *_maillage_ext; /* Maillage externe associé, si
-                                            propriétaire */
-
-  fvm_writer_time_dep_t   ind_mod_min;   /* Indicateur de possibilité de
-                                            modification au cours du temps */
-  fvm_writer_time_dep_t   ind_mod_max;   /* Indicateur de possibilité de
-                                            modification au cours du temps */
-};
-
+static cs_post_time_dep_var_t **_cs_post_f_var_tp = NULL;
+static int                     *_cs_post_i_var_tp = NULL;
 
 /*============================================================================
- *  Variables globales statiques
- *============================================================================*/
-
-/* Tableau de sauvegarde des coordonnées initiales des sommets */
-
-static cs_bool_t           cs_glob_post_deformable = false;
-static cs_real_t          *cs_glob_post_coo_som_ini = NULL;
-
-/* Indicateur de sortie du domaine en parallèle */
-
-static cs_bool_t           cs_glob_post_domaine = true;
-
-
-/* Tableau des maillages externes associés aux post-traitements */
-/* (maillages, -1 et -2 réservés, donc numérotation commence  -2)*/
-static int                 cs_glob_post_num_maillage_min = -2;
-static int                 cs_glob_post_nbr_maillages = 0;
-static int                 cs_glob_post_nbr_maillages_max = 0;
-static cs_post_maillage_t *cs_glob_post_maillages = NULL;
-
-
-/* Tableau des writers d'écriture associés aux post-traitements */
-
-static int                 cs_glob_post_nbr_writers = 0;
-static int                 cs_glob_post_nbr_writers_max = 0;
-static cs_post_writer_t   *cs_glob_post_writers = NULL;
-
-
-/* Tableau des fonctions et instances enregistrés */
-
-static int                 cs_glob_post_nbr_var_tp = 0;
-static int                 cs_glob_post_nbr_var_tp_max = 0;
-
-static cs_post_var_temporelle_t  **cs_glob_post_f_var_tp = NULL;
-static int                        *cs_glob_post_i_var_tp = NULL;
-
-
-/*============================================================================
- *  Définitions de macros
- *============================================================================*/
-
-
-/*============================================================================
- * Prototypes de fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Conversion d'un type de données cs_post_type_t en type fvm_datatype_t.
- *----------------------------------------------------------------------------*/
-
-static fvm_datatype_t _cs_post_cnv_datatype
-(
- cs_post_type_t type_cs
-);
-
-
-/*----------------------------------------------------------------------------
- * Recherche de l'indice d'un writer associé à un numéro donné.
- *----------------------------------------------------------------------------*/
-
-static int _cs_post_ind_writer
-(
- const cs_int_t   id_writer     /* --> numéro du writer                       */
-);
-
-
-/*----------------------------------------------------------------------------
- * Recherche de l'indice d'un maillage de post traitement associé à un
- * numéro donné.
- *----------------------------------------------------------------------------*/
-
-static int _cs_post_ind_maillage
-(
- const cs_int_t   nummai        /* --> numéro du maillage externe associé     */
-);
-
-
-/*----------------------------------------------------------------------------
- * Ajout d'un maillage de post traitement et initialisation de base,
- * et renvoi d'un pointeur sur la structure associée
- *----------------------------------------------------------------------------*/
-
-static cs_post_maillage_t * _cs_post_ajoute_maillage
-(
- const cs_int_t  id_maillage           /* --> numéro du maillage  demandé     */
-);
-
-
-/*----------------------------------------------------------------------------
- * Création d'un maillage de post traitement ; les listes de cellules ou
- * faces à extraire sont triées en sortie, qu'elles le soient déjà en entrée
- * ou non.
+ * Convert cs_post_type_t datatype to fvm_datatype_t.
  *
- * La liste des cellules associées n'est nécessaire que si le nombre
- * de cellules à extraire est strictement supérieur à 0 et inférieur au
- * nombre de cellules du maillage.
+ * parameters:
+ *   type_cs <-- Code_Saturne data type
  *
- * Les listes de faces ne sont prises en compte que si le nombre de cellules
- * à extraire est nul ; si le nombre de faces de bord à extraire est égal au
- * nombre de faces de bord du maillage global, et le nombre de faces internes
- * à extraire est nul, alors on extrait par défaut le maillage de bord, et la
- * liste des faces de bord associée n'est donc pas nécessaire.
+ * returns
+ *   corresponding FVM datatype
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_definit_maillage
-(
- cs_post_maillage_t  *const maillage_post, /* <-> maillage post à compléter   */
- const char          *const nom_maillage,  /* --> nom du maillage externe     */
- const cs_int_t             nbr_cel,       /* --> nombre de cellules          */
- const cs_int_t             nbr_fac,       /* --> nombre de faces internes    */
- const cs_int_t             nbr_fbr,       /* --> nombre de faces de bord     */
-       cs_int_t             liste_cel[],   /* <-> liste des cellules          */
-       cs_int_t             liste_fac[],   /* <-> liste des faces internes    */
-       cs_int_t             liste_fbr[]    /* <-> liste des faces de bord     */
-);
-
-
-/*----------------------------------------------------------------------------
- * Mise à jour en cas d'alias des critères de modification au cours du temps
- * des maillages en fonction des propriétés des writers qui lui
- * sont associés :
- *
- * La topologie d'un maillage ne pourra pas être modifiée si le critère
- * de modification minimal résultant est trop faible (i.e. si l'un des
- * writers associés ne permet pas la redéfinition de la topologie du maillage).
- *
- * Les coordonnées des sommets et la connectivité ne pourront être libérés
- * de la mémoire si la critère de modification maximal résultant est trop
- * élevé (i.e. si l'un des writers associés permet l'évolution du maillage
- * en temps, et nécessite donc sa réécriture).
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_ind_mod_alias
-(
- const int  indmai              /* --> indice du maillage post en cours       */
-);
-
-
-/*----------------------------------------------------------------------------
- * Découpage des polygones ou polyèdres en éléments simples si nécessaire.
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_divise_poly
-(
- cs_post_maillage_t      *const maillage_post,  /* --> maillage ext. associé  */
- const cs_post_writer_t  *const writer          /* --> writer associé         */
-);
-
-
-/*----------------------------------------------------------------------------
- * Assemblage des valeurs d'une variable définie sur une combinaison de
- * faces de bord et de faces internes (sans indirection) en un tableau
- * défini sur un ensemble unique de faces.
- *
- * La variable résultante n'est pas entrelacée.
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_assmb_var_faces
-(
- const fvm_nodal_t      *const maillage_ext,     /* --> maillage externe   */
- const cs_int_t                nbr_fac,          /* --> nb faces internes  */
- const cs_int_t                nbr_fbr,          /* --> nb faces bord      */
- const int                     dim_var,          /* --> dim. variable      */
- const fvm_interlace_t         interlace,        /* --> indic. entrelacage */
- const cs_real_t               var_fac[],        /* --> valeurs faces int. */
- const cs_real_t               var_fbr[],        /* --> valeurs faces bord */
-       cs_real_t               var_tmp[]         /* <-- valeurs assemblées */
-);
-
-
-/*----------------------------------------------------------------------------
- * Ecriture d'un maillage de post traitement en fonction des "writers".
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_ecrit_maillage
-(
-       cs_post_maillage_t  *const maillage_post,
- const cs_int_t                   nt_cur_abs,   /* --> numéro de pas de temps */
- const cs_real_t                  t_cur_abs     /* --> temps physique courant */
-);
-
-
-/*----------------------------------------------------------------------------
- * Transformation d'un tableau d'indicateurs (marqueurs) en liste ;
- * renvoie la taille effective de la liste.
- *----------------------------------------------------------------------------*/
-
-static cs_int_t _cs_post_ind_vers_liste
-(
- cs_int_t  nbr,                       /* <-> taille indicateur                */
- cs_int_t  liste[]                    /* <-> indicateur, puis liste           */
-);
-
-
-/*----------------------------------------------------------------------------
- * Boucle sur les maillages de post traitement pour écriture des variables
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_ecrit_deplacements
-(
- const cs_int_t   nt_cur_abs,         /* --> numéro de pas de temps courant   */
- const cs_real_t  t_cur_abs           /* --> valeur du temps physique associé */
-);
-
-
-/*----------------------------------------------------------------------------
- * Écriture du domaine sur maillage de post traitement
- *----------------------------------------------------------------------------*/
-
-static void _cs_post_ecrit_domaine
-(
-       fvm_writer_t   *writer,        /* --> writer FVM                       */
- const fvm_nodal_t    *maillage_ext,  /* --> maillage externe                 */
-       cs_int_t        nt_cur_abs,    /* --> numéro pas de temps courant      */
-       cs_real_t       t_cur_abs      /* --> valeur du temps physique associé */
-);
-
-
-/*============================================================================
- * Prototypes de fonctions Fortran appellées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Fonction développeur pour la sortie de variables sur un maillage post
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dvvpst, DVVPST)
-(
- const cs_int_t  *const idbia0,    /* --> numéro 1ère case libre dans IA      */
- const cs_int_t  *const idbra0,    /* --> numéro 1ère case libre dans RA      */
- const cs_int_t  *const nummai,    /* --> numéro du maillage post             */
- const cs_int_t  *const ndim,      /* --> dimension de l'espace               */
- const cs_int_t  *const ncelet,    /* --> nombre de cellules étendu           */
- const cs_int_t  *const ncel,      /* --> nombre de cellules                  */
- const cs_int_t  *const nfac,      /* --> nombre de faces internes            */
- const cs_int_t  *const nfabor,    /* --> nombre de faces de bord             */
- const cs_int_t  *const nfml,      /* --> nombre de familles                  */
- const cs_int_t  *const nprfml,    /* --> nombre de proprietes des familles   */
- const cs_int_t  *const nnod,      /* --> nombre de sommets                   */
- const cs_int_t  *const lndfac,    /* --> longueur de nodfac                  */
- const cs_int_t  *const lndfbr,    /* --> longueur de nodfbr                  */
- const cs_int_t  *const ncelbr,    /* --> nombre de cellules de bord          */
- const cs_int_t  *const nvar,      /* --> nombre de variables                 */
- const cs_int_t  *const nscal,     /* --> nombre de scalaires                 */
- const cs_int_t  *const nphas,     /* --> nombre de phases                    */
- const cs_int_t  *const nvlsta,    /* --> nombre de variables stat. (lagr)    */
- const cs_int_t  *const nvisbr,    /* --> nombre de variables stat. (lagr)    */
- const cs_int_t  *const ncelps,    /* --> nombre de cellules post             */
- const cs_int_t  *const nfacps,    /* --> nombre de faces internes post       */
- const cs_int_t  *const nfbrps,    /* --> nombre de faces de bord post        */
- const cs_int_t  *const nideve,    /* --> longueur du tableau idevel[]        */
- const cs_int_t  *const nrdeve,    /* --> longueur du tableau rdevel[]        */
- const cs_int_t  *const nituse,    /* --> longueur du tableau ituser[]        */
- const cs_int_t  *const nrtuse,    /* --> longueur du tableau rtuser[]        */
- const cs_int_t         itypps[],  /* --> indicateur (0 ou 1) de présence     */
-                                   /*     de cellules, faces internes et bord */
- const cs_int_t         ifacel[],  /* --> connect. faces internes / cellules  */
- const cs_int_t         ifabor[],  /* --> connect. faces de bord / cellules   */
- const cs_int_t         ifmfbr[],  /* --> liste des familles des faces bord   */
- const cs_int_t         ifmcel[],  /* --> liste des familles des cellules     */
- const cs_int_t         iprfml[],  /* --> liste des propriétés des familles   */
- const cs_int_t         ipnfac[],  /* --> rang ds nodfac 1er sommet faces int */
- const cs_int_t         nodfac[],  /* --> numéro des sommets des faces int    */
- const cs_int_t         ipnfbr[],  /* --> rang ds nodfbr 1er sommt faces brd  */
- const cs_int_t         nodfbr[],  /* --> numéro des sommets des faces bord   */
- const cs_int_t         lstcel[],  /* --> liste des cellules post             */
- const cs_int_t         lstfac[],  /* --> liste des faces internes post       */
- const cs_int_t         lstfbr[],  /* --> liste des faces de bord post        */
- const cs_int_t         idevel[],  /* --> tab. complémentaire développeur     */
- const cs_int_t         ituser[],  /* --> tab. complémentaire utilisateur     */
- const cs_int_t         ia[],      /* --> macro-tableau entier                */
- const cs_real_t        xyzcen[],  /* --> c.d.g. des cellules                 */
- const cs_real_t        surfac[],  /* --> surfaces des faces internes         */
- const cs_real_t        surfbo[],  /* --> surfaces des faces de bord          */
- const cs_real_t        cdgfac[],  /* --> c.d.g. des faces internes           */
- const cs_real_t        cdgfbo[],  /* --> c.d.g. des faces de bord            */
- const cs_real_t        xyznod[],  /* --> coordonnées des sommets             */
- const cs_real_t        volume[],  /* --> volumes des cellules                */
- const cs_real_t        dt[],      /* --> pas de temps                        */
- const cs_real_t        rtpa[],    /* --> variables aux cellules (préc.)      */
- const cs_real_t        rtp[],     /* --> variables aux cellules              */
- const cs_real_t        propce[],  /* --> propriétés physiques cellules       */
- const cs_real_t        propfa[],  /* --> propriétés physiques aux faces      */
- const cs_real_t        propfb[],  /* --> propriétés physiques faces bord     */
- const cs_real_t        coefa[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        coefb[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        statce[],  /* --> moy. statistiques (Lagrangien)      */
- const cs_real_t        stativ[],  /* --> var. statistiques (Lagrangien)      */
- const cs_real_t        statfb[],  /* --> moy. statistiques (Lagrangien)      */
- const cs_real_t        valcel[],  /* --- vals. aux cellules post             */
- const cs_real_t        valfac[],  /* --- vals. aux faces internes post       */
- const cs_real_t        valfbr[],  /* --- vals. aux faces de bord post        */
- const cs_real_t        rdevel[],  /* --> tab. complémentaire développeur     */
- const cs_real_t        rtuser[],  /* --> tab. complémentaire utilisateur     */
- const cs_real_t        ra[]       /* --> macro-tableau réel                  */
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction utilisateur pour la modification d'un maillage post
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usmpst, USMPST)
-(
- const cs_int_t  *const idbia0,    /* --> numéro 1ère case libre dans IA      */
- const cs_int_t  *const idbra0,    /* --> numéro 1ère case libre dans RA      */
- const cs_int_t  *const nummai,    /* --> numéro du maillage post             */
- const cs_int_t  *const ndim,      /* --> dimension de l'espace               */
- const cs_int_t  *const ncelet,    /* --> nombre de cellules étendu           */
- const cs_int_t  *const ncel,      /* --> nombre de cellules                  */
- const cs_int_t  *const nfac,      /* --> nombre de faces internes            */
- const cs_int_t  *const nfabor,    /* --> nombre de faces de bord             */
- const cs_int_t  *const nfml,      /* --> nombre de familles                  */
- const cs_int_t  *const nprfml,    /* --> nombre de proprietes des familles   */
- const cs_int_t  *const nnod,      /* --> nombre de sommets                   */
- const cs_int_t  *const lndfac,    /* --> longueur de nodfac                  */
- const cs_int_t  *const lndfbr,    /* --> longueur de nodfbr                  */
- const cs_int_t  *const ncelbr,    /* --> nombre de cellules de bord          */
- const cs_int_t  *const nvar,      /* --> nombre de variables                 */
- const cs_int_t  *const nscal,     /* --> nombre de scalaires                 */
- const cs_int_t  *const nphas,     /* --> nombre de phases                    */
- const cs_int_t  *const nvlsta,    /* --> nombre de variables stat. (lagr)    */
- const cs_int_t  *const ncelps,    /* --> nombre de cellules post             */
- const cs_int_t  *const nfacps,    /* --> nombre de faces internes post       */
- const cs_int_t  *const nfbrps,    /* --> nombre de faces de bord post        */
- const cs_int_t  *const nideve,    /* --> longueur du tableau idevel[]        */
- const cs_int_t  *const nrdeve,    /* --> longueur du tableau rdevel[]        */
- const cs_int_t  *const nituse,    /* --> longueur du tableau ituser[]        */
- const cs_int_t  *const nrtuse,    /* --> longueur du tableau rtuser[]        */
-       cs_int_t  *const imodif,    /* <-- 0 si maillage non modifié, 1 sinon  */
- const cs_int_t         itypps[],  /* --> indicateur (0 ou 1) de présence     */
-                                   /*     de cellules, faces internes et bord */
- const cs_int_t         ifacel[],  /* --> connect. faces internes / cellules  */
- const cs_int_t         ifabor[],  /* --> connect. faces de bord / cellules   */
- const cs_int_t         ifmfbr[],  /* --> liste des familles des faces bord   */
- const cs_int_t         ifmcel[],  /* --> liste des familles des cellules     */
- const cs_int_t         iprfml[],  /* --> liste des propriétés des familles   */
- const cs_int_t         ipnfac[],  /* --> rang ds nodfac 1er sommet faces int */
- const cs_int_t         nodfac[],  /* --> numéro des sommets des faces int    */
- const cs_int_t         ipnfbr[],  /* --> rang ds nodfbr 1er sommt faces brd  */
- const cs_int_t         nodfbr[],  /* --> numéro des sommets des faces bord   */
- const cs_int_t         lstcel[],  /* --> liste des cellules post             */
- const cs_int_t         lstfac[],  /* --> liste des faces internes post       */
- const cs_int_t         lstfbr[],  /* --> liste des faces de bord post        */
- const cs_int_t         idevel[],  /* --> tab. complémentaire développeur     */
- const cs_int_t         ituser[],  /* --> tab. complémentaire utilisateur     */
- const cs_int_t         ia[],      /* --> macro-tableau entier                */
- const cs_real_t        xyzcen[],  /* --> c.d.g. des cellules                 */
- const cs_real_t        surfac[],  /* --> surfaces des faces internes         */
- const cs_real_t        surfbo[],  /* --> surfaces des faces de bord          */
- const cs_real_t        cdgfac[],  /* --> c.d.g. des faces internes           */
- const cs_real_t        cdgfbo[],  /* --> c.d.g. des faces de bord            */
- const cs_real_t        xyznod[],  /* --> coordonnées des sommets             */
- const cs_real_t        volume[],  /* --> volumes des cellules                */
- const cs_real_t        dt[],      /* --> pas de temps                        */
- const cs_real_t        rtpa[],    /* --> variables aux cellules (préc.)      */
- const cs_real_t        rtp[],     /* --> variables aux cellules              */
- const cs_real_t        propce[],  /* --> propriétés physiques cellules       */
- const cs_real_t        propfa[],  /* --> propriétés physiques aux faces      */
- const cs_real_t        propfb[],  /* --> propriétés physiques faces bord     */
- const cs_real_t        coefa[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        coefb[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        statce[],  /* --> moy. statistiques (Lagrangien)      */
- const cs_real_t        valcel[],  /* --- vals. aux cellules post             */
- const cs_real_t        valfac[],  /* --- vals. aux faces internes post       */
- const cs_real_t        valfbr[],  /* --- vals. aux faces de bord post        */
- const cs_real_t        rdevel[],  /* --> tab. complémentaire développeur     */
- const cs_real_t        rtuser[],  /* --> tab. complémentaire utilisateur     */
- const cs_real_t        ra[]       /* --> macro-tableau réel                  */
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction utilisateur pour la sortie de variables sur un maillage post
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usvpst, USVPST)
-(
- const cs_int_t  *const idbia0,    /* --> numéro 1ère case libre dans IA      */
- const cs_int_t  *const idbra0,    /* --> numéro 1ère case libre dans RA      */
- const cs_int_t  *const nummai,    /* --> numéro du maillage post             */
- const cs_int_t  *const ndim,      /* --> dimension de l'espace               */
- const cs_int_t  *const ncelet,    /* --> nombre de cellules étendu           */
- const cs_int_t  *const ncel,      /* --> nombre de cellules                  */
- const cs_int_t  *const nfac,      /* --> nombre de faces internes            */
- const cs_int_t  *const nfabor,    /* --> nombre de faces de bord             */
- const cs_int_t  *const nfml,      /* --> nombre de familles                  */
- const cs_int_t  *const nprfml,    /* --> nombre de proprietes des familles   */
- const cs_int_t  *const nnod,      /* --> nombre de sommets                   */
- const cs_int_t  *const lndfac,    /* --> longueur de nodfac                  */
- const cs_int_t  *const lndfbr,    /* --> longueur de nodfbr                  */
- const cs_int_t  *const ncelbr,    /* --> nombre de cellules de bord          */
- const cs_int_t  *const nvar,      /* --> nombre de variables                 */
- const cs_int_t  *const nscal,     /* --> nombre de scalaires                 */
- const cs_int_t  *const nphas,     /* --> nombre de phases                    */
- const cs_int_t  *const nvlsta,    /* --> nombre de variables stat. (lagr)    */
- const cs_int_t  *const ncelps,    /* --> nombre de cellules post             */
- const cs_int_t  *const nfacps,    /* --> nombre de faces internes post       */
- const cs_int_t  *const nfbrps,    /* --> nombre de faces de bord post        */
- const cs_int_t  *const nideve,    /* --> longueur du tableau idevel[]        */
- const cs_int_t  *const nrdeve,    /* --> longueur du tableau rdevel[]        */
- const cs_int_t  *const nituse,    /* --> longueur du tableau ituser[]        */
- const cs_int_t  *const nrtuse,    /* --> longueur du tableau rtuser[]        */
- const cs_int_t         itypps[],  /* --> indicateur (0 ou 1) de présence     */
-                                   /*     de cellules, faces internes et bord */
- const cs_int_t         ifacel[],  /* --> connect. faces internes / cellules  */
- const cs_int_t         ifabor[],  /* --> connect. faces de bord / cellules   */
- const cs_int_t         ifmfbr[],  /* --> liste des familles des faces bord   */
- const cs_int_t         ifmcel[],  /* --> liste des familles des cellules     */
- const cs_int_t         iprfml[],  /* --> liste des propriétés des familles   */
- const cs_int_t         ipnfac[],  /* --> rang ds nodfac 1er sommet faces int */
- const cs_int_t         nodfac[],  /* --> numéro des sommets des faces int    */
- const cs_int_t         ipnfbr[],  /* --> rang ds nodfbr 1er sommt faces brd  */
- const cs_int_t         nodfbr[],  /* --> numéro des sommets des faces bord   */
- const cs_int_t         lstcel[],  /* --> liste des cellules post             */
- const cs_int_t         lstfac[],  /* --> liste des faces internes post       */
- const cs_int_t         lstfbr[],  /* --> liste des faces de bord post        */
- const cs_int_t         idevel[],  /* --> tab. complémentaire développeur     */
- const cs_int_t         ituser[],  /* --> tab. complémentaire utilisateur     */
- const cs_int_t         ia[],      /* --> macro-tableau entier                */
- const cs_real_t        xyzcen[],  /* --> c.d.g. des cellules                 */
- const cs_real_t        surfac[],  /* --> surfaces des faces internes         */
- const cs_real_t        surfbo[],  /* --> surfaces des faces de bord          */
- const cs_real_t        cdgfac[],  /* --> c.d.g. des faces internes           */
- const cs_real_t        cdgfbo[],  /* --> c.d.g. des faces de bord            */
- const cs_real_t        xyznod[],  /* --> coordonnées des sommets             */
- const cs_real_t        volume[],  /* --> volumes des cellules                */
- const cs_real_t        dt[],      /* --> pas de temps                        */
- const cs_real_t        rtpa[],    /* --> variables aux cellules (préc.)      */
- const cs_real_t        rtp[],     /* --> variables aux cellules              */
- const cs_real_t        propce[],  /* --> propriétés physiques cellules       */
- const cs_real_t        propfa[],  /* --> propriétés physiques aux faces      */
- const cs_real_t        propfb[],  /* --> propriétés physiques faces bord     */
- const cs_real_t        coefa[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        coefb[],   /* --> cond. limites aux faces de bord     */
- const cs_real_t        statce[],  /* --> moy. statistiques (Lagrangien)      */
- const cs_real_t        valcel[],  /* --- vals. aux cellules post             */
- const cs_real_t        valfac[],  /* --- vals. aux faces internes post       */
- const cs_real_t        valfbr[],  /* --- vals. aux faces de bord post        */
- const cs_real_t        rdevel[],  /* --> tab. complémentaire développeur     */
- const cs_real_t        rtuser[],  /* --> tab. complémentaire utilisateur     */
- const cs_real_t        ra[]       /* --> macro-tableau réel                  */
-);
-
-
-/*----------------------------------------------------------------------------
- * Fonction récupèrant les paramètres contenus dans les commons FORTRAN qui
- * sont utiles à l'initialisation du post-traitement.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (inipst, INIPST)
-(
- const cs_int_t  *const ichrvl,    /* --> indic. de post du volume fluide     */
- const cs_int_t  *const ichrbo,    /* --> indic. de post des faces de bord    */
- const cs_int_t  *const ichrsy,    /* --> indic. de post des faces de bord    */
-                                   /*     couplées avec Syrthes               */
- const cs_int_t  *const ichrze,    /* --> indic. de post des faces de bord    */
-                                   /*     zones d'echange aero    */
- const cs_int_t  *const ipstmd,    /* --> indic. de maillage déformable       */
-                                   /*     0 : pas de déformation              */
-                                   /*     1 : déformation des maillages post  */
-                                   /*     2 : écriture d'un champ déplacement */
- const cs_int_t  *const ntchr,     /* --> fréquence des sorties post          */
- const char      *const fmtchr,    /* --> nom du format de post-traitement    */
- const char      *const optchr     /* --> options du format de post           */
-);
-
-
-/*============================================================================
- * Fonctions publiques pour l'API Fortran
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Création d'un "writer" à partir des données du Fortran.
- *
- * Interface Fortran : utiliser PSTCWR (voir cs_post_util.F)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstcw1, PSTCW1)
-(
- const cs_int_t   *const numwri,  /* --> numéro du writer à créer
-                                   *     < 0 pour writer réservé,
-                                   *     > 0 pour writer utilisateur)         */
- const char       *const nomcas,  /* --> nom du cas associé                   */
- const char       *const nomrep,  /* --> nom de répertoire associé            */
- const char       *const nomfmt,  /* --> nom de format associé                */
- const char       *const optfmt,  /* --> options associées au format          */
- const cs_int_t   *const lnmcas,  /* --> longueur du nom du cas               */
- const cs_int_t   *const lnmrep,  /* --> longueur du nom du répertoire        */
- const cs_int_t   *const lnmfmt,  /* --> longueur du nom du format            */
- const cs_int_t   *const lopfmt,  /* --> longueur des options du format       */
- const cs_int_t   *const indmod,  /* --> 0 si figé, 1 si déformable,
-                                   *     2 si topologie change                */
- const cs_int_t   *const ntchr    /* --> fréquence de sortie par défaut       */
- CS_ARGF_SUPP_CHAINE              /*     (arguments 'longueur' éventuels,
-                                          Fortran, inutilisés lors de
-                                          l'appel mais placés par de
-                                          nombreux compilateurs)              */
-)
-{
-  /* variables locales */
-
-  char  *nom_cas;
-  char  *nom_rep;
-  char  *nom_format;
-  char  *opt_format;
-
-  /* Conversion des chaînes de caractères Fortran en chaînes C */
-
-  nom_cas    = cs_base_string_f_to_c_create(nomcas, *lnmcas);
-  nom_rep    = cs_base_string_f_to_c_create(nomrep, *lnmrep);
-  nom_format = cs_base_string_f_to_c_create(nomfmt, *lnmfmt);
-  opt_format = cs_base_string_f_to_c_create(optfmt, *lopfmt);
-
-  /* Traitement principal */
-
-  cs_post_ajoute_writer(*numwri,
-                        nom_cas,
-                        nom_rep,
-                        nom_format,
-                        opt_format,
-                        *indmod,
-                        *ntchr);
-
-  /* Libération des chaînes C temporaires */
-
-  cs_base_string_f_to_c_free(&nom_cas);
-  cs_base_string_f_to_c_free(&nom_rep);
-  cs_base_string_f_to_c_free(&nom_format);
-  cs_base_string_f_to_c_free(&opt_format);
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Création d'un maillage de post traitement à partir des données du
- * Fortran.
- *
- * Interface Fortran : utiliser PSTCMA (voir cs_post_util.F)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstcm1, PSTCM1)
-(
- const cs_int_t   *const nummai,    /* --> numéro du maillage à créer (< 0 pour
-                                     *     maillage standard ou développeur,
-                                     *     > 0 pour maillage utilisateur)     */
- const char       *const nommai,    /* --> nom du maillage externe            */
- const cs_int_t   *const lnmmai,    /* --> longueur du nom du maillage        */
- const cs_int_t   *const nbrcel,    /* --> nombre de cellules                 */
- const cs_int_t   *const nbrfac,    /* --> nombre de faces internes           */
- const cs_int_t   *const nbrfbr,    /* --> nombre de faces de bord            */
-       cs_int_t          lstcel[],  /* <-> liste des cellules                 */
-       cs_int_t          lstfac[],  /* <-> liste des faces internes           */
-       cs_int_t          lstfbr[]   /* <-> liste des faces de bord            */
- CS_ARGF_SUPP_CHAINE                /*     (arguments 'longueur' éventuels,
-                                           Fortran, inutilisés lors de
-                                           l'appel mais placés par de
-                                           nombreux compilateurs)             */
-)
-{
-  /* variables locales */
-
-  char  *nom_maillage = NULL;
-
-
-  /* Conversion des chaînes de caractères Fortran en chaînes C */
-
-  nom_maillage = cs_base_string_f_to_c_create(nommai, *lnmmai);
-
-  /* Traitement principal */
-
-  cs_post_ajoute_maillage(*nummai,
-                          nom_maillage,
-                          *nbrcel,
-                          *nbrfac,
-                          *nbrfbr,
-                          lstcel,
-                          lstfac,
-                          lstfbr);
-
-  /* Libération des chaînes C temporaires */
-
-  cs_base_string_f_to_c_free(&nom_maillage);
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Création d'un alias sur un maillage de post traitement.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTALM (NUMMAI, NUMWRI)
- * *****************
- *
- * INTEGER          NUMMAI      : --> : Numéro de l'alias à créer
- * INTEGER          NUMREF      : --> : Numéro du maillage externe associé
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstalm, PSTALM)
-(
- const cs_int_t   *nummai,      /* --> numéro de l'alias à créer              */
- const cs_int_t   *numref       /* --> numéro du maillage associe             */
-)
-{
-  cs_post_alias_maillage(*nummai, *numref);
-}
-
-
-/*----------------------------------------------------------------------------
- * Association d'un "writer" à un maillage pour le post traitement.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTASS (NUMMAI, NUMWRI)
- * *****************
- *
- * INTEGER          NUMMAI      : --> : Numéro du maillage externe associé
- * INTEGER          NUMWRI      : --> : Numéro du writer
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstass, PSTASS)
-(
- const cs_int_t   *nummai,      /* --> numéro du maillage externe associé     */
- const cs_int_t   *numwri       /* --> numéro du writer                       */
-)
-{
-  cs_post_associe(*nummai, *numwri);
-}
-
-
-/*----------------------------------------------------------------------------
- * Mise à jour de l'indicateur "actif" ou "inactif" des "writers" en
- * fonction du pas de temps et de leur fréquence de sortie par défaut.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTNTC (NTCABS)
- * *****************
- *
- * INTEGER          NTCABS      : --> : Numéro du pas de temps
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstntc, PSTNTC)
-(
- const cs_int_t   *ntcabs         /* --> numéro de pas de temps associé       */
-)
-{
-  cs_post_activer_selon_defaut(*ntcabs);
-}
-
-
-/*----------------------------------------------------------------------------
- * Forcer de l'indicateur "actif" ou "inactif" d'un "writers" spécifique
- * ou de l'ensemble des "writers" pour le pas de temps en cours.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTACT (NTCABS, TTCABS)
- * *****************
- *
- * INTEGER          NUMWRI      : --> : Numéro du writer, ou 0 pour forcer
- *                              :     : simultanément tous les writers
- * INTEGER          INDACT      : --> : 0 pour désactiver, 1 pour activer
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstact, PSTACT)
-(
- const cs_int_t   *numwri,     /* --> numéro du writer, ou 0 pour forcer
-                                *     simultanément tous les writers          */
- const cs_int_t   *indact      /* --> 0 pour désactiver, 1 pour activer       */
-)
-{
-  cs_post_activer_writer(*numwri,
-                         *indact);
-}
-
-
-/*----------------------------------------------------------------------------
- * Ecriture des maillages de post traitement en fonction des gestionnaires
- * de sortie associés.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTEMA (NTCABS, TTCABS)
- * *****************
- *
- * INTEGER          NTCABS      : --> : Numéro du pas de temps
- * DOUBLE PRECISION TTCABS      : --> : Temps physique associé
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstema, PSTEMA)
-(
- const cs_int_t   *ntcabs,        /* --> numéro de pas de temps associé       */
- const cs_real_t  *ttcabs         /* --> valeur du pas de temps associé       */
-)
-{
-  cs_post_ecrit_maillages(*ntcabs, *ttcabs);
-}
-
-
-/*----------------------------------------------------------------------------
- * Boucle sur les maillages de post traitement pour écriture  des variables
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstvar, PSTVAR)
-(
- const cs_int_t   *const idbia0,      /* --> numéro 1ère case libre dans IA   */
- const cs_int_t   *const idbra0,      /* --> numéro 1ère case libre dans RA   */
- const cs_int_t   *const ndim,        /* --> dimension de l'espace            */
- const cs_int_t   *const ntcabs,      /* --> numéro de pas de temps courant   */
- const cs_int_t   *const ncelet,      /* --> nombre de cellules étendu        */
- const cs_int_t   *const ncel,        /* --> nombre de cellules               */
- const cs_int_t   *const nfac,        /* --> nombre de faces internes         */
- const cs_int_t   *const nfabor,      /* --> nombre de faces de bord          */
- const cs_int_t   *const nfml,        /* --> nombre de familles               */
- const cs_int_t   *const nprfml,      /* --> nombre de proprietes des familles*/
- const cs_int_t   *const nnod,        /* --> nombre de noeuds                 */
- const cs_int_t   *const lndfac,      /* --> longueur de nodfac               */
- const cs_int_t   *const lndfbr,      /* --> longueur de nodfbr               */
- const cs_int_t   *const ncelbr,      /* --> nombre de cellules de bord       */
- const cs_int_t   *const nvar,        /* --> nombre de variables              */
- const cs_int_t   *const nscal,       /* --> nombre de scalaires              */
- const cs_int_t   *const nphas,       /* --> nombre de phases                 */
- const cs_int_t   *const nvlsta,      /* --> nombre de variables stat. (lagr) */
- const cs_int_t   *const nvisbr,      /* --> nombre de variables stat. (lagr) */
- const cs_int_t   *const nideve,      /* --> longueur du tableau idevel[]     */
- const cs_int_t   *const nrdeve,      /* --> longueur du tableau rdevel[]     */
- const cs_int_t   *const nituse,      /* --> longueur du tableau ituser[]     */
- const cs_int_t   *const nrtuse,      /* --> longueur du tableau rtuser[]     */
- const cs_int_t          ifacel[],    /* --> liste des faces internes         */
- const cs_int_t          ifabor[],    /* --> liste des faces de bord          */
- const cs_int_t          ifmfbr[],    /* --> liste des familles des faces bord*/
- const cs_int_t          ifmcel[],    /* --> liste des familles des cellules  */
- const cs_int_t          iprfml[],    /* --> liste des proprietes des familles*/
- const cs_int_t          ipnfac[],    /* --> rg ds nodfac 1er sommet faces int*/
- const cs_int_t          nodfac[],    /* --> numero des sommets des faces int.*/
- const cs_int_t          ipnfbr[],    /* --> rg ds nodfbr 1er sommet faces brd*/
- const cs_int_t          nodfbr[],    /* --> numéro des sommets des faces bord*/
- const cs_int_t          idevel[],    /* --> tab. complémentaire développeur  */
- const cs_int_t          ituser[],    /* --> tab. complémentaire utilisateur  */
- const cs_int_t          ia[],        /* --> macro-tableau entier             */
- const cs_real_t  *const ttcabs,      /* --> temps courant absolu             */
- const cs_real_t         xyzcen[],    /* --> c.d.g. des cellules              */
- const cs_real_t         surfac[],    /* --> surfaces des faces internes      */
- const cs_real_t         surfbo[],    /* --> surfaces des faces de bord       */
- const cs_real_t         cdgfac[],    /* --> c.d.g. des faces internes        */
- const cs_real_t         cdgfbo[],    /* --> c.d.g. des faces de bord         */
- const cs_real_t         xyznod[],    /* --> coordonnees des sommets          */
- const cs_real_t         volume[],    /* --> volumes des cellules             */
- const cs_real_t         dt[],        /* --> pas de temps                     */
- const cs_real_t         rtpa[],      /* --> variables aux cellules (préc.)   */
- const cs_real_t         rtp[],       /* --> variables aux cellules           */
- const cs_real_t         propce[],    /* --> propriétés physiques cellules    */
- const cs_real_t         propfa[],    /* --> propriétés physiques aux faces   */
- const cs_real_t         propfb[],    /* --> propriétés physiques faces bord  */
- const cs_real_t         coefa[],     /* --> cond. limites aux faces de bord  */
- const cs_real_t         coefb[],     /* --> cond. limites aux faces de bord  */
- const cs_real_t         statce[],    /* --> moyennes statistiques (Lagrangien*/
- const cs_real_t         stativ[],    /* --> variances statistiques (Lagrangie*/
- const cs_real_t         statfb[],    /* --> moyennes statistiques (Lagrangien*/
- const cs_real_t         rdevel[],    /* --> tab. complémentaire développeur  */
- const cs_real_t         rtuser[],    /* --> tab. complémentaire utilisateur  */
- const cs_real_t         ra[]         /* --> macro-tableau réel               */
-)
-{
-  /* variables locales */
-
-  int i, j, k;
-  int dim_ent;
-  cs_int_t   itypps[3];
-  cs_int_t   ind_cel, ind_fac, dec_num_fbr;
-  cs_int_t   nbr_ent, nbr_ent_max;
-  cs_int_t   nummai, imodif;
-
-  cs_bool_t  actif;
-
-  cs_post_maillage_t  *maillage_post;
-  cs_post_writer_t  *writer;
-
-  cs_int_t    nbr_cel, nbr_fac, nbr_fbr;
-  cs_int_t    *liste_cel, *liste_fac, *liste_fbr;
-
-  cs_int_t    *num_ent_parent = NULL;
-  cs_real_t   *var_trav = NULL;
-  cs_real_t   *var_cel = NULL;
-  cs_real_t   *var_fac = NULL;
-  cs_real_t   *var_fbr = NULL;
-
-
-  /* Boucle sur les writers pour vérifier si l'on a quelque chose à faire */
-  /*----------------------------------------------------------------------*/
-
-  for (j = 0 ; j < cs_glob_post_nbr_writers ; j++) {
-    writer = cs_glob_post_writers + j;
-    if (writer->actif == 1)
-      break;
-  }
-  if (j == cs_glob_post_nbr_writers)
-    return;
-
-
-  /* Modification éventuelle des définitions des maillages post */
-  /*------------------------------------------------------------*/
-
-  nbr_ent_max = 0;
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    actif = false;
-
-    for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
-      writer = cs_glob_post_writers + maillage_post->ind_writer[j];
-      if (writer->actif == 1)
-        actif = true;
-    }
-
-    /* Maillage utilisateur modifiable, non alias, actif à ce pas de temps */
-
-    if (   actif == true
-        && maillage_post->alias < 0
-        && maillage_post->id > 0
-        && maillage_post->ind_mod_min == FVM_WRITER_TRANSIENT_CONNECT) {
-
-      const fvm_nodal_t * maillage_ext = maillage_post->maillage_ext;
-
-      dim_ent = fvm_nodal_get_max_entity_dim(maillage_ext);
-      nbr_ent = fvm_nodal_get_n_entities(maillage_ext, dim_ent);
-
-      if (nbr_ent > nbr_ent_max) {
-        nbr_ent_max = nbr_ent;
-        BFT_REALLOC(num_ent_parent, nbr_ent_max, cs_int_t);
-      }
-
-      nummai = maillage_post->id;
-
-      /* Récupération des listes d'entités correspondantes */
-
-      fvm_nodal_get_parent_num(maillage_ext, dim_ent, num_ent_parent);
-
-      for (k = 0 ; k < 3 ; k++)
-        itypps[k] = maillage_post->ind_ent[k];
-
-
-      /* On surdimensionne ici les listes, l'utilisateur pouvant
-         en remplir une partie arbitraire */
-
-      BFT_MALLOC(liste_cel, cs_glob_mesh->n_cells, cs_int_t);
-      BFT_MALLOC(liste_fac, cs_glob_mesh->n_i_faces, cs_int_t);
-      BFT_MALLOC(liste_fbr, cs_glob_mesh->n_b_faces, cs_int_t);
-
-      nbr_cel = 0;
-      nbr_fac = 0;
-      nbr_fbr = 0;
-
-      /* Mise à zéro des listes */
-
-      if (dim_ent == 3)
-        for (ind_cel = 0 ; ind_cel < cs_glob_mesh->n_cells ; ind_cel++)
-          liste_cel[ind_cel] = 0;
-      else if (dim_ent == 2) {
-        for (ind_fac = 0 ; ind_fac < cs_glob_mesh->n_b_faces ; ind_fac++)
-          liste_fbr[ind_fac] = 0;
-        for (ind_fac = 0 ; ind_fac < cs_glob_mesh->n_i_faces ; ind_fac++)
-          liste_fac[ind_fac] = 0;
-      }
-
-      /* Si les éléments du maillage FVM sont découpés, un même numéro
-         parent peut apparaître plusieurs fois ; On utilise donc une
-         logique par indicateur. */
-
-      if (dim_ent == 3) {
-        for (ind_cel = 0 ; ind_cel < nbr_ent ; ind_cel++)
-          liste_cel[num_ent_parent[ind_cel] - 1] = 1;
-      }
-
-      /* Pour les faces, les numéros de faces internes "parentes"
-         connus par FVM décalés du nombre total de faces de bord
-         (c.f. construction dans cs_maillage_extrait...()) */
-
-      else if (dim_ent == 2) {
-        dec_num_fbr = cs_glob_mesh->n_b_faces;
-        for (ind_fac = 0 ; ind_fac < nbr_ent ; ind_fac++) {
-          if (num_ent_parent[ind_fac] > dec_num_fbr)
-            liste_fac[num_ent_parent[ind_fac] - dec_num_fbr - 1] = 1;
-          else
-            liste_fbr[num_ent_parent[ind_fac] - 1] = 1;
-        }
-      }
-
-      /* Transformation des indicateurs en listes */
-
-      if (dim_ent == 3) {
-        nbr_cel = _cs_post_ind_vers_liste(cs_glob_mesh->n_cells,
-                                          liste_cel);
-      }
-      else if (dim_ent == 2) {
-        nbr_fac = _cs_post_ind_vers_liste(cs_glob_mesh->n_i_faces,
-                                          liste_fac);
-        nbr_fbr = _cs_post_ind_vers_liste(cs_glob_mesh->n_b_faces,
-                                          liste_fbr);
-      }
-
-      /* Modification de la définition du maillage par l'utilisateur */
-
-      imodif = 0;
-
-      CS_PROCF(usmpst, USMPST) (idbia0, idbra0, &nummai,
-                                ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
-                                nnod, lndfac, lndfbr, ncelbr,
-                                nvar, nscal, nphas, nvlsta,
-                                &nbr_cel, &nbr_fac, &nbr_fbr,
-                                nideve, nrdeve, nituse, nrtuse, &imodif,
-                                itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
-                                ipnfac, nodfac, ipnfbr, nodfbr,
-                                liste_cel, liste_fac, liste_fbr,
-                                idevel, ituser, ia,
-                                xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
-                                volume, dt, rtpa, rtp, propce, propfa, propfb,
-                                coefa, coefb, statce,
-                                var_cel, var_fac, var_fbr,
-                                rdevel, rtuser, ra);
-
-      if (imodif > 0)
-        cs_post_modifie_maillage(maillage_post->id,
-                                 nbr_cel,
-                                 nbr_fac,
-                                 nbr_fbr,
-                                 liste_cel,
-                                 liste_fac,
-                                 liste_fbr);
-
-      BFT_FREE(liste_cel);
-      BFT_FREE(liste_fac);
-      BFT_FREE(liste_fbr);
-
-    }
-
-  }
-
-  /* On s'assure maintenant de la synchronisation des alias */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    if (maillage_post->alias > -1) {
-
-      const cs_post_maillage_t  *maillage_ref;
-
-      maillage_ref = cs_glob_post_maillages + maillage_post->alias;
-
-      for (j = 0 ; j < 3 ; j++)
-        maillage_post->ind_ent[j] = maillage_ref->ind_ent[j];
-
-      maillage_post->nbr_fac = maillage_ref->nbr_fac;
-      maillage_post->nbr_fbr = maillage_ref->nbr_fbr;
-
-    }
-
-  }
-
-  /* Sortie des maillages ou champs de déplacement des sommets si nécessaire */
-  /*-------------------------------------------------------------------------*/
-
-  cs_post_ecrit_maillages(*ntcabs, *ttcabs);
-
-  if (cs_glob_post_deformable == true)
-    _cs_post_ecrit_deplacements(*ntcabs, *ttcabs);
-
-
-  /* Sorties des variables réalisés par des traitements enregistrés */
-  /*----------------------------------------------------------------*/
-
-  for (i = 0; i < cs_glob_post_nbr_var_tp; i++) {
-    cs_glob_post_f_var_tp[i](cs_glob_post_i_var_tp[i],
-                             *ntcabs,
-                             *ttcabs);
-  }
-
-  /* Sortie des variables associées aux maillages de post traitement */
-  /*-----------------------------------------------------------------*/
-
-  /* nbr_ent_max déja initialisé avant et au cours de la
-     modification éventuelle des définitions de maillages post,
-     et num_ent_parent alloué si nbr_ent_max > 0 */
-
-  BFT_MALLOC(var_trav, nbr_ent_max * 3, cs_real_t);
-
-  /* Boucle principale sur les maillages de post traitment */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    actif = false;
-
-    for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
-      writer = cs_glob_post_writers + maillage_post->ind_writer[j];
-      if (writer->actif == 1)
-        actif = true;
-    }
-
-    /* Si le maillage est actif à ce pas de temps */
-    /*--------------------------------------------*/
-
-    if (actif == true) {
-
-      const fvm_nodal_t * maillage_ext = maillage_post->maillage_ext;
-
-      dim_ent = fvm_nodal_get_max_entity_dim(maillage_ext);
-      nbr_ent = fvm_nodal_get_n_entities(maillage_ext, dim_ent);
-
-      if (nbr_ent > nbr_ent_max) {
-        nbr_ent_max = nbr_ent;
-        BFT_REALLOC(var_trav, nbr_ent_max * 3, cs_real_t);
-        BFT_REALLOC(num_ent_parent, nbr_ent_max, cs_int_t);
-      }
-
-      nummai = maillage_post->id;
-
-
-      /* Récupération des listes d'entités correspondantes */
-
-      fvm_nodal_get_parent_num(maillage_ext, dim_ent, num_ent_parent);
-
-      for (k = 0 ; k < 3 ; k++)
-        itypps[k] = maillage_post->ind_ent[k];
-
-
-      /* On peut sortir des variables pour ce pas de temps */
-      /*---------------------------------------------------*/
-
-      nbr_cel = 0;
-      nbr_fac = 0;
-      nbr_fbr = 0;
-      liste_cel = NULL;
-      liste_fac = NULL;
-      liste_fbr = NULL;
-
-      /* Ici, les listes sont dimensionnées au plus juste, et on pointe
-         sur le tableau rempli par fvm_nodal_get_parent_num() si possible. */
-
-      if (dim_ent == 3) {
-        nbr_cel = nbr_ent;
-        liste_cel = num_ent_parent;
-      }
-
-      /* Les numéros de faces internes "parentes" connus par FVM
-         sont décalés du nombre total de faces de bord */
-
-      else if (dim_ent == 2 && nbr_ent > 0) {
-
-        dec_num_fbr = cs_glob_mesh->n_b_faces;
-
-        for (ind_fac = 0 ; ind_fac < nbr_ent ; ind_fac++) {
-          if (num_ent_parent[ind_fac] > dec_num_fbr)
-            nbr_fac++;
-          else
-            nbr_fbr++;
-        }
-
-        /* faces de bord seulement : numéros faces parentes FVM adaptés */
-        if (nbr_fac == 0) {
-          liste_fbr = num_ent_parent;
-        }
-
-        /* faces internes seulement : numéros faces parentes FVM décalés */
-        else if (nbr_fbr == 0) {
-          for (ind_fac = 0 ; ind_fac < nbr_ent ; ind_fac++)
-            num_ent_parent[ind_fac] -= dec_num_fbr;
-          liste_fac = num_ent_parent;
-        }
-
-        /* faces internes et de bord : numéros à séparer */
-
-        else {
-
-          BFT_MALLOC(liste_fac, nbr_fac, cs_int_t);
-          BFT_MALLOC(liste_fbr, nbr_fbr, cs_int_t);
-
-          nbr_fac = 0, nbr_fbr = 0;
-
-          for (ind_fac = 0 ; ind_fac < nbr_ent ; ind_fac++) {
-            if (num_ent_parent[ind_fac] > dec_num_fbr)
-              liste_fac[nbr_fac++] = num_ent_parent[ind_fac] - dec_num_fbr;
-            else
-              liste_fbr[nbr_fbr++] = num_ent_parent[ind_fac];
-          }
-
-        }
-
-        /* Dans tous les cas, mise à jour du nombre de faces internes
-           et faces de bord (utile en cas de découpage du maillage FVM)
-           pour les fonctions appellées par celle-ci */
-
-        maillage_post->nbr_fac = nbr_fac;
-        maillage_post->nbr_fbr = nbr_fbr;
-
-      }
-
-      /* Pointeurs sur tableaux d'assemblage des variables,
-         mis à NULL si inutiles (afin de provoquer si possible
-         une erreur immédiate en cas de mauvaise utilisation) */
-
-      var_cel = var_trav;
-      var_fac = var_cel + (nbr_cel * 3);
-      var_fbr = var_fac + (nbr_fac * 3);
-
-      if (nbr_cel == 0)
-        var_cel = NULL;
-      if (nbr_fac == 0)
-        var_fac = NULL;
-      if (nbr_fbr == 0)
-        var_fbr = NULL;
-
-      /* Post traitement automatique des variables */
-
-      if (nummai < 0)
-        CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai,
-                                  ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
-                                  nnod, lndfac, lndfbr, ncelbr,
-                                  nvar, nscal, nphas, nvlsta, nvisbr,
-                                  &nbr_cel, &nbr_fac, &nbr_fbr,
-                                  nideve, nrdeve, nituse, nrtuse,
-                                  itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
-                                  ipnfac, nodfac, ipnfbr, nodfbr,
-                                  liste_cel, liste_fac, liste_fbr,
-                                  idevel, ituser, ia,
-                                  xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
-                                  volume, dt, rtpa, rtp, propce, propfa, propfb,
-                                  coefa, coefb, statce, stativ , statfb ,
-                                  var_cel, var_fac, var_fbr,
-                                  rdevel, rtuser, ra);
-
-      /* Appel Fortran utilisateur pour post traitement des variables */
-
-      CS_PROCF(usvpst, USVPST) (idbia0, idbra0, &nummai,
-                                ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
-                                nnod, lndfac, lndfbr, ncelbr,
-                                nvar, nscal, nphas, nvlsta,
-                                &nbr_cel, &nbr_fac, &nbr_fbr,
-                                nideve, nrdeve, nituse, nrtuse,
-                                itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
-                                ipnfac, nodfac, ipnfbr, nodfbr,
-                                liste_cel, liste_fac, liste_fbr,
-                                idevel, ituser, ia,
-                                xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
-                                volume, dt, rtpa, rtp, propce, propfa, propfb,
-                                coefa, coefb, statce,
-                                var_cel, var_fac, var_fbr,
-                                rdevel, rtuser, ra);
-
-
-      /* En cas de mélange de faces internes et de bord, tableaux
-         supplémentaires alloués, à libérer */
-
-      if (liste_fac != NULL && liste_fbr != NULL) {
-        BFT_FREE(liste_fac);
-        BFT_FREE(liste_fbr);
-      }
-
-    }
-
-  }
-
-
-  /* Libération mémoire */
-
-  BFT_FREE(num_ent_parent);
-  BFT_FREE(var_trav);
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Sortie d'un champ de post traitement défini sur les cellules ou faces
- * d'un maillage en fonction des "writers" associés.
- *
- * Interface Fortran : utiliser PSTEVA (voir cs_post_util.F)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstev1, PSTEV1)
-(
- const cs_int_t   *const nummai,      /* --> numéro du maillage associé       */
- const char       *const nomvar,      /* --> nom de la variable               */
- const cs_int_t   *const lnmvar,      /* --> longueur du nom de la variable   */
- const cs_int_t   *const idimt,       /* --> 1 pour scalaire, 3 pour vecteur  */
- const cs_int_t   *const ientla,      /* --> si vecteur, 1 si valeurs
-                                       *     entrelacées, 0 sinon             */
- const cs_int_t   *const ivarpr,      /* --> 1 si variable définie sur
-                                       *     maillage "parent", 0 si variable
-                                       *     restreinte au maillage post      */
- const cs_int_t   *const ntcabs,      /* --> numéro de pas de temps associé   */
- const cs_real_t  *const ttcabs,      /* --> valeur du pas de temps associé   */
- const cs_real_t         varcel[],    /* --> valeurs aux cellules             */
- const cs_real_t         varfac[],    /* --> valeurs aux faces internes       */
- const cs_real_t         varfbr[]     /* --> valeurs aux faces de bord        */
- CS_ARGF_SUPP_CHAINE                  /*     (arguments 'longueur' éventuels,
-                                             Fortran, inutilisés lors de
-                                             l'appel mais placés par de
-                                             nombreux compilateurs)           */
-)
-{
-  cs_bool_t  var_parent;
-  cs_bool_t  entrelace;
-
-  char  *nom_var = NULL;
-
-  if (*ivarpr == 1)
-    var_parent = true;
-  else if (*ivarpr == 0)
-    var_parent = false;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("The PSTEVA sub-routine argument IVARPR must be\n"
-                "equal to 0 or 1, and not %d.\n"), (int)(*ivarpr));
-
-  if (*ientla == 0)
-    entrelace = false;
-  else if (*ientla == 1)
-    entrelace = true;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("The PSTEVA sub-routine argument IENTLA must be\n"
-                "equal to 0 or 1, and not %d.\n"), (int)(*ientla));
-
-
-  /* Conversion des chaînes de caractères Fortran en chaînes C */
-
-  nom_var = cs_base_string_f_to_c_create(nomvar, *lnmvar);
-
-
-  /* Traitement principal */
-
-  cs_post_ecrit_var(*nummai,
-                    nom_var,
-                    *idimt,
-                    entrelace,
-                    var_parent,
-                    CS_POST_TYPE_cs_real_t,
-                    *ntcabs,
-                    *ttcabs,
-                    varcel,
-                    varfac,
-                    varfbr);
-
-  /* Libération des tableaux C temporaires */
-
-  cs_base_string_f_to_c_free(&nom_var);
-
-}
-
-
-/*============================================================================
- * Fonctions publiques
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Création d'un "writer" ; cet objet correspond au choix d'un nom de cas,
- * de répertoire, et de format, ainsi qu'un indicateur précisant si les
- * maillages associés doivent dépendre ou non du temps, et la fréquence de
- * sortie par défaut pour les variables associées.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ajoute_writer
-(
-       cs_int_t          id_writer,  /* --> numéro du writer à créer
-                                      *     (< 0 pour writer réservé,
-                                      *      > 0 pour writer utilisateur)     */
- const char       *const nom_cas,    /* --> nom du cas associé                */
- const char       *const nom_rep,    /* --> nom de répertoire associé         */
- const char       *const nom_fmt,    /* --> nom de format associé             */
- const char       *const opt_fmt,    /* --> options associées au format       */
-       cs_int_t          ind_mod,    /* --> 0 si figé, 1 si déformable,
-                                      *     2 si topologie change, +10 pour
-                                      *     ajouter un champ déplacement      */
-       cs_int_t          frequence   /* --> fréquence de sortie par défaut    */
-)
-{
-  /* variables locales */
-
-  int    i;
-
-  cs_post_writer_t  *writer = NULL;
-  fvm_writer_time_dep_t  dep_temps = FVM_WRITER_FIXED_MESH;
-
-
-  /* Vérification que le numéro demandé est disponible */
-
-  if (id_writer == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The requested post-processing writer number\n"
-                "must be < 0 (reserved) or > 0 (user).\n"));
-
-  for (i = 0 ; i < cs_glob_post_nbr_writers ; i++) {
-    if ((cs_glob_post_writers + i)->id == id_writer)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The requested post-processing writer number\n"
-                  "(%d) has already been assigned.\n"), (int)id_writer);
-  }
-
-
-  /* Redimensionnement du tableau global des writers */
-
-  if (cs_glob_post_nbr_writers == cs_glob_post_nbr_writers_max) {
-
-    if (cs_glob_post_nbr_writers_max == 0)
-      cs_glob_post_nbr_writers_max = 4;
-    else
-      cs_glob_post_nbr_writers_max *= 2;
-
-    BFT_REALLOC(cs_glob_post_writers,
-                cs_glob_post_nbr_writers_max,
-                cs_post_writer_t);
-
-  }
-
-  cs_glob_post_nbr_writers += 1;
-
-
-  /* Affectation du writer nouvellement créé à la structure */
-
-  writer = cs_glob_post_writers + cs_glob_post_nbr_writers - 1;
-
-  writer->id = id_writer;
-  writer->freq_sortie = frequence;
-  writer->ecr_depl = false;
-  writer->actif = 0;
-
-  if (ind_mod >= 10) {
-    writer->ecr_depl = true;
-    ind_mod -= 10;
-  }
-
-  if (ind_mod == 1)
-    dep_temps = FVM_WRITER_TRANSIENT_COORDS;
-  else if (ind_mod >= 2)
-    dep_temps = FVM_WRITER_TRANSIENT_CONNECT;
-
-  writer->writer = fvm_writer_init(nom_cas,
-                                   nom_rep,
-                                   nom_fmt,
-                                   opt_fmt,
-                                   dep_temps);
-}
-
-
-/*----------------------------------------------------------------------------
- * Création d'un maillage de post traitement ; les listes de cellules ou
- * faces à extraire sont triées en sortie, qu'elles le soient déjà en entrée
- * ou non.
- *
- * La liste des cellules associées n'est nécessaire que si le nombre
- * de cellules à extraire est strictement supérieur à 0 et inférieur au
- * nombre de cellules du maillage.
- *
- * Les listes de faces ne sont prises en compte que si le nombre de cellules
- * à extraire est nul ; si le nombre de faces de bord à extraire est égal au
- * nombre de faces de bord du maillage global, et le nombre de faces internes
- * à extraire est nul, alors on extrait par défaut le maillage de bord, et la
- * liste des faces de bord associées n'est donc pas nécessaire.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ajoute_maillage
-(
- const cs_int_t          id_maillage,  /* --> numéro du maillage à créer
-                                        *     (< 0 pour maillage réservé,
-                                        *      > 0 pour maillage utilisateur) */
- const char       *const nom_maillage, /* --> nom du maillage externe         */
- const cs_int_t          nbr_cel,      /* --> nombre de cellules              */
- const cs_int_t          nbr_fac,      /* --> nombre de faces internes        */
- const cs_int_t          nbr_fbr,      /* --> nombre de faces de bord         */
-       cs_int_t          liste_cel[],  /* <-> liste des cellules              */
-       cs_int_t          liste_fac[],  /* <-> liste des faces internes        */
-       cs_int_t          liste_fbr[]   /* <-> liste des faces de bord         */
-)
-{
-  /* variables locales */
-
-  cs_post_maillage_t  *maillage_post = NULL;
-
-
-  /* Ajout et initialisation de la structure de base */
-
-  maillage_post = _cs_post_ajoute_maillage(id_maillage);
-
-
-  /* Création du maillage et affectation à la structure */
-
-  _cs_post_definit_maillage(maillage_post,
-                            nom_maillage,
-                            nbr_cel,
-                            nbr_fac,
-                            nbr_fbr,
-                            liste_cel,
-                            liste_fac,
-                            liste_fbr);
-}
-
-
-/*----------------------------------------------------------------------------
- * Création d'un maillage de post traitement par association d'un maillage
- * externe existant.
- *
- * Si le maillage externe n'est plus destiné à être utilisé par ailleurs,
- * on peut choisir d'en transférer la propriété au maillage de post traitement,
- * qui gèrera alors son cycle de vie selon ses seuls besoins.
- *
- * Si le maillage externe doit continuer à être partagé, on devra veiller
- * à maintenir la cohérence entre ce maillage et le posttraitement au cours
- * du temps.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ajoute_maillage_existant
-(
- cs_int_t            id_maillage,      /* --> numéro du maillage à créer
-                                        *     (< 0 pour maillage réservé,
-                                        *      > 0 pour maillage utilisateur) */
- fvm_nodal_t  *const maillage_ext,     /* --> maillage externe */
- cs_bool_t           transferer        /* --> indique si l'on transfère la
-                                        *     propriété du maillage externe
-                                              au maillage de post traitement  */
-)
-{
-  /* variables locales */
-
-  int       i;
-  int       indic_glob[3];
-  cs_int_t  dec_num_fbr, ind_fac;
-
-  int    indic_loc[3] = {1, 1, 1};  /* Indicateurs 0 à 2 "inversés" par
-                                       rapport aux autres pour pouvoir
-                                       utiliser un même appel à
-                                       MPI_Allreduce(..., MPI_MIN, ...) */
-
-  int         dim_ent = 0;
-  cs_bool_t   maj_ind_ent = false;
-  fvm_lnum_t  nbr_ent = 0;
-
-  fvm_lnum_t          *num_ent_parent = NULL;
-  cs_post_maillage_t  *maillage_post = NULL;
-
-
-  /* Ajout et initialisation de la structure de base */
-
-  maillage_post = _cs_post_ajoute_maillage(id_maillage);
-
-
-  /* Affectation du maillage à la structure */
-
-  maillage_post->maillage_ext = maillage_ext;
-
-  if (transferer == true)
-    maillage_post->_maillage_ext = maillage_ext;
-
-
-  /* Calcul du nombre de cellules et/ou de faces */
-
-  dim_ent = fvm_nodal_get_max_entity_dim(maillage_ext);
-  nbr_ent = fvm_nodal_get_n_entities(maillage_ext, dim_ent);
-
-  if (dim_ent == 3 && nbr_ent > 0)
-    indic_loc[0] = 0;
-
-  else if (dim_ent == 2 && nbr_ent > 0) {
-
-    BFT_MALLOC(num_ent_parent, nbr_ent, cs_int_t);
-
-    fvm_nodal_get_parent_num(maillage_ext, dim_ent, num_ent_parent);
-
-    dec_num_fbr = cs_glob_mesh->n_b_faces;
-    for (ind_fac = 0 ; ind_fac < nbr_ent ; ind_fac++) {
-      if (num_ent_parent[ind_fac] > dec_num_fbr)
-        maillage_post->nbr_fac += 1;
-      else
-        maillage_post->nbr_fbr += 1;
-    }
-
-    BFT_FREE(num_ent_parent);
-
-    if (maillage_post->nbr_fac > 0)
-      indic_loc[1] = 0;
-    else if (maillage_post->nbr_fbr > 0)
-      indic_loc[2] = 0;
-
-  }
-
-  for (i = 0 ; i < 3 ; i++)
-    indic_glob[i] = indic_loc[i];
-
-#if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
-    MPI_Allreduce (indic_loc, indic_glob, 3, MPI_INT, MPI_MIN,
-                   cs_glob_base_mpi_comm);
-#endif
-
-
-  /* Indicateurs globaux de présence de types de mailles
-     on ne met à jour que si le maillage n'est pas totalement vide
-     (pour des maillages dépendant du temps, vides à certains instants,
-     on veut pouvoir connaître le dernier type de maille contenu
-     dans USMPST) */
-
-  for (i = 0 ; i < 3 ; i++) {
-    if (indic_glob[i] == 0)
-      maj_ind_ent = true;
-  }
-
-  if (maj_ind_ent == true) {
-    for (i = 0 ; i < 3 ; i++) {
-      if (indic_glob[i] == 0)           /* Logique indic_glob 0 à 2 inversée */
-        maillage_post->ind_ent[i] = 1;  /* (c.f. remarque ci-dessus) */
-      else
-        maillage_post->ind_ent[i] = 0;
-    }
-  }
-
-  /* Indicateurs de modification min et max inversés initialement,
-     seront recalculés lors des associations maillages - post-traitements */
-
-  maillage_post->ind_mod_min = FVM_WRITER_TRANSIENT_CONNECT;
-  maillage_post->ind_mod_max = FVM_WRITER_FIXED_MESH;
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Création d'un alias sur un maillage de post traitement.
- *
- * Un alias permet d'associer un numéro supplémentaire à un maillage de
- * post traitement déjà défini, et donc de lui associer d'autres
- * "writers" qu'au maillage initial ; ceci permet par exemple d'écrire
- * un jeu de variables principales tous les n1 pas de temps dans un
- * jeu de données de post traitement, et de sortir quelques variables
- * spécifiques tous les n2 pas de temps dans un autre jeu de données
- * de post traitement, sans nécessiter de duplication du maillage support.
- *
- * Un alias est donc traité en tout point comme le maillage principal
- * associé ; en particulier, si la définition de l'un est modifié, celle
- * de l'autre l'est aussi.
- *
- * Il est impossible d'associer un alias à un autre alias (cela n'aurait
- * pas d'utilité), mais on peut associer plusieurs alias à un maillage.
- *----------------------------------------------------------------------------*/
-
-void cs_post_alias_maillage
-(
- const cs_int_t          id_alias,     /* --> numéro de l'alias à créer
-                                        *     (< 0 pour alias réservé,
-                                        *      > 0 pour alias utilisateur)    */
- const cs_int_t          id_maillage   /* --> numéro du maillage  associé     */
-)
-{
-  /* variables locales */
-
-  int    indref, j;
-
-  cs_post_maillage_t  *maillage_post = NULL;
-  cs_post_maillage_t  *maillage_ref = NULL;
-
-
-  /* Vérifications initiales */
-
-  indref = _cs_post_ind_maillage(id_maillage);
-  maillage_ref = cs_glob_post_maillages + indref;
-
-  if (maillage_ref->alias > -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The mesh %d cannot be an alias of mesh %d,\n"
-                "which is itself an alias of mesh %d.\n"),
-              (int)id_alias, (int)id_maillage,
-              (int)((cs_glob_post_maillages + maillage_ref->alias)->id));
-
-  /* Ajout et initialisation de la structure de base */
-
-  maillage_post = _cs_post_ajoute_maillage(id_alias);
-
-  /* On réactualise maillage_ref, car on a pu déplacer l'adresse
-     de cs_glob_pos_maillages en le réallouant */
-
-  maillage_ref = cs_glob_post_maillages + indref;
-
-  /* Liens avec le maillage de référence */
-
-  maillage_post->alias = indref;
-
-  maillage_post->maillage_ext = maillage_ref->maillage_ext;
-
-  maillage_post->ind_mod_min = maillage_ref->ind_mod_min;
-  maillage_post->ind_mod_max = maillage_ref->ind_mod_max;
-
-  for (j = 0 ; j < 3 ; j++)
-    maillage_post->ind_ent[j] = maillage_ref->ind_ent[j];
-
-  maillage_post->nbr_fac = maillage_ref->nbr_fac;
-  maillage_post->nbr_fbr = maillage_ref->nbr_fbr;
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Vérifie l'existence d'un "writer" associé à un numéro donné.
- *----------------------------------------------------------------------------*/
-
-cs_bool_t cs_post_existe_writer
-(
- const cs_int_t   numwri        /* --> numéro du writer associé               */
-)
-{
-  /* variables locales */
-
-  int indwri;
-  cs_post_writer_t  *writer = NULL;
-
-
-  /* Recherche du writer demandé */
-
-  for (indwri = 0 ; indwri < cs_glob_post_nbr_writers ; indwri++) {
-    writer = cs_glob_post_writers + indwri;
-    if (writer->id == numwri)
-      return true;
-  }
-
-  return false;
-}
-
-
-/*----------------------------------------------------------------------------
- * Vérifie l'existence d'un maillage de post traitement associé à un
- * numéro donné.
- *----------------------------------------------------------------------------*/
-
-cs_bool_t cs_post_existe_maillage
-(
- const cs_int_t   nummai        /* --> numéro du maillage externe associé     */
-)
-{
-  /* variables locales */
-
-  int indmai;
-  cs_post_maillage_t  *maillage_post = NULL;
-
-
-  /* Recherche du maillage demandé */
-
-  for (indmai = 0 ; indmai < cs_glob_post_nbr_maillages ; indmai++) {
-    maillage_post = cs_glob_post_maillages + indmai;
-    if (maillage_post->id == nummai)
-      return true;
-  }
-
-  return false;
-}
-
-
-/*----------------------------------------------------------------------------
- * Modification d'un maillage de post traitement existant.
- *
- * Il s'agit ici de modifier les listes de cellules ou faces du maillage,
- * par exemple pour faire évoluer une coupe en fonction des zones
- * "intéressantes (il n'est pas nécessaire de recourir à cette fonction
- * si le maillage se déforme simplement).
- *----------------------------------------------------------------------------*/
-
-void cs_post_modifie_maillage
-(
- const cs_int_t          id_maillage,  /* --> numéro du writer à créer
-                                        *     (< 0 pour maillage réservé,
-                                        *      > 0 pour maillage utilisateur) */
- const cs_int_t          nbr_cel,      /* --> nombre de cellules              */
- const cs_int_t          nbr_fac,      /* --> nombre de faces internes        */
- const cs_int_t          nbr_fbr,      /* --> nombre de faces de bord         */
-       cs_int_t          liste_cel[],  /* <-> liste des cellules              */
-       cs_int_t          liste_fac[],  /* <-> liste des faces internes        */
-       cs_int_t          liste_fbr[]   /* <-> liste des faces de bord         */
-)
-{
-  /* variables locales */
-
-  int i, indmai;
-  char  *nom_maillage = NULL;
-  cs_post_maillage_t  *maillage_post = NULL;
-  cs_post_writer_t    *writer = NULL;
-
-
-  /* Récupération de la structure de base
-     (sortie si l'on n'est pas propriétaire du maillage) */
-
-  indmai = _cs_post_ind_maillage(id_maillage);
-  maillage_post = cs_glob_post_maillages + indmai;
-
-  if (maillage_post->_maillage_ext == NULL)
-    return;
-
-
-  /* Remplacement de la structure de base */
-
-  BFT_MALLOC(nom_maillage,
-             strlen(fvm_nodal_get_name(maillage_post->maillage_ext)) + 1,
-             char);
-  strcpy(nom_maillage, fvm_nodal_get_name(maillage_post->maillage_ext));
-
-  fvm_nodal_destroy(maillage_post->_maillage_ext);
-  maillage_post->maillage_ext = NULL;
-
-  _cs_post_definit_maillage(maillage_post,
-                            nom_maillage,
-                            nbr_cel,
-                            nbr_fac,
-                            nbr_fbr,
-                            liste_cel,
-                            liste_fac,
-                            liste_fbr);
-
-  BFT_FREE(nom_maillage);
-
-
-  /* Mise à jour des alias éventuels */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-    if ((cs_glob_post_maillages + i)->alias == indmai)
-      (cs_glob_post_maillages + i)->maillage_ext
-        = maillage_post->maillage_ext;
-  }
-
-  /* Découpage des polygones ou polyèdres en éléments simples */
-
-  for (i = 0 ; i < maillage_post->nbr_writers ; i++) {
-
-    writer = cs_glob_post_writers + maillage_post->ind_writer[i];
-    _cs_post_divise_poly(maillage_post, writer);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Récupération du prochain numéro de maillage standard ou développeur
- * disponible (basé sur le plus petit numéro négatif présent -1).
- *----------------------------------------------------------------------------*/
-
-cs_int_t cs_post_ret_num_maillage_libre
-(
- void
-)
-{
-  return (cs_glob_post_num_maillage_min - 1);
-}
-
-
-/*----------------------------------------------------------------------------
- * Association d'un "writer" à un maillage pour le post traitement.
- *----------------------------------------------------------------------------*/
-
-void cs_post_associe
-(
- const cs_int_t   id_maillage,  /* --> numéro du maillage externe associé     */
- const cs_int_t   id_writer     /* --> numéro du writer                       */
-)
-{
-  int  i;
-  int  indmai, indgep;
-  fvm_writer_time_dep_t ind_mod;
-
-  cs_post_maillage_t  *maillage_post = NULL;
-  cs_post_writer_t  *writer = NULL;
-
-
-  /* Recherche du maillage et writer demandés */
-
-  indmai = _cs_post_ind_maillage(id_maillage);
-  indgep = _cs_post_ind_writer(id_writer);
-
-  maillage_post = cs_glob_post_maillages + indmai;
-
-  /* On vérifie que le writer n'est pas déjà associé */
-
-  for (i = 0 ; i < maillage_post->nbr_writers ; i++) {
-    if (maillage_post->ind_writer[i] == indgep)
-      break;
-  }
-
-  /* Si le writer n'est pas déjà associé, on l'associe */
-
-  if (i >= maillage_post->nbr_writers) {
-
-    maillage_post->nbr_writers += 1;
-    BFT_REALLOC(maillage_post->ind_writer,
-                maillage_post->nbr_writers,
-                cs_int_t);
-
-    maillage_post->ind_writer[maillage_post->nbr_writers - 1] = indgep;
-    maillage_post->nt_ecr = - 1;
-
-    /* Mise à jour de la structure */
-
-    writer = cs_glob_post_writers + indgep;
-    ind_mod = fvm_writer_get_time_dep(writer->writer);
-
-    if (ind_mod < maillage_post->ind_mod_min)
-      maillage_post->ind_mod_min = ind_mod;
-    if (ind_mod > maillage_post->ind_mod_max)
-      maillage_post->ind_mod_max = ind_mod;
-
-    _cs_post_ind_mod_alias(indmai);
-
-    /* Si l'on doit calculer le champ déplacement des sommets, on devra
-       sauvegarder les coordonnées initiales des sommets */
-
-    if (   cs_glob_post_deformable == false
-        && cs_glob_post_coo_som_ini == NULL
-        && writer->ecr_depl == true) {
-
-      cs_mesh_t *maillage = cs_glob_mesh;
-
-      if (maillage->n_vertices > 0) {
-        BFT_MALLOC(cs_glob_post_coo_som_ini,
-                   maillage->n_vertices * 3,
-                   cs_real_t);
-        memcpy(cs_glob_post_coo_som_ini,
-               maillage->vtx_coord,
-               maillage->n_vertices * 3 * sizeof(cs_real_t));
-      }
-
-      cs_glob_post_deformable = true;
-
-    }
-
-    /* Découpage des polygones ou polyèdres en éléments simples */
-
-    _cs_post_divise_poly(maillage_post, writer);
-
-  }
-
-}
-
-
-
-/*----------------------------------------------------------------------------
- * Mise à jour de l'indicateur "actif" ou "inactif" des "writers" en
- * fonction du pas de temps et de leur fréquence de sortie par défaut.
- *----------------------------------------------------------------------------*/
-
-void cs_post_activer_selon_defaut
-(
- const cs_int_t   nt_cur_abs      /* --> numéro de pas de temps courant       */
-)
-{
-  int  i;
-  cs_post_writer_t  *writer;
-
-  for (i = 0 ; i < cs_glob_post_nbr_writers ; i++) {
-
-    writer = cs_glob_post_writers + i;
-
-    if (writer->freq_sortie > 0) {
-      if (nt_cur_abs % (writer->freq_sortie) == 0)
-        writer->actif = 1;
-      else
-        writer->actif = 0;
-    }
-    else
-      writer->actif = 0;
-
-  }
-}
-
-
-/*----------------------------------------------------------------------------
- * Forcer de l'indicateur "actif" ou "inactif" d'un "writers" spécifique
- * ou de l'ensemble des "writers" pour le pas de temps en cours.
- *----------------------------------------------------------------------------*/
-
-void cs_post_activer_writer
-(
- const cs_int_t   id_writer,    /* --> numéro du writer,ou 0 pour forcer
-                                 *     simultanément tous les writers         */
- const cs_int_t   activer       /* --> 0 pour désactiver, 1 pour activer      */
-)
-{
-  int i;
-  cs_post_writer_t  *writer;
-
-  if (id_writer != 0) {
-    i = _cs_post_ind_writer(id_writer);
-    writer = cs_glob_post_writers + i;
-    writer->actif = (activer > 0) ? 1 : 0;
-  }
-  else {
-    for (i = 0 ; i < cs_glob_post_nbr_writers ; i++) {
-      writer = cs_glob_post_writers + i;
-      writer->actif = (activer > 0) ? 1 : 0;
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Get the writer associated to a writer_id.
- *
- * writer_id       -->  id of the writer in cs_glob_post_writers
- *
- * Returns:
- *  a pointer to a fvm_writer_t structure
- *----------------------------------------------------------------------------*/
-
-fvm_writer_t *
-cs_post_get_writer(cs_int_t   writer_id)
-{
-  int  id;
-  const cs_post_writer_t  *writer = NULL;
-
-  id = _cs_post_ind_writer(writer_id);
-  writer = cs_glob_post_writers + id;
-
-  return writer->writer;
-}
-
-/*----------------------------------------------------------------------------
- * Ecriture des maillages de post traitement en fonction des "writers"
- * associés.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ecrit_maillages
-(
- const cs_int_t   nt_cur_abs,         /* --> numéro de pas de temps courant   */
- const cs_real_t  t_cur_abs           /* --> valeur du temps physique associé */
-)
-{
-  int  i;
-  cs_post_maillage_t  *maillage_post;
-
-  /* Boucles sur les maillages et "writers" */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    _cs_post_ecrit_maillage(maillage_post,
-                            nt_cur_abs,
-                            t_cur_abs);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Sortie d'un champ de post traitement défini sur les cellules ou faces
- * d'un maillage en fonction des "writers" associés.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ecrit_var
-(
-       cs_int_t          id_maillage,  /* --> numéro du maillage post associé */
- const char             *nom_var,      /* --> nom de la variable              */
-       cs_int_t          dim_var,      /* --> 1 pour scalaire, 3 pour vecteur */
-       cs_bool_t         entrelace,    /* --> si vecteur, vrai si valeurs
-                                        *     entrelacées, faux sinon         */
-       cs_bool_t         var_parent,   /* --> vrai si valeurs définies sur
-                                        *     maillage "parent", faux si
-                                        *     restreintes au maillage post    */
-       cs_post_type_t    var_type,     /* --> type de données associé         */
-       cs_int_t          nt_cur_abs,   /* --> numéro de pas de temps courant  */
-       cs_real_t         t_cur_abs,    /* --> valeur du temps physique        */
- const void             *var_cel,      /* --> valeurs aux cellules            */
- const void             *var_fac,      /* --> valeurs aux faces internes      */
- const void             *var_fbr       /* --> valeurs aux faces de bord       */
-)
-{
-  cs_int_t  i;
-  int       indmai;
-
-
-  fvm_interlace_t      interlace;
-  fvm_datatype_t       datatype;
-
-  size_t       dec_ptr = 0;
-  int          nbr_listes_parents = 0;
-  fvm_lnum_t   dec_num_parent[2]  = {0, 0};
-  cs_real_t   *var_tmp = NULL;
-  cs_post_maillage_t  *maillage_post = NULL;
-  cs_post_writer_t    *writer = NULL;
-
-  const void  *var_ptr[2*9] = {NULL, NULL, NULL,
-                               NULL, NULL, NULL,
-                               NULL, NULL, NULL,
-                               NULL, NULL, NULL,
-                               NULL, NULL, NULL,
-                               NULL, NULL, NULL};
-
-  /* Initialisations */
-
-  indmai = _cs_post_ind_maillage(id_maillage);
-  maillage_post = cs_glob_post_maillages + indmai;
-
-  if (entrelace == true)
-    interlace = FVM_INTERLACE;
-  else
-    interlace = FVM_NO_INTERLACE;
-
-  datatype =  _cs_post_cnv_datatype(var_type);
-
-
-  /* Affectation du tableau approprié à FVM pour la sortie */
-
-  /* Cas des cellules */
-  /*------------------*/
-
-  if (maillage_post->ind_ent[CS_POST_SUPPORT_CEL] == 1) {
-
-    if (var_parent == true) {
-      nbr_listes_parents = 1;
-      dec_num_parent[0] = 0;
-    }
-    else
-      nbr_listes_parents = 0;
-
-    var_ptr[0] = var_cel;
-    if (entrelace == false) {
-      if (var_parent == true)
-        dec_ptr = cs_glob_mesh->n_cells_with_ghosts;
-      else
-        dec_ptr = fvm_nodal_get_n_entities(maillage_post->maillage_ext, 3);
-      dec_ptr *= fvm_datatype_size[datatype];
-      for (i = 1 ; i < dim_var ; i++)
-        var_ptr[i] = ((const char *)var_cel) + i*dec_ptr;
-    }
-  }
-
-  /* Cas des faces */
-  /*---------------*/
-
-  else if (   maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1
-           || maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] == 1) {
-
-    /* En cas d'indirection, il suffit de positionner les pointeurs */
-
-    if (var_parent == true) {
-
-      nbr_listes_parents = 2;
-      dec_num_parent[0] = 0;
-      dec_num_parent[1] = cs_glob_mesh->n_b_faces;
-
-      if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] == 1) {
-        if (entrelace == false) {
-          dec_ptr = cs_glob_mesh->n_b_faces * fvm_datatype_size[datatype];
-          for (i = 0 ; i < dim_var ; i++)
-            var_ptr[i] = ((const char *)var_fbr) + i*dec_ptr;
-        }
-        else
-          var_ptr[0] = var_fbr;
-      }
-
-      if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1) {
-        if (entrelace == false) {
-          dec_ptr = cs_glob_mesh->n_i_faces * fvm_datatype_size[datatype];
-          for (i = 0 ; i < dim_var ; i++)
-            var_ptr[dim_var + i] = ((const char *)var_fac) + i*dec_ptr;
-        }
-        else
-          var_ptr[1] = var_fac;
-      }
-
-    }
-
-    /* Sans indirection, on doit repasser d'une variable définie sur deux
-       listes de faces à une variable définie sur une liste */
-
-    else {
-
-      nbr_listes_parents = 0;
-
-      if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] == 1) {
-
-        /* Cas où la variable est définie à la fois sur des faces de
-           bord et des faces internes : on doit repasser à une liste
-           unique, étant donné que l'on n'utilise pas l'indirection */
-
-        if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1) {
-
-          BFT_MALLOC(var_tmp,
-                     (   maillage_post->nbr_fac
-                      +  maillage_post->nbr_fbr) * dim_var,
-                     cs_real_t);
-
-          _cs_post_assmb_var_faces(maillage_post->maillage_ext,
-                                   maillage_post->nbr_fac,
-                                   maillage_post->nbr_fbr,
-                                   dim_var,
-                                   interlace,
-                                   var_fac,
-                                   var_fbr,
-                                   var_tmp);
-
-          interlace = FVM_NO_INTERLACE;
-
-          dec_ptr = fvm_datatype_size[datatype] * (  maillage_post->nbr_fac
-                                                   + maillage_post->nbr_fbr);
-
-          for (i = 0 ; i < dim_var ; i++)
-            var_ptr[i] = ((char *)var_tmp) + i*dec_ptr;
-
-        }
-
-        /* Cas où l'on a que des faces de bord */
-
-        else {
-
-          if (entrelace == false) {
-            dec_ptr = fvm_datatype_size[datatype] * maillage_post->nbr_fbr;
-            for (i = 0 ; i < dim_var ; i++)
-              var_ptr[i] = ((const char *)var_fbr) + i*dec_ptr;
-          }
-          else
-            var_ptr[0] = var_fbr;
-        }
-
-      }
-
-      /* Cas où l'on a que des faces internes */
-
-      else if (maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] == 1) {
-
-        if (entrelace == false) {
-          dec_ptr = fvm_datatype_size[datatype] * maillage_post->nbr_fac;
-          for (i = 0 ; i < dim_var ; i++)
-            var_ptr[i] = ((const char *)var_fac) + i*dec_ptr;
-        }
-        else
-          var_ptr[0] = var_fac;
-      }
-
-    }
-
-  }
-
-
-  /* Sortie effective : boucle sur les writers */
-  /*-------------------------------------------*/
-
-  for (i = 0 ; i < maillage_post->nbr_writers ; i++) {
-
-    writer = cs_glob_post_writers + maillage_post->ind_writer[i];
-
-    if (writer->actif == 1)
-      fvm_writer_export_field(writer->writer,
-                              maillage_post->maillage_ext,
-                              nom_var,
-                              FVM_WRITER_PER_ELEMENT,
-                              dim_var,
-                              interlace,
-                              nbr_listes_parents,
-                              dec_num_parent,
-                              datatype,
-                              (int)nt_cur_abs,
-                              (double)t_cur_abs,
-                              (const void * *)var_ptr);
-
-  }
-
-  /* Libération mémoire (si faces internes et de bord simultanées) */
-
-  if (var_tmp != NULL)
-    BFT_FREE(var_tmp);
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Sortie d'un champ de post traitement défini sur les sommets
- * d'un maillage en fonction des "writers" associés.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ecrit_var_som
-(
-       cs_int_t          id_maillage,  /* --> numéro du maillage post associé */
- const char             *nom_var,      /* --> nom de la variable              */
-       cs_int_t          dim_var,      /* --> 1 pour scalaire, 3 pour vecteur */
-       cs_bool_t         entrelace,    /* --> si vecteur, vrai si valeurs
-                                        *     entrelacées, faux sinon         */
-       cs_bool_t         var_parent,   /* --> vrai si valeurs définies sur
-                                        *     maillage "parent", faux si
-                                        *     restreintes au maillage post    */
-       cs_post_type_t    var_type,     /* --> type de données associé         */
-       cs_int_t          nt_cur_abs,   /* --> numéro de pas de temps courant  */
-       cs_real_t         t_cur_abs,    /* --> valeur du temps physique        */
- const void             *var_som       /* --> valeurs aux sommets             */
-)
-{
-  cs_int_t  i;
-  int       indmai;
-
-
-  cs_post_maillage_t  *maillage_post;
-  cs_post_writer_t    *writer;
-  fvm_interlace_t      interlace;
-  fvm_datatype_t       datatype;
-
-  size_t       dec_ptr = 0;
-  int          nbr_listes_parents = 0;
-  fvm_lnum_t   dec_num_parent[1]  = {0};
-
-  const void  *var_ptr[9] = {NULL, NULL, NULL,
-                             NULL, NULL, NULL,
-                             NULL, NULL, NULL};
-
-
-  /* Initialisations */
-
-  indmai = _cs_post_ind_maillage(id_maillage);
-  maillage_post = cs_glob_post_maillages + indmai;
-
-  if (entrelace == true)
-    interlace = FVM_INTERLACE;
-  else
-    interlace = FVM_NO_INTERLACE;
-
-  assert(   sizeof(cs_real_t) == sizeof(double)
-         || sizeof(cs_real_t) == sizeof(float));
-
-  datatype =  _cs_post_cnv_datatype(var_type);
-
-
-  /* Affectation du tableau approprié à FVM pour la sortie */
-
-  if (var_parent == true)
-    nbr_listes_parents = 1;
-  else
-    nbr_listes_parents = 0;
-
-  var_ptr[0] = var_som;
-  if (entrelace == false) {
-    if (var_parent == true)
-      dec_ptr = cs_glob_mesh->n_vertices;
-    else
-      dec_ptr =   fvm_nodal_get_n_entities(maillage_post->maillage_ext, 0)
-                * fvm_datatype_size[datatype];
-    for (i = 1 ; i < dim_var ; i++)
-      var_ptr[i] = ((const char *)var_som) + i*dec_ptr;
-  }
-
-
-  /* Sortie effective : boucle sur les writers */
-  /*-------------------------------------------*/
-
-  for (i = 0 ; i < maillage_post->nbr_writers ; i++) {
-
-    writer = cs_glob_post_writers + maillage_post->ind_writer[i];
-
-    if (writer->actif == 1)
-      fvm_writer_export_field(writer->writer,
-                              maillage_post->maillage_ext,
-                              nom_var,
-                              FVM_WRITER_PER_NODE,
-                              dim_var,
-                              interlace,
-                              nbr_listes_parents,
-                              dec_num_parent,
-                              datatype,
-                              (int)nt_cur_abs,
-                              (double)t_cur_abs,
-                              (const void * *)var_ptr);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Prise en compte de la renumérotation des cellules
- * dans les liens de "parenté" des maillages post.
- *
- * Cette fonction ne doit être appellée qu'une fois, après la renumérotation
- * évuentuelle des cellules, pour adapter les maillages post existants.
- * Des nouveaux maillages post seront automatiquement basés sur la
- * "bonne" numérotation, par construction.
- *----------------------------------------------------------------------------*/
-
-void cs_post_renum_cells
-(
- const cs_int_t  *init_cell_num   /* --> numérotation initiale des cellules   */
-)
-{
-  int       i;
-  cs_int_t  icel;
-  cs_int_t  nbr_ent;
-
-  cs_int_t  *renum_ent_parent = NULL;
-
-  cs_bool_t  a_traiter = false;
-
-  cs_post_maillage_t   *maillage_post;
-  const cs_mesh_t  *maillage = cs_glob_mesh;
-
-  if (init_cell_num == NULL)
-    return;
-
-  /* Boucles sur les maillages */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    if (maillage_post->ind_ent[CS_POST_SUPPORT_CEL] > 0)
-      a_traiter = true;
-  }
-
-  if (a_traiter == true) {
-
-    /* Préparation de la renumérotation */
-
-    nbr_ent = maillage->n_cells;
-
-    BFT_MALLOC(renum_ent_parent, nbr_ent, cs_int_t);
-
-    for (icel = 0 ; icel < maillage->n_cells ; icel++)
-      renum_ent_parent[init_cell_num[icel] - 1] = icel + 1;
-
-    /* Modification effective */
-
-    for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-      maillage_post = cs_glob_post_maillages + i;
-
-      if (   maillage_post->_maillage_ext != NULL
-          && maillage_post->ind_ent[CS_POST_SUPPORT_CEL] > 0) {
-
-        fvm_nodal_change_parent_num(maillage_post->_maillage_ext,
-                                    renum_ent_parent,
-                                    3);
-
-      }
-
-    }
-
-    BFT_FREE(renum_ent_parent);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Prise en compte de la renumérotation des faces et faces de bord
- * dans les liens de "parenté" des maillages post.
- *
- * Cette fonction ne doit être appellée qu'une fois, après la renumérotation
- * évuentuelle des faces, pour adapter les maillages post existants.
- * Des nouveaux maillages post seront automatiquement basés sur la
- * "bonne" numérotation, par construction.
- *----------------------------------------------------------------------------*/
-
-void cs_post_renum_faces
-(
- const cs_int_t  *init_i_face_num,  /* --> numérotation init. faces internes  */
- const cs_int_t  *init_b_face_num   /* --> numérotation init. faces de bord   */
-)
-{
-  int       i;
-  cs_int_t  ifac;
-  cs_int_t  nbr_ent;
-
-  cs_int_t  *renum_ent_parent = NULL;
-
-  cs_bool_t  a_traiter = false;
-
-  cs_post_maillage_t   *maillage_post;
-  const cs_mesh_t  *maillage = cs_glob_mesh;
-
-
-  /* Boucles sur les maillages */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-    maillage_post = cs_glob_post_maillages + i;
-
-    if (   maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] > 0
-        || maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] > 0) {
-      a_traiter = true;
-    }
-
-  }
-
-  if (a_traiter == true) {
-
-    /* Préparation de la renumérotation */
-
-    nbr_ent = maillage->n_i_faces + maillage->n_b_faces;
-
-    BFT_MALLOC(renum_ent_parent, nbr_ent, cs_int_t);
-
-    if (init_b_face_num == NULL) {
-      for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++)
-        renum_ent_parent[ifac] = ifac + 1;
-    }
-    else {
-      for (ifac = 0 ; ifac < maillage->n_b_faces ; ifac++)
-        renum_ent_parent[init_b_face_num[ifac] - 1] = ifac + 1;
-    }
-
-    if (init_i_face_num == NULL) {
-      for (ifac = 0, i = maillage->n_b_faces ;
-           ifac < maillage->n_i_faces ;
-           ifac++, i++)
-        renum_ent_parent[maillage->n_b_faces + ifac]
-          = maillage->n_b_faces + ifac + 1;
-    }
-    else {
-      for (ifac = 0, i = maillage->n_b_faces ;
-           ifac < maillage->n_i_faces ;
-           ifac++, i++)
-        renum_ent_parent[maillage->n_b_faces + init_i_face_num[ifac] - 1]
-          = maillage->n_b_faces + ifac + 1;
-    }
-
-    /* Modification effective */
-
-    for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-
-      maillage_post = cs_glob_post_maillages + i;
-
-      if (   maillage_post->_maillage_ext != NULL
-          && (   maillage_post->ind_ent[CS_POST_SUPPORT_FAC_INT] > 0
-              || maillage_post->ind_ent[CS_POST_SUPPORT_FAC_BRD] > 0)) {
-
-        fvm_nodal_change_parent_num(maillage_post->_maillage_ext,
-                                    renum_ent_parent,
-                                    2);
-
-      }
-
-    }
-
-    BFT_FREE(renum_ent_parent);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Destruction des structures associées aux post traitements
- *----------------------------------------------------------------------------*/
-
-void cs_post_detruit
-(
- void
-)
-{
-  int i;
-  cs_post_maillage_t  *maillage_post = NULL;
-
-  /* Chronométrages */
-
-  for (i = 0 ; i < cs_glob_post_nbr_writers ; i++) {
-    double m_wtime = 0.0, m_cpu_time = 0.0, c_wtime = 0.0, c_cpu_time = 0.;
-    fvm_writer_get_times((cs_glob_post_writers + i)->writer,
-                         &m_wtime, &m_cpu_time, &c_wtime, &c_cpu_time);
-    bft_printf(_("\n"
-                 "Writing of \"%s\" (%s) summary:\n"
-                 "\n"
-                 "  CPU time for meshes:              %12.3f\n"
-                 "  CPU time for variables:           %12.3f\n"
-                 "\n"
-                 "  Elapsed time for meshes:          %12.3f\n"
-                 "  Elapsed time for variables:       %12.3f\n"),
-               fvm_writer_get_name((cs_glob_post_writers + i)->writer),
-               fvm_writer_get_format((cs_glob_post_writers + i)->writer),
-               m_cpu_time, c_cpu_time, m_wtime, c_wtime);
-  }
-
-  /* Coordonnées initiales si maillage déformable) */
-
-  if (cs_glob_post_coo_som_ini != NULL)
-    BFT_FREE(cs_glob_post_coo_som_ini);
-
-  /* Maillages externes */
-
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-    maillage_post = cs_glob_post_maillages + i;
-    if (maillage_post->_maillage_ext != NULL)
-      fvm_nodal_destroy(maillage_post->_maillage_ext);
-    BFT_FREE(maillage_post->ind_writer);
-  }
-
-  BFT_FREE(cs_glob_post_maillages);
-
-  cs_glob_post_num_maillage_min = -2;
-  cs_glob_post_nbr_maillages = 0;
-  cs_glob_post_nbr_maillages_max = 0;
-
-  /* Writers */
-
-  for (i = 0 ; i < cs_glob_post_nbr_writers ; i++)
-    fvm_writer_finalize((cs_glob_post_writers + i)->writer);
-
-  BFT_FREE(cs_glob_post_writers);
-
-  cs_glob_post_nbr_writers = 0;
-  cs_glob_post_nbr_writers_max = 0;
-
-  /* Traitements enregistrés si nécessaire */
-
-  if (cs_glob_post_nbr_var_tp_max > 0) {
-    BFT_FREE(cs_glob_post_f_var_tp);
-    BFT_FREE(cs_glob_post_i_var_tp);
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Initialisation du "writer" du post-traitement principal
- *----------------------------------------------------------------------------*/
-
-void cs_post_init_pcp_writer
-(
- void
-)
-{
-  /* Valeurs par défaut */
-
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
-  cs_int_t  indic_mod = -1;
-  char  fmtchr[32 + 1] = "";
-  char  optchr[96 + 1] = "";
-  cs_int_t  ntchr = -1;
-
-  const char  nomcas[] = "chr";
-  const char  nomrep_ens[] = "chr.ensight";
-  const char  nomrep_def[] = ".";
-  const char *nomrep = NULL;
-
-  const cs_int_t  id_writer = -1; /* Numéro du writer par défaut */
-
-  /* Récupération des paramètres contenus dans les COMMONS Fortran */
-
-  CS_PROCF(inipst, INIPST)(&indic_vol,
-                           &indic_brd,
-                           &indic_syr,
-                           &indic_ze,
-                           &indic_mod,
-                           &ntchr,
-                           fmtchr,
-                           optchr);
-
-  fmtchr[32] = '\0';
-  optchr[96] = '\0';
-
-  if (indic_vol == 0 && indic_brd == 0 && indic_syr == 0)
-    return;
-
-  /* Création du writer par défaut */
-
-  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
-    nomrep = nomrep_ens;
-  else
-    nomrep = nomrep_def;
-
-  cs_post_ajoute_writer(id_writer,
-                        nomcas,
-                        nomrep,
-                        fmtchr,
-                        optchr,
-                        indic_mod,
-                        ntchr);
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Initialisation des maillages du post-traitement principal
- *----------------------------------------------------------------------------*/
-
-void cs_post_init_pcp_maillages
-(
- void
-)
-{
-  /* Valeurs par défaut */
-
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
-  cs_int_t  indic_mod = -1;
-  char  fmtchr[32 + 1] = "";
-  char  optchr[96 + 1] = "";
-  cs_int_t  ntchr = -1;
-
-  cs_int_t  id_maillage = -1;
-
-  const cs_int_t  id_writer = -1; /* Numéro du writer par défaut */
-
-  /* Récupération des paramètres contenus dans les COMMONS Fortran */
-
-  CS_PROCF(inipst, INIPST)(&indic_vol,
-                           &indic_brd,
-                           &indic_syr,
-                           &indic_ze,
-                           &indic_mod,
-                           &ntchr,
-                           fmtchr,
-                           optchr);
-
-  fmtchr[32] = '\0';
-  optchr[96] = '\0';
-
-  /* Définition des maillages de post-traitement */
-
-  if (cs_glob_mesh->n_i_faces > 0 || cs_glob_mesh->n_b_faces > 0) {
-
-    /*
-      Si on dispose de la connectivité faces -> sommets, on
-      peut reconstruire la connectivité nodale pour le post
-      traitement (mécanisme usuel).
-    */
-
-    if (indic_vol > 0) { /* Maillage volumique */
-
-      id_maillage = -1; /* Numéro de maillage réservé */
-
-      cs_post_ajoute_maillage(id_maillage,
-                              _("Fluid volume"),
-                              cs_glob_mesh->n_cells,
-                              0,
-                              0,
-                              NULL,
-                              NULL,
-                              NULL);
-
-      cs_post_associe(id_maillage, id_writer);
-
-    }
-
-    if (indic_brd > 0) { /* Maillage de peau */
-
-      id_maillage = -2;  /* Numéro de maillage réservé */
-
-      cs_post_ajoute_maillage(id_maillage,
-                              _("Boundary"),
-                              0,
-                              0,
-                              cs_glob_mesh->n_b_faces,
-                              NULL,
-                              NULL,
-                              NULL);
-
-      cs_post_associe(id_maillage, id_writer);
-
-    }
-
-  } /* Fin if cs_glob_mesh->n_i_faces > 0 || cs_glob_mesh->n_b_faces > 0 */
-
-  /*
-    Si on ne dispose pas de la connectivité faces -> sommets, on
-    ne peut pas reconstruire la connectivité nodale, donc on doit
-    l'obtenir par un autre moyen.
-
-    Ceci ne doit se produire que lorsqu'on a lu directement certains
-    maillages au format solcom, dans quel cas la connectivité
-    nodale a déja été lue et affectée à un maillage post
-    (voir LETGEO et cs_maillage_solcom_lit).
-  */
-
-  else if (indic_vol > 0) {
-
-    id_maillage = -1;
-
-    if (cs_post_existe_maillage(id_maillage))
-      cs_post_associe(id_maillage, id_writer);
-
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Ajout d'un traitement de variable temporelle à l'appel de PSTVAR.
- *
- * L'identificateur d'instance associé à la fonction permet d'ajouter
- * une même fonction plusieurs fois, avec un identificateur différent
- * permettant à la fonction de sélectionner un sous-traitement.
- *----------------------------------------------------------------------------*/
-
-void cs_post_ajoute_var_temporelle
-(
- cs_post_var_temporelle_t  *fonction,    /* Fonction associée                 */
- cs_int_t                   id_instance  /* Indentificateur d'instance
-                                            associé à la fonction             */
-)
-{
-  /* Redimensionnement du tableau des traitements enregistrés si nécessaire */
-
-  if (cs_glob_post_nbr_var_tp <= cs_glob_post_nbr_var_tp_max) {
-    if (cs_glob_post_nbr_var_tp_max == 0)
-      cs_glob_post_nbr_var_tp_max = 8;
-    else
-      cs_glob_post_nbr_var_tp_max *= 2;
-    BFT_REALLOC(cs_glob_post_f_var_tp,
-                cs_glob_post_nbr_var_tp_max,
-                cs_post_var_temporelle_t *);
-    BFT_REALLOC(cs_glob_post_i_var_tp, cs_glob_post_nbr_var_tp_max, cs_int_t);
-  }
-
-  /* Ajout du traitement */
-
-  cs_glob_post_f_var_tp[cs_glob_post_nbr_var_tp] = fonction;
-  cs_glob_post_i_var_tp[cs_glob_post_nbr_var_tp] = id_instance;
-
-  cs_glob_post_nbr_var_tp += 1;
-
-}
-
-
-/*============================================================================
- * Fonctions privées
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Conversion d'un type de données cs_post_type_t en type fvm_datatype_t.
- *----------------------------------------------------------------------------*/
-
-static fvm_datatype_t _cs_post_cnv_datatype
-(
- cs_post_type_t type_cs
-)
+static fvm_datatype_t
+_cs_post_cnv_datatype(cs_post_type_t  type_cs)
 {
   fvm_datatype_t type_fvm = FVM_DATATYPE_NULL;
 
@@ -2928,592 +240,675 @@ static fvm_datatype_t _cs_post_cnv_datatype
   return type_fvm;
 }
 
-
 /*----------------------------------------------------------------------------
- * Recherche de l'indice d'un writer associé à un numéro donné.
+ * Search for position in the array of writers of a writer with a given id.
+ *
+ * parameters:
+ *   writer_id <-- id of writer
+ *
+ * returns:
+ *   position in the array of writers
  *----------------------------------------------------------------------------*/
 
-static int _cs_post_ind_writer
-(
- const cs_int_t   id_writer     /* --> numéro du writer                       */
-)
+static int
+_cs_post_writer_id(const int  writer_id)
 {
-  cs_int_t  indgep;
+  cs_int_t  id;
 
   cs_post_writer_t  *writer = NULL;
 
+  /* Search for requested writer */
 
-  /* Recherche du writer demandé */
-
-  for (indgep = 0 ; indgep < cs_glob_post_nbr_writers ; indgep++) {
-    writer = cs_glob_post_writers + indgep;
-    if (writer->id == id_writer)
+  for (id = 0; id < _cs_post_n_writers; id++) {
+    writer = _cs_post_writers + id;
+    if (writer->id == writer_id)
       break;
   }
-  if (indgep >= cs_glob_post_nbr_writers)
+  if (id >= _cs_post_n_writers)
     bft_error(__FILE__, __LINE__, 0,
               _("The requested post-processing writer number\n"
-                "%d is not defined.\n"), (int)(id_writer));
+                "%d is not defined.\n"), (int)(writer_id));
 
-  return indgep;
-
+  return id;
 }
 
-
 /*----------------------------------------------------------------------------
- * Recherche de l'indice d'un maillage de post traitement associé à un
- * numéro donné.
+ * Search for position in the array of meshes of a mesh with a given id.
+ *
+ * parameters:
+ *   mesh_id <-- id of mesh
+ *
+ * returns:
+ *   position in the array of meshes
  *----------------------------------------------------------------------------*/
 
-static int _cs_post_ind_maillage
-(
- const cs_int_t   nummai        /* --> numéro du maillage externe associé     */
-)
+static int
+_cs_post_mesh_id(int  mesh_id)
 {
-  int indmai;
-  cs_post_maillage_t  *maillage_post = NULL;
+  int id;
+  cs_post_mesh_t  *post_mesh = NULL;
 
+  /* Search for requested mesh */
 
-  /* Recherche du maillage demandé */
-
-  for (indmai = 0 ; indmai < cs_glob_post_nbr_maillages ; indmai++) {
-    maillage_post = cs_glob_post_maillages + indmai;
-    if (maillage_post->id == nummai)
+  for (id = 0; id < _cs_post_n_meshes; id++) {
+    post_mesh = _cs_post_meshes + id;
+    if (post_mesh->id == mesh_id)
       break;
   }
-  if (indmai >= cs_glob_post_nbr_maillages)
+  if (id >= _cs_post_n_meshes)
     bft_error(__FILE__, __LINE__, 0,
               _("The requested post-processing mesh number\n"
-                "%d is not defined.\n"), (int)nummai);
+                "%d is not defined.\n"), (int)mesh_id);
 
-  return indmai;
-
+  return id;
 }
 
-
 /*----------------------------------------------------------------------------
- * Ajout d'un maillage de post traitement et initialisation de base,
- * et renvoi d'un pointeur sur la structure associée
+ * Add a post-processing mesh, do basic initialization, and return a pointer
+ * to the associated structure
+ *
+ * parameters:
+ *   mesh_id <-- requested mesh id
+ *
+ * returns:
+ *   pointer to associated structure
  *----------------------------------------------------------------------------*/
 
-static cs_post_maillage_t * _cs_post_ajoute_maillage
-(
- const cs_int_t          id_maillage   /* --> numéro du maillage  demandé     */
-)
+static cs_post_mesh_t *
+_cs_post_add_mesh(int  mesh_id)
 {
-  /* variables locales */
+  /* local variables */
 
   int    i, j;
 
-  cs_post_maillage_t  *maillage_post = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
 
+  /* Check that the requested mesh is available */
 
-  /* Vérification que le numéro demandé est disponible */
-
-  if (id_maillage == 0)
+  if (mesh_id == 0)
       bft_error(__FILE__, __LINE__, 0,
                 _("The requested post-processing mesh number\n"
                   "must be < 0 (reserved) or > 0 (user).\n"));
 
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
-    if ((cs_glob_post_maillages + i)->id == id_maillage)
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    if ((_cs_post_meshes + i)->id == mesh_id)
       bft_error(__FILE__, __LINE__, 0,
                 _("The requested post-processing mesh number\n"
-                  "(%d) has already been assigned.\n"), (int)id_maillage);
+                  "(%d) has already been assigned.\n"), (int)mesh_id);
   }
 
+  /* Resize global array of exportable meshes */
 
-  /* Redimensionnement du tableau global des maillages externes */
+  if (_cs_post_n_meshes == _cs_post_n_meshes_max) {
 
-  if (cs_glob_post_nbr_maillages == cs_glob_post_nbr_maillages_max) {
-
-    if (cs_glob_post_nbr_maillages_max == 0)
-      cs_glob_post_nbr_maillages_max = 8;
+    if (_cs_post_n_meshes_max == 0)
+      _cs_post_n_meshes_max = 8;
     else
-      cs_glob_post_nbr_maillages_max *= 2;
+      _cs_post_n_meshes_max *= 2;
 
-    BFT_REALLOC(cs_glob_post_maillages,
-                cs_glob_post_nbr_maillages_max,
-                cs_post_maillage_t);
+    BFT_REALLOC(_cs_post_meshes,
+                _cs_post_n_meshes_max,
+                cs_post_mesh_t);
 
   }
 
-  cs_glob_post_nbr_maillages += 1;
+  _cs_post_n_meshes += 1;
 
-  if (id_maillage < cs_glob_post_num_maillage_min)
-    cs_glob_post_num_maillage_min = id_maillage;
+  if (mesh_id < _cs_post_min_mesh_id)
+    _cs_post_min_mesh_id = mesh_id;
 
-  /* Affectation du maillage nouvellement crée à la structure */
+  /* Assign newly created mesh to the structure */
 
-  maillage_post = cs_glob_post_maillages + cs_glob_post_nbr_maillages - 1;
+  post_mesh = _cs_post_meshes + _cs_post_n_meshes - 1;
 
-  maillage_post->id = id_maillage;
-  maillage_post->alias = -1;
+  post_mesh->id = mesh_id;
+  post_mesh->alias = -1;
 
-  maillage_post->nbr_writers = 0;
-  maillage_post->ind_writer = NULL;
+  post_mesh->n_writers = 0;
+  post_mesh->writer_id = NULL;
 
-  maillage_post->nt_ecr = -1;
+  post_mesh->nt_last = -1;
 
-  for (j = 0 ; j < 3 ; j++)
-    maillage_post->ind_ent[j] = 0;
+  for (j = 0; j < 3; j++)
+    post_mesh->ent_flag[j] = 0;
 
-  maillage_post->nbr_fac = 0;
-  maillage_post->nbr_fbr = 0;
+  post_mesh->n_i_faces = 0;
+  post_mesh->n_b_faces = 0;
 
-  maillage_post->maillage_ext = NULL;
-  maillage_post->_maillage_ext = NULL;
+  post_mesh->exp_mesh = NULL;
+  post_mesh->_exp_mesh = NULL;
 
-  /* Indicateurs de modification min et max inversés initialement,
-     seront recalculés lors des associations maillages - post-traitements */
+  /* Minimum and maximum time dependency flags initially inverted,
+     will be recalculated after mesh - writer associations */
 
-  maillage_post->ind_mod_min = FVM_WRITER_TRANSIENT_CONNECT;
-  maillage_post->ind_mod_max = FVM_WRITER_FIXED_MESH;
+  post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
+  post_mesh->mod_flag_max = FVM_WRITER_FIXED_MESH;
 
-  return maillage_post;
+  return post_mesh;
 }
 
-
 /*----------------------------------------------------------------------------
- * Création d'un maillage de post traitement ; les listes de cellules ou
- * faces à extraire sont triées en sortie, qu'elles le soient déjà en entrée
- * ou non.
+ * Create a post-processing mesh; lists of cells or faces to extract are
+ * sorted upon exit, whether they were sorted upon calling or not.
  *
- * La liste des cellules associées n'est nécessaire que si le nombre
- * de cellules à extraire est strictement supérieur à 0 et inférieur au
- * nombre de cellules du maillage.
+ * The list of associated cells is only necessary if the number of cells
+ * to extract is strictly greater than 0 and less than the number of cells
+ * of the computational mesh.
  *
- * Les listes de faces ne sont prises en compte que si le nombre de cellules
- * à extraire est nul ; si le nombre de faces de bord à extraire est égal au
- * nombre de faces de bord du maillage global, et le nombre de faces internes
- * à extraire est nul, alors on extrait par défaut le maillage de bord, et la
- * liste des faces de bord associée n'est donc pas nécessaire.
+ * Lists of faces are ignored if the number of extracted cells is nonzero;
+ * otherwise, if the number of boundary faces to extract is equal to the
+ * number of boundary faces in the computational mesh, and the number of
+ * interior faces to extract is zero, than we extrac by default the boundary
+ * mesh, and the list of associated boundary faces is thus not necessary.
+ *
+ * parameters:
+ *   post_mesh   <-> pointer to partially initialized post-processing mesh
+ *   mesh_name   <-- associated mesh name
+ *   n_cells     <-- number of associated cells
+ *   n_i_faces   <-- number of associated interior faces
+ *   n_b_faces   <-- number of associated boundary faces
+ *   cell_list   <-> list of associated cells
+ *   i_face_list <-> list of associated interior faces
+ *   b_face_list <-> list of associated boundary faces
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_definit_maillage
-(
- cs_post_maillage_t  *const maillage_post, /* <-> maillage post à compléter   */
- const char          *const nom_maillage,  /* --> nom du maillage externe     */
- const cs_int_t             nbr_cel,       /* --> nombre de cellules          */
- const cs_int_t             nbr_fac,       /* --> nombre de faces internes    */
- const cs_int_t             nbr_fbr,       /* --> nombre de faces de bord     */
-       cs_int_t             liste_cel[],   /* <-> liste des cellules          */
-       cs_int_t             liste_fac[],   /* <-> liste des faces internes    */
-       cs_int_t             liste_fbr[]    /* <-> liste des faces de bord     */
-)
+static void
+_cs_post_define_mesh(cs_post_mesh_t  *post_mesh,
+                     const char      *mesh_name,
+                     cs_int_t         n_cells,
+                     cs_int_t         n_i_faces,
+                     cs_int_t         n_b_faces,
+                     cs_int_t         cell_list[],
+                     cs_int_t         i_face_list[],
+                     cs_int_t         b_face_list[])
 {
-  /* variables locales */
+  /* local variables */
 
   int    i;
-  int    indic_glob[5];
+  int    glob_flag[5];
 
-  int    indic_loc[5] = {1, 1, 1, 0, 0};  /* Indicateurs 0 à 2 "inversés" par
-                                             rapport aux autres pour pouvoir
-                                             utiliser un même appel à
-                                             MPI_Allreduce(..., MPI_MIN, ...) */
+  int    loc_flag[5] = {1, 1, 1, 0, 0};  /* Flags 0 to 2 "inverted" compared
+                                            to others so as to use a single
+                                            call to
+                                            MPI_Allreduce(..., MPI_MIN, ...) */
 
-  fvm_nodal_t  *maillage_ext = NULL;
-  cs_bool_t     maj_ind_ent = false;
+  fvm_nodal_t  *exp_mesh = NULL;
+  cs_bool_t     maj_ent_flag = false;
 
+  /* Flags:
+     0: 0 if cells present, 1 if none,
+     1: 0 if interior faces present, 1 if none,
+     2: 0 if boundary faces present, 1 if none,
+     3: 1 if all cells were selected,
+     4: 1 if all boundary faces and no interior faces selected */
 
-  /* Indicateurs:
-     0 : 0 si cellules, 1 si pas de cellules,
-     1 : 0 si faces internes, 1 si pas de faces internes,
-     2 : 0 si faces de bord, 1 si pas de faces de bord,
-     3 : 1 si toutes les cellules sont sélectionnées,
-     4 : 1 si toutes les faces de bord et aucune face interne sélectionnées */
-
-  if (nbr_cel > 0)
-    indic_loc[0] = 0;
+  if (n_cells > 0)
+    loc_flag[0] = 0;
   else {
-    if (nbr_fac > 0)
-      indic_loc[1] = 0;
-    if (nbr_fbr > 0)
-      indic_loc[2] = 0;
+    if (n_i_faces > 0)
+      loc_flag[1] = 0;
+    if (n_b_faces > 0)
+      loc_flag[2] = 0;
   }
 
-  if (nbr_cel >= cs_glob_mesh->n_cells)
-    indic_loc[3] = 1;
+  if (n_cells >= cs_glob_mesh->n_cells)
+    loc_flag[3] = 1;
   else
-    indic_loc[3] = 0;
+    loc_flag[3] = 0;
 
-  if (   nbr_fbr >= cs_glob_mesh->n_b_faces
-      && nbr_fac == 0)
-    indic_loc[4] = 1;
+  if (   n_b_faces >= cs_glob_mesh->n_b_faces
+      && n_i_faces == 0)
+    loc_flag[4] = 1;
   else
-    indic_loc[4] = 0;
+    loc_flag[4] = 0;
 
-  for (i = 0 ; i < 5 ; i++)
-    indic_glob[i] = indic_loc[i];
+  for (i = 0; i < 5; i++)
+    glob_flag[i] = loc_flag[i];
 
 #if defined(_CS_HAVE_MPI)
   if (cs_glob_base_nbr > 1)
-    MPI_Allreduce (indic_loc, indic_glob, 5, MPI_INT, MPI_MIN,
+    MPI_Allreduce (loc_flag, glob_flag, 5, MPI_INT, MPI_MIN,
                    cs_glob_base_mpi_comm);
 #endif
 
-  /* Création de la structure associée */
+  /* Create associated structure */
 
-  if (indic_glob[0] == 0) {
+  if (glob_flag[0] == 0) {
 
-    if (indic_glob[3] == 1)
-      maillage_ext = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                    nom_maillage,
-                                                    cs_glob_mesh->n_cells,
-                                                    NULL);
+    if (glob_flag[3] == 1)
+      exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                mesh_name,
+                                                cs_glob_mesh->n_cells,
+                                                NULL);
     else
-      maillage_ext = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                    nom_maillage,
-                                                    nbr_cel,
-                                                    liste_cel);
+      exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                mesh_name,
+                                                n_cells,
+                                                cell_list);
 
   }
   else {
 
-    if (indic_glob[4] == 1)
-      maillage_ext = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                    nom_maillage,
-                                                    0,
-                                                    cs_glob_mesh->n_b_faces,
-                                                    NULL,
-                                                    NULL);
+    if (glob_flag[4] == 1)
+      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                mesh_name,
+                                                0,
+                                                cs_glob_mesh->n_b_faces,
+                                                NULL,
+                                                NULL);
     else
-      maillage_ext = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                    nom_maillage,
-                                                    nbr_fac,
-                                                    nbr_fbr,
-                                                    liste_fac,
-                                                    liste_fbr);
+      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                mesh_name,
+                                                n_i_faces,
+                                                n_b_faces,
+                                                i_face_list,
+                                                b_face_list);
 
   }
 
-  /* Indicateurs globaux de présence de types de mailles ;
-     on ne met à jour que si le maillage n'est pas totalement vide
-     (pour des maillages dépendant du temps, vides à certains instants,
-     on veut pouvoir connaître le dernier type de maille contenu
-     dans USMPST) */
+  /* Global indicators of mesh entity type presence;
+     updated only if the mesh is not totally empty (for time-depending
+     meshes, empty at certain times, we want to know the last type
+     of entity used in USMPST) */
 
-  for (i = 0 ; i < 3 ; i++) {
-    if (indic_glob[i] == 0)
-      maj_ind_ent = true;
+  for (i = 0; i < 3; i++) {
+    if (glob_flag[i] == 0)
+      maj_ent_flag = true;
   }
 
-  if (maj_ind_ent == true) {
-    for (i = 0 ; i < 3 ; i++) {
-      if (indic_glob[i] == 0)           /* Logique indic_glob 0 à 2 inversée */
-        maillage_post->ind_ent[i] = 1;  /* (c.f. remarque ci-dessus) */
+  if (maj_ent_flag == true) {
+    for (i = 0; i < 3; i++) {
+      if (glob_flag[i] == 0)         /* Inverted glob_flag 0 to 2 logic */
+        post_mesh->ent_flag[i] = 1;  /* (c.f. remark above) */
       else
-        maillage_post->ind_ent[i] = 0;
+        post_mesh->ent_flag[i] = 0;
     }
   }
 
-  /* Dimensions locales */
+  /* Local dimensions */
 
-  maillage_post->nbr_fac = nbr_fac;
-  maillage_post->nbr_fbr = nbr_fbr;
+  post_mesh->n_i_faces = n_i_faces;
+  post_mesh->n_b_faces = n_b_faces;
 
-  /* Lien sur le maillage nouvellement créé */
+  /* Link to newly created mesh */
 
-  maillage_post->maillage_ext = maillage_ext;
-  maillage_post->_maillage_ext = maillage_ext;
-
+  post_mesh->exp_mesh = exp_mesh;
+  post_mesh->_exp_mesh = exp_mesh;
 }
 
-
 /*----------------------------------------------------------------------------
- * Mise à jour en cas d'alias des critères de modification au cours du temps
- * des maillages en fonction des propriétés des writers qui lui
- * sont associés :
+ * Update mesh time dependency flags in case of an alias based on the
+ * associated writer properties:
  *
- * La topologie d'un maillage ne pourra pas être modifiée si le critère
- * de modification minimal résultant est trop faible (i.e. si l'un des
- * writers associés ne permet pas la redéfinition de la topologie du maillage).
+ * A mesh's definition may not be modified if the minimum time dependency
+ * flag is too low (i.e. if one of the associated writers does not allow
+ * changing a mesh's topology).
  *
- * Les coordonnées des sommets et la connectivité ne pourront être libérés
- * de la mémoire si la critère de modification maximal résultant est trop
- * élevé (i.e. si l'un des writers associés permet l'évolution du maillage
- * en temps, et nécessite donc sa réécriture).
+ * Vertex coordinates and connectivity can be freed from memory if the
+ * maximum time dependency flag is low enough (i.e. if none of the associated
+ * writers allows modification of the mesh, and thus its future output).
+ *
+ * parameters:
+ *   mesh_id <-- associated mesh (alias) id
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_ind_mod_alias
-(
- const int  indmai              /* --> indice du maillage post en cours       */
-)
+static void
+_cs_post_mod_flag_alias(int  mesh_id)
 {
   int  i;
 
-  cs_post_maillage_t  *maillage_post = NULL;
-  cs_post_maillage_t  *maillage_ref = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
+  cs_post_mesh_t  *ref_mesh = NULL;
 
+  /* Update reference */
 
-  /* Mise à jour référence */
+  post_mesh = _cs_post_meshes + mesh_id;
 
-  maillage_post = cs_glob_post_maillages + indmai;
+  if (post_mesh->alias > -1) {
 
-  if (maillage_post->alias > -1) {
+    ref_mesh = _cs_post_meshes + post_mesh->alias;
 
-    maillage_ref = cs_glob_post_maillages + maillage_post->alias;
+    if (post_mesh->mod_flag_min < ref_mesh->mod_flag_min)
+      ref_mesh->mod_flag_min = post_mesh->mod_flag_min;
 
-    if (maillage_post->ind_mod_min < maillage_ref->ind_mod_min)
-      maillage_ref->ind_mod_min = maillage_post->ind_mod_min;
-
-    if (maillage_post->ind_mod_max < maillage_ref->ind_mod_max)
-      maillage_ref->ind_mod_max = maillage_post->ind_mod_max;
+    if (post_mesh->mod_flag_max < ref_mesh->mod_flag_max)
+      ref_mesh->mod_flag_max = post_mesh->mod_flag_max;
 
   }
 
+  /* Update alias */
 
-  /* Mise  à jour alias) */
+  for (i = 0; i < _cs_post_n_meshes; i++) {
 
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
+    post_mesh = _cs_post_meshes + i;
 
-    maillage_post = cs_glob_post_maillages + i;
+    if (post_mesh->alias > -1) {
 
-    if (maillage_post->alias > -1) {
+      ref_mesh = _cs_post_meshes + post_mesh->alias;
 
-      maillage_ref = cs_glob_post_maillages + maillage_post->alias;
+      if (post_mesh->mod_flag_min > ref_mesh->mod_flag_min)
+        post_mesh->mod_flag_min = ref_mesh->mod_flag_min;
 
-      if (maillage_post->ind_mod_min > maillage_ref->ind_mod_min)
-        maillage_post->ind_mod_min = maillage_ref->ind_mod_min;
-
-      if (maillage_post->ind_mod_max > maillage_ref->ind_mod_max)
-        maillage_post->ind_mod_max = maillage_ref->ind_mod_max;
+      if (post_mesh->mod_flag_max > ref_mesh->mod_flag_max)
+        post_mesh->mod_flag_max = ref_mesh->mod_flag_max;
     }
 
   }
 
 }
 
-
 /*----------------------------------------------------------------------------
- * Découpage des polygones ou polyèdres en éléments simples si nécessaire.
+ * Divide polygons or polyhedra in simpler elements if necessary.
+ *
+ * parameters:
+ *   post_mesh <-> pointer to post-processing mesh
+ *   writer    <-- pointer to associated writer
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_divise_poly
-(
- cs_post_maillage_t      *const maillage_post,  /* --> maillage ext. associé  */
- const cs_post_writer_t  *const writer          /* --> writer associé         */
-)
+static void
+_cs_post_divide_poly(cs_post_mesh_t          *post_mesh,
+                     const cs_post_writer_t  *writer)
 {
-  /* Découpage des polygones ou polyèdres en éléments simples */
+  /* Divide polygons or polyhedra into simple elements */
 
   if (fvm_writer_needs_tesselation(writer->writer,
-                                   maillage_post->maillage_ext,
+                                   post_mesh->exp_mesh,
                                    FVM_CELL_POLY) > 0)
-    fvm_nodal_tesselate(maillage_post->_maillage_ext,
+    fvm_nodal_tesselate(post_mesh->_exp_mesh,
                         FVM_CELL_POLY,
                         NULL);
 
   if (fvm_writer_needs_tesselation(writer->writer,
-                                   maillage_post->maillage_ext,
+                                   post_mesh->exp_mesh,
                                    FVM_FACE_POLY) > 0)
-    fvm_nodal_tesselate(maillage_post->_maillage_ext,
+    fvm_nodal_tesselate(post_mesh->_exp_mesh,
                         FVM_FACE_POLY,
                         NULL);
 }
 
-
 /*----------------------------------------------------------------------------
- * Assemblage des valeurs d'une variable définie sur une combinaison de
- * faces de bord et de faces internes (sans indirection) en un tableau
- * défini sur un ensemble unique de faces.
+ * Assemble variable values defined on a mix of interior and boundary
+ * faces (with no indirection) into an array defined on a single faces set.
  *
- * La variable résultante n'est pas entrelacée.
+ * The resulting variable is not interlaced.
+ *
+ * parameters:
+ *   exp_mesh    <-- exportable mesh
+ *   n_i_faces   <-- number of interior faces
+ *   n_b_faces   <-- number of boundary faces
+ *   var_dim     <-- varible dimension
+ *   interlace   <-- for vector, interlace if 1, no interlace if 0
+ *   i_face_vals <-- values at interior faces
+ *   b_face_vals <-- values at boundary faces
+ *   var_tmp[]   --> assembled values
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_assmb_var_faces
-(
- const fvm_nodal_t      *const maillage_ext,     /* --> maillage externe   */
- const cs_int_t                nbr_fac,          /* --> nb faces internes  */
- const cs_int_t                nbr_fbr,          /* --> nb faces bord      */
- const int                     dim_var,          /* --> dim. variable      */
- const fvm_interlace_t         interlace,        /* --> indic. entrelacage */
- const cs_real_t               var_fac[],        /* --> valeurs faces int. */
- const cs_real_t               var_fbr[],        /* --> valeurs faces bord */
-       cs_real_t               var_tmp[]         /* <-- valeurs assemblées */
-)
+static void
+_cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
+                         cs_int_t            n_i_faces,
+                         cs_int_t            n_b_faces,
+                         int                 var_dim,
+                         fvm_interlace_t     interlace,
+                         const cs_real_t     i_face_vals[],
+                         const cs_real_t     b_face_vals[],
+                         cs_real_t           var_tmp[])
 {
-  cs_int_t  i, j, pas_1, pas_2;
+  cs_int_t  i, j, stride_1, stride_2;
 
-  cs_int_t  nbr_ent = nbr_fac + nbr_fbr;
+  cs_int_t  n_elts = n_i_faces + n_b_faces;
 
-  assert(maillage_ext != NULL);
+  assert(exp_mesh != NULL);
 
-  /* La variable est définie sur les faces internes et faces de bord
-     du maillage de post traitement, et a été construite à partir
-     des listes de faces internes et de bord correspondantes */
+  /* The variable is defined on interior and boundary faces of the
+     post-processing mesh, and has been built using values
+     at the corresponding interior and boundary faces */
 
-  /* Contribution des faces de bord */
-
-  if (interlace == FVM_INTERLACE) {
-    pas_1 = dim_var;
-    pas_2 = 1;
-  }
-  else {
-    pas_1 = 1;
-    pas_2 = nbr_fbr;
-  }
-
-  for (i = 0 ; i < nbr_fbr ; i++) {
-    for (j = 0 ; j < dim_var ; j++)
-      var_tmp[i + j*nbr_ent] = var_fbr[i*pas_1 + j*pas_2];
-  }
-
-  /* Contribution des faces internes */
+  /* Boundary faces contribution */
 
   if (interlace == FVM_INTERLACE) {
-    pas_1 = dim_var;
-    pas_2 = 1;
+    stride_1 = var_dim;
+    stride_2 = 1;
   }
   else {
-    pas_1 = 1;
-    pas_2 = nbr_fac;
+    stride_1 = 1;
+    stride_2 = n_b_faces;
   }
 
-  for (i = 0 ; i < nbr_fac ; i++) {
-    for (j = 0 ; j < dim_var ; j++)
-      var_tmp[i + nbr_fbr + j*nbr_ent] = var_fac[i*pas_1 + j*pas_2];
+  for (i = 0; i < n_b_faces; i++) {
+    for (j = 0; j < var_dim; j++)
+      var_tmp[i + j*n_elts] = b_face_vals[i*stride_1 + j*stride_2];
+  }
+
+  /* Interior faces contribution */
+
+  if (interlace == FVM_INTERLACE) {
+    stride_1 = var_dim;
+    stride_2 = 1;
+  }
+  else {
+    stride_1 = 1;
+    stride_2 = n_i_faces;
+  }
+
+  for (i = 0; i < n_i_faces; i++) {
+    for (j = 0; j < var_dim; j++)
+      var_tmp[i + n_b_faces + j*n_elts] = i_face_vals[i*stride_1 + j*stride_2];
   }
 
 }
 
+/*----------------------------------------------------------------------------
+ * Write parallel domain (rank) number to post-processing mesh
+ *
+ * parameters:
+ *   writer     <-- FVM writer
+ *   exp_mesh   <-- exportable mesh
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- current physical time
+ *---------------------------------------------------------------------------*/
+
+static void
+_cs_post_write_domain(fvm_writer_t       *writer,
+                      const fvm_nodal_t  *exp_mesh,
+                      int                 nt_cur_abs,
+                      double              t_cur_abs)
+{
+  int  dim_ent;
+  fvm_lnum_t  i, n_elts;
+  fvm_datatype_t  datatype;
+
+  fvm_lnum_t   dec_num_parent[1]  = {0};
+  cs_int_t *domain = NULL;
+
+  int _nt_cur_abs = -1;
+  double _t_cur_abs = 0.;
+
+  const cs_int_t   *var_ptr[1] = {NULL};
+
+  if (cs_glob_base_nbr < 2 || _cs_post_domain == false)
+    return;
+
+  dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+  n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+
+  /* Prepare domain number */
+
+  BFT_MALLOC(domain, n_elts, cs_int_t);
+
+  for (i = 0; i < n_elts; i++)
+    domain[i] = cs_glob_mesh->domain_num;
+
+  /* Prepare post-processing output */
+
+  if (sizeof(cs_int_t) == 4)
+    datatype = FVM_INT32;
+  else if (sizeof(cs_real_t) == 8)
+    datatype = FVM_INT64;
+
+  var_ptr[0] = domain;
+
+  if (fvm_writer_get_time_dep(writer) != FVM_WRITER_FIXED_MESH) {
+    _nt_cur_abs = nt_cur_abs;
+    _t_cur_abs = t_cur_abs;
+  }
+
+  fvm_writer_export_field(writer,
+                          exp_mesh,
+                          _("parallel domain"),
+                          FVM_WRITER_PER_ELEMENT,
+                          1,
+                          FVM_INTERLACE,
+                          1,
+                          dec_num_parent,
+                          datatype,
+                          _nt_cur_abs,
+                          _t_cur_abs,
+                          (const void * *)var_ptr);
+
+  /* Free memory */
+
+  BFT_FREE(domain);
+}
 
 /*----------------------------------------------------------------------------
- * Ecriture d'un maillage de post traitement en fonction des "writers".
+ * Output a post-processing mesh using associated writers.
+ *
+ * parameters:
+ *   post_mesh  <-> pointer to post-processing mesh
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- current physical time
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_ecrit_maillage
-(
-       cs_post_maillage_t  *const maillage_post,
- const cs_int_t                   nt_cur_abs,   /* --> numéro de pas de temps */
- const cs_real_t                  t_cur_abs     /* --> temps physique courant */
-)
+static void
+_cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
+                    int              nt_cur_abs,
+                    double           t_cur_abs)
 {
   int  j;
-  cs_bool_t  ecrire_maillage;
+  cs_bool_t  write_mesh;
   fvm_writer_time_dep_t  dep_temps;
 
   cs_post_writer_t *writer = NULL;
 
+  /* Loop on writers */
 
-  /* Boucles sur les "writers" */
+  for (j = 0; j < post_mesh->n_writers; j++) {
 
-  for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
-
-    writer = cs_glob_post_writers + maillage_post->ind_writer[j];
+    writer = _cs_post_writers + post_mesh->writer_id[j];
 
     dep_temps = fvm_writer_get_time_dep(writer->writer);
 
-    ecrire_maillage = false;
+    write_mesh = false;
 
     if (dep_temps == FVM_WRITER_FIXED_MESH) {
-      if (maillage_post->nt_ecr < 0)
-        ecrire_maillage = true;
+      if (post_mesh->nt_last < 0)
+        write_mesh = true;
     }
     else {
-      if (maillage_post->nt_ecr < nt_cur_abs && writer->actif == 1)
-        ecrire_maillage = true;
+      if (post_mesh->nt_last < nt_cur_abs && writer->active == 1)
+        write_mesh = true;
     }
 
-    if (ecrire_maillage == true) {
+    if (write_mesh == true) {
       fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
-      fvm_writer_export_nodal(writer->writer, maillage_post->maillage_ext);
+      fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
     }
 
-    if (ecrire_maillage == true && maillage_post->id == -1)
-      _cs_post_ecrit_domaine(writer->writer,
-                             maillage_post->maillage_ext,
-                             nt_cur_abs,
-                             t_cur_abs);
+    if (write_mesh == true && post_mesh->id == -1)
+      _cs_post_write_domain(writer->writer,
+                            post_mesh->exp_mesh,
+                            nt_cur_abs,
+                            t_cur_abs);
 
   }
 
-  if (ecrire_maillage == true)
-    maillage_post->nt_ecr = nt_cur_abs;
+  if (write_mesh == true)
+    post_mesh->nt_last = nt_cur_abs;
 
-  if (   maillage_post->ind_mod_max == FVM_WRITER_FIXED_MESH
-      && maillage_post->_maillage_ext != NULL)
-    fvm_nodal_reduce(maillage_post->_maillage_ext, 0);
+  if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
+      && post_mesh->_exp_mesh != NULL)
+    fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
 }
 
-
 /*----------------------------------------------------------------------------
- * Transformation d'un tableau d'indicateurs (marqueurs) en liste ;
- * renvoie la taille effective de la liste.
+ * Transform an array of flags (markers) to a list
+ *
+ * parameters:
+ *   list_size <-> size of array, then list
+ *   list      <-> array of flags, then list
+ *
+ * returns:
+ *   size of list
  *----------------------------------------------------------------------------*/
 
-static cs_int_t _cs_post_ind_vers_liste
-(
- cs_int_t  nbr,         /* <-> taille indicateur                */
- cs_int_t  liste[]      /* <-> indicateur, puis liste           */
-)
+static cs_int_t
+_cs_post_marker_to_list(cs_int_t  list_size,
+                        cs_int_t  list[])
 {
-  cs_int_t   cpt, ind;
+  cs_int_t  cpt, ind;
 
-  for (cpt = 0, ind = 0 ; ind < nbr ; ind++) {
-    if (liste[ind] != 0) {
-      liste[ind] = 0;
-      liste[cpt++] = ind + 1;
+  for (cpt = 0, ind = 0; ind < list_size; ind++) {
+    if (list[ind] != 0) {
+      list[ind] = 0;
+      list[cpt++] = ind + 1;
     }
   }
 
   return cpt;
 }
 
-
 /*----------------------------------------------------------------------------
- * Boucle sur les maillages de post traitement pour écriture  des variables
+ * Loop on post-processing meshes to output variables
+ *
+ * parameters:
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- current physical time
  *----------------------------------------------------------------------------*/
 
-static void _cs_post_ecrit_deplacements
-(
- const cs_int_t   nt_cur_abs,         /* --> numéro de pas de temps courant   */
- const cs_real_t  t_cur_abs           /* --> valeur du temps physique associé */
-)
+static void
+_cs_post_write_displacements(int     nt_cur_abs,
+                             double  t_cur_abs)
 {
   int i, j;
   cs_int_t  k, nbr_val;
   fvm_datatype_t datatype;
 
   fvm_lnum_t   dec_num_parent[1]  = {0};
-  cs_post_maillage_t  *maillage_post = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
   cs_post_writer_t  *writer = NULL;
   cs_real_t   *deplacements = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_real_t   *var_ptr[1] = {NULL};
 
+  /* Loop on writers to check if something must be done */
+  /*----------------------------------------------------*/
 
-  /* Boucle sur les writers pour vérifier si l'on a quelque chose à faire */
-  /*----------------------------------------------------------------------*/
-
-  if (cs_glob_post_deformable == false)
+  if (_cs_post_deformable == false)
     return;
 
-  for (j = 0 ; j < cs_glob_post_nbr_writers ; j++) {
-    writer = cs_glob_post_writers + j;
-    if (writer->actif == 1 && writer->ecr_depl == true)
+  for (j = 0; j < _cs_post_n_writers; j++) {
+    writer = _cs_post_writers + j;
+    if (writer->active == 1 && writer->write_displ == true)
       break;
   }
-  if (j == cs_glob_post_nbr_writers)
+  if (j == _cs_post_n_writers)
     return;
 
-
-  /* Calcul du champ de déformation principal */
-  /*------------------------------------------*/
+  /* Compute main deformation field */
+  /*--------------------------------*/
 
   nbr_val = mesh->n_vertices * 3;
 
   BFT_MALLOC(deplacements, nbr_val, cs_real_t);
 
-  assert(mesh->n_vertices == 0 || cs_glob_post_coo_som_ini != NULL);
+  assert(mesh->n_vertices == 0 || _cs_post_ini_vtx_coo != NULL);
 
   for (k = 0; k < nbr_val; k++)
-    deplacements[k] = mesh->vtx_coord[k] - cs_glob_post_coo_som_ini[k];
+    deplacements[k] = mesh->vtx_coord[k] - _cs_post_ini_vtx_coo[k];
 
-
-  /* Préparation du post traitement */
-  /*--------------------------------*/
+  /* Prepare post-processing */
+  /*-------------------------*/
 
   if (sizeof(cs_real_t) == sizeof(double))
     datatype = FVM_DOUBLE;
@@ -3522,22 +917,21 @@ static void _cs_post_ecrit_deplacements
 
   var_ptr[0] = deplacements;
 
+  /* Loop on meshes to output displacements */
+  /*----------------------------------------*/
 
-  /* Boucle sur les maillages pour l'écriture des déplacements */
-  /*-----------------------------------------------------------*/
+  for (i = 0; i < _cs_post_n_meshes; i++) {
 
-  for (i = 0 ; i < cs_glob_post_nbr_maillages ; i++) {
+    post_mesh = _cs_post_meshes + i;
 
-    maillage_post = cs_glob_post_maillages + i;
+    for (j = 0; j < post_mesh->n_writers; j++) {
 
-    for (j = 0 ; j < maillage_post->nbr_writers ; j++) {
+      writer = _cs_post_writers + post_mesh->writer_id[j];
 
-      writer = cs_glob_post_writers + maillage_post->ind_writer[j];
-
-      if (writer->actif == 1 && writer->ecr_depl == true) {
+      if (writer->active == 1 && writer->write_displ == true) {
 
         fvm_writer_export_field(writer->writer,
-                                maillage_post->maillage_ext,
+                                post_mesh->exp_mesh,
                                 _("displacement"),
                                 FVM_WRITER_PER_NODE,
                                 3,
@@ -3555,82 +949,2338 @@ static void _cs_post_ecrit_deplacements
 
   }
 
-  /* Libération mémoire */
+  /* Free memory */
 
   BFT_FREE(deplacements);
 }
 
+/*============================================================================
+ * Public Fortran function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Écriture du domaine sur maillage de post traitement
- *---------------------------------------------------------------------------*/
+ * Create a writer based on Fortran data; this object is based on a choice
+ * of a case, directory, and format, as well as indicator for associated
+ * meshe's time dependency, and the default output frequency for associated
+ * variables.
+ *
+ * Fortran Interface: use PSTCWR (see cs_post_util.F)
+ *
+ * SUBROUTINE PSTCW1 (NUMGEP, NOMCAS, NOMREP, NOMFMT, OPTFMT,
+ * *****************
+ *                    LNMCAS, LNMFMT, LNMREP, LOPFMT,
+ *                    INDMOD, NTCHR)
+ *
+ * INTEGER          NUMWRI      : --> : Number of writer to create (< 0 for
+ *                              :     : standard writer, > 0 for user writer)
+ * CHARACTER        NOMCAS      : --> : Name of associated case
+ * CHARACTER        NOMREP      : --> : Name of associated directory
+ * INTEGER          NOMFMT      : --> : Name of associated format
+ * INTEGER          OPTFMT      : --> : Additional format options
+ * INTEGER          LNMCAS      : --> : Case name length
+ * INTEGER          LNMREP      : --> : Directory name length
+ * INTEGER          LNMFMT      : --> : Format name length
+ * INTEGER          LOPFMT      : --> : Format options string length
+ * INTEGER          INDMOD      : --> : 0 if fixed, 1 if deformable,
+ *                              :     : 2 if topology changes
+ * INTEGER          NTCHR       : --> : Default output frequency
+ *----------------------------------------------------------------------------*/
 
-static void _cs_post_ecrit_domaine
+void CS_PROCF (pstcw1, PSTCW1)
 (
-       fvm_writer_t     *const writer,         /* --> writer FVM              */
- const fvm_nodal_t      *const maillage_ext,   /* --> maillage externe        */
-       cs_int_t                nt_cur_abs,     /* --> numéro pas de temps     */
-       cs_real_t               t_cur_abs       /* --> temps physique associé  */
+ const cs_int_t  *numwri,
+ const char      *nomcas,
+ const char      *nomrep,
+ const char      *nomfmt,
+ const char      *optfmt,
+ const cs_int_t  *lnmcas,
+ const cs_int_t  *lnmrep,
+ const cs_int_t  *lnmfmt,
+ const cs_int_t  *lopfmt,
+ const cs_int_t  *indmod,
+ const cs_int_t  *ntchr
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
 )
 {
-  int  dim_ent;
-  fvm_lnum_t  i, nbr_ent;
-  fvm_datatype_t  datatype;
+  /* local variables */
 
-  fvm_lnum_t   dec_num_parent[1]  = {0};
-  cs_int_t *domaine = NULL;
+  char  *case_name;
+  char  *dir_name;
+  char  *nom_format;
+  char  *opt_format;
 
-  int _nt_cur_abs = -1;
-  double _t_cur_abs = 0.;
+  /* Copy Fortran strings to C strings */
 
-  const cs_int_t   *var_ptr[1] = {NULL};
+  case_name    = cs_base_string_f_to_c_create(nomcas, *lnmcas);
+  dir_name    = cs_base_string_f_to_c_create(nomrep, *lnmrep);
+  nom_format = cs_base_string_f_to_c_create(nomfmt, *lnmfmt);
+  opt_format = cs_base_string_f_to_c_create(optfmt, *lopfmt);
 
-  if (cs_glob_base_nbr < 2 || cs_glob_post_domaine == false)
-    return;
+  /* Main processing */
 
-  dim_ent = fvm_nodal_get_max_entity_dim(maillage_ext);
-  nbr_ent = fvm_nodal_get_n_entities(maillage_ext, dim_ent);
+  cs_post_add_writer(*numwri,
+                     case_name,
+                     dir_name,
+                     nom_format,
+                     opt_format,
+                     *indmod,
+                     *ntchr);
 
+  /* Free temporary C strings */
 
-  /* Préparation du numéro de domaine */
-
-  BFT_MALLOC(domaine, nbr_ent, cs_int_t);
-
-  for (i = 0; i < nbr_ent; i++)
-    domaine[i] = cs_glob_mesh->domain_num;
-
-  /* Préparation du post traitement */
-
-  if (sizeof(cs_int_t) == 4)
-    datatype = FVM_INT32;
-  else if (sizeof(cs_real_t) == 8)
-    datatype = FVM_INT64;
-
-  var_ptr[0] = domaine;
-
-  if (fvm_writer_get_time_dep(writer) != FVM_WRITER_FIXED_MESH) {
-    _nt_cur_abs = nt_cur_abs;
-    _t_cur_abs = t_cur_abs;
-  }
-
-  fvm_writer_export_field(writer,
-                          maillage_ext,
-                          _("parallel domain"),
-                          FVM_WRITER_PER_ELEMENT,
-                          1,
-                          FVM_INTERLACE,
-                          1,
-                          dec_num_parent,
-                          datatype,
-                          _nt_cur_abs,
-                          _t_cur_abs,
-                          (const void * *)var_ptr);
-
-  /* Libération mémoire */
-
-  BFT_FREE(domaine);
+  cs_base_string_f_to_c_free(&case_name);
+  cs_base_string_f_to_c_free(&dir_name);
+  cs_base_string_f_to_c_free(&nom_format);
+  cs_base_string_f_to_c_free(&opt_format);
 }
 
+
+/*----------------------------------------------------------------------------
+ * Create a post-processing mesh; lists of cells or faces to extract are
+ * sorted upon exit, whether they were sorted upon calling or not.
+ *
+ * The list of associated cells is only necessary if the number of cells
+ * to extract is strictly greater than 0 and less than the number of cells
+ * of the computational mesh.
+ *
+ * Lists of faces are ignored if the number of extracted cells is nonzero;
+ * otherwise, if the number of boundary faces to extract is equal to the
+ * number of boundary faces in the computational mesh, and the number of
+ * interior faces to extract is zero, than we extrac by default the boundary
+ * mesh, and the list of associated boundary faces is thus not necessary.
+ *
+ * Fortran interface: use PSTCMA (see cs_post_util.F)
+ *
+ * SUBROUTINE PSTCM1 (NUMMAI, NOMMAI, LNMMAI,
+ * *****************
+ *                    NBRCEL, NBRFAC, NBRFBR, LSTCEL, LSTFAC, LSTFBR)
+ *
+ * INTEGER          NUMMAI      : <-- : Number of output mesh to create
+ *                              :     : (< 0 for standard mesh,
+ *                              :     : > 0 for user mesh)
+ * CHARACTER        NOMMAI      : <-- : Name of associated output mesh
+ * INTEGER          LNMMAI      : <-- : Mesh name length
+ * INTEGER          NBRCEL      : <-- : Number of associated cells
+ * INTEGER          NBRFAC      : <-- : Number of associated interior faces
+ * INTEGER          NBRFBR      : <-- : Nulber of associated boundary faces
+ * INTEGER          LSTCEL      : <-- : List of associated cells
+ * INTEGER          LSTFAC      : <-- : List of associated interior faces
+ * INTEGER          LSTFBR      : <-- : List of associated boundary faces
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstcm1, PSTCM1)
+(
+ const cs_int_t  *nummai,
+ const char      *nommai,
+ const cs_int_t  *lnmmai,
+ const cs_int_t  *nbrcel,
+ const cs_int_t  *nbrfac,
+ const cs_int_t  *nbrfbr,
+       cs_int_t   lstcel[],
+       cs_int_t   lstfac[],
+       cs_int_t   lstfbr[]
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  /* local variables */
+
+  char  *mesh_name = NULL;
+
+  /* Copy Fortran strings to C strings */
+
+  mesh_name = cs_base_string_f_to_c_create(nommai, *lnmmai);
+
+  /* Main processing */
+
+  cs_post_add_mesh(*nummai,
+                   mesh_name,
+                   *nbrcel,
+                   *nbrfac,
+                   *nbrfbr,
+                   lstcel,
+                   lstfac,
+                   lstfbr);
+
+  /* Free temporary C strings */
+
+  cs_base_string_f_to_c_free(&mesh_name);
+}
+
+/*----------------------------------------------------------------------------
+ * Create an alias to a post-processing mesh.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTALM (NUMMAI, NUMWRI)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the alias to create
+ * INTEGER          NUMREF      : <-- : Number of the associated output mesh
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstalm, PSTALM)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numref
+)
+{
+  cs_post_alias_mesh(*nummai, *numref);
+}
+
+/*----------------------------------------------------------------------------
+ * Associate a writer to a post-processing mesh.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTASS (NUMMAI, NUMWRI)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the associated output mesh
+ * INTEGER          NUMWRI      : <-- : Number of the writer to associate
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstass, PSTASS)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numwri
+)
+{
+  cs_post_associate(*nummai, *numwri);
+}
+
+/*----------------------------------------------------------------------------
+ * Update the "active" or "inactive" flag for writers based on the current
+ * time step and their default output frequency.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTNTC (NTCABS)
+ * *****************
+ *
+ * INTEGER          NTCABS      : <-- : Current time step number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstntc, PSTNTC)
+(
+ const cs_int_t  *ntcabs
+)
+{
+  cs_post_activate_if_default(*ntcabs);
+}
+
+/*----------------------------------------------------------------------------
+ * Force the "active" or "inactive" flag for a specific writer or for all
+ * writers for the current time step.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTNTC (NUMWRI, INDACT)
+ * *****************
+ *
+ * INTEGER          NUMWRI      : <-- : Writer number, or 0 for all writers
+ * INTEGER          INDACT      : <-- : 0 to deactivate, 1 to activate
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstact, PSTACT)
+(
+ const cs_int_t  *numwri,
+ const cs_int_t  *indact
+)
+{
+  cs_post_activate_writer(*numwri, *indact);
+}
+
+/*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTEMA (NTCABS, TTCABS)
+ * *****************
+ *
+ * INTEGER          NTCABS      : <-- : Current time step number
+ * DOUBLE PRECISION TTCABS      : <-- : Current physical time
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstema, PSTEMA)
+(
+ const cs_int_t   *ntcabs,
+ const cs_real_t  *ttcabs
+)
+{
+  cs_post_write_meshes(*ntcabs, *ttcabs);
+}
+
+/*----------------------------------------------------------------------------
+ * Loop on post-processing meshes to output variables
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTVAR (IDBIA0, IDBRA0,
+ * *****************
+ *                    NDIM,   NTCABS, NCELET, NCEL,   NFAC,   NFABOR,
+ *                    NFML,   NPRFML, NNOD,   LNDFAC, LNDFBR, NCELBR,
+ *                    NVAR,   NSCAL,  NPHAS,  NVLSTA, NVISBR,
+ *                    NIDEVE, NRDEVE, NITUSE, NRTUSE,
+ *                    IFACEL, IFABOR, IFMFBR, IFMCEL, IPRFML,
+ *                    IPNFAC, NODFAC, IPNFBR, NODFBR,
+ *                    IDEVEL, ITUSER, IA,
+ *                    TTCABS, XYZCEN, SURFAC, SURFBO, CDGFAC, CDGFBO,
+ *                    XYZNOD, VOLUME,
+ *                    DT,     RTPA,   RTP,    PROPCE, PROPFA, PROPFB,
+ *                    COEFA,  COEFB,
+ *                    STATCE, STATIV, STATFB,
+ *                    RDEVEL, RTUSER, RA)
+ *
+ * INTEGER          IDBIA0      : <-- : Number of first free position in IA
+ * INTEGER          IDBRA0      : <-- : Number of first free position in RA
+ * INTEGER          NDIM        : <-- : Spatial dimension
+ * INTEGER          NTCABS      : --> : Current time step number
+ * INTEGER          NCELET      : <-- : Number of extended (real + ghost) cells
+ * INTEGER          NFAC        : <-- : Number of interior faces
+ * INTEGER          NFABOR      : <-- : Number of boundary faces
+ * INTEGER          NFML        : <-- : Number of families (group classes)
+ * INTEGER          NPRFML      : <-- : Number of family properties
+ * INTEGER          NNOD        : <-- : Number of vertices
+ * INTEGER          LNDFAC      : <-- : Size of nodfac
+ * INTEGER          LNDFBR      : <-- : Size of nodfbr
+ * INTEGER          NCELBR      : <-- : Number of cells on boundary
+ * INTEGER          NVAR        : <-- : Number of variables
+ * INTEGER          NSCAL       : <-- : Number of scalars
+ * INTEGER          NPHAS       : <-- : Number of phases
+ * INTEGER          NVLSTA      : <-- : Number of statistical variables (lagr)
+ * INTEGER          NVISBR      : <-- : Number of boundary stat. variables (lagr)
+ * INTEGER          NIDEVE      : <-- : Size of IDEVEL integer array
+ * INTEGER          NRDEVE      : <-- : Size of RDEVEL floating-point array
+ * INTEGER          NITUSE      : <-- : Size of ITUSER integer array
+ * INTEGER          NRTUSE      : <-- : Size of RTUSER floating-point array
+ * INTEGER          IFACEL      : <-- : Interior faces -> cells connectivity
+ * INTEGER          IFABOR      : <-- : Boundary faces -> cell connectivity
+ * INTEGER          IFMFBR      : <-- : Boundary face families
+ * INTEGER          IFMCEL      : <-- : Cell families
+ * INTEGER          IPRFML      : <-- : List of family properties
+ * INTEGER          IPNFAC      : <-- : Interior faces -> vertices connect. idx.
+ * INTEGER          NODFAC      : <-- : Interior faces -> vertices connectivity
+ * INTEGER          IPNFBR      : <-- : Boundary faces -> vertices connect. idx.
+ * INTEGER          NODFBR      : <-- : Boundary faces -> vertices connectivity
+ * INTEGER          IDEVEL      : <-- : IDEVEL integer array
+ * INTEGER          ITUSER      : <-- : ITUSER integer array
+ * INTEGER          IA          : <-- : IA integer array
+ * DOUBLE PRECISION TTCABS      : <-- : Current physical time
+ * DOUBLE PRECISION XYZCEN      : <-- : Points associated with cell centers
+ * DOUBLE PRECISION SURFAC      : <-- : Interior face surface vectors
+ * DOUBLE PRECISION SURFBO      : <-- : Boundary face surface vectors
+ * DOUBLE PRECISION CDGFAC      : <-- : Interior face centers
+ * DOUBLE PRECISION CDGFBO      : <-- : Boundary face vectors
+ * DOUBLE PRECISION XYZNOD      : <-- : Vertex coordinates (optional)
+ * DOUBLE PRECISION VOLUME      : <-- : Cell volumes
+ * DOUBLE PRECISION DT          : <-- : Local time step
+ * DOUBLE PRECISION RTPA        : <-- : Cell variables at previous time step
+ * DOUBLE PRECISION RTP         : <-- : Cell variables
+ * DOUBLE PRECISION PROPCE      : <-- : Cell physical properties
+ * DOUBLE PRECISION PROPFA      : <-- : Interior face physical properties
+ * DOUBLE PRECISION PROPFB      : <-- : Boundary face physical properties
+ * DOUBLE PRECISION COEFA       : <-- : Boundary conditions array
+ * DOUBLE PRECISION COEFB       : <-- : Boundary conditions array
+ * DOUBLE PRECISION STATCE      : <-- : Cell statistics (Lagrangian)
+ * DOUBLE PRECISION STATIV      : <-- : Cell variance statistics (Lagrangian)
+ * DOUBLE PRECISION STATFB      : <-- : Boundary face statistics (Lagrangian)
+ * DOUBLE PRECISION RDEVEL      : <-- : RDEVEL floating-point array
+ * DOUBLE PRECISION RTUSER      : <-- : RTUSER floating-point array
+ * DOUBLE PRECISION RA          : <-- : RA floating-point array
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstvar, PSTVAR)
+(
+ const cs_int_t   *idbia0,
+ const cs_int_t   *idbra0,
+ const cs_int_t   *ndim,
+ const cs_int_t   *ntcabs,
+ const cs_int_t   *ncelet,
+ const cs_int_t   *ncel,
+ const cs_int_t   *nfac,
+ const cs_int_t   *nfabor,
+ const cs_int_t   *nfml,
+ const cs_int_t   *nprfml,
+ const cs_int_t   *nnod,
+ const cs_int_t   *lndfac,
+ const cs_int_t   *lndfbr,
+ const cs_int_t   *ncelbr,
+ const cs_int_t   *nvar,
+ const cs_int_t   *nscal,
+ const cs_int_t   *nphas,
+ const cs_int_t   *nvlsta,
+ const cs_int_t   *nvisbr,
+ const cs_int_t   *nideve,
+ const cs_int_t   *nrdeve,
+ const cs_int_t   *nituse,
+ const cs_int_t   *nrtuse,
+ const cs_int_t    ifacel[],
+ const cs_int_t    ifabor[],
+ const cs_int_t    ifmfbr[],
+ const cs_int_t    ifmcel[],
+ const cs_int_t    iprfml[],
+ const cs_int_t    ipnfac[],
+ const cs_int_t    nodfac[],
+ const cs_int_t    ipnfbr[],
+ const cs_int_t    nodfbr[],
+ const cs_int_t    idevel[],
+       cs_int_t    ituser[],
+       cs_int_t    ia[],
+ const cs_real_t  *ttcabs,
+ const cs_real_t   xyzcen[],
+ const cs_real_t   surfac[],
+ const cs_real_t   surfbo[],
+ const cs_real_t   cdgfac[],
+ const cs_real_t   cdgfbo[],
+ const cs_real_t   xyznod[],
+ const cs_real_t   volume[],
+ const cs_real_t   dt[],
+ const cs_real_t   rtpa[],
+ const cs_real_t   rtp[],
+ const cs_real_t   propce[],
+ const cs_real_t   propfa[],
+ const cs_real_t   propfb[],
+ const cs_real_t   coefa[],
+ const cs_real_t   coefb[],
+ const cs_real_t   statce[],
+ const cs_real_t   stativ[],
+ const cs_real_t   statfb[],
+ const cs_real_t   rdevel[],
+       cs_real_t   rtuser[],
+       cs_real_t   ra[]
+)
+{
+  /* variables locales */
+
+  int i, j, k;
+  int dim_ent;
+  cs_int_t   itypps[3];
+  cs_int_t   ind_cel, ind_fac, dec_num_fbr;
+  cs_int_t   n_elts, n_elts_max;
+  cs_int_t   nummai, imodif;
+
+  cs_bool_t  active;
+
+  cs_post_mesh_t  *post_mesh;
+  cs_post_writer_t  *writer;
+
+  cs_int_t    n_cells, n_i_faces, n_b_faces;
+  cs_int_t    *cell_list, *i_face_list, *b_face_list;
+
+  cs_int_t    *num_ent_parent = NULL;
+  cs_real_t   *var_trav = NULL;
+  cs_real_t   *cel_vals = NULL;
+  cs_real_t   *i_face_vals = NULL;
+  cs_real_t   *b_face_vals = NULL;
+
+  /* Loop on writers to check if something must be done */
+  /*----------------------------------------------------*/
+
+  for (j = 0; j < _cs_post_n_writers; j++) {
+    writer = _cs_post_writers + j;
+    if (writer->active == 1)
+      break;
+  }
+  if (j == _cs_post_n_writers)
+    return;
+
+  /* Possible modification of post-processing meshes */
+  /*-------------------------------------------------*/
+
+  n_elts_max = 0;
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    active = false;
+
+    for (j = 0; j < post_mesh->n_writers; j++) {
+      writer = _cs_post_writers + post_mesh->writer_id[j];
+      if (writer->active == 1)
+        active = true;
+    }
+
+    /* Modifiable user mesh, not an alias, active at this time step */
+
+    if (   active == true
+        && post_mesh->alias < 0
+        && post_mesh->id > 0
+        && post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT) {
+
+      const fvm_nodal_t * exp_mesh = post_mesh->exp_mesh;
+
+      dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+      n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+
+      if (n_elts > n_elts_max) {
+        n_elts_max = n_elts;
+        BFT_REALLOC(num_ent_parent, n_elts_max, cs_int_t);
+      }
+
+      nummai = post_mesh->id;
+
+      /* Get corresponding entity lists */
+
+      fvm_nodal_get_parent_num(exp_mesh, dim_ent, num_ent_parent);
+
+      for (k = 0; k < 3; k++)
+        itypps[k] = post_mesh->ent_flag[k];
+
+      /* Oversize lists, as the user may fill an arbitrary part of those */
+
+      BFT_MALLOC(cell_list, cs_glob_mesh->n_cells, cs_int_t);
+      BFT_MALLOC(i_face_list, cs_glob_mesh->n_i_faces, cs_int_t);
+      BFT_MALLOC(b_face_list, cs_glob_mesh->n_b_faces, cs_int_t);
+
+      n_cells = 0;
+      n_i_faces = 0;
+      n_b_faces = 0;
+
+      /* Set lists to zero */
+
+      if (dim_ent == 3)
+        for (ind_cel = 0; ind_cel < cs_glob_mesh->n_cells; ind_cel++)
+          cell_list[ind_cel] = 0;
+      else if (dim_ent == 2) {
+        for (ind_fac = 0; ind_fac < cs_glob_mesh->n_b_faces; ind_fac++)
+          b_face_list[ind_fac] = 0;
+        for (ind_fac = 0; ind_fac < cs_glob_mesh->n_i_faces; ind_fac++)
+          i_face_list[ind_fac] = 0;
+      }
+
+      /* If the elements of the FVM mesh are divied, a same parent number
+         may appear several times; we thus use a marker logic. */
+
+      if (dim_ent == 3) {
+        for (ind_cel = 0; ind_cel < n_elts; ind_cel++)
+          cell_list[num_ent_parent[ind_cel] - 1] = 1;
+      }
+
+      /* For faces, the number of interior "parent" faces known by FVM
+         are shifted by the total number of boundary faces
+         (c.f. construction in cs_mesh_connect...()) */
+
+      else if (dim_ent == 2) {
+        dec_num_fbr = cs_glob_mesh->n_b_faces;
+        for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+          if (num_ent_parent[ind_fac] > dec_num_fbr)
+            i_face_list[num_ent_parent[ind_fac] - dec_num_fbr - 1] = 1;
+          else
+            b_face_list[num_ent_parent[ind_fac] - 1] = 1;
+        }
+      }
+
+      /* Transform markers to lists */
+
+      if (dim_ent == 3) {
+        n_cells = _cs_post_marker_to_list(cs_glob_mesh->n_cells,
+                                          cell_list);
+      }
+      else if (dim_ent == 2) {
+        n_i_faces = _cs_post_marker_to_list(cs_glob_mesh->n_i_faces,
+                                            i_face_list);
+        n_b_faces = _cs_post_marker_to_list(cs_glob_mesh->n_b_faces,
+                                            b_face_list);
+      }
+
+      /* User modification of the mesh definition */
+
+      imodif = 0;
+
+      CS_PROCF(usmpst, USMPST) (idbia0, idbra0, &nummai,
+                                ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
+                                nnod, lndfac, lndfbr, ncelbr,
+                                nvar, nscal, nphas, nvlsta,
+                                &n_cells, &n_i_faces, &n_b_faces,
+                                nideve, nrdeve, nituse, nrtuse, &imodif,
+                                itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
+                                ipnfac, nodfac, ipnfbr, nodfbr,
+                                cell_list, i_face_list, b_face_list,
+                                idevel, ituser, ia,
+                                xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
+                                volume, dt, rtpa, rtp, propce, propfa, propfb,
+                                coefa, coefb, statce,
+                                cel_vals, i_face_vals, b_face_vals,
+                                rdevel, rtuser, ra);
+
+      if (imodif > 0)
+        cs_post_modify_mesh(post_mesh->id,
+                            n_cells,
+                            n_i_faces,
+                            n_b_faces,
+                            cell_list,
+                            i_face_list,
+                            b_face_list);
+
+      BFT_FREE(cell_list);
+      BFT_FREE(i_face_list);
+      BFT_FREE(b_face_list);
+
+    }
+
+  }
+
+  /* We now make sure aliases are synchronized */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    if (post_mesh->alias > -1) {
+
+      const cs_post_mesh_t  *ref_mesh;
+
+      ref_mesh = _cs_post_meshes + post_mesh->alias;
+
+      for (j = 0; j < 3; j++)
+        post_mesh->ent_flag[j] = ref_mesh->ent_flag[j];
+
+      post_mesh->n_i_faces = ref_mesh->n_i_faces;
+      post_mesh->n_b_faces = ref_mesh->n_b_faces;
+
+    }
+
+  }
+
+  /* Output of meshes or vertex displacement field if necessary */
+  /*------------------------------------------------------------*/
+
+  cs_post_write_meshes(*ntcabs, *ttcabs);
+
+  if (_cs_post_deformable == true)
+    _cs_post_write_displacements(*ntcabs, *ttcabs);
+
+  /* Output of variables by registered function instances */
+  /*------------------------------------------------------*/
+
+  for (i = 0; i < _cs_post_nbr_var_tp; i++) {
+    _cs_post_f_var_tp[i](_cs_post_i_var_tp[i],
+                             *ntcabs,
+                             *ttcabs);
+  }
+
+  /* Output of variables associated with post-processing meshes */
+  /*------------------------------------------------------------*/
+
+  /* n_elts_max already initialized before and during the
+     eventual modification of post-processing mesh definitions,
+     and num_ent_parent allocated if n_elts_max > 0 */
+
+  BFT_MALLOC(var_trav, n_elts_max * 3, cs_real_t);
+
+  /* Main loop on post-processing meshes */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    active = false;
+
+    for (j = 0; j < post_mesh->n_writers; j++) {
+      writer = _cs_post_writers + post_mesh->writer_id[j];
+      if (writer->active == 1)
+        active = true;
+    }
+
+    /* If the mesh is active at this time step */
+    /*-----------------------------------------*/
+
+    if (active == true) {
+
+      const fvm_nodal_t * exp_mesh = post_mesh->exp_mesh;
+
+      dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+      n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+
+      if (n_elts > n_elts_max) {
+        n_elts_max = n_elts;
+        BFT_REALLOC(var_trav, n_elts_max * 3, cs_real_t);
+        BFT_REALLOC(num_ent_parent, n_elts_max, cs_int_t);
+      }
+
+      nummai = post_mesh->id;
+
+      /* Get corresponding element lists */
+
+      fvm_nodal_get_parent_num(exp_mesh, dim_ent, num_ent_parent);
+
+      for (k = 0; k < 3; k++)
+        itypps[k] = post_mesh->ent_flag[k];
+
+      /* We can output variables for this time step */
+      /*--------------------------------------------*/
+
+      n_cells = 0;
+      n_i_faces = 0;
+      n_b_faces = 0;
+      cell_list = NULL;
+      i_face_list = NULL;
+      b_face_list = NULL;
+
+      /* Here list sizes are adjusted, and we point to the array filled
+         by fvm_nodal_get_parent_num() if possible. */
+
+      if (dim_ent == 3) {
+        n_cells = n_elts;
+        cell_list = num_ent_parent;
+      }
+
+      /* The numbers of "parent" interior faces known by FVM
+         are shifted by the total number of boundary faces */
+
+      else if (dim_ent == 2 && n_elts > 0) {
+
+        dec_num_fbr = cs_glob_mesh->n_b_faces;
+
+        for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+          if (num_ent_parent[ind_fac] > dec_num_fbr)
+            n_i_faces++;
+          else
+            n_b_faces++;
+        }
+
+        /* boundary faces only: parent FVM face numbers unchanged */
+        if (n_i_faces == 0) {
+          b_face_list = num_ent_parent;
+        }
+
+        /* interior faces only: parents FVM face numbers shifted */
+        else if (n_b_faces == 0) {
+          for (ind_fac = 0; ind_fac < n_elts; ind_fac++)
+            num_ent_parent[ind_fac] -= dec_num_fbr;
+          i_face_list = num_ent_parent;
+        }
+
+        /* interior and boundary faces: numbers must be separated */
+
+        else {
+
+          BFT_MALLOC(i_face_list, n_i_faces, cs_int_t);
+          BFT_MALLOC(b_face_list, n_b_faces, cs_int_t);
+
+          n_i_faces = 0, n_b_faces = 0;
+
+          for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+            if (num_ent_parent[ind_fac] > dec_num_fbr)
+              i_face_list[n_i_faces++] = num_ent_parent[ind_fac] - dec_num_fbr;
+            else
+              b_face_list[n_b_faces++] = num_ent_parent[ind_fac];
+          }
+
+        }
+
+        /* In all cases, update the number of interior and boundary faces
+           (useful in case of splitting of FVM mesh elements) for functions
+           called by this one */
+
+        post_mesh->n_i_faces = n_i_faces;
+        post_mesh->n_b_faces = n_b_faces;
+
+      }
+
+      /* Pointers to variable assembly arrays, set to NULL if unused
+         (so as to provoke an immediate error in case of incorrect use) */
+
+      cel_vals = var_trav;
+      i_face_vals = cel_vals + (n_cells * 3);
+      b_face_vals = i_face_vals + (n_i_faces * 3);
+
+      if (n_cells == 0)
+        cel_vals = NULL;
+      if (n_i_faces == 0)
+        i_face_vals = NULL;
+      if (n_b_faces == 0)
+        b_face_vals = NULL;
+
+      /* Standard post-processing */
+
+      if (nummai < 0)
+        CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai,
+                                  ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
+                                  nnod, lndfac, lndfbr, ncelbr,
+                                  nvar, nscal, nphas, nvlsta, nvisbr,
+                                  &n_cells, &n_i_faces, &n_b_faces,
+                                  nideve, nrdeve, nituse, nrtuse,
+                                  itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
+                                  ipnfac, nodfac, ipnfbr, nodfbr,
+                                  cell_list, i_face_list, b_face_list,
+                                  idevel, ituser, ia,
+                                  xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
+                                  volume, dt, rtpa, rtp, propce, propfa, propfb,
+                                  coefa, coefb, statce, stativ , statfb ,
+                                  cel_vals, i_face_vals, b_face_vals,
+                                  rdevel, rtuser, ra);
+
+      /* Call to user subroutine for additional post-processing */
+
+      CS_PROCF(usvpst, USVPST) (idbia0, idbra0, &nummai,
+                                ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
+                                nnod, lndfac, lndfbr, ncelbr,
+                                nvar, nscal, nphas, nvlsta,
+                                &n_cells, &n_i_faces, &n_b_faces,
+                                nideve, nrdeve, nituse, nrtuse,
+                                itypps, ifacel, ifabor, ifmfbr, ifmcel, iprfml,
+                                ipnfac, nodfac, ipnfbr, nodfbr,
+                                cell_list, i_face_list, b_face_list,
+                                idevel, ituser, ia,
+                                xyzcen, surfac, surfbo, cdgfac, cdgfbo, xyznod,
+                                volume, dt, rtpa, rtp, propce, propfa, propfb,
+                                coefa, coefb, statce,
+                                cel_vals, i_face_vals, b_face_vals,
+                                rdevel, rtuser, ra);
+
+      /* In case of mixed interior and boundary faces, free
+         additional arrays */
+
+      if (i_face_list != NULL && b_face_list != NULL) {
+        BFT_FREE(i_face_list);
+        BFT_FREE(b_face_list);
+      }
+
+    }
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(num_ent_parent);
+  BFT_FREE(var_trav);
+}
+
+/*----------------------------------------------------------------------------
+ * Post-processing output of a variable defined on cells or faces of a mesh
+ * using associated writers.
+ *
+ * Fortran interface; use PSTEVA (see cs_post_util.F)
+ *
+ * SUBROUTINE PSTEV1 (NUMMAI, NOMVAR, LNMVAR, IDIMT,  IENTLA, IVARPR,
+ * *****************
+ *                    NTCABS, TTCABS, VARCEL, VARFAC, VARFBR)
+ *
+ * INTEGER          NUMMAI      : <-- : Number of associated output mesh
+ * CHARACTER        NOMVAR      : <-- : Name of associated variable
+ * INTEGER          LNMVAR      : <-- : Variable name length
+ * INTEGER          IDIMT       : <-- : 1 for scalar, 3 for vector
+ * INTEGER          IENTLA      : <-- : If a vector, 1 for interlaced values
+ *                              :     : (x1, y1, z1, x2, y2, ..., yn, zn),
+ *                              :     : 0 otherwise (x1, x2, ...xn, y1, y2, ...)
+ * INTEGER          IVARPR      : <-- : 1 if variable is defined on "parent"
+ *                              :     : mesh, 2 if defined on output mesh
+ * INTEGER          NTCABS      : <-- : Current time step number
+ * DOUBLE PRECISION TTCABS      : <-- : Current physical time
+ * DOUBLE PRECISION VARCEL(*)   : <-- : Cell values
+ * DOUBLE PRECISION VARFAC(*)   : <-- : Interior face values
+ * DOUBLE PRECISION VARFBO(*)   : <-- : Boundary face values
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstev1, PSTEV1)
+(
+ const cs_int_t   *nummai,
+ const char       *nomvar,
+ const cs_int_t   *lnmvar,
+ const cs_int_t   *idimt,
+ const cs_int_t   *ientla,
+ const cs_int_t   *ivarpr,
+ const cs_int_t   *ntcabs,
+ const cs_real_t  *ttcabs,
+ const cs_real_t   varcel[],
+ const cs_real_t   varfac[],
+ const cs_real_t   varfbr[]
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  cs_bool_t  use_parent;
+  cs_bool_t  interlace;
+
+  char  *var_name = NULL;
+
+  if (*ivarpr == 1)
+    use_parent = true;
+  else if (*ivarpr == 0)
+    use_parent = false;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("The PSTEVA sub-routine argument IVARPR must be\n"
+                "equal to 0 or 1, and not %d.\n"), (int)(*ivarpr));
+
+  if (*ientla == 0)
+    interlace = false;
+  else if (*ientla == 1)
+    interlace = true;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("The PSTEVA sub-routine argument IENTLA must be\n"
+                "equal to 0 or 1, and not %d.\n"), (int)(*ientla));
+
+
+  /* Copy Fortran strings to C strings */
+
+  var_name = cs_base_string_f_to_c_create(nomvar, *lnmvar);
+
+  /* Main processing */
+
+  cs_post_write_var(*nummai,
+                    var_name,
+                    *idimt,
+                    interlace,
+                    use_parent,
+                    CS_POST_TYPE_cs_real_t,
+                    *ntcabs,
+                    *ttcabs,
+                    varcel,
+                    varfac,
+                    varfbr);
+
+  /* Free temporary C strings */
+
+  cs_base_string_f_to_c_free(&var_name);
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create a writer; this objects manages a case's name, directory, and format,
+ * as well as associated meshe's time dependency, and the default output
+ * frequency for associated variables.
+ *
+ * parameters:
+ *   writer_id <-- number of writer to create (< 0 reserved, > 0 for user)
+ *   case_name <-- associated case name
+ *   dir_name  <-- associated directory name
+ *   fmt_name  <-- associated format name
+ *   fmt_opts  <-- associated format options
+ *   mod_flag  <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
+ *                 +10 add a displacement field
+ *   frequency <-- default output frequency
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_writer(int          writer_id,
+                   const char  *case_name,
+                   const char  *dir_name,
+                   const char  *fmt_name,
+                   const char  *fmt_opts,
+                   cs_int_t     mod_flag,
+                   cs_int_t     frequency)
+{
+  /* local variables */
+
+  int    i;
+
+  cs_post_writer_t  *writer = NULL;
+  fvm_writer_time_dep_t  dep_temps = FVM_WRITER_FIXED_MESH;
+
+  /* Check that the required mesh is available */
+
+  if (writer_id == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The requested post-processing writer number\n"
+                "must be < 0 (reserved) or > 0 (user).\n"));
+
+  for (i = 0; i < _cs_post_n_writers; i++) {
+    if ((_cs_post_writers + i)->id == writer_id)
+      bft_error(__FILE__, __LINE__, 0,
+                _("The requested post-processing writer number\n"
+                  "(%d) has already been assigned.\n"), (int)writer_id);
+  }
+
+  /* Resize global writers array */
+
+  if (_cs_post_n_writers == _cs_post_n_writers_max) {
+
+    if (_cs_post_n_writers_max == 0)
+      _cs_post_n_writers_max = 4;
+    else
+      _cs_post_n_writers_max *= 2;
+
+    BFT_REALLOC(_cs_post_writers,
+                _cs_post_n_writers_max,
+                cs_post_writer_t);
+
+  }
+
+  _cs_post_n_writers += 1;
+
+  /* Assign newly created writer to the structure */
+
+  writer = _cs_post_writers + _cs_post_n_writers - 1;
+
+  writer->id = writer_id;
+  writer->frequency = frequency;
+  writer->write_displ = false;
+  writer->active = 0;
+
+  if (mod_flag >= 10) {
+    writer->write_displ = true;
+    mod_flag -= 10;
+  }
+
+  if (mod_flag == 1)
+    dep_temps = FVM_WRITER_TRANSIENT_COORDS;
+  else if (mod_flag >= 2)
+    dep_temps = FVM_WRITER_TRANSIENT_CONNECT;
+
+  writer->writer = fvm_writer_init(case_name,
+                                   dir_name,
+                                   fmt_name,
+                                   fmt_opts,
+                                   dep_temps);
+}
+
+/*----------------------------------------------------------------------------
+ * Create a post-processing mesh; lists of cells or faces to extract are
+ * sorted upon exit, whether they were sorted upon calling or not.
+ *
+ * The list of associated cells is only necessary if the number of cells
+ * to extract is strictly greater than 0 and less than the number of cells
+ * of the computational mesh.
+ *
+ * Lists of faces are ignored if the number of extracted cells is nonzero;
+ * otherwise, if the number of boundary faces to extract is equal to the
+ * number of boundary faces in the computational mesh, and the number of
+ * interior faces to extract is zero, than we extrac by default the boundary
+ * mesh, and the list of associated boundary faces is thus not necessary.
+ *
+ * parameters:
+ *   mesh_id     <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   mesh_name   <-- associated mesh name
+ *   n_cells     <-- number of associated cells
+ *   n_i_faces   <-- number of associated interior faces
+ *   n_b_faces   <-- number of associated boundary faces
+ *   cell_list   <-- list of associated cells
+ *   i_face_list <-- list of associated interior faces
+ *   b_face_list <-- list of associated boundary faces
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_mesh(int          mesh_id,
+                 const char  *mesh_name,
+                 cs_int_t     n_cells,
+                 cs_int_t     n_i_faces,
+                 cs_int_t     n_b_faces,
+                 cs_int_t     cell_list[],
+                 cs_int_t     i_face_list[],
+                 cs_int_t     b_face_list[])
+{
+  /* local variables */
+
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Add and initialize base structure */
+
+  post_mesh = _cs_post_add_mesh(mesh_id);
+
+  /* Create mesh and assign to structure */
+
+  _cs_post_define_mesh(post_mesh,
+                            mesh_name,
+                            n_cells,
+                            n_i_faces,
+                            n_b_faces,
+                            cell_list,
+                            i_face_list,
+                            b_face_list);
+}
+
+/*----------------------------------------------------------------------------
+ * Create a post-processing mesh associated with an existing exportable mesh
+ * representation.
+ *
+ * If the exportable mesh is not intended to be used elsewhere, one can choose
+ * to transfer its property to the post-processing mesh, which will then
+ * manage its lifecycle based on its own requirements.
+ *
+ * If the exportable mesh must still be shared, one must be careful to
+ * maintain consistency between this mesh and the post-processing output.
+ *
+ * parameters:
+ *   mesh_id  <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   exp_mesh <-- mesh in exportable representation (i.e. fvm_nodal_t)
+ *   transfer <-- if true, ownership of exp_mesh is transferred to the
+ *                post-processing mesh
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_existing_mesh(int           mesh_id,
+                          fvm_nodal_t  *exp_mesh,
+                          cs_bool_t     transfer)
+{
+  /* local variables */
+
+  int       i;
+  int       glob_flag[3];
+  cs_int_t  dec_num_fbr, ind_fac;
+
+  int    loc_flag[3] = {1, 1, 1};  /* Flags 0 to 2 "inverted" compared
+                                      to others so as to use a single
+                                      call to
+                                      MPI_Allreduce(..., MPI_MIN, ...) */
+
+  int         dim_ent = 0;
+  cs_bool_t   maj_ent_flag = false;
+  fvm_lnum_t  n_elts = 0;
+
+  fvm_lnum_t      *num_ent_parent = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Initialization of base structure */
+
+  post_mesh = _cs_post_add_mesh(mesh_id);
+
+  /* Assign mesh to structure */
+
+  post_mesh->exp_mesh = exp_mesh;
+
+  if (transfer == true)
+    post_mesh->_exp_mesh = exp_mesh;
+
+  /* Compute number of cells and/or faces */
+
+  dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+  n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+
+  if (dim_ent == 3 && n_elts > 0)
+    loc_flag[0] = 0;
+
+  else if (dim_ent == 2 && n_elts > 0) {
+
+    BFT_MALLOC(num_ent_parent, n_elts, cs_int_t);
+
+    fvm_nodal_get_parent_num(exp_mesh, dim_ent, num_ent_parent);
+
+    dec_num_fbr = cs_glob_mesh->n_b_faces;
+    for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+      if (num_ent_parent[ind_fac] > dec_num_fbr)
+        post_mesh->n_i_faces += 1;
+      else
+        post_mesh->n_b_faces += 1;
+    }
+
+    BFT_FREE(num_ent_parent);
+
+    if (post_mesh->n_i_faces > 0)
+      loc_flag[1] = 0;
+    else if (post_mesh->n_b_faces > 0)
+      loc_flag[2] = 0;
+
+  }
+
+  for (i = 0; i < 3; i++)
+    glob_flag[i] = loc_flag[i];
+
+#if defined(_CS_HAVE_MPI)
+  if (cs_glob_base_nbr > 1)
+    MPI_Allreduce (loc_flag, glob_flag, 3, MPI_INT, MPI_MIN,
+                   cs_glob_base_mpi_comm);
+#endif
+
+  /* Global indicators of mesh entity type presence;
+     updated only if the mesh is not totally empty (for time-depending
+     meshes, empty at certain times, we want to know the last type
+     of entity used in USMPST) */
+
+  for (i = 0; i < 3; i++) {
+    if (glob_flag[i] == 0)
+      maj_ent_flag = true;
+  }
+
+  if (maj_ent_flag == true) {
+    for (i = 0; i < 3; i++) {
+      if (glob_flag[i] == 0)         /* Inverted glob_flag 0 to 2 logic */
+        post_mesh->ent_flag[i] = 1;  /* (c.f. remark above) */
+      else
+        post_mesh->ent_flag[i] = 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Create an alias to a post-processing mesh.
+ *
+ * An alias allows association of an extra identifier (number) to an
+ * existing post-processing mesh, and thus to associate different writers
+ * than those associated with the existing mesh. For example, this allows
+ * outputting a set of main variables every n1 time steps with one writer,
+ * and outputting a specific set of variables every n2 time time steps to
+ * another post-processing set using another writer, without the overhead
+ * that would be incurred by duplication of the post-processing mesh.
+ *
+ * An alias is thus treated in all points like its associated mesh;
+ * if the definition of either one is modified, that of the other is
+ * modified also.
+ *
+ * It is forbidden to associate an alias to another alias (as there is no
+ * identified use for this, and it would make consistency checking more
+ * difficult), but multiple aliases may be associated with a given mesh.
+ *
+ * parameters:
+ *   alias_id <-- number of alias to create (< 0 reserved, > 0 for user)
+ *   mesh_id  <-- id of associated mesh
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_alias_mesh(int  alias_id,
+                   int  mesh_id)
+{
+  /* local variables */
+
+  int    indref, j;
+
+  cs_post_mesh_t  *post_mesh = NULL;
+  cs_post_mesh_t  *ref_mesh = NULL;
+
+  /* Initial checks */
+
+  indref = _cs_post_mesh_id(mesh_id);
+  ref_mesh = _cs_post_meshes + indref;
+
+  if (ref_mesh->alias > -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The mesh %d cannot be an alias of mesh %d,\n"
+                "which is itself an alias of mesh %d.\n"),
+              (int)alias_id, (int)mesh_id,
+              (int)((_cs_post_meshes + ref_mesh->alias)->id));
+
+  /* Initialize base structure */
+
+  post_mesh = _cs_post_add_mesh(alias_id);
+
+  /* Update ref_mesh, as the adress of _cs_post_meshes may
+     have been changed by reallocation */
+
+  ref_mesh = _cs_post_meshes + indref;
+
+  /* Links to the reference mesh */
+
+  post_mesh->alias = indref;
+
+  post_mesh->exp_mesh = ref_mesh->exp_mesh;
+
+  post_mesh->mod_flag_min = ref_mesh->mod_flag_min;
+  post_mesh->mod_flag_max = ref_mesh->mod_flag_max;
+
+  for (j = 0; j < 3; j++)
+    post_mesh->ent_flag[j] = ref_mesh->ent_flag[j];
+
+  post_mesh->n_i_faces = ref_mesh->n_i_faces;
+  post_mesh->n_b_faces = ref_mesh->n_b_faces;
+}
+
+/*----------------------------------------------------------------------------
+ * Check for the existence of a writer of the given id.
+ *
+ * parameters:
+ *   writer_id <-- writer id to check
+ *
+ * returns:
+ *   true if writer with this id exists, false otherwise
+ *----------------------------------------------------------------------------*/
+
+cs_bool_t
+cs_post_writer_exists(int  writer_id)
+{
+  /* local variables */
+
+  int id;
+  cs_post_writer_t  *writer = NULL;
+
+  /* Search for requested mesh */
+
+  for (id = 0; id < _cs_post_n_writers; id++) {
+    writer = _cs_post_writers + id;
+    if (writer->id == writer_id)
+      return true;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------
+ * Check for the existence of a post-processing mesh of the given id.
+ *
+ * parameters:
+ *   mesh_id <-- mesh id to check
+ *
+ * returns:
+ *   true if mesh with this id exists, false otherwise
+ *----------------------------------------------------------------------------*/
+
+cs_bool_t
+cs_post_mesh_exists(int  mesh_id)
+{
+  int id;
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Search for requested mesh */
+
+  for (id = 0; id < _cs_post_n_meshes; id++) {
+    post_mesh = _cs_post_meshes + id;
+    if (post_mesh->id == mesh_id)
+      return true;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------
+ * Modify an existing post-processing mesh.
+ *
+ * The lists of cells or faces are redefined, for example to update an
+ * extracted mesh based in "interesting" zones.
+ *
+ * It is not necessary to use this function if a mesh is simply deformed.
+ *
+ * parameters:
+ *   mesh_id     <-- id of mesh to modify (< 0 reserved, > 0 for user)
+ *   n_cells     <-- number of associated cells
+ *   n_i_faces   <-- number of associated interior faces
+ *   n_b_faces   <-- number of associated boundary faces
+ *   cell_list   <-- list of associated cells
+ *   i_face_list <-- list of associated interior faces
+ *   b_face_list <-- list of associated boundary faces
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_modify_mesh(int       mesh_id,
+                    cs_int_t  n_cells,
+                    cs_int_t  n_i_faces,
+                    cs_int_t  n_b_faces,
+                    cs_int_t  cell_list[],
+                    cs_int_t  i_face_list[],
+                    cs_int_t  b_face_list[])
+{
+  /* local variables */
+
+  int i, _mesh_id;
+  char  *mesh_name = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
+  cs_post_writer_t    *writer = NULL;
+
+  /* Get base structure (return if we do not own the mesh) */
+
+  _mesh_id = _cs_post_mesh_id(mesh_id);
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  if (post_mesh->_exp_mesh == NULL)
+    return;
+
+  /* Remplace base structure */
+
+  BFT_MALLOC(mesh_name,
+             strlen(fvm_nodal_get_name(post_mesh->exp_mesh)) + 1,
+             char);
+  strcpy(mesh_name, fvm_nodal_get_name(post_mesh->exp_mesh));
+
+  fvm_nodal_destroy(post_mesh->_exp_mesh);
+  post_mesh->exp_mesh = NULL;
+
+  _cs_post_define_mesh(post_mesh,
+                       mesh_name,
+                       n_cells,
+                       n_i_faces,
+                       n_b_faces,
+                       cell_list,
+                       i_face_list,
+                       b_face_list);
+
+  BFT_FREE(mesh_name);
+
+  /* Update possible aliases */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    if ((_cs_post_meshes + i)->alias == _mesh_id)
+      (_cs_post_meshes + i)->exp_mesh
+        = post_mesh->exp_mesh;
+  }
+
+  /* Divide polygons or polyhedra into simple elements */
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+
+    writer = _cs_post_writers + post_mesh->writer_id[i];
+    _cs_post_divide_poly(post_mesh, writer);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the next "reservable" (i.e. non-user) mesh id available.
+ *
+ * Returns:
+ *   the smallest negative integer present, -1
+ *----------------------------------------------------------------------------*/
+
+int
+cs_post_get_free_mesh_id(void)
+{
+  return (_cs_post_min_mesh_id - 1);
+}
+
+/*----------------------------------------------------------------------------
+ * Associate a writer with a post-processing mesh.
+ *
+ * parameters:
+ *   mesh_id   <-- id of associated mesh
+ *   writer_id <-- id of associated writer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_associate(int  mesh_id,
+                  int  writer_id)
+{
+  int  i;
+  int  _mesh_id, _writer_id;
+  fvm_writer_time_dep_t mod_flag;
+
+  cs_post_mesh_t  *post_mesh = NULL;
+  cs_post_writer_t  *writer = NULL;
+
+  /* Search for requested mesh and writer */
+
+  _mesh_id = _cs_post_mesh_id(mesh_id);
+  _writer_id = _cs_post_writer_id(writer_id);
+
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  /* Check that the writer is not already associated */
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+    if (post_mesh->writer_id[i] == _writer_id)
+      break;
+  }
+
+  /* If the writer is not already associated, associate it */
+
+  if (i >= post_mesh->n_writers) {
+
+    post_mesh->n_writers += 1;
+    BFT_REALLOC(post_mesh->writer_id,
+                post_mesh->n_writers,
+                cs_int_t);
+
+    post_mesh->writer_id[post_mesh->n_writers - 1] = _writer_id;
+    post_mesh->nt_last = - 1;
+
+    /* Update structure */
+
+    writer = _cs_post_writers + _writer_id;
+    mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+    if (mod_flag < post_mesh->mod_flag_min)
+      post_mesh->mod_flag_min = mod_flag;
+    if (mod_flag > post_mesh->mod_flag_max)
+      post_mesh->mod_flag_max = mod_flag;
+
+    _cs_post_mod_flag_alias(_mesh_id);
+
+    /* If we must compute the vertices displacement field, we need
+       to save the initial vertex coordinates */
+
+    if (   _cs_post_deformable == false
+        && _cs_post_ini_vtx_coo == NULL
+        && writer->write_displ == true) {
+
+      cs_mesh_t *maillage = cs_glob_mesh;
+
+      if (maillage->n_vertices > 0) {
+        BFT_MALLOC(_cs_post_ini_vtx_coo,
+                   maillage->n_vertices * 3,
+                   cs_real_t);
+        memcpy(_cs_post_ini_vtx_coo,
+               maillage->vtx_coord,
+               maillage->n_vertices * 3 * sizeof(cs_real_t));
+      }
+
+      _cs_post_deformable = true;
+
+    }
+
+    /* Divide polygons or polyhedra into simple elements */
+
+    _cs_post_divide_poly(post_mesh, writer);
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Update "active" or "inactive" flag of writers whose output frequency
+ * is a divisor of the current time step number.
+ *
+ * parameters:
+ *   nt_cur_abs <-- current time step number
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_activate_if_default(int  nt_cur_abs)
+{
+  int  i;
+  cs_post_writer_t  *writer;
+
+  for (i = 0; i < _cs_post_n_writers; i++) {
+
+    writer = _cs_post_writers + i;
+
+    if (writer->frequency > 0) {
+      if (nt_cur_abs % (writer->frequency) == 0)
+        writer->active = 1;
+      else
+        writer->active = 0;
+    }
+    else
+      writer->active = 0;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Force the "active" or "inactive" flag for a specific writer or for all
+ * writers for the current time step.
+ *
+ * parameters:
+ *   writer_id <-- writer id, or 0 for all writers
+ *   activate  <-- 0 to deactivate, 1 to activate
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_activate_writer(int  writer_id,
+                        int  activate)
+{
+  int i;
+  cs_post_writer_t  *writer;
+
+  if (writer_id != 0) {
+    i = _cs_post_writer_id(writer_id);
+    writer = _cs_post_writers + i;
+    writer->active = (activate > 0) ? 1 : 0;
+  }
+  else {
+    for (i = 0; i < _cs_post_n_writers; i++) {
+      writer = _cs_post_writers + i;
+      writer->active = (activate > 0) ? 1 : 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to the FVM library writer associated to a writer_id.
+ *
+ * parameters:
+ *   writer_id <-- associated writer id
+ *
+ * Returns:
+ *  a pointer to a fvm_writer_t structure
+ *----------------------------------------------------------------------------*/
+
+fvm_writer_t *
+cs_post_get_writer(cs_int_t  writer_id)
+{
+  int  id;
+  const cs_post_writer_t  *writer = NULL;
+
+  id = _cs_post_writer_id(writer_id);
+  writer = _cs_post_writers + id;
+
+  return writer->writer;
+}
+
+/*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *
+ * parameters:
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- current physical time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_write_meshes(int     nt_cur_abs,
+                     double  t_cur_abs)
+{
+  int  i;
+  cs_post_mesh_t  *post_mesh;
+
+  /* Loops on meshes and writers */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    _cs_post_write_mesh(post_mesh,
+                        nt_cur_abs,
+                        t_cur_abs);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Output a variable defined at cells or faces of a post-processing mesh
+ * using associated writers.
+ *
+ * parameters:
+ *   mesh_id     <-- id of associated mesh
+ *   var_name    <-- name of variable to output
+ *   var_dim     <-- 1 for scalar, 3 for vector
+ *   interlace   <-- if a vector, true for interlaced values, false otherwise
+ *   use_parent  <-- true if values are defined on "parent" mesh,
+ *                   false if values are defined on post-processing mesh
+ *   var_type    <-- variable's data type
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- current physical time
+ *   cel_vals    <-- cell values
+ *   i_face_vals <-- interior face values
+ *   b_face_vals <-- boundary face values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_write_var(int              mesh_id,
+                  const char      *var_name,
+                  cs_int_t         var_dim,
+                  cs_bool_t        interlace,
+                  cs_bool_t        use_parent,
+                  cs_post_type_t   var_type,
+                  cs_int_t         nt_cur_abs,
+                  cs_real_t        t_cur_abs,
+                  const void      *cel_vals,
+                  const void      *i_face_vals,
+                  const void      *b_face_vals)
+{
+  cs_int_t  i;
+  int       _mesh_id;
+
+
+  fvm_interlace_t      _interlace;
+  fvm_datatype_t       datatype;
+
+  size_t       dec_ptr = 0;
+  int          nbr_listes_parents = 0;
+  fvm_lnum_t   dec_num_parent[2]  = {0, 0};
+  cs_real_t   *var_tmp = NULL;
+  cs_post_mesh_t  *post_mesh = NULL;
+  cs_post_writer_t    *writer = NULL;
+
+  const void  *var_ptr[2*9] = {NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL};
+
+  /* Initializations */
+
+  _mesh_id = _cs_post_mesh_id(mesh_id);
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  if (interlace == true)
+    _interlace = FVM_INTERLACE;
+  else
+    _interlace = FVM_NO_INTERLACE;
+
+  datatype =  _cs_post_cnv_datatype(var_type);
+
+  /* Assign appropriate array to FVM for output */
+
+  /* Case of cells */
+  /*---------------*/
+
+  if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] == 1) {
+
+    if (use_parent == true) {
+      nbr_listes_parents = 1;
+      dec_num_parent[0] = 0;
+    }
+    else
+      nbr_listes_parents = 0;
+
+    var_ptr[0] = cel_vals;
+    if (interlace == false) {
+      if (use_parent == true)
+        dec_ptr = cs_glob_mesh->n_cells_with_ghosts;
+      else
+        dec_ptr = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 3);
+      dec_ptr *= fvm_datatype_size[datatype];
+      for (i = 1; i < var_dim; i++)
+        var_ptr[i] = ((const char *)cel_vals) + i*dec_ptr;
+    }
+  }
+
+  /* Case of faces */
+  /*---------------*/
+
+  else if (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1
+           || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
+
+    /* In case of indirection, all that is necessary is to set pointers */
+
+    if (use_parent == true) {
+
+      nbr_listes_parents = 2;
+      dec_num_parent[0] = 0;
+      dec_num_parent[1] = cs_glob_mesh->n_b_faces;
+
+      if (post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
+        if (interlace == false) {
+          dec_ptr = cs_glob_mesh->n_b_faces * fvm_datatype_size[datatype];
+          for (i = 0; i < var_dim; i++)
+            var_ptr[i] = ((const char *)b_face_vals) + i*dec_ptr;
+        }
+        else
+          var_ptr[0] = b_face_vals;
+      }
+
+      if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
+        if (interlace == false) {
+          dec_ptr = cs_glob_mesh->n_i_faces * fvm_datatype_size[datatype];
+          for (i = 0; i < var_dim; i++)
+            var_ptr[var_dim + i] = ((const char *)i_face_vals) + i*dec_ptr;
+        }
+        else
+          var_ptr[1] = i_face_vals;
+      }
+
+    }
+
+    /* With no indirection, we must switch to a variable defined on two
+       lists of faces to a variable defined on one list */
+
+    else {
+
+      nbr_listes_parents = 0;
+
+      if (post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
+
+        /* Case where a variable is defined both on boundary and
+           interior faces: we must switch to a single list, as
+           indirection is not used */
+
+        if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
+
+          BFT_MALLOC(var_tmp,
+                     (   post_mesh->n_i_faces
+                      +  post_mesh->n_b_faces) * var_dim,
+                     cs_real_t);
+
+          _cs_post_assmb_var_faces(post_mesh->exp_mesh,
+                                   post_mesh->n_i_faces,
+                                   post_mesh->n_b_faces,
+                                   var_dim,
+                                   _interlace,
+                                   i_face_vals,
+                                   b_face_vals,
+                                   var_tmp);
+
+          _interlace = FVM_NO_INTERLACE;
+
+          dec_ptr = fvm_datatype_size[datatype] * (  post_mesh->n_i_faces
+                                                   + post_mesh->n_b_faces);
+
+          for (i = 0; i < var_dim; i++)
+            var_ptr[i] = ((char *)var_tmp) + i*dec_ptr;
+
+        }
+
+        /* Case where we only have boundary faces */
+
+        else {
+
+          if (interlace == false) {
+            dec_ptr = fvm_datatype_size[datatype] * post_mesh->n_b_faces;
+            for (i = 0; i < var_dim; i++)
+              var_ptr[i] = ((const char *)b_face_vals) + i*dec_ptr;
+          }
+          else
+            var_ptr[0] = b_face_vals;
+        }
+
+      }
+
+      /* Case where we only have interior faces */
+
+      else if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
+
+        if (interlace == false) {
+          dec_ptr = fvm_datatype_size[datatype] * post_mesh->n_i_faces;
+          for (i = 0; i < var_dim; i++)
+            var_ptr[i] = ((const char *)i_face_vals) + i*dec_ptr;
+        }
+        else
+          var_ptr[0] = i_face_vals;
+      }
+
+    }
+
+  }
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+
+    writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->active == 1)
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_ELEMENT,
+                              var_dim,
+                              _interlace,
+                              nbr_listes_parents,
+                              dec_num_parent,
+                              datatype,
+                              (int)nt_cur_abs,
+                              (double)t_cur_abs,
+                              (const void * *)var_ptr);
+
+  }
+
+  /* Free memory (if both interior and boundary faces present) */
+
+  if (var_tmp != NULL)
+    BFT_FREE(var_tmp);
+}
+
+/*----------------------------------------------------------------------------
+ * Output a variable defined at vertices of a post-processing mesh using
+ * associated writers.
+ *
+ * parameters:
+ *   mesh_id     <-- id of associated mesh
+ *   var_name    <-- name of variable to output
+ *   var_dim     <-- 1 for scalar, 3 for vector
+ *   interlace   <-- if a vector, true for interlaced values, false otherwise
+ *   use_parent  <-- true if values are defined on "parent" mesh,
+ *                   false if values are defined on post-processing mesh
+ *   var_type    <-- variable's data type
+ *   nt_cur_abs  <-- current time step number
+ *   t_cur_abs   <-- current physical time
+ *   vtx_vals    <-- vertex values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_write_vertex_var(int              mesh_id,
+                         const char      *var_name,
+                         cs_int_t         var_dim,
+                         cs_bool_t        interlace,
+                         cs_bool_t        use_parent,
+                         cs_post_type_t   var_type,
+                         cs_int_t         nt_cur_abs,
+                         cs_real_t        t_cur_abs,
+                         const void      *vtx_vals)
+{
+  cs_int_t  i;
+  int       _mesh_id;
+
+
+  cs_post_mesh_t  *post_mesh;
+  cs_post_writer_t    *writer;
+  fvm_interlace_t      _interlace;
+  fvm_datatype_t       datatype;
+
+  size_t       dec_ptr = 0;
+  int          nbr_listes_parents = 0;
+  fvm_lnum_t   dec_num_parent[1]  = {0};
+
+  const void  *var_ptr[9] = {NULL, NULL, NULL,
+                             NULL, NULL, NULL,
+                             NULL, NULL, NULL};
+
+  /* Initializations */
+
+  _mesh_id = _cs_post_mesh_id(mesh_id);
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  if (interlace == true)
+    _interlace = FVM_INTERLACE;
+  else
+    _interlace = FVM_NO_INTERLACE;
+
+  assert(   sizeof(cs_real_t) == sizeof(double)
+         || sizeof(cs_real_t) == sizeof(float));
+
+  datatype =  _cs_post_cnv_datatype(var_type);
+
+  /* Assign appropriate array to FVM for output */
+
+  if (use_parent == true)
+    nbr_listes_parents = 1;
+  else
+    nbr_listes_parents = 0;
+
+  var_ptr[0] = vtx_vals;
+  if (interlace == false) {
+    if (use_parent == true)
+      dec_ptr = cs_glob_mesh->n_vertices;
+    else
+      dec_ptr =   fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0)
+                * fvm_datatype_size[datatype];
+    for (i = 1; i < var_dim; i++)
+      var_ptr[i] = ((const char *)vtx_vals) + i*dec_ptr;
+  }
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+
+    writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->active == 1)
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_NODE,
+                              var_dim,
+                              _interlace,
+                              nbr_listes_parents,
+                              dec_num_parent,
+                              datatype,
+                              (int)nt_cur_abs,
+                              (double)t_cur_abs,
+                              (const void * *)var_ptr);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Update references to parent mesh of post-processing meshes in case of
+ * computational mesh cell renumbering.
+ *
+ * This function may be called only once, after possible renumbering of cells,
+ * to update existing post-processing meshes. Post-processing meshes defined
+ * after renumbering will automatically be based upon the new numbering,
+ * so this function will not need to be called again.
+ *
+ * parameters:
+ *   init_cell_num <-- initial cell numbering (1 to n, new -> old)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_renum_cells(const cs_int_t  init_cell_num[])
+{
+  int       i;
+  cs_int_t  icel;
+  cs_int_t  n_elts;
+
+  cs_int_t  *renum_ent_parent = NULL;
+
+  cs_bool_t  a_traiter = false;
+
+  cs_post_mesh_t   *post_mesh;
+  const cs_mesh_t  *maillage = cs_glob_mesh;
+
+  if (init_cell_num == NULL)
+    return;
+
+  /* Loop on meshes */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] > 0)
+      a_traiter = true;
+  }
+
+  if (a_traiter == true) {
+
+    /* Prepare renumbering */
+
+    n_elts = maillage->n_cells;
+
+    BFT_MALLOC(renum_ent_parent, n_elts, cs_int_t);
+
+    for (icel = 0; icel < maillage->n_cells; icel++)
+      renum_ent_parent[init_cell_num[icel] - 1] = icel + 1;
+
+    /* Effective modification */
+
+    for (i = 0; i < _cs_post_n_meshes; i++) {
+
+      post_mesh = _cs_post_meshes + i;
+
+      if (   post_mesh->_exp_mesh != NULL
+          && post_mesh->ent_flag[CS_POST_LOCATION_CELL] > 0) {
+
+        fvm_nodal_change_parent_num(post_mesh->_exp_mesh,
+                                    renum_ent_parent,
+                                    3);
+
+      }
+
+    }
+
+    BFT_FREE(renum_ent_parent);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Update references to parent mesh of post-processing meshes in case of
+ * computational mesh interior and/or boundary faces renumbering.
+ *
+ * This function may be called only once, after possible renumbering of faces,
+ * to update existing post-processing meshes. Post-processing meshes defined
+ * after renumbering will automatically be based upon the new numbering,
+ * so this function will not need to be called again.
+ *
+ * parameters:
+ *   init_i_face_num <-- initial interior numbering (1 to n, new -> old)
+ *   init_b_face_num <-- initial boundary numbering (1 to n, new -> old)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_renum_faces(const cs_int_t  init_i_face_num[],
+                    const cs_int_t  init_b_face_num[])
+{
+  int       i;
+  cs_int_t  ifac;
+  cs_int_t  n_elts;
+
+  cs_int_t  *renum_ent_parent = NULL;
+
+  cs_bool_t  a_traiter = false;
+
+  cs_post_mesh_t   *post_mesh;
+  const cs_mesh_t  *maillage = cs_glob_mesh;
+
+  /* Loop on meshes */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+
+    if (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] > 0
+        || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] > 0) {
+      a_traiter = true;
+    }
+
+  }
+
+  if (a_traiter == true) {
+
+    /* Prepare renumbering */
+
+    n_elts = maillage->n_i_faces + maillage->n_b_faces;
+
+    BFT_MALLOC(renum_ent_parent, n_elts, cs_int_t);
+
+    if (init_b_face_num == NULL) {
+      for (ifac = 0; ifac < maillage->n_b_faces; ifac++)
+        renum_ent_parent[ifac] = ifac + 1;
+    }
+    else {
+      for (ifac = 0; ifac < maillage->n_b_faces; ifac++)
+        renum_ent_parent[init_b_face_num[ifac] - 1] = ifac + 1;
+    }
+
+    if (init_i_face_num == NULL) {
+      for (ifac = 0, i = maillage->n_b_faces;
+           ifac < maillage->n_i_faces;
+           ifac++, i++)
+        renum_ent_parent[maillage->n_b_faces + ifac]
+          = maillage->n_b_faces + ifac + 1;
+    }
+    else {
+      for (ifac = 0, i = maillage->n_b_faces;
+           ifac < maillage->n_i_faces;
+           ifac++, i++)
+        renum_ent_parent[maillage->n_b_faces + init_i_face_num[ifac] - 1]
+          = maillage->n_b_faces + ifac + 1;
+    }
+
+    /* Effective modification */
+
+    for (i = 0; i < _cs_post_n_meshes; i++) {
+
+      post_mesh = _cs_post_meshes + i;
+
+      if (   post_mesh->_exp_mesh != NULL
+          && (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] > 0
+              || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] > 0)) {
+
+        fvm_nodal_change_parent_num(post_mesh->_exp_mesh,
+                                    renum_ent_parent,
+                                    2);
+
+      }
+
+    }
+
+    BFT_FREE(renum_ent_parent);
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy all structures associated with post-processing
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_finalize(void)
+{
+  int i;
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Timings */
+
+  for (i = 0; i < _cs_post_n_writers; i++) {
+    double m_wtime = 0.0, m_cpu_time = 0.0, c_wtime = 0.0, c_cpu_time = 0.;
+    fvm_writer_get_times((_cs_post_writers + i)->writer,
+                         &m_wtime, &m_cpu_time, &c_wtime, &c_cpu_time);
+    bft_printf(_("\n"
+                 "Writing of \"%s\" (%s) summary:\n"
+                 "\n"
+                 "  CPU time for meshes:              %12.3f\n"
+                 "  CPU time for variables:           %12.3f\n"
+                 "\n"
+                 "  Elapsed time for meshes:          %12.3f\n"
+                 "  Elapsed time for variables:       %12.3f\n"),
+               fvm_writer_get_name((_cs_post_writers + i)->writer),
+               fvm_writer_get_format((_cs_post_writers + i)->writer),
+               m_cpu_time, c_cpu_time, m_wtime, c_wtime);
+  }
+
+  /* Initial coordinates (if mesh is deformable) */
+
+  if (_cs_post_ini_vtx_coo != NULL)
+    BFT_FREE(_cs_post_ini_vtx_coo);
+
+  /* Exportable meshes */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    post_mesh = _cs_post_meshes + i;
+    if (post_mesh->_exp_mesh != NULL)
+      fvm_nodal_destroy(post_mesh->_exp_mesh);
+    BFT_FREE(post_mesh->writer_id);
+  }
+
+  BFT_FREE(_cs_post_meshes);
+
+  _cs_post_min_mesh_id = -2;
+  _cs_post_n_meshes = 0;
+  _cs_post_n_meshes_max = 0;
+
+  /* Writers */
+
+  for (i = 0; i < _cs_post_n_writers; i++)
+    fvm_writer_finalize((_cs_post_writers + i)->writer);
+
+  BFT_FREE(_cs_post_writers);
+
+  _cs_post_n_writers = 0;
+  _cs_post_n_writers_max = 0;
+
+  /* Registered processings if necessary */
+
+  if (_cs_post_nbr_var_tp_max > 0) {
+    BFT_FREE(_cs_post_f_var_tp);
+    BFT_FREE(_cs_post_i_var_tp);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize main post-processing writer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_init_main_writer(void)
+{
+  /* Default values */
+
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
+  cs_int_t  indic_mod = -1;
+  char  fmtchr[32 + 1] = "";
+  char  optchr[96 + 1] = "";
+  cs_int_t  ntchr = -1;
+
+  const char  nomcas[] = "chr";
+  const char  nomrep_ens[] = "chr.ensight";
+  const char  nomrep_def[] = ".";
+  const char *nomrep = NULL;
+
+  const cs_int_t  writer_id = -1; /* Default (main) writer id */
+
+  /* Get parameters from Fortran COMMON blocks */
+
+  CS_PROCF(inipst, INIPST)(&indic_vol,
+                           &indic_brd,
+                           &indic_syr,
+                           &indic_ze,
+                           &indic_mod,
+                           &ntchr,
+                           fmtchr,
+                           optchr);
+
+  fmtchr[32] = '\0';
+  optchr[96] = '\0';
+
+  if (indic_vol == 0 && indic_brd == 0 && indic_syr == 0)
+    return;
+
+  /* Create default writer */
+
+  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
+    nomrep = nomrep_ens;
+  else
+    nomrep = nomrep_def;
+
+  cs_post_add_writer(writer_id,
+                     nomcas,
+                     nomrep,
+                     fmtchr,
+                     optchr,
+                     indic_mod,
+                     ntchr);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize main post-processing meshes
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_init_main_meshes(void)
+{
+  /* Default values */
+
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
+  cs_int_t  indic_mod = -1;
+  char  fmtchr[32 + 1] = "";
+  char  optchr[96 + 1] = "";
+  cs_int_t  ntchr = -1;
+
+  cs_int_t  mesh_id = -1;
+
+  const cs_int_t  writer_id = -1; /* Default (main) writer id */
+
+  /* Get parameters from Fortran COMMON blocks */
+
+  CS_PROCF(inipst, INIPST)(&indic_vol,
+                           &indic_brd,
+                           &indic_syr,
+                           &indic_ze,
+                           &indic_mod,
+                           &ntchr,
+                           fmtchr,
+                           optchr);
+
+  fmtchr[32] = '\0';
+  optchr[96] = '\0';
+
+  /* Definition of post-processing meshes */
+
+  if (cs_glob_mesh->n_i_faces > 0 || cs_glob_mesh->n_b_faces > 0) {
+
+    /*
+      If the faces -> vertices connectivity is available, we
+      may rebuild the nodal connectivity for post-processing
+      (usual mechanism).
+    */
+
+    if (indic_vol > 0) { /* Volume mesh */
+
+      mesh_id = -1; /* Reserved mesh id */
+
+      cs_post_add_mesh(mesh_id,
+                       _("Fluid volume"),
+                       cs_glob_mesh->n_cells,
+                       0,
+                       0,
+                       NULL,
+                       NULL,
+                       NULL);
+
+      cs_post_associate(mesh_id, writer_id);
+
+    }
+
+    if (indic_brd > 0) { /* Boundary mesh */
+
+      mesh_id = -2;  /* Reserved mesh id */
+
+      cs_post_add_mesh(mesh_id,
+                       _("Boundary"),
+                       0,
+                       0,
+                       cs_glob_mesh->n_b_faces,
+                       NULL,
+                       NULL,
+                       NULL);
+
+      cs_post_associate(mesh_id, writer_id);
+
+    }
+
+  } /* End if cs_glob_mesh->n_i_faces > 0 || cs_glob_mesh->n_b_faces > 0 */
+
+  /*
+    If we do not have the faces -> vertices connectivity, we may not
+    rebuild the nodal connectivity, so we must obtain it through
+    another means.
+
+    This only happens when we have directly read a mesh in the solcom
+    format, in which  the nodal connectivity has already been read and
+    assigned to a post-processing mesh
+    (see LETGEO and cs_maillage_solcom_lit).
+  */
+
+  else if (indic_vol > 0) {
+
+    mesh_id = -1;
+
+    if (cs_post_mesh_exists(mesh_id))
+      cs_post_associate(mesh_id, writer_id);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Register a processing of a time-dependent variable to the call to PSTVAR.
+ *
+ * The instance identifier associated with the function allows registering
+ * the same function several times, with a diferent identifier allowing the
+ * function to select a specific operation or data.
+ *
+ * parameters:
+ *   function    <-- function to register
+ *   instance_id <-- instance id associated with this registration
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_time_dep_var(cs_post_time_dep_var_t  *function,
+                         int                      instance_id)
+{
+  /* Resize array of registered post-processings if necessary */
+
+  if (_cs_post_nbr_var_tp <= _cs_post_nbr_var_tp_max) {
+    if (_cs_post_nbr_var_tp_max == 0)
+      _cs_post_nbr_var_tp_max = 8;
+    else
+      _cs_post_nbr_var_tp_max *= 2;
+    BFT_REALLOC(_cs_post_f_var_tp,
+                _cs_post_nbr_var_tp_max,
+                cs_post_time_dep_var_t *);
+    BFT_REALLOC(_cs_post_i_var_tp, _cs_post_nbr_var_tp_max, cs_int_t);
+  }
+
+  /* Add a post-processing */
+
+  _cs_post_f_var_tp[_cs_post_nbr_var_tp] = function;
+  _cs_post_i_var_tp[_cs_post_nbr_var_tp] = instance_id;
+
+  _cs_post_nbr_var_tp += 1;
+}
 
 /*----------------------------------------------------------------------------*/
 

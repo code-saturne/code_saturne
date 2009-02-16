@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -626,7 +626,7 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
   if (mg == NULL)
     return;
 
-  if (mg->post_cell_num == NULL || cs_post_existe_maillage(-1) != true)
+  if (mg->post_cell_num == NULL || cs_post_mesh_exists(-1) != true)
     return;
 
   /* Allocate name buffer */
@@ -642,7 +642,7 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
     sprintf(var_name, "%s %s %3d %2d",
             name_prefix, base_name, (int)(ii+1), (int)nt_cur_abs);
 
-    cs_post_ecrit_var(-1,
+    cs_post_write_var(-1,
                       var_name,
                       1,
                       false,
@@ -1562,7 +1562,7 @@ void CS_PROCF(clmlga, CLMLGA)
     if (mg->post_cell_max == 0) {
       int mg_id = _multigrid_id(mg);
       if (mg_id > -1)
-        cs_post_ajoute_var_temporelle(_cs_multigrid_post_function, mg_id);
+        cs_post_add_time_dep_var(_cs_multigrid_post_function, mg_id);
       mg->post_cell_max = *ncpost;
     }
 

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -4194,7 +4194,7 @@ void
 cs_ctwr_post_init(cs_int_t  ct_id,
                   cs_int_t  writer_id)
 {
-  cs_int_t  mesh_id = cs_post_ret_num_maillage_libre();
+  cs_int_t  mesh_id = cs_post_get_free_mesh_id();
 
   cs_ctwr_zone_t * ct = cs_ctwr_by_id(ct_id);
 
@@ -4202,7 +4202,7 @@ cs_ctwr_post_init(cs_int_t  ct_id,
 
   /* Exit silently if associated writer is not available */
 
-  if (cs_post_existe_writer(writer_id) != CS_TRUE)
+  if (cs_post_writer_exists(writer_id) != CS_TRUE)
     return;
 
   /* Initialict post processing flag, and free previous arrays in
@@ -4210,21 +4210,17 @@ cs_ctwr_post_init(cs_int_t  ct_id,
 
   ct->post_mesh_id = mesh_id;
 
-
   /* Associate external mesh description with post processing subsystem */
 
-  cs_post_ajoute_maillage_existant(mesh_id,
-                                   ct->water_mesh,
-                                   CS_FALSE);
+  cs_post_add_existing_mesh(mesh_id,
+                            ct->water_mesh,
+                            CS_FALSE);
 
-
-
-  cs_post_associe(mesh_id, writer_id);
+  cs_post_associate(mesh_id, writer_id);
 
   /* Register post processing function */
 
-  cs_post_ajoute_var_temporelle(cs_ctwr_post_function,
-                                ct_id);
+  cs_post_add_time_dep_var(cs_ctwr_post_function, ct_id);
 
   /* Update start and end (negative) numbers associated with
      dedicated post processing meshes */
@@ -4253,8 +4249,8 @@ cs_ctwr_post_function(cs_int_t   ct_id,
 
   if (ct->post_mesh_id != 0) {
 
-    cs_post_ecrit_var(ct->post_mesh_id,
-                      _("T eau"),
+    cs_post_write_var(ct->post_mesh_id,
+                      _("T water"),
                       1,
                       CS_FALSE,
                       CS_FALSE,
@@ -4265,17 +4261,17 @@ cs_ctwr_post_function(cs_int_t   ct_id,
                       NULL,
                       NULL);
 
-    cs_post_ecrit_var(ct->post_mesh_id,
-                       _("Flux eau"),
-                       1,
+    cs_post_write_var(ct->post_mesh_id,
+                      _("Flux water"),
+                      1,
+                      CS_FALSE,
                        CS_FALSE,
-                       CS_FALSE,
-                       CS_POST_TYPE_cs_real_t,
-                       nt_cur_abs,
-                       t_cur_abs,
-                       ct->fem,
+                      CS_POST_TYPE_cs_real_t,
+                      nt_cur_abs,
+                      t_cur_abs,
+                      ct->fem,
                        NULL,
-                       NULL);
+                      NULL);
 
   }
 
