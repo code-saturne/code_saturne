@@ -66,10 +66,8 @@ fi
 #
 # Check the number of nodes if possible
 NUMBER_OF_NODES=1
-if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
-  if [ ! -z  "${MPIHOSTS}" ] ; then
-    NUMBER_OF_NODES=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
-  fi
+if [ ! -z  "${MPIHOSTS}" ] ; then
+  NUMBER_OF_NODES=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
 fi
 #
 if [ ! -z "$MPIHOSTS" ] ; then
