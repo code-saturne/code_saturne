@@ -85,7 +85,7 @@ struct par1d
  *============================================================================*/
 
 static struct par1d *cs_glob_par1d = NULL;
-static cs_suite_t   *cs_glob_tpar1d_suite = NULL;
+static cs_restart_t *cs_glob_tpar1d_suite = NULL;
 
 
 /*============================================================================
@@ -146,16 +146,16 @@ cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_tpar1d_opnsuite(const char            *nomsui,
-                       const cs_int_t        *lngnom,
-                       const cs_suite_mode_t  ireawr)
+cs_loc_tpar1d_opnsuite(const char              *nomsui,
+                       const cs_int_t          *lngnom,
+                       const cs_restart_mode_t  ireawr)
 {
   char            *nombuf;
 
   /* Name treatment for the C API */
   nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
 
-  cs_glob_tpar1d_suite = cs_suite_cree(nombuf, ireawr);
+  cs_glob_tpar1d_suite = cs_restart_create(nombuf, ireawr);
 
   /* Free the memory if necessary */
   cs_base_string_f_to_c_free(&nombuf);
@@ -422,19 +422,17 @@ void CS_PROCF (lect1d,LECT1D)
   cs_int_t            i, j, ifac, indfac, ierror;
   cs_int_t            version;    /* Not used at the moment */
 
-  cs_suite_t          *suite;
-  cs_suite_mode_t     suite_mode;
-  cs_suite_support_t  support;
-  cs_type_t           typ_val;
+  cs_restart_t         *suite;
+  cs_restart_location_t support;
+  cs_type_t             typ_val;
 
 
-  ierror = CS_SUITE_SUCCES;
-  suite_mode = CS_SUITE_MODE_LECTURE;
+  ierror = CS_RESTART_SUCCES;
 
   /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
-                         suite_mode);
+                         CS_RESTART_MODE_READ);
 
   if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -448,8 +446,8 @@ void CS_PROCF (lect1d,LECT1D)
   suite = cs_glob_tpar1d_suite;
 
   /* Verification of the associated "support" to the restart file */
-  cs_suite_verif_support_base(suite, &corresp_cel, &corresp_fac,
-                              &corresp_fbr, &corresp_som);
+  cs_restart_check_base_location(suite, &corresp_cel, &corresp_fac,
+                                 &corresp_fbr, &corresp_som);
 
   /* Only boundary faces are of interest */
   indfac = (corresp_fbr == true ? 1 : 0);
@@ -468,17 +466,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, 1, cs_int_t);
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_SCAL;
+    support = CS_RESTART_LOCATION_NONE;
     typ_val = CS_TYPE_cs_int_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES)
+    if (ierror < CS_RESTART_SUCCES)
       bft_error(__FILE__, __LINE__, 0,
                 _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                   "********               1D-WALL THERMAL MODULE\n"
@@ -507,17 +505,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_int_t);
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_int_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES)
+    if (ierror < CS_RESTART_SUCCES)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -582,7 +580,7 @@ void CS_PROCF (lect1d,LECT1D)
 
     /* Allocate the cs_glob_par1d structure */
 
-    cs_loc_tpar1d_cree (*nfpt1d, nppt1d);
+    cs_loc_tpar1d_cree(*nfpt1d, nppt1d);
 
     BFT_FREE(tabvar);
   }
@@ -595,17 +593,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES)
+    if (ierror < CS_RESTART_SUCCES)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -649,17 +647,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES)
+    if (ierror < CS_RESTART_SUCCES)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -685,17 +683,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
     nbvent  = *nmxt1d;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES)
+    if (ierror < CS_RESTART_SUCCES)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -750,17 +748,17 @@ void CS_PROCF (lect1d,LECT1D)
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
     nbvent  = *nmxt1d;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
-    ierror = cs_suite_lit_rub(suite,
-                              nomrub,
-                              support,
-                              nbvent,
-                              typ_val,
-                              tabvar);
+    ierror = cs_restart_read_section(suite,
+                                     nomrub,
+                                     support,
+                                     nbvent,
+                                     typ_val,
+                                     tabvar);
 
-    if (ierror < CS_SUITE_SUCCES) {
+    if (ierror < CS_RESTART_SUCCES) {
       cs_base_warn(__FILE__,__LINE__);
       bft_printf(_("Problem while reading the section in the restart file\n"
                    "for the 1D-wall thermal module:\n"
@@ -781,7 +779,7 @@ void CS_PROCF (lect1d,LECT1D)
   }
 
   /* Close the restart file and free structures */
-  cs_suite_detruit(cs_glob_tpar1d_suite);
+  cs_restart_destroy(cs_glob_tpar1d_suite);
   cs_glob_tpar1d_suite = NULL;
 }
 
@@ -817,19 +815,17 @@ void CS_PROCF (ecrt1d,ECRT1D)
   cs_int_t            nbvent, ierror;
   cs_int_t            i, j, ifac;
 
-  cs_suite_t          *suite;
-  cs_suite_support_t  support;
-  cs_suite_mode_t     suite_mode;
-  cs_type_t           typ_val;
+  cs_restart_t         *suite;
+  cs_restart_location_t support;
+  cs_type_t             typ_val;
 
 
-  ierror = CS_SUITE_SUCCES;
-  suite_mode = CS_SUITE_MODE_ECRITURE;
+  ierror = CS_RESTART_SUCCES;
 
   /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
                          lngnom,
-                         suite_mode);
+                         CS_RESTART_MODE_WRITE);
 
   if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -851,15 +847,15 @@ void CS_PROCF (ecrt1d,ECRT1D)
     *tabvar = 120;
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_SCAL;
+    support = CS_RESTART_LOCATION_NONE;
     typ_val = CS_TYPE_cs_int_t;
 
-    cs_suite_ecr_rub(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+    cs_restart_write_section(suite,
+                             nomrub,
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -874,7 +870,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0;
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_int_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -882,12 +878,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
             tabvar[ifac] = cs_glob_par1d[i].n;
           }
 
-    cs_suite_ecr_rub(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+    cs_restart_write_section(suite,
+                             nomrub,
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -902,7 +898,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -910,7 +906,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
             tabvar[ifac] = cs_glob_par1d[i].e;
           }
 
-    cs_suite_ecr_rub(suite,
+    cs_restart_write_section(suite,
                      nomrub,
                      support,
                      nbvent,
@@ -930,7 +926,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = 1;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -938,12 +934,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[ifac] = tppt1d[i];
     }
 
-    cs_suite_ecr_rub(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+    cs_restart_write_section(suite,
+                             nomrub,
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -960,7 +956,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -973,12 +969,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
         tabvar[j + (*nmxt1d)*ifac] = cs_glob_par1d[i].z[j];
     }
 
-    cs_suite_ecr_rub(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+    cs_restart_write_section(suite,
+                             nomrub,
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
@@ -995,7 +991,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
       tabvar[i] = 0.0;
 
     nbvent  = *nmxt1d;
-    support = CS_SUITE_SUPPORT_FAC_BRD;
+    support = CS_RESTART_LOCATION_B_FACE;
     typ_val = CS_TYPE_cs_real_t;
 
     for (i = 0; i < *nfpt1d; i++) {
@@ -1009,18 +1005,18 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
     }
 
-    cs_suite_ecr_rub(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+    cs_restart_write_section(suite,
+                             nomrub,
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
 
   /* Close the restart file and free structures */
-  cs_suite_detruit(cs_glob_tpar1d_suite);
+  cs_restart_destroy(cs_glob_tpar1d_suite);
   cs_glob_tpar1d_suite = NULL;
 
 }

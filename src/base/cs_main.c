@@ -215,10 +215,6 @@ main(int    argc,
 #endif
   }
 
-  /* Allocate internal structures for restart files Fortran 77 API */
-
-  cs_suite_f77_api_init();
-
   /* Call main calculation initialization function or help */
 
   _verif = opts.iverif;
@@ -464,10 +460,6 @@ main(int    argc,
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
-  /* Free internal structures for restart files Fortran 77 API */
-
-  cs_suite_f77_api_finalize();
-
   /* Free coupling-related data */
 
   cs_syr_coupling_all_finalize();
@@ -494,6 +486,8 @@ main(int    argc,
   cs_proxy_comm_finalize();
 
   /* CPU times and memory management finalization */
+
+  cs_restart_print_stats();
 
   cs_base_bilan_temps();
   cs_base_mem_fin();
