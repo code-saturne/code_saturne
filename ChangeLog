@@ -1,3 +1,8 @@
+* 16/02/2009 - David Monfort <david.monfort@edf.fr>
+  Wrong commit for cs_suite.c
+  modified routine:
+    src/base/cs_suite.c
+
 * 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   English translation of the restart files management.
   Also add a basic timer for the restart files process.
