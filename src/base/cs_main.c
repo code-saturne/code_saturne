@@ -184,6 +184,8 @@ main(int    argc,
     BFT_FREE(opts.proxy_socket);
     opts.proxy_key = -1;
     cs_calcium_set_comm_proxy();
+    /* For verbose output, uncomment the following */
+    /*cs_calcium_set_verbosity(3);*/
   }
 
   /* System information */

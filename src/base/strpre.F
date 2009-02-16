@@ -245,84 +245,105 @@ C   par Newmark)
 C Lors des iterations suivantes (ITRALE>0) on utilise les schemas standard
 C   de calcul de XSTP
 C
-      IF (ITRALE.EQ.0) THEN
+      IF (NBSTRU.GT.0) THEN
 C
-        DO ISTR = 1, NBSTRU
-          DO II = 1, NDIM
-            XSTR(II,ISTR) = XSTP(II,ISTR)
+        IF (ITRALE.EQ.0) THEN
+C
+          DO ISTR = 1, NBSTRU
+            DO II = 1, NDIM
+              XSTR(II,ISTR) = XSTP(II,ISTR)
+            ENDDO
           ENDDO
-        ENDDO
 C
-      ELSE
+        ELSE
 C
 C 2.1.1 : SCHEMA DE COUPLAGE EXPLICITE
 C-------------------------------------
-        IF (NALIMX.EQ.1) THEN
-          DO ISTR = 1, NBSTRU
-            DO II = 1, 3
-              XSTP(II,ISTR) = XSTR(II,ISTR)
+          IF (NALIMX.EQ.1) THEN
+            DO ISTR = 1, NBSTRU
+              DO II = 1, 3
+                XSTP(II,ISTR) = XSTR(II,ISTR)
      &             + AEXXST*DTSTR(ISTR)*XPSTR(II,ISTR)
      &             + BEXXST*DTSTR(ISTR)*(XPSTR(II,ISTR)-XPSTA(II,ISTR))
+              ENDDO
             ENDDO
-          ENDDO
 C
 C 2.1.2 : SCHEMA DE COUPLAGE IMPLICITE
 C-------------------------------------
-        ELSE
-          DO ISTR = 1, NBSTRU
-            DO II = 1, 3
-              XSTP(II,ISTR)  = XSTR(II,ISTR)
+          ELSE
+            DO ISTR = 1, NBSTRU
+              DO II = 1, 3
+                XSTP(II,ISTR)  = XSTR(II,ISTR)
+              ENDDO
             ENDDO
-          ENDDO
+          ENDIF
+C
         ENDIF
+C
+        DO IFAC = 1, NFABOR
+          ISTR = IA(IIDFST+IFAC-1)
+          IF (ISTR.GT.0) THEN
+            DO II = IPNFBR(IFAC), IPNFBR(IFAC+1)-1
+              INOD = NODFBR(II)
+              IMPALE(INOD) = 1
+              DEPALE(INOD,1) = XSTP(1,ISTR)
+              DEPALE(INOD,2) = XSTP(2,ISTR)
+              DEPALE(INOD,3) = XSTP(3,ISTR)
+            ENDDO
+          ENDIF
+        ENDDO
 C
       ENDIF
-C
-      DO IFAC = 1, NFABOR
-        ISTR = IA(IIDFST+IFAC-1)
-        IF (ISTR.GT.0) THEN
-          DO II = IPNFBR(IFAC), IPNFBR(IFAC+1)-1
-            INOD = NODFBR(II)
-            IMPALE(INOD) = 1
-            DEPALE(INOD,1) = XSTP(1,ISTR)
-            DEPALE(INOD,2) = XSTP(2,ISTR)
-            DEPALE(INOD,3) = XSTP(3,ISTR)
-          ENDDO
-        ENDIF
-      ENDDO
 C
 C
 C 2.2 STRUCTURES EXTERNES (COUPLAGE CODE_ASTER) :
 C -----------------------
 C
 C
-      IF(NBASTE.GT.0) THEN
+      IF (NBASTE.GT.0) THEN
 C
-        NTCAST = NTCAST + 1
-C
-C Reception des deplacements predits et remplissage de depale
-C
-        ILSTFA = IDEBIA
-        IFINIA = ILSTFA + NBFAST
-        CALL IASIZE('STRPRE',IFINIA)
-C
-        INDAST = 0
         DO IFAC = 1, NFABOR
           ISTR = IA(IIDFST+IFAC-1)
           IF (ISTR.LT.0) THEN
-            INDAST = INDAST + 1
-            IA(ILSTFA + INDAST-1) = IFAC
+            DO II = IPNFBR(IFAC), IPNFBR(IFAC+1)-1
+              INOD = NODFBR(II)
+              IMPALE(INOD) = 1
+            ENDDO
           ENDIF
         ENDDO
+
+C Si ITRALE = 0, on ne fait rien pour l'instant, mais il faudrait
+C prevoir la reception de deplacement initiaux venant de Code_Aster
+        IF (ITRALE.GT.0) THEN
 C
-        CALL ASTCIN(NTCAST, NBFAST, IA(ILSTFA), IMPALE, DEPALE)
-C       ===========
+          NTCAST = NTCAST + 1
+C
+C Reception des deplacements predits et remplissage de depale
+C
+          ILSTFA = IDEBIA
+          IFINIA = ILSTFA + NBFAST
+          CALL IASIZE('STRPRE',IFINIA)
+C
+          INDAST = 0
+          DO IFAC = 1, NFABOR
+            ISTR = IA(IIDFST+IFAC-1)
+            IF (ISTR.LT.0) THEN
+              INDAST = INDAST + 1
+              IA(ILSTFA + INDAST-1) = IFAC
+            ENDIF
+          ENDDO
+C
+          CALL ASTCIN(NTCAST, NBFAST, IA(ILSTFA), DEPALE)
+C         ===========
+C
+        ENDIF
 C
       ENDIF
 C
 C=======================================================================
 C 3. DEPLACEMENT AU PAS DE TEMPS PRECEDENT ET SAUVEGARDE FLUX ET DE P
 C=======================================================================
+C
       IF (ITALIM.EQ.1) THEN
         DO ISTR = 1, NBSTRU
           DO II = 1, 3

@@ -190,7 +190,7 @@ void CS_PROCF(astgeo, ASTGEO)
   BFT_MALLOC(ast_coupling, 1, cs_ast_coupling_t);
 
   ast_coupling->n_g_nodes = fvm_nodal_get_n_g_vertices(ifs_mesh);
-  ast_coupling->n_g_nodes = n_faces;
+  ast_coupling->n_g_faces = n_faces;
 
   BFT_MALLOC(ast_coupling->n_faces_by_domain, cs_glob_base_nbr, cs_int_t);
   BFT_MALLOC(ast_coupling->n_nodes_by_domain, cs_glob_base_nbr, cs_int_t);
@@ -284,7 +284,7 @@ void CS_PROCF(astfor, ASTFOR)
   cs_real_t  *_forast;
 
 
-  if (cs_glob_base_nbr <= 0)
+  if (cs_glob_base_rang <= 0)
     BFT_MALLOC(_forast, 3*n_g_faces, cs_real_t);
 
 
@@ -332,7 +332,6 @@ void CS_PROCF(astcin, ASTCIN)
  cs_int_t  *ntcast,
  cs_int_t  *nbfast,
  cs_int_t  *lstfac,
- cs_int_t  *impale,
  cs_real_t *depale
 )
 {
@@ -340,18 +339,20 @@ void CS_PROCF(astcin, ASTCIN)
   cs_int_t *parent_num      = NULL;
   cs_int_t  num_node_parent  = 0;
 
-  const cs_int_t  n_vertices = cs_glob_mesh->n_vertices;
+  const cs_int_t n_vertices = cs_glob_mesh->n_vertices;
+  const cs_int_t local_rank = (cs_glob_base_rang == -1) ? 0 : cs_glob_base_rang;
 
   cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
 
-  const int  n_faces = *nbfast;
-  const int  n_nodes = ast_coupling->n_nodes_by_domain[cs_glob_base_rang];
+  int  n_nodes;
   const int  n_g_nodes = ast_coupling->n_g_nodes;
+  const int  n_faces = *nbfast;
 
   fvm_nodal_t *mesh_ifs;
 
   cs_real_t  *_xast, *xast;
 
+  n_nodes = ast_coupling->n_nodes_by_domain[local_rank];
 
   BFT_MALLOC(xast, 3*n_nodes, cs_real_t);
 
@@ -410,13 +411,12 @@ void CS_PROCF(astcin, ASTCIN)
   fvm_nodal_get_parent_num(mesh_ifs, 0, parent_num);
 
   /* On remplit dans DEPALE les valeurs de deplacement aux noeuds
-     couples a deplacement impose et on impose IMPALE=1 */
+     couples a deplacement impose */
 
   for (i = 0; i < n_nodes; i++) {
 
     num_node_parent = parent_num[i];
 
-    impale[num_node_parent-1] = 1;
     depale[               num_node_parent-1] = xast[3*i];
     depale[  n_vertices + num_node_parent-1] = xast[3*i + 1];
     depale[2*n_vertices + num_node_parent-1] = xast[3*i + 2];
@@ -454,7 +454,7 @@ void CS_PROCF(astpar, ASTPAR)
 
     char *instance = NULL;
 
-    double ttanc;
+    double ttanc = 0.;
 
     BFT_MALLOC(instance,200,char);
 

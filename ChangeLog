@@ -1,3 +1,13 @@
+* 16/02/2009 - François Jusserand <francois.jusserand@edf.fr>
+  Fix Code_Aster coupling for sequential calculations.
+  modified routines:
+    include/base/cs_ast_coupling.h
+    src/base/cs_ast_coupling.c
+    src/base/cs_main.c
+    src/base/strdep.F
+    src/base/strini.F
+    src/base/strpre.F
+
 * 16/02/2009 - David Monfort <david.monfort@edf.fr>
   Update of french dictionnary and list of gettextized files.
   modified files:

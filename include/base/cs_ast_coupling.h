@@ -124,7 +124,6 @@ void CS_PROCF(astcin, ASTCIN)
  cs_int_t  *ntcast,
  cs_int_t  *nbfast,
  cs_int_t  *lstfac,
- cs_int_t  *impale,
  cs_real_t *depale
 );
 

@@ -391,15 +391,15 @@ C
         ENDDO
         NBNAST = INDAST
 C
-C       Envoi des donnees geometriques a Code_Aster
-        CALL ASTGEO
-C       ===========
-     & ( NBFAST, NBNAST, IA(ILSTFA), IA(IIDFLO), IA(IIDNLO), ALMAX )
-C
 C       Recuperation des parametres commun du couplage
         CALL ASTPAR
 C       ===========
      & ( NTMABS, NALIMX, EPALIM, ISYNCP, NTCHR, TTPABS, DTREF )
+C
+C       Envoi des donnees geometriques a Code_Aster
+        CALL ASTGEO
+C       ===========
+     & ( NBFAST, NBNAST, IA(ILSTFA), IA(IIDFLO), IA(IIDNLO), ALMAX )
 C
       ENDIF
 C

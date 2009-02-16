@@ -382,6 +382,8 @@ C       ce sera la derniere iteration
 C       on a forcement ITRFIN=1 et on sort
         IF (NALIMX.GT.1) WRITE(NFECRA,1100) ITALIM, DELTA
         ITRFIN = -1
+C       On met ICV a 1 pour que Code_Aster s'arrete lui aussi
+        ICV = 1
       ENDIF
 C
 C     On renvoie l'indicateur de convergence final a Code_Aster
