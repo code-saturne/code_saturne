@@ -1228,7 +1228,7 @@ _echo_data(size_t           echo,
 
   if (n_elts == 0) return;
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     loc_glob = _loc_glob[0];
   else if (global_num_start > 0) {
     loc_glob = _loc_glob[0];
@@ -2837,14 +2837,14 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int needs_safe_algo_loc = 0;
     int needs_safe_algo = 0;
-    int rank = cs_glob_base_rang;
+    int rank = cs_glob_rank_id;
     int send_rank = rank - 1;
     int recv_rank = rank + 1;
-    MPI_Comm comm = cs_glob_base_mpi_comm;
+    MPI_Comm comm = cs_glob_mpi_comm;
     MPI_Status  status;
     fvm_gnum_t  past_last_recv = 0;
     fvm_gnum_t  past_last_send = 0;

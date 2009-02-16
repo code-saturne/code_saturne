@@ -332,7 +332,7 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
-  /* Check if cs_glob_base_rang belongs to interface set in order to
+  /* Check if cs_glob_rank_id belongs to interface set in order to
      order ranks with local rank at first place */
 
   for (i = 0; i < halo->n_c_domains; i++) {
@@ -340,7 +340,7 @@ cs_halo_create(fvm_interface_set_t  *ifs)
     interface = fvm_interface_set_get(ifs, i);
     halo->c_domain_rank[i] = fvm_interface_rank(interface);
 
-    if (cs_glob_base_rang == fvm_interface_rank(interface))
+    if (cs_glob_rank_id == fvm_interface_rank(interface))
       loc_id = i;
 
   } /* End of loop on ranks */
@@ -529,7 +529,7 @@ cs_halo_destroy(cs_halo_t  *halo)
 
 #if defined(_CS_HAVE_MPI)
 
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
       _cs_glob_halo_send_buffer_size = 0;
       _cs_glob_halo_request_size = 0;
@@ -569,7 +569,7 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
                                        halo->n_elts[CS_HALO_EXTENDED])
@@ -677,7 +677,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
   fvm_lnum_t i, start, length;
 
   cs_int_t end_shift = 0;
-  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
@@ -687,13 +687,13 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int rank_id;
     int request_count = 0;
     cs_int_t *build_buffer = (cs_int_t *)_cs_glob_halo_send_buffer;
     cs_int_t *buffer = NULL;
-    const int local_rank = cs_glob_base_rang;
+    const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */
 
@@ -711,7 +711,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }
@@ -722,7 +722,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -746,7 +746,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
                   local_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }
@@ -803,7 +803,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
   fvm_lnum_t i, start, length;
 
   cs_int_t end_shift = 0;
-  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
@@ -813,13 +813,13 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int rank_id;
     int request_count = 0;
     cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
     cs_real_t *buffer = NULL;
-    const int local_rank = cs_glob_base_rang;
+    const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */
 
@@ -837,7 +837,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }
@@ -848,7 +848,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -872,7 +872,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
                   local_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }
@@ -931,7 +931,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   fvm_lnum_t i, j, start, length;
 
   cs_int_t end_shift = 0;
-  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
 #if defined(_CS_HAVE_MPI)
 
@@ -955,13 +955,13 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int rank_id;
     int request_count = 0;
     cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
     cs_real_t *buffer = NULL;
-    const int local_rank = cs_glob_base_rang;
+    const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */
 
@@ -979,7 +979,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }
@@ -990,7 +990,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -1029,7 +1029,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                   CS_MPI_REAL,
                   halo->c_domain_rank[rank_id],
                   local_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
       }

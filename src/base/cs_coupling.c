@@ -104,7 +104,7 @@ void
 cs_coupling_discover_mpi_apps(int          app_num,
                               const char  *app_name)
 {
-  if (app_num > -1 && cs_glob_base_mpi_comm != MPI_COMM_WORLD) {
+  if (app_num > -1 && cs_glob_mpi_comm != MPI_COMM_WORLD) {
 
     int i, n_apps, app_id;
 
@@ -115,7 +115,7 @@ cs_coupling_discover_mpi_apps(int          app_num,
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
-    if (cs_glob_base_rang < 1) {
+    if (cs_glob_rank_id < 1) {
       bft_printf(_("\n"
                    "Applications accessible through MPI:\n"
                    "------------------------------------\n\n"));
@@ -126,12 +126,12 @@ cs_coupling_discover_mpi_apps(int          app_num,
       = fvm_coupling_mpi_world_create(app_num,
                                       app_type,
                                       app_name,
-                                      cs_glob_base_mpi_comm);
+                                      cs_glob_mpi_comm);
 
     n_apps = fvm_coupling_mpi_world_n_apps(_cs_glob_coupling_mpi_app_world);
     app_id = fvm_coupling_mpi_world_get_app_id(_cs_glob_coupling_mpi_app_world);
 
-    if (cs_glob_base_rang < 1) {
+    if (cs_glob_rank_id < 1) {
 
       const char local_add[] = " (this instance)";
       const char nolocal_add[] = "";

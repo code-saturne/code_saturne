@@ -156,7 +156,7 @@ static void
 _print_overhead(double  wt,
                 double  cpu)
 {
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     bft_printf(_("  Wall clock : %12.5e\n"
                  "  CPU :        %12.5e\n"),
                wt);
@@ -170,11 +170,11 @@ _print_overhead(double  wt,
 
 #if defined(_CS_HAVE_MPI)
     MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 #else
     { /* We should never enter here unless we have an alternative to MPI */
       int i;
@@ -213,7 +213,7 @@ _print_stats(long    n_ops,
 {
   double fm = 1.0 / (1.e9 * wt);
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     bft_printf(_("  N ops :      %12ld\n"
                  "  Wall clock : %12.5e\n"
                  "  CPU :        %12.5e\n"
@@ -232,18 +232,18 @@ _print_stats(long    n_ops,
 #if defined(_CS_HAVE_MPI)
 
     MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&n_ops, &n_ops_max, 1, MPI_LONG, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&n_ops, &n_ops_tot, 1, MPI_LONG, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     MPI_Allreduce(loc_count, glob_min, 3, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(loc_count, glob_max, 3, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
 #else
     { /* We should never enter here unless we have an alternative to MPI */
@@ -320,7 +320,7 @@ _dot_product_1(int                  global,
   if (x == y)
     type_name[2] = 'X';
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     _global = 0;
 
   n_ops = n_cells;
@@ -339,7 +339,7 @@ _dot_product_1(int                  global,
     if (_global) {
       double s1_glob = 0.0;
       MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
       s1 = s1_glob;
     }
 #endif
@@ -376,7 +376,7 @@ _dot_product_1(int                  global,
     if (_global) {
       double s1_glob = 0.0;
       MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
       s1 = s1_glob;
     }
 #endif
@@ -938,7 +938,7 @@ _matrix_vector_test(int                  n_runs,
 
   n_ops = n_cells + n_faces*2;
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
   else
     n_ops_glob = (  cs_glob_mesh->n_g_cells
@@ -989,7 +989,7 @@ _matrix_vector_test(int                  n_runs,
 
   /* Local timing in parallel mode */
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     test_sum = 0.0;
 
@@ -1079,7 +1079,7 @@ _matrix_vector_test(int                  n_runs,
 
   n_ops = n_faces*2;
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
   else
     n_ops_glob = (  cs_glob_mesh->n_g_cells
@@ -1308,7 +1308,7 @@ _sub_matrix_vector_test(int                  n_runs,
 
   n_ops = n_faces*2;
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     n_ops_glob = n_ops;
   else
     n_ops_glob = (  cs_glob_mesh->n_g_cells
@@ -1483,7 +1483,7 @@ cs_benchmark(int  mpi_trace_mode)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     n_runs = (mpi_trace_mode) ? 1 : 10000;
 

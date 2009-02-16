@@ -6737,7 +6737,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
       /* Only the first processor rank opens the file */
 
-      if (cs_glob_base_rang <= 0) {
+      if (cs_glob_rank_id <= 0) {
 
         filename = _get_profile_label(i);
 
@@ -6813,7 +6813,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           iel1 = iel;
           irang1 = irangv;
 
-          if (cs_glob_base_rang == irangv) {
+          if (cs_glob_rank_id == irangv) {
 
             iel--;
             xx = xyzcen[3 * iel + 0];
@@ -6852,17 +6852,17 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           }
 
           /* Send to other processors if parallel */
-          if (cs_glob_base_rang >= 0) {
+          if (cs_glob_rank_id >= 0) {
 #if defined(_CS_HAVE_MPI)
             MPI_Bcast(array,
                       nvar_prop4,
                       CS_MPI_REAL,
                       irangv,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
 #endif
           }
 
-          if (cs_glob_base_rang <= 0) {
+          if (cs_glob_rank_id <= 0) {
             for (iii=0; iii < nvar_prop4; iii++)
               fprintf(file, "%12.5e ", array[iii]);
             fprintf(file, "\n");
@@ -6870,7 +6870,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         }
       }
 
-      if (cs_glob_base_rang <= 0) fclose(file);
+      if (cs_glob_rank_id <= 0) fclose(file);
 
       BFT_FREE(array);
     }

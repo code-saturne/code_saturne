@@ -312,7 +312,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 #if defined(_CS_HAVE_MPI)
     MPI_Allgather(&(mesh->n_cells), 1, CS_MPI_INT,
-                  rank_buffer     , 1, CS_MPI_INT, cs_glob_base_mpi_comm);
+                  rank_buffer     , 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
     bft_printf(_("\n    Histogram of the number of cells per rank:\n\n"));
@@ -331,7 +331,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 #if defined(_CS_HAVE_MPI)
     MPI_Allgather(&(mesh->n_cells_with_ghosts), 1, CS_MPI_INT,
-                  rank_buffer, 1, CS_MPI_INT, cs_glob_base_mpi_comm);
+                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
     bft_printf(_("\n    Histogram of number of standard + halo cells (NCELET) "
@@ -361,7 +361,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 #if defined(_CS_HAVE_MPI)
       MPI_Allgather(&n_gcells  , 1, CS_MPI_INT,
-                    rank_buffer, 1, CS_MPI_INT, cs_glob_base_mpi_comm);
+                    rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
       bft_printf
@@ -386,7 +386,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 #if defined(_CS_HAVE_MPI)
       MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
-                    rank_buffer , 1, CS_MPI_INT, cs_glob_base_mpi_comm);
+                    rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
       bft_printf(_("\n    Histogram of the number of neighboring domains "
@@ -475,7 +475,7 @@ cs_mesh_create(void)
   /* General features */
 
   mesh->dim = 3;
-  mesh->domain_num = cs_glob_base_rang + 1;
+  mesh->domain_num = cs_glob_rank_id + 1;
   mesh->n_domains = 0;
 
   /* Local dimensions */
@@ -665,7 +665,7 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  *mesh_builder)
   BFT_FREE(mesh_builder->per_face_idx);
   BFT_FREE(mesh_builder->per_face_lst);
 
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     BFT_FREE(mesh_builder->per_rank_lst);
 
   BFT_FREE(mesh_builder);
@@ -793,15 +793,15 @@ cs_mesh_info(const cs_mesh_t  *mesh)
 
 #if defined(_CS_HAVE_MPI)
 
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
       cs_real_t  g_min_xyz[3];
       cs_real_t  g_max_xyz[3];
 
       MPI_Allreduce(min_xyz, g_min_xyz, dim, CS_MPI_REAL, MPI_MIN,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
       MPI_Allreduce(max_xyz, g_max_xyz, dim, CS_MPI_REAL, MPI_MAX,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
 
       for (i = 0 ; i < dim ; i++) {
         min_xyz[i] = g_min_xyz[i];
@@ -841,7 +841,7 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   cs_int_t  i;
   fvm_gnum_t  n_g_elts[4], max_elt_num[4];
 
-  if (cs_glob_base_nbr <= 1)
+  if (cs_glob_n_ranks <= 1)
     return;
 
   bft_printf(_("\n Global definition of the number of elements "
@@ -851,7 +851,7 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
 
   max_elt_num[0] = mesh->n_cells;
   MPI_Allreduce(max_elt_num, n_g_elts, 1, FVM_MPI_GNUM, MPI_SUM,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   max_elt_num[1] = 0;
   for (i = 0; i < mesh->n_i_faces; i++) {
@@ -872,7 +872,7 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   }
 
   MPI_Allreduce(max_elt_num + 1, n_g_elts + 1, 3, FVM_MPI_GNUM, MPI_MAX,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   mesh->n_g_cells = n_g_elts[0];
   mesh->n_g_i_faces = n_g_elts[1];
@@ -1104,16 +1104,16 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 {
   cs_int_t  n_g_ghost_cells = 0;
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     n_g_ghost_cells = mesh->n_ghost_cells;
 
   else {
 
-    assert(cs_glob_base_nbr > 1);
+    assert(cs_glob_n_ranks > 1);
 
 #if defined(_CS_HAVE_MPI)
     MPI_Allreduce(&(mesh->n_ghost_cells), &n_g_ghost_cells, 1, MPI_INT,
-                  MPI_SUM, cs_glob_base_mpi_comm);
+                  MPI_SUM, cs_glob_mpi_comm);
 #endif
 
   }

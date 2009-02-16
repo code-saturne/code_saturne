@@ -1327,7 +1327,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
   } /* If n_faces > 0 */
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     fvm_gnum_t  *global_vertex_num = NULL;
 
@@ -1355,7 +1355,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
   /* Spatial dimension */
 
-  if (cs_glob_base_rang < 1)
+  if (cs_glob_rank_id < 1)
     cs_syr3_comm_send_message("coupl:b:ndim_",
                               1,
                               CS_TYPE_cs_int_t,
@@ -1411,7 +1411,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
   /* Ready to start time iterations */
 
-  if (cs_glob_base_rang < 1)
+  if (cs_glob_rank_id < 1)
     cs_syr3_comm_send_message("coupl:b:start",
                               0,
                               CS_TYPE_void,

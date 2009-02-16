@@ -112,7 +112,7 @@ _sync_loc_var(const cs_halo_t  *halo,
 {
   cs_int_t  i, start, length;
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_n_ranks == 1) {
 
     cs_real_t *recv_var
       = var + halo->n_local_elts + halo->index[0];
@@ -152,7 +152,7 @@ _sync_loc_var_strided(const cs_halo_t  *halo,
 {
   cs_int_t  i, j, start, length;
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_n_ranks == 1) {
 
     cs_real_t *recv_var
       = var + halo->n_local_elts*stride + halo->index[0];
@@ -1893,7 +1893,7 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
 
   else if (   rota_mode == CS_PERIO_ROTA_IGNORE
            && have_rotation
-           && cs_glob_base_nbr > 1)
+           && cs_glob_n_ranks > 1)
     cs_perio_restore_rotation_halo(halo, sync_mode, var);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
@@ -1984,7 +1984,7 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
   }
   else if (   rota_mode == CS_PERIO_ROTA_IGNORE
            && have_rotation
-           && cs_glob_base_nbr > 1) {
+           && cs_glob_n_ranks > 1) {
     cs_perio_restore_rotation_halo(halo, sync_mode, var_x);
     cs_perio_restore_rotation_halo(halo, sync_mode, var_y);
     cs_perio_restore_rotation_halo(halo, sync_mode, var_z);
@@ -2605,7 +2605,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
   const cs_int_t  n_ranks = cs_glob_mesh->n_domains;
   const cs_int_t  n_perio = cs_glob_mesh->n_init_perio;
   const cs_int_t  n_keys = n_ranks * n_perio;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;
@@ -2680,7 +2680,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 #if defined(_CS_HAVE_MPI)
   if (n_ranks > 1)
     MPI_Alltoall(send_count, n_perio, CS_MPI_INT,
-                 recv_count, n_perio, CS_MPI_INT, cs_glob_base_mpi_comm);
+                 recv_count, n_perio, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
   if (n_ranks == 1)
@@ -2891,7 +2891,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 #if defined(_CS_HAVE_MPI)
     MPI_Alltoallv(send_buffer, send_rank_count, send_rank_shift, FVM_MPI_GNUM,
                   recv_buffer, recv_rank_count, recv_rank_shift, FVM_MPI_GNUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* DEBUG */

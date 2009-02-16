@@ -104,7 +104,7 @@ _arg_env_help(const char  *name)
 {
   FILE *e = stderr;
 
-  if (cs_glob_base_rang >= 1)
+  if (cs_glob_rank_id >= 1)
     return;
 
   fprintf (e, _("Usage: %s [options]\n"), name);
@@ -634,7 +634,7 @@ cs_opts_define(int         argc,
 
   /* Print help and exit if required or in case of command line error */
   if (argerr != 0) {
-    if (cs_glob_base_rang <= 0) {
+    if (cs_glob_rank_id <= 0) {
       cs_opts_logfile_head(argc, argv);
       _arg_env_help(argv[0]) ;
     }

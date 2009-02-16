@@ -123,7 +123,7 @@ cs_syr3_messages_test_iter(int   nt_cur_abs,
       syr_coupling = cs_syr3_coupling_by_id(i_coupl);
       comm = cs_syr3_coupling_get_comm(syr_coupling);
 
-      if (cs_glob_base_rang < 1) {
+      if (cs_glob_rank_id < 1) {
 
         cs_syr3_comm_receive_header(&header, comm);
         assert(header.n_elts == 0);
@@ -133,8 +133,8 @@ cs_syr3_messages_test_iter(int   nt_cur_abs,
       }
 
 #if defined(_CS_HAVE_MPI)
-      if (cs_glob_base_nbr > 1)
-        MPI_Bcast(section_name, 32, MPI_CHAR, 0, cs_glob_base_mpi_comm);
+      if (cs_glob_n_ranks > 1)
+        MPI_Bcast(section_name, 32, MPI_CHAR, 0, cs_glob_mpi_comm);
 #endif
 
       /* Treatment according to the received header */
@@ -201,7 +201,7 @@ cs_syr3_messages_new_time_step(int  nt_cur_abs,
 
   /* If there is at least one SYRTHES coupling */
 
-  if (n_coupl > 0 && cs_glob_base_rang < 1) {
+  if (n_coupl > 0 && cs_glob_rank_id < 1) {
 
     /*
        Code_Saturne tells SYRTHES when we are ready to begin a new

@@ -564,14 +564,14 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     /* Global Max */
 
     MPI_Allreduce(&max_factor, &global_max_factor, 1, CS_MPI_REAL,
-                  MPI_MAX, cs_glob_base_mpi_comm);
+                  MPI_MAX, cs_glob_mpi_comm);
 
     max_factor = global_max_factor;
 
     /* Global min */
 
     MPI_Allreduce(&min_factor, &global_min_factor, 1, CS_MPI_REAL,
-                  MPI_MIN, cs_glob_base_mpi_comm);
+                  MPI_MIN, cs_glob_mpi_comm);
 
     min_factor = global_min_factor;
 
@@ -580,7 +580,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
     assert(sizeof(cs_int_t) == sizeof(int));
 
     MPI_Allreduce(&n_clip, &n_g_clip, 1, CS_MPI_INT,
-                  MPI_SUM, cs_glob_base_mpi_comm);
+                  MPI_SUM, cs_glob_mpi_comm);
 
     n_clip = n_g_clip;
 

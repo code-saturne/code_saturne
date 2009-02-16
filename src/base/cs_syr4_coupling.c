@@ -197,7 +197,7 @@ _init_comm(cs_syr4_coupling_t *syr_coupling,
              coupling_id);
   bft_printf_flush();
 
-  fvm_coupling_mpi_intracomm_create(cs_glob_base_mpi_comm,
+  fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
                                     syr_coupling->syr_root_rank,
                                     &(syr_coupling->comm),
                                     local_range,
@@ -254,7 +254,7 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
 {
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_rang < 1) {
+  if (cs_glob_rank_id < 1) {
 
     MPI_Status status;
 
@@ -288,8 +288,8 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
 
   }
 
-  if (op_name_recv != NULL && cs_glob_base_rang > -1) {
-    MPI_Bcast(op_name_recv, 32, MPI_CHAR, 0, cs_glob_base_mpi_comm);
+  if (op_name_recv != NULL && cs_glob_rank_id > -1) {
+    MPI_Bcast(op_name_recv, 32, MPI_CHAR, 0, cs_glob_mpi_comm);
     op_name_recv[32] = '\0';
   }
 

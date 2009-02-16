@@ -530,9 +530,9 @@ void CS_PROCF (lect1d,LECT1D)
     mfpt1t = mfpt1d;
     /* if necessary, sum over all the processors */
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1)
+    if (cs_glob_n_ranks > 1)
       MPI_Allreduce (&mfpt1d, &mfpt1t, 1, CS_MPI_INT, MPI_SUM,
-                     cs_glob_base_mpi_comm);
+                     cs_glob_mpi_comm);
 #endif
     if (mfpt1t != *nfpt1t)
       bft_error(__FILE__, __LINE__, 0,

@@ -138,7 +138,7 @@ CS_PROCF (parcom, PARCOM)(cs_real_t  var[])
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcom\n",
-         cs_glob_base_rang, n_parcom_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parcom_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -168,7 +168,7 @@ CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[])
 
 #if CS_PARALL_DEBUG_COUNT
   printf ("irang = %d, iappel = %d, tot = %d, parcve\n",
-          cs_glob_base_rang, n_parcve_calls++, n_total_calls++);
+          cs_glob_rank_id, n_parcve_calls++, n_total_calls++);
 #endif
 
 }
@@ -196,7 +196,7 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
   assert(sizeof(int) == sizeof(cs_int_t));
 
   MPI_Allreduce(counter, &global_max, 1, CS_MPI_INT, MPI_MAX,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *counter = global_max;
 
@@ -204,7 +204,7 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcmx\n",
-         cs_glob_base_rang, n_parcmx_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parcmx_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -232,7 +232,7 @@ CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
   assert(sizeof(int) == sizeof(cs_int_t));
 
   MPI_Allreduce(counter, &global_max, 1, CS_MPI_INT, MPI_MIN,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *counter = global_max;
 
@@ -240,7 +240,7 @@ CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcmn\n",
-         cs_glob_base_rang, n_parcmn_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parcmn_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -268,7 +268,7 @@ CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter)
   assert(sizeof(int) == sizeof(cs_int_t));
 
   MPI_Allreduce(counter, &global_sum, 1, CS_MPI_INT, MPI_SUM,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *counter = global_sum;
 
@@ -276,7 +276,7 @@ CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcpt\n",
-         cs_glob_base_rang, n_parcpt_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parcpt_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -305,7 +305,7 @@ CS_PROCF (parsom, PARSOM)(cs_real_t  *var)
   assert (sizeof (double) == sizeof (cs_real_t));
 
   MPI_Allreduce (var, &global_sum, 1, CS_MPI_REAL, MPI_SUM,
-                 cs_glob_base_mpi_comm);
+                 cs_glob_mpi_comm);
 
   *var = global_sum;
 
@@ -313,7 +313,7 @@ CS_PROCF (parsom, PARSOM)(cs_real_t  *var)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parsom\n",
-         cs_glob_base_rang, n_parsom_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parsom_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -341,7 +341,7 @@ CS_PROCF (parmax, PARMAX)(cs_real_t  *var)
   assert(sizeof(double) == sizeof(cs_real_t));
 
   MPI_Allreduce(var, &global_max, 1, CS_MPI_REAL, MPI_MAX,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *var = global_max;
 
@@ -349,7 +349,7 @@ CS_PROCF (parmax, PARMAX)(cs_real_t  *var)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parmax\n",
-         cs_glob_base_rang, n_parmax_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parmax_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -377,7 +377,7 @@ CS_PROCF (parmin, PARMIN)(cs_real_t  *var)
   assert(sizeof(double) == sizeof(cs_real_t));
 
   MPI_Allreduce(var, &global_min, 1, CS_MPI_REAL, MPI_MIN,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *var = global_min;
 
@@ -385,7 +385,7 @@ CS_PROCF (parmin, PARMIN)(cs_real_t  *var)
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parmin\n",
-         cs_glob_base_rang, n_parmin_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parmin_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -418,20 +418,20 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
-  val_in.rank = cs_glob_base_rang;
+  val_in.rank = cs_glob_rank_id;
 
   MPI_Allreduce(&val_in, &val_max, 1, CS_MPI_REAL_INT, MPI_MAXLOC,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *var = val_max.val;
 
-  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_max.rank, cs_glob_base_mpi_comm);
+  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_max.rank, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parmxl\n",
-         cs_glob_base_rang, n_parmxl_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parmxl_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -466,20 +466,20 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
-  val_in.rank = cs_glob_base_rang;
+  val_in.rank = cs_glob_rank_id;
 
   MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *var = val_min.val;
 
-  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_min.rank, cs_glob_base_mpi_comm);
+  MPI_Bcast(xyzvar, *nbr, CS_MPI_REAL, val_min.rank, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parmnl\n",
-         cs_glob_base_rang, n_parmnl_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parmnl_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -516,7 +516,7 @@ CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
     BFT_MALLOC(sum_array, *n_elts, cs_int_t);
 
     MPI_Allreduce(array, sum_array, *n_elts, CS_MPI_INT, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = sum_array[i];
@@ -527,7 +527,7 @@ CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
   else {
 
     MPI_Allreduce(array, set_sum_array, *n_elts, CS_MPI_INT, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0 ; i < *n_elts ; i++)
       array[i] = set_sum_array[i];
@@ -538,7 +538,7 @@ CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parism\n",
-         cs_glob_base_rang, n_parism_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parism_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -575,7 +575,7 @@ CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
     BFT_MALLOC(globmax_array, *n_elts, cs_int_t);
 
     MPI_Allreduce(array, globmax_array, *n_elts, CS_MPI_INT, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0 ; i < *n_elts ; i++)
         array[i] = globmax_array[i];
@@ -586,7 +586,7 @@ CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
   else {
 
     MPI_Allreduce(array, set_globmax_array, *n_elts, CS_MPI_INT, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0 ; i < *n_elts ; i++)
       array[i] = set_globmax_array[i];
@@ -597,7 +597,7 @@ CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf ("irang = %d, iappel = %d, tot = %d, parimx\n",
-          cs_glob_base_rang, n_parimx_calls++, n_total_par_calls++);
+          cs_glob_rank_id, n_parimx_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -634,7 +634,7 @@ CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
     BFT_MALLOC(globmin_array, *n_elts, cs_int_t);
 
     MPI_Allreduce (array, globmin_array, *n_elts, CS_MPI_INT, MPI_MIN,
-                   cs_glob_base_mpi_comm);
+                   cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
         array[i] = globmin_array[i];
@@ -645,7 +645,7 @@ CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
   else {
 
     MPI_Allreduce(array, set_globmin_array, *n_elts, CS_MPI_INT, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = set_globmin_array[i];
@@ -656,7 +656,7 @@ CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parimn\n",
-         cs_glob_base_rang, n_parimn_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parimn_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -693,7 +693,7 @@ CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
     BFT_MALLOC(sum_array, *n_elts, cs_real_t);
 
     MPI_Allreduce(array, sum_array, *n_elts, CS_MPI_REAL, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
         array[i] = sum_array[i];
@@ -704,7 +704,7 @@ CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
   else {
 
     MPI_Allreduce(array, set_sum_array, *n_elts, CS_MPI_REAL, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = set_sum_array[i];
@@ -715,7 +715,7 @@ CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parrsm\n",
-         cs_glob_base_rang, n_parrsm_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parrsm_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -752,7 +752,7 @@ CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
     BFT_MALLOC(globmax_array, *n_elts, cs_real_t);
 
     MPI_Allreduce(array, globmax_array, *n_elts, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = globmax_array[i];
@@ -763,7 +763,7 @@ CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
   else {
 
     MPI_Allreduce(array, set_globmax_array, *n_elts, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = set_globmax_array[i];
@@ -774,7 +774,7 @@ CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parrmx\n",
-         cs_glob_base_rang, n_parrmx_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parrmx_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -811,7 +811,7 @@ CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
     BFT_MALLOC(globmin_array, *n_elts, cs_real_t);
 
     MPI_Allreduce(array, globmin_array, *n_elts, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = globmin_array[i];
@@ -822,7 +822,7 @@ CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
   else {
 
     MPI_Allreduce(array, set_globmin_array, *n_elts, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < *n_elts; i++)
       array[i] = set_globmin_array[i];
@@ -833,7 +833,7 @@ CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parrmn\n",
-         cs_glob_base_rang, n_parrmn_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parrmn_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -859,13 +859,13 @@ CS_PROCF (parbci, PARBCI)(cs_int_t   *irank,
 {
 #if defined(_CS_HAVE_MPI)
 
-  MPI_Bcast(array, *n_elts, CS_MPI_INT, *irank, cs_glob_base_mpi_comm);
+  MPI_Bcast(array, *n_elts, CS_MPI_INT, *irank, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parbci\n",
-         cs_glob_base_rang, n_parbci_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parbci_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -893,13 +893,13 @@ CS_PROCF (parbcr, PARBCR)(cs_int_t   *irank,
 {
 #if defined(_CS_HAVE_MPI)
 
-  MPI_Bcast(array, *n_elts, CS_MPI_REAL, *irank, cs_glob_base_mpi_comm);
+  MPI_Bcast(array, *n_elts, CS_MPI_REAL, *irank, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parbcr\n",
-         cs_glob_base_rang, n_parbcr_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parbcr_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -939,7 +939,7 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
   BFT_MALLOC(shift, n_domains, cs_int_t);
 
   MPI_Allgather(n_elts, 1, CS_MPI_INT, count, 1, CS_MPI_INT,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   shift[0] = 0;
   for (i = 1; i < n_domains; i++)
@@ -948,7 +948,7 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
   assert(*n_g_elts == (shift[n_domains - 1] + count[n_domains - 1]));
 
   MPI_Allgatherv(array, *n_elts, CS_MPI_REAL,
-                 g_array, count, shift, CS_MPI_REAL, cs_glob_base_mpi_comm);
+                 g_array, count, shift, CS_MPI_REAL, cs_glob_mpi_comm);
 
   BFT_FREE(count);
   BFT_FREE(shift);
@@ -957,7 +957,7 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, paragv\n",
-         cs_glob_base_rang, n_paragv_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_paragv_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -990,21 +990,21 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *dis2mn;
-  val_in.rank = cs_glob_base_rang;
+  val_in.rank = cs_glob_rank_id;
 
   MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
-  *ndrang = cs_glob_base_rang;
+  *ndrang = cs_glob_rank_id;
 
-  MPI_Bcast(node,   1, CS_MPI_INT, val_min.rank, cs_glob_base_mpi_comm);
-  MPI_Bcast(ndrang, 1, CS_MPI_INT, val_min.rank, cs_glob_base_mpi_comm);
+  MPI_Bcast(node,   1, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
+  MPI_Bcast(ndrang, 1, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parfpt\n",
-         cs_glob_base_rang, n_parfpt_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parfpt_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -1036,18 +1036,18 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-  if (*ndrang == cs_glob_base_rang)
+  if (*ndrang == cs_glob_rank_id)
     *varcap = var[*node - 1];
   else
     *varcap = 0.0;
 
-  MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_base_mpi_comm);
+  MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf ("irang = %d, iappel = %d, tot = %d, parhis\n",
-          cs_glob_base_rang, n_parhis_calls++, n_total_par_calls++);
+          cs_glob_rank_id, n_parhis_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -1077,18 +1077,18 @@ CS_PROCF (parcel, PARCEL)(cs_int_t   *lnum,
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-  if (*rankid == cs_glob_base_rang)
+  if (*rankid == cs_glob_rank_id)
     *gnum = cs_glob_mesh->global_cell_num[*lnum - 1];
   else
     *gnum = 0;
 
-  MPI_Bcast(gnum, 1, CS_MPI_INT, *rankid, cs_glob_base_mpi_comm);
+  MPI_Bcast(gnum, 1, CS_MPI_INT, *rankid, cs_glob_mpi_comm);
 
 #endif
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, parcel\n",
-         cs_glob_base_rang, n_parcel_calls++, n_total_par_calls++);
+         cs_glob_rank_id, n_parcel_calls++, n_total_par_calls++);
 #endif
 
 }
@@ -1118,7 +1118,7 @@ CS_PROCF (parclg, PARCLG)(cs_int_t   *lnum,
   if (*rankid < 0)
     *gnum = *lnum;
 
-  else if ( (*rankid == cs_glob_base_rang) && (*lnum <= cs_glob_mesh->n_cells) )
+  else if ( (*rankid == cs_glob_rank_id) && (*lnum <= cs_glob_mesh->n_cells) )
     *gnum = cs_glob_mesh->global_cell_num[*lnum - 1];
 
   else
@@ -1151,7 +1151,7 @@ CS_PROCF (parfig, PARFIG)(cs_int_t   *lnum,
   if (*rankid < 0)
     *gnum = *lnum;
 
-  else if (   (*rankid == cs_glob_base_rang)
+  else if (   (*rankid == cs_glob_rank_id)
            && (*lnum <= cs_glob_mesh->n_i_faces) )
     *gnum = cs_glob_mesh->global_i_face_num[*lnum - 1];
 
@@ -1185,7 +1185,7 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
   if (*rankid < 0)
     *gnum = *lnum;
 
-  else if (   (*rankid == cs_glob_base_rang)
+  else if (   (*rankid == cs_glob_rank_id)
            && (*lnum <= cs_glob_mesh->n_b_faces) )
     *gnum = cs_glob_mesh->global_b_face_num[*lnum - 1];
 
@@ -1271,7 +1271,7 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
               CS_MPI_REAL,
               distant_rank,
               distant_rank,
-              cs_glob_base_mpi_comm,
+              cs_glob_mpi_comm,
               &(request[request_count++]));
 
     count_size += n_entities;
@@ -1302,8 +1302,8 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
               n_entities * stride,
               CS_MPI_REAL,
               distant_rank,
-              (int)cs_glob_base_rang,
-              cs_glob_base_mpi_comm,
+              (int)cs_glob_rank_id,
+              cs_glob_mpi_comm,
               &(request[request_count++]));
 
     count_size += n_entities;
@@ -1349,7 +1349,7 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
 
 #if CS_PARALL_DEBUG_COUNT
   printf("irang = %d, iappel = %d, tot = %d, cs_parallel_interface_sr\n",
-         cs_glob_base_rang,
+         cs_glob_rank_id,
          n_interface_sr_calls++,
          n_total_par_calls++);
 #endif

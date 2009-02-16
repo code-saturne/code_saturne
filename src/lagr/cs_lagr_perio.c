@@ -97,7 +97,7 @@ CS_PROCF (perloc, PERLOC)(cs_int_t   *icelcr,
   cs_halo_t  *halo = mesh->halo;
 
   const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
   if (mesh->halo_type == CS_HALO_N_TYPES)
     return;

@@ -652,14 +652,14 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
   }
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
       cs_real_t surf_glob;
 
       surf_loc = (cs_glob_ventil_tab[ivtl])->surface;
       MPI_Allreduce (&surf_loc, &surf_glob, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_base_mpi_comm);
+                     cs_glob_mpi_comm);
       (cs_glob_ventil_tab[ivtl])->surface = surf_glob;
     }
 
@@ -850,7 +850,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
   }
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
 
@@ -863,7 +863,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
       debit_loc[1] = ventil->debit_entrant;
 
       MPI_Allreduce (debit_loc, debit_glob, 2, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_base_mpi_comm);
+                     cs_glob_mpi_comm);
 
       ventil->debit_sortant = debit_glob[0];
       ventil->debit_entrant = debit_glob[1];

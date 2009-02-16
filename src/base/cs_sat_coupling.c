@@ -120,7 +120,7 @@ static cs_sat_coupling_t  **cs_glob_couplages = NULL;
  * Create a coupling.
  *
  * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_base_mpi_comm), or within this same
+ * application communicator (cs_glob_mpi_comm), or within this same
  * communicator.
  *
  * parameters:
@@ -159,12 +159,12 @@ _sat_coupling_create(cs_int_t  root_rank)
 
     MPI_Comm_rank(MPI_COMM_WORLD, &r_glob);
     MPI_Comm_size(MPI_COMM_WORLD, &n_glob_ranks);
-    MPI_Comm_size(cs_glob_base_mpi_comm, &n_loc_ranks);
+    MPI_Comm_size(cs_glob_mpi_comm, &n_loc_ranks);
 
     MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     if (root_rank > r_loc_min && root_rank <= r_loc_max)
       bft_error(__FILE__, __LINE__, 0,
@@ -186,7 +186,7 @@ _sat_coupling_create(cs_int_t  root_rank)
       if (n_loc_ranks == 1)
         couplage->comm = MPI_COMM_NULL;
       else
-        couplage->comm = cs_glob_base_mpi_comm;
+        couplage->comm = cs_glob_mpi_comm;
       n_dist_ranks = n_loc_ranks;
     }
 
@@ -197,7 +197,7 @@ _sat_coupling_create(cs_int_t  root_rank)
       int local_range[2] = {-1, -1};
       int distant_range[2] = {-1, -1};
 
-      fvm_coupling_mpi_intracomm_create(cs_glob_base_mpi_comm,
+      fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
                                         root_rank,
                                         &(couplage->comm),
                                         local_range,
@@ -270,7 +270,7 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 
 #if defined(_CS_HAVE_MPI)
   if (   couplage->comm != MPI_COMM_WORLD
-      && couplage->comm != cs_glob_base_mpi_comm)
+      && couplage->comm != cs_glob_mpi_comm)
     MPI_Comm_free(&(couplage->comm));
 #endif
 
@@ -391,9 +391,9 @@ void CS_PROCF (defcpl, DEFCPL)
     indic_glob[ind] = indic_loc[ind];
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     MPI_Allreduce (indic_loc, indic_glob, 2, MPI_INT, MPI_MAX,
-                   cs_glob_base_mpi_comm);
+                   cs_glob_mpi_comm);
 #endif
 
   if (indic_glob[0] > 0)
@@ -963,15 +963,15 @@ void CS_PROCF (tbicpl, TBICPL)
 
     /* Exchange between the groups master node */
 
-    if (cs_glob_base_rang < 1)
+    if (cs_glob_rank_id < 1)
       MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->dist_root_rank, 0,
                    varloc, *nbrloc, CS_MPI_INT, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronization inside a group */
 
-    if (cs_glob_base_nbr > 1)
-      MPI_Bcast (varloc, *nbrloc, CS_MPI_INT, 0, cs_glob_base_mpi_comm);
+    if (cs_glob_n_ranks > 1)
+      MPI_Bcast (varloc, *nbrloc, CS_MPI_INT, 0, cs_glob_mpi_comm);
 
   }
 
@@ -1039,15 +1039,15 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
     /* Exchange between the groups master node */
 
-    if (cs_glob_base_rang < 1)
+    if (cs_glob_rank_id < 1)
       MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->dist_root_rank, 0,
                    varloc, *nbrloc, CS_MPI_REAL, coupl->dist_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronization inside a group */
 
-    if (cs_glob_base_nbr > 1)
-      MPI_Bcast(varloc, *nbrloc, CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
+    if (cs_glob_n_ranks > 1)
+      MPI_Bcast(varloc, *nbrloc, CS_MPI_REAL, 0, cs_glob_mpi_comm);
 
   }
 
@@ -1071,7 +1071,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
  * Add a coupling.
  *
  * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_base_mpi_comm), or within this same
+ * application communicator (cs_glob_mpi_comm), or within this same
  * communicator.
  *
  * parameters:

@@ -466,9 +466,9 @@ _cs_post_define_mesh(cs_post_mesh_t  *post_mesh,
     glob_flag[i] = loc_flag[i];
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     MPI_Allreduce (loc_flag, glob_flag, 5, MPI_INT, MPI_MIN,
-                   cs_glob_base_mpi_comm);
+                   cs_glob_mpi_comm);
 #endif
 
   /* Create associated structure */
@@ -725,7 +725,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   const cs_int_t   *var_ptr[1] = {NULL};
 
-  if (cs_glob_base_nbr < 2 || _cs_post_domain == false)
+  if (cs_glob_n_ranks < 2 || _cs_post_domain == false)
     return;
 
   dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
@@ -2105,9 +2105,9 @@ cs_post_add_existing_mesh(int           mesh_id,
     glob_flag[i] = loc_flag[i];
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     MPI_Allreduce (loc_flag, glob_flag, 3, MPI_INT, MPI_MIN,
-                   cs_glob_base_mpi_comm);
+                   cs_glob_mpi_comm);
 #endif
 
   /* Global indicators of mesh entity type presence;

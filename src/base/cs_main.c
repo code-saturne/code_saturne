@@ -165,8 +165,8 @@ main(int    argc,
   /* Open 'listing' (log) files */
 
   CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
-                           &cs_glob_base_rang,
-                           &cs_glob_base_nbr,
+                           &cs_glob_rank_id,
+                           &cs_glob_n_ranks,
                            &(opts.ilisr0),
                            &(opts.ilisrp));
   cs_base_bft_printf_set();
@@ -207,7 +207,7 @@ main(int    argc,
                                      CS_IO_MODE_READ,
                                      0,
                                      CS_IO_ECHO_OPEN_CLOSE,
-                                     cs_glob_base_mpi_comm);
+                                     cs_glob_mpi_comm);
 #else
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
                                      "Face-based mesh definition, R0",

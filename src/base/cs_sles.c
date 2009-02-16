@@ -255,17 +255,17 @@ _sles_info_dump(cs_sles_info_t *this_info)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     double cpu_min, cpu_max, cpu_tot;
     double cpu_loc = this_info->cpu_tot;
 
     MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     bft_printf(_("  Min local total CPU time:         %12.3f\n"
                  "  Max local total CPU time:         %12.3f\n"
@@ -276,7 +276,7 @@ _sles_info_dump(cs_sles_info_t *this_info)
 
 #endif
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     bft_printf(_("  Total CPU time:                   %12.3f\n"),
                this_info->cpu_tot);
 }
@@ -495,9 +495,9 @@ _dot_product(cs_int_t          n_elts,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_base_mpi_comm);
+    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
     s = _sum;
   }
 
@@ -568,9 +568,9 @@ _dot_products_2(cs_int_t          n_elts,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, cs_glob_base_mpi_comm);
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -1176,10 +1176,10 @@ _jacobi(const char             *var_name,
 
 #if defined(_CS_HAVE_MPI)
 
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
       double _sum;
       MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
       res2 = _sum;
     }
 
@@ -1769,7 +1769,7 @@ cs_sles_solve(const char         *var_name,
 
     switch (solver_type) {
     case CS_SLES_PCG:
-      if (cs_glob_base_nbr == 1)
+      if (cs_glob_n_ranks == 1)
         _conjugate_gradient_sp(var_name,
                                _a,
                                _ax,

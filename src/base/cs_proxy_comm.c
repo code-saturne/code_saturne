@@ -513,7 +513,7 @@ cs_proxy_comm_initialize(const char           *port_name,
                          int                   key,
                          cs_proxy_comm_type_t  type)
 {
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     _cs_glob_proxy_comm = _comm_initialize(port_name,
                                            key,
                                            type);
@@ -526,7 +526,7 @@ cs_proxy_comm_initialize(const char           *port_name,
 void
 cs_proxy_comm_finalize(void)
 {
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     _cs_glob_proxy_comm = _comm_finalize(_cs_glob_proxy_comm);
 }
 

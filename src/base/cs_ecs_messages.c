@@ -266,8 +266,8 @@ _set_block_ranges(cs_mesh_t       *mesh,
 {
   int i;
 
-  int rank_id = cs_glob_base_rang;
-  int n_ranks = cs_glob_base_nbr;
+  int rank_id = cs_glob_rank_id;
+  int n_ranks = cs_glob_n_ranks;
 
   /* Always build per_face_range in case of periodicity */
 
@@ -329,9 +329,9 @@ _read_cell_rank(cs_mesh_t       *mesh,
     return;
 
 #if (_CS_STDC_VERSION < 199901L)
-  sprintf(file_name, "domain_number_%d", cs_glob_base_nbr);
+  sprintf(file_name, "domain_number_%d", cs_glob_n_ranks);
 #else
-  snprintf(file_name, 32, "domain_number_%d", cs_glob_base_nbr);
+  snprintf(file_name, 32, "domain_number_%d", cs_glob_n_ranks);
 #endif
   file_name[31] = '\0'; /* Just in case; processor counts would need to be
                            in the exa-range for this to be necessary. */
@@ -353,7 +353,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                                 CS_IO_MODE_READ,
                                 0,
                                 echo,
-                                cs_glob_base_mpi_comm);
+                                cs_glob_mpi_comm);
 #else
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
@@ -406,13 +406,13 @@ _read_cell_rank(cs_mesh_t       *mesh,
       else {
         cs_io_set_fvm_lnum(&header, rank_pp_in);
         cs_io_read_global(&header, &n_ranks, rank_pp_in);
-        if (n_ranks != cs_glob_base_nbr)
+        if (n_ranks != cs_glob_n_ranks)
           bft_error(__FILE__, __LINE__, 0,
                     _("Le number of ranks reported by file\n"
                       "\"%s\" (%d) does not\n"
                       "correspond to the current number of ranks (%d)."),
                     cs_io_get_name(rank_pp_in), (int)n_ranks,
-                    (int)cs_glob_base_nbr);
+                    (int)cs_glob_n_ranks);
       }
 
     }
@@ -894,7 +894,7 @@ _orient_perio_couples(cs_mesh_builder_t  *mb,
 
   if (mb->per_rank_lst != NULL) {
 
-    const int local_rank = cs_glob_base_rang + 1;
+    const int local_rank = cs_glob_rank_id + 1;
 
     for (i = 0; i < n_couples; i++) {
 
@@ -993,7 +993,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
        once per opposing direction transforms) */
 
     for (i = 1; i < tr_index_size-1; i++) {
-      if ((distant_rank != cs_glob_base_rang) || (i%2 == 1))
+      if ((distant_rank != cs_glob_rank_id) || (i%2 == 1))
         mb->per_face_idx[(i-1)/2 + 1] += tr_index[i+1] - tr_index[i];
     }
   }
@@ -1044,7 +1044,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
     for (k = start_id, l = tr_index[1]; k < end_id; k++, l++)
       send_num[k] = i_face_id[loc_num[l] - 1] + 1;
 
-    if (distant_rank == cs_glob_base_rang) {
+    if (distant_rank == cs_glob_rank_id) {
       const fvm_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
       for (k = start_id, l = tr_index[1]; k < end_id; k++, l++)
         recv_num[k] = i_face_id[dist_num[l] - 1] + 1;
@@ -1067,26 +1067,26 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
     for (j = 0; j < n_interfaces; j++) {
       const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
       int distant_rank = fvm_interface_rank(face_if);
-      if (distant_rank != cs_glob_base_rang)
+      if (distant_rank != cs_glob_rank_id)
         MPI_Irecv(recv_num + if_index[j],
                   if_index[j+1] - if_index[j],
                   FVM_MPI_LNUM,
                   distant_rank,
                   distant_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(request[request_count++]));
     }
 
     for (j = 0; j < n_interfaces; j++) {
       const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
       int distant_rank = fvm_interface_rank(face_if);
-      if (distant_rank != cs_glob_base_rang)
+      if (distant_rank != cs_glob_rank_id)
         MPI_Isend(send_num + if_index[j],
                   if_index[j+1] - if_index[j],
                   FVM_MPI_LNUM,
                   distant_rank,
-                  (int)cs_glob_base_rang,
-                  cs_glob_base_mpi_comm,
+                  (int)cs_glob_rank_id,
+                  cs_glob_mpi_comm,
                   &(request[request_count++]));
     }
 
@@ -1113,7 +1113,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
 
       fvm_lnum_t n_elts = tr_index[i+1] - tr_index[i];
 
-      if ((distant_rank != cs_glob_base_rang) || (i%2 == 1)) {
+      if ((distant_rank != cs_glob_rank_id) || (i%2 == 1)) {
 
         fvm_lnum_t k, l, send_shift, recv_shift;
 
@@ -1123,7 +1123,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
         fvm_lnum_t n_rev_elts = tr_index[2*perio_id+3] - tr_index[2*perio_id+2];
 
         send_shift = if_index[j] + tr_shift;
-        if (distant_rank != cs_glob_base_rang) {
+        if (distant_rank != cs_glob_rank_id) {
           if (perio_sgn > 0)
             recv_shift = if_index[j] + n_rev_elts + tr_shift;
           else
@@ -1157,7 +1157,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
 
      cs_int_t  start_id = mb->per_face_idx[perio_id];
      cs_int_t  end_id = mb->per_face_idx[perio_id+1];
-     const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+     const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
      bft_printf("\n  Perio id: %4d - Number of elements: %7d "
                 "(start: %7d - end: %7d)\n",
@@ -1165,7 +1165,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
      bft_printf("   id    | 1st face | 2nd face | associated rank\n");
 
      for (i = start_id; i < end_id; i++) {
-       if (cs_glob_base_nbr > 1)
+       if (cs_glob_n_ranks > 1)
          bft_printf("%10d | %10d | %10d | %6d\n", i, mb->per_face_lst[2*i],
                     mb->per_face_lst[2*i+1], mb->per_rank_lst[i]-1);
        else
@@ -1351,7 +1351,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
     bft_error(__FILE__, __LINE__, 0,
               _("Number of cells on rank %d is zero.\n"
                 "(number of cells / number of processes ratio too low)."),
-              (int)cs_glob_base_rang);
+              (int)cs_glob_rank_id);
 
   /* Distribute faces */
   /*------------------*/
@@ -1957,18 +1957,18 @@ void CS_PROCF(ledevi, LEDEVI)
   *nfml = mesh->n_families;
   *nprfml = mesh->n_max_family_items;
 
-  mesh->n_domains = cs_glob_base_nbr;
-  mesh->domain_num = cs_glob_base_rang + 1;
+  mesh->n_domains = cs_glob_n_ranks;
+  mesh->domain_num = cs_glob_rank_id + 1;
 
   /* Update data in cs_mesh_t structure in serial mode */
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_n_ranks == 1) {
     mesh->n_cells = mesh->n_g_cells;
     mesh->n_cells_with_ghosts = mesh->n_cells;
     mesh->domain_num = 1;
   }
   else
-    mesh->domain_num = cs_glob_base_rang + 1;
+    mesh->domain_num = cs_glob_rank_id + 1;
 }
 
 /*============================================================================
@@ -2262,7 +2262,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
 
   /* Read cell rank data if available */
 
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     _read_cell_rank(mesh, mr, echo);
 
   /* Now send data to the correct rank */
@@ -2270,15 +2270,15 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     _decompose_data_g(mesh,
                       mesh_builder,
                       mr,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
 
 #endif
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     _decompose_data_l(mesh, mesh_builder, mr);
 
   /* Free temporary memory */

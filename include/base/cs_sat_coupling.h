@@ -354,7 +354,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
  * Add a coupling.
  *
  * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_base_mpi_comm), or within this same
+ * application communicator (cs_glob_mpi_comm), or within this same
  * communicator.
  *
  * parameters:

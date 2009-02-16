@@ -743,10 +743,10 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
   _ivect[0] = ivecti; _ivect[1] = ivectb;
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     int ivect_tot[2];
     MPI_Allreduce(_ivect, ivect_tot, 2, MPI_INT, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     _ivect[0] = ivect_tot[0]; _ivect[1] = ivect_tot[1];
   }
 #endif
@@ -756,7 +756,7 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
                " --------------\n"
                "   interior faces: %d ranks (of %d)\n"
                "   boundary faces: %d ranks\n\n"),
-             _ivect[0], cs_glob_base_nbr, _ivect[1]);
+             _ivect[0], cs_glob_n_ranks, _ivect[1]);
 }
 
 /*----------------------------------------------------------------------------

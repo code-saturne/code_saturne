@@ -446,15 +446,15 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 {
   fvm_lnum_t  i, start, length;
 
-  int local_rank_id = (cs_glob_base_nbr == 1) ? 0 : -1;
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     int rank_id;
     int  request_count = 0;
-    const int  local_rank = cs_glob_base_rang;
+    const int  local_rank = cs_glob_rank_id;
 
     MPI_Request _request[128];
     MPI_Request *request = _request;
@@ -482,7 +482,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(request[request_count++]));
 
       }
@@ -493,7 +493,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -511,7 +511,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                   CS_MPI_INT,
                   halo->c_domain_rank[rank_id],
                   local_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(request[request_count++]));
 
       }
@@ -885,10 +885,10 @@ _coarsen(const cs_grid_t   *f,
   c->n_g_cells = c_n_cells;
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     fvm_gnum_t _c_n_cells = c_n_cells;
     MPI_Allreduce(&_c_n_cells, &(c->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
   }
 #endif
 
@@ -974,10 +974,10 @@ cs_grid_create_from_shared(fvm_lnum_t         n_cells,
   g->n_g_cells = n_cells;
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     fvm_gnum_t _n_cells = n_cells;
     MPI_Allreduce(&_n_cells, &(g->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
   }
 #endif
 
@@ -1559,11 +1559,11 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
   /* Compute local base starting cell number in parallel mode */
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     fvm_gnum_t local_shift = g->n_cells;
     fvm_gnum_t global_shift = 0;
     MPI_Scan(&local_shift, &global_shift, 1, FVM_MPI_GNUM, MPI_SUM,
-             cs_glob_base_mpi_comm);
+             cs_glob_mpi_comm);
     base_shift = 1 + global_shift - g->n_cells;
   }
 #endif

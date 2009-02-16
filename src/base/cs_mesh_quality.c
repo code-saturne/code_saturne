@@ -147,7 +147,7 @@ _display_histograms(int         n_steps,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     fvm_gnum_t _g_count[CS_MESH_QUALITY_N_SUBS];
     fvm_gnum_t *g_count = _g_count;
@@ -156,7 +156,7 @@ _display_histograms(int         n_steps,
       BFT_MALLOC(g_count, n_steps, fvm_gnum_t);
 
     MPI_Allreduce(count, g_count, n_steps, FVM_MPI_GNUM, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     for (i = 0; i < n_steps; i++)
       count[i] = g_count[i];
@@ -228,12 +228,12 @@ _histogram(cs_int_t         n_vals,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
   }
 
 #endif
@@ -300,12 +300,12 @@ _int_face_histogram(const cs_mesh_t  *mesh,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
   }
 
 #endif

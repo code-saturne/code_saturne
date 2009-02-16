@@ -181,7 +181,7 @@ _vtx_lookup_create(cs_int_t              n_vertices,
   for (i = 0; i < n_vertices + 1; i++)
     vtx_lookup->index[i] = 0;
 
-  /* Check if cs_glob_base_rang belongs to the interface set in order to
+  /* Check if cs_glob_rank_id belongs to the interface set in order to
      arrange if_ranks with local rank at first place */
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
@@ -190,7 +190,7 @@ _vtx_lookup_create(cs_int_t              n_vertices,
     vtx_lookup->if_ranks[rank_id] = fvm_interface_rank(interface);
     vtx_lookup->rank_ids[rank_id] = rank_id;
 
-    if (cs_glob_base_rang == fvm_interface_rank(interface))
+    if (cs_glob_rank_id == fvm_interface_rank(interface))
       loc_rank_id = rank_id;
 
   } /* End of loop on if_ranks */
@@ -589,7 +589,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   cs_halo_t  *halo = ct->water_halo;
 
   const  cs_int_t  n_c_domains = halo->n_c_domains;
-  const  cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const  cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
 #if defined(_CS_HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
@@ -610,7 +610,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
       MPI_Irecv(&(halo->index[rank_id+1]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -621,8 +621,8 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   /* We wait for receiving all messages */
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+  if (cs_glob_n_ranks > 1)
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   BFT_MALLOC(count, n_c_domains, cs_int_t);
@@ -641,7 +641,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
       MPI_Isend(&(count[shift]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -657,7 +657,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   /* Wait for all exchanges being done */
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     MPI_Waitall(request_count, request, status);
 #endif
   request_count = 0;
@@ -712,7 +712,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
   cs_halo_t  *halo = ct->water_halo;
 
   const cs_int_t n_c_domains = halo->n_c_domains;
-  const cs_int_t local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
 #if defined(_CS_HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
@@ -733,7 +733,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
       MPI_Irecv(&(halo->index[rank_id+1]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -744,8 +744,8 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
   /* We wait for receiving all messages */
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+  if (cs_glob_n_ranks > 1)
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   BFT_MALLOC(count, n_c_domains, cs_int_t);
@@ -764,7 +764,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
       MPI_Isend(&(count[shift]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -780,7 +780,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
   /* Wait for all exchanges being done */
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     MPI_Waitall(request_count, request, status);
 #endif
   request_count = 0;
@@ -843,7 +843,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
 
   cs_halo_t  *halo = ct->water_halo;
 
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_int_t  n_c_domains = halo->n_c_domains;
   const cs_int_t  n_ghost_faces = halo->n_elts[CS_HALO_EXTENDED];
 
@@ -888,7 +888,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
                      halo->c_domain_rank[rank_id], local_rank,
                      &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
                      halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                     cs_glob_base_mpi_comm, &status);
+                     cs_glob_mpi_comm, &status);
 #endif
 
     } /* If rank != local_rank */
@@ -935,7 +935,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
                    halo->c_domain_rank[rank_id], local_rank,
                    recv_buffer, n_recv_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                   cs_glob_base_mpi_comm, &status);
+                   cs_glob_mpi_comm, &status);
 #endif
 
     }
@@ -1076,7 +1076,7 @@ _create_in_faces_vtx_connect( cs_ctwr_zone_t              *ct            ,
   if (interface_set == NULL)
     return;
 
-  const cs_int_t  local_rank  = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank  = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_int_t  n_vertices   = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
 
   const int  ifs_size   = fvm_interface_set_size(interface_set);

@@ -599,7 +599,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
 #if defined (_CS_HAVE_MPI)
   int ierror = MPI_SUCCESS;
 #endif
-  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);
 
   const int lng_hostname = CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1;
 
@@ -615,7 +615,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
 
     /* Send number of ranks */
 
-    sprintf(size_str, "%5d", (int)cs_glob_base_nbr);
+    sprintf(size_str, "%5d", (int)cs_glob_n_ranks);
 
     if (write(comm->sock, size_str, 6) < 6)
       bft_error(__FILE__, __LINE__, errno,
@@ -624,18 +624,18 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
 
   /* Obtains the name of the host machine and its port number on rank 0 */
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     BFT_MALLOC(host_names,
-               lng_hostname * cs_glob_base_nbr,
+               lng_hostname * cs_glob_n_ranks,
                char);
 
-    BFT_MALLOC(port_num_array, cs_glob_base_nbr, int);
+    BFT_MALLOC(port_num_array, cs_glob_n_ranks, int);
 
 #if defined(_CS_HAVE_MPI)
     ierror = MPI_Gather(cs_glob_comm_sock_hostname, lng_hostname, MPI_CHAR,
                         host_names, lng_hostname, MPI_CHAR, 0,
-                        cs_glob_base_mpi_comm);
+                        cs_glob_mpi_comm);
 
     if (ierror < 0)
       bft_error(__FILE__, __LINE__, 0,
@@ -645,7 +645,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
     /* Send the port number */
 
     ierror = MPI_Gather(&cs_glob_comm_sock_port_num, 1, MPI_INT,
-                        port_num_array, 1, MPI_INT, 0, cs_glob_base_mpi_comm);
+                        port_num_array, 1, MPI_INT, 0, cs_glob_mpi_comm);
 
     if (ierror < 0)
       bft_error(__FILE__, __LINE__, 0,
@@ -674,7 +674,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
         bft_error(__FILE__, __LINE__, errno,
                   _("Error in socket communication\n"));
 
-      for (ii = 1; ii < cs_glob_base_nbr; ii++) {
+      for (ii = 1; ii < cs_glob_n_ranks; ii++) {
 
         /* Send host machine name */
 
@@ -698,7 +698,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
     BFT_FREE(host_names);
     BFT_FREE(port_num_array);
 
-  } /* End for cs_glob_base_nbr > 1 */
+  } /* End for cs_glob_n_ranks > 1 */
 
 }
 
@@ -714,7 +714,7 @@ _comm_sock_open(cs_syr3_comm_t   *comm,
 
   char *magic_string_read = NULL;
 
-  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);
   int len = strlen(CS_SYR3_COMM_SOCKET_HEADER);
   int magic_string_len = strlen(magic_string);
 
@@ -1491,7 +1491,7 @@ cs_syr3_comm_init_socket(void)
   struct hostent      *host_ent;
 
 
-  int rank = (cs_glob_base_rang == -1 ? 0 : cs_glob_base_rang);
+  int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);
 
   /* Initialization */
 

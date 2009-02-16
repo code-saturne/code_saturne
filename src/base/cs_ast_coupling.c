@@ -182,7 +182,7 @@ void CS_PROCF(astgeo, ASTGEO)
   n_nodes = (cs_int_t) fvm_nodal_get_n_entities(ifs_mesh, 0);
 
 
-  assert(cs_glob_base_nbr == 1);
+  assert(cs_glob_n_ranks == 1);
 
   /* Creation of the information structure for Code_Saturne/Code_Aster
      coupling */
@@ -192,8 +192,8 @@ void CS_PROCF(astgeo, ASTGEO)
   ast_coupling->n_g_nodes = fvm_nodal_get_n_g_vertices(ifs_mesh);
   ast_coupling->n_g_faces = n_faces;
 
-  BFT_MALLOC(ast_coupling->n_faces_by_domain, cs_glob_base_nbr, cs_int_t);
-  BFT_MALLOC(ast_coupling->n_nodes_by_domain, cs_glob_base_nbr, cs_int_t);
+  BFT_MALLOC(ast_coupling->n_faces_by_domain, cs_glob_n_ranks, cs_int_t);
+  BFT_MALLOC(ast_coupling->n_nodes_by_domain, cs_glob_n_ranks, cs_int_t);
 
   ast_coupling->n_nodes_by_domain[0] = n_nodes;
   ast_coupling->n_faces_by_domain[0] = n_faces;
@@ -228,7 +228,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   /* TODO: Adapter l'algo parallel en sequentiel */
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     cs_int_t *geom = NULL;
 
@@ -284,11 +284,11 @@ void CS_PROCF(astfor, ASTFOR)
   cs_real_t  *_forast;
 
 
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     BFT_MALLOC(_forast, 3*n_g_faces, cs_real_t);
 
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_n_ranks == 1) {
 
     int  i;
 
@@ -301,18 +301,18 @@ void CS_PROCF(astfor, ASTFOR)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     MPI_Gatherv(forast, 3*n_faces, CS_MPI_REAL,
                 _forast, ast_coupling->n_faces_by_domain,
                 ast_coupling->face_index, CS_MPI_REAL,
-                0, cs_glob_base_mpi_comm);
+                0, cs_glob_mpi_comm);
 
   }
 
 #endif
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, *ntcast,
                             "forsat", 3*n_g_faces, _forast);
@@ -340,7 +340,7 @@ void CS_PROCF(astcin, ASTCIN)
   cs_int_t  num_node_parent  = 0;
 
   const cs_int_t n_vertices = cs_glob_mesh->n_vertices;
-  const cs_int_t local_rank = (cs_glob_base_rang == -1) ? 0 : cs_glob_base_rang;
+  const cs_int_t local_rank = (cs_glob_rank_id == -1) ? 0 : cs_glob_rank_id;
 
   cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
 
@@ -356,7 +356,7 @@ void CS_PROCF(astcin, ASTCIN)
 
   BFT_MALLOC(xast, 3*n_nodes, cs_real_t);
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     int  n_val_read = 0;
 
@@ -371,7 +371,7 @@ void CS_PROCF(astcin, ASTCIN)
 
   }
 
-  if (cs_glob_base_nbr == 1) {
+  if (cs_glob_n_ranks == 1) {
 
     assert(n_nodes == n_g_nodes);
 
@@ -382,18 +382,18 @@ void CS_PROCF(astcin, ASTCIN)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     MPI_Scatterv(_xast, ast_coupling->n_nodes_by_domain,
                  ast_coupling->node_index, CS_MPI_REAL,
                  xast, n_nodes,
-                 CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
+                 CS_MPI_REAL, 0, cs_glob_mpi_comm);
 
   }
 
 #endif
 
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     BFT_FREE(_xast);
 
   /* Creation maillage */
@@ -445,7 +445,7 @@ void CS_PROCF(astpar, ASTPAR)
 {
   /* Initialisation calcium */
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     int  n_val_read = 0;
     int  iteration = *nbpdt;
@@ -504,14 +504,14 @@ void CS_PROCF(astpar, ASTPAR)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
-    MPI_Bcast(nbpdt,   1, CS_MPI_INT,  0, cs_glob_base_mpi_comm);
-    MPI_Bcast(nbsspdt, 1, CS_MPI_INT,  0, cs_glob_base_mpi_comm);
-    MPI_Bcast(ihi,     1, CS_MPI_INT,  0, cs_glob_base_mpi_comm);
-    MPI_Bcast(chro,    1, CS_MPI_INT,  0, cs_glob_base_mpi_comm);
-    MPI_Bcast(delta,   1, CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
-    MPI_Bcast(dt,      1, CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
+    MPI_Bcast(nbpdt,   1, CS_MPI_INT,  0, cs_glob_mpi_comm);
+    MPI_Bcast(nbsspdt, 1, CS_MPI_INT,  0, cs_glob_mpi_comm);
+    MPI_Bcast(ihi,     1, CS_MPI_INT,  0, cs_glob_mpi_comm);
+    MPI_Bcast(chro,    1, CS_MPI_INT,  0, cs_glob_mpi_comm);
+    MPI_Bcast(delta,   1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
+    MPI_Bcast(dt,      1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
 
   }
 
@@ -556,7 +556,7 @@ void CS_PROCF(astpdt, ASTPDT)
   int        i;
   cs_real_t  dttmp = 0.;
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     int  n_val_read = 0;
     double  dtloc = 0.;
@@ -580,8 +580,8 @@ void CS_PROCF(astpdt, ASTPDT)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1)
-    MPI_Bcast(&dttmp, 1, CS_MPI_REAL, 0, cs_glob_base_mpi_comm);
+  if (cs_glob_n_ranks > 1)
+    MPI_Bcast(&dttmp, 1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
 
 #endif
 
@@ -626,7 +626,7 @@ void CS_PROCF(astcv1, ASTCV1)
  cs_int_t  *icv
 )
 {
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     int  n_val_read = 0;
 
@@ -639,8 +639,8 @@ void CS_PROCF(astcv1, ASTCV1)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1)
-    MPI_Bcast(icv, 1, CS_MPI_INT, 0, cs_glob_base_mpi_comm);
+  if (cs_glob_n_ranks > 1)
+    MPI_Bcast(icv, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
 
 #endif
 }
@@ -656,7 +656,7 @@ void CS_PROCF(astcv2, ASTCV2)
  cs_int_t  *icv
 )
 {
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, *ntcast,
                          "icv", 1, icv);

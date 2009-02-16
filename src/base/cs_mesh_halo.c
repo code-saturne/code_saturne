@@ -533,7 +533,7 @@ _vtx_lookup_create(cs_int_t              n_vertices,
   for (i = 0; i < n_vertices + 1; i++)
     vtx_lookup->index[i] = 0;
 
-  /* Check if cs_glob_base_rang belongs to the interface set in order to
+  /* Check if cs_glob_rank_id belongs to the interface set in order to
      arrange if_ranks with local rank at first place */
 
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
@@ -542,7 +542,7 @@ _vtx_lookup_create(cs_int_t              n_vertices,
     vtx_lookup->if_ranks[rank_id] = fvm_interface_rank(interface);
     vtx_lookup->rank_ids[rank_id] = rank_id;
 
-    if (cs_glob_base_rang == fvm_interface_rank(interface))
+    if (cs_glob_rank_id == fvm_interface_rank(interface))
       loc_rank_id = rank_id;
 
   } /* End of loop on if_ranks */
@@ -823,7 +823,7 @@ _build_halo_index(cs_mesh_t  *mesh)
   const cs_int_t  n_init_perio = mesh->n_init_perio;
   const cs_int_t  stride = 4*n_c_domains;
   const cs_int_t  n_transforms = mesh->n_transforms;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
   buffer_size = 0;
   for (i = 0; i < 2*n_c_domains; i++)
@@ -1390,7 +1390,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
   const  cs_int_t  n_c_domains = halo->n_c_domains;
   const  cs_int_t  n_transforms = mesh->n_transforms;
-  const  cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const  cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
 #if defined(_CS_HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
@@ -1411,7 +1411,7 @@ _fill_halo(cs_mesh_t  *mesh)
       MPI_Irecv(&(halo->index[2*rank_id+1]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -1423,7 +1423,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   BFT_MALLOC(count, 2*n_c_domains, cs_int_t);
@@ -1444,7 +1444,7 @@ _fill_halo(cs_mesh_t  *mesh)
       MPI_Isend(&(count[shift]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[request_count++]));
 #endif
 
@@ -1507,7 +1507,7 @@ _fill_halo(cs_mesh_t  *mesh)
                      &(exchange_buffer[n_elts_to_exchange]), n_elts_to_exchange,
                      CS_MPI_INT,
                      halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                     cs_glob_base_mpi_comm, status);
+                     cs_glob_mpi_comm, status);
 #endif
 
         /* Put received elements in the periodic structure */
@@ -2277,7 +2277,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
   cs_halo_t  *halo = mesh->halo;
 
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_int_t  n_c_domains = halo->n_c_domains;
   const cs_int_t  n_ghost_cells = halo->n_elts[CS_HALO_EXTENDED];
 
@@ -2322,7 +2322,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
                    halo->c_domain_rank[rank_id], local_rank,
                    &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                   cs_glob_base_mpi_comm, &status);
+                   cs_glob_mpi_comm, &status);
 #endif
 
     } /* If rank != local_rank */
@@ -2369,7 +2369,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
                    halo->c_domain_rank[rank_id], local_rank,
                    recv_buffer, n_recv_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                   cs_glob_base_mpi_comm, &status);
+                   cs_glob_mpi_comm, &status);
 #endif
 
     }
@@ -2657,7 +2657,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
   const cs_int_t  n_init_perio = mesh->n_init_perio;
   const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_int_t  n_gcells = halo->n_elts[CS_HALO_EXTENDED];
   const cs_int_t  n_send_gcells = halo->n_send_elts[CS_HALO_EXTENDED];
 
@@ -2683,7 +2683,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Irecv(&(gcell_faces_idx[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm, &(request[request_count++]));
+                cs_glob_mpi_comm, &(request[request_count++]));
 #endif
 
     }
@@ -2694,7 +2694,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   /* Send data to distant ranks */
@@ -2719,7 +2719,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_base_mpi_comm, &(request[request_count++]));
+                cs_glob_mpi_comm, &(request[request_count++]));
 #endif
 
     }
@@ -2810,7 +2810,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Irecv(&(gcell_glob_faces_lst[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm, &(request[request_count++]));
+                cs_glob_mpi_comm, &(request[request_count++]));
 #endif
 
     }
@@ -2821,7 +2821,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   /* Send data to distant ranks */
@@ -2904,7 +2904,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_base_mpi_comm, &(request[request_count++]));
+                cs_glob_mpi_comm, &(request[request_count++]));
 #endif
 
     }

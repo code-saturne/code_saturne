@@ -343,7 +343,7 @@ _add_file(cs_restart_t  *r)
                                         magic_string,
                                         0,
                                         echo,
-                                        cs_glob_base_mpi_comm);
+                                        cs_glob_mpi_comm);
 #else
     r->fh = cs_io_initialize_with_index(r->name, magic_string, 0, echo);
 #endif
@@ -359,7 +359,7 @@ _add_file(cs_restart_t  *r)
                              CS_IO_MODE_WRITE,
                              0,
                              echo,
-                             cs_glob_base_mpi_comm);
+                             cs_glob_mpi_comm);
 #else
     r->fh = cs_io_initialize(r->name,
                              magic_string,
@@ -427,12 +427,12 @@ _read_ent_values(cs_restart_t        *r,
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
   }
 
-  bi = fvm_block_to_part_compute_sizes(cs_glob_base_rang,
-                                       cs_glob_base_nbr,
+  bi = fvm_block_to_part_compute_sizes(cs_glob_rank_id,
+                                       cs_glob_n_ranks,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
-  d = fvm_block_to_part_create_strided(cs_glob_base_mpi_comm,
+  d = fvm_block_to_part_create_strided(cs_glob_mpi_comm,
                                        bi,
                                        n_ents,
                                        ent_global_num);
@@ -517,12 +517,12 @@ _write_ent_values(const cs_restart_t  *r,
     assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
   }
 
-  bi = fvm_part_to_block_compute_sizes(cs_glob_base_rang,
-                                       cs_glob_base_nbr,
+  bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
+                                       cs_glob_n_ranks,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
-  d = fvm_part_to_block_create_strided(cs_glob_base_mpi_comm,
+  d = fvm_part_to_block_create_strided(cs_glob_mpi_comm,
                                        bi,
                                        n_ents,
                                        ent_global_num);
@@ -1365,7 +1365,7 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
         *match_vertex = true;
     }
 
-    else if (cs_glob_base_rang <= 0) {
+    else if (cs_glob_rank_id <= 0) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("The size of location \"%s\" associated with\n"
                    "the restart file \"%s\" is %lu and does not\n"
@@ -1633,7 +1633,7 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   /* In single processor mode or for global values */
 
-  if (cs_glob_base_nbr == 1 || location_id == 0) {
+  if (cs_glob_n_ranks == 1 || location_id == 0) {
 
     cs_io_read_global(&header, val, restart->fh);
 
@@ -1750,7 +1750,7 @@ cs_restart_write_section(cs_restart_t  *restart,
                        restart->fh);
 
 
-  else if (cs_glob_base_nbr == 1) {
+  else if (cs_glob_n_ranks == 1) {
 
     cs_byte_t  *val_tmp = NULL;
 

@@ -158,7 +158,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 #endif
 
   const cs_int_t  n_domains = mesh->n_domains;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_halo_t  *halo = mesh->halo;
   const cs_int_t  n_c_ranks = halo->n_c_domains;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
@@ -227,7 +227,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Irecv(&(r_rank_index[rank_id+1]), 1, MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm,
+                cs_glob_mpi_comm,
                 &(request[cpt_request++]));
 #endif
 
@@ -241,7 +241,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   for (rank_id = 0; rank_id < n_c_ranks; rank_id++) {
@@ -251,7 +251,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 #if defined(_CS_HAVE_MPI)
         MPI_Isend(&(s_rank_index[rank_id+1]), 1, MPI_INT,
                   halo->c_domain_rank[rank_id], local_rank,
-                  cs_glob_base_mpi_comm,
+                  cs_glob_mpi_comm,
                   &(request[cpt_request++]));
 #endif
 
@@ -328,7 +328,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 #endif
 
   const cs_int_t  n_domains = mesh->n_domains;
-  const cs_int_t  local_rank = (cs_glob_base_rang == -1) ? 0:cs_glob_base_rang;
+  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
   const cs_halo_t  *halo = mesh->halo;
   const cs_int_t  *per_face_idx = cs_glob_mesh_builder->per_face_idx;
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
@@ -409,7 +409,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Irecv(&(perio_r_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_base_mpi_comm, &(request[cpt_request++]));
+                cs_glob_mpi_comm, &(request[cpt_request++]));
 #endif
 
     }
@@ -428,7 +428,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
 #if defined(_CS_HAVE_MPI)
   if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_base_mpi_comm);
+    MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
   for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
@@ -441,7 +441,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 #if defined(_CS_HAVE_MPI)
       MPI_Isend(&(perio_s_buffer[shift]), n_elts, MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_base_mpi_comm, &(request[cpt_request++]));
+                cs_glob_mpi_comm, &(request[cpt_request++]));
 #endif
 
     }
@@ -1255,10 +1255,10 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   if (mesh->n_domains > 1) {
 #if defined(_CS_HAVE_MPI)
     MPI_Allreduce(&n_i_warp_faces, &n_g_i_warp_faces, 1, CS_MPI_INT,
-                  MPI_SUM, cs_glob_base_mpi_comm);
+                  MPI_SUM, cs_glob_mpi_comm);
 
     MPI_Allreduce(&n_b_warp_faces, &n_g_b_warp_faces, 1, CS_MPI_INT,
-                  MPI_SUM, cs_glob_base_mpi_comm);
+                  MPI_SUM, cs_glob_mpi_comm);
 #endif
   }
   else {

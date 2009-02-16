@@ -127,11 +127,11 @@ _cs_base_exit(int status);
  *  Global variables
  *============================================================================*/
 
-cs_int_t  cs_glob_base_rang = -1;     /* Rank of process in communicator */
-cs_int_t  cs_glob_base_nbr  =  1;     /* Number of processes in communicator */
+cs_int_t  cs_glob_rank_id = -1;     /* Rank of process in communicator */
+cs_int_t  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
 
 #if defined(_CS_HAVE_MPI)
-MPI_Comm  cs_glob_base_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
+MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
 #endif
 
 bft_error_handler_t  *cs_glob_base_gest_erreur_sauve = NULL;
@@ -298,10 +298,10 @@ _cs_base_err_vprintf(const char  *format,
 
     char nom_fic_err[81];
 
-    if (cs_glob_base_rang < 1)
+    if (cs_glob_rank_id < 1)
       strcpy(nom_fic_err, "error");
     else
-      sprintf(nom_fic_err, "error_n%04d", cs_glob_base_rang + 1);
+      sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
 
     freopen(nom_fic_err, "w", stderr);
 
@@ -353,7 +353,7 @@ _cs_base_exit(int status)
     if (mpi_flag != 0) {
 
       if (status != EXIT_SUCCESS)
-        MPI_Abort(cs_glob_base_mpi_comm, EXIT_FAILURE);
+        MPI_Abort(cs_glob_mpi_comm, EXIT_FAILURE);
 
       else { /*  if (status == EXIT_SUCCESS) */
 
@@ -521,7 +521,7 @@ static void
 _cs_base_mpi_fin(void)
 {
 #if defined(_CS_HAVE_MPE)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     _cs_base_prof_mpe_fin();
 #endif
 
@@ -531,9 +531,9 @@ _cs_base_mpi_fin(void)
 
   bft_error_handler_set(cs_glob_base_gest_erreur_sauve);
 
-  if (   cs_glob_base_mpi_comm != MPI_COMM_NULL
-      && cs_glob_base_mpi_comm != MPI_COMM_WORLD)
-    MPI_Comm_free(&cs_glob_base_mpi_comm);
+  if (   cs_glob_mpi_comm != MPI_COMM_NULL
+      && cs_glob_mpi_comm != MPI_COMM_WORLD)
+    MPI_Comm_free(&cs_glob_mpi_comm);
 }
 
 
@@ -691,14 +691,14 @@ _cs_base_work_mem_max(cs_int_t  *mem_peak,
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *mem_peak;
-  val_in.rank = cs_glob_base_rang;
+  val_in.rank = cs_glob_rank_id;
 
   MPI_Allreduce(&val_in, &val_max, 1, MPI_LONG_INT, MPI_MAXLOC,
-                cs_glob_base_mpi_comm);
+                cs_glob_mpi_comm);
 
   *mem_peak = val_max.val;
 
-  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rank, cs_glob_base_mpi_comm);
+  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rank, cs_glob_mpi_comm);
 #endif
 }
 
@@ -841,8 +841,8 @@ void CS_PROCF (rasize, RASIZE)
 /*----------------------------------------------------------------------------
  * Complete MPI initialization.
  *
- * Global variables `cs_glob_base_nbr' (number of Code_Saturne processes)
- * and `cs_glob_base_rang' (rank of local process) are set by this function.
+ * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
+ * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
  * parameters:
  *   argc    <-- pointer to number of command line arguments.
@@ -883,48 +883,48 @@ cs_base_mpi_init(int     *argc,
   MPI_Allreduce(&app_num_l, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   if (app_num_max > 0)
-    MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_base_mpi_comm);
+    MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_mpi_comm);
   else
-    cs_glob_base_mpi_comm = MPI_COMM_WORLD;
+    cs_glob_mpi_comm = MPI_COMM_WORLD;
 
-  MPI_Comm_size(cs_glob_base_mpi_comm, &nbr);
-  MPI_Comm_rank(cs_glob_base_mpi_comm, &rank);
+  MPI_Comm_size(cs_glob_mpi_comm, &nbr);
+  MPI_Comm_rank(cs_glob_mpi_comm, &rank);
 
-  cs_glob_base_nbr = nbr;
+  cs_glob_n_ranks = nbr;
 
-  if (cs_glob_base_nbr > 1)
-    cs_glob_base_rang = rank;
+  if (cs_glob_n_ranks > 1)
+    cs_glob_rank_id = rank;
 
-  /* cs_glob_base_mpi_comm may not be freed at this stage, as it
+  /* cs_glob_mpi_comm may not be freed at this stage, as it
      it may be needed to build intercommunicators for couplings,
-     but we may set cs_glob_base_rang to its serial value if
+     but we may set cs_glob_rank_id to its serial value if
      we are only using MPI for coupling. */
 
-  if (cs_glob_base_nbr == 1 && app_num_max > 0)
-    cs_glob_base_rang = -1;
+  if (cs_glob_n_ranks == 1 && app_num_max > 0)
+    cs_glob_rank_id = -1;
 
   /* Initialize associated libraries */
 
 #if defined(FVM_HAVE_MPI)
-  if (cs_glob_base_rang > -1)
-    fvm_parall_set_mpi_comm(cs_glob_base_mpi_comm);
+  if (cs_glob_rank_id > -1)
+    fvm_parall_set_mpi_comm(cs_glob_mpi_comm);
   else
     fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
 
 #if defined(DEBUG) || !defined(NDEBUG)
-  if (nbr > 1 || cs_glob_base_mpi_comm != MPI_COMM_NULL) {
+  if (nbr > 1 || cs_glob_mpi_comm != MPI_COMM_NULL) {
     MPI_Errhandler_create(&_cs_base_erreur_mpi, &errhandler);
     MPI_Errhandler_set(MPI_COMM_WORLD, errhandler);
-    if (   cs_glob_base_mpi_comm != MPI_COMM_WORLD
-        && cs_glob_base_mpi_comm != MPI_COMM_NULL)
-      MPI_Errhandler_set(cs_glob_base_mpi_comm, errhandler);
+    if (   cs_glob_mpi_comm != MPI_COMM_WORLD
+        && cs_glob_mpi_comm != MPI_COMM_NULL)
+      MPI_Errhandler_set(cs_glob_mpi_comm, errhandler);
     MPI_Errhandler_free(&errhandler);
   }
 #endif
 
 #if defined(_CS_HAVE_MPE)
-  if (cs_glob_base_nbr > 1)
+  if (cs_glob_n_ranks > 1)
     _cs_base_prof_mpe_init(rank);
 #endif
 }
@@ -991,11 +991,11 @@ cs_base_error_init(void)
   bft_backtrace_print_set(_cs_base_backtrace_print);
 
 #if defined(SIGHUP)
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
     cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
     cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
   }
@@ -1004,7 +1004,7 @@ cs_base_error_init(void)
   cs_glob_base_sigsegv_sauve = signal(SIGSEGV, _cs_base_sig_fatal);
 
 #if defined(SIGXCPU)
-  if (cs_glob_base_rang <= 0)
+  if (cs_glob_rank_id <= 0)
     cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
 }
@@ -1039,8 +1039,8 @@ cs_base_mem_init(void)
     if (nom_complet != NULL) {
 
       /* In parallel, we will have one trace file per MPI process */
-      if (cs_glob_base_rang >= 0)
-        sprintf(nom_complet, "%s.%04d", nom_base, cs_glob_base_rang + 1);
+      if (cs_glob_rank_id >= 0)
+        sprintf(nom_complet, "%s.%04d", nom_base, cs_glob_rank_id + 1);
       else
         strcpy(nom_complet, nom_base);
 
@@ -1130,20 +1130,20 @@ cs_base_mem_fin(void)
   }
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     MPI_Reduce(ind_val, ind_min, 3, CS_MPI_INT, MPI_MIN,
-               0, cs_glob_base_mpi_comm);
+               0, cs_glob_mpi_comm);
     MPI_Reduce(valreal, val_somme, 3, CS_MPI_REAL, MPI_SUM,
-               0, cs_glob_base_mpi_comm);
+               0, cs_glob_mpi_comm);
     for (ind_bil = 0; ind_bil < 3; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
-      val_in[ind_bil].rank = cs_glob_base_rang;
+      val_in[ind_bil].rank = cs_glob_rank_id;
     }
     MPI_Reduce(&val_in, &val_min, 3, CS_MPI_REAL_INT, MPI_MINLOC,
-               0, cs_glob_base_mpi_comm);
+               0, cs_glob_mpi_comm);
     MPI_Reduce(&val_in, &val_max, 3, CS_MPI_REAL_INT, MPI_MAXLOC,
-               0, cs_glob_base_mpi_comm);
-    if (cs_glob_base_rang == 0) {
+               0, cs_glob_mpi_comm);
+    if (cs_glob_rank_id == 0) {
       for (ind_bil = 0; ind_bil < 3; ind_bil++) {
         ind_val[ind_bil]  = ind_min[ind_bil];
         valreal[ind_bil] = val_somme[ind_bil];
@@ -1166,7 +1166,7 @@ cs_base_mem_fin(void)
            itot++)
         valreal[ind_bil] /= 1024.;
 #if defined(_CS_HAVE_MPI)
-      if (cs_glob_base_nbr > 1 && cs_glob_base_rang == 0) {
+      if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         for (imin = 0 ;
              val_min[ind_bil].val > 1024. && unite[imin] != 'p' ;
              imin++)
@@ -1184,7 +1184,7 @@ cs_base_mem_fin(void)
                   _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
 #if defined(_CS_HAVE_MPI)
-      if (cs_glob_base_nbr > 1 && cs_glob_base_rang == 0) {
+      if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         bft_printf (_("                             "
                       "local minimum: %12.3f %cb  (rank %d)\n"),
                     val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
@@ -1199,7 +1199,7 @@ cs_base_mem_fin(void)
 
   /* Information on Fortran working arrays */
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     _cs_base_work_mem_max(&_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak);
     _cs_base_work_mem_max(&_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak);
   }
@@ -1215,10 +1215,10 @@ cs_base_mem_fin(void)
                   + sizeof(cs_real_t)*_cs_glob_mem_ra_peak) / 1000;
 
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
       double _wk_size_loc = wk_size[0];
       MPI_Allreduce(&_wk_size_loc, &(wk_size[0]), 1, MPI_DOUBLE, MPI_MAX,
-                    cs_glob_base_mpi_comm);
+                    cs_glob_mpi_comm);
     }
 #endif
 
@@ -1290,11 +1290,11 @@ cs_base_bilan_temps(void)
                 (float)time_cpu);
 
 #if defined(_CS_HAVE_MPI)
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     double time_cumul;
     MPI_Reduce (&time_cpu, &time_cumul, 1, MPI_DOUBLE, MPI_SUM,
-                0, cs_glob_base_mpi_comm);
-    if (cs_glob_base_rang == 0)
+                0, cs_glob_mpi_comm);
+    if (cs_glob_rank_id == 0)
       bft_printf (_("  Total CPU time:      %12.3f s\n"),
                   time_cumul);
   }

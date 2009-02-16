@@ -328,18 +328,18 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     double cpu_min[2], cpu_max[2], cpu_tot[2], cpu_loc[2];
     cpu_loc[0] = this_info->cpu_tot[0];
     cpu_loc[1] = this_info->cpu_tot[1];
 
     MPI_Allreduce(cpu_loc, cpu_min, 2, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(cpu_loc, cpu_max, 2, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
     MPI_Allreduce(cpu_loc, cpu_tot, 2, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+                  cs_glob_mpi_comm);
 
     bft_printf(_("    Min local total CPU time:       %12.3f  %12.3f\n"
                  "    Max local total CPU time:       %12.3f  %12.3f\n"
@@ -351,7 +351,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 
 #endif
 
-  if (cs_glob_base_nbr == 1)
+  if (cs_glob_n_ranks == 1)
     bft_printf(_("    Total CPU time:                 %12.3f  %12.3f\n"),
                this_info->cpu_tot[0], this_info->cpu_tot[1]);
 }
@@ -683,9 +683,9 @@ _dot_product(cs_int_t          n_elts,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
     double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_base_mpi_comm);
+    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
     s = _sum;
   }
 
@@ -1507,19 +1507,19 @@ void CS_PROCF(clmlga, CLMLGA)
 
 #if defined(_CS_HAVE_MPI)
 
-      if (cs_glob_base_nbr > 1) {
+      if (cs_glob_n_ranks > 1) {
 
         int lcount[2], gcount[2];
         int n_c_min, n_c_max, n_f_min, n_f_max;
 
         lcount[0] = n_cells; lcount[1] = n_faces;
         MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MAX,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
         n_c_max = gcount[0]; n_f_max = gcount[1];
 
         lcount[0] = n_cells; lcount[1] = n_faces;
         MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MIN,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
         n_c_min = gcount[0]; n_f_min = gcount[1];
 
         bft_printf
@@ -1531,7 +1531,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
 #endif
 
-      if (cs_glob_base_nbr == 1)
+      if (cs_glob_n_ranks == 1)
         bft_printf(_("     number of cells:     %10d\n"
                      "     number of faces:     %10d\n"),
                    (int)n_cells, (int)n_faces);
@@ -1541,7 +1541,7 @@ void CS_PROCF(clmlga, CLMLGA)
     /* If too few cells were grouped, we stop at this level */
 
     if (   n_g_cells > (0.8 * n_g_cells_prev)
-        || n_g_cells < (1.5 * cs_glob_base_nbr))
+        || n_g_cells < (1.5 * cs_glob_n_ranks))
       break;
   }
 

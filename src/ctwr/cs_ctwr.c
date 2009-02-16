@@ -629,7 +629,7 @@ void cs_ctwr_definit
   ct->water_halo    = NULL;
 
 
-  if (cs_glob_base_rang <= 0) {
+  if (cs_glob_rank_id <= 0) {
     length = strlen("bltctc.") + 3 ;
     BFT_MALLOC(file_name, length, char);
     sprintf(file_name, "bltctc.%02d", ct->num);
@@ -1036,8 +1036,8 @@ _search_height(cs_ctwr_zone_t   *ct,
 
 #if defined(FVM_HAVE_MPI)
   locator = fvm_locator_create(tolerance,
-                               cs_glob_base_mpi_comm,
-                               cs_glob_base_nbr,
+                               cs_glob_mpi_comm,
+                               cs_glob_n_ranks,
                                0);
 #else
   locator = fvm_locator_create(tolerance);
@@ -1543,10 +1543,10 @@ void cs_ctwr_maille
     *--------------------------------------------------------------*/
 
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
-      nb   = cs_glob_base_nbr;
-      rank = cs_glob_base_rang;
+      nb   = cs_glob_n_ranks;
+      rank = cs_glob_rank_id;
       BFT_MALLOC(ct->cs_array_rank, nb, cs_int_t );
 
 
@@ -1557,7 +1557,7 @@ void cs_ctwr_maille
         if(dist_rank != rank ){
           MPI_Sendrecv(&res_loc,  1, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
                         &res_dist, 1, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
-                        cs_glob_base_mpi_comm, &status);
+                        cs_glob_mpi_comm, &status);
 
           ct->cs_array_rank[ dist_rank ] = res_dist;
 
@@ -1628,10 +1628,10 @@ void cs_ctwr_maille
 
 
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
-      nb   = cs_glob_base_nbr;
-      rank = cs_glob_base_rang;
+      nb   = cs_glob_n_ranks;
+      rank = cs_glob_rank_id;
 
       // TODO : changer ce bordel !!!!!!!!!!!!!!!!!
       // sans doute equivalent a MPI_Allreduce(ct-hmax, ..., MPI_MAX)
@@ -1643,13 +1643,13 @@ void cs_ctwr_maille
 
               MPI_Sendrecv(&ct->hmax, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
                            &aux, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
-                           cs_glob_base_mpi_comm, &status);
+                           cs_glob_mpi_comm, &status);
 
               if ( aux > ct->hmax ) ct->hmax = aux;
 
               MPI_Sendrecv(&ct->hmin, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
                            &aux  , 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
-                         cs_glob_base_mpi_comm, &status);
+                         cs_glob_mpi_comm, &status);
 
               if ( aux < ct->hmin ) ct->hmin = aux;
 
@@ -1659,11 +1659,11 @@ void cs_ctwr_maille
       }
 
       MPI_Allreduce (&ct->surface_in, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->surface_in = aux;
 
       MPI_Allreduce (&ct->surface_out, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->surface_out = aux;
     }
 #endif
@@ -1730,8 +1730,8 @@ void cs_ctwr_maille
 
 #if defined(FVM_HAVE_MPI)
     ct->locat_water_air = fvm_locator_create(tolerance,
-                                             cs_glob_base_mpi_comm,
-                                             cs_glob_base_nbr,
+                                             cs_glob_mpi_comm,
+                                             cs_glob_n_ranks,
                                              0);
 #else
     ct->locat_water_air = fvm_locator_create(tolerance);
@@ -1752,8 +1752,8 @@ void cs_ctwr_maille
 
 #if defined(FVM_HAVE_MPI)
     ct->locat_air_water = fvm_locator_create(tolerance,
-                                             cs_glob_base_mpi_comm,
-                                             cs_glob_base_nbr,
+                                             cs_glob_mpi_comm,
+                                             cs_glob_n_ranks,
                                              0);
 #else
     ct->locat_air_water = fvm_locator_create(tolerance);
@@ -2643,17 +2643,17 @@ cs_ctwr_stacking(const cs_real_t  gx,
 
 #if defined(_CS_HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     BFT_MALLOC(aux, nb, cs_int_t);
-    rank = cs_glob_base_rang;
+    rank = cs_glob_rank_id;
 
-    for (dist_rank = 0; dist_rank < cs_glob_base_nbr; dist_rank++)
+    for (dist_rank = 0; dist_rank < cs_glob_n_ranks; dist_rank++)
       if (dist_rank != rank){
 
         MPI_Sendrecv(cs_stack_ct, nb, CS_MPI_INT , dist_rank, CS_CT_MPI_TAG,
                      aux, nb, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
-                     cs_glob_base_mpi_comm, &status);
+                     cs_glob_mpi_comm, &status);
         for (i=0 ; i < cs_glob_ct_nbr ; i++)
           for (j=0 ; j < cs_glob_ct_nbr ; j++){
             if (aux[i*cs_glob_ct_nbr + j] > cs_stack_ct[i*cs_glob_ct_nbr + j])
@@ -2711,8 +2711,8 @@ cs_ctwr_stacking(const cs_real_t  gx,
 #if defined(FVM_HAVE_MPI)
         ct->locat_cell_ct_upwind[nb_ct-1] =
           fvm_locator_create(tolerance,
-                             cs_glob_base_mpi_comm,
-                             cs_glob_base_nbr,
+                             cs_glob_mpi_comm,
+                             cs_glob_n_ranks,
                              0);
 #else
         ct->locat_cell_ct_upwind[nb_ct-1] = fvm_locator_create(tolerance);
@@ -3980,30 +3980,30 @@ void cs_ctwr_bilanct
     }
 
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
       MPI_Allreduce (&ct->teau_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->teau_e = aux;
 
       MPI_Allreduce (&ct->fem_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->fem_e = aux;
 
       MPI_Allreduce (&ct->heau_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->heau_e = aux;
 
       MPI_Allreduce (&ct->teau_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->teau_s = aux;
 
       MPI_Allreduce (&ct->fem_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->fem_s = aux;
 
       MPI_Allreduce (&ct->heau_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->heau_s = aux;
 
     }
@@ -4079,39 +4079,39 @@ void cs_ctwr_bilanct
     }
 
 #if defined(_CS_HAVE_MPI)
-    if (cs_glob_base_nbr > 1) {
+    if (cs_glob_n_ranks > 1) {
 
 
       MPI_Allreduce (&ct->tair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->tair_e = aux;
 
       MPI_Allreduce (&ct->xair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->xair_e = aux;
 
       MPI_Allreduce (&ct->debit_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->debit_e = aux;
 
       MPI_Allreduce (&ct->hair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->hair_e = aux;
 
       MPI_Allreduce (&ct->tair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->tair_s = aux;
 
       MPI_Allreduce (&ct->xair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->xair_s = aux;
 
       MPI_Allreduce (&ct->debit_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->debit_s = aux;
 
       MPI_Allreduce (&ct->hair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_base_mpi_comm);
+                      cs_glob_mpi_comm);
       ct->hair_s = aux;
 
     }
@@ -4149,7 +4149,7 @@ void cs_ctwr_bilanct
 
 
 
-    if (cs_glob_base_rang <= 0) {
+    if (cs_glob_rank_id <= 0) {
       length = strlen("bltctc.") + 3 ;
       BFT_MALLOC(file_name, length, char);
       sprintf(file_name, "bltctc.%02d", ct->num);

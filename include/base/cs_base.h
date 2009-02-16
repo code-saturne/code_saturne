@@ -250,11 +250,11 @@ typedef void (cs_exit_t) (int status);
  * Global variable definitions
  *============================================================================*/
 
-extern cs_int_t  cs_glob_base_rang;        /* Rank of process in group */
-extern cs_int_t  cs_glob_base_nbr;         /* Number of processes in group */
+extern cs_int_t  cs_glob_rank_id;        /* Rank of process in group */
+extern cs_int_t  cs_glob_n_ranks;        /* Number of processes in group */
 
 #if defined(_CS_HAVE_MPI)
-extern MPI_Comm  cs_glob_base_mpi_comm;    /* Intra-communicator */
+extern MPI_Comm  cs_glob_mpi_comm;    /* Intra-communicator */
 #endif
 
 /* Global variables used for MPE instrumentation */
@@ -357,8 +357,8 @@ void CS_PROCF (rasize, RASIZE)
 /*----------------------------------------------------------------------------
  * Complete MPI initialization.
  *
- * Global variables `cs_glob_base_nbr' (number of Code_Saturne processes)
- * and `cs_glob_base_rang' (rank of local process) are set by this function.
+ * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
+ * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
  * parameters:
  *   argc    <-- pointer to number of command line arguments.
