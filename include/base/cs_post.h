@@ -186,6 +186,31 @@ void CS_PROCF (pstcm1, PSTCM1)
 );
 
 /*----------------------------------------------------------------------------
+ * Create a mesh based upon the extraction of edges from an existing mesh.
+ *
+ * The newly created edges have no link to their parent elements, so
+ * no variable referencing parent elements may be output to this mesh,
+ * whose main use is to visualize "true" face edges when polygonal faces
+ * are subdivided by the writer. In this way, even highly non-convex
+ * faces may be visualized correctly if their edges are overlaid on
+ * the surface mesh with subdivided polygons.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTEDG (NUMMAI, NUMREF)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the edges mesh to create
+ * INTEGER          NUMREF      : <-- : Number of the existing mesh
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstedg, PSTEDG)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numref
+);
+
+/*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
  *
  * Fortran interface:
@@ -545,6 +570,25 @@ void
 cs_post_add_existing_mesh(int           mesh_id,
                           fvm_nodal_t  *exp_mesh,
                           cs_bool_t     transfer);
+
+/*----------------------------------------------------------------------------
+ * Create a mesh based upon the extraction of edges from an existing mesh.
+ *
+ * The newly created edges have no link to their parent elements, so
+ * no variable referencing parent elements may be output to this mesh,
+ * whose main use is to visualize "true" face edges when polygonal faces
+ * are subdivided by the writer. In this way, even highly non-convex
+ * faces may be visualized correctly if their edges are overlaid on
+ * the surface mesh with subdivided polygons.
+ *
+ * parameters:
+ *   edges_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
+ *   base_id  <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_mesh_edges(int  edges_id,
+                       int  base_id);
 
 /*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.

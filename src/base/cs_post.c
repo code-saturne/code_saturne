@@ -1109,6 +1109,34 @@ void CS_PROCF (pstcm1, PSTCM1)
 }
 
 /*----------------------------------------------------------------------------
+ * Create a mesh based upon the extraction of edges from an existing mesh.
+ *
+ * The newly created edges have no link to their parent elements, so
+ * no variable referencing parent elements may be output to this mesh,
+ * whose main use is to visualize "true" face edges when polygonal faces
+ * are subdivided by the writer. In this way, even highly non-convex
+ * faces may be visualized correctly if their edges are overlaid on
+ * the surface mesh with subdivided polygons.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTEDG (NUMMAI, NUMREF)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the edges mesh to create
+ * INTEGER          NUMREF      : <-- : Number of the existing mesh
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstedg, PSTEDG)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numref
+)
+{
+  cs_post_add_mesh_edges(*nummai, *numref);
+}
+
+/*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
  *
  * Fortran interface:
@@ -2172,6 +2200,56 @@ cs_post_alias_mesh(int  alias_id,
 
   post_mesh->n_i_faces = ref_mesh->n_i_faces;
   post_mesh->n_b_faces = ref_mesh->n_b_faces;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a mesh based upon the extraction of edges from an existing mesh.
+ *
+ * The newly created edges have no link to their parent elements, so
+ * no variable referencing parent elements may be output to this mesh,
+ * whose main use is to visualize "true" face edges when polygonal faces
+ * are subdivided by the writer. In this way, even highly non-convex
+ * faces may be visualized correctly if their edges are overlaid on
+ * the surface mesh with subdivided polygons.
+ *
+ * parameters:
+ *   edges_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
+ *   base_id  <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_mesh_edges(int  edges_id,
+                       int  base_id)
+{
+  /* local variables */
+
+  char *edges_name = NULL;
+  cs_post_mesh_t *post_edges = NULL;
+  fvm_nodal_t *exp_edges = NULL;
+
+  const cs_post_mesh_t *post_base = _cs_post_meshes +_cs_post_mesh_id(base_id);
+  const fvm_nodal_t *exp_mesh = post_base->exp_mesh;
+  const char *exp_name = fvm_nodal_get_name(exp_mesh);
+
+  /* Add and initialize base structure */
+
+  post_edges = _cs_post_add_mesh(edges_id);
+
+  /* Copy mesh edges to new mesh structure */
+
+  BFT_MALLOC(edges_name, strlen(exp_name) + strlen(_(" edges")) + 1, char);
+
+  strcpy(edges_name, exp_name);
+  strcat(edges_name, _(" edges"));
+
+  exp_edges = fvm_nodal_copy_edges(edges_name, exp_mesh);
+
+  BFT_FREE(edges_name);
+
+  /* Create mesh and assign to structure */
+
+  post_edges->exp_mesh = exp_edges;
+  post_edges->_exp_mesh = exp_edges;
 }
 
 /*----------------------------------------------------------------------------

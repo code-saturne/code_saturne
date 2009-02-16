@@ -1,4 +1,12 @@
 * 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  The kernel is now able to post-process edges for a given
+  mesh via the PSTEDG subroutine. This functionnality is
+  thus removed from the preprocessor.
+  modified routines:
+    include/base/cs_post.h
+    src/base/cs_post.c
+
+* 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   English translation of the post-processing management.
   modified routines:
     include/base/cs_post.h
