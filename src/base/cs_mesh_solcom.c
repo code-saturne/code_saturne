@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -98,10 +98,10 @@ static cs_int_t  cs_glob_nhexae = 0;
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_maillage_solcom_alloc_mem(cs_mesh_t             *mesh,
-                                 cs_mesh_quantities_t  *mesh_quantities)
+_mesh_solcom_alloc_mem(cs_mesh_t             *mesh,
+                       cs_mesh_quantities_t  *mesh_quantities)
 {
-  cs_int_t  nbr_elt;
+  cs_int_t  n_elts;
 
   /* Allocation */
   /*------------*/
@@ -112,8 +112,8 @@ cs_loc_maillage_solcom_alloc_mem(cs_mesh_t             *mesh,
 
   /* Cell centers (sized for true + ghost cells, but there should be no
      ghost cells here) */
-  nbr_elt = mesh->dim * mesh->n_cells_with_ghosts;
-  BFT_MALLOC(mesh_quantities->cell_cen, nbr_elt, cs_real_t);
+  n_elts = mesh->dim * mesh->n_cells_with_ghosts;
+  BFT_MALLOC(mesh_quantities->cell_cen, n_elts, cs_real_t);
 
   /* Face surfaces */
   BFT_MALLOC(mesh_quantities->i_face_normal, mesh->dim * mesh->n_i_faces,
@@ -132,15 +132,15 @@ cs_loc_maillage_solcom_alloc_mem(cs_mesh_t             *mesh,
   BFT_MALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_int_t);
 
   /* Family properties */
-  nbr_elt = mesh->n_families * mesh->n_max_family_items;
-  BFT_MALLOC(mesh->family_item, nbr_elt, cs_int_t);
+  n_elts = mesh->n_families * mesh->n_max_family_items;
+  BFT_MALLOC(mesh->family_item, n_elts, cs_int_t);
 
 
   if (mesh->n_vertices > 0) {
 
     /* Vertex coordinates */
-    nbr_elt = mesh->dim * mesh->n_vertices;
-    BFT_MALLOC(mesh->vtx_coord, nbr_elt, cs_real_t);
+    n_elts = mesh->dim * mesh->n_vertices;
+    BFT_MALLOC(mesh->vtx_coord, n_elts, cs_real_t);
 
     /* Faces / vertices connectivity */
     BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_int_t);
@@ -156,40 +156,40 @@ cs_loc_maillage_solcom_alloc_mem(cs_mesh_t             *mesh,
  * Transfer a part of the nodal connectivity to an FVM structure.
  *
  * parameters:
- *   maillage_ext <-> mesh to complete
- *   nbr_elt      <-- number of elements to add
- *   type         <-- type of section to add
- *   connect      <-- connectivity to transfer
- *   cpt_elt_tot  <-> total element counter
+ *   ext_mesh      <-> mesh to complete
+ *   n_elts        <-- number of elements to add
+ *   type          <-- type of section to add
+ *   connect       <-- connectivity to transfer
+ *   tot_elt_count <-> total element counter
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_maillage_solcom_ajoute(fvm_nodal_t    *maillage_ext,
-                              cs_int_t        nbr_elt,
-                              fvm_element_t   type,
-                              cs_int_t       *connect,
-                              cs_int_t       *cpt_elt_tot)
+_mesh_solcom_add(fvm_nodal_t    *ext_mesh,
+                 cs_int_t        n_elts,
+                 fvm_element_t   type,
+                 cs_int_t       *connect,
+                 cs_int_t       *tot_elt_count)
 {
   cs_int_t   ind_elt = 0;
   cs_int_t   cpt_elt = 0;
 
   fvm_lnum_t   *parent_element_num = NULL;
 
-  if (nbr_elt == 0)
+  if (n_elts == 0)
     return;
 
   /* Parent element numbers if necessary */
 
   if (cpt_elt > 0) {
-    BFT_MALLOC(parent_element_num, nbr_elt, fvm_lnum_t);
-    for (ind_elt = 0 ; ind_elt < nbr_elt ; ind_elt++)
-      parent_element_num[ind_elt] = ind_elt + (*cpt_elt_tot + 1);
+    BFT_MALLOC(parent_element_num, n_elts, fvm_lnum_t);
+    for (ind_elt = 0 ; ind_elt < n_elts ; ind_elt++)
+      parent_element_num[ind_elt] = ind_elt + (*tot_elt_count + 1);
   }
 
   /* Transfer connectivity and parent numbers */
 
-  fvm_nodal_append_by_transfer(maillage_ext,
-                               nbr_elt,
+  fvm_nodal_append_by_transfer(ext_mesh,
+                               n_elts,
                                type,
                                NULL,
                                NULL,
@@ -197,7 +197,7 @@ cs_loc_maillage_solcom_ajoute(fvm_nodal_t    *maillage_ext,
                                connect,
                                parent_element_num);
 
-  *cpt_elt_tot = *cpt_elt_tot + nbr_elt;
+  *tot_elt_count = *tot_elt_count + n_elts;
 }
 
 /*============================================================================
@@ -298,11 +298,11 @@ void CS_PROCF (dimgeo, DIMGEO)
  *----------------------------------------------------------------------------*/
 
 void
-cs_maillage_solcom_lit(cs_mesh_t             *mesh,
-                       cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_solcom_read(cs_mesh_t             *mesh,
+                    cs_mesh_quantities_t  *mesh_quantities)
 {
   cs_int_t   indic_nodal = 0;
-  cs_int_t   cpt_elt_tot = 0;
+  cs_int_t   tot_elt_count = 0;
 
   cs_real_t  *vtx_coord = NULL;
   cs_int_t   *connect_tetra = NULL;
@@ -310,12 +310,11 @@ cs_maillage_solcom_lit(cs_mesh_t             *mesh,
   cs_int_t   *connect_prism = NULL;
   cs_int_t   *connect_hexae = NULL;
 
-  fvm_nodal_t  *maillage_ext = NULL;
+  fvm_nodal_t  *ext_mesh = NULL;
 
   /* Allocations for main mesh */
 
-  cs_loc_maillage_solcom_alloc_mem(mesh,
-                                   mesh_quantities);
+  _mesh_solcom_alloc_mem(mesh, mesh_quantities);
 
   /* Allocations for post-processing mesh when we do not have
      a faces -> vertices connectivity */
@@ -376,43 +375,42 @@ cs_maillage_solcom_lit(cs_mesh_t             *mesh,
     /* Direct creation of the  post-processing mesh when we
        do not have a faces -> vertices connectivity */
 
-    maillage_ext = fvm_nodal_create(_("Fluid volume"), 3);
+    ext_mesh = fvm_nodal_create(_("Fluid volume"), 3);
 
     if (cs_glob_ntetra > 0)
-      cs_loc_maillage_solcom_ajoute(maillage_ext,
-                                    cs_glob_ntetra,
-                                    FVM_CELL_TETRA,
-                                    connect_tetra,
-                                    &cpt_elt_tot);
+      _mesh_solcom_add(ext_mesh,
+                       cs_glob_ntetra,
+                       FVM_CELL_TETRA,
+                       connect_tetra,
+                       &tot_elt_count);
 
     if (cs_glob_npyram > 0)
-      cs_loc_maillage_solcom_ajoute(maillage_ext,
-                                    cs_glob_npyram,
-                                    FVM_CELL_PYRAM,
-                                    connect_pyram,
-                                    &cpt_elt_tot);
+      _mesh_solcom_add(ext_mesh,
+                       cs_glob_npyram,
+                       FVM_CELL_PYRAM,
+                       connect_pyram,
+                       &tot_elt_count);
 
     if (cs_glob_nprism > 0)
-      cs_loc_maillage_solcom_ajoute(maillage_ext,
-                                    cs_glob_nprism,
-                                    FVM_CELL_PRISM,
-                                    connect_prism,
-                                    &cpt_elt_tot);
+      _mesh_solcom_add(ext_mesh,
+                       cs_glob_nprism,
+                       FVM_CELL_PRISM,
+                       connect_prism,
+                       &tot_elt_count);
 
     if (cs_glob_nhexae > 0)
-      cs_loc_maillage_solcom_ajoute(maillage_ext,
-                                    cs_glob_nhexae,
-                                    FVM_CELL_HEXA,
-                                    connect_hexae,
-                                    &cpt_elt_tot);
+      _mesh_solcom_add(ext_mesh,
+                       cs_glob_nhexae,
+                       FVM_CELL_HEXA,
+                       connect_hexae,
+                       &tot_elt_count);
 
-    fvm_nodal_transfer_vertices(maillage_ext,
-                                vtx_coord);
+    fvm_nodal_transfer_vertices(ext_mesh, vtx_coord);
 
     /* Transfer structure to post-processing */
 
     cs_post_ajoute_maillage_existant(-1,
-                                     maillage_ext,
+                                     ext_mesh,
                                      true);
 
   }

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -117,8 +117,8 @@ void CS_PROCF (dimgeo, DIMGEO)
  *----------------------------------------------------------------------------*/
 
 void
-cs_maillage_solcom_lit(cs_mesh_t             *mesh,
-                       cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_solcom_read(cs_mesh_t             *mesh,
+                    cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 

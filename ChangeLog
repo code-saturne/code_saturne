@@ -1,4 +1,11 @@
 * 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  English translation of the SolCom format reader.
+  modified routines:
+    include/base/cs_mesh_solcom.h
+    src/base/cs_main.c
+    src/base/cs_mesh_solcom.c
+
+* 16/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add cell renumbering capability and re-organize face
   renumbering process.
   added routine:
