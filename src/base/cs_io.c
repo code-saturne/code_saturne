@@ -1090,7 +1090,8 @@ _file_reopen_read(cs_io_t   *inp,
 static void
 _file_close(cs_io_t  *cs_io)
 {
-  cs_io->f = fvm_file_free(cs_io->f);
+  if (cs_io->f != NULL)
+    cs_io->f = fvm_file_free(cs_io->f);
 }
 
 /*----------------------------------------------------------------------------
@@ -2069,9 +2070,9 @@ cs_io_initialize(const char    *file_name,
 
   if (echo >= CS_IO_ECHO_OPEN_CLOSE) {
     if (mode == CS_IO_MODE_READ)
-      bft_printf(_("\n Reading file:         %s\n"), file_name);
+      bft_printf(_("\n Reading file:        %s\n"), file_name);
     else
-      bft_printf(_("\n Writing file:         %s\n"), file_name);
+      bft_printf(_("\n Writing file:        %s\n"), file_name);
     bft_printf_flush();
   }
 
@@ -2125,7 +2126,7 @@ cs_io_initialize_with_index(const char    *file_name,
   /* Info on interface creation */
 
   if (echo >= CS_IO_ECHO_OPEN_CLOSE) {
-    bft_printf(_("\n Reading file:         %s\n"), file_name);
+    bft_printf(_("\n Reading file:        %s\n"), file_name);
     bft_printf_flush();
   }
 
@@ -2192,8 +2193,8 @@ cs_io_finalize(cs_io_t **cs_io)
 
   if (_cs_io->index != NULL)
     _destroy_index(_cs_io);
-  else
-    _file_close(_cs_io);
+
+  _file_close(_cs_io);
 
   _cs_io->buffer_size = 0;
   BFT_FREE(_cs_io->buffer);
