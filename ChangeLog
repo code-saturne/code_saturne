@@ -1,4 +1,7 @@
 * 16/02/2009 - David Monfort <david.monfort@edf.fr>
+  Rename cs_suite.[hc] files in cs_restart.[hc]
+
+* 16/02/2009 - David Monfort <david.monfort@edf.fr>
   Wrong commit for cs_suite.c
   modified routine:
     src/base/cs_suite.c

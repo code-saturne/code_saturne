@@ -80,8 +80,8 @@
 #include "cs_prototypes.h"
 #include "cs_proxy_comm.h"
 #include "cs_renumber.h"
+#include "cs_restart.h"
 #include "cs_sles.h"
-#include "cs_suite.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 
