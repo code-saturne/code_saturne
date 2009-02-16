@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -136,11 +136,6 @@ typedef struct {
 
   /* Extended neighborhood features */
 
-  cs_int_t  *vtx_gcells_idx;   /* Index of the connectivity vertex -> cells
-                                  Used to build cell -> cells connectivity */
-
-  cs_int_t  *vtx_gcells_lst;   /* Connectivity vertex -> cells. */
-
   cs_int_t  *cell_cells_idx;   /* "cell -> cells" connectivity index for
                                   extended halo. Only defined if extended
                                   neighborhood is built. */
@@ -198,7 +193,7 @@ extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer on builder mesh
                                                     structure */
 
 /*============================================================================
- *  Public functions definition for API Fortran
+ *  Public functions definition for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -224,28 +219,6 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
  const cs_int_t   *len      /* --> Name length */
  CS_ARGF_SUPP_CHAINE        /*     (possible 'length' arguments added
                                    by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Update global face numberings in case of renumbering.
- *
- * Fortran interface:
- *
- * SUBROUTINE SAVNUM (IVECTI, IVECTB, INUMFI, INUMFB)
- * *****************
- *
- * INTEGER          IVECTI      : --> : Interior faces renumbering indicator
- * INTEGER          IVECTB      : --> : Boundary faces renumbering indicator
- * INTEGER          INUMFI      : --> : Interior faces renumbering array
- * INTEGER          INUMFB      : --> : Boundary faces renumbering array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (savnum, SAVNUM)
-(
- const cs_int_t  *ivecti,
- const cs_int_t  *ivectb,
- const cs_int_t   inumfi[],
- const cs_int_t   inumfb[]
 );
 
 /*=============================================================================

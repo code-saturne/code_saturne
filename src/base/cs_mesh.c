@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -407,47 +407,6 @@ _print_halo_info(cs_mesh_t  *mesh,
 
 }
 
-/*----------------------------------------------------------------------------
- * Update a global numbering array in case of entity renumbering
- *
- * parameters:
- *   n_elts      --> number of elements in array
- *   init_num    --> initial local number of renumbered elements (1 to n)
- *   global_num  <-> global numbering (allocated if initially NULL)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_global_num(size_t              n_elts,
-                   const fvm_lnum_t    init_num[],
-                   fvm_gnum_t        **global_num)
-{
-  size_t i;
-  fvm_gnum_t *_global_num = *global_num;
-
-  if (_global_num == NULL) {
-
-      BFT_MALLOC(_global_num, n_elts, fvm_gnum_t);
-
-      for (i = 0; i < n_elts; i++)
-        _global_num[i] = init_num[i];
-
-      *global_num = _global_num;
-  }
-
-  else {
-
-    fvm_gnum_t *tmp_global;
-
-    BFT_MALLOC(tmp_global, n_elts, fvm_gnum_t);
-    memcpy(tmp_global, _global_num, n_elts*sizeof(fvm_gnum_t));
-
-    for (i = 0; i < n_elts; i++)
-      _global_num[i] = tmp_global[init_num[i] - 1];
-
-    BFT_FREE(tmp_global);
-  }
-}
-
 /*============================================================================
  *  Public functions definition for API Fortran
  *============================================================================*/
@@ -493,41 +452,6 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
   }
 
   return -9999;
-}
-
-/*----------------------------------------------------------------------------
- * Update global face numberings in case of renumbering.
- *
- * Fortran interface:
- *
- * SUBROUTINE SAVNUM (IVECTI, IVECTB, INUMFI, INUMFB)
- * *****************
- *
- * INTEGER          IVECTI      : --> : Interior faces renumbering indicator
- * INTEGER          IVECTB      : --> : Boundary faces renumbering indicator
- * INTEGER          INUMFI      : --> : Interior faces renumbering array
- * INTEGER          INUMFB      : --> : Boundary faces renumbering array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (savnum, SAVNUM)
-(
- const cs_int_t  *ivecti,
- const cs_int_t  *ivectb,
- const cs_int_t   inumfi[],
- const cs_int_t   inumfb[]
-)
-{
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  if (*ivecti != 0)
-    _update_global_num(mesh->n_i_faces,
-                       inumfi,
-                       &(mesh->global_i_face_num));
-
-  if (*ivectb != 0)
-    _update_global_num(mesh->n_b_faces,
-                       inumfb,
-                       &(mesh->global_b_face_num));
 }
 
 /*=============================================================================
@@ -601,8 +525,6 @@ cs_mesh_create(void)
   mesh->n_cells_with_ghosts = 0;
   mesh->halo = NULL;
 
-  mesh->vtx_gcells_idx = NULL;
-  mesh->vtx_gcells_lst = NULL;
   mesh->cell_cells_idx = NULL;
   mesh->cell_cells_lst = NULL;
 
@@ -689,11 +611,6 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   if (mesh->n_init_perio > 0)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
-
-  if (mesh->halo_type == CS_HALO_EXTENDED) {
-    BFT_FREE(mesh->vtx_gcells_idx);
-    BFT_FREE(mesh->vtx_gcells_lst);
-  }
 
   if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);

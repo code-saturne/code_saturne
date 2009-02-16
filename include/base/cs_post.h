@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -429,35 +429,6 @@ void CS_PROCF (pstev1, PSTEV1)
 );
 
 
-/*----------------------------------------------------------------------------
- * Prise en compte de la renumérotation des faces et faces de bord
- * dans les liens de "parenté" des maillages post.
- *
- * Cette fonction ne doit être appellée qu'une fois, après la renumérotation
- * évuentuelle des faces, pour adapter les maillages post existants.
- * Des nouveaux maillages post seront automatiquement basés sur la
- * "bonne" numérotation, par construction.
- *
- * Interface Fortran :
- *
- * SUBROUTINE PSTRNM(IVECTI, IVECTB, INUMFI, INUMFB)
- * *****************
- *
- * INTEGER IVECTI               : --> : Indicateur de renum. faces internes
- * INTEGER IVECTB               : --> : Indicateur de renum. faces de bord
- * INTEGER INUMFI(NFAC)         : --> : Table de renum. des faces internes
- * INTEGER INUMFB(NFABOR)       : --> : Table de renum. des faces de bord
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstrnm, PSTRNM)
-(
- cs_int_t  *ivecti,           /* --> vectorisation des faces internes         */
- cs_int_t  *ivectb,           /* --> vectorisation des faces de bord          */
- cs_int_t  *inumfi,           /* --> numérotation initiale des faces internes */
- cs_int_t  *inumfb            /* --> numérotation initiale des faces de bord  */
-);
-
-
 /*============================================================================
  *  Prototypes de fonctions publiques
  *============================================================================*/
@@ -730,6 +701,22 @@ void cs_post_ecrit_var_som
 
 
 /*----------------------------------------------------------------------------
+ * Prise en compte de la renumérotation des cellules
+ * dans les liens de "parenté" des maillages post.
+ *
+ * Cette fonction ne doit être appellée qu'une fois, après la renumérotation
+ * évuentuelle des cellules, pour adapter les maillages post existants.
+ * Des nouveaux maillages post seront automatiquement basés sur la
+ * "bonne" numérotation, par construction.
+ *----------------------------------------------------------------------------*/
+
+void cs_post_renum_cells
+(
+ const cs_int_t  *init_cell_num   /* --> numérotation initiale des cellules   */
+);
+
+
+/*----------------------------------------------------------------------------
  * Prise en compte de la renumérotation des faces et faces de bord
  * dans les liens de "parenté" des maillages post.
  *
@@ -741,8 +728,8 @@ void cs_post_ecrit_var_som
 
 void cs_post_renum_faces
 (
- cs_int_t  *init_i_face_num,  /* --> numérotation initiale des faces internes */
- cs_int_t  *init_b_face_num   /* --> numérotation initiale des faces de bord  */
+ const cs_int_t  *init_i_face_num,  /* --> numérotation init. faces internes  */
+ const cs_int_t  *init_b_face_num   /* --> numérotation init. faces de bord   */
 );
 
 /*----------------------------------------------------------------------------

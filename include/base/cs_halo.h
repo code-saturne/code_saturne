@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -234,6 +234,18 @@ cs_halo_destroy(cs_halo_t  *this_halo);
 
 void
 cs_halo_update_buffers(const cs_halo_t *halo);
+
+/*----------------------------------------------------------------------------
+ * Apply cell renumbering to a halo
+ *
+ * parameters:
+ *   halo        --> pointer to halo structure
+ *   new_cell_id --> array indicating old -> new cell id (0 to n-1)
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_renumber_cells(cs_halo_t       *halo,
+                       const cs_int_t   new_cell_id[]);
 
 /*----------------------------------------------------------------------------
  * Update array of integer halo values in case of parallelism or periodicity.

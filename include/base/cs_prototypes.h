@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -368,30 +368,33 @@ extern void CS_PROCF (numvec, NUMVEC)
  const cs_int_t   *ncel,          /* <-- Number of local cells */
  const cs_int_t   *nfac,          /* <-- Number of interior faces */
  const cs_int_t   *nfabor,        /* <-- Number of boundary faces */
- const cs_int_t   *nsom,          /* <-- Number of vertices */
- const cs_int_t   *lndfac,        /* <-- Size of interior face connectivity */
- const cs_int_t   *lndfbr,        /* <-- Size of boundary face connectivity */
  cs_int_t         *irveci,        /* <-> Interior face vectorization indic. */
  cs_int_t         *irvecb,        /* <-> Boundary face vectorization indic. */
  cs_int_t         *ifacel,        /* <-> Interior face->cell connectivity */
  cs_int_t         *ifabor,        /* <-> Boundary face->cell connectivity */
- cs_int_t         *ifmfac,        /* <-> Interior face group class number */
- cs_int_t         *ifmfbr,        /* <-> Boundary face group class number */
- cs_int_t         *ipnfac,        /* <-> Interior face->vertex index */
- cs_int_t         *nodfac,        /* <-> Interior face->vertex connectivity */
- cs_int_t         *ipnfbr,        /* <-> Boundary face->vertex index */
- cs_int_t         *nodfbr,        /* <-> Boundary face->vertex connectivity */
  cs_int_t         *inumfi,        /* <-> Interior faces renumbering array
                                          (size: nfac) */
  cs_int_t         *inumfb,        /* <-> Boundary faces renumbering array
                                          (size: nfac) */
  cs_int_t         *iworkf,        /* --> Work array, size: max(nfac, nfabor) */
+ cs_int_t         *ismbs          /* --> Work array, size: ncelet */
+);
+
+/*----------------------------------------------------------------------------
+ * Test renumbering for vector processors
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (tstvec, TSTVEC)
+(
+ const cs_int_t   *ncelet,        /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,          /* <-- Number of local cells */
+ const cs_int_t   *nfac,          /* <-- Number of interior faces */
+ const cs_int_t   *nfabor,        /* <-- Number of boundary faces */
+ cs_int_t         *ifacel,        /* <-> Interior face->cell connectivity */
+ cs_int_t         *ifabor,        /* <-> Boundary face->cell connectivity */
+ cs_int_t         *iworkf,        /* --> Work array, size: max(nfac, nfabor) */
  cs_int_t         *ismbs,         /* --> Work array, size: ncelet */
  cs_int_t         *ismbv,         /* --> Work array, size: ncelet */
- cs_int_t         *ipnfaw,        /* --> Work array, size: nfac+1 */
- cs_int_t         *nodfaw,        /* --> Work array, size: lndfac */
- cs_int_t         *ipnfbw,        /* --> Work array, size: nfabor+1 */
- cs_int_t         *nodfbw,        /* --> Work array, size: lndfbr */
  cs_real_t        *rworkf,        /* --> Work array, size: max(nfac, nfabor) */
  cs_real_t        *rsmbs,         /* --> Work array, size: ncelet */
  cs_real_t        *rsmbv          /* --> Work array, size: ncelet */
