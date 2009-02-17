@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -70,8 +70,7 @@ typedef struct {
 
   /* Other options */
 
-  cs_int_t       iverif;        /* Mesh quality verification modes
-                                   (-1 for standard mode) */
+  cs_bool_t      verif;         /* Mesh quality verification mode */
 
   int            benchmark;     /* Benchmark mode:
                                    0: not used;

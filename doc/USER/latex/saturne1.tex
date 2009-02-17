@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2009 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -1629,39 +1629,21 @@ passes the \texttt{-mpi} option to the Kernel command line
 executions of \CS. It is still under development. Please refer to \CS
 development team for further information.
 
-\item \texttt{-q n} or \texttt{--quality n}: triggers the verification mode.
-The code runs without
-any Interface parameter file nor any user subroutine. The mesh is read and
-elementary tests are performed.\\
-\hspace*{0.5cm}\texttt{n=-1}: no test (default value if no \texttt{-q} option is
-specified. The code runs normally\\
-\hspace*{0.5cm}\texttt{n=0}: the quality criteria of the mesh are calculated
-(non-orthogonality angles, internal faces off-set, ...) and corresponding
-EnSight post-processing parts are created.\\
-\hspace*{0.5cm}\texttt{n=1}: test calculation of the gradient of
-$sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
-EnSight part for the corresponding error is created. The gradient is calculated
-with option IMRGRA=0.\\
-\hspace*{0.5cm}\texttt{n=2}: test calculation of the gradient of
-$sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
-EnSight part for the corresponding error is created. The gradient is calculated
-with option IMRGRA=1.\\
-\hspace*{0.5cm}\texttt{n=3}: test calculation of the gradient of
-$sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
-EnSight part for the corresponding error is created. The gradient is calculated
-with option IMRGRA=2.\\
-\hspace*{0.5cm}\texttt{n=4}: test calculation of the gradient of
-$sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
-EnSight part for the corresponding error is created. The gradient is calculated
-with option IMRGRA=3.\\
-\hspace*{0.5cm}\texttt{n=5}: test calculation of the gradient of
-$sin(x+2y+3z)$. The calculated value is compared to the exact value, and an
-EnSight part for the corresponding error is created. The gradient is calculated
-with option IMRGRA=4.\\
-The command \texttt{-q n} is to be placed in the \texttt{ARG\_CS\_VERIF} variable
-in the launch script to be added automatically to the Kernel command line.\\
-The value of \texttt{n} is accessible in the variable IVERIF\index{IVERIF} in
-the FORTRAN code.
+\item \texttt{-q} or \texttt{--quality}: triggers the verification mode.
+The code runs without any Interface parameter file nor any user subroutine.
+The mesh is read and elementary tests are performed:\\
+\begin{list}{-}{}
+\item the quality criteria of the mesh are calculated (non-orthogonality angles,
+internal faces off-set, \ldots) and corresponding EnSight
+post-processing parts are created.\\
+\item test calculation of the gradient of $sin(x+2y+3z)$. The calculated
+value is compared to the exact value, and an EnSight part for the
+corresponding error is created. The gradient is calculated with each
+option IMRGRA from $0$ to $4$.\\
+\end{list}
+The command \texttt{-q} is to be placed in the \texttt{ARG\_CS\_VERIF}
+variable in the launch script to be added automatically to the Kernel
+command line.\\
 
 \item \texttt{-cwf}: triggers the cutting of boundary and internal faces which
 have a warp angle larger than a certain limit\footnote{the warp angle is an
@@ -1862,7 +1844,7 @@ valgrind debugging and profiling tool. The usual value to use valgrind is
 
 \item \texttt{ARG\_CS\_VERIF}: verification mode to be used for \CS (see
 \ref{prg_optappelnoy}). An empty variable implies standard calculation mode
-(IVERIF=-1).
+(IVERIF=0).
 
 \item \texttt{ARG\_CS\_OUTPUT}: options for the redirection of the standard
 output (see \ref{prg_optappelnoy})

@@ -5,7 +5,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2008 EDF S.A., France
+C     Copyright (C) 1998-2009 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -148,6 +148,7 @@ C
       INCLUDE "cstnum.h"
       INCLUDE "pointe.h"
       INCLUDE "entsor.h"
+      INCLUDE "albase.h"
 C
 C***********************************************************************
 C
@@ -195,23 +196,25 @@ C
 C***********************************************************************
 C
 C=======================================================================
-C 1.  INITIALISATIONS
+C 0.  INITIALISATIONS
 C=======================================================================
 C
-      IDEBIA = IDBIA0
-      IDEBRA = IDBRA0
+      IFINIA = IDBIA0
 C
-      IW1 = IDEBRA
-      IW2 = IW1 + NCELET
-      IW3 = IW2 + NCELET
-      IFINRA  = IW3 + NCELET
+C On positionne l'indicateur ALE a 1 de maniere a forcer le recalcul
+C de la contribution des cellules de bord a chaque appel de GRDCEL
+      IALE = 1
+C
+      IW1    = IDBRA0
+      IW2    = IW1    + NCELET
+      IW3    = IW2    + NCELET
+      IFINRA = IW3    + NCELET
 C
       CALL RASIZE('TESTEL',IFINRA)
-C
-      IFINIA = IDEBIA
+C     ===========
 C
 C=======================================================================
-C 2. APPEL A GRDCEL POUR LA FONCTION ANALYTIQUE SIN(X+2Y+3Z)
+C 1. FONCTION ANALYTIQUE SIN(X+2Y+3Z)
 C=======================================================================
 C
       IPHAS = 1
@@ -222,7 +225,7 @@ C
       IVAR   = IPR(IPHAS)
       IPCLIP = ICLRTP(IVAR,ICOEF)
 C
-      DO IEL = 1,NCELET
+      DO IEL = 1, NCELET
         XX = XYZCEN(1,IEL)
         YY = XYZCEN(2,IEL)
         ZZ = XYZCEN(3,IEL)
@@ -240,6 +243,31 @@ C
         COEFB(IFAC,IPCLIP) = 0.D0
       ENDDO
 C
+C On active le writer standard
+C
+      INDWRI = -1
+      INDACT = 1
+      CALL PSTACT(INDWRI, INDACT)
+C     ===========
+C
+C Options de sorties des variables (gradient non entrelaces)
+C
+      IPART = -1
+      IDIMT = 3
+      IENTLA = 0
+      IVARPR = 1
+C
+C=======================================================================
+C 2. CALCUL DU GRADIENT DE LA FONCTION ANALYTIQUE
+C
+C    NE PAS CHANGER L'ORDRE DE CALCUL DES GRADIENTS:
+C      * IMRGRA = 0
+C      * IMRGRA = 1 (voisinage standard)
+C      * IMRGRA = 2 (voisinage etendu)
+C      * IMRGRA = 4 (voisinage etendu)
+C      * IMRGRA = 3 (reduction du voisinage etendu)
+C=======================================================================
+C
       INC = 1
       ICCOCG = 1
       NSWRGP = NSWRGR(IVAR)
@@ -249,6 +277,12 @@ C
       CLIMGP = CLIMGR(IVAR)
       EXTRAP = EXTRAG(IVAR)
       IPHYDP = 0
+C
+C  2.1 APPEL A GRDCEL AVEC IMRGRA = 0
+C  ==================================
+C
+      IMRGRA = 0
+      IMLIGP = -1
 C
       CALL GRDCEL
 C     ===========
@@ -269,43 +303,241 @@ C     ===========
      &   RA(IW1), RA(IW2), RA(IW3),
      &   RDEVEL , RTUSER , RA     )
 C
-C=============================================================================
+C On sort le gradient
 C
-C On active le writer standard
-      INDWRI = -1
-      INDACT = 1
-      CALL PSTACT(INDWRI, INDACT)
-C     ===========
-C
-C On sort la variable
-      IPART = -1
-      NAMEVR = 'gradient'
-      IDIMT = 3
-      IENTLA = 0
-      IVARPR = 1
+      NAMEVR = 'Grad_RC'
       CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
 C     ===========
-     &     NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
 C
 C Calcul de l'erreur absolue
-      DO IEL = 1,NCELET
+C
+      DO IEL = 1, NCELET
         XX = XYZCEN(1,IEL)
         YY = XYZCEN(2,IEL)
         ZZ = XYZCEN(3,IEL)
-        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-     COS(XX+2.D0*YY+3.D0*ZZ)
         RTP(IEL,IVIPH) = RTP(IEL,IVIPH)-2.D0*COS(XX+2.D0*YY+3.D0*ZZ)
         RTP(IEL,IWIPH) = RTP(IEL,IWIPH)-3.D0*COS(XX+2.D0*YY+3.D0*ZZ)
       ENDDO
 C
 C On sort l'erreur
-      IPART = -1
-      NAMEVR = 'erreur_gradient'
-      IDIMT = 3
-      IENTLA = 0
-      IVARPR = 1
+C
+      NAMEVR = 'Err_Grad_RC'
       CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
 C     ===========
-     &     NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C
+C  2.2 APPEL A GRDCEL AVEC IMRGRA = 1
+C  ==================================
+C
+      IMRGRA = 1
+      IMLIGP = 1
+C
+      CALL GRDCEL
+C     ===========
+     & ( IFINIA , IFINRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IVAR   , IMRGRA , INC    , ICCOCG , NSWRGP , IMLIGP ,  IPHYDP ,
+     &   IWARNP , NFECRA ,
+     &   EPSRGP , CLIMGP , EXTRAP ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   RA(IW1), RA(IW1), RA(IW1),
+     &   RTP(1,IVAR)     , COEFA(1,IPCLIP) , COEFB(1,IPCLIP) ,
+     &   RTP(1,IUIPH)    , RTP(1,IVIPH)    , RTP(1,IWIPH)    ,
+     &   RA(IW1), RA(IW2), RA(IW3),
+     &   RDEVEL , RTUSER , RA     )
+C
+C
+C On sort le gradient
+C
+      NAMEVR = 'Grad_LSQ'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C Calcul de l'erreur absolue
+C
+      DO IEL = 1, NCELET
+        XX = XYZCEN(1,IEL)
+        YY = XYZCEN(2,IEL)
+        ZZ = XYZCEN(3,IEL)
+        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-     COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IVIPH) = RTP(IEL,IVIPH)-2.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IWIPH) = RTP(IEL,IWIPH)-3.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+      ENDDO
+C
+C On sort l'erreur
+C
+      NAMEVR = 'Err_Grad_LSQ'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C
+C  2.3 APPEL A GRDCEL AVEC IMRGRA = 2
+C  ==================================
+C
+      IMRGRA = 2
+      IMLIGP = 1
+C
+      CALL GRDCEL
+C     ===========
+     & ( IFINIA , IFINRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IVAR   , IMRGRA , INC    , ICCOCG , NSWRGP , IMLIGP ,  IPHYDP ,
+     &   IWARNP , NFECRA ,
+     &   EPSRGP , CLIMGP , EXTRAP ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   RA(IW1), RA(IW1), RA(IW1),
+     &   RTP(1,IVAR)     , COEFA(1,IPCLIP) , COEFB(1,IPCLIP) ,
+     &   RTP(1,IUIPH)    , RTP(1,IVIPH)    , RTP(1,IWIPH)    ,
+     &   RA(IW1), RA(IW2), RA(IW3),
+     &   RDEVEL , RTUSER , RA     )
+C
+C On sort le gradient
+C
+      NAMEVR = 'Grad_LSQ_Ext'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C Calcul de l'erreur absolue
+C
+      DO IEL = 1, NCELET
+        XX = XYZCEN(1,IEL)
+        YY = XYZCEN(2,IEL)
+        ZZ = XYZCEN(3,IEL)
+        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-     COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IVIPH) = RTP(IEL,IVIPH)-2.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IWIPH) = RTP(IEL,IWIPH)-3.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+      ENDDO
+C
+C On sort l'erreur
+C
+      NAMEVR = 'Err_Grad_LSQ_Ext'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C
+C  2.4 APPEL A GRDCEL AVEC IMRGRA = 4
+C  ==================================
+C
+      IMRGRA = 4
+      IMLIGP = -1
+C
+      CALL GRDCEL
+C     ===========
+     & ( IFINIA , IFINRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IVAR   , IMRGRA , INC    , ICCOCG , NSWRGP , IMLIGP ,  IPHYDP ,
+     &   IWARNP , NFECRA ,
+     &   EPSRGP , CLIMGP , EXTRAP ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   RA(IW1), RA(IW1), RA(IW1),
+     &   RTP(1,IVAR)     , COEFA(1,IPCLIP) , COEFB(1,IPCLIP) ,
+     &   RTP(1,IUIPH)    , RTP(1,IVIPH)    , RTP(1,IWIPH)    ,
+     &   RA(IW1), RA(IW2), RA(IW3),
+     &   RDEVEL , RTUSER , RA     )
+C
+C On sort le gradient
+C
+      NAMEVR = 'Grad_LSQ_RC'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C Calcul de l'erreur absolue
+C
+      DO IEL = 1, NCELET
+        XX = XYZCEN(1,IEL)
+        YY = XYZCEN(2,IEL)
+        ZZ = XYZCEN(3,IEL)
+        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-     COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IVIPH) = RTP(IEL,IVIPH)-2.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IWIPH) = RTP(IEL,IWIPH)-3.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+      ENDDO
+C
+C On sort l'erreur
+C
+      NAMEVR = 'Err_Grad_LSQ_RC'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C
+C  2.5 APPEL A GRDCEL AVEC IMRGRA = 3
+C  ==================================
+C
+C Reduction du voisinage etendu
+C
+      CALL REDVSE(ANOMAX)
+C     ===========
+C
+      IMRGRA = 3
+      IMLIGP = 1
+C
+      CALL GRDCEL
+C     ===========
+     & ( IFINIA , IFINRA ,
+     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
+     &   NNOD   , LNDFAC , LNDFBR , NCELBR , NPHAS  ,
+     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
+     &   IVAR   , IMRGRA , INC    , ICCOCG , NSWRGP , IMLIGP ,  IPHYDP ,
+     &   IWARNP , NFECRA ,
+     &   EPSRGP , CLIMGP , EXTRAP ,
+     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
+     &   IDEVEL , ITUSER , IA     ,
+     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
+     &   RA(IW1), RA(IW1), RA(IW1),
+     &   RTP(1,IVAR)     , COEFA(1,IPCLIP) , COEFB(1,IPCLIP) ,
+     &   RTP(1,IUIPH)    , RTP(1,IVIPH)    , RTP(1,IWIPH)    ,
+     &   RA(IW1), RA(IW2), RA(IW3),
+     &   RDEVEL , RTUSER , RA     )
+C
+C On sort le gradient
+C
+      NAMEVR = 'Grad_LSQ_ExtRed'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
+C Calcul de l'erreur absolue
+C
+      DO IEL = 1, NCELET
+        XX = XYZCEN(1,IEL)
+        YY = XYZCEN(2,IEL)
+        ZZ = XYZCEN(3,IEL)
+        RTP(IEL,IUIPH) = RTP(IEL,IUIPH)-     COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IVIPH) = RTP(IEL,IVIPH)-2.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+        RTP(IEL,IWIPH) = RTP(IEL,IWIPH)-3.D0*COS(XX+2.D0*YY+3.D0*ZZ)
+      ENDDO
+C
+C On sort l'erreur
+C
+      NAMEVR = 'Err_Grad_LSQ_ExtRed'
+      CALL PSTEVA(IPART , NAMEVR, IDIMT, IENTLA, IVARPR,
+C     ===========
+     &            NTCABS, TTCABS, RTP(1,IUIPH), RBID, RBID)
+C
 C
 C----
 C FIN

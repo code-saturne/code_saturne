@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -111,8 +111,8 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("\nCommand line options:\n\n"));
   fprintf
-    (e, _(" -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
-          "                   SolCom format (obsolete);\n"));
+    (e, _(" -solcom           stand-alone kernel with \"geomet\" mesh in\n"
+          "                   SolCom format (obsolete)\n"));
 #if defined(_CS_HAVE_MPI)
   fprintf
     (e, _(" -mpi, --mpi       use MPI for parallelism or coupling\n"
@@ -121,10 +121,7 @@ _arg_env_help(const char  *name)
 
 #endif
   fprintf
-    (e, _(" -q, --quality     verifications\n"
-          "                   -1: no tests activated (default)\n"
-          "                    0: only the initialization is tested\n"
-          "                    1 to 5: elementary tests are activated\n"));
+    (e, _(" -q, --quality     mesh quality verification mode\n"));
   fprintf
     (e, _(" -cwf              <criterion> cut warped faces\n"
           "                    -post: activate the post-processing related\n"
@@ -507,7 +504,7 @@ cs_opts_define(int         argc,
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
 
-  opts->iverif = -1;
+  opts->verif = false;
   opts->benchmark = 0;
 
   opts->cwf = false;
@@ -537,12 +534,9 @@ cs_opts_define(int         argc,
     }
 
 #endif /* defined(_CS_HAVE_MPI) */
-    else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0) {
-      cs_int_t tmperr = 0;
-      opts->iverif = (cs_int_t) _arg_to_int(arg_id + 1, argc, argv, &tmperr);
-      if (tmperr == 0)
-        arg_id++;
-    }
+
+    else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
+      opts->verif = true;
 
     else if (strcmp(s, "--log") == 0) {
       cs_int_t n1 = 0;

@@ -252,12 +252,8 @@ Options OPTIMIZATION and CS_LIB_ADD are more advanced, mainly
 
   ARG_CS_VERIF allows activation of elementary mesh quality tests,
     as well as basic linear algebra operations micro-benchmarks.
-    ="-q 0" : mesh quality criteria
-    ="-q 1" : test precision of gradient for sin(x+2y+3z) with IMRGRA=0
-    ="-q 2" : test precision of gradient for sin(x+2y+3z) with IMRGRA=1
-    ="-q 3" : test precision of gradient for sin(x+2y+3z) with IMRGRA=2
-    ="-q 4" : test precision of gradient for sin(x+2y+3z) with IMRGRA=3
-    ="-q 5" : test precision of gradient for sin(x+2y+3z) with IMRGRA=4
+    ="-q" : mesh quality criteria and test precision of gradient for
+            sin(x+2y+3z) with each calculation mode (IMRGRA from 0 to 4)
     ="--benchmark": basic linear algebra operation benchmark
     ="--benchmark --mpitrace" : same as benchmark, with operations run
                                 only once, for use with MPI trace tools.

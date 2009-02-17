@@ -5,7 +5,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2008 EDF S.A., France
+C     Copyright (C) 1998-2009 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -123,15 +123,10 @@ C
       CALL MTINI1
 C     ===========
 C
-C En mode verification, on change IMRGRA en consequence, avant les
-C   impressions dans le listing (on en a besoin dans MODINI pour ANOMAX)
-C Si d'autres tests elementaires viennent se greffer, on pourra faire
-C   une routine specifique d'initialisation des parametres des tests.
-        IF (IVERIF.EQ.1) IMRGRA = 0
-        IF (IVERIF.EQ.2) IMRGRA = 1
-        IF (IVERIF.EQ.3) IMRGRA = 2
-        IF (IVERIF.EQ.4) IMRGRA = 3
-        IF (IVERIF.EQ.5) IMRGRA = 4
+C En mode verification, on positionne IMRGRA a 2 de maniere a creer
+C le voisinage etendu (complet) necessaire a certains modes de calcul
+C de gradient
+      IF (IVERIF.EQ.1) IMRGRA = 2
 C
 C
 C=======================================================================
@@ -224,6 +219,8 @@ C
 C=======================================================================
 C 6. IMPRESSIONS
 C=======================================================================
+C
+      IF (IVERIF.EQ.1) RETURN
 C
       CALL IMPINI
 C     ===========

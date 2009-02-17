@@ -5,7 +5,7 @@ C
 C     This file is part of the Code_Saturne Kernel, element of the
 C     Code_Saturne CFD tool.
 C
-C     Copyright (C) 1998-2008 EDF S.A., France
+C     Copyright (C) 1998-2009 EDF S.A., France
 C
 C     contact: saturne-support@edf.fr
 C
@@ -248,7 +248,7 @@ C     Stockage supplémentaire si on initialise le gradient
 C       par moindre carre
 C
       IICOCI = 0
-      IF(IMRGRA.EQ.4 .OR. IVERIF.EQ.5) THEN
+      IF(IMRGRA.EQ.4 .OR. IVERIF.EQ.1) THEN
         IICOCI = 1
       ENDIF
 C

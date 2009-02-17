@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2009-02-16 12:14+0100\n"
-"PO-Revision-Date: 2009-02-16 12:27+0100\n"
+"POT-Creation-Date: 2009-02-17 14:33+0100\n"
+"PO-Revision-Date: 2009-02-17 14:36+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -1535,7 +1535,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/base/cs_main.c:382
+#: src/base/cs_main.c:380
 #, c-format
 msgid ""
 "\n"
@@ -1550,7 +1550,7 @@ msgstr ""
 "       LONGRA =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/base/cs_main.c:392
+#: src/base/cs_main.c:390
 #, c-format
 msgid ""
 "\n"
@@ -1563,7 +1563,7 @@ msgstr ""
 "       NIDEVE =   %10d (Nombre d'entiers)\n"
 "       NRDEVE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:398
+#: src/base/cs_main.c:396
 #, c-format
 msgid ""
 "\n"
@@ -1577,7 +1577,7 @@ msgstr ""
 "       NITUSE =   %10d (Nombre d'entiers)\n"
 "       NRTUSE =   %10d (Nombre de réels)\n"
 
-#: src/base/cs_main.c:460
+#: src/base/cs_main.c:458
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -2535,13 +2535,13 @@ msgstr ""
 "\n"
 
 #: src/base/cs_opts.c:114
-#, c-format
+#, fuzzy, c-format
 msgid ""
-" -solcom           Stand-alone kernel with \"geomet\" mesh in\n"
-"                   SolCom format (obsolete);\n"
+" -solcom           stand-alone kernel with \"geomet\" mesh in\n"
+"                   SolCom format (obsolete)\n"
 msgstr ""
-" -solcom           Noyau autonome avec maillage \"geomet\" au\n"
-"                   format SolCom (obsolète) ;\n"
+" -solcom           noyau autonome avec maillage \"geomet\" au\n"
+"                   format SolCom (obsolète)\n"
 
 #: src/base/cs_opts.c:118
 #, c-format
@@ -2556,18 +2556,10 @@ msgstr ""
 
 #: src/base/cs_opts.c:124
 #, c-format
-msgid ""
-" -q, --quality     verifications\n"
-"                   -1: no tests activated (default)\n"
-"                    0: only the initialization is tested\n"
-"                    1 to 5: elementary tests are activated\n"
-msgstr ""
-" -q, --quality     vérifications\n"
-"                   -1 : pas de tests activés (défaut)\n"
-"                    0 : verification de l'initialisation seule\n"
-"                    1 à 5 : activation de tests élémentaires\n"
+msgid " -q, --quality     mesh quality verification mode\n"
+msgstr " -q, --quality     vérification de la qualité du maillage\n"
 
-#: src/base/cs_opts.c:129
+#: src/base/cs_opts.c:126
 #, c-format
 msgid ""
 " -cwf              <criterion> cut warped faces\n"
@@ -2579,7 +2571,7 @@ msgstr ""
 "                    -post : active le post-traitement lié au \n"
 "                            découpage des faces\n"
 
-#: src/base/cs_opts.c:133
+#: src/base/cs_opts.c:130
 #, c-format
 msgid ""
 " --benchmark       elementary operations performance\n"
@@ -2590,7 +2582,7 @@ msgstr ""
 "                   [--mpitrace] opérations effectuées une seule\n"
 "                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:137
+#: src/base/cs_opts.c:134
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -2601,7 +2593,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/base/cs_opts.c:141
+#: src/base/cs_opts.c:138
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -2616,12 +2608,12 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"listing_n<rang>\"\n"
 
-#: src/base/cs_opts.c:148
+#: src/base/cs_opts.c:145
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:151
+#: src/base/cs_opts.c:148
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -2630,16 +2622,16 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/base/cs_opts.c:304
+#: src/base/cs_opts.c:301
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:319
+#: src/base/cs_opts.c:316
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:323
+#: src/base/cs_opts.c:320
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -2648,7 +2640,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:326
+#: src/base/cs_opts.c:323
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -3574,12 +3566,12 @@ msgstr ""
 #: src/base/cs_syr4_coupling.c:354
 #, c-format
 msgid "SYRTHES_cells_%d"
-msgstr ""
+msgstr "Cellules_SYRTHES_%d"
 
 #: src/base/cs_syr4_coupling.c:375
 #, c-format
 msgid "SYRTHES_faces_%d"
-msgstr ""
+msgstr "Faces_SYRTHES_%d"
 
 #: src/base/cs_syr4_coupling.c:402
 #, c-format

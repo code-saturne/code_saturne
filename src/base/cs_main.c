@@ -219,9 +219,7 @@ main(int    argc,
 
   /* Call main calculation initialization function or help */
 
-  _verif = opts.iverif;
-  if (opts.benchmark > 0 && _verif < 0)
-    _verif = 0;
+  _verif = (opts.verif == true) ? 1 : 0;
 
   CS_PROCF(initi1, INITI1)(&_verif);
 
@@ -361,20 +359,18 @@ main(int    argc,
 
   /* Compute iterations or quality criteria depending on verification options */
 
-  if (opts.iverif == 0) {
+  if (opts.verif == true) {
     bft_printf(_("\n Computing quality criteria\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
-  }
-
-  if (opts.iverif >= 0)
     cs_mesh_coherency_check();
+  }
 
   if (opts.benchmark > 0) {
     int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;
     cs_benchmark(mpi_trace_mode);
   }
 
-  if (opts.iverif != 0 && opts.benchmark <= 0) {
+  if (opts.benchmark <= 0) {
 
     /* Allocate Fortran working arrays */
 
@@ -420,7 +416,7 @@ main(int    argc,
      * Call main calculation function (code Kernel)
      *----------------------------------------------*/
 
-    CS_PROCF(caltri, CALTRI)(&(opts.iverif),
+    CS_PROCF(caltri, CALTRI)(&_verif,
                              &nideve, &nrdeve, &nituse, &nrtuse,
                              cs_glob_mesh->i_face_cells,
                              cs_glob_mesh->b_face_cells,
