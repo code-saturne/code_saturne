@@ -860,10 +860,10 @@ C
         CALL PARMAX(MAXFP2)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip haut sur
-     & la variance en f =', CLFP2M
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur atteinte-valeur max) =', MXCFP
+      WRITE(NFECRA,*)' nombre de clip haut sur la variance en f =',
+     &               CLFP2M
+      WRITE(NFECRA,*)' ecart maximum (valeur atteinte-valeur max) =',
+     &               MXCFP
       WRITE(NFECRA,*)' valeur max (pour l ecart max) =', MAXFP2
       WRITE(NFECRA,*)'     '
 C
@@ -873,17 +873,17 @@ C
         CALL PARMAX(MXYFP2)
         ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip haut sur
-     & la variance en y =', CLYF21
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur atteinte-valeur max)  =', MXCYFP
+      WRITE(NFECRA,*)' nombre de clip haut sur la variance en y =',
+     &               CLYF21
+      WRITE(NFECRA,*)' ecart maximum (valeur atteinte-valeur max)  =',
+     &               MXCYFP
       WRITE(NFECRA,*)' valeur max (pour l ecart max) =', MXYFP2
       WRITE(NFECRA,*)'     '
 C
-C     WRITE(NFECRA,*)' nombre de clip bas sur
-C    & la variance en y =', CLYF22
-C     WRITE(NFECRA,*)' ecart maximum
-C    & (valeur min-valeur atteinte) =', MNCYFP
+C     WRITE(NFECRA,*)' nombre de clip bas sur la variance en y =',
+C    &               CLYF22
+C     WRITE(NFECRA,*)' ecart maximum (valeur min-valeur atteinte) =',
+C    &               MNCYFP
 C     WRITE(NFECRA,*)' valeur min (pour l ecart max) =', MNYFP2
 C     WRITE(NFECRA,*)'     '
 C
@@ -893,10 +893,10 @@ C
         CALL PARMAX(MXCOYF)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip haut sur
-     & la covariance =', CLCYF1
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur atteinte-valeur max)F =', MXCCYF
+      WRITE(NFECRA,*)' nombre de clip haut sur la covariance =',
+     &               CLCYF1
+      WRITE(NFECRA,*)' ecart maximum (valeur atteinte-valeur max)F =',
+     &               MXCCYF
       WRITE(NFECRA,*)' valeur max (pour l ecart max) =', MXCOYF
       WRITE(NFECRA,*)'     '
 C
@@ -906,10 +906,10 @@ C
         CALL PARMIN(MNCOYF)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip bas sur
-     & la covariance =', CLCYF2
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur min-valeur atteinte) =', MNCCYF
+      WRITE(NFECRA,*)' nombre de clip bas sur la covariance =',
+     &               CLCYF2
+      WRITE(NFECRA,*)' ecart maximum (valeur min-valeur atteinte) =',
+     &               MNCCYF
       WRITE(NFECRA,*)' valeur min (pour l ecart max) =', MNCOYF
       WRITE(NFECRA,*)'     '
 C
@@ -919,10 +919,10 @@ C
         CALL PARMAX(MY2P1)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip haut sur
-     & la variance conditionnelle 1 =', CLY2P1
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur atteinte-valeur max) =', MCY2P1
+      WRITE(NFECRA,*)
+     &' nombre de clip haut sur la variance conditionnelle 1 =', CLY2P1
+      WRITE(NFECRA,*)' ecart maximum (valeur atteinte-valeur max) =',
+     &               MCY2P1
       WRITE(NFECRA,*)' valeur max (pour l ecart max) =', MY2P1
       WRITE(NFECRA,*)'     '
 C
@@ -932,10 +932,10 @@ C
         CALL PARMIN(MY2P3)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip bas sur
-     & la variance conditionnelle 1 =', CLY2P3
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur min-valeur atteinte) =', MCY2P3
+      WRITE(NFECRA,*)
+     &' nombre de clip bas sur la variance conditionnelle 1 =', CLY2P3
+      WRITE(NFECRA,*)' ecart maximum (valeur min-valeur atteinte) =',
+     &               MCY2P3
       WRITE(NFECRA,*)' valeur min (pour l ecart max) =', MY2P3
       WRITE(NFECRA,*)'     '
 C
@@ -945,10 +945,10 @@ C
         CALL PARMAX(MY2P2)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip haut sur
-     & la variance conditionnelle 2 =', CLY2P2
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur atteinte-valeur max) =', MCY2P2
+      WRITE(NFECRA,*)
+     &' nombre de clip haut sur la variance conditionnelle 2 =', CLY2P2
+      WRITE(NFECRA,*)' ecart maximum (valeur atteinte-valeur max) =',
+     &               MCY2P2
       WRITE(NFECRA,*)' valeur max (pour l ecart max) =', MY2P2
       WRITE(NFECRA,*)'     '
 C
@@ -958,10 +958,10 @@ C
         CALL PARMIN(MY2P4)
       ENDIF
 C
-      WRITE(NFECRA,*)' nombre de clip bas sur
-     & la variance conditionnelle 2=', CLY2P4
-      WRITE(NFECRA,*)' ecart maximum
-     & (valeur min-valeur atteinte) =', MCY2P4
+      WRITE(NFECRA,*)
+     &' nombre de clip bas sur la variance conditionnelle 2=', CLY2P4
+      WRITE(NFECRA,*)' ecart maximum (valeur min-valeur atteinte) =',
+     &               MCY2P4
       WRITE(NFECRA,*)' valeur min (pour l ecart max) =', MY2P4
       WRITE(NFECRA,*)'     '
 C
