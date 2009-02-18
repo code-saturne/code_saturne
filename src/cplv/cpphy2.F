@@ -365,7 +365,6 @@ C
  1008 FORMAT(/,1X,' CLIPPING EN MIN DE LA MASSE VOL. POUR LA CLASSE ',
      &        I3,/,10X,' Nombre de points : ',I8,
      &           /,10X,' Valeur Min       : ',G15.7)
-     &
 C
 C
 C----

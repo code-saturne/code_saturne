@@ -385,7 +385,7 @@ C
 c            ROVSDT(IEL) = ROVSDT(IEL) + ZERO
           ENDDO
 C
-        ELSE IF ( IVAR. EQ. ISCA(IPOTVA(3)) ) THEN
+        ELSE IF ( IVAR .EQ. ISCA(IPOTVA(3)) ) THEN
 C
           IF (IWARNI(IVAR).GE.1) THEN
             WRITE(NFECRA,1000) CHAINE(1:8)

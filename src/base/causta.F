@@ -156,7 +156,7 @@ C
         IF ( ABS ( UET-UETA ) .LE. EPS * UETA ) THEN
           IF ( IMP .GT. 5 ) WRITE ( NFECRA,3000 ) NIT, EPS
         ELSE IF ( NIT .GE. NITM ) THEN
-          IF ( IMP .GT .1 ) THEN
+          IF ( IMP .GT. 1 ) THEN
             IF ( IPOS .LE. 0 ) WRITE ( NFECRA,1000 ) IFACE
             IPOS = 1
             WRITE ( NFECRA,3100 ) NITM, EPS

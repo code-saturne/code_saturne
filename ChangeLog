@@ -1,3 +1,16 @@
+* 18/02/2009 - David Monfort <david.monfort@edf.fr>
+  Minor modifications to make Fortran files to be compiled a
+  Fortran 95 source files after conversion.
+  modified routines:
+    src/base/causta.F
+    src/base/crstgr.F
+    src/base/divrij.F
+    src/base/inimas.F
+    src/base/projts.F
+    src/cplv/cpphy2.F
+    src/elec/elphyv.F
+    src/elec/eltssc.F
+
 * 16/02/2009 - David Monfort <david.monfort@edf.fr>
   Change the mesh quality verification behaviour. The different
   gradient calculation modes are now done in one pass. Thus, only

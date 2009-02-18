@@ -181,6 +181,14 @@ CARGU ! RA(*)        ! TR !  -  ! MACRO TABLEAU REEL                   !
 CARGU !______________!____!_____!______________________________________!
 c@argue
 C
+c@commb
+CCOMM                             COMMONS
+CCOMM .______________.____._____.______________________________________.
+CCOMM !    NOM       !TYPE!MODE !                   ROLE               !
+CCOMM !______________!____!_____!______________________________________!
+CCOMM !______________!____!_____!______________________________________!
+c@comme
+C
 C     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
 C            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 C     MODE : -> DONNEE, <- RESULTAT, <-> DONNEE MODIFIEE,

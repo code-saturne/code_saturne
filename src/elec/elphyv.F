@@ -443,7 +443,7 @@ C
 C
 C     Masse volumique, Viscosite, CP, Sigm et Lambda de chaque constituant
 C
-          IF ( TP . LE. TH(1) ) THEN
+          IF ( TP .LE. TH(1) ) THEN
 C
 C         Extrapolation : Valeur constante = 1ere valeur de la table
 C

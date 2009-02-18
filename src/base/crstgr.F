@@ -356,7 +356,7 @@ C
         ENDDO
 C
         IF(IWARNP.GT.3) THEN
-          IF (IRANGP. GE. 0) THEN
+          IF (IRANGP .GE. 0) THEN
             CALL PARCPT(IMIN)
             CALL PARCPT(IMAX)
           ENDIF
@@ -466,7 +466,7 @@ C
           ENDIF
         ENDDO
 C
-        IF (IRANGP. GE. 0) THEN
+        IF (IRANGP .GE. 0) THEN
           II = 2
           CALL PARRMN(II, ANMIN)
           CALL PARRMX(II, ANMAX)
@@ -485,7 +485,7 @@ C
               RMAX = MAX(RMAX, XAG(IFACG,1)/XAG0(IFACG))
             ENDDO
 C
-            IF (IRANGP. GE. 0) THEN
+            IF (IRANGP .GE. 0) THEN
               CALL PARMIN(RMIN)
               CALL PARMAX(RMAX)
             ENDIF
