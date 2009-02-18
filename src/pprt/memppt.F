@@ -65,6 +65,7 @@ CARGU !              !    !     !  DANS IA EN SORTIE                   !
 CARGU ! IFINRA       ! E  ! <-  ! POINTEUR DE LA PREMIERE CAS LIBRE DAN!
 CARGU !              !    !     !  DANS IA EN SORTIE                   !
 CARGU .______________.____._____.______________________________________.
+c@argue
 C
 c@commb
 CCOMM                             COMMONS

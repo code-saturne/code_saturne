@@ -1,5 +1,5 @@
 * 18/02/2009 - David Monfort <david.monfort@edf.fr>
-  Minor modifications to make Fortran files to be compiled a
+  Minor modifications to make Fortran files to be compiled as
   Fortran 95 source files after conversion.
   modified routines:
     src/base/causta.F
@@ -10,6 +10,7 @@
     src/cplv/cpphy2.F
     src/elec/elphyv.F
     src/elec/eltssc.F
+    src/pprt/memppt.F
 
 * 16/02/2009 - David Monfort <david.monfort@edf.fr>
   Change the mesh quality verification behaviour. The different
