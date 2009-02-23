@@ -71,7 +71,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
-#include "cs_mesh_select.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 

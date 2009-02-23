@@ -1,4 +1,14 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Remove unused cs_mesh_select feature (replaced by fvm_selector
+  for SYRTHES coupling).
+  modified routines:
+    src/base/cs_sat_coupling.c
+    src/base/cs_syr_coupling.c
+  deleted routines:
+    include/base/cs_mesh_select.h
+    src/base/cs_mesh_select.c
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Porting to NEC SX9: replace VPP 5000 vectorization directives
   by NEC ones (!OCL... => !CDIR...) and add a specific macros file.
   Also add new AR and ARFLAGS variables in the Makefile so that one
