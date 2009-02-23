@@ -54,6 +54,7 @@ ARCHBIN_CS     = $(ARCH_CS)/bin
 ARCHINC_CS     = $(ARCH_CS)/include
 ARCHLIB_CS     = $(ARCH_CS)/lib
 ARCHLOCALE_CS  = $(ARCH_CS)/share/locale
+ARCHUSR_CS     = $(ARCH_CS)/share/users
 BLD_CS         = $(DIR_CS)/build
 
 # Names of the base library and Code_Saturne executable file
@@ -147,7 +148,7 @@ saturne: link
 lib: privtitre privconfig privcompil privlib privfin
 
 
-lib_install: privtitre privconfig privcompil privlib privlibinst privincinst privfin
+lib_install: privtitre privconfig privcompil privlib privlibinst privincinst privusrinst privfin
 
 
 link: privtitre privconfig privcompil privlink privfin
@@ -476,13 +477,13 @@ privlibinst:
 	@if [ ! -d "$(DIR_CS)/arch" ] ; \
 	 then mkdir "$(DIR_CS)/arch" ; \
 	 fi ;\
-         if [ ! -d "$(ARCH_CS)" ] ; \
+     if [ ! -d "$(ARCH_CS)" ] ; \
 	 then mkdir "$(ARCH_CS)" ; \
 	 fi ;\
-         if [ ! -d "$(ARCHBIN_CS)" ] ; \
+     if [ ! -d "$(ARCHBIN_CS)" ] ; \
 	 then mkdir "$(ARCHBIN_CS)" ; \
 	 fi ;\
-         if [ ! -d "$(ARCHLIB_CS)" ] ; \
+     if [ ! -d "$(ARCHLIB_CS)" ] ; \
 	 then mkdir "$(ARCHLIB_CS)" ; \
 	 fi 
 	@dirtrav=`pwd` ;\
@@ -510,7 +511,7 @@ privincinst:
          if [ ! -d "$(ARCH_CS)" ] ; \
 	 then mkdir "$(ARCH_CS)" ; \
 	 fi ;\
-         if [ ! -d "$(ARCHINC_CS)" ] ; \
+     if [ ! -d "$(ARCHINC_CS)" ] ; \
 	 then mkdir "$(ARCHINC_CS)" ; \
 	 fi
 	@dirtrav=`pwd` ;\
@@ -554,6 +555,69 @@ privincinst:
 		 done ; \
 	 done
 	@echo "***  Headers installation finished" ; echo
+
+
+privusrinst:
+	@echo "***  Installing user files"
+	@if [ ! -d "$(DIR_CS)/arch" ] ; \
+	 then mkdir "$(DIR_CS)/arch" ; \
+	 fi ;\
+     if [ ! -d "$(ARCH_CS)" ] ; \
+	 then mkdir "$(ARCH_CS)" ; \
+	 fi ;\
+	 if [ ! -d "$(ARCH_CS)/share" ] ; \
+	 then mkdir "$(ARCH_CS)/share" ; \
+	 fi ;\
+     if [ ! -d "$(ARCHUSR_CS)" ] ; \
+	 then mkdir "$(ARCHUSR_CS)" ; \
+	 fi
+	@dirtrav=`pwd` ;\
+	 dirprec=`dirname $${dirtrav}` ;\
+	 if   [ "$${dirprec}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	 then modtrav=`basename $${dirtrav}` ;\
+	 else dirprec1=`dirname $${dirprec}` ;\
+	      if   [ "$${dirprec1}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
+	      then modtrav=`basename $${dirprec}` ;\
+	      else modtrav="" ;\
+	      fi ;\
+	 fi ;\
+	 if   [ "$${modtrav}" = "BASE" ] ;\
+	 then user_cs_all="$(USR_CS)/base $(USR_CS)/pprt" ;\
+         elif [ "$${modtrav}" = "ATMO" ] ;\
+	 then user_cs_all="$(USR_CS)/atmo" ;\
+         elif [ "$${modtrav}" = "CFBL" ] ;\
+	 then user_cs_all="$(USR_CS)/cfbl" ;\
+         elif [ "$${modtrav}" = "COGZ" ] ;\
+	 then user_cs_all="$(USR_CS)/cogz" ;\
+         elif [ "$${modtrav}" = "CPLV" ] ;\
+	 then user_cs_all="$(USR_CS)/cplv" ;\
+         elif [ "$${modtrav}" = "CTWR" ] ;\
+	 then user_cs_all="$(USR_CS)/ctwr" ;\
+         elif [ "$${modtrav}" = "ELEC" ] ;\
+	 then user_cs_all="$(USR_CS)/elec" ;\
+         elif [ "$${modtrav}" = "FUEL" ] ;\
+	 then user_cs_all="$(USR_CS)/fuel" ;\
+         elif [ "$${modtrav}" = "LAGR" ] ;\
+	 then user_cs_all="$(USR_CS)/lagr" ;\
+         elif [ "$${modtrav}" = "RAYT" ] ;\
+	 then user_cs_all="$(USR_CS)/rayt" ;\
+	 fi ;\
+	 for dir in $${user_cs_all} ;\
+	 do \
+	     moddir=`basename $${dir}` ; \
+	     if [ ! -d "$(ARCHUSR_CS)/$${moddir}" ] ; \
+		 then mkdir "$(ARCHUSR_CS)/$${moddir}" ; \
+		 fi ; \
+	     for f in $${dir}/*.F ; \
+	     do \
+		     cp -f "$${f}" "$(ARCHUSR_CS)/$${moddir}/" ; \
+			 finst=$(ARCHUSR_CS)/$${moddir}/`basename $${f}` ; \
+             oldvers="^CVERS\nC" ; \
+             newvers="CVERS                  Code_Saturne version $(VERSION)\nC                      --------------------------" ; \
+             sed "N;s/$${oldvers}/$${newvers}/" "$${finst}" > "$${finst}.tmp" && mv "$${finst}.tmp" "$${finst}" ; \
+		 done ; \
+	 done
+	@echo "***  User files installation finished" ; echo
 
 
 privmodlink:

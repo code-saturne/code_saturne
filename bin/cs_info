@@ -35,7 +35,6 @@
 # Styles
 # ======
 
- NOM_ARCH=`uname -s`
  TERM=$TERM
 
  BO=`tput bold`
@@ -114,6 +113,7 @@ else
   acroread=acroread
 fi
 
+docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
 
  topic=$1
  if   [ "$topic" = "version" ] ; then
@@ -141,7 +141,8 @@ fi
      tput init
   fi
  elif [ "$topic" = "user" ] ; then
-   saturnepdf=$CS_HOME/doc/USER/user.pdf
+   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
+   saturnepdf=$docPATH/user.pdf
    echo
    echo " ${BO}user manual${NO} : $saturnepdf"
    echo
@@ -149,13 +150,15 @@ fi
    $acroread $saturnepdf  || sortie "The ${SO}$acroread $saturnepdf${NO} command failed"
    tput init
  elif [ "$topic" = "theory" ] ; then
-   noyaupdf=$CS_HOME/doc/THEORY/theory.pdf
+   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
+   noyaupdf=$docPATH/theory.pdf
    echo
    echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
    echo
    $acroread $noyaupdf
  elif [ "$topic" = "tutorial" ] ; then
-   noyaupdf=$CS_HOME/doc/TUTORIAL/tutorial.pdf
+   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
+   noyaupdf=$docPATH/tutorial.pdf
    echo
    echo " ${BO}Code_Saturne tutorial${NO} : $noyaupdf"
    echo
@@ -172,7 +175,7 @@ fi
    echo
    tput init
  elif [ "$topic" = "ecs" ] ; then
-   ecs=$CSPP_HOME/bin/ecs
+   ecs=$CSPP_HOME/arch/$NOM_ARCH/bin/ecs
    echo
    echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
    echo

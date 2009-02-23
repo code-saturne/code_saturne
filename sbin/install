@@ -263,22 +263,26 @@ Macro_readme_comp=$2
 # =================
 #
  if [ "$1" = "DOC" ] ; then
+  mkdir -p ${CS_HOME}/arch/${NOM_ARCH}/share/doc
   titre "Compilation of the theory"
   cd ../doc/THEORY
   make
   make clean
+  cp -f theory.pdf ${CS_HOME}/arch/${NOM_ARCH}/share/doc
   titrefin "End of the theory compilation"
   echo
   titre "Compilation of the userguide"
   cd ../USER
   make
   make clean
+  cp -f user.pdf ${CS_HOME}/arch/${NOM_ARCH}/share/doc
   titrefin "End of the userguide compilation"
   echo
   titre "Compilation of the tutorials"
   cd ../TUTORIAL
   make
   make clean
+  cp -f tutorial.pdf ${CS_HOME}/arch/${NOM_ARCH}/share/doc
   titrefin "End of the tutorials compilation"
   local_exit
  fi

@@ -1,4 +1,14 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Install the user subroutines and the documentation within
+  a standard "arch/$NOM_ARCH/share" directory.
+  Minor corrections in these scripts as well.
+  modified scripts:
+    bin/cs_create
+    bin/cs_info
+    bin/Makefile
+    sbin/install
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Typo in macro use (CS_ARCH_Linux instead of _CS_ARCH_Linux).
   modified routine:
     src/base/cs_proxy_comm.c
