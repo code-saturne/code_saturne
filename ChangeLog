@@ -1,3 +1,8 @@
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Typo in macro use (CS_ARCH_Linux instead of _CS_ARCH_Linux).
+  modified routine:
+    src/base/cs_proxy_comm.c
+
 * 18/02/2009 - David Monfort <david.monfort@edf.fr>
   Minor modifications to make Fortran files to be compiled as
   Fortran 95 source files after conversion (in three commits).

@@ -254,7 +254,7 @@ _comm_sock_connect(cs_proxy_comm_t  *comm)
 
   char  *host_name = NULL;
 
-#if defined(CS_ARCH_Linux)
+#if defined(_CS_ARCH_Linux)
   socklen_t  sock_len;
 #else
   size_t     sock_len;
