@@ -142,7 +142,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPU.EQ.1) THEN
           RETURN
         ELSE
@@ -330,7 +330,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPU.EQ.1) THEN
           RETURN
         ELSE
@@ -510,7 +510,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPU.EQ.1) THEN
           RETURN
         ELSE
@@ -763,7 +763,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPU.EQ.1) THEN
           RETURN
         ELSE
@@ -970,7 +970,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPR.EQ.1) THEN
           RETURN
         ELSE
@@ -1695,7 +1695,7 @@ C       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
 C       LA BIBLIOTHEQUE)
 C=======================================================================
 C
-      IF (IVERIF.LT.0) THEN
+      IF (IVERIF.EQ.0) THEN
         IF(IIHMPR.EQ.1) THEN
           RETURN
         ELSE

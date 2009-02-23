@@ -1,4 +1,10 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Correction for tests based on IVERIF variable in usini1.F, bug
+  introduced when merging the different verification tests.
+  modified routine:
+    users/base/usini1.F
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Remove unused cs_mesh_select feature (replaced by fvm_selector
   for SYRTHES coupling).
   modified routines:
