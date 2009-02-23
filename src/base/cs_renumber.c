@@ -408,7 +408,7 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
     for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
       ii = face_cells_tmp[face_id] - 1;
-      mesh->b_face_cells[face_id] = new_cell_id[ii];
+      mesh->b_face_cells[face_id] = new_cell_id[ii] + 1;
     }
   }
 
@@ -490,7 +490,7 @@ _update_face_vertices(cs_int_t         n_faces,
     cs_int_t ii, jj, kk, n_vtx, start_id, start_id_old;
     cs_int_t *face_vtx_idx_old, *face_vtx_old;
 
-    const cs_int_t connect_size = face_vtx_idx[n_faces];
+    const cs_int_t connect_size = face_vtx_idx[n_faces] - 1;
 
     BFT_MALLOC(face_vtx_idx_old, n_faces + 1, cs_int_t);
     BFT_MALLOC(face_vtx_old, connect_size, cs_int_t);

@@ -1,3 +1,8 @@
+* 23/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correction in the mesh structure update when renumbering cells.
+  modified routines:
+    src/base/cs_renumber.c
+
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Minor modifications on halos routines (no impact).
   modified routines:
