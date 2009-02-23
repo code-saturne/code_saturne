@@ -145,7 +145,22 @@ _arg_env_help(const char  *name)
     (e, _(" -p, --param       <file_name> parameter file\n"));
 #endif
   fprintf
+    (e, _(" --version         print version number\n"));
+  fprintf
     (e, _(" -h, --help        this help message\n\n"));
+}
+
+/*----------------------------------------------------------------------------
+ * Print version number
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_version(void)
+{
+  if (cs_glob_rank_id >= 1)
+    return;
+
+  printf(_("%s version %s\n"), CS_APP_NAME, CS_APP_VERSION);
 }
 
 /*----------------------------------------------------------------------------
@@ -617,6 +632,11 @@ cs_opts_define(int         argc,
 
 #endif /* defined(_CS_HAVE_SOCKET) */
 
+    /* Version number */
+
+    else if (strcmp(s, "--version") == 0)
+      argerr = 3;
+
     /* Usage */
 
     else if (strcmp(s, "-h") == 0 || strcmp(s, "--help") == 0)
@@ -626,16 +646,26 @@ cs_opts_define(int         argc,
 
   } /* End parsing command line */
 
-  /* Print help and exit if required or in case of command line error */
+  /* Print version/help and exit if required or in case of command line error */
   if (argerr != 0) {
     if (cs_glob_rank_id <= 0) {
-      cs_opts_logfile_head(argc, argv);
-      _arg_env_help(argv[0]) ;
+      switch (argerr) {
+      case 1:
+      case 2:
+        cs_opts_logfile_head(argc, argv);
+        _arg_env_help(argv[0]);
+        break;
+      case 3:
+        _print_version();
+        break;
+      default:
+        break;
+      }
     }
-    if (argerr == 2)
-      cs_exit(EXIT_SUCCESS);
-    else
+    if (argerr == 1)
       cs_exit(EXIT_FAILURE);
+    else
+      cs_exit(EXIT_SUCCESS);
   }
 }
 

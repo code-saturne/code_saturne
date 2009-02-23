@@ -1,4 +1,11 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Add a --version option to get Code_Saturne version number.
+  modified routine:
+    src/base/cs_opts.c
+  updated dictionary:
+    po/fr.po
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Install the user subroutines and the documentation within
   a standard "arch/$NOM_ARCH/share" directory.
   Minor corrections in these scripts as well.

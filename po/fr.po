@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2009-02-17 14:33+0100\n"
-"PO-Revision-Date: 2009-02-17 14:36+0100\n"
+"POT-Creation-Date: 2009-02-23 13:54+0100\n"
+"PO-Revision-Date: 2009-02-23 14:10+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -2535,7 +2535,7 @@ msgstr ""
 "\n"
 
 #: src/base/cs_opts.c:114
-#, fuzzy, c-format
+#, c-format
 msgid ""
 " -solcom           stand-alone kernel with \"geomet\" mesh in\n"
 "                   SolCom format (obsolete)\n"
@@ -2615,6 +2615,11 @@ msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
 #: src/base/cs_opts.c:148
 #, c-format
+msgid " --version         print version number\n"
+msgstr " --version         affiche le numéro de version\n"
+
+#: src/base/cs_opts.c:150
+#, c-format
 msgid ""
 " -h, --help        this help message\n"
 "\n"
@@ -2622,16 +2627,21 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/base/cs_opts.c:301
+#: src/base/cs_opts.c:163
+#, c-format
+msgid "%s version %s\n"
+msgstr "%s version %s\n"
+
+#: src/base/cs_opts.c:316
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:316
+#: src/base/cs_opts.c:331
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:320
+#: src/base/cs_opts.c:335
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -2640,7 +2650,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:323
+#: src/base/cs_opts.c:338
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
