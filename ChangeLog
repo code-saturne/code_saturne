@@ -1,4 +1,10 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Minor modifications on halos routines (no impact).
+  modified routines:
+    src/base/cs_mesh_halo.c
+    src/ctwr/cs_ctwr_halo.c
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Correction for tests based on IVERIF variable in usini1.F, bug
   introduced when merging the different verification tests.
   modified routine:

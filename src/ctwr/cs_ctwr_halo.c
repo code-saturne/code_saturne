@@ -166,7 +166,6 @@ _vtx_lookup_create(cs_int_t              n_vertices,
 
   const fvm_interface_t  *interface = NULL;
   const fvm_lnum_t  *local_num = NULL;
-
   const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
 
   BFT_MALLOC(vtx_lookup, 1, vtx_lookup_table_t);
@@ -321,7 +320,6 @@ _update_vtx_checker(cs_int_t             vtx_id,
   } /* End of loop on vtx_lookup */
 
 }
-
 
 /*---------------------------------------------------------------------------
  *
@@ -511,12 +509,17 @@ _fill_send_halo(cs_ctwr_zone_t            *ct,
 
   /* Complete halo definition */
 
-  halo->n_send_elts[0] = 0;
+  halo->n_send_elts[CS_HALO_STANDARD] = 0;
+  halo->n_send_elts[CS_HALO_EXTENDED] = 0;
 
-  for (i = 0; i < halo->n_c_domains; i++)
-    halo->n_send_elts[0] += halo->send_index[i+1] - halo->send_index[i];
+  for (i = 0; i < halo->n_c_domains; i++) {
 
-  halo->n_send_elts[1] = halo->n_send_elts[0];
+    halo->n_send_elts[CS_HALO_STANDARD] += halo->send_index[i+1]
+                                         - halo->send_index[i];
+
+  }
+
+  halo->n_send_elts[CS_HALO_EXTENDED] += halo->n_send_elts[CS_HALO_STANDARD];
 }
 
 /*---------------------------------------------------------------------------
@@ -678,18 +681,19 @@ _fill_halo(cs_ctwr_zone_t  *ct)
 #endif
 
   halo->n_elts[CS_HALO_STANDARD] = 0;
+  halo->n_elts[CS_HALO_EXTENDED] = 0;
 
-  halo->n_elts[0] = 0;
+  for (i = 0; i < n_c_domains; i++) {
 
-  for (i = 0; i < n_c_domains; i++)
-    halo->n_elts[0] += halo->index[i+1] - halo->index[i];
+    halo->n_elts[CS_HALO_STANDARD] += halo->index[i+1] - halo->index[i];
 
-  halo->n_elts[1] = halo->n_elts[0];
+  }
+
+  halo->n_elts[CS_HALO_EXTENDED] += halo->n_elts[CS_HALO_STANDARD];
 }
 
 /*---------------------------------------------------------------------------
  *  TODO
-
  *---------------------------------------------------------------------------*/
 
 static void

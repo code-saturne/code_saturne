@@ -1267,7 +1267,6 @@ _fill_send_halo(cs_mesh_t            *mesh,
   }
 
   halo->n_send_elts[CS_HALO_EXTENDED] += halo->n_send_elts[CS_HALO_STANDARD];
-
 }
 
 /*---------------------------------------------------------------------------
@@ -1595,8 +1594,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
   }
 
-  halo->n_elts[CS_HALO_EXTENDED] += halo->n_elts[CS_HALO_STANDARD] ;
-
+  halo->n_elts[CS_HALO_EXTENDED] += halo->n_elts[CS_HALO_STANDARD];
 }
 
 /*---------------------------------------------------------------------------
