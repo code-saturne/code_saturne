@@ -538,7 +538,7 @@ _dot_products_2(cs_int_t          n_elts,
 
   if (x1 == x2 || x1 == y2 || y1 == x2 || y1 == y2) {
 
-#if (defined(__INTEL_COMPILER) && defined(__ia64__))
+#if ((defined(__INTEL_COMPILER) && defined(__ia64__)) || defined(__uxpvp__))
 
     /* Use temporary variables to help compiler optimize */
     double _s0 = 0.0, _s1 = 0.0;

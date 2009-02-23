@@ -464,7 +464,7 @@ privlib:
 	      fi ;\
 	 fi ;\
 	 \rm -f "lib$(NOM_LIB_CS_PRE)$${modtrav}$${opttrav}.a" ;\
-	 ar -cr "lib$(NOM_LIB_CS_PRE)$${modtrav}$${opttrav}.a" *.o 
+	 $(AR) $(ARFLAGS) "lib$(NOM_LIB_CS_PRE)$${modtrav}$${opttrav}.a" *.o 
 	@echo "***  Library creation finished" ; echo
 
 #
@@ -681,7 +681,7 @@ privmodlink:
          libraries="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
 	 if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
 	     if [ ! -f cs_main.o ] ; then \
-	        ar x $(ARCH_CS)/lib/libsaturneBASE$(OPT).a cs_main.o ;\
+	        $(AR) x $(ARCH_CS)/lib/libsaturneBASE$(OPT).a cs_main.o ;\
 	        liste_obj="$${liste_obj} cs_main.o" ;\
 	     fi ;\
 	     objcopy --redefine-sym main=cs_main cs_main.o cs_main.o ;\

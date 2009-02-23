@@ -356,7 +356,7 @@ C
 C
         IF (IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
 C
             II = IFACEL(1,IFAC)
@@ -428,7 +428,7 @@ C
 C
         IF (IVECTB.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFABOR
             II = IFABOR(IFAC )
             III = IDIIPB-1+3*(IFAC-1)
@@ -541,7 +541,7 @@ C
 C
         IF (IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
 C
             II = IFACEL(1,IFAC)
@@ -659,7 +659,7 @@ C
         IF (IVECTI.EQ.1) THEN
 C
           IOK = 0
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
 C
             II = IFACEL(1,IFAC)
@@ -885,7 +885,7 @@ C
         IF (IVECTI.EQ.1) THEN
 C
           IOK = 0
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
 C
             II = IFACEL(1,IFAC)
@@ -1217,7 +1217,7 @@ C       il sera imposé par les C.L.
 C
         IF (IVECTB.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFABOR
 C
             II = IFABOR(IFAC)
@@ -1281,7 +1281,7 @@ C     On ne dispose pas de flux issu des C.L. : traitement std
 C
         IF (IVECTB.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFABOR
 C
             II = IFABOR(IFAC)

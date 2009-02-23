@@ -25,13 +25,13 @@
 #
 #============================================================================
 #
-# Macros for Makefile under Darwin
-##################################
+# Macros for Makefile under NEC SX9
+###################################
 #
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/Users/saturne/opt/bft-1.0.8/arch/Darwin
+BFT_HOME        =/home/saturne/opt/bft-1.0.8/arch/SX9
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -39,7 +39,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/Users/saturne/opt/fvm-0.13.0/arch/Darwin
+FVM_HOME        =/home/saturne/opt/fvm-0.13.0/arch/SX9
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -52,8 +52,7 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# For MPICH on saturne
-MPI_HOME        =
+#Les bibliothèques MPI sont directement appelées par mpicc et mpif77
 MPI_BIN         =
 MPI_INC         =
 MPI_LIB         =
@@ -62,7 +61,7 @@ MPI_LIB         =
 #-------------------
 
 # Sockets support
-SOCKET          =1
+SOCKET          =0
 SOCKET_INC      =
 SOCKET_LIB      =
 
@@ -81,7 +80,7 @@ XML_LIB  =-lxml2
 #----------------
 
 # BLAS support
-BLAS            =0
+BLAS            =1
 BLAS_HOME       =
 BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
@@ -107,39 +106,35 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /Users/saturne/opt/mpich-1.2.7p1/bin/mpicc
+CCOMP                  = sxmpicc
 
-CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
-                         -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
-                         -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
+CCOMPFLAGSDEF          = -Kc99 -ftrace -D__uxpvp__ -pvctl,loopcnt=2147483647
 
-CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2
-CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3
-CCOMPFLAGSPROF         = -pg
-CCOMPFLAGSVERS         = -v
-
+CCOMPFLAGS             = $(CCOMPFLAGSDEF)
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF)
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF)
+CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF)
+CCOMPFLAGSLO           = $(CCOMPFLAGSDEF)
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF)
+CCOMPFLAGSPROF         = 
+CCOMPFLAGSVERS         = 
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
-FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
 
-FTNCOMPFLAGSDEF        = -I.
+FTNCOMP                = sxmpif90
 
-FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
-FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
-FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g
-FTNCOMPFLAGSPROF       = -pg
-FTNCOMPFLAGSVERS       = -v
+FTNCOMPFLAGSDEF        = -C hopt -ftrace -D__uxpvp__ -I. -Wf,-pvctl,loopcnt=2147483647
+
+FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF)
+FTNCOMPFLAGSPROF       = 
+FTNCOMPFLAGSVERS       =
 
 FTNPREPROCOPT          =
 
@@ -148,19 +143,19 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
-LDEDLFLAGS      = -O
-LDEDLFLAGSLO    = -O0
-LDEDLFLAGSDBG   = -g
-LDEDLFLAGSPROF  = -pg
-LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
+LDEDL           = $(FTNCOMP)
+LDEDLFLAGS      = -ftrace
+LDEDLFLAGSLO    =
+LDEDLFLAGSDBG   = 
+LDEDLFLAGSPROF  =
+LDEDLFLAGSVERS  =
+LDEDLRPATH      = -Wf,-pvctl,loopcnt=2147483647
 
 
 # Archiver
 #---------
 
-AR              = ar
+AR              = sxar
 ARFLAGS         = cr
 
 
@@ -169,14 +164,14 @@ ARFLAGS         = cr
 #
 # _POSIX_SOURCE          : POSIX standard functions
 
-VARDEF          = -D_POSIX_SOURCE
+VARDEF          = 
 
 # Libraries to link against
 #--------------------------
 
 # Base libraries (always used)
 
-LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread -lz
+LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) 
 
 # Libraries in production mode
 
@@ -192,7 +187,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
+LIBEF    =
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------
@@ -208,11 +203,8 @@ LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 #
 # The file lists below correspond to different optimization levels
 #
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
-LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c
+LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 

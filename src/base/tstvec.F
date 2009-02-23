@@ -129,7 +129,7 @@ C
           ISMBS(IEL) = 0
         ENDDO
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
         DO IFAC = 1, NFAC
           II = IFACEL(1,IFAC)
           JJ = IFACEL(2,IFAC)
@@ -171,7 +171,7 @@ C
           ISMBS(IEL) = 0
         ENDDO
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
         DO IFAC = 1, NFABOR
           II = IFABOR(IFAC)
           ISMBV(II) = ISMBV(II) + IWORKF(IFAC)
@@ -212,7 +212,7 @@ C
           RSMBS(IEL) = 0.D0
         ENDDO
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
         DO IFAC = 1, NFAC
           II = IFACEL(1,IFAC)
           JJ = IFACEL(2,IFAC)
@@ -254,7 +254,7 @@ C
           RSMBS(IEL) = 0.D0
         ENDDO
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
         DO IFAC = 1, NFABOR
           II = IFABOR(IFAC)
           RSMBV(II) = RSMBV(II) + RWORKF(IFAC)

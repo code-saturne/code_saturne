@@ -498,7 +498,7 @@ C        FJ = FJM + CJ*S avec CJ = (FJM-FJI7)/SI7 (J = 1 a 4)
 C
 C Devectorisation de la boucle pour VPP 5000
 C
-!OCL SCALAR
+!CDIR NOVECTOR
 C
       DO IEL = 1, NCEL
 C

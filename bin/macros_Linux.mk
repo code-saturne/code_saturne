@@ -169,6 +169,13 @@ FTNFLAGSSO      =-fPIC
 LDEDLFLAGSSO    =-Wl,-soname -Wl,libcs14.so -fPIC -shared
 
 
+# Archiver
+#---------
+
+AR              = ar
+ARFLAGS         = cr
+
+
 # Set preprocessor variables
 #---------------------------
 #
@@ -212,9 +219,6 @@ LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
 #    for others, we prefer O2, less risky, but slightly slower
 #
 # The file lists below correspond to different optimization levels
-#
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
 #
 
 LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c

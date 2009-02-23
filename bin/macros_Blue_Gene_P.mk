@@ -164,6 +164,13 @@ LDEDLFLAGSVERS  = -v
 LDEDLRPATH      =
 
 
+# Archiver
+#---------
+
+AR              = ar
+ARFLAGS         = cr
+
+
 # Set preprocessor variables
 #---------------------------
 #

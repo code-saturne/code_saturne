@@ -431,7 +431,7 @@ C
 C
           IF(IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
             DO IFAC = 1, NFAC
               II = IFACEL(1,IFAC)
               JJ = IFACEL(2,IFAC)
@@ -462,7 +462,7 @@ C --- Assemblage sur les faces de bord
 C
 CMO          IF(IVECTB.EQ.1) THEN
 CMOC
-CMO!OCL NOVREC,VRL(16)
+CMO!CDIR NODEP
 CMO            DO IFAC = 1, NFABOR
 CMO             II = IFABOR(IFAC)
 CMO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
@@ -568,7 +568,7 @@ C --- Assemblage sur les faces internes
 C
         IF(IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
             II = IFACEL(1,IFAC)
             JJ = IFACEL(2,IFAC)
@@ -595,7 +595,7 @@ C --- Assemblage sur les faces de bord
 C
         IF(IVECTB.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFABOR
            II = IFABOR(IFAC)
            TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)

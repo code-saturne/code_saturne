@@ -167,7 +167,7 @@ C
 C
         IF (IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1,NFAC
             II = IFACEL(1,IFAC)
             JJ = IFACEL(2,IFAC)
@@ -191,7 +191,7 @@ C
 C
         IF (IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1,NFAC
             II = IFACEL(1,IFAC)
             JJ = IFACEL(2,IFAC)

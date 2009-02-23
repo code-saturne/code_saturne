@@ -1,4 +1,39 @@
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Porting to NEC SX9: replace VPP 5000 vectorization directives
+  by NEC ones (!OCL... => !CDIR...) and add a specific macros file.
+  Also add new AR and ARFLAGS variables in the Makefile so that one
+  can specify the archiver.
+  Thanks to HLRS for the modifications.
+  added script:
+    bin/macros_SX9.mk
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+    bin/Makefile
+  modified routines:
+    src/base/bilsc2.F
+    src/base/cs_sles.c
+    src/base/divmas.F
+    src/base/gradmc.F
+    src/base/gradrc.F
+    src/base/matrdt.F
+    src/base/matrix.F
+    src/base/promav.F
+    src/base/proxav.F
+    src/base/recvmc.F
+    src/base/tstvec.F
+    src/base/vissec.F
+    src/cfbl/cfbsc2.F
+    src/cfbl/cfbsc3.F
+    src/cfbl/cfdivs.F
+    src/cplv/cplym1.F
+
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Add a --version option to get Code_Saturne version number.
   modified routine:
     src/base/cs_opts.c

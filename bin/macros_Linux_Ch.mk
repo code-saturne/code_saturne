@@ -153,6 +153,13 @@ LDEDLFLAGSVERS  = -v
 LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
 
 
+# Archiver
+#---------
+
+AR              = ar
+ARFLAGS         = cr
+
+
 # Set preprocessor variables
 #---------------------------
 #

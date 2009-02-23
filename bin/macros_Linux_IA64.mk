@@ -154,6 +154,13 @@ LDEDLFLAGSVERS  = -V
 LDEDLRPATH      = -Wl,-rpath -Wl,
 
 
+# Archiver
+#---------
+
+AR              = ar
+ARFLAGS         = cr
+
+
 # Set preprocessor variables
 #---------------------------
 #
@@ -199,7 +206,7 @@ LIBEF    =-lefence
 # The file lists below correspond to different optimization levels
 #
 
-LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c
+LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
 LISTE_OPT_PART3 =
 

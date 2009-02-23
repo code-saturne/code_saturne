@@ -367,7 +367,7 @@ C
 C
         IF (IVECTI.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFAC
 C
             II = IFACEL(1,IFAC)
@@ -439,7 +439,7 @@ C
 C
         IF (IVECTB.EQ.1) THEN
 C
-!OCL NOVREC,VRL(16)
+!CDIR NODEP
           DO IFAC = 1, NFABOR
             II = IFABOR(IFAC )
             III = IDIIPB-1+3*(IFAC-1)
