@@ -225,7 +225,7 @@ LIBEF    =
 # The file lists below correspond to different optimization levels
 #
 
-LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
+LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
 LISTE_OPT_PART3 =
 

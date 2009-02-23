@@ -1,3 +1,10 @@
+* 23/02/2009 - David Monfort <david.monfort@edf.fr>
+  Minor corrections in file list optimization.
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+
 * 23/02/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Correction in the mesh structure update when renumbering cells.
   modified routines:
