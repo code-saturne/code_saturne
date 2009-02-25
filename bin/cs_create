@@ -1,4 +1,4 @@
-
+#!/bin/sh
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -77,7 +77,7 @@ while [ $NTEST -gt 0 ] ; do
     mv ${1}.tmp $1
     sed "${NFIN}s/FIN/fin/" $1 > ${1}.tmp
     mv ${1}.tmp $1
-    sed "${NDEB},${NFIN}s/^/Cex/" $1 > ${1}.tmp
+    sed "${NDEB},${NFIN}s/^/!ex/" $1 > ${1}.tmp
     mv ${1}.tmp $1
   fi
   NTEST=`grep -c CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT $1`
@@ -184,7 +184,7 @@ do
       -e "s/study/${study}/g"  $CASE/SCRIPTS/runcase >case.tmp
   mv case.tmp $CASE/SCRIPTS/runcase
 
-  for fich in $CASE/SRC/$reference/*/*.[F]
+  for fich in $CASE/SRC/$reference/*/*.f90
   do
     if [ -f $fich ] ; then
       if [ "$GUI" = "gui" ] ; then
@@ -194,7 +194,7 @@ do
       fi
     fi
   done
-  for fich in $CASE/SRC/$reference/*/*.[F,c] $CASE/SCRIPTS/runcase
+  for fich in $CASE/SRC/$reference/*/*.f90 $CASE/SCRIPTS/runcase
   do
     if [ -f $fich ] ; then
       remove_test $fich

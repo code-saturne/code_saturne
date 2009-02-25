@@ -1,206 +1,203 @@
-c@a
-c@versb
-C-----------------------------------------------------------------------
-C
-C     This file is part of the Code_Saturne Kernel, element of the
-C     Code_Saturne CFD tool.
-C
-C     Copyright (C) 1998-2008 EDF S.A., France
-C
-C     contact: saturne-support@edf.fr
-C
-C     The Code_Saturne Kernel is free software; you can redistribute it
-C     and/or modify it under the terms of the GNU General Public License
-C     as published by the Free Software Foundation; either version 2 of
-C     the License, or (at your option) any later version.
-C
-C     The Code_Saturne Kernel is distributed in the hope that it will be
-C     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-C     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-C     GNU General Public License for more details.
-C
-C     You should have received a copy of the GNU General Public License
-C     along with the Code_Saturne Kernel; if not, write to the
-C     Free Software Foundation, Inc.,
-C     51 Franklin St, Fifth Floor,
-C     Boston, MA  02110-1301  USA
-C
-C-----------------------------------------------------------------------
-c@verse
-C                             fuincl.h
-C
-C***********************************************************************
-C
-C            INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF
-C                A LA COMBUSTION DU FUEL
-C
-C Necessite ppppar.h et ppthch
-C-----------------------------------------------------------------------
-C      EPSIFL : Precision pour les tests
-C
-        DOUBLE PRECISION EPSIFL
-        PARAMETER ( EPSIFL = 1.D-8 )
-C
-C--> DONNEES RELATIVES AU FUEL
-C
-C      - Proprietes du fuel
-C        CFOL      --> fractions massiques elementaires en C, H, O, S, In (%)
-C        HFOL          du fuel oil liquid
-C        OFOL
-C        SFOL
-C        XInFOL
-C        PCIFOL    --> PCI (J/kg) fuel oil liquid
-C        RHO0FL   --> Masse volumique initiale (kg/m3)
-C      - Proprietes du coke
-C        CKF      --> Fractions massiques elementaires en C, H, O, S, In (%)
-C        HKF          du coke
-C        OKF
-C        SKF
-C        XInKF
-C        GAMMA    --> Composition du coke
-C        DELTA        sous la forme CH(GAMMA)O(DELTA)
-C                         GAMMA = HCK/CCK
-C                         DELTA = OCK/CCK
-C        PCIKF     --> PCI (J/kg) coke
-C        RHOKF     --> Masse volumique coke
-C        FKC       --> Fraction massique initiale de coke dans le fuel
-C        H02FOL    --> H0 du fuel oil liquid
-C        CPFOL     --> CP du fuel oil liquid
-C        HRFVAP    --> H formation vapeur a Tebu
-C        Fractions massiques dans les vapeurs
-C        HSFOV     --> H2S
-C        COFOV     --> CO
-C        CHFOV     --> CHn
-C        nHCFOV    --> n dans la formule CHn (un reel, car formule molaire moyenne)
-C
-C        DFOL      --> densite du fuel liquide
-C
-      DOUBLE PRECISION CFOL , HFOL , OFOL , SFOL, XInFOL,
-     &                 PCIFOL , RHO0FL , RHOKF,
-     &                 H02FOL , CP2FOL , HRFVAP, DFOL,
-     &                 CKF , HKF , OKF , SKF, XInKF, PCIKF, FKC,
-     &                 HSFOV, COFOV, CHFOV, nHCFOV
-C
-C      - Parametres pour l'evaporation
-C      TEVAP1      --> temperature de debut d'evaporation
-C      TEVAP2      --> temperature de fin d'evaporation
-c
-c
-c
-C        - Parametres cinetiques pour la combustion heterogene du coke
-C          (Modele a sphere retrecissante)
-C        AHETFL   --> Constante pre-exponentielle (kg/m2/s/atm)
-C        EHETFL   --> Energie d'activation (kcal/mol)
-C        IOFHET   --> Ordre de la reaction 0.5 si = 0 1 si = 1
-C
-      DOUBLE PRECISION YFOL , AFOL  , EFOL  ,
-     &                 AHETFL , EHETFL, TEVAP1, TEVAP2
-      INTEGER          IOFHET
-C
-C      - Enthalpie du fuel et coke
-C     IFOL         --> Pointeur dans le tableau EHSOLI pour
-C                         le fuel oil liquid
-C     IKF          --> Pointeur dans le tableau EHSOLI pour
-C                         le Coke
-C     EHSOLI(S,IT) --> Enthalpie massique (J/kg) du constituant solide
-C                         no S a la temperature T(IT)
-C
-      INTEGER          IFOL, IKF
-C
-C ---- PAR CLASSES (grandeurs deduites)
-C
-C        NCLAFU     --> Nb de classes
-C
-      INTEGER          NCLAFU
-C
-C      - Proprietes : on garde le meme max que pour le charbon qui
-C        est definis dans ppppar.h
-C        DINIFL(CL)  --> Diametre initial (mm)
-C        DINIKF(CL)  --> Diametre coke (mm)
-C        DINIIN(CL)  --> Diametre min (mm)
-C
-      DOUBLE PRECISION DINIFL(NCLCPM),DINIKF(NCLCPM),DINIIN(NCLCPM)
-C
-C--> DONNEES RELATIVES A LA COMBUSTION DES ESPECES GAZEUSES
-C
-C        IIFOV        --> Pointeur FOV   pour EHGAZE et WMOLE
-C        IICO         --> Pointeur CO    pour EHGAZE et WMOLE
-C        IIO2         --> Pointeur O2    pour EHGAZE et WMOLE
-C        IICO2        --> Pointeur CO2   pour EHGAZE et WMOLE
-C        IIH2O        --> Pointeur H2O   pour EHGAZE et WMOLE
-C        IIN2         --> Pointeur N2    pour EHGAZE et WMOLE
-C        IIH2S        --> Pointeur H2S   pour EHGAZE et WMOLE
-C        IISO2        --> Pointeur SO2   pour EHGAZE et WMOLE
-C
-C        XSI         --> XSI = 3,76 pour de l'air
-C        FVAPMX     --> Maximum pour le traceur F3
-C        FOV         --> Composition de l'hydrocarbure relatif
-C                        aux matieres volatiles
-C        A,     --> Coefficients stoechiometriques molaires pour
-C        B          la reaction d'evaporation
-C
-C        Concentrations dans les especes globales
-C        AFOVF1         nb de moles de vapeur associees a un kg de traceur 1
-C        ACOF1                          CO
-C        AH2SF1                         H2S
-C        AH2SF3                         H2S
-C        AH2OF3                         H2O
-C        FF3MAX fraction massqique maximale du traceur F3
-C               (correspondant a la masse liberee par combustion heterogene il
-C                ne peut exister pur)
-C
-C
-      DOUBLE PRECISION FVAPMX, FOV, A, B
-      INTEGER IFOV,IH2S,ISO2
-C
-C--> DONNEES COMPLEMENTAIRES RELATIVES AU CALCUL DE RHO
-C    SUR LES FACETTES DE BORD
-C
-C       IENTAT(IENT) --> Indicateur air par type de facette d'entree
-C       IENTFL(IENT) --> Indicateur CFOL  par type de facette d'entree
-C       TIMPAT(IENT) --> Temperature en K pour l'air relative
-C                         a l'entree IENT
-C
-      INTEGER          IENTFL(NOZPPM)
-C
-C--> POINTEURS DANS LE TABLEAU TBMCR
-C
-      DOUBLE PRECISION AFOVF1,ACOF1,AH2SF1,AH2SF3
-      DOUBLE PRECISION FF3MAX
-C
-C--> DEFINITION DES COMMONS
-C
-      COMMON / IFUCOM / IFOL, IKF, IENTFL, IOFHET, NCLAFU
-C
-      COMMON / IFUESP / IFOV,IH2S,ISO2
-      COMMON / RFUESP / AFOVF1,ACOF1,AH2SF1,AH2SF3,
-     &                  FF3MAX
-C
-      COMMON / RFUCOM / CFOL   , HFOL  , OFOL , SFOL, XInFOL,
-     &                  PCIFOL , RHO0FL, RHOKF ,
-     &                  CKF    , HKF   , OKF  , SKF , XInKF,
-     &                  PCIKF,FKC,
-     &                  HSFOV,COFOV,CHFOV,nHCFOV,
-     &                  H02FOL , CP2FOL , HRFVAP,
-     &                  YFOL  , AFOL  , EFOL  , DFOL,
-     &                  AHETFL, EHETFL,TEVAP1, TEVAP2 ,
-     &                  FVAPMX, FOV, A   , B ,
-     &                  DINIFL , DINIKF , DINIIN
-C
-C--> GRANDEURS FOURNIES PAR L'UTILISATEUR EN CONDITIONS AUX LIMITES
-C      PERMETTANT DE CALCULER AUTOMATIQUEMENT LA VITESSE, LA TURBULENCE,
-C      L'ENTHALPIE D'ENTREE.
-C
-C    POUR LES ENTREES UNIQUEMENT , IENT ETANT LE NUMERO DE ZONE FRONTIERE
-C
-C       QIMPFL(IENT)      --> Debit      Fuel Oil Liquid     en kg/s
-C       TIMPFL(IENT)      --> Temperature  FOL               en K
-C
-      DOUBLE PRECISION  QIMPFL(NOZPPM), TIMPFL(NOZPPM)
-      DOUBLE PRECISION  DISTFU(NOZPPM,NCLCPM)
-      DOUBLE PRECISION  HLFM
-C
-      COMMON / RCPCLI / QIMPFL  , TIMPFL , HLFM, DISTFU
-C
-C FIN
-c@z
+!-------------------------------------------------------------------------------
+
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+!                             fuincl.h
+
+!===============================================================================
+
+!            INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF
+!                A LA COMBUSTION DU FUEL
+
+! Necessite ppppar.h et ppthch
+!-------------------------------------------------------------------------------
+!      EPSIFL : Precision pour les tests
+
+  double precision epsifl
+  parameter ( epsifl = 1.d-8 )
+
+!--> DONNEES RELATIVES AU FUEL
+
+!      - Proprietes du fuel
+!        CFOL      --> fractions massiques elementaires en C, H, O, S, In (%)
+!        HFOL          du fuel oil liquid
+!        OFOL
+!        SFOL
+!        XInFOL
+!        PCIFOL    --> PCI (J/kg) fuel oil liquid
+!        RHO0FL   --> Masse volumique initiale (kg/m3)
+!      - Proprietes du coke
+!        CKF      --> Fractions massiques elementaires en C, H, O, S, In (%)
+!        HKF          du coke
+!        OKF
+!        SKF
+!        XInKF
+!        GAMMA    --> Composition du coke
+!        DELTA        sous la forme CH(GAMMA)O(DELTA)
+!                         GAMMA = HCK/CCK
+!                         DELTA = OCK/CCK
+!        PCIKF     --> PCI (J/kg) coke
+!        RHOKF     --> Masse volumique coke
+!        FKC       --> Fraction massique initiale de coke dans le fuel
+!        H02FOL    --> H0 du fuel oil liquid
+!        CPFOL     --> CP du fuel oil liquid
+!        HRFVAP    --> H formation vapeur a Tebu
+!        Fractions massiques dans les vapeurs
+!        HSFOV     --> H2S
+!        COFOV     --> CO
+!        CHFOV     --> CHn
+!        nHCFOV    --> n dans la formule CHn (un reel, car formule molaire moyenne)
+
+!        DFOL      --> densite du fuel liquide
+
+double precision cfol , hfol , ofol , sfol, xinfol,               &
+                 pcifol , rho0fl , rhokf,                         &
+                 h02fol , cp2fol , hrfvap, dfol,                  &
+                 ckf , hkf , okf , skf, xinkf, pcikf, fkc,        &
+                 hsfov, cofov, chfov, nhcfov
+
+!      - Parametres pour l'evaporation
+!      TEVAP1      --> temperature de debut d'evaporation
+!      TEVAP2      --> temperature de fin d'evaporation
+
+
+
+!        - Parametres cinetiques pour la combustion heterogene du coke
+!          (Modele a sphere retrecissante)
+!        AHETFL   --> Constante pre-exponentielle (kg/m2/s/atm)
+!        EHETFL   --> Energie d'activation (kcal/mol)
+!        IOFHET   --> Ordre de la reaction 0.5 si = 0 1 si = 1
+
+double precision yfol , afol  , efol  ,                           &
+                 ahetfl , ehetfl, tevap1, tevap2
+integer          iofhet
+
+!      - Enthalpie du fuel et coke
+!     IFOL         --> Pointeur dans le tableau EHSOLI pour
+!                         le fuel oil liquid
+!     IKF          --> Pointeur dans le tableau EHSOLI pour
+!                         le Coke
+!     EHSOLI(S,IT) --> Enthalpie massique (J/kg) du constituant solide
+!                         no S a la temperature T(IT)
+
+integer          ifol, ikf
+
+! ---- PAR CLASSES (grandeurs deduites)
+
+!        NCLAFU     --> Nb de classes
+
+integer          nclafu
+
+!      - Proprietes : on garde le meme max que pour le charbon qui
+!        est definis dans ppppar.h
+!        DINIFL(CL)  --> Diametre initial (mm)
+!        DINIKF(CL)  --> Diametre coke (mm)
+!        DINIIN(CL)  --> Diametre min (mm)
+
+double precision dinifl(nclcpm),dinikf(nclcpm),diniin(nclcpm)
+
+!--> DONNEES RELATIVES A LA COMBUSTION DES ESPECES GAZEUSES
+
+!        IIFOV        --> Pointeur FOV   pour EHGAZE et WMOLE
+!        IICO         --> Pointeur CO    pour EHGAZE et WMOLE
+!        IIO2         --> Pointeur O2    pour EHGAZE et WMOLE
+!        IICO2        --> Pointeur CO2   pour EHGAZE et WMOLE
+!        IIH2O        --> Pointeur H2O   pour EHGAZE et WMOLE
+!        IIN2         --> Pointeur N2    pour EHGAZE et WMOLE
+!        IIH2S        --> Pointeur H2S   pour EHGAZE et WMOLE
+!        IISO2        --> Pointeur SO2   pour EHGAZE et WMOLE
+
+!        XSI         --> XSI = 3,76 pour de l'air
+!        FVAPMX     --> Maximum pour le traceur F3
+!        FOV         --> Composition de l'hydrocarbure relatif
+!                        aux matieres volatiles
+!        A,     --> Coefficients stoechiometriques molaires pour
+!        B          la reaction d'evaporation
+
+!        Concentrations dans les especes globales
+!        AFOVF1         nb de moles de vapeur associees a un kg de traceur 1
+!        ACOF1                          CO
+!        AH2SF1                         H2S
+!        AH2SF3                         H2S
+!        AH2OF3                         H2O
+!        FF3MAX fraction massqique maximale du traceur F3
+!               (correspondant a la masse liberee par combustion heterogene il
+!                ne peut exister pur)
+
+
+double precision fvapmx, fov, a, b
+integer ifov,ih2s,iso2
+
+!--> DONNEES COMPLEMENTAIRES RELATIVES AU CALCUL DE RHO
+!    SUR LES FACETTES DE BORD
+
+!       IENTAT(IENT) --> Indicateur air par type de facette d'entree
+!       IENTFL(IENT) --> Indicateur CFOL  par type de facette d'entree
+!       TIMPAT(IENT) --> Temperature en K pour l'air relative
+!                         a l'entree IENT
+
+integer          ientfl(nozppm)
+
+!--> POINTEURS DANS LE TABLEAU TBMCR
+
+double precision afovf1,acof1,ah2sf1,ah2sf3
+double precision ff3max
+
+!--> DEFINITION DES COMMONS
+
+common / ifucom / ifol, ikf, ientfl, iofhet, nclafu
+
+common / ifuesp / ifov,ih2s,iso2
+common / rfuesp / afovf1,acof1,ah2sf1,ah2sf3,                     &
+                  ff3max
+
+common / rfucom / cfol   , hfol  , ofol , sfol, xinfol,           &
+                  pcifol , rho0fl, rhokf ,                        &
+                  ckf    , hkf   , okf  , skf , xinkf,            &
+                  pcikf,fkc,                                      &
+                  hsfov,cofov,chfov,nhcfov,                       &
+                  h02fol , cp2fol , hrfvap,                       &
+                  yfol  , afol  , efol  , dfol,                   &
+                  ahetfl, ehetfl,tevap1, tevap2 ,                 &
+                  fvapmx, fov, a   , b ,                          &
+                  dinifl , dinikf , diniin
+
+!--> GRANDEURS FOURNIES PAR L'UTILISATEUR EN CONDITIONS AUX LIMITES
+!      PERMETTANT DE CALCULER AUTOMATIQUEMENT LA VITESSE, LA TURBULENCE,
+!      L'ENTHALPIE D'ENTREE.
+
+!    POUR LES ENTREES UNIQUEMENT , IENT ETANT LE NUMERO DE ZONE FRONTIERE
+
+!       QIMPFL(IENT)      --> Debit      Fuel Oil Liquid     en kg/s
+!       TIMPFL(IENT)      --> Temperature  FOL               en K
+
+double precision  qimpfl(nozppm), timpfl(nozppm)
+double precision  distfu(nozppm,nclcpm)
+double precision  hlfm
+
+common / rcpcli / qimpfl  , timpfl , hlfm, distfu
+
+! FIN

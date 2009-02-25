@@ -128,9 +128,9 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
+FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif90
 
-FTNCOMPFLAGSDEF        = -I.
+FTNCOMPFLAGSDEF        = -I. -x f95-cpp-input
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
@@ -148,7 +148,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
+LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif90
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
@@ -199,7 +199,7 @@ LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 
 # In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
-#                fic_3.F
+#                fic_3.f90
 #
 # 70% cpu promav gradrc prodsc
 # 10% cpu bilsc2 ;
@@ -212,7 +212,7 @@ LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 #       with gcc 3.3.2 (resolved with 3.3.3)
 #
 
-LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
-LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
+LISTE_OPT_PART1 = gradmc.f90 gradrc.f90 promav.f90 cs_matrix.c cs_sles.c
+LISTE_OPT_PART2 = prodsc.f90 prods2.f90 prods3.f90 cs_blas.c cs_benchmark.c
 LISTE_OPT_PART3 =
 

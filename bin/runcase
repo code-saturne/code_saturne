@@ -276,8 +276,8 @@ fi
 #########################################################################
 #
 N_SYRTHES_COUPLINGS=0
-if [ -f "${SRC}/ussyrc.F" ] ; then
-  N_SYRTHES_COUPLINGS=`grep -e ^' ' ${SRC}/ussyrc.F | grep -i -c defsyr`
+if [ -f "${SRC}/ussyrc.f90" ] ; then
+  N_SYRTHES_COUPLINGS=`grep -e ^' ' ${SRC}/ussyrc.f90 | grep -i -c defsyr`
 fi
 #
 if [ $N_SYRTHES_COUPLINGS = 0 ] ; then
@@ -495,7 +495,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   # (no links: the directory is copied later)
   mkdir src_saturne
   cd src_saturne
-  for f in ${source_cas}/*.[F,c,h] ; do
+  for f in ${source_cas}/*.[fF]90 ${source_cas}/*.[ch] ; do
     if [ -f $f ] ; then
       cp ${f} .
     fi
@@ -660,7 +660,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     fi
   fi
   #
-  for f in uscpcl.F usd3pc.F usebuc.F uslwcc.F usfucl.F
+  for f in uscpcl.f90 usd3pc.f90 usebuc.f90 uslwcc.f90 usfucl.f90
   do
     if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
       cp $CS_HOME/data/thch/JANAF JANAF
@@ -1074,7 +1074,7 @@ if [ $EXEC_KERNEL = yes ] ; then
       if [ $? -ne 0 ] ; then
         echo Failure creating $RESU/SRC.$SUFFIX
       else
-        for f in $dir/*.[f,F,c,h] ; do
+        for f in $dir/*.[fF]90 $dir/*.[ch] ; do
           if [ -f ${f} ] ; then
             cp -R ${f} $RESU/SRC.$SUFFIX/.
             fbase=`basename ${f}`

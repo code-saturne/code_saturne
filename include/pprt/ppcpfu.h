@@ -1,101 +1,98 @@
-c@a
-c@versb
-C-----------------------------------------------------------------------
-C
-C     This file is part of the Code_Saturne Kernel, element of the
-C     Code_Saturne CFD tool.
-C
-C     Copyright (C) 1998-2008 EDF S.A., France
-C
-C     contact: saturne-support@edf.fr
-C
-C     The Code_Saturne Kernel is free software; you can redistribute it
-C     and/or modify it under the terms of the GNU General Public License
-C     as published by the Free Software Foundation; either version 2 of
-C     the License, or (at your option) any later version.
-C
-C     The Code_Saturne Kernel is distributed in the hope that it will be
-C     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-C     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-C     GNU General Public License for more details.
-C
-C     You should have received a copy of the GNU General Public License
-C     along with the Code_Saturne Kernel; if not, write to the
-C     Free Software Foundation, Inc.,
-C     51 Franklin St, Fifth Floor,
-C     Boston, MA  02110-1301  USA
-C
-C-----------------------------------------------------------------------
-c@verse
-C                             cpincl.h
-C
-C***********************************************************************
-C
-C            INCLUDE POUR LA PHYSIQUE PARTICULIERE
-C                        VARIABLE COMMUNE ENTRE
-C                    COMBUSTION DU CHARBON PULVERISE
-C                    COMBUSTION DU FIOUL LOURD
-C
-C        XSI         --> XSI = 3,76 pour de l'air
-C
-      DOUBLE PRECISION  XSI
-      COMMON / RCPFU1 / XSI
-C
-C   nb de moles de I dans J
-C
-      DOUBLE PRECISION AO2F3,ACOF3,AN2F3,AH2OF3
-      DOUBLE PRECISION AO2F4,AN2F4,AH2OF4,ACO2F4
-      DOUBLE PRECISION AH2OF5
-      DOUBLE PRECISION AO2F6,AN2F6,AH2OF6,ACO2F6
-      DOUBLE PRECISION AO2F7,AN2F7,AH2OF7,ACO2F7
-C
-      COMMON / RCPFU2 / AO2F3,ACOF3,AN2F3,AH2OF3,
-     &                  AO2F4,AN2F4,AH2OF4,ACO2F4,
-     &                  AH2OF5,
-     &                  AO2F6,AN2F6,AH2OF6,ACO2F6,
-     &                  AO2F7,AN2F7,AH2OF7,ACO2F7
-C
-C Equation sur YCO2
-C
-       INTEGER         IEQCO2 , IYCO2
-       COMMON/EQUCO2 / IEQCO2 , IYCO2
-C
-C Combustion heterogene avec le  CO2
-C
-       INTEGER         IHTCO2
-       COMMON/EHTCO2 / IHTCO2
-C
-C Equation sur NOX :
-C ================
-C
-C   IEQNOX = 0 pas de NOx
-C          = 1 calcul du NOx
-C
-       INTEGER         IEQNOX
-       COMMON/EQUNOX / IEQNOX
-C
-C   Scalaires supplementaires : fraction massique de HCN et NO
-C                               temperature air
-C
-       INTEGER         IYHCN , IYNO , ITAIRE
-       COMMON/EQUNOX / IYHCN , IYNO , ITAIRE
-C
-C   Propce supplementaires :
-C
-C         Conversion HCN en NO       : EXP(-E1/RT)
-C         Conversion HCN en NO       : EXP(-E2/RT)
-C         NO thermique (Zel'dovitch) : EXP(-E3/RT)
-C
-C
-       INTEGER         IGHCN1 , IGHCN2 , IGNOTH
-       COMMON/PRONOX / IGHCN1 , IGHCN2 , IGNOTH
-C
-C   Temperature moyenne d'entree
-C   Taux de vapeur moyen
-C
-       DOUBLE PRECISION TAIRE
-       COMMON /NOXDBL/  TAIRE
+!-------------------------------------------------------------------------------
 
-C
-C FIN
-c@z
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+!                             cpincl.h
+
+!===============================================================================
+
+!            INCLUDE POUR LA PHYSIQUE PARTICULIERE
+!                        VARIABLE COMMUNE ENTRE
+!                    COMBUSTION DU CHARBON PULVERISE
+!                    COMBUSTION DU FIOUL LOURD
+
+!        XSI         --> XSI = 3,76 pour de l'air
+
+double precision  xsi
+common / rcpfu1 / xsi
+
+!   nb de moles de I dans J
+
+double precision ao2f3,acof3,an2f3,ah2of3
+double precision ao2f4,an2f4,ah2of4,aco2f4
+double precision ah2of5
+double precision ao2f6,an2f6,ah2of6,aco2f6
+double precision ao2f7,an2f7,ah2of7,aco2f7
+
+common / rcpfu2 / ao2f3,acof3,an2f3,ah2of3,                       &
+                  ao2f4,an2f4,ah2of4,aco2f4,                      &
+                  ah2of5,                                         &
+                  ao2f6,an2f6,ah2of6,aco2f6,                      &
+                  ao2f7,an2f7,ah2of7,aco2f7
+
+! Equation sur YCO2
+
+ integer         ieqco2 , iyco2
+ common/equco2 / ieqco2 , iyco2
+
+! Combustion heterogene avec le  CO2
+
+ integer         ihtco2
+ common/ehtco2 / ihtco2
+
+! Equation sur NOX :
+! ================
+
+!   IEQNOX = 0 pas de NOx
+!          = 1 calcul du NOx
+
+ integer         ieqnox
+ common/equnox / ieqnox
+
+!   Scalaires supplementaires : fraction massique de HCN et NO
+!                               temperature air
+
+ integer         iyhcn , iyno , itaire
+ common/equnox / iyhcn , iyno , itaire
+
+!   Propce supplementaires :
+
+!         Conversion HCN en NO       : EXP(-E1/RT)
+!         Conversion HCN en NO       : EXP(-E2/RT)
+!         NO thermique (Zel'dovitch) : EXP(-E3/RT)
+
+
+ integer         ighcn1 , ighcn2 , ignoth
+ common/pronox / ighcn1 , ighcn2 , ignoth
+
+!   Temperature moyenne d'entree
+!   Taux de vapeur moyen
+
+ double precision taire
+ common /noxdbl/  taire
+
+
+! FIN

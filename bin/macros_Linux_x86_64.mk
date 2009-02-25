@@ -130,7 +130,7 @@ CCOMPFLAGSVERS         = -v
 
 FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
 
-FTNCOMPFLAGSDEF        = -I.
+FTNCOMPFLAGSDEF        = -I. -x f95-cpp-input
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
@@ -222,7 +222,7 @@ LIBEF    =-lefence
 # The file lists below correspond to different optimization levels
 #
 
-LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
-LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
+LISTE_OPT_PART1 = gradmc.f90 gradrc.f90 promav.f90 cs_matrix.c cs_sles.c
+LISTE_OPT_PART2 = prodsc.f90 prods2.f90 prods3.f90 cs_blas.c cs_benchmark.c
 LISTE_OPT_PART3 =
 

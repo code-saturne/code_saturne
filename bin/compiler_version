@@ -112,7 +112,7 @@ echo $compillog
 #     - to fool the compiler
 #     - to be able to run the case if any problem
 
- foof=foo.F
+ foof=foo.f90
  echo '      program foo'                       >> ${foof}
  echo '      print*,"FORTRAN test program successfully ran "'   >> ${foof}
  echo '      end'                               >> ${foof}

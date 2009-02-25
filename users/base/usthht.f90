@@ -1,0 +1,235 @@
+!-------------------------------------------------------------------------------
+
+!VERS
+
+
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+subroutine usthht &
+!================
+
+ ( mode   , enthal , temper  )
+
+!===============================================================================
+! FONCTION :
+! --------
+
+!    ROUTINE UTILISATEUR
+!    LOI ENTHALPIE   -> TEMPERATURE (MODE =  1)
+!    LOI TEMPERATURE -> ENTHALPIE   (MODE = -1)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
+! enthal           ! r  ! <-- ! enthalpie                                      !
+! temper           ! r  ! <-- ! temperature                                    !
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
+!===============================================================================
+
+implicit none
+
+!===============================================================================
+!     DONNEES EN COMMON
+!===============================================================================
+
+include "paramx.h"
+include "entsor.h"
+include "parall.h"
+include "period.h"
+
+!===============================================================================
+
+! Arguments
+
+integer          mode
+
+double precision enthal, temper
+
+! VARIABLES LOCALES
+
+integer         it
+
+!     Pour le second exemple ci-dessous,
+!        donnee de NTAB > 1 valeurs (fictives) de H (=HT) tabulees
+!        en fonction de NTAB valeurs de T (=TH) (attention a l'unité K ou C)
+
+integer          ntab
+parameter       (ntab=5)
+double precision ht(ntab), th(ntab)
+data             ht /100000.d0,200000.d0,300000.d0,               &
+                               400000.d0,500000.d0 /
+data             th /   100.d0,   200.d0,   300.d0,               &
+                                  400.d0,   500.d0 /
+
+!===============================================================================
+
+
+!     ATTENTION, CE SOUS-PROGRAMME EST APPELE DANS DES BOUCLES :
+!     =========                               ================
+
+!       EVITER LES IMPRESSIONS
+!       ======
+
+!       EVITER LES OPERATIONS FAISANT APPEL AU PARALLELISME
+!       ======
+
+! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+
+write(nfecra,9000)
+call csexit (1)
+!==========
+
+!----
+! FORMATS
+!----
+
+ 9000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DE LA TEMPERATURE      ',/,&
+'@    =========                                               ',/,&
+'@    LES TABLES ENTHALPIE TEMPERATURE NE SONT PAS DISPONIBLES',/,&
+'@                                                            ',/,&
+'@  Le sous-programme utilisateur usthht doit etre complete.  ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Le couplage avec SYRTHES necessite la donne d''une        ',/,&
+'@    temperature de paroi.                                   ',/,&
+'@  Le scalaire choisi pour le couplage SYRTHES est ici une   ',/,&
+'@    enthalpie.                                              ',/,&
+'@  La loi donnant la temperature en fonction de l''enthalpie ',/,&
+'@    doit etre fournie par l''utilisateur dans le            ',/,&
+'@    sous-programme usthht.                                  ',/ &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+
+!===============================================================================
+! EXEMPLES
+!===============================================================================
+
+! Premier exemple, correspondant a H=CpT avec Cp = 4000
+! =====================================================
+
+! --- Mode H -> T
+if (mode .eq.  1) then
+  temper = enthal / 4000.d0
+
+! --- Mode T -> H
+else
+  enthal = temper * 4000.d0
+
+endif
+
+return
+
+
+
+
+
+
+
+
+
+
+
+
+! Second exemple, correspondant a une interpolation simple
+! === a partir d'une tabulation H=f(T) entree en DATA ====
+!     ================================================
+
+! --- Mode H -> T
+if (mode .eq.  1) then
+
+!       Initialisation par defaut
+  temper = 0.d0
+
+!       Si H plus petit que la plus petite enthalpie tabulee
+!         on limite arbitrairement T a la plus petite temperature
+  if(enthal.le.ht(1)) then
+    temper = th(1)
+
+!       Si H plus grand que la plus grande enthalpie tabulee
+!         on limite arbitrairement T a la plus grande temperature
+  elseif(enthal.ge.ht(ntab)) then
+    temper = th(ntab)
+
+!       Sinon, on interpole lineairement
+  else
+    do it = 2, ntab
+      if(enthal.le.ht(it)) then
+        temper = th(it-1)                                         &
+          +(enthal-ht(it-1))*(th(it)-th(it-1))/(ht(it)-ht(it-1))
+      endif
+    enddo
+  endif
+
+! --- Mode T -> H
+else
+
+!       Initialisation par defaut
+  enthal = 0.d0
+
+!       Si T plus petit que la plus petite temperature tabulee
+!         on limite arbitrairement H a la plus petite enthalpie
+  if(temper.le.th(1)) then
+    enthal = ht(1)
+
+!       Si T plus grand que la plus grande temperature tabulee
+!         on limite arbitrairement H a la plus grande enthalpie
+  elseif(temper.ge.th(ntab)) then
+    enthal = ht(ntab)
+
+!       Sinon, on interpole lineairement
+  else
+    do it = 2, ntab
+      if(temper.le.th(it)) then
+        enthal = ht(it-1)                                         &
+          +(temper-th(it-1))*(ht(it)-ht(it-1))/(th(it)-th(it-1))
+      endif
+    enddo
+  endif
+endif
+
+return
+
+!----
+! FIN
+!----
+
+end

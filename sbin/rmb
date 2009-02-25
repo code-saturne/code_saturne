@@ -7,7 +7,7 @@ RMBDIR=tmp_rmb
 
 mkdir $RMBDIR || exit 1
 
-for file in $PREFIX/src/*/*.c $PREFIX/src/*/*.F $PREFIX/users/*/*.F $PREFIX/include/*/*.h
+for file in $PREFIX/src/*/*.c $PREFIX/src/*/*.f90 $PREFIX/users/*/*.f90 $PREFIX/include/*/*.h
 do
   tmpfile=`basename $file`
   sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile

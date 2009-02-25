@@ -134,7 +134,7 @@ CCOMPFLAGSVERS         = -v
 
 FTNCOMP                = /opt/ibmcmp/xlf/bg/11.1/bin/blrts_xlf
 
-FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname
+FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsuffix=cpp=f90
 #FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 #FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsource -qlist
 
@@ -216,7 +216,7 @@ LIBEF    =
 
 # In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
-#                fic_3.F
+#                fic_3.f90
 #
 # 70% cpu promav gradrc prodsc
 # 10% cpu bilsc2 ;
@@ -226,7 +226,7 @@ LIBEF    =
 # The file lists below correspond to different optimization levels
 #
 
-LISTE_OPT_PART1 = gradmc.F gradrc.F promav.F cs_matrix.c cs_sles.c
-LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
+LISTE_OPT_PART1 = gradmc.f90 gradrc.f90 promav.f90 cs_matrix.c cs_sles.c
+LISTE_OPT_PART2 = prodsc.f90 prods2.f90 prods3.f90 cs_blas.c cs_benchmark.c
 LISTE_OPT_PART3 =
 

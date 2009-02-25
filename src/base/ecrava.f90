@@ -1,0 +1,2767 @@
+!-------------------------------------------------------------------------------
+
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+subroutine ecrava &
+!================
+
+ ( idbia0 , idbra0 ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
+   dt     , rtp    , propce , propfa , propfb ,                   &
+   coefa  , coefb  , frcxt  ,                                     &
+   rdevel , rtuser , ra     )
+
+!===============================================================================
+
+! FONCTION :
+! ----------
+! ECRITURE D'UN FICHIER SUITE
+
+! PAS DE STOP (RETURN SI ON ECHOUE)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
+! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
+! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! nfac             ! e  ! <-- ! nombre de faces internes                       !
+! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nnod             ! e  ! <-- ! nombre de noeuds                               !
+! nvar             ! e  ! <-- ! nombre total de variables                      !
+! nscal            ! e  ! <-- ! nombre total de scalaires                      !
+! nphas            ! e  ! <-- ! nombre de phases                               !
+! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
+! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
+! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
+! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
+! rtp              ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant        )          !
+! propce           ! tr ! <-- ! proprietes physiques au centre des             !
+! (ncelet,*)       !    !     !    cellules                                    !
+! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfac,*)        !    !     !    faces internes                              !
+! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfabor,*)      !    !     !    faces de bord                               !
+! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
+!  (nfabor,*)      !    !     !    faces de bord                               !
+! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
+!   3,nphas)       !    !     !  hydrostatique                                 !
+! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
+! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
+! ra(*)            ! tr ! --- ! macro tableau reel                             !
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
+!===============================================================================
+
+implicit none
+
+!===============================================================================
+!     DONNEES EN COMMON
+!===============================================================================
+
+include "dimfbr.h"
+include "paramx.h"
+include "numvar.h"
+include "cstphy.h"
+include "entsor.h"
+include "pointe.h"
+include "optcal.h"
+include "albase.h"
+include "alstru.h"
+include "alaste.h"
+include "ppppar.h"
+include "ppthch.h"
+include "ppincl.h"
+include "coincl.h"
+include "cpincl.h"
+include "fuincl.h"
+include "elincl.h"
+
+!===============================================================================
+
+! Arguments
+
+integer          idbia0 , idbra0
+integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
+integer          nvar   , nscal  , nphas
+integer          nideve , nrdeve , nituse , nrtuse
+
+integer          idevel(nideve), ituser(nituse), ia(*)
+
+double precision xyzcen(ndim,ncelet)
+double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
+double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
+double precision dt(ncelet), rtp(ncelet,*)
+double precision propce(ncelet,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision frcxt(ncelet,3,nphas)
+double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+
+! VARIABLES LOCALES
+
+
+integer          nbmom2
+parameter       (nbmom2=nbmomx*2)
+
+character        rubriq*64,car2*2,car4*4,car54*54
+character        cindfp*2,cindfs*4,cindff*4,cindfm*4
+character        cindfc*2,cindfl*4
+character        cphase(nphsmx)*2 , cscal(nscamx)*4
+character        cflu  (nvarmx)*4 , cmom (nbmomx)*4
+character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
+character        nomcli(nvarmx)*18
+character        cstruc(nstrmx)*2, cindst*2
+integer          idebia, idebra
+integer          ivar  , iphas , iscal , imom
+integer          idecal, iclapc, icha  , icla
+integer          ii    , ivers , idtm  , idtcm
+integer          iclvar, iclvaf, iptsna, iptsta, iptsca
+integer          ierror, nberro, irtyp , itysup, nbval
+integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
+integer          nfmtph, nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
+integer          nfmtst
+integer          nbflu , ilecec, iecr
+integer          ifait (nvarmx)
+integer          icdtvu(nbmom2)
+integer          ngbstr(2)
+integer          iw1, ifinra, ifac, iel, istr
+integer          impava, impavx
+double precision tmpstr(27)
+
+!===============================================================================
+!     A noter :
+!        Lorsque qu'il est necessaire d'utiliser un ordre implicite
+!        de rangement des variables, on a choisi :
+!          P,
+!          (U, V, W, turbulence, scalaires)_phase1,
+!          (...)_phase2,
+!          (...)_...
+!          scalaires
+
+!          avec turbulence = k, epsilon
+!                       ou   R11, R22, R33, R12, R13, R23, epsilon
+!                       ou   k, epsilon, phi, f_barre
+!                       ou   k, omega
+
+!        Ceci est par exemple utilise pour relier les flux de masse aux
+!        variables
+
+
+!===============================================================================
+! 1. INITIALISATION
+!===============================================================================
+
+idebia = idbia0
+idebra = idbra0
+
+!===============================================================================
+! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES
+!===============================================================================
+
+!  --->  On code en chaine le numero des phases et scalaires
+!        ----------------------------------------------------
+
+!     Nombre de phases, de scalaires, de flux, de moments et de charbons
+!       max pour les formats choisis
+nfmtph = 99
+nfmtsc = 9999
+nfmtfl = 9999
+nfmtmo = 9999
+nfmtch = 99
+nfmtcl = 9999
+
+!     Indefini (on met qqch de different de lecamo (pour generer une
+!       erreur a la lecture)
+CINDFP = 'XX'
+CINDFS = 'XXXX'
+CINDFF = 'XXXX'
+CINDFM = 'XXXX'
+CINDFC = 'XX'
+CINDFL = 'XXXX'
+
+
+!     Codage en chaine de caracteres du numero de la phase
+do iphas = 1, min(nphas ,nfmtph)
+  WRITE(CPHASE(IPHAS),'(I2.2)') IPHAS
+enddo
+do iphas = min(nphas ,nfmtph)+1,nphas
+ cphase(iphas) = cindfp
+enddo
+
+!     Codage en chaine de caracteres du numero du scalaire
+do iscal = 1, min(nscal ,nfmtsc)
+  WRITE(CSCAL(ISCAL),'(I4.4)')ISCAL
+enddo
+do iscal = min(nscal ,nfmtsc)+1,nscal
+  cscal(iscal) = cindfs
+enddo
+
+!     Codage en chaine de caracteres du numero du flux de masse
+do ivar = 1, min(nvar  ,nfmtfl)
+  WRITE(CFLU(IVAR),'(I4.4)')IVAR
+enddo
+do ivar = min(nvar  ,nfmtfl)+1,nvar
+  cflu(ivar) = cindff
+enddo
+
+!     Codage en chaine de caracteres du numero du moment
+do imom = 1, min(nbmomt,nfmtmo)
+  WRITE(CMOM(IMOM),'(I4.4)')IMOM
+enddo
+do imom = min(nbmomt,nfmtmo)+1,nbmomt
+  cmom(imom) = cindfm
+enddo
+
+!     Verifications pour les formats et les numero de phase
+!       et de scalaire en chaine.
+!     Avertissement (certaines infos passent a la trappe)
+if(nphsmx.gt.nfmtph) then
+  write(nfecra,7000)nfmtph,nphsmx
+endif
+if(nscamx.gt.nfmtsc) then
+  write(nfecra,7001)nfmtsc,nscamx
+endif
+if(nvarmx.gt.nfmtfl) then
+  write(nfecra,7002)nfmtfl,nvarmx
+endif
+if(nbmomx.gt.nfmtmo) then
+  write(nfecra,7003)nfmtmo,nbmomx
+endif
+if(ncharm.gt.nfmtch) then
+  write(nfecra,7004)nfmtch,ncharm
+endif
+if(ncpcmx.gt.nfmtcl) then
+  write(nfecra,7005)nfmtcl,ncpcmx
+endif
+
+
+!===============================================================================
+! 2. OUVERTURE FICHIER SUITE DE BASE
+!===============================================================================
+! ILECEC = 2 : ecriture
+
+write(nfecra,1000)
+
+ilecec = 2
+
+call opnsui(ficava, len(ficava), ilecec, impava, ierror)
+!==========
+if (ierror.ne.0) then
+  write(nfecra,8000) ficava
+  return
+endif
+
+
+!===============================================================================
+! 3. ECRITURE FICHIER SUITE DE BASE
+!===============================================================================
+
+write(nfecra,1100)
+
+
+! 3.0 VERSION  : Rubrique "fichier suite ppal"
+!=============   Pourrait porter le numero de version si besoin.
+!                On ne se sert pas de IVERS (=1.2.0) pour le moment.
+
+ivers  = 120
+itysup = 0
+nbval  = 1
+irtyp  = 1
+RUBRIQ = 'version_fichier_suite_principal'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
+            ierror)
+if (ierror.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54='ERREUR A L''ECRITURE DE L''ENTETE                     '
+#else
+  CAR54='ERROR WHILE WRITING THE HEADER                        '
+#endif
+  write(nfecra,8100)car54
+endif
+
+
+! 3.1 DIMENSIONS : les dimensions geometriques sont ecrites
+!===============   automatiquement lors de l'ouverture du fichier
+!                  on ecrit ici les nombres de variables
+
+nberro = 0
+
+itysup = 0
+nbval  = 1
+irtyp  = 1
+
+RUBRIQ = 'nombre_variables'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nvar,    &
+            ierror)
+nberro=nberro+ierror
+
+RUBRIQ = 'nombre_scalaires'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscal,   &
+            ierror)
+nberro=nberro+ierror
+
+RUBRIQ = 'nombre_scalaires_us'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscaus,  &
+            ierror)
+nberro=nberro+ierror
+
+RUBRIQ = 'nombre_scalaires_pp'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscapp,  &
+            ierror)
+nberro=nberro+ierror
+
+RUBRIQ = 'nombre_phases'
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nphas,   &
+            ierror)
+nberro=nberro+ierror
+
+if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54='ERREUR A L''ECRITURE DES DIMENSIONS                   '
+#else
+  CAR54='ERROR WHILE WRITING THE DIMENSIONS                    '
+#endif
+  write(nfecra,8100)car54
+endif
+
+#if defined(_CS_LANG_FR)
+CAR54 =' Fin de l''ecriture des dimensions                    '
+#else
+CAR54 =' End writing the dimensions                           '
+#endif
+write(nfecra,1110)car54
+
+! 3.2 OPTIONS (Celles servant a donner le nombre de tableaux a lire)
+!============================================================================
+! Remarque : ces variables ne sont pas toutes utilies pour la relecture
+!            en revanche, elles peuvent completer les infos au sein
+!            du fichier suite
+
+nberro = 0
+
+!  ---> Nombre de pas de temps, instant precedent
+RUBRIQ = 'nbre_pas_de_temps'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs,  &
+            ierror)
+nberro=nberro+ierror
+
+RUBRIQ = 'instant_precedent'
+itysup = 0
+nbval  = 1
+irtyp  = 2
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs,  &
+            ierror)
+nberro=nberro+ierror
+
+!  ---> Modeles de turbulence
+do iphas = 1, nphas
+  RUBRIQ = 'modele_turbulence_phase'//CPHASE(IPHAS)
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+              iturb(iphas),ierror)
+  nberro=nberro+ierror
+enddo
+
+
+!  ---> Methode ALE
+RUBRIQ = 'methode_ALE'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale,    &
+            ierror)
+nberro=nberro+ierror
+
+
+if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54='ERREUR A L''ECRITURE DES OPTIONS                      '
+#else
+  CAR54='ERROR WHILE WRITING THE OPTIONS                       '
+#endif
+  write(nfecra,8100)car54
+endif
+
+#if defined(_CS_LANG_FR)
+CAR54 =' Fin de l''ecriture des options                       '
+#else
+CAR54 =' End writing the options                              '
+#endif
+write(nfecra,1110)car54
+
+! 3.3 VARIABLES "PRINCIPALES"
+!====================================
+
+nberro = 0
+
+NOMRTP(IPR(1))='pression_ce_phase'//CPHASE(1)
+do iphas = 1, nphas
+  NOMRTP(IU(IPHAS))='vitesse_u_ce_phase'//CPHASE(IPHAS)
+  NOMRTP(IV(IPHAS))='vitesse_v_ce_phase'//CPHASE(IPHAS)
+  NOMRTP(IW(IPHAS))='vitesse_w_ce_phase'//CPHASE(IPHAS)
+  if (itytur(iphas).eq.2) then
+    NOMRTP(IK(IPHAS))='k_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IEP(IPHAS))='eps_ce_phase'//CPHASE(IPHAS)
+  elseif (itytur(iphas).eq.3) then
+    NOMRTP(IR11(IPHAS))='R11_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IR22(IPHAS))='R22_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IR33(IPHAS))='R33_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IR12(IPHAS))='R12_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IR13(IPHAS))='R13_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IR23(IPHAS))='R23_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IEP(IPHAS))='eps_ce_phase'//CPHASE(IPHAS)
+  elseif (iturb(iphas).eq.50) then
+    NOMRTP(IK(IPHAS))='k_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IEP(IPHAS))='eps_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IPHI(IPHAS))='phi_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IFB(IPHAS))='fb_ce_phase'//CPHASE(IPHAS)
+  elseif (iturb(iphas).eq.60) then
+    NOMRTP(IK(IPHAS))='k_ce_phase'//CPHASE(IPHAS)
+    NOMRTP(IOMG(IPHAS))='omega_ce_phase'//CPHASE(IPHAS)
+  endif
+enddo
+if(nscal.gt.0) then
+  do iscal = 1, nscal
+    NOMRTP(ISCA(ISCAL))='scalaire_ce_'//CSCAL(ISCAL)
+  enddo
+endif
+if (iale.eq.1) then
+  NOMRTP(IUMA)='vit_maillage_u_ce'
+  NOMRTP(IVMA)='vit_maillage_v_ce'
+  NOMRTP(IWMA)='vit_maillage_w_ce'
+endif
+
+!     Dans le cas ou il y a plusieurs phases,
+!       on ne veut ecrire la pression qu'une seule fois
+!       mais ca tombe bien, car on ne la verra qu'une seule fois
+!       dans la liste des variables
+
+do ivar = 1, nvar
+
+  itysup = 1
+  nbval  = 1
+  irtyp  = 2
+  rubriq = nomrtp(ivar)
+  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+              rtp(1,ivar),ierror)
+  nberro=nberro+ierror
+
+enddo
+
+if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54='ERREUR A L''ECRITURE DES VARIABLES PRINCIPALES        '
+#else
+  CAR54='ERROR WHILE WRITING THE MAIN VARIABLES                '
+#endif
+  write(nfecra,8100)car54
+endif
+
+#if defined(_CS_LANG_FR)
+CAR54 =' Fin de l''ecriture des variables principales         '
+#else
+CAR54 =' End writing the main variables                       '
+#endif
+write(nfecra,1110)car54
+
+
+! 3.4 INFORMATIONS COMPLEMENTAIRES LEGERES (IE UN ENTIER, UN REEL...)
+!==================================================
+
+nberro = 0
+
+iecr = 0
+
+
+
+if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54='ERREUR A L''ECRITURE DES INFORMATIONS COMPLEMENTAIRES '
+#else
+  CAR54='ERROR WHILE WRITING THE COMPLEMENTARY INFORMATION    '
+#endif
+  write(nfecra,8100)car54
+endif
+
+if(iecr.ne.0) then
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture des informations complementaires  '
+#else
+  CAR54 =' End writing the complementary information           '
+#endif
+  write(nfecra,1110)car54
+endif
+
+
+!===============================================================================
+! 4. FERMETURE FICHIER SUITE DE BASE
+!===============================================================================
+
+!     Fermeture du fichier suite principal
+call clssui(impava,ierror)
+
+if (ierror.ne.0) then
+  write(nfecra,8010) ficava
+endif
+
+write(nfecra,1200)
+
+!===============================================================================
+! 5. ECRITURE FICHIER SUITE AUXILIAIRE
+!===============================================================================
+
+!     Si  l'ecriture du fichier suite auxiliaire est demandee
+if (iecaux.eq.1) then
+
+! 5.0. OUVERTURE FICHIER SUITE AUXILIAIRE
+!================================================
+
+  write(nfecra,2000)
+
+  ilecec = 2
+  call opnsui(ficavx, len(ficavx), ilecec, impavx, ierror)
+  !==========
+  if (ierror.ne.0) then
+    write(nfecra,8001) ficavx
+    return
+  endif
+
+  write(nfecra,1100)
+
+! 5.1 VERSION  : Rubrique "fichier suite auxiliaire"
+!=============   Pourrait porter le numero de version si besoin.
+!                On ne se sert pas de IVERS (=1.2.0) pour le moment.
+
+  ivers  = 120
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  RUBRIQ = 'version_fichier_suite_auxiliaire'
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+              ivers,ierror)
+  if (ierror.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DE L''ENTETE                     '
+#else
+    CAR54='ERROR WHILE WRITING THE HEADER                        '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+! 5.2 DIMENSIONS : les dimensions geometriques sont ecrites
+!===============   automatiquement lors de l'ouverture du fichier
+
+
+  nberro=0
+
+!  ---> Nombre de phases
+!       On les reecrit ici car on en aura besoin a la relecture
+  RUBRIQ = 'nombre_phases'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nphas, &
+              ierror)
+  nberro=nberro+ierror
+
+!  ---> Nombre de pas de temps, instant precedent
+!       On les reecrit ici car on en aura besoin a la relecture
+  RUBRIQ = 'nbre_pas_de_temps'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs,&
+              ierror)
+  nberro=nberro+ierror
+
+!  ---> Indicateur de pas de temps variable
+  RUBRIQ = 'indic_dt_variable'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,idtvar,&
+        ierror)
+  nberro=nberro+ierror
+
+!  ---> Modeles de turbulence
+!       On les reecrit ici car on en aura besoin a la relecture
+  do iphas = 1, nphas
+    RUBRIQ = 'modele_turbulence_phase'//CPHASE(IPHAS)
+    itysup = 0
+    nbval  = 1
+    irtyp  = 1
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                iturb(iphas),ierror)
+    nberro=nberro+ierror
+  enddo
+
+RUBRIQ = 'methode_ALE'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iale,    &
+            ierror)
+nberro=nberro+ierror
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES DIMENSIONS ET DES OPTIONS    '
+#else
+    CAR54='ERROR WHILE WRITING THE DIMENSIONS AND OPTIONS        '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture des dimensions et des options     '
+#else
+  CAR54 =' End writing the dimensions and options               '
+#endif
+  write(nfecra,1110)car54
+
+! 5.3 ECRITURE DES VARIABLES
+!===================================
+
+! --->  Proprietes physiques
+
+  nberro=0
+
+  do iphas = 1, nphas
+
+!     Point de reference pour la pression totale
+!     On n'ecrit que si XYZP0 a ete specifie par l'utilisateur ou
+!       calcule a partir de faces de sorties ou de Dirichlet
+    if (ixyzp0(iphas).eq.1) then
+      RUBRIQ = 'ref_presstot'//CPHASE(IPHAS)
+      itysup = 0
+      nbval  = 3
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  xyzp0(1,iphas),ierror)
+      nberro=nberro+ierror
+    endif
+
+!     Masse volumique si elle est variable uniquement
+    if(irovar(iphas).eq.1) then
+!          Masse volumique - cellules
+      RUBRIQ = 'rho_ce_phase'//CPHASE(IPHAS)
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,ipproc(irom(iphas))),ierror)
+      nberro=nberro+ierror
+
+!          Masse volumique - faces de bord
+      RUBRIQ = 'rho_fb_phase'//CPHASE(IPHAS)
+      itysup = 3
+      nbval  = 1
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propfb(1,ipprob(irom(iphas))),ierror)
+      nberro=nberro+ierror
+    endif
+
+!     On n'ecrit les proprietes physiques que si on les extrapole.
+!       On pourrait les ecrire a tous les coups en prevision d'une
+!       suite avec extrapolation, mais
+!          - c'est rare
+!          - si on demarre un calcul a l'ordre deux a partir d'un calcul
+!            a l'ordre 1, on peut estimer que les premiers pas de temps
+!            sont a jeter de toute facon.
+!       Une exception : on ecrit egalement Cp en effet joule pour
+!         pouvoir calculer la temperature H/Cp en debut de calcul
+
+    if(iviext(iphas).gt.0) then
+!         Viscosite moleculaire - cellules (si variable)
+      if(ivivar(iphas).eq.1) then
+        RUBRIQ = 'viscl_ce_phase'//CPHASE(IPHAS)
+        itysup = 1
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,ipproc(iviscl(iphas))),ierror)
+        nberro = nberro+ierror
+      endif
+
+!         Viscosite turbulente ou de sous-maille - cellules
+      RUBRIQ = 'visct_ce_phase'//CPHASE(IPHAS)
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,ipproc(ivisct(iphas))),ierror)
+      nberro = nberro+ierror
+    endif
+
+    if((icpext(iphas ).gt.0.and.icp(iphas).gt.0).or.              &
+       (ippmod(ieljou).ge.1.and.icp(iphas).gt.0))  then
+!         Chaleur massique - cellules
+      RUBRIQ = 'cp_ce_phase'//CPHASE(IPHAS)
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,ipproc(icp(iphas))),ierror)
+      nberro = nberro+ierror
+    endif
+
+  enddo
+
+!     Si on a des scalaires, on ecrit leur diffusivite
+!        (on ne l'ecrit pas pour les variances)
+  if(nscal.gt.0) then
+    do iscal = 1, nscal
+      if(ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
+         (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
+!         Diffusivite - cellules
+        RUBRIQ = 'visls_ce_scalaire'//CSCAL(ISCAL)
+        itysup = 1
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,ipproc(ivisls(iscal))),ierror)
+        nberro = nberro+ierror
+      endif
+    enddo
+  endif
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES PROPRIETES PHYSIQUES         '
+#else
+    CAR54='ERROR WHILE WRITING THE PHYSICAL PROPERTIES           '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture des proprietes physiques          '
+#else
+  CAR54 =' End writing the physical properties                  '
+#endif
+  write(nfecra,1110)car54
+
+! ---> Pas de temps
+
+  nberro = 0
+
+  if(idtvar.eq.2) then
+    RUBRIQ = 'dt_variable_espace_ce'
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt,  &
+                ierror)
+    nberro=nberro+ierror
+  elseif(idtvar.eq.1) then
+    RUBRIQ = 'dt_variable_temps'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt,  &
+                ierror)
+    nberro=nberro+ierror
+  endif
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DU PAS DE TEMPS                  '
+#else
+    CAR54='ERROR WHILE WRITING THE TIME STEP                     '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture du pas de temps                   '
+#else
+  CAR54 =' End writing the time step                            '
+#endif
+  write(nfecra,1110)car54
+
+! ---> Flux de masse
+
+!     Pour garder la memoire de la correspondance entre les variables
+!     et les flux de masse, on memorise le nom de chaque variable
+!     (NOMFLU(I)= nom de la ieme variable)
+!     Ensuite, pour chaque variable, on ecrit son nom et le numero
+!     local du flux de masse correspondant (en pratique 1 ou 2)
+
+  nberro=0
+
+!       Initialisation des tableaux de travail
+  nbflu = 0
+  do ii = 1, nvarmx
+    ifait(ii) = 0
+  enddo
+
+  iphas = 1
+  NOMFLU(IPR(IPHAS))='fm_p_phase'//CPHASE(IPHAS)
+  do iphas=1,nphas
+    NOMFLU(IU(IPHAS))='fm_u_phase'//CPHASE(IPHAS)
+    NOMFLU(IV(IPHAS))='fm_v_phase'//CPHASE(IPHAS)
+    NOMFLU(IW(IPHAS))='fm_w_phase'//CPHASE(IPHAS)
+    if (itytur(iphas).eq.2) then
+      NOMFLU(IK(IPHAS))='fm_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_eps_phase'//CPHASE(IPHAS)
+    elseif (itytur(iphas).eq.3) then
+      NOMFLU(IR11(IPHAS))='fm_R11_phase'//CPHASE(IPHAS)
+      NOMFLU(IR22(IPHAS))='fm_R22_phase'//CPHASE(IPHAS)
+      NOMFLU(IR33(IPHAS))='fm_R33_phase'//CPHASE(IPHAS)
+      NOMFLU(IR12(IPHAS))='fm_R12_phase'//CPHASE(IPHAS)
+      NOMFLU(IR13(IPHAS))='fm_R13_phase'//CPHASE(IPHAS)
+      NOMFLU(IR23(IPHAS))='fm_R23_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_eps_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.50) then
+      NOMFLU(IK(IPHAS))='fm_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_eps_phase'//CPHASE(IPHAS)
+      NOMFLU(IPHI(IPHAS))='fm_phi_phase'//CPHASE(IPHAS)
+!     On n'utilise pas le flux de masse pour fb en fait mais on le laisse ici, car ca
+!     ne change rien (le flux n'est ecrit qu'une seule fois)
+      NOMFLU(IFB(IPHAS))='fm_fb_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.60) then
+      NOMFLU(IK(IPHAS))='fm_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IOMG(IPHAS))='fm_omega_phase'//CPHASE(IPHAS)
+    endif
+  enddo
+  if(nscal.gt.0) then
+    do iscal = 1, nscal
+      NOMFLU(ISCA(ISCAL))='fm_scalaire'//CSCAL(ISCAL)
+    enddo
+  endif
+  if (iale.eq.1) then
+    NOMFLU(IUMA)='fm_vit_maill_u'
+    NOMFLU(IVMA)='fm_vit_maill_v'
+    NOMFLU(IWMA)='fm_vit_maill_w'
+  endif
+
+
+  do ivar = 1, nvar
+
+!        Si la variable n'est pas associee a un flux de masse
+!          on ne fait rien
+    if (ifluma(ivar).gt.0) then
+!          Si le flux de masse n'a pas encore ete ecrit
+      if (ifait(ifluma(ivar)).eq.0) then
+!            C'est un nouveau flux a ecrire
+        nbflu=nbflu+1
+!            On note que ce flux est alors traite (c'est le NBFLUieme)
+        ifait(ifluma(ivar))=nbflu
+
+!            Ecriture du flux de masse sur les faces internes
+        RUBRIQ = 'flux_masse_fi_'//CFLU(NBFLU)
+        itysup = 2
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propfa(1,ipprof(ifluma(ivar))),ierror)
+        nberro=nberro+ierror
+
+!            Ecriture du flux de masse sur les faces de bord
+        RUBRIQ = 'flux_masse_fb_'//CFLU(NBFLU)
+        itysup = 3
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propfb(1,ipprob(ifluma(ivar))),ierror)
+        nberro=nberro+ierror
+      endif
+!          Que le flux de masse ait deja ete ecrit ou pas,
+!            on ecrit  le lien variable/numero de flux
+      rubriq = nomflu(ivar)
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  ifait(ifluma(ivar)),ierror)
+      nberro=nberro+ierror
+    endif
+  enddo
+
+
+!     On fait de meme pour les flux de masse au temps precedent.
+!       Initialisation des tableaux de travail
+
+  nbflu = 0
+  do ii = 1, nvarmx
+    ifait(ii) = 0
+  enddo
+
+  iphas = 1
+  NOMFLU(IPR(IPHAS))='fm_a_p_phase'//CPHASE(IPHAS)
+  do iphas=1,nphas
+    NOMFLU(IU(IPHAS))='fm_a_u_phase'//CPHASE(IPHAS)
+    NOMFLU(IV(IPHAS))='fm_a_v_phase'//CPHASE(IPHAS)
+    NOMFLU(IW(IPHAS))='fm_a_w_phase'//CPHASE(IPHAS)
+    if (itytur(iphas).eq.2) then
+      NOMFLU(IK(IPHAS))='fm_a_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_a_eps_phase'//CPHASE(IPHAS)
+    elseif (itytur(iphas).eq.3) then
+      NOMFLU(IR11(IPHAS))='fm_a_R11_phase'//CPHASE(IPHAS)
+      NOMFLU(IR22(IPHAS))='fm_a_R22_phase'//CPHASE(IPHAS)
+      NOMFLU(IR33(IPHAS))='fm_a_R33_phase'//CPHASE(IPHAS)
+      NOMFLU(IR12(IPHAS))='fm_a_R12_phase'//CPHASE(IPHAS)
+      NOMFLU(IR13(IPHAS))='fm_a_R13_phase'//CPHASE(IPHAS)
+      NOMFLU(IR23(IPHAS))='fm_a_R23_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_a_eps_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.50) then
+      NOMFLU(IK(IPHAS))='fm_a_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IEP(IPHAS))='fm_a_eps_phase'//CPHASE(IPHAS)
+      NOMFLU(IPHI(IPHAS))='fm_a_phi_phase'//CPHASE(IPHAS)
+      NOMFLU(IFB(IPHAS))='fm_a_fb_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.60) then
+      NOMFLU(IK(IPHAS))='fm_a_k_phase'//CPHASE(IPHAS)
+      NOMFLU(IOMG(IPHAS))='fm_a_omega_phase'//CPHASE(IPHAS)
+    endif
+  enddo
+  if(nscal.gt.0) then
+    do iscal = 1, nscal
+      NOMFLU(ISCA(ISCAL))='fm_a_scalaire'//CSCAL(ISCAL)
+    enddo
+  endif
+  if (iale.eq.1) then
+    NOMFLU(IUMA)='fm_a_vit_maill_u'
+    NOMFLU(IVMA)='fm_a_vit_maill_v'
+    NOMFLU(IWMA)='fm_a_vit_maill_w'
+  endif
+
+
+  do ivar = 1, nvar
+
+!        Si la variable n'est pas associee a un flux de masse
+!          on ne fait rien
+    if (ifluaa(ivar).gt.0) then
+!          Si le flux de masse n'a pas encore ete ecrit
+      if (ifait(ifluaa(ivar)).eq.0) then
+!            C'est un nouveau flux a ecrire
+        nbflu=nbflu+1
+!            On note que ce flux est alors traite (c'est le NBFLUieme)
+        ifait(ifluaa(ivar))=nbflu
+
+!            Ecriture du flux de masse sur les faces internes
+        RUBRIQ = 'flux_masse_a_fi_'//CFLU(NBFLU)
+        itysup = 2
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propfa(1,ipprof(ifluaa(ivar))),ierror)
+        nberro=nberro+ierror
+
+!            Ecriture du flux de masse sur les faces de bord
+        RUBRIQ = 'flux_masse_a_fb_'//CFLU(NBFLU)
+        itysup = 3
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propfb(1,ipprob(ifluaa(ivar))),ierror)
+        nberro=nberro+ierror
+      endif
+!          Que le flux de masse ait deja ete ecrit ou pas,
+!            on ecrit  le lien variable/numero de flux
+      rubriq = nomflu(ivar)
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  ifait(ifluaa(ivar)),ierror)
+      nberro=nberro+ierror
+    endif
+  enddo
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES FLUX DE MASSE                '
+#else
+    CAR54='ERROR WHILE WRITING THE MASS FLUXES                   '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture des flux de masse                 '
+#else
+  CAR54 =' End writing the mass fluxes                          '
+#endif
+  write(nfecra,1110)car54
+
+! ---> Conditions aux limites
+
+  nberro=0
+
+  NOMCLI(IPR(1))='_p_phase'//CPHASE(1)
+  do iphas = 1, nphas
+    NOMCLI(IU(IPHAS))='_u_phase'//CPHASE(IPHAS)
+    NOMCLI(IV(IPHAS))='_v_phase'//CPHASE(IPHAS)
+    NOMCLI(IW(IPHAS))='_w_phase'//CPHASE(IPHAS)
+    if (itytur(iphas).eq.2) then
+      NOMCLI(IK(IPHAS))='_k_phase'//CPHASE(IPHAS)
+      NOMCLI(IEP(IPHAS))='_eps_phase'//CPHASE(IPHAS)
+    elseif (itytur(iphas).eq.3) then
+      NOMCLI(IR11(IPHAS))='_R11_phase'//CPHASE(IPHAS)
+      NOMCLI(IR22(IPHAS))='_R22_phase'//CPHASE(IPHAS)
+      NOMCLI(IR33(IPHAS))='_R33_phase'//CPHASE(IPHAS)
+      NOMCLI(IR12(IPHAS))='_R12_phase'//CPHASE(IPHAS)
+      NOMCLI(IR13(IPHAS))='_R13_phase'//CPHASE(IPHAS)
+      NOMCLI(IR23(IPHAS))='_R23_phase'//CPHASE(IPHAS)
+      NOMCLI(IEP(IPHAS))='_eps_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.50) then
+      NOMCLI(IK(IPHAS))='_k_phase'//CPHASE(IPHAS)
+      NOMCLI(IEP(IPHAS))='_eps_phase'//CPHASE(IPHAS)
+      NOMCLI(IPHI(IPHAS))='_phi_phase'//CPHASE(IPHAS)
+      NOMCLI(IFB(IPHAS))='_fb_phase'//CPHASE(IPHAS)
+    elseif (iturb(iphas).eq.60) then
+      NOMCLI(IK(IPHAS))='_k_phase'//CPHASE(IPHAS)
+      NOMCLI(IOMG(IPHAS))='_omega_phase'//CPHASE(IPHAS)
+    endif
+  enddo
+  if(nscal.gt.0) then
+    do iscal = 1, nscal
+      NOMCLI(ISCA(ISCAL))='_scalaire'//CSCAL(ISCAL)
+    enddo
+  endif
+  if (iale.eq.1) then
+    NOMCLI(IUMA)='_vit_maillage_u'
+    NOMCLI(IVMA)='_vit_maillage_v'
+    NOMCLI(IWMA)='_vit_maillage_w'
+  endif
+
+!     Dans le cas ou il y a plusieurs phases,
+!       on ne veut ecrire la pression qu'une seule fois
+!       mais ca tombe bien, car on ne la verra qu'une seule fois
+!       dans la liste des variables
+
+  do ivar = 1, nvar
+
+    itysup = 3
+    nbval  = 1
+    irtyp  = 2
+
+!          Coefficients numeros 1
+    iclvar = iclrtp(ivar,icoef)
+    RUBRIQ = 'cla1'//NOMCLI(IVAR)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                coefa(1,iclvar),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'clb1'//NOMCLI(IVAR)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                coefb(1,iclvar),ierror)
+    nberro=nberro+ierror
+
+!          Coefficients numeros 2
+    iclvaf = iclrtp(ivar,icoeff)
+    if (iclvar.ne.iclvaf) then
+
+      RUBRIQ = 'cla2'//NOMCLI(IVAR)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  coefa(1,iclvaf),ierror)
+      nberro=nberro+ierror
+
+      RUBRIQ = 'clb2'//NOMCLI(IVAR)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  coefb(1,iclvaf),ierror)
+      nberro=nberro+ierror
+    endif
+
+  enddo
+
+
+!     Type symétrie (utilisé pour les gradients par moindres carrés
+!       sur support étendu, avec extrapolation du gradient au bord).
+
+  do iphas = 1, nphas
+
+    RUBRIQ = 'isympa_fb_phase'//CPHASE(IPHAS)
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iisymp+nfabor*(iphas-1)),ierror)
+    nberro=nberro+ierror
+
+  enddo
+
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES CONDITIONS AUX LIMITES       '
+#else
+    CAR54='ERROR WHILE WRITING THE BOUNDARY CONDITIONS           '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+#if defined(_CS_LANG_FR)
+  CAR54 =' Fin de l''ecriture des conditions aux limites        '
+#else
+  CAR54 =' End writing the boundary conditions                  '
+#endif
+  write(nfecra,1110)car54
+
+! ---> Termes sources
+!      Lorsqu'ils sont extrapoles (pour les versions elec, voir plus bas)
+
+  nberro=0
+
+  iecr = 0
+
+! ---> Termes sources Navier-Stokes
+  do iphas = 1, nphas
+
+!     Si les termes sont a l'ordre 2
+    if(isno2t(iphas).gt.0) then
+
+      iecr = 1
+
+      iptsna = ipproc(itsnsa(iphas))
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+
+      RUBRIQ = 'tsource_ns_ce_x_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,iptsna  ),ierror)
+      nberro=nberro+ierror
+
+      RUBRIQ = 'tsource_ns_ce_y_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,iptsna+1),ierror)
+      nberro=nberro+ierror
+
+      RUBRIQ = 'tsource_ns_ce_z_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,iptsna+2),ierror)
+      nberro=nberro+ierror
+
+    endif
+
+  enddo
+
+! ---> Termes sources turbulence
+  do iphas = 1, nphas
+
+!        Si les termes sont a l'ordre 2
+    if(isto2t(iphas).gt.0) then
+
+      iecr = 1
+
+      iptsta = ipproc(itstua(iphas))
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+
+!          En k-eps
+      if(itytur(iphas).eq.2) then
+
+        RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta  ),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+1),ierror)
+        nberro=nberro+ierror
+
+!          En Rij
+      elseif(itytur(iphas).eq.3) then
+
+        RUBRIQ = 'tsource_tu_ce_R11_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta  ),ierror)
+        nberro=nberro+ierror
+        RUBRIQ = 'tsource_tu_ce_R22_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+1),ierror)
+        nberro=nberro+ierror
+        RUBRIQ = 'tsource_tu_ce_R33_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+2),ierror)
+        nberro=nberro+ierror
+        RUBRIQ = 'tsource_tu_ce_R12_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+3),ierror)
+        nberro=nberro+ierror
+        RUBRIQ = 'tsource_tu_ce_R13_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+4),ierror)
+        nberro=nberro+ierror
+        RUBRIQ = 'tsource_tu_ce_R23_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+5),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+6),ierror)
+        nberro=nberro+ierror
+
+!          En v2f
+      elseif(iturb(iphas).eq.50) then
+
+        RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta  ),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+1),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_phi_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+2),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_fb_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+3),ierror)
+        nberro=nberro+ierror
+
+!          En k-omega
+      elseif(iturb(iphas).eq.60) then
+
+        RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta  ),ierror)
+        nberro=nberro+ierror
+
+        RUBRIQ = 'tsource_tu_ce_omega_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+1),ierror)
+        nberro=nberro+ierror
+
+      endif
+    endif
+  enddo
+
+
+! ---> Termes sources scalaires
+
+!     Boucle sur les scalaires
+  do iscal = 1, nscal
+!     Si le terme est a l'ordre 2
+    if(isso2t(iscal).gt.0) then
+
+      iecr = 1
+
+      iptsca = ipproc(itssca(iscal))
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      RUBRIQ = 'tsource_sc_ce_scalaire'//CSCAL(ISCAL)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,iptsca  ),ierror)
+      nberro=nberro+ierror
+
+    endif
+  enddo
+
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES TERMES SOURCES               '
+#else
+    CAR54='ERROR WHILE WRITING THE SOURCES TERMS                 '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+  if (iecr.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des termes sources                '
+#else
+    CAR54=' End writing the source terms                         '
+#endif
+    write(nfecra,1110)car54
+  endif
+
+
+! ---> Moyennes (cumuls)
+
+  nberro = 0
+
+!  ---> Nombre de moyennes
+  RUBRIQ = 'nombre_moyennes_temps'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nbmomt,&
+              ierror)
+  nberro=nberro+ierror
+
+!     Cumuls des moyennes
+  do imom = 1, nbmomt
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+    RUBRIQ = 'cumul_ce_moment'//CMOM(IMOM)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                propce(1,ipproc(icmome(imom))),ierror)
+    nberro=nberro+ierror
+  enddo
+
+!     Cumuls des durees
+
+!     On determine un numero unique de duree, local au fichier suite.
+!       les durees variable ou non sont considerees sans distinction
+!     Le tableau ICDTVU(2*NBMOMX) renvoie aux cumuls temporels variables
+!       en espace pour les indices 1->NBMOMX et aux cumuls temporels
+!       uniformes pour les indices NBMOMX+1->2*NBMOMX
+
+!     Initialisation des elements de travail
+  nbctm = 0
+  do ii = 1, nbmom2
+    icdtvu(ii) = 0
+  enddo
+
+
+  do imom = 1, nbmomt
+    idtm = idtmom(imom)
+!        Si cumul variable en espace
+    if(idtm.gt.0) then
+!          Si cumul pas encore vu
+      if(icdtvu(idtm).eq.0) then
+!            C'est un nouveau, le NBCTM ieme
+        nbctm = nbctm+1
+!            On le marque
+        icdtvu(idtm) = nbctm
+!            On ecrit ses valeurs
+        if(nbctm.le.nfmtmo) then
+          WRITE(CAR4,'(I4.4)')NBCTM
+        else
+          car4 = cindfm
+        endif
+        idtcm  = ipproc(icdtmo(idtm))
+        itysup = 1
+        nbval  = 1
+        irtyp  = 2
+        RUBRIQ = 'cumul_temps_ce_'//CAR4
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,idtcm),ierror)
+        nberro=nberro+ierror
+      endif
+!          Cumul vu ou pas, on ecrit son numero, >0 pour dire qu'il est
+!            variable en espace
+      RUBRIQ = 'numero_cumul_temps_moment'//CMOM(IMOM)
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  icdtvu(idtm),ierror)
+      nberro=nberro+ierror
+
+!        Sinon, si cumul uniforme en espace
+    elseif(idtm.lt.0) then
+!          Si cumul pas encore vu
+      if(icdtvu(nbmomx-idtm).eq.0) then
+!            C'est un nouveau, le NBCTM ieme
+        nbctm = nbctm+1
+!            On le marque
+        icdtvu(nbmomx-idtm) = -nbctm
+!            On ecrit ses valeurs
+        if(nbctm.le.nfmtmo) then
+          WRITE(CAR4,'(I4.4)')NBCTM
+        else
+          car4 = cindfm
+        endif
+        idtcm  = -idtm
+        itysup = 0
+        nbval  = 1
+        irtyp  = 2
+        RUBRIQ = 'cumul_temps_'//CAR4
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    dtcmom(idtcm),ierror)
+        nberro=nberro+ierror
+      endif
+!          Cumul vu ou pas, on ecrit son numero, <0 pour dire qu'il est
+!            uniforme en espace
+      RUBRIQ = 'numero_cumul_temps_moment'//CMOM(IMOM)
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  icdtvu(nbmomx-idtm),ierror)
+      nberro=nberro+ierror
+    endif
+  enddo
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES MOYENNES TEMPORELLES         '
+#else
+    CAR54='ERROR WHILE WRITING THE TIME AVERAGES                 '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+  if(nbmomt.gt.0) then
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des moyennes temporelles          '
+#else
+    CAR54=' End writing the time averages                        '
+#endif
+    write(nfecra,1110)car54
+  endif
+
+! ---> Distance a la paroi
+!      On pourra ecrire ici la distance a la paroi
+
+  nberro = 0
+
+  iecr = 0
+
+  if(ineedy.eq.1) then
+!     Ancien mode de calcul. On ecrit aussi la distance a la paroi,
+!       au cas ou on fait une suite en ICDPAR=1.
+    if(abs(icdpar).eq.2) then
+      do iphas = 1, nphas
+        if(iifapa(iphas).gt.0) then
+          iecr   = 1
+          itysup = 1
+          nbval  = 1
+          irtyp  = 1
+          RUBRIQ = 'num_fac_par_ce_phase'//CPHASE(IPHAS)
+          call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
+                    irtyp,ia(iifapa(iphas)),ierror)
+          nberro=nberro+ierror
+        endif
+      enddo
+!     Pour la distance reelle, on a besoin d'un tableau provisoire
+!     on ne prend que la phase 1
+      iphas  = 1
+      if(iifapa(iphas).gt.0) then
+        iw1    = idebra
+        ifinra = iw1 + ncelet
+        CALL RASIZE('ECRAVA',IFINRA)
+        do iel = 1, ncel
+          ifac = ia(iifapa(iphas)+iel-1)
+          ra(iw1+iel-1) =                                         &
+               sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
+               +       (cdgfbo(2,ifac)-xyzcen(2,iel))**2          &
+               +       (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
+        enddo
+        iecr   = 1
+        itysup = 1
+        nbval  = 1
+        irtyp  = 2
+        RUBRIQ = 'dist_fac_par_ce_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+             ra(iw1),ierror)
+        nberro=nberro+ierror
+      endif
+
+!     Nouveau mode de calcul
+    elseif(abs(icdpar).eq.1) then
+      iphas  = 1
+      iecr   = 1
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      RUBRIQ = 'dist_fac_par_ce_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  ra(idipar),ierror)
+      nberro=nberro+ierror
+    endif
+  endif
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DE LA DISTANCE A LA PAROI        '
+#else
+    CAR54='ERROR WHILE WRITING THE WALL DISTANCE                 '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+  if(iecr.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture de la distance a la paroi         '
+#else
+    CAR54=' End writing the wall distance                        '
+#endif
+    write(nfecra,1110)car54
+  endif
+
+! ---> Force exterieure
+
+  if(iphydr.eq.1) then
+    nberro=0
+
+    do iphas = 1, nphas
+
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+
+      RUBRIQ = 'force_ext_ce_x_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  frcxt(1,1,iphas),ierror)
+      nberro=nberro+ierror
+
+      RUBRIQ = 'force_ext_ce_y_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  frcxt(1,2,iphas),ierror)
+      nberro=nberro+ierror
+
+      RUBRIQ = 'force_ext_ce_z_phase'//CPHASE(IPHAS)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  frcxt(1,3,iphas),ierror)
+      nberro=nberro+ierror
+    enddo
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES FORCES EXTERIEURES           '
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING THE EXTERNAL FORCES               '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des forces exterieures            '
+#else
+    CAR54=' End writing the external forces                      '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+! ---> Methode ALE
+
+  if(iale.eq.1) then
+    nberro=0
+
+    itysup = 4
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'deplact_x_no'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ra(idepal),ierror)
+    nberro=nberro+ierror
+    RUBRIQ = 'deplact_y_no'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ra(idepal+nnod),ierror)
+    nberro=nberro+ierror
+    RUBRIQ = 'deplact_z_no'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ra(idepal+2*nnod),ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DU DEPLACEMENT AUX NOEUDS (ALE)  '
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING THE VERTICES DISPLACEMENTS (ALE)  '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+!     Viscosite de maillage (elle est souvent definie geometriquement sur le
+!       maillage initial ... il est donc plus facile de la relire ensuite)
+
+    nberro = 0
+    RUBRIQ = 'type_visc_mail'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 1
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+         iortvm,ierror)
+    nberro = nberro+ierror
+
+    nberro = 0
+    RUBRIQ = 'visc_maillage_x'
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+         propce(1,ipproc(ivisma(1))),ierror)
+    nberro = nberro+ierror
+
+    if (iortvm.eq.1) then
+      RUBRIQ = 'visc_maillage_y'
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         propce(1,ipproc(ivisma(2))),ierror)
+      RUBRIQ = 'visc_maillage_z'
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         propce(1,ipproc(ivisma(3))),ierror)
+    endif
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DE LA VISCOSITE DE MAILLAGE (ALE)'
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING THE MESH VISCOSITY (ALE)          '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des donnees ALE    '
+#else
+    CAR54=' End writing the ALE data              '
+#endif
+    write(nfecra,1110)car54
+
+    ngbstr(1) = nbstru
+    ngbstr(2) = nbaste
+
+    nberro=0
+    RUBRIQ = 'nombre_structures'
+    itysup = 0
+    nbval  = 2
+    irtyp  = 1
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+         ngbstr,ierror)
+    nberro=nberro+ierror
+
+    if (nbstru.gt.0) then
+
+      nfmtst = 99
+      CINDST = 'XX'
+!     Codage en chaine de caracteres du numero de la structure
+      do istr = 1, min(nbstru ,nfmtst)
+        WRITE(CSTRUC(ISTR),'(I2.2)') ISTR
+      enddo
+      do istr = min(nbstru ,nfmtst)+1,nbstru
+        cstruc(istr) = cindst
+      enddo
+
+      do istr = 1, nbstru
+        RUBRIQ = 'donnees_structure_'//CSTRUC(ISTR)
+        itysup = 0
+        nbval  = 27
+        irtyp  = 2
+
+        do ii = 1, 3
+          tmpstr(   ii) = xstr  (ii,istr)
+          tmpstr(3 +ii) = xpstr (ii,istr)
+          tmpstr(6 +ii) = xppstr(ii,istr)
+          tmpstr(9 +ii) = xsta  (ii,istr)
+          tmpstr(12+ii) = xpsta (ii,istr)
+          tmpstr(15+ii) = xppsta(ii,istr)
+          tmpstr(18+ii) = xstp  (ii,istr)
+          tmpstr(21+ii) = forstr(ii,istr)
+          tmpstr(24+ii) = forsta(ii,istr)
+        enddo
+
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+             tmpstr,ierror)
+        nberro=nberro+ierror
+      enddo
+
+      if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+        car54=                                                    &
+          'ERREUR A L''ECRITURE DES DONNEES DES STRUCTURES (ALE) '
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING THE STRUCTURES DATE (ALE)         '
+#endif
+        write(nfecra,8101)car54
+      endif
+
+#if defined(_CS_LANG_FR)
+      CAR54=' Fin de l''ecriture des donnees des structures (ALE)'
+#else
+      CAR54=' End writing the structures data (ALE)              '
+#endif
+      write(nfecra,1110)car54
+
+    endif
+  endif
+
+
+! ---> Grandeurs complementaires pour la combustion gaz
+
+!     Modele COD3P :
+!     ============
+
+  if ( ippmod(icod3p).ge.0 ) then
+
+    nberro=0
+
+    RUBRIQ = 'hinfue_cod3p'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                hinfue,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'hinoxy_cod3p'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                hinoxy,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'tinfue_cod3p'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                tinfue,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'tinoxy_cod3p'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                tinoxy,ierror)
+    nberro=nberro+ierror
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    RUBRIQ = 'num_zone_fb_cod3p'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iizfpp), ierror)
+    nberro=nberro+ierror
+
+!       Entree Fuel (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientfu_zone_bord_cod3p'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientfu, ierror)
+    nberro=nberro+ierror
+
+!       Entree oxydant (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientox_zone_bord_cod3p'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientox, ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION COD3P'
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING COMBUSTION INFORMATION (COD3P)   '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations combustion COD3P'
+#else
+    CAR54=' End writing combustion information (COD3P)         '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+!      Modele EBU :
+!      ==========
+
+  if ( ippmod(icoebu).ge.0 ) then
+
+    nberro=0
+
+    RUBRIQ = 'temperature_gaz_frais_ebu'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                tgf,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'frmel_ebu'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                frmel,ierror)
+    nberro=nberro+ierror
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    RUBRIQ = 'num_zone_fb_ebu'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iizfpp), ierror)
+    nberro=nberro+ierror
+
+!       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientgb_zone_bord_ebu'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientgb, ierror)
+    nberro=nberro+ierror
+
+!       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientgf_zone_bord_ebu'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientgf, ierror)
+    nberro=nberro+ierror
+
+!       FMENT (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'fment_zone_bord_ebu'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                fment, ierror)
+    nberro=nberro+ierror
+
+!       TKENT (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'tkent_zone_bord_ebu'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                tkent, ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION EBU'
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING COMBUSTION INFORMATION (EBU)   '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations combustion EBU '
+#else
+    CAR54=' End writing the combustion information (EBU)      '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+!      Modele LWC :
+!      ==========
+
+  if ( ippmod(icolwc).ge.0 ) then
+
+    nberro=0
+
+    RUBRIQ = 'fmin_lwc'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                fmin,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'fmax_lwc'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                fmax,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'hmin_lwc'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                hmin,ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'hmax_lwc'
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                hmax,ierror)
+    nberro=nberro+ierror
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    RUBRIQ = 'num_zone_fb_lwc'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iizfpp), ierror)
+    nberro=nberro+ierror
+
+!       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientgb_zone_bord_lwc'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientgb, ierror)
+    nberro=nberro+ierror
+
+!       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientgf_zone_bord_lwc'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientgf, ierror)
+    nberro=nberro+ierror
+
+!       FMENT (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'fment_zone_bord_lwc'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                fment, ierror)
+    nberro=nberro+ierror
+
+!       TKENT (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'tkent_zone_bord_lwc'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                tkent, ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION LWC'
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING COMBUSTION INFORMATION (LWC)   '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations combustion LWC '
+#else
+    CAR54=' End writing combustion information (LWC)          '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+! ---> Grandeurs complementaires pour la combustion CP
+
+  if ( ippmod(icp3pl).ge.0 .or. ippmod(icpl3c).ge.0 ) then
+    nberro=0
+
+
+!     Charbon PuLVerise : masse vol des charbons
+
+    itysup = 0
+    nbval  = 1
+    irtyp  = 2
+    do icha = 1, ncharb
+      if(icha.le.nfmtch) then
+        WRITE(CAR2,'(I2.2)')ICHA
+      else
+        car2 = cindfc
+      endif
+      RUBRIQ = 'masse_volumique_charbon'//CAR2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  rhock(icha), ierror)
+      nberro=nberro+ierror
+    enddo
+
+
+!     Charbon PuLVerise : type de zones de bord, ientat, ientcp, timpat
+!       x20, pour le calcul de rho au bord en entree
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    RUBRIQ = 'num_zone_fb_charbon_pulverise'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iizfpp), ierror)
+    nberro=nberro+ierror
+
+
+!       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientat_zone_bord_charbon_pulverise'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientat, ierror)
+    nberro=nberro+ierror
+
+!       ientat et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
+    if ( ippmod(icp3pl).ge.0 ) then
+
+      itysup = 0
+      nbval  = nozppm
+      irtyp  = 1
+      RUBRIQ = 'ientcp_zone_bord_charbon_pulverise'
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  ientcp, ierror)
+      nberro=nberro+ierror
+
+
+      itysup = 0
+      nbval  = nozppm
+      irtyp  = 2
+
+      idecal = 0
+      do icha = 1, ncharb
+        do iclapc = 1, nclpch(icha)
+          icla = iclapc + idecal
+          if(icha.le.nfmtch.and.iclapc.le.nfmtcl) then
+            WRITE(CAR2,'(I2.2)')ICHA
+            WRITE(CAR4,'(I4.4)')ICLAPC
+          else
+            car2 = cindfc
+            car4 = cindfl
+          endif
+          RUBRIQ = 'x20_zone_bord_charbon'//CAR2//'_classe'//CAR4
+          call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
+               irtyp,x20(1,icla), ierror)
+          nberro=nberro+ierror
+
+        enddo
+      enddo
+
+    endif
+
+!       Temperature
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'timpat_zone_bord_charbon_pulverise'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                timpat, ierror)
+    nberro=nberro+ierror
+
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION CP   '
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING COMBUSTION INFORMATION (CP)     '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations combustion CP    '
+#else
+    CAR54=' End writing combustion information (CP)            '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+! ---> Grandeurs complementaires pour la FUEL
+
+  if ( ippmod(icfuel).ge.0 ) then
+    nberro=0
+
+
+!     Charbon PuLVerise : type de zones de bord, ientat, ientfl, timpat
+!       qimpat et qimpfl  pour le calcul de rho au bord en entree
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    irtyp  = 1
+    RUBRIQ = 'num_zone_fb_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ia(iizfpp), ierror)
+    nberro=nberro+ierror
+
+
+!       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientat_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientat, ierror)
+    nberro=nberro+ierror
+
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'ientfl_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                ientfl, ierror)
+    nberro=nberro+ierror
+
+!       Timpat
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'timpat_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                timpat, ierror)
+    nberro=nberro+ierror
+
+!       Qimpat
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'qimpat_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                qimpat, ierror)
+    nberro=nberro+ierror
+
+!       Qimpfl
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 2
+    RUBRIQ = 'qimpfl_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                qimpfl, ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54=                                                      &
+          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION FUEL '
+#else
+      car54=                                                      &
+          'ERROR WHILE WRITING COMBUSTION INFORMATION (FUEL)    '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations combustion FUEL  '
+#else
+    CAR54=' End writing combustion information (FUEL)           '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+! ---> Grandeurs complementaires pour les versions electriques
+
+  nberro=0
+  iecr = 0
+
+!     Recalage des CL pot des versions electriques
+
+  if ( ippmod(ieljou).ge.1       ) then
+    if(ielcor.eq.1) then
+
+      iecr   = 1
+      RUBRIQ = 'coeff_recalage_joule'
+      itysup = 0
+      nbval  = 1
+      irtyp  = 2
+
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  coejou,ierror)
+      nberro=nberro+ierror
+
+    endif
+  endif
+
+  if ( ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1 ) then
+    if(ielcor.eq.1) then
+
+      iecr   = 1
+      RUBRIQ = 'ddpot_recalage_arc_elec'
+      itysup = 0
+      nbval  = 1
+      irtyp  = 2
+
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  dpot  ,ierror)
+      nberro=nberro+ierror
+
+    endif
+  endif
+
+!     Termes sources des versions electriques
+
+  if ( ippmod(ieljou).ge.1 .or.                                   &
+       ippmod(ielarc).ge.1 .or.                                   &
+       ippmod(ielion).ge.1       ) then
+
+    iecr   = 1
+    ipcefj = ipproc(iefjou)
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'tsource_sc_ce_joule'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                propce(1,ipcefj  ),ierror)
+    nberro=nberro+ierror
+
+  endif
+
+  if( ippmod(ielarc).ge.1 ) then
+
+    iecr   = 1
+    ipcla1 = ipproc(ilapla(1))
+    ipcla2 = ipproc(ilapla(2))
+    ipcla3 = ipproc(ilapla(3))
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'tsource_ns_ce_x_laplace'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                propce(1,ipcla1  ),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'tsource_ns_ce_y_laplace'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                propce(1,ipcla2  ),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'tsource_ns_ce_z_laplace'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                propce(1,ipcla3  ),ierror)
+    nberro=nberro+ierror
+
+  endif
+
+  if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54='ERREUR A L''ECRITURE DES INFORMATIONS ELECTRIQUES     '
+#else
+    CAR54='ERROR WHILE WRITING ELECTRIC INFORMATION             '
+#endif
+    write(nfecra,8101)car54
+  endif
+
+  if (iecr.ne.0) then
+#if defined(_CS_LANG_FR)
+    CAR54=' Fin de l''ecriture des informations electriques      '
+#else
+    CAR54=' End writing the electric information                '
+#endif
+    write(nfecra,1110)car54
+  endif
+
+
+!       Fermeture du fichiers suite auxiliaire
+  call clssui(impavx,ierror)
+
+  if (ierror.ne.0) then
+    write(nfecra,8011) ficavx
+  endif
+
+  write(nfecra,1200)
+
+endif
+!     Fin de l'ecriture du fichier suite auxiliaire
+
+
+return
+
+!===============================================================================
+! 6. FORMATS
+!===============================================================================
+
+#if defined(_CS_LANG_FR)
+
+ 1000 format(3X,'** ECRITURE DU FICHIER SUITE PRINCIPAL',/,       &
+       3X,'   ----------------------------------- ',/)
+ 1100 format(' Debut de l''ecriture                                   ')
+ 1110 format('  ',A54                                                  )
+ 1200 format(' Fin de l''ecriture                                     ')
+ 2000 format(/,3X,'** ECRITURE DU FICHIER SUITE AUXILIAIRE',/,    &
+         3X,'   ------------------------------------ ',/)
+
+ 7000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de phases    maximal NPHSMX supporte par le ',/,&
+'@        format d''ecriture du fichier suite est             ',/,&
+'@        NFMTPH = ',I10                                       ,/,&
+'@      On a ici un nombre de phases    maximal superieur     ',/,&
+'@        NPHSMX = ',I10                                       ,/,&
+'@      Si le nombre de phases effectif est superieur, elles  ',/,&
+'@        ne seront pas relues.                               ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de scalaires maximal NSCAMX supporte par le ',/,&
+'@        format d''ecriture du fichier suite est             ',/,&
+'@        NFMTSC = ',I10                                       ,/,&
+'@      On a ici un nombre de scalaires maximal superieur     ',/,&
+'@        NSCAMX = ',I10                                       ,/,&
+'@      On ne pourra pas relire les scalaires dont le numero  ',/,&
+'@        est superieur                                       ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7002 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de flux de masse max NVARMX supporte par le ',/,&
+'@        format d''ecriture du fichier suite est             ',/,&
+'@        NFMTFL = ',I10                                       ,/,&
+'@      On a ici un nombre de flux      maximal superieur     ',/,&
+'@        NVARMX = ',I10                                       ,/,&
+'@      On ne pourra pas relire les flux      dont le numero  ',/,&
+'@        est superieur                                       ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de moments       max NBMOMX supporte par le ',/,&
+'@        format d''ecriture du fichier suite est             ',/,&
+'@        NFMTMO = ',I10                                       ,/,&
+'@      On a ici un nombre de moments   maximal superieur     ',/,&
+'@        NBMOMX = ',I10                                       ,/,&
+'@      On ne pourra pas relire les moments   dont le numero  ',/,&
+'@        est superieur                                       ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7004 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de charbons      max NCHARM supporte par le ',/,&
+'@        format d''ecriture du fichier suite est             ',/,&
+'@        NFMTCH = ',I10                                       ,/,&
+'@      On a ici un nombre de charbons  maximal superieur     ',/,&
+'@        NCHARM = ',I10                                       ,/,&
+'@      On ne pourra pas relire certaines informations        ',/,&
+'@        relatives aux charbons dont le numero               ',/,&
+'@        est superieur                                       ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7005 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      Le nombre de classes par charbon max NCPCMX supporte  ',/,&
+'@        par le format d''ecriture du fichier suite est      ',/,&
+'@        NFMTCL = ',I10                                       ,/,&
+'@      On a ici un nombre de classes par charbon superieur   ',/,&
+'@        NCPCMX = ',I10                                       ,/,&
+'@      On ne pourra pas relire certaines informations        ',/,&
+'@        relatives aux classes  dont le numero               ',/,&
+'@        est superieur                                       ',/,&
+'@                                                            ',/,&
+'@    Le calcul sera execute.                                 ',/,&
+'@                                                            ',/,&
+'@    Voir le sous-programme ecrava.                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
+'@    =========                                 AVAL PRINCIPAL',/,&
+'@                                                            ',/,&
+'@    Verifier que le fichier ',A13,'peut etre                ',/,&
+'@            cree dans le repertoire de travail.             ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
+'@    =========                                AVAL AUXILIAIRE',/,&
+'@                                                            ',/,&
+'@    Verifier que le fichier ',A13,'peut etre                ',/,&
+'@            cree dans le repertoire de travail.             ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8010 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
+'@    =========                                 AVAL PRINCIPAL',/,&
+'@                                                            ',/,&
+'@    Probleme sur le fichier de nom (',A13,')                ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8011 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
+'@    =========                                AVAL AUXILIAIRE',/,&
+'@                                                            ',/,&
+'@    Probleme sur le fichier de nom (',A13,')                ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8100 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''ECRITURE DU FICHIER SUITE              ',/,&
+'@    =========                                 AVAL PRINCIPAL',/,&
+'@      ', A54                                                 ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8101 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''ECRITURE DU FICHIER SUITE              ',/,&
+'@    =========                                AVAL AUXILIAIRE',/,&
+'@      ', A54                                                 ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+#else
+
+ 1000 format(3X,'** WRITING THE MAIN RESTART FILE',/,             &
+       3X,'   -----------------------------',/)
+ 1010 format(3X,'   Opening a binary file',/)
+ 1020 format(3X,'   Opening an ASCII file',/)
+ 1100 format(' Start writing'                                          )
+ 1110 format('  ',A54                                                  )
+ 1200 format(' End writing'                                            )
+ 2000 format(/,3X,'** WRITING THE AUXILLIARY RESTART FILE',/,     &
+         3X,'   -----------------------------------',/)
+
+ 7000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The maximum number of phases NPHSMX handled by the    ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTPH = ',I10                                       ,/,&
+'@      The current maximum number of phases is greater.      ',/,&
+'@        NPHSMX = ',I10                                       ,/,&
+'@      If the effective number of phases is greater, they    ',/,&
+'@        will not be read.                                   ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The maximum number of scalars NSCAMX handled by the   ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTSC = ',I10                                       ,/,&
+'@      The current maximum number of scalars is greater.     ',/,&
+'@        NSCAMX = ',I10                                       ,/,&
+'@      The scalars with a larger number will not be read.    ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7002 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The maximum number of mass flux NVARMX handled by the ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTFL = ',I10                                       ,/,&
+'@      The current maximum number of mass fluxes is greater. ',/,&
+'@        NVARMX = ',I10                                       ,/,&
+'@      The fluxes with a larger number will not be read.     ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The maximum number of moments NBMOMX handled by the   ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTMO = ',I10                                       ,/,&
+'@      The current maximum number of moments is greater.     ',/,&
+'@        NBMOMX = ',I10                                       ,/,&
+'@      The moments with a larger number will not be read.    ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7004 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The maximum number of coals NCHARM handled by the     ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTCH = ',I10                                       ,/,&
+'@      The current maximum number of coals is greater.       ',/,&
+'@        NCHARM = ',I10                                       ,/,&
+'@      Some information relative to coals with a greater     ',/,&
+'@        number will not be read.                            ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7005 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@      The number of coal classes NCPCMX handled by the      ',/,&
+'@        restart file writing format is                      ',/,&
+'@        NFMTCL = ',I10                                       ,/,&
+'@      The current number of coal classes is greater.        ',/,&
+'@        NCPCMX = ',I10                                       ,/,&
+'@      Some information relative to classes with a greater   ',/,&
+'@        number will not be read.                            ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@    Refer to the subroutine ecrava.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE OPENING THE MAIN RESTART FILE      ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@    Verify that the file ',A13,'can be created              ',/,&
+'@            in the working directory.                       ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE OPENING THE AUXILIARY RESTART FILE ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@    Verify that the file ',A13,'can be created              ',/,&
+'@            in the working directory.                       ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8010 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE CLOSING THE MAIN RESTART FILE      ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@    Problem with the file of name (',A13,')                 ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8011 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE CLOSING THE AUXILIARY RESTART FILE ',/,&
+'@    ========                                                ',/,&
+'@                                                            ',/,&
+'@    Problem with the file of name (',A13,')                 ',/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 8100 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE MAIN RESTART FILE            ',/,&
+'@    ========                                                ',/,&
+'@      ', A54                                                 ,/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8101 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: WHILE WRITING THE AUXILIARY RESTART FILE       ',/,&
+'@    ========                                                ',/,&
+'@      ', A54                                                 ,/,&
+'@                                                            ',/,&
+'@    The calculation will be run.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+#endif
+
+
+end

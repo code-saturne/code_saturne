@@ -1,0 +1,361 @@
+!-------------------------------------------------------------------------------
+
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+subroutine pppdfr &
+!================
+
+ ( ncelet , ncel   , indpdf ,                                     &
+   fm     , fp2m   ,                                              &
+   fmini  , fmaxi  ,                                              &
+   dirmin , dirmax , fdeb   , ffin   , hrec )
+
+!===============================================================================
+! FONCTION :
+! ----------
+
+! CALCUL DES PARAMETRES DE LA PDF
+! PDF RECTANGLE - PICS DE DIRAC "GENERALISEE" PPl - AE
+
+! LE RESULTAT EST :
+! ---------------
+!    CALCUL DES PARAMETRES ASSOCIES AUX FONCTIONS RECTANGLE - DIRAC
+
+!         INDPDF indique le passage ou non par la pdf
+!         DIRMIN contient le Dirac en FMINI
+!         DIRMAX - - - -  le Dirac en FMAXI
+!         FDEB - - - -  l'abcisse de debut du rectangle
+!         FFIN - - - - - - - - - - - fin   - - - - - -
+!         HREC - - - -  la hauteur du rectangle
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+!    nom           !type!mode !                   role                         !
+!__________________!____!_____!________________________________________________!
+! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! indpdf           ! te ! --> ! indicateur passage ou non par pdf              !
+! fm               ! tr ! <-- ! moyenne de la fraction de melange              !
+! fp2m             ! tr ! <-- ! variance de la fraction de melange             !
+! fmini            ! tr ! <-- ! borne min de la fraction de melange           !
+! fmaxi            ! tr ! <-- ! borne max de la fraction de melange           !
+! dirmin           ! tr !  <- ! dirac en fmini                                 !
+! dirmax           ! tr !  <- ! dirac en fmaxi                                 !
+! fdeb             ! tr !  <- ! abscisse debut rectangle                       !
+! ffin             ! tr !  <- ! abscisse fin rectangle                         !
+! hrec             ! tr !  <- ! hauteur rectangle                              !
+! xinpdf           ! tr !  <- ! indicateur passage ou non par pdf              !
+!                  !    !     ! pourrait etre entier mais puisqu'on a          !
+!                  !    !     ! un tableau de travail reel on s"en             !
+!                  !    !     ! sert                                           !
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
+!===============================================================================
+
+implicit none
+
+!==============================================================================
+!     DONNEES EN COMMON
+!==============================================================================
+
+include "paramx.h"
+include "numvar.h"
+include "optcal.h"
+include "cstphy.h"
+include "cstnum.h"
+include "entsor.h"
+include "pointe.h"
+include "parall.h"
+include "ppppar.h"
+include "ppthch.h"
+include "coincl.h"
+include "cpincl.h"
+include "ppincl.h"
+
+!===============================================================================
+
+! Arguments
+
+integer          ncelet, ncel
+integer          indpdf(ncelet)
+
+double precision fm(ncelet), fp2m(ncelet)
+double precision fmini(ncelet), fmaxi(ncelet)
+double precision dirmin(ncelet), dirmax(ncelet)
+double precision fdeb(ncelet), ffin(ncelet)
+double precision hrec(ncelet)
+
+
+! VARIABLES LOCALES
+
+integer          iel, n1, n2, n3, n4, n5 , nfp2 , nbspdf
+double precision t1, t2, t3, t1mod, t2mod , fp2max
+
+
+!===============================================================================
+
+!===============================================================================
+! 0.  INITIALISATION
+!===============================================================================
+
+do iel = 1, ncel
+
+  indpdf(iel) = 0
+
+  dirmin(iel) = 0.d0
+  dirmax(iel) = 0.d0
+  fdeb  (iel) = 0.d0
+  ffin  (iel) = 0.d0
+  hrec  (iel) = 0.d0
+
+enddo
+
+!===============================================================================
+! 1.  CALCULS PRELIMINAIRES
+!===============================================================================
+
+! Parametre relatif a la variance
+t1 = 1.d-08
+! Parametre relatif a la moyenne
+t2 = 5.d-07
+
+do iel = 1, ncel
+
+! Modifs des parametres T1 et T2 afin de tenir compte du fait que
+!   FMINI < FM < FMAXI
+  t1mod = t1*(fmaxi(iel)-fmini(iel))**2
+  t2mod = t2*(fmaxi(iel)-fmini(iel))
+  if ( (fp2m(iel).gt.t1mod)                                       &
+       .and.(fm(iel) .ge. (fmini(iel) + t2mod))                   &
+       .and.(fm(iel) .le. (fmaxi(iel) - t2mod)) ) then
+    indpdf(iel) = 1
+  endif
+enddo
+
+! Clipping de la variance
+
+nfp2 = 0
+do iel = 1, ncel
+  fp2max = (fmaxi(iel)-fm(iel))*(fm(iel)-fmini(iel))
+  if ( fp2m(iel) .gt. fp2max ) then
+    fp2m(iel) = fp2max
+    nfp2 = nfp2 + 1
+  endif
+enddo
+if ( irangp .ge. 0 ) then
+  call parcpt(nfp2)
+endif
+WRITE(NFECRA,*) ' PPPDFR : Points de clipping',                   &
+                ' de la variance : ',NFP2
+
+!===============================================================================
+! 2.  CALCUL DES PARAMETRES DE LA FONCTION DENSITE DE PROBABILITE
+!===============================================================================
+
+do iel = 1, ncel
+
+  if ( indpdf(iel).eq.1 ) then
+
+    if (    (     (fm(iel) .le.(fmini(iel) + fmaxi(iel))*0.5d0)   &
+            .and.(fp2m(iel).le.(fm(iel) - fmini(iel))**2/3.d0))   &
+       .or. (     (fm(iel) .gt.(fmini(iel) + fmaxi(iel))*0.5d0)   &
+            .and.(fp2m(iel).le.(fmaxi(iel) -fm(iel))**2/3.d0)) )  &
+      then
+
+! --> Rectangle seul
+
+      hrec(iel)   = sqrt(3.d0*fp2m(iel))
+      dirmin(iel) = 0.d0
+      dirmax(iel) = 0.d0
+      fdeb(iel)   = fm(iel) - hrec(iel)
+      ffin(iel)   = fm(iel) + hrec(iel)
+
+    elseif(      (fm(iel)  .le.(fmini(iel) + fmaxi(iel))*0.5d0)   &
+           .and. (fp2m(iel).le.((fm(iel) - fmini(iel))            &
+              *(2.d0*fmaxi(iel) +fmini(iel)-3.d0*fm(iel))/3.d0)) )&
+      then
+
+! --> Rectangle et un Dirac en FMINI
+
+      fdeb(iel)   = fmini(iel)
+      dirmax(iel) = 0.d0
+      ffin(iel)   = fmini(iel) +1.5d0*( (fm(iel) - fmini(iel))**2 &
+                                       + fp2m(iel) )              &
+                                    /(fm(iel) - fmini(iel))
+      dirmin(iel) = (3.d0*fp2m(iel) -(fm(iel) - fmini(iel))**2)   &
+                  / (3.d0*((fm(iel) - fmini(iel))**2 +fp2m(iel)))
+
+    elseif(      (fm(iel)  .gt.(fmini(iel) + fmaxi(iel))*0.5d0)   &
+           .and. (fp2m(iel).le.((fmaxi(iel) - fm(iel))            &
+               *(3.d0*fm(iel)-fmaxi(iel)-2.d0*fmini(iel))/3.d0)) )&
+      then
+
+! --> Rectangle et un Dirac en FMAXI (c'est juste ;
+!                          le HI/81/02/03/A contient une erreur  p 12)
+
+      ffin(iel)   = fmaxi(iel)
+      dirmin(iel) = 0.d0
+      fdeb(iel)   = fmini(iel)                                    &
+                  + ( 3.d0*( (fm(iel)-fmini(iel))**2+fp2m(iel) )  &
+                     + (fmaxi(iel) - fmini(iel))**2               &
+                     - 4.d0*(fm(iel) - fmini(iel))                &
+                           *(fmaxi(iel) - fmini(iel)) )           &
+                    / (2.d0*(fm(iel) - fmaxi(iel)))
+      dirmax(iel) = ( 3.d0*fp2m(iel) -(fm(iel) - fmaxi(iel))**2 ) &
+                 / ( 3.d0*((fm(iel) - fmaxi(iel))**2 +fp2m(iel)) )
+
+    else
+
+! --> Rectangle et deux Diracs
+
+      fdeb(iel)   = fmini(iel)
+      ffin(iel)   = fmaxi(iel)
+      dirmax(iel) = 3.d0*((fm(iel) - fmini(iel))**2 +fp2m(iel))   &
+                    /(fmaxi(iel) - fmini(iel))**2                 &
+                   -2.d0*(fm(iel) - fmini(iel))                   &
+                    /(fmaxi(iel) - fmini(iel))
+      dirmin(iel) = dirmax(iel) + 1.d0 - 2.d0*(fm(iel)-fmini(iel))&
+                                          /(fmaxi(iel)-fmini(iel))
+
+    endif
+
+    if ( abs(ffin(iel) - fdeb(iel)).gt.epzero ) then
+      hrec(iel) = ( 1.d0-dirmin(iel)-dirmax(iel) )                &
+                / ( ffin(iel)-fdeb(iel) )
+    else
+      t3 = sqrt(3.d0*t1*(fmaxi(iel)-fmini(iel))**2)
+      fdeb(iel) = min(fmaxi(iel),max(fmini(iel),fm(iel) - t3))
+      ffin(iel) = min(fmaxi(iel),max(fmini(iel),fm(iel) + t3))
+
+      if ( abs(ffin(iel) - fdeb(iel)).gt.epzero ) then
+        hrec(iel) = ( 1.d0-dirmin(iel)-dirmax(iel) )              &
+                   /( ffin(iel) - fdeb(iel) )
+      else
+        hrec(iel) = 0.d0
+      endif
+
+    endif
+
+  else
+    dirmin(iel) = 0.d0
+    dirmax(iel) = 0.d0
+    fdeb(iel)   = 0.d0
+    ffin(iel)   = 0.d0
+    hrec(iel)   = 0.d0
+  endif
+
+enddo
+
+! Verification : si Hrec <= 0 on passe sans les PDF
+
+nbspdf = 0.d0
+do iel=1,ncel
+  if ( hrec(iel) .le. 0.d0 .and. indpdf(iel).eq.1 ) then
+
+    indpdf(iel) = 0
+    nbspdf      = nbspdf + 1
+
+  endif
+enddo
+
+if ( irangp .ge. 0 ) then
+   call parcpt(nbspdf)
+endif
+WRITE(NFECRA,*) ' PPPDFR : Basculement sans les PDF ',NBSPDF
+
+!===============================================================================
+! 4.  IMPRESSION
+!===============================================================================
+
+n1 = 0
+n2 = 0
+n3 = 0
+n4 = 0
+n5 = 0
+do iel = 1, ncel
+  if ( indpdf(iel).eq.1 ) then
+    n1 = n1+1
+    if ( dirmin(iel).gt.epzero                                    &
+         .and. dirmax(iel).lt.epzero ) then
+      n2 = n2+1
+    else if ( dirmin(iel).lt.epzero                               &
+         .and. dirmax(iel).gt.epzero ) then
+      n3 = n3+1
+    else if ( dirmin(iel).gt.epzero                               &
+         .and. dirmax(iel).gt.epzero ) then
+      n4 = n4+1
+    else if ( dirmin(iel).lt.epzero                               &
+         .and. dirmax(iel).lt.epzero ) then
+      n5 = n5+1
+    endif
+  endif
+enddo
+
+if ( irangp.ge.0 ) then
+
+  call parcpt (n1)
+  !==========
+  call parcpt (n2)
+  !==========
+  call parcpt (n3)
+  !==========
+  call parcpt (n4)
+  !==========
+  call parcpt (n5)
+  !==========
+endif
+
+write(nfecra,1000) n1, ncel
+write(nfecra,2000) n5, n2, n3, n4
+
+
+!----
+! FORMATS
+!----
+
+ 1000 format ( /,                                                 &
+'PDF RECTANGLE - PICS DE DIRAC COPDFR',/,                   &
+'MOYENNE, VARIANCE DU TRACEUR TRANPORTES',/,                &
+'NOMBRE DE POINTS TURBULENTS (PASSAGE PAR LES PDF)   = ',I6,/,    &
+'NOMBRE DE POINTS DE CALCULS                         = ',I6 )
+ 2000 format(                                                           &
+' Nb points avec PDF rectangle sans Dirac                = ',I6,/,&
+' - - - - - - - - - -- - - -  et Dirac en FMINI          = ',I6,/,&
+' - - - - - - - - - -- - - - - - - - - -  FMAXI          = ',I6,/,&
+' - - - - - - - - - - - - - - - Diracs en FMINI et FMAXI = ',I6,/)
+
+!----
+! FIN
+!----
+
+return
+end

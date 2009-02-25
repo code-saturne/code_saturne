@@ -1,179 +1,176 @@
-c@a
-c@versb
-C-----------------------------------------------------------------------
-C
-C     This file is part of the Code_Saturne Kernel, element of the
-C     Code_Saturne CFD tool.
-C
-C     Copyright (C) 1998-2008 EDF S.A., France
-C
-C     contact: saturne-support@edf.fr
-C
-C     The Code_Saturne Kernel is free software; you can redistribute it
-C     and/or modify it under the terms of the GNU General Public License
-C     as published by the Free Software Foundation; either version 2 of
-C     the License, or (at your option) any later version.
-C
-C     The Code_Saturne Kernel is distributed in the hope that it will be
-C     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-C     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-C     GNU General Public License for more details.
-C
-C     You should have received a copy of the GNU General Public License
-C     along with the Code_Saturne Kernel; if not, write to the
-C     Free Software Foundation, Inc.,
-C     51 Franklin St, Fifth Floor,
-C     Boston, MA  02110-1301  USA
-C
-C-----------------------------------------------------------------------
-c@verse
-C                              paramx.h
-C***********************************************************************
-C
-C
-C
-C
-C
-C                         =================
-C                         =================
-C
-C                             ATTENTION
-C
-C                         =================
-C                         =================
-C
-C
-C
-C
-C
-C
-C              LA MODIFICATION DES PARAMETRES CI DESSOUS
-C
-C
-C
-C                           EST INTERDITE
-C
-C                         =================
-C                         =================
-C
-C
-C
-C
-C
-C
-C
-C
-C       Elle demande la recompilation de la totalite de la bibliotheque
-C         operation qui ne peut etre effectuee que si l'on dispose de
-C         la totalite des sources.
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C
-C PARAMETRES DIVERS
-C =================
-C
-C NPHSMX : NOMBRE MAX DE PHASES
-C          (keep it coherent with CS_NPHSMX in cs_perio.h)
-C NSCAMX : NOMBRE MAX DE SCALAIRES
-C NVARMX : NOMBRE MAX DE VARIABLES =
-C          NOMBRE MAX DE SCALAIRES + 12 (U,V,W,P,Rij,E,ALP)*NPHSMX
-C NPRCMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX CELLULES (TOTAL) =
-C          NSCAMX (Lambda) + 7 (RHO,CP,VISCL,VISCT,COU,FOU,IPRTOT) NPHSMX
-C                          + 4 (ESTIM) NPHSMX
-C NPRFMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES INTERNES =
-C          NSCAMX (Flumas) + 2*NPHSMX(Flumas,ALP)
-C NPRBMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES DE BORD =
-C          NSCAMX (Flumab) + 3*NPHSMX(Flumab,ALP, ROMB)
-C NPROMX : NOMBRE MAX DE PROPRIETES PHYSIQUES TOUT CONFONDU
-C          Majore par NPRCMX+NPRFMX+NPRBMX
-C NGRDMX : NOMBRE MAX DE GRANDEURS =
-C          NVARMX + NPROMX
-C NSMAMX : NOMBRE MAX DE CASES POUR LES TABLEAUX TERMES SOURCE DE MASSE
-C          NVARMX + NPHSMX pour SMACEL
-C NVPPMX : NOMBRE DE VARIABLES POUR AFFICHAGES
-C          NGRDMX + 20 (20 couvre DT, TPUCOU, et une marge de 16 ...)
-C
-      INTEGER   NPHSMX, NSCAMX, NVARMX, NPRCMX, NPRFMX, NPRBMX, NPROMX
-      INTEGER   NGRDMX, NSMAMX, NVPPMX
-      PARAMETER(NPHSMX=1)
-      PARAMETER(NSCAMX=200)
-      PARAMETER(NVARMX=NSCAMX+12*NPHSMX)
-      PARAMETER(NPRCMX=NSCAMX+11*NPHSMX)
-      PARAMETER(NPRFMX=NSCAMX+ 2*NPHSMX)
-      PARAMETER(NPRBMX=NSCAMX+ 3*NPHSMX)
-      PARAMETER(NPROMX=NPRCMX+ NPRFMX+NPRBMX)
-      PARAMETER(NGRDMX=NVARMX+ NPROMX)
-      PARAMETER(NSMAMX=NVARMX+ NPHSMX)
-      PARAMETER(NVPPMX=NGRDMX+20)
-C
-C NUSHMX : NOMBRE MAX DE FICHIERS UTILISATEUR POUR HISTORIQUES
-      INTEGER    NUSHMX
-      PARAMETER(NUSHMX=16)
-C
-C NUSRMX : NOMBRE MAX DE FICHIERS UTILISATEUR
-      INTEGER    NUSRMX
-      PARAMETER(NUSRMX=10)
-C
-C NCAPTM : NOMBRE MAX DE SONDES (POUR HISTORIQUES)
-C          Voir le format associe dans ecrhis
-      INTEGER    NCAPTM
-      PARAMETER(NCAPTM=100)
-C
-C NTYPMX NOMBRE DE TYPES DE CONDITIONS AUX LIMITES POSSIBLES
-C
-      INTEGER    NTYPMX
-      PARAMETER(NTYPMX=200)
-C
-      INTEGER    IINDEF, IENTRE, ISOLIB, ISYMET, IPAROI,
-     &   IPARUG, IESICF, ISSPCF, ISOPCF, IERUCF, IEQHCF
-C
-      PARAMETER(IINDEF=1, IENTRE=2, ISOLIB=3, ISYMET=4, IPAROI=5,
-     & IPARUG=6, IESICF=7, ISSPCF=8, ISOPCF=9, IERUCF=10, IEQHCF=11)
-C
-C NESTMX : NOMBRE MAX D'ESTIMATEURS
-C  IESPRE, IESDER, IESCOR, IESTOT : Numeros
-      INTEGER    NESTMX
-      PARAMETER (NESTMX=4)
-      INTEGER    IESPRE  , IESDER  , IESCOR  , IESTOT
-      PARAMETER (IESPRE=1, IESDER=2, IESCOR=3, IESTOT=4)
-C
-C NBMOMX : NOMBRE MAX DE MOYENNES (MOMENTS) CALCULE
-C NDGMOX : DEGRE MAX DES MOMENTS
-      INTEGER    NBMOMX, NDGMOX
-      PARAMETER (NBMOMX = 50, NDGMOX = 5)
-C
-C IPST* : SELECTION POST TRAITEMENT AUTOMATIQUE BORD : VOIR IPSTDV
-C
-      INTEGER    IPSTYP  , IPSTCL  , IPSTFT, IPSTFO
-      PARAMETER (IPSTYP=2, IPSTCL=3, IPSTFT=5, IPSTFO=7)
-C
-C CONDITIONS AUX LIMITES POSSIBLES POUR LA VITESSE DE MAILLAGE EN ALE
-C
-      INTEGER    IBFIXE, IGLISS, IVIMPO
-      PARAMETER(IBFIXE=1, IGLISS=2, IVIMPO=3 )
-C
-C NOMBRE DE STRUCTURES MAX EN ALE
-C
-      INTEGER NSTRMX
-      PARAMETER (NSTRMX=20)
-C
-C NOMBRE DE STRUCTURES MAX EN ALE ET COUPLAGE CODE_ASTER
-C
-      INTEGER NASTMX
-      PARAMETER (NASTMX=20)
-C
-c@z
+!-------------------------------------------------------------------------------
+
+!     This file is part of the Code_Saturne Kernel, element of the
+!     Code_Saturne CFD tool.
+
+!     Copyright (C) 1998-2008 EDF S.A., France
+
+!     contact: saturne-support@edf.fr
+
+!     The Code_Saturne Kernel is free software; you can redistribute it
+!     and/or modify it under the terms of the GNU General Public License
+!     as published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+
+!     The Code_Saturne Kernel is distributed in the hope that it will be
+!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!     GNU General Public License for more details.
+
+!     You should have received a copy of the GNU General Public License
+!     along with the Code_Saturne Kernel; if not, write to the
+!     Free Software Foundation, Inc.,
+!     51 Franklin St, Fifth Floor,
+!     Boston, MA  02110-1301  USA
+
+!-------------------------------------------------------------------------------
+
+!                              paramx.h
+!===============================================================================
+
+
+
+
+
+!                         =================
+!                         =================
+
+!                             ATTENTION
+
+!                         =================
+!                         =================
+
+
+
+
+
+
+!              LA MODIFICATION DES PARAMETRES CI DESSOUS
+
+
+
+!                           EST INTERDITE
+
+!                         =================
+!                         =================
+
+
+
+
+
+
+
+
+!       Elle demande la recompilation de la totalite de la bibliotheque
+!         operation qui ne peut etre effectuee que si l'on dispose de
+!         la totalite des sources.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+! PARAMETRES DIVERS
+! =================
+
+! NPHSMX : NOMBRE MAX DE PHASES
+!          (keep it coherent with CS_NPHSMX in cs_perio.h)
+! NSCAMX : NOMBRE MAX DE SCALAIRES
+! NVARMX : NOMBRE MAX DE VARIABLES =
+!          NOMBRE MAX DE SCALAIRES + 12 (U,V,W,P,Rij,E,ALP)*NPHSMX
+! NPRCMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX CELLULES (TOTAL) =
+!          NSCAMX (Lambda) + 7 (RHO,CP,VISCL,VISCT,COU,FOU,IPRTOT) NPHSMX
+!                          + 4 (ESTIM) NPHSMX
+! NPRFMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES INTERNES =
+!          NSCAMX (Flumas) + 2*NPHSMX(Flumas,ALP)
+! NPRBMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES DE BORD =
+!          NSCAMX (Flumab) + 3*NPHSMX(Flumab,ALP, ROMB)
+! NPROMX : NOMBRE MAX DE PROPRIETES PHYSIQUES TOUT CONFONDU
+!          Majore par NPRCMX+NPRFMX+NPRBMX
+! NGRDMX : NOMBRE MAX DE GRANDEURS =
+!          NVARMX + NPROMX
+! NSMAMX : NOMBRE MAX DE CASES POUR LES TABLEAUX TERMES SOURCE DE MASSE
+!          NVARMX + NPHSMX pour SMACEL
+! NVPPMX : NOMBRE DE VARIABLES POUR AFFICHAGES
+!          NGRDMX + 20 (20 couvre DT, TPUCOU, et une marge de 16 ...)
+
+integer   nphsmx, nscamx, nvarmx, nprcmx, nprfmx, nprbmx, npromx
+integer   ngrdmx, nsmamx, nvppmx
+parameter(nphsmx=1)
+parameter(nscamx=200)
+parameter(nvarmx=nscamx+12*nphsmx)
+parameter(nprcmx=nscamx+11*nphsmx)
+parameter(nprfmx=nscamx+ 2*nphsmx)
+parameter(nprbmx=nscamx+ 3*nphsmx)
+parameter(npromx=nprcmx+ nprfmx+nprbmx)
+parameter(ngrdmx=nvarmx+ npromx)
+parameter(nsmamx=nvarmx+ nphsmx)
+parameter(nvppmx=ngrdmx+20)
+
+! NUSHMX : NOMBRE MAX DE FICHIERS UTILISATEUR POUR HISTORIQUES
+integer    nushmx
+parameter(nushmx=16)
+
+! NUSRMX : NOMBRE MAX DE FICHIERS UTILISATEUR
+integer    nusrmx
+parameter(nusrmx=10)
+
+! NCAPTM : NOMBRE MAX DE SONDES (POUR HISTORIQUES)
+!          Voir le format associe dans ecrhis
+integer    ncaptm
+parameter(ncaptm=100)
+
+! NTYPMX NOMBRE DE TYPES DE CONDITIONS AUX LIMITES POSSIBLES
+
+integer    ntypmx
+parameter(ntypmx=200)
+
+integer    iindef, ientre, isolib, isymet, iparoi,                &
+   iparug, iesicf, isspcf, isopcf, ierucf, ieqhcf
+
+parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
+ iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10, ieqhcf=11)
+
+! NESTMX : NOMBRE MAX D'ESTIMATEURS
+!  IESPRE, IESDER, IESCOR, IESTOT : Numeros
+integer    nestmx
+parameter (nestmx=4)
+integer    iespre  , iesder  , iescor  , iestot
+parameter (iespre=1, iesder=2, iescor=3, iestot=4)
+
+! NBMOMX : NOMBRE MAX DE MOYENNES (MOMENTS) CALCULE
+! NDGMOX : DEGRE MAX DES MOMENTS
+integer    nbmomx, ndgmox
+parameter (nbmomx = 50, ndgmox = 5)
+
+! IPST* : SELECTION POST TRAITEMENT AUTOMATIQUE BORD : VOIR IPSTDV
+
+integer    ipstyp  , ipstcl  , ipstft, ipstfo
+parameter (ipstyp=2, ipstcl=3, ipstft=5, ipstfo=7)
+
+! CONDITIONS AUX LIMITES POSSIBLES POUR LA VITESSE DE MAILLAGE EN ALE
+
+integer    ibfixe, igliss, ivimpo
+parameter(ibfixe=1, igliss=2, ivimpo=3 )
+
+! NOMBRE DE STRUCTURES MAX EN ALE
+
+integer nstrmx
+parameter (nstrmx=20)
+
+! NOMBRE DE STRUCTURES MAX EN ALE ET COUPLAGE CODE_ASTER
+
+integer nastmx
+parameter (nastmx=20)
+

@@ -1,3 +1,30 @@
+* 25/02/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Conversion of all the Fortran files (headers included)
+  form fixed F77 format to free f90 format. A small-case
+  extension is used so that one can, in the future, skip the
+  preprocessing stage.
+  Moreover the herebelow scripts have been updated to take
+  into account the changes, especially the Makefile and macros
+  files (to enforce the preprocessing stage by a correct compiler
+  option).
+  modified scripts:
+    sbin/rmb
+    bin/compiler_version
+    bin/macros_Linux_Ch.mk
+    bin/cs_profile
+    bin/macros_Linux_x86_64.mk
+    bin/cs_create
+    bin/macros_Linux_IA64.mk
+    bin/macros_SX9.mk
+    bin/check_consistency
+    bin/macros_Darwin.mk
+    bin/runcase
+    bin/macros_Linux.mk
+    bin/macros_Blue_Gene_L.mk
+    bin/Makefile
+    bin/macros_Blue_Gene_P.mk
+
 * 23/02/2009 - David Monfort <david.monfort@edf.fr>
   Minor corrections in file list optimization.
   modified scripts:

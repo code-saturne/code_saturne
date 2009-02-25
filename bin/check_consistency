@@ -93,13 +93,13 @@ done
 # Detect presence of modules
 
 # Standard
-USCLIM_PRESENT=`presence "${cur_dir}/usclim.F"`
+USCLIM_PRESENT=`presence "${cur_dir}/usclim.f90"`
 
 # Lagrangien
-USLAG2_PRESENT=`presence "${cur_dir}/uslag2.F"`
+USLAG2_PRESENT=`presence "${cur_dir}/uslag2.f90"`
 
 # Radiative transfer
-USRAY2_PRESENT=`presence "${cur_dir}/usray2.F"`
+USRAY2_PRESENT=`presence "${cur_dir}/usray2.f90"`
 if [ ! -z "${param}" ] ; then
   NRAYT=`grep "radiative_transfer\ model" ${param} | grep -v "off" |wc -l`
   if [ $NRAYT -eq 1 ] ; then
@@ -108,7 +108,7 @@ if [ ! -z "${param}" ] ; then
 fi
 
 # Pulverized coal
-USCPCL_PRESENT=`presence "${cur_dir}/uscpcl.F"`
+USCPCL_PRESENT=`presence "${cur_dir}/uscpcl.f90"`
 if [ ! -z "${param}" ] ; then
   NCHARB=`grep "pulverized_coal\ model" ${param} | grep -v "off" |wc -l`
   if [ $NCHARB -eq 1 ] ; then
@@ -117,28 +117,28 @@ if [ ! -z "${param}" ] ; then
 fi
 
 # Gas combustion with 3 point chemistry
-USD3PC_PRESENT=`presence "${cur_dir}/usd3pc.F"`
+USD3PC_PRESENT=`presence "${cur_dir}/usd3pc.f90"`
 
 # EBU gas combustion
-USEBUC_PRESENT=`presence "${cur_dir}/usebuc.F"`
+USEBUC_PRESENT=`presence "${cur_dir}/usebuc.f90"`
 
 # Combustion gaz LWC
-USLWCC_PRESENT=`presence "${cur_dir}/uslwcc.F"`
+USLWCC_PRESENT=`presence "${cur_dir}/uslwcc.f90"`
 
 # Electric arcs
-USELCL_PRESENT=`presence "${cur_dir}/uselcl.F"`
+USELCL_PRESENT=`presence "${cur_dir}/uselcl.f90"`
 
 # Compressible
-USCFCL_PRESENT=`presence "${cur_dir}/uscfcl.F"`
+USCFCL_PRESENT=`presence "${cur_dir}/uscfcl.f90"`
 
 # Fuel
-USFUCL_PRESENT=`presence "${cur_dir}/usfucl.F"`
+USFUCL_PRESENT=`presence "${cur_dir}/usfucl.f90"`
 
 # Atmospheric
-USATCL_PRESENT=`presence "${cur_dir}/usatcl.F"`
+USATCL_PRESENT=`presence "${cur_dir}/usatcl.f90"`
 
 # Cooling towers
-USCTCL_PRESENT=`presence "${cur_dir}/usctcl.F"`
+USCTCL_PRESENT=`presence "${cur_dir}/usctcl.f90"`
 
 # Compatibility tests
 

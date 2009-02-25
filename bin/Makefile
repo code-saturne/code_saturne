@@ -117,15 +117,18 @@ NO = `tput rmso; tput sgr0`
 # Definition of objects to create
 #================================
 
+.SUFFIXES:
+.SUFFIXES: .c .f90 .F90 .o
+
 .c.o:
 	@echo $<
 	$(CCOMP)   $(INC_CS_I) $(ALLCCOMPFLAGS) -c $<
 
-#%.o : %.F95
-#	@echo $<
-#	$(FTNCOMP) $(ALLFCOMPFLAGS) -c $<
+.f90.o:
+	@echo $<
+	$(FTNCOMP) $(ALLFCOMPFLAGS) -c $<
 
-.F.o:
+.F90.o:
 	@echo $<
 	$(FTNCOMP) $(ALLFCOMPFLAGS) -c $<
 
@@ -247,7 +250,7 @@ privcompil:
 	           -o "$${dirprec1}" = "$(BLD_CS)/$(NOM_ARCH)" ] ;\
 	      then for dir in `echo $${inc_cs_all} $${src_cs_all}` ;\
 	           do \
-		        for fich in $${dir}/*.? ;\
+		        for fich in $${dir}/*.* ;\
 		        do \
 		             if [ ! -d "$${fich}" -a -f $${fich} ] ;\
 			     then fichloc=`basename $${fich}` ;\
@@ -400,14 +403,14 @@ privcompil:
 privdepend:
 	@mkfiles="" ;\
 	 liste="" ;\
-	for file in *.c *.F *.F95 ;\
-	   do if [ "$${file}" != "*.c" -a "$${file}" != "*.F*" ] ;\
+	for file in *.c *.f90 *.F90 ;\
+	   do if [ "$${file}" != "*.c" -a "$${file}" != "*.f90" -a "$${file}" != "*.F90" ] ;\
 	      then mkfiles="$${mkfiles} `basename $${file}`" ;\
 	      fi ;\
 	   done ;\
 	   echo "$${mkfiles}" | sed -e "s/\.c/.o/g" \
-	                            -e "s/\.F95/.o/g" \
-	                            -e "s/\.F/.o/g" \
+	                            -e "s/\.f90/.o/g" \
+	                            -e "s/\.F90/.o/g" \
                                   -e "s/ \*\.o//g"> .liste_mkfiles.o
 #
 # privdependoptpart genere les listes de dependance
@@ -429,8 +432,8 @@ privdependoptpart:
 	 then \rm -f .liste_mkoptpart.o ;\
 	 fi ;\
 	 echo "$${mkfiles}" | sed -e "s/\.c/.o/g" \
-	                          -e "s/\.F95/.o/g" \
-	                          -e "s/\.F/.o/g" > .liste_mkoptpart.o
+	                          -e "s/\.f90/.o/g" \
+	                          -e "s/\.F90/.o/g" > .liste_mkoptpart.o
 
 
 privdependobj: $(OBJECTS)
@@ -477,13 +480,13 @@ privlibinst:
 	@if [ ! -d "$(DIR_CS)/arch" ] ; \
 	 then mkdir "$(DIR_CS)/arch" ; \
 	 fi ;\
-     if [ ! -d "$(ARCH_CS)" ] ; \
+         if [ ! -d "$(ARCH_CS)" ] ; \
 	 then mkdir "$(ARCH_CS)" ; \
 	 fi ;\
-     if [ ! -d "$(ARCHBIN_CS)" ] ; \
+         if [ ! -d "$(ARCHBIN_CS)" ] ; \
 	 then mkdir "$(ARCHBIN_CS)" ; \
 	 fi ;\
-     if [ ! -d "$(ARCHLIB_CS)" ] ; \
+         if [ ! -d "$(ARCHLIB_CS)" ] ; \
 	 then mkdir "$(ARCHLIB_CS)" ; \
 	 fi 
 	@dirtrav=`pwd` ;\
@@ -511,7 +514,7 @@ privincinst:
          if [ ! -d "$(ARCH_CS)" ] ; \
 	 then mkdir "$(ARCH_CS)" ; \
 	 fi ;\
-     if [ ! -d "$(ARCHINC_CS)" ] ; \
+         if [ ! -d "$(ARCHINC_CS)" ] ; \
 	 then mkdir "$(ARCHINC_CS)" ; \
 	 fi
 	@dirtrav=`pwd` ;\
@@ -608,12 +611,12 @@ privusrinst:
 	     if [ ! -d "$(ARCHUSR_CS)/$${moddir}" ] ; \
 		 then mkdir "$(ARCHUSR_CS)/$${moddir}" ; \
 		 fi ; \
-	     for f in $${dir}/*.F ; \
+	     for f in $${dir}/*.f90 ; \
 	     do \
 		     cp -f "$${f}" "$(ARCHUSR_CS)/$${moddir}/" ; \
 			 finst=$(ARCHUSR_CS)/$${moddir}/`basename $${f}` ; \
-             oldvers="^CVERS\nC" ; \
-             newvers="CVERS                  Code_Saturne version $(VERSION)\nC                      --------------------------" ; \
+             oldvers="^\!VERS\nC" ; \
+             newvers="\!VERS                  Code_Saturne version $(VERSION)\n\!                      --------------------------" ; \
              sed "N;s/$${oldvers}/$${newvers}/" "$${finst}" > "$${finst}.tmp" && mv "$${finst}.tmp" "$${finst}" ; \
 		 done ; \
 	 done
@@ -862,7 +865,7 @@ privfin:
 clean purge rmobj: privconfig
 	@\rm -f *.o *.inl core \
 	      .liste_mkfiles.* .liste_mkoptpart.o so_locations
-	@for file in *.c *.F *.F95 *.h *.hf *.i ;\
+	@for file in *.c *.f90 *.F90 *.h ;\
 	 do \
 	      if [ -h "$${file}" ] ;\
 	      then \rm -f $${file} ;\

@@ -126,7 +126,7 @@ CCOMPFLAGSVERS         = -v
 
 FTNCOMP                = $(MPI_BIN)/mpif77
 
-FTNCOMPFLAGSDEF        = -fno-silent -I.
+FTNCOMPFLAGSDEF        = -fno-silent -I. -x f95-cpp-input
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
@@ -195,7 +195,7 @@ LIBEF    =-lefence
 
 # In the form:
 # LISTE_OPT_PART = fic_1.c fic_2.c \
-#                fic_3.F
+#                fic_3.f90
 #
 # 70% cpu promav gradrc prodsc
 # 10% cpu bilsc2 ;
@@ -204,11 +204,8 @@ LIBEF    =-lefence
 #
 # The file lists below correspond to different optimization levels
 #
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
-LISTE_OPT_PART1 = gradrc.F promav.F cs_matrix.c cs_sles.c
-LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART1 = gradmc.f90 gradrc.f90 promav.f90 cs_matrix.c cs_sles.c
+LISTE_OPT_PART2 = prodsc.f90 prods2.f90 prods3.f90 cs_blas.c cs_benchmark.c
+LISTE_OPT_PART3 =
 
