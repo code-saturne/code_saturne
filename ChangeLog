@@ -1,4 +1,9 @@
 * 25/02/2009 - David Monfort <david.monfort@edf.fr>
+  Fix wrong commit of the cs_profile script.
+  modified script:
+    bin/cs_profile
+
+* 25/02/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Conversion of all the Fortran files (headers included)
   form fixed F77 format to free f90 format. A small-case
