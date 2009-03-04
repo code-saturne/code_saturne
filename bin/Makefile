@@ -615,7 +615,7 @@ privusrinst:
 	     do \
 		     cp -f "$${f}" "$(ARCHUSR_CS)/$${moddir}/" ; \
 			 finst=$(ARCHUSR_CS)/$${moddir}/`basename $${f}` ; \
-             oldvers="^\!VERS\nC" ; \
+             oldvers="^\!VERS\n" ; \
              newvers="\!VERS                  Code_Saturne version $(VERSION)\n\!                      --------------------------" ; \
              sed "N;s/$${oldvers}/$${newvers}/" "$${finst}" > "$${finst}.tmp" && mv "$${finst}.tmp" "$${finst}" ; \
 		 done ; \

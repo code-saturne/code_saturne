@@ -1,3 +1,8 @@
+* 04/03/2009 - David Monfort <david.monfort@edf.fr>
+  Fix wrong test when tagging user files with version number.
+  modified script:
+    bin/Makefile
+
 * 25/02/2009 - David Monfort <david.monfort@edf.fr>
   Fix wrong commit of the cs_profile script.
   modified script:
