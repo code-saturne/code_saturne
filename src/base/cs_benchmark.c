@@ -1374,7 +1374,7 @@ _sub_matrix_vector_test(int                  n_runs,
 
   for (run_id = 0; run_id < n_runs; run_id++) {
     _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
-    test_sum += y[n_faces-1];
+    test_sum += y[n_cells-1];
   }
 
   _timer_stop(n_runs, &wt, &cpu);
