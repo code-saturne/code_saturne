@@ -65,7 +65,6 @@
 #endif
 
 #include "cs_parall.h"
-#include "cs_post.h"
 
 #include "cs_syr3_coupling.h"
 #include "cs_syr3_messages.h"

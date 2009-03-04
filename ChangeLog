@@ -1,16 +1,24 @@
 * 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
-  Cosmethic changes.
+  Cosmethic changes (committed in two revisions).
   modified routines:
     include/base/cs_base.h
     include/base/cs_parall.h
     include/base/cs_matrix.h
     include/base/cs_halo.h
     include/base/cs_mesh.h
+    src/base/caltri.f90
     src/base/cs_benchmark.c
     src/base/cs_base.c
     src/base/cs_halo.c
-    src/base/caltri.f90
+    src/base/cs_matrix.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_parall.c
+    src/base/cs_syr_coupling.c
+    users/base/usray3.F
+    users/base/usray4.F
+    users/base/usray5.F
   modified script:
     bin/runcase
 

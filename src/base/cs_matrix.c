@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -32,7 +32,7 @@
 /*
  * Notes:
  *
- * The aim of these structures and associated functions is to multiple:
+ * The aim of these structures and associated functions is multiple:
  *
  * - Provide an "opaque" matrix object for linear solvers, allowing possible
  *   choice of the matrix type based on run-time tuning at code initialization
@@ -422,10 +422,10 @@ _order_local(const cs_int_t  number[],
  * array (usually the code's main face -> cell structure) is freed.
  *
  * parameters:
- *   n_cells     --> Local number of participating cells
- *   n_cells_ext --> Local number of cells + ghost cells sharing a face
- *   n_faces     --> Local number of faces
- *   face_cell   --> Face -> cells connectivity (1 to n)
+ *   n_cells     <-- Local number of participating cells
+ *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
+ *   n_faces     <-- Local number of faces
+ *   face_cell   <-- Face -> cells connectivity (1 to n)
  *
  * returns:
  *   pointer to allocated native matrix structure.
@@ -522,10 +522,10 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
  * or simply mapped.
  *
  * parameters:
- *   matrix    --> Pointer to matrix structure
- *   symmetric --> Indicates if extradiagonal values are symmetric
- *   da        --> Diagonal values
- *   xa        --> Extradiagonal values
+ *   matrix    <-- Pointer to matrix structure
+ *   symmetric <-- Indicates if extradiagonal values are symmetric
+ *   da        <-- Diagonal values
+ *   xa        <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -575,7 +575,7 @@ _set_coeffs_native(cs_matrix_t      *matrix,
  * Release native matrix coefficients.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix <-- Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -602,8 +602,8 @@ _release_coeffs_native(cs_matrix_t  *matrix)
  * Get diagonal of native matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   da    <-- Diagonal (pre-allocated, size: n_cells)
+ *   matrix <-- Pointer to matrix structure
+ *   da     --> Diagonal (pre-allocated, size: n_cells)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -634,9 +634,9 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
  * Local matrix.vector product y = A.x with native matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
- *   y      <-- Resulting vector
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 #if !defined(IA64_OPTIM)  /* Standard variant */
@@ -844,10 +844,10 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
  * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
  *
  * parameters:
- *   alpha  --> Scalar, alpha in alpha.A.x + beta.y
- *   beta   --> Scalar, beta in alpha.A.x + beta.y
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
 
@@ -926,14 +926,14 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
  * this array (usually the code's global cell numbering) is freed.
  *
  * parameters:
- *   symmetric   --> Indicates if symmetric variant should be used
- *   have_diag   --> Indicates if the diagonal is nonzero
+ *   symmetric   <-- Indicates if symmetric variant should be used
+ *   have_diag   <-- Indicates if the diagonal is nonzero
  *                   (forced to true for symmetric variant)
- *   n_cells     --> Local number of participating cells
- *   n_cells_ext --> Local number of cells + ghost cells sharing a face
- *   n_faces     --> Local number of faces
- *   cell_num    --> Global cell numbers (1 to n)
- *   face_cell   --> Face -> cells connectivity (1 to n)
+ *   n_cells     <-- Local number of participating cells
+ *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
+ *   n_faces     <-- Local number of faces
+ *   cell_num    <-- Global cell numbers (1 to n)
+ *   face_cell   <-- Face -> cells connectivity (1 to n)
  *
  * returns:
  *   pointer to allocated CSR matrix structure.
@@ -1267,9 +1267,9 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
  * to a given coefficient).
  *
  * parameters:
- *   matrix    --> Pointer to matrix structure
- *   symmetric --> Indicates if extradiagonal values are symmetric
- *   xa        --> Extradiagonal values
+ *   matrix    <-- Pointer to matrix structure
+ *   symmetric <-- Indicates if extradiagonal values are symmetric
+ *   xa        <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1367,9 +1367,9 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
  * some before using this function.
  *
  * parameters:
- *   matrix    --> Pointer to matrix structure
- *   symmetric --> Indicates if extradiagonal values are symmetric
- *   xa        --> Extradiagonal values
+ *   matrix    <-- Pointer to matrix structure
+ *   symmetric <-- Indicates if extradiagonal values are symmetric
+ *   xa        <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1463,10 +1463,10 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
  * Set CSR matrix coefficients.
  *
  * parameters:
- *   matrix    --> Pointer to matrix structure
- *   symmetric --> Indicates if extradiagonal values are symmetric
- *   da        --> Diagonal values (NULL if all zero)
- *   xa        --> Extradiagonal values (NULL if all zero)
+ *   matrix    <-> Pointer to matrix structure
+ *   symmetric <-- Indicates if extradiagonal values are symmetric
+ *   da        <-- Diagonal values (NULL if all zero)
+ *   xa        <-- Extradiagonal values (NULL if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1582,7 +1582,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
  * Release CSR matrix coefficients.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix <-- Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1601,8 +1601,8 @@ _release_coeffs_csr(cs_matrix_t  *matrix)
  * Get diagonal of CSR matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   da     <-- Diagonal (pre-allocated, size: n_rows)
+ *   matrix <-- Pointer to matrix structure
+ *   da     --> Diagonal (pre-allocated, size: n_rows)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1665,9 +1665,9 @@ _get_diagonal_csr(const cs_matrix_t  *matrix,
  * Local matrix.vector product y = A.x with CSR matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
- *   y      <-- Resulting vector
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1709,9 +1709,9 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
  * Local matrix.vector product y = A.x with symmetric CSR matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
- *   y      <-- Resulting vector
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1775,9 +1775,9 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
  * Local matrix.vector product y = A.x with CSR matrix (prefetch).
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
- *   y      <-- Resulting vector
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1848,10 +1848,10 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
  * Local matrix.vector product y = alpha.A.x + beta.y with CSR matrix.
  *
  * parameters:
- *   alpha  --> Scalar, alpha in alpha.A.x + beta.y
- *   beta   --> Scalar, beta in alpha.A.x + beta.y
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
 
@@ -1897,10 +1897,10 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
  * with symmetric CSR matrix.
  *
  * parameters:
- *   alpha  --> Scalar, alpha in alpha.A.x + beta.y
- *   beta   --> Scalar, beta in alpha.A.x + beta.y
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
 
@@ -1959,10 +1959,10 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
  * with CSR matrix (prefetch).
  *
  * parameters:
- *   alpha  --> Scalar, alpha in alpha.A.x + beta.y
- *   beta   --> Scalar, beta in alpha.A.x + beta.y
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
 
@@ -2054,17 +2054,17 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:
- *   type        --> Type of matrix considered
- *   symmetric   --> Indicates if a symmetric variant of the matrix type
+ *   type        <-- Type of matrix considered
+ *   symmetric   <-- Indicates if a symmetric variant of the matrix type
  *                   should be used
- *   have_diag   --> Indicates if the diagonal structure contains nonzeroes
- *   periodic    --> Indicates if periodicity is present
- *   n_cells     --> Local number of cells
- *   n_cells_ext --> Local number of cells + ghost cells sharing a face
- *   n_faces     --> Local number of internal faces
- *   cell_num    --> Global cell numbers (1 to n)
- *   face_cell   --> Face -> cells connectivity (1 to n)
- *   halo        --> Halo structure associated with cells, or NULL
+ *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
+ *   periodic    <-- Indicates if periodicity is present
+ *   n_cells     <-- Local number of cells
+ *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
+ *   n_faces     <-- Local number of internal faces
+ *   cell_num    <-- Global cell numbers (1 to n)
+ *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   halo        <-- Halo structure associated with cells, or NULL
  *
  * returns:
  *   pointer to created matrix structure;
@@ -2219,7 +2219,7 @@ cs_matrix_destroy(cs_matrix_t **matrix)
  * Return number of columns in matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix <-- Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_int_t
@@ -2236,7 +2236,7 @@ cs_matrix_get_n_columns(const cs_matrix_t  *matrix)
  * Return number of rows in matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix <-- Pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_int_t
@@ -2257,9 +2257,9 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
  *
  * parameters:
  *   matrix    <-> Pointer to matrix structure
- *   symmetric --> Indicates if matrix coefficients are symmetric
- *   da        --> Diagonal values (NULL if zero)
- *   xa        --> Extradiagonal values (NULL if zero)
+ *   symmetric <-- Indicates if matrix coefficients are symmetric
+ *   da        <-- Diagonal values (NULL if zero)
+ *   xa        <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
@@ -2300,8 +2300,8 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
  * Get matrix diagonal values.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   da     <-- Diagonal (pre-allocated, size: n_cells)
+ *   matrix <-- Pointer to matrix structure
+ *   da     --> Diagonal (pre-allocated, size: n_cells)
  *----------------------------------------------------------------------------*/
 
 void
@@ -2324,10 +2324,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   matrix        --> Pointer to matrix structure
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   matrix        <-- Pointer to matrix structure
  *   x             <-> Multipliying vector values (ghost values updated)
- *   y             <-- Resulting vector
+ *   y             --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -2374,9 +2374,9 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
  * redundant update by using this variant of the matrix.vector product).
  *
  * parameters:
- *   matrix    --> Pointer to matrix structure
- *   x         --> Multipliying vector values
- *   y         <-- Resulting vector
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -2401,12 +2401,12 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   alpha         --> Scalar, alpha in alpha.A.x + beta.y
- *   beta          --> Scalar, beta in alpha.A.x + beta.y
- *   matrix        --> Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             <-- Resulting vector
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   alpha         <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta          <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix        <-- Pointer to matrix structure
+ *   x             <-- Multipliying vector values (ghost values updated)
+ *   y             --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void

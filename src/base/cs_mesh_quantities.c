@@ -186,26 +186,26 @@ _compute_face_normal(cs_int_t         dim,
     start_id = face_vtx_idx[face_id] - 1;
     end_id = face_vtx_idx[face_id + 1] - 1;
 
-    for (i = 0; i < CS_DIM_3; i++)
+    for (i = 0; i < 3; i++)
       this_face_normal[i] = 0.0;
 
-    /* Define the polugon (P) according to the vertices (Pi) of the face */
+    /* Define the polygon (P) according to the vertices (Pi) of the face */
 
     for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
       shift = 3 * (face_vtx_lst[vtx_id] - 1);
-      for (i = 0; i < CS_DIM_3; i++)
+      for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
       n_face_vertices++;
 
     }
 
-    for (i = 0; i < CS_DIM_3; i++)
+    for (i = 0; i < 3; i++)
       face_vtx_coord[n_face_vertices][i] = face_vtx_coord[0][i];
 
     /* Compute the barycentre of the face */
 
-    for (i = 0; i < CS_DIM_3; i++) {
+    for (i = 0; i < 3; i++) {
 
       this_face_barycentre[i] = 0.0;
       for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
@@ -226,14 +226,14 @@ _compute_face_normal(cs_int_t         dim,
       /*  N(Ti) = 1/2 ( BPi X BPi+1 )                                         */
       /*----------------------------------------------------------------------*/
 
-      for (i = 0; i < CS_DIM_3; i++) {
+      for (i = 0; i < 3; i++) {
         vect1[i] = face_vtx_coord[tri_id    ][i] - this_face_barycentre[i];
         vect2[i] = face_vtx_coord[tri_id + 1][i] - this_face_barycentre[i];
       }
 
       _CS_CROSS_PRODUCT(triangle_normal[tri_id], vect1, vect2);
 
-      for (i = 0; i < CS_DIM_3; i++)
+      for (i = 0; i < 3; i++)
         triangle_normal[tri_id][i] *= 0.5;
 
       /*----------------------------------------------------------------------*/
@@ -245,15 +245,15 @@ _compute_face_normal(cs_int_t         dim,
       /*          i=0                                                         */
       /*----------------------------------------------------------------------*/
 
-      for (i = 0; i < CS_DIM_3; i++)
+      for (i = 0; i < 3; i++)
         this_face_normal[i] += triangle_normal[tri_id][i];
 
     } /* End of loop on triangles of the face */
 
     /* Store result in appropriate structure */
 
-    for (i = 0; i < CS_DIM_3; i++)
-      face_normal[face_id * CS_DIM_3 + i] = this_face_normal[i];
+    for (i = 0; i < 3; i++)
+      face_normal[face_id * 3 + i] = this_face_normal[i];
 
   } /* End of loop on faces */
 
@@ -361,14 +361,14 @@ _compute_face_quantities(const cs_int_t   dim,
 
       lower_coord_id = 3 * (face_vtx_lst[vtx_id] - 1);
 
-      for (i = X; i < CS_DIM_3; i++)
+      for (i = X; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[lower_coord_id + i];
 
       n_face_vertices++;
 
     }
 
-    for (i = X; i < CS_DIM_3; i++)
+    for (i = X; i < 3; i++)
       face_vtx_coord[n_face_vertices][i] = face_vtx_coord[0][i];
 
     /*------------------------------------------------------------------------
@@ -379,7 +379,7 @@ _compute_face_quantities(const cs_int_t   dim,
      *         n   i=0
      *------------------------------------------------------------------------*/
 
-    for (i = X; i < CS_DIM_3; i++) {
+    for (i = X; i < 3; i++) {
 
       face_barycentre[i] = 0.0;
 
@@ -390,7 +390,7 @@ _compute_face_quantities(const cs_int_t   dim,
 
     }
 
-    for (i = X; i < CS_DIM_3; i++) {
+    for (i = X; i < 3; i++) {
       face_normal[i] = 0.0;
       face_centre[i] = 0.0;
     }
@@ -407,14 +407,14 @@ _compute_face_quantities(const cs_int_t   dim,
        *  N(Ti) = 1/2 ( BPi X BPi+1 )
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < CS_DIM_3; i++) {
+      for (i = X; i < 3; i++) {
         vect1[i] = face_vtx_coord[tri_id    ][i] - face_barycentre[i];
         vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycentre[i];
       }
 
       _CS_CROSS_PRODUCT(triangle_norm[tri_id], vect1, vect2);
 
-      for (i = X; i < CS_DIM_3; i++)
+      for (i = X; i < 3; i++)
         triangle_norm[tri_id][i] *= 0.5;
 
       /*----------------------------------------------------------------------
@@ -426,7 +426,7 @@ _compute_face_quantities(const cs_int_t   dim,
        *          i=0
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < CS_DIM_3; i++)
+      for (i = X; i < 3; i++)
         face_normal[i] += triangle_norm[tri_id][i];
 
     } /* End of loop on triangles of the face */
@@ -448,7 +448,7 @@ _compute_face_quantities(const cs_int_t   dim,
        *  OG(Ti).N(Ti)
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < CS_DIM_3; i++) {
+      for (i = X; i < 3; i++) {
 
         tri_centre[i] = face_barycentre[i]
                       + face_vtx_coord[tri_id    ][i]
@@ -480,7 +480,7 @@ _compute_face_quantities(const cs_int_t   dim,
        *   i=0
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < CS_DIM_3; i++)
+      for (i = X; i < 3; i++)
         face_centre[i] += tri_surface * tri_centre[i];
 
     } /* End of second loop  on triangles of the face */
@@ -504,21 +504,21 @@ _compute_face_quantities(const cs_int_t   dim,
 
     face_vol_part = 0.0;
 
-    for (i = X; i < CS_DIM_3; i++) {
+    for (i = X; i < 3; i++) {
       face_centre[i] = face_centre[i] / face_surface;
       face_vol_part += (face_centre[i] * face_normal[i]);
     }
 
     rectif_cog = (tri_vol_part - face_vol_part) / (face_surface * face_surface);
 
-    for (i = X; i < CS_DIM_3; i++)
+    for (i = X; i < 3; i++)
       face_centre[i] += rectif_cog * face_normal[i];
 
     /* Store result in appropriate structure */
 
-    for (i = X; i < CS_DIM_3; i++) {
-      face_cog[fac_id * CS_DIM_3 + i] = face_centre[i];
-      face_norm[fac_id * CS_DIM_3 + i] = face_normal[i];
+    for (i = X; i < 3; i++) {
+      face_cog[fac_id * 3 + i] = face_centre[i];
+      face_norm[fac_id * 3 + i] = face_normal[i];
     }
 
   } /* End of loop on faces */
@@ -575,8 +575,8 @@ _compute_cell_cen_vertex(const cs_mesh_t  *const mesh,
   /* Initialization */
 
   for (j = 0; j < mesh->n_cells_with_ghosts; j++)
-    for (i = 0; i < CS_DIM_3; i++)
-      cell_cen[CS_DIM_3*j + i] = 0. ;
+    for (i = 0; i < 3; i++)
+      cell_cen[3*j + i] = 0. ;
 
   /* Extract "cell -> faces" connectivity */
 

@@ -963,8 +963,8 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Find a node which minimize a given distance and its related rank. It enables
- * to locate a node among several domains.
+ * Find a node which minimizes a given distance and its related rank.
+ * May be used to locate a node among several domains.
  *
  * Fortran Interface :
  *
@@ -1010,7 +1010,7 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
 }
 
 /*----------------------------------------------------------------------------
- * Return the value associated to a measure node.
+ * Return the value associated to a probe.
  *
  * Fortran Interface :
  *

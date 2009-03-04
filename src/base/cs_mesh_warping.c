@@ -545,7 +545,7 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
   const cs_int_t  dim = mesh->dim;
   const cs_int_t  n_init_faces = *p_n_faces;
 
-  assert(dim == CS_DIM_3);
+  assert(dim == 3);
 
   BFT_MALLOC(n_sub_elt_lst, n_init_faces, fvm_lnum_t);
   BFT_MALLOC(new_face_shift, n_init_faces, cs_int_t);
@@ -822,7 +822,7 @@ _cut_warped_faces(cs_mesh_t       *mesh,
   const cs_int_t  n_init_faces = *p_n_faces;
 
   assert(stride == 1 || stride ==2);
-  assert(dim == CS_DIM_3);
+  assert(dim == 3);
 
   BFT_MALLOC(n_sub_elt_lst, n_init_faces, fvm_lnum_t);
 

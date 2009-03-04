@@ -190,7 +190,6 @@ include "period.h"
 include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
-include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
 
