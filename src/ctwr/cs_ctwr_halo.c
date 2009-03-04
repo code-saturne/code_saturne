@@ -578,7 +578,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   cs_int_t  rank_id, i;
   cs_int_t  shift;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -594,7 +594,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   const  cs_int_t  n_c_domains = halo->n_c_domains;
   const  cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -609,7 +609,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(halo->index[rank_id+1]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
@@ -623,7 +623,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -640,7 +640,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(count[shift]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
@@ -659,7 +659,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
 
   /* Wait for all exchanges being done */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -673,7 +673,7 @@ _fill_halo(cs_ctwr_zone_t  *ct)
   for (i = 0; i < n_c_domains; i++)
     halo->index[i+1] += halo->index[i];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request != _request) {
     BFT_FREE(request);
     BFT_FREE(status);
@@ -702,7 +702,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
   cs_int_t  rank_id, i;
   cs_int_t  shift;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -718,7 +718,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
   const cs_int_t n_c_domains = halo->n_c_domains;
   const cs_int_t local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -733,7 +733,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(halo->index[rank_id+1]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
@@ -747,7 +747,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -764,7 +764,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(count[shift]), 1, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
@@ -783,7 +783,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
 
   /* Wait for all exchanges being done */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -799,7 +799,7 @@ _fill_index_out_halo(cs_ctwr_zone_t  *ct)
 
   /* Wait for all exchanges being done */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request_count > 0)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -851,7 +851,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
   const cs_int_t  n_c_domains = halo->n_c_domains;
   const cs_int_t  n_ghost_faces = halo->n_elts[CS_HALO_EXTENDED];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Status  status;
 #endif
 
@@ -887,7 +887,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
       n_send_elts =  halo->send_index[rank_id + 1] - halo->send_index[rank_id];
       n_recv_elts =  halo->index[rank_id + 1] - halo->index[rank_id];
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
       MPI_Sendrecv(&(send_idx_buffer[0]), n_send_elts, CS_MPI_INT,
                      halo->c_domain_rank[rank_id], local_rank,
                      &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
@@ -934,7 +934,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
       MPI_Sendrecv(send_buffer, n_send_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], local_rank,
                    recv_buffer, n_recv_elts, CS_MPI_INT,

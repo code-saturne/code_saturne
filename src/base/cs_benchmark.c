@@ -50,7 +50,7 @@
 #include <stdlib.h>
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -168,7 +168,7 @@ _print_overhead(double  wt,
     loc_count[0] = wt;
     loc_count[1] = cpu;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
                   cs_glob_mpi_comm);
     MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
@@ -229,7 +229,7 @@ _print_stats(long    n_ops,
     loc_count[1] = cpu;
     loc_count[2] = n_ops*fm;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
                   cs_glob_mpi_comm);
@@ -329,13 +329,13 @@ _dot_product_1(int                  global,
 
   _timer_start(&wt, &cpu);
 
-#if defined(_CS_HAVE_BLAS)
+#if defined(HAVE_BLAS)
 
   test_sum = 0.0;
 
   for (run_id = 0; run_id < n_runs; run_id++) {
     double s1 = cblas_ddot(n_cells, x, 1, y, 1);
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (_global) {
       double s1_glob = 0.0;
       MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
@@ -364,7 +364,7 @@ _dot_product_1(int                  global,
 
   _print_stats(n_ops, 0, wt, cpu);
 
-#endif /* defined(_CS_HAVE_BLAS) */
+#endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
 
@@ -372,7 +372,7 @@ _dot_product_1(int                  global,
     double s1 = 0.0;
     for (ii = 0; ii < n_cells; ii++)
       s1 += x[ii] * y[ii];
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (_global) {
       double s1_glob = 0.0;
       MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
@@ -436,7 +436,7 @@ _dot_product_2(int                  n_runs,
 
   _timer_start(&wt, &cpu);
 
-#if defined(_CS_HAVE_BLAS)
+#if defined(HAVE_BLAS)
 
   test_sum = 0.0;
 
@@ -456,7 +456,7 @@ _dot_product_2(int                  n_runs,
 
   _print_stats(n_ops, 0, wt, cpu);
 
-#endif /* defined(_CS_HAVE_BLAS) */
+#endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
 
@@ -519,7 +519,7 @@ _axpy_(int                n_runs,
 
   _timer_start(&wt, &cpu);
 
-#if defined(_CS_HAVE_BLAS)
+#if defined(HAVE_BLAS)
 
   test_sum = 0.0;
 
@@ -542,7 +542,7 @@ _axpy_(int                n_runs,
 
   _print_stats(n_ops, 0, wt, cpu);
 
-#endif /* defined(_CS_HAVE_BLAS) */
+#endif /* defined(HAVE_BLAS) */
 
   test_sum = 0.0;
 
@@ -1481,7 +1481,7 @@ cs_benchmark(int  mpi_trace_mode)
   _division_test(n_runs/5, n_cells);
   _sqrt_test(n_runs/10, n_cells);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -1492,7 +1492,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   }
 
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
   /* Matrix test */
   /*-------------*/

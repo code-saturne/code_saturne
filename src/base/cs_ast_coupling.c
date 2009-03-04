@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -93,7 +93,7 @@ struct _cs_ast_coupling_t {
   fvm_gnum_t   n_g_faces;
   fvm_gnum_t   n_g_nodes;
 
-//#if defined(_CS_HAVE_MPI)
+//#if defined(HAVE_MPI)
 
   cs_int_t    *n_faces_by_domain;
   cs_int_t    *n_nodes_by_domain;
@@ -165,7 +165,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Status status;
 #endif
 
@@ -298,7 +298,7 @@ void CS_PROCF(astfor, ASTFOR)
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -379,7 +379,7 @@ void CS_PROCF(astcin, ASTCIN)
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -501,7 +501,7 @@ void CS_PROCF(astpar, ASTPAR)
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -577,7 +577,7 @@ void CS_PROCF(astpdt, ASTPDT)
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
     MPI_Bcast(&dttmp, 1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
@@ -636,7 +636,7 @@ void CS_PROCF(astcv1, ASTCV1)
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
     MPI_Bcast(icv, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);

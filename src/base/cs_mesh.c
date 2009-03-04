@@ -310,7 +310,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
     BFT_MALLOC(rank_buffer, mesh->n_domains, cs_int_t);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Allgather(&(mesh->n_cells), 1, CS_MPI_INT,
                   rank_buffer     , 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
@@ -329,7 +329,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   if (mesh->n_domains > 1) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Allgather(&(mesh->n_cells_with_ghosts), 1, CS_MPI_INT,
                   rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
@@ -359,7 +359,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
       cs_int_t  n_gcells = mesh->n_ghost_cells;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Allgather(&n_gcells  , 1, CS_MPI_INT,
                     rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
@@ -384,7 +384,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 
       cs_int_t  n_c_domains = halo->n_c_domains;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
                     rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
@@ -791,7 +791,7 @@ cs_mesh_info(const cs_mesh_t  *mesh)
     } /* End of loop on vertices */
 
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     if (cs_glob_n_ranks > 1) {
 
@@ -836,7 +836,7 @@ void
 cs_mesh_init_parall(cs_mesh_t  *mesh)
 {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   fvm_gnum_t  n_g_elts[4], max_elt_num[4];
@@ -1111,7 +1111,7 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 
     assert(cs_glob_n_ranks > 1);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Allreduce(&(mesh->n_ghost_cells), &n_g_ghost_cells, 1, MPI_INT,
                   MPI_SUM, cs_glob_mpi_comm);
 #endif

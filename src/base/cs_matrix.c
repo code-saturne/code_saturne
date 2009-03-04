@@ -74,7 +74,7 @@
 #include <stdlib.h>
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 

@@ -50,7 +50,7 @@
 #include <stdlib.h>
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -326,7 +326,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
              n_it_e_min, n_it_e_max, n_it_e_mean,
              this_info->wt_tot[0], this_info->wt_tot[1]);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -681,7 +681,7 @@ _dot_product(cs_int_t          n_elts,
 {
   double s = cblas_ddot(n_elts, x, 1, y, 1);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
     double _sum;
@@ -689,7 +689,7 @@ _dot_product(cs_int_t          n_elts,
     s = _sum;
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   return s;
 }
@@ -1505,7 +1505,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
     if (*iwarnp > 2) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
       if (cs_glob_n_ranks > 1) {
 

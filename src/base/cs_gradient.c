@@ -41,7 +41,7 @@
 #include <math.h>
 #include <float.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -555,7 +555,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
   /* Update min/max and n_clip in case of parallelism */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (mesh->n_domains > 1) {
 
@@ -586,7 +586,7 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
 
   } /* If n_domains > 1 */
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   /* Output warning if necessary */
 

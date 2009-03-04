@@ -1374,7 +1374,7 @@ _fill_halo(cs_mesh_t  *mesh)
   cs_int_t  rank_id, i, j;
   cs_int_t  shift;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -1391,7 +1391,7 @@ _fill_halo(cs_mesh_t  *mesh)
   const  cs_int_t  n_transforms = mesh->n_transforms;
   const  cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -1406,7 +1406,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(halo->index[2*rank_id+1]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
@@ -1420,7 +1420,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -1439,7 +1439,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(count[shift]), 2, CS_MPI_INT,
                 halo->c_domain_rank[rank_id],
                 local_rank,
@@ -1459,7 +1459,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
   /* Wait for all exchanges being done */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -1500,7 +1500,7 @@ _fill_halo(cs_mesh_t  *mesh)
             exchange_buffer[2*i+j] = halo->send_perio_lst[shift + 2*j + 1];
         }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
         MPI_Sendrecv(&(exchange_buffer[0]), n_elts_to_exchange, CS_MPI_INT,
                      halo->c_domain_rank[rank_id], local_rank,
                      &(exchange_buffer[n_elts_to_exchange]), n_elts_to_exchange,
@@ -1577,7 +1577,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
   } /* End if n_perio > 0 */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request != _request) {
     BFT_FREE(request);
     BFT_FREE(status);
@@ -2279,7 +2279,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
   const cs_int_t  n_c_domains = halo->n_c_domains;
   const cs_int_t  n_ghost_cells = halo->n_elts[CS_HALO_EXTENDED];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Status  status;
 #endif
 
@@ -2315,7 +2315,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
       n_send_elts =  halo->send_index[2*rank_id+2] - halo->send_index[2*rank_id];
       n_recv_elts =  halo->index[2*rank_id+2] - halo->index[2*rank_id];
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
       MPI_Sendrecv(&(send_idx_buffer[0]), n_send_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], local_rank,
                    &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
@@ -2362,7 +2362,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
       MPI_Sendrecv(send_buffer, n_send_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], local_rank,
                    recv_buffer, n_recv_elts, CS_MPI_INT,
@@ -2646,7 +2646,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
   cs_halo_t  *halo = mesh->halo;
   cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -2659,7 +2659,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
   const cs_int_t  n_gcells = halo->n_elts[CS_HALO_EXTENDED];
   const cs_int_t  n_send_gcells = halo->n_send_elts[CS_HALO_EXTENDED];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -2678,7 +2678,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(gcell_faces_idx[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                 cs_glob_mpi_comm, &(request[request_count++]));
@@ -2690,7 +2690,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -2714,7 +2714,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
                 cs_glob_mpi_comm, &(request[request_count++]));
@@ -2734,7 +2734,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
   /* Wait for all exchanges to finish */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -2805,7 +2805,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(gcell_glob_faces_lst[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                 cs_glob_mpi_comm, &(request[request_count++]));
@@ -2817,7 +2817,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -2899,7 +2899,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
                 cs_glob_mpi_comm, &(request[request_count++]));
@@ -2920,7 +2920,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
 
   /* Wait for all exchanges being done */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Waitall(request_count, request, status);
 #endif
@@ -2933,7 +2933,7 @@ _define_gcells_connect(cs_mesh_t       *mesh,
   BFT_FREE(rank_shift);
   BFT_FREE(send_buffer);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request != _request) {
     BFT_FREE(request);
     BFT_FREE(status);

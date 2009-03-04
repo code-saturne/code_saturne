@@ -42,7 +42,7 @@
 #include <math.h>
 #include <float.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -1088,7 +1088,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
     /* Output for listing */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     if (cs_glob_n_ranks > 1) {
 

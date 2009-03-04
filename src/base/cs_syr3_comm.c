@@ -39,11 +39,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -133,7 +133,7 @@ static char  cs_syr3_comm_elt_type_name_char[] = "c ";  /* String */
 static char  cs_syr3_comm_elt_type_name_int[]  = "i ";  /* Integer */
 static char  cs_syr3_comm_elt_type_name_real[] = "r8";  /* Real */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 static cs_bool_t  cs_glob_comm_little_endian = false;
 
@@ -146,13 +146,13 @@ struct sockaddr_in     cs_glob_comm_sock_addr;
 static char  cs_glob_comm_socket_err[]
 = N_("Error in socket communication:  %s (node %4d)\n");
 
-#endif /* _CS_HAVE_SOCKET */
+#endif /* HAVE_SOCKET */
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Print an error message in case of MPI communication problem
@@ -422,9 +422,9 @@ _comm_mpi_body(void                  *sec_elts,
     _comm_mpi_error_msg(comm, ierror);
 }
 
-#endif /* (_CS_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
  * Read a record from the interface socket
@@ -596,7 +596,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
   char  *host_names = NULL;
   int   *port_num_array = NULL;
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
   int ierror = MPI_SUCCESS;
 #endif
   int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);
@@ -632,7 +632,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
 
     BFT_MALLOC(port_num_array, cs_glob_n_ranks, int);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     ierror = MPI_Gather(cs_glob_comm_sock_hostname, lng_hostname, MPI_CHAR,
                         host_names, lng_hostname, MPI_CHAR, 0,
                         cs_glob_mpi_comm);
@@ -780,7 +780,7 @@ _comm_sock_close(cs_syr3_comm_t  *comm)
   comm->sock = -1;
 }
 
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
 /*----------------------------------------------------------------------------
  * Print information on waiting for a message
@@ -957,7 +957,7 @@ _comm_echo_body(cs_int_t     echo,
 
 cs_syr3_comm_t *
 cs_syr3_comm_initialize(int                  number,
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
                         int                  proc_rank,
 #endif
                         cs_syr3_comm_type_t  type,
@@ -982,7 +982,7 @@ cs_syr3_comm_initialize(int                  number,
   comm->type = type;
   comm->echo = echo;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   comm->proc_rank = proc_rank;
 #else
   comm->proc_rank = -1;
@@ -1013,17 +1013,17 @@ cs_syr3_comm_initialize(int                  number,
   bft_printf(_("\n  Opening communication:  %s ..."), comm->nom);
   bft_printf_flush();
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
   if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
     _comm_sock_connect(comm);
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
   /* Create interface file descriptor */
   /*----------------------------------*/
 
   if (comm->type == CS_SYR3_COMM_TYPE_MPI) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     _comm_mpi_open(comm, magic_string);
 #else
     assert(comm->proc_rank < 0);
@@ -1032,7 +1032,7 @@ cs_syr3_comm_initialize(int                  number,
   }
   else {
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
     if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
       _comm_sock_open(comm, magic_string);
 #endif
@@ -1059,12 +1059,12 @@ cs_syr3_comm_finalize(cs_syr3_comm_t *comm)
   bft_printf(_("\n  Closing communication:  %s\n"), comm->nom);
   bft_printf_flush();
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
   if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
     _comm_sock_close(comm);
 
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
   BFT_FREE(comm->nom);
   BFT_FREE(comm);
@@ -1162,7 +1162,7 @@ cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
     _comm_echo_pre(comm, CS_SYR3_COMM_MODE_SEND);
 
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   /* MPI communication */
   /*-------------------*/
@@ -1186,9 +1186,9 @@ cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
 
   }
 
-#endif /* (_CS_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
   /* socket communication */
   /*----------------------*/
@@ -1229,7 +1229,7 @@ cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
 
   }
 
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
   /* Possibly print to log file */
 
@@ -1270,7 +1270,7 @@ cs_syr3_comm_receive_header(cs_syr3_comm_msg_header_t  *header,
     _comm_echo_pre(comm, CS_SYR3_COMM_MODE_RECEIVE);
 
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   /* MPI communication */
   /*-------------------*/
@@ -1285,9 +1285,9 @@ cs_syr3_comm_receive_header(cs_syr3_comm_msg_header_t  *header,
 
   }
 
-#endif /* (_CS_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
   /* socket communication */
   /*----------------------*/
@@ -1322,7 +1322,7 @@ cs_syr3_comm_receive_header(cs_syr3_comm_msg_header_t  *header,
 
   }
 
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
   header->sec_name[CS_SYR3_COMM_H_LEN] = '\0';
 
@@ -1421,7 +1421,7 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
 
   if (header->n_elts != 0) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     if (comm->type == CS_SYR3_COMM_TYPE_MPI)
       _comm_mpi_body((void *)_sec_elts,
@@ -1430,9 +1430,9 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                      CS_SYR3_COMM_MODE_RECEIVE,
                      comm);
 
-#endif /* (_CS_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
     if (comm->type == CS_SYR3_COMM_TYPE_SOCKET)
       _comm_read_sock(comm,
@@ -1440,7 +1440,7 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                       (size_t) header->n_elts,
                       header->elt_type);
 
-#endif /* (_CS_HAVE_SOCKET) */
+#endif /* (HAVE_SOCKET) */
 
     /* Verification */
 
@@ -1463,7 +1463,7 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
 
 }
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
  * Open an IP socket to prepare for this communication mode
@@ -1625,7 +1625,7 @@ cs_syr3_comm_finalize_socket(void)
   bft_printf_flush();
 }
 
-#endif /* _CS_HAVE_SOCKET */
+#endif /* HAVE_SOCKET */
 
 /*----------------------------------------------------------------------------*/
 

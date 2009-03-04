@@ -145,7 +145,7 @@ _display_histograms(int         n_steps,
   int  i, j;
   double var_step;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -226,7 +226,7 @@ _histogram(cs_int_t         n_vals,
   min = _min;
   max = _max;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
@@ -298,7 +298,7 @@ _int_face_histogram(const cs_mesh_t  *mesh,
   min = _min;
   max = _max;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,

@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -253,7 +253,7 @@ _sles_info_dump(cs_sles_info_t *this_info)
              n_calls, n_it_min, n_it_max, n_it_mean,
              this_info->wt_tot);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -493,7 +493,7 @@ _dot_product(cs_int_t          n_elts,
 {
   double s = cblas_ddot(n_elts, x, 1, y, 1);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
     double _sum;
@@ -501,7 +501,7 @@ _dot_product(cs_int_t          n_elts,
     s = _sum;
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   return s;
 }
@@ -566,7 +566,7 @@ _dot_products_2(cs_int_t          n_elts,
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
     double _sum[2];
@@ -575,7 +575,7 @@ _dot_products_2(cs_int_t          n_elts,
     s[1] = _sum[1];
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   *s1 = s[0];
   *s2 = s[1];
@@ -597,7 +597,7 @@ _y_aypx(cs_int_t    n,
         cs_real_t  *restrict x,
         cs_real_t  *restrict y)
 {
-#if defined(_CS_HAVE_ESSL)
+#if defined(HAVE_ESSL)
 
   dzaxpy(n, alpha, y, 1, x, 1, y, 1);
 
@@ -1174,7 +1174,7 @@ _jacobi(const char             *var_name,
       res2 += (r*r);
     }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     if (cs_glob_n_ranks > 1) {
       double _sum;
@@ -1183,7 +1183,7 @@ _jacobi(const char             *var_name,
       res2 = _sum;
     }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
     residue = sqrt(res2);
 

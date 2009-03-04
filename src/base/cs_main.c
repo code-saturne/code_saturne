@@ -200,7 +200,7 @@ cs_run(void)
      this is done after main calculation initialization so that the user
      may have the option of assigning a name to this instance. */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_coupling_discover_mpi_apps(app_num, NULL);
 #endif
 
@@ -434,7 +434,7 @@ cs_run(void)
   /* Free coupling-related data */
 
   cs_syr_coupling_all_finalize();
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_sat_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
@@ -475,7 +475,7 @@ main(int    argc,
   /* First analysis of the command line to determine if MPI is required,
      and MPI initialization if it is. */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   app_num = cs_opts_mpi_app_num(&argc, &argv);
   if (app_num > -1)
     cs_base_mpi_init(&argc, &argv, app_num);

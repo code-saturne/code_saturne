@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -375,7 +375,7 @@ _add_file(cs_restart_t  *r)
   _restart_n_opens[r->mode] += 1;
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Read variable values defined on a mesh location.
@@ -562,7 +562,7 @@ _write_ent_values(const cs_restart_t  *r,
   fvm_part_to_block_destroy(&d);
 }
 
-#endif /* #if defined(_CS_HAVE_MPI) */
+#endif /* #if defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Convert read/write arguments from the Fortran API to the C API.
@@ -1645,7 +1645,7 @@ cs_restart_read_section(cs_restart_t  *restart,
                             val);
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   /* In parallel mode for a distributed mesh location */
 
@@ -1659,7 +1659,7 @@ cs_restart_read_section(cs_restart_t  *restart,
                      val_type,
                      (cs_byte_t *)val);
 
-#endif /* #if defined(_CS_HAVE_MPI) */
+#endif /* #if defined(HAVE_MPI) */
 
   timing[1] = bft_timer_wtime();
   _restart_wtime[restart->mode] += timing[1] - timing[0];
@@ -1774,7 +1774,7 @@ cs_restart_write_section(cs_restart_t  *restart,
       BFT_FREE (val_tmp);
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   /* In parallel mode for a distributed mesh location */
 
@@ -1792,7 +1792,7 @@ cs_restart_write_section(cs_restart_t  *restart,
   timing[1] = bft_timer_wtime();
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
-#endif /* #if defined(_CS_HAVE_MPI) */
+#endif /* #if defined(HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------

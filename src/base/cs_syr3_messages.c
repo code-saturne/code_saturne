@@ -39,7 +39,7 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -132,7 +132,7 @@ cs_syr3_messages_test_iter(int   nt_cur_abs,
           section_name[ii] = header.sec_name[ii];
       }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1)
         MPI_Bcast(section_name, 32, MPI_CHAR, 0, cs_glob_mpi_comm);
 #endif

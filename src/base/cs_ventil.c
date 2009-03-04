@@ -651,7 +651,7 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
 
     for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
@@ -849,7 +849,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
 
     for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
 
 static int _cs_glob_n_halos = 0;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /* Send buffer for synchronization */
 
@@ -527,7 +527,7 @@ cs_halo_destroy(cs_halo_t  *halo)
 
   if (_cs_glob_n_halos == 0) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     if (cs_glob_n_ranks > 1) {
 
@@ -567,7 +567,7 @@ cs_halo_update_buffers(const cs_halo_t *halo)
   if (halo == NULL)
     return;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -685,7 +685,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
   else if (sync_mode == CS_HALO_EXTENDED)
     end_shift = 2;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -758,7 +758,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
     MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   /* Copy local values in case of periodicity */
 
@@ -811,7 +811,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
   else if (sync_mode == CS_HALO_EXTENDED)
     end_shift = 2;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -884,7 +884,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
     MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   /* Copy local values in case of periodicity */
 
@@ -933,7 +933,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   const size_t send_buffer_size =   halo->n_elts[sync_mode]
                                   * sizeof(cs_real_t) * stride;
@@ -945,7 +945,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                 char);
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
@@ -953,7 +953,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   else if (sync_mode == CS_HALO_EXTENDED)
     end_shift = 2;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -1041,7 +1041,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
     MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   /* Copy local values in case of periodicity */
 

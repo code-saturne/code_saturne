@@ -260,18 +260,18 @@ privcompil:
 	 fi ; \
 	 if   [ "${MPI}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(MPI_INC)" ;\
-	      cflags="$${cflags} -D_CS_HAVE_MPI " ;\
+	      cflags="$${cflags} -DHAVE_MPI " ;\
 	 fi ; \
        if [ "${MPE}" -eq "1" ] ;\
        then dir_inc_cs="$${dir_inc_cs} $(MPE_INC)" ;\
-            cflags="$${cflags} -D_CS_HAVE_MPE ";\
+            cflags="$${cflags} -DHAVE_MPE ";\
 	   if [ "${MPE_COMM}" -eq "1" ] ; \
                then cflags="$${cflags} -D_CS_COMM_PROFILING ";\
          fi ; \
        fi ; \
 	 if   [ "${SOCKET}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(SOCKET_INC)" ;\
-	      cflags="$${cflags} -D_CS_HAVE_SOCKET " ;\
+	      cflags="$${cflags} -DHAVE_SOCKET " ;\
 	 fi ; \
 	 if   [ "${BLAS}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(BLAS_INC)" ;\
@@ -279,7 +279,7 @@ privcompil:
 	 fi ; \
 	 if   [ "${XML}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(XML_INC)" ;\
-	      cflags="$${cflags} -D_CS_HAVE_XML " ;\
+	      cflags="$${cflags} -DHAVE_XML " ;\
 	 fi ; \
 	 if   [ "${NLS}" -eq "1" ] ;\
 	 then cflags="$${cflags} -DENABLE_NLS -DPACKAGE=\\\"$(NOM_PACKAGE)\\\" -DLOCALEDIR=\\\"$(ARCHLOCALE_CS)\\\"" ;\

@@ -2677,7 +2677,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
 
   /* Exchange number of elements to exchange */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (n_ranks > 1)
     MPI_Alltoall(send_count, n_perio, CS_MPI_INT,
                  recv_count, n_perio, CS_MPI_INT, cs_glob_mpi_comm);
@@ -2888,7 +2888,7 @@ cs_perio_define_couples(int         *p_n_periodic_lists,
     }
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Alltoallv(send_buffer, send_rank_count, send_rank_shift, FVM_MPI_GNUM,
                   recv_buffer, recv_rank_count, recv_rank_shift, FVM_MPI_GNUM,
                   cs_glob_mpi_comm);

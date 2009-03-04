@@ -61,7 +61,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <fvm_config.h>
-#if !defined(_CS_HAVE_MPI) && defined(FVM_HAVE_MPI)
+#if !defined(HAVE_MPI) && defined(FVM_HAVE_MPI)
 #error "Either both or neither Code_Saturne and FVM must be configured with MPI"
 #endif
 
@@ -102,7 +102,7 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 typedef struct
 {
@@ -130,7 +130,7 @@ _cs_base_exit(int status);
 cs_int_t  cs_glob_rank_id = -1;     /* Rank of process in communicator */
 cs_int_t  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
 #endif
 
@@ -176,7 +176,7 @@ static cs_int_t  _cs_glob_mem_ra_size = 0;
 
 /* Global variables for instrumentation */
 
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPI) && defined(HAVE_MPE)
 int  cs_glob_mpe_broadcast_a = 0;
 int  cs_glob_mpe_broadcast_b = 0;
 int  cs_glob_mpe_synchro_a = 0;
@@ -344,7 +344,7 @@ _cs_base_err_printf(const char  *format,
 static void
 _cs_base_exit(int status)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   {
     int mpi_flag;
 
@@ -363,7 +363,7 @@ _cs_base_exit(int status)
       }
     }
   }
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
   exit(status);
 }
@@ -511,7 +511,7 @@ _cs_base_sig_fatal(int  signum)
   _cs_glob_exit(EXIT_FAILURE);
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  *  Finalisation MPI
@@ -520,7 +520,7 @@ _cs_base_sig_fatal(int  signum)
 static void
 _cs_base_mpi_fin(void)
 {
-#if defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPE)
   if (cs_glob_n_ranks > 1)
     _cs_base_prof_mpe_fin();
 #endif
@@ -581,10 +581,10 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 }
 
 #endif
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPI) && defined(HAVE_MPE)
 
 /*----------------------------------------------------------------------------
  * Initialize MPE instrumentation
@@ -669,7 +669,7 @@ _cs_base_prof_mpe_fin(void)
     MPE_Finish_log("Code_Saturne");
 }
 
-#endif /* defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE) */
+#endif /* defined(HAVE_MPI) && defined(HAVE_MPE) */
 
 /*----------------------------------------------------------------------------
  * Maximum value of a counter and associated 6 character string
@@ -684,7 +684,7 @@ static void
 _cs_base_work_mem_max(cs_int_t  *mem_peak,
                       char       srt_peak[6])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   _cs_base_mpi_long_int_t  val_in, val_max;
 
@@ -836,7 +836,7 @@ void CS_PROCF (rasize, RASIZE)
  * Public function definitions
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Complete MPI initialization.
@@ -923,13 +923,13 @@ cs_base_mpi_init(int     *argc,
   }
 #endif
 
-#if defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPE)
   if (cs_glob_n_ranks > 1)
     _cs_base_prof_mpe_init(rank);
 #endif
 }
 
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Exit, with handling for both normal and error cases.
@@ -954,7 +954,7 @@ cs_exit(int  status)
 
   CS_PROCF(csclli, CSCLLI)(); /* Close log files */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   {
     int mpi_flag;
@@ -969,7 +969,7 @@ cs_exit(int  status)
     }
   }
 
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
   _cs_glob_exit(status);
 }
@@ -1097,7 +1097,7 @@ cs_base_mem_fin(void)
   int        ind_bil, itot;
   cs_real_t  valreal[3];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   int                imax, imin;
   cs_mpi_real_int_t  val_in[3], val_min[3], val_max[3];
   cs_real_t          val_somme[3];
@@ -1129,7 +1129,7 @@ cs_base_mem_fin(void)
       ind_val[ind_bil] = 0;
   }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     MPI_Reduce(ind_val, ind_min, 3, CS_MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
@@ -1165,7 +1165,7 @@ cs_base_mem_fin(void)
            valreal[ind_bil] > 1024. && unite[itot] != 'p' ;
            itot++)
         valreal[ind_bil] /= 1024.;
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         for (imin = 0 ;
              val_min[ind_bil].val > 1024. && unite[imin] != 'p' ;
@@ -1183,7 +1183,7 @@ cs_base_mem_fin(void)
       bft_printf (_("  %s %12.3f %cb\n"),
                   _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         bft_printf (_("                             "
                       "local minimum: %12.3f %cb  (rank %d)\n"),
@@ -1214,7 +1214,7 @@ cs_base_mem_fin(void)
     wk_size[1] = (  sizeof(cs_int_t)*_cs_glob_mem_ia_peak
                   + sizeof(cs_real_t)*_cs_glob_mem_ra_peak) / 1000;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
       double _wk_size_loc = wk_size[0];
       MPI_Allreduce(&_wk_size_loc, &(wk_size[0]), 1, MPI_DOUBLE, MPI_MAX,
@@ -1289,7 +1289,7 @@ cs_base_bilan_temps(void)
     bft_printf (_("\n  CPU time:            %12.3f s\n"),
                 (float)time_cpu);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     double time_cumul;
     MPI_Reduce (&time_cpu, &time_cumul, 1, MPI_DOUBLE, MPI_SUM,

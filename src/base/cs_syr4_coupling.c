@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -142,7 +142,7 @@ struct _cs_syr4_coupling_t {
 
   /* Communication-related members */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Comm           comm;           /* Associated MPI communicator */
 
@@ -182,7 +182,7 @@ _init_comm(cs_syr4_coupling_t *syr_coupling,
            int                 coupling_id)
 
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   int  mpi_flag = 0;
   int local_range[2] = {-1, -1};
@@ -225,7 +225,7 @@ _init_comm(cs_syr4_coupling_t *syr_coupling,
 static void
 _finalize_comm(cs_syr4_coupling_t *syr_coupling)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (syr_coupling == NULL)
     return;
@@ -252,7 +252,7 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
                const char          *op_name_send,
                char                *op_name_recv)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_rank_id < 1) {
 
@@ -767,7 +767,7 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
 
   /* Initialize communicators */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   syr_coupling->comm = MPI_COMM_NULL;
   syr_coupling->n_syr_ranks = 0;
@@ -844,7 +844,7 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
                            int                 syr_root_rank,
                            int                 n_syr_ranks)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   char  volume_flag = ' ';
   char  boundary_flag = ' ';

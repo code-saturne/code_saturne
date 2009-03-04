@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -132,7 +132,7 @@ cs_int_t  *  cs_chain_ct = NULL;
 
 
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 MPI_Status status;
 
@@ -615,7 +615,7 @@ void cs_ctwr_definit
   cs_glob_ct_tab[cs_glob_ct_nbr] = ct;
   cs_glob_ct_nbr += 1;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   ct->cs_array_rank = NULL;
 #endif
   ct->locat_air_water     = NULL;
@@ -1542,7 +1542,7 @@ void cs_ctwr_maille
     * Construct cs_array_rank                                  *
     *--------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
 
       nb   = cs_glob_n_ranks;
@@ -1627,7 +1627,7 @@ void cs_ctwr_maille
 
 
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
 
       nb   = cs_glob_n_ranks;
@@ -2641,7 +2641,7 @@ cs_ctwr_stacking(const cs_real_t  gx,
       if (CS_ABS(cs_glob_ct_tab[i]->hmax - cs_glob_ct_tab[j]->hmin)< 1.e-6)
         cs_stack_ct[i*cs_glob_ct_nbr + j] =1;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -3979,7 +3979,7 @@ void cs_ctwr_bilanct
 
     }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
 
       MPI_Allreduce (&ct->teau_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
@@ -4078,7 +4078,7 @@ void cs_ctwr_bilanct
       }
     }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
 
 

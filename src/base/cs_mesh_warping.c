@@ -150,7 +150,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   cs_int_t  *domain_to_c_rank = NULL;
   cs_int_t  *s_rank_index = NULL, *r_rank_index = NULL;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -165,7 +165,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -224,7 +224,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(r_rank_index[rank_id+1]), 1, MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                 cs_glob_mpi_comm,
@@ -239,7 +239,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -248,7 +248,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
         MPI_Isend(&(s_rank_index[rank_id+1]), 1, MPI_INT,
                   halo->c_domain_rank[rank_id], local_rank,
                   cs_glob_mpi_comm,
@@ -261,7 +261,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
 
   /* Sync after each communicating rank had received all the messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Waitall(cpt_request, request, status);
 #endif
@@ -277,7 +277,7 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   *p_s_rank_index = s_rank_index;
   *p_r_rank_index = r_rank_index;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request != _request) {
     BFT_FREE(request);
     BFT_FREE(status);
@@ -320,7 +320,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   cs_int_t  *counter = NULL;
   cs_int_t  *perio_s_buffer = NULL, *perio_r_buffer = NULL;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -334,7 +334,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   const cs_int_t  *per_face_lst = cs_glob_mesh_builder->per_face_lst;
   const cs_int_t  *per_rank_lst = cs_glob_mesh_builder->per_rank_lst;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
     BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
     BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -406,7 +406,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Irecv(&(perio_r_buffer[shift]), n_elts, CS_MPI_INT,
                 halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                 cs_glob_mpi_comm, &(request[cpt_request++]));
@@ -426,7 +426,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
   /* We wait for receiving all messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
@@ -438,7 +438,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
       n_elts = s_rank_index[rank_id+1] - s_rank_index[rank_id];
       shift = s_rank_index[rank_id];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Isend(&(perio_s_buffer[shift]), n_elts, MPI_INT,
                 halo->c_domain_rank[rank_id], local_rank,
                 cs_glob_mpi_comm, &(request[cpt_request++]));
@@ -450,7 +450,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
 
   /* Sync after each communicating rank had received all the messages */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (mesh->n_domains > 1)
     MPI_Waitall(cpt_request, request, status);
 #endif
@@ -486,7 +486,7 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   BFT_FREE(perio_s_buffer);
   BFT_FREE(counter);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (request != _request) {
     BFT_FREE(request);
     BFT_FREE(status);
@@ -1253,7 +1253,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   /* Define the global number of faces which need to be cut */
 
   if (mesh->n_domains > 1) {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Allreduce(&n_i_warp_faces, &n_g_i_warp_faces, 1, CS_MPI_INT,
                   MPI_SUM, cs_glob_mpi_comm);
 

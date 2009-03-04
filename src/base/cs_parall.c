@@ -189,7 +189,7 @@ CS_PROCF (parcve, PARCVE)(cs_real_t  pvar[])
 void
 CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  global_max;
 
@@ -225,7 +225,7 @@ CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter)
 void
 CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  global_max;
 
@@ -261,7 +261,7 @@ CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter)
 void
 CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  global_sum;
 
@@ -298,7 +298,7 @@ CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter)
 void
 CS_PROCF (parsom, PARSOM)(cs_real_t  *var)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_real_t  global_sum;
 
@@ -334,7 +334,7 @@ CS_PROCF (parsom, PARSOM)(cs_real_t  *var)
 void
 CS_PROCF (parmax, PARMAX)(cs_real_t  *var)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_real_t global_max;
 
@@ -370,7 +370,7 @@ CS_PROCF (parmax, PARMAX)(cs_real_t  *var)
 void
 CS_PROCF (parmin, PARMIN)(cs_real_t  *var)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_real_t global_min;
 
@@ -411,7 +411,7 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
                           cs_real_t  *var,
                           cs_real_t   xyzvar[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_mpi_real_int_t  val_in, val_max;
 
@@ -459,7 +459,7 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
                           cs_real_t  *var,
                           cs_real_t   xyzvar[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_mpi_real_int_t  val_in, val_min;
 
@@ -502,7 +502,7 @@ void
 CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
                           cs_int_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_int_t  set_sum_array[CS_PARALL_ARRAY_SIZE];
@@ -561,7 +561,7 @@ void
 CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
                           cs_int_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_int_t  set_globmax_array[CS_PARALL_ARRAY_SIZE];
@@ -620,7 +620,7 @@ void
 CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
                           cs_int_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_int_t  set_globmin_array[CS_PARALL_ARRAY_SIZE];
@@ -679,7 +679,7 @@ void
 CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
                           cs_real_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_real_t  set_sum_array[CS_PARALL_ARRAY_SIZE];
@@ -738,7 +738,7 @@ void
 CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
                           cs_real_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_real_t  set_globmax_array[CS_PARALL_ARRAY_SIZE];
@@ -797,7 +797,7 @@ void
 CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
                           cs_real_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_real_t  set_globmin_array[CS_PARALL_ARRAY_SIZE];
@@ -857,7 +857,7 @@ CS_PROCF (parbci, PARBCI)(cs_int_t   *irank,
                           cs_int_t   *n_elts,
                           cs_int_t    array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Bcast(array, *n_elts, CS_MPI_INT, *irank, cs_glob_mpi_comm);
 
@@ -891,7 +891,7 @@ CS_PROCF (parbcr, PARBCR)(cs_int_t   *irank,
                           cs_int_t   *n_elts,
                           cs_real_t   array[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Bcast(array, *n_elts, CS_MPI_REAL, *irank, cs_glob_mpi_comm);
 
@@ -925,7 +925,7 @@ CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
                           cs_real_t   array[],
                           cs_real_t  *g_array)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_int_t  i;
   cs_int_t  *count = NULL;
@@ -983,7 +983,7 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
                           cs_int_t   *ndrang,
                           cs_real_t  *dis2mn)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_mpi_real_int_t  val_in, val_min;
 
@@ -1032,7 +1032,7 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
                           cs_real_t   var[],
                           cs_real_t  *varcap)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
@@ -1073,7 +1073,7 @@ CS_PROCF (parcel, PARCEL)(cs_int_t   *lnum,
                           cs_int_t   *rankid,
                           cs_int_t   *gnum)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
@@ -1217,7 +1217,7 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
                        cs_int_t              stride,
                        cs_real_t            *var)
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   int  request_count;
   int  distant_rank, n_interfaces;

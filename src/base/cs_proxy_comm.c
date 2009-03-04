@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -95,7 +95,7 @@ struct _cs_proxy_comm_t {
   char                  *port_name;     /* Port name (hostname:socket
                                            for IP sockets) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
   int                    socket;        /* Socket number */
 #endif
 
@@ -117,7 +117,7 @@ cs_proxy_comm_t *_cs_glob_proxy_comm = NULL;
  * Private function definitions
  *============================================================================*/
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
  * Read a record from an interface socket
@@ -368,7 +368,7 @@ _comm_sock_handshake(cs_proxy_comm_t  *comm,
   BFT_FREE(str_cmp);
 }
 
-#endif /* defined(_CS_HAVE_SOCKET) */
+#endif /* defined(HAVE_SOCKET) */
 
 /*----------------------------------------------------------------------------
  * Establish a communicator connection
@@ -434,7 +434,7 @@ _comm_initialize(const char           *port_name,
 
   if (type == CS_PROXY_COMM_TYPE_SOCKET) {
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
     _comm_sock_connect(comm);
     _comm_sock_handshake(comm, CS_PROXY_COMM_MAGIC_STRING, key);
@@ -482,7 +482,7 @@ _comm_finalize(cs_proxy_comm_t *comm)
     bft_printf(_("Closing communication: %s\n"),
                comm->port_name);
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
     if (comm->socket > -1)
       _comm_sock_disconnect(comm);
 #endif
@@ -548,7 +548,7 @@ cs_proxy_comm_write(const void  *rec,
 
   assert(comm != NULL);
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
   if (comm->socket > -1)
     _comm_write_sock(comm, rec, size, count);
 #endif
@@ -572,7 +572,7 @@ cs_proxy_comm_read(void    *rec,
 
   assert(comm != NULL);
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
   if (comm->socket > -1)
     _comm_read_sock(comm, rec, size, count);
 #endif

@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -140,7 +140,7 @@ struct _cs_syr3_coupling_t {
   cs_syr3_comm_type_t  comm_type;        /* Communicator type */
   int                  comm_echo;        /* Optional echo to standard output */
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
   cs_int_t        syr_proc_rank;    /* SYRTHES rank */
 #endif
 };
@@ -900,7 +900,7 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
   bft_printf("\nCommunication type: %i\n",
              syr_coupling->comm_type);
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
   bft_printf("(MPI) rank of SYRTHES process: %i\n",
              syr_coupling->syr_proc_rank);
 #endif
@@ -1113,7 +1113,7 @@ cs_syr3_coupling_add(int                 dim,
   syr_coupling->comm_type = comm_type;
   syr_coupling->comm = NULL;
 
-#if defined (_CS_HAVE_MPI)
+#if defined (HAVE_MPI)
   syr_coupling->syr_proc_rank = syr_proc_rank;
 #endif
 
@@ -1139,7 +1139,7 @@ cs_syr3_coupling_init_comm(cs_syr3_coupling_t  *syr_coupling,
 
   syr_coupling->comm
     = cs_syr3_comm_initialize(syr_id + 1,
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
                               syr_coupling->syr_proc_rank,
 #endif
                               syr_coupling->comm_type,
@@ -1204,7 +1204,7 @@ cs_syr3_coupling_all_destroy(void)
     if (syr_coupling->if_set != NULL)
       syr_coupling->if_set = fvm_interface_set_destroy(syr_coupling->if_set);
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
     if (syr_coupling->comm_type == CS_SYR3_COMM_TYPE_SOCKET)
       cs_syr3_comm_finalize_socket();
 #endif

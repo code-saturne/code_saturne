@@ -45,7 +45,7 @@
  * libxml2 library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -162,7 +162,7 @@ typedef struct {
  * Management of the XML document
  *----------------------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
 extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Context       */
 extern xmlNodePtr node;               /* Pointer on the root node     */
 #endif
@@ -6853,7 +6853,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
           /* Send to other processors if parallel */
           if (cs_glob_rank_id >= 0) {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
             MPI_Bcast(array,
                       nvar_prop4,
                       CS_MPI_REAL,
@@ -6978,14 +6978,14 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 
   /* clean memory for xml document */
 
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
   if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
   if (node != NULL) xmlFreeNode(node);
 #endif
 
   /* Shutdown libxml */
 
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
   xmlCleanupParser();
   xmlMemoryDump();
 #endif

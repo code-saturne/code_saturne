@@ -89,7 +89,7 @@ XML_LIB  =-L$(XML_HOME)/lib -lxml2
 BLAS            =1
 ESSL            =1 # IBM ESSL library with BLAS extension
 BLAS_INC        =-I/opt/ibmmath/essl/4.2/include
-BLAS_CFLAGS     =-D_CS_HAVE_ESSL
+BLAS_CFLAGS     =-DHAVE_ESSL
 BLAS_LDFLAGS    =
 
 # Macros for dlopen

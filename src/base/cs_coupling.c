@@ -90,7 +90,7 @@ static fvm_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
  * Public function definitions
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Discover other applications in the same MPI root communicator.
@@ -179,7 +179,7 @@ cs_coupling_get_mpi_apps(void)
   return _cs_glob_coupling_mpi_app_world;
 }
 
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 

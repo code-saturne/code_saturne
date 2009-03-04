@@ -39,7 +39,7 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -742,7 +742,7 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
 
   _ivect[0] = ivecti; _ivect[1] = ivectb;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     int ivect_tot[2];
     MPI_Allreduce(_ivect, ivect_tot, 2, MPI_INT, MPI_SUM,

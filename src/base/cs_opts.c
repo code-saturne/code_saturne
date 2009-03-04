@@ -39,7 +39,7 @@
 #include <string.h>
 #include <time.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -113,7 +113,7 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -solcom           stand-alone kernel with \"geomet\" mesh in\n"
           "                   SolCom format (obsolete)\n"));
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   fprintf
     (e, _(" -mpi, --mpi       use MPI for parallelism or coupling\n"
           "                   [appnum]: number of this application in\n"
@@ -140,7 +140,7 @@ _arg_env_help(const char  *name)
           "                     0: no redirection (if independant\n"
           "                        terminals, debugger type)\n"
           "                     1: output in \"listing_n<rang>\"\n"));
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
   fprintf
     (e, _(" -p, --param       <file_name> parameter file\n"));
 #endif
@@ -373,7 +373,7 @@ int
 cs_opts_mpi_app_num(int    *argc,
                     char  **argv[])
 {
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   char *s;
 
@@ -482,7 +482,7 @@ cs_opts_mpi_app_num(int    *argc,
 
   return appnum;
 
-#else /* if defined(_CS_HAVE_MPI) */
+#else /* if defined(HAVE_MPI) */
 
   return -1;
 
@@ -541,7 +541,7 @@ cs_opts_define(int         argc,
     if (strcmp(s, "-solcom") == 0)
       opts->ifoenv = 0;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     else if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
       cs_int_t tmperr = 0;
@@ -551,7 +551,7 @@ cs_opts_define(int         argc,
       }
     }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;
@@ -590,7 +590,7 @@ cs_opts_define(int         argc,
       }
     }
 
-#if defined(_CS_HAVE_XML)
+#if defined(HAVE_XML)
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       s = argv[++arg_id];
       argerr = cs_gui_file_loading(s);
@@ -614,7 +614,7 @@ cs_opts_define(int         argc,
       }
     }
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
     /* Proxy connection options (do not appear in help as they
        are not destined to be used directly by a user) */
@@ -633,7 +633,7 @@ cs_opts_define(int         argc,
         argerr = 1;
     }
 
-#endif /* defined(_CS_HAVE_SOCKET) */
+#endif /* defined(HAVE_SOCKET) */
 
 #if defined(HAVE_DLOPEN)
 

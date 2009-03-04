@@ -91,7 +91,7 @@ struct _cs_sat_coupling_t {
   fvm_nodal_t     *faces_sup;    /* Local faces at which distant values are
                                     interpolated*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Comm         comm;         /* Associated MPI communicator */
 
@@ -144,7 +144,7 @@ _sat_coupling_create(cs_int_t  root_rank)
 
   BFT_MALLOC(couplage, 1, cs_sat_coupling_t);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Initialized(&mpi_flag);
 
@@ -268,7 +268,7 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
   if (couplage->faces_sup != NULL)
     fvm_nodal_destroy(couplage->faces_sup);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (   couplage->comm != MPI_COMM_WORLD
       && couplage->comm != cs_glob_mpi_comm)
     MPI_Comm_free(&(couplage->comm));
@@ -390,7 +390,7 @@ void CS_PROCF (defcpl, DEFCPL)
   for (ind = 0 ; ind < 2 ; ind++)
     indic_glob[ind] = indic_loc[ind];
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     MPI_Allreduce (indic_loc, indic_glob, 2, MPI_INT, MPI_MAX,
                    cs_glob_mpi_comm);
@@ -942,7 +942,7 @@ void CS_PROCF (tbicpl, TBICPL)
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Status  status;
 
@@ -975,7 +975,7 @@ void CS_PROCF (tbicpl, TBICPL)
 
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   if (distant == false) {
 
@@ -1018,7 +1018,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
   cs_int_t  nbr = 0;
   cs_bool_t  distant = false;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Status  status;
 
@@ -1051,7 +1051,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   if (distant == false) {
 

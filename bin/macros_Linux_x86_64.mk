@@ -84,7 +84,7 @@ XML_LIB  =-lxml2
 BLAS            =1
 BLAS_HOME       =
 BLAS_INC        =-I/usr/include
-BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
+BLAS_CFLAGS     =-DHAVE_CBLAS
 BLAS_LDFLAGS    =-lcblas -latlas
 
 # Macros for dlopen

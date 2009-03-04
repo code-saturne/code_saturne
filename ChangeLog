@@ -1,3 +1,6 @@
+* 04/03/2009 - David Monfort <david.monfort@edf.fr>
+  Rename every _CS_HAVE_xxx macro in the more standard HAVE_xxx
+
 * 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Refactoring the code in a stand-alone plug-in for YACS, thus
   the complex part of the shared library build is removed.

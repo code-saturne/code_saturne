@@ -68,11 +68,11 @@
 #include <stdint.h>
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 #include <mpi.h>
 
-#if defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPE)
 #include <mpe.h>
 #endif
 
@@ -214,7 +214,7 @@ typedef enum {                          /* Boolean */
 
 /* Mappings to MPI datatypes */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 #define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int;
                                             otherwise redefine MPI_xxx */
@@ -229,7 +229,7 @@ typedef struct
   cs_int_t  rank;
 } cs_mpi_real_int_t;
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /* Datatype enumeration to transmit a data's type to a function */
 
@@ -253,13 +253,13 @@ typedef void (cs_exit_t) (int status);
 extern cs_int_t  cs_glob_rank_id;        /* Rank of process in group */
 extern cs_int_t  cs_glob_n_ranks;        /* Number of processes in group */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 extern MPI_Comm  cs_glob_mpi_comm;    /* Intra-communicator */
 #endif
 
 /* Global variables used for MPE instrumentation */
 
-#if defined(_CS_HAVE_MPI) && defined(_CS_HAVE_MPE)
+#if defined(HAVE_MPI) && defined(HAVE_MPE)
 extern int  cs_glob_mpe_broadcast_a;
 extern int  cs_glob_mpe_broadcast_b;
 extern int  cs_glob_mpe_synchro_a;
@@ -352,7 +352,7 @@ void CS_PROCF (rasize, RASIZE)
  * Public function prototypes
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Complete MPI initialization.
@@ -372,7 +372,7 @@ cs_base_mpi_init(int     *argc,
                  char  ***argv,
                  int      app_num);
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Exit, with handling for both normal and error cases.

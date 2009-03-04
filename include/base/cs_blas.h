@@ -36,13 +36,13 @@
  * External library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_ESSL)
+#if defined(HAVE_ESSL)
 #include <essl.h>
 
-#elif defined(_CS_HAVE_MKL)
+#elif defined(HAVE_MKL)
 #include <mkl_cblas.h>
 
-#elif defined(_CS_HAVE_CBLAS)
+#elif defined(HAVE_CBLAS)
 #include <cblas.h>
 
 #endif
@@ -61,9 +61,9 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#if    defined(_CS_HAVE_CBLAS) || defined(_CS_HAVE_F77BLAS) \
-    || defined(_CS_HAVE_ESSL) || defined (_CS_HAVE_MKL)
-#define _CS_HAVE_BLAS 1
+#if    defined(HAVE_CBLAS) || defined(HAVE_F77BLAS) \
+    || defined(HAVE_ESSL) || defined (HAVE_MKL)
+#define HAVE_BLAS 1
 #endif
 
 /*----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ BEGIN_C_DECLS
 /* For the IBM ESSL library, function prototypes are defined in essl.h,
    with legacy blas names <name> mapped to esv<name> */
 
-#if defined(_CS_HAVE_ESSL)
+#if defined(HAVE_ESSL)
 
 #define cblas_dasum  dasum
 #define cblas_daxpy  daxpy
@@ -146,14 +146,14 @@ BEGIN_C_DECLS
 /* For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
    with standard legacy C BLAS names */
 
-#elif defined(_CS_HAVE_MKL)
+#elif defined(HAVE_MKL)
 
 /* Otherwise, if the legacy C BLAS names are not defined, we define double
    precision legacy BLAS 1 prototypes */
 
-#define _CS_HAVE_CBLAS 1
+#define HAVE_CBLAS 1
 
-#elif !defined(_CS_HAVE_CBLAS)
+#elif !defined(HAVE_CBLAS)
 
 /* Sum of the absolute values of a vector */
 
@@ -213,7 +213,7 @@ cs_int_t cblas_idamax(cs_int_t       n,
                       const double  *x,
                       cs_int_t       incx);
 
-#endif /* !defined(_CS_HAVE_CBLAS) */
+#endif /* !defined(HAVE_CBLAS) */
 
 /*============================================================================
  *  Public function definitions for Fortran API

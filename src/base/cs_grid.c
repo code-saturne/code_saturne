@@ -51,7 +51,7 @@
 #include <stdlib.h>
 #endif
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -448,7 +448,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -528,7 +528,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     }
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   /* Copy local values in case of periodicity */
 
@@ -884,7 +884,7 @@ _coarsen(const cs_grid_t   *f,
   c->n_cells = c_n_cells;
   c->n_g_cells = c_n_cells;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     fvm_gnum_t _c_n_cells = c_n_cells;
     MPI_Allreduce(&_c_n_cells, &(c->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
@@ -973,7 +973,7 @@ cs_grid_create_from_shared(fvm_lnum_t         n_cells,
   g->n_faces = n_faces;
   g->n_g_cells = n_cells;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     fvm_gnum_t _n_cells = n_cells;
     MPI_Allreduce(&_n_cells, &(g->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
@@ -1558,7 +1558,7 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
 
   /* Compute local base starting cell number in parallel mode */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     fvm_gnum_t local_shift = g->n_cells;
     fvm_gnum_t global_shift = 0;

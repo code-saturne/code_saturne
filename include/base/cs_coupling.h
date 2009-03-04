@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Discover other applications in the same MPI root communicator.
@@ -99,7 +99,7 @@ cs_coupling_finalize(void);
 const fvm_coupling_mpi_world_t *
 cs_coupling_get_mpi_apps(void);
 
-#endif /* _CS_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 

@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -446,7 +446,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
     cs_io_finalize(&rank_pp_in);
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Mark faces by type (0 for interior, 1 for exterior faces with outwards
@@ -522,7 +522,7 @@ _face_type_g(cs_mesh_t                  *mesh,
   }
 }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Mark faces by type (0 for interior, 1 for exterior faces with outwards
@@ -734,7 +734,7 @@ _extract_face_vertices(cs_mesh_t         *mesh,
   }
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Build internal and boundary face -> global numberings using a common
@@ -826,7 +826,7 @@ _extract_face_gnum(cs_mesh_t         *mesh,
   BFT_FREE(global_b_face);
 }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Build internal and boundary face -> group class id using a common
@@ -941,7 +941,7 @@ _orient_perio_couples(cs_mesh_builder_t  *mb,
   }
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Extract periodic face connectivity information for mesh builder when
@@ -1185,7 +1185,7 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
   BFT_FREE(if_index);
 }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Extract periodic face connectivity information for mesh builder when
@@ -1256,7 +1256,7 @@ _extract_periodic_faces_l(cs_mesh_builder_t        *mb,
   BFT_FREE(i_face_id);
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Organize data read by blocks in parallel and build most mesh structures.
@@ -1536,7 +1536,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   BFT_FREE(face_type);
 }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Organize data read locally and build most mesh structures
@@ -2268,7 +2268,7 @@ cs_ecs_messages_read_data(cs_mesh_t          *mesh,
   /* Now send data to the correct rank */
   /*-----------------------------------*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
     _decompose_data_g(mesh,

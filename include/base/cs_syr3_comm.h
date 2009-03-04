@@ -108,7 +108,7 @@ typedef struct {
 
 cs_syr3_comm_t *
 cs_syr3_comm_initialize(int                  number,
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
                         int                  proc_rank,
 #endif
                         cs_syr3_comm_type_t  type,
@@ -181,7 +181,7 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
                           void                             *elt,
                           const cs_syr3_comm_t             *comm);
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
  * Open an IP socket to prepare for this communication mode
@@ -197,7 +197,7 @@ cs_syr3_comm_init_socket(void);
 void
 cs_syr3_comm_finalize_socket(void);
 
-#endif /* _CS_HAVE_SOCKET */
+#endif /* HAVE_SOCKET */
 
 /*----------------------------------------------------------------------------*/
 

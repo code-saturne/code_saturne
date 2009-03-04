@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -62,7 +62,7 @@
 
 #include <fvm_file.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <fvm_parall.h>
 #endif
 
@@ -592,7 +592,7 @@ _file_open(cs_io_t     *cs_io,
 
   /* Create interface file descriptor */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_io->f = fvm_file_open(name, cs_io_mode, hints, comm);
 #else
   cs_io->f = fvm_file_open(name, cs_io_mode, hints);
@@ -791,7 +791,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
 
   /* Create interface file descriptor */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
   inp->f = fvm_file_open(name, inp->mode, FVM_FILE_NO_MPI_IO, comm);
 #else
   inp->f = fvm_file_open(name, inp->mode, 0);
@@ -1062,7 +1062,7 @@ _file_reopen_read(cs_io_t   *inp,
 
     inp->index->f[i] = fvm_file_free(inp->index->f[i]);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
     inp->index->f[i] = fvm_file_open(tmpname, CS_IO_MODE_READ, hints, comm);
 #else
     inp->index->f[i] = fvm_file_open(tmpname, CS_IO_MODE_READ, hints);
@@ -2835,7 +2835,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   /* Exchange past-the-end values */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
@@ -2924,7 +2924,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                (unsigned long)(global_num_end),
                (unsigned long)retval[global_num_end - global_num_start]);
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   return retval;
 }

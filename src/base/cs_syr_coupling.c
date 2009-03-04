@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -60,7 +60,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 #include "cs_coupling.h"
 #endif
 
@@ -197,7 +197,7 @@ _print_all_unmatched_syr(void)
   bft_printf_flush();
 }
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Add a SYRTHES 4 coupling using MPI.
@@ -476,9 +476,9 @@ _init_all_mpi_syr(void)
   _remove_matched_builder_entries();
 }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
  * Add a SYRTHES 3 coupling using sockets.
@@ -547,7 +547,7 @@ _init_all_socket_syr(void)
   _remove_matched_builder_entries();
 }
 
-#endif /* defined(_CS_HAVE_SOCKETS) */
+#endif /* defined(HAVE_SOCKETS) */
 
 /*============================================================================
  *  Public function definitions for Fortran API
@@ -1043,7 +1043,7 @@ cs_syr_coupling_all_init(void)
 {
   /* First try using MPI */
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (_syr_coupling_builder_size > 0)
     _init_all_mpi_syr();
@@ -1052,7 +1052,7 @@ cs_syr_coupling_all_init(void)
 
   /* If not all SYRTHES instances have been found, try using sockets */
 
-#if defined(_CS_HAVE_SOCKET)
+#if defined(HAVE_SOCKET)
 
   if (_syr_coupling_builder_size > 0)
     _init_all_socket_syr();
