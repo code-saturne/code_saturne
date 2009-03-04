@@ -654,15 +654,17 @@ _proxy_comm_write_any(const char  *func_name,
 static void
 _calcium_exit(int status)
 {
-  if (status == 0) {
-    while (1)
-      sleep(60);
-  }
-  else {
+  if (status != 0) {
     cs_calcium_unload_yacs();
     cs_base_exit_set(_cs_calcium_exit_save);
     cs_exit(status);
   }
+#if defined(_POSIX_SOURCE)
+  else {
+    while (1)
+      sleep(60);
+  }
+#endif
 }
 
 #if defined(HAVE_DLOPEN)

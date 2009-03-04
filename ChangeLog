@@ -1,4 +1,13 @@
 * 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add a sleep function in error handling to avoid multiple output
+  in case of parallelism. Protect the cs_calcium.c sleep call with
+  a test on _POSIX_SOURCE.
+  modified routine:
+    src/base/cs_base.c
+    src/base/cs_calcium.c
+
+* 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug in cs_benchmark.c (n_faces instead of n_cells).
   modified routine:
     src/base/cs_benchmark.c

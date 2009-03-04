@@ -300,8 +300,18 @@ _cs_base_err_vprintf(const char  *format,
 
     if (cs_glob_rank_id < 1)
       strcpy(nom_fic_err, "error");
-    else
+
+    else {
+#if defined(_POSIX_SOURCE)
+      sleep(10); /* Wait a few seconds, so that if rank 0 also
+                    has encountered an error, it may kill
+                    other ranks through MPI_Abort, so that
+                    only rank 0 will generate an error file.
+                    If rank 0 has not encountered the error,
+                    proceed normally after the wait. */
+#endif
       sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
+    }
 
     freopen(nom_fic_err, "w", stderr);
 
