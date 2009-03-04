@@ -226,11 +226,11 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
   if (imodak.eq.1) then
 
     do iel = 1, ncel
-      xm = 1.d0/ (  propce(iel,(iym(1)))/wmolg(1)                 &
-                  + propce(iel,(iym(2)))/wmolg(2)                 &
-                  + propce(iel,(iym(3)))/wmolg(3) )
-      w1(iel) = propce(iel,(iym(3)))*xm/wmolg(3)*xco2
-      w2(iel) = propce(iel,(iym(3)))*xm/wmolg(3)*xh2o
+      xm = 1.d0/ (  propce(iel,ipproc(iym(1)))/wmolg(1)                 &
+                  + propce(iel,ipproc(iym(2)))/wmolg(2)                 &
+                  + propce(iel,ipproc(iym(3)))/wmolg(3) )
+      w1(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xco2
+      w2(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xh2o
       w3(iel) = 0.d0
     enddo
     call raydak(ncel,ncelet,                                      &

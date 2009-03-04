@@ -1,3 +1,9 @@
+* 04/03/2009 - Bertrand Sapa <bertrand-externe.sapa@edf.fr>
+  Correction on some missing "ipproc" indirections for several
+  arguments in the call to the "rmodak" subroutine.
+  modified routine:
+    src/pprt/ppcabs.f90
+
 * 04/03/2009 - David Monfort <david.monfort@edf.fr>
   Fix wrong test when tagging user files with version number.
   modified script:
