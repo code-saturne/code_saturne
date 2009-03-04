@@ -86,26 +86,24 @@ typedef struct {
 
   /* Local structures */
 
-  cs_real_t  *vtx_coord;          /* Coordinates of the vertices */
+  cs_real_t  *vtx_coord;           /* Vertex coordinates */
 
-  cs_int_t   *i_face_cells;       /* Internal faces -> cells connectivity */
-  cs_int_t   *b_face_cells;       /* Border faces -> cells connectivity */
+  cs_int_t   *i_face_cells;        /* Internal faces -> cells connectivity */
+  cs_int_t   *b_face_cells;        /* Border faces -> cells connectivity */
 
-  cs_int_t   *i_face_vtx_idx;     /* Internal faces -> vertices connectivity
-                                     index */
-  cs_int_t   *i_face_vtx_lst;     /* Internal faces -> vertices connectivity */
+  cs_int_t   *i_face_vtx_idx;      /* Internal faces -> vertices index */
+  cs_int_t   *i_face_vtx_lst;      /* Interior faces -> vertices connectivity */
 
-  cs_int_t   *b_face_vtx_idx;     /* Border faces -> vertices connectivity
-                                     index */
-  cs_int_t   *b_face_vtx_lst;     /* Border faces -> vertices connectivity */
+  cs_int_t   *b_face_vtx_idx;      /* Boundary faces -> vertices index */
+  cs_int_t   *b_face_vtx_lst;      /* Boundary faces -> vertices connectivity */
 
 
   /* Global dimension */
 
-  fvm_gnum_t   n_g_cells;           /* Global number of cells */
-  fvm_gnum_t   n_g_i_faces;         /* Global number of internal faces */
-  fvm_gnum_t   n_g_b_faces;         /* Global number of border faces */
-  fvm_gnum_t   n_g_vertices;        /* Global number of vertices */
+  fvm_gnum_t   n_g_cells;          /* Global number of cells */
+  fvm_gnum_t   n_g_i_faces;        /* Global number of internal faces */
+  fvm_gnum_t   n_g_b_faces;        /* Global number of border faces */
+  fvm_gnum_t   n_g_vertices;       /* Global number of vertices */
 
   /* Global numbering */
 
@@ -116,13 +114,12 @@ typedef struct {
 
   /* Periodictity features */
 
-  cs_int_t  n_init_perio;         /* Number of initial periodicities
-                                     (standard) */
-  cs_int_t  n_transforms;         /* Number of transformations */
+  int       n_init_perio;          /* Number of initial periodicities */
+  int       n_transforms;          /* Number of transformations */
 
-  cs_int_t  have_rotation_perio;  /* Periodicity rotation indicator */
+  int       have_rotation_perio;   /* Periodicity rotation indicator */
 
-  fvm_periodicity_t  *periodicity;   /* parameters of each periodicity */
+  fvm_periodicity_t  *periodicity; /* parameters of each periodicity */
 
   /* Parallelism and/or periodic features */
 
@@ -189,7 +186,7 @@ typedef struct {
 
 extern cs_mesh_t *cs_glob_mesh; /* Pointer to main mesh structure */
 
-extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer on builder mesh
+extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer to builder mesh
                                                     structure */
 
 /*============================================================================

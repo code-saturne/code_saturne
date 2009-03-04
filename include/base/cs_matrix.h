@@ -198,7 +198,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix);
  *
  * parameters:
  *   matrix --> Pointer to matrix structure
- *   da     <-- Diagonal (pre-allocated, size: n_cells)
+ *   da     --> Diagonal (pre-allocated, size: n_cells)
  *----------------------------------------------------------------------------*/
 
 void
@@ -214,7 +214,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix,
  *   rotation_mode --> Halo update option for rotational periodicity
  *   matrix        --> Pointer to matrix structure
  *   x             <-> Multipliying vector values (ghost values updated)
- *   y             <-- Resulting vector
+ *   y             --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -234,7 +234,7 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
  * parameters:
  *   matrix --> Pointer to matrix structure
  *   x      --> Multipliying vector values
- *   y      <-- Resulting vector
+ *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -253,7 +253,7 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *   beta          --> Scalar, beta in alpha.A.x + beta.y
  *   matrix        --> Pointer to matrix structure
  *   x             <-> Multipliying vector values (ghost values updated)
- *   y             <-- Resulting vector
+ *   y             --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 void

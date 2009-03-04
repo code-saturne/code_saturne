@@ -112,7 +112,7 @@ typedef struct
 
 #endif
 
-/* Type pour la sauvegarde des signaux */
+/* Type to backup signal handlers */
 
 typedef void (*_cs_base_sighandler_t) (int);
 
@@ -127,14 +127,14 @@ _cs_base_exit(int status);
  *  Global variables
  *============================================================================*/
 
-cs_int_t  cs_glob_rank_id = -1;     /* Rank of process in communicator */
-cs_int_t  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
+int  cs_glob_rank_id = -1;     /* Rank of process in communicator */
+int  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
 
 #if defined(HAVE_MPI)
 MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
 #endif
 
-bft_error_handler_t  *cs_glob_base_gest_erreur_sauve = NULL;
+static bft_error_handler_t  *cs_glob_base_gest_erreur_save = NULL;
 
 /* Static (private) global variables */
 /*-----------------------------------*/
@@ -149,16 +149,16 @@ static char       cs_glob_base_str[CS_BASE_N_STRINGS]
 /* Global variables associated with signal handling */
 
 #if defined(SIGHUP)
-static _cs_base_sighandler_t cs_glob_base_sighup_sauve = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sighup_save = SIG_DFL;
 #endif
 
-static _cs_base_sighandler_t cs_glob_base_sigint_sauve = SIG_DFL;
-static _cs_base_sighandler_t cs_glob_base_sigterm_sauve = SIG_DFL;
-static _cs_base_sighandler_t cs_glob_base_sigfpe_sauve = SIG_DFL;
-static _cs_base_sighandler_t cs_glob_base_sigsegv_sauve = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sigint_save = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sigterm_save = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sigfpe_save = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 
 #if defined(SIGXCPU)
-static _cs_base_sighandler_t cs_glob_base_sigcpu_sauve = SIG_DFL;
+static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
 
 /* Global variables associated with function pointers */
@@ -539,7 +539,7 @@ _cs_base_mpi_fin(void)
   fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
 
-  bft_error_handler_set(cs_glob_base_gest_erreur_sauve);
+  bft_error_handler_set(cs_glob_base_gest_erreur_save);
 
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
@@ -993,7 +993,7 @@ cs_base_error_init(void)
 {
   /* Error handler */
 
-  cs_glob_base_gest_erreur_sauve = bft_error_handler_get();
+  cs_glob_base_gest_erreur_save = bft_error_handler_get();
   bft_error_handler_set(_cs_base_gestion_erreur);
 
   /* Signal handlers */
@@ -1002,20 +1002,20 @@ cs_base_error_init(void)
 
 #if defined(SIGHUP)
   if (cs_glob_rank_id <= 0)
-    cs_glob_base_sighup_sauve  = signal(SIGHUP, _cs_base_sig_fatal);
+    cs_glob_base_sighup_save  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
 
   if (cs_glob_rank_id <= 0) {
-    cs_glob_base_sigint_sauve  = signal(SIGINT, _cs_base_sig_fatal);
-    cs_glob_base_sigterm_sauve = signal(SIGTERM, _cs_base_sig_fatal);
+    cs_glob_base_sigint_save  = signal(SIGINT, _cs_base_sig_fatal);
+    cs_glob_base_sigterm_save = signal(SIGTERM, _cs_base_sig_fatal);
   }
 
-  cs_glob_base_sigfpe_sauve  = signal(SIGFPE, _cs_base_sig_fatal);
-  cs_glob_base_sigsegv_sauve = signal(SIGSEGV, _cs_base_sig_fatal);
+  cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
+  cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
 
 #if defined(SIGXCPU)
   if (cs_glob_rank_id <= 0)
-    cs_glob_base_sigcpu_sauve  = signal(SIGXCPU, _cs_base_sig_fatal);
+    cs_glob_base_sigcpu_save = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
 }
 

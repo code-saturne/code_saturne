@@ -109,8 +109,8 @@ BEGIN_C_DECLS
  * Start timer.
  *
  * parameters:
- *   wt       <-- wall-clock time (start in, stop - start out)
- *   cpu      <-- CPU time (start in, stop - start out)
+ *   wt       --> wall-clock time (start in, stop - start out)
+ *   cpu      --> CPU time (start in, stop - start out)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -125,7 +125,7 @@ _timer_start(double  *wt,
  * Stop timer.
  *
  * parameters:
- *   n_runs     --> Number of timing runs
+ *   n_runs     <-- Number of timing runs
  *   wt         <-> wall-clock time (start in, stop - start out)
  *   cpu        <-> CPU time (start in, stop - start out)
  *----------------------------------------------------------------------------*/
@@ -148,8 +148,8 @@ _timer_stop(int      n_runs,
  * Print overhead.
  *
  * parameters:
- *   wt       --> wall-clock time
- *   cpu      --> CPU time
+ *   wt       <-- wall-clock time
+ *   cpu      <-- CPU time
  *----------------------------------------------------------------------------*/
 
 static void
@@ -198,11 +198,11 @@ _print_overhead(double  wt,
  * Count number of operations.
  *
  * parameters:
- *   n_ops        --> Local number of operations
- *   n_ops_single --> Single-processor equivalent number of operations
+ *   n_ops        <-- Local number of operations
+ *   n_ops_single <-- Single-processor equivalent number of operations
  *                    (without ghosts); ignored if 0
- *   wt           --> wall-clock time
- *   cpu          --> CPU time
+ *   wt           <-- wall-clock time
+ *   cpu          <-- CPU time
  *----------------------------------------------------------------------------*/
 
 static void
@@ -289,11 +289,11 @@ _print_stats(long    n_ops,
  * Simple dot product.
  *
  * parameters:
- *   global          --> 0 for local use, 1 for MPI sum
- *   n_runs          --> number of operation runs
- *   n_cells         --> number of cells (array size)
- *   x               --> Vector
- *   y               --> Vector
+ *   global          <-- 0 for local use, 1 for MPI sum
+ *   n_runs          <-- number of operation runs
+ *   n_cells         <-- number of cells (array size)
+ *   x               <-- Vector
+ *   y               <-- Vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -407,10 +407,10 @@ _dot_product_1(int                  global,
  * Double local dot product.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   n_cells         --> number of cells (array size)
- *   x               --> Vector
- *   y               --> Vector
+ *   n_runs          <-- number of operation runs
+ *   n_cells         <-- number of cells (array size)
+ *   x               <-- Vector
+ *   y               <-- Vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -487,9 +487,9 @@ _dot_product_2(int                  n_runs,
  * y -> ax + y test
  *
  * parameters:
- *   n_runs        --> number of operation runs
- *   n_cells       --> number of cells (array size)
- *   x             --> Vector
+ *   n_runs        <-- number of operation runs
+ *   n_cells       <-- number of cells (array size)
+ *   x             <-- Vector
  *   y             <-> Vector
  *----------------------------------------------------------------------------*/
 
@@ -572,8 +572,8 @@ _axpy_(int                n_runs,
  * Simple divisions on a vector.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   n_cells         --> number of cells (array size)
+ *   n_runs          <-- number of operation runs
+ *   n_cells         <-- number of cells (array size)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -673,8 +673,8 @@ _division_test(int     n_runs,
  * Simple square root on a vector.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   n_cells         --> number of cells (array size)
+ *   n_runs          <-- number of operation runs
+ *   n_cells         <-- number of cells (array size)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -747,16 +747,16 @@ _sqrt_test(int     n_runs,
  * Measure matrix creation + destruction related performance.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   type_name       --> type name
- *   type            --> matrix type
- *   symmetric       --> symmetric structure (if available)
- *   n_cells         --> number of local cells
- *   n_cells_ext     --> number of cells including ghost cells (array size)
- *   n_faces         --> local number of internal faces
- *   cell_num        --> global cell numbers (1 to n)
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   halo            --> cell halo structure
+ *   n_runs      <-- number of operation runs
+ *   type_name   <-- type name
+ *   type        <-- matrix type
+ *   symmetric   <-- symmetric structure (if available)
+ *   n_cells     <-- number of local cells
+ *   n_cells_ext <-- number of cells including ghost cells (array size)
+ *   n_faces     <-- local number of internal faces
+ *   cell_num    <-- global cell numbers (1 to n)
+ *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   halo        <-- cell halo structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -813,19 +813,19 @@ _matrix_creation_test(int                  n_runs,
  * Measure matrix assignment performance.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   type_name       --> type name
- *   type            --> matrix type
- *   sym_struct      --> symmetric structure (if available)
- *   sym_coeffs      --> symmetric coefficients
- *   n_cells         --> number of local cells
- *   n_cells_ext     --> number of cells including ghost cells (array size)
- *   n_faces         --> local number of internal faces
- *   cell_num        --> global cell numbers (1 to n)
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   halo            --> cell halo structure
- *   da              --> diagonal values
- *   xa              --> extradiagonal values
+ *   n_runs      <-- number of operation runs
+ *   type_name   <-- type name
+ *   type        <-- matrix type
+ *   sym_struct  <-- symmetric structure (if available)
+ *   sym_coeffs  <-- symmetric coefficients
+ *   n_cells     <-- number of local cells
+ *   n_cells_ext <-- number of cells including ghost cells (array size)
+ *   n_faces     <-- local number of internal faces
+ *   cell_num    <-- global cell numbers (1 to n)
+ *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   halo        <-- cell halo structure
+ *   da          <-- diagonal values
+ *   xa          <-- extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -891,21 +891,21 @@ _matrix_assignment_test(int                  n_runs,
  * Measure matrix.vector product related performance.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   type_name       --> type name
- *   type            --> matrix type
- *   sym_struct      --> symmetric structure (if available)
- *   sym_coeffs      --> symmetric coefficients
- *   n_cells         --> number of local cells
- *   n_cells_ext     --> number of cells including ghost cells (array size)
- *   n_faces         --> local number of internal faces
- *   cell_num        --> global cell numbers (1 to n)
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   halo            --> cell halo structure
- *   da              --> diagonal values
- *   xa              --> extradiagonal values
- *   x               <-> vector
- *   y               <-- vector
+ *   n_runs      <-- number of operation runs
+ *   type_name   <-- type name
+ *   type        <-- matrix type
+ *   sym_struct  <-- symmetric structure (if available)
+ *   sym_coeffs  <-- symmetric coefficients
+ *   n_cells     <-- number of local cells
+ *   n_cells_ext <-- number of cells including ghost cells (array size)
+ *   n_faces     <-- local number of internal faces
+ *   cell_num    <-- global cell numbers (1 to n)
+ *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   halo        <-- cell halo structure
+ *   da          <-- diagonal values
+ *   xa          <-- extradiagonal values
+ *   x           <-> vector
+ *   y           --> vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1133,10 +1133,10 @@ _matrix_vector_test(int                  n_runs,
  * (symmetric matrix case).
  *
  * parameters:
- *   n_faces         --> local number of internal faces
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   xa              --> extradiagonal values
- *   x               --> vector
+ *   n_faces         <-- local number of internal faces
+ *   face_cell       <-- face -> cells connectivity (1 to n)
+ *   xa              <-- extradiagonal values
+ *   x               <-- vector
  *   y               <-> vector
  *----------------------------------------------------------------------------*/
 
@@ -1169,10 +1169,10 @@ _mat_vec_exdiag_native(cs_int_t             n_faces,
  * (symmetric matrix case, variant 1).
  *
  * parameters:
- *   n_faces         --> local number of internal faces
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   xa              --> extradiagonal values
- *   x               --> vector
+ *   n_faces         <-- local number of internal faces
+ *   face_cell       <-- face -> cells connectivity (1 to n)
+ *   xa              <-- extradiagonal values
+ *   x               <-- vector
  *   y               <-> vector
  *----------------------------------------------------------------------------*/
 
@@ -1241,10 +1241,10 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
  * (symmetric matrix case).
  *
  * parameters:
- *   n_faces         --> local number of internal faces
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   xa              --> extradiagonal values
- *   x               --> vector
+ *   n_faces         <-- local number of internal faces
+ *   face_cell       <-- face -> cells connectivity (1 to n)
+ *   xa              <-- extradiagonal values
+ *   x               <-- vector
  *   ya              <-> vector
  *----------------------------------------------------------------------------*/
 
@@ -1276,14 +1276,14 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
  * Measure matrix.vector product local extradiagonal part related performance.
  *
  * parameters:
- *   n_runs          --> number of operation runs
- *   n_cells         --> number of cells
- *   n_cells_ext     --> number of cells including ghost cells (array size)
- *   n_faces         --> local number of internal faces
- *   face_cell       --> face -> cells connectivity (1 to n)
- *   xa              --> extradiagonal values
- *   x               <-> vector
- *   y               <-- vector
+ *   n_runs      <-- number of operation runs
+ *   n_cells     <-- number of cells
+ *   n_cells_ext <-- number of cells including ghost cells (array size)
+ *   n_faces     <-- local number of internal faces
+ *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   xa          <-- extradiagonal values
+ *   x           <-> vector
+ *   y           --> vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1400,8 +1400,8 @@ _sub_matrix_vector_test(int                  n_runs,
  * Run simple benchmarks.
  *
  * parameters:
- *   mpi_trace_mode  --> indicates if timing mode (0) or MPI trace-friendly
- *                       mode (1) is to be used
+ *   mpi_trace_mode <-- indicates if timing mode (0) or MPI trace-friendly
+ *                      mode (1) is to be used
  *----------------------------------------------------------------------------*/
 
 void

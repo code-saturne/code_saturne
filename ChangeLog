@@ -1,5 +1,21 @@
 * 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
+  Cosmethic changes.
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_parall.h
+    include/base/cs_matrix.h
+    include/base/cs_halo.h
+    include/base/cs_mesh.h
+    src/base/cs_benchmark.c
+    src/base/cs_base.c
+    src/base/cs_halo.c
+    src/base/caltri.f90
+  modified script:
+    bin/runcase
+
+* 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
   Add a sleep function in error handling to avoid multiple output
   in case of parallelism. Protect the cs_calcium.c sleep call with
   a test on _POSIX_SOURCE.

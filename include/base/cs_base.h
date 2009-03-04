@@ -143,8 +143,6 @@
 #define CS_MEM_ALIGN 0
 #endif
 
-#define CS_DIM_3              3                 /* Spatial dimension */
-
 /* "Classical" macros */
 
 #define CS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
@@ -152,7 +150,7 @@
 #define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /* Maximum of a et b */
 
 /*
- * Macros for future internationalization via gettext() or a similar
+ * Macros for internationalization via gettext() or a similar
  * function (to mark translatable character strings)
  */
 
@@ -216,12 +214,9 @@ typedef enum {                          /* Boolean */
 
 #if defined(HAVE_MPI)
 
-#define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int;
-                                            otherwise redefine MPI_xxx */
-#define CS_MPI_REAL      MPI_DOUBLE      /* If cs_real_t is a double;
-                                            otherwise redefine as MPI_REAL */
-#define CS_MPI_REAL_INT  MPI_DOUBLE_INT  /* If cs_real_t est un double ;
-                                            otherwise redefine as MPI_REAL_INT */
+#define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int */
+#define CS_MPI_REAL      MPI_DOUBLE      /* If cs_real_t is a double */
+#define CS_MPI_REAL_INT  MPI_DOUBLE_INT  /* Redefine if necessary */
 
 typedef struct
 {
@@ -250,8 +245,8 @@ typedef void (cs_exit_t) (int status);
  * Global variable definitions
  *============================================================================*/
 
-extern cs_int_t  cs_glob_rank_id;        /* Rank of process in group */
-extern cs_int_t  cs_glob_n_ranks;        /* Number of processes in group */
+extern int  cs_glob_rank_id;        /* Rank of process in group */
+extern int  cs_glob_n_ranks;        /* Number of processes in group */
 
 #if defined(HAVE_MPI)
 extern MPI_Comm  cs_glob_mpi_comm;    /* Intra-communicator */

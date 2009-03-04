@@ -457,8 +457,6 @@ else
   echo ' Preprocessor version:    ' $CSPP_HOME
 fi
 
-source_cas=$SRC
-
 if [ -f compil.log ] ; then
   rm -f compil.log
 fi
@@ -472,6 +470,11 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   cur_dir=`pwd`
 
+  # Compiler version
+  ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
+
+  source_cas=$SRC
+
   #
   # Copy of the parameter file
   if [ ! -z "$PARAM" ] ; then
@@ -482,14 +485,11 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     else
       echo ' '
       echo ' -- ERROR -- '
-      echo ' The parametes file ' $var
+      echo ' The parameters file ' $var
       echo ' can not be accessed.'
       exit 1
     fi
   fi
-
-  # Compiler version
-  ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
 
   # Copy of the user source files
   # (no links: the directory is copied later)

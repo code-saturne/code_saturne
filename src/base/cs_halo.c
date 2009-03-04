@@ -306,7 +306,7 @@ _zero_rotation_values(const cs_halo_t  *halo,
  *   ifs  -->  pointer to a fvm_interface_set structure
  *
  * returns:
- *  pointer to created cs_mesh_halo_t structure
+ *  pointer to created cs_halo_t structure
  *---------------------------------------------------------------------------*/
 
 cs_halo_t *
@@ -435,7 +435,7 @@ cs_halo_create(fvm_interface_set_t  *ifs)
  *   ref  -->  pointer to reference halo
  *
  * returns:
- *  pointer to created cs_mesh_halo_t structure
+ *  pointer to created cs_halo_t structure
  *---------------------------------------------------------------------------*/
 
 cs_halo_t *
@@ -496,7 +496,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
  * Destroy a halo structure
  *
  * parameters:
- *   halo  -->  pointer to cs_mesh_halo_t structure to destroy
+ *   halo  -->  pointer to cs_halo_t structure to destroy
  *
  * Returns:
  *  pointer to deleted halo structure (NULL)
@@ -558,7 +558,7 @@ cs_halo_destroy(cs_halo_t  *halo)
  * so that buffer sizes are increased if necessary.
  *
  * parameters:
- *   halo --> pointer to cs_mesh_halo_t structure.
+ *   halo --> pointer to cs_halo_t structure.
  *---------------------------------------------------------------------------*/
 
 void

@@ -192,7 +192,7 @@ idebra = 1
 !     Initialisation du generateur de nombres aleatoires
 !     (pas toujours necessaire mais ne coute rien)
 call zufalli(0)
-!     ============
+!===========
 
 !---> MISE A ZERO DES TABLEAUX UTILISATEUR ET DEVELOPPEUR
 
@@ -293,7 +293,7 @@ if (iilagr.gt.0) then
 !   Tableau NCELET de travail entier
   iiwork = idebia
   ifinia = iiwork + ncelet
-  CALL IASIZE ('LAGINI',IFINIA)
+  call iasize ('lagini',ifinia)
 
   ifinra = idebra
 
@@ -566,7 +566,7 @@ idbra1 = ifinra
 
 ils    = idbia1
 ifnia2 = ils + maxelt
-CALL IASIZE('CALTRI',IFNIA2)
+call iasize('caltri',ifnia2)
 
 iphas = 1
 
@@ -615,11 +615,11 @@ if (nfpt1t.gt.0) then
 !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
   ils    = ifinia
   ifnia3 = ils + maxelt
-  CALL IASIZE('CALTRI',IFNIA3)
+  call iasize('caltri',ifnia3)
 
   iappel = 2
   call  uspt1d                                                    &
-!       ============
+  !===========
  ( ifnia3 , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -654,7 +654,7 @@ if (nfpt1t.gt.0) then
     nmxt1d = max(ia(inppt1+iiii-1),nmxt1d)
   enddo
   if (irangp.ge.0) call parcmx(nmxt1d)
-                             !==========
+                   !==========
 
   if (isuit1.eq.1) then
 
@@ -705,7 +705,7 @@ do iphas = 1, nphas
 !        uskpdc)
 
     call  mtkpdc                                                  &
-!         ============
+    !===========
  ( idbia1 , idbra1 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -726,10 +726,10 @@ do iphas = 1, nphas
 
     ils    = idbia1
     idbia2 = ils + maxelt
-    CALL IASIZE('CALTRI',IDBIA2)
+    call iasize('caltri',idbia2)
 
     call  uskpdc                                                  &
-!         ============
+    !===========
  ( idbia2 , idbra1 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -770,7 +770,7 @@ do iphas = 1, nphas
     if (imatis.eq.1) then
 
       call  mtkpdc                                                &
-!           ============
+      !===========
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -792,10 +792,10 @@ do iphas = 1, nphas
 
       ils    = ifinia
       ifnia2 = ils + maxelt
-      CALL IASIZE('CALTRI',IFNIA2)
+      call iasize('caltri',ifnia2)
 
       call  uskpdc                                                &
-!           ============
+      !===========
  ( ifnia2 , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -824,13 +824,13 @@ idbra1 = ifinra
 
 ils    = idbia1
 idbia2 = ils + maxelt
-CALL IASIZE('CALTRI',IDBIA2)
+call iasize('caltri',idbia2)
 
 do iphas = 1, nphas
 
   iappel = 1
   call  ustsma                                                    &
-!       ============
+  !===========
  ( idbia2 , idbra1 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -869,11 +869,11 @@ do iphas = 1, nphas
 
     ils    = ifinia
     ifnia2 = ils + maxelt
-    CALL IASIZE('CALTRI',IFNIA2)
+    call iasize('caltri',ifnia2)
 
     iappel = 2
     call  ustsma                                                  &
-!         ============
+    !===========
  ( ifnia2 , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -919,7 +919,7 @@ if (ivrtex.eq.1) then
 
   ils    = ifinia
   ifnia2 = ils + maxelt
-  CALL IASIZE('CALTRI',IFNIA2)
+  call iasize('caltri',ifnia2)
 
   call usvort                                                     &
   !==========
@@ -1212,7 +1212,7 @@ if (itrale.gt.0) then
 
   ils    = ifinia
   ifnia2 = ils + maxelt
-  CALL IASIZE('CALTRI',IFNIA2)
+  call iasize('caltri',ifnia2)
 
   call usproj                                                     &
   !==========
