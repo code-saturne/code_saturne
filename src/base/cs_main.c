@@ -94,25 +94,63 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Main function for Code_Saturne run.
+ *
+ * This function is called either by main() in the standard case, or by
+ * a SALOME standalone module's yacsinit() function. As the latter cannot
+ * return, almost all of the code's execution steps (except command-line
+ * initialization, required to know if we are running in standard mode or
+ * pluging a SALOME module) are done here.
+ *
+ * As yacsinit() can take no arguments, the command-line options must be
+ * defined as a static global variable by main() so as to be usable
+ * by run().
+ *----------------------------------------------------------------------------*/
+
+void
+cs_run(void);
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static int        app_num = -1;
+static cs_opts_t  opts;
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*============================================================================
- * Main program
+ * Public function definitions
  *============================================================================*/
 
-int
-main(int    argc,
-     char  *argv[])
+/*----------------------------------------------------------------------------
+ * Main function for Code_Saturne run.
+ *
+ * This function is called either by main() in the standard case, or by
+ * a SALOME standalone module's yacsinit() function. As the latter cannot
+ * return, almost all of the code's execution steps (except command-line
+ * initialization, required to know if we are running in standard mode or
+ * pluging a SALOME module) are done here.
+ *
+ * As yacsinit() can take no arguments, the command-line options must be
+ * defined as a static global variable by main() so as to be usable
+ * by run().
+ *----------------------------------------------------------------------------*/
+
+void
+cs_run(void)
 {
   double  t1, t2;
 
   cs_int_t  iasize, rasize;
   cs_int_t  nituse, nrtuse, nideve, nrdeve;
 
-  cs_opts_t  opts;
-
-  int  app_num = -1;
   int  _verif = -1;
 
   cs_int_t  *ia = NULL;
@@ -122,71 +160,6 @@ main(int    argc,
   cs_real_t  *ra = NULL;
   cs_real_t  *rtuser = NULL;
   cs_real_t  *rdevel = NULL;
-
-  /* First analysis of the command line to determine if MPI is required,
-     and MPI initialization if it is. */
-
-#if defined(_CS_HAVE_MPI)
-  app_num = cs_opts_mpi_app_num(&argc, &argv);
-  if (app_num > -1)
-    cs_base_mpi_init(&argc, &argv, app_num);
-#endif
-
-  /* Default initialization */
-
-#if defined(_CS_ARCH_Linux)
-
-  if (getenv("LANG") != NULL)
-    setlocale(LC_ALL,"");
-  else
-    setlocale(LC_ALL, "C");
-  setlocale(LC_NUMERIC, "C");
-
-#endif
-
-#if defined(ENABLE_NLS)
-  bindtextdomain(PACKAGE, LOCALEDIR);
-  textdomain(PACKAGE);
-#endif
-
-  (void)bft_timer_wtime();
-
-  bft_fp_trap_set();
-
-  /* Initialize memory management and signals */
-
-  cs_base_mem_init();
-  cs_base_error_init();
-
-  /* Parse command line */
-
-  cs_opts_define(argc, argv, &opts);
-
-  /* Open 'listing' (log) files */
-
-  CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
-                           &cs_glob_rank_id,
-                           &cs_glob_n_ranks,
-                           &(opts.ilisr0),
-                           &(opts.ilisrp));
-  cs_base_bft_printf_set();
-
-  /* Log-file header and command line arguments recap */
-
-  cs_opts_logfile_head(argc, argv);
-
-  /* Connection with CFD_Proxy launcher */
-
-  if (opts.proxy_socket != NULL) {
-    cs_proxy_comm_initialize(opts.proxy_socket,
-                             opts.proxy_key,
-                             CS_PROXY_COMM_TYPE_SOCKET);
-    BFT_FREE(opts.proxy_socket);
-    opts.proxy_key = -1;
-    cs_calcium_set_comm_proxy();
-    /* For verbose output, uncomment the following */
-    /*cs_calcium_set_verbosity(3);*/
-  }
 
   /* System information */
 
@@ -489,6 +462,104 @@ main(int    argc,
 
   cs_base_bilan_temps();
   cs_base_mem_fin();
+}
+
+/*============================================================================
+ * Main program
+ *============================================================================*/
+
+int
+main(int    argc,
+     char  *argv[])
+{
+  /* First analysis of the command line to determine if MPI is required,
+     and MPI initialization if it is. */
+
+#if defined(_CS_HAVE_MPI)
+  app_num = cs_opts_mpi_app_num(&argc, &argv);
+  if (app_num > -1)
+    cs_base_mpi_init(&argc, &argv, app_num);
+#endif
+
+  /* Default initialization */
+
+#if defined(_CS_ARCH_Linux)
+
+  if (getenv("LANG") != NULL)
+    setlocale(LC_ALL,"");
+  else
+    setlocale(LC_ALL, "C");
+  setlocale(LC_NUMERIC, "C");
+
+#endif
+
+#if defined(ENABLE_NLS)
+  bindtextdomain(PACKAGE, LOCALEDIR);
+  textdomain(PACKAGE);
+#endif
+
+  (void)bft_timer_wtime();
+
+  bft_fp_trap_set();
+
+  /* Initialize memory management and signals */
+
+  cs_base_mem_init();
+  cs_base_error_init();
+
+  /* Parse command line */
+
+  cs_opts_define(argc, argv, &opts);
+
+  /* Open 'listing' (log) files */
+
+  {
+    cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
+
+    CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
+                             &_rank_id,
+                             &_n_ranks,
+                             &(opts.ilisr0),
+                             &(opts.ilisrp));
+  }
+
+  cs_base_bft_printf_set();
+
+  /* Log-file header and command line arguments recap */
+
+  cs_opts_logfile_head(argc, argv);
+
+  /* In case of use with SALOME, optional connection with CFD_Proxy
+     launcher or load and start of YACS module */
+
+  /* For verbose output, uncomment the following */
+  /*cs_calcium_set_verbosity(3);*/
+
+  /* Using CFD_Proxy, simply initialize connection before standard run */
+  if (opts.proxy_socket != NULL) {
+    cs_proxy_comm_initialize(opts.proxy_socket,
+                             opts.proxy_key,
+                             CS_PROXY_COMM_TYPE_SOCKET);
+    BFT_FREE(opts.proxy_socket);
+    opts.proxy_key = -1;
+    cs_calcium_set_comm_proxy();
+  }
+
+  /* Running as a standalone SALOME component, load YACS component
+     library and run yacsinit() component initialization and event loop,
+     which should itself include the standard run routine */
+
+  if (opts.yacs_module != NULL) {
+    cs_calcium_load_yacs(opts.yacs_module);
+    BFT_FREE(opts.yacs_module);
+    cs_calcium_start_yacs(); /* Event-loop does not return as of this version */
+    cs_calcium_unload_yacs();
+  }
+
+  /* In standard case or with CFD_Proxy, simply call regular run() method */
+
+  else
+    cs_run();
 
   /* Return */
 

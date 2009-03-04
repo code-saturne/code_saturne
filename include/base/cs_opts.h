@@ -83,7 +83,9 @@ typedef struct {
   cs_bool_t      cwf_post;      /* true if post-treatment is required */
   double         cwf_criterion; /* Criterion to choose which face to cut */
 
-  /* Connection with proxy */
+  /* Connection with YACS or proxy */
+
+  char          *yacs_module;   /* Path to YACS module */
 
   char          *proxy_socket;  /* Name of proxy socket */
   int            proxy_key;     /* Key for connection to proxy */

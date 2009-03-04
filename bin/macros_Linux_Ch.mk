@@ -83,6 +83,14 @@ BLAS_INC        =
 BLAS_CFLAGS     =
 BLAS_LDFLAGS    =
 
+# Macros for dlopen
+#------------------
+
+# Dynamic library loader support
+
+DLOPEN          =0
+
+
 # Macros for gettext
 #-------------------
 

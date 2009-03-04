@@ -61,7 +61,6 @@ BLD_CS         = $(DIR_CS)/build
 
 NOM_LIB_CS_PRE = "saturne"
 NOM_EXE        = "cs14.exe"
-NOM_SO         = "libcs14.so"
 NOM_PACKAGE    = "ncs"
 
 
@@ -155,17 +154,6 @@ lib_install: privtitre privconfig privcompil privlib privlibinst privincinst pri
 
 
 link: privtitre privconfig privcompil privlink privfin
-
-
-link_shared: privtitre privconfig
-	@if   [ ${BUILD_SO} -ne 1 ] ;\
-	 then echo ;\
-	      echo "$(BO)macros are not configured for shared library$(NO)" ;\
-	      echo ;\
-	 else make privcompil ;\
-	      make privlink LINKTARGETTYPE="SO" ;\
-	      make privfin ;\
-	 fi
 
 
 compversion: privtitre privcompil privlink privfin
@@ -270,10 +258,6 @@ privcompil:
      then cflags="$${cflags} -I$(ARCHINC_CS)" ;\
           fflags="$${fflags} -I$(ARCHINC_CS)" ;\
 	 fi ; \
-	 if   [ "${BUILD_SO}" -eq "1" ] ;\
-	 then cflags="$${cflags} $(CCFLAGSSO)" ;\
-	      fflags="$${fflags} $(FTNFLAGSSO)" ;\
-	 fi ; \
 	 if   [ "${MPI}" -eq "1" ] ;\
 	 then dir_inc_cs="$${dir_inc_cs} $(MPI_INC)" ;\
 	      cflags="$${cflags} -D_CS_HAVE_MPI " ;\
@@ -299,6 +283,9 @@ privcompil:
 	 fi ; \
 	 if   [ "${NLS}" -eq "1" ] ;\
 	 then cflags="$${cflags} -DENABLE_NLS -DPACKAGE=\\\"$(NOM_PACKAGE)\\\" -DLOCALEDIR=\\\"$(ARCHLOCALE_CS)\\\"" ;\
+	 fi ; \
+	 if   [ "${DLOPEN}" -eq "1" ] ;\
+	 then cflags="$${cflags} -DHAVE_DLOPEN " ;\
 	 fi ; \
 	 if   [ "${CS_LANG}" = "FR" ] ;\
 	 then fflags="$${fflags} $(FTNPREPROCOPT)-D_CS_LANG_FR" ;\
@@ -682,28 +669,12 @@ privmodlink:
 	     librariessup="$${librariessup} $${libpath}" ;\
          fi ;\
          libraries="-L$(ARCHLIB_CS) $${librariesloc} $${librariesloc} $${librariessup} $(LIBRARY)" ;\
-	 if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
-	     if [ ! -f cs_main.o ] ; then \
-	        $(AR) x $(ARCH_CS)/lib/libsaturneBASE$(OPT).a cs_main.o ;\
-	        liste_obj="$${liste_obj} cs_main.o" ;\
-	     fi ;\
-	     objcopy --redefine-sym main=cs_main cs_main.o cs_main.o ;\
-	     link_cmd="$(LDEDL) -o $(NOM_SO) $(LDEDLFLAGSSO) $(ALLLDEDLFLAGS)" ;\
-	     link_cmd="$${link_cmd} $${liste_obj} $${libraries} $(MYLIBS)" ;\
-	     echo "$${link_cmd}" ;\
-	     $${link_cmd} ;\
-	 else \
 	     link_cmd="$(LDEDL) -o $(NOM_EXE) $(ALLLDEDLFLAGS)" ;\
 	     link_cmd="$${link_cmd} $${liste_obj} $${libraries} $(MYLIBS)" ;\
 	     echo "$${link_cmd}" ;\
-	     $${link_cmd} ;\
-	 fi 
+	     $${link_cmd}
 	@echo ; echo "***  Linking finished; library:" ; echo
-	@if [ "$(LINKTARGETTYPE)" = "SO" ] ; then \
-	     ls -l $(NOM_SO) ;\
-	 else \
-	     ls -l $(NOM_EXE) ;\
-	 fi
+	@ls -l $(NOM_EXE)
 
 
 privlink:
@@ -874,7 +845,7 @@ clean purge rmobj: privconfig
 
 
 rmexe: privconfig
-	@\rm -f $(NOM_EXE) $(NOM_SO) *.out
+	@\rm -f $(NOM_EXE) *.out
 
 rmlib: privconfig
 	@\rm -f "$(NOM_LIB_CS_PRE)$(MYOPT).a"
@@ -897,7 +868,6 @@ help info: privtitre
 	@echo "                $(BO)lib_install$(NO) : library creation and installation"
 	@echo "                $(BO)comp$(NO)        : compilation only"
 	@echo "                $(BO)link$(NO)        : link of Code_Saturne"
-	@echo "                $(BO)link_shared$(NO) : link of Code_Saturne shared library"
 	@echo "                $(BO)saturne$(NO)     : same"
 	@echo "                $(BO)clean$(NO)       : delete object files"
 	@echo "                $(BO)purge$(NO)       : same"

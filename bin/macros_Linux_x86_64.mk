@@ -87,6 +87,14 @@ BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-lcblas -latlas
 
+# Macros for dlopen
+#------------------
+
+# Dynamic library loader support
+
+DLOPEN          =1
+
+
 # Macros for gettext
 #-------------------
 
@@ -166,15 +174,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linu
 
 AR              = ar
 ARFLAGS         = cr
-
-
-# Shared library options
-#-----------------------
-
-BUILD_SO        =1
-CCFLAGSSO       =-fPIC
-FTNFLAGSSO      =-fPIC
-LDEDLFLAGSSO    =-Wl,-soname -Wl,libcs14.so -fPIC -shared
 
 
 # Set preprocessor variables

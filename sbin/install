@@ -501,23 +501,12 @@ Macro_readme_comp=$2
    else
      if   [ "${opttrav}" = "" ] ; then
        make saturne                || sortie "make saturne failed"
-       if [ `uname` = "Linux" ] ; then
-         make link_shared          || sortie "make lib_shared failed"
-       fi
      else
        make saturne OPT="$opttrav" || sortie "make saturne OPT=$opttrav failed"
-       if [ `uname` = "Linux" ] ; then
-         make link_shared OPT="$opttrav" || sortie "make lib_shared OPT=$opttrav failed"
-       fi
      fi
      for file in *.exe ; do
        mv $file ${CS_HOME}/arch/${NOM_ARCH}/bin/`basename $file .exe`${opttrav}.exe
      done
-     if [ `uname` = "Linux" ] ; then
-       for file in *.so ; do
-         mv $file ${CS_HOME}/arch/${NOM_ARCH}/lib/`basename $file .so`${opttrav}.so
-       done
-     fi
    fi
 #
    info "Generation of the summary file"

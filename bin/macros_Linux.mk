@@ -87,6 +87,14 @@ BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-lcblas -latlas
 
+# Macros for dlopen
+#------------------
+
+# Dynamic library loader support
+
+DLOPEN          =1
+
+
 # Macros for gettext
 #-------------------
 
@@ -159,15 +167,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linu
 # If libxml2 must be installed under CS_ROOT, it may be necessary to add
 # $(CS_ROOT)/opt/libxml2-2.6.19/arch/$NOM_ARCH/lib
 # to LDEDLRPATH
-
-# Shared library options
-#-----------------------
-
-BUILD_SO        =1
-CCFLAGSSO       =-fPIC
-FTNFLAGSSO      =-fPIC
-LDEDLFLAGSSO    =-Wl,-soname -Wl,libcs14.so -fPIC -shared
-
 
 # Archiver
 #---------

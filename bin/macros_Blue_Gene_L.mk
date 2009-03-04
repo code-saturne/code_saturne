@@ -92,6 +92,14 @@ BLAS_INC        =-I/opt/ibmmath/essl/4.2/include
 BLAS_CFLAGS     =-D_CS_HAVE_ESSL
 BLAS_LDFLAGS    =
 
+# Macros for dlopen
+#------------------
+
+# Dynamic library loader support
+
+DLOPEN          =0
+
+
 # Macros for gettext
 #-------------------
 

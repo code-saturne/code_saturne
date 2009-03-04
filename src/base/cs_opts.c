@@ -509,6 +509,7 @@ cs_opts_define(int         argc,
   const char *s;
   int arg_id = 0, argerr = 0;
 
+  const char moduleoptbase[] = "--yacs-module=";
   const char socketoptbase[] = "--proxy-socket=";
   const char keyoptbase[] = "--proxy-key=";
 
@@ -525,6 +526,8 @@ cs_opts_define(int         argc,
   opts->cwf = false;
   opts->cwf_post = false;
   opts->cwf_criterion = 0.01;
+
+  opts->yacs_module = NULL;
 
   opts->proxy_socket = NULL;
   opts->proxy_key = -1;
@@ -631,6 +634,19 @@ cs_opts_define(int         argc,
     }
 
 #endif /* defined(_CS_HAVE_SOCKET) */
+
+#if defined(HAVE_DLOPEN)
+
+    /* Library loader options (do not appear in help as they
+       are not destined to be used directly by a user) */
+
+    else if (strncmp(s, moduleoptbase, strlen(moduleoptbase)) == 0) {
+      const char *_s = s + strlen(moduleoptbase);
+      BFT_MALLOC(opts->yacs_module, strlen(_s) + 1, char);
+      strcpy(opts->yacs_module, _s);
+    }
+
+#endif /* defined(HAVE_DLOPEN) */
 
     /* Version number */
 

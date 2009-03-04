@@ -87,6 +87,14 @@ BLAS_INC        =-I/usr/include
 BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
 BLAS_LDFLAGS    =-lcblas -latlas
 
+# Macros for dlopen
+#------------------
+
+# Dynamic library loader support
+
+DLOPEN          =0
+
+
 # Macros for gettext
 #-------------------
 

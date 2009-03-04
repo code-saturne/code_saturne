@@ -1,3 +1,28 @@
+* 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Refactoring the code in a stand-alone plug-in for YACS, thus
+  the complex part of the shared library build is removed.
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_calcium.h
+    include/base/cs_opts.h
+    src/base/cs_base.c
+    src/base/cs_calcium.c
+    src/base/cs_main.c
+    src/base/cs_opts.c
+  modified scripts:
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux_Ch.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_x86_64.mk
+    bin/macros_SX9.mk
+    bin/Makefile
+    sbin/install
+  added file:
+    extras/cs_component.py
+
 * 04/03/2009 - Bertrand Sapa <bertrand-externe.sapa@edf.fr>
   Correction on some missing "ipproc" indirections for several
   arguments in the call to the "rmodak" subroutine.

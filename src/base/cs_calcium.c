@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -37,6 +37,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#if defined(HAVE_DLOPEN)
+#include <dlfcn.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * BFT library headers
@@ -93,23 +98,98 @@ typedef enum {
 
 } cs_calcium_datatype_t;
 
+/*----------------------------------------------------------------------------
+ * Function pointer types
+ *----------------------------------------------------------------------------*/
+
+typedef int
+(cs_calcium_yacsinit_t)(void);
+
+typedef int
+(cs_calcium_connect_t)(void  *component,
+                       char  *s);
+
+typedef int
+(cs_calcium_disconnect_t)(void  *component,
+                          int    cont);
+
+typedef int
+(cs_calcium_read_int_t)(void    *component,
+                        int      time_dep,
+                        float   *min_time,
+                        float   *max_time,
+                        int     *iteration,
+                        char    *var_name,
+                        int      n_val_max,
+                        int     *n_val_read,
+                        int      val[]);
+
+typedef int
+(cs_calcium_read_float_t)(void    *component,
+                          int      time_dep,
+                          float   *min_time,
+                          float   *max_time,
+                          int     *iteration,
+                          char    *var_name,
+                          int      n_val_max,
+                          int     *n_val_read,
+                          float    val[]);
+
+typedef int
+(cs_calcium_read_double_t)(void    *component,
+                           int      time_dep,
+                           double  *min_time,
+                           double  *max_time,
+                           int     *iteration,
+                           char    *var_name,
+                           int      n_val_max,
+                           int     *n_val_read,
+                           double   val[]);
+
+typedef int
+(cs_calcium_write_int_t)(void    *component,
+                         int      time_dep,
+                         float    cur_time,
+                         int      iteration,
+                         char    *var_name,
+                         int      n_val,
+                         int      val[]);
+
+typedef int
+(cs_calcium_write_float_t)(void    *component,
+                           int      time_dep,
+                           float    cur_time,
+                           int      iteration,
+                           char    *var_name,
+                           int      n_val,
+                           float    val[]);
+
+typedef int
+(cs_calcium_write_double_t)(void    *component,
+                            int      time_dep,
+                            double   cur_time,
+                            int      iteration,
+                            char    *var_name,
+                            int      n_val,
+                            double   val[]);
+
 /*=============================================================================
  * Static global variables
  *============================================================================*/
 
 /* Use communication with proxy ? */
 
-static int _cs_glob_calcium_comm_proxy = 0;
+static int _cs_calcium_comm_proxy = 0;
 
 /* Verbosity (none if -1, headers if 0,
    headers + n first and last elements if > 0 */
 
-static int _cs_glob_calcium_n_echo = -1;
+static int _cs_calcium_n_echo = -1;
 
 /* Pointer of type Superv_Component_i* to the supervisable SALOME component */
 
-static void *_cs_glob_calcium_component[8] = {NULL, NULL, NULL, NULL,
-                                              NULL, NULL, NULL, NULL};
+static void *_cs_calcium_component[8] = {NULL, NULL, NULL, NULL,
+                                         NULL, NULL, NULL, NULL};
 
 /* Map from enumerated values to SALOME's Calcium API defined values */
 
@@ -127,16 +207,23 @@ static const char *cs_calcium_datatype_name[] = {"integer", "real", "double",
                                                  "logical"};
 static const char *cs_calcium_timedep_name[] = {"T", "I", "S"};
 
-/* Function pointers */
+/* YACS dynamic library, initialization, and specific error handling */
 
-static cs_calcium_connect_t         *_cs_glob_calcium_connect = NULL;
-static cs_calcium_disconnect_t      *_cs_glob_calcium_disconnect = NULL;
-static cs_calcium_read_int_t        *_cs_glob_calcium_read_int = NULL;
-static cs_calcium_read_float_t      *_cs_glob_calcium_read_float = NULL;
-static cs_calcium_read_double_t     *_cs_glob_calcium_read_double = NULL;
-static cs_calcium_write_int_t       *_cs_glob_calcium_write_int = NULL;
-static cs_calcium_write_float_t     *_cs_glob_calcium_write_float = NULL;
-static cs_calcium_write_double_t    *_cs_glob_calcium_write_double = NULL;
+static void  *_cs_calcium_yacslib = NULL;
+
+static cs_calcium_yacsinit_t  *_cs_calcium_yacsinit = NULL;
+static cs_exit_t              *_cs_calcium_exit_save = NULL;
+
+/* Calcium function pointers */
+
+static cs_calcium_connect_t         *_cs_calcium_connect = NULL;
+static cs_calcium_disconnect_t      *_cs_calcium_disconnect = NULL;
+static cs_calcium_read_int_t        *_cs_calcium_read_int = NULL;
+static cs_calcium_read_float_t      *_cs_calcium_read_float = NULL;
+static cs_calcium_read_double_t     *_cs_calcium_read_double = NULL;
+static cs_calcium_write_int_t       *_cs_calcium_write_int = NULL;
+static cs_calcium_write_float_t     *_cs_calcium_write_float = NULL;
+static cs_calcium_write_double_t    *_cs_calcium_write_double = NULL;
 
 /*=============================================================================
  * Local function definitions
@@ -276,14 +363,14 @@ _calcium_echo_pre_read(int                     comp_id,
                        cs_calcium_datatype_t   datatype,
                        int                     n_max_vals)
 {
-  if (_cs_glob_calcium_n_echo < 0)
+  if (_cs_calcium_n_echo < 0)
     return;
 
   assert(var_name != NULL);
 
-  if (_cs_glob_calcium_component[comp_id] != NULL)
+  if (_cs_calcium_component[comp_id] != NULL)
     bft_printf(_("\nComponent %d [%p]:\n"),
-               comp_id, _cs_glob_calcium_component[comp_id]);
+               comp_id, _cs_calcium_component[comp_id]);
   else
     bft_printf(_("\nComponent %d:\n"), comp_id);
 
@@ -314,14 +401,14 @@ _calcium_echo_post_read(double                 min_time,
                         int                    n_val,
                         const void            *val)
 {
-  if (_cs_glob_calcium_n_echo < 0)
+  if (_cs_calcium_n_echo < 0)
     return;
 
   bft_printf(_("[ok]\n"
                "Read          %d values (min time %f, iteration %d).\n"),
              n_val, min_time, iteration);
 
-  _calcium_echo_body(datatype, _cs_glob_calcium_n_echo, n_val, val);
+  _calcium_echo_body(datatype, _cs_calcium_n_echo, n_val, val);
 }
 
 /*----------------------------------------------------------------------------
@@ -346,14 +433,14 @@ _calcium_echo_pre_write(int                     comp_id,
                         cs_calcium_datatype_t   datatype,
                         int                     n_vals)
 {
-  if (_cs_glob_calcium_n_echo < 0)
+  if (_cs_calcium_n_echo < 0)
     return;
 
   assert(var_name != NULL);
 
-  if (_cs_glob_calcium_component[comp_id] != NULL)
+  if (_cs_calcium_component[comp_id] != NULL)
     bft_printf(_("\nComponent %d [%p]:\n"),
-               comp_id, _cs_glob_calcium_component[comp_id]);
+               comp_id, _cs_calcium_component[comp_id]);
   else
     bft_printf(_("\nComponent %d:\n"), comp_id);
 
@@ -379,12 +466,12 @@ _calcium_echo_post_write(cs_calcium_datatype_t  datatype,
                          int                    n_val,
                          const void            *val)
 {
-  if (_cs_glob_calcium_n_echo < 0)
+  if (_cs_calcium_n_echo < 0)
     return;
 
   bft_printf(_("[ok]\n"));
 
-  _calcium_echo_body(datatype, _cs_glob_calcium_n_echo, n_val, val);
+  _calcium_echo_body(datatype, _cs_calcium_n_echo, n_val, val);
 }
 
 /*----------------------------------------------------------------------------
@@ -556,6 +643,64 @@ _proxy_comm_write_any(const char  *func_name,
   return retval;
 }
 
+/*----------------------------------------------------------------------------
+ * Exit function for use when running with YACS.
+ *
+ * In case of an exitwith status 0, this function simply goes into sleep
+ * cycles until it is killed. If an error occured, the normal exit
+ * routine is applied.
+ *----------------------------------------------------------------------------*/
+
+static void
+_calcium_exit(int status)
+{
+  if (status == 0) {
+    while (1)
+      sleep(60);
+  }
+  else {
+    cs_calcium_unload_yacs();
+    cs_base_exit_set(_cs_calcium_exit_save);
+    cs_exit(status);
+  }
+}
+
+#if defined(HAVE_DLOPEN)
+
+/*----------------------------------------------------------------------------
+ * Get a shared library function pointer
+ *
+ * parameters:
+ *   handle           <-- pointer to shared library (result of dlopen)
+ *   name             <-- name of function symbol in library
+ *   errors_are_fatal <-- abort if true, silently ignore if false
+ *
+ * returns:
+ *   pointer to function in shared library
+ *----------------------------------------------------------------------------*/
+
+static void *
+_get_dl_function_pointer(void        *handle,
+                         const char  *name,
+                         cs_bool_t    errors_are_fatal)
+{
+  void  *retval = NULL;
+  char  *error = NULL;
+
+  dlerror();    /* Clear any existing error */
+
+  retval = dlsym(handle, name);
+  error = dlerror();
+
+  if (error != NULL && errors_are_fatal)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error calling dlsym: %s\n"), dlerror());
+
+  return retval;
+}
+
+#endif /* defined(HAVE_DLOPEN)*/
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -578,11 +723,11 @@ cs_calcium_connect(int   comp_id,
 {
   int retval = 0;
 
-  if (_cs_glob_calcium_connect != NULL)
-    retval = _cs_glob_calcium_connect(_cs_glob_calcium_component[comp_id],
-                                      s);
+  if (_cs_calcium_connect != NULL)
+    retval = _cs_calcium_connect(_cs_calcium_component[comp_id],
+                                 s);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     retval = _proxy_comm_connect(comp_id, s);
 
   return retval;
@@ -606,11 +751,11 @@ cs_calcium_disconnect(int                       comp_id,
   int _cont = _cs_calcium_continuation_map[cont];
   int retval = 0;
 
-  if (_cs_glob_calcium_connect != NULL)
-    retval = _cs_glob_calcium_disconnect(_cs_glob_calcium_component[comp_id],
-                                         _cont);
+  if (_cs_calcium_disconnect != NULL)
+    retval = _cs_calcium_disconnect(_cs_calcium_component[comp_id],
+                                    _cont);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     retval = _proxy_comm_disconnect(comp_id, _cont);
 
   return retval;
@@ -657,21 +802,21 @@ cs_calcium_read_int(int                    comp_id,
                          _var_name, time_dep, *min_time, *max_time, *iteration,
                          CALCIUM_integer, n_val_max);
 
-  if (_cs_glob_calcium_read_int != NULL) {
-    _retval = _cs_glob_calcium_read_int(_cs_glob_calcium_component[comp_id],
-                                        _time_dep,
-                                        &_min_time,
-                                        &_max_time,
-                                        iteration,
-                                        _var_name,
-                                        n_val_max,
-                                        n_val_read,
-                                        val);
+  if (_cs_calcium_read_int != NULL) {
+    _retval = _cs_calcium_read_int(_cs_calcium_component[comp_id],
+                                   _time_dep,
+                                   &_min_time,
+                                   &_max_time,
+                                   iteration,
+                                   _var_name,
+                                   n_val_max,
+                                   n_val_read,
+                                   val);
     *min_time = _min_time;
     *max_time = _max_time;
   }
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _retval = _proxy_comm_read_any("cp_len", 1, comp_id,
                                    _time_dep, min_time, max_time, iteration,
                                    _var_name, n_val_max, n_val_read,
@@ -724,21 +869,21 @@ cs_calcium_read_float(int                    comp_id,
                          _var_name, time_dep, *min_time, *max_time, *iteration,
                          CALCIUM_real, n_val_max);
 
-  if (_cs_glob_calcium_read_float != NULL) {
-    _retval = _cs_glob_calcium_read_float(_cs_glob_calcium_component[comp_id],
-                                          _time_dep,
-                                          &_min_time,
-                                          &_max_time,
-                                          iteration,
-                                          _var_name,
-                                          n_val_max,
-                                          n_val_read,
-                                          val);
+  if (_cs_calcium_read_float != NULL) {
+    _retval = _cs_calcium_read_float(_cs_calcium_component[comp_id],
+                                     _time_dep,
+                                     &_min_time,
+                                     &_max_time,
+                                     iteration,
+                                     _var_name,
+                                     n_val_max,
+                                     n_val_read,
+                                     val);
     *min_time = _min_time;
     *max_time = _max_time;
   }
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _retval = _proxy_comm_read_any("cp_lre", 1, comp_id,
                                    _time_dep, min_time, max_time, iteration,
                                    _var_name, n_val_max, n_val_read,
@@ -790,18 +935,18 @@ cs_calcium_read_double(int                    comp_id,
                          _var_name, time_dep, *min_time, *max_time, *iteration,
                          CALCIUM_double, n_val_max);
 
-  if (_cs_glob_calcium_read_double != NULL)
-    _retval = _cs_glob_calcium_read_double(_cs_glob_calcium_component[comp_id],
-                                           _time_dep,
-                                           min_time,
-                                           max_time,
-                                           iteration,
-                                           _var_name,
-                                           n_val_max,
-                                           n_val_read,
-                                           val);
+  if (_cs_calcium_read_double != NULL)
+    _retval = _cs_calcium_read_double(_cs_calcium_component[comp_id],
+                                      _time_dep,
+                                      min_time,
+                                      max_time,
+                                      iteration,
+                                      _var_name,
+                                      n_val_max,
+                                      n_val_read,
+                                      val);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _retval = _proxy_comm_read_any("cp_ldb", 1, comp_id,
                                    _time_dep, min_time, max_time, iteration,
                                    _var_name, n_val_max, n_val_read,
@@ -853,16 +998,16 @@ cs_calcium_write_int(int                    comp_id,
   BFT_MALLOC(_val, n_val, int);
   memcpy(_val, val, n_val * sizeof(int));
 
-  if (_cs_glob_calcium_write_int != NULL)
-    retval = _cs_glob_calcium_write_int(_cs_glob_calcium_component[comp_id],
-                                        _time_dep,
-                                        cur_time,
-                                        iteration,
-                                        _var_name,
-                                        n_val,
-                                        _val);
+  if (_cs_calcium_write_int != NULL)
+    retval = _cs_calcium_write_int(_cs_calcium_component[comp_id],
+                                   _time_dep,
+                                   cur_time,
+                                   iteration,
+                                   _var_name,
+                                   n_val,
+                                   _val);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _proxy_comm_write_any("cp_een", comp_id, _time_dep,
                           cur_time, iteration, _var_name,
                           n_val, sizeof(int), _val);
@@ -914,16 +1059,16 @@ cs_calcium_write_float(int                    comp_id,
   BFT_MALLOC(_val, n_val, float);
   memcpy(_val, val, n_val * sizeof(float));
 
-  if (_cs_glob_calcium_write_float != NULL)
-    retval = _cs_glob_calcium_write_float(_cs_glob_calcium_component[comp_id],
-                                          _time_dep,
-                                          cur_time,
-                                          iteration,
-                                          _var_name,
-                                          n_val,
-                                          _val);
+  if (_cs_calcium_write_float != NULL)
+    retval = _cs_calcium_write_float(_cs_calcium_component[comp_id],
+                                     _time_dep,
+                                     cur_time,
+                                     iteration,
+                                     _var_name,
+                                     n_val,
+                                     _val);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _proxy_comm_write_any("cp_ere", comp_id, _time_dep,
                           cur_time, iteration, _var_name,
                           n_val, sizeof(float), _val);
@@ -975,16 +1120,16 @@ cs_calcium_write_double(int                    comp_id,
   BFT_MALLOC(_val, n_val, double);
   memcpy(_val, val, n_val * sizeof(double));
 
-  if (_cs_glob_calcium_write_double != NULL)
-    retval = _cs_glob_calcium_write_double(_cs_glob_calcium_component[comp_id],
-                                           _time_dep,
-                                           cur_time,
-                                           iteration,
-                                           _var_name,
-                                           n_val,
-                                           _val);
+  if (_cs_calcium_write_double != NULL)
+    retval = _cs_calcium_write_double(_cs_calcium_component[comp_id],
+                                      _time_dep,
+                                      cur_time,
+                                      iteration,
+                                      _var_name,
+                                      n_val,
+                                      _val);
 
-  else if (_cs_glob_calcium_comm_proxy)
+  else if (_cs_calcium_comm_proxy)
     _proxy_comm_write_any("cp_edb", comp_id, _time_dep,
                           cur_time, iteration, _var_name,
                           n_val, sizeof(double), _val);
@@ -1010,7 +1155,7 @@ cs_calcium_set_component(int    comp_id,
 {
   assert(comp_id > -1 && comp_id < 8); /* Current limit, easily made dynamic */
 
-  _cs_glob_calcium_component[comp_id] = comp;
+  _cs_calcium_component[comp_id] = comp;
 }
 
 /*----------------------------------------------------------------------------
@@ -1020,7 +1165,7 @@ cs_calcium_set_component(int    comp_id,
 void
 cs_calcium_set_comm_proxy(void)
 {
-  _cs_glob_calcium_comm_proxy = 1;
+  _cs_calcium_comm_proxy = 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -1034,71 +1179,121 @@ cs_calcium_set_comm_proxy(void)
 void
 cs_calcium_set_verbosity(int  n_echo)
 {
-  _cs_glob_calcium_n_echo = n_echo;
+  _cs_calcium_n_echo = n_echo;
 }
 
 /*----------------------------------------------------------------------------
- * Set connect and disconnect functions
+ * Load YACS and corresponding Calcium functions.
  *
  * parameters:
- *   cp_cd_func  <-- pointer to cp_cd function or equivalent
- *   cp_fin_func <-- pointer to cp_fin function or equivalent
+ *   lib_path <-- path to shared library containing the yacsinit() function.
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_connection_funcs(cs_calcium_connect_t     *cp_cd_func,
-                                cs_calcium_disconnect_t  *cp_fin_func)
+cs_calcium_load_yacs(const char *lib_path)
 {
-  _cs_glob_calcium_connect = cp_cd_func;
-  _cs_glob_calcium_disconnect = cp_fin_func;
+#if defined(HAVE_DLOPEN)
+
+  /* Load symbols from shared library */
+
+  _cs_calcium_yacslib = dlopen(lib_path, RTLD_LAZY);
+
+  if (_cs_calcium_yacslib == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error loading %s: %s."), lib_path, dlerror());
+
+  _cs_calcium_yacsinit
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
+
+  _cs_calcium_read_int
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
+
+  _cs_calcium_write_int
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
+
+  _cs_calcium_read_float
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
+
+  _cs_calcium_write_float
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
+
+  _cs_calcium_read_double
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
+
+  _cs_calcium_write_double
+    = _get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
+
+  if (   _cs_calcium_yacsinit == NULL
+      || _cs_calcium_read_int == NULL
+      || _cs_calcium_write_int == NULL
+      || _cs_calcium_read_float == NULL
+      || _cs_calcium_write_float == NULL
+      || _cs_calcium_read_double== NULL
+      || _cs_calcium_write_double == NULL) {
+    dlclose(_cs_calcium_yacslib);
+    _cs_calcium_yacslib = NULL;
+  }
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Shared library support not available.\n"
+              "Unable to load: %s\n"), lib_path);
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for integers
- *
- * parameters:
- *   cp_len_func  <-- pointer to cp_len function or equivalent
- *   cp_een_func  <-- pointer to cp_een function or equivalent
+ * Unload YACS and corresponding Calcium functions
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
-                            cs_calcium_write_int_t    *cp_een_func)
+cs_calcium_unload_yacs(void)
 {
-  _cs_glob_calcium_read_int = cp_len_func;
-  _cs_glob_calcium_write_int = cp_een_func;
+#if defined(HAVE_DLOPEN)
+
+  if (_cs_calcium_yacslib != NULL)
+    dlclose(_cs_calcium_yacslib);
+
+  /* Reset function pointers to NULL */
+
+  _cs_calcium_yacslib = NULL;
+
+  _cs_calcium_yacsinit = NULL;
+
+  _cs_calcium_read_int = NULL;
+  _cs_calcium_write_int = NULL;
+  _cs_calcium_read_float = NULL;
+  _cs_calcium_write_float = NULL;
+  _cs_calcium_read_double = NULL;
+  _cs_calcium_write_double = NULL;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for floats
+ * Initialize YACS component and enter event loop.
  *
- * parameters:
- *   cp_lre_func  <-- pointer to cp_lre function or equivalent
- *   cp_ere_func  <-- pointer to cp_ere function or equivalent
+ * This must be called after cs_calcium_load_yacs().
+ *
+ * Note that the YACS event loop does not return, sot the YACS component
+ * description should ensure that the code's main run() method (or similar)
+ * is called in the component body.
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
-                              cs_calcium_write_float_t    *cp_ere_func)
+cs_calcium_start_yacs(void)
 {
-  _cs_glob_calcium_read_float = cp_lre_func;
-  _cs_glob_calcium_write_float = cp_ere_func;
-}
+  if (_cs_calcium_yacslib != NULL) {
 
-/*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for doubles
- *
- * parameters:
- *   cp_ldb_func  <-- pointer to cp_ldb function or equivalent
- *   cp_edb_func  <-- pointer to cp_edb function or equivalent
- *----------------------------------------------------------------------------*/
+    if (_cs_calcium_exit_save == NULL) {
+      _cs_calcium_exit_save = cs_base_exit_get();
+      cs_base_exit_set(_calcium_exit);
+    }
 
-void
-cs_calcium_set_double_rw_funcs(cs_calcium_read_double_t     *cp_ldb_func,
-                               cs_calcium_write_double_t    *cp_edb_func)
-{
-  _cs_glob_calcium_read_double = cp_ldb_func;
-  _cs_glob_calcium_write_double = cp_edb_func;
+    _cs_calcium_yacsinit();
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

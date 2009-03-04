@@ -491,6 +491,16 @@ void
 cs_base_string_f_to_c_free(char  **c_str);
 
 /*----------------------------------------------------------------------------
+ * Get pointer to program exit function.
+ *
+ * returns:
+ *   pointer to current exit function
+ *----------------------------------------------------------------------------*/
+
+cs_exit_t *
+cs_base_exit_get(void);
+
+/*----------------------------------------------------------------------------
  * Modify program exit behavior setting a specific exit function.
  *
  * parameters:

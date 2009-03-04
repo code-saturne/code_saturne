@@ -46,11 +46,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Function name mappings */
-
-#define cp_cd    cs_calcium_connect
-#define cp_fin   cs_calcium_disconnect
-
 /* Instance continuation directive */
 
 #define CS_CALCIUM_CONTINUE  20
@@ -82,78 +77,6 @@ typedef enum {
   CALCIUM_stop          /* Stop after disconnect */
 
 } cs_calcium_continuation_t;
-
-/*----------------------------------------------------------------------------
- * Function pointer types
- *----------------------------------------------------------------------------*/
-
-typedef int
-(cs_calcium_connect_t) (void  *component,
-                        char  *s);
-
-typedef int
-(cs_calcium_disconnect_t) (void  *component,
-                           int    cont);
-
-typedef int
-(cs_calcium_read_int_t)(void    *component,
-                        int      time_dep,
-                        float   *min_time,
-                        float   *max_time,
-                        int     *iteration,
-                        char    *var_name,
-                        int      n_val_max,
-                        int     *n_val_read,
-                        int      val[]);
-
-typedef int
-(cs_calcium_read_float_t)(void    *component,
-                          int      time_dep,
-                          float   *min_time,
-                          float   *max_time,
-                          int     *iteration,
-                          char    *var_name,
-                          int      n_val_max,
-                          int     *n_val_read,
-                          float    val[]);
-
-typedef int
-(cs_calcium_read_double_t)(void    *component,
-                           int      time_dep,
-                           double  *min_time,
-                           double  *max_time,
-                           int     *iteration,
-                           char    *var_name,
-                           int      n_val_max,
-                           int     *n_val_read,
-                           double   val[]);
-
-typedef int
-(cs_calcium_write_int_t)(void    *component,
-                         int      time_dep,
-                         float    cur_time,
-                         int      iteration,
-                         char    *var_name,
-                         int      n_val,
-                         int      val[]);
-
-typedef int
-(cs_calcium_write_float_t)(void    *component,
-                           int      time_dep,
-                           float    cur_time,
-                           int      iteration,
-                           char    *var_name,
-                           int      n_val,
-                           float    val[]);
-
-typedef int
-(cs_calcium_write_double_t)(void    *component,
-                            int      time_dep,
-                            double   cur_time,
-                            int      iteration,
-                            char    *var_name,
-                            int      n_val,
-                            double   val[]);
 
 /*=============================================================================
  * Public function prototypes
@@ -315,52 +238,34 @@ void
 cs_calcium_set_verbosity(int  n_echo);
 
 /*----------------------------------------------------------------------------
- * Set connect and disconnect functions
+ * Load YACS and corresponding Calcium functions.
  *
  * parameters:
- *   cp_cd_func  <-- pointer to cp_cd function or equivalent
- *   cp_fin_func <-- pointer to cp_fin function or equivalent
+ *   lib_path <-- path to shared library containing the yacsinit() function.
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_connection_funcs(cs_calcium_connect_t     *cp_cd_func,
-                                cs_calcium_disconnect_t  *cp_fin_func);
+cs_calcium_load_yacs(const char *lib_path);
 
 /*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for integers
- *
- * parameters:
- *   cp_len_func  <-- pointer to cp_len function or equivalent
- *   cp_een_func  <-- pointer to cp_een function or equivalent
+ * Unload YACS and corresponding Calcium functions
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_int_rw_funcs(cs_calcium_read_int_t     *cp_len_func,
-                            cs_calcium_write_int_t    *cp_een_func);
+cs_calcium_unload_yacs(void);
 
 /*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for floats
+ * Initialize YACS component and enter event loop.
  *
- * parameters:
- *   cp_lre_func  <-- pointer to cp_lre function or equivalent
- *   cp_ere_func  <-- pointer to cp_ere function or equivalent
+ * This must be called after cs_calcium_load_yacs().
+ *
+ * Note that the YACS event loop does not return, sot the YACS component
+ * description should ensure that the code's main run() method (or similar)
+ * is called in the component body.
  *----------------------------------------------------------------------------*/
 
 void
-cs_calcium_set_float_rw_funcs(cs_calcium_read_float_t     *cp_lre_func,
-                              cs_calcium_write_float_t    *cp_ere_func);
-
-/*----------------------------------------------------------------------------
- * Set read, non-blocking read, and write functions for doubles
- *
- * parameters:
- *   cp_ldb_func  <-- pointer to cp_ldb function or equivalent
- *   cp_edb_func  <-- pointer to cp_edb function or equivalent
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_set_double_rw_funcs(cs_calcium_read_double_t     *cp_ldb_func,
-                               cs_calcium_write_double_t    *cp_edb_func);
+cs_calcium_start_yacs(void);
 
 /*----------------------------------------------------------------------------*/
 
