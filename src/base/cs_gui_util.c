@@ -46,7 +46,7 @@
  * libxml2 library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  * Global variables
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 xmlDocPtr docxml            = NULL;   /* Pointer on the XML document  */
 xmlXPathContextPtr xpathCtx = NULL;   /* Pointer on the XPath Context */
 xmlNodePtr node             = NULL;   /* Pointer on the root node     */
@@ -116,7 +116,7 @@ const char *xmlRootName     = NULL;   /* Name of the root node        */
 
 void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
   if (docxml == NULL)
     *iihmpr = 0;
   else
@@ -140,7 +140,7 @@ void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
 int
 cs_gui_file_loading(const char *const filename)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   int file_descriptor = 0;
   int argerr = 0;
@@ -268,7 +268,7 @@ cs_gui_get_version(void)
 char*
 cs_xpath_init_path(void)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   char *path = NULL;
 
@@ -519,7 +519,7 @@ char**
 cs_gui_get_attribute_values(char *const path,
                             int  *const size)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   char             **nodes_name = NULL;
   xmlNodeSetPtr      nodes;
@@ -619,7 +619,7 @@ char**
 cs_gui_get_nodes_name(char *const path,
                       int  *const size)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   char             **nodes_name = NULL;
   xmlXPathObjectPtr  xpathObj;
@@ -716,7 +716,7 @@ char**
 cs_gui_get_text_values(char   *const path,
                        int    *const size)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   char             **text_name = NULL;
   xmlXPathObjectPtr  xpathObj;
@@ -869,7 +869,7 @@ cs_gui_get_int(char *const path,
 int
 cs_gui_get_nb_element(char *const path)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   xmlXPathObjectPtr xpathObj;
   int nb;
@@ -908,7 +908,7 @@ cs_gui_get_nb_element(char *const path)
 int
 cs_gui_get_max_value(char *const path)
 {
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
 
   xmlXPathObjectPtr xpathObj;
   xmlNodeSetPtr     nodes;

@@ -1,3 +1,11 @@
+* 05/03/2009 - David Monfort <david.monfort@edf.fr>
+  Rename HAVE_XML macros to HAVE_LIBXML2 to give a better
+  view of what is needed in the code.
+  modified routines:
+    src/base/cs_gui.c
+    src/base/cs_gui_util.c
+    src/base/cs_opts.c
+
 * 04/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Cosmethic changes (committed in two revisions).

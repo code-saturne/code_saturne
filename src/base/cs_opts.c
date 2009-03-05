@@ -140,7 +140,7 @@ _arg_env_help(const char  *name)
           "                     0: no redirection (if independant\n"
           "                        terminals, debugger type)\n"
           "                     1: output in \"listing_n<rang>\"\n"));
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
   fprintf
     (e, _(" -p, --param       <file_name> parameter file\n"));
 #endif
@@ -590,7 +590,7 @@ cs_opts_define(int         argc,
       }
     }
 
-#if defined(HAVE_XML)
+#if defined(HAVE_LIBXML2)
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       s = argv[++arg_id];
       argerr = cs_gui_file_loading(s);
