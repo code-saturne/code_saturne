@@ -29,6 +29,10 @@
  * Manage the exchange of data between Code_Saturne and the pre-processor
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/

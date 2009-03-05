@@ -29,6 +29,10 @@
  *  Communication with SYRTHES 3
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -596,7 +600,7 @@ _comm_sock_connect(cs_syr3_comm_t  *comm)
   char  *host_names = NULL;
   int   *port_num_array = NULL;
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
   int ierror = MPI_SUCCESS;
 #endif
   int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);

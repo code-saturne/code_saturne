@@ -29,6 +29,10 @@
  * Cut warped faces in serial or parallel with/without periodicity.
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/

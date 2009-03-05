@@ -29,6 +29,10 @@
  * Functions dealing with ghost cells
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -887,7 +891,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
       n_send_elts =  halo->send_index[rank_id + 1] - halo->send_index[rank_id];
       n_recv_elts =  halo->index[rank_id + 1] - halo->index[rank_id];
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Sendrecv(&(send_idx_buffer[0]), n_send_elts, CS_MPI_INT,
                      halo->c_domain_rank[rank_id], local_rank,
                      &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
@@ -934,7 +938,7 @@ _exchange_gface_vtx_connect(cs_ctwr_zone_t *ct,
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
       MPI_Sendrecv(send_buffer, n_send_elts, CS_MPI_INT,
                    halo->c_domain_rank[rank_id], local_rank,
                    recv_buffer, n_recv_elts, CS_MPI_INT,

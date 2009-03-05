@@ -29,6 +29,10 @@
  * Basic CALCIUM-mappable functions for code coupling using SALOME's YACS
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/

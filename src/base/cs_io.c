@@ -29,6 +29,10 @@
  *  Low level file I/O utility functions for Preprocessor and restart files
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/

@@ -1,4 +1,93 @@
 * 05/03/2009 - David Monfort <david.monfort@edf.fr>
+  First integration of the autoconfiscation of the build
+  system.
+  Add a bootstrap script, config files, Makefile.am
+  files and configure.ac script.
+  Add a Makefile.am file in every src sub-directory and
+  modify C sources to account for the cs_config.h header.
+  Add also some mandatory files in the root directory.
+  added scripts:
+    config
+    config/cs_auto_flags.sh
+    config/cs_bft.m4
+    config/cs_blas.m4
+    config/cs_fvm.m4
+    config/cs_libxml2.m4
+    config/cs_mpi.m4
+    config/cs_tools.m4
+    configure.ac
+    INSTALL
+    Makefile.am
+    NEWS
+    README
+    sbin/bootstrap
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/ctwr/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/lagr/Makefile.am
+    src/mati/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+  modified routines:
+    src/base/cs_ale.c
+    src/base/cs_ast_coupling.c
+    src/base/cs_base.c
+    src/base/cs_benchmark.c
+    src/base/cs_blas.c
+    src/base/cs_calcium.c
+    src/base/cs_coupling.c
+    src/base/cs_ecs_messages.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_gradient.c
+    src/base/cs_grid.c
+    src/base/cs_gui.c
+    src/base/cs_gui_matisse.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/cs_halo.c
+    src/base/cs_io.c
+    src/base/cs_main.c
+    src/base/cs_matrix.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_coherency.c
+    src/base/cs_mesh_connect.c
+    src/base/cs_mesh_halo.c
+    src/base/cs_mesh_quality.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_solcom.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_multigrid.c
+    src/base/cs_opts.c
+    src/base/cs_parall.c
+    src/base/cs_perio.c
+    src/base/cs_post.c
+    src/base/cs_proxy_comm.c
+    src/base/cs_renumber.c
+    src/base/cs_restart.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_selector.c
+    src/base/cs_sles.c
+    src/base/cs_syr3_comm.c
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr3_messages.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+    src/base/cs_tpar1d.c
+    src/base/cs_ventil.c
+    src/base/tcpumx.c
+    src/base/tremai.c
+    src/ctwr/cs_ctwr_air_props.c
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_halo.c
+    src/lagr/cs_lagrang.c
+    src/lagr/cs_lagr_perio.c
+
+* 05/03/2009 - David Monfort <david.monfort@edf.fr>
   Rename HAVE_XML macros to HAVE_LIBXML2 to give a better
   view of what is needed in the code.
   modified routines:

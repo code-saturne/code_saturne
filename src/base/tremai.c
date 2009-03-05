@@ -25,12 +25,16 @@
  *
  *============================================================================*/
 
-#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
-#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
-
 /*============================================================================
  * Compute remaining time allocated to this process
  *============================================================================*/
+
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
+#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
+#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
 
 /*----------------------------------------------------------------------------
  * Standard C library headers

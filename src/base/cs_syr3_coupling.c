@@ -29,6 +29,10 @@
  * SYRTHES 3 coupling
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -140,7 +144,7 @@ struct _cs_syr3_coupling_t {
   cs_syr3_comm_type_t  comm_type;        /* Communicator type */
   int                  comm_echo;        /* Optional echo to standard output */
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_int_t        syr_proc_rank;    /* SYRTHES rank */
 #endif
 };
@@ -900,7 +904,7 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
   bft_printf("\nCommunication type: %i\n",
              syr_coupling->comm_type);
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
   bft_printf("(MPI) rank of SYRTHES process: %i\n",
              syr_coupling->syr_proc_rank);
 #endif
@@ -1113,7 +1117,7 @@ cs_syr3_coupling_add(int                 dim,
   syr_coupling->comm_type = comm_type;
   syr_coupling->comm = NULL;
 
-#if defined (HAVE_MPI)
+#if defined(HAVE_MPI)
   syr_coupling->syr_proc_rank = syr_proc_rank;
 #endif
 

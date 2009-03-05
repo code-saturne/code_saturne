@@ -25,6 +25,10 @@
  *
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
