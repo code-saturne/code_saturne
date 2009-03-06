@@ -1,3 +1,15 @@
+* 06/03/2009 - David Monfort <david.monfort@edf.fr>
+  Rename cs_lagrang in cs_lagr.
+  modified files:
+    po/POTFILES.in
+    src/lagr/Makefile.am
+  removed routines:
+    include/lagr/cs_lagrang.h
+    src/lagr/cs_lagrang.c
+  added routines:
+    include/lagr/cs_lagr.h
+    src/lagr/cs_lagr.c
+
 * 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug when running in benchmark mode.
   modified routine:

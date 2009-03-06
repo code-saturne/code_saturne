@@ -22,7 +22,6 @@ src/base/cs_mesh_connect.c
 src/base/cs_mesh_halo.c
 src/base/cs_mesh_quality.c
 src/base/cs_mesh_quantities.c
-src/base/cs_mesh_select.c
 src/base/cs_mesh_solcom.c
 src/base/cs_mesh_warping.c
 src/base/cs_multigrid.c
@@ -49,5 +48,5 @@ src/base/tremai.c
 src/ctwr/cs_ctwr_air_props.c
 src/ctwr/cs_ctwr.c
 src/ctwr/cs_ctwr_halo.c
-src/lagr/cs_lagrang.c
+src/lagr/cs_lagr.c
 src/lagr/cs_lagr_perio.c

@@ -43,7 +43,7 @@ AM_LDFLAGS = @LDFLAGS_DBG@ @LDFLAGS_OPT@
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/lagr/cs_lagrang.h \
+$(top_srcdir)/include/lagr/cs_lagr.h \
 $(top_srcdir)/include/lagr/cs_lagr_perio.h \
 $(top_srcdir)/include/lagr/lagdim.h \
 $(top_srcdir)/include/lagr/lagpar.h \
@@ -53,7 +53,7 @@ $(top_srcdir)/include/lagr/lagran.h
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
-cs_lagrang.c \
+cs_lagr.c \
 cs_lagr_perio.c \
 diverv.f90 \
 enslag.f90 \

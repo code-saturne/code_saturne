@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_LAGRANG_H__
-#define __CS_LAGRANG_H__
+#ifndef __CS_LAGR_H__
+#define __CS_LAGR_H__
 
 /*============================================================================
  * Utilitarian functions for the diphasic lagrangian module
@@ -127,4 +127,4 @@ CS_PROCF (coturn,COTURN)(cs_real_t   *pvalmax,
 
 END_C_DECLS
 
-#endif /* __CS_LAGRANG_H__ */
+#endif /* __CS_LAGR_H__ */
