@@ -216,13 +216,6 @@ typedef enum {                          /* Boolean */
 
 #define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int */
 #define CS_MPI_REAL      MPI_DOUBLE      /* If cs_real_t is a double */
-#define CS_MPI_REAL_INT  MPI_DOUBLE_INT  /* Redefine if necessary */
-
-typedef struct
-{
-  cs_real_t val;
-  cs_int_t  rank;
-} cs_mpi_real_int_t;
 
 #endif /* defined(HAVE_MPI) */
 

@@ -114,6 +114,12 @@ typedef struct
   int  rank;
 } _cs_base_mpi_long_int_t;
 
+typedef struct
+{
+  double val;
+  int    rank;
+} _cs_base_mpi_double_int_t;
+
 #endif
 
 /* Type to backup signal handlers */
@@ -1097,18 +1103,18 @@ cs_base_mem_init_work(size_t       iasize,
 void
 cs_base_mem_fin(void)
 {
-  int        ind_bil, itot;
-  cs_real_t  valreal[3];
+  int    ind_bil, itot;
+  double valreal[3];
 
 #if defined(HAVE_MPI)
-  int                imax, imin;
-  cs_mpi_real_int_t  val_in[3], val_min[3], val_max[3];
-  cs_real_t          val_somme[3];
-  cs_int_t           ind_min[3];
+  int  imax, imin;
+  double val_somme[3];
+  int  ind_min[3];
+  _cs_base_mpi_double_int_t  val_in[3], val_min[3], val_max[3];
 #endif
 
-  cs_int_t   ind_val[3] = {1, 1, 1};
-  char       unite[]    = {'k', 'm', 'g', 't', 'p'};
+  int   ind_val[3] = {1, 1, 1};
+  char  unite[]    = {'k', 'm', 'g', 't', 'p'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
                               N_("Memory reported by C library:            "),
@@ -1118,9 +1124,9 @@ cs_base_mem_fin(void)
 
   bft_printf(_("\nMemory use summary:\n\n"));
 
-  valreal[0] = (cs_real_t) bft_mem_usage_max_pr_size();
-  valreal[1] = (cs_real_t) bft_mem_usage_max_alloc_size();
-  valreal[2] = (cs_real_t) bft_mem_size_max();
+  valreal[0] = (double)bft_mem_usage_max_pr_size();
+  valreal[1] = (double)bft_mem_usage_max_alloc_size();
+  valreal[2] = (double)bft_mem_size_max();
 
   /* Ignore inconsistent measurements */
 
@@ -1134,17 +1140,17 @@ cs_base_mem_fin(void)
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    MPI_Reduce(ind_val, ind_min, 3, CS_MPI_INT, MPI_MIN,
+    MPI_Reduce(ind_val, ind_min, 3, MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(valreal, val_somme, 3, CS_MPI_REAL, MPI_SUM,
+    MPI_Reduce(valreal, val_somme, 3, MPI_DOUBLE, MPI_SUM,
                0, cs_glob_mpi_comm);
     for (ind_bil = 0; ind_bil < 3; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
     }
-    MPI_Reduce(&val_in, &val_min, 3, CS_MPI_REAL_INT, MPI_MINLOC,
+    MPI_Reduce(&val_in, &val_min, 3, MPI_DOUBLE_INT, MPI_MINLOC,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(&val_in, &val_max, 3, CS_MPI_REAL_INT, MPI_MAXLOC,
+    MPI_Reduce(&val_in, &val_max, 3, MPI_DOUBLE_INT, MPI_MAXLOC,
                0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0) {
       for (ind_bil = 0; ind_bil < 3; ind_bil++) {

@@ -1,4 +1,12 @@
 * 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move from a global location to a local some specific
+  MPI types.
+  modified routines:
+    include/base/cs_base.h
+    src/base/cs_base.c
+    src/base/cs_parall.c
+
+* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Rename cs_ecs_messages in cs_preprocessor_data.
   modified files:
     po/POTFILES.in

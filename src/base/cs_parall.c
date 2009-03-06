@@ -70,8 +70,14 @@ BEGIN_C_DECLS
  * Local structure and type definitions
  *============================================================================*/
 
-#define CS_PARALL_DEBUG_COUNT  0
+#define CS_PARALL_DEBUG_COUNT   0
 #define CS_PARALL_ARRAY_SIZE  500
+
+typedef struct
+{
+  double  val;
+  int     rank;
+} _mpi_double_int_t;
 
 
 /*============================================================================
@@ -417,14 +423,14 @@ CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
 {
 #if defined(HAVE_MPI)
 
-  cs_mpi_real_int_t  val_in, val_max;
+  _mpi_double_int_t  val_in, val_max;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
   val_in.rank = cs_glob_rank_id;
 
-  MPI_Allreduce(&val_in, &val_max, 1, CS_MPI_REAL_INT, MPI_MAXLOC,
+  MPI_Allreduce(&val_in, &val_max, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
                 cs_glob_mpi_comm);
 
   *var = val_max.val;
@@ -465,14 +471,14 @@ CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
 {
 #if defined(HAVE_MPI)
 
-  cs_mpi_real_int_t  val_in, val_min;
+  _mpi_double_int_t  val_in, val_min;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *var;
   val_in.rank = cs_glob_rank_id;
 
-  MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
+  MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
                 cs_glob_mpi_comm);
 
   *var = val_min.val;
@@ -989,14 +995,14 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
 {
 #if defined(HAVE_MPI)
 
-  cs_mpi_real_int_t  val_in, val_min;
+  _mpi_double_int_t  val_in, val_min;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
   val_in.val  = *dis2mn;
   val_in.rank = cs_glob_rank_id;
 
-  MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
+  MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
                 cs_glob_mpi_comm);
 
   *ndrang = cs_glob_rank_id;
