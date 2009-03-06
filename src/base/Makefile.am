@@ -61,7 +61,6 @@ $(top_srcdir)/include/base/cs_benchmark.h \
 $(top_srcdir)/include/base/cs_blas.h \
 $(top_srcdir)/include/base/cs_calcium.h \
 $(top_srcdir)/include/base/cs_coupling.h \
-$(top_srcdir)/include/base/cs_ecs_messages.h \
 $(top_srcdir)/include/base/cs_ext_neighborhood.h \
 $(top_srcdir)/include/base/cs_gradient.h \
 $(top_srcdir)/include/base/cs_grid.h \
@@ -85,6 +84,7 @@ $(top_srcdir)/include/base/cs_opts.h \
 $(top_srcdir)/include/base/cs_parall.h \
 $(top_srcdir)/include/base/cs_perio.h \
 $(top_srcdir)/include/base/cs_post.h \
+$(top_srcdir)/include/base/cs_preprocessor_data.h \
 $(top_srcdir)/include/base/cs_prototypes.h \
 $(top_srcdir)/include/base/cs_proxy_comm.h \
 $(top_srcdir)/include/base/cs_renumber.h \
@@ -213,7 +213,6 @@ cs_base.c \
 cs_calcium.c \
 csclli.f90 \
 cs_coupling.c \
-cs_ecs_messages.c \
 cs_ext_neighborhood.c \
 csflsh.f90 \
 cs_gradient.c \
@@ -241,6 +240,7 @@ cs_parall.c \
 cs_perio.c \
 cs_post.c \
 cs_post_util.f90 \
+cs_preprocessor_data.c \
 cs_proxy_comm.c \
 cs_renumber.c \
 cs_restart.c \

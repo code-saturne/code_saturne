@@ -69,7 +69,6 @@
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
-#include "cs_ecs_messages.h"
 #include "cs_gui.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
@@ -81,6 +80,7 @@
 #include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_post.h"
+#include "cs_preprocessor_data.h"
 #include "cs_prototypes.h"
 #include "cs_proxy_comm.h"
 #include "cs_renumber.h"
@@ -224,8 +224,8 @@ cs_run(void)
 
     /* Read Preprocessor output */
 
-    cs_ecs_messages_read_data(cs_glob_mesh,
-                              cs_glob_mesh_builder);
+    cs_preprocessor_data_read_mesh(cs_glob_mesh,
+                                   cs_glob_mesh_builder);
 
   }
 

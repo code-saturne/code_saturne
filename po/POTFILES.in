@@ -5,7 +5,6 @@ src/base/cs_benchmark.c
 src/base/cs_blas.c
 src/base/cs_calcium.c
 src/base/cs_coupling.c
-src/base/cs_ecs_messages.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_gradient.c
 src/base/cs_grid.c
@@ -31,6 +30,7 @@ src/base/cs_opts.c
 src/base/cs_parall.c
 src/base/cs_perio.c
 src/base/cs_post.c
+src/base/cs_preprocessor_data.c
 src/base/cs_proxy_comm.c
 src/base/cs_renumber.c
 src/base/cs_restart.c

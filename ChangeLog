@@ -1,4 +1,17 @@
 * 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Rename cs_ecs_messages in cs_preprocessor_data.
+  modified files:
+    po/POTFILES.in
+    src/base/cs_main.c
+    src/base/Makefile.am
+  removed routines:
+    include/base/cs_ecs_messages.h
+    src/base/cs_ecs_messages.c
+  added routines:
+    include/base/cs_preprocessor_data.h
+    src/base/cs_preprocessor_data.c
+
+* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unnecessary specific exit handling.
   modified routines:
     include/base/cs_base.h

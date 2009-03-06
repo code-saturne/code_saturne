@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_ECS_MESSAGES_H__
-#define __CS_ECS_MESSAGES_H__
+#ifndef __CS_PRE_PROCESSOR_DATA_H__
+#define __CS_PRE_PROCESSOR_DATA_H__
 
 /*============================================================================
  * Exchange of data between Code_Saturne Kernel and Preprocessor
@@ -81,7 +81,7 @@ void CS_PROCF(ledevi, LEDEVI)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Read data from the pre-processor and finalize pre-processor input.
+ * Read pre-processor mesh data and finalize input.
  *
  * parameters:
  *   mesh         <-- pointer to mesh structure
@@ -91,12 +91,12 @@ void CS_PROCF(ledevi, LEDEVI)
  *----------------------------------------------------------------------------*/
 
 void
-cs_ecs_messages_read_data(cs_mesh_t          *mesh,
-                          cs_mesh_builder_t  *mesh_builder);
+cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
+                               cs_mesh_builder_t  *mesh_builder);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_ECS_MESSAGES_H__ */
+#endif /* __CS_PRE_PROCESSOR_DATA_H__ */
 

@@ -29,6 +29,7 @@
  * Manage the exchange of data between Code_Saturne and the pre-processor
  *============================================================================*/
 
+
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
 #endif
@@ -80,7 +81,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ecs_messages.h"
+#include "cs_preprocessor_data.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -1980,7 +1981,7 @@ void CS_PROCF(ledevi, LEDEVI)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Read data from the pre-processor and finalize pre-processor input.
+ * Read pre-processor mesh data and finalize input.
  *
  * mesh         <-- pointer to mesh structure
  * mesh_builder <-- pointer to mesh builder structure
@@ -1989,8 +1990,8 @@ void CS_PROCF(ledevi, LEDEVI)
  *----------------------------------------------------------------------------*/
 
 void
-cs_ecs_messages_read_data(cs_mesh_t          *mesh,
-                          cs_mesh_builder_t  *mesh_builder)
+cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
+                               cs_mesh_builder_t  *mesh_builder)
 {
   cs_int_t  perio_id, perio_type;
   cs_io_sec_header_t  header;
