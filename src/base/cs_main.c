@@ -196,7 +196,7 @@ cs_run(void)
 
   /* Call main calculation initialization function or help */
 
-  _verif = (opts.verif == true) ? 1 : 0;
+  _verif = (opts.verif == true || opts.benchmark > 0) ? 1 : 0;
 
   CS_PROCF(initi1, INITI1)(&_verif);
 
