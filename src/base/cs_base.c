@@ -120,13 +120,6 @@ typedef struct
 
 typedef void (*_cs_base_sighandler_t) (int);
 
-/*----------------------------------------------------------------------------
- * Private funtion prototypes necessary for global variables.
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_base_exit(int status);
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -164,10 +157,6 @@ static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
-
-/* Global variables associated with function pointers */
-
-static cs_exit_t  *_cs_glob_exit = (_cs_base_exit);
 
 /* Global variables for handling of Fortran work arrays */
 
@@ -408,7 +397,7 @@ _cs_base_gestion_erreur(const char  *nom_fic,
 
   bft_backtrace_print(3);
 
-  _cs_glob_exit(EXIT_FAILURE);
+  _cs_base_exit(EXIT_FAILURE);
 }
 
 /*----------------------------------------------------------------------------
@@ -522,7 +511,7 @@ _cs_base_sig_fatal(int  signum)
 
   bft_backtrace_print(3);
 
-  _cs_glob_exit(EXIT_FAILURE);
+  _cs_base_exit(EXIT_FAILURE);
 }
 
 #if defined(HAVE_MPI)
@@ -591,7 +580,7 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 
   bft_backtrace_print(3);
 
-  _cs_glob_exit(EXIT_FAILURE);
+  _cs_base_exit(EXIT_FAILURE);
 }
 
 #endif
@@ -985,7 +974,7 @@ cs_exit(int  status)
 
 #endif /* HAVE_MPI */
 
-  _cs_glob_exit(status);
+  _cs_base_exit(status);
 }
 
 /*----------------------------------------------------------------------------
@@ -1560,32 +1549,6 @@ cs_base_string_f_to_c_free(char  **c_str)
 
   if (ind == CS_BASE_N_STRINGS && *c_str != NULL)
     BFT_FREE(*c_str);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer to program exit function.
- *
- * returns:
- *   pointer to current exit function
- *----------------------------------------------------------------------------*/
-
-cs_exit_t *
-cs_base_exit_get(void)
-{
-  return _cs_glob_exit;
-}
-
-/*----------------------------------------------------------------------------
- * Modify program exit behavior setting a specific exit function.
- *
- * parameters:
- *   exit_func <-- pointer to exit function which should be used
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_exit_set(cs_exit_t *exit_func)
-{
-  _cs_glob_exit = exit_func;
 }
 
 /*----------------------------------------------------------------------------*/

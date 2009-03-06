@@ -216,7 +216,6 @@ static const char *cs_calcium_timedep_name[] = {"T", "I", "S"};
 static void  *_cs_calcium_yacslib = NULL;
 
 static cs_calcium_yacsinit_t  *_cs_calcium_yacsinit = NULL;
-static cs_exit_t              *_cs_calcium_exit_save = NULL;
 
 /* Calcium function pointers */
 
@@ -645,30 +644,6 @@ _proxy_comm_write_any(const char  *func_name,
   retval = cs_proxy_comm_read_response(0, 0, 0, NULL, NULL, NULL);
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Exit function for use when running with YACS.
- *
- * In case of an exitwith status 0, this function simply goes into sleep
- * cycles until it is killed. If an error occured, the normal exit
- * routine is applied.
- *----------------------------------------------------------------------------*/
-
-static void
-_calcium_exit(int status)
-{
-  if (status != 0) {
-    cs_calcium_unload_yacs();
-    cs_base_exit_set(_cs_calcium_exit_save);
-    cs_exit(status);
-  }
-#if defined(_POSIX_SOURCE)
-  else {
-    while (1)
-      sleep(60);
-  }
-#endif
 }
 
 #if defined(HAVE_DLOPEN)
@@ -1290,16 +1265,8 @@ cs_calcium_unload_yacs(void)
 void
 cs_calcium_start_yacs(void)
 {
-  if (_cs_calcium_yacslib != NULL) {
-
-    if (_cs_calcium_exit_save == NULL) {
-      _cs_calcium_exit_save = cs_base_exit_get();
-      cs_base_exit_set(_calcium_exit);
-    }
-
+  if (_cs_calcium_yacslib != NULL)
     _cs_calcium_yacsinit();
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/

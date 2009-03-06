@@ -1,3 +1,10 @@
+* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unnecessary specific exit handling.
+  modified routines:
+    include/base/cs_base.h
+    src/base/cs_base.c
+    src/base/cs_calcium.c
+
 * 05/03/2009 - David Monfort <david.monfort@edf.fr>
   First integration of the autoconfiscation of the build
   system.
