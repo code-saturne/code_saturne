@@ -382,7 +382,9 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
-                 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile])
+                 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 bin/check_mesh bin/cs_info bin/cs_create
+                 bin/runcase bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 
@@ -394,7 +396,7 @@ echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
-echo " IP socket support (for SYRTHES 3 or CFD_Proxy)): "$have_socket""
+echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""
 echo
 echo "The package has been configured. Type:"

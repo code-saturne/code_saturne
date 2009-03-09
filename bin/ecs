@@ -1,4 +1,0 @@
-#!/bin/sh
-
-$CSPP_HOME/arch/$NOM_ARCH/bin/ecs $*
-

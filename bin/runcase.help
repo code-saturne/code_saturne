@@ -226,16 +226,7 @@ The EXEC_PREPROCESS, EXEC_PARTITION, and EXEC_KERNEL variables allow running
 
                -------------------------------
 
-Options OPTIMIZATION and CS_LIB_ADD are more advanced, mainly
-  for developers.
-
-  OPTIMIZATION allows selecting the optimization level
-    (LO, DBG, EF, PROF, ...). By default, standard Code_Saturne choices
-    are used. This parameter may be used to used debug or profiling
-    libraries, or libraries built without optimization.
-    For production runs, this should be left empty.
-    A list of possible values for OPTIMIZATION and a short explanation
-    is given by makehelp (see OPT=...).
+Option CS_LIB_ADD is more advanced, mainly for developers.
 
   CS_LIB_ADD allows specifying external libraries to link. In this
     case, the whole option to pass to the linker must be given.

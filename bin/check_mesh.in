@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -151,9 +152,19 @@
     exit
   fi
 
+# Kernel installation parameters
+  prefix=@prefix@
+  exec_prefix=@exec_prefix@
+  bindir=@bindir@
+
+# Preprocessor installation parameters
+  ecs_prefix=@ecs_prefix@
+  ecs_exec_prefix=${ecs_prefix}
+  ecs_bindir=${ecs_exec_prefix}/bin
+
 # Run Preprocessor
   ERROR=0
-  $CS_HOME/bin/ecs $* -ens -case check_mesh || ERROR=1
+  ${ecs_bindir}/ecs $* -ens -case check_mesh || ERROR=1
 
   if [ $ERROR -eq 0 ] ; then
     if [ -d check_mesh.ensight ] ; then
@@ -166,7 +177,7 @@
     fi
 
   # Run Kernel
-    $CS_HOME/bin/cs.exe -q --log 0 || ERROR=1
+    ${bindir}/cs_solver -q --log 0 || ERROR=1
 
     if [ $ERROR -eq 0 ] ; then
       if [ -d chr.ensight ] ; then

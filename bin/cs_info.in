@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -94,17 +95,6 @@
  }
 
 
- if [ -z "$CS_HOME" ]; then
-   echo
-   echo " ${BO}WARNING${NO} : variable CS_HOME is not properly set"
-   echo "             Depending on the environment, it is possible to specify"
-   echo "             it in the .monprofile file."
-   echo "             Remember to logout and login again afterwards."
-   echo
-   tput init
-   local_exit
- fi
-
 # Test if xpdf or acroread exists
 isthere=`which xpdf 2>/dev/null |wc -w`
 if [ $isthere -eq 1 ] ; then
@@ -113,33 +103,33 @@ else
   acroread=acroread
 fi
 
-docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
+# Kernel installation parameters
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+
+# Preprocessor installation parameters
+ecs_prefix=@ecs_prefix@
+ecs_exec_prefix=${ecs_prefix}
+ecs_bindir=${ecs_exec_prefix}/bin
+ecs_datarootdir=${ecs_prefix}/share
+ecs_datadir=${ecs_datarootdir}
+
+# Interface installation parameters
+ics_prefix=@ics_prefix@
+
+docPATH=${datadir}/doc
 
  topic=$1
  if   [ "$topic" = "version" ] ; then
-   whichINFOCS=`which cs_info`
-   varPATH=$whichINFOCS
-   varPATH=`dirname  $varPATH`
-   varPATH=`dirname  $varPATH`
-   version=$varPATH
-   if [ "$CS_HOME" != "$version" ] ; then
-     echo
-     echo " ${BO}WARNING${NO}               : variable CS_HOME and the UNIX PATH"
-     echo "                             do not seem consistent :"
-     echo "        ${BO}CS_HOME variable     ${NO} : $CS_HOME"
-     echo "        ${BO}Path of cs_info      ${NO} : $whichINFOCS"
-     echo
-     echo " ${BO}Restart the session of necessary${NO}"
-     echo
-     tput init
-   else
-     echo
-     echo " ${BO}Code_Saturne version${NO} : $version"
-     echo " ${BO}Preprocessor version${NO} : $CSPP_HOME"
-     echo " ${BO}GUI version${NO}          : $CSGUI_HOME"
-     echo
-     tput init
-  fi
+   echo
+   echo " ${BO}Code_Saturne version${NO} : $prefix"
+   echo " ${BO}Preprocessor version${NO} : $ecs_prefix"
+   echo " ${BO}GUI version${NO}          : $ics_prefix"
+   echo
+   tput init
  elif [ "$topic" = "user" ] ; then
    [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
    saturnepdf=$docPATH/user.pdf
@@ -164,7 +154,7 @@ docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
    echo
    $acroread $noyaupdf
  elif [ "$topic" = "cs" ] ; then
-   cs=$CS_HOME/bin/cs.exe
+   cs=${bindir}/cs_solver
    echo
    echo " ${BO}Kernel module usage${NO}"
    echo
@@ -175,7 +165,7 @@ docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
    echo
    tput init
  elif [ "$topic" = "ecs" ] ; then
-   ecs=$CSPP_HOME/arch/$NOM_ARCH/bin/ecs
+   ecs=${ecs_bindir}/ecs
    echo
    echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
    echo
@@ -186,7 +176,7 @@ docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
    echo
    tput init
  elif [ "$topic" = "ecs_user" ] ; then
-   ecsdocpdf=$CSPP_HOME/doc/mu_ecs.pdf
+   ecsdocpdf=${ecs_datadir}/doc/mu_ecs.pdf
    echo
    echo " ${BO}Preprocessor module user manual${NO} : $ecsdocpdf"
    echo
@@ -194,7 +184,7 @@ docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
    $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
    tput init
  elif [ "$topic" = "check_mesh" ] ; then
-   check_mesh=$CS_HOME/bin/check_mesh
+   check_mesh=${bindir}/check_mesh
    echo
    echo " ${BO}mesh verification and quality with ${NO} : $check_mesh"
    echo
@@ -202,7 +192,7 @@ docPATH=$CS_HOME/arch/$NOM_ARCH/share/doc
    $check_mesh -h || sortie "The $check_mesh -h command failed"
    tput init ; tput rmso
  elif [ "$topic" = "gracehst" ] ; then
-   gracehst=$CS_HOME/bin/gracehst
+   gracehst=${bindir}/gracehst
    echo
    echo " ${BO}xmgrace launch script${NO} : $gracehst"
    echo

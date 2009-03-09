@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -180,7 +181,6 @@ USER_OUTPUT_FILES=""
 CS_TMP_PREFIX=
 #CS_TMP_PREFIX=/local00/users/`whoami`
 #
-OPTIMIZATION=
 CS_LIB_ADD=
 VALGRIND=
 #
@@ -243,21 +243,21 @@ EXEC_KERNEL=yes
 #
 ########################################################################
 #
-#  Kernel library
-CS_HOME=CSHOMENAME
-export CS_HOME
+# Kernel installation parameters
 #
-# Installation parameters
+prefix=@prefix@
 #
-. $CS_HOME/bin/cs_profile
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+datarootdir=@datarootdir@
+datadir=@datadir@
 #
-# Library compatibility check
-if [ ! -f ${CS_HOME}/bin/macros_${NOM_ARCH}.mk ]
-then
-  echo "Architecture ${NOM_ARCH} not supported by this Code_Saturne version."
-  echo ${CS_HOME}
-  exit 1
-fi
+# Preprocessor installation parameters
+#
+ecs_prefix=@ecs_prefix@
+#
+ecs_exec_prefix=${ecs_prefix}
+ecs_bindir=${ecs_exec_prefix}/bin
 #
 ########################################################################
 #  Mesh Adaptation
@@ -309,7 +309,7 @@ THISSCRIPT=$0
 USER=`whoami`
 DATE=`date '+%m%d%H%M'`
 SUFFIX=$DATE
-EXE=cs14.exe
+EXE=cs_solver
 EXE_SYR=syrthes
 #
 # Copy runcase before changing to the working directory
@@ -362,16 +362,15 @@ cd $RUN
 #
 # Use makefile query to obtain the path to MPI binaries if those are
 # not on the default path. This is a peculiar use of make, but allows
-# us to avoid defining the MPI configuration in multiple files
-# (everything is defined in the corresponding macros_*.mk file).
+# us to avoid defining the MPI configuration in multiple files.
 
-CS_MPI_PATH=`make -f ${CS_HOME}/bin/Makefile echo_mpi_bin`
+CS_MPI_PATH=@MPI_BIN@
 
 # NUMBER_OF_PROCESSORS is determined here if not already set;
 # MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
 # defined by the sourced script, and PATH may be updated.
 #
-. $CS_HOME/bin/runcase_mpi_env
+. ${bindir}/bin/runcase_mpi_env
 #
 # Check for the number of requested processors
 nproc_kernel="${NUMBER_OF_PROCESSORS}"
@@ -446,16 +445,9 @@ echo '    ' $RUN
 #
 # Note: we also check the for the presence of certain user subroutines here.
 #
-if [ "$CS_HOME" = "" ]; then
-   echo
-   echo "WARNING: CS_HOME is not set."
-   echo
-   exit 1
-else
-  echo
-  echo ' Kernel version:          ' $CS_HOME
-  echo ' Preprocessor version:    ' $CSPP_HOME
-fi
+echo
+echo ' Kernel version:          ' $prefix
+echo ' Preprocessor version:    ' $ecs_prefix
 
 if [ -f compil.log ] ; then
   rm -f compil.log
@@ -469,9 +461,6 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   echo  "  ***************************************************************"
 
   cur_dir=`pwd`
-
-  # Compiler version
-  ${CS_HOME}/bin/compiler_version -cshome ${CS_HOME} -nomarch ${NOM_ARCH} -output ${cur_dir}/compil.log
 
   source_cas=$SRC
 
@@ -503,18 +492,18 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   # Detect presence and test for compatibility of modules.
   if [ ! -z "$PARAM" ] ; then
-    ${CS_HOME}/bin/check_consistency -param ../$PARAM -nproc $nproc_kernel
+    ${bindir}/bin/check_consistency -param ../$PARAM -nproc $nproc_kernel
   else
-    ${CS_HOME}/bin/check_consistency -nproc $nproc_kernel
+    ${bindir}/bin/check_consistency -nproc $nproc_kernel
   fi
   if [ $? = 1 ] ; then
     exit 1
   fi
 
 # Compilation
-  ln -s ${CS_HOME}/bin/Makefile .
+  ln -s ${datadir}/Makefile .
 
-  make saturne OPT="${OPTIMIZATION}" OPTLIBS="${CS_LIB_ADD}"  2>>$cur_dir/compil.log 1>&2
+  make saturne OPTLIBS="${CS_LIB_ADD}"  2>>$cur_dir/compil.log 1>&2
   if [ $? -ne 0 ]
   then
     cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
@@ -532,7 +521,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   if [ $SYRTHES_COUPLING = yes ] ; then
 
-    ${CS_HOME}/bin/runcase_syrthes -compile -src-syr=${SRC_SYR} \
+    ${bindir}/runcase_syrthes -compile -src-syr=${SRC_SYR} \
       -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log
 
   fi
@@ -663,13 +652,13 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   for f in uscpcl.f90 usd3pc.f90 usebuc.f90 uslwcc.f90 usfucl.f90
   do
     if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
-      cp $CS_HOME/data/thch/JANAF JANAF
+      cp ${datadir}/data/thch/JANAF JANAF
     fi
   done
   #
   if [ $SYRTHES_COUPLING = yes ] ; then
     #
-    ${CS_HOME}/bin/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
+    ${bindir}/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
     #
   fi
   #
@@ -695,17 +684,15 @@ fi
 # Summary: start
 #
 CURDATE=`unset LANG ; date`
-CSPP_PATH=${CSPP_HOME}/arch/${NOM_ARCH}/bin
 #
 echo '========================================================'>>$summary
 echo '   Start time       : ' $CURDATE                         >>$summary
 echo '  ----------------------------------------------------'  >>$summary
-echo '    CS_HOME         : ' $CS_HOME                         >>$summary
-echo '    CSPP_HOME       : ' $CSPP_HOME                       >>$summary
-echo '    SYRCS_HOME      : ' $SYRCS_HOME                      >>$summary
+echo '    Kernel          : ' $prefix                          >>$summary
+echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
+echo '    Interface       : ' $ics_prefix                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
-echo '    CS_ROOT         : ' $CS_ROOT                         >>$summary
-echo '    CSGUI_HOME      : ' $CSGUI_HOME                      >>$summary
+echo '    SYRCS_HOME      : ' $SYRCS_HOME                      >>$summary
 echo '    CSHOMARD_HOME   : ' $CSHOMARD_HOME                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary
@@ -736,18 +723,13 @@ echo '  ----------------------------------------------------'  >>$summary
 echo '    Exec. dir.      : ' $RUN                             >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 if [ "$EXEC_PREPROCESSOR" = "yes" ] ; then
-  echo '    Preprocessor    : ' ${CSPP_PATH}/ecs               >>$summary
+  echo '    Preprocessor    : ' ${ecs_bindir}/ecs              >>$summary
 fi
 if [ "$EXEC_PARTITION" = "yes" ] ; then
-  echo '    Partitioner     : ' ${CSPP_PATH}/cs_partition      >>$summary
+  echo '    Partitioner     : ' ${ecs_bindir}/cs_partition     >>$summary
 fi
 if [ "$EXEC_KERNEL" = "yes" ] ; then
   echo '    Executable      : ' $EXE                           >>$summary
-  if [ -z "$OPTIMIZATION" ] ; then
-    echo '      Optimization  : default (production)'          >>$summary
-  else
-    echo '      Optimization  : ' $OPTIMIZATION                >>$summary
-  fi
 fi
 echo '  ----------------------------------------------------'  >>$summary
 #
@@ -762,7 +744,7 @@ echo
 #
 if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
   #
-  ${CSPP_PATH}/ecs -mesh $MESH "-case" $CASE \
+  ${ecs_bindir}/ecs -mesh $MESH "-case" $CASE \
                    $COMMAND_REORIENT $COMMAND_JOIN $COMMAND_PERIO \
                    > listpre 2>&1
   if [ $? != 0 ] ; then
@@ -783,8 +765,8 @@ fi
 #
 # Partitioner start
 #
-if [ ! -f ${CSPP_PATH}/cs_partition ] ; then
-  echo "Warning: ${CSPP_PATH}/cs_partition not found."
+if [ ! -f ${ecs_bindir}/cs_partition ] ; then
+  echo "Warning: ${ecs_bindir}/cs_partition not found."
   echo
   echo "The partitioner may not have been installed"
   echo "  (this is the case if neither METIS nor."
@@ -799,7 +781,7 @@ fi
 if [ "${EXEC_PARTITION}" = "yes" ] ; then
   #
   if [ "${EXEC_KERNEL}" = "yes" ] ; then
-    ${CSPP_PATH}/cs_partition $nproc_kernel > listpart 2>&1
+    ${ecs_bindir}/cs_partition $nproc_kernel > listpart 2>&1
   else
     if [ -z "$PARTITION_LIST" ] ; then
       echo "Error running the partitioner."
@@ -809,7 +791,7 @@ if [ "${EXEC_PARTITION}" = "yes" ] ; then
       PARTITION_ERROR=true
       ERROR=true
     else
-      ${CSPP_PATH}/cs_partition $PARTITION_LIST > listpart 2>&1
+      ${ecs_bindir}/cs_partition $PARTITION_LIST > listpart 2>&1
     fi
   fi
   if [ $? != 0 -a $PARTITION_ERROR = false ] ; then
@@ -843,7 +825,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
-    echo "MPI_RANK=\`$CS_HOME/bin/mpi_rank.sh \$@\`" >> $localexec
+    echo "MPI_RANK=\`${bindir}/mpi_rank.sh \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
     echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
@@ -1086,7 +1068,7 @@ if [ $EXEC_KERNEL = yes ] ; then
   done
 
   if [ $SYRTHES_COUPLING = yes ] ; then
-    ${CS_HOME}/bin/runcase_syrthes -copy-results \
+    ${bindir}/runcase_syrthes -copy-results \
       -result-dir=${RESU}/RESU_SYR.${SUFFIX}
   fi
 

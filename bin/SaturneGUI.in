@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -35,7 +36,7 @@ else
   CS_PYTHON=python
 fi
 
-$CS_PYTHON NOMCSGUIHOME/ics --no-splash $*
+$CS_PYTHON @ics_prefix@/ics --no-splash $*
 
 exit
 

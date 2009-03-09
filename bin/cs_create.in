@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -136,42 +137,28 @@ do
   mkdir ${CASE}/RESU
   mkdir ${CASE}/SCRIPTS
 
-# Get CS_HOME
-  FICCSHOMEBKSLH=$CASE/SCRIPTS/.cshomebkslh
-  echo $CS_HOME | sed -e "s/\//\\\\\//g" > $FICCSHOMEBKSLH
-  CSHOMEBCKSLH=`cat $FICCSHOMEBKSLH`
-  rm $FICCSHOMEBKSLH
-
-# Get CSGUI_HOME
-  FICCSGUIHOMEBKSLH=$CASE/SCRIPTS/.csguihomebkslh
-  echo $CSGUI_HOME | sed -e "s/\//\\\\\//g" > $FICCSGUIHOMEBKSLH
-  CSGUIHOMEBCKSLH=`cat $FICCSGUIHOMEBKSLH`
-  rm $FICCSGUIHOMEBKSLH
-
 # Copy data (only that which is useful)
   thch=THCH
   mkdir ${CASE}/DATA/$thch
   for var in dp_C3P dp_C3PSJ dp_ELE dp_FCP dp_FUE ; do
-    cp -f $CS_HOME/data/thch/$var $CASE/DATA/$thch/.
+    cp -f ${datadir}/data/thch/$var $CASE/DATA/$thch/.
   done
 
   gui=SaturneGUI
   if [ "$GUI" = "gui" ] ; then
-    cp -f $SCRIPT_HOME/$gui ${CASE}/DATA/.
-    sed "s/NOMCSGUIHOME/$CSGUIHOMEBCKSLH/g"  $CASE/DATA/$gui  >case.tmp
-    mv -f case.tmp $CASE/DATA/$gui
+    cp -f ${datadir}/$gui ${CASE}/DATA/.
     chmod +x $CASE/DATA/$gui
   fi
 
 # Copy user source files
   reference=REFERENCE
-  cp -Rf $CS_HOME/arch/$NOM_ARCH/share/users $CASE/SRC/$reference
+  cp -Rf ${datadir}/users $CASE/SRC/$reference
 
 # On some batch sytems, the name is limited to 15 characters
   NAMEANDCASE=`echo ${study}${case}|cut -c1-15`
 
-  cp -f $SCRIPT_HOME/runcase         $CASE/SCRIPTS
-  cp -f $SCRIPT_HOME/runcase.help    $CASE/SCRIPTS
+  cp -f ${datadir}/runcase         $CASE/SCRIPTS
+  cp -f ${datadir}/runcase.help    $CASE/SCRIPTS
   FICREPBASECASBKSLH=$CASE/SCRIPTS/.repbasecasbkslh
   echo $REPBASECAS | sed -e "s/\//\\\\\//g" > $FICREPBASECASBKSLH
   REPBASECASBCKSLH=`cat $FICREPBASECASBKSLH`
@@ -180,9 +167,8 @@ do
       -e "s/STUDYNAME/$STUDY/g" \
       -e "s/CASENAME/$CASE/g" \
       -e "s/CASEDIRNAME/$REPBASECASBCKSLH/g" \
-      -e "s/CSHOMENAME/$CSHOMEBCKSLH/g" \
-      -e "s/study/${study}/g"  $CASE/SCRIPTS/runcase >case.tmp
-  mv case.tmp $CASE/SCRIPTS/runcase
+      -e "s/study/${study}/g"  $CASE/SCRIPTS/runcase >"case.tmp"
+  mv "case.tmp" $CASE/SCRIPTS/runcase
 
   for fich in $CASE/SRC/$reference/*/*.f90
   do
@@ -211,24 +197,18 @@ exit
 
 clear
 echo "================================================================="
-echo "             Code_Saturne study/case generation"
-echo "                        version 1.4                              "
+echo "             Code_Saturne study/case generation                  "
+echo "                        version 2.0                              "
 echo "================================================================="
 echo
 
-if [ -z "$CS_HOME" ]; then
-  echo
-  tput bold ;
-  echo " WARNING: CS_HOME is not set."
-  tput rmso ; tput sgr0
-  echo " Session terminated"; echo
-  exit
-fi
+# Kernel installation parameters
+prefix=@prefix@
+datarootdir=@datarootdir@
+datadir=@datadir@
 
 USER=`whoami`
-SCRIPT_HOME=$CS_HOME/bin
-FICHE_HOME=$CS_HOME/doc/FICHE
-DOC_UTILISATION=$CS_HOME/doc/USER/saturne.pdf
+DOC_UTILISATION=${datadir}/doc/USER/user.pdf
 
 NNOGUI=0
 for i in $*

@@ -1,4 +1,22 @@
 * 09/03/2009 - David Monfort <david.monfort@edf.fr>
+  Replace CS_HOME fixed behaviour with autoconf handling
+  in check_mesh, cs_create, cs_info, runcase and SaturneGUI.
+  Remove unused scripts.
+  modified scripts:
+    bin/check_mesh
+    bin/cs_create
+    bin/cs_info
+    bin/mpi_rank.sh
+    bin/runcase
+    bin/runcase.help
+    bin/SaturneGUI
+    configure.ac
+  removed scripts:
+    bin/compiler_version
+    bin/cs.exe
+    bin/ecs
+
+* 09/03/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Change BFT and FVM behaviour wrt the _FLAGS handling.
   modified scripts:
@@ -25,6 +43,7 @@
     config/cs_tools.m4
     configure.ac
     Makefile.am
+    sbin/backup
   modified routine:
     include/base/cs_base.h
     src/base/cs_base.c
