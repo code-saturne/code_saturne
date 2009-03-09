@@ -1,5 +1,16 @@
 * 09/03/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
+  Change BFT and FVM behaviour wrt the _FLAGS handling.
+  modified scripts:
+    config/cs_bft.m4
+    config/cs_fvm.m4
+    configure.ac
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/lagr/Makefile.am
+
+* 09/03/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
   Automatic detection of fvm_coupl library, along with
   sockets and dlopen support, and some system calls.
   Installation of user scripts in the proper directories.

@@ -159,4 +159,8 @@ unset saved_CPPFLAGS
 unset saved_LDFLAGS
 unset saved_LIBS
 
+AC_SUBST(BFT_CPPFLAGS)
+AC_SUBST(BFT_LDFLAGS)
+AC_SUBST(BFT_LIBS)
+
 ])dnl

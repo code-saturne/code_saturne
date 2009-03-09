@@ -60,18 +60,16 @@ FVM_LIBS="-lfvm"
 type "$fvm_config" > /dev/null 2>&1
 if test "$?" = "0" ; then
   FVM_CPPFLAGS="$FVM_CPPFLAGS `$fvm_config --cppflags`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags bft`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags cgns`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags hdf5`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags med`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags mpi`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs bft`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs cgns`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs hdf5`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs med`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs mpi`"
+  FVM_DEP_LDFLAGS="`$fvm_config --ldflags`"
+  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags cgns`"
+  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags hdf5`"
+  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags med`"
+  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags mpi`"
+  FVM_DEP_LIBS="`$fvm_config --libs`"
+  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs cgns`"
+  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs hdf5`"
+  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs med`"
+  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs mpi`"
 fi
 
 fvm_version_min=$1
@@ -116,8 +114,8 @@ saved_LDFLAGS=$LDFLAGS
 saved_LIBS=$LIBS
 
 CPPFLAGS="${CPPFLAGS} $FVM_CPPFLAGS"
-LDFLAGS="${LDFLAGS} $FVM_LDFLAGS"
-LIBS="${LIBS} $FVM_LIBS"
+LDFLAGS="${LDFLAGS} $FVM_LDFLAGS $FVM_DEP_LDFLAGS `$fvm_config --ldflags bft`"
+LIBS="${LIBS} $FVM_LIBS $FVM_DEP_LIBS `$fvm_config --libs bft`"
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
 ]],
@@ -149,12 +147,12 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
 
 # Now check if fvm_coupl library is available (using MPI)
 
-AC_MSG_CHECKING([for fvm_coupling discovery functions)])
+AC_MSG_CHECKING([for fvm_coupling discovery functions])
 
-LIBS="$saved_LIBS $FVM_LIBS -lfvm_coupl"
+LIBS="$saved_LIBS $FVM_LIBS -lfvm_coupl $FVM_DEP_LIBS `$fvm_config --libs bft`"
 
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_coupling.h>]],
-               [[fvm_coupling_mpi_world_n_apps(NULL); ]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[int fvm_coupling_mpi_world_n_apps(void *);]],
+               [[fvm_coupling_mpi_world_n_apps(0); ]])],
                 [fvm_have_coupl=yes],
                 [fvm_have_coupl=no])
 
@@ -162,6 +160,8 @@ AC_MSG_RESULT($fvm_have_coupl)
 if test "$fvm_have_coupl" = "yes"; then
   FVM_LIBS="$FVM_LIBS -lfvm_coupl"
 fi
+FVM_LDFLAGS="$FVM_LDFLAGS $FVM_DEP_LDFLAGS"
+FVM_LIBS="$FVM_LIBS $FVM_DEP_LIBS"
 
 # Unset temporary variables
 
@@ -186,5 +186,9 @@ LIBS=$saved_LIBS
 unset saved_CPPFLAGS
 unset saved_LDFLAGS
 unset saved_LIBS
+
+AC_SUBST(FVM_CPPFLAGS)
+AC_SUBST(FVM_LDFLAGS)
+AC_SUBST(FVM_LIBS)
 
 ])dnl

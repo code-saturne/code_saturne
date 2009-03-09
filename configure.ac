@@ -362,10 +362,6 @@ AM_GNU_GETTEXT([external])
 # Compiler options and system characteristics
 #------------------------------------------------------------------------------
 
-CPPFLAGS="${CPPFLAGS} $BFT_CPPFLAGS $FVM_CPPFLAGS"
-LDFLAGS="${LDFLAGS} $BFT_LDFLAGS $FVM_LDFLAGS"
-LIBS="${LIBS} $BFT_LIBS $FVM_LIBS"
-
 if test "$FCLIBS" != "x"; then
   LIBS="${LIBS} ${FCLIBS}"
 fi
