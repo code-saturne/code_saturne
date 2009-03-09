@@ -1,8 +1,24 @@
-dnl Copyright (C) 2009 EDF S.A., France
+dnl----------------------------------------------------------------------------
+dnl   This file is part of the Code_Saturne Kernel, element of the
+dnl   Code_Saturne CFD tool.
 dnl
-dnl This file is part of the Code_Saturne Preprocessor.  For license
-dnl information, see the COPYING file in the top level directory of the
-dnl Code_Saturne Preprocessor source distribution.
+dnl   Copyright (C) 2009 EDF S.A., France
+dnl
+dnl   The Code_Saturne Kernel is free software; you can redistribute it
+dnl   and/or modify it under the terms of the GNU General Public License
+dnl   as published by the Free Software Foundation; either version 2 of
+dnl   the License, or (at your option) any later version.
+dnl
+dnl   The Code_Saturne Kernel is distributed in the hope that it will be
+dnl   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+dnl   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl   GNU General Public License for more details.
+dnl
+dnl   You should have received a copy of the GNU General Public Licence
+dnl   along with the Code_Saturne Preprocessor; if not, write to the
+dnl   Free Software Foundation, Inc.,
+dnl   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_FVM(Minimal Release string, [Maximal Release string])
 #-----------------------------------------------------------------
@@ -39,7 +55,6 @@ elif test "x$with_fvm" != "x" ; then
 else
   FVM_LDFLAGS=""
 fi
-#FVM_LIBS="-lfvm -lfvm_coupl"
 FVM_LIBS="-lfvm"
 
 type "$fvm_config" > /dev/null 2>&1
@@ -131,6 +146,24 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
 ]])],
                [AC_MSG_RESULT([compatible fvm version found])],
                [AC_MSG_FAILURE([compatible fvm version not found])])
+
+# Now check if fvm_coupl library is available (using MPI)
+
+AC_MSG_CHECKING([for fvm_coupling discovery functions)])
+
+LIBS="$saved_LIBS $FVM_LIBS -lfvm_coupl"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_coupling.h>]],
+               [[fvm_coupling_mpi_world_n_apps(NULL); ]])],
+                [fvm_have_coupl=yes],
+                [fvm_have_coupl=no])
+
+AC_MSG_RESULT($fvm_have_coupl)
+if test "$fvm_have_coupl" = "yes"; then
+  FVM_LIBS="$FVM_LIBS -lfvm_coupl"
+fi
+
+# Unset temporary variables
 
 unset fvm_version_major_min
 unset fvm_version_minor_min

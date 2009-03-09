@@ -51,7 +51,7 @@ m4_define([cs_licence_c_comment],
 
 m4_define([cs_major_version], [2])
 m4_define([cs_minor_version], [0])
-m4_define([cs_release_version], [])
+m4_define([cs_release_version], [0])
 m4_define([cs_version_extra], [-beta1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
@@ -105,7 +105,6 @@ AC_ARG_ENABLE(debug,
   ],
   [ debug=false ]
 )
-AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
 
 # Optionally deactivate automatic determination of flags on known systems
 
@@ -119,6 +118,20 @@ AC_ARG_ENABLE(auto-flags,
     esac
   ],
   [ auto_flags=true ]
+)
+
+# Optionally activate French translation of Fortran logs (compile-time)
+
+AC_ARG_ENABLE(french,
+  [  --enable-french         enable French translation of Fortran logs],
+  [
+    case "${enableval}" in
+      yes) french=true ;;
+      no)  french=false ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-french]) ;;
+    esac
+  ],
+  [ french=false ]
 )
 
 # Default compiler options (may be modified
@@ -191,6 +204,22 @@ case "$host_os" in
     ;;
 esac
 
+# Preprocessor flags for debugging purposes
+
+if test "x$debug" = "xtrue"; then
+  CPPFLAGS="${CPPFLAGS} -DDEBUG"
+else
+  CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+fi
+  
+# Fortran flags for French translation
+
+if test "x$french" = "xtrue"; then
+  FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
+else
+  FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
+fi
+
 # We may only turn on processing for libtool now that the basic compiler
 # and linker flags are set (to avoid issues with linkers with different
 # modes such as 32 and 64 bit which may be modified by compiler or
@@ -249,10 +278,70 @@ AC_CHECK_SIZEOF([double], [cs])
 #------------------------------------------------------------------------------
 
 AC_CHECK_FUNCS([snprintf])
+AC_CHECK_FUNCS([getcwd sleep])
+AC_CHECK_FUNCS([getpwuid geteuid])
+AC_CHECK_FUNCS([uname])
 
 #------------------------------------------------------------------------------
 # Checks for system services.
 #------------------------------------------------------------------------------
+
+# Optional socket support
+#------------------------
+
+have_socket=no
+
+AC_ARG_ENABLE(sockets,
+  [  --disable-sockets       disable communications through IP sockets],
+  [
+    case "${enableval}" in
+      yes) have_socket=yes ;;
+      no)  have_socket=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sockets]) ;;
+    esac
+  ],
+  [ have_socket=yes ]
+)
+if test "x$have_socket" = "xyes" ; then
+  AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
+fi
+
+# Optional shared library support
+#--------------------------------
+
+have_dlloader=no
+
+AC_ARG_ENABLE(dlloader,
+  [  --disable-dlloader      disable dynamic shared library loading],
+  [
+    case "${enableval}" in
+      yes) have_dlloader=yes ;;
+      no)  have_dlloader=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
+    esac
+  ],
+  [ have_dlloader=yes ]
+)
+
+if test "x$have_dlloader" = "xyes" ; then
+
+  saved_LIBS="$LIBS"
+  LIBS="$LIBS -ldl"
+
+  AC_MSG_CHECKING([for dlopen])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
+                 [[ dlopen("none.so", RTLD_LAZY);]])],
+                 [have_dlloader=yes],
+                 [have_dlloader=no])
+  AC_MSG_RESULT($have_dlloader)
+  if test "x$have_dlloader" = "xyes" ; then
+    AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
+  else
+    LIBS="saved_LIBS"
+    have_dlloader=no
+  fi
+
+fi
 
 #------------------------------------------------------------------------------
 # Internationalization
@@ -308,7 +397,9 @@ echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$have_blas""
-echo " LIBXML2 (XML Reader) support: "$have_libxml2""
+echo " Libxml2 (XML Reader) support: "$have_libxml2""
+echo " IP socket support (for SYRTHES 3 or CFD_Proxy)): "$have_socket""
+echo " Dynamic loader support (for YACS): "$have_dlloader""
 echo
 echo "The package has been configured. Type:"
 echo " make"

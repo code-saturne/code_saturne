@@ -84,8 +84,8 @@
 
 /* Application type name */
 
-#define CS_APP_NAME    "Code_Saturne"  /* PACKAGE_NAME with autoconf */
-#define CS_APP_VERSION "1.4.0"         /* PACKAGE_VERSION with autoconf */
+#define CS_APP_NAME     "Code_Saturne"
+#define CS_APP_VERSION  PACKAGE_VERSION  /* PACKAGE_VERSION from autoconf */
 
 /* System type name */
 

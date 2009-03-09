@@ -1,8 +1,24 @@
-dnl Copyright (C) 2009 EDF S.A., France
+dnl----------------------------------------------------------------------------
+dnl   This file is part of the Code_Saturne Kernel, element of the
+dnl   Code_Saturne CFD tool.
 dnl
-dnl This file is part of the Code_Saturne Preprocessor.  For license
-dnl information, see the COPYING file in the top level directory of the
-dnl Code_Saturne Preprocessor source distribution.
+dnl   Copyright (C) 2009 EDF S.A., France
+dnl
+dnl   The Code_Saturne Kernel is free software; you can redistribute it
+dnl   and/or modify it under the terms of the GNU General Public License
+dnl   as published by the Free Software Foundation; either version 2 of
+dnl   the License, or (at your option) any later version.
+dnl
+dnl   The Code_Saturne Kernel is distributed in the hope that it will be
+dnl   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+dnl   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl   GNU General Public License for more details.
+dnl
+dnl   You should have received a copy of the GNU General Public Licence
+dnl   along with the Code_Saturne Preprocessor; if not, write to the
+dnl   Free Software Foundation, Inc.,
+dnl   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_MPI
 #---------------
@@ -31,10 +47,16 @@ AC_ARG_ENABLE(mpi,
 )
 
 AC_ARG_WITH(mpi, [AS_HELP_STRING([--with-mpi=PATH], [specify prefix directory for MPI])])
+AC_ARG_WITH(mpi-exec, [AS_HELP_STRING([--with-mpi-exec=PATH], [specify prefix directory for MPI executables])])
 AC_ARG_WITH(mpi-include, [AS_HELP_STRING([--with-mpi-include=PATH], [specify directory for MPI include files])])
 AC_ARG_WITH(mpi-lib, [AS_HELP_STRING([--with-mpi-lib=PATH], [specify directory for MPI library])])
 
 if test "x$mpi" = "xtrue" ; then
+  if test "x$with_mpi_exec" != "x" ; then
+    MPI_BIN="$with_mpi_exec"
+  elif test "x$with_mpi" != "x" ; then
+    MPI_BIN="$with_mpi/bin"
+  fi
   if test "x$with_mpi_include" != "x" ; then
     MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi_include"
   elif test "x$with_mpi" != "x" ; then
@@ -175,6 +197,7 @@ AM_CONDITIONAL(HAVE_MPI, test x$cs_have_mpi = xyes)
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)
+AC_SUBST(MPI_BIN)
 
 ])dnl
 

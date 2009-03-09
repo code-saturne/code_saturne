@@ -40,12 +40,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-#if defined(_POSIX_SOURCE)
 #include <time.h>
+
+#if defined(HAVE_GETCWD) || defined(HAVE_SLEEP)
 #include <unistd.h>
-#include <unistd.h>      /* getcwd(), getpid() */
-#include <pwd.h>         /* getpwuid()         */
+#endif
+
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+#include <pwd.h>
+#endif
+
+#if defined(HAVE_UNAME)
 #include <sys/utsname.h>
 #endif
 
@@ -301,7 +306,7 @@ _cs_base_err_vprintf(const char  *format,
       strcpy(nom_fic_err, "error");
 
     else {
-#if defined(_POSIX_SOURCE)
+#if defined(HAVE_SLEEP)
       sleep(10); /* Wait a few seconds, so that if rank 0 also
                     has encountered an error, it may kill
                     other ranks through MPI_Abort, so that
@@ -1332,54 +1337,41 @@ cs_base_bilan_temps(void)
 void
 cs_base_system_info(void)
 {
-#if defined(_POSIX_SOURCE)
-
-  int             l_user;
-  int             l_info;
   time_t          date;
   size_t          ram;
+
+#if defined(HAVE_UNAME)
   struct utsname  sys_config;
-  struct passwd   *pwd_user;
+#endif
 
-#undef  _CS_INFO_SYS_STR_SIZE
-#define _CS_INFO_SYS_STR_SIZE 80
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+  struct passwd   *pwd_user = NULL;
+#endif
 
-  char  str_date     [81];
-  char  str_system   [_CS_INFO_SYS_STR_SIZE + 1];
-  char  str_machine  [_CS_INFO_SYS_STR_SIZE + 1];
-  char  str_ram      [_CS_INFO_SYS_STR_SIZE + 1];
-  char  str_user     [_CS_INFO_SYS_STR_SIZE + 1];
-  char  str_directory[1024];
+#if !defined(PATH_MAX)
+#define PATH_MAX 1024
+#endif
+
+  char  str_date[81];
+  char  str_directory[PATH_MAX] = "";
+  char  *str_user = NULL;
 
   /* Date */
 
-  if (time(&date) == -1 ||
-      strftime(str_date, _CS_INFO_SYS_STR_SIZE,
-               "%c", localtime(&date)) == 0)
+  if (   time(&date) == -1
+      || strftime(str_date, 80, "%c", localtime(&date)) == 0)
     strcpy(str_date, "");
-
-  /* System and machine */
-
-  if (uname(&sys_config) != -1) {
-    strcpy(str_system  , sys_config.sysname );
-    strcat(str_system  , " "                );
-    strcat(str_system  , sys_config.release );
-    strcpy(str_machine , sys_config.nodename);
-  }
-  else {
-    strcpy(str_system  , "");
-    strcpy(str_machine , "");
-  }
 
   /* Available memory */
 
   ram = bft_sys_info_mem_ram();
-  if (ram > 1)
-    sprintf(str_ram, "%lu", (unsigned long)ram);
 
   /* User */
 
-  /* Functions not available on IBM Blue Gene or Cray XT */
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+
+  /* Functions not available on IBM Blue Gene or Cray XT,
+     but a stub may exist, so we make sure we ignore it */
 #if   defined(__blrts__) || defined(__bgp__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   pwd_user = NULL;
@@ -1389,34 +1381,36 @@ cs_base_system_info(void)
 
   if (pwd_user != NULL) {
 
-    str_user[_CS_INFO_SYS_STR_SIZE] = '\0';
-    strncpy(str_user, pwd_user->pw_name, _CS_INFO_SYS_STR_SIZE);
+    size_t l_user = strlen(pwd_user->pw_name);
+    size_t l_info = 0;
 
     if (pwd_user->pw_gecos != NULL) {
-
-      l_user = strlen(str_user);
       for (l_info = 0;
            (   pwd_user->pw_gecos[l_info] != '\0'
             && pwd_user->pw_gecos[l_info] != ',');
            l_info++);
+    }
 
-      if (l_user + l_info + 3 < _CS_INFO_SYS_STR_SIZE) {
-        strcat(str_user, " (");
-        strncpy(str_user + l_user + 2, pwd_user->pw_gecos, l_info);
-        str_user[l_user + 2 + l_info]     = ')';
-        str_user[l_user + 2 + l_info + 1] = '\0';
-      }
+    BFT_MALLOC(str_user, l_info + l_user + 3 + 1, char);
+    strcpy(str_user, pwd_user->pw_name);
 
+    if (pwd_user->pw_gecos != NULL) {
+      strcat(str_user, " (");
+      strncpy(str_user + l_user + 2, pwd_user->pw_gecos, l_info);
+      str_user[l_user + 2 + l_info]     = ')';
+      str_user[l_user + 2 + l_info + 1] = '\0';
     }
 
   }
-  else
-    strcpy(str_user, "");
+
+#endif /* defined(HAVE_GETPWUID) && defined(HAVE_GETEUID) */
 
   /* Working directory */
 
+#if defined(HAVE_GETCWD)
   if (getcwd(str_directory, 1024) == NULL)
     strcpy(str_directory, "");
+#endif
 
   /* Print local configuration */
   /*---------------------------*/
@@ -1425,19 +1419,31 @@ cs_base_system_info(void)
 
   bft_printf("  %s%s\n", _("Date:              "), str_date);
 
-  bft_printf("  %s%s\n", _("System:            "),  str_system);
-  bft_printf("  %s%s\n", _("Machine:           "),  str_machine);
-  bft_printf("  %s%s\n", _("Processor:         "),  bft_sys_info_cpu());
+
+  /* System and machine */
+
+#if defined(HAVE_UNAME)
+
+  if (uname(&sys_config) != -1) {
+    bft_printf("  %s%s %s\n", _("System:            "),
+               sys_config.sysname, sys_config.release);
+    bft_printf("  %s%s\n", _("Machine:           "),  sys_config.nodename);
+  }
+#endif
+
+  bft_printf("  %s%s\n", _("Processor:         "), bft_sys_info_cpu());
+
   if (ram > 0)
-    bft_printf("  %s%s\n", _("Memory:            "),   str_ram);
-  bft_printf("  %s%s\n", _("User:                "), str_user);
-  bft_printf("  %s%s\n", _("Directory:           "),  str_directory);
+    bft_printf("  %s%lu\n", _("Memory:            "), (unsigned long)ram);
+
+  if (str_user != NULL) {
+    bft_printf("  %s%s\n", _("User:              "), str_user);
+    BFT_FREE(str_user);
+  }
+
+  bft_printf("  %s%s\n", _("Directory:         "), str_directory);
 
   bft_printf("\n");
-
-#undef  _CS_INFO_SYS_STR_SIZE
-
-#endif /* _POSIX_SOURCE */
 }
 
 /*----------------------------------------------------------------------------

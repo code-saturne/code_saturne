@@ -1,3 +1,26 @@
+* 09/03/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Automatic detection of fvm_coupl library, along with
+  sockets and dlopen support, and some system calls.
+  Installation of user scripts in the proper directories.
+  Copyright correction and dictionnary update.
+  modified scripts:
+    config/cs_auto_flags.sh
+    config/cs_bft.m4
+    config/cs_blas.m4
+    config/cs_fvm.m4
+    config/cs_libxml2.m4
+    config/cs_mpi.m4
+    config/cs_tools.m4
+    configure.ac
+    Makefile.am
+  modified routine:
+    include/base/cs_base.h
+    src/base/cs_base.c
+  updated dictionnary:
+    po/fr.po
+    po/remove-potcdate.sed
+
 * 06/03/2009 - David Monfort <david.monfort@edf.fr>
   Rename cs_lagrang in cs_lagr.
   modified files:
