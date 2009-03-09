@@ -1148,10 +1148,7 @@ do iphas = 1, nphas
              then
           if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
             itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
-            if (iok.eq.0) then
-              iok = 1
-              chaine = nomvar(ipprtp(ivar))
-              write(nfecra,6040)ifac,chaine(1:8)
+            if (iok.eq.0.or.iok.eq.2) iok = iok + 1
             endif
           else
             icodcl(ifac,ivar) = 1
@@ -1170,10 +1167,7 @@ do iphas = 1, nphas
             rcodcl(ifac,ivar,3) = 0.d0
           else
             itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
-            if (iok.lt.2) then
-              iok = iok + 2
-              chaine = nomvar(ipprtp(ivar))
-              write(nfecra,6050)ifac,chaine(1:8)
+            if (iok.lt.2) iok = iok + 2
             endif
           endif
         else
@@ -1650,60 +1644,7 @@ enddo
 '---------------------------------------------------------------',&
 '----------'/)
 
- 6040 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,&
-'@                                                            ',/,&
-'@    Face de bord ',I10                                       ,/,&
-'@    Face declaree en entree (ou sortie) a vitesse imposee,  ',/,&
-'@      mais la valeur de la vitesse n''a pas ete fournie pour',/,&
-'@      la composante ',A8                                     ,/,&
-'@    (ce message ne s''affiche que pour la premiere face ou  ',/,&
-'@      le probleme est detecte, mais d''autres faces peuvent ',/,&
-'@      etre concernees)                                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier les conditions aux limites dans l''Interface   ',/,&
-'@    ou dans le sous-programme utilisateur correspondant.    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 6050 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,&
-'@                                                            ',/,&
-'@    Face de bord ',I10                                       ,/,&
-'@    Face declaree en entree (ou sortie) a vitesse imposee   ',/,&
-'@      avec un flux rentrant.                                ',/,&
-'@    La valeur de la variable ',A8  ,' n''a pas ete specifiee',/,&
-'@      (condition de Dirichlet).                             ',/,&
-'@    (ce message ne s''affiche que pour la premiere face ou  ',/,&
-'@      le probleme est detecte, mais d''autres faces peuvent ',/,&
-'@      etre concernees)                                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute                           ',/,&
-'@                                                            ',/,&
-'@    Verifier les conditions aux limites dans l''Interface   ',/,&
-'@    ou dans le sous-programme utilisateur correspondant.    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 6060 format(                                                           &
+ 6060 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1883,60 +1824,7 @@ enddo
 '---------------------------------------------------------------',&
 '----------'/)
 
- 6040 format(                                                           &
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,&
-'@    ========'                                                ,/,&
-'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,&
-'@'                                                            ,/,&
-'@    Boundary face ',I10                                      ,/,&
-'@    Face declared as inlet (or outlet) with prescribed'      ,/,&
-'@      velocity, but velocity value has not been given for'   ,/,&
-'@      component ',A8                                         ,/,&
-'@    (this message is printed only for the first face on'     ,/,&
-'@      which this problem is detected, but other faces may'   ,/,&
-'@      be concerned)'                                         ,/,&
-'@'                                                            ,/,&
-'@    The calculation will not be run.                        ',/,&
-'@'                                                            ,/,&
-'@    Verify the boundary condition definitions in the GUI'    ,/,&
-'@    or in the appropriate user subroutine.'                  ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 6050 format(                                                           &
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,&
-'@    ========'                                                ,/,&
-'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,&
-'@'                                                            ,/,&
-'@    Boundary face ',I10                                      ,/,&
-'@    Face declared as inlet (or outlet) with prescribed'      ,/,&
-'@      velocity with entering flow.'                          ,/,&
-'@    Value of variable ',A8  ,' has not been specified'       ,/,&
-'@      (Dirichlet condition).'                                ,/,&
-'@    (this message is printed only for the first face on'     ,/,&
-'@      which this problem is detected, but other faces may'   ,/,&
-'@      be concerned)'                                         ,/,&
-'@'                                                            ,/,&
-'@    The calculation will not be run.                        ',/,&
-'@'                                                            ,/,&
-'@    Verify the boundary condition definitions in the GUI'    ,/,&
-'@    or in the appropriate user subroutine.'                  ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 6060 format(                                                           &
+ 6060 format(                                                     &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&
