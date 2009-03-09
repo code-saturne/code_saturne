@@ -4,7 +4,8 @@
   added routines:
     include/base/cs_boundary_conditions.h
     src/base/cs_boundary_conditions.c
-  modified script:
+  modified scripts:
+    po/POTFILES.in
     src/base/Makefile.am
   modified routines:
     include/base/cs_post.h
