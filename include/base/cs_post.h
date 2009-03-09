@@ -859,6 +859,15 @@ void
 cs_post_init_main_meshes(void);
 
 /*----------------------------------------------------------------------------
+ * Initialize post-processing writer with same format and associated
+ * options as default writer, but no time dependency, intended to
+ * troubleshoot errors.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_init_error_writer(void);
+
+/*----------------------------------------------------------------------------
  * Register a processing of a time-dependent variable to the call to PSTVAR.
  *
  * The instance identifier associated with the function allows registering

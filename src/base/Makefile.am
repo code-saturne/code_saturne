@@ -59,6 +59,7 @@ $(top_srcdir)/include/base/cs_ast_coupling.h \
 $(top_srcdir)/include/base/cs_base.h \
 $(top_srcdir)/include/base/cs_benchmark.h \
 $(top_srcdir)/include/base/cs_blas.h \
+$(top_srcdir)/include/base/cs_boundary_conditions.h \
 $(top_srcdir)/include/base/cs_calcium.h \
 $(top_srcdir)/include/base/cs_coupling.h \
 $(top_srcdir)/include/base/cs_ext_neighborhood.h \
@@ -210,6 +211,7 @@ crstgr.f90 \
 cs_ale.c \
 cs_ast_coupling.c \
 cs_base.c \
+cs_boundary_conditions.c \
 cs_calcium.c \
 csclli.f90 \
 cs_coupling.c \

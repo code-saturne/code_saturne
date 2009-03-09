@@ -173,7 +173,8 @@ static int              _cs_post_n_meshes = 0;
 static int              _cs_post_n_meshes_max = 0;
 static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
-/* Array of writers for post-processing */
+/* Array of writers for post-processing; */
+/* writers -1 (default) and -2 (show errors) are reserved */
 
 static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
@@ -3325,6 +3326,63 @@ cs_post_init_main_meshes(void)
       cs_post_associate(mesh_id, writer_id);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize post-processing writer with same format and associated
+ * options as default writer, but no time dependency, intended to
+ * troubleshoot errors.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_init_error_writer(void)
+{
+  /* Default values */
+
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
+  cs_int_t  indic_mod = -1;
+  char  fmtchr[32 + 1] = "";
+  char  optchr[96 + 1] = "";
+  cs_int_t  ntchr = -1;
+
+  const char  nomcas[] = "error";
+  const char  nomrep_ens[] = "error.ensight";
+  const char  nomrep_def[] = ".";
+  const char *nomrep = NULL;
+
+  const int writer_id = -2;
+
+  if (cs_post_writer_exists(writer_id))
+    return;
+
+  /* Get parameters from Fortran COMMON blocks */
+
+  CS_PROCF(inipst, INIPST)(&indic_vol,
+                           &indic_brd,
+                           &indic_syr,
+                           &indic_ze,
+                           &indic_mod,
+                           &ntchr,
+                           fmtchr,
+                           optchr);
+
+  fmtchr[32] = '\0';
+  optchr[96] = '\0';
+
+  /* Create default writer */
+
+  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
+    nomrep = nomrep_ens;
+  else
+    nomrep = nomrep_def;
+
+  cs_post_add_writer(writer_id,
+                     nomcas,
+                     nomrep,
+                     fmtchr,
+                     optchr,
+                     -1, /* No time dependency here */
+                     ntchr);
 }
 
 /*----------------------------------------------------------------------------

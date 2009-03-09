@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -44,10 +44,10 @@ subroutine typecl &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Function :
 ! --------
 
-! TRAITEMENT DES CODES DE CONDITION LIMITE ITYPFB
+! Handle boundary condition type code (itypfb)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -166,7 +166,7 @@ subroutine typecl &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Fortran common blocks
 !===============================================================================
 
 include "dimfbr.h"
@@ -219,7 +219,7 @@ double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,3)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 character        chaine*80
 integer          idebia, idebra
@@ -248,14 +248,14 @@ save             ipass
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2.  VERIFICATION DE LA CONSISTANCE DES TYPES DONNES DANS USCLIM
+! 2.  Check consistency of types given in usclim
 !===============================================================================
 
 iok = 0
@@ -264,7 +264,7 @@ do iphas = 1, nphas
   do ifac = 1, nfabor
     ityp = itypfb(ifac,iphas)
     if(ityp.le.0.or.ityp.gt.ntypmx) then
-      write(nfecra,1010)iphas, ifac, iprfml(ifmfbr(ifac),1), ityp
+      itypfb(ifac,iphas) = 0
       iok = iok + 1
     endif
   enddo
@@ -272,17 +272,15 @@ enddo
 
 if (irangp.ge.0) call parcmx(iok)
 if(iok.ne.0) then
-  write(nfecra,1099) ntypmx
-  call csexit (1)
+  call bcderr(nphas, itypfb)
 endif
 
-
 !===============================================================================
-! 3.  TRI DES FACES DE BORD
+! 3.  Sort boundary faces
 !===============================================================================
 
 
-! ---> On compte les faces de chaque type (provisoirement dans IFINTY)
+! Count faces of each type (temporarily in ifinty)
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
@@ -298,8 +296,7 @@ do iphas = 1, nphas
 enddo
 
 
-! ---> On positionne le debut de chaque groupe de face
-!       dans ITRIFB (classees par type) : IDEBTY
+! Set start of each group of faces in itrifb (sorted by type): idebty
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
@@ -315,8 +312,7 @@ do iphas = 1, nphas
   enddo
 enddo
 
-! ---> On classe les faces dans ITRIFB
-!       et on en profite pour remplir correctement IFINTY
+! Sort faces in itrifb and use the opportunity to correctly set ifinty
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
@@ -333,7 +329,7 @@ do iphas = 1, nphas
   enddo
 enddo
 
-! ---> On verifie sommairement
+! Basic check
 
 iok = 0
 do iphas = 1, nphas
@@ -350,8 +346,7 @@ do iphas = 1, nphas
       write(nfecra,2020) (ifinty(jj,iphas),jj=1,ntypmx)
       write(nfecra,2030) (idebty(jj,iphas),jj=1,ntypmx)
       write(nfecra,2040) (itypfb(jj,iphas),jj=1,nfabor)
-      write(nfecra,2098)                                          &
-                       ii,ifinty(ii,iphas),ii+1,idebty(ii+1,iphas)
+      write(nfecra,2098) ii,ifinty(ii,iphas),ii+1,idebty(ii+1,iphas)
     else
       write(nfecra,2099) ii,ii+1
     endif
@@ -395,28 +390,28 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ientre
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree           ',II,                  &
+      WRITE(NFECRA,6020) 'Entree           ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi lisse      ',II,                  &
+      WRITE(NFECRA,6020) 'Paroi lisse      ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi rugueuse   ',II,                  &
+      WRITE(NFECRA,6020) 'Paroi rugueuse   ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Symetrie         ',II,                  &
+      WRITE(NFECRA,6020) 'Symetrie         ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -424,7 +419,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
        ii = isolib
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie libre     ',II,                  &
+      WRITE(NFECRA,6020) 'Sortie libre     ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -432,7 +427,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Indefini         ',II,                  &
+      WRITE(NFECRA,6020) 'Indefini         ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -447,7 +442,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
-            WRITE(NFECRA,6020) 'Type utilisateur ',II,            &
+            WRITE(NFECRA,6020) 'Type utilisateur ', ii,           &
                  inb,                                             &
                  ifinty(ii,iphas)-idebty(ii,iphas)+1,             &
                  idebty(ii,iphas),ifinty(ii,iphas)
@@ -460,7 +455,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ieqhcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree sub. enth.',II,                  &
+      WRITE(NFECRA,6020) 'Entree sub. enth.', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -468,7 +463,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ierucf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree subsonique',II,                  &
+      WRITE(NFECRA,6020) 'Entree subsonique', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -476,7 +471,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = iesicf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree/Sortie imp',II,                  &
+      WRITE(NFECRA,6020) 'Entree/Sortie imp', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -484,7 +479,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = isopcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie subsonique',II,                  &
+      WRITE(NFECRA,6020) 'Sortie subsonique', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -492,7 +487,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = isspcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie supersoniq',II,                  &
+      WRITE(NFECRA,6020) 'Sortie supersoniq', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -500,7 +495,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi lisse      ',II,                  &
+      WRITE(NFECRA,6020) 'Paroi lisse      ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -508,7 +503,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi rugueuse   ',II,                  &
+      WRITE(NFECRA,6020) 'Paroi rugueuse   ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -516,7 +511,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Symetrie         ',II,                  &
+      WRITE(NFECRA,6020) 'Symetrie         ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
@@ -524,21 +519,21 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Indefini         ',II,                  &
+      WRITE(NFECRA,6020) 'Indefini         ', ii,                 &
            inb,                                                   &
            ifinty(ii,iphas)-idebty(ii,iphas)+1,                   &
            idebty(ii,iphas),ifinty(ii,iphas)
 
       do ii = 1, ntypmx
-        if( ii.ne.iesicf .and.                                    &
-             ii.ne.isspcf .and.                                   &
-             ii.ne.ieqhcf .and.                                   &
-             ii.ne.ierucf .and.                                   &
-             ii.ne.isopcf .and.                                   &
-             ii.ne.iparoi .and.                                   &
-             ii.ne.iparug .and.                                   &
-             ii.ne.isymet .and.                                   &
-             ii.ne.iindef ) then
+        if (ii.ne.iesicf .and. &
+            ii.ne.isspcf .and. &
+            ii.ne.ieqhcf .and. &
+            ii.ne.ierucf .and. &
+            ii.ne.isopcf .and. &
+            ii.ne.iparoi .and. &
+            ii.ne.iparug .and. &
+            ii.ne.isymet .and. &
+            ii.ne.iindef ) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
@@ -559,36 +554,29 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
 endif
 
 !================================================================================
-! 4.  RCODCL(.,    .,1) A ETE INITIALISE A RINFIN POUR VERIFIER CEUX QUE
-!     L'UTILISATEUR A MODIFIE. ON REINITIALISE ICI A ZERO CEUX QUI N'ONT
-!     PAS ETE MODIFIES.
-!     ISOLIB et IENTRE  SONT  TRAITES PLUS TARD.
-
-
+! 4.  rcodcl(.,    .,1) has been initialized as rinfin so as to check what
+!     the user has modified. Those not modified are reset to zero here.
+!     isolib and ientre are handled later.
 !================================================================================
-
 
 do iphas = 1, nphas
   do ivar=1, nvar
      do ifac = 1, nfabor
-        if((itypfb(ifac,iphas).ne.isolib) .and.                   &
-             (itypfb(ifac,iphas).ne. ientre) .and.                &
-          (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0)) then
-               rcodcl(ifac,ivar,1) = 0.d0
+        if((itypfb(ifac,iphas) .ne. isolib) .and. &
+           (itypfb(ifac,iphas) .ne. ientre) .and. &
+           (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
+           rcodcl(ifac,ivar,1) = 0.d0
        endif
       enddo
    enddo
 enddo
 
 
-
-
 !===============================================================================
-! 5.  CALCUL DE LA PRESSION AU BORD (DANS COEFU(*,1))
-!   (SI ON EN A BESOIN, IE S'IL Y A DES FACES DE BORD SORTIE)
+! 5.  Compute pressure at boundary (in coefu(*,1))
+!     (if we need it, that is if there are outlet boudary faces).
 
-!    LA BOUCLE SUR LES PHASES COMMENCEE ICI SE TERMINE A LA FIN DU BLOC
-!    SUIVANT
+!     The loop on phases starts here and ends at the end of the next block.
 !===============================================================================
 
 ! --- Boucle sur les phases : debut
@@ -625,8 +613,7 @@ do iphas = 1, nphas
     iomgip = iomg(iphas)
   endif
 
-!   -- On regarde si la pression (unique) n'a pas ete traitee
-!         auparavant
+! Check if the pressure (unique) has not been handled already
 
   iprnew = 1
   if(iphas.gt.1) then
@@ -637,9 +624,9 @@ do iphas = 1, nphas
     enddo
   endif
 
-!     IFRSLB = premiere face de sortie libre standard (ICODCL non modifie)
-!     ITBSLB = max de IFRSLB sur tous les processeurs, indique s'il y a des
-!              faces de sortie standard
+! ifrslb = first free standard outlet face (ICODCL not modified)
+! itbslb = max of ifrslb on all ranks, standard outlet face presence inidcator
+
   ifrslb(iphas) = 0
   do ii = ifinty(isolib,iphas), idebty(isolib,iphas), -1
     ifac = itrifb(ii,iphas)
@@ -683,8 +670,8 @@ do iphas = 1, nphas
    rdevel , rtuser , ra     )
 
 
-! On met dans COEFU la valeur en I' ou F (suivant IPHYDR) de la
-!  pression totale, calculee a partir de P*
+!  Put in coefu the value at I' or F (depending on iphydr) of the
+!  total pressure, computed from P*
 
     if (iphydr.eq.0) then
       do ifac = 1, nfabor
@@ -694,7 +681,7 @@ do iphas = 1, nphas
         diipby = ra(iii+2)
         diipbz = ra(iii+3)
         coefu(ifac,1) = rtpa(ii,ipriph)                           &
-             + diipbx*w1(ii)+ diipby*w2(ii)  + diipbz*w3(ii)      &
+             + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
              + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
                       + gy*(cdgfbo(2,ifac)-xyp0)                  &
                       + gz*(cdgfbo(3,ifac)-xzp0))                 &
@@ -707,9 +694,9 @@ do iphas = 1, nphas
              + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
              + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
              + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
-             + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
-                      + gy*(cdgfbo(2,ifac)-xyp0)                  &
-                      + gz*(cdgfbo(3,ifac)-xzp0))                 &
+             + ro0iph*(  gx*(cdgfbo(1,ifac)-xxp0)                 &
+                       + gy*(cdgfbo(2,ifac)-xyp0)                 &
+                       + gz*(cdgfbo(3,ifac)-xzp0))                &
              + p0iph - pr0iph
       enddo
     endif
@@ -718,11 +705,11 @@ do iphas = 1, nphas
 
 
 !===============================================================================
-! 6.  CONVERSION EN RCODCL ICODCL
-!   (SI CE DERNIER N'A PAS DEJA ETE RENSEIGNE PAR L'UTILISATEUR)
+! 6.  Convert to rcodcl and icodcl
+!     (if this has not already been set by the user)
 
-!      TOUT D'ABORD POUR LES VARIABLES POUR LESQUELLES IL EXISTE
-!    TRAITEMENT PARTICULIER (PRESSION, VITESSE,
+!     First, process variables for which a specific treatement is done
+!     (pressure, velocity, ...)
 !===============================================================================
 
 ! 6.1 ENTREE
@@ -1160,6 +1147,7 @@ do iphas = 1, nphas
         if (ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph)      &
              then
           if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+            itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
             if (iok.eq.0) then
               iok = 1
               chaine = nomvar(ipprtp(ivar))
@@ -1181,6 +1169,7 @@ do iphas = 1, nphas
             rcodcl(ifac,ivar,2) = rinfin
             rcodcl(ifac,ivar,3) = 0.d0
           else
+            itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
             if (iok.lt.2) then
               iok = iok + 2
               chaine = nomvar(ipprtp(ivar))
@@ -1202,7 +1191,7 @@ do iphas = 1, nphas
   if (iok.gt.0) then
     if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
     if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
-    call csexit (1)
+    call bcderr(nphas, itypfb)
   endif
 
 
@@ -1210,9 +1199,12 @@ do iphas = 1, nphas
 ! 6.2 SORTIE (entree sortie libre)
 ! ===================
 
-! ---> La pression a un traitement Dirichlet, les vitesses 9 ont ete  traites plus haut.
-!      Le reste Dirichlet si l'utilisateur fournit une donnee (flux de masse entrant ou sortant).
-!      S'il n'y a pas de donnee utilisateur, on utilise un Neumann homogene (flux entrant et sortant)
+! ---> La pression a un traitement Dirichlet, les vitesses 9 ont ete
+!        traites plus haut.
+!      Le reste Dirichlet si l'utilisateur fournit une donnee
+!        (flux de masse entrant ou sortant).
+!      S'il n'y a pas de donnee utilisateur, on utilise un Neumann homogene
+!        (flux entrant et sortant)
 
 
 ! ---> Sortie ISOLIB
@@ -1363,7 +1355,7 @@ do iphas = 1, nphas
 
   iwrnp = iwarni(iu(iphas))
   if (irangp.ge.0) call parcmx (iwrnp)
-                             !==========
+                   !==========
 
 !     On ecrit le flux de masse si IWARNI>0, a la periodicite NTLIST
 !     et au deux premiers et deux derniers pas de temps.
@@ -1386,7 +1378,7 @@ do iphas = 1, nphas
 
     write(nfecra,7011) iphas
 
-    if ( ippmod(icompf).lt.0 ) then
+    if (ippmod(icompf).lt.0 ) then
 
       ii = ientre
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1555,10 +1547,7 @@ enddo
 
 #if defined(_CS_LANG_FR)
 
- 1010 format(                                                           &
-'@ @@ ATTENTION PHASE ',I3,                                       &
-                  ', FACE ',I10,', PROP.No1 ',I5,', TYPE CL ',I4)
- 1099 format(                                                           &
+ 1099 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1643,9 +1632,9 @@ enddo
 
 
  6010 format ( /,/,                                               &
- '   ** INFORMATIONS SUR LE TYPE DE FACES DE BORD',/,       &
+ '   ** INFORMATIONS SUR LE TYPE DE FACES DE BORD',/,             &
  '      -----------------------------------------',/)
- 6011 format (                                                          &
+ 6011 format (                                                    &
 '   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
 '----------',                                                     &
@@ -1655,9 +1644,9 @@ enddo
                                                                 /,&
 '---------------------------------------------------------------',&
 '----------')
- 6020 format (                                                          &
+ 6020 format (                                                    &
  a17,i10,i10,3i12)
- 6030 format(                                                           &
+ 6030 format(                                                     &
 '---------------------------------------------------------------',&
 '----------'/)
 
@@ -1760,18 +1749,18 @@ enddo
 
 
  7010 format ( /,/,                                               &
- '   ** INFORMATIONS SUR LE FLUX DE MASSE AU BORD',/,       &
+ '   ** INFORMATIONS SUR LE FLUX DE MASSE AU BORD',/,             &
  '      -----------------------------------------',/)
- 7011 format (                                                          &
+ 7011 format (                                                    &
 '   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
                                                                 /,&
 'Type de bord           Code    Nb faces           Flux de masse',&
                                                                 /,&
 '---------------------------------------------------------------')
- 7020 format (                                                          &
+ 7020 format (                                                    &
  a17,i10,i12,6x,e18.9)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '---------------------------------------------------------------',&
                                                                 /)
 
@@ -1790,10 +1779,7 @@ enddo
 
 #else
 
- 1010 format(                                                           &
-'@ @@ WARNING  PHASE ',I3,                                        &
-                  ', FACE ',I10,', PROP.No1 ',I5,', BC TYPE ',I4)
- 1099 format(                                                           &
+ 1099 format(                                                     &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&
@@ -1858,7 +1844,7 @@ enddo
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 3099 format(                                                           &
+ 3099 format(                                                     &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/,&
@@ -1879,9 +1865,9 @@ enddo
 
 
  6010 format ( /,/,                                               &
- '   ** INFORMATION ON BOUNDARY FACES TYPE',/,              &
+ '   ** INFORMATION ON BOUNDARY FACES TYPE',/,                    &
  '      ----------------------------------',/)
- 6011 format (                                                          &
+ 6011 format (                                                    &
 '   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
 '----------',                                                     &
@@ -1891,9 +1877,9 @@ enddo
                                                                 /,&
 '---------------------------------------------------------------',&
 '----------')
- 6020 format (                                                          &
+ 6020 format (                                                    &
  a17,i10,i10,3i12)
- 6030 format(                                                           &
+ 6030 format(                                                     &
 '---------------------------------------------------------------',&
 '----------'/)
 
@@ -1972,7 +1958,7 @@ enddo
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 6070 format(                                                           &
+ 6070 format(                                                     &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&
@@ -1996,18 +1982,18 @@ enddo
 
 
  7010 format ( /,/,                                               &
- '   ** BOUNDARY MASS FLOW INFORMATION',/,                  &
+ '   ** BOUNDARY MASS FLOW INFORMATION',/,                        &
  '      ------------------------------',/)
- 7011 format (                                                          &
+ 7011 format (                                                    &
 '   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
                                                                 /,&
 'Boundary type          Code    Nb faces           Mass flow'   , &
                                                                 /,&
 '---------------------------------------------------------------')
- 7020 format (                                                          &
+ 7020 format (                                                    &
  a17,i10,i12,6x,e18.9)
- 7030 format(                                                           &
+ 7030 format(                                                     &
 '---------------------------------------------------------------',&
                                                                 /)
 
