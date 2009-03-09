@@ -368,7 +368,7 @@ void CS_PROCF (bcderr, BCDERR)
       cs_int_t  *bc_type = itypfb + phase_id*n_b_faces;
 
       if (*nphas > 1) {
-        sprintf(var_name, _("Phase %d, "));
+        sprintf(var_name, _("Phase %d, "), phase_id + 1);
         name_size = strlen(var_name);
       }
       else
