@@ -480,16 +480,6 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     fi
   fi
 
-  # Copy of the user source files
-  # (no links: the directory is copied later)
-  mkdir src_saturne
-  cd src_saturne
-  for f in ${source_cas}/*.[fF]90 ${source_cas}/*.[ch] ; do
-    if [ -f $f ] ; then
-      cp ${f} .
-    fi
-  done
-
   # Detect presence and test for compatibility of modules.
   if [ ! -z "$PARAM" ] ; then
     ${bindir}/bin/check_consistency -param ../$PARAM -nproc $nproc_kernel
@@ -500,24 +490,44 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     exit 1
   fi
 
-# Compilation
-  ln -s ${datadir}/Makefile .
+  src_files=`ls ${source_cas}/*.[fF]90 ${source_cas}/*.[ch] 2>/dev/null`
 
-  make saturne OPTLIBS="${CS_LIB_ADD}"  2>>$cur_dir/compil.log 1>&2
-  if [ $? -ne 0 ]
-  then
-    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
-    echo "COMPILE OR LINK ERROR"
-    rm -f *.o
-    exit 1
+  if [ ! -z "${src_files}" ] ; then
+
+    # Copy of the user source files
+    # (no links: the directory is copied later)
+    mkdir src_saturne
+    cd src_saturne
+    for f in ${src_files} ; do
+      if [ -f $f ] ; then
+        cp ${f} .
+      fi
+    done
+
+    # Compilation
+    ln -s ${datadir}/Makefile .
+
+    make saturne OPTLIBS="${CS_LIB_ADD}"  2>>$cur_dir/compil.log 1>&2
+    if [ $? -ne 0 ]
+    then
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
+      echo "COMPILE OR LINK ERROR"
+      rm -f *.o
+      exit 1
+    else
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
+    fi
+
+    # Cleanup
+    make clean
+    mv $EXE ${cur_dir}/
+    cd ${cur_dir}
+
   else
-    cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
-  fi
 
-# Cleanup
-  make clean
-  mv $EXE ${cur_dir}/
-  cd ${cur_dir}
+    ln -s ${bindir}/$EXE .
+
+  fi
 
   if [ $SYRTHES_COUPLING = yes ] ; then
 

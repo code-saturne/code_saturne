@@ -1,4 +1,9 @@
-* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+* 09/03/2009 - David Monfort <david.monfort@edf.fr>
+  Do not compile the code if there is no user file.
+  modified script:
+    bin/runcase.in
+
+* 09/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Refactoring of the mesh renumbering feature in order
   to account for OpenMP support. Still missing is the
   correct numbering of interior and boundary faces.
@@ -35,7 +40,7 @@
     po/POTFILES.in
     src/base/Makefile.am
 
-* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+* 09/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Create a graphical post-processing view of the boundary
   conditions definition in case of error.
   added routines:
