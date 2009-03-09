@@ -70,6 +70,7 @@
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_mesh_halo.h"
+#include "cs_numbering.h"
 #include "cs_perio.h"
 #include "cs_mesh_quantities.h"
 #include "cs_ext_neighborhood.h"
@@ -532,6 +533,11 @@ cs_mesh_create(void)
   mesh->cell_cells_idx = NULL;
   mesh->cell_cells_lst = NULL;
 
+  /* Numbering info */
+
+  mesh->i_face_numbering = NULL;
+  mesh->b_face_numbering = NULL;
+
   /* Group and family features */
 
   mesh->n_groups = 0;
@@ -627,6 +633,13 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
     cs_perio_free_buffer();
 
   mesh->halo = cs_halo_destroy(mesh->halo);
+
+  /* Free numbering info */
+
+  if (mesh->i_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->i_face_numbering));
+  if (mesh->b_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->b_face_numbering));
 
   /* Free selection structures */
 
@@ -1408,6 +1421,11 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     }
 
   }
+
+  /* Dump numbering info */
+
+  cs_numbering_dump(mesh->i_face_numbering);
+  cs_numbering_dump(mesh->b_face_numbering);
 
   bft_printf("\n\nEND OF DUMP OF MESH STRUCTURE\n\n");
   bft_printf_flush();

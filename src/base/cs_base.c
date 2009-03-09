@@ -135,6 +135,8 @@ typedef void (*_cs_base_sighandler_t) (int);
  *  Global variables
  *============================================================================*/
 
+int  cs_glob_n_threads = 1;    /* Number of threads */
+
 int  cs_glob_rank_id = -1;     /* Rank of process in communicator */
 int  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
 

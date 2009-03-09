@@ -284,15 +284,29 @@ cs_run(void)
 
   cs_post_init_main_meshes();
 
-  /* Update some mesh sizes counts and quantities */
+  /* Update Fortran mesh sizes and quantities */
 
   {
-    cs_int_t  n_g_cells, n_g_i_faces, n_g_b_faces, n_g_vertices;
+    cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
+    cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
+    cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
+    cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
+    cs_int_t ngrpi = 1;
+    cs_int_t ngrpb = 1;
+    const cs_int_t *idxfi = NULL;
+    const cs_int_t *idxfb = NULL;
 
-    n_g_cells = cs_glob_mesh->n_g_cells;
-    n_g_i_faces = cs_glob_mesh->n_g_i_faces;
-    n_g_b_faces = cs_glob_mesh->n_g_b_faces;
-    n_g_vertices = cs_glob_mesh->n_g_vertices;
+    if (cs_glob_mesh->i_face_numbering != NULL) {
+      const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
+      ngrpi = _n->n_groups;
+      idxfi = _n->group_index;
+    }
+
+    if (cs_glob_mesh->b_face_numbering != NULL) {
+      const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
+      ngrpb = _n->n_groups;
+      idxfb = _n->group_index;
+    }
 
     CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
                               &(cs_glob_mesh->n_cells_with_ghosts),
@@ -304,7 +318,11 @@ cs_run(void)
                               &n_g_cells,
                               &n_g_i_faces,
                               &n_g_b_faces,
-                              &n_g_vertices);
+                              &n_g_vertices,
+                              &ngrpi,
+                              &ngrpb,
+                              idxfi,
+                              idxfb);
   }
 
   cs_mesh_print_info(cs_glob_mesh);
@@ -485,6 +503,10 @@ main(int    argc,
     cs_base_mpi_init(&argc, &argv, app_num);
 #endif
 
+#if defined(HAVE_OPENMP)
+  cs_glob_n_threads = omp_get_num_threads();
+#endif
+
   /* Default initialization */
 
 #if defined(_CS_ARCH_Linux)
@@ -518,11 +540,13 @@ main(int    argc,
   /* Open 'listing' (log) files */
 
   {
+    cs_int_t _n_threads = cs_glob_n_threads;
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
     CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
                              &_rank_id,
                              &_n_ranks,
+                             &_n_threads,
                              &(opts.ilisr0),
                              &(opts.ilisrp));
   }

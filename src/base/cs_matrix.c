@@ -102,6 +102,7 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_numbering.h"
 #include "cs_prototypes.h"
 #include "cs_perio.h"
 
@@ -289,6 +290,8 @@ struct _cs_matrix_t {
   const cs_int_t        *face_cell;    /* Face -> cells connectivity (1 to n) */
   const fvm_gnum_t      *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
+  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
+                                          numbering information */
 
   /* Function pointers */
 
@@ -325,6 +328,101 @@ static char _cs_glob_perio_ignore_error_str[]
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * y[i] = da[i].x[i], with da possibly NULL
+ *
+ * parameters:
+ *   da     <-- Pointer to coefficients array (usually matrix diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *   n_elts <-- Array size
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_diag_vec_p_l(const cs_real_t  *restrict da,
+              const cs_real_t  *restrict x,
+              cs_real_t        *restrict y,
+              cs_int_t          n_elts)
+{
+  cs_int_t  ii;
+
+#if defined(__xlc__) /* Tell IBM compiler not to alias */
+#pragma disjoint(*x, *y, *da)
+#endif
+
+  /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
+
+  if (da != NULL) {
+#pragma omp parallel for
+    for (ii = 0; ii < n_elts; ii++)
+      y[ii] = da[ii] * x[ii];
+  }
+  else {
+#pragma omp parallel for
+    for (ii = 0; ii < n_elts; ii++);
+      y[ii] = 0.0;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * y[i] = da[i].x[i], with da possibly NULL
+ *
+ * parameters:
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   da     <-- Pointer to coefficients array (usually matrix diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *   n_elts <-- Array size
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_diag_x_p_beta_y(cs_real_t         alpha,
+                 cs_real_t         beta,
+                 const cs_real_t  *restrict da,
+                 const cs_real_t  *restrict x,
+                 cs_real_t        *restrict y,
+                 cs_int_t          n_elts)
+{
+  cs_int_t  ii;
+
+#if defined(__xlc__) /* Tell IBM compiler not to alias */
+#pragma disjoint(*x, *y, *da)
+#endif
+
+  if (da != NULL) {
+#pragma omp parallel for firstprivate(alpha, beta)
+    for (ii = 0; ii < n_elts; ii++) {
+      y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]); }
+  }
+  else {
+#pragma omp parallel for firstprivate(beta)
+    for (ii = 0; ii < n_elts; ii++) {
+      y[ii] *= beta; }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set values from y[start_id] to y[end_id] to 0.
+ *
+ * parameters:
+ *   y        --> Resulting vector
+ *   start_id <-- start id in array
+ *   end_id   <-- end id in array
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_zero_range(cs_real_t  *restrict y,
+            cs_int_t    start_id,
+            cs_int_t    end_id)
+{
+  cs_int_t  ii;
+
+#pragma omp parallel for
+  for (ii = start_id; ii < end_id; ii++)
+    y[ii] = 0.0;
+}
 
 /*----------------------------------------------------------------------------
  * Descend binary tree for the ordering of a fvm_gnum (integer) array.
@@ -389,7 +487,7 @@ _order_local(const cs_int_t  number[],
              cs_int_t        order[],
              const size_t    n_elts)
 {
-  size_t i;
+  size_t i, j, inc;
   cs_int_t o_save;
 
   /* Initialize ordering array */
@@ -400,21 +498,45 @@ _order_local(const cs_int_t  number[],
   if (n_elts < 2)
     return;
 
-  /* Create binary tree */
+  /* Use shell sort for short arrays */
 
-  i = (n_elts / 2) ;
-  do {
-    i--;
-    _order_descend_tree(number, i, n_elts, order);
-  } while (i > 0);
+  if (n_elts < 20) {
 
-  /* Sort binary tree */
+    inc = (n_elts / 2);
 
-  for (i = n_elts - 1 ; i > 0 ; i--) {
-    o_save   = order[0];
-    order[0] = order[i];
-    order[i] = o_save;
-    _order_descend_tree(number, 0, i, order);
+    while (inc > 0) {
+      for (i = inc; i < n_elts; i++) {
+        o_save = order[i];
+        j = i;
+        while (j >= inc && number[order[j-inc]] > number[o_save]) {
+          order[j] = order[j-inc];
+          j = j - inc;
+        }
+        order[j] = o_save;
+      }
+      inc = inc / 2.2;
+    }
+
+  }
+
+  else {
+
+    /* Create binary tree */
+
+    i = (n_elts / 2);
+    do {
+      i--;
+      _order_descend_tree(number, i, n_elts, order);
+    } while (i > 0);
+
+    /* Sort binary tree */
+
+    for (i = n_elts - 1 ; i > 0 ; i--) {
+      o_save   = order[0];
+      order[0] = order[i];
+      order[i] = o_save;
+      _order_descend_tree(number, 0, i, order);
+    }
   }
 }
 
@@ -621,12 +743,14 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
 
   if (mc->da != NULL) {
 
+#pragma omp parallel for
     for (ii = 0; ii < n_cells; ii++)
       da[ii] = mc->da[ii];
 
   }
   else {
 
+#pragma omp parallel for
     for (ii = 0; ii < n_cells; ii++)
       da[ii] = 0.0;
 
@@ -643,8 +767,6 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
  *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
-#if !defined(IA64_OPTIM)  /* Standard variant */
-
 static void
 _mat_vec_p_l_native(const cs_matrix_t  *matrix,
                     const cs_real_t    *restrict x,
@@ -653,7 +775,6 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict da = mc->da;
   const cs_real_t  *restrict xa1 = mc->xa;
   const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
 
@@ -664,17 +785,9 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
   /* Diagonal part of matrix.vector product */
 
-  /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
+  _diag_vec_p_l(mc->da, x, y, ms->n_cells);
 
-  if (mc->da != NULL) {
-    for (ii = 0; ii < ms->n_cells; ii++)
-      y[ii] = da[ii] * x[ii];
-  }
-  else {
-    for (ii = 0; ii < ms->n_cells; y[ii++] = 0.0);
-  }
-
-  for (ii = ms->n_cells; ii < ms->n_cells_ext; y[ii++] = 0.0);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
@@ -687,8 +800,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
         y[ii] += xa1[face_id] * x[jj];
         y[jj] += xa1[face_id] * x[ii];
       }
@@ -699,8 +812,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
         y[ii] += xa1[face_id] * x[jj];
         y[jj] += xa2[face_id] * x[ii];
       }
@@ -711,12 +824,107 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
 }
 
-#else /* defined(IA64_OPTIM), IA64 optimized variant (optimization by BULL) */
+#if defined(HAVE_OPENMP) /* OpenMP variant */
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with native matrix.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                    const cs_real_t    *restrict x,
-                    cs_real_t          *restrict y)
+_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
+                        const cs_real_t    *restrict x,
+                        cs_real_t          *restrict y)
+{
+  int g_id, t_id;
+  cs_int_t  ii, jj, face_id;
+
+  const int n_threads = matrix->numbering->n_threads;
+  const int n_groups = matrix->numbering->n_groups;
+  const fvm_lnum_t *group_index = matrix->numbering->group_index;
+
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
+
+  /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
+#endif
+
+  /* Diagonal part of matrix.vector product */
+
+  _diag_vec_p_l(mc->da, x, y, ms->n_cells);
+
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (g_id=0; g_id < n_groups; g_id++) {
+
+#pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
+
+          for (face_id = group_index[t_id*n_groups*2 + g_id];
+               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+               face_id++) {
+            ii = face_cel_p[2*face_id] -1;
+            jj = face_cel_p[2*face_id + 1] -1;
+            y[ii] += xa1[face_id] * x[jj];
+            y[jj] += xa1[face_id] * x[ii];
+          }
+        }
+      }
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (g_id=0; g_id < n_groups; g_id++) {
+
+#pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
+
+          for (face_id = group_index[t_id*n_groups*2 + g_id];
+               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+               face_id++) {
+            ii = face_cel_p[2*face_id] -1;
+            jj = face_cel_p[2*face_id + 1] -1;
+            y[ii] += xa1[face_id] * x[jj];
+            y[jj] += xa2[face_id] * x[ii];
+          }
+        }
+      }
+    }
+
+  }
+
+}
+
+#endif /* defined(HAVE_OPENMP) */
+
+#if defined(IA64_OPTIM)  /* Special variant for IA64 */
+
+static void
+_mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
+                         const cs_real_t    *restrict x,
+                         cs_real_t          *restrict y)
 {
   cs_int_t  ii, ii_prev, kk, face_id, kk_max;
   cs_real_t y_it, y_it_prev;
@@ -844,6 +1052,75 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 
 #endif /* defined(IA64_OPTIM) */
 
+#if defined(SX) && defined(_SX) /* For vector machines */
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with native matrix.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
+                           const cs_real_t    *restrict x,
+                           cs_real_t          *restrict y)
+{
+  cs_int_t  ii, jj, face_id;
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
+
+  /* Diagonal part of matrix.vector product */
+
+  _diag_vec_p_l(mc->da, x, y, ms->n_cells);
+
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+#pragma dir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += xa1[face_id] * x[jj];
+        y[jj] += xa1[face_id] * x[ii];
+      }
+
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+#pragma dir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += xa1[face_id] * x[jj];
+        y[jj] += xa2[face_id] * x[ii];
+      }
+
+    }
+
+  }
+
+}
+
+#endif /* Vector machine variant */
+
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
  *
@@ -865,7 +1142,6 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict da = mc->da;
   const cs_real_t  *restrict xa1 = mc->xa;
   const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
 
@@ -876,16 +1152,9 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
 
   /* Diagonal part of matrix.vector product */
 
-  if (mc->da != NULL) {
-    for (ii = 0; ii < ms->n_cells; ii++)
-      y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]);
-  }
-  else {
-    for (ii = 0; ii < ms->n_cells; ii++)
-      y[ii] *= beta;
-  }
+  _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
 
-  for (ii = ms->n_cells; ii < ms->n_cells_ext; y[ii++] = 0.0);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
@@ -898,8 +1167,8 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
         y[ii] += alpha * xa1[face_id] * x[jj];
         y[jj] += alpha * xa1[face_id] * x[ii];
       }
@@ -910,8 +1179,8 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
         y[ii] += alpha * xa1[face_id] * x[jj];
         y[jj] += alpha * xa2[face_id] * x[ii];
       }
@@ -921,6 +1190,180 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
   }
 
 }
+
+#if defined(HAVE_OPENMP) /* OpenMP variant */
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
+ *
+ * parameters:
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      <-> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
+                               cs_real_t           beta,
+                               const cs_matrix_t  *matrix,
+                               const cs_real_t    *restrict x,
+                               cs_real_t          *restrict y)
+{
+  int g_id, t_id;
+  cs_int_t  ii, jj, face_id;
+
+  const int n_threads = matrix->numbering->n_threads;
+  const int n_groups = matrix->numbering->n_groups;
+  const fvm_lnum_t *group_index = matrix->numbering->group_index;
+
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
+
+  /* Tell IBM compiler not to alias */
+#if defined(__xlc__)
+#pragma disjoint(*x, *y, *da, *xa1, *xa2)
+#endif
+
+  /* Diagonal part of matrix.vector product */
+
+  _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
+
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (g_id=0; g_id < n_groups; g_id++) {
+
+#pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
+
+          for (face_id = group_index[t_id*n_groups*2 + g_id];
+               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+               face_id++) {
+            ii = face_cel_p[2*face_id] -1;
+            jj = face_cel_p[2*face_id + 1] -1;
+            y[ii] += alpha * xa1[face_id] * x[jj];
+            y[jj] += alpha * xa1[face_id] * x[ii];
+          }
+        }
+
+      }
+
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+      for (g_id=0; g_id < n_groups; g_id++) {
+
+#pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
+
+          for (face_id = group_index[t_id*n_groups*2 + g_id];
+               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+               face_id++) {
+            ii = face_cel_p[2*face_id] -1;
+            jj = face_cel_p[2*face_id + 1] -1;
+            y[ii] += alpha * xa1[face_id] * x[jj];
+            y[jj] += alpha * xa2[face_id] * x[ii];
+          }
+        }
+      }
+
+    }
+
+  } /* if mc-> xa != NULL */
+
+}
+
+#endif
+
+#if defined(SX) && defined(_SX) /* For vector machines */
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = alpha.A.x + beta.y with native matrix.
+ *
+ * parameters:
+ *   alpha  <-- Scalar, alpha in alpha.A.x + beta.y
+ *   beta   <-- Scalar, beta in alpha.A.x + beta.y
+ *   matrix <-- Pointer to matrix structure
+ *   x      <-- Multipliying vector values
+ *   y      <-> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
+                                  cs_real_t           beta,
+                                  const cs_matrix_t  *matrix,
+                                  const cs_real_t    *restrict x,
+                                  cs_real_t          *restrict y)
+{
+  cs_int_t  ii, jj, face_id;
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_real_t  *restrict xa1 = mc->xa;
+  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+
+  assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
+
+  /* Diagonal part of matrix.vector product */
+
+  _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
+
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    if (mc->symmetric) {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+#pragma cdir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += alpha * xa1[face_id] * x[jj];
+        y[jj] += alpha * xa1[face_id] * x[ii];
+      }
+
+    }
+    else {
+
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
+
+#pragma cdir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += alpha * xa1[face_id] * x[jj];
+        y[jj] += alpha * xa2[face_id] * x[ii];
+      }
+
+    }
+
+  }
+
+}
+
+#endif /* Vector machine variant */
 
 /*----------------------------------------------------------------------------
  * Create a CSR matrix structure from a native matrix stucture.
@@ -1679,7 +2122,11 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
                  const cs_real_t    *restrict x,
                  cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_real_t  sii;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1688,12 +2135,13 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 
   /* Full rows for non-symmetric structure */
 
+#pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    cs_real_t  sii = 0.0;
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+    sii = 0.0;
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
@@ -1866,7 +2314,11 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
                         const cs_real_t    *restrict x,
                         cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj;
+  cs_int_t  ii, jj, n_cols;
+  cs_int_t  *restrict col_id;
+  cs_real_t  *restrict m_row;
+  cs_real_t  sii;
+
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
@@ -1875,12 +2327,13 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
 
   /* Full rows for non-symmetric structure */
 
+#pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
-    const cs_int_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    cs_real_t  sii = 0.0;
+    col_id = ms->col_id + ms->row_index[ii];
+    m_row = mc->val + ms->row_index[ii];
+    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+    sii = 0.0;
 
     /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
@@ -2069,22 +2522,24 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
  *   cell_num    <-- Global cell numbers (1 to n)
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *   halo        <-- Halo structure associated with cells, or NULL
+ *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *
  * returns:
  *   pointer to created matrix structure;
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_create(cs_matrix_type_t   type,
-                 cs_bool_t          symmetric,
-                 cs_bool_t          have_diag,
-                 cs_bool_t          periodic,
-                 cs_int_t           n_cells,
-                 cs_int_t           n_cells_ext,
-                 cs_int_t           n_faces,
-                 const fvm_gnum_t  *cell_num,
-                 const cs_int_t    *face_cell,
-                 const cs_halo_t   *halo)
+cs_matrix_create(cs_matrix_type_t       type,
+                 cs_bool_t              symmetric,
+                 cs_bool_t              have_diag,
+                 cs_bool_t              periodic,
+                 cs_int_t               n_cells,
+                 cs_int_t               n_cells_ext,
+                 cs_int_t               n_faces,
+                 const fvm_gnum_t      *cell_num,
+                 const cs_int_t        *face_cell,
+                 const cs_halo_t       *halo,
+                 const cs_numbering_t  *numbering)
 {
   cs_matrix_t *m;
 
@@ -2132,17 +2587,41 @@ cs_matrix_create(cs_matrix_type_t   type,
   m->face_cell = face_cell;
   m->cell_num = cell_num;
   m->halo = halo;
+  m->numbering = numbering;
 
   /* Set function pointers here */
 
   switch(m->type) {
 
   case CS_MATRIX_NATIVE:
+
     m->set_coefficients = _set_coeffs_native;
     m->release_coefficients = _release_coeffs_native;
     m->get_diagonal = _get_diagonal_native;
     m->vector_multiply = _mat_vec_p_l_native;
     m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_native;
+
+    /* Optimized variants here */
+
+#if defined(IA64_OPTIM)
+    m->vector_multiply = _mat_vec_p_l_native_ia64;
+#endif
+
+    if (m->numbering != NULL) {
+#if defined(HAVE_OPENMP)
+      if (m->numbering->type == CS_NUMBERING_THREADS) {
+        m->vector_multiply = _mat_vec_p_l_native_omp;
+        m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_native_omp;
+      }
+#endif
+#if defined(SX) && defined(_SX) /* For vector machines */
+      if (m->numbering->type == CS_NUMBERING_VECTORIZE) {
+        m->vector_multiply = _mat_vec_p_l_native_vector;
+        m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_vector;
+      }
+#endif
+    }
+
     break;
 
   case CS_MATRIX_CSR:
@@ -2150,7 +2629,7 @@ cs_matrix_create(cs_matrix_type_t   type,
     m->release_coefficients = _release_coeffs_csr;
     m->get_diagonal = _get_diagonal_csr;
     if (symmetric == false) {
-      if (_cs_glob_matrix_prefetch_rows > 0) {
+      if (_cs_glob_matrix_prefetch_rows > 0 && cs_glob_n_threads == 1) {
         m->vector_multiply = _mat_vec_p_l_csr_pf;
         m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_csr_pf;
       }

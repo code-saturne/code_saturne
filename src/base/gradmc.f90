@@ -153,6 +153,7 @@ implicit none
 !     DONNEES EN COMMON
 !===============================================================================
 
+include "paramx.h"
 include "vector.h"
 include "albase.h"
 include "period.h"

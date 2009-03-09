@@ -627,9 +627,92 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
   cs_post_renum_faces(renum_i, renum_b);
 }
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
+/*----------------------------------------------------------------------------
+ * Try to apply renumbering of faces and cells for multiple threads.
+ *
+ * parameters:
+ *   mesh            <->  Pointer to global mesh structure
+ *   mesh_quantities <->  Pointer to global mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_for_threads(cs_mesh_t             *mesh,
+                      cs_mesh_quantities_t  *mesh_quantities)
+{
+  int  update_c = 0, update_fi = 0, update_fb = 0;
+  int  n_i_groups = 1, n_b_groups = 1;
+  cs_int_t  *inumc = NULL, *inumfi = NULL, *inumfb = NULL;
+  fvm_lnum_t *i_group_index = NULL, *b_group_index = NULL;
+
+  /* Allocate Work arrays */
+
+  BFT_MALLOC(inumc, mesh->n_cells, cs_int_t);
+  BFT_MALLOC(inumfi, mesh->n_i_faces, cs_int_t);
+  BFT_MALLOC(inumfb, mesh->n_b_faces, cs_int_t);
+
+  /* Try renumbering */
+
+  {
+    cs_int_t ii;
+
+    for (ii = 0; ii < mesh->n_cells; ii++)
+      inumc[ii] = ii+1;
+
+    for (ii = 0; ii < mesh->n_i_faces; ii++)
+      inumfi[ii] = ii+1;
+
+    for (ii = 0; ii < mesh->n_b_faces; ii++)
+      inumfb[ii] = ii+1;
+  }
+
+  /* Only keep non-trivial renumbering arrays */
+
+  if (update_c == 0)
+    BFT_FREE(inumc);
+
+  if (update_fi == 0)
+    BFT_FREE(inumfi);
+
+  if (update_fb == 0)
+    BFT_FREE(inumfb);
+
+  /* Now update mesh */
+  /*-----------------*/
+
+  if (inumfi != NULL || inumfb != NULL)
+    _cs_renumber_update_faces(mesh,
+                              mesh_quantities,
+                              inumfi,
+                              inumfb);
+
+  if (inumc != NULL)
+    _cs_renumber_update_cells(mesh,
+                              mesh_quantities,
+                              inumc);
+
+  /* Add numbering info to mesh */
+  /*----------------------------*/
+
+  if (n_i_groups > 1) {
+    mesh->i_face_numbering = cs_numbering_create_threaded(cs_glob_n_threads,
+                                                          n_i_groups,
+                                                          i_group_index);
+    BFT_FREE(i_group_index);
+  }
+
+  if (n_b_groups > 1) {
+    mesh->b_face_numbering = cs_numbering_create_threaded(cs_glob_n_threads,
+                                                          n_b_groups,
+                                                          b_group_index);
+    BFT_FREE(b_group_index);
+  }
+
+  /* Now free remaining arrays */
+
+  BFT_FREE(inumfi);
+  BFT_FREE(inumfb);
+  BFT_FREE(inumc);
+}
 
 /*----------------------------------------------------------------------------
  * Try to apply renumbering of faces for vector machines.
@@ -639,14 +722,17 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
  * 0 means we should not renumber. On exit, 0 means we have not found an
  * adequate renumbering, 1 means we have (and it was applied).
  *
+ * If the target architecture does not enable vectorization, do as if no
+ * adequate renumbering was found.
+ *
  * parameters:
  *   mesh            <->  Pointer to global mesh structure
  *   mesh_quantities <->  Pointer to global mesh quantities structure
  *----------------------------------------------------------------------------*/
 
-void
-cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities)
+static void
+_renumber_for_vectorizing(cs_mesh_t             *mesh,
+                          cs_mesh_quantities_t  *mesh_quantities)
 {
   int _ivect[2] = {0, 0};
   cs_int_t   ivecti = 0, ivectb = 0;
@@ -655,6 +741,34 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
 
   cs_int_t  n_faces_max = CS_MAX(mesh->n_i_faces, mesh->n_b_faces);
   cs_int_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+
+
+#if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
+
+  /* Vector register numbers and lengths:
+   *   4       4096 ;
+   *  16       1024
+   *  32        512
+   *  64        256
+   * 128        128
+   * 256         64 */
+
+  const cs_int_t vector_size = 1024; /* Use register 16 */
+
+#elif defined(SX) && defined(_SX) /* For NEC SX series */
+
+  const cs_int_t vector_size = 256; /* At least for NEC SX-9 */
+
+#else
+
+  const cs_int_t vector_size = 1; /* Non-vector machines */
+
+#endif
+
+  /* Nothing to do if vector size = 1 */
+
+  if (vector_size == 1)
+    return;
 
   /* Allocate Work arrays */
 
@@ -669,6 +783,7 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
                            &(mesh->n_cells),
                            &(mesh->n_i_faces),
                            &(mesh->n_b_faces),
+                           &vector_size,
                            &ivecti,
                            &ivectb,
                            mesh->i_face_cells,
@@ -742,6 +857,13 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
     BFT_FREE(iworkf);
   }
 
+  /* Update mesh */
+
+  if (ivecti > 0)
+    mesh->i_face_numbering = cs_numbering_create_vectorized(vector_size);
+  if (ivectb > 0)
+    mesh->b_face_numbering = cs_numbering_create_vectorized(vector_size);
+
   /* Output info */
 
   _ivect[0] = ivecti; _ivect[1] = ivectb;
@@ -763,8 +885,13 @@ cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
              _ivect[0], cs_glob_n_ranks, _ivect[1]);
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Renumber mesh elements depending on code options and target machine.
+ * Renumber mesh elements for vectorization or OpenMP depending on code
+ * options and target machine.
  *
  * Currently, only the legacy vectorizing renumbering is handled.
  *
@@ -777,8 +904,14 @@ void
 cs_renumber_mesh(cs_mesh_t             *mesh,
                  cs_mesh_quantities_t  *mesh_quantities)
 {
-  cs_renumber_for_vectorizing(mesh,
-                              mesh_quantities);
+  /* Try vectorizing first */
+
+  _renumber_for_vectorizing(mesh, mesh_quantities);
+
+  /* Then try OpenMP if available */
+
+  if (cs_glob_n_threads > 1)
+    _renumber_for_threads(mesh, mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -45,6 +45,7 @@
 #include "cs_base.h"
 
 #include "cs_halo.h"
+#include "cs_numbering.h"
 #include "cs_perio.h"
 
 /*----------------------------------------------------------------------------*/
@@ -117,22 +118,24 @@ extern const char  *cs_matrix_type_fullname[];
  *   cell_num    --> Global cell numbers (1 to n)
  *   face_cell   --> Face -> cells connectivity (1 to n)
  *   halo        --> Halo structure associated with cells, or NULL
+ *   numbering   --> vectorization or thread-related numbering info, or NULL
  *
  * returns:
  *   pointer to created matrix structure;
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_create(cs_matrix_type_t   type,
-                 cs_bool_t          symmetric,
-                 cs_bool_t          have_diag,
-                 cs_bool_t          periodic,
-                 cs_int_t           n_cells,
-                 cs_int_t           n_cells_ext,
-                 cs_int_t           n_faces,
-                 const fvm_gnum_t  *cell_num,
-                 const cs_int_t    *face_cell,
-                 const cs_halo_t   *halo);
+cs_matrix_create(cs_matrix_type_t       type,
+                 cs_bool_t              symmetric,
+                 cs_bool_t              have_diag,
+                 cs_bool_t              periodic,
+                 cs_int_t               n_cells,
+                 cs_int_t               n_cells_ext,
+                 cs_int_t               n_faces,
+                 const fvm_gnum_t      *cell_num,
+                 const cs_int_t        *face_cell,
+                 const cs_halo_t       *halo,
+                 const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.

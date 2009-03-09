@@ -1,4 +1,41 @@
 * 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Refactoring of the mesh renumbering feature in order
+  to account for OpenMP support. Still missing is the
+  correct numbering of interior and boundary faces.
+  Based on initial work of Pascal Vezolles from IBM.
+  added routines:
+    include/base/cs_numbering.h
+    src/base/cs_numbering.c
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_matrix.h
+    include/base/cs_mesh.h
+    include/base/cs_prototypes.h
+    include/base/cs_renumber.h
+    include/base/parall.h
+    include/base/paramx.h
+    include/base/vector.h
+    src/base/cs_base.c
+    src/base/cs_benchmark.c
+    src/base/cs_grid.c
+    src/base/csinit.f90
+    src/base/cs_main.c
+    src/base/cs_matrix.c
+    src/base/cs_mesh.c
+    src/base/cs_renumber.c
+    src/base/cs_sles.c
+    src/base/gradmc.f90
+    src/base/iniini.f90
+    src/base/majgeo.f90
+    src/base/numvec.f90
+    src/base/prods2.f90
+    src/base/prods3.f90
+    src/base/prodsc.f90
+  modified scripts:
+    po/POTFILES.in
+    src/base/Makefile.am
+
+* 06/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Create a graphical post-processing view of the boundary
   conditions definition in case of error.
   added routines:

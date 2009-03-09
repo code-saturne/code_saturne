@@ -28,7 +28,7 @@
 subroutine csinit &
 !================
 
- ( argifo , irgpar , nrgpar , ilisr0, ilisrp )
+ ( argifo , irgpar , nrgpar , nthpar , ilisr0 , ilisrp )
 
 !===============================================================================
 !  FONCTION  :
@@ -48,6 +48,7 @@ subroutine csinit &
 !                  !    !     !   1 : communication par fichiers               !
 ! irgpar           ! e  ! <-- ! rang si parallele ; -1 si sequentiel           !
 ! nrgpar           ! e  ! <-- ! nombre de processus ; 1 si sequentiel          !
+! nthpar           ! e  ! <-- ! nombre de threads                              !
 ! ilisr0           ! e  ! <-- ! option de sortie du listing :                  !
 !                  !    !     !   0 : rang 0 non redirige                      !
 !                  !    !     !   1 : rang 0 dans fichier listing,             !
@@ -79,7 +80,7 @@ include "parall.h"
 
 !===============================================================================
 
-integer          argifo, irgpar, nrgpar, ilisr0, ilisrp
+integer          argifo, irgpar, nrgpar, nthpar, ilisr0, ilisrp
 
 character        name*300
 
@@ -91,6 +92,8 @@ character        name*300
 
 irangp = irgpar
 nrangp = nrgpar
+
+nthrdp = nthpar
 
 !===============================================================================
 ! Initialisation des paramètres de lecture des données Préprocesseur

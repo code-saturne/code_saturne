@@ -1565,7 +1565,8 @@ cs_sles_initialize(void)
                                               mesh->n_i_faces,
                                               mesh->global_cell_num,
                                               mesh->i_face_cells,
-                                              mesh->halo);
+                                              mesh->halo,
+                                              mesh->i_face_numbering);
 
   cs_glob_sles_native_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
                                                 false,
@@ -1576,7 +1577,8 @@ cs_sles_initialize(void)
                                                 mesh->n_i_faces,
                                                 mesh->global_cell_num,
                                                 mesh->i_face_cells,
-                                                mesh->halo);
+                                                mesh->halo,
+                                                mesh->i_face_numbering);
 }
 
 /*----------------------------------------------------------------------------

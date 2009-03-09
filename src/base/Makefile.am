@@ -81,6 +81,7 @@ $(top_srcdir)/include/base/cs_mesh_quantities.h \
 $(top_srcdir)/include/base/cs_mesh_solcom.h \
 $(top_srcdir)/include/base/cs_mesh_warping.h \
 $(top_srcdir)/include/base/cs_multigrid.h \
+$(top_srcdir)/include/base/cs_numbering.h \
 $(top_srcdir)/include/base/cs_opts.h \
 $(top_srcdir)/include/base/cs_parall.h \
 $(top_srcdir)/include/base/cs_perio.h \
@@ -237,6 +238,7 @@ cs_mesh_quantities.c \
 cs_mesh_solcom.c \
 cs_mesh_warping.c \
 cs_multigrid.c \
+cs_numbering.c \
 cs_opts.c \
 cs_parall.c \
 cs_perio.c \

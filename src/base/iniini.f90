@@ -1410,13 +1410,8 @@ enddo
 !  le code sur NEC SX8 ou Cray X1 de maniere analogue).
 !  Sur machine non vectorielle, inutile de chercher a vectoriser.
 
-#if defined(__uxpvp__)
 ivecti = -1
 ivectb = -1
-#else
-ivecti = 0
-ivectb = 0
-#endif
 
 !===============================================================================
 ! 10. INITIALISATION DES PARAMETRES DE PERIODICITE de period.h

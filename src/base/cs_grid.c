@@ -1037,7 +1037,8 @@ cs_grid_create_from_shared(fvm_lnum_t         n_cells,
                                n_faces,
                                NULL,
                                face_cell,
-                               halo);
+                               halo,
+                               NULL);
 
   return g;
 }
@@ -1438,7 +1439,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
                                c->n_faces,
                                NULL,
                                c->face_cell,
-                               c->halo);
+                               c->halo,
+                               NULL);
 
   /* Return new (coarse) grid */
 

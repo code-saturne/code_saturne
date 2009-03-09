@@ -26,6 +26,7 @@ src/base/cs_mesh_quantities.c
 src/base/cs_mesh_solcom.c
 src/base/cs_mesh_warping.c
 src/base/cs_multigrid.c
+src/base/cs_numbering.c
 src/base/cs_opts.c
 src/base/cs_parall.c
 src/base/cs_perio.c

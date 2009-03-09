@@ -179,8 +179,9 @@ extern void CS_PROCF (csflsh, CSFLSH)
 extern void CS_PROCF (csinit, CSINIT)
 (
  const cs_int_t  *ifoenv,  /* <-- 0: SolCom mesh; 1: Preprocesor mesh */
- const cs_int_t  *iparal,  /* <-- MPI Rank in parallel, -1 otherwise */
- const cs_int_t  *nparal,  /* <-- Number of MPI processes, or 1 */
+ const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
+ const cs_int_t  *nrgpar,  /* <-- Number of MPI processes, or 1 */
+ const cs_int_t  *nthpar,  /* <-- Number of threads */
  const cs_int_t  *ilisr0,  /* <-- Output of main log (listing (rank 0): */
                            /*     0: non redirected; 1: to 'listing' file */
  const cs_int_t  *ilisrp   /* <-- Output of logs for ranks > 0: */
@@ -438,7 +439,11 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *ncelgb,  /* <-- global number of cells */
  const cs_int_t   *nfacgb,  /* <-- global number of interior faces */
  const cs_int_t   *nfbrgb,  /* <-- global number of boundary faces */
- const cs_int_t   *nsomgb   /* <-- global number of vertices */
+ const cs_int_t   *nsomgb,  /* <-- global number of vertices */
+ const cs_int_t   *ngrpi,   /* <-- number of interior face groups */
+ const cs_int_t   *ngrpb,   /* <-- number of boundary face groups */
+ const cs_int_t   *idxfi,   /* <-- interior face group/thread start/end ids */
+ const cs_int_t   *idxfb    /* <-- boundary face group/thread start/end ids */
 );
 
 /*----------------------------------------------------------------------------
@@ -465,6 +470,7 @@ extern void CS_PROCF (numvec, NUMVEC)
  const cs_int_t  *ncel,     /* <-- number of local cells */
  const cs_int_t  *nfac,     /* <-- number of interior faces */
  const cs_int_t  *nfabor,   /* <-- number of boundary faces */
+ const cs_int_t  *lregis,   /* <-- vector registor length */
  cs_int_t        *irveci,   /* <-> interior face vectorization indic. */
  cs_int_t        *irvecb,   /* <-> boundary face vectorization indic. */
  cs_int_t         ifacel[], /* <-- interior face->cell connectivity */

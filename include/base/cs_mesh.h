@@ -47,6 +47,7 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_numbering.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -130,6 +131,9 @@ typedef struct {
   cs_int_t   n_ghost_cells;        /* Number of "ghost" cells */
 
   cs_halo_t  *halo;                /* Structure used to manage ghost cells */
+
+  cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
+  cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
 
   /* Extended neighborhood features */
 

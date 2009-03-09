@@ -28,20 +28,8 @@
 !                              vector.h
 !===============================================================================
 
-! Longueur de registre LREGIS
-!           VR number    VR lenght
-!               4       4096
-!               8       2048
-!              16       1024
-!              32        512
-!              64        256
-!             128        128
-!             256         64
-
 ! IVECTI,IVECTB             INDICATEUR (1/0) DE VECTORISATION
-!                           FORCEE OU NON (FACES INTERN ET DE BRD
+!                           FORCEE OU NON (FACES INTERNES ET DE BORD)
 
-integer   lregis
-parameter(lregis=1024)
 integer           ivecti , ivectb
 common / ivecto / ivecti , ivectb

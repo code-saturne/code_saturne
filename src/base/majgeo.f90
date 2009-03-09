@@ -28,8 +28,9 @@
 subroutine majgeo &
 !================
 
- ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,                    &
-   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 )
+ ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,           &
+   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
+   ngrpi  , ngrpb  , idxfi  , idxfb   )
 
 !===============================================================================
 ! FONCTION :
@@ -53,6 +54,10 @@ subroutine majgeo &
 ! nfacg2           ! e  ! <-- ! nombre global de faces internes                !
 ! nfbrg2           ! e  ! <-- ! nombre global de faces de bord                 !
 ! nsomg2           ! e  ! <-- ! nombre global de sommets                       !
+! ngrpi            ! e  ! <-- ! nb. groupes de faces interieures               !
+! ngrpb            ! e  ! <-- ! nb. groupes de faces de bord                   !
+! idxfi            ! e  ! <-- ! index pour faces internes                      !
+! idxfb            ! e  ! <-- ! index pour faces de bord                       !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -78,7 +83,11 @@ include "parall.h"
 integer          ncel2, ncele2, nfac2, nfabo2, nsom2
 integer          lndfa2, lndfb2
 integer          ncelg2, nfacg2 , nfbrg2, nsomg2
+integer          ngrpi, ngrpb, idxfi, idxfb
 
+! VARIABLES LOCALES
+
+integer          ii, jj
 
 !===============================================================================
 
@@ -121,5 +130,57 @@ nfacgb = nfacg2
 nfbrgb = nfbrg2
 nsomgb = nsomg2
 
+!===============================================================================
+! 5. INITIALISATION DES INFORMATIONS SUR LES THREADS
+!===============================================================================
+
+do ii = 1, nthrd1
+  do jj = 1, nthrd2
+    iompli(1, ii, jj) = 0
+    iompli(2, ii, jj) = 0
+    iomplb(1, ii, jj) = 0
+    iomplb(2, ii, jj) = 0
+  enddo
+enddo
+
+! Pour le groupe j et le thread i, boucles sur les faces
+! de iompl.(1, j, i) à iompl.(2, j, i).
+
+! Par defaut (i.e. sans Open MP), 1 thread et un groupe
+
+iompli(1, 1, 1) = 1
+iompli(2, 1, 1) = nfac
+iomplb(1, 1, 1) = 1
+iomplb(2, 1, 1) = nfabor
+
+! Numerotations pour boucles OpenMP sur les faces interieures
+
+if (nthrdp.gt.1 .and. ngrpi.gt.1) then
+
+  do ii = 1, nthrdp
+    do jj = 1, ngrpi
+
+      iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + jj - 1) + 1
+      iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + jj) + 1
+
+    enddo
+  enddo
+
+endif
+
+! Numerotations pour boucles OpenMP sur les faces de bord
+
+if (nthrdp.gt.1 .and. ngrpb.gt.1) then
+
+  do ii = 1, nthrdp
+    do jj = 1, ngrpb
+
+      iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + jj - 1) + 1
+      iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + jj) + 1
+
+    enddo
+  enddo
+
+endif
 return
 end

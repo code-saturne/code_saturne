@@ -57,24 +57,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Try to apply renumbering of faces for vector machines.
- *
- * Renumbering can be cancelled using the IVECTI and IVECTB values in
- * Fortan common IVECTO: -1 indicates we should try to renumber,
- * 0 means we should not renumber. On exit, 0 means we have not found an
- * adequate renumbering, 1 means we have (and it was applied).
- *
- * parameters:
- *   mesh            <->  Pointer to global mesh structure
- *   mesh_quantities <->  Pointer to global mesh quantities structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_renumber_for_vectorizing(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------
- * Renumber mesh elements depending on code options and target machine.
+ * Renumber mesh elements for vectorization or OpenMP depending on code
+ * options and target machine.
  *
  * Currently, only the legacy vectorizing renumbering is handled.
  *

@@ -29,7 +29,7 @@ subroutine numvec &
 !================
 
  ( ncelet , ncel   , nfac   , nfabor ,                            &
-   irveci , irvecb ,                                              &
+   lregis , irveci , irvecb ,                                     &
    ifacel , ifabor ,                                              &
    inumfi , inumfb , iworkf , ismbs  )
 
@@ -47,6 +47,7 @@ subroutine numvec &
 ! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
 ! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
 ! nfac  /nfabor    ! e  ! <-- ! nombre total de faces internes/de brd          !
+! lregis           ! e  ! --> ! longueur de registre vectoriel                 !
 ! irveci           ! e  ! --> ! indicateur vectorisation face intern           !
 ! irvecb           ! e  ! --> ! indicateur vectorisation face bord             !
 ! ifacel           ! te ! <-- ! no des elts voisins d'une face intern          !
@@ -78,7 +79,7 @@ include "entsor.h"
 ! Arguments
 
 integer          ncelet, ncel, nfac, nfabor
-integer          irveci, irvecb
+integer          lregis, irveci, irvecb
 integer          ifacel(2,nfac),ifabor(nfabor)
 integer          inumfi(nfac), inumfb(nfabor)
 integer          iworkf(*), ismbs(ncelet)
@@ -96,7 +97,19 @@ integer          ibloc, iel, ireg, ilig, nfamax, itmp
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS COMMUNES
+! 1. SORTIE IMMEDIATE SI L'ON N'A PAS UN CALCULATEUR VECTORIEL
+!===============================================================================
+
+if (lregis .eq. 1) then
+  ivecti = 0
+  ivectb = 0
+  irveci = 0
+  irvecb = 0
+  return
+endif
+
+!===============================================================================
+! 2. INITIALISATIONS COMMUNES
 !===============================================================================
 
 ! --- Numerotation
@@ -109,7 +122,7 @@ enddo
 
 
 !===============================================================================
-! 2. RANGEMENT DES FACES INTERNES
+! 3. RANGEMENT DES FACES INTERNES
 !     (pour le raisonnement, on place le reliquat a la fin)
 !===============================================================================
 
@@ -257,7 +270,7 @@ if(iloop.le.100) goto 100
  400  continue
 
 !===============================================================================
-! 3. RANGEMENT DES FACES DE BORD
+! 4. RANGEMENT DES FACES DE BORD
 !===============================================================================
 
 ! --- Si l'utilisateur a indique IVECTB = 0, il ne souhaite pas
@@ -325,7 +338,7 @@ ivectb=1
   900 continue
 
 !===============================================================================
-! 4. VERIFICATIONS
+! 5. VERIFICATIONS
 !===============================================================================
 
 ! -----> Verif que toutes les faces se retrouvent une et une seule fois
@@ -463,14 +476,14 @@ if(ivectb.eq.1) then
 endif
 
 !===============================================================================
-! 5. INDICATEURS
+! 6. INDICATEURS
 !===============================================================================
 
 irveci = ivecti
 irvecb = ivectb
 
 !===============================================================================
-! 6. FORMATS
+! 7. FORMATS
 !===============================================================================
 
 #if defined(_CS_LANG_FR)

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -29,21 +29,30 @@
 !===============================================================================
 
 
-! GESTION DU PARALLELLISME
-!   IRANGP : RANG DU PROCESSUS
-!     = -1 EN MODE SEQUENTIEL
-!     =  R (0 < R < NB_PROCESSUS) EN EXECUTION PARALLELLE
-!   NRANGP : NOMBRE DE PROCESSUS (=1 SI SEQUENTIEL)
+! Gestion du parallellisme
 
-integer           irangp, nrangp
-common / iparal / irangp, nrangp
+!   irangp : rang du processus
+!     = -1 en mode sequentiel
+!     =  r (0 < r < nb_processus) en execution parallelle distribuee
+!   nrangp : nombre de processus (=1 si sequentiel)
+!   nthrdp : nombre de threads (> 1 avec OpenMP, 1 sinon)
+!   iompli : bornes par thread pour les faces internes
+!   iomplb : bornes par thread pour les faces de bord
+!            (pour le groupe j et le thread i, boucles
+!             de iompl.(1, j, i) à iompl.(2, j, i)
+
+integer           irangp, nrangp, nthrdp,                         &
+                  iompli(2, nthrd1, nthrd2),                      &
+                  iomplb(2, nthrd1, nthrd2)
+common / iparal / irangp, nrangp, nthrdp,                         &
+                  iompli, iomplb
 
 
-! DIMENSIONS GLOBALES (I.E. INDEPENDANTES DE DECOUPAGE PARALLELE)
-!   NCELGB : NOMBRE DE CELLULES GLOBAL
-!   NFACGB : NOMBRE DE FACES INTERNES GLOBAL
-!   NFBRGB : NOMBRE DE FACES DE BORD GLOBAL
-!   NSOMGB : NOMBRE DE SOMMETS GLOBAL
+! Dimensions globales (i.e. independantes de decoupage parallele)
+!   ncelgb : nombre de cellules global
+!   nfacgb : nombre de faces internes global
+!   nfbrgb : nombre de faces de bord global
+!   nsomgb : nombre de sommets global
 
 integer           ncelgb, nfacgb, nfbrgb, nsomgb
 common / igeogb / ncelgb, nfacgb, nfbrgb, nsomgb
