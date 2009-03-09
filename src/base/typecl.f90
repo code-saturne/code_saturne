@@ -1149,7 +1149,6 @@ do iphas = 1, nphas
           if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
             itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
             if (iok.eq.0.or.iok.eq.2) iok = iok + 1
-            endif
           else
             icodcl(ifac,ivar) = 1
 !                 RCODCL(IFAC,IVAR,1) = Utilisateur
@@ -1168,7 +1167,6 @@ do iphas = 1, nphas
           else
             itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
             if (iok.lt.2) iok = iok + 2
-            endif
           endif
         else
           icodcl(ifac,ivar) = 1
