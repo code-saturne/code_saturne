@@ -120,6 +120,7 @@ fi
 if test "x$cs_gcc" = "xgcc"; then
 
   # Version strings for logging purposes and known compiler flag
+  $CC -v > $outfile 2>&1
   cs_ac_cc_version=`$CC --version 2>&1 | head -1`
   cs_cc_compiler_known=yes
 
@@ -403,8 +404,9 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
 fi
 
-if test -f $outfile ; then 
+if test -f $outfile ; then
   cs_ac_cc_version_full=`sed -e '11,$d' $outfile`
+  rm -f $outfile
 fi
 
 
@@ -425,6 +427,7 @@ cs_gfortran=gfortran
 if test "x$cs_gfortran" = "xgfortran"; then
 
   # Version strings for logging purposes and known compiler flag
+  $FC -v > $outfile 2>&1
   cs_ac_fc_version=`$FC --version 2>&1 | head -1`
   cs_fc_compiler_known=yes
 

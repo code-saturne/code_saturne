@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+# @configure_input@
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 2009 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+
+#-------------------------------------------------------------------------------
+
+@cs_config_comments@
+
+#-------------------------------------------------------------------------------
+
+import os.path
+
+# Package Version
+#----------------
+
+class package:
+    name="@PACKAGE_NAME@"
+    version="@PACKAGE_VERSION@"
+
+# Installation directories
+#-------------------------
+
+class dirs:
+    prefix = "@prefix@"
+    exec_prefix = "@exec_prefix@"
+    if exec_prefix == "${prefix}":
+        exec_prefix = prefix
+    includedir = "@includedir@"
+    if includedir == "${prefix}/include":
+        includedir = os.path.join(prefix, "include")
+    libdir = "@libdir@"
+    if libdir == "${exec_prefix}/lib":
+        libdir = os.path.join(exec_prefix, "lib")
+    datarootdir = "@datarootdir@"
+    if datarootdir == "${prefix}/share":
+        datarootdir = os.path.join(prefix, "share")
+    datadir = "@datadir@"
+    if datadir == "${datarootdir}":
+        datadir = datarootdir
+    docdir = "@docdir@"
+    if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
+        docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
+    pdfdir = "@pdfdir@"
+    if pdfdir == "${docdir}":
+        pdfdir = docdir
+
+# Build tools, option, and libraries
+#-----------------------------------
+
+class build:
+    cc="@CC@"
+    fc="@FC@"
+    cppflags="@CPPFLAGS@ @MPI_CPPFLAGS@ @BFT_CPPFLAGS@ @FVM_CPPFLAGS@"
+    cflags="@CFLAGS@"
+    fcflags="@FCFLAGS@"
+    ldflags="@LDFLAGS@ @FVM_LDFLAGS@ @MPI_LDFLAGS@ @BFT_LDFLAGS@"
+    libs="@LIBS@ @FVM_LIBS@ @MPI_LIBS@ @BFT_LIBS@"
+
+#-------------------------------------------------------------------------------
+
+def main():
+    """
+    Main configuration info function.
+    """
+    print "Directories:"
+    print "  dirs.prefix = " + dirs.prefix
+    print "  dirs.exec_prefix = " + dirs.exec_prefix
+    print "  dirs.includedir = " + dirs.includedir
+    print "  dirs.libdir = " + dirs.libdir
+    print "  dirs.datarootdir = " + dirs.datarootdir
+    print "  dirs.datadir = " + dirs.datadir
+    print "  dirs.docdir = " + dirs.docdir
+    print "  dirs.pdfdir = " + dirs.pdfdir
+    print ""
+    print "Compilers and associated options:"
+    print "  cc = " + build.cc
+    print "  fc = " + build.fc
+    print "  cppflags = " + build.cppflags
+    print "  cflags = " + build.cflags
+    print "  fcflags = " + build.fcflags
+    print "  ldflags = " + build.ldflags
+    print "  libs = " + build.libs
+
+if __name__ == '__main__':
+    main()
+

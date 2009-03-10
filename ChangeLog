@@ -1,3 +1,13 @@
+* 10/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a Python config files to enable the user scripts to
+  be aware of the build and install options.
+  added scripts:
+    bin/cs_config.py.in
+    configure.ac
+  modified scripts:
+    config/cs_auto_flags.sh
+    config/cs_config_info.m4
+
 * 09/03/2009 - David Monfort <david.monfort@edf.fr>
   Do not compile the code if there is no user file.
   modified script:

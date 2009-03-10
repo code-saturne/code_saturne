@@ -376,19 +376,42 @@ AC_SUBST(LIBS)
 # Output
 #------------------------------------------------------------------------------
 
-# If we use GNU gettext, we need intl/Makefile, po/Makefile, and m4/Makefile.
+# Output configuration info
+
+CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
+
+CS_AC_CONFIG_INFO_EXTRA([
+# use debugging code:                              "$debug"
+# MPI (Message Passing Interface) support:         "$cs_have_mpi"
+# BLAS (Basic Linear Algebra Subprograms) support: "$have_blas"
+# Libxml2 (XML Reader) support:                    "$have_libxml2"
+# IP socket support (for SYRTHES 3 or CFD_Proxy)): "$have_socket"
+# Dynamic loader support (for YACS):               "$have_dlloader"
+])
+
+CS_AC_CONFIG_INFO_CC([${cs_ac_cc_version}], [${cs_ac_cc_version_full}])
+CS_AC_CONFIG_INFO_FC([${cs_ac_fc_version}], [${cs_ac_fc_version_full}])
+
+CS_AC_CONFIG_INFO_FINALIZE
+
+AC_SUBST_FILE([cs_config_comments])
+cs_config_comments=cs_config_comments_include
+
+# Main configuration
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
-                 bin/check_mesh bin/cs_info bin/cs_create
+                 bin/check_mesh bin/cs_config.py bin/cs_info bin/cs_create
                  bin/runcase bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 
 AC_OUTPUT
+
+rm -f cs_config_comments_include
 
 echo
 echo "Configuration options:"
