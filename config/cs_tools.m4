@@ -22,7 +22,7 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_PREPRO(Minimal Release string, [Maximal Release string])
 #--------------------------------------------------------------------
-# Check for the Preprocessor executable ; defines CSPP_HOME
+# Check for the Preprocessor executable ; defines ecs_prefix
 
 AC_DEFUN([CS_AC_TEST_PREPRO], [
 
@@ -36,7 +36,7 @@ AC_SUBST(ecs_prefix)
 
 # CS_AC_TEST_GUI(Minimal Release string, [Maximal Release string])
 #-----------------------------------------------------------------
-# Check for the GUI executable ; defines CSGUIHOME
+# Check for the GUI executable ; defines ics_prefix
 
 AC_DEFUN([CS_AC_TEST_GUI], [
 
@@ -50,7 +50,7 @@ AC_SUBST(ics_prefix)
 
 # CS_AC_TEST_SYRCS(Minimal Release string, [Maximal Release string])
 #-------------------------------------------------------------------
-# Check for the SYR_CS library ; defines SYRCS_HOME
+# Check for the SYR_CS library ; defines syrcs_prefix
 
 AC_DEFUN([CS_AC_TEST_SYRCS], [
 
@@ -62,5 +62,19 @@ fi
 
 AC_CHECK_FILE($syrcs_bindir/syr_cs_profile, syrcs_prefix=$with_syrcs, )
 AC_SUBST(syrcs_prefix)
+
+])dnl
+
+
+# CS_AC_TEST_PYTHON()
+#--------------------
+# Check specific Python executable (if needed); defines python_prefix
+
+AC_DEFUN([CS_AC_TEST_PYTHON], [
+
+AC_ARG_WITH(python, [AS_HELP_STRING([--with-python=PATH], [specify prefix directory for Python])])
+
+AC_CHECK_PROG(python_prefix, python, $with_python, , $with_python/bin, )
+AC_SUBST(python_prefix)
 
 ])dnl

@@ -234,12 +234,13 @@ LT_INIT
 
 CS_AC_TEST_BFT(["1.0.0"])
 CS_AC_TEST_FVM(["0.13.0"])
-CS_AC_TEST_PREPRO
-CS_AC_TEST_GUI
-CS_AC_TEST_SYRCS
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS
 CS_AC_TEST_MPI
+CS_AC_TEST_PREPRO
+CS_AC_TEST_GUI
+CS_AC_TEST_SYRCS
+CS_AC_TEST_PYTHON
 
 #------------------------------------------------------------------------------
 # Checks for header files.

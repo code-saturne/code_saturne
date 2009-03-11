@@ -239,16 +239,24 @@ ecs_prefix=@ecs_prefix@
 ecs_exec_prefix=${ecs_prefix}
 ecs_bindir=${ecs_exec_prefix}/bin
 #
+# SYR_CS installation parameters
+#
+syrcs_prefix=@syrcs_prefix@
+#
+# HOMARD installation parameters (to be completed if needed)
+#
+homard_prefix=
+#
 ########################################################################
 #  Mesh Adaptation
 #
 if [ ! -z  "${ADAPTATION}" ] ; then
   if [ "${ADAPTATION}" = "-help" ] ; then
-    ${CSHOMARD_HOME}/saturne_homard ${ADAPTATION}
+    ${homard_prefix}/saturne_homard ${ADAPTATION}
     exit 0
   else
     HOMARD_options="  -v"
-    ${CSHOMARD_HOME}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $CASEDIR \
+    ${homard_prefix}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $CASEDIR \
                     -Pilotage_Adaptation $ADAPTATION $HOMARD_options || exit 1
   fi
 fi
@@ -695,14 +703,13 @@ echo '    Kernel          : ' $prefix                          >>$summary
 echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
 echo '    Interface       : ' $ics_prefix                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
-echo '    SYRCS_HOME      : ' $SYRCS_HOME                      >>$summary
-echo '    CSHOMARD_HOME   : ' $CSHOMARD_HOME                   >>$summary
+echo '    SYR_CS          : ' $syrcs_prefix                    >>$summary
+echo '    HOMARD          : ' $homard_prefix                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary
 echo '    PATH            : ' $PATH                            >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    User            : ' $USER                            >>$summary
-echo '    Architecture    : ' $NOM_ARCH                        >>$summary
 echo '========================================================'>>$summary
 echo '    Machine         : '                                  >>$summary
      uname -a                                                  >>$summary

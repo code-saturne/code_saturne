@@ -1,4 +1,14 @@
 * 11/03/2009 - David Monfort <david.monfort@edf.fr>
+  Add a --with-python option so that the Python executable used
+  by the SaturneGUI script can be set up at installation stage.
+  Minor modifications in the runcase script.
+  modified scripts:
+    bin/runcase.in
+    bin/SaturneGUI.in
+    config/cs_tools.m4
+    configure.ac
+
+* 11/03/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add a cs_compile Python script to enable user compilation,
   based on information provided by cs_config.py, and add rpath

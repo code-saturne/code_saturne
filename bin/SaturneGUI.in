@@ -30,8 +30,8 @@
 # Python may be set by Salome under that environment
 if [ -n "${KERNEL_ROOT_DIR}" ] ; then
   CS_PYTHON=python
-elif [ -x ${CS_ROOT}/opt/python/arch/${NOM_ARCH}/bin/python ] ; then
-  CS_PYTHON=${CS_ROOT}/opt/python/arch/${NOM_ARCH}/bin/python
+elif [ -x @python_prefix@/bin/python ] ; then
+  CS_PYTHON=@python_prefix@/bin/python
 else
   CS_PYTHON=python
 fi
