@@ -10,6 +10,13 @@
     bin/macros_Linux_x86_64.mk
     bin/macros_SX9.mk
     bin/Makefile
+    extras/macros_old/macros_IRIX64.mk
+    extras/macros_old/macros_SunOS.mk
+    extras/macros_old/macros_OSF1.mk
+    extras/macros_old/macros_Linux_CCRT.mk
+    extras/macros_old/macros_HP-UX.mk
+    extras/macros_old/README
+    extras/macros_old
 
 * 11/03/2009 - David Monfort <david.monfort@edf.fr>
   Add a --with-python option so that the Python executable used
