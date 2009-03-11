@@ -1,4 +1,17 @@
 * 11/03/2009 - David Monfort <david.monfort@edf.fr>
+  Remove (at last!) the cs_profile, Makefile and macros files.
+  removed scripts:
+    bin/cs_profile
+    bin/macros_Blue_Gene_L.mk
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_Darwin.mk
+    bin/macros_Linux.mk
+    bin/macros_Linux_IA64.mk
+    bin/macros_Linux_x86_64.mk
+    bin/macros_SX9.mk
+    bin/Makefile
+
+* 11/03/2009 - David Monfort <david.monfort@edf.fr>
   Add a --with-python option so that the Python executable used
   by the SaturneGUI script can be set up at installation stage.
   Minor modifications in the runcase script.
