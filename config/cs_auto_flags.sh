@@ -40,6 +40,7 @@
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
 # ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "")
+# ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
@@ -483,7 +484,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
 fi
 
-if test -f $outfile ; then 
+if test -f $outfile ; then
   cs_ac_fc_version_full=`sed -e '11,$d' $outfile`
 fi
 
@@ -507,6 +508,16 @@ if test "x$cs_linker_set" != "xyes" ; then
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
       ldflags_default_prf="-pg"
+      ldflags_rpath="-Wl,-rpath -Wl,"
+      if test "x$cs_gfortran" = "xgfortran"; then
+        libgfortran_path=`$FC --print-file-name=libgfortran.so`
+        libgfortran_dir=`dirname $libgfortran_path`
+        unset libgfortran_path
+        if test "`echo $libgfortran_dir | cut -c1-4`" != "/usr" ; then
+          ldflags_rpath="${ldflags_rpath}${libgfortran_dir}"
+        fi
+        unset libgfortran_dir
+      fi
       ;;
 
     osf*)

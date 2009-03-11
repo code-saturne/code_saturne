@@ -28,11 +28,6 @@
 #
 # Handle SYRTHES files when coupled: compile, copy data, or copy results
 #
-# For compilation, necessary environment variables are:
-#
-#   SYRCS_HOME  (normally exported by cs_profile)
-#   NOM_ARCH    (architecture, normally exported by cs_profile)
-#
 # Command-line arguments are described by the usage message below.
 #
 ########################################################################
@@ -139,9 +134,14 @@ if [ "$1" = "-compile" ] ; then
       fi
     done
   fi
+  
+  # SYR_CS library installation parameters
+  syrcs_prefix=@syrcs_prefix@
+  syrcs_bindir=${syrcs_prefix}/bin
 
-  ln -s $SYRCS_HOME/bin/Makefile .
-  make syrthes NOM_ARCH=${NOM_ARCH} > ./compil.log 2>&1
+  ln -s ${syrcs_bindir}/Makefile .
+  . ${syrcs_bindir}/syrcs_profile
+  make syrthes > ./compil.log 2>&1
   make_ret=$?
   make clean > /dev/null 2>&1
 

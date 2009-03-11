@@ -1,3 +1,29 @@
+* 11/03/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Add a cs_compile Python script to enable user compilation,
+  based on information provided by cs_config.py, and add rpath
+  handling in this latter script to be able to link even if the
+  library path is not standard.
+  Add a call to the new syr_cs_profile in SYRTHES coupling
+  handling.
+  Modify the behaviour of cs_create so that the comment removal
+  and version tag is done at the installation stage, and no more
+  at the study structure creation.
+  Minor correction and modification in the runcase script.
+  added scripts:
+    bin/cs_compile
+    bin/runcase_syrthes.in
+  removed scripts:
+    bin/runcase_syrthes
+  modified scripts:
+    bin/cs_config.py.in
+    bin/cs_create.in
+    bin/runcase.in
+    config/cs_auto_flags.sh
+    config/cs_tools.m4
+    configure.ac
+    Makefile.am
+
 * 10/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a Python config files to enable the user scripts to
   be aware of the build and install options.

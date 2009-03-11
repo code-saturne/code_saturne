@@ -61,6 +61,8 @@ ACLOCAL_AMFLAGS = -I config
 dist_bin_SCRIPTS = \
 bin/check_consistency \
 bin/check_mesh \
+bin/cs_compile \
+bin/cs_config.py \
 bin/cs_create \
 bin/cs_info \
 bin/gracehst \
@@ -91,13 +93,21 @@ data/thch/dp_FUE \
 data/thch/dp_transfo \
 data/thch/JANAF
 
-# Tag the user files with the package version number
+# Finish user files installation
+# - tag with the package version number
+# - remove the test preventing from using a source file
+# Done with two sed passes (do not work otherwise)
 
 install-data-hook:
 	cd $(DESTDIR)$(datadir)/users && \
-	stub="^\!VERS\n"; \
+	user_files=`ls */*.f90 2>/dev/null`; \
+	stubvers="^\!VERS\n"; \
 	version1="\!VERS                  Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
-	for file in */*.f90; do \
-	  sed -i -s "N;s/$${stub}/$${version1}$${version2}/" "$${file}"; \
+	comment1="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT"; \
+	comment2="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN"; \
+	for file in $${user_files}; do \
+	  sed -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
+	  sed -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
+	  mv "$${file}.tmp" "$${file}"; \
 	done

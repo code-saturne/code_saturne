@@ -79,6 +79,7 @@ class build:
     fcflags="@FCFLAGS@"
     ldflags="@LDFLAGS@ @FVM_LDFLAGS@ @MPI_LDFLAGS@ @BFT_LDFLAGS@"
     libs="@LIBS@ @FVM_LIBS@ @MPI_LIBS@ @BFT_LIBS@"
+    rpath="@LDRPATH@"
 
 #-------------------------------------------------------------------------------
 
@@ -104,6 +105,7 @@ def main():
     print "  fcflags = " + build.fcflags
     print "  ldflags = " + build.ldflags
     print "  libs = " + build.libs
+    print "  rpath = " + build.rpath
 
 if __name__ == '__main__':
     main()

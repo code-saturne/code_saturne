@@ -154,6 +154,7 @@ if test "x$auto_flags" = "xtrue" ; then
   CFLAGS="$cflags_default $user_CFLAGS"
   FCFLAGS="$fcflags_default $user_FCFLAGS"
   LDFLAGS="$ldflags_default $user_LDFLAGS"
+  LDRPATH="$ldflags_rpath"
 
   if test "x$debug" = xtrue; then
     CFLAGS_DBG="$cflags_default_dbg"
@@ -179,7 +180,7 @@ if test "x$auto_flags" = "xtrue" ; then
 
   AC_SUBST(LDFLAGS_DBG)
   AC_SUBST(LDFLAGS_OPT)
-
+  AC_SUBST(LDRPATH)
 fi
 
 # Add some preprocessor flags to include additional system features
@@ -187,7 +188,7 @@ fi
 
 case "$host_os" in
   linux*)
-    CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE"
+    CPPFLAGS="${CPPFLAGS} -D_POSIX_SOURCE"
     ;;
   *bsd* | solaris2.* | aix*)
     ;;
@@ -385,7 +386,7 @@ CS_AC_CONFIG_INFO_EXTRA([
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
 # BLAS (Basic Linear Algebra Subprograms) support: "$have_blas"
 # Libxml2 (XML Reader) support:                    "$have_libxml2"
-# IP socket support (for SYRTHES 3 or CFD_Proxy)): "$have_socket"
+# IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket"
 # Dynamic loader support (for YACS):               "$have_dlloader"
 ])
 
@@ -405,7 +406,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  bin/check_mesh bin/cs_config.py bin/cs_info bin/cs_create
-                 bin/runcase bin/SaturneGUI])
+                 bin/runcase bin/runcase_syrthes bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 

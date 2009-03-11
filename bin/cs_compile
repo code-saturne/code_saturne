@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+#
+#-------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Solver.
+#
+#   Copyright (C) 2009  EDF
+#
+#   The Code_Saturne Preprocessor is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Preprocessor is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Preprocessor; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+import fnmatch
+import getopt
+import os
+import sys
+import subprocess
+import tempfile
+
+import cs_config
+
+#-------------------------------------------------------------------------------
+
+def so_dirs_path(flags):
+    """
+    Assemble path for shared libraries in nonstandard directories.
+    """
+    retval = ""
+    first = True
+
+    args = flags.split(" ")
+
+    for arg in args:
+        if arg[0:2] == '-L' and arg[0:6] != '-L/usr' and arg[0:6] != '-L/lib':
+            if first == True:
+                retval = " " + cs_config.build.rpath + ":" + arg[2:]
+                first = False
+            else:
+                retval = retval + ":" + arg[2:]
+
+    return retval
+
+#-------------------------------------------------------------------------------
+
+def run_command(cmd):
+    """
+    Run a command.
+    """
+    print cmd
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    output = p.communicate()
+    print output[0], output[1]
+
+    return p.returncode
+
+#-------------------------------------------------------------------------------
+
+def compile_and_link(srcdir, destdir, optlibs):
+    """
+    Compilation and link function.
+    """
+    retval = 0
+
+    exec_name = "cs_solver"
+    if destdir != None:
+        exec_name = os.path.join(destdir, exec_name)
+
+    # Change to temporary directory
+
+    call_dir = os.getcwd()
+    temp_dir = tempfile.mkdtemp(suffix=".cs_compile")
+    os.chdir(temp_dir)
+
+    # Find files to compile in source path
+
+    dir_files = os.listdir(srcdir)
+
+    c_files = fnmatch.filter(dir_files, '*.c')
+    h_files = fnmatch.filter(dir_files, '*.h')
+    f_files = fnmatch.filter(dir_files, '*.[fF]90')
+
+    for f in c_files:
+        cmd = cs_config.build.cc + " " + cs_config.build.cppflags
+        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        if len(h_files) > 0:
+            cmd = cmd + " -I" + srcdir
+        cmd = cmd + " " + cs_config.build.ccflags
+        cmd = cmd + " -c " + os.path.join(srcdir, f)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    for f in f_files:
+        cmd = cs_config.build.fc + " " + cs_config.build.fcflags
+        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        if len(h_files) > 0:
+            cmd = cmd + " -I" + srcdir
+        cmd = cmd + " -c " + os.path.join(srcdir, f)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    if retval == 0 and (len(c_files) + len(f_files)) > 0:
+        cmd = cs_config.build.fc
+        cmd = cmd + " -o " + exec_name + " *.o"
+        cmd = cmd + " -L" + os.path.join(cs_config.dirs.prefix, "lib")
+        cmd = cmd + " -lsaturne"
+        if len(optlibs) > 0:
+            cmd = cmd + " " + optlibs
+        cmd = cmd + " " + cs_config.build.ldflags + " " + cs_config.build.libs
+        if cs_config.build.rpath != "":
+            cmd = cmd + " " + so_dirs_path(cmd)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    # Cleanup
+
+    for f in os.listdir(temp_dir):
+        os.remove(os.path.join(temp_dir, f))
+
+    # Return to original directory
+
+    os.chdir(call_dir)
+    os.rmdir(temp_dir)
+
+    return retval
+
+#-------------------------------------------------------------------------------
+
+def usage():
+    """
+    Indicate usage.
+    """
+    print "Usage: " + sys.argv[0] + " [options]"
+    print "Options:"
+    print "-h, --help              print this message"
+    print "-t, --test              test only, discard compilation result"
+    print "-s, --source=<src_dir>  choose source file directory"
+    print "-d, --dest=<dest_dir>   choose executable file directory"
+    print "--opt-libs=<libs>       additional libraries to link"
+
+#-------------------------------------------------------------------------------
+
+def main(argv):
+    """
+    Main function.
+    """
+
+    src_dir = os.getcwd()
+    dest_dir = os.getcwd()
+    opt_libs = ""
+    test_mode = False
+
+    try:
+        opts, args = getopt.getopt(argv,
+                                   "hts:d:",
+                                   ["help", "test", "source=", "dest=", "opt-libs="])
+    except getopt.GetoptError, err:
+        print str(err)
+        usage()
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit(0)
+        elif opt in ("-t", "--test"):
+            test_mode = True
+        elif opt in ("-s", "--source"):
+            src_dir = arg
+            src_dir = os.path.expanduser(src_dir)
+            src_dir = os.path.expandvars(src_dir)
+            src_dir = os.path.abspath(src_dir)
+        elif opt in ("-d", "--dest"):
+            dest_dir = arg
+            dest_dir = os.path.expanduser(dest_dir)
+            dest_dir = os.path.expandvars(dest_dir)
+            dest_dir = os.path.abspath(dest_dir)
+        elif opt == "--opt-libs":
+            opt_libs = arg
+        
+
+    if test_mode == True:
+        dest_dir = None
+
+    retcode = compile_and_link(src_dir, dest_dir, opt_libs)
+
+    sys.exit(retcode)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

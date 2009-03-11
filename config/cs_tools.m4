@@ -54,22 +54,13 @@ AC_SUBST(ics_prefix)
 
 AC_DEFUN([CS_AC_TEST_SYRCS], [
 
-AC_ARG_WITH(syrcs, [AS_HELP_STRING([--with-syrcs=PATH], [specify prefix directory for Syr_CS library])])
+AC_ARG_WITH(syrcs, [AS_HELP_STRING([--with-syrcs=PATH], [specify prefix directory for SYR_CS library])])
 
 if test "x$with_syrcs" != "x" ; then
-  SYRCS_LDFLAGS="-L$with_syrcs/lib/Linux"
+  syrcs_bindir="$with_syrcs/bin"
 fi
 
-saved_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS $SYRCS_LDFLAGS"
-
-AC_CHECK_LIB(syr_cs, syr_coupling_initialize, SYRCS_HOME=$with_syrcs, , )
-
-LDFLAGS="$saved_LDFLAGS"
-
-
-AC_SUBST(SYRCS_HOME)
-
-
+AC_CHECK_FILE($syrcs_bindir/syr_cs_profile, syrcs_prefix=$with_syrcs, )
+AC_SUBST(syrcs_prefix)
 
 ])dnl
