@@ -1,3 +1,6 @@
+* 16/03/2009 - David Monfort <david.monfort@edf.fr>
+  Make lowercase documentation directories.
+
 * 11/03/2009 - David Monfort <david.monfort@edf.fr>
   Remove (at last!) the cs_profile, Makefile and macros files.
   removed scripts:
