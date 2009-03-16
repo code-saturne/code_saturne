@@ -1,4 +1,8 @@
 * 16/03/2009 - David Monfort <david.monfort@edf.fr>
+  Major overhauling of the documentation building to keep
+  automake rules.
+
+* 16/03/2009 - David Monfort <david.monfort@edf.fr>
   Make lowercase documentation directories.
 
 * 11/03/2009 - David Monfort <david.monfort@edf.fr>

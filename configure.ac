@@ -387,7 +387,7 @@ CS_AC_CONFIG_INFO_EXTRA([
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
 # BLAS (Basic Linear Algebra Subprograms) support: "$have_blas"
 # Libxml2 (XML Reader) support:                    "$have_libxml2"
-# IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket"
+# IP socket support (for SYRTHES 3 or CFD_Proxy):  "$have_socket"
 # Dynamic loader support (for YACS):               "$have_dlloader"
 ])
 
@@ -406,6 +406,11 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 doc/Makefile
+                 doc/howto/Makefile doc/howto/graphics/Makefile
+                 doc/theory/Makefile doc/theory/graphics/Makefile
+                 doc/tutorial/Makefile doc/tutorial/graphics/Makefile
+                 doc/user/Makefile doc/user/graphics/Makefile
                  bin/check_mesh bin/cs_config.py bin/cs_info bin/cs_create
                  bin/runcase bin/runcase_syrthes bin/SaturneGUI])
 

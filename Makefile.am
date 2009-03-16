@@ -37,9 +37,7 @@ $(top_srcdir)/cs_config-h.in \
 $(AUX_DIST)
 
 SUBDIRS = src/atmo src/cfbl src/cogz src/cplv src/ctwr src/elec src/fuel src/lagr src/mati src/pprt src/rayt src/base \
-          po
-
-#EXTRA_SUBDIRS = doc
+          po doc
 
 EXTRA_DIST = $(ac_aux_dir)/config.rpath  \
              $(ac_aux_dir)/cs_auto_flags.sh \
