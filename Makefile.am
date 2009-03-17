@@ -98,7 +98,8 @@ doc/manpages/cs_check_consistency.1 \
 doc/manpages/cs_check_mesh.1 \
 doc/manpages/cs_config.1 \
 doc/manpages/cs_create.1 \
-doc/manpages/cs_info.1
+doc/manpages/cs_info.1 \
+doc/manpages/cs_plot_probes.1
 
 # Finish user files installation
 # - tag with the package version number
