@@ -1,0 +1,76 @@
+.\"
+.\"  This file is part of the Code_Saturne Kernel, element of the
+.\"  Code_Saturne CFD tool.
+.\"
+.\"  Copyright (C) 2009 EDF S.A., France
+.\"
+.\"  contact: saturne-support@edf.fr
+.\"
+.\"  The Code_Saturne Kernel is free software; you can redistribute it
+.\"  and/or modify it under the terms of the GNU General Public License
+.\"  as published by the Free Software Foundation; either version 2 of
+.\"  the License, or (at your option) any later version.
+.\"
+.\"  The Code_Saturne Kernel is distributed in the hope that it will be
+.\"  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+.\"  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with the Code_Saturne Preprocessor; if not, write to the
+.\"  Free Software Foundation, Inc.,
+.\"  51 Franklin St, Fifth Floor,
+.\"  Boston, MA  02110-1301  USA
+.\"
+.TH CS_CONFIG 1 2009-03-15 "" "Code_Saturne commands"
+.SH NAME
+cs_config.py \- Script to get information about the installed version of
+Code_Saturne Kernel.
+.SH SYNOPSIS
+.B cs_config.py
+.RI [options]
+.RI [scope]
+.br
+.SH DESCRIPTION
+This script is a tool that is used to configure to determine
+the compiler and linker flags that should be used to compile
+and link programs that use
+.BR libsaturne .
+.SH OPTIONS
+.PP
+.I Options
+.B
+.IP --prefix
+Installation path prefix
+.B
+.IP --exec-prefix
+System-dependent path prefix
+.B
+.IP --version
+Version
+.B
+.IP --cppflags
+C preprocessor flags (e.g. -D<macro>, ...)
+.B
+.IP --cflags
+C flags (e.g. -O, -g, ...)
+.B
+.IP --ldflags
+Linker flags (e.g. -g, -L<path>, ...)
+.B
+.IP --libs
+librairies used (e.g. -l<libname>)
+.B
+.IP --cc
+C compiler used for build
+.PP
+.I Scope
+.B
+.IP "use (default)"
+Options required for user code
+.B
+.IP build
+Options used for build
+.SH SEE ALSO
+.BR bft-config (1),
+.BR fvm-config (1)

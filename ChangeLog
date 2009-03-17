@@ -1,4 +1,17 @@
 * 17/03/2009 - David Monfort <david.monfort@edf.fr>
+  Add man pages for the main scripts to the documentation.
+  added files:
+    doc/manpages
+    doc/manpages/cs_info.1
+    doc/manpages/cs_check_consistency.1
+    doc/manpages/cs_create.1
+    doc/manpages/cs_config.1
+    doc/manpages/cs_plot_probes.1
+    doc/manpages/cs_check_mesh.1
+  modified script:
+    Makefile.am
+
+* 17/03/2009 - David Monfort <david.monfort@edf.fr>
   Take into account the correct installation path for pdf documentation.
   modified scripts:
     bin/cs_create.in

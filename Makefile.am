@@ -91,6 +91,15 @@ data/thch/dp_FUE \
 data/thch/dp_transfo \
 data/thch/JANAF
 
+# Install man pages
+
+dist_man_MANS = \
+doc/manpages/cs_check_consistency.1 \
+doc/manpages/cs_check_mesh.1 \
+doc/manpages/cs_config.1 \
+doc/manpages/cs_create.1 \
+doc/manpages/cs_info.1
+
 # Finish user files installation
 # - tag with the package version number
 # - remove the test preventing from using a source file
