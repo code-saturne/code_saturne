@@ -305,21 +305,20 @@ if [ "$1" = "-copy-results" ] ; then
       echo Failure creating ${RESULT_DIR}
       exit 1
     fi
-  else
-    for var in $SYRTHES_DATA $SYRTHES_DATA_RAY \
-               $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
-               $SYRTHES_OUT_RES1 $SYRTHES_OUT_RES2 $SYRTHES_OUT_CHR2 \
-               $SYRTHES_OUT_HIST \
-               $SYRTHES_OUT_MAIL_PEAU_FLUIDE $SYRTHES_OUT_RESU_PEAU_FLUIDE \
-               $SYRTHES_OUT_CHR_PEAU_FLUIDE \
-               $SYRTHES_OUT_MAIL_RAY $SYRTHES_OUT_RESU_RAY \
-               $SYRTHES_OUT_CHR_RAY \
-               $SYRTHES_OUT_HIST_RAY ; do
-      f=$EXEC_DIR/`basename $var`
-      if [ -f $f ] ; then
-        cp $f ${RESULT_DIR}/
-      fi
-    done
   fi
+  for var in $SYRTHES_DATA $SYRTHES_DATA_RAY \
+             $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
+             $SYRTHES_OUT_RES1 $SYRTHES_OUT_RES2 $SYRTHES_OUT_CHR2 \
+             $SYRTHES_OUT_HIST \
+             $SYRTHES_OUT_MAIL_PEAU_FLUIDE $SYRTHES_OUT_RESU_PEAU_FLUIDE \
+             $SYRTHES_OUT_CHR_PEAU_FLUIDE \
+             $SYRTHES_OUT_MAIL_RAY $SYRTHES_OUT_RESU_RAY \
+             $SYRTHES_OUT_CHR_RAY \
+             $SYRTHES_OUT_HIST_RAY ; do
+    f=$EXEC_DIR/`basename $var`
+    if [ -f $f ] ; then
+      cp $f ${RESULT_DIR}/
+    fi
+  done
 
 fi

@@ -1,4 +1,9 @@
 * 17/03/2009 - David Monfort <david.monfort@edf.fr>
+  Bug correction in the copy of SYRTHES results.
+  modified script:
+    cs_runcase_syrthes.in
+
+* 17/03/2009 - David Monfort <david.monfort@edf.fr>
   Rename all scripts to remain coherent throughout Code_Saturne
   distribution.
   modified scripts:
