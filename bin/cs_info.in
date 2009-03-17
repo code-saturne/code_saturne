@@ -102,23 +102,25 @@ else
 fi
 
 # Kernel installation parameters
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 datarootdir=@datarootdir@
-datadir=@datadir@
+docdir=@docdir@
+pdfdir=@pdfdir@
 
 # Preprocessor installation parameters
+ECS_PACKAGE_TARNAME=ecs
 ecs_prefix=@ecs_prefix@
 ecs_exec_prefix=${ecs_prefix}
 ecs_bindir=${ecs_exec_prefix}/bin
 ecs_datarootdir=${ecs_prefix}/share
-ecs_datadir=${ecs_datarootdir}
+ecs_docdir=${ecs_datarootdir}/doc/${PACKAGE_TARNAME}
+ecs_pdfdir=${ecs_docdir}
 
 # Interface installation parameters
 ics_prefix=@ics_prefix@
-
-docPATH=${datadir}/doc
 
  topic=$1
  if   [ "$topic" = "version" ] ; then
@@ -129,8 +131,8 @@ docPATH=${datadir}/doc
    echo
    tput init
  elif [ "$topic" = "user" ] ; then
-   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
-   saturnepdf=$docPATH/user.pdf
+   [ -d $pdfdir ] || sortie "The documentation directory $pdfdir does not exist"
+   saturnepdf=$pdfdir/user.pdf
    echo
    echo " ${BO}user manual${NO} : $saturnepdf"
    echo
@@ -138,8 +140,8 @@ docPATH=${datadir}/doc
    $acroread $saturnepdf  || sortie "The ${SO}$acroread $saturnepdf${NO} command failed"
    tput init
  elif [ "$topic" = "theory" ] ; then
-   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
-   noyaupdf=$docPATH/theory.pdf
+   [ -d $pdfdir ] || sortie "The documentation directory $pdfdir does not exist"
+   noyaupdf=$pdfdir/theory.pdf
    echo
    echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
    echo
@@ -147,8 +149,8 @@ docPATH=${datadir}/doc
    $acroread $noyaupdf
    tput init
  elif [ "$topic" = "tutorial" ] ; then
-   [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
-   noyaupdf=$docPATH/tutorial.pdf
+   [ -d $pdfdir ] || sortie "The documentation directory $pdfdir does not exist"
+   noyaupdf=$pdfdir/tutorial.pdf
    echo
    echo " ${BO}Code_Saturne tutorial${NO} : $noyaupdf"
    echo

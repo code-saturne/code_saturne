@@ -181,12 +181,14 @@ echo "================================================================="
 echo
 
 # Kernel installation parameters
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 datarootdir=@datarootdir@
-datadir=@datadir@
+docdir=@docdir@
+pdfdir=@pdfdir@
 
 USER=`whoami`
-DOC_UTILISATION=${datadir}/doc/USER/user.pdf
+DOC_UTILISATION=${pdfdir}/user.pdf
 
 NNOGUI=0
 for i in $*
