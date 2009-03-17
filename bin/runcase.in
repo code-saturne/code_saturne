@@ -358,7 +358,7 @@ CS_MPI_PATH=@MPI_BIN@
 # MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
 # defined by the sourced script, and PATH may be updated.
 #
-. ${bindir}/runcase_mpi_env
+. ${bindir}/cs_runcase_mpi_env
 #
 # Check for the number of requested processors
 nproc_kernel="${NUMBER_OF_PROCESSORS}"
@@ -485,9 +485,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/check_consistency -dir $src_dir -param $PARAM -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency -dir $src_dir -param $PARAM -nproc $nproc_kernel
     else
-      ${bindir}/check_consistency -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency -nproc $nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1
@@ -518,9 +518,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/check_consistency -param $PARAM -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency -param $PARAM -nproc $nproc_kernel
     else
-      ${bindir}/check_consistency -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency -nproc $nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1
@@ -532,7 +532,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   if [ $SYRTHES_COUPLING = yes ] ; then
 
-    ${bindir}/runcase_syrthes -compile -src-syr=${SRC_SYR} \
+    ${bindir}/cs_runcase_syrthes -compile -src-syr=${SRC_SYR} \
       -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log
 
   fi
@@ -669,7 +669,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   #
   if [ $SYRTHES_COUPLING = yes ] ; then
     #
-    ${bindir}/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
+    ${bindir}/cs_runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
     #
   fi
   #
@@ -835,7 +835,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
-    echo "MPI_RANK=\`${bindir}/mpi_rank.sh \$@\`" >> $localexec
+    echo "MPI_RANK=\`${bindir}/cs_runcase_mpi_rank \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
     echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
@@ -1078,7 +1078,7 @@ if [ $EXEC_KERNEL = yes ] ; then
   done
 
   if [ $SYRTHES_COUPLING = yes ] ; then
-    ${bindir}/runcase_syrthes -copy-results \
+    ${bindir}/cs_runcase_syrthes -copy-results \
       -result-dir=${RESU}/RESU_SYR.${SUFFIX}
   fi
 

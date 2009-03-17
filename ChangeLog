@@ -1,3 +1,10 @@
+* 17/03/2009 - David Monfort <david.monfort@edf.fr>
+  Rename all scripts to remain coherent throughout Code_Saturne
+  distribution.
+  modified scripts:
+    configure.ac
+    Makefile.am
+
 * 16/03/2009 - David Monfort <david.monfort@edf.fr>
   Major overhauling of the documentation building to keep
   automake rules.

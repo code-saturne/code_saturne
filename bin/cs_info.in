@@ -86,8 +86,6 @@
     echo "                  ${BO}ecs_user${NO}   : user and theory manual for the Preprocessor module (pdf)"
     echo "                  ${BO}cs${NO}         : usage for the Kernel module"
     echo "                  ${BO}ecs${NO}        : usage for the Preprocessor module"
-    echo "                  ${BO}check_mesh${NO} : usage of mesh checking script"
-    echo "                  ${BO}gracehst${NO}   : usage of xmgrace launch script gracehst"
     echo
     echo
     tput init
@@ -145,14 +143,26 @@ docPATH=${datadir}/doc
    echo
    echo " ${BO}theory and programmer's guide${NO} : $noyaupdf"
    echo
+   tput init
    $acroread $noyaupdf
+   tput init
  elif [ "$topic" = "tutorial" ] ; then
    [ -d $docPATH ] || sortie "The documentation directory $docPATH does not exist"
    noyaupdf=$docPATH/tutorial.pdf
    echo
    echo " ${BO}Code_Saturne tutorial${NO} : $noyaupdf"
    echo
+   tput init
    $acroread $noyaupdf
+   tput init
+ elif [ "$topic" = "ecs_user" ] ; then
+   ecsdocpdf=${ecs_datadir}/doc/mu_ecs.pdf
+   echo
+   echo " ${BO}Preprocessor module user manual${NO} : $ecsdocpdf"
+   echo
+   tput init
+   $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
+   tput init
  elif [ "$topic" = "cs" ] ; then
    cs=${bindir}/cs_solver
    echo
@@ -175,30 +185,6 @@ docPATH=${datadir}/doc
    echo " ${BO}Preprocessor module${NO} : use ecs or $ecs"
    echo
    tput init
- elif [ "$topic" = "ecs_user" ] ; then
-   ecsdocpdf=${ecs_datadir}/doc/mu_ecs.pdf
-   echo
-   echo " ${BO}Preprocessor module user manual${NO} : $ecsdocpdf"
-   echo
-   tput init
-   $acroread $ecsdocpdf || sortie "The ${SO}$acroread $ecsdocpdf${NO} command failed"
-   tput init
- elif [ "$topic" = "check_mesh" ] ; then
-   check_mesh=${bindir}/check_mesh
-   echo
-   echo " ${BO}mesh verification and quality with ${NO} : $check_mesh"
-   echo
-   tput init
-   $check_mesh -h || sortie "The $check_mesh -h command failed"
-   tput init ; tput rmso
- elif [ "$topic" = "gracehst" ] ; then
-   gracehst=${bindir}/gracehst
-   echo
-   echo " ${BO}xmgrace launch script${NO} : $gracehst"
-   echo
-   tput init
-   $gracehst -h || sortie "The $gracehst -h command failed"
-   tput init ; tput rmso
 else
   usage
  fi

@@ -28,21 +28,22 @@
 #
 if [ "$1" = "-h" ] ; then
 echo ' '
-echo ' gracehst: runs grace -nxy on a Code_Saturne time         '
+echo ' cs_plot_probes:                                          '
+echo '       runs grace -nxy on a Code_Saturne time             '
 echo '       monitoring file (chronological records) after      '
 echo '       removing the first column (in order to have        '
 echo '       physical time on the X axis).                      '
 echo '                                                          '
-echo ' help: gracehst -h                                        '
+echo ' help: cs_plot_probes -h                                  '
 echo '                                                          '
 echo ' examples:                                                '
 echo '                                                          '
 echo '   for a time monitoring file VelocitU.hst                '
-echo '           gracehst VelocitU.hst                          '
+echo '           cs_plot_probes VelocitU.hst                    '
 echo '                                                          '
 echo '   for a series of files *.hst                            '
 echo '           for fic in *.hst ; do                          '
-echo '             gracehst $fic                                '
+echo '             cs_plot_probes $fic                          '
 echo '           done                                           '
 echo '                                                          '
 echo ' '
@@ -50,7 +51,7 @@ exit
 fi
 
 hst=$1
-tmp=/tmp/$hst.gracehstmod
+tmp=/tmp/$hst.hstmod
 if [ -f $tmp ] ; then
   echo $tmp existe : stop
   exit

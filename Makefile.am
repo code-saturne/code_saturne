@@ -57,16 +57,16 @@ ACLOCAL_AMFLAGS = -I config
 # Install binary scripts
 
 dist_bin_SCRIPTS = \
-bin/check_consistency \
-bin/check_mesh \
+bin/cs_check_consistency \
+bin/cs_check_mesh \
 bin/cs_compile \
 bin/cs_config.py \
 bin/cs_create \
 bin/cs_info \
-bin/gracehst \
-bin/mpi_rank.sh \
-bin/runcase_mpi_env \
-bin/runcase_syrthes
+bin/cs_plot_probes \
+bin/cs_runcase_mpi_env \
+bin/cs_runcase_mpi_rank \
+bin/cs_runcase_syrthes
 
 # Install user scripts
 
