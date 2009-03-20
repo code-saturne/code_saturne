@@ -63,21 +63,21 @@ bin/cs_compile \
 bin/cs_config.py \
 bin/cs_create \
 bin/cs_info \
-bin/cs_plot_probes \
-bin/cs_runcase_mpi_env \
-bin/cs_runcase_mpi_rank \
-bin/cs_runcase_syrthes
+bin/cs_plot_probes
 
 # Install user scripts
 
-dist_data_DATA = \
+dist_pkgdata_DATA = \
 bin/runcase \
 bin/runcase.help \
+bin/runcase_mpi_env \
+bin/runcase_mpi_rank \
+bin/runcase_syrthes \
 bin/SaturneGUI
 
 # Install thermochemistry and Matisse data files
 
-nobase_dist_data_DATA = \
+nobase_dist_pkgdata_DATA = \
 data/mati/emm.dat \
 data/mati/emm.geom \
 data/mati/vault.dat \

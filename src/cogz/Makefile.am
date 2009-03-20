@@ -81,7 +81,7 @@ $(top_srcdir)/users/cogz/uslwc1.f90 \
 $(top_srcdir)/users/cogz/uslwcc.f90 \
 $(top_srcdir)/users/cogz/uslwci.f90
 
-cogzdir = $(datadir)/users/cogz
+cogzdir = $(pkgdatadir)/users/cogz
 cogz_DATA = \
 $(top_srcdir)/users/cogz/usd3p1.f90 \
 $(top_srcdir)/users/cogz/usd3pc.f90 \

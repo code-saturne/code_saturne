@@ -53,7 +53,7 @@ $(top_srcdir)/users/atmo/usatcl.f90 \
 $(top_srcdir)/users/atmo/usati1.f90 \
 $(top_srcdir)/users/atmo/usativ.f90
 
-atmodir = $(datadir)/users/atmo
+atmodir = $(pkgdatadir)/users/atmo
 atmo_DATA = \
 $(top_srcdir)/users/atmo/usatcl.f90 \
 $(top_srcdir)/users/atmo/usati1.f90 \

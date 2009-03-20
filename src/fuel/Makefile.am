@@ -72,7 +72,7 @@ $(top_srcdir)/users/fuel/usfucl.f90 \
 $(top_srcdir)/users/fuel/usfui1.f90 \
 $(top_srcdir)/users/fuel/usfuiv.f90
 
-fueldir = $(datadir)/users/fuel
+fueldir = $(pkgdatadir)/users/fuel
 fuel_DATA = \
 $(top_srcdir)/users/fuel/usfucl.f90 \
 $(top_srcdir)/users/fuel/usfui1.f90 \

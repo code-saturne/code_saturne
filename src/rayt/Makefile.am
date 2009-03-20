@@ -69,7 +69,7 @@ $(top_srcdir)/users/rayt/usray3.f90 \
 $(top_srcdir)/users/rayt/usray4.f90 \
 $(top_srcdir)/users/rayt/usray5.f90
 
-raytdir = $(datadir)/users/rayt
+raytdir = $(pkgdatadir)/users/rayt
 rayt_DATA = \
 $(top_srcdir)/users/rayt/usray1.f90 \
 $(top_srcdir)/users/rayt/usray2.f90 \

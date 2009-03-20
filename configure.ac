@@ -487,7 +487,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
                  bin/cs_check_mesh bin/cs_config.py bin/cs_info bin/cs_create
-                 bin/cs_runcase_syrthes bin/runcase bin/SaturneGUI])
+                 bin/runcase bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 

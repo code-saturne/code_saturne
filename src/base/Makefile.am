@@ -417,7 +417,7 @@ $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90
 
-basedir = $(datadir)/users/base
+basedir = $(pkgdatadir)/users/base
 base_DATA = \
 $(top_srcdir)/users/base/usalcl.f90 \
 $(top_srcdir)/users/base/usalin.f90 \

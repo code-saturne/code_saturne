@@ -61,6 +61,9 @@ class dirs:
     datadir = "@datadir@"
     if datadir == "${datarootdir}":
         datadir = datarootdir
+    pkgdatadir = "@pkgdatadir@"
+    if pkgdatadir == "${datadir}/${PACKAGE}":
+        pkgdatadir = os.path.join(datadir, "@PACKAGE@")
     docdir = "@docdir@"
     if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
         docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
@@ -94,6 +97,7 @@ def main():
     print "  dirs.libdir = " + dirs.libdir
     print "  dirs.datarootdir = " + dirs.datarootdir
     print "  dirs.datadir = " + dirs.datadir
+    print "  dirs.pkgdatadir = " + dirs.pkgdatadir
     print "  dirs.docdir = " + dirs.docdir
     print "  dirs.pdfdir = " + dirs.pdfdir
     print ""

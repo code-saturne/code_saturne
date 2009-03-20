@@ -74,6 +74,6 @@ libcspprt_la_LDFLAGS = -no-undefined
 libcspprt_la_SOURCES += \
 $(top_srcdir)/users/pprt/usppmo.f90
 
-pprtdir = $(datadir)/users/pprt
+pprtdir = $(pkgdatadir)/users/pprt
 pprt_DATA = \
 $(top_srcdir)/users/pprt/usppmo.f90

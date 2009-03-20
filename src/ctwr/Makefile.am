@@ -66,7 +66,7 @@ $(top_srcdir)/users/ctwr/usctdz.f90 \
 $(top_srcdir)/users/ctwr/uscti1.f90 \
 $(top_srcdir)/users/ctwr/usctiv.f90
 
-ctwrdir = $(datadir)/users/ctwr
+ctwrdir = $(pkgdatadir)/users/ctwr
 ctwr_DATA = \
 $(top_srcdir)/users/ctwr/usctcl.f90 \
 $(top_srcdir)/users/ctwr/usctdz.f90 \

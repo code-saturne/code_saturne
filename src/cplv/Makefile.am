@@ -87,7 +87,7 @@ $(top_srcdir)/users/cplv/uscpiv.f90 \
 $(top_srcdir)/users/cplv/uscpl1.f90 \
 $(top_srcdir)/users/cplv/uscplc.f90
 
-cplvdir = $(datadir)/users/cplv
+cplvdir = $(pkgdatadir)/users/cplv
 cplv_DATA = \
 $(top_srcdir)/users/cplv/uscpcl.f90 \
 $(top_srcdir)/users/cplv/uscpi1.f90 \

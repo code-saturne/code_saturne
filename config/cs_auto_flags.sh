@@ -802,7 +802,7 @@ if test -d /bgl/BlueLight/ppcfloor/bglsys ; then #  For Blue Gene/L
 elif test -d /bgsys/drivers/ppcfloor/comm/include ; then #  For Blue Gene/P
 
   bg_sys_ldflags="-L/bgsys/drivers/ppcfloor/comm/lib -L/bgsys/drivers/ppcfloor/runtime/SPI"
-  bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk .cnk.a -lSPI.cna -lrt -lpthread"
+  bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -lSPI.cna -lrt -lpthread"
   bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
 
   ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib -L/opt/ibmmath/essl/4.4/lib ${bg_sys_ldflags}"

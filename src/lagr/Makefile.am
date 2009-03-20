@@ -115,7 +115,7 @@ $(top_srcdir)/users/lagr/uslast.f90 \
 $(top_srcdir)/users/lagr/uslatc.f90 \
 $(top_srcdir)/users/lagr/uslatp.f90
 
-lagrdir = $(datadir)/users/lagr
+lagrdir = $(pkgdatadir)/users/lagr
 lagr_DATA = \
 $(top_srcdir)/users/lagr/uslabo.f90 \
 $(top_srcdir)/users/lagr/usladp.f90 \

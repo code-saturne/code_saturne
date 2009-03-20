@@ -37,14 +37,17 @@
 if [ "$1" = "" -o "$1" = "-h" -o "$1" = "--help" ] ; then
   echo "Usage:"
   echo
-  echo "  $0 -compile [-src-syr=<dir>] [-copy-dir=<dir>] [-log-dir=<dir>]"
-  echo "              [-exec-dir=<dir>]"
+  echo "  $0 -compile -syrcs-dir=<dir> [-src-syr=<dir>] [-copy-dir=<dir>]"
+  echo "              [-log-dir=<dir>] [-exec-dir=<dir>]"
+  echo
+  echo "   Indicate where to find the coupling library (mandatory):"
+  echo "     -syrcs-dir: directory where is installed the SYR_CS library."
   echo
   echo "   Compile and link SYRTHES, with the following optional arguments:"
-  echo "     -src-syr:  source code directory; if none, link only."
-  echo "     -src-copy: directory in which sources are copied."
-  echo "     -log:      file to which the compilation/link log is copied."
-  echo "     -exec-dir: SYRTHES execution directory"
+  echo "     -src-syr:   source code directory; if none, link only."
+  echo "     -src-copy:  directory in which sources are copied."
+  echo "     -log:       file to which the compilation/link log is copied."
+  echo "     -exec-dir:  SYRTHES execution diretory."
   echo
   echo "or:"
   echo
@@ -67,6 +70,7 @@ fi
 
 # Parse secondary arguments
 
+unset SYRCS_DIR
 unset SRC_SYR
 unset EXEC_DIR
 unset RESULT_DIR
@@ -74,6 +78,11 @@ unset SYRTHES_ENV
 
 for arg in $*
 do
+
+  is_syrcs_dir=`echo $arg | grep -e "-syrcs-dir="`
+  if [ "$is_syrcs_dir" != "" ] ; then
+    SYRCS_DIR=`echo $arg | sed -e "s/-syrcs-dir=//"`
+  fi
 
   is_exec_dir=`echo $arg | grep -e "-exec-dir="`
   if [ "$is_exec_dir" != "" ] ; then
@@ -136,11 +145,10 @@ if [ "$1" = "-compile" ] ; then
   fi
   
   # SYR_CS library installation parameters
-  syrcs_prefix=@syrcs_prefix@
-  syrcs_bindir=${syrcs_prefix}/bin
+  SYRCS_BINDIR=${SYRCS_DIR}/bin
 
-  ln -s ${syrcs_bindir}/Makefile .
-  . ${syrcs_bindir}/syrcs_profile
+  ln -s ${SYRCS_BINDIR}/Makefile .
+  . ${SYRCS_BINDIR}/syrcs_profile
   make syrthes > ./compil.log 2>&1
   make_ret=$?
   make clean > /dev/null 2>&1

@@ -1,3 +1,35 @@
+* 20/03/2009 - David Monfort <david.monfort@edf.fr>
+  Minor corrections and improvements based on feedback from
+  Debian packager S. Ledru.
+  added scripts:
+    bin/runcase_mpi_env
+    bin/runcase_mpi_rank
+    bin/runcase_syrthes
+  deleted scripts:
+    bin/cs_runcase_mpi_env
+    bin/cs_runcase_mpi_rank
+    bin/cs_runcase_syrthes.in
+    sbin/compil
+    sbin/gettextize
+    sbin/install
+  modified scripts:
+    bin/cs_config.py.in
+    bin/runcase.in
+    config/cs_auto_flags.sh
+    configure.ac
+    Makefile.am
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/ctwr/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/lagr/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+
 * 20/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Port autotools build system to BlueGene and Itanium systems.
   Add full BLAS and OpenMP support.
