@@ -1,4 +1,16 @@
 * 20/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Port autotools build system to BlueGene and Itanium systems.
+  Add full BLAS and OpenMP support.
+  modified scripts:
+    config/cs_auto_flags.sh
+    config/cs_blas.m4
+    config/cs_fvm.m4
+    config/cs_libxml2.m4
+    config/cs_mpi.m4
+    config/cs_tools.m4
+    configure.ac
+
+* 20/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Upgrade to BFT 1.1.
   Corrections and modifications for OpenMP support.
   Other small fixes regarding autotools support.

@@ -54,7 +54,7 @@ if test "x$libxml2" = "xtrue" ; then
   if test "x$with_libxml2_include" != "x" ; then
     LIBXML2_CPPFLAGS="-I$with_libxml2_include"
   elif test "x$with_libxml2" != "x" ; then
-    LIBXML2_CPPFLAGS="-I$with_libxml2/include"
+    LIBXML2_CPPFLAGS="-I$with_libxml2/include/libxml2"
   else
     LIBXML2_CPPFLAGS="-I/usr/include/libxml2"
   fi

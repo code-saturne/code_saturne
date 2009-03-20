@@ -81,21 +81,6 @@ if test "$MPI_LIBS" != "" ; then
   MPI_LIBS=`echo $MPI_LIBS | sed 's/^[ ]*//;s/[ ]*$//'`
 fi
 
-# If we use mpicc or a variant, we have nothing to add
-
-if test "x$mpi" = "xtrue" -a "x$CC" != "x" ; then
-  CCNAME=`basename "$CC"`
-  # Test for standard wrappers
-  if test "$CCNAME" = "mpicc" -o "$CCNAME" = "mpiCC" \
-                              -o "$CCNAME" = "mpic++" ; then
-    cs_have_mpi=yes
-  # Else test for other known wrappers
-  elif test "$CCNAME" = "mpcc" -o "$CCNAME" = "mpCC" \
-                               -o "$CCNAME" = "mpixlc" ; then
-    cs_have_mpi=yes
-  fi
-fi
-
 # If we do not use an MPI compiler wrapper, we must add compilation
 # and link flags; we try to detect the correct flags to add.
 
@@ -103,11 +88,8 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
 
   # try several tests for MPI
 
-  # Basic test
-  AC_MSG_CHECKING([for MPI (basic test)])
-  if test "$MPI_LIBS" = "" ; then
-    MPI_LIBS="-lmpi $PTHREAD_LIBS"
-  fi
+  # MPI Compiler wrapper test
+  AC_MSG_CHECKING([for MPI (MPI compiler wrapper test)])
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
   LIBS="$saved_LIBS $MPI_LIBS"
@@ -117,6 +99,24 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                   cs_have_mpi=yes],
                  [cs_have_mpi=no])
   AC_MSG_RESULT($cs_have_mpi)
+
+  # If failed, basic test
+  if test "x$cs_have_mpi" = "xno"; then
+    # Basic test
+    AC_MSG_CHECKING([for MPI (basic test)])
+    if test "$MPI_LIBS" = "" ; then
+      MPI_LIBS="-lmpi $PTHREAD_LIBS"
+    fi
+    CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+    LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
+    LIBS="$saved_LIBS $MPI_LIBS"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Init(0, (void *)0); ]])],
+                   [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                    cs_have_mpi=yes],
+                   [cs_have_mpi=no])
+    AC_MSG_RESULT($cs_have_mpi)
+  fi
 
   # If failed, test for mpich
   if test "x$cs_have_mpi" = "xno"; then

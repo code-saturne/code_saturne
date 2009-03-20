@@ -84,6 +84,7 @@ user_CPPFLAGS=$CPPFLAGS
 user_CFLAGS=$CFLAGS
 user_FCFLAGS=$FCFLAGS
 user_LDFLAGS=$LDFLAGS
+user_LIBS=$LIBS
 
 AC_PROG_CC
 AC_PROG_FC
@@ -154,9 +155,11 @@ if test "x$auto_flags" = "xtrue" ; then
   CFLAGS="$cflags_default $user_CFLAGS"
   FCFLAGS="$fcflags_default $user_FCFLAGS"
   LDFLAGS="$ldflags_default $user_LDFLAGS"
+  LIBS="$libs_default $user_LIBS"
   LDRPATH="$ldflags_rpath"
 
   if test "x$debug" = xtrue; then
+    # Normal optimization flags
     CFLAGS_DBG="$cflags_default_dbg"
     FCFLAGS_DBG="$fcflags_default_dbg"
     LDFLAGS_DBG="$ldflags_default_dbg"
@@ -217,8 +220,6 @@ fi
 
 if test "x$french" = "xtrue"; then
   FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
-else
-  FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
 fi
 
 # We may only turn on processing for libtool now that the basic compiler
@@ -226,28 +227,15 @@ fi
 # modes such as 32 and 64 bit which may be modified by compiler or
 # linker flags).
 
+# AC_DISABLE_SHARED may not be used inside a test, as it seems to
+# take effect whether the result is true or not (maybe due to a bug),
+# so we directly use autoconf's enable_shared variable.
+
+if test "x$cs_disable_shared" = "xyes" ; then
+   enable_shared=no
+fi
+
 LT_INIT
-
-#------------------------------------------------------------------------------
-# Checks for libraries.
-#------------------------------------------------------------------------------
-
-CS_AC_TEST_BFT(["1.0.0"])
-CS_AC_TEST_FVM(["0.13.0"])
-CS_AC_TEST_LIBXML2
-CS_AC_TEST_BLAS
-CS_AC_TEST_MPI
-CS_AC_TEST_PREPRO
-CS_AC_TEST_GUI
-CS_AC_TEST_SYRCS
-CS_AC_TEST_PYTHON
-
-#------------------------------------------------------------------------------
-# Checks for header files.
-#------------------------------------------------------------------------------
-
-AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
@@ -274,6 +262,92 @@ AC_CHECK_SIZEOF([int], [cs])
 AC_CHECK_SIZEOF([long], [cs])
 AC_CHECK_SIZEOF([float], [cs])
 AC_CHECK_SIZEOF([double], [cs])
+
+#------------------------------------------------------------------------------
+# Determine OpenMP support
+#------------------------------------------------------------------------------
+
+# It seems that we may not use AC_OPENMP both for C and Fortran, so
+# we use our own method here, based on flags already set by default
+# or by the user.
+
+# From this point, no runtime tests should be run, so no issues should
+# arise due to missing RPATH or LD_LIBRARY_PATH values in case of non-standard
+# compiler install paths, such as may happen with gcc's libgomp.
+
+cs_have_openmp=no
+
+AC_ARG_ENABLE(openmp,
+  [  --disable-openmp      disable OpenMP support],
+  [
+    case "${enableval}" in
+      yes) cs_have_openmp=yes ;;
+      no)  cs_have_openmp=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-openmp]) ;;
+    esac
+  ],
+  [ cs_have_openmp=yes ]
+)
+
+if test "x$cs_have_openmp" = "xyes" ; then
+
+  saved_CFLAGS="$CFLAGS"
+  saved_FCFLAGS="$FCFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+
+  CFLAGS="${CFLAGS} ${cflags_default_omp}"
+  FCFLAGS="${FCFLAGS} ${fcflags_default_omp}"
+  LDFLAGS="${LDFLAGS} ${cflags_default_omp}"
+
+  AC_MSG_CHECKING([for OpenMP (C)])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
+                 [[ omp_get_num_threads();]])],
+                 [cs_have_openmp=yes],
+                 [cs_have_openmp=no])
+  AC_MSG_RESULT($cs_have_openmp)
+  if test "x$cs_have_openmp" = "xyes" ; then
+    AC_LANG_PUSH([Fortran])
+    AC_MSG_CHECKING([for OpenMP (Fortran)])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([],
+                   [[
+      integer n
+      n = omp_get_num_threads()
+]])],
+                   [cs_have_openmp=yes],
+                   [cs_have_openmp=no])
+    AC_MSG_RESULT($cs_have_openmp)
+    AC_LANG_POP([Fortran])
+  fi
+  if test "x$cs_have_openmp" = "xyes" ; then
+    AC_DEFINE([HAVE_OPENMP], 1, [openmp support])
+  else
+    cs_have_openmp=no
+    CFLAGS="$saved_CFLAGS"
+    FCFLAGS="$saved_FCFLAGS"
+    LDFLAGS="$saved_LDFLAGS"
+  fi
+fi
+
+#------------------------------------------------------------------------------
+# Checks for libraries.
+#------------------------------------------------------------------------------
+
+CS_AC_TEST_BFT(["1.1.0"])
+CS_AC_TEST_FVM(["0.13.0"])
+CS_AC_TEST_LIBXML2
+CS_AC_TEST_BLAS([$cs_have_openmp])
+CS_AC_TEST_MPI
+CS_AC_TEST_PREPRO
+CS_AC_TEST_GUI
+CS_AC_TEST_SYRCS
+CS_AC_TEST_PYTHON
+
+#------------------------------------------------------------------------------
+# Checks for header files.
+#------------------------------------------------------------------------------
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
 
 #------------------------------------------------------------------------------
 # Checks for library functions.
@@ -339,7 +413,7 @@ if test "x$have_dlloader" = "xyes" ; then
   if test "x$have_dlloader" = "xyes" ; then
     AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
   else
-    LIBS="saved_LIBS"
+    LIBS="$saved_LIBS"
     have_dlloader=no
   fi
 
@@ -361,7 +435,7 @@ AC_DEFINE_UNQUOTED(LOCALEDIR, "${localedir}", LOCALEDIR)
 AM_GNU_GETTEXT([external])
 
 #------------------------------------------------------------------------------
-# Compiler options and system characteristics
+# Pass compiler options to automake files and cs_config.py
 #------------------------------------------------------------------------------
 
 if test "$FCLIBS" != "x"; then
@@ -385,7 +459,8 @@ CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
 CS_AC_CONFIG_INFO_EXTRA([
 # use debugging code:                              "$debug"
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
-# BLAS (Basic Linear Algebra Subprograms) support: "$have_blas"
+# OpenMP support:                                  "$cs_have_openmp"
+# BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"
 # Libxml2 (XML Reader) support:                    "$have_libxml2"
 # IP socket support (for SYRTHES 3 or CFD_Proxy):  "$have_socket"
 # Dynamic loader support (for YACS):               "$have_dlloader"
@@ -418,13 +493,33 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
 
 AC_OUTPUT
 
+#------------------------------------------------------------------------------
+
+# Libtool configuration bug workaround (problem encountered with compilers
+# which do not recognize "-soname", so that "-Wl,-soname" is needed to pass
+# flags to the linker; Manually setting $wl to "-Wl" in libtool corrects
+# the problem, and so does this workaround borrowed from
+# the HDF5 configure.in, which does it automatically).
+
+if test "x$GCC" != "xyes"; then
+  echo 'fixing $wl in libtool'
+ed - libtool <<EOF 2> /dev/null
+/^wl=""/s//wl="-Wl,"/
+w
+q
+EOF
+fi
+
+#------------------------------------------------------------------------------
+
 rm -f cs_config_comments_include
 
 echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
-echo " BLAS (Basic Linear Algebra Subprograms) support: "$have_blas""
+echo " OpenMP support: "$cs_have_openmp""
+echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""

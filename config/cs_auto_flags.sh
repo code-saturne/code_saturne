@@ -25,22 +25,33 @@
 # given OS/CPU/compiler combination:
 #
 # cppflags_default       # Base CPPFLAGS                     (default: "")
-#
+
 # cflags_default         # Base CFLAGS                       (default: "")
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
+# cflags_default_hot     # Optimization for specific files   (default: "-O")
 # cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
-#
+# cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
+
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
+# fcflags_default_hot    # Optimization for specific files    (default: "-O")
 # fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "")
+# fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
 # ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
+
+# libs_default           # Base LIBS                          (default: "")
+# libs_default_dbg       # Added to $LDFLAGS for debugging    (default: "")
+# libs_default_opt       # Added to $LDFLAGS for optimization (default: "")
+# libs_default_prf       # Added to $LDFLAGS for profiling    (default: "")
+
+# cs_disable_shared      # Disable shared librairies          (default: "")
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
@@ -75,6 +86,14 @@ _______EOF
 
 save_LANG=$LANG
 unset LANG;
+
+# Libraries only added on special cases (such as IBM Blue Gene),
+# so initialize empty variables here
+
+libs_default=""
+libs_default_dbg=""
+libs_default_opt=""
+libs_default_prf=""
 
 ##################
 #                #
@@ -152,6 +171,7 @@ if test "x$cs_gcc" = "xgcc"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-pg"
+  cflags_default_omp="-fopenmp"
 
   # Modify default flags on certain systems
 
@@ -191,6 +211,12 @@ if test "x$cs_gcc" = "xgcc"; then
 
   esac
 
+  case "$cs_cc_vendor-$cs_cc_version" in
+    gcc-2.*|gcc-3*|gcc-4.[012]*)
+      cflags_default_omp=""
+      ;;
+  esac
+
 # Otherwise, are we using icc ?
 #------------------------------
 
@@ -207,15 +233,17 @@ elif test "x$cs_gcc" = "xicc"; then
 
   # Default compiler flags
   cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -traceback"
-  cflags_default_opt="-O3"
+  cflags_default_dbg="-g -O0 -traceback -w2 -Wp66 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_hot="-O3"
   cflags_default_prf="-p"
+  cflags_default_omp="-openmp"
 
   # Modify default flags on certain systems
 
   case "$host-os-$host_cpu" in
     *ia64)
-      cflags_default_opt="-O3 -mcpu=itanium2-p9000"
+      cflags_default_opt="-O2 -mcpu=itanium2-p9000"
       ;;
   esac
 
@@ -239,6 +267,7 @@ else
     cflags_default_dbg="-g"
     cflags_default_opt="-fast -fastsse"
     cflags_default_prf="-Mprof=func,lines"
+    cflags_default_omp="-mp"
 
   fi
 
@@ -250,6 +279,54 @@ fi
 if test "x$cs_cc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
+
+    linux* | none)
+
+      # IBM Blue Gene
+      #--------------
+
+      $CC -qversion 2>&1 | grep 'XL C' | grep 'Blue Gene' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CC' is IBM XL C compiler for Blue Gene"
+
+        # Version strings for logging purposes and known compiler flag
+        $CC -qversion > $outfile 2>&1
+        cs_ac_cc_version=`grep 'XL C' $outfile`
+        cs_compiler_known=yes
+        cs_linker_set=yes
+
+        # Default compiler flags
+        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
+          cppflags_default="-I/opt/ibmmath/essl/4.2/include -I/bgl/BlueLight/ppcfloor/bglsys/include"
+          cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
+          cflags_default_opt="-O3"
+          cflags_default_hot="-O3 -qhot"
+          cflags_default_dbg=""
+        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
+          cppflags_default="-I/opt/ibmmath/essl/4.4/include -I/bgsys/drivers/ppcfloor/comm/include"
+          cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
+          cflags_default_opt="-O3"
+          cflags_default_hot="-O3 -qhot"
+          cflags_default_dbg=""
+        else
+          cppflags_default=""
+          cflags_default=""
+          cflags_default_opt="-O3"
+          cflags_default_hot="-O3"
+          cflags_default_dbg="-g"
+        fi
+        cflags_default_prf="-pg"
+        cflags_default_omp="-qsmp=omp"
+
+        # Default  linker flags
+        ldflags_default=""
+        ldflags_default_opt="-O3"
+        ldflags_default_dbg="-g"
+        ldflags_default_prf="-pg"
+
+      fi
+      ;;
 
     osf*)
 
@@ -265,29 +342,38 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         $CC -V conftest.c > $outfile 2>&1
         cs_ac_cc_version=`grep 'Compaq C' $outfile`
         cs_cc_compiler_known=yes
+        cs_linker_set=yes
 
         # Default compiler flags
         case "$host_cpu" in
           alphaev6|alphaev67|alphaev68|alphaev7)
             cflags_default="-arch host -tune host -ansi_alias -std -check_bounds -trapuv -check -msg_enable alignment -msg_enable noansi -msg_enable performance -portable -msg_enable c_to_cxx"
             cflags_default_opt="-O"
+            cflags_default_hot="-O"
             cflags_default_dbg="-g"
             cflags_default_prf="-pg"
+            cflags_default_omp="-omp"
           ;;
         esac
 
+        # Default  linker flags
+        ldflags_default="-Wl,-call_shared"
+        ldflags_default_opt="-O0"
+        ldflags_default_dbg="-g"
+        ldflags_default_prf="-pg"
+        ldflags_rpath="-Wl,-rpath -Wl,"
       fi
       ;;
 
-    uxpv*)
+    SUPER-UX*)
 
-      # Native Fujitsu vectorizing C compiler (tested on VPP5000)
-      #---------------------------------------
+      # Native NEC SX vectorizing C compiler (sxmpicc)
+      #-------------------------------------
 
-      $CC -V 2>&1 | grep 'Fujitsu' > /dev/null
+      $CC -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
       if test "$?" = "0" ; then
 
-        echo "compiler '$CC' is Fujitsu compiler"
+        echo "compiler '$CC' is NEC SX compiler"
 
         # Version strings for logging purposes and known compiler flag
         $CC -V conftest.c > $outfile 2>&1
@@ -296,13 +382,14 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cs_linker_set=yes
 
         # Default compiler flags
-        cflags_default="-KA64 -Kvp"
-        cflags_default_opt="-O"
-        cflags_default_dbg="-g -Kargchk -w4"
-        cflags_default_prf="-pg"
+        cflags_default="-Kc99 -ftrace --pvctl,loopcnt=2147483647"
+        cflags_default_opt=""
+        cflags_default_dbg=""
+        cflags_default_prf=""
+        cflags_default_omp=""
 
         # Default linker flags
-        ldflags_default="-Kvp -Kargchk -Wl,-S1:d"
+        ldflags_default="-ftrace -Wf,-pvctl,loopcnt=2147483647 -f90lib"
         ldflags_default_opt="-O"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-pg"
@@ -353,14 +440,17 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         # Default compiler flags
         cflags_default="-Aa +e +DA2.0W"
         cflags_default_opt="+O2"
+        cflags_default_hot="+O3 +Oinline=Orient3D_split,Orient3D_normalize,Orient3D_set_maxvalue"
         cflags_default_dbg="-g"
         cflags_default_prf="-G"
+        cflags_default_omp="+Oopenmp" # most pragmas require +O3
 
         # Default linker flags
-        ldflags_default="+DA2.0W"
-        ldflags_default_opt="+O2"
+        ldflags_default="+DA2.0W +FPVZOUD +U77"
+        ldflags_default_opt="+O1"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-fbexe"
+        cflags_default_omp="+Oopenmp"
 
       fi
       ;;
@@ -385,6 +475,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_opt="-xO2"
         cflags_default_dbg="-g"
         cflags_default_prf="-pg"
+        cflags_default_omp="-xopenmp"
 
      fi
      ;;
@@ -398,11 +489,15 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       cflags_default_opt="-O"
       cflags_default_dbg="-g"
       cflags_default_prf=""
-
+      cflags_default_omp=""
       ;;
 
   esac
 
+fi
+
+if test "x$cflags_default_hot" = "x" ; then
+  cflags_default_hot = $cflags_default
 fi
 
 if test -f $outfile ; then
@@ -423,9 +518,23 @@ cs_fc_compiler_known=no
 # Are we using gfortran ?
 #------------------------
 
-cs_gfortran=gfortran
+cs_gfortran=no
 
-if test "x$cs_gfortran" = "xgfortran"; then
+# Are we using gfortran ?
+#------------------------
+
+$FC --version 2>&1 | grep 'GNU Fortran' > /dev/null
+
+if test "$?" = "0" ; then
+
+  cs_fc_version=`echo $FC --version  |sed 's/[a-zA-Z()]//g'`
+  cs_fc_version="`$FC -v 2>&1 |grep 'gcc version' |\
+                  sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
+
+  echo "compiler '$FC' is gfortran"
+
+  cs_fc_compiler_known=yes
+  cs_gfortran=gfortran
 
   # Version strings for logging purposes and known compiler flag
   $FC -v > $outfile 2>&1
@@ -458,15 +567,132 @@ if test "x$cs_gfortran" = "xgfortran"; then
   fcflags_default_dbg="-g"
   fcflags_default_opt="-O"
   fcflags_default_prf="-pg"
+  fcflags_default_omp="-fopenmp"
 
 fi
 
-# Compiler still not identified
-#------------------------------
-
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
+  # Are we using ifort ?
+  #---------------------
+
+  $FC --version 2>&1 | grep 'IFORT' > /dev/null
+  if test "$?" = "0" ; then
+
+    cs_fc_version=`echo $FC --version | grep ifort |sed 's/[a-zA-Z()]//g'`
+
+    echo "compiler '$FC' is Intel Fortran"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC -V > $outfile 2>&1
+    cs_ac_fc_version=`$FC --version 2>&1 | head -1`
+    cs_fc_compiler_known=yes
+
+    # Default compiler flags
+    fcflags_default="-cpp -fpic -warn"
+    fcflags_default_dbg="-g -O0 -traceback -check all -fpe0 -ftrapuv"
+    fcflags_default_opt="-O2"
+    fcflags_default_hot="-O3"
+    fcflags_default_prf="-p"
+    fcflags_default_omp="-openmp"
+
+    # Modify default flags on certain systems
+
+    case "$host-os-$host_cpu" in
+      *ia64)
+        fcflags_default_opt="-O2 -mcpu=itanium2-p9000"
+        fcflags_default_hot="-O3 -mcpu=itanium2-p9000"
+        ;;
+    esac
+
+  fi
+
   case "$host_os" in
+
+    linux* | none)
+
+      # IBM Blue Gene
+      #--------------
+
+      $FC -qversion 2>&1 | grep 'XL Fortran' | grep 'Blue Gene' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$FC' is IBM XL Fortran compiler for Blue Gene"
+
+        # Version strings for logging purposes and known compiler flag
+        $FC -qversion > $outfile 2>&1
+        cs_ac_fc_version=`grep 'XL Fortran' $outfile`
+        cs_fc_compiler_known=yes
+
+        # Default compiler flags
+        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
+          fcflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsuffix=cpp=f90"
+          fcflags_default_opt="-O3"
+          fcflags_default_hot="-O3 -qhot"
+        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
+          fcflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsuffix=cpp=f90"
+          fcflags_default_opt="-O3"
+          fcflags_default_hot="-O3 -qhot"
+        else
+          fcflags_default="-qsuffix=cpp=f90"
+          fcflags_default_opt="-O3"
+        fi
+        fcflags_default_prf="-pg"
+        fcflags_default_omp="-qsmp=omp"
+
+      fi
+      ;;
+
+    SUPER-UX*)
+
+      # Native NEC SX vectorizing Fortran compiler (sxmpif90)
+      #-------------------------------------------
+
+      $FC -V conftest.f 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$FC' is NEC SX compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $FC -V conftest.f > $outfile 2>&1
+        cs_ac_fc_version=`grep ccom $outfile`
+        cs_fc_compiler_known=yes
+
+        # Default compiler flags
+        fcflags_default="-Ep -C hopt -ftrace -I. -Wf,-pvctl,loopcnt=2147483647"
+        fcflags_default_opt=""
+        fcflags_default_dbg=""
+        fcflags_default_prf=""
+        fcflags_default_omp=""
+
+      fi
+      ;;
+
+    hpux*)
+
+      # Native HP-UX Fortran compiler
+      #------------------------------
+
+      $FC +version 2>&1 | grep 'HP' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$FC' is HP compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $FC -V conftest.f > $outfile 2>&1
+        cs_ac_fc_version=`$FC +version`
+        cs_fc_compiler_known=yes
+
+        # Default compiler flags
+        fcflags_default="+cpp=yes +fp_exception +FPVZOUD +U77 +DA2.0W +noppu"
+        fcflags_default_opt="+O1"
+        fcflags_default_hot="+O2"
+        fcflags_default_dbg="-g"
+        fcflags_default_prf="-G"
+        fcflags_default_omp="+Oopenmp" # most pragmas require +O3
+
+      fi
+      ;;
 
     *)
 
@@ -477,11 +703,14 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fcflags_default_opt="-O"
       fcflags_default_dbg="-g"
       fcflags_default_prf=""
-
       ;;
 
   esac
 
+fi
+
+if test "x$fcflags_default_hot" = "x" ; then
+  fcflags_default_hot = $fcflags_default
 fi
 
 if test -f $outfile ; then
@@ -510,6 +739,12 @@ if test "x$cs_linker_set" != "xyes" ; then
       ldflags_default_prf="-pg"
       ldflags_rpath="-Wl,-rpath -Wl,"
       if test "x$cs_gfortran" = "xgfortran"; then
+        libgfortran_path=`$FC --print-file-name=libgfortran.so`
+        libgfortran_dir=`dirname $libgfortran_path`
+        unset libgfortran_path
+        if test "`echo $libgfortran_dir | cut -c1-4`" != "/usr" ; then
+          ldflags_rpath="${ldflags_rpath}${libgfortran_dir}"
+        fi
         libgfortran_path=`$FC --print-file-name=libgfortran.so`
         libgfortran_dir=`dirname $libgfortran_path`
         unset libgfortran_path
@@ -548,6 +783,31 @@ if test "x$cs_linker_set" != "xyes" ; then
       ;;
 
   esac
+
+fi
+
+# Additional libraries and options for specific systems
+#------------------------------------------------------
+
+if test -d /bgl/BlueLight/ppcfloor/bglsys ; then #  For Blue Gene/L
+
+  bg_sys_ldflags="-L/bgl/BlueLight/ppcfloor/bglsys/lib"
+  bg_sys_libs="-lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
+  bg_trace="/bgl/local/lib/libmpitrace.a"
+
+  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -L/opt/ibmmath/essl/4.2/lib ${bg_sys_ldflags}"
+  libs_default="-lmass -lmassv -lesslbg ${bg_trace} ${bg_sys_libs}"
+  cs_disable_shared=yes
+
+elif test -d /bgsys/drivers/ppcfloor/comm/include ; then #  For Blue Gene/P
+
+  bg_sys_ldflags="-L/bgsys/drivers/ppcfloor/comm/lib -L/bgsys/drivers/ppcfloor/runtime/SPI"
+  bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk .cnk.a -lSPI.cna -lrt -lpthread"
+  bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
+
+  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib -L/opt/ibmmath/essl/4.4/lib ${bg_sys_ldflags}"
+  libs_default="-lmass -lmassv -lesslsmpbg ${bg_trace} ${bg_sys_libs}"
+  cs_disable_shared=yes
 
 fi
 

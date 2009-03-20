@@ -497,7 +497,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     if [ ! -z "${CS_LIB_ADD}" ] ; then
       OPTLIBS="--opt-libs=${CS_LIB_ADD}"
     fi
-    ${bindir}/bin/cs_compile \
+    ${bindir}/cs_compile \
       --source=src_saturne ${OPTLIBS} 2>>$cur_dir/compil.log 1>&2
     if [ $? -ne 0 ]
     then
@@ -508,11 +508,6 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     else
       cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
     fi
-
-    # Cleanup
-    make clean
-    mv $EXE ${cur_dir}/
-    cd ${cur_dir}
 
   else
 

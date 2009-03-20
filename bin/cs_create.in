@@ -184,6 +184,7 @@ echo
 PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 datarootdir=@datarootdir@
+datadir=@datadir@
 docdir=@docdir@
 pdfdir=@pdfdir@
 

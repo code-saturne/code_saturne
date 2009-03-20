@@ -60,7 +60,9 @@ if test "x$with_syrcs" != "x" ; then
   syrcs_bindir="$with_syrcs/bin"
 fi
 
-AC_CHECK_FILE($syrcs_bindir/syr_cs_profile, syrcs_prefix=$with_syrcs, )
+if test -f $syrcs_bindir/syr_cs_profile ; then
+  syrcs_prefix=$with_syrcs
+fi
 AC_SUBST(syrcs_prefix)
 
 ])dnl

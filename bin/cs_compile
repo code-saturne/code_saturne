@@ -112,9 +112,11 @@ def compile_and_link(srcdir, destdir, optlibs):
         if run_command(cmd) != 0:
             retval = 1
 
-    if retval == 0 and (len(c_files) + len(f_files)) > 0:
-        cmd = cs_config.build.fc
-        cmd = cmd + " -o " + exec_name + " *.o"
+    if retval == 0:
+        cmd = cs_config.build.cc
+        cmd = cmd + " -o " + exec_name
+        if (len(c_files) + len(f_files)) > 0:
+          cmd = cmd + " *.o"
         cmd = cmd + " -L" + os.path.join(cs_config.dirs.prefix, "lib")
         cmd = cmd + " -lsaturne"
         if len(optlibs) > 0:

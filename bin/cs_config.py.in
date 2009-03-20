@@ -77,8 +77,8 @@ class build:
     cppflags="@CPPFLAGS@ @MPI_CPPFLAGS@ @BFT_CPPFLAGS@ @FVM_CPPFLAGS@"
     cflags="@CFLAGS@"
     fcflags="@FCFLAGS@"
-    ldflags="@LDFLAGS@ @FVM_LDFLAGS@ @MPI_LDFLAGS@ @BFT_LDFLAGS@"
-    libs="@LIBS@ @FVM_LIBS@ @MPI_LIBS@ @BFT_LIBS@"
+    ldflags="@FVM_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @BLAS_LDFLAGS@ @LIBXML2_LDFLAGS@ @LDFLAGS@"
+    libs="@FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@"
     rpath="@LDRPATH@"
 
 #-------------------------------------------------------------------------------

@@ -114,8 +114,8 @@ saved_LDFLAGS=$LDFLAGS
 saved_LIBS=$LIBS
 
 CPPFLAGS="${CPPFLAGS} $FVM_CPPFLAGS"
-LDFLAGS="${LDFLAGS} $FVM_LDFLAGS $FVM_DEP_LDFLAGS `$fvm_config --ldflags bft`"
-LIBS="${LIBS} $FVM_LIBS $FVM_DEP_LIBS `$fvm_config --libs bft`"
+LDFLAGS="$FVM_LDFLAGS $FVM_DEP_LDFLAGS `$fvm_config --ldflags bft` ${LDFLAGS}"
+LIBS="$FVM_LIBS $FVM_DEP_LIBS `$fvm_config --libs bft` ${LIBS}"
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
 ]],
@@ -149,7 +149,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
 
 AC_MSG_CHECKING([for fvm_coupling discovery functions])
 
-LIBS="$saved_LIBS $FVM_LIBS -lfvm_coupl $FVM_DEP_LIBS `$fvm_config --libs bft`"
+LIBS="$FVM_LIBS -lfvm_coupl $FVM_DEP_LIBS `$fvm_config --libs bft` ${saved_LIBS}"
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[int fvm_coupling_mpi_world_n_apps(void *);]],
                [[fvm_coupling_mpi_world_n_apps(0); ]])],
