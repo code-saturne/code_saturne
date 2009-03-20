@@ -499,7 +499,7 @@ void CS_PROCF(astpar, ASTPAR)
                            &iteration,
                            "pdtref",1,&n_val_read, dt);
 
-    if (*tt != ttanc)
+    if (fabs(*tt - ttanc) > 1.e-16)
       bft_error(__FILE__, __LINE__, 0,
                 "Arret du calcul: ttinit different de ttpabs \n");
 

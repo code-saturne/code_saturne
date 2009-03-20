@@ -1,3 +1,25 @@
+* 20/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Upgrade to BFT 1.1.
+  Corrections and modifications for OpenMP support.
+  Other small fixes regarding autotools support.
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_blas.h
+    include/base/cs_opts.h
+    include/base/parall.h
+    src/base/cs_ast_coupling.c
+    src/base/cs_base.c
+    src/base/cs_blas.c
+    src/base/cs_main.c
+    src/base/cs_matrix.c
+    src/base/cs_opts.c
+    src/base/cs_syr3_coupling.c
+    src/base/majgeo.f90
+    src/ctwr/cs_ctwr.c
+    users/base/usdpst.f90
+
 * 17/03/2009 - David Monfort <david.monfort@edf.fr>
   Add man pages for the main scripts to the documentation.
   added files:

@@ -602,7 +602,7 @@ _compute_weighting(cs_syr3_coupling_t  *syr_coupling,
 
       syr_coupling->weighting[i_elt] = _MODULE_3D(cross_prod);
 
-      assert(syr_coupling->weighting[i_elt] != 0);
+      assert(syr_coupling->weighting[i_elt] > 1.e-16);
 
     } /* End of loop on elements */
 
@@ -638,7 +638,7 @@ _compute_weighting(cs_syr3_coupling_t  *syr_coupling,
 
       syr_coupling->weighting[i_elt] = _MODULE_3D(vect);
 
-      assert(syr_coupling->weighting[i_elt] != 0);
+      assert(syr_coupling->weighting[i_elt] > 1.e-16);
 
     } /* End of loop on elements */
 

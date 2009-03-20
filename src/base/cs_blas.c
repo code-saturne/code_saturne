@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  * Public function definitions (see BLAS reference)
  *============================================================================*/
 
-#if     defined(HAVE_F77BLAS) && !defined(HAVE_CBLAS) \
+#if     defined(HAVE_FBLAS) && !defined(HAVE_CBLAS) \
     && !defined(HAVE_ESSL) && !defined (HAVE_MKL)
 
 /* If we have F77 BLAS but no C BLAS functions, define C BLAS as F77 wrappers */
@@ -175,10 +175,10 @@ cs_int_t cblas_idamax(cs_int_t       n,
   return CS_PROCF(idamax, IDAMAX)(&n, x, &incx);
 }
 
-#endif  /*     defined(HAVE_F77BLAS) && !defined(HAVE_CBLAS) \
+#endif  /*     defined(HAVE_FBLAS) && !defined(HAVE_CBLAS) \
            && !defined(HAVE_ESSL) && !defined (HAVE_MKL) */
 
-#if    !defined(HAVE_F77BLAS) \
+#if    !defined(HAVE_FBLAS) \
     && !defined(HAVE_ESSL) && !defined (HAVE_MKL)
 
 /* If we have no F77 BLAS functions, define F77 BLAS as C wrappers */
@@ -266,7 +266,7 @@ cs_int_t CS_PROCF(idamax, IDAMAX)(const cs_int_t  *n,
   return cblas_idamax(*n, x, *incx);
 }
 
-#endif /*    !defined(HAVE_F77BLAS) \
+#endif /*    !defined(HAVE_FBLAS) \
           && !defined(HAVE_ESSL) && !defined (HAVE_MKL) */
 
 #if !defined(HAVE_BLAS)
@@ -514,7 +514,7 @@ cs_int_t cblas_idamax(cs_int_t       n,
   return index_max;
 }
 
-#endif /* !defined(HAVE_CBLAS) && !defined(HAVE_F77BLAS) */
+#endif /* !defined(HAVE_CBLAS) && !defined(HAVE_FBLAS) */
 
 /*----------------------------------------------------------------------------*/
 

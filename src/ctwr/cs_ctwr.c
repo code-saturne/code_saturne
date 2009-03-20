@@ -824,7 +824,7 @@ _invmat(cs_real_t mat[4][4],
   i = 0;
   while (err == 1 && (i < (idim+1))){
 
-    if (matInv[i][i] != 0.0){
+    if (CS_ABS(matInv[i][i]) > 1.e-15){
 
       aux = 1.0/matInv[i][i];
 

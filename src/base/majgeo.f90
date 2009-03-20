@@ -30,7 +30,7 @@ subroutine majgeo &
 
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,           &
    lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
-   ngrpi  , ngrpb  , idxfi  , idxfb   )
+   ngrpi2 , ngrpb2 , idxfi  , idxfb   )
 
 !===============================================================================
 ! FONCTION :
@@ -54,8 +54,8 @@ subroutine majgeo &
 ! nfacg2           ! e  ! <-- ! nombre global de faces internes                !
 ! nfbrg2           ! e  ! <-- ! nombre global de faces de bord                 !
 ! nsomg2           ! e  ! <-- ! nombre global de sommets                       !
-! ngrpi            ! e  ! <-- ! nb. groupes de faces interieures               !
-! ngrpb            ! e  ! <-- ! nb. groupes de faces de bord                   !
+! ngrpi2           ! e  ! <-- ! nb. groupes de faces interieures               !
+! ngrpb2           ! e  ! <-- ! nb. groupes de faces de bord                   !
 ! idxfi            ! e  ! <-- ! index pour faces internes                      !
 ! idxfb            ! e  ! <-- ! index pour faces de bord                       !
 !__________________!____!_____!________________________________________________!
@@ -83,7 +83,7 @@ include "parall.h"
 integer          ncel2, ncele2, nfac2, nfabo2, nsom2
 integer          lndfa2, lndfb2
 integer          ncelg2, nfacg2 , nfbrg2, nsomg2
-integer          ngrpi, ngrpb, idxfi, idxfb
+integer          ngrpi2, ngrpb2, idxfi, idxfb
 
 ! VARIABLES LOCALES
 
@@ -155,6 +155,8 @@ iomplb(2, 1, 1) = nfabor
 
 ! Numerotations pour boucles OpenMP sur les faces interieures
 
+ngrpi = ngrpi2
+
 if (nthrdp.gt.1 .and. ngrpi.gt.1) then
 
   do ii = 1, nthrdp
@@ -169,6 +171,8 @@ if (nthrdp.gt.1 .and. ngrpi.gt.1) then
 endif
 
 ! Numerotations pour boucles OpenMP sur les faces de bord
+
+ngrpb = ngrpb2
 
 if (nthrdp.gt.1 .and. ngrpb.gt.1) then
 

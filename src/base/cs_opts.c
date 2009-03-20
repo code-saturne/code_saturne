@@ -330,7 +330,7 @@ cs_opts_logfile_head(int    argc,
              "                      Version %s\n\n",
              CS_APP_VERSION);
 
-  bft_printf("\n  Copyright (C) 1998-2008 EDF S.A., France\n\n");
+  bft_printf("\n  Copyright (C) 1998-2009 EDF S.A., France\n\n");
 
   bft_printf(_("  build %s\n"), str);
 
@@ -374,8 +374,8 @@ cs_opts_logfile_head(int    argc,
  *----------------------------------------------------------------------------*/
 
 int
-cs_opts_mpi_app_num(int    *argc,
-                    char  **argv[])
+cs_opts_mpi_init(int    *argc,
+                 char  **argv[])
 {
 #if defined(HAVE_MPI)
 
@@ -432,8 +432,14 @@ cs_opts_mpi_app_num(int    *argc,
 
   if (use_mpi == true) {
     MPI_Initialized(&flag);
-    if (!flag)
+    if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+      int mpi_threads;
+      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
       MPI_Init(argc, argv);
+#endif
+    }
   }
 
   /* Loop on command line arguments */
@@ -462,8 +468,14 @@ cs_opts_mpi_app_num(int    *argc,
   if (use_mpi == true) {
 
     MPI_Initialized(&flag);
-    if (!flag)
+    if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+      int mpi_threads;
+      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
       MPI_Init(argc, argv);
+#endif
+    }
 
     /*
       If appnum was not given through the command line but we

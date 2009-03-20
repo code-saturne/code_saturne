@@ -309,12 +309,13 @@ _cs_base_err_vprintf(const char  *format,
 
     else {
 #if defined(HAVE_SLEEP)
-      sleep(10); /* Wait a few seconds, so that if rank 0 also
-                    has encountered an error, it may kill
-                    other ranks through MPI_Abort, so that
-                    only rank 0 will generate an error file.
-                    If rank 0 has not encountered the error,
-                    proceed normally after the wait. */
+      int wait_time = (cs_glob_n_ranks < 64) ? 1: 10;
+      sleep(wait_time); /* Wait a few seconds, so that if rank 0 also
+                           has encountered an error, it may kill
+                           other ranks through MPI_Abort, so that
+                           only rank 0 will generate an error file.
+                           If rank 0 has not encountered the error,
+                           proceed normally after the wait. */
 #endif
       sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
     }
@@ -855,22 +856,20 @@ void CS_PROCF (rasize, RASIZE)
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Complete MPI initialization.
+ * Complete MPI setup.
+ *
+ * MPI should have been initialized by cs_opts_mpi_init().
  *
  * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
  * parameters:
- *   argc    <-- pointer to number of command line arguments.
- *   argv    <-- pointer to command line arguments array.
  *   app_num <-- -1 if MPI is not needed, or application number in
  *               MPI_COMM_WORLD of this instance of Code_Saturne.
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_mpi_init(int     *argc,
-                 char  ***argv,
-                 int      app_num)
+cs_base_mpi_init(int  app_num)
 {
   int flag, nbr, rank;
 
@@ -879,10 +878,6 @@ cs_base_mpi_init(int     *argc,
 #if defined(DEBUG) || !defined(NDEBUG)
   MPI_Errhandler errhandler;
 #endif
-
-  MPI_Initialized(&flag);
-  if (!flag)
-    MPI_Init(argc, argv);
 
   /*
     If necessary, split MPI_COMM_WORLD to separate different coupled
@@ -1037,10 +1032,6 @@ cs_base_mem_init(void)
 
   /* Memory usage measure initialization */
 
-#if defined(_CS_ARCH_Linux)
-  bft_mem_usage_set_options(BFT_MEM_USAGE_TRACK_PR_SIZE |
-                            BFT_MEM_USAGE_TRACK_ALLOC_SIZE);
-#endif
   bft_mem_usage_init();
 
   /* Memory management initialization */
@@ -1111,20 +1102,19 @@ void
 cs_base_mem_fin(void)
 {
   int    ind_bil, itot;
-  double valreal[3];
+  double valreal[2];
 
 #if defined(HAVE_MPI)
   int  imax, imin;
-  double val_somme[3];
-  int  ind_min[3];
-  _cs_base_mpi_double_int_t  val_in[3], val_min[3], val_max[3];
+  double val_somme[2];
+  int  ind_min[2];
+  _cs_base_mpi_double_int_t  val_in[2], val_min[2], val_max[2];
 #endif
 
-  int   ind_val[3] = {1, 1, 1};
+  int   ind_val[2] = {1, 1};
   char  unite[]    = {'k', 'm', 'g', 't', 'p'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
-                              N_("Memory reported by C library:            "),
                               N_("Theoretical instrumented dynamic memory: ")};
 
   /* Memory summary */
@@ -1132,35 +1122,31 @@ cs_base_mem_fin(void)
   bft_printf(_("\nMemory use summary:\n\n"));
 
   valreal[0] = (double)bft_mem_usage_max_pr_size();
-  valreal[1] = (double)bft_mem_usage_max_alloc_size();
-  valreal[2] = (double)bft_mem_size_max();
+  valreal[1] = (double)bft_mem_size_max();
 
   /* Ignore inconsistent measurements */
 
-  if (valreal[1] < valreal[2])
-    ind_val[1] = 0;
-
-  for (ind_bil = 0; ind_bil < 3; ind_bil++) {
+  for (ind_bil = 0; ind_bil < 2; ind_bil++) {
     if (valreal[ind_bil] < 1.0)
       ind_val[ind_bil] = 0;
   }
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    MPI_Reduce(ind_val, ind_min, 3, MPI_INT, MPI_MIN,
+    MPI_Reduce(ind_val, ind_min, 2, MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(valreal, val_somme, 3, MPI_DOUBLE, MPI_SUM,
+    MPI_Reduce(valreal, val_somme, 2, MPI_DOUBLE, MPI_SUM,
                0, cs_glob_mpi_comm);
-    for (ind_bil = 0; ind_bil < 3; ind_bil++) {
+    for (ind_bil = 0; ind_bil < 2; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
     }
-    MPI_Reduce(&val_in, &val_min, 3, MPI_DOUBLE_INT, MPI_MINLOC,
+    MPI_Reduce(&val_in, &val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(&val_in, &val_max, 3, MPI_DOUBLE_INT, MPI_MAXLOC,
+    MPI_Reduce(&val_in, &val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
                0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0) {
-      for (ind_bil = 0; ind_bil < 3; ind_bil++) {
+      for (ind_bil = 0; ind_bil < 2; ind_bil++) {
         ind_val[ind_bil]  = ind_min[ind_bil];
         valreal[ind_bil] = val_somme[ind_bil];
       }
@@ -1170,7 +1156,7 @@ cs_base_mem_fin(void)
 
   /* Similar handling of several instrumentation methods */
 
-  for (ind_bil = 0 ; ind_bil < 3 ; ind_bil++) {
+  for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
 
     /* If an instrumentation method returns an apparently consistent
        result, print it. */
@@ -1444,6 +1430,13 @@ cs_base_system_info(void)
   }
 
   bft_printf("  %s%s\n", _("Directory:         "), str_directory);
+
+#if defined(HAVE_MPI)
+  bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
+#endif
+#if defined(HAVE_OPENMP)
+  bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
+#endif
 
   bft_printf("\n");
 }

@@ -228,8 +228,7 @@ do icas = 1, nbcas
 !       forme, il faudra gerer son rapatriement a la main.
 
 !       NOMFMT permet de choisir le format de sortie
-!       ("EnSight Gold" uniquement aujourd'hui, "MED_fichier" et "CGNS"
-!       a terme, ou "text" a des fins de debug).
+!       ("EnSight Gold", "MED_fichier", ou "CGNS").
 
 !       OPTFMT permet de fournir des options specifiques au format de
 !       sortie (separees par des virgules) ;

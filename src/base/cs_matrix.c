@@ -347,19 +347,19 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
 {
   cs_int_t  ii;
 
-#if defined(__xlc__) /* Tell IBM compiler not to alias */
-#pragma disjoint(*x, *y, *da)
-#endif
+  #if defined(__xlc__) /* Tell IBM compiler not to alias */
+  #pragma disjoint(*x, *y, *da)
+  #endif
 
   /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
 
   if (da != NULL) {
-#pragma omp parallel for
+    #pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = da[ii] * x[ii];
   }
   else {
-#pragma omp parallel for
+    #pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++);
       y[ii] = 0.0;
   }
@@ -387,17 +387,17 @@ _diag_x_p_beta_y(cs_real_t         alpha,
 {
   cs_int_t  ii;
 
-#if defined(__xlc__) /* Tell IBM compiler not to alias */
-#pragma disjoint(*x, *y, *da)
-#endif
+   #if defined(__xlc__) /* Tell IBM compiler not to alias */
+   #pragma disjoint(*x, *y, *da)
+   #endif
 
   if (da != NULL) {
-#pragma omp parallel for firstprivate(alpha, beta)
+    #pragma omp parallel for firstprivate(alpha, beta)
     for (ii = 0; ii < n_elts; ii++) {
       y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]); }
   }
   else {
-#pragma omp parallel for firstprivate(beta)
+    #pragma omp parallel for firstprivate(beta)
     for (ii = 0; ii < n_elts; ii++) {
       y[ii] *= beta; }
   }
@@ -419,7 +419,7 @@ _zero_range(cs_real_t  *restrict y,
 {
   cs_int_t  ii;
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for (ii = start_id; ii < end_id; ii++)
     y[ii] = 0.0;
 }
@@ -743,14 +743,14 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
 
   if (mc->da != NULL) {
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (ii = 0; ii < n_cells; ii++)
       da[ii] = mc->da[ii];
 
   }
   else {
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (ii = 0; ii < n_cells; ii++)
       da[ii] = 0.0;
 
@@ -779,9 +779,9 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
   const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
 
   /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *da, *xa1, *xa2)
-#endif
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -855,9 +855,9 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
 
   /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *da, *xa1, *xa2)
-#endif
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -878,7 +878,7 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-#pragma omp parallel for private(face_id, ii, jj)
+        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[t_id*n_groups*2 + g_id];
@@ -898,7 +898,7 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-#pragma omp parallel for private(face_id, ii, jj)
+        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[t_id*n_groups*2 + g_id];
@@ -1092,7 +1092,7 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
 
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-#pragma dir nodep
+      #pragma dir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
@@ -1105,7 +1105,7 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
 
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-#pragma dir nodep
+      #pragma dir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
@@ -1146,9 +1146,9 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
   const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
 
   /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *da, *xa1, *xa2)
-#endif
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1226,9 +1226,9 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
 
   /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *da, *xa1, *xa2)
-#endif
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1248,7 +1248,7 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-#pragma omp parallel for private(face_id, ii, jj)
+        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[t_id*n_groups*2 + g_id];
@@ -1270,7 +1270,7 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-#pragma omp parallel for private(face_id, ii, jj)
+        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[t_id*n_groups*2 + g_id];
@@ -1336,7 +1336,7 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
 
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-#pragma cdir nodep
+      #pragma cdir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
@@ -1349,7 +1349,7 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
 
       const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-#pragma cdir nodep
+      #pragma cdir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
@@ -2135,7 +2135,7 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 
   /* Full rows for non-symmetric structure */
 
-#pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
+  #pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
     col_id = ms->col_id + ms->row_index[ii];
@@ -2144,9 +2144,9 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
     sii = 0.0;
 
     /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *m_row, *col_id)
-#endif
+    #if defined(__xlc__)
+    #pragma disjoint(*x, *y, *m_row, *col_id)
+    #endif
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -2181,10 +2181,10 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
 
   cs_int_t sym_jj_start = 0;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *m_row, *col_id)
-#endif
+  /* Tell IBM compiler not to alias */
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *m_row, *col_id)
+  #endif
 
   assert(ms->symmetric == true);
 
@@ -2253,11 +2253,11 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
 
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*prefetch_p, *y, *m_row)
-#pragma disjoint(*prefetch_p, *x, *col_id)
-#endif
+    /* Tell IBM compiler not to alias */
+    #if defined(__xlc__)
+    #pragma disjoint(*prefetch_p, *y, *m_row)
+    #pragma disjoint(*prefetch_p, *x, *col_id)
+    #endif
 
     if (end_row > n_rows)
       end_row = n_rows;
@@ -2327,7 +2327,7 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
 
   /* Full rows for non-symmetric structure */
 
-#pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
+  #pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
     col_id = ms->col_id + ms->row_index[ii];
@@ -2336,9 +2336,9 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
     sii = 0.0;
 
     /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *m_row, *col_id)
-#endif
+    #if defined(__xlc__)
+    #pragma disjoint(*x, *y, *m_row, *col_id)
+    #endif
 
     for (jj = 0; jj < n_cols; jj++)
       sii += (m_row[jj]*x[col_id[jj]]);
@@ -2376,10 +2376,10 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
-    /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *m_row, *col_id)
-#endif
+  /* Tell IBM compiler not to alias */
+  #if defined(__xlc__)
+  #pragma disjoint(*x, *y, *m_row, *col_id)
+  #endif
 
   assert(ms->symmetric == true);
 
@@ -2445,11 +2445,11 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
     cs_int_t end_row = start_row + mc->n_prefetch_rows;
     cs_real_t  *restrict prefetch_p = mc->x_prefetch;
 
-      /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*prefetch_p, *x, *col_id)
-#pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
-#endif
+    /* Tell IBM compiler not to alias */
+    #if defined(__xlc__)
+    #pragma disjoint(*prefetch_p, *x, *col_id)
+    #pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
+    #endif
 
     if (end_row > n_rows)
       end_row = n_rows;

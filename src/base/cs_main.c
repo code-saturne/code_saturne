@@ -498,13 +498,21 @@ main(int    argc,
      and MPI initialization if it is. */
 
 #if defined(HAVE_MPI)
-  app_num = cs_opts_mpi_app_num(&argc, &argv);
+  app_num = cs_opts_mpi_init(&argc, &argv);
   if (app_num > -1)
-    cs_base_mpi_init(&argc, &argv, app_num);
+    cs_base_mpi_init(app_num);
 #endif
 
-#if defined(HAVE_OPENMP)
-  cs_glob_n_threads = omp_get_num_threads();
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+  {
+    int t_id;
+#pragma omp parallel private(t_id)
+    {
+      t_id = omp_get_thread_num();
+      if (t_id == 0)
+        cs_glob_n_threads = omp_get_num_threads();
+    }
+  }
 #endif
 
   /* Default initialization */

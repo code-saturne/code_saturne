@@ -122,8 +122,8 @@ cs_opts_logfile_head(int    argc,
  *----------------------------------------------------------------------------*/
 
 int
-cs_opts_mpi_app_num(int    *argc,
-                    char  **argv[]);
+cs_opts_mpi_init(int    *argc,
+                 char  **argv[]);
 
 /*----------------------------------------------------------------------------
  * Define options and call some associated initializations

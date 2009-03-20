@@ -255,7 +255,7 @@ cs_syr3_coupling.c \
 cs_syr3_messages.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
-cs_syr_util.c \
+cs_syr_util.f90 \
 cs_tpar1d.c \
 cs_ventil.c \
 csprnt.f90 \
@@ -451,11 +451,6 @@ $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90
-
-libsaturne_la_LIBADD += \
-@MPI_LDFLAGS@ @MPI_LIBS@ \
-@LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
-@BLAS_LDFLAGS@ @BLAS_LIBS@
 
 ####
 

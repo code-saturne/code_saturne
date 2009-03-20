@@ -36,7 +36,7 @@
  * External library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_ESSL)
+#if defined(HAVE_ESSL_H)
 #include <essl.h>
 
 #elif defined(HAVE_MKL)
@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#if    defined(HAVE_CBLAS) || defined(HAVE_F77BLAS) \
+#if    defined(HAVE_CBLAS) || defined(HAVE_FBLAS) \
     || defined(HAVE_ESSL) || defined (HAVE_MKL)
 #define HAVE_BLAS 1
 #endif
@@ -133,7 +133,7 @@ BEGIN_C_DECLS
 /* For the IBM ESSL library, function prototypes are defined in essl.h,
    with legacy blas names <name> mapped to esv<name> */
 
-#if defined(HAVE_ESSL)
+#if defined(HAVE_ESSL_H)
 
 #define cblas_dasum  dasum
 #define cblas_daxpy  daxpy
