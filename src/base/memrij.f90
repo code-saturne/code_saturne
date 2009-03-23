@@ -189,9 +189,6 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMRIJ',IFINIA)
-!==========
-
 CALL RASIZE('MEMRIJ',IFINRA)
 !==========
 

@@ -172,9 +172,6 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMDYP',IFINIA)
-!==========
-
 CALL RASIZE('MEMDYP',IFINRA)
 !==========
 

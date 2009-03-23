@@ -148,9 +148,6 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMSCA',IFINIA)
-!==========
-
 CALL RASIZE('MEMSCA',IFINRA)
 !==========
 

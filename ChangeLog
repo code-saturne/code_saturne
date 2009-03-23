@@ -1,4 +1,22 @@
 * 20/03/2009 - David Monfort <david.monfort@edf.fr>
+  Remove the test on iasize in memory management routines where
+  one does not need anymore new integer arrays. Fix a potential
+  bug (introduced with the new multigrid algorithm) when
+  checking a non-initialized variable.
+  modified routines:
+    src/base/memale.f90
+    src/base/memdis.f90
+    src/base/memdyp.f90
+    src/base/memkep.f90
+    src/base/memkom.f90
+    src/base/memnav.f90
+    src/base/memrij.f90
+    src/base/memsca.f90
+    src/base/memv2f.f90
+    src/cfbl/memcfm.f90
+    src/rayt/memra2.f90
+
+* 20/03/2009 - David Monfort <david.monfort@edf.fr>
   Minor corrections and improvements based on feedback from
   Debian packager S. Ledru.
   added scripts:

@@ -163,9 +163,6 @@ ifinra =       icoefu + nfabor*ndim
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCFM',IFINIA)
-!==========
-
 CALL RASIZE('MEMCFM',IFINRA)
 !==========
 

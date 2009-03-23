@@ -178,9 +178,6 @@ ifinra =       iflxmb + nfabor
 !---> VERIFICATION
 !===============================================================================
 
-CALL IASIZE('MEMRA2',IFINIA)
-!==========
-
 CALL RASIZE('MEMRA2',IFINRA)
 !==========
 

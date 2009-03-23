@@ -211,9 +211,6 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMNAV',IFINIA)
-!==========
-
 CALL RASIZE('MEMNAV',IFINRA)
 !==========
 
