@@ -296,7 +296,7 @@ msgstr "Rangs MPI :        "
 
 #: src/base/cs_base.c:1438
 msgid "OpenMP threads:    "
-msgstr ""
+msgstr "Threads OpenMP:    "
 
 #: src/base/cs_base.c:1470
 #, c-format
@@ -2493,7 +2493,7 @@ msgstr ""
 
 #: src/base/cs_numbering.c:80
 msgid "vectorization"
-msgstr ""
+msgstr "vectorisation"
 
 #: src/base/cs_numbering.c:81
 msgid "threads"

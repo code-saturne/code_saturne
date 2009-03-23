@@ -129,7 +129,7 @@ _check_ieee_standard(void)
  * Returns:
  *----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _orient3D_set_maxvalue(cs_real_t  d)
 {
   float  D;
@@ -164,7 +164,7 @@ _orient3D_set_maxvalue(cs_real_t  d)
  * Returns:
  *----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _orient3D_normalize(float  *value)
 {
   /* round a value with fixed precision */
@@ -201,7 +201,7 @@ _orient3D_normalize(float  *value)
  * Returns:
  *----------------------------------------------------------------------------*/
 
-inline static void
+static inline void
 _orient3D_split(cs_real_t    a,
                 cs_real_t   *a1,
                 cs_real_t   *a0,

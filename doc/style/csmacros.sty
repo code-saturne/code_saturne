@@ -97,13 +97,13 @@
 %
 \newcommand{\variab}[4]{%
        \setbox\tempbox\hbox{ifacel [e]: }
-       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3]:\quad}\ignorespaces#4.}
+       \hangindent\wd\tempbox\noindent{{\tt #2\index{#1}} [#3]:\quad}\ignorespaces#4.}
 \newcommand{\variabsize}[2]{%
    \noindent
    \makebox[.12\linewidth][l]{\tt #1:}\index{#1}\parbox[t]{.88\linewidth}{#2.}}
 \newcommand{\variablist}[4]{%
        \setbox\tempbox\hbox{ifacel [e]: }
-       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3]:\quad}\ignorespaces#4\quad}
+       \hangindent\wd\tempbox\noindent{{\tt #2\index{#1}} [#3]:\quad}\ignorespaces#4\quad}
 %
 % Other useful macros (for \raggedright in tabular, for a Unix tilde)
 %

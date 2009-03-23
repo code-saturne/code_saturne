@@ -1,4 +1,17 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Add a trick to fool the Makefile.in.in from gettext support
+  so that it handles the install-pdf target.
+  Update the autoflags and cs_lagr.c accordingly.
+  Small modification in the documentation macros.
+  modified files:
+    config/cs_auto_flags.sh
+    doc/style/csmacros.sty
+    po/fr.po
+    po/Rules-install
+    src/lagr/cs_lagr.c
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Update French dictionnary.
   Remove ale.tex, integrated in the user guide.
 

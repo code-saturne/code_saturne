@@ -263,8 +263,8 @@ else
     cs_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-Xa -fPIC"
-    cflags_default_dbg="-g"
+    cflags_default="-Xa"
+    cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-fast -fastsse"
     cflags_default_prf="-Mprof=func,lines"
     cflags_default_omp="-mp"
@@ -414,9 +414,9 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
         # Default compiler flags
         cflags_default="-c99 -64"
-        cflags_default_opt="-O2 -woff 1429,1521"
+        cflags_default_opt="-O2 -woff 1521,1552,1096"
         cflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cflags_default_prf="-O0"
+        cflags_default_prf="-fbexe"
 
       fi
       ;;
@@ -440,7 +440,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         # Default compiler flags
         cflags_default="-Aa +e +DA2.0W"
         cflags_default_opt="+O2"
-        cflags_default_hot="+O3 +Oinline=Orient3D_split,Orient3D_normalize,Orient3D_set_maxvalue"
+        cflags_default_hot="+O3"
         cflags_default_dbg="-g"
         cflags_default_prf="-G"
         cflags_default_omp="+Oopenmp" # most pragmas require +O3
@@ -471,8 +471,9 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cs_cc_compiler_known=yes
 
         # Default compiler flags
-        cflags_default="-Xa"
+        cflags_default="-Xa -Xc99"
         cflags_default_opt="-xO2"
+        cflags_default_hot="-xO3"
         cflags_default_dbg="-g"
         cflags_default_prf="-pg"
         cflags_default_omp="-xopenmp"
