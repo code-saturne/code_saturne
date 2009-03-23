@@ -1,4 +1,7 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Reorganize the test cases database in a simpler way.
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Lot of Makefile changes related to package distribution.
   Add a refcard documentation and some missing manpages.
   Add a csmacro and a csvers file containing all the macros
