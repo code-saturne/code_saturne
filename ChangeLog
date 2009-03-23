@@ -1,5 +1,9 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Reorganize the test cases database in a simpler way.
+  Remove obsolete tex files.
+  removed files:
+    doc/theory/introd_fonc.save
+    doc/theory/introd_fonc.tex.last
 
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Lot of Makefile changes related to package distribution.
