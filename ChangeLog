@@ -1,4 +1,13 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Remove standard user shell script by Python ones.
+  modified scripts:
+    bin/cs_check_consistency
+    bin/cs_check_mesh
+    bin/cs_create
+    bin/cs_info
+    bin/cs_plot_probes
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Reorganize the test cases database in a simpler way.
   Remove obsolete tex files.
   removed files:
