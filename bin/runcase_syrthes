@@ -91,7 +91,7 @@ do
 
   is_src_syr=`echo $arg | grep -e "-src-syr="`
   if [ "$is_src_syr" != "" ] ; then
-    SRC_SYR=`echo $arg | sed -e "s/src-syr=//"`
+    SRC_SYR=`echo $arg | sed -e "s/-src-syr=//"`
   fi
 
   is_log=`echo $arg | grep -e "-log="`
@@ -143,7 +143,7 @@ if [ "$1" = "-compile" ] ; then
       fi
     done
   fi
-  
+
   # SYR_CS library installation parameters
   SYRCS_BINDIR=${SYRCS_DIR}/bin
 

@@ -1,4 +1,9 @@
-* 20/03/2009 - David Monfort <david.monfort@edf.fr>
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Bug correction in SYRTHES coupling script.
+  modified script:
+    bin/runcase_syrthes
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Remove the test on iasize in memory management routines where
   one does not need anymore new integer arrays. Fix a potential
   bug (introduced with the new multigrid algorithm) when
