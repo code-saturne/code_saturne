@@ -1,4 +1,8 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Update French dictionnary.
+  Remove ale.tex, integrated in the user guide.
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Update Subversion ignore property.
   modified directories:
     config
