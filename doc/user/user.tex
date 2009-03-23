@@ -24,37 +24,22 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                    %
-%                                                                    %
-%                                                                    %
-% Title:            Code_Saturne user manual                         %
-%                                                                    %
-%                                                                    %
-%                                                                    %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[a4paper,10pt,twoside]{article}
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES OBLIGATOIRES
 \usepackage{csdoc}
+% MACROS SUPPLEMENTAIRES
+\usepackage{csmacros}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
-\usepackage[pdftex,
-            bookmarksopen=true,
-            colorlinks=true,
-            linkcolor=blue,
-            filecolor=blue,
-            urlcolor=blue,
-            citecolor=blue]{hyperref}
 \hypersetup{%
-  pdftitle = {Code_Saturne version 1.4 practical user's guide},
+  pdftitle = {CodeSaturne practical user's guide},
   pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
@@ -73,41 +58,6 @@
 \usepackage{alltt}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MACROS SUPPLEMENTAIRES
-% \newcommand{/...}{...}
-%
-%
-\newbox\tempbox
-\newcommand{\motcle}[7]{%
-   \noindent
-   \setbox\tempbox\hbox{\hspace*{2.5cm}}
-   \makebox[2.5cm][l]{#1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
-   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
-   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
-\newcommand{\motcleb}[7]{%
-   \noindent
-   \setbox\tempbox\hbox{\hspace*{2.5cm}}
-   \makebox[2.5cm][l]{\bf #1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
-   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
-   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
-%
-%\newcommand{\variab}[4]{%
-%       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3] \quad\\}
-%       \hspace*{0.5cm}\ignorespaces#4.}
-\newcommand{\variab}[4]{%
-       \setbox\tempbox\hbox{IFACEL [E]: }
-       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3]:\quad}\ignorespaces#4.}
-\newcommand{\variablist}[4]{%
-       \setbox\tempbox\hbox{IFACEL [E]: }
-       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3]:\quad}\ignorespaces#4\quad}
-%\newcommand{\variab}[4]{%
-%       \setbox\tempbox\hbox{#2 [#3]:\quad}
-%       \hangindent\wd\tempbox\noindent{#2\index{#1} [#3]:\quad}\ignorespaces#4.}
-%
-% Commande utilitaire pour \raggedright dans tabular
-\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
 \titreCS{\CS version~\verscs practical user's guide}
 \docassociesCS{}
@@ -124,7 +74,7 @@ the document for easier consultation.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
 \begin{document}
-\pdfgraphics
+
 \def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
 contents}{contents}}
 \def\indexname{Index of the main variables and keywords}

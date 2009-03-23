@@ -15,9 +15,17 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Preprocessor; if not, write to the
+#   along with the Code_Saturne Kernel; if not, write to the
 #   Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = theory tutorial user
+SUBDIRS = howto refcard theory tutorial user
+
+EXTRA_DIST = \
+style/csdoc.sty \
+style/csindex.sty \
+style/csmacros.sty \
+style/csvers.tex.in \
+style/logocs.png \
+style/logoedf.png

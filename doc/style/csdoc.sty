@@ -24,72 +24,25 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-%
-% Classe Note EDF, variante de la classe standard report
-%
-% Etienne DECOSSIN 2000 (Classe Note EDF, variante de la classe standard report)
-% Alexandre Douce 2003 --> feuille de style LateX
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% IDENTIFICATION DE noteEDF.sty
-\NeedsTeXFormat {LaTeX2e}[2003/05/01]
+\NeedsTeXFormat{LaTeX2e}
 \def \filename {csdoc.sty}
 \def \filedate {2009/01/16}
 \def \fileversion {0.5}
 \ProvidesPackage {csdoc}[\filedate\space\fileversion\space
-  EDF R&D report format package]
+  Code_Saturne documentation format package]
 \typeout {Package: `csdoc' \fileversion\space <\filedate>}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DEFINITION DES OPTIONS DU STYLE noteEDF
-%%%\newif\if@EDFenglish
-%%%\@EDFenglishfalse
-%%%\newif\if@EDFpdftex
-%%%\@EDFpdftexfalse
-%%%\newif\if@EDFlatexfont
-%%%\@EDFlatexfontfalse
-%%%\newif\if@EDFedfdoc
-%%%\@EDFedfdoctrue
-%%%\newif\if@EDFrddoc
-%%%\@EDFrddocfalse
-%%%\newif\if@EDFconfidentiel
-%%%\@EDFconfidentielfalse
-%%%%
-%%%\DeclareOption{english}{\@EDFenglishtrue}
-%%%\DeclareOption{pdftex}{\@EDFpdftextrue}
-%%%\DeclareOption{latexfont}{\@EDFlatexfonttrue}
-%%%\DeclareOption{confidentiel}{\@EDFconfidentieltrue\@EDFedfdocfalse\@EDFrddocfalse}
-%%%\DeclareOption{rddoc}{\@EDFconfidentielfalse\@EDFedfdocfalse\@EDFrddoctrue}
-%%%\DeclareOption{edfdoc}{\@EDFconfidentielfalse\@EDFedfdoctrue\@EDFrddocfalse}
-%%%\ProcessOptions
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% UTILISATION DE PDFLATEX ?
-\newif\ifpdf
-\ifx\pdfoutput\undefined
-  \pdffalse    % we are not running PDFLaTeX
-\else
-  \pdfoutput=1 % we are running PDFLaTeX
-  \pdftrue
-\fi
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chargement des Packages utiles
+\RequirePackage{ifpdf}
+
 \ifpdf
-  \RequirePackage[pdftex]{graphicx}
   \pdfcompresslevel=9
+  \RequirePackage[pdftex]{graphicx}
+  \DeclareGraphicsExtensions{.png,.pdf,.jpg}
 \else
   \RequirePackage{graphicx}
 \fi
@@ -107,47 +60,44 @@
 
 \RequirePackage[latin1]{inputenc}
 \RequirePackage[OT1]{fontenc} % \RequirePackage[T1]{fontenc} Attention: Liste des symboles
-%\RequirePackage[francais]{babel}
 
-%\if@EDFlatexfont
-%   \RequirePackage[T1]{fontenc}
-%\else
-%   \RequirePackage{pslatex}
-%   \RequirePackage[T1]{fontenc}
-%\fi
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Keep the hyperref package at the end of the required packages list
+\RequirePackage[pdftex,
+                bookmarksopen=true,
+                colorlinks=true,
+                linkcolor=blue,
+                filecolor=blue,
+                urlcolor=blue,
+                citecolor=blue]{hyperref}
 
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mise en page : Définitions des MACROS
 \newcommand{\titreCS}[1]{\def\titre{#1}}
 \newcommand{\docassociesCS}[1]{\def\docassocies{#1}}
 \newcommand{\resumeCS}[1]{\def\resume{#1}}
 
-\newcommand{\pdfgraphics}{\ifpdf\DeclareGraphicsExtensions{.pdf,.png,.jpg}\else\fi}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Marges horizontales (du haut vers le bas)
-%------------------------------------------
+% Horizontal margins
+%-------------------
 \setlength{\voffset}{0pt}
-\setlength{\topmargin}{0pt} % définit la marge a 1 pouce
-\addtolength{\topmargin}{-13mm} % redéfinit la marge en retrait par rapport a 1 pouce
-\setlength{\headheight}{15mm} % épaisseur de la boîte contenant le haut de page (cartouche)
-\setlength{\headsep}{6mm} % redefinit la séparation en l'entête et le corps du document
-\setlength{\textheight}{233mm} % redéfinit la hauteur de la page
-\setlength{\footskip}{15mm} % espace entre la fin du texte et le début du pieds de page
+\setlength{\topmargin}{0pt}
+\addtolength{\topmargin}{-13mm}
+\setlength{\headheight}{15mm}
+\setlength{\headsep}{6mm}
+\setlength{\textheight}{233mm}
+\setlength{\footskip}{15mm}
 
-% Marges verticales
-%------------------
+% Vertical margins
+%-----------------
 \setlength{\hoffset}{0pt}
-\setlength{\evensidemargin}{7mm} % redefinit la marge impaire
-\setlength{\oddsidemargin}{7mm} % redefinit la marge paire
-\setlength{\textwidth}{156mm} % largeur du texte
+\setlength{\evensidemargin}{7mm}
+\setlength{\oddsidemargin}{7mm}
+\setlength{\textwidth}{156mm}
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{6pt}
 \setlength{\tabcolsep}{1mm}
@@ -156,7 +106,7 @@
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Pour choisir à la main les style des titres et sections :
+% Renew title styles for sections and others
 \DeclareFixedFont{\polsec}{OT1}{phv}{b}{n}{16}
 \DeclareFixedFont{\polssec}{OT1}{phv}{b}{n}{14}
 \DeclareFixedFont{\polsssec}{OT1}{phv}{b}{n}{12}
@@ -181,65 +131,20 @@
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SOMMAIRE
+% Contents
 %
 \renewcommand*\l@section{\upshape\bfseries \@dottedtocline{1}{0mm}{1.5em}}
 \renewcommand*\l@subsection{\mdseries\scshape \@dottedtocline{2}{0mm}{2.4em}}
 \renewcommand*\l@subsubsection{\itshape \@dottedtocline{3}{3mm}{3.6em}}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MACROS RACCOURCIS
-\newcommand{\verscs}{1.4.0\xspace}
-\newcommand{\CS}{%
-{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
-\newcommand{\syrthes}{SYRTHES\xspace}
-%
-\newcommand{\ensight}{EnSight\xspace}
-\newcommand{\ensightg}{EnSight Gold\xspace}
-\newcommand{\fluent}{FLUENT\xspace}
-\newcommand{\fvm}{FVM\xspace}
-\newcommand{\gambit}{GAMBIT\xspace}
-\newcommand{\gmsh}{Gmsh\xspace}
-\newcommand{\harpoon}{Harpoon\xspace}
-\newcommand{\hexpress}{\emph{HexPress}\xspace}
-\newcommand{\icemcfd}{ICEM~CFD\xspace}
-\newcommand{\ideas}{I-deas\xspace}
-\newcommand{\med}{MED\xspace}
-\newcommand{\Metis}{METIS\xspace}
-\newcommand{\nopo}{{\sc nopp}\xspace}
-\newcommand{\pcs}{Preprocessor\xspace}
-\newcommand{\paraview}{ParaView\xspace}
-\newcommand{\salome}{SALOME\xspace}
-\newcommand{\simail}{S\textsc{IMAIL}\xspace}
-\newcommand{\starcd}{\textbf{STAR-CD}\xspace}
-\newcommand{\starccmp}{\textbf{STAR-CCM+}\xspace}
-\newcommand{\vtk}{VTK\xspace}
-%
-\newcommand{\tildeunix}{%
-{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
-%
-%(Attention : \passepage ne fonctionne pas devant un \chapter (classe 'report'))
-\newcommand{\passepage}{%
-\ifthenelse{\isodd{\arabic{page}}}
-{\newpage\hspace*{6.cm}\newpage}{\newpage}}
-\newcommand{\passepart}{%
-\hspace*{6.cm}\ifthenelse{\isodd{\value{page}}}
-{\newpage}{\hspace*{-6.cm}}}
-%
-\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
-\newcommand{\vect}[1]{\underline{#1}}
-\newcommand{\tens}[1]{\underline{\underline{#1}}}
-\newcommand{\grad}{\text{g}\underline{\text{rad}}\ }
-\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\ }
-\newcommand{\dive}{\text{div}}
-\newcommand{\rot}{\underline{\text{rot}}\ }
-\newcommand{\ind}[1]{\text{$_{#1}$}}
-\newcommand{\degresC}{$^\circ$C}
+% Input Code_Saturne name and version macros
+\input{csvers}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%BIBLIOGRAPHIE
+% Bibliography
 %-------------
-% Suppression du titre References
+% Remove the references title
 
 \renewenvironment{thebibliography}[1]
      {\list{\@biblabel{\@arabic\c@enumiv}}%
@@ -260,8 +165,18 @@
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% EN-TETE ET PIED DE PAGE
-% =======================
+% Warning: \passepage does not work before a \chapter ('report' class)
+\newcommand{\passepage}{%
+\ifthenelse{\isodd{\arabic{page}}}
+{\newpage\hspace*{6.cm}\newpage}{\newpage}}
+\newcommand{\passepart}{%
+\hspace*{6.cm}\ifthenelse{\isodd{\value{page}}}
+{\newpage}{\hspace*{-6.cm}}}
+%
+\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
+%
+% Headers and footpages
+% =====================
 \pagestyle{fancy}
 \fancyhead{}
 \fancyhead[LE,LO]{\cartouche}
@@ -269,8 +184,8 @@
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
 
-% CARTOUCHE1
-% ==========
+% CARTOUCHE
+% =========
 \newcommand{\cartouche}{%
 \hspace*{-5mm}
 \begin{tabularx}{162mm}
@@ -291,7 +206,7 @@ Page \thepage/\pageref{LastPage} \\
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PAGE DE TITRE
+% Title page
 \newcount\hour \newcount\minute
 \hour=\time  \divide \hour by 60
 \minute=\time
@@ -300,17 +215,12 @@ Page \thepage/\pageref{LastPage} \\
          \ifnum \minute<10 0\fi
          \number\minute}
 
-\def\moisannee{\ifcase\month
-    \or JANVIER\or FÉVRIER\or MARS\or AVRIL\or MAI\or JUIN\or
-    JUILLET\or AOÛT\or SEPTEMBRE\or OCTOBRE\or NOVEMBRE\or
-    DÉCEMBRE\fi
-    \space \number\year}
-
-\def\monthyear{\ifcase\month
-    \or JANUARY\or FEBRUARY\or MARCH\or APRIL\or MAY\or JUNE\or
-    JULY\or AUGUST\or SEPTEMBER\or OCTOBER\or NOVEMBER\or
-    DECEMBER\fi
-    \space \number\year}
+\def\monthyear{%
+  \ifcase\month\or
+  JANUARY\or FEBRUARY\or MARCH\or APRIL\or MAY\or JUNE\or
+  JULY\or AUGUST\or SEPTEMBER\or OCTOBER\or NOVEMBER\or
+  DECEMBER\fi
+  \space \number\year}
 
 \newcommand{\makepdgCS}
 {%
@@ -344,15 +254,6 @@ Page \thepage/\pageref{LastPage} \\
 \begin{picture}(16,13)
 \put(1,3){\includegraphics*[width=14cm]{logocs}}
 \end{picture}
-%%%
-%%\begin{picture}(16,13)
-%%  \put(2,6.2){\parbox[t]{12cm}{\includegraphics*[width=12cm]{logocs}}}
-%%%  \put(2,11.2){\parbox[t]{12cm}{\small\remauteurs}}
-%%%  \put(1,10.1){\small\textbf{Related Documents:} \parbox[t]{12cm}{\docassocies}}
-%%%  \put(1,7.4){\small\textbf{Abstract:}}
-%%%  \put(0,6.7){\small\parbox[t]{16cm}{\resume}}
-%%  \put(0,0.1){\small\parbox[t]{16cm}{http://rd.edf.com/code\_saturne\hfill\copyright{} EDF \number\year}}
-%%\end{picture}
 \end{center}
 
 { http://www.code-saturne.org/\hfill\copyright{} EDF \number\year}
@@ -362,7 +263,3 @@ Page \thepage/\pageref{LastPage} \\
 \end{titlepage}
 \normalsize
 }
-%
-%
-
-%%% EOF.

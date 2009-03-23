@@ -15,7 +15,7 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Preprocessor; if not, write to the
+#   along with the Code_Saturne Kernel; if not, write to the
 #   Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
@@ -24,13 +24,31 @@
 
 TEXMAIN = user.tex
 
+# Other LaTex document
+
+TEXOTHERS = \
+a1_autovalid.tex \
+ale.tex \
+biblio.tex \
+saturne1.tex \
+saturne2.tex \
+summary.tex
+
+TEXINPUTFILES = \
+input/addstudy.xml \
+input/autovalid.xml
+
+# Distributed files
+
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
 # Subdirectories (order is important)
 
 SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/doc/style/:$(srcdir)//:$(builddir)//:
+TEXINPUTS = $(top_srcdir)/doc/style/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
 BIBINPUTS = $(top_srcdir)/doc/style/:
 BSTINPUTS = $(top_srcdir)/doc/style/:
 INDEXSTYLE = $(top_srcdir)/doc/style/:
@@ -64,5 +82,5 @@ install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
 	cp -p $(PDFMAIN) $(DESTDIR)$(pdfdir)
 
-distclean-local: clean
+distclean-local: clean-local
 	-rm -f $(PDFMAIN)

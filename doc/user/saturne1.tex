@@ -1599,7 +1599,7 @@ specified in the script.
 
 \begin{list}{$\bullet$}{}
 \item \texttt{-ec n} or \texttt{--echo-comm n}: triggers the display of the
-communications between the Kernel and SYRTHES.\\
+communications between the Kernel and \syrthes 3.4.\\
 \hspace*{0.5cm}\texttt{n=-1}: display only the error messages\\
 \hspace*{0.5cm}\texttt{n=0}: display the headers of messages\\
  \hspace*{0.5cm}\texttt{n$>$0}: display the headers and the n first and last
@@ -1740,13 +1740,6 @@ specific to the cluster of the University of Manchester
 Kernel (see \ref{prg_optappelnoy})
 \end{list}
 
-{\it For parallel computations, LONGIA and LONGRA can theoretically
-be divided by the number of processors with respect to their value in a
-single-processor calculation, since each execution only deals with a
-fraction of the domain. It is however advised to add a safety margin (10\%) to
-account for non-optimal distribution of the domain among the processors and for
-the presence of phantom cells (see \S\ref{prg_paralperio}).}
-
 \begin{list}{$\bullet$}{}
 \item \texttt{STUDY}: name of the study directory (automatically set by
 \texttt{cs\_create}, see \S\ref{prg_architecture})
@@ -1769,9 +1762,6 @@ faces with too large a warp angle (see \ref{prg_optappelnoy})
 
 \item \texttt{COMMAND\_PERIO}: Preprocessor command line option for the definition
 of periodic boundary conditions (see \ref{prg_optappelecs})
-
-\item \texttt{COMMAND\_SYRTHES}: Kernel command line option for coupling with
-\syrthes (see \ref{prg_optappelnoy})
 
 \item \texttt{THERMOCHEMISTRY\_DATA}: name of the thermochemical data file, if
 necessary (the file is looked for in the directory \texttt{DATA}, see
@@ -1898,7 +1888,7 @@ This directory has to be created by the user. It is advised to keep the location
 proposed in the launch script, which complies with the standard architecture
 of \CS (see \ref{prg_architecture}).
 
-\item \texttt{COUPLING\_MODE}: coupling mode between \CS and \syrthes, when
+\item \texttt{COUPLING\_MODE}: coupling mode between \CS and \syrthes 3.4, when
 such coupling is activated (see \texttt{COMMAND\_SYRTHES}). Two options are
 available:\\
 \hspace*{0.5cm}\texttt{MPI}: for a coupling based on MPI messages (requires a
@@ -2225,74 +2215,76 @@ Developpers can also refer to \cite{boucker00} and \cite{theory}.
 These variables are listed in the alphabetical index at the end of this
 document.
 
-The type of each variable is given: integer [I], real number [R],
-integer array [IA], real array [RA].
+The type of each variable is given: integer [i], real number [r],
+integer array [ia], real array [ra].
 
 %==================================
 \subsection{Array sizes}
 %==================================
 \label{prg_dimensions}
 
-\variab{NDIM}{NDIM}{I}{Space dimension (NDIM=3)}
+\variabsize{ndim}{Space dimension (ndim=3)}
 
 \bigskip
 
-\variab{NCEL}{NCEL}{I}{Number of real cells in the mesh}
+\variabsize{ncel}{Number of real cells in the mesh}
 
-\variab{NCELET}{NCELET}{I}{Number of cells in the mesh, including the
+\variabsize{ncelet}{Number of cells in the mesh, including the
 ghost cells of the ``halos'' (see note 1)}
 
-\variab{NFAC}{NFAC}{I}{Number of internal faces (see note 2)}
+\variabsize{nfac}{Number of internal faces (see note 2)}
 
-\variab{NFABOR}{NFABOR}{I}{Number of boundary faces (see note 2)}
+\variabsize{nfabor}{Number of boundary faces (see note 2)}
 
-\variab{NCELBR}{NCELBR}{I}{Number of cells with at least one boundary
+\variabsize{ncelbr}{Number of cells with at least one boundary
 face (see note 2)}
 
 \bigskip
 
-\variab{LNDFAC}{LNDFAC}{I}{Size of the array NODFAC\index{NODFAC} of
+\variabsize{lndfac}{Size of the array \texttt{nodfac}\index{nodfac} of
 internal faces - nodes connectivity (see note 3)}
 
-\variab{LNDFBR}{LNDFBR}{I}{Size of the array NODFBR\index{NODFBR} of
+\variabsize{lndfbr}{Size of the array \texttt{nodfbr}\index{nodfbr} of
 boundary faces - nodes connectivity (see note 3)}
 
-\variab{NNOD}{NNOD}{I}{Number of vertices in the mesh}
+\variabsize{nnod}{Number of vertices in the mesh}
 
 \bigskip
 
-\variab{NFML}{NFML}{I}{Number of referenced families of entities (boundary
+\variabsize{nfml}{Number of referenced families of entities (boundary
 faces, elements, ...)}
 
-\variab{NPRFML}{NPRFML}{I}{Number of properties per referenced entity family}
+\variabsize{nprfml}{Number of properties per referenced entity family}
 
 \bigskip
 
-\variab{NPHAS}{NPHAS}{I}{Effective number of phases. NPHAS must be
-inferior or equal to NPHSMX. In the current version, NPHAS is forced to 1 and
-should not be changed.}
+\variabsize{nphas}{Effective number of phases. \texttt{nphas} must be
+inferior or equal to \texttt{nphsmx}. In the current version, \texttt{nphas}
+is forced to 1 and should not be changed.}
 
-\variab{NPHSMX}{NPHSMX}{I}{Maximum number of phases (default value:
+\variabsize{nphsmx}{Maximum number of phases (default value:
 1)\footnote{the data structure of \CS is ready for a multiphase description,
 however no multiphase model has been implemented. Moreover, some options of the
-code are not compatible with NPHAS different from 1.}}
+code are not compatible with \texttt{nphas} different from 1.}}
 
-\variab{NVAR}{NVAR}{I}{Number of solved variables (must be lower than NVRMAX)}
+\variabsize{nvar}{Number of solved variables (must be lower than
+\texttt{nvrmax})}
 
-\variab{NSCAMX}{NSCAMX}{I}{Maximum number of scalars solutions of an
+\variabsize{nscamx}{Maximum number of scalars solutions of an
 advection equation, apart from the variables of the turbulence model ($k$,
 $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$). That is
 to say the temperature and other scalars (passive or not, user-defined or not)}
 
-\variab{NSCAL}{NSCAL}{I}{Effective number of scalars solutions of an
+\variabsize{nscal}{Effective number of scalars solutions of an
 advection equation, apart from the variables of the turbulence model ($k$,
 $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$). That is
 to say the temperature and other scalars (passive or not, user-defined or
-not). These scalars can be divided into two distinct groups: NSCAUS
-user-defined scalars and NSCAPP scalars related to a ``specific
-physics''. NSCAL=NSCAUS+NSCAPP, and NSCAL must be inferior or equal to NSCAMX}
+not). These scalars can be divided into two distinct groups: \texttt{nscaus}
+user-defined scalars and \texttt{nscapp} scalars related to a ``specific
+physics''. \texttt{nscal=nscaus+nscapp}, and \texttt{nscal}
+must be inferior or equal to \texttt{nscamx}}
 
-\variab{NSCAPP}{NSCAPP}{I}{Effective number of scalars related to a
+\variabsize{nscapp}{Effective number of scalars related to a
 ``specific physics''. These scalars are solutions of an advection
 equation and distinct from the scalars of the turbulence model ($k$,
 $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$). They are
@@ -2300,61 +2292,61 @@ automatically defined by the choice of the selected specific physics
 model (gas combustion with Eddy Break-Up model, pulverised coal
 combustion, ...). For example: mass fractions, enthalpy, ...}
 
-\variab{NSCAUS}{NSCAUS}{I}{Effective number of user-defined scalars. These
+\variabsize{nscaus}{Effective number of user-defined scalars. These
 scalars are solutions of an advection equation and distinct from the
 scalars of the turbulence model ($k$, $\varepsilon$, $R_{ij}$, $\omega$,
-$\varphi$, $\overline{f}$) and from the NSCAPP scalars related to the
+$\varphi$, $\overline{f}$) and from the \texttt{nscapp} scalars related to the
 ``specific physics''. For example: passive tracers, temperature (when no
 specific physics model is selected), ...}
 
-\variab{NESTMX}{NESTMX}{I}{Maximum number of error estimators for
+\variabsize{nestmx}{Maximum number of error estimators for
 Navier-Stokes}
 
 \bigskip
 
-\variab{LONGIA}{LONGIA}{I}{Size of the macro array of integer IA}
+\variabsize{longia}{Size of the macro array of integer \texttt{ia}}
 
-\variab{LONGRA}{LONGRA}{I}{Size of the macro array of real RA}
+\variabsize{longra}{Size of the macro array of real \texttt{ra}}
 
-\variab{NPROMX}{NPROMX}{I}{Maximum number of physical properties. They
-will be stored in the arrays PROPCE, PROPFA or PROPFB}
+\variabsize{npromx}{Maximum number of physical properties. They will
+be stored in the arrays \texttt{propce}, \texttt{propfa} or \texttt{propfb}}
 
-\variab{NPROCE}{NPROCE}{I}{Number of properties defined at the
-cells. They will be stored in the array PROPCE}
+\variabsize{nproce}{Number of properties defined at the
+cells. They will be stored in the array \texttt{propce}}
 
-\variab{NPROFA}{NPROFA}{I}{Number of properties defined at the internal
-faces. They will be stored in the array PROPFA}
+\variabsize{nprofa}{Number of properties defined at the internal
+faces. They will be stored in the array \texttt{propfa}}
 
-\variab{NPROFB}{NPROFB}{I}{Number of properties defined at the boundary
-faces. They will be stored in the array PROPFB}
+\variabsize{nprofb}{Number of properties defined at the boundary
+faces. They will be stored in the array \texttt{propfb}}
 
-\variab{NVISLS}{NVISLS}{I}{Number of scalars with variable diffusivity}
+\variabsize{nvisls}{Number of scalars with variable diffusivity}
 
 
 \bigskip
 
-\variab{NUSHMX}{NUSHMX}{I}{Maximum number of user chronological files
+\variabsize{nushmx}{Maximum number of user chronological files
 (in the case where \texttt{ushist} is used)}
 
-\variab{NBMOMT}{NBMOMT}{I}{Effective number of calculated time-averages.
-NBMOMT must be inferior or equal to NBMOMX}
+\variabsize{nbmomt}{Effective number of calculated time-averages.
+NBMOMT must be inferior or equal to \texttt{nbmomx}}
 
-\variab{NBMOMX}{NBMOMX}{I}{Maximum number of calculated time-averages (default
+\variabsize{nbmomx}{Maximum number of calculated time-averages (default
 value: 50)}
 
 
-\variab{NDGMOX}{NDGMOX}{I}{Maximum degree of the time-averages (default value:
+\variabsize{ndgmox}{Maximum degree of the time-averages (default value:
 5)}
 
 
 \bigskip
 
-\variab{NCLACP}{NCLACP}{I}{Number of coal classes for the pulverised
+\variabsize{nclacp}{Number of coal classes for the pulverised
 coal combustion module. It is the total number of classes, {\it i.e.}
-the sum of the number of classes for every represented coal. NCLACP must
-be inferior or equal to NCLCPM}
+the sum of the number of classes for every represented coal. \texttt{nclacp} must
+be inferior or equal to \texttt{nclcpm}}
 
-\variab{NCLCPM}{NCLCPM}{I}{Maximum number of coal classes for the
+\variabsize{nclcpm}{Maximum number of coal classes for the
 pulverised coal combustion module}
 
 
@@ -2364,7 +2356,7 @@ discretisation of the calculation domain. The mesh is made of NCEL cells.\\
 When using periodicity and parallelism, extra ``ghost'' cells
 ( called ``halo'' cells) are defined for temporary storage of some information
 (on a given processor).
-The total number of real and ghost cells is NCELET. \\
+The total number of real and ghost cells is \texttt{ncelet}. \\
 \hspace*{1cm} Indeed, when periodicity is enabled, the cells with
 periodic faces do not have any real neighboring cell across these
 particular faces. Their neighboring cell is elsewhere in the calculation
@@ -2377,8 +2369,8 @@ calculation domain, some cells no longer have access to all
 their neighboring cells, some of them being treated by another processor. The
 creation of ghost cells allows to temporarily store the information
 coming from real neighboring cells treated by other processors.\\
-The variables are generally arrays of size NCELET (number of real and
-fictitious cells). The calculations (loops) are made on NCEL cells (only
+The variables are generally arrays of size \texttt{ncelet} (number of real and
+fictitious cells). The calculations (loops) are made on \texttt{ncel} cells (only
 the real cells, the fictitious cells are only used to store information).
 
 \minititre{Note 2: internal faces}
@@ -2391,17 +2383,20 @@ boundary faces (of the whole mesh);
 
 \minititre{Note 3: faces-nodes connectivity}\label{prg_nodfac}
 The faces - nodes connectivity is stored by
-means of four integer arrays: IPNFAC and NODFAC for the internal
-faces, IPNFBR and NODFBR for the boundary faces. NODFAC (dimension LNDFAC)
+means of four integer arrays: \texttt{ipnfac} and \texttt{nodfac} for the
+internal faces, \texttt{ipnfbr} and \texttt{nodfbr} for the boundary faces.
+\texttt{nodfac} (size \texttt{lndfac})
 contains the list of all the nodes of all the internal faces; first the nodes of
 the first face, then the nodes of the second face, and so on.
-IPNFAC (dimension: NFAC+1) gives the position IPNFAC(IFAC) in NODFAC of the
-first node of each internal face IFAC. Therefore, the reference numbers of all
-the nodes of the internal face IFAC are: NODFAC(IPNFAC(IFAC)),
-NODFAC(IPNFAC(IFAC)+1), ..., NODFAC(IPNFAC(IFAC+1)-1). In order for this last
-formula to be valid even for IFAC=NFAC, IPNFAC is of dimension NFAC+1 and
-IPNFAC(NFAC+1) is equal to LNDFAC+1.\\
-The composition of the arrays NODFBR and IPNFBR is similar.
+\texttt{ipnfac} (size: \texttt{nfac+1}) gives the position \texttt{ipnfac(ifac)}
+in \texttt{nodfac} of the first node of each internal face \texttt{ifac}.
+Therefore, the reference numbers of all
+the nodes of the internal face \texttt{ifac} are: \texttt{nodfac(ipnfac(ifac))},
+\texttt{nodfac(ipnfac(ifac)+1)}, ..., \texttt{nodfac(ipnfac(ifac+1)-1)}.
+In order for this last formula to be valid even for \texttt{ifac=nfac},
+\texttt{ipnfac} is of size \texttt{nfac+1} and \texttt{ipnfac(nfac+1)}
+is equal to \texttt{lndfac+1}.\\
+The composition of the arrays \texttt{nodfbr} and \texttt{ipnfbr} is similar.
 
 \minititre{Note 4: commons}
 {\bf The user will not modify the existing ``commons''.} This would require the
@@ -3794,30 +3789,30 @@ the three following arguments:
 
 Several examples of possible selections are given here:
 \begin{list}{-}{}
-\item \verb+CALL GETFBR('Face_1, Face_2', NLELT, LSTELT)+ to select
+\item \verb+call getfbr('Face_1, Face_2', nlelt, lstelt)+ to select
   boundary faces in groups Face\_1 or Face\_2,  
-\item \verb+CALL GETFAC('4', NLELT, LSTELT)+ to select internal
+\item \verb+call getfac('4', nlelt, lstelt)+ to select internal
   faces of color 4,
-\item \verb+CALL GETFAC('not(4)', NLELT, LSTELT)+ to select internal
+\item \verb+call getfac('not(4)', nlelt, lstelt)+ to select internal
   faces which have a different color from 4,
-\item \verb+CALL GETFAC('4 to 8', NLELT, LSTELT)+ to internal faces
+\item \verb+call getfac('4 to 8', nlelt, lstelt)+ to internal faces
 with color between 4 and 8 internal faces,
-\item \verb+CALL GETCEL('1 or 2', NLELT, LSTELT)+ to select cells
+\item \verb+call getcel('1 or 2', nlelt, lstelt)+ to select cells
   with colors 1 or 2,
-\item \verb+CALL GETFBR('1 and Y > 0', NLELT, LSTELT)+ to select boundary
+\item \verb+call getfbr('1 and y > 0', nlelt, lstelt)+ to select boundary
   faces of color 1 which have the coordinate $Y > 0$,
-\item \verb+CALL GETFAC('normal[1, 0, 0, 0.0001]', NLELT, LSTELT)+ to select
+\item \verb+call getfac('normal[1, 0, 0, 0.0001]', nlelt, lstelt)+ to select
 internal faces which have a normal direction to the vector (1,0,0),  
-\item \verb+CALL GETCEL('all[]', NLELT, LSTELT)+ to select all cells.
+\item \verb+call getcel('all[]', nlelt, lstelt)+ to select all cells.
 \end{list}
 
 The user may then use a loop on the selected elements.
 For instance, in the subroutine \texttt{usclim} used to impose
 boundary  conditions, let us consider the boundary faces of color
 number 2 and which have the coordinate $X <= 0.01$ (so
-that \verb+CALL GETFBR('2 and X <= 0.01', NLELT,LSTELT)+);
-we can do a loop (\verb+DO ILELT = 1, NLELT+) and
-obtain \verb+IFAC = LSTELT(ILELT)+.
+that \verb+call getfbr('2 and x <= 0.01', nlelt,lstelt)+);
+we can do a loop (\verb+do ilelt = 1, nlelt+) and
+obtain \verb+ifac = lstelt(ilelt)+.
 
 \minititre{Note: legacy method using explicit families and properties}
 
@@ -5103,6 +5098,161 @@ wall uniform in thickness in $J.m^{-3}.K^{-1}$)
 
 The 3rd call, done at each time step, allows the imposition of boundary conditions
  and physical values in time.
+
+%==================================
+\subsection{ Initialization of the options of the variables related
+   to the ale module: \textmd{\texttt{usalin}} and \textmd{\texttt{usstr1}} }
+%==================================
+\label{prg_usalin}%
+\noindent
+\textit{Subroutine called at the start.}
+
+
+\minititre{Subroutine \texttt{usalin}}
+This subroutine completes \texttt{usini1}.
+
+\texttt{usalin} allows to set option for the ale module, and in
+particular to active the ale module
+
+\minititre{Subroutine \texttt{usstr1}}
+
+\texttt{usstr1} allows to specify for the structure module the
+following pieces of information:
+\begin{list}{-}{}
+  \item number of structure (NBSTRU).
+  \item initial value of deplacement, velocity and acceleration
+    (XSTR0, XSTREQ and VSTR0).
+\end{list}
+
+Below is a list of the different variables that might be modified :
+
+\begin{list}{$\bullet$}{}
+
+\item{NBSTRU} \\
+{the number of structures}
+
+\item{IDFSTR(I)} \\
+{index of the structure, where I is the index of the face}
+
+\item{XSTR0(I,K)} \\
+{ initial position of a structure, where I is the dimension of space
+and K the index of the structure }
+
+\item{XSTREQ(I,K)} \\
+{position of balance of a structure, where I is the dimension of space
+and K the index of the structure }
+
+\item{VSTR0(I,K)} \\
+{initial velicity of a structure, where I is the dimension of space
+and K the index of the structure }
+\end{list}
+
+%==================================
+\subsection{Management of the boundary conditions of velocity mesh related to the ale module: \textmd{\texttt{usalcl}}}
+%==================================
+
+
+\noindent
+\textit{Subroutine called every time step.}
+
+\minititre{Subroutine \texttt{usalcl}}
+The use of \texttt{usalcl} is obligatory to run a calculation using
+the ale module just as it is in \texttt{usini1} . The way of using it
+is the same as the way of using \texttt{usclim} in the framework of
+standard calculations, that is to say a loop on the boundary faces
+marked out by their colour (or more generally by a property of their
+family), where the type of boundary condition of velocity mesh for
+each variable are defined.
+
+The main numerical variables are described below.
+
+\variab{IALTYB}{IALTYB(NFABOR)}{IA}{In the ale module, the user
+defines the velocity mesh from the colour of the boundary faces, or
+more generally from their properties (colours, groups ...), from the
+boundary conditions defined in \texttt{usclim}, or even from their
+coordinates. To do so, the array IALTYB(NFABOR) gives for each face
+IFAC the velocity mesh boundary condition types marked out by the key
+words IVIMPO\index{IVIMPO}, IGLISS\index{IGLISS}, IBFIXE\index{IBFIXE}
+
+\begin{list}{$\bullet$}{}
+
+\item If IALTYB=IVIMPO : imposed velocity.
+
+\begin{list}{$\rightarrow$}{}
+\item In the case where all the nodes of a face have a imposed displacement,
+it is not necessary to fill the tables with boundary conditions
+velocity mesh for this face, they will be erased. In the other case,
+the value of the Dirichlet must be given in RCODCL(IFAC,IVAR,1) for
+every value of IVAR (IUMA, IVMA and IWMA) The other boxes of RCODCL
+and ICODCL are completed automatically.
+
+ The tangential velocity mesh is taken like a tape speed under the
+ boundary conditions of wall for the fluid, except if wall velocity
+ was specified by the user in the interface or usclim (in which case
+ it is this speed which is considered).
+\end{list}
+
+ \item if IALTYB(NFAC) = IBFIXE : fixe wall
+\begin{list}{$\rightarrow$}{}
+ \item the velocity is null.
+\end{list}
+
+ \item if IALTYB(NFAC) = IGLISS :  slice wall
+\begin{list}{$\rightarrow$}{}
+\item the tangential velocity is not used.
+\end{list}
+
+\end{list}
+
+}
+
+
+%==================================
+\subsection{Management of the structure property: \textmd{\texttt{usstr2}}}
+%==================================
+
+\noindent
+\textit{Subroutine called every time step.}
+
+The use of \texttt{usstr2}
+is obligatory to run a calculation using the ale module with a structure module.
+
+For each structure, the system that will be solved is :
+
+\begin{equation}
+M.x^{''}+C.x^{''}+K.(x-x_{0} = 0
+\end{equation}
+
+where
+
+\begin{list}{-}{}
+ \item $M$ is the mass stucture (XMSTRU).
+ \item $C$ is the dumping coefficient of the stucture (XCSTRU).
+ \item $K$ is the spring constant or force constant of the stucture (XKSTRU).
+ \item $x_{0}$ is the initial position
+\end{list}
+
+Below is a list of the different variables that might be modified :
+
+\begin{list}{$\bullet$}{}
+
+\item{XMSTRU(I,J,K)} \\
+{the mass stucture of the structure, where I,J is the array of mass
+structure and K the index of the structure.  }
+
+\item{XCSTRU(I,J,K)}\\
+{dumping coefficient of the stucture, where I,J is the array of
+dumping coefficient and K the index of the structure.  }
+
+\item{XKSTRU(I,J,K)}\\
+{spring constant of the stucture, where I,J is the array of spring
+constant and K the index of the structure.  }
+
+\item{FORSTR(I,K)}\\
+{force vector of the stucture, where I is the force vector and K the
+index of the structure.  }
+\end{list}
+
 
 %==================================
 \subsection{Modification of the turbulent viscosity: \textmd{\texttt{usvist}}}

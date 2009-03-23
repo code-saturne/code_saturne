@@ -24,36 +24,21 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                    %
-%                                                                    %
-%                                                                    %
-% Titre :           Code_Saturne theory and programmer's guide       %
-%                                                                    %
-%                                                                    %
-%                                                                    %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[a4paper,10pt,twoside]{report}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES OBLIGATOIRES
 \usepackage{csdoc}
+% MACROS SUPPLEMENTAIRES
+\usepackage{csmacros}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
-\usepackage[pdftex,
-            bookmarksopen=true,
-            colorlinks=true,
-            linkcolor=blue,
-            filecolor=blue,
-            urlcolor=blue,
-            citecolor=blue]{hyperref}
 \hypersetup{%
-  pdftitle = {Code_Saturne version 1.4 Theory and Programmer's Guide},
+  pdftitle = {CodeSaturne Theory and Programmer's Guide},
   pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
@@ -84,24 +69,6 @@
 \Huge \bf \theprog - \underline{Sous-programme \fort{#1}}
 \end{center}
 \addcontentsline{toc}{chapter}{\theprog- Sous-programme #1}}
-\DeclareGraphicsExtensions{.pdf,.jpg}
-%
-\newcommand{\bm}[1]{\text{\boldmath $#1$ \unboldmath} \! \!}
-\newcommand{\Min}{\text{Min}}
-\newcommand{\Max}{\text{Max}}
-\newcommand{\nl}{\vspace{1ex}}
-\newcommand{\grandN}{\mbox{I\hspace{-.15em}N}}
-\newcommand{\grandC}{\mbox{l\hspace{-.47em}C}}
-\newcommand{\mat}[1]{\underline{\textrm{#1}}}
-\newcommand{\matt}[1]{\underline{\underline{\textrm{#1}}}}
-\newcommand{\comp}[1]{\textrm{#1}}
-\newcommand{\gradv}{\text{g}\underline{\text{rad}}\ }
-\newcommand{\gradt}{\text{g}\underline{\underline{\text{rad}}}\ }
-\newcommand{\divs}{\text{div}}
-\newcommand{\divv}{\underline{\text{div}}}
-\newcommand{\etape}[1]{\vspace{0.3cm}$\bullet\ ${\bf #1}\\}
-\newcommand{\fort}[1]{\texttt{#1}}
-\newcommand{\var}[1]{\ensuremath{\text{\texttt{#1}}}}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
@@ -122,7 +89,7 @@ commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
 \begin{document}
-\pdfgraphics
+
 %\def\bibname{Références}
 \def\contentsname{\textbf{\normalsize SOMMAIRE}\pdfbookmark[1]{Sommaire}{contents}}
 \def\indexname{Index des variables principales et des mots cl\'es}

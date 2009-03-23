@@ -483,6 +483,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  doc/Makefile
                  doc/howto/Makefile doc/howto/graphics/Makefile
+                 doc/refcard/Makefile doc/refcard/graphics/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile

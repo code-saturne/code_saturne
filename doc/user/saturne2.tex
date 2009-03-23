@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2009 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -112,7 +112,7 @@ corresponds to 1.D12.
 \begin{list}{$\bullet$}{}
 \item Two different files can have neither the same unit number nor the
       same name.
-\item  ASCII files (also called ``formatted'' files, in opposition to
+\item  Text files (also called ``formatted'' files, in opposition to
       ``binary'' files) are bigger, longer to write and to read, but can
       be used on every architecture (in particular, it is an asset for
       calculation restart files). However, \CS can automatically recognise and
@@ -128,159 +128,156 @@ corresponds to 1.D12.
 
 \minititre{General}
 
-\motcle{IMPGEO}{I}{strictly positive integer}{10}{O}{L3}
+\motcle{impgeo}{i}{strictly positive integer}{10}{O}{L3}
 {unit of the geometric file (if the Preprocessor is not used)\\
-useful if and only if IFOENV = 0}
+useful if and only if {\tt SOLCOM = 1}}
 
-\motcle{FICGEO}{C}{string of 6 characters}{\tt geomet}{O}{L3}
+\motcle{ficgeo}{c}{string of 6 characters}{\tt geomet}{O}{L3}
 {name of the geometric file (if the Preprocessor is not used)\\
-useful if and only if IFOENV = 0}
+useful if and only if {\tt SOLCOM = 1}}
 
-\motcle{IMPSTP}{I}{strictly positive integer}{12}{O}{L3}
+\motcle{impstp}{i}{strictly positive integer}{12}{O}{L3}
 {unit of the calculation interactive stop file\\
 always useful (because of the interactive character)}
 
-\motcle{FICSTP}{C}{string of 6 characters}{\tt ficstp}{O}{L3}
+\motcle{ficstp}{c}{string of 6 characters}{\tt ficstp}{O}{L3}
 {name of the calculation interactive stop file (see p.\pageref{prg_ficstp})\\
 always useful (because of the interactive characteristic)}
 
-\motcle{FICAMO}{C}{string of 13 characters}{\tt suiamo}{O}{L3}
-{name of the main upstream restart file. Its ``format'' (ASCII or binary)
-is automatically determined by the code.\\
-useful if and only if ISUITE = 1}
+\motcle{ficamo}{c}{string of 13 characters}{\tt suiamo}{O}{L3}
+{name of the main upstream restart file.  As with all restart
+files, its ``format'' (current or version 1.3) is automatically
+determined by the code.\\
+useful if and only if {\tt isuite = 1}}
 
-\motcle{FICAMX}{C}{string of 13 characters}{\tt suiamx}{O}{L3}
-{name of the auxiliary upstream restart file. Its ``format'' (ASCII or binary)
-is automatically determined by the code.\\
-useful if and only if ISUITE = 1}
+\motcle{ficamx}{c}{string of 13 characters}{\tt suiamx}{O}{L3}
+{name of the auxiliary upstream restart file.\\
+useful if and only if {\tt isuite = 1}}
 
-\motcle{FICAVA}{C}{string of 13 characters}{\tt suiava}{O}{L3}
+\motcle{ficava}{c}{string of 13 characters}{\tt suiava}{O}{L3}
 {name of the main downstream restart file\\
 always useful}
 
-\motcle{FICAVX}{C}{string of 13 characters}{\tt suiavx}{O}{L3}
+\motcle{ficavx}{c}{string of 13 characters}{\tt suiavx}{O}{L3}
 {name of the auxiliary downstream restart file\\
 always useful}
 
 
 \minititre{1D wall thermal module}
 
-\motcle{FICMT1}{C}{string of 13 characters}{\tt t1damo}{O}{L3}
-{name of the upstream restart file for the 1D wall thermal module.
-Its ``format'' (ASCII or binary) is  automatically determinedby the code.\\
-useful if and only if ISUIT1 = 1 and NFPT1D$>$0}
+\motcle{ficmt1}{c}{string of 13 characters}{\tt t1damo}{O}{L3}
+{name of the upstream restart file for the 1D wall thermal module.\\
+useful if and only if {\tt isuit1 = 1} and {\tt nfpt1d$>$0}}
 
-\motcle{FICVT1}{C}{string of 13 characters}{\tt t1dava}{O}{L3}
+\motcle{ficvt1}{c}{string of 13 characters}{\tt t1dava}{O}{L3}
 {name of the upstream restart file for the 1D wall thermal module\\
-useful if and only if NFPT1D$>$0}
+useful if and only if {\tt nfpt1d$>$0}}
 
 \minititre{Vortex method for LES}
 
-\motcle{IMPMVO}{I}{strictly positive integer}{\tt IMPAMO}{O}{L3}
+\motcle{impmvo}{i}{strictly positive integer}{\tt impmvo}{O}{L3}
 {unit of the upstream restart file for the vortex method\\
-useful if and only if ISUIVO = 1 et IVRTEX=1}
+useful if and only if {\tt isuivo = 1} and {\tt ivrtex=1}}
 
-\motcle{FICMVO}{C}{string of 13 characters}{\tt voramo}{O}{L3}
+\motcle{ficmvo}{c}{string of 13 characters}{\tt voramo}{O}{L3}
 {name of the upstream restart file for the vortex method\\
-Its ``format'' is always ASCII (this file has a different structure from the
+This is always a text file (this file has a different structure from the
 other restart files)\\
-useful if and only if ISUIVO = 1 et IVRTEX=1}
+useful if and only if {\tt isuivo = 1} and {\tt ivrtex=1}}
 
-\motcle{IMPVVO}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
+\motcle{impvvo}{i}{strictly positive integer}{\tt impvvo}{O}{L3}
 {unit of the downstream restart file for the vortex method\\
-useful if and only if IVRTEX=1}
+useful if and only if {\tt ivrtex=1}}
 
-\motcle{FICVVO}{C}{string of 13 characters}{\tt vorava}{O}{L3}
+\motcle{ficvvo}{c}{string of 13 characters}{\tt vorava}{O}{L3}
 {name of the upstream restart file for the vortex method\\
-Its ``format'' is always ASCII (this file has a different structure from the
+This is always a text file (this file has a different structure from the
 other restart files)\\
-useful if and only if IVRTEX=1}
+useful if and only if {\tt ivrtex=1}}
 
-\motcle{IMPDVO}{I}{strictly positive integer}{\tt IMPAVA}{O}{L3}
-{unit of the FICVOR data files for the vortex method. These files have an ASCII
-format. Their number and names are specified by the user in the \texttt{usvort} subroutine.\\
-(Although it corresponds to an ``upstream'' data file, IMPDVO is initialised to
-IMPAVA because, in case of multiple vortex entries, it is opened at the same time
-as the FICMVO upstream restart file, which already uses the IMPAMO unit)\\
-useful if and only if IVRTEX=1}
+\motcle{impdvo}{i}{strictly positive integer}{\tt impdvo}{O}{L3}
+{unit of the {\tt ficvor} data files for the vortex method. These
+files are text files. Their number and names are specified by the user in
+the \texttt{usvort} subroutine.\\
+(Although it corresponds to an ``upstream'' data file, {\tt impdvo} is
+initialized to {\tt 20} because, in case of multiple vortex entries,
+it is opened at the same time as the {\tt ficmvo} upstream restart file,
+which already uses the {\tt impamo} unit)\\
+useful if and only if {\tt ivrtex=1}}
 
 
 \minititre{Radiation}
 
-\motcle{FICAMR}{C}{string of 13 characters}{\tt rayamo}{O}{L3}
-{name of the radiation upstream restart file. Its ``format'' (ASCII or
-binary) is automatically determined by the code.\\
-useful if and only if ISUIRD = 1}
+\motcle{ficamr}{c}{string of 13 characters}{\tt rayamo}{O}{L3}
+{name of the radiation upstream restart file.\\
+useful if and only if {\tt isuird = 1}}
 
-\motcle{FICAVR}{C}{string of 13 characters}{\tt rayava}{O}{L3}
+\motcle{ficavr}{c}{string of 13 characters}{\tt rayava}{O}{L3}
 {name of the radiation downstream restart file \\
 always useful in case of radiation modeling}
 
 
 \minititre{Thermochemistry}
 
-\motcle{IMPFPP}{I}{strictly positive integer}{25}{O}{L3}
+\motcle{impfpp}{i}{strictly positive integer}{25}{O}{L3}
 {unit of the thermochemical data file\\
 useful in case of gas or pulverised coal combustion or electric arc}
 
-\motcle{FICFPP}{C}{string of 6 characters}{\tt dp\_tch}{O}{L3}
+\motcle{ficfpp}{c}{string of 6 characters}{\tt dp\_tch}{O}{L3}
 {name of the thermochemical data file. The launch script is designed to copy the
 user specified thermochemical data file in the temporary execution directory
 under the name \texttt{dp\_tch}, for \CS to open it properly. Should the value
 of FICFPP be changed, the launch script would have to be adapted.\\
 useful in case of gas or pulverised coal combustion}
 
-\motcle{IMPJNF}{I}{strictly positive integer}{\tt IMPFPP}{O}{L3}
+\motcle{impjnf}{i}{strictly positive integer}{\tt impfpp}{O}{L3}
 {unit of the JANAF data file\\
 useful in case of gas or pulverised coal combustion}
 
-\motcle{FICJNF}{C}{string of 5 characters}{\tt JANAF}{O}{L3}
+\motcle{ficjnf}{c}{string of 5 characters}{\tt JANAF}{O}{L3}
 {name of the JANAF data file. The launch script is designed to copy the
 user specified JANAF data file in the temporary execution directory
 under the name \texttt{JANAF}, for \CS to open it properly. Should the value
-of FICJNF be changed, the launch script would have to be adapted.\\
+of {\tt ficjnf} be changed, the launch script would have to be adapted.\\
 useful in case of gas or pulverised coal combustion}
 
 \minititre{Lagrangian}
 
-\motcle{FICAML}{C}{string of 6 characters}{\tt lagamo}{O}{L3}
-{name of the upstream restart file in case of Lagrangian modeling.
-Its ``format'' (ASCII or
-binary) is automatically determined by the code.\\
-useful if and only if ISUILA = 1}
+\motcle{ficaml}{c}{string of 6 characters}{\tt lagamo}{O}{L3}
+{name of the upstream restart file in case of Lagrangian modeling.\\
+useful if and only if {\tt isuila = 1}}
 
-\motcle{FICMLS}{C}{string of 13 characters}{\tt lasamo}{O}{L3}
+\motcle{ficmls}{c}{string of 13 characters}{\tt lasamo}{O}{L3}
 {name of the upstream restart file for the statistics in case of
-Lagrangian modeling. Its ``format'' (ASCII or
-binary) is automatically determined by the code.\\
-useful if and only if ISUIST = 1}
+Lagrangian modeling.\\
+useful if and only if {\tt isuist = 1}}
 
-\motcle{FICAVL}{C}{string of 13 characters}{\tt lagava}{O}{L3}
+\motcle{ficavl}{c}{string of 13 characters}{\tt lagava}{O}{L3}
 {name of the downstream restart file in case of Lagrangian modeling\\
 always useful in case of Lagrangian modeling}
 
-\motcle{FICVLS}{C}{string of 6 characters}{\tt lasava}{O}{L3}
+\motcle{ficvls}{c}{string of 6 characters}{\tt lasava}{O}{L3}
 {name of the downstream restart file for the statistics in case of
 Lagrangian modeling\\
 useful in case of Lagrangian modeling with statistics}
 
-\motcle{IMPLA1}{I}{strictly positive integer}{50}{O}{L3}
+\motcle{impla1}{i}{strictly positive integer}{50}{O}{L3}
 {unit of a file specific to Lagrangian modeling\\
 useful in case of Lagrangian modeling}
 
-\motcle{IMPLA2}{I}{strictly positive integer}{51}{O}{L3}
+\motcle{impla2}{i}{strictly positive integer}{51}{O}{L3}
 {unit of a file specific to Lagrangian modeling\\
 useful in case of Lagrangian modeling}
 
-\motcle{IMPLA3}{I}{strictly positive integer}{52}{O}{L3}
+\motcle{impla3}{i}{strictly positive integer}{52}{O}{L3}
 {unit of a file specific to Lagrangian modeling\\
 useful in case of Lagrangian modeling}
 
-\motcle{IMPLA4}{I}{strictly positive integer}{53}{O}{L3}
+\motcle{impla4}{i}{strictly positive integer}{53}{O}{L3}
 {unit of a file specific to Lagrangian modeling\\
 useful in case of Lagrangian modeling}
 
-\motcle{IMPLA5}{IA}{strictly positive integer}{54 to 68}{O}{L3}
+\motcle{impla5}{ia}{strictly positive integer}{54 to 68}{O}{L3}
 {units of files specific Lagrangian modeling, 15-dimension array\\
 useful in case of Lagrangian modeling}
 
@@ -300,23 +297,23 @@ variable or preselected physical parameter), the user specifies if a
 post-processing output is wanted. The output frequency can be set.\\
 
 
-\motcle{ICHRVL}{I}{0 or 1}{1}{O}{L3}
+\motcle{ichrvl}{i}{0 or 1}{1}{O}{L3}
 {indicates whether post-processing outputs are wanted (=1) or not (=0)
 on the 3D volume mesh\\
 always useful}
 
-\motcle{ICHRBO}{I}{0 or 1}{0}{O}{L2}
+\motcle{ichrbo}{i}{0 or 1}{0}{O}{L2}
 {indicates whether post-processing outputs are wanted (=1) or not (=0)
 on the 2D boundary mesh\\
 always useful}
 
- \motcle{ICHRSY}{I}{0 or 1}{0}{O}{L2}
+ \motcle{ichrsy}{i}{0 or 1}{0}{O}{L2}
  {indicates whether post-processing outputs are wanted (=1) or not (=0)
  on the 2D boundary mesh patches coupled with the \syrthes conjugate
  heat trabsfer code\\
  always useful}
 
- \motcle{ICHRMD}{I}{0, 1, 2, 10, 11 or 12}{0}{O}{L2}
+ \motcle{ichrmd}{i}{0, 1, 2, 10, 11 or 12}{0}{O}{L2}
  {indicates whether the post-processing geometry varies with time:\\
  \hspace*{1.3cm}= 0: time independent\\
  \hspace*{1.3cm}= 1: deforming or moving mesh\\
@@ -325,13 +322,13 @@ always useful}
  \hspace*{1.3cm}= 11: deforming or moving mesh, plus nodal displacement field\\
  \hspace*{1.3cm}= 12: changing vertex coordinates and topology, plus nodal displacement field}
 
- \motcleb{FMTCHR}{C}{string of less than 32 characters}{Ensight Gold}{O}{L1}
+ \motcleb{fmtchr}{c}{string of less than 32 characters}{Ensight Gold}{O}{L1}
  {name of the output format, among the following:\\
  \hspace*{1.3cm}$\bullet\quad$ ``Ensight Gold''\\
  \hspace*{1.3cm}$\bullet\quad$ ``MED\_fichier'' (if available)\\
  \hspace*{1.3cm}$\bullet\quad$ ``CGNS'' (if available)}
 
- \motcle{OPTCHR}{C}{string of less than 96 characters}{binary}{O}{L2}
+ \motcle{optchr}{c}{string of less than 96 characters}{binary}{O}{L2}
  {options associated to the selected output format. The string is given as a
  series of key words, separated by a comma (and optional spaces). The key words
  are among the following:\\
@@ -355,14 +352,13 @@ always useful}
  variable as a series of independent variables (always the case for now)}
 
 
-\motcleb{NTCHR}{I}{-1 or strictly positive integer}{-1}{O}{L1}
+\motcleb{ntchr}{i}{-1 or strictly positive integer}{-1}{O}{L1}
 {output period for the post-processing\\
 \hspace*{1.3cm}= -1: only at the end of the calculation\\
-\hspace*{1.3cm}$>$ 0: period (every NTCHR time step)\\
+\hspace*{1.3cm}$>$ 0: period (every {\tt ntchr} time step)\\
 always useful}
 
-
-\motcleb{ICHRVR}{IA}{-999, 0 or 1}{-999}{O}{L1}
+\motcleb{ichrvr}{ia}{-999, 0 or 1}{-999}{O}{L1}
 {for each quantity defined at the cell centers (physical or numerical
 variable), indicator of whether it should be post-processed or not \\
 \hspace*{1.3cm}= -999: not initialised. By default, the post-processed
@@ -373,23 +369,24 @@ the turbulent viscosity and the time step if is not uniform\\
 \hspace*{1.3cm}= 1: post-processed\\
 useful if and only if the variable is defined at the cell centers:
 calculation variable, physical property (time step, density,
-viscosity, specific heat) or turbulent viscosity if ITURB(IPHAS)
+viscosity, specific heat) or turbulent viscosity if {\tt iturb(iphas)}
 $\geqslant$ 10}
 
-\motcleb{IPSTDV}{I}{integer $\geqslant 1$: see below}{IPSTYP*IPSTCL*IPSTFT}{O}{L1}
+\motcleb{ipstdv}{i}{integer $\geqslant 1$: see below}
+{{\tt ipstyp*ipstcl*ipstft}}{O}{L1}
 {indicates the data to post-process on the boundary mesh (the boundary mesh must
-have been activated with ICHRBO=1). The value of IPSTDV is
+have been activated with {\tt ichrbo=1}). The value of {\tt ipstdv} is
 the product of the following integers, depending on the variables that should be
 post-processed:\\
-\hspace*{1.3cm}IPSTYP\index{IPSTYP}: $y^+$ at the boundary\\
-\hspace*{1.3cm}IPSTCL\index{IPSTCL}: value of the variables at the
+\hspace*{1.3cm}{\tt ipstyp}\index{ipstyp}: $y^+$ at the boundary\\
+\hspace*{1.3cm}{\tt ipstcl}\index{ipstcl}: value of the variables at the
 boundary (using the boundary conditions but without reconstruction)\\
-\hspace*{1.3cm}IPSTFT\index{IPSTFT}: thermal flux at the boundary
-($W\,m^{-2}$), if a thermal scalar has been defined (ISCALT)\\
-For instance, with IPSTDV=IPSTYP*IPSTCL, $y^+$ and the variables will be
+\hspace*{1.3cm}{\tt ipstft}\index{ipstft}: thermal flux at the boundary
+($W\,m^{-2}$), if a thermal scalar has been defined ({\tt iscalt})\\
+For instance, with {\tt ipstdv=ipstyp*ipstcl}, $y^+$ and the variables will be
 post-processed at the boundaries.\\
-With IPSTDV=1, none of these data are post-processed at the boundaries.\\
-always useful if ICHRBO=1}
+With {\tt ipstdv=1}, none of these data are post-processed at the boundaries.\\
+always useful if {\tt ichrbo=1}}
 
 %==================================
 \subsubsection{Chronological records of the variables on specific points}

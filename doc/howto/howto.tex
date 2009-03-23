@@ -24,7 +24,7 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-\documentclass[a4paper,10pt,twoside]{report}
+\documentclass[a4paper,10pt,twoside]{article}
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,36 +39,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
 \hypersetup{%
-  pdftitle = {CodeSaturne tutorial},
+  pdftitle = {CodeSaturne howto's},
   pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
 \pdfinfo{/CreationDate (D:20030429000000-01 00 )}
 %
-% Pour avoir les Thumbnails a l'ouverture du document sous ACROREAD :
+% To have thumbnails upon opening the document under ACROREAD
 % pdfpagemode = UseThumbs
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MACROS SUPPLEMENTAIRES
-% \newcommand{/...}{...}
-%
-\renewcommand{\thefigure}{\Roman{part}.\arabic{figure}}
-\renewcommand{\thetable}{\Roman{part}.\arabic{table}}
-\renewcommand{\theequation}{\Roman{part}.\arabic{equation}}
-\renewcommand{\thesection}{\arabic{section}}
-%
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreCS{\CS version~\verscs tutorial}
-\docassociesCS{}
-\resumeCS{}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\titreCS{\CS version~\verscs howto-'s}
 
+\docassociesCS{}
+\resumeCS{This document presents all a list of quick How-To's for
+\CS version~\verscs.
+
+\begin{center}
+\large{WORK IN PROGRESS}
+\end{center}
+}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
@@ -76,58 +69,19 @@
 
 \def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
 contents}{contents}}
-\def\indexname{Index of the main variables and keywords}
 
 \pdfbookmark[1]{Flyleaf}{pdg}
 \large
 \makepdgCS
 \normalsize
 
+\passepage
+
 \begin{center}\begin{singlespace}
 \tableofcontents
 \end{singlespace}\end{center}
-
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% CORPS DU DOCUMENT
-%
-\passepage
-\stepcounter{chapter}
-\part{INTRODUCTION}
-\include{intro}
-\setcounter{section}{0}
-\stepcounter{chapter}
-\part{SIMPLE JUNCTION TEST CASE}
-\include{case1}
-\setcounter{section}{0}
-\stepcounter{chapter}
-\part{FULL DOMAIN}
-\include{case2}
-\include{case3}
-\include{case4}
-\setcounter{section}{0}
-\stepcounter{chapter}
-\part{STRATIFIED JUNCTION}
-\include{case5}
-\setcounter{section}{0}
-\stepcounter{chapter}
-\part{STEP BY STEP SOLUTION}
-\include{tuto_case1}
-\include{tuto_case2}
-\include{tuto_case3}
-\include{tuto_case4}
-\include{tuto_case5}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FIN DU DOCUMENT
 \end{document}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -24,12 +24,6 @@
 %     Boston, MA  02110-1301  USA
 %
 %-----------------------------------------------------------------------
-headings_flag 3
-heading_prefix "{\\large \\bf \\hfil--\\ "
-heading_suffix " --\\ \\hfil}\\nopagebreak\n"
-symhead_negative "symboles"
-symhead_positive "Symboles"
-
-delim_0 " \\dotfill \ "
-delim_1 " \\dotfill \ "
-delim_2 " \\dotfill \ "
+\newcommand{\CS}{%
+  {\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
+\newcommand{\verscs}{@VERSION@\xspace}

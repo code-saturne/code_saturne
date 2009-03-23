@@ -15,7 +15,7 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Preprocessor; if not, write to the
+#   along with the Code_Saturne Kernel; if not, write to the
 #   Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
@@ -24,13 +24,39 @@
 
 TEXMAIN = tutorial.tex
 
+# Other LaTex document
+
+TEXOTHERS = \
+case1.tex \
+case2.tex \
+case3.tex \
+case4.tex \
+case5.tex \
+intro.tex \
+tuto_case1.tex \
+tuto_case2.tex \
+tuto_case3.tex \
+tuto_case4.tex \
+tuto_case5.tex
+
+TEXINPUTFILES =
+
+# Distributed files
+
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
+# One adds the whole directory of test cases and get rid of the .svn
+# directories with a dist-hook. The reason for this trick is that
+# the number of test cases can grow and change a lot.
+EXTRA_DIST += test_cases
+
 # Subdirectories (order is important)
 
 SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/doc/style/:$(srcdir)//:$(builddir)//:
+TEXINPUTS = $(top_srcdir)/doc/style/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
 BIBINPUTS = $(top_srcdir)/doc/style/:
 BSTINPUTS = $(top_srcdir)/doc/style/:
 
@@ -59,5 +85,8 @@ install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
 	cp -p $(PDFMAIN) $(DESTDIR)$(pdfdir)
 
-distclean-local: clean
+distclean-local: clean-local
 	-rm -f $(PDFMAIN)
+
+dist-hook:
+	-rm -rf `find $(distdir)/test_cases -name .svn`

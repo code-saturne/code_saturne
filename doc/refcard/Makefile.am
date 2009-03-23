@@ -22,42 +22,11 @@
 
 # Main LaTeX document
 
-TEXMAIN = theory.tex
+TEXMAIN = refcard.tex
 
 # Other LaTex document
 
-TEXOTHERS = \
-bilsc2.tex \
-cfbase.tex \
-cfener.tex \
-cfmsvl.tex \
-cfqdmv.tex \
-cfxtcl.tex \
-clptrg.tex \
-clptur.tex \
-clsyvt.tex \
-codits.tex \
-combustion.tex \
-condli.tex \
-covofi.tex \
-elbase.tex \
-gradmc.tex \
-gradrc.tex \
-inimas.tex \
-introd.tex \
-itrmas.tex \
-matrix.tex \
-navsto.tex \
-preduv.tex \
-recvmc.tex \
-resolp.tex \
-summary.tex \
-turbke.tex \
-turrij.tex \
-viscfa.tex \
-visort.tex \
-vissec.tex \
-vortex.tex
+TEXOTHERS =
 
 TEXINPUTFILES =
 

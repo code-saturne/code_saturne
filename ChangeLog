@@ -1,4 +1,46 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Lot of Makefile changes related to package distribution.
+  Add a refcard documentation and some missing manpages.
+  Add a csmacro and a csvers file containing all the macros
+  and version for Code_Saturne documentation.
+  Install cs_config.py in a Python site-package.
+  Rename TEST_CASES in test_cases.
+  modified files:
+    configure.ac
+    doc/howto/graphics/Makefile.am
+    doc/howto/howto.tex
+    doc/howto/Makefile.am
+    doc/Makefile.am
+    doc/manpages/cs_compile.1
+    doc/manpages/cs_config.1
+    doc/manpages/cs_create.1
+    doc/manpages/cs_info.1
+    doc/manpages/cs_plot_probes.1
+    doc/manpages/cs_solver.1
+    doc/refcard
+    doc/refcard/graphics
+    doc/refcard/graphics/Makefile.am
+    doc/refcard/Makefile.am
+    doc/refcard/refcard.tex
+    doc/style/csdoc.sty
+    doc/style/csindex.sty
+    doc/style/csmacros.sty
+    doc/style/csvers.tex.in
+    doc/theory/graphics/Makefile.am
+    doc/theory/Makefile.am
+    doc/theory/theory.tex
+    doc/tutorial/graphics/Makefile.am
+    doc/tutorial/Makefile.am
+    doc/tutorial/test_cases
+    doc/tutorial/tutorial.tex
+    doc/user/graphics/Makefile.am
+    doc/user/Makefile.am
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+    doc/user/user.tex
+    Makefile.am
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Bug correction in SYRTHES coupling script.
   modified script:
     bin/runcase_syrthes

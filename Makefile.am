@@ -20,35 +20,45 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-AUX_DIST = $(ac_aux_dir)/compile \
-           $(ac_aux_dir)/config.guess \
-           $(ac_aux_dir)/config.sub \
-           $(ac_aux_dir)/depcomp \
-           $(ac_aux_dir)/install-sh \
-           $(ac_aux_dir)/missing \
-           $(ac_aux_dir)/mkinstalldirs \
-           $(ac_aux_dir)/ltmain.sh
-
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \
 $(top_srcdir)/aclocal.m4 \
 $(top_srcdir)/configure \
 $(top_srcdir)/cs_config-h.in \
-$(AUX_DIST)
+$(ac_aux_dir)/compile \
+$(ac_aux_dir)/config.guess \
+$(ac_aux_dir)/config.sub \
+$(ac_aux_dir)/depcomp \
+$(ac_aux_dir)/install-sh \
+$(ac_aux_dir)/ltmain.sh \
+$(ac_aux_dir)/missing \
+$(ac_aux_dir)/py-compile
 
-SUBDIRS = src/atmo src/cfbl src/cogz src/cplv src/ctwr src/elec src/fuel src/lagr src/mati src/pprt src/rayt src/base \
+SUBDIRS = src/atmo src/cfbl src/cogz src/cplv src/ctwr src/elec src/fuel \
+          src/lagr src/mati src/pprt src/rayt src/base \
           po doc
 
-EXTRA_DIST = $(ac_aux_dir)/config.rpath  \
-             $(ac_aux_dir)/cs_auto_flags.sh \
-             $(ac_aux_dir)/cs_bft.m4 \
-             $(ac_aux_dir)/cs_blas.m4 \
-             $(ac_aux_dir)/cs_fvm.m4 \
-             $(ac_aux_dir)/cs_libxml2.m4 \
-             $(ac_aux_dir)/cs_mpi.m4 \
-             $(ac_aux_dir)/cs_tools.m4
+EXTRA_DIST = \
+COMPATIBILITY \
+QUALITY_ASSURANCE \
+sbin/backup \
+sbin/bootstrap \
+sbin/clean \
+sbin/rmb \
+$(ac_aux_dir)/cs_auto_flags.sh \
+$(ac_aux_dir)/cs_bft.m4 \
+$(ac_aux_dir)/cs_blas.m4 \
+$(ac_aux_dir)/cs_fvm.m4 \
+$(ac_aux_dir)/cs_libxml2.m4 \
+$(ac_aux_dir)/cs_mpi.m4 \
+$(ac_aux_dir)/cs_tools.m4
 
-include_HEADERS = cs_config.h
+# One adds two whole sub-directories and get rid of the .svn
+# directories with a dist-hook. The reason for this trick is that
+# the number of extra files or patches can grow and change a lot.
+EXTRA_DIST += extras patches
+
+nodist_include_HEADERS = cs_config.h
 
 DISTCLEANFILES = cs_config.h
 
@@ -60,20 +70,28 @@ dist_bin_SCRIPTS = \
 bin/cs_check_consistency \
 bin/cs_check_mesh \
 bin/cs_compile \
-bin/cs_config.py \
 bin/cs_create \
 bin/cs_info \
 bin/cs_plot_probes
 
+# Install Python library
+
+nodist_pkgpython_PYTHON = \
+bin/cs_config.py
+
 # Install user scripts
 
-dist_pkgdata_DATA = \
+nodist_pkgdata_DATA = \
 bin/runcase \
-bin/runcase.help \
+bin/SaturneGUI
+
+dist_pkgdata_DATA = \
+bin/runcase.help
+
+dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_env \
 bin/runcase_mpi_rank \
-bin/runcase_syrthes \
-bin/SaturneGUI
+bin/runcase_syrthes
 
 # Install thermochemistry and Matisse data files
 
@@ -96,10 +114,11 @@ data/thch/JANAF
 dist_man_MANS = \
 doc/manpages/cs_check_consistency.1 \
 doc/manpages/cs_check_mesh.1 \
-doc/manpages/cs_config.1 \
+doc/manpages/cs_compile.1 \
 doc/manpages/cs_create.1 \
 doc/manpages/cs_info.1 \
-doc/manpages/cs_plot_probes.1
+doc/manpages/cs_plot_probes.1 \
+doc/manpages/cs_solver.1
 
 # Finish user files installation
 # - tag with the package version number
@@ -107,7 +126,7 @@ doc/manpages/cs_plot_probes.1
 # Done with two sed passes (do not work otherwise)
 
 install-data-hook:
-	cd $(DESTDIR)$(datadir)/users && \
+	cd $(DESTDIR)$(pkgdatadir)/users && \
 	user_files=`ls */*.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
 	version1="\!VERS                  Code_Saturne version $(VERSION)\n"; \
@@ -115,7 +134,11 @@ install-data-hook:
 	comment1="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT"; \
 	comment2="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN"; \
 	for file in $${user_files}; do \
-	  sed -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
-	  sed -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
+	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
+	  $(SED) -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
+
+dist-hook:
+	-rm -rf `find $(distdir)/extras  -name .svn`
+	-rm -rf `find $(distdir)/patches -name .svn`

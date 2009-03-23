@@ -22,55 +22,35 @@
 .\"  51 Franklin St, Fifth Floor,
 .\"  Boston, MA  02110-1301  USA
 .\"
-.TH CS_CONFIG 1 2009-03-15 "" "Code_Saturne commands"
+.TH CS_COMPILE 1 2009-03-15 "" "Code_Saturne commands"
 .SH NAME
-cs_config.py \- Script to get information about the installed version of
-Code_Saturne Kernel.
+cs_compile \- Code_Saturne wrapper for user files compilation.
 .SH SYNOPSIS
-.B cs_config.py
-.RI [options]
-.RI [scope]
+.B cs_compile
+.RI [--test]
+.RI [--source=<src_dir>]
+.RI [--dest=<dest_dir>]
+.RI [--opt-libs=<libs>]
 .br
 .SH DESCRIPTION
-This script is a tool that is used to configure to determine
-the compiler and linker flags that should be used to compile
-and link programs that use
-.BR libsaturne .
+The
+.B cs_compile
+script can be used to generate the
+.B cs_solver
+executable needed for running a Code_Saturne study.
 .SH OPTIONS
-.PP
-.I Options
 .B
-.IP --prefix
-Installation path prefix
+.IP "-t, --test"
+Test only, discard compilation result.
 .B
-.IP --exec-prefix
-System-dependent path prefix
+.IP "--source"
+Choose source file directory.
 .B
-.IP --version
-Version
+.IP "--dest"
+Choose executable file directory.
 .B
-.IP --cppflags
-C preprocessor flags (e.g. -D<macro>, ...)
-.B
-.IP --cflags
-C flags (e.g. -O, -g, ...)
-.B
-.IP --ldflags
-Linker flags (e.g. -g, -L<path>, ...)
-.B
-.IP --libs
-librairies used (e.g. -l<libname>)
-.B
-.IP --cc
-C compiler used for build
-.PP
-.I Scope
-.B
-.IP "use (default)"
-Options required for user code
-.B
-.IP build
-Options used for build
+.IP "-h, --help"
+Print a usage message and exit.
 .SH SEE ALSO
-.BR bft-config (1),
-.BR fvm-config (1)
+.BR cs_create (1),
+.BR cs_solver (1)

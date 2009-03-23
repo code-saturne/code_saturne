@@ -15,7 +15,7 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Preprocessor; if not, write to the
+#   along with the Code_Saturne Kernel; if not, write to the
 #   Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
@@ -25,6 +25,16 @@
 FIGFILES = \
 cs_components.fig \
 vortex.fig
+
+# Other files
+
+OTHERFILES = \
+halo.pdf \
+rota_perio_parall.jpg
+
+# Distributed files
+
+EXTRA_DIST = $(FIGFILES) $(OTHERFILES)
 
 # Generated documents (pdf files)
 
@@ -45,4 +55,4 @@ pdf-local: $(PDF_FIGFILES)
 clean-local:
 	-rm -f $(PDF_FIGFILES)
 
-distclean-local: clean
+distclean-local: clean-local
