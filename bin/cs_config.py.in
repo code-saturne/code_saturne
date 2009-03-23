@@ -49,6 +49,9 @@ class dirs:
     exec_prefix = "@exec_prefix@"
     if exec_prefix == "${prefix}":
         exec_prefix = prefix
+    bindir = "@bindir@"
+    if bindir == "${exec_prefix}/bin":
+        bindir = os.path.join(exec_prefix, "bin")
     includedir = "@includedir@"
     if includedir == "${prefix}/include":
         includedir = os.path.join(prefix, "include")
@@ -61,15 +64,19 @@ class dirs:
     datadir = "@datadir@"
     if datadir == "${datarootdir}":
         datadir = datarootdir
-    pkgdatadir = "@pkgdatadir@"
-    if pkgdatadir == "${datadir}/${PACKAGE}":
-        pkgdatadir = os.path.join(datadir, "@PACKAGE@")
+    pkgdatadir = os.path.join(datadir, "@PACKAGE@")
     docdir = "@docdir@"
     if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
         docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
     pdfdir = "@pdfdir@"
     if pdfdir == "${docdir}":
         pdfdir = docdir
+    ecs_prefix = "@ecs_prefix@"
+    ecs_exec_prefix = ecs_prefix
+    ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
+    ics_prefix = "@ics_prefix@"
+    ics_exec_prefix = ics_prefix
+    ics_bindir = os.path.join(ics_exec_prefix, "bin")
 
 # Build tools, option, and libraries
 #-----------------------------------
@@ -93,6 +100,7 @@ def main():
     print "Directories:"
     print "  dirs.prefix = " + dirs.prefix
     print "  dirs.exec_prefix = " + dirs.exec_prefix
+    print "  dirs.bindir = " + dirs.bindir
     print "  dirs.includedir = " + dirs.includedir
     print "  dirs.libdir = " + dirs.libdir
     print "  dirs.datarootdir = " + dirs.datarootdir
@@ -100,6 +108,10 @@ def main():
     print "  dirs.pkgdatadir = " + dirs.pkgdatadir
     print "  dirs.docdir = " + dirs.docdir
     print "  dirs.pdfdir = " + dirs.pdfdir
+    print ""
+    print "Auxiliary information:"
+    print "  dirs.ecs_prefix = " + dirs.ecs_prefix
+    print "  dirs.ics_prefix = " + dirs.ics_prefix
     print ""
     print "Compilers and associated options:"
     print "  cc = " + build.cc

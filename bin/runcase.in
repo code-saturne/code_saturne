@@ -485,9 +485,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/cs_check_consistency -dir $src_dir -param $PARAM -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency --source $src_dir --param $PARAM --nproc $nproc_kernel
     else
-      ${bindir}/cs_check_consistency -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency --nproc $nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1
@@ -513,9 +513,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/cs_check_consistency -param $PARAM -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency --param $PARAM --nproc $nproc_kernel
     else
-      ${bindir}/cs_check_consistency -nproc $nproc_kernel
+      ${bindir}/cs_check_consistency --nproc $nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1

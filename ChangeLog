@@ -1,4 +1,16 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Several modifications and corrections related to missing
+  information (mostly).
+  Updated GUI-related scripts in order to use an installed
+  version of the GUI.
+  modified scripts:
+    bin/cs_config.py.in
+    bin/SaturneGUI.in
+    config/cs_auto_flags.sh
+    config/cs_tools.m4
+    configure.ac
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Remove standard user shell script by Python ones.
   modified scripts:
     bin/cs_check_consistency
@@ -6,6 +18,7 @@
     bin/cs_create
     bin/cs_info
     bin/cs_plot_probes
+    bin/runcase.in
 
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Reorganize the test cases database in a simpler way.

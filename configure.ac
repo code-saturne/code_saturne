@@ -90,8 +90,11 @@ AC_PROG_CC
 AC_PROG_FC
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_PROG_SED
 
 AC_FC_LIBRARY_LDFLAGS
+
+AM_PATH_PYTHON
 
 # Debug or production compilation mode (debug by default) ?
 
@@ -481,14 +484,13 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
-                 doc/Makefile
+                 doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
-                 bin/cs_check_mesh bin/cs_config.py bin/cs_info bin/cs_create
-                 bin/runcase bin/SaturneGUI])
+                 bin/cs_config.py bin/runcase bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 

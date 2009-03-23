@@ -1,0 +1,386 @@
+#!/usr/bin/env python
+#-------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Solver.
+#
+#   Copyright (C) 2009  EDF
+#
+#   The Code_Saturne Preprocessor is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Preprocessor is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Preprocessor; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+
+"""
+This module describes the script used to create a study/case for Code_Saturne.
+
+This module defines the following functions:
+- usage
+- process_cmd_line
+- make_executable
+- comments
+and the following classes:
+- study
+- class
+"""
+
+
+#-------------------------------------------------------------------------------
+# Library modules import
+#-------------------------------------------------------------------------------
+
+import os, sys, pwd, shutil, stat, getopt
+import types, string, re
+
+import cs_config
+
+#-------------------------------------------------------------------------------
+# Usage/help message
+#-------------------------------------------------------------------------------
+
+
+def usage():
+    """
+    Usage of cs_create script.
+    """
+
+    documentation = os.path.join(cs_config.dirs.pdfdir, 'user.pdf')
+
+    msg = """
+Usage:  cs_create [options] [cases names]
+
+  Valid options are one or more of the following:
+
+    -n
+    --nogui
+    
+        Specifies not to use the GUI of Code_Saturne.
+
+    -s [study name]
+    --study [study name]
+
+        Creates a new study.
+
+    -h
+    --help
+
+        Prints this message
+
+  For more detailed informations about Code_Saturne, please type:
+    
+    acroread %(doc)s
+
+  Examples:
+
+    cs_create --nogui --study study_name
+    cs_create --study study_name case_1 case_2
+    cs_create --nogui case_1 case_2
+    """ % { 'doc': documentation }
+    return msg
+
+
+#-------------------------------------------------------------------------------
+# Processes the passed command line arguments
+#-------------------------------------------------------------------------------
+
+
+def process_cmd_line(arg):
+    """
+    Processes the passed command line arguments.
+    
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string the
+             string is split to create a list of arguments.
+    Returned Values:
+      case -- Name of the file. If the variable case is set 
+              to "new case" SaturneGUI is open with a new case.
+    """
+
+    options = "hs:n"
+    long_opts = ['help', 'study=', 'nogui']
+
+    try:
+        opts, args = getopt.getopt(arg, options, long_opts)
+    except getopt.error, msg:
+        print "\nWarning:\n", msg
+        print usage()
+        print "Warning:\n", msg, "\n"
+        sys.exit(1)
+
+    use_gui = True
+    study_name = os.path.basename(os.getcwd())
+    cases_names = ['CASE1']
+    number_of_instances = 1
+
+    for o, a in opts:
+        if o in ('-n', '--nogui'):
+            use_gui = False
+        if o in ('-s', '--study'):
+            study_name = string.upper(a)
+        if o in ('-h', '--help'):
+            print usage()
+            sys.exit(1)
+
+    if (len(args) > 0):
+        cases_names = args
+
+    return use_gui, study_name, cases_names, number_of_instances
+
+
+#-------------------------------------------------------------------------------
+# Give executable mode (chmod +x) to a file
+#-------------------------------------------------------------------------------
+
+
+def make_executable(filename):
+    """
+    Give executable permission to a given file.
+    Equivalent to `chmod +x` shell function.
+    """
+    
+    st   = os.stat(filename)
+    mode = st[stat.ST_MODE]
+    os.chmod(filename, mode | stat.S_IEXEC)
+
+    return
+    
+
+#-------------------------------------------------------------------------------
+# Comment or uncomment examples in user files
+#-------------------------------------------------------------------------------
+
+
+def comments(filename, use_gui):
+    """
+    Comment or uncomment examples in user files.
+    """
+    
+    fd = file(filename, 'r')
+    fdt = file(filename+'.tmp','w')
+    
+    kwd_beg = re.compile('CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT')
+    kwd_end = re.compile('CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN')
+    
+
+    if use_gui:
+
+        comment_line = 0
+        for line in fd:
+            if kwd_beg.search(line): comment_line = 1
+            if comment_line == 0:
+                fdt.write(line)
+            else:
+                fdt.write('!ex'+line)
+                if kwd_end.search(line): comment_line = 0
+
+    else:
+
+        for line in fd:
+            if not kwd_beg.search(line) and not kwd_end.search(line):
+                fdt.write(line)
+            
+    fd.close()
+    fdt.close()
+
+    shutil.move(filename+'.tmp', filename)
+
+    return
+
+
+#-------------------------------------------------------------------------------
+# Definition of a class for a study
+#-------------------------------------------------------------------------------
+
+class Study:
+
+
+    def __init__(self, name, cases, use_gui, instances):
+        """
+        Initialize the structure for a study.
+        """
+        
+        self.name = name
+        self.cases = []
+        for c in cases:
+            self.cases.append(string.upper(c))
+        self.number_instances = instances
+        self.use_gui = use_gui
+
+
+    def create(self):
+        """
+        Create a study.
+        """
+
+        if self.name != os.path.basename(os.getcwd()):
+            os.mkdir(self.name)
+            os.chdir(self.name)
+            os.mkdir('MESH')
+            os.mkdir('POST')
+        # Creating cases
+        repbase = os.getcwd()
+        for c in self.cases:
+            os.chdir(repbase)
+            self.createCase(c)
+
+
+    def createCase(self, casename):
+        """
+        Create a case for a Code_Saturne study.
+        """
+
+        datadir = os.path.join(cs_config.dirs.pkgdatadir)
+        data_distpath  = os.path.join(datadir, 'data')
+        users_distpath = os.path.join(datadir, 'users')
+
+        try:
+            os.mkdir(casename)
+        except:
+            sys.exit(1)
+            
+        os.chdir(casename)
+
+        # Loop for dependancy on the number of instances of Code_Saturne
+
+        for i in range(self.number_instances):
+
+            # Data directory
+
+            if self.number_instances == 1:
+                data = 'DATA'
+            else:
+                data = 'DATA.%(inst)d' % { 'inst' : i+1 }
+
+            os.mkdir(data)
+
+            thch_distpath = os.path.join(data_distpath, 'thch')
+            thch          = os.path.join(data, 'THCH')
+            shutil.copytree(thch_distpath, thch)
+
+        
+            if self.use_gui:
+        
+                csguiname = 'SaturneGUI'
+                csguiscript = os.path.join(datadir, csguiname)
+            
+                shutil.copy(csguiscript, data)
+                make_executable(os.path.join(data, csguiname))
+
+
+            # User source files directory
+
+            if self.number_instances == 1:
+                src = 'SRC'
+            else:
+                src = 'SRC.%(inst)d' % { 'inst' : i+1 }
+                
+            os.mkdir(src)
+
+            users = os.path.join(src, 'REFERENCE')
+            shutil.copytree(users_distpath, users)
+
+            for file in ['usini1.f90','usalin.f90']:
+                f = os.path.join(users, 'base', file)
+                comments(f, use_gui)
+
+
+        # Results directory (only one for all instances)
+
+        resu = 'RESU'
+        os.mkdir(resu)
+
+
+        # Script directory (only one for all instances)
+
+        scripts = 'SCRIPTS'
+        os.mkdir(scripts)
+        
+        shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
+
+        if number_instances == 1:
+            shutil.copy(os.path.join(datadir, 'runcase'), scripts)
+            runcase = os.path.join(scripts, 'runcase')
+        else:
+            shutil.copy(os.path.join(datadir, 'runcase_coupling'), scripts)
+            runcase = os.path.join(scripts, 'runcase')
+
+        kwd1 = re.compile('nameandcase')
+        kwd2 = re.compile('STUDYNAME')
+        kwd3 = re.compile('CASENAME')
+        kwd4 = re.compile('CASEDIRNAME')
+
+        repbase = os.getcwd()
+        studyname     = string.lower(self.name)
+        studycasename = studyname + string.lower(casename)
+        # In the cluster, names are limited to 15 caracters
+        studycasename = studycasename[:15]
+
+        runcase_tmp = runcase + '.tmp'
+
+        fd  = open(runcase, 'r')
+        fdt = open(runcase_tmp,'w')
+
+        for line in fd:
+            line = re.sub(kwd1, studycasename, line)
+            line = re.sub(kwd2, self.name, line)
+            line = re.sub(kwd3, casename, line)
+            line = re.sub(kwd4, repbase, line)
+            fdt.write(line)
+                
+        fd.close()
+        fdt.close()
+
+        shutil.move(runcase_tmp, runcase)
+        
+        make_executable(runcase)
+
+
+    def dump(self):
+        """
+        Dump the structure of a study.
+        """
+        
+        print "Name  of the study  :", myStudy.name
+        print "Names of the cases  :", myStudy.cases
+        print "Use of the GUI      :", myStudy.use_gui
+        print
+
+        
+#-------------------------------------------------------------------------------
+# Creation of the study directory
+#-------------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+
+    welcome = """
+=================================================================
+                Code_Saturne study/case generation
+                           Version %(csvers)s
+=================================================================
+    """ % { 'csvers': cs_config.package.version }
+    
+    use_gui, name, cases, number_instances = process_cmd_line(sys.argv[1:])
+
+    print welcome
+
+    myStudy = Study(name, cases, use_gui, number_instances)
+    myStudy.dump()
+    myStudy.create()
+
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

@@ -36,7 +36,7 @@ else
   CS_PYTHON=python
 fi
 
-$CS_PYTHON @ics_prefix@/ics $*
+$CS_PYTHON @ics_prefix@/bin/ics $*
 
 exit
 

@@ -1,0 +1,217 @@
+#!/usr/bin/env python
+#-------------------------------------------------------------------------------
+#
+#     This file is part of the Code_Saturne User Interface, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2008 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne User Interface is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne User Interface is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#-------------------------------------------------------------------------------
+
+
+"""
+This module describes the script used to display information on Code_Saturne.
+
+This module defines the following functions:
+- usage
+- process_cmd_line
+- print_version
+- launch_manual
+- launch_usage
+"""
+
+
+#-------------------------------------------------------------------------------
+# Library modules import
+#-------------------------------------------------------------------------------
+
+
+import os, sys, pwd, shutil, stat, getopt
+
+import cs_config
+
+#-------------------------------------------------------------------------------
+# Usage/help message
+#-------------------------------------------------------------------------------
+
+
+def usage():
+    """
+    Usage of cs_info script.
+    """
+
+    msg = """
+Usage:  cs_info [option] [topics]
+
+  Valid option is one of the following:
+
+    -r [PDF reader]
+    --reader [PDF reader]
+
+        Specifies the PDF reader used to display manuals.
+
+    -h
+    --help
+
+        Prints this message.
+
+  Valid topics are one of the following:
+
+    version    : Code_Saturne version
+
+    user       : Code_Saturne solver user manual
+    theory     : Code_Saturne solver theory and programmer's manual
+    tutorial   : Code_Saturne tutorial
+
+    cs_solver  : usage for the Kernel module
+    ecs        : usage for the Preprocessor module
+    """
+    return msg
+
+
+#-------------------------------------------------------------------------------
+# Processes the passed command line arguments
+#-------------------------------------------------------------------------------
+
+
+def process_cmd_line(arg):
+    """
+    Processes the passed command line arguments.
+    
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string the
+             string is split to create a list of arguments.
+    """
+
+    options = "hr:"
+    long_opts = ['help','reader=']
+
+    try:
+        opts, args = getopt.getopt(arg, options, long_opts)
+    except getopt.error, msg:
+        print "\nWarning:\n", msg
+        print usage()
+        print "Warning:\n", msg, "\n"
+        sys.exit(1)
+
+    usages  = []
+    manuals = []
+    reader  = 'kpdf'
+    version = False
+
+    for o, a in opts:
+        if o in ('-r', '--reader'):
+            reader = a
+        if o in ('-h', '--help'):
+            print usage()
+            sys.exit(1)
+
+    if len(args) == 0:
+        print usage()
+        sys.exit(1)
+
+    for a in args:
+        if a in ('version'):
+            version = True
+        elif a in ('user','theory','tutorial'):
+            manuals.append(a)
+        elif a in ('cs_solver','ecs'):
+            usages.append(a)
+        else:
+            print usage()
+            sys.exit(1)
+
+    return usages, manuals, reader, version
+
+
+#-------------------------------------------------------------------------------
+# Print Code_Saturne version
+#-------------------------------------------------------------------------------
+
+
+def print_version():
+    """
+    Print Code_Saturne version.
+    """
+
+    msg = """
+ Code_Saturne version: %(solver)s
+ Preprocessor version: %(prepro)s
+ GUI version:          %(gui)s
+    """
+
+    print msg % {'solver':cs_config.dirs.prefix,
+                 'prepro':cs_config.dirs.ecs_prefix,
+                 'gui':cs_config.dirs.ics_prefix}
+
+
+#-------------------------------------------------------------------------------
+# Launch the PDF manual
+#-------------------------------------------------------------------------------
+
+
+def launch_manual(reader, m):
+    """
+    Launch the corresponding PDF manual.
+    """
+
+    cmd = reader + ' ' + os.path.join(cs_config.dirs.pdfdir, m) + '.pdf &'
+    os.system(cmd)
+
+
+#-------------------------------------------------------------------------------
+# Launch the help
+#-------------------------------------------------------------------------------
+
+
+def launch_usage(u):
+    """
+    Launch the corresponding usage help.
+    """
+
+    cmd = os.path.join(cs_config.dirs.prefix, u) + ' -h &'
+    os.system(cmd)
+
+
+#-------------------------------------------------------------------------------
+# Creation of the study directory
+#-------------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+
+    usages, manuals, reader, version = process_cmd_line(sys.argv[1:])
+
+    if version:
+        print_version()
+        
+    for m in manuals:
+        launch_manual(reader, m)
+
+    for u in usages:
+        launch_usage(u)
+
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

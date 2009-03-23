@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+#
+#-------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Solver.
+#
+#   Copyright (C) 2009  EDF
+#
+#   The Code_Saturne Preprocessor is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Preprocessor is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Preprocessor; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+import getopt
+import os
+import sys
+import subprocess
+import tempfile
+
+#-------------------------------------------------------------------------------
+
+def run_command(cmd):
+    """
+    Run a command.
+    """
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    p.wait()
+
+    return p.returncode
+
+#-------------------------------------------------------------------------------
+
+def plot(f):
+    """
+    Plot a monitoring file with XmGrace.
+    """
+    retval = 0
+
+    # Create a temporary file and correctly format the monitoring file
+
+    temp_file = tempfile.mkstemp(suffix=".hst")
+
+    cmd = "grep -v '#'" + " " + str(f) + "|cut -c9- >" + " " + temp_file[1]
+    run_command(cmd)
+
+    # Run XmGrace -nxy command
+
+    cmd = "xmgrace -nxy" + " " + temp_file[1]
+    run_command(cmd)
+
+    # Cleanup and exit
+
+    os.remove(temp_file[1])
+
+    return retval
+
+#-------------------------------------------------------------------------------
+
+def usage():
+    """
+    Indicate usage.
+    """
+    print "Usage: " + sys.argv[0] + " <monitoring file>"
+    print "-h, --help              print this message"
+
+#-------------------------------------------------------------------------------
+
+def main(argv):
+    """
+    Main function.
+    """
+
+    try:
+        opts, args = getopt.getopt(argv, "h", ["help"])
+    except getopt.GetoptError, err:
+        print str(err)
+        usage()
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit(0)
+        
+    if (len(args) == 1):
+        file = args[0]
+    else:
+        usage()
+        sys.exit(0)
+
+    retcode = plot(file)
+
+    sys.exit(retcode)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
