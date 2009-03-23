@@ -1,4 +1,11 @@
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
+  Update Subversion ignore property.
+  modified directories:
+    config
+    doc/refcard
+    doc/refcard/graphics
+
+* 23/03/2009 - David Monfort <david.monfort@edf.fr>
   Several modifications and corrections related to missing
   information (mostly).
   Updated GUI-related scripts in order to use an installed
