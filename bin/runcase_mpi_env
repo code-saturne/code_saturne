@@ -78,6 +78,25 @@ fi
 #
 if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
 #
+# Temporarily set the architecture name (for EDF purposes)
+  NOM_ARCH=`uname -s`
+  if [ "$NOM_ARCH" = "Linux" ] ; then
+    if [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
+      NOM_ARCH=Linux_Ch
+    elif [ -d /bgl/BlueLight/ppcfloor ] ; then
+      NOM_ARCH=Blue_Gene_L
+    elif [ -d /bgsys/drivers/ppcfloor ] ; then
+      NOM_ARCH=Blue_Gene_P
+    else
+      MACHINE=`uname -m`
+      case "$MACHINE" in
+        *86)    NOM_ARCH=Linux ;;
+        x86_64) NOM_ARCH=Linux_x86_64 ;;
+        ia64)   NOM_ARCH=Linux_IA64 ;;
+        *)      NOM_ARCH=Linux_$MACHINE ;;
+      esac
+    fi
+  fi
 # Default values
   MPIBOOT=""
   MPIHALT=""

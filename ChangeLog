@@ -1,4 +1,10 @@
 * 25/03/2009 - David Monfort <david.monfort@edf.fr>
+  Temporarily set the architecture name (for EDF purposes), this
+  part will be rewritten later on.
+  modified script:
+    bin/runcase_mpi_env
+
+* 25/03/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add a trick in some Python user scripts so that one does not
   have to set the PYTHONPATH variable in case the install path
