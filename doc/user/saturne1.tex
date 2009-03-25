@@ -1074,9 +1074,9 @@ so we simply interpret their number as a color.
 
 Also note that files produced by \emph{Harpoon} may contain badly oriented
 prisms, so the Preprocessor orientation correction option
-(\texttt{-reorient})may need to be used. Meshes built by this tool also
+(\texttt{--reorient})may need to be used. Meshes built by this tool also
 contain hanging nodes, with non-conforming elements sharing some vertices.
-The \texttt{-join -semi-conf} preprocessor option must thus be used.
+The \texttt{--join --semi-conf} preprocessor option must thus be used.
 This option is not set automatically, as the user may prefer to specify
 which surfaces should be joined, and which ones should not (i.e. to
 conserve thin walls).
@@ -1521,47 +1521,48 @@ corresponding user's guide \cite{ecsuser} (available on-line through the command
 %==================================
 \label{prg_optappelecs}%
 A complete description of the Preprocessor command line options can be found in
-\cite{ecsmu}, accessible by the command \texttt{cs\_info ecsmu}. The executable
-of the Preprocessor module is \texttt{ecs}, accessible directly once the environment
-variables of \CS are set properly. A summary of the command line options is
-also given by the command \texttt{ecs -help}.
+\cite{ecsmu}. The executable of the Preprocessor module is \texttt{cs_preprocess},
+accessible directly once the environment variables of \CS are set
+properly. A summary of the command line options is also given by the
+command \texttt{cs_preprocess --help}.
 
-For the main options, the launch script \texttt{runcase} contains corresponding
-environment variables at its beginning, that are used later when the executable
-is called. This way, the user only has to fill these variables and doesn't need
-to search deep in the script for the Preprocessor command line.
+For the main options, the launch script \texttt{runcase} contains
+corresponding environment variables at its beginning, that are used
+later when the executable is called. This way, the user only has to
+fill these variables and doesn't need to search deep in the script for
+the Preprocessor command line.
 
 The main options are:
 \begin{list}{$\bullet$}{}
-\item \texttt{-help}: gives a summary of the different command line options
+\item \texttt{--help}: gives a summary of the different command line options
 
 \item \texttt{-m mesh1 mesh2}: used to specify the names of the different meshes
 used. The launch script automatically calls the Preprocessor with the option
 \texttt{-m \$MESH}, where \texttt{MESH} is the variable where the user has
 specified the different meshes to be used.
 
-\item \texttt{-join}: triggers the mesh joining functions. If nothing more is
+\item \texttt{--join}: triggers the mesh joining functions. If nothing more is
 specified, every area of contact between two meshes will be pasted together. The
 joining can be limited to certain selected faces. For instance, to paste only
-the faces of colors 6 and 7, the full option will be \mbox{\texttt{-join -color
+the faces of colors 6 and 7, the full option will be \mbox{\texttt{--join --color
 6 7}}. These options are to be specified in the \texttt{COMMAND\_JOIN} variable in
 the launch script, to be automatically passed to the command line.
 
-\item \texttt{-perio}: triggers periodic boundary conditions. Two types of
+\item \texttt{--perio}: triggers periodic boundary conditions. Two types of
 periodic boundaries are possible: translation or rotation (see
 \S\ref{prg_paralperio} for additional details). For the translation, the basic
-option line is \texttt{-perio -trans tx ty tz}\\
+option line is \texttt{--perio --trans tx ty tz}\\
 where \texttt{tx}, \texttt{ty} and \texttt{tz} are the coordinates of the
 translation vector. For the rotation, there are two possibilities. The
 transformation can be defined with a rotation angle (in degrees, between -180
 and 180), a direction  and an
 invariant point\\
-\texttt{-perio -rota -angle a -dir dx dy dz -invpt px py pz}\\
+\texttt{--perio --rota --angle a --dir dx dy dz --invpt px py pz}\\
 (with obvious notations), or by giving the rotation matrix and an invariant point\\
-\texttt{-perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py
+\texttt{--perio --rota --matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 --invpt px py
 pz}\\
-A rotation and a translation can be combined, by giving both \texttt{-rota} and
-\texttt{-trans} specifications. The translation will always be applied first,
+A rotation and a translation can be combined, by giving both \texttt{--rota} and
+\texttt{--trans} specifications. The translation will always be applied first,
 whatever the order in which the rotation and the translation have been given.\\
 The orientation of the transformations is not important since both the
 transformation and its inverse will be used to connect faces. Yet, when
@@ -1569,17 +1570,17 @@ combining a translation and a rotation, the orientations given for both have to
 be consistent.\\
 It is possible (and usually recommended) to restrict the  search for periodic
 connections between faces to a certain group of faces, by adding selection
-arguments like \texttt{-color}. It is also possible to specify up to 3
-independent periodicities, simply by repeating the \texttt{-perio} option. Below
+arguments like \texttt{--color}. It is also possible to specify up to 3
+independent periodicities, simply by repeating the \texttt{--perio} option. Below
 is given a example of the option line for a triple periodicity (the \verb+\+
 indicates the continuation of the command line):\\
-\texttt{-perio -trans -10.2 0 0 -color 2} \verb+\+\\
-\texttt{-perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 -color 3 4} \verb+\+\\
-\texttt{-perio -trans 0 1 0 -rota -matrix 1 0  0 0 0 -1 0 1 0 -invpt 0 0 -0.2}\\
+\texttt{--perio --trans -10.2 0 0 --color 2} \verb+\+\\
+\texttt{--perio --rota --angle 90 --dir 0 0 1 --invpt 0 0 0 --color 3 4} \verb+\+\\
+\texttt{--perio --trans 0 1 0 --rota --matrix 1 0  0 0 0 -1 0 1 0 --invpt 0 0 -0.2}\\
 This option is to be specified in the \texttt{COMMAND\_PERIO} variable in
 the launch script, to be automatically passed to the command line.
 
-\item \texttt{-reorient}: try to re-orient badly-oriented cells
+\item \texttt{--reorient}: try to re-orient badly-oriented cells
 if it is necessary to compensate for mesh-generation software
 whose output does not conform to the format specifications.
 
@@ -1598,18 +1599,7 @@ the complete list of options, with the variables in which they should be
 specified in the script.
 
 \begin{list}{$\bullet$}{}
-\item \texttt{-ec n} or \texttt{--echo-comm n}: triggers the display of the
-communications between the Kernel and \syrthes 3.4.\\
-\hspace*{0.5cm}\texttt{n=-1}: display only the error messages\\
-\hspace*{0.5cm}\texttt{n=0}: display the headers of messages\\
- \hspace*{0.5cm}\texttt{n$>$0}: display the headers and the n first and last
-elements of the messages\\
-The usage of this option is very limited, and generally restricted to
-developpers. The value of \texttt{n} is to be placed in the \texttt{ECHOCOMM}
-variable of the launch script, the option \texttt{--echo-comm \$ECHOCOMM} is
-then automatically passed to the Kernel command line.
-
-\item \texttt{-solcom}: this option indicates that the Kernel will read the
+\item \texttt{--solcom}: this option indicates that the Kernel will read the
 mesh directly, not using the Preprocessor output files. This is only possible
 with ``Common Solver'' type of mesh files (see \S\ref{prg_maillages} for
 restrictions).\\
@@ -1617,17 +1607,13 @@ This option is triggered by the \texttt{SOLCOM} variable in the launch
 script. If \texttt{SOLCOM} is set to 1, the \texttt{-solcom} option is
 automatically added to the Kernel command line. The variable
 IFOENV\index{IFOENV} in the FORTRAN code will be set to 0 if the
-\texttt{-solcom} option has been used, otherwise it will be set to 1.
+\texttt{--solcom} option has been used, otherwise it will be set to 1.
 
-\item \texttt{-mpi} or \texttt{--mpi}: specifies that the calculation is running
+\item \texttt{--mpi}: specifies that the calculation is running
 with MPI communications. The number of processors used will be determined
 automatically by the Kernel. If necessary, the launch script automatically
-passes the \texttt{-mpi} option to the Kernel command line
+passes the \texttt{--mpi} option to the Kernel command line
 (see \ref{prg_runcase}).
-
-\item \texttt{--coupl-cs}: this option concerns the coupling of different
-executions of \CS. It is still under development. Please refer to \CS
-development team for further information.
 
 \item \texttt{-q} or \texttt{--quality}: triggers the verification mode.
 The code runs without any Interface parameter file nor any user subroutine.
@@ -1645,7 +1631,7 @@ The command \texttt{-q} is to be placed in the \texttt{ARG\_CS\_VERIF}
 variable in the launch script to be added automatically to the Kernel
 command line.\\
 
-\item \texttt{-cwf}: triggers the cutting of boundary and internal faces which
+\item \texttt{--cwf}: triggers the cutting of boundary and internal faces which
 have a warp angle larger than a certain limit\footnote{the warp angle is an
 indicator of the non-coplanarity of the different vertices of the face}. The
 concerned faces are divided into triangles. This option is to handle with care,

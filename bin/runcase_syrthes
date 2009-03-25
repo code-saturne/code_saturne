@@ -162,7 +162,7 @@ if [ "$1" = "-compile" ] ; then
       mkdir ${SRC_COPY}
     fi
     if [ -d ${SRC_COPY} ] ; then
-      for f in $dir/*.[f,F,c,h] ; do
+      for f in *.[f,F,c,h] ; do
         if [ -f ${f} ] ; then
           cp -R ${f} $RESULT_DIR/
           fbase=`basename ${f}`
@@ -314,7 +314,7 @@ if [ "$1" = "-copy-results" ] ; then
       exit 1
     fi
   fi
-  for var in $SYRTHES_DATA $SYRTHES_DATA_RAY \
+  for var in $SYRTHES_ENV $SYRTHES_DATA $SYRTHES_DATA_RAY \
              $SYRTHES_CORR $SYRTHES_CORR_RAY $SYRTHES_FFOR_RAY \
              $SYRTHES_OUT_RES1 $SYRTHES_OUT_RES2 $SYRTHES_OUT_CHR2 \
              $SYRTHES_OUT_HIST \

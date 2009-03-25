@@ -1,3 +1,23 @@
+* 25/03/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Change the way one detects OpenMPI (version 1.3).
+  Two minor corrections in the runcase_syrthes scripts (some
+  results were not copied back).
+  Make the long options of the code use the double-hyphen style.
+  modified files:
+    bin/cs_check_mesh
+    bin/cs_compile
+    bin/runcase.help
+    bin/runcase.in
+    bin/runcase_mpi_rank
+    bin/runcase_syrthes
+    doc/manpages/cs_check_mesh.1
+    doc/manpages/cs_info.1
+    doc/manpages/cs_solver.1
+    doc/user/saturne1.tex
+    po/fr.po
+    src/base/cs_opts.c
+
 * 23/03/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add a trick to fool the Makefile.in.in from gettext support

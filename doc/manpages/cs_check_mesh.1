@@ -39,7 +39,7 @@ script verify the quality of a given mesh. The following options will
 be passed to Code_Saturne preprocessor.
 .SH OPTIONS
 .B
-.IP "-m, -mesh <file>"
+.IP "-m, --mesh <file>"
 Preprocessor input mesh file (mesh file format determined
 automatically by filename extension or forced by
 .B -format
@@ -48,49 +48,49 @@ sub-option)
 .PP
 .I General options
 .B
-.IP "-h, -help"
+.IP "-h, --help"
 Print a usage message and exit.
 .B
-.IP "-i, -in [<file>]"
+.IP "-i, --in [<file>]"
 Command line completed by a file (default file: standard input)
 .B
-.IP "-int-face [<sub-options>]"
+.IP "--int-face [<sub-options>]"
 Count and display interior faces these faces may be selected with
 face-selection sub-options
 .B
-.IP "-j, -join [<sub-options>]"
+.IP "-j, --join [<sub-options>]"
 Join non-conforming faces; select faces to join with face-selection
 sub-options
 .B
-.IP "-perio, -periodic <sub-options>"
+.IP "-p, --perio <sub-options>"
 Mesh periodicity defined by argument; joining sub-options for
 tolerances and selection of periodic faces with face-selection
 sub-options
 .B
-.IP "-reorient"
+.IP "--reorient"
 If necessary, correct orientation of cells and faces
 
 .PP
-.I Mesh selection sub-options (-m, -mesh)
+.I Mesh selection sub-options (-m, --mesh)
 .B
-.IP "-format <keyword>"
+.IP "--format <keyword>"
 Selection of mesh file format
 .B
-.IP "-num <n>"
+.IP "--num <n>"
 Selection of mesh number in file (if the format allows it)
 .B
-.IP "-grp-cel <keyword>"
+.IP "--grp-cel <keyword>"
 Add groups of cells (based on format features/conventions)
   * based on sections: keyword "section"
   * based on zones:    keyword "zone"
 .B
-.IP "-grp-fac <keyword>"
+.IP "--grp-fac <keyword>"
 Add groups of faces (based on format features/conventions)
   * based on sections: keyword "section"
   * based on zones:    keyword "zone"
 
 .PP
-.I Available mesh formats (-m, -mesh; -format)
+.I Available mesh formats (-m, --mesh; --format)
 
                                  Extension      Keyword
 
@@ -106,44 +106,44 @@ Add groups of faces (based on format features/conventions)
    Meta-mesh file                .mesh          meta     
 
 .PP
-.I Periodicity sub-options (-perio, -periodic)
+.I Periodicity sub-options (-p, --perio)
 .B
-.IP "-trans <tx ty tz>"
+.IP "--trans <tx ty tz>"
 Translation vector
 .B
-.IP "-rota -angle <alpha> -dir <dx dy dz> [-invpt <px py pz>]"
+.IP "--rota --angle <alpha> --dir <dx dy dz> [--invpt <px py pz>]"
 Rotation defined by an angle (in degrees) and a direction vector, and
 eventually by an invariant point (origin by default)
 .B
-.IP "-rota -matrix <mij> [-invpt <px py pz>]"
+.IP "--rota --matrix <mij> [--invpt <px py pz>]"
 Rotation defined by the rotation matrix (given line by line), and
 eventually by an invariant point (origin by default)
 
 .PP
-.I Non-conformal face joining sub-options (-j, -join, -perio, -periodic)
+.I Non-conformal face joining sub-options (-j, --join, -p, --perio)
 .B
-.IP "-fraction <real number>"
+.IP "--fraction <real number>"
 Fraction of the length of the smallest edge under which we consider
 that vertices may be fused (default value: 0.1)
 .B
-.IP "-plane <real number>"
+.IP "--plane <real number>"
 Minimal cosine of the normals of 2 coplanar faces (default value: 0.8)
 .B
-.IP "-semi-conf"
+.IP "--semi-conf"
 Fast joining algorithm (allowed if faces already share vertices)
 
 .PP
 .I Face selection sub-options (for joining, selection, and periodicity)
 .B
-.IP "-color <number(s)>"
+.IP "--color <number(s)>"
 Color numbers of faces to select
 .B
-.IP "-group <name(s)>"
+.IP "--group <name(s)>"
 Group names of faces to select
 .B
-.IP "-invsel"
+.IP "--invsel"
 Invert selection
 .SH SEE ALSO
 .BR cs_check_consistency (1),
 .BR cs_create (1),
-.BR ecs (1)
+.BR cs_preprocess (1)

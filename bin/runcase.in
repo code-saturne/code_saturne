@@ -231,6 +231,7 @@ exec_prefix=@exec_prefix@
 bindir=@bindir@
 datarootdir=@datarootdir@
 datadir=@datadir@
+pkgdatadir=${datadir}/@PACKAGE@
 #
 # Preprocessor installation parameters
 #
@@ -358,7 +359,7 @@ CS_MPI_PATH=@MPI_BIN@
 # MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
 # defined by the sourced script, and PATH may be updated.
 #
-. ${bindir}/runcase_mpi_env
+. ${pkgdatadir}/runcase_mpi_env
 #
 # Check for the number of requested processors
 nproc_kernel="${NUMBER_OF_PROCESSORS}"
@@ -401,7 +402,7 @@ fi
 #
 # In parallel mode, the corresponding argument must be set
 if [ $nproc_kernel -gt 1 ] ; then
-  ARG_CS_MPI=" -mpi"
+  ARG_CS_MPI=" --mpi"
 else
   ARG_CS_MPI=""
 fi
@@ -527,7 +528,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
   if [ $SYRTHES_COUPLING = yes ] ; then
 
-    ${bindir}/runcase_syrthes -compile \
+    ${pkgdatadir}/runcase_syrthes -compile \
       -syrcs-dir=${syrcs_prefix} -src-syr=${SRC_SYR} \
       -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log
 
@@ -665,7 +666,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   #
   if [ $SYRTHES_COUPLING = yes ] ; then
     #
-    ${bindir}/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
+    ${pkgdatadir}/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
     #
   fi
   #
@@ -729,7 +730,7 @@ echo '  ----------------------------------------------------'  >>$summary
 echo '    Exec. dir.      : ' $RUN                             >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 if [ "$EXEC_PREPROCESSOR" = "yes" ] ; then
-  echo '    Preprocessor    : ' ${ecs_bindir}/ecs              >>$summary
+  echo '    Preprocessor    : ' ${ecs_bindir}/cs_preprocess    >>$summary
 fi
 if [ "$EXEC_PARTITION" = "yes" ] ; then
   echo '    Partitioner     : ' ${ecs_bindir}/cs_partition     >>$summary
@@ -750,7 +751,7 @@ echo
 #
 if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
   #
-  ${ecs_bindir}/ecs -mesh $MESH "-case" $CASE \
+  ${ecs_bindir}/cs_preprocess --mesh $MESH "--case" $CASE \
                    $COMMAND_REORIENT $COMMAND_JOIN $COMMAND_PERIO \
                    > listpre 2>&1
   if [ $? != 0 ] ; then
@@ -831,12 +832,12 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
-    echo "MPI_RANK=\`${bindir}/runcase_mpi_rank \$@\`" >> $localexec
+    echo "MPI_RANK=\`${pkgdatadir}/runcase_mpi_rank \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
     echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
     echo "else" >> $localexec
-    echo "  $VALGRIND $RUN/$EXE \$@ -mpi 1 $COMMAND_CWF "\
+    echo "  $VALGRIND $RUN/$EXE \$@ --mpi 1 $COMMAND_CWF "\
          "$ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM " >> $localexec
     echo "fi" >> $localexec
     echo "retour=\$?" >> $localexec
@@ -890,7 +891,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     #
   else # cas SOLCOM = 1
     #
-    $VALGRIND $RUN/$EXE -solcom \
+    $VALGRIND $RUN/$EXE --solcom \
           $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM \
           || EXECUTION_ERROR=true
     #
@@ -1074,7 +1075,7 @@ if [ $EXEC_KERNEL = yes ] ; then
   done
 
   if [ $SYRTHES_COUPLING = yes ] ; then
-    ${bindir}/runcase_syrthes -copy-results \
+    ${pkgdatadir}/runcase_syrthes -copy-results \
       -result-dir=${RESU}/RESU_SYR.${SUFFIX}
   fi
 

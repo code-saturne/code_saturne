@@ -80,10 +80,10 @@ def run_check(opts):
 
     cur_dir = os.getcwd()
 
-    cmd = os.path.join(cs_config.dirs.ecs_bindir, 'ecs')
+    cmd = os.path.join(cs_config.dirs.ecs_bindir, 'cs_preprocess')
     for o in opts:
         cmd = cmd + " " + str(o)
-    cmd = cmd + " -ens -case check_mesh"
+    cmd = cmd + " --ensight --case check_mesh"
     retval = run_command(cmd)
 
     os.chdir('check_mesh.ensight')

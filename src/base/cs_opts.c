@@ -115,11 +115,11 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("\nCommand line options:\n\n"));
   fprintf
-    (e, _(" -solcom           stand-alone kernel with \"geomet\" mesh in\n"
+    (e, _(" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
           "                   SolCom format (obsolete)\n"));
 #if defined(HAVE_MPI)
   fprintf
-    (e, _(" -mpi, --mpi       use MPI for parallelism or coupling\n"
+    (e, _(" --mpi             use MPI for parallelism or coupling\n"
           "                   [appnum]: number of this application in\n"
           "                             case of code coupling (default: 0)\n"));
 
@@ -127,7 +127,7 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -q, --quality     mesh quality verification mode\n"));
   fprintf
-    (e, _(" -cwf              <criterion> cut warped faces\n"
+    (e, _(" --cwf             <criterion> cut warped faces\n"
           "                    -post: activate the post-processing related\n"
           "                           to the cutting of warped faces\n"));
   fprintf
@@ -419,6 +419,8 @@ cs_opts_mpi_init(int    *argc,
 #elif defined(OPEN_MPI)
   if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)
     use_mpi = true;
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
+    use_mpi = true;
 
 #elif defined(MPICH2)
   if (getenv("PMI_RANK") != NULL)
@@ -452,7 +454,7 @@ cs_opts_mpi_init(int    *argc,
 
     /* Parallel run */
 
-    if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
+    if (strcmp(s, "--mpi") == 0) {
       cs_int_t tmperr = 0;
       int _appnum = 0;
       use_mpi = true;
@@ -554,12 +556,12 @@ cs_opts_define(int         argc,
 
     s = argv[arg_id];
 
-    if (strcmp(s, "-solcom") == 0)
+    if (strcmp(s, "--solcom") == 0)
       opts->ifoenv = 0;
 
 #if defined(HAVE_MPI)
 
-    else if (strcmp(s, "-mpi") == 0 || strcmp(s, "--mpi") == 0) {
+    else if (strcmp(s, "--mpi") == 0) {
       cs_int_t tmperr = 0;
       (void)_arg_to_int(arg_id + 1, argc, argv, &tmperr);
       if (tmperr == 0) {
@@ -613,7 +615,7 @@ cs_opts_define(int         argc,
     }
 #endif
 
-    else if (strcmp(s, "-cwf") == 0) {
+    else if (strcmp(s, "--cwf") == 0) {
       opts->cwf = true;
       if (arg_id + 1 < argc) {
         if (*(argv[arg_id+1]) != '-') {
@@ -623,7 +625,7 @@ cs_opts_define(int         argc,
         }
       }
       if (arg_id + 1 < argc) {
-        if (strcmp((argv[arg_id+1]), "-post") == 0) {
+        if (strcmp((argv[arg_id+1]), "--post") == 0) {
           opts->cwf_post = true;
           arg_id++;
         }

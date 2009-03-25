@@ -13,7 +13,7 @@ WARNING: .slc and .tlc formats are obsolete and their use is deprecated.
 The variable COMMAND_REORIENT is used by the preprocessor to reorient cells and
 faces in case of incorrect orientation.
 
-    COMMAND_REORIENT="-reorient"
+    COMMAND_REORIENT="--reorient"
 
   If no correction is necessary, the variable COMMAND_REORIENT is left emtpy, as:
 
@@ -32,7 +32,7 @@ To join meshes with the preprocessor, additional options must be defined:
      titi.des and toto.unv are joined as:
 
     MESH="titi.des toto.unv"
-    COMMAND_JOIN="-j -color 3 4 6"
+    COMMAND_JOIN="-j --color 3 4 6"
 
   If no joining is necessary, the variable COMMAND_JOIN is left emtpy, as:
 
@@ -50,7 +50,7 @@ The variable COMMAND_CWF is used to cut the faces whose warp angle is larger
   than a given tolerance (in degrees). For instance, if the tolerance
   angle is 0.01 degrees (default value), the command reads:
 
-    COMMAND_CWF="-cwf 0.01"
+    COMMAND_CWF="--cwf 0.01"
 
   If the user wants to use the mesh as obtained by the mesh generator,
     COMMAND_CWF is left empty, as:
@@ -60,29 +60,29 @@ The variable COMMAND_CWF is used to cut the faces whose warp angle is larger
                -------------------------------
 
 When periodicity applies, COMMAND_PERIO is used by the preprocessor,
-  with the option -perio:
+  with the option --perio:
 
   Two types of periodicity are possible: translation and rotation.
-    Translation : -perio -trans tx ty tz
+    Translation : --perio --trans tx ty tz
       (tx,ty,tz): vector components
     Rotation    : two methods are possible
       - the angle, the direction and an invariant point are given:
-        -perio -rota -angle a -dir dx dy dz -invpt px py pz
+        --perio --rota --angle a --dir dx dy dz --invpt px py pz
           a         : angle in degrees (between -180 and +180)
           (dx,dy,dz): rotation axis vector components
           (px,py,pz): rotation invariant point components
       - the matrix and an invariant point are given:
-        -perio -rota -matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 -invpt px py pz
+        --perio --rota --matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 --invpt px py pz
           mij       : matrix elements (line by line)
           (px,py,pz): rotation invariant point components
 
   Translation and rotation can be used together:
-        -perio -trans tx ty tz -rota -angle a
-                                     -dir dx dy dz -invpt px py pz
-     or -perio -trans tx ty tz -rota -matrix m11 m12 m13
-                                             m21 m22 m23
-                                             m31 m32 m33
-                                     -invpt   px py pz
+        --perio --trans tx ty tz --rota --angle a
+                                        --dir dx dy dz -invpt px py pz
+     or --perio --trans tx ty tz --rota --matrix m11 m12 m13
+                                                 m21 m22 m23
+                                                 m31 m32 m33
+                                        --invpt px py pz
     The result is RoT (whatever the order of the rotation and translation in
       the command line).
 
@@ -92,11 +92,11 @@ When periodicity applies, COMMAND_PERIO is used by the preprocessor,
     property of these faces, with their color for instance (faces
     can be selected by other means than their color: see ecs -h for more
     details), for instance:
-      -perio -trans 10 0 0 -color 1 2
+      --perio --trans 10 0 0 --color 1 2
 
   Up to 3 periodicity directions can be imposed (one per spacial direction),
     for example:
-    -perio -trans 10 0 0 -perio -trans 0 1 0 -perio -trans 0 0 1
+    --perio --trans 10 0 0 --perio --trans 0 1 0 --perio --trans 0 0 1
 
   If periodicity does not apply, COMMAND_PERIO is left empty as:
 
@@ -104,13 +104,13 @@ When periodicity applies, COMMAND_PERIO is used by the preprocessor,
 
   Example ("\" shows the continuation of the command line):
 
-    COMMAND_PERIO="-perio -trans -10.2 0 0 -color 2               \
-                   -perio -rota -angle 90 -dir 0 0 1 -invpt 0 0 0 \
-                          -color 3 4                              \
-                   -perio -trans 0 1 0                            \
-                          -rota -matrix 1 0  0                    \
-                                        0 0 -1                    \
-                                        0 1  0 -invpt 0 0 -0.2    "
+    COMMAND_PERIO="--perio --trans -10.2 0 0 --color 2                 \
+                   --perio --rota --angle 90 --dir 0 0 1 --invpt 0 0 0 \
+                           --color 3 4                                 \
+                   --perio --trans 0 1 0                               \
+                           --rota --matrix 1 0  0                      \
+                                           0 0 -1                      \
+                                           0 1  0 --invpt 0 0 -0.2"
 
                -------------------------------
 

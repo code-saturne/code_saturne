@@ -98,7 +98,7 @@ def compile_and_link(srcdir, destdir, optlibs):
         cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " " + cs_config.build.ccflags
+        cmd = cmd + " " + cs_config.build.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1

@@ -38,10 +38,10 @@ equations, on a mesh given by the
 created by the Code_Saturne preprocessor.
 .SH OPTIONS
 .B
-.IP -solcom
+.IP --solcom
 Stand-alone kernel with "geomet" mesh in SolCom format (obsolete).
 .B
-.IP "-mpi, --mpi [appnum]"
+.IP "--mpi [appnum]"
 Use MPI for parallelism or coupling. In case of code coupling,
 .B appnum
 gives the number of this application (default: 0).
@@ -49,7 +49,7 @@ gives the number of this application (default: 0).
 .IP "-q, --quality"
 Mesh quality verification mode.
 .B
-.IP "-cwf <criterion> [-post]"
+.IP "--cwf <criterion> [--post]"
 Cut warped faces. Set the
 .B  post
 option to activate the post-processing related to the cutting of
@@ -85,5 +85,5 @@ Print a usage message and exit.
 Name of memory operations trace file.
 .SH SEE ALSO
 .BR cs_create (1),
-.BR ecs (1)
+.BR cs_preprocess (1)
 
