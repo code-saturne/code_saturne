@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# @configure_input@
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne User Interface, element of the
@@ -31,11 +32,9 @@
 This module describes the script used to display information on Code_Saturne.
 
 This module defines the following functions:
-- usage
 - process_cmd_line
 - print_version
 - launch_manual
-- launch_usage
 """
 
 
@@ -44,7 +43,8 @@ This module defines the following functions:
 #-------------------------------------------------------------------------------
 
 
-import os, sys, pwd, shutil, stat, getopt
+import os, sys, pwd, shutil, stat
+from optparse import OptionParser
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
 prefix = "@prefix@"
@@ -54,51 +54,13 @@ sys.path.insert(0, pkgpythondir)
 
 import cs_config
 
-#-------------------------------------------------------------------------------
-# Usage/help message
-#-------------------------------------------------------------------------------
-
-
-def usage():
-    """
-    Usage of cs_info script.
-    """
-
-    msg = """
-Usage:  cs_info [option] [topics]
-
-  Valid option is one of the following:
-
-    -r [PDF reader]
-    --reader [PDF reader]
-
-        Specifies the PDF reader used to display manuals.
-
-    -h
-    --help
-
-        Prints this message.
-
-  Valid topics are one of the following:
-
-    version    : Code_Saturne version
-
-    user       : Code_Saturne solver user manual
-    theory     : Code_Saturne solver theory and programmer's manual
-    tutorial   : Code_Saturne tutorial
-
-    cs_solver  : usage for the Kernel module
-    ecs        : usage for the Preprocessor module
-    """
-    return msg
-
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line(arg):
+def process_cmd_line():
     """
     Processes the passed command line arguments.
     
@@ -109,45 +71,31 @@ def process_cmd_line(arg):
              string is split to create a list of arguments.
     """
 
-    options = "hr:"
-    long_opts = ['help','reader=']
+    parser = OptionParser(usage="usage: %prog [options]")
 
-    try:
-        opts, args = getopt.getopt(arg, options, long_opts)
-    except getopt.error, msg:
-        print "\nWarning:\n", msg
-        print usage()
-        print "Warning:\n", msg, "\n"
+    parser.add_option("-r", "--reader", dest="pdf_reader", type="string",
+                      metavar="<pdfreader>",
+                      help="define a pdf reader")
+
+    parser.add_option("-g", "--guide", dest="guides", type="string",
+                      metavar="<guide>", action="append",
+                      help="open a given manual [user, theory, tutorial]")
+
+    parser.add_option("--version", dest="version",
+                      action="store_true",
+                      help="print Code_Saturne version number")
+
+    parser.set_defaults(pdf_reader="kpdf")
+    parser.set_defaults(guides=[])
+    parser.set_defaults(version=False)
+
+    (options, args) = parser.parse_args()
+
+    if len(args) > 0:
+        parser.print_help()
         sys.exit(1)
 
-    usages  = []
-    manuals = []
-    reader  = 'kpdf'
-    version = False
-
-    for o, a in opts:
-        if o in ('-r', '--reader'):
-            reader = a
-        if o in ('-h', '--help'):
-            print usage()
-            sys.exit(1)
-
-    if len(args) == 0:
-        print usage()
-        sys.exit(1)
-
-    for a in args:
-        if a in ('version'):
-            version = True
-        elif a in ('user','theory','tutorial'):
-            manuals.append(a)
-        elif a in ('cs_solver','ecs'):
-            usages.append(a)
-        else:
-            print usage()
-            sys.exit(1)
-
-    return usages, manuals, reader, version
+    return options.guides, options.pdf_reader, options.version
 
 
 #-------------------------------------------------------------------------------
@@ -186,36 +134,19 @@ def launch_manual(reader, m):
 
 
 #-------------------------------------------------------------------------------
-# Launch the help
-#-------------------------------------------------------------------------------
-
-
-def launch_usage(u):
-    """
-    Launch the corresponding usage help.
-    """
-
-    cmd = os.path.join(cs_config.dirs.prefix, u) + ' -h &'
-    os.system(cmd)
-
-
-#-------------------------------------------------------------------------------
 # Creation of the study directory
 #-------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
 
-    usages, manuals, reader, version = process_cmd_line(sys.argv[1:])
+    manuals, reader, version = process_cmd_line()
 
     if version:
         print_version()
         
     for m in manuals:
         launch_manual(reader, m)
-
-    for u in usages:
-        launch_usage(u)
 
 
 #-------------------------------------------------------------------------------

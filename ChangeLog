@@ -1,4 +1,19 @@
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
+  Move from getopt to optparse module in Python scripts to handle
+  the command line.
+  Add a --force option to the compilation script (in case no source
+  files are present).
+  Change some missing classical short/long options in some scripts.
+  modified scripts:
+    bin/cs_check_consistency
+    bin/cs_check_mesh.in
+    bin/cs_compile.in
+    bin/cs_create.in
+    bin/cs_info.in
+    bin/cs_plot_probes
+    bin/runcase.in
+
+* 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Use the new cs_preprocess name for autoconf detection.
   Add a PYTHONPATH variable export in order to be able to launch
   the GUI correctly.

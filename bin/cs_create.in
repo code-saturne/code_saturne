@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -39,8 +40,9 @@ and the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, pwd, shutil, stat, getopt
+import os, sys, pwd, shutil, stat
 import types, string, re
+from optparse import OptionParser
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
 prefix = "@prefix@"
@@ -50,99 +52,52 @@ sys.path.insert(0, pkgpythondir)
 
 import cs_config
 
-#-------------------------------------------------------------------------------
-# Usage/help message
-#-------------------------------------------------------------------------------
-
-
-def usage():
-    """
-    Usage of cs_create script.
-    """
-
-    documentation = os.path.join(cs_config.dirs.pdfdir, 'user.pdf')
-
-    msg = """
-Usage:  cs_create [options] [cases names]
-
-  Valid options are one or more of the following:
-
-    -n
-    --nogui
-    
-        Specifies not to use the GUI of Code_Saturne.
-
-    -s [study name]
-    --study [study name]
-
-        Creates a new study.
-
-    -h
-    --help
-
-        Prints this message
-
-  For more detailed informations about Code_Saturne, please type:
-    
-    acroread %(doc)s
-
-  Examples:
-
-    cs_create --nogui --study study_name
-    cs_create --study study_name case_1 case_2
-    cs_create --nogui case_1 case_2
-    """ % { 'doc': documentation }
-    return msg
-
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line(arg):
+def process_cmd_line():
     """
     Processes the passed command line arguments.
-    
-    Input Argument:
-      arg -- This can be either a list of arguments as in
-             sys.argv[1:] or a string that is similar to the one
-             passed on the command line.  If it is a string the
-             string is split to create a list of arguments.
-    Returned Values:
-      case -- Name of the file. If the variable case is set 
-              to "new case" SaturneGUI is open with a new case.
     """
 
-    options = "hs:n"
-    long_opts = ['help', 'study=', 'nogui']
+    parser = OptionParser(usage="usage: %prog [options]")
 
-    try:
-        opts, args = getopt.getopt(arg, options, long_opts)
-    except getopt.error, msg:
-        print "\nWarning:\n", msg
-        print usage()
-        print "Warning:\n", msg, "\n"
-        sys.exit(1)
+    parser.add_option("-s", "--study", dest="study_name", type="string",
+                      metavar="<study>",
+                      help="create a new study")
 
-    use_gui = True
-    study_name = os.path.basename(os.getcwd())
-    cases_names = ['CASE1']
-    number_of_instances = 1
+    parser.add_option("-c", "--case", dest="cases_name", type="string",
+                      metavar="<case>", action="append",
+                      help="create a new case")
 
-    for o, a in opts:
-        if o in ('-n', '--nogui'):
-            use_gui = False
-        if o in ('-s', '--study'):
-            study_name = string.upper(a)
-        if o in ('-h', '--help'):
-            print usage()
-            sys.exit(1)
+    parser.add_option("-n", "--nogui", dest="use_gui",
+                      action="store_false",
+                      help="don't use the GUI")
 
-    if (len(args) > 0):
-        cases_names = args
+    parser.add_option("--nsat", dest="n_sat", type="int",
+                      metavar="<nsat>",
+                      help="specify the number of Code_Saturne instances")
 
-    return use_gui, study_name, cases_names, number_of_instances
+    parser.set_defaults(use_gui=True)
+    parser.set_defaults(study_name=os.path.basename(os.getcwd()))
+    parser.set_defaults(cases_name=[])
+    parser.set_defaults(n_sat=1)
+
+    (options, args) = parser.parse_args()
+
+    if options.cases_name == []:
+        if len(args) > 0:
+            options.cases_name = args
+        else:
+            options.cases_name = ["CASE1"]
+
+    return Study(options.study_name,
+                 options.cases_name,
+                 options.use_gui,
+                 options.n_sat)
 
 
 #-------------------------------------------------------------------------------
@@ -212,17 +167,17 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, use_gui, instances):
+    def __init__(self, name, cases, use_gui, n_sat):
         """
         Initialize the structure for a study.
         """
         
-        self.name = name
+        self.name = string.upper(name)
         self.cases = []
         for c in cases:
             self.cases.append(string.upper(c))
-        self.number_instances = instances
         self.use_gui = use_gui
+        self.n_sat = n_sat
 
 
     def create(self):
@@ -260,11 +215,11 @@ class Study:
 
         # Loop for dependancy on the number of instances of Code_Saturne
 
-        for i in range(self.number_instances):
+        for i in range(self.n_sat):
 
             # Data directory
 
-            if self.number_instances == 1:
+            if self.n_sat == 1:
                 data = 'DATA'
             else:
                 data = 'DATA.%(inst)d' % { 'inst' : i+1 }
@@ -287,7 +242,7 @@ class Study:
 
             # User source files directory
 
-            if self.number_instances == 1:
+            if self.n_sat == 1:
                 src = 'SRC'
             else:
                 src = 'SRC.%(inst)d' % { 'inst' : i+1 }
@@ -299,7 +254,7 @@ class Study:
 
             for file in ['usini1.f90','usalin.f90']:
                 f = os.path.join(users, 'base', file)
-                comments(f, use_gui)
+                comments(f, self.use_gui)
 
 
         # Results directory (only one for all instances)
@@ -315,12 +270,12 @@ class Study:
         
         shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
 
-        if number_instances == 1:
+        if self.n_sat == 1:
             shutil.copy(os.path.join(datadir, 'runcase'), scripts)
             runcase = os.path.join(scripts, 'runcase')
         else:
             shutil.copy(os.path.join(datadir, 'runcase_coupling'), scripts)
-            runcase = os.path.join(scripts, 'runcase')
+            runcase = os.path.join(scripts, 'runcase_coupling')
 
         kwd1 = re.compile('nameandcase')
         kwd2 = re.compile('STUDYNAME')
@@ -358,9 +313,11 @@ class Study:
         Dump the structure of a study.
         """
         
-        print "Name  of the study  :", myStudy.name
-        print "Names of the cases  :", myStudy.cases
-        print "Use of the GUI      :", myStudy.use_gui
+        print "Name  of the study:", self.name
+        print "Names of the cases:", self.cases
+        print "Use of the GUI:", self.use_gui
+        if self.n_sat > 1:
+            print "Number of Code_Saturne instances:", self.n_sat
         print
 
         
@@ -378,11 +335,10 @@ if __name__ == "__main__":
 =================================================================
     """ % { 'csvers': cs_config.package.version }
     
-    use_gui, name, cases, number_instances = process_cmd_line(sys.argv[1:])
+    myStudy = process_cmd_line()
 
     print welcome
 
-    myStudy = Study(name, cases, use_gui, number_instances)
     myStudy.dump()
     myStudy.create()
 

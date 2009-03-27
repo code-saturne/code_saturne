@@ -21,11 +21,36 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-import getopt
 import os
 import sys
 import subprocess
 import tempfile
+from optparse import OptionParser
+
+#-------------------------------------------------------------------------------
+
+def process_cmd_line():
+    """
+    Processes the passed command line arguments.
+    
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string the
+             string is split to create a list of arguments.
+    """
+
+    parser = OptionParser(usage="usage: %prog <monitoring file>")
+
+    (options, args) = parser.parse_args()
+
+    if len(args) == 1:
+        file = args[0]
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+    return file
 
 #-------------------------------------------------------------------------------
 
@@ -69,37 +94,12 @@ def plot(f):
 
 #-------------------------------------------------------------------------------
 
-def usage():
-    """
-    Indicate usage.
-    """
-    print "Usage: " + sys.argv[0] + " <monitoring file>"
-    print "-h, --help              print this message"
-
-#-------------------------------------------------------------------------------
-
 def main(argv):
     """
     Main function.
     """
 
-    try:
-        opts, args = getopt.getopt(argv, "h", ["help"])
-    except getopt.GetoptError, err:
-        print str(err)
-        usage()
-        sys.exit(1)
-
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            usage()
-            sys.exit(0)
-        
-    if (len(args) == 1):
-        file = args[0]
-    else:
-        usage()
-        sys.exit(0)
+    file = process_cmd_line()
 
     retcode = plot(file)
 

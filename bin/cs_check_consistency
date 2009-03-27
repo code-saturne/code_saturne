@@ -26,24 +26,65 @@
 
 
 import os, sys
-import getopt
+from optparse import OptionParser
 
 
 #-------------------------------------------------------------------------------
-# Usage
+# Process command line
 #-------------------------------------------------------------------------------
 
+def process_cmd_line():
+    """
+    Processes the passed command line arguments.
+    
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string the
+             string is split to create a list of arguments.
+    """
 
-def usage():
-    """
-    Indicate usage.
-    """
-    print "Usage: " + sys.argv[0] + " [options]"
-    print "Options:"
-    print "-h, --help              print this message"
-    print "-n, --nproc             number of processors"
-    print "-p, --param             parameters file"
-    print "-s, --source=<src_dir>  choose source file directory"
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("-p", "--param", dest="param", type="string",
+                      metavar="<param>",
+                      help="give the parameters file")
+
+    parser.add_option("-s", "--source", dest="src_dir", type="string",
+                      metavar="<src_dir>",
+                      help="choose source file directory")
+
+    parser.add_option("-n", "--nproc", dest="nproc", type="int",
+                      metavar="<nproc>",
+                      help="specify the number of processors")
+
+    parser.set_defaults(param="")
+    parser.set_defaults(src_dir=os.getcwd())
+    parser.set_defaults(nproc=1)
+
+    (options, args) = parser.parse_args()
+
+    if len(args) > 0:
+        parser.print_help()
+        sys.exit(1)
+
+    param = options.param
+    if param != "":
+        param = os.path.expanduser(options.param)
+        param = os.path.expandvars(param)
+        param = os.path.abspath(param)
+        if not os.path.isfile(param):
+            print "Error: cannot access to %s parameter file" % param
+            sys.exit(1)
+
+    src_dir = os.path.expanduser(options.src_dir)
+    src_dir = os.path.expandvars(src_dir)
+    src_dir = os.path.abspath(src_dir)
+    if not os.path.isdir(src_dir):
+        print "Error: %s is not a directory" % src_dir
+        sys.exit(1)
+
+    return options.nproc, param, src_dir
 
 
 #-------------------------------------------------------------------------------
@@ -151,36 +192,6 @@ def checkConsistency(n_procs, param, src_dir):
 
 if __name__ == "__main__":
 
-    src_dir = os.getcwd()
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],
-                                   "hn:p:s:",
-                                   ["help", "nproc=", "param=", "source="])
-    except getopt.GetoptError, err:
-        print str(err)
-        usage()
-        sys.exit(1)
-
-    n_procs = 1
-    param = ""
-    src_dir = os.getcwd()
-
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            usage()
-            sys.exit(0)
-        elif opt in ("-n", "--nproc"):
-            n_procs = arg
-        elif opt in ("-p", "--param"):
-            param = arg
-            param = os.path.expanduser(param)
-            param = os.path.expandvars(param)
-            param = os.path.abspath(param)
-        elif opt in ("-s", "--source"):
-            src_dir = arg
-            src_dir = os.path.expanduser(src_dir)
-            src_dir = os.path.expandvars(src_dir)
-            src_dir = os.path.abspath(src_dir)
+    n_procs, param, src_dir = process_cmd_line()
         
     checkConsistency(n_procs, param, src_dir)

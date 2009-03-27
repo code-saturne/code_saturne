@@ -22,11 +22,12 @@
 #-------------------------------------------------------------------------------
 
 import fnmatch
-import getopt
 import os
 import sys
 import subprocess
 import tempfile
+
+from optparse import OptionParser
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
 prefix = "@prefix@"
@@ -35,6 +36,69 @@ pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
 sys.path.insert(0, pkgpythondir)
 
 import cs_config
+
+#-------------------------------------------------------------------------------
+
+def process_cmd_line():
+    """
+    Processes the passed command line arguments.
+    
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string the
+             string is split to create a list of arguments.
+    """
+
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("-t", "--test", dest="test_mode",
+                      action="store_true",
+                      help="test only, discard compilation result")
+
+    parser.add_option("-f", "--force", dest="force_link",
+                      action="store_true",
+                      help="force link, even with no source files")
+
+    parser.add_option("-s", "--source", dest="src_dir", type="string",
+                      metavar="<src_dir>",
+                      help="choose source file directory")
+
+    parser.add_option("-d", "--dest", dest="dest_dir", type="string",
+                      metavar="<dest_dir>",
+                      help="choose executable file directory")
+
+    parser.add_option("--opt-libs", dest="libs", type="string",
+                      metavar="<libs>",
+                      help="print Code_Saturne version number")
+
+    parser.set_defaults(test_mode=False)
+    parser.set_defaults(force_link=False)
+    parser.set_defaults(src_dir=os.getcwd())
+    parser.set_defaults(dest_dir=os.getcwd())
+    parser.set_defaults(opt_libs="")
+
+    (options, args) = parser.parse_args()
+
+    if len(args) > 0:
+        parser.print_help()
+        sys.exit(1)
+
+    src_dir = os.path.expanduser(options.src_dir)
+    src_dir = os.path.expandvars(src_dir)
+    src_dir = os.path.abspath(src_dir)
+    if not os.path.isdir(src_dir):
+        print "Error: %s is not a directory" % src_dir
+        sys.exit(1)
+
+    dest_dir = os.path.expanduser(options.dest_dir)
+    dest_dir = os.path.expandvars(dest_dir)
+    dest_dir = os.path.abspath(dest_dir)
+    if not os.path.isdir(dest_dir):
+        print "Error: %s is not a directory" % dest_dir
+        sys.exit(1)
+
+    return options.test_mode, options.force_link, src_dir, dest_dir, options.opt_libs
 
 #-------------------------------------------------------------------------------
 
@@ -75,7 +139,7 @@ def run_command(cmd):
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link(srcdir, destdir, optlibs):
+def compile_and_link(srcdir, destdir, optlibs, force_link):
     """
     Compilation and link function.
     """
@@ -119,7 +183,7 @@ def compile_and_link(srcdir, destdir, optlibs):
         if run_command(cmd) != 0:
             retval = 1
 
-    if retval == 0:
+    if retval == 0 and (force_link or (len(c_files) + len(f_files)) > 0):
         cmd = cs_config.build.cc
         cmd = cmd + " -o " + exec_name
         if (len(c_files) + len(f_files)) > 0:
@@ -148,63 +212,17 @@ def compile_and_link(srcdir, destdir, optlibs):
 
 #-------------------------------------------------------------------------------
 
-def usage():
-    """
-    Indicate usage.
-    """
-    print "Usage: " + sys.argv[0] + " [options]"
-    print "Options:"
-    print "-h, --help              print this message"
-    print "-t, --test              test only, discard compilation result"
-    print "-s, --source=<src_dir>  choose source file directory"
-    print "-d, --dest=<dest_dir>   choose executable file directory"
-    print "--opt-libs=<libs>       additional libraries to link"
-
-#-------------------------------------------------------------------------------
-
 def main(argv):
     """
     Main function.
     """
 
-    src_dir = os.getcwd()
-    dest_dir = os.getcwd()
-    opt_libs = ""
-    test_mode = False
-
-    try:
-        opts, args = getopt.getopt(argv,
-                                   "hts:d:",
-                                   ["help", "test", "source=", "dest=", "opt-libs="])
-    except getopt.GetoptError, err:
-        print str(err)
-        usage()
-        sys.exit(1)
-
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            usage()
-            sys.exit(0)
-        elif opt in ("-t", "--test"):
-            test_mode = True
-        elif opt in ("-s", "--source"):
-            src_dir = arg
-            src_dir = os.path.expanduser(src_dir)
-            src_dir = os.path.expandvars(src_dir)
-            src_dir = os.path.abspath(src_dir)
-        elif opt in ("-d", "--dest"):
-            dest_dir = arg
-            dest_dir = os.path.expanduser(dest_dir)
-            dest_dir = os.path.expandvars(dest_dir)
-            dest_dir = os.path.abspath(dest_dir)
-        elif opt == "--opt-libs":
-            opt_libs = arg
+    test_mode, force_link, src_dir, dest_dir, opt_libs = process_cmd_line()
         
-
     if test_mode == True:
         dest_dir = None
 
-    retcode = compile_and_link(src_dir, dest_dir, opt_libs)
+    retcode = compile_and_link(src_dir, dest_dir, opt_libs, force_link)
 
     sys.exit(retcode)
 
