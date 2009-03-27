@@ -121,28 +121,9 @@ $(top_srcdir)/include/base/vortex.h
 
 # Library source files
 
-lib_LTLIBRARIES = libsaturne.la
-libsaturne_la_SOURCES =
-libsaturne_la_LIBADD = \
-$(top_builddir)/src/atmo/libcsatmo.la \
-$(top_builddir)/src/cfbl/libcscfbl.la \
-$(top_builddir)/src/cogz/libcscogz.la \
-$(top_builddir)/src/cplv/libcscplv.la \
-$(top_builddir)/src/ctwr/libcsctwr.la \
-$(top_builddir)/src/elec/libcselec.la \
-$(top_builddir)/src/fuel/libcsfuel.la \
-$(top_builddir)/src/lagr/libcslagr.la \
-$(top_builddir)/src/mati/libcsmati.la \
-$(top_builddir)/src/pprt/libcspprt.la \
-$(top_builddir)/src/rayt/libcsrayt.la
-libsaturne_la_LDFLAGS = -no-undefined
-
-####
-
 noinst_LTLIBRARIES = libcshot.la \
                      libcsbase.la
 
-libsaturne_la_LIBADD += libcshot.la
 libcshot_la_CFLAGS = @CFLAGS_DBG@ @CFLAGS_HOT@
 libcshot_la_FCFLAGS = \
 -I$(top_srcdir)/include/base \
@@ -173,8 +154,6 @@ libcshot_la_LDFLAGS = @LDFLAGS_DBG@ @LDFLAGS_HOT@ -no-undefined
 
 ###
 
-#noinst_LTLIBRARIES = libcsbase.la
-libsaturne_la_LIBADD += libcsbase.la
 libcsbase_la_SOURCES = \
 alelap.f90 \
 alemaj.f90 \
@@ -228,7 +207,6 @@ cs_halo.c \
 csinit.f90 \
 cs_interpr_util.f90 \
 cs_io.c \
-cs_main.c \
 cs_mesh.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
@@ -451,15 +429,3 @@ $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90
-
-####
-
-bin_PROGRAMS = cs_solver
-cs_solver_SOURCES =
-cs_solver_LDADD = \
-$(top_builddir)/src/base/libsaturne.la \
-@FVM_LDFLAGS@ @FVM_LIBS@ \
-@BFT_LDFLAGS@ @BFT_LIBS@ \
-@MPI_LDFLAGS@ @MPI_LIBS@ \
-@LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
-@BLAS_LDFLAGS@ @BLAS_LIBS@

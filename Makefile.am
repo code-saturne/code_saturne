@@ -20,6 +20,8 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+SUBDIRS = src po doc
+
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \
 $(top_srcdir)/aclocal.m4 \
@@ -33,10 +35,6 @@ $(ac_aux_dir)/install-sh \
 $(ac_aux_dir)/ltmain.sh \
 $(ac_aux_dir)/missing \
 $(ac_aux_dir)/py-compile
-
-SUBDIRS = src/atmo src/cfbl src/cogz src/cplv src/ctwr src/elec src/fuel \
-          src/lagr src/mati src/pprt src/rayt src/base \
-          po doc
 
 EXTRA_DIST = \
 COMPATIBILITY \

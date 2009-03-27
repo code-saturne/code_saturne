@@ -57,7 +57,7 @@ m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
 AC_INIT([ncs],[cs_version_string],[saturne-support@edf.fr])
-AC_CONFIG_SRCDIR([src/base/cs_main.c])
+AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
 # Use the config directory for libtool stuff ...
 AC_CONFIG_AUX_DIR(config)
@@ -94,7 +94,7 @@ AC_PROG_SED
 
 AC_FC_LIBRARY_LDFLAGS
 
-AM_PATH_PYTHON
+AM_PATH_PYTHON([2.3])
 
 # Debug or production compilation mode (debug by default) ?
 
@@ -480,6 +480,7 @@ cs_config_comments=cs_config_comments_include
 # Main configuration
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
+                 src/Makefile      src/apps/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile

@@ -1,3 +1,20 @@
+* 27/03/2009 - David Monfort <david.monfort@edf.fr>
+  Add an "apps" directory in which the compilation of Code_Saturne
+  main library and applications is done.
+  Rename cs_main.c in cs_solver.c
+  Add the pre-requisite version of Python (2.3).
+  added files:
+    src/apps
+    src/apps/cs_solver.c
+    src/apps/Makefile.am
+    src/Makefile.am
+  removed routine:
+    src/base/cs_main.c
+  modified files:
+    src/base/Makefile.am
+    configure.ac
+    Makefile.am
+
 * 25/03/2009 - David Monfort <david.monfort@edf.fr>
   Temporarily set the architecture name (for EDF purposes), this
   part will be rewritten later on.
