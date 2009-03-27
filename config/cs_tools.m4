@@ -42,7 +42,7 @@ AC_DEFUN([CS_AC_TEST_GUI], [
 
 AC_ARG_WITH(gui, [AS_HELP_STRING([--with-gui=PATH], [specify prefix directory for the GUI])])
 
-AC_CHECK_PROG(ics_prefix, ics, $with_gui, , $with_gui/bin, )
+AC_CHECK_PROG(ics_prefix, cs_gui, $with_gui, , $with_gui/bin, )
 AC_SUBST(ics_prefix)
 
 ])dnl
@@ -64,19 +64,5 @@ if test -f $syrcs_bindir/syr_cs_profile ; then
   syrcs_prefix=$with_syrcs
 fi
 AC_SUBST(syrcs_prefix)
-
-])dnl
-
-
-# CS_AC_TEST_PYTHON()
-#--------------------
-# Check specific Python executable (if needed); defines python_prefix
-
-AC_DEFUN([CS_AC_TEST_PYTHON], [
-
-AC_ARG_WITH(python, [AS_HELP_STRING([--with-python=PATH], [specify prefix directory for Python])])
-
-AC_CHECK_PROG(python_prefix, python, $with_python, , $with_python/bin, )
-AC_SUBST(python_prefix)
 
 ])dnl

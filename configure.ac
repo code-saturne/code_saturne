@@ -94,8 +94,6 @@ AC_PROG_SED
 
 AC_FC_LIBRARY_LDFLAGS
 
-AM_PATH_PYTHON([2.3])
-
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
@@ -343,7 +341,28 @@ CS_AC_TEST_MPI
 CS_AC_TEST_PREPRO
 CS_AC_TEST_GUI
 CS_AC_TEST_SYRCS
-CS_AC_TEST_PYTHON
+
+#------------------------------------------------------------------------------
+# Checks for Python support.
+#------------------------------------------------------------------------------
+
+AC_ARG_WITH(python,
+            [
+	     AS_HELP_STRING(
+	     [--with-python-exec=PATH],
+	     [Path for a python interpreter [default search in $PATH]])
+	    ],
+	    [PYTHON_EXE=${withval}],
+            [PYTHON_EXE=none])dnl
+
+if test "x${PYTHON_EXE}" == "xnone" ; then
+   AC_PATH_PROG([PYEXE], [python], ["no"])
+else
+   AC_PATH_PROG([PYEXE], [python], ["no"], [${PYTHON_EXE}])
+fi
+
+PYTHON=${PYEXE}
+AM_PATH_PYTHON([2.3])
 
 #------------------------------------------------------------------------------
 # Checks for header files.
