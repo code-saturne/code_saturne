@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2009-03-25 16:39+0100\n"
+"POT-Creation-Date: 2009-03-27 15:33+0100\n"
 "PO-Revision-Date: 2009-03-25 16:40+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -17,6 +17,90 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/apps/cs_solver.c:272
+#, c-format
+msgid ""
+"\n"
+" Cutting warped faces (%.3g s)\n"
+msgstr ""
+"\n"
+" Découpage des faces gauches (%.3g s)\n"
+
+#: src/apps/cs_solver.c:278
+msgid ""
+"\n"
+" Renumbering mesh:\n"
+msgstr ""
+"\n"
+" Renumérotation du maillage:\n"
+
+#: src/apps/cs_solver.c:342
+#, c-format
+msgid ""
+"\n"
+" Computing geometric quantities (%.3g s)\n"
+msgstr ""
+"\n"
+" Calcul des grandeurs géométriques (%.3g s)\n"
+
+#: src/apps/cs_solver.c:358
+msgid ""
+"\n"
+" Computing quality criteria\n"
+msgstr ""
+"\n"
+" Calcul des critères de qualité\n"
+
+#: src/apps/cs_solver.c:375
+#, c-format
+msgid ""
+"\n"
+" --- Main Fortran work arrays:\n"
+"       LONGIA =   %10d (Number of integers)\n"
+"       LONGRA =   %10d (Number of reals)\n"
+"       (%d bytes/integer, %d bytes/real)\n"
+msgstr ""
+"\n"
+" --- Tableaux de travail Fortran principaux :\n"
+"       LONGIA =   %10d (Nombre d'entiers)\n"
+"       LONGRA =   %10d (Nombre de réels)\n"
+"       (%d octets/entier, %d octets/réel)\n"
+
+#: src/apps/cs_solver.c:385
+#, c-format
+msgid ""
+"\n"
+" --- Developer Fortran work arrays:\n"
+"       NIDEVE =   %10d (Number of integer)\n"
+"       NRDEVE =   %10d (Number of reals)\n"
+msgstr ""
+"\n"
+" --- Tableaux de travail Fortran développeur :\n"
+"       NIDEVE =   %10d (Nombre d'entiers)\n"
+"       NRDEVE =   %10d (Nombre de réels)\n"
+
+#: src/apps/cs_solver.c:391
+#, c-format
+msgid ""
+"\n"
+" --- User Fortran work arrays:\n"
+"       NITUSE =   %10d (Number of integers)\n"
+"       NRTUSE =   %10d (Number of reals)\n"
+"\n"
+msgstr ""
+"\n"
+" --- Tableaux de travail Fortran utilisateur :\n"
+"       NITUSE =   %10d (Nombre d'entiers)\n"
+"       NRTUSE =   %10d (Nombre de réels)\n"
+
+#: src/apps/cs_solver.c:453
+msgid ""
+"\n"
+" Destroying structures and ending computation\n"
+msgstr ""
+"\n"
+" Destruction des structures et clôture du calcul\n"
 
 #: src/base/cs_base.c:239
 #, c-format
@@ -1513,90 +1597,6 @@ msgstr ""
 "  alignement des corps :        %lu\n"
 "  niveau d'impression :         %ld\n"
 "\n"
-
-#: src/base/cs_main.c:272
-#, c-format
-msgid ""
-"\n"
-" Cutting warped faces (%.3g s)\n"
-msgstr ""
-"\n"
-" Découpage des faces gauches (%.3g s)\n"
-
-#: src/base/cs_main.c:278
-msgid ""
-"\n"
-" Renumbering mesh:\n"
-msgstr ""
-"\n"
-" Renumérotation du maillage:\n"
-
-#: src/base/cs_main.c:342
-#, c-format
-msgid ""
-"\n"
-" Computing geometric quantities (%.3g s)\n"
-msgstr ""
-"\n"
-" Calcul des grandeurs géométriques (%.3g s)\n"
-
-#: src/base/cs_main.c:358
-msgid ""
-"\n"
-" Computing quality criteria\n"
-msgstr ""
-"\n"
-" Calcul des critères de qualité\n"
-
-#: src/base/cs_main.c:375
-#, c-format
-msgid ""
-"\n"
-" --- Main Fortran work arrays:\n"
-"       LONGIA =   %10d (Number of integers)\n"
-"       LONGRA =   %10d (Number of reals)\n"
-"       (%d bytes/integer, %d bytes/real)\n"
-msgstr ""
-"\n"
-" --- Tableaux de travail Fortran principaux :\n"
-"       LONGIA =   %10d (Nombre d'entiers)\n"
-"       LONGRA =   %10d (Nombre de réels)\n"
-"       (%d octets/entier, %d octets/réel)\n"
-
-#: src/base/cs_main.c:385
-#, c-format
-msgid ""
-"\n"
-" --- Developer Fortran work arrays:\n"
-"       NIDEVE =   %10d (Number of integer)\n"
-"       NRDEVE =   %10d (Number of reals)\n"
-msgstr ""
-"\n"
-" --- Tableaux de travail Fortran développeur :\n"
-"       NIDEVE =   %10d (Nombre d'entiers)\n"
-"       NRDEVE =   %10d (Nombre de réels)\n"
-
-#: src/base/cs_main.c:391
-#, c-format
-msgid ""
-"\n"
-" --- User Fortran work arrays:\n"
-"       NITUSE =   %10d (Number of integers)\n"
-"       NRTUSE =   %10d (Number of reals)\n"
-"\n"
-msgstr ""
-"\n"
-" --- Tableaux de travail Fortran utilisateur :\n"
-"       NITUSE =   %10d (Nombre d'entiers)\n"
-"       NRTUSE =   %10d (Nombre de réels)\n"
-
-#: src/base/cs_main.c:453
-msgid ""
-"\n"
-" Destroying structures and ending computation\n"
-msgstr ""
-"\n"
-" Destruction des structures et clôture du calcul\n"
 
 #: src/base/cs_matrix.c:317
 msgid "diagonal + faces"

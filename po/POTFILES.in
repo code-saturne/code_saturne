@@ -1,3 +1,4 @@
+src/apps/cs_solver.c
 src/base/cs_ale.c
 src/base/cs_ast_coupling.c
 src/base/cs_base.c
@@ -15,7 +16,6 @@ src/base/cs_gui_radiative_transfer.c
 src/base/cs_gui_util.c
 src/base/cs_halo.c
 src/base/cs_io.c
-src/base/cs_main.c
 src/base/cs_matrix.c
 src/base/cs_mesh.c
 src/base/cs_mesh_coherency.c

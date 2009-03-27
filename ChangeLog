@@ -1,4 +1,10 @@
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
+  Translation dictionary update.
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+
+* 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Documentation update.
   modified files:
     doc/manpages/cs_check_consistency.1
