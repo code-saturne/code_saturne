@@ -1,3 +1,10 @@
+* 27/03/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Disable OpenMP by default.
+  Add a missing -DHAVE_CONFIG_H in the cs_compile script.
+  modified scripts:
+    bin/cs_compile
+    configure.ac
+
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Add an "apps" directory in which the compilation of Code_Saturne
   main library and applications is done.

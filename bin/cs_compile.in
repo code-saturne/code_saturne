@@ -101,6 +101,7 @@ def compile_and_link(srcdir, destdir, optlibs):
 
     for f in c_files:
         cmd = cs_config.build.cc + " " + cs_config.build.cppflags
+        cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
