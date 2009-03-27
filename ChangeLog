@@ -1,4 +1,13 @@
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
+  Documentation update.
+  modified files:
+    doc/manpages/cs_check_consistency.1
+    doc/manpages/cs_create.1
+    doc/manpages/cs_info.1
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+
+* 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Move from getopt to optparse module in Python scripts to handle
   the command line.
   Add a --force option to the compilation script (in case no source

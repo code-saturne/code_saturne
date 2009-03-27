@@ -102,7 +102,7 @@ implementation, please refer to the reports \cite{mechitoua98} and
 which is newer and more detailed
 (the latest updated version of this document
 is available on-line with the version of \CS and accessible through the command
-\texttt{cs\_info theory}).
+\texttt{cs\_info --guide theory}).
 
 The present document first
 presents all the necessary elements to run a calculation
@@ -138,24 +138,21 @@ For installs outside EDF R\&D, please refer to the administrator who
 installed the code for the \texttt{PATHCS} location.
 
 The current version of \CS (\verscs) is located in the directory
-\texttt{\$PATHCS/Noyau/ncs-\verscs}.
+\texttt{\$PATHCS/Code\_Saturne/\verscs}.
 
 In order to use \CS, every user must add the following line in their file
 ``\texttt{.profile}''\footnote{or \texttt{.monprofile} if the
  modifications of the \texttt{.profile} file are reserved for the
  administrators, as is the case in the MFEE department of EDF}:
 
-\hspace*{2cm}\texttt{. }\texttt{xxxxxxx/Noyau/ncs-\verscs/bin/cs\_profile},
+\hspace*{2cm}\texttt{export PATH=/path/to/saturne/\verscs/bin:\$PATH}\\
 where \texttt{xxxxxxx} represents the PATHCS directory where
 \CS and its components have been installed (refer to the administrator
 responsible for \CS).
 
-This command runs the environment file of \CS, which sets the different
-environment variables to their correct value. {\bf \CS will not work correctly
-if those variables have not been set properly}.\\
-After adding this line to the \texttt{.profile}, it is
-necessary to logout of the session and relog in (simply reading the file by
-typing ``\texttt{. \tildeunix/.profile}'' is usually not enough and might not
+After adding this line to the \texttt{.profile}, it is necessary to
+logout of the session and relog in (simply reading the file by typing
+``\texttt{. \tildeunix/.profile}'' is usually not enough and might not
 set the \texttt{PATH} variable correctly for the whole session).
 
 {\em WARNING: Other pieces of information related
@@ -344,11 +341,9 @@ guides and the tutorial) without the user having to look for them in the \CS
 directories.
 
 
-The subdirectory \texttt{arch} contains the libraries and compiled executables.
-
-\noindent
-The environment variable \texttt{NOM\_ARCH} allows to distinguish the different
-architectures:
+The subdirectory \texttt{arch} contains the libraries and compiled
+executables, followed by a subdirectory allowing to distinguished the
+architectures (named as referenced here after):
 \begin{list}{$\bullet$}{}
 \item\texttt{Blue\_Gene\_L} for the EDF BlueGene/L machine
 \item\texttt{Blue\_Gene\_P} for the EDF BlueGene/P machine
@@ -359,34 +354,12 @@ architectures:
 \end{list}
 
 For each architecture, a subdirectory (named after \texttt{NOM\_ARCH})
-stores the compiled elements
-(\texttt{libsaturne*.a} libraries in \texttt{lib} and executable in
+stores the compiled library (\texttt{libsaturne.so} in \texttt{lib}
+and executable in
 \texttt{bin}\footnote{This executable is used only for standalone mesh
-analysis. In a standard \CS run, the executable is recompiled to allow for user
-routines to be taken into account.}).
-The launch script automatically loads them for
-the standard calculations. The different libraries correspond to the
-different modules of \CS:
-\begin{list}{$\bullet$}{}
-\item\texttt{libsaturneBASE.a} for the basic Kernel,
-\item\texttt{libsaturneCOGZ.a} for the gas combustion module,
-\item\texttt{libsaturneCFBL.a} for the compressible module,
-\item\texttt{libsaturneCPLV.a} for the pulverised coal combustion module,
-\item\texttt{libsaturneELEC.a} for the electric module,
-\item\texttt{libsaturneFUEL.a} for the heavy fuel oil combustion module,
-\item\texttt{libsaturneLAGR.a} for the lagrangian module,
-\item\texttt{libsaturneMATI.a} for the Matisse module,
-\item\texttt{libsaturneRAYT.a} for the radiation module.
-\end{list}
-
-\noindent Different compilation options are available for each module:
-\begin{list}{$\bullet$}{}
-\item DBG for debugging,
-\item LO for low optimisation,
-\item PROF for profiling,
-\end{list}
-Each option is related to a specific library, for instance \texttt{libstaurneBASELO.a}
-for the ``low optimisation'' library of the base module.
+analysis or when no user routines are defined. In a standard \CS run,
+the executable is recompiled to allow for user routines to be taken
+into account.}).
 
 The data files (for instance thermochemical data) are located in the
 directory \texttt{data}.
@@ -431,7 +404,7 @@ prepare and run a standard case:
 \begin{list}{$\bullet$}{}
 
 \item Check the version of \CS set for use in the environment variables
-(\texttt{cs\_info version}). If it does not correspond to the desired version,
+(\texttt{cs\_info --version}). If it does not correspond to the desired version,
 update the \texttt{.profile} file to set the environment
 variables correctly. Log out of the session and
 log in again to take the modifications into account properly (cf.
@@ -762,18 +735,18 @@ pre-fills an example of calculation launch script.
 The syntax of \texttt{cs\_create} is as follows:
 
 \noindent
-\texttt{cs\_create -study STUDY CASE\_NAME1 CASE\_NAME2...}\\
+\texttt{cs\_create --study STUDY CASE\_NAME1 CASE\_NAME2...}\\
 creates a study directory \texttt{STUDY} with case subdirectories
 \texttt{CASE\_NAME1} and \texttt{CASE\_NAME2}...
 If no case name is given, a default case directory called \texttt{CASE1} is
 created.
 
 \noindent
-\texttt{cs\_create -case DEBIT3 DEBIT4}\\
+\texttt{cs\_create --case DEBIT3 --case DEBIT4}\\
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
-An option \texttt{-nogui} is available for the use of \CS
+An option \texttt{--nogui} is available for the use of \CS
 without Graphic Interface (see \S\ref{prg_gui}). This option must
 be either the first or the last argument and appear only once.
 
@@ -1513,18 +1486,17 @@ conditions, the Preprocessor module also identifies the boundary faces that are
 related through periodicity and creates the corresponding connectivity table.
 
 For a complete information on the Preprocessor module, please refer to the
-corresponding user's guide \cite{ecsuser} (available on-line through the command
-\texttt{cs\_info ecs\_user}).
+corresponding user's guide \cite{ecsuser}.
 
 %==================================
 \subsubsection{Preprocessor command line options}
 %==================================
 \label{prg_optappelecs}%
 A complete description of the Preprocessor command line options can be found in
-\cite{ecsmu}. The executable of the Preprocessor module is \texttt{cs_preprocess},
+\cite{ecsmu}. The executable of the Preprocessor module is \texttt{cs\_preprocess},
 accessible directly once the environment variables of \CS are set
 properly. A summary of the command line options is also given by the
-command \texttt{cs_preprocess --help}.
+command \texttt{cs\_preprocess --help}.
 
 For the main options, the launch script \texttt{runcase} contains
 corresponding environment variables at its beginning, that are used
@@ -1993,7 +1965,7 @@ Prepare batch analysis), the PARAM section is filled automatically as are the
 other parameters specified through the Interface.
 
 
-\minititre{Note: option \texttt{-nogui} of cs\_create}
+\minititre{Note: option \texttt{--nogui} of cs\_create}
 When a calculation is using the Interface but, for some reason, some extra
 parameters need to be specified in the subroutine \texttt{usini1}, the latter
 must be placed in the directory \texttt{SRC}. But, while doing this, all the
@@ -2005,7 +1977,7 @@ each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the 
 only needs to uncomment the specific parts of \texttt{usini1} he wants to modify,
 and the rest of the examples will be ignored.\\
 On the contrary, if the Interface will not be used, then all the parameters in
-\texttt{usini1} have to be specified. In that case, using the \texttt{-nogui}
+\texttt{usini1} have to be specified. In that case, using the \texttt{--nogui}
 option of \texttt{cs\_create} will prevent it from commenting \texttt{usini1}
 out, thus saving the user the tedious task of uncommenting all the lines (and
 the risk of skipping some of them).
@@ -3891,11 +3863,11 @@ supplementary parameters (which can not be defined in the interface)
 should appear in \texttt{usini1}. To spare the user the necessity to
 delete the other parameters appearing as examples in the subroutine, the
 utility program \texttt{cs\_create} comments automatically all the
-example lines of \texttt{usini1} with a code \texttt{Cex}. The user
+example lines of \texttt{usini1} with a code \texttt{!ex}. The user
 needs then only to uncomment the lines which are useful in his
 case. This function of
 \texttt{cs\_create} can be inactivated with
-the option \texttt{-nogui} (useful if the user knows that he will not
+the option \texttt{--nogui} (useful if the user knows that he will not
 use the interface).
 
 %==================================
@@ -3926,7 +3898,7 @@ For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
-\mbox{\texttt{cs\_info theory}}).
+\mbox{\texttt{cs\_info --guide theory}}).
 
 From the user point of view, the boundary conditions are totally
 determined by three arrays\footnote{except with lagrangien}~: ITYPFB(NFABOR,NPHAS)\index{ITYPFB},
@@ -5271,7 +5243,7 @@ precisions concerning the friction velocity and the wall boundary
 conditions, the user may refer to the report \cite{bouckermattei00} and
 to the theoretical and computer documentation \cite{theory} of the
 subroutine \texttt{clptur}. To access to this document from a
-workstation, use the command \texttt{cs\_info theory}.
+workstation, use the command \texttt{cs\_info --guide theory}.
 % or refer to \mbox{$_\text{\Large\~~\hspace{-0.2cm}}$\texttt{sc\_doc/saturne.html}}
 
 The subroutine allows in particular to access to the value of $y^+$ at

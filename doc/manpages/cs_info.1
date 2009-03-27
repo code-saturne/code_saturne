@@ -27,7 +27,11 @@
 cs_info \- Wrapper for Code_Saturne documentation.
 .SH SYNOPSIS
 .B cs_info
-.RI <topic>
+.RI [--version]
+.RI [--reader
+.RI <pdf_reader>]
+.RI [--guide
+.RI <guide>]
 .br
 .SH DESCRIPTION
 The
@@ -35,23 +39,14 @@ The
 script is a wrapper for an easier look at Code_Saturne documentation.
 .SH OPTIONS
 .B
-.IP version
+.IP --version
 Print Code_Saturne version (preprocessor, kernel, interface).
 .B
-.IP user
-Open the user manual.
+.IP "-g, --guide <guide>"
+Open a pdf manual amongst: user, theory, tutorial
 .B
-.IP theory
-Open the theory manual.
-.B
-.IP theory
-Open the tutorial manual.
-.B
-.IP cs_solver
-Usage for the Kernel module.
-.B
-.IP ecs
-Usage for the Preprocessor module.
+.IP "-r, --reader <pdf_reader>"
+Specify a pdf reader
 .B
 .IP -h
 Print a usage message and exit.

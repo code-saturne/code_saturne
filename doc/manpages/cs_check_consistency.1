@@ -28,11 +28,11 @@ cs_check_consistency \- Check the consistency of Code_Saturne input data
 (user files, Xml file from the gui).
 .SH SYNOPSIS
 .B cs_check_consistency
-.RI [-dir
-.RI <wdir>]
-.RI [-param
+.RI [--source
+.RI <dir>]
+.RI [--param
 .RI <param.xml>]
-.RI [-nproc
+.RI [--nproc
 .RI <n_procs>]
 .br
 .SH DESCRIPTION
@@ -44,14 +44,14 @@ needed, that the chosen options are compatible with parallel
 calculations. Lastly, it prints the chosen specific physics.
 .SH OPTIONS
 .B
-.IP -dir
+.IP "-s, --source"
 To specify the directory where the user files are.
 .B
-.IP -param
+.IP "-p, --param"
 To specify the name of the Xml file written by the Graphical User
 Interface.
 .B
-.IP -nproc
+.IP "-n, --nproc"
 To specify the number of processors used by the solver.
 .SH SEE ALSO
 .BR cs_check_mesh (1),

@@ -27,11 +27,11 @@
 cs_create \- Generate a Code_Saturne study/case.
 .SH SYNOPSIS
 .B cs_create
-.RI [-no-gui]
-.RI [-study
+.RI [--nogui]
+.RI [--study
 .RI <study_name>
 .RI <case_name>]
-.RI [-case
+.RI [--case
 .RI <case_name>]
 .br
 .SH DESCRIPTION
@@ -44,27 +44,27 @@ DATA, SRC (to store user files), RESU (to store results) and SCRIPTS
 directory.
 .SH OPTIONS
 .B
-.IP -study
+.IP "-s, --study"
 To specify the name of the study when creating a full study.
 .B
-.IP -case
+.IP "-c, --case"
 To specify the name(s) of the case(s) when created in an existing
 study.
 .B
-.IP -no-gui
+.IP "-n, --nogui"
 To force non use of the Graphical User Interface. This option has to
 be used only once at the beginning or at the end of the option list.
 .B
 .IP -h
 Print a usage message and exit.
 .SH EXAMPLE
-cs_create -study study_name
+cs_create --study study_name
 .P
-cs_create -study study_name case_name_1 case_name_2
+cs_create --study study_name case_name_1 case_name_2
 .P
-cs_create -case case_name_1 case_name2
+cs_create --case case_name_1 case_name2
 .P
-cs_create -nogui -case case_name_1
+cs_create --nogui --case case_name_1
 .SH SEE ALSO
 .BR cs_check_consistency (1),
 .BR cs_check_mesh (1)

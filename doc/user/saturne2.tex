@@ -2817,6 +2817,34 @@ useful if and only if there is a phase IPHAS such as ITURB(IPHAS)=60
 
 
 %==================================
+\subsection{ALE}
+%==================================
+\motcleb{IALE}{I}{0 or 1}{C}{O}{L1}
+{activates (=1) or not (=0), activate the ALE module}
+
+\motcleb{NALINF}{I}{0 or positive integer}{C}{0}{L2}
+{The number of under-iterations of initialization of the fluid}
+
+\motcleb{NBSTR}{I}{0 or positive integer}{C}{0}{L1}
+{number of structure}
+
+\motcleb{ALPNMK}{R}{real}{C}{0.D0}{L3}
+{$alpha$ newmark's method}
+
+\motcleb{BETNMK}{R}{real}{C}{-GRAND}{L3}
+{$beta$ newmark's method}
+
+\motcleb{GAMNMK}{R}{real}{C}{-GRAND}{L3}
+{$gamma$ newmark's method}
+
+\motcleb{NALIMX}{I}{positive integer}{C}{15}{L2}
+{maximum number of iterations of implicitation of the structure displacement }
+
+\motcleb{EPALIM}{R}{positive real}{C}{1.D-5}{L2}
+{Relative precision of implicitation of the structure displacement }
+
+
+%==================================
 \subsection{Thermal radiative transfers: global settings}
 %==================================
 
