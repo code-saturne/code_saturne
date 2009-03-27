@@ -28,7 +28,7 @@ AC_DEFUN([CS_AC_TEST_PREPRO], [
 
 AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH], [specify prefix directory for the Preprocessor])])
 
-AC_CHECK_PROG(ecs_prefix, ecs, $with_prepro, , $with_prepro/bin, )
+AC_CHECK_PROG(ecs_prefix, cs_preprocess, $with_prepro, , $with_prepro/bin, )
 AC_SUBST(ecs_prefix)
 
 ])dnl

@@ -1,4 +1,12 @@
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
+  Use the new cs_preprocess name for autoconf detection.
+  Add a PYTHONPATH variable export in order to be able to launch
+  the GUI correctly.
+  modified scripts:
+    bin/SaturneGUI
+    config/cs_tools.m4
+
+* 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Add a runcase_coupling script to launch code/code coupling
   simulations (experimental, only the script works).
   added scripts:

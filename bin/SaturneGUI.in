@@ -36,6 +36,9 @@ else
   CS_PYTHON=python
 fi
 
+pkgpythondir=@ics_prefix@/lib/python@PYTHON_VERSION@/site-packages
+export PYTHONPATH=$PYTHONPATH:$pkgpythondir
+
 $CS_PYTHON @ics_prefix@/bin/ics $*
 
 exit
