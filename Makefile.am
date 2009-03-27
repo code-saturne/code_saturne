@@ -81,6 +81,7 @@ bin/cs_config.py
 
 nodist_pkgdata_DATA = \
 bin/runcase \
+bin/runcase_coupling \
 bin/SaturneGUI
 
 dist_pkgdata_DATA = \
