@@ -346,7 +346,7 @@ CS_AC_TEST_SYRCS
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(python,
+AC_ARG_WITH(python-exec,
             [
 	     AS_HELP_STRING(
 	     [--with-python-exec=PATH],
