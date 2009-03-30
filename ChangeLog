@@ -1,3 +1,8 @@
+* 30/03/2009 - David Monfort <david.monfort@edf.fr>
+  Update cs_auto_flags.sh (missing optimized flags)
+  modified script:
+    config/cs_auto_flags.sh
+
 * 27/03/2009 - David Monfort <david.monfort@edf.fr>
   Correct way of handling a local Python installation.
   Update to the new name of the GUI script: cs_gui.

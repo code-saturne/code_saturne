@@ -567,6 +567,7 @@ if test "$?" = "0" ; then
   fcflags_default="-x f95-cpp-input"
   fcflags_default_dbg="-g"
   fcflags_default_opt="-O"
+  fcflags_default_hot="-O2"
   fcflags_default_prf="-pg"
   fcflags_default_omp="-fopenmp"
 
@@ -628,10 +629,12 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         # Default compiler flags
         if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
           fcflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsuffix=cpp=f90"
+          fcflags_default_dbg=""
           fcflags_default_opt="-O3"
           fcflags_default_hot="-O3 -qhot"
         elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
           fcflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsuffix=cpp=f90"
+          fcflags_default_dbg=""
           fcflags_default_opt="-O3"
           fcflags_default_hot="-O3 -qhot"
         else
@@ -662,6 +665,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         # Default compiler flags
         fcflags_default="-Ep -C hopt -ftrace -I. -Wf,-pvctl,loopcnt=2147483647"
         fcflags_default_opt=""
+        fcflags_default_hot=""
         fcflags_default_dbg=""
         fcflags_default_prf=""
         fcflags_default_omp=""
@@ -702,6 +706,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
       fcflags_default=""
       fcflags_default_opt="-O"
+      fcflags_default_hot="-O"
       fcflags_default_dbg="-g"
       fcflags_default_prf=""
       ;;
