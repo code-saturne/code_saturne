@@ -84,11 +84,11 @@ class dirs:
 class build:
     cc="@CC@"
     fc="@FC@"
-    cppflags="@CPPFLAGS@ @MPI_CPPFLAGS@ @BFT_CPPFLAGS@ @FVM_CPPFLAGS@"
-    cflags="@CFLAGS@"
-    fcflags="@FCFLAGS@"
-    ldflags="@FVM_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @BLAS_LDFLAGS@ @LIBXML2_LDFLAGS@ @LDFLAGS@"
-    libs="@FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@"
+    cppflags="@CPPFLAGS@ @BFT_CPPFLAGS@ @FVM_CPPFLAGS@ @MEI_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
+    cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
+    fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
+    ldflags="@MEI_LDFLAGS@ @FVM_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @BLAS_LDFLAGS@ @LIBXML2_LDFLAGS@ @LDFLAGS@"
+    libs="@MEI_LIBS@ @FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@"
     rpath="@LDRPATH@"
 
 #-------------------------------------------------------------------------------

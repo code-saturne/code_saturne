@@ -498,7 +498,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 fi
 
 if test "x$cflags_default_hot" = "x" ; then
-  cflags_default_hot=$cflags_default
+  cflags_default_hot=$cflags_default_opt
 fi
 
 if test -f $outfile ; then
@@ -716,7 +716,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 fi
 
 if test "x$fcflags_default_hot" = "x" ; then
-  fcflags_default_hot=$fcflags_default
+  fcflags_default_hot=$fcflags_default_opt
 fi
 
 if test -f $outfile ; then

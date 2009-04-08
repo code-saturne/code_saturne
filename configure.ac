@@ -335,6 +335,7 @@ fi
 
 CS_AC_TEST_BFT(["1.1.0"])
 CS_AC_TEST_FVM(["0.13.0"])
+CS_AC_TEST_MEI
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
@@ -346,14 +347,10 @@ CS_AC_TEST_SYRCS
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(python-exec,
-            [
-	     AS_HELP_STRING(
-	     [--with-python-exec=PATH],
-	     [Path for a python interpreter [default search in $PATH]])
-	    ],
-	    [PYTHON_EXE=${withval}],
-            [PYTHON_EXE=none])dnl
+AC_ARG_WITH(python-exec, [AS_HELP_STRING([--with-python-exec=PATH],
+                                         [specify prefix directory for a Python interpreter])],
+                         [PYTHON_EXE=${withval}],
+                         [PYTHON_EXE=none])dnl
 
 if test "x${PYTHON_EXE}" == "xnone" ; then
    AC_PATH_PROG([PYEXE], [python], ["no"])
@@ -545,6 +542,7 @@ echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
+echo " MEI (Mathematical Expressions Interpreter) support: "$have_mei""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""
 echo
