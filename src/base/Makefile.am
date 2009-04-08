@@ -45,7 +45,7 @@ AM_FCFLAGS = \
 -I$(top_srcdir)/include/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
-AM_LDFLAGS = @LDFLAGS_DBG@ @LDFLAGS_OPT@
+AM_LDFLAGS =
 
 # Public header files (to be installed)
 

@@ -1,3 +1,9 @@
+* 08/04/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Merge debug and optimized LDFLAGS.
+  modified scripts:
+    configure.ac
+    src/*/Makefile.am
+
 * 08/04/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add support for a future use of MEI library for function

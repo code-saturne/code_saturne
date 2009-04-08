@@ -160,18 +160,20 @@ if test "x$auto_flags" = "xtrue" ; then
   LDRPATH="$ldflags_rpath"
 
   if test "x$debug" = xtrue; then
-    # Normal optimization flags
+    # Debug flags
     CFLAGS_DBG="$cflags_default_dbg"
     FCFLAGS_DBG="$fcflags_default_dbg"
-    LDFLAGS_DBG="$ldflags_default_dbg"
+    # Add debug flags for linker
+    LDFLAGS="$LDFLAGS $ldflags_default_dbg"
   else
     # Normal optimization flags
     CFLAGS_OPT="$cflags_default_opt"
     FCFLAGS_OPT="$fcflags_default_opt"
-    LDFLAGS_OPT="$ldflags_default_opt"
     # Hot optimization flags
     CFLAGS_HOT="$cflags_default_hot"
     FCFLAGS_HOT="$fcflags_default_hot"
+    # Add optimization flags for linker
+    LDFLAGS="$LDFLAGS $ldflags_default_opt"
   fi
 
   AC_SUBST(CFLAGS_DBG)
@@ -182,8 +184,6 @@ if test "x$auto_flags" = "xtrue" ; then
   AC_SUBST(FCFLAGS_OPT)
   AC_SUBST(FCFLAGS_HOT)
 
-  AC_SUBST(LDFLAGS_DBG)
-  AC_SUBST(LDFLAGS_OPT)
   AC_SUBST(LDRPATH)
 fi
 
