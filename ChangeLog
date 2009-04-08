@@ -1,3 +1,10 @@
+* 08/04/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Missing common for OpenMP support and simplification
+  in boundary conditions output.
+  modified routines:
+    include/base/parall.h
+    src/base/typecl.f90
+
 * 30/03/2009 - David Monfort <david.monfort@edf.fr>
   Update cs_auto_flags.sh (missing optimized flags)
   modified script:

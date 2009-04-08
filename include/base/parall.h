@@ -46,7 +46,7 @@
 integer           irangp, nrangp, nthrdp, ngrpi, ngrpb,           &
                   iompli(2, nthrd1, nthrd2),                      &
                   iomplb(2, nthrd1, nthrd2)
-common / iparal / irangp, nrangp, nthrdp,                         &
+common / iparal / irangp, nrangp, nthrdp, ngrpi, ngrpb,           &
                   iompli, iomplb
 
 
