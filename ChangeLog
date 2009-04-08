@@ -1,3 +1,9 @@
+* 08/04/2009 - David Monfort <david.monfort@edf.fr>
+  Fix data/results for SYRTHES coupling.
+  modified scritps:
+    bin/runcase.in
+    bin/runcase_syrthes
+
 * 08/04/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Merge debug and optimized LDFLAGS.
   modified scripts:

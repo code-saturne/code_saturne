@@ -530,7 +530,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     ${pkgdatadir}/runcase_syrthes -compile \
       -syrcs-dir=${syrcs_prefix} -src-syr=${SRC_SYR} \
-      -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log
+      -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log.${SUFFIX}
 
   fi
 

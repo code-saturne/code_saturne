@@ -164,7 +164,7 @@ if [ "$1" = "-compile" ] ; then
     if [ -d ${SRC_COPY} ] ; then
       for f in *.[f,F,c,h] ; do
         if [ -f ${f} ] ; then
-          cp -R ${f} $RESULT_DIR/
+          cp -R ${f} ${SRC_COPY}/
           fbase=`basename ${f}`
           # chmod a-w $RESULT_DIR/${fbase}
         fi
