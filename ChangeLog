@@ -1,3 +1,8 @@
+* 10/04/2009 - David Monfort <david.monfort@edf.fr>
+  Fix the opt-libs option parsing in the compilation script.
+  modified script:
+    bin/cs_compile
+
 * 08/04/2009 - David Monfort <david.monfort@edf.fr>
   Fix data/results for SYRTHES coupling.
   modified scritps:

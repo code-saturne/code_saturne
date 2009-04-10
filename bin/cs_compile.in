@@ -68,7 +68,7 @@ def process_cmd_line():
                       metavar="<dest_dir>",
                       help="choose executable file directory")
 
-    parser.add_option("--opt-libs", dest="libs", type="string",
+    parser.add_option("--opt-libs", dest="opt_libs", type="string",
                       metavar="<libs>",
                       help="print Code_Saturne version number")
 
