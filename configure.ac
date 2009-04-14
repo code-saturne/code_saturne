@@ -51,7 +51,7 @@ m4_define([cs_licence_c_comment],
 
 m4_define([cs_major_version], [2])
 m4_define([cs_minor_version], [0])
-m4_define([cs_release_version], [])
+m4_define([cs_release_version], [0])
 m4_define([cs_version_extra], [-beta1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
@@ -353,10 +353,13 @@ AC_ARG_WITH(python-exec, [AS_HELP_STRING([--with-python-exec=PATH],
                          [PYTHON_EXE=none])dnl
 
 if test "x${PYTHON_EXE}" == "xnone" ; then
+   cs_python="/usr/bin/env python"
    AC_PATH_PROG([PYEXE], [python], ["no"])
 else
+   cs_python="${PYTHON_EXE}/python"
    AC_PATH_PROG([PYEXE], [python], ["no"], [${PYTHON_EXE}])
 fi
+AC_SUBST(cs_python)
 
 PYTHON=${PYEXE}
 AM_PATH_PYTHON([2.3])
@@ -507,7 +510,8 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
-                 bin/cs_check_mesh bin/cs_compile bin/cs_create bin/cs_info
+                 bin/cs_check_consistency bin/cs_check_mesh bin/cs_compile
+                 bin/cs_create bin/cs_info bin/cs_plot_probes
                  bin/cs_config.py bin/runcase bin/runcase_coupling bin/SaturneGUI])
 
 #------------------------------------------------------------------------------

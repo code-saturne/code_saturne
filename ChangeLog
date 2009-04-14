@@ -1,4 +1,17 @@
 * 14/04/2009 - David Monfort <david.monfort@edf.fr>
+  Make all Python scripts depend on the right Python interpreter.
+  Revert to 2.0.0-beta version number.
+  modified scripts:
+    bin/cs_check_consistency.in
+    bin/cs_check_mesh.in
+    bin/cs_compile.in
+    bin/cs_config.py.in
+    bin/cs_create.in
+    bin/cs_info.in
+    bin/cs_plot_probes.in
+    configure.ac
+
+* 14/04/2009 - David Monfort <david.monfort@edf.fr>
   Add a quick reference card documentation.
   Remove the reference to the VERS keyword in user subroutines.
   Change the version number to 2.0-beta1.
