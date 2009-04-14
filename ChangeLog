@@ -1,4 +1,9 @@
 * 14/04/2009 - David Monfort <david.monfort@edf.fr>
+  Change the order of header directory search when compiling.
+  modified script:
+    bin/cs_compile.in
+
+* 14/04/2009 - David Monfort <david.monfort@edf.fr>
   Make all Python scripts depend on the right Python interpreter.
   Revert to 2.0.0-beta version number.
   modified scripts:

@@ -164,21 +164,23 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
     f_files = fnmatch.filter(dir_files, '*.[fF]90')
 
     for f in c_files:
-        cmd = cs_config.build.cc + " " + cs_config.build.cppflags
-        cmd = cmd + " -DHAVE_CONFIG_H"
-        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        cmd = cs_config.build.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
+        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        cmd = cmd + " -DHAVE_CONFIG_H"
+        cmd = cmd + " " + cs_config.build.cppflags
         cmd = cmd + " " + cs_config.build.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
 
     for f in f_files:
-        cmd = cs_config.build.fc + " " + cs_config.build.fcflags
-        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        cmd = cs_config.build.fc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
+        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        cmd = cmd + " " + cs_config.build.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
