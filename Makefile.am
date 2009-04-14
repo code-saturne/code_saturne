@@ -128,7 +128,7 @@ install-data-hook:
 	cd $(DESTDIR)$(pkgdatadir)/users && \
 	user_files=`ls */*.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!VERS                  Code_Saturne version $(VERSION)\n"; \
+	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
 	comment1="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT"; \
 	comment2="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN"; \
