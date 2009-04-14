@@ -150,7 +150,7 @@ prods2.f90 \
 prods3.f90 \
 prodsc.f90 \
 promav.f90
-libcshot_la_LDFLAGS = @LDFLAGS_DBG@ @LDFLAGS_HOT@ -no-undefined
+libcshot_la_LDFLAGS = -no-undefined
 
 ###
 
