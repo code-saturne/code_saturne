@@ -1,6 +1,7 @@
 * 15/04/2009 - David Monfort <david.monfort@edf.fr>
-  Fix a missing test for BG/L ESSL BLAS.
+  Fix BG/L and /P ESSL BLAS detection.
   modified script:
+    config/cs_auto_flags.sh
     config/cs_blas.m4
 
 * 14/04/2009 - David Monfort <david.monfort@edf.fr>
