@@ -233,7 +233,7 @@ elif test "x$cs_gcc" = "xicc"; then
 
   # Default compiler flags
   cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -traceback -w2 -Wp66 -ftrapuv"
+  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
