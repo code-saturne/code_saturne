@@ -1,3 +1,8 @@
+* 15/04/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a missing test for BG/L ESSL BLAS.
+  modified script:
+    config/cs_blas.m4
+
 * 14/04/2009 - David Monfort <david.monfort@edf.fr>
   Change the order of header directory search when compiling.
   modified script:

@@ -132,7 +132,7 @@ if test "x$blas" = "xtrue" ; then
     
     if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
-      if test -d /bgsys/drivers/ppcfloor ; then
+      if test -d /bgl/BlueLight/ppcfloor -o -d /bgsys/drivers/ppcfloor ; then
         BLAS_LIBS="" # Already set in cs_auto_flags so as to group with other options
       else
         BLAS_LIBS="-lesslsmp"
