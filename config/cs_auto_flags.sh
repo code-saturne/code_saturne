@@ -812,7 +812,7 @@ elif test -d /bgsys/drivers/ppcfloor/comm/include ; then #  For Blue Gene/P
   bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
 
   ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib -L/opt/ibmmath/essl/4.4/lib ${bg_sys_ldflags}"
-  libs_default="-lmass -lmassv -lesslbg -lesslsmpbg ${bg_trace} ${bg_sys_libs}"
+  libs_default="-lmass -lmassv -lesslsmpbg -lesslbg ${bg_trace} ${bg_sys_libs}"
   cs_disable_shared=yes
 
 fi
