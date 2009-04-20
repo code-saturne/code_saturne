@@ -1,3 +1,8 @@
+* 20/04/2009 - David Monfort <david.monfort@edf.fr>
+  Mis-spelling of syr_cs_profile.
+  modified script:
+    bin/runcase_syrthes
+
 * 15/04/2009 - David Monfort <david.monfort@edf.fr>
   Fix BG/L and /P ESSL BLAS detection.
   modified script:

@@ -148,7 +148,7 @@ if [ "$1" = "-compile" ] ; then
   SYRCS_BINDIR=${SYRCS_DIR}/bin
 
   ln -s ${SYRCS_BINDIR}/Makefile .
-  . ${SYRCS_BINDIR}/syrcs_profile
+  . ${SYRCS_BINDIR}/syr_cs_profile
   make syrthes > ./compil.log 2>&1
   make_ret=$?
   make clean > /dev/null 2>&1
