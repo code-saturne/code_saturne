@@ -21,10 +21,10 @@
 #-------------------------------------------------------------------------------
 
 all-local:
-	@$(PYTHON) $(top_srcdir)/gui/bootstrap.py \ --build $(srcdir)
+	@$(PYTHON) $(top_srcdir)/gui/sbin/mkpyqt.py --build $(srcdir)
 
 clean-local:
-	@$(PYTHON) $(top_srcdir)/gui/bootstrap.py \ --clean $(srcdir)
+	@$(PYTHON) $(top_srcdir)/gui/sbin/mkpyqt.py --clean $(srcdir)
 
 # Install Python library
 
