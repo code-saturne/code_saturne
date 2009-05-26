@@ -34,20 +34,6 @@ AC_SUBST(ecs_prefix)
 ])dnl
 
 
-# CS_AC_TEST_GUI(Minimal Release string, [Maximal Release string])
-#-----------------------------------------------------------------
-# Check for the GUI executable ; defines ics_prefix
-
-AC_DEFUN([CS_AC_TEST_GUI], [
-
-AC_ARG_WITH(gui, [AS_HELP_STRING([--with-gui=PATH], [specify prefix directory for the GUI])])
-
-AC_CHECK_PROG(ics_prefix, cs_gui, $with_gui, , $with_gui/bin, )
-AC_SUBST(ics_prefix)
-
-])dnl
-
-
 # CS_AC_TEST_SYRCS(Minimal Release string, [Maximal Release string])
 #-------------------------------------------------------------------
 # Check for the SYR_CS library ; defines syrcs_prefix

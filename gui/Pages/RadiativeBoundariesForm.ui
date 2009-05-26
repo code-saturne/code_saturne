@@ -1,0 +1,183 @@
+<ui version="4.0" >
+ <class>RadiativeBoundariesForm</class>
+ <widget class="QWidget" name="RadiativeBoundariesForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>655</width>
+    <height>787</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>30</y>
+     <width>396</width>
+     <height>698</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" >
+    <item row="0" column="0" >
+     <widget class="QGroupBox" name="groupBoxRadiative" >
+      <property name="title" >
+       <string>Scalars boundary </string>
+      </property>
+      <layout class="QGridLayout" >
+       <item row="0" column="0" >
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <widget class="QTreeView" name="treeViewBoundaries" >
+           <property name="minimumSize" >
+            <size>
+             <width>350</width>
+             <height>150</height>
+            </size>
+           </property>
+           <property name="maximumSize" >
+            <size>
+             <width>16777215</width>
+             <height>150</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" >
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>16</width>
+             <height>41</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="2" column="0" >
+          <widget class="QFrame" name="frameRadiative" >
+           <property name="frameShape" >
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow" >
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
+             <layout class="QGridLayout" >
+              <item row="0" column="0" >
+               <widget class="QComboBox" name="comboBoxRadiative" >
+                <property name="minimumSize" >
+                 <size>
+                  <width>300</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="toolTip" >
+                 <string>Code_Saturne keyword: ISOTHP</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>350</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="2" column="0" >
+               <widget class="QTableView" name="tableViewScalars" >
+                <property name="maximumSize" >
+                 <size>
+                  <width>350</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" >
+               <widget class="QFrame" name="frameZone" >
+                <property name="frameShape" >
+                 <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow" >
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <layout class="QGridLayout" >
+                   <item row="0" column="0" >
+                    <widget class="QLabel" name="label" >
+                     <property name="text" >
+                      <string>Post-processing zone: no.</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1" >
+                    <widget class="QLineEdit" name="lineEditZone" >
+                     <property name="maximumSize" >
+                      <size>
+                       <width>80</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="0" >
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="0" >
+     <spacer>
+      <property name="orientation" >
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" >
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

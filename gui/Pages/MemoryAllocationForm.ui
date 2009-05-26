@@ -1,0 +1,336 @@
+<ui version="4.0" >
+ <class>MemoryAllocationForm</class>
+ <widget class="QWidget" name="MemoryAllocationForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>322</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <property name="toolTip" >
+   <string/>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="title" >
+      <string>Integer array</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <layout class="QHBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>16</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" >
+          <item row="0" column="0" >
+           <widget class="QLabel" name="label" >
+            <property name="text" >
+             <string>Main integer work array = </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" >
+           <widget class="QLineEdit" name="lineEditIDIMLS" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" >
+           <widget class="QLabel" name="label_6" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" >
+           <widget class="QLineEdit" name="lineEditICEL" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" >
+           <widget class="QLabel" name="label_2" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NCELET</string>
+            </property>
+            <property name="text" >
+             <string>Number of cells with halo</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" >
+           <widget class="QLabel" name="label_9" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" >
+           <widget class="QLineEdit" name="lineEditIFAC" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" >
+           <widget class="QLabel" name="label_3" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NFAC</string>
+            </property>
+            <property name="text" >
+             <string>Number of interior faces</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0" >
+           <widget class="QLabel" name="label_10" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" >
+           <widget class="QLineEdit" name="lineEditIFABOR" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2" >
+           <widget class="QLabel" name="label_4" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NFABOR</string>
+            </property>
+            <property name="text" >
+             <string>Number of boundary faces</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <widget class="QGroupBox" name="groupBox_2" >
+     <property name="title" >
+      <string>Real array</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <layout class="QHBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" >
+          <item row="0" column="0" >
+           <widget class="QLabel" name="label_5" >
+            <property name="text" >
+             <string>Main real work array= </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" >
+           <widget class="QLineEdit" name="lineEditRDIMLS" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" >
+           <widget class="QLabel" name="label_11" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" >
+           <widget class="QLineEdit" name="lineEditRCEL" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" >
+           <widget class="QLabel" name="labelRCEL" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NCELET</string>
+            </property>
+            <property name="text" >
+             <string>Number of cells with halo</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" >
+           <widget class="QLabel" name="label_12" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" >
+           <widget class="QLineEdit" name="lineEditRFAC" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" >
+           <widget class="QLabel" name="label_7" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NFAC</string>
+            </property>
+            <property name="text" >
+             <string>Number of interior faces</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0" >
+           <widget class="QLabel" name="label_13" >
+            <property name="layoutDirection" >
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" >
+           <widget class="QLineEdit" name="lineEditRFABOR" >
+            <property name="toolTip" >
+             <string/>
+            </property>
+            <property name="statusTip" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2" >
+           <widget class="QLabel" name="label_8" >
+            <property name="toolTip" >
+             <string>Code_Saturne keyword: NFABOR</string>
+            </property>
+            <property name="text" >
+             <string>Number of boundary faces</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

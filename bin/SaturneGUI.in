@@ -27,8 +27,13 @@
 #
 #============================================================================
 
-export PYTHONPATH=@ics_prefix@/lib/python@PYTHON_VERSION@/site-packages:$PYTHONPATH
-@PYTHON@ @ics_prefix@/bin/cs_gui $*
+prefix=@prefix@
+#
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+#
+export PYTHONPATH=@pythondir@:$PYTHONPATH
+@PYTHON@ ${bindir}/cs_gui $*
 
 exit
 

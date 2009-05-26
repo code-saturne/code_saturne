@@ -340,7 +340,6 @@ CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
 CS_AC_TEST_PREPRO
-CS_AC_TEST_GUI
 CS_AC_TEST_SYRCS
 
 #------------------------------------------------------------------------------
@@ -504,6 +503,8 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile
+                 gui/cs_gui
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile

@@ -20,7 +20,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = src po doc
+SUBDIRS = src gui po doc
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \

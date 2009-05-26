@@ -1,3 +1,18 @@
+* 26/05/2009 - David Monfort <david.monfort@edf.fr>
+  Merge the Graphical User Interface module within the Kernel
+  module for a better consistency in development and maintenance.
+  See the ICS Subversion repository for previous ChangeLog.
+  added module:
+    gui
+  modified scripts:
+    configure.ac
+    config/cs_tools.m4
+    bin/SaturneGUI.in
+    Makefile.am
+
+* 26/05/2009 - David Monfort <david.monfort@edf.fr>
+  Tagging version 2.0 beta1
+
 * 20/04/2009 - David Monfort <david.monfort@edf.fr>
   Mis-spelling of syr_cs_profile.
   modified script:

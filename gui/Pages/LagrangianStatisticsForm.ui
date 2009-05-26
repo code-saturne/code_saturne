@@ -1,0 +1,410 @@
+<ui version="4.0" >
+ <class>LagrangianStatisticsForm</class>
+ <widget class="QWidget" name="LagrangianStatisticsForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>411</width>
+    <height>431</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <layout class="QGridLayout" >
+     <item row="0" column="0" >
+      <widget class="QGroupBox" name="groupBox" >
+       <property name="title" >
+        <string/>
+       </property>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <layout class="QGridLayout" >
+          <item row="0" column="0" >
+           <widget class="QLabel" name="labelISUIST" >
+            <property name="toolTip" >
+             <string>Code_Saturne key word: ISUIST</string>
+            </property>
+            <property name="text" >
+             <string>Particles statistics read from restart file</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>51</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="2" >
+           <widget class="QCheckBox" name="checkBoxISUIST" >
+            <property name="toolTip" >
+             <string>Code_Saturne key word: ISUIST</string>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0" >
+           <widget class="QLabel" name="labelNBCLST" >
+            <property name="toolTip" >
+             <string>Code_Saturne key word: NBCLST</string>
+            </property>
+            <property name="text" >
+             <string>Number of particles cluster </string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" >
+           <spacer>
+            <property name="toolTip" >
+             <string>Code_Saturne key word: NBCLST</string>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>51</width>
+              <height>22</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="2" >
+           <widget class="QLineEdit" name="lineEditNBCLST" >
+            <property name="maximumSize" >
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip" >
+             <string>Code_Saturne key word: NBCLST</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="0" >
+      <widget class="QTabWidget" name="tabWidget" >
+       <property name="currentIndex" >
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="widget" >
+        <attribute name="title" >
+         <string>Volumes</string>
+        </attribute>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <widget class="QGroupBox" name="groupBoxISTALA" >
+           <property name="toolTip" >
+            <string>Code_Saturne key word: ISTALA</string>
+           </property>
+           <property name="title" >
+            <string>Volume statistics</string>
+           </property>
+           <property name="checkable" >
+            <bool>true</bool>
+           </property>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
+             <layout class="QGridLayout" >
+              <item row="0" column="0" >
+               <widget class="QGroupBox" name="groupBoxMainVolume" >
+                <property name="title" >
+                 <string/>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="1" >
+                  <widget class="QLabel" name="labelIDSTNT" >
+                   <property name="toolTip" >
+                    <string>Code_Saturne key word: IDSTNT</string>
+                   </property>
+                   <property name="text" >
+                    <string>Time step number for calculation start</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3" >
+                  <widget class="QLineEdit" name="lineEditIDSTNT" >
+                   <property name="maximumSize" >
+                    <size>
+                     <width>60</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip" >
+                    <string>Code_Saturne key word: IDSTNT</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0" >
+                  <spacer>
+                   <property name="orientation" >
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" >
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="1" column="2" >
+                  <spacer>
+                   <property name="orientation" >
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" >
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="1" column="4" >
+                  <spacer>
+                   <property name="orientation" >
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" >
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="2" column="1" >
+                  <widget class="QLabel" name="labelSEUIL" >
+                   <property name="toolTip" >
+                    <string>Code_Saturne key word: SEUIL</string>
+                   </property>
+                   <property name="text" >
+                    <string> Limit statistical weight value</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3" >
+                  <widget class="QLineEdit" name="lineEditSEUIL" >
+                   <property name="maximumSize" >
+                    <size>
+                     <width>60</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip" >
+                    <string>Code_Saturne key word: SEUIL</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0" >
+               <widget class="QGroupBox" name="groupBoxVolumeNames" >
+                <property name="title" >
+                 <string>Variable names</string>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QTableView" name="tableViewVolumicNames" />
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab" >
+        <attribute name="title" >
+         <string>Boundaries</string>
+        </attribute>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <widget class="QGroupBox" name="groupBoxIENSI3" >
+           <property name="toolTip" >
+            <string>Code_Saturne key word: IENSI3</string>
+           </property>
+           <property name="title" >
+            <string>Boundaries statistics</string>
+           </property>
+           <property name="checkable" >
+            <bool>true</bool>
+           </property>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
+             <layout class="QGridLayout" >
+              <item row="0" column="0" >
+               <widget class="QGroupBox" name="groupBoxMainBoundaries" >
+                <property name="title" >
+                 <string/>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <layout class="QGridLayout" >
+                   <item row="0" column="1" >
+                    <widget class="QLabel" name="labelNSTBOR" >
+                     <property name="toolTip" >
+                      <string>Code_Saturne key word: NSTBOR</string>
+                     </property>
+                     <property name="text" >
+                      <string>Time step number for calculation start</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="3" >
+                    <widget class="QLineEdit" name="lineEditNSTBOR" >
+                     <property name="maximumSize" >
+                      <size>
+                       <width>60</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="toolTip" >
+                      <string>Code_Saturne key word: NSTBOR</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0" >
+                    <spacer>
+                     <property name="orientation" >
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" >
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="2" >
+                    <spacer>
+                     <property name="orientation" >
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" >
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="4" >
+                    <spacer>
+                     <property name="orientation" >
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" >
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="2" column="1" >
+                    <widget class="QLabel" name="labelSEUILF" >
+                     <property name="toolTip" >
+                      <string>Code_Saturne key word: SEUILF</string>
+                     </property>
+                     <property name="text" >
+                      <string> Limit statistical weight value</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="3" >
+                    <widget class="QLineEdit" name="lineEditSEUILF" >
+                     <property name="maximumSize" >
+                      <size>
+                       <width>60</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="toolTip" >
+                      <string>Code_Saturne key word: SEUILF</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0" >
+               <widget class="QGroupBox" name="groupBoxBoundariesNames" >
+                <property name="title" >
+                 <string>Variable names</string>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QTableView" name="tableViewBoundariesNames" />
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

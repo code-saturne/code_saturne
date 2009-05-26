@@ -1,0 +1,544 @@
+# -*- coding: iso-8859-1 -*-
+#
+#-------------------------------------------------------------------------------
+#
+#     This file is part of the Code_Saturne User Interface, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2009 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne User Interface is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne User Interface is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#-------------------------------------------------------------------------------
+
+"""
+This module contains the following class:
+- SolutionVerifView
+"""
+
+#-------------------------------------------------------------------------------
+# Standard modules
+#-------------------------------------------------------------------------------
+
+import os, logging, subprocess
+import string, shutil, cStringIO
+
+#-------------------------------------------------------------------------------
+# Third-party modules
+#-------------------------------------------------------------------------------
+
+from PyQt4.QtCore import *
+from PyQt4.QtGui  import *
+
+#-------------------------------------------------------------------------------
+# Application modules import
+#-------------------------------------------------------------------------------
+
+from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel
+from Base.XMLengine import Case
+from Base.XMLinitialize import XMLinit
+from SolutionVerifForm import Ui_SolutionVerifForm
+from MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
+from Pages.SolutionDomainModel import SolutionDomainModel
+from OutputControlModel import OutputControlModel
+from FacesSelectionView import StandardItemModelFaces
+
+#-------------------------------------------------------------------------------
+# log config
+#-------------------------------------------------------------------------------
+
+logging.basicConfig()
+log = logging.getLogger("SolutionVerifView")
+log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# 
+#-------------------------------------------------------------------------------
+
+class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogForm):
+    """
+    Advanced dialog
+    """
+    def __init__(self, parent, case, case2):
+        """
+        Constructor
+        """
+        QDialog.__init__(self, parent)
+
+        Ui_MeshQualityCriteriaLogDialogForm.__init__(self)
+        self.setupUi(self)
+	self.setWindowTitle(self.tr("Run mesh quality criteria"))
+        self.pushButton.setEnabled(False)
+
+        self.case = case
+        self.case2 = case2
+        self.mdl = SolutionDomainModel(self.case)
+        self.out2 = OutputControlModel(self.case2)
+
+        self.proc = QProcess()
+        self.connect(self.proc, SIGNAL('readyReadStandardOutput()'), self.__readFromStdout)
+        self.connect(self.proc, SIGNAL('readyReadStandardError()'), self.__readFromStderr)
+        self.procErrorFlag = False
+
+        self.cwd = os.getcwd()
+        os.chdir(self.case['resu_path'])
+        self.fmt = string.join(string.split(self.__getPostCommand()))
+
+        self.__ecsProcess()
+
+
+    def __ecsProcess(self):
+        # Run Preprocessor
+
+        lines = []
+        lines.append(self.mdl.getMeshCommand())
+        lines.append(self.mdl.getJoinCommand())
+        lines.append(self.mdl.getPerioCommand())
+        lines.append(self.mdl.getSelectCommand())
+        lines.append(self.__getPostCommand())
+        lines.append(" --case check_mesh ")
+        log.debug("ecs_cmd = %s" % lines)
+
+        f1 = 'ecs_cmd'
+        f = open(f1, 'w')
+        f.writelines(lines)
+        f.close()
+
+        ecs = "cs_preprocess "
+        args = ' --in ' + f1
+        self.proc.start(ecs + args)
+
+        self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
+
+
+    def __ecsPostTreatment(self):
+        if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
+            if self.fmt == "--ensight":
+                os.chdir(self.case['resu_path'] + '/check_mesh.ensight')
+                os.rename('CHR.case', 'PREPROCESSOR.case')
+                os.rename('chr.geo', 'preprocessor.geo')
+
+                out = cStringIO.StringIO()
+                f = open('PREPROCESSOR.case')
+                for line in f:
+                    print >> out, line.replace('chr', 'preprocessor'),
+                f.close()
+                out2 = open('PREPROCESSOR.case', 'w')
+                out2.write(out.getvalue())
+                out2.close()
+
+                os.chdir(self.case['resu_path'])
+
+            elif self.fmt == "--med":
+                os.rename('check_mesh.med', 'PREPROCESSOR.med')
+
+            elif self.fmt == "--cgns":
+                os.rename('check_mesh.cgns', 'PREPROCESSOR.cgns')
+
+	    if os.path.isfile(self.case['resu_path'] + '/preprocessor_output'):
+                self.__csProcess()
+            else:
+	        self.__finished()
+
+        else:
+            self.__finished()
+
+
+
+    def __csProcess(self):
+        # Run Kernel
+        self.disconnect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
+
+        self.case2.xmlSaveDocument()
+        cs = "cs_solver --quality --log 0 "
+        args = ' --param ' + self.case2['xmlfile']
+        self.proc.start(cs + args)
+
+        self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__csPostTreatment)
+
+
+    def __csPostTreatment(self):
+        if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
+            if self.fmt == "--ensight":
+                for src in os.listdir(self.case['resu_path'] + '/chr.ensight'):
+                    shutil.copy(self.case['resu_path'] + '/chr.ensight/' + src,
+                                self.case['resu_path'] + '/check_mesh.ensight')
+                os.chdir(self.case['resu_path'] + '/check_mesh.ensight')
+                os.rename('CHR.case', 'QUALITY.case')
+
+                for src in os.listdir(self.case['resu_path'] + '/check_mesh.ensight'):
+                    if src[:4] == "chr.":
+                        dst = src.replace("chr.", "quality.")
+                        os.rename(src, dst)
+
+                out = cStringIO.StringIO()
+                f = open('QUALITY.case')
+                for line in f:
+                    print >> out, line.replace('chr', 'quality'), 
+                f.close()
+                out2 = open('QUALITY.case', 'w')
+                out2.write(out.getvalue())
+                out2.close() 
+
+                shutil.rmtree(self.case['resu_path'] + '/chr.ensight')
+                os.chdir(self.case['resu_path'])
+
+            elif self.fmt == "--med":
+                os.rename('chr.med', 'QUALITY.med')
+
+            elif self.fmt == "--cgns":
+                os.rename('chr.cgns', 'QUALITY.cgns')
+
+        # Cleanup
+        os.remove('preprocessor_output')
+        os.remove('cs_cmd')
+        os.remove('ecs_cmd')
+
+        self.__saveLog()
+        self.__finished()
+
+
+    def __getPostCommand(self):
+        """
+        Return the preprocessor argument for postprocessing.
+        """
+        format = self.out2.getPostProFormat()
+        if format == "EnSight":
+            l = " --ensight "
+        elif format == "MED_fichier":
+            l = " --med "
+        elif format == "CGNS":
+            l = " --cgns "
+        return l
+
+
+    def __readFromStdout(self):
+        """
+        Private slot to handle the readyReadStandardOutput signal of the process.
+        """
+        if self.proc is None:
+            return
+        self.proc.setReadChannel(QProcess.StandardOutput)
+
+        while self.proc and self.proc.canReadLine():
+            ba = self.proc.readLine()
+            if ba.isNull(): return
+            str = QString()
+            s = QString(str.fromUtf8(ba.data()))[:-1]
+            self.logText.append(s)
+
+
+    def __readFromStderr(self):
+        """
+        Private slot to handle the readyReadStandardError signal of the process.
+        """
+        if self.proc is None:
+            return
+        self.proc.setReadChannel(QProcess.StandardError)
+
+        while self.proc and self.proc.canReadLine():
+            ba = self.proc.readLine()
+            if ba.isNull(): return
+            str = QString()
+            s = QString(str.fromUtf8(ba.data()))[:-1]
+            self.logText.append(s.prepend('<font color="red">').append('</font>'))
+            self.procErrorFlag = True
+
+
+    def __saveLog(self):
+        fileName = QFileDialog.getSaveFileName(self,
+                                               self.tr("Save File As"),
+                                               self.case['resu_path'],
+                                               self.tr("Mesh quality criteria listing (listpre.*);;All files (*)"))
+        if fileName.isEmpty(): return
+        try:
+            logFile = open(str(fileName), 'w')
+        except:
+            QMessageBox.warning(self, 'Error', 'Could not open file for writing')
+            return
+        logFile.write(str(self.logText.toPlainText().toAscii()))
+        logFile.close()
+
+
+    def __finished(self):
+        os.chdir(self.cwd)
+        self.pushButton.setEnabled(True)
+
+
+    def tr(self, text):
+        """
+        Translation
+        """
+        return text
+
+#-------------------------------------------------------------------------------
+# Main class
+#-------------------------------------------------------------------------------
+
+class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
+    """
+    """
+    def __init__(self, parent, case):
+        """
+        Constructor
+        """
+        QWidget.__init__(self, parent)
+
+        Ui_SolutionVerifForm.__init__(self)
+        self.setupUi(self)
+
+        self.parent = parent
+        self.case = case
+        self.mdl = SolutionDomainModel(self.case)
+        self.out = OutputControlModel(self.case)
+
+        self.case2 = Case(None)
+        XMLinit(self.case2)
+        self.case2['xmlfile'] = 'cs_cmd'
+        self.out2 = OutputControlModel(self.case2)
+
+        # combo models
+        self.modelFMTCHR         = ComboModel(self.comboBoxFMTCHR, 3, 1)
+        self.modelFormat         = ComboModel(self.comboBoxFormat, 2, 1)
+        self.modelPolygon        = ComboModel(self.comboBoxPolygon, 3, 1)
+        self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra, 3, 1)
+
+        self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
+        self.modelFMTCHR.addItem(self.tr("MED"), 'MED_fichier')
+        self.modelFMTCHR.addItem(self.tr("CGNS"), 'CGNS')
+
+        self.modelFormat.addItem(self.tr("binary"), 'binary')
+        self.modelFormat.addItem(self.tr("text"), 'text')
+
+        self.modelPolygon.addItem(self.tr("display"), 'display')
+        self.modelPolygon.addItem(self.tr("discard"), 'discard_polygons')
+        self.modelPolygon.addItem(self.tr("subdivide"), 'divide_polygons')
+
+        self.modelPolyhedra.addItem(self.tr("display"), 'display')
+        self.modelPolyhedra.addItem(self.tr("discard"), 'discard_polyhedra')
+        self.modelPolyhedra.addItem(self.tr("subdivide"), 'divide_polyhedra')
+        
+        # connections
+        
+        self.connect(self.groupBoxFaces, SIGNAL("clicked(bool)"), self.slotInterneFacesPostPro)
+        self.connect(self.comboBoxFMTCHR, SIGNAL("activated(const QString&)"), self.slotOutputFormat)
+        self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
+        self.connect(self.comboBoxPolygon, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
+        self.connect(self.comboBoxPolyhedra, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
+        self.connect(self.checkBoxBigEndian, SIGNAL("clicked()"), self.slotOutputOptions)
+        self.connect(self.toolButtonBatch, SIGNAL("clicked()"), self.slotMeshChecking)
+
+        # Faces for selection (Custom Widgets)
+
+        model = StandardItemModelFaces(self, self.mdl, 'faces_select')
+        self.widgetFacesSelect.modelFaces = model
+        self.widgetFacesSelect.tableView.setModel(model)
+
+        # INITIALISATIONS
+        # 1 - Visualization faces parameters
+
+        if self.mdl.getSelectStatus() == 'on':
+            self.groupBoxFaces.setChecked(True)
+            self.slotInterneFacesPostPro(True)
+        else:
+            self.groupBoxFaces.setChecked(False)
+            self.slotInterneFacesPostPro(False)
+
+        # 2 - Values of post processing's format
+
+        fmt = self.out.getPostProFormat()
+        self.modelFMTCHR.setItem(str_model=fmt)
+        line = self.out.getPostProOptionsFormat()
+        self.__updateOptionsFormat(line)
+
+        if not self.mdl.getMeshList():
+            self.toolButtonBatch.setEnabled(False)
+
+
+    @pyqtSignature("bool")
+    def slotInterneFacesPostPro(self, checked):
+        """
+        Private slot.
+
+        Do we join any meshes ?
+
+        @type checked: C{True} or C{False}
+        @param checked: if C{True}, shows the QGroupBox join parameters
+        """
+        self.groupBoxFaces.setFlat(not checked)
+        if checked:
+            self.mdl.setSelectStatus("on")
+            self.frameFaces.show()
+        else:
+            self.mdl.setSelectStatus("off")
+            self.frameFaces.hide()
+
+
+    @pyqtSignature("const QString &")
+    def slotOutputFormat(self, text):
+        """
+        Input format of post-processing
+        """
+        format = self.modelFMTCHR.dicoV2M[str(text)]
+
+        if self.out.getPostProFormat() != format:
+            self.out.setPostProFormat(format)
+            l = self.out.defaultInitialValues()['postprocessing_options']
+            self.out.setPostProOptionsFormat(l)
+
+        if self.out2.getPostProFormat() != format:
+            self.out2.setPostProFormat(format)
+            l = self.out2.defaultInitialValues()['postprocessing_options']
+            self.out2.setPostProOptionsFormat(l)
+            self.__updateOptionsFormat(l)
+
+
+    @pyqtSignature("")
+    def slotOutputOptions(self):
+        """
+        Create characters ligne for command of format's options
+        """
+        line = []
+        opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
+        line.append(opt_format)
+
+        if self.checkBoxBigEndian.isChecked():
+            line.append('big_endian')
+
+        opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
+        opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
+        if opt_polygon != 'display': line.append(opt_polygon)
+        if opt_polyhed != 'display': line.append(opt_polyhed)
+
+        l = string.join(line, ',')
+        log.debug("slotOutputOptions-> OPTCHR = %s" % l)
+        self.out.setPostProOptionsFormat(l)
+        self.out2.setPostProOptionsFormat(l)
+
+
+    def __updateOptionsFormat(self, line):
+        """
+        Update ligne for command of format's options at each modification of
+        post processing format
+        """
+        list = string.split(line, ',')
+        format = self.modelFMTCHR.dicoV2M[str(self.comboBoxFMTCHR.currentText())]
+        log.debug("__updateOptionsFormat-> FMTCHR = %s" % format)
+        log.debug("__updateOptionsFormat-> OPTCHR = %s" % line)
+
+        # update widgets from the options list
+
+        for opt in list:
+
+            if opt == 'binary' or opt == 'text' :
+                self.modelFormat.setItem(str_model=opt)
+
+            if opt == 'discard_polygons' or opt == 'divide_polygons':
+                self.modelPolygon.setItem(str_model=opt)
+                
+            if opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
+                self.modelPolyhedra.setItem(str_model=opt)
+
+            if format == 'EnSight':
+                if opt == 'big_endian':
+                    self.checkBoxBigEndian.setChecked(True)
+##                if opt == 'split_tensors':
+##                    self.opt_splittens.set('on')
+
+        if 'discard_polygons' not in list and 'divide_polygons' not in list:
+            self.modelPolygon.setItem(str_model="display")
+        if 'discard_polyhedra' not in list and 'divide_polyhedra' not in list:
+            self.modelPolyhedra.setItem(str_model="display")
+        if 'big_endian' not in list:
+            self.checkBoxBigEndian.setChecked(False)
+##        if 'split_tensors' not in list:
+##            self.opt_splittens.set('off')
+
+        # enable and disable options related to the format
+
+        if format != "EnSight":
+
+            if format == "CGNS":
+                self.modelPolyhedra.setItem(str_model='divide_polyhedra')
+                self.modelPolyhedra.disableItem(str_model='display')
+
+            self.modelFormat.setItem(str_model="binary")
+            self.modelFormat.disableItem(str_model='text')
+            self.labelBigEndian.setEnabled(False)
+            self.checkBoxBigEndian.setEnabled(False)
+        else:
+            self.modelFormat.enableItem(str_model='text')
+            self.comboBoxFormat.setEnabled(True)
+            self.labelBigEndian.setEnabled(True)
+            self.checkBoxBigEndian.setEnabled(True)
+            self.modelPolyhedra.enableItem(str_model='display')
+            self.comboBoxPolyhedra.setEnabled(True)
+
+
+    def __getPostCommand(self):
+        """
+        Return the preprocessor argument for postprocessing.
+        """
+        format = self.out2.getPostProFormat()
+        if format == "EnSight":
+            l = " --ensight "
+        elif format == "MED_fichier":
+            l = " --med "
+        elif format == "CGNS":
+            l = " --cgns "
+        return l
+
+
+    def __setButtonEnabled(self):
+        """
+        Block the QButton during the display of the dialog.
+        """
+        try:
+            self.toolButtonBatch.setEnabled(not self.toolButtonBatch.isEnabled())
+        except:
+            pass
+
+
+    def slotMeshChecking(self):
+        """
+        """
+        self.__setButtonEnabled()
+        dialog = MeshQualityCriteriaLogDialogView(self.parent, self.case, self.case2)
+        dialog.show()
+        self.connect(dialog, SIGNAL("accepted()"), self.__setButtonEnabled)
+        self.connect(dialog, SIGNAL("rejected()"), self.__setButtonEnabled)
+
+
+    def tr(self, text):
+        """
+        Translation
+        """
+        return text 
+
+#-------------------------------------------------------------------------------
+# Testing part
+#-------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    pass
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

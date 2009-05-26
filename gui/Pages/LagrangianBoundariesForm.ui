@@ -1,0 +1,1134 @@
+<ui version="4.0" >
+ <class>LagrangianBoundariesForm</class>
+ <widget class="QWidget" name="LagrangianBoundariesForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>428</width>
+    <height>1297</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBoxBoundaries" >
+     <property name="title" >
+      <string>Lagrangian boundary condition</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <widget class="QTableView" name="tableViewBoundaries" />
+        </item>
+        <item row="1" column="0" >
+         <widget class="QGroupBox" name="groupBoxClassNumber" >
+          <property name="title" >
+           <string/>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelICLAS" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ICLAS</string>
+               </property>
+               <property name="text" >
+                <string>Class number</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="3" >
+              <widget class="QSpinBox" name="spinBoxICLAS" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ICLAS</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="2" column="0" >
+         <widget class="QGroupBox" name="groupBoxMain" >
+          <property name="title" >
+           <string/>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelIJNBP" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IJNBP</string>
+               </property>
+               <property name="text" >
+                <string>Number of particles in class</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3" >
+              <widget class="QLineEdit" name="lineEditIJNBP" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IJNBP</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelIJFRE" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IJFRE</string>
+               </property>
+               <property name="text" >
+                <string>Frequency of injection</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3" >
+              <widget class="QLineEdit" name="lineEditIJFRE" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IJFRE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>31</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="1" >
+              <widget class="QLabel" name="labelICLST" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ICLST</string>
+               </property>
+               <property name="text" >
+                <string>Cluster number for particle</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="3" >
+              <widget class="QLineEdit" name="lineEditICLST" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ICLST</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="5" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>21</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="3" column="1" >
+              <widget class="QLabel" name="labelIROPT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IROPT</string>
+               </property>
+               <property name="text" >
+                <string>Density</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3" >
+              <widget class="QLineEdit" name="lineEditIROPT" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IROPT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="4" >
+              <widget class="QLabel" name="labelUnitIROPT" >
+               <property name="text" >
+                <string>kg/m3</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="3" column="0" >
+         <widget class="QGroupBox" name="groupBoxRate" >
+          <property name="title" >
+           <string/>
+          </property>
+          <property name="checkable" >
+           <bool>false</bool>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>51</width>
+                 <height>22</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="1" >
+              <widget class="QComboBox" name="comboBoxIPOIT" >
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IPOIT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>41</width>
+                 <height>22</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QFrame" name="frameVolumicRate" >
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelIDEBT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IDEBT</string>
+                    </property>
+                    <property name="text" >
+                     <string>Volumic rate</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLineEdit" name="lineEditIDEBT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IDEBT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="4" >
+                   <widget class="QLabel" name="labelUnitIDEBT" >
+                    <property name="text" >
+                     <string>kg/s</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="1" >
+              <widget class="QFrame" name="frameStatisticalWeight" >
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelIPOIT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IPOIT</string>
+                    </property>
+                    <property name="text" >
+                     <string>Statistical weight</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLineEdit" name="lineEditIPOIT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IPOIT</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="4" column="0" >
+         <widget class="QGroupBox" name="groupBoxVelocity" >
+          <property name="title" >
+           <string>Velocity</string>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="1" >
+              <widget class="QComboBox" name="comboBoxIJUVW" >
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IJUVW</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QFrame" name="frameVelocityNorm" >
+               <property name="minimumSize" >
+                <size>
+                 <width>16</width>
+                 <height>42</height>
+                </size>
+               </property>
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelIUNO" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IUNO</string>
+                    </property>
+                    <property name="text" >
+                     <string>Norm</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <widget class="QLineEdit" name="lineEditIUNO" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IUNO</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLabel" name="labelUnitIUNO" >
+                    <property name="text" >
+                     <string>m/s</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="2" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="1" >
+              <widget class="QFrame" name="frameVelocityValues" >
+               <property name="minimumSize" >
+                <size>
+                 <width>16</width>
+                 <height>42</height>
+                </size>
+               </property>
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelIUPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IUPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>U</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <widget class="QLineEdit" name="lineEditIUPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IUPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLabel" name="labelUnitIUPT" >
+                    <property name="text" >
+                     <string>m/s</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>22</width>
+                      <height>16</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="4" >
+                   <widget class="QLabel" name="labelIVPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IVPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>V</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="5" >
+                   <widget class="QLineEdit" name="lineEditIVPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IVPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="6" >
+                   <widget class="QLabel" name="labelUnitIVPT" >
+                    <property name="text" >
+                     <string>m/s</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="7" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>22</width>
+                      <height>16</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="8" >
+                   <widget class="QLabel" name="labelIWPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IWPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>W</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="9" >
+                   <widget class="QLineEdit" name="lineEditIWPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IWPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="10" >
+                   <widget class="QLabel" name="labelUnitIWPT" >
+                    <property name="text" >
+                     <string>m/s</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="5" column="0" >
+         <widget class="QGroupBox" name="groupBoxDiameter" >
+          <property name="title" >
+           <string>Diameter</string>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="1" >
+              <widget class="QComboBox" name="comboBoxIJRDP" >
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word:IJRDP</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QFrame" name="frameDiameter" >
+               <property name="minimumSize" >
+                <size>
+                 <width>16</width>
+                 <height>42</height>
+                </size>
+               </property>
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelIDPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IDPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>Mean value</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <widget class="QLineEdit" name="lineEditIDPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word:IDPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLabel" name="labelUnitIDPT" >
+                    <property name="text" >
+                     <string>m</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3" >
+                   <spacer>
+                    <property name="orientation" >
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" >
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="4" >
+                   <widget class="QLabel" name="labelIVDPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IVDPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>Standard deviation</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="5" >
+                   <widget class="QLineEdit" name="lineEditIVDPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>80</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: IVDPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="6" >
+                   <widget class="QLabel" name="labelUnitIVDPT" >
+                    <property name="text" >
+                     <string>m</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="2" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="6" column="0" >
+         <widget class="QGroupBox" name="groupBoxTemperature" >
+          <property name="title" >
+           <string>Temperature</string>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QComboBox" name="comboBoxIJRTP" >
+               <property name="minimumSize" >
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word:IJRTP</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QFrame" name="frameTemperature" >
+               <property name="minimumSize" >
+                <size>
+                 <width>16</width>
+                 <height>42</height>
+                </size>
+               </property>
+               <property name="frameShape" >
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow" >
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <layout class="QGridLayout" >
+                  <item row="0" column="0" >
+                   <widget class="QLabel" name="labelITPT" >
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: ITPT</string>
+                    </property>
+                    <property name="text" >
+                     <string>Temperature</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" >
+                   <widget class="QLineEdit" name="lineEditITPT" >
+                    <property name="maximumSize" >
+                     <size>
+                      <width>60</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="toolTip" >
+                     <string>Code_Saturne key word: ITPT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2" >
+                   <widget class="QLabel" name="labelUnitITPT" >
+                    <property name="text" >
+                     <string>C</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="0" >
+              <widget class="Line" name="line" >
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" >
+              <layout class="QGridLayout" >
+               <item row="0" column="0" >
+                <widget class="QLabel" name="labelICPT" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: ICPT</string>
+                 </property>
+                 <property name="text" >
+                  <string>Specific heat</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" >
+                <widget class="QLineEdit" name="lineEditICPT" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: ICPT</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2" >
+                <widget class="QLabel" name="labelUnitICPT" >
+                 <property name="text" >
+                  <string>J/kg/K</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" >
+                <widget class="QLabel" name="labelIEPSI" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: IEPSI</string>
+                 </property>
+                 <property name="text" >
+                  <string>Emissivity</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" >
+                <widget class="QLineEdit" name="lineEditIEPSI" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: IEPSI</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="7" column="0" >
+         <widget class="QGroupBox" name="groupBoxCoal" >
+          <property name="title" >
+           <string>Coal</string>
+          </property>
+          <layout class="QGridLayout" >
+           <item row="0" column="0" >
+            <layout class="QGridLayout" >
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelINUCHL" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: INUCHL</string>
+               </property>
+               <property name="text" >
+                <string>Coal number</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3" >
+              <widget class="QLineEdit" name="lineEditINUCHL" >
+               <property name="maximumSize" >
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: INUCHL</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelIHPT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IHPT</string>
+               </property>
+               <property name="text" >
+                <string>Temperature</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3" >
+              <widget class="QLineEdit" name="lineEditIHPT" >
+               <property name="maximumSize" >
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IHPT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4" >
+              <widget class="QLabel" name="labelUnitIHPT" >
+               <property name="text" >
+                <string>C</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="1" >
+              <widget class="QLabel" name="labelIMCHT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCHT</string>
+               </property>
+               <property name="text" >
+                <string>Mass of coal</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2" >
+              <spacer>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCHT</string>
+               </property>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>121</width>
+                 <height>22</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="3" >
+              <widget class="QLineEdit" name="lineEditIMCHT" >
+               <property name="maximumSize" >
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCHT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="4" >
+              <widget class="QLabel" name="labelUnitIMCHT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCHT</string>
+               </property>
+               <property name="text" >
+                <string>kg</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="5" >
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" >
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="3" column="1" >
+              <widget class="QLabel" name="labelIMCKT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCKT</string>
+               </property>
+               <property name="text" >
+                <string>Mass of coke</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3" >
+              <widget class="QLineEdit" name="lineEditIMCKT" >
+               <property name="maximumSize" >
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCKT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="4" >
+              <widget class="QLabel" name="labelUnitIIMCKT" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: IMCHT</string>
+               </property>
+               <property name="text" >
+                <string>kg</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

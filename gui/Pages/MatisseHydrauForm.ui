@@ -1,0 +1,41 @@
+<ui version="4.0" >
+ <class>MatisseHydrauForm</class>
+ <widget class="QWidget" name="MatisseHydrauForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>557</width>
+    <height>567</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>473</width>
+     <height>425</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string>hydraulic load</string>
+   </property>
+   <widget class="QTableView" name="tableView" >
+    <property name="geometry" >
+     <rect>
+      <x>11</x>
+      <y>27</y>
+      <width>451</width>
+      <height>371</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

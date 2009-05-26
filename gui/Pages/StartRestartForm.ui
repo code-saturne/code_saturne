@@ -1,0 +1,446 @@
+<ui version="4.0" >
+ <class>StartRestartForm</class>
+ <widget class="QWidget" name="StartRestartForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>202</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="title" >
+      <string>Start/Restart</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <widget class="QFrame" name="frameRestart" >
+        <property name="minimumSize" >
+         <size>
+          <width>380</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <property name="leftMargin" >
+          <number>0</number>
+         </property>
+         <property name="topMargin" >
+          <number>0</number>
+         </property>
+         <property name="rightMargin" >
+          <number>0</number>
+         </property>
+         <property name="bottomMargin" >
+          <number>0</number>
+         </property>
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>21</width>
+               <height>21</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" colspan="2" >
+              <widget class="QLabel" name="label" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ISUITE</string>
+               </property>
+               <property name="text" >
+                <string>Calculation restart:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2" >
+              <widget class="QRadioButton" name="radioButtonYes" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ISUITE</string>
+               </property>
+               <property name="text" >
+                <string>on</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3" >
+              <widget class="QRadioButton" name="radioButtonNo" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ISUITE</string>
+               </property>
+               <property name="text" >
+                <string>off</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4" >
+              <widget class="QToolButton" name="toolButton" >
+               <property name="toolTip" >
+                <string>Selection of the restart directory and
+creation of the symbolic link in the DATA directory</string>
+               </property>
+               <property name="text" >
+                <string>...</string>
+               </property>
+               <property name="icon" >
+                <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/document-open.png</iconset>
+               </property>
+               <property name="iconSize" >
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLabel" name="labelDir1" >
+               <property name="text" >
+                <string>RESTART:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" colspan="3" >
+              <widget class="QLabel" name="labelDir2" >
+               <property name="text" >
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>80</width>
+               <height>25</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="1" column="0" >
+       <widget class="Line" name="line" >
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" >
+       <widget class="QFrame" name="frameFrozen" >
+        <property name="minimumSize" >
+         <size>
+          <width>380</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <property name="leftMargin" >
+          <number>0</number>
+         </property>
+         <property name="topMargin" >
+          <number>0</number>
+         </property>
+         <property name="rightMargin" >
+          <number>0</number>
+         </property>
+         <property name="bottomMargin" >
+          <number>0</number>
+         </property>
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2" >
+             <property name="toolTip" >
+              <string>Code_Saturne key word: ICCVFG</string>
+             </property>
+             <property name="text" >
+              <string>Calculation on frozen velocity and pressure fields</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox" >
+             <property name="text" >
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="0" >
+       <widget class="Line" name="lineICCVFG" >
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" >
+       <widget class="QFrame" name="frameAdvanced" >
+        <property name="minimumSize" >
+         <size>
+          <width>380</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <property name="leftMargin" >
+          <number>0</number>
+         </property>
+         <property name="topMargin" >
+          <number>0</number>
+         </property>
+         <property name="rightMargin" >
+          <number>0</number>
+         </property>
+         <property name="bottomMargin" >
+          <number>0</number>
+         </property>
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_3" >
+             <property name="text" >
+              <string>Advanced options</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonAdvanced" >
+             <property name="text" >
+              <string>...</string>
+             </property>
+             <property name="icon" >
+              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+             </property>
+             <property name="iconSize" >
+              <size>
+               <width>22</width>
+               <height>22</height>
+              </size>
+             </property>
+             <property name="shortcut" >
+              <string>Ctrl+S</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>16</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources_pages.qrc" />
+ </resources>
+ <connections>
+  <connection>
+   <sender>radioButtonYes</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frameFrozen</receiver>
+   <slot>show()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>318</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>78</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonNo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frameFrozen</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>365</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>478</x>
+     <y>307</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonNo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toolButton</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>365</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>397</x>
+     <y>122</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonYes</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toolButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>318</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>397</x>
+     <y>122</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonYes</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lineICCVFG</receiver>
+   <slot>show()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>244</x>
+     <y>46</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>224</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonNo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lineICCVFG</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>286</x>
+     <y>46</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>224</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

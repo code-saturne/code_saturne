@@ -1,0 +1,130 @@
+<ui version="4.0" >
+ <class>MatisseThermicForm</class>
+ <widget class="QWidget" name="MatisseThermicForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>675</width>
+    <height>685</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <widget class="QTabWidget" name="tabWidget" >
+   <property name="geometry" >
+    <rect>
+     <x>30</x>
+     <y>40</y>
+     <width>531</width>
+     <height>531</height>
+    </rect>
+   </property>
+   <property name="currentIndex" >
+    <number>1</number>
+   </property>
+   <widget class="QWidget" name="tab" >
+    <attribute name="title" >
+     <string>Parameters</string>
+    </attribute>
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>503</width>
+       <height>425</height>
+      </rect>
+     </property>
+     <property name="title" >
+      <string>Thermal load</string>
+     </property>
+     <widget class="QTableView" name="tableView" >
+      <property name="geometry" >
+       <rect>
+        <x>11</x>
+        <y>27</y>
+        <width>481</width>
+        <height>371</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_2" >
+    <attribute name="title" >
+     <string>Canisters network</string>
+    </attribute>
+    <widget class="QTabWidget" name="tabWidget_2" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>501</width>
+       <height>461</height>
+      </rect>
+     </property>
+     <property name="currentIndex" >
+      <number>2</number>
+     </property>
+     <widget class="QWidget" name="tab_line" >
+      <attribute name="title" >
+       <string>Line</string>
+      </attribute>
+      <widget class="MatisseCustomView" native="1" name="widgetLine" >
+       <property name="geometry" >
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>481</width>
+         <height>421</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_row" >
+      <attribute name="title" >
+       <string>Row</string>
+      </attribute>
+      <widget class="MatisseCustomView" native="1" name="widgetRow" >
+       <property name="geometry" >
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>481</width>
+         <height>421</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_height" >
+      <attribute name="title" >
+       <string>Height</string>
+      </attribute>
+      <widget class="MatisseCustomView" native="1" name="widgetHeight" >
+       <property name="geometry" >
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>481</width>
+         <height>421</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MatisseCustomView</class>
+   <extends>QWidget</extends>
+   <header>MatisseCustomView.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

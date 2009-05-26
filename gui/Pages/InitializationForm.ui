@@ -1,0 +1,837 @@
+<ui version="4.0" >
+ <class>InitializationForm</class>
+ <widget class="QWidget" name="InitializationForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>943</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBoxZone" >
+     <property name="title" >
+      <string>Select volume zone for initialization</string>
+     </property>
+     <layout class="QHBoxLayout" >
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="labelZone" >
+          <property name="text" >
+           <string>Volume zone</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxZone" />
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <widget class="QGroupBox" name="groupBoxVelocity" >
+     <property name="title" >
+      <string>Velocity initialization</string>
+     </property>
+     <layout class="QHBoxLayout" >
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QLabel" name="label_U" >
+          <property name="text" >
+           <string>U</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_V" >
+          <property name="text" >
+           <string>V</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_W" >
+          <property name="text" >
+           <string>W</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <widget class="QLineEdit" name="lineEditU" />
+        </item>
+        <item row="0" column="1" >
+         <widget class="QLabel" name="labelUnitU" >
+          <property name="text" >
+           <string>m/s</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" >
+         <widget class="QLineEdit" name="lineEditV" />
+        </item>
+        <item row="1" column="1" >
+         <widget class="QLabel" name="labelUnitV" >
+          <property name="text" >
+           <string>m/s</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" >
+         <widget class="QLineEdit" name="lineEditW" />
+        </item>
+        <item row="2" column="1" >
+         <widget class="QLabel" name="labelUnitW" >
+          <property name="text" >
+           <string>m/s</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" >
+    <widget class="QGroupBox" name="groupBoxThermal" >
+     <property name="title" >
+      <string>Thermal scalar initialization</string>
+     </property>
+     <layout class="QHBoxLayout" >
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="labelThermal" >
+          <property name="text" >
+           <string>Temp</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="lineEditThermal" />
+        </item>
+        <item>
+         <widget class="QLabel" name="labelUnitThermal" >
+          <property name="text" >
+           <string>C</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>16</width>
+          <height>21</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" >
+    <widget class="QGroupBox" name="groupBoxTurbulence" >
+     <property name="title" >
+      <string>Turbulence initialization</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxTurbulence" />
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="Line" name="line" >
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameKeps" >
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Plain</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>21</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" >
+             <item>
+              <widget class="QLabel" name="labelKeps_k" >
+               <property name="text" >
+                <string>k</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelKeps_eps" >
+               <property name="text" >
+                <string>eps</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QLineEdit" name="lineEditKeps_k" />
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelUnitKeps_k" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLineEdit" name="lineEditKeps_eps" />
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelUnitKeps_eps" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>3&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameRij" >
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" >
+             <item>
+              <widget class="QLabel" name="labelR11" >
+               <property name="text" >
+                <string>R&lt;sub>11&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelR22" >
+               <property name="text" >
+                <string>R&lt;sub>22&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelR33" >
+               <property name="text" >
+                <string>R&lt;sub>33&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelR12" >
+               <property name="text" >
+                <string>R&lt;sub>12&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelR13" >
+               <property name="text" >
+                <string>R&lt;sub>13&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelR23" >
+               <property name="text" >
+                <string>R&lt;sub>23&lt;/sub></string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelRijEps" >
+               <property name="text" >
+                <string>eps</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QLineEdit" name="lineEditR11" />
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelUnitR11" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLineEdit" name="lineEditR22" />
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelUnitR22" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" >
+              <widget class="QLineEdit" name="lineEditR33" />
+             </item>
+             <item row="2" column="1" >
+              <widget class="QLabel" name="labelUnitR33" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" >
+              <widget class="QLineEdit" name="lineEditR12" />
+             </item>
+             <item row="3" column="1" >
+              <widget class="QLabel" name="labelUnitR12" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0" >
+              <widget class="QLineEdit" name="lineEditR13" />
+             </item>
+             <item row="4" column="1" >
+              <widget class="QLabel" name="labelUnitR13" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0" >
+              <widget class="QLineEdit" name="lineEditR23" />
+             </item>
+             <item row="5" column="1" >
+              <widget class="QLabel" name="labelUnitR23" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0" >
+              <widget class="QLineEdit" name="lineEditRijEps" />
+             </item>
+             <item row="6" column="1" >
+              <widget class="QLabel" name="labelUnitRijEps" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>3&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="framev2f" >
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" >
+             <item>
+              <widget class="QLabel" name="labelv2f_k" >
+               <property name="text" >
+                <string>k</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelv2f_eps" >
+               <property name="text" >
+                <string>eps</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelv2f_phi" >
+               <property name="text" >
+                <string>phi</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelv2f_fb" >
+               <property name="text" >
+                <string>fb</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QLineEdit" name="lineEditv2f_k" />
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelUbitv2f_k" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLineEdit" name="lineEditv2f_eps" />
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelUbitv2f_eps" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>3&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" >
+              <widget class="QLineEdit" name="lineEditv2f_phi" />
+             </item>
+             <item row="3" column="0" >
+              <widget class="QLineEdit" name="lineEditv2f_fb" />
+             </item>
+             <item row="3" column="1" >
+              <widget class="QLabel" name="labelUbitv2f_fb" >
+               <property name="text" >
+                <string>s&lt;sup>-1&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameKomega" >
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" >
+             <item>
+              <widget class="QLabel" name="labelKomega_k" >
+               <property name="text" >
+                <string>k</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelKomega_omega" >
+               <property name="text" >
+                <string>omega</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QLineEdit" name="lineEditKomega_k" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLabel" name="labelUnitKomega_k" >
+               <property name="text" >
+                <string>m&lt;sup>2&lt;/sup>/s&lt;sup>2&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLineEdit" name="lineEditKomega_omega" >
+               <property name="maximumSize" >
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="labelUnitKomega_omega" >
+               <property name="text" >
+                <string>s&lt;sup>-1&lt;/sup></string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameReference" >
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" >
+         <item row="0" column="0" >
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QGridLayout" >
+             <item row="0" column="0" >
+              <widget class="QLabel" name="labelRefVelocity" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: UREF</string>
+               </property>
+               <property name="text" >
+                <string>Reference velocity</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" >
+              <widget class="QLineEdit" name="lineEditRefVelocity" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: UREF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2" >
+              <widget class="QLabel" name="labelUnitRefVelocity" >
+               <property name="text" >
+                <string>m/s</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" >
+              <widget class="QLabel" name="labelRefLength" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ALMAX</string>
+               </property>
+               <property name="text" >
+                <string>Reference length</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLineEdit" name="lineEditRefLength" >
+               <property name="toolTip" >
+                <string>Code_Saturne key word: ALMAX</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2" >
+              <widget class="QLabel" name="labelUnitRefLength" >
+               <property name="text" >
+                <string>m</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>16</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
