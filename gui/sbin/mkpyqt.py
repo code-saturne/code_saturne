@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2007-8 Qtrac Ltd. All rights reserved.
+# Copyright (c) 2007-9 Qtrac Ltd. All rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
@@ -15,12 +15,25 @@ import stat
 import sys
 import PyQt4.QtCore
 
-__version__ = "1.0.1"
+__version__ = "1.0.3"
 
-app = PyQt4.QtCore.QCoreApplication([])
-PATH = unicode(app.applicationDirPath())
-del app
+if sys.platform.startswith("win"):
+    PATH = os.path.join(os.path.dirname(sys.executable),
+                        "Lib/site-packages/PyQt4")
+else:
+    app = PyQt4.QtCore.QCoreApplication([])
+    PATH = unicode(app.applicationDirPath())
+    del app
+if sys.platform.startswith("darwin"):
+    i = PATH.find("Resources")
+    if i > -1:
+        PATH = PATH[:i] + "bin"
 PYUIC4 = os.path.join(PATH, "pyuic4") # e.g. PYUIC4 = "/usr/bin/pyuic4"
+if sys.platform.startswith("darwin"):
+    PYUIC4 = os.path.dirname(sys.executable)
+    i = PYUIC4.find("Resources")
+    if i > -1:
+        PYUIC4 = PYUIC4[:i] + "Lib/python2.5/site-packages/PyQt4/uic/pyuic.py"
 PYRCC4 = os.path.join(PATH, "pyrcc4")
 PYLUPDATE4 = os.path.join(PATH, "pylupdate4")
 LRELEASE = "lrelease"
@@ -80,9 +93,17 @@ NOTE: If any tool fails to run, e.g., pyuic4, then edit this program and
 hard-code the path; the variables with the tool paths are near the top
 of the file.
 
-mkpyqt.py v %s. Copyright (c) 2007 Qtrac Ltd. All rights reserved.
+mkpyqt.py v %s. Copyright (c) 2007-9 Qtrac Ltd. All rights reserved.
 """ % __version__
     sys.exit()
+
+
+def report_failure(command, args, process):
+    msg = ""
+    ba = process.readAllStandardError()
+    if not ba.isEmpty():
+        msg = ": " + str(QString(ba))
+    print "failed", command, " ".join(args), msg
 
 
 def build(path):
@@ -105,12 +126,15 @@ def build(path):
                os.stat(source)[stat.ST_MTIME] > \
                os.stat(target)[stat.ST_MTIME]):
                 args = ["-o", target, source]
+                if sys.platform.startswith("darwin") and command == PYUIC4:
+                    command = sys.executable
+                    args = [PYUIC4] + args
                 if Debug:
-                    print "# %s -o %s %s" % (command, target, source)
+                    print "# %s %s" % (command, " ".join(args))
                 else:
                     process.start(command, args)
                     if not process.waitForFinished(2 * 60 * 1000):
-                        print "failed", command, " ".join(args)
+                        report_failure(command, args, process)
                     else:
                         print source, "->", target
             elif Verbose:
@@ -123,16 +147,19 @@ def clean(path):
         target = os.path.join(path, name)
         source = None
         if target.endswith(".py") or target.endswith(".pyc") or \
-           target.endswith(".pyo") or target.endswith("~"):
+           target.endswith(".pyo"):
             #if name.startswith("ui_") and not name[-1] in "oc":
             if name.endswith("Form.py") and not name[-1] in "oc":
                 #source = os.path.join(path, name[3:-3] + ".ui")
                 source = os.path.join(path, name[:-3] + ".ui")
-            elif name.startswith("qrc_"):
+            #elif name.startswith("qrc_"):
+            elif name.endswith("_rc.py"):
                 if target[-1] in "oc":
-                    source = os.path.join(path, name[4:-4] + ".qrc")
+                    #source = os.path.join(path, name[4:-4] + ".qrc")
+                    source = os.path.join(path, name[:-7] + ".qrc")
                 else:
-                    source = os.path.join(path, name[4:-3] + ".qrc")
+                    #source = os.path.join(path, name[4:-3] + ".qrc")
+                    source = os.path.join(path, name[:-6] + ".qrc")
             elif target[-1] in "oc":
                 source = target[:-1]
             if source is not None:
@@ -161,17 +188,16 @@ def translate(path):
             tsfiles.append(os.path.join(path, name))
     if not tsfiles:
         return
+    #verbose = "-verbose" if Verbose else ""
     if Verbose:
         verbose = "-verbose"
     else:
         verbose = ""
-
-    #verbose = "-verbose" if Verbose else ""
+    #silent = "-silent" if not Verbose else ""
     if not Verbose:
         silent = "-silent"
     else:
         silent = ""
-    #silent = "-silent" if not Verbose else ""
     process = PyQt4.QtCore.QProcess()
     for ts in tsfiles:
         qm = ts[:-3] + ".qm"
@@ -185,10 +211,10 @@ def translate(path):
         else:
             process.start(command1, args1)
             if not process.waitForFinished(2 * 60 * 1000):
-                print "failed", command1, " ".join(args1)
+                report_failure(command1, args1, process)
             process.start(command2, args2)
             if not process.waitForFinished(2 * 60 * 1000):
-                print "failed", command2, " ".join(args2)
+                report_failure(command2, args2, process)
             
 
 def apply(recurse, function, path):
@@ -240,3 +266,5 @@ main()
 
 # 1.0.1 Fixed bug reported by Brian Downing where paths that contained
 #       spaces were not handled correctly.
+# 1.0.2 Changed default path on Windows to match PyQt 4.4
+# 1.0.3 Tried to make the paths work on Mac OS X

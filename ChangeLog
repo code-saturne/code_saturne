@@ -1,3 +1,12 @@
+* 27/05/2009 - David Monfort <david.monfort@edf.fr>
+  Update to new mkpyqt.py script.
+  Remove two generated resources files.
+  modified script:
+    gui/sbin/mkpyqt.py
+  removed files:
+    gui/Base/resource_base_rc.py
+    gui/Pages/resources_pages_rc.py
+
 * 26/05/2009 - David Monfort <david.monfort@edf.fr>
   Merge the Graphical User Interface module within the Kernel
   module for a better consistency in development and maintenance.
