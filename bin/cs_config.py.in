@@ -74,9 +74,6 @@ class dirs:
     ecs_prefix = "@ecs_prefix@"
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
-    ics_prefix = "@ics_prefix@"
-    ics_exec_prefix = ics_prefix
-    ics_bindir = os.path.join(ics_exec_prefix, "bin")
 
 # Build tools, option, and libraries
 #-----------------------------------
@@ -111,7 +108,6 @@ def main():
     print ""
     print "Auxiliary information:"
     print "  dirs.ecs_prefix = " + dirs.ecs_prefix
-    print "  dirs.ics_prefix = " + dirs.ics_prefix
     print ""
     print "Compilers and associated options:"
     print "  cc = " + build.cc

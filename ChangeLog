@@ -1,3 +1,12 @@
+* 28/05/2009 - David Monfort <david.monfort@edf.fr>
+  Update user scripts with respect to the GUI integration,
+  remove the ics_prefix references.
+  modified scripts:
+    bin/cs_info.in
+    bin/runcase.in
+    bin/runcase_coupling.in
+    bin/cs_config.py.in
+
 * 27/05/2009 - David Monfort <david.monfort@edf.fr>
   Update to new mkpyqt.py script.
   Remove two generated resources files.

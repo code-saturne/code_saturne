@@ -698,7 +698,6 @@ echo '   Start time       : ' $CURDATE                         >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 echo '    Kernel          : ' $prefix                          >>$summary
 echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
-echo '    Interface       : ' $ics_prefix                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    SYR_CS          : ' $syrcs_prefix                    >>$summary
 echo '    HOMARD          : ' $homard_prefix                   >>$summary

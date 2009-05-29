@@ -115,8 +115,7 @@ def print_version():
     """
 
     print msg % {'solver':cs_config.dirs.prefix,
-                 'prepro':cs_config.dirs.ecs_prefix,
-                 'gui':cs_config.dirs.ics_prefix}
+                 'prepro':cs_config.dirs.ecs_prefix}
 
 
 #-------------------------------------------------------------------------------
