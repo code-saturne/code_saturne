@@ -1,4 +1,9 @@
 * 28/05/2009 - David Monfort <david.monfort@edf.fr>
+  Add a trick to by-pass the PYTHONPATH environment variable.
+  modified script:
+    gui/cs_gui.in
+
+* 28/05/2009 - David Monfort <david.monfort@edf.fr>
   Update user scripts with respect to the GUI integration,
   remove the ics_prefix references.
   modified scripts:
