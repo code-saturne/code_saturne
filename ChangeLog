@@ -1,6 +1,12 @@
+* 15/06/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code cleaning.
+  modified routines:
+    include/base/cs_boundary_conditions.h
+    src/base/cs_boundary_conditions.c
+
 * 15/06/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a wrong array indirection in mass source term calculation.
-  modified routine:
+  modified routines:
     src/base/mempdc.f90
     src/base/resolp.f90
 

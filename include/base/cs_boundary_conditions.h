@@ -101,6 +101,25 @@ void CS_PROCF (bcderr, BCDERR)
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Handling of boundary condition definition errors and associated output.
+ *
+ * For each boundary face, bc_type defines the boundary condition type.
+ * As a convention here, zero values correspond to undefined types,
+ * positive values to defined types (with no error), and negative values
+ * to defined types with inconsistent or incompatible values, the
+ * absolute value indicating the original boundary condition type.
+ *
+ *
+ * parameters:
+ *   n_phases  <-- number of active phases
+ *   bc_type   <-- array of BC type ids (per phase)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_error(int             n_phases,
+                             const cs_int_t  bc_type[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

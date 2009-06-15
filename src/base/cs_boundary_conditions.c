@@ -190,7 +190,7 @@ _min_gnum_face(fvm_gnum_t  *face_gnum,
  * As a convention here, zero values correspond to undefined types,
  * positive values to defined types (with no error), and negative values
  * to defined types with inconsistent or incompatible values, the
- * aboslute value indicationg the original boundary condition type.
+ * absolute value indicating the original boundary condition type.
  *
  * Fortran Interface:
  *
@@ -207,9 +207,35 @@ void CS_PROCF (bcderr, BCDERR)
  cs_int_t        *itypfb
 )
 {
+  cs_boundary_conditions_error(*nphas, itypfb);
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Handling of boundary condition definition errors and associated output.
+ *
+ * For each boundary face, bc_type defines the boundary condition type.
+ * As a convention here, zero values correspond to undefined types,
+ * positive values to defined types (with no error), and negative values
+ * to defined types with inconsistent or incompatible values, the
+ * absolute value indicating the original boundary condition type.
+ *
+ *
+ * parameters:
+ *   n_phases  <-- number of active phases
+ *   bc_type   <-- array of BC type ids (per phase)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_error(int             n_phases,
+                             const cs_int_t  bc_type[])
+{
   /* local variables */
 
-  cs_int_t    phase_id;
+  int  phase_id;
   fvm_lnum_t  face_id;
 
   fvm_gnum_t  n_errors = 0;
@@ -230,19 +256,19 @@ void CS_PROCF (bcderr, BCDERR)
 
   /* Count and mark faces with problems */
 
-  for (phase_id = 0; phase_id < *nphas; phase_id++) {
+  for (phase_id = 0; phase_id < n_phases; phase_id++) {
 
     int         err_face_type;
     cs_real_t   err_face_coo[3];
     fvm_gnum_t  err_face_gnum = 0;
 
-    cs_int_t  *bc_type = itypfb + phase_id*n_b_faces;
+    const cs_int_t  *_bc_type = bc_type + phase_id*n_b_faces;
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-      /* bc_type[] used to determine if we have an error */
+      /* _bc_type[] used to determine if we have an error */
 
-      if (bc_type[face_id] < 1) {
+      if (_bc_type[face_id] < 1) {
 
         fvm_gnum_t face_gnum;
 
@@ -255,7 +281,7 @@ void CS_PROCF (bcderr, BCDERR)
 
         if (err_face_gnum == 0 || face_gnum < err_face_gnum) {
           int coo_id;
-          err_face_type = bc_type[face_id];
+          err_face_type = _bc_type[face_id];
           for (coo_id = 0; coo_id < 3; coo_id++)
             err_face_coo[coo_id] = mesh_q->b_face_cog[face_id*3 + coo_id];
         }
@@ -273,7 +299,7 @@ void CS_PROCF (bcderr, BCDERR)
 
     if (cs_glob_rank_id < 1) {
 
-      if (*nphas > 1)
+      if (n_phases > 1)
         bft_printf(_("\nPhase %d:\n  "), phase_id + 1);
 
       bft_printf(_("\nFirst face with boundary condition definition error\n"
@@ -360,14 +386,14 @@ void CS_PROCF (bcderr, BCDERR)
 
     cs_post_write_meshes(-1, 0.0);
 
-    for (phase_id = 0; phase_id < *nphas; phase_id++) {
+    for (phase_id = 0; phase_id < n_phases; phase_id++) {
 
       size_t name_size = 0;
       char var_name[32];
 
-      cs_int_t  *bc_type = itypfb + phase_id*n_b_faces;
+      const cs_int_t  *_bc_type = bc_type + phase_id*n_b_faces;
 
-      if (*nphas > 1) {
+      if (n_phases > 1) {
         sprintf(var_name, _("Phase %d, "), phase_id + 1);
         name_size = strlen(var_name);
       }
@@ -389,7 +415,7 @@ void CS_PROCF (bcderr, BCDERR)
                             0.0,
                             NULL,
                             NULL,
-                            bc_type);
+                            _bc_type);
 
       }
     }
@@ -401,10 +427,6 @@ void CS_PROCF (bcderr, BCDERR)
        "  For details, read the end of the calculation log,\n"
        "  or visualize the error postprocessing output."));
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 
