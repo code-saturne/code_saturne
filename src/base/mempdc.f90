@@ -200,7 +200,7 @@ CALL RASIZE('MEMPDC',IFINRA)
  /,'PHASE ',I6,' : HEAD LOSS TREATMENT NOT ACTIVATED ',/,   &
    '                 NCEPDC = ',I10,/)
  2001 format(                                                           &
- /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,     &
+ /,'PHASE ',I6,' : HEAD LOSS TERMS TREATMENT ACTIVATED ',/,     &
  '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/)
 
 

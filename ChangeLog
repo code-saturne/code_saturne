@@ -1,3 +1,9 @@
+* 15/06/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a wrong array indirection in mass source term calculation.
+  modified routine:
+    src/base/mempdc.f90
+    src/base/resolp.f90
+
 * 15/06/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a tricky bug in Bull optimization for matrix/vector product,
   often seen while using the multigrid algorithm (more occurences...)

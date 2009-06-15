@@ -251,7 +251,7 @@ character*80     chaine
 integer          lchain
 integer          idebia, idebra
 integer          iccocg, inc   , init  , isym  , ipol  , isqrt
-integer          iel   , ifac  , ifac0 , iel0
+integer          ii, iel   , ifac  , ifac0 , iel0
 integer          ireslp, nswrp , nswmpr
 integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
@@ -460,9 +460,9 @@ if(irnpnw.ne.1) then
        ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
 
   if (ncesmp.gt.0) then
-    do iel = 1, ncesmp
-      w1(icetsm(iel)) = w1(icetsm(iel))                           &
-       -volume(icetsm(iel))*smacel(iel,ipriph)/propce(iel,ipcrom)
+    do ii = 1, ncesmp
+      iel = icetsm(ii)
+      w1(iel) = w1(iel) -volume(iel)*smacel(ii,ipriph)/propce(iel,ipcrom)
     enddo
   endif
 
@@ -1089,9 +1089,9 @@ call divmas                                                       &
 
 ! --- Termes sources de masse
 if (ncesmp.gt.0) then
-  do iel = 1, ncesmp
-    w7(icetsm(iel)) = w7(icetsm(iel))                             &
-           -volume(icetsm(iel))*smacel(iel,ipriph)
+  do ii = 1, ncesmp
+    iel = icetsm(ii)
+    w7(iel) = w7(iel) -volume(iel)*smacel(ii,ipriph)
   enddo
 endif
 
