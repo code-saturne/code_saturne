@@ -1,3 +1,14 @@
+* 15/06/2009 - David Monfort <david.monfort@edf.fr>
+  Enable the multigrid algorithm for the diffusion equation in
+  the electric arcs, Lagrangian, radiative transfert (P1 model)
+  and ALE modules.
+  modified scripts:
+    src/base/codits.f90
+    src/base/varpos.f90
+    src/elec/elini1.f90
+    src/lagr/lageqp.f90
+    src/rayt/raypun.f90
+
 * 15/06/2009 - Jérôme Lucas <jerome.lucas@incka.fr>
   Fix a missing initialization in the halo structure.
   modified routine:

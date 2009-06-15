@@ -305,11 +305,13 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 character*80     chaine
 character*8      cnom
+integer          lchain
 integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          iphas,idimte,itenso,iinvpe, iinvpp
 integer          idtva0
+integer          iagmax, nagmax, npstmg
 double precision residu,rnorm
 double precision thetex
 
@@ -410,6 +412,28 @@ if (idtvar.lt.0) then
   do iel = 1, ncel
     dam(iel) = dam(iel)/relaxp
   enddo
+endif
+!      CREATION DE LA HIERARCHIE DE MAILLAGE SI MULTIGRILLE
+
+if (imgrp.gt.0) then
+
+! --- Creation de la hierarchie de maillages
+
+  chaine = nomvar(ivar)
+  iwarnp = iwarni(ivar)
+  iagmax = iagmx0(ivar)
+  nagmax = nagmx0(ivar)
+  npstmg = ncpmgr(ivar)
+  lchain = 8
+
+  call clmlga                                                     &
+  !==========
+ ( chaine(1:8) ,     lchain ,                                     &
+   ncelet , ncel   , nfac   ,                                     &
+   isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
+   ngrmax , ncegrm ,                                              &
+   dam    , xam    )
+
 endif
 
 
@@ -685,6 +709,15 @@ if (iescap.gt.0) then
     dam(iel) = (smbrp(iel)/ volume(iel))**2
   enddo
 
+endif
+
+! SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+
+if (imgrp.gt.0) then
+  chaine = nomvar(ipp)
+  lchain = 8
+  call dsmlga(chaine(1:8), lchain)
+  !==========
 endif
 
 !--------

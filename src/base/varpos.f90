@@ -637,10 +637,13 @@ if(ipass.eq.3) then
   if (iale.eq.1) then
     istat(iuma) = 0
     iconv(iuma) = 0
+    imgr (iuma) = 1
     istat(ivma) = 0
     iconv(ivma) = 0
+    imgr (ivma) = 1
     istat(iwma) = 0
     iconv(iwma) = 0
+    imgr (iwma) = 1
   endif
 
 
