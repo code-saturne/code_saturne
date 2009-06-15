@@ -360,7 +360,7 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
   }
   else {
     #pragma omp parallel for
-    for (ii = 0; ii < n_elts; ii++);
+    for (ii = 0; ii < n_elts; ii++)
       y[ii] = 0.0;
   }
 }
@@ -393,13 +393,13 @@ _diag_x_p_beta_y(cs_real_t         alpha,
 
   if (da != NULL) {
     #pragma omp parallel for firstprivate(alpha, beta)
-    for (ii = 0; ii < n_elts; ii++) {
-      y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]); }
+    for (ii = 0; ii < n_elts; ii++)
+      y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]);
   }
   else {
     #pragma omp parallel for firstprivate(beta)
-    for (ii = 0; ii < n_elts; ii++) {
-      y[ii] *= beta; }
+    for (ii = 0; ii < n_elts; ii++)
+      y[ii] *= beta;
   }
 }
 
@@ -881,8 +881,8 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
         #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
-          for (face_id = group_index[t_id*n_groups*2 + g_id];
-               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+          for (face_id = group_index[(t_id*n_groups + g_id)*2];
+               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
@@ -901,8 +901,8 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
         #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
-          for (face_id = group_index[t_id*n_groups*2 + g_id];
-               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+          for (face_id = group_index[(t_id*n_groups + g_id)*2];
+               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
@@ -976,13 +976,14 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
 
         /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
 
-        ii_prev = face_cel_p[0] - 1;
+        ii = face_cel_p[0] - 1;
+        ii_prev = ii;
         y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
 
         for (kk = 1; kk < kk_max; ++kk) {
           ii = face_cel_p[2*kk] - 1;
           /* y[ii] += xa1[face_id+kk] * x[jj]; */
-          if(ii == ii_prev) {
+          if (ii == ii_prev) {
             y_it = y_it_prev;
           }
           else {
@@ -1017,13 +1018,14 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
 
         /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
 
-        ii_prev = face_cel_p[0] - 1;
+        ii = face_cel_p[0] - 1;
+        ii_prev = ii;
         y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
 
         for (kk = 1; kk < kk_max; ++kk) {
           ii = face_cel_p[2*kk] - 1;
           /* y[ii] += xa1[face_id+i] * x[jj]; */
-          if(ii == ii_prev) {
+          if (ii == ii_prev) {
             y_it = y_it_prev;
           }
           else {
@@ -1251,8 +1253,8 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
         #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
-          for (face_id = group_index[t_id*n_groups*2 + g_id];
-               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+          for (face_id = group_index[(t_id*n_groups + g_id)*2];
+               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
@@ -1273,8 +1275,8 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
         #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
-          for (face_id = group_index[t_id*n_groups*2 + g_id];
-               face_id < group_index[t_id*n_groups*2 + g_id + 1];
+          for (face_id = group_index[(t_id*n_groups + g_id)*2];
+               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
@@ -2617,7 +2619,7 @@ cs_matrix_create(cs_matrix_type_t       type,
 #if defined(SX) && defined(_SX) /* For vector machines */
       if (m->numbering->type == CS_NUMBERING_VECTORIZE) {
         m->vector_multiply = _mat_vec_p_l_native_vector;
-        m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_vector;
+        m->alpha_a_x_p_beta_y = _alpha_a_x_p_beta_y_native_vector;
       }
 #endif
     }
