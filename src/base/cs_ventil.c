@@ -816,7 +816,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
         if (ivtl > -1) {
           ventil = cs_glob_ventil_tab[ivtl];
-          debit = CS_ABS(flux_masse_fac[ifac]/densite_cel[icel]);
+          debit = flux_masse_fac[ifac]/densite_cel[icel];
           sens = (i == 0 ? 1 : - 1);
           if (CS_LOC_PRODUIT_SCALAIRE(ventil->dir_axe, orient) * sens > 0.0)
             ventil->debit_sortant += debit;
@@ -843,7 +843,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
       for (idim = 0 ; idim < 3 ; idim++)
         orient[idim] = mesh_quantities->b_face_normal[ifac * 3 + idim];
 
-      debit = CS_ABS(flux_masse_fbr[ifac]/densite_fbr[ifac]);
+      debit = flux_masse_fbr[ifac]/densite_fbr[ifac];
       if (CS_LOC_PRODUIT_SCALAIRE(ventil->dir_axe, orient) > 0.0)
         ventil->debit_sortant += debit;
       else
@@ -934,8 +934,8 @@ cs_ventil_calcul_force(const cs_mesh_quantities_t  *mesh_quantities,
     const cs_real_t  ray_pales  = ventil->ray_pales;
     const cs_real_t  ray_ventil = ventil->ray_ventil;
 
-    const cs_real_t  debit_moy = 0.5 * (  ventil->debit_entrant
-                                        + ventil->debit_sortant);
+    const cs_real_t  debit_moy = 0.5 * (  ventil->debit_sortant
+                                        - ventil->debit_entrant);
 
     const cs_real_t  delta_p = - (ventil->coeff_carac[2] * debit_moy*debit_moy)
                                + (ventil->coeff_carac[1] * debit_moy)

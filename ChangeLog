@@ -1,3 +1,8 @@
+* 15/06/2009 - David Monfort <david.monfort@edf.fr>
+  Fix mass flux calculation for fans modelling.
+  modified routine:
+    src/base/cs_ventil.c
+
 * 15/06/2009 - François Jusserand <francois.jusserand@edf.fr>
   Fix a missing variable initialization for Code_Aster coupling.
   modified routine:
