@@ -262,6 +262,8 @@ void CS_PROCF(astgeo, ASTGEO)
 
   }
 
+  cs_glob_ast_coupling = ast_coupling;
+
   BFT_FREE(faces_color);
   BFT_FREE(nodes_color);
   BFT_FREE(faces_coords);
