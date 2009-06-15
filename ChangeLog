@@ -1,4 +1,9 @@
 * 15/06/2009 - David Monfort <david.monfort@edf.fr>
+  Use the default reader for pdf.
+  modified script:
+    bin/cs_info.py
+
+* 15/06/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Replace all the different user scripts by a single one.
   modified scripts:

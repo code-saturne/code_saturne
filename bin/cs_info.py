@@ -77,7 +77,7 @@ def process_cmd_line(argv):
                       action="store_true",
                       help="print Code_Saturne version number")
 
-    parser.set_defaults(pdf_reader="evince")
+    parser.set_defaults(pdf_reader=None)
     parser.set_defaults(guides=[])
     parser.set_defaults(version=False)
 
@@ -119,8 +119,45 @@ def launch_manual(reader, m):
     Launch the corresponding PDF manual.
     """
 
-    cmd = reader + ' ' + os.path.join(cs_config.dirs.pdfdir, m) + '.pdf &'
-    os.system(cmd)
+    sys_tools = ["xdg-open",       # Generic
+                 "gnome-open",     # Gnome
+                 "kfmclient exec", # KDE
+                 "kde-open",       # KDE 4
+                 "exo-open"]       # Xfce
+
+    readers = ["evince", "gpdf", "kpdf", "xpdf", "acroread"]
+
+    manual = os.path.join(cs_config.dirs.pdfdir, m) + '.pdf'
+
+    if not os.path.isfile(manual):
+        print "File %s not found." % manual
+        return
+
+    # First:  use the reader specified by the user, if any
+    # Second: try the different tool that open with the default system reader
+    # Last:   try some classical pdf viewers
+
+    if reader is not None:
+        cmd = reader + ' ' + manual + ' 2>/dev/null &'
+        os.system(cmd)
+
+    else:
+        if os.name == "nt":
+            os.filestart(manual)
+
+        elif os.name == "posix":
+            
+            for t in sys_tools:
+                cmd = t + ' ' + manual + ' 2>/dev/null &'
+                try: os.system(cmd)
+                except: pass
+                return
+
+            for r in readers:
+                cmd = r + ' ' + manual + ' 2>/dev/null &'
+                try: os.system(cmd)
+                except: pass
+                return
 
 
 #-------------------------------------------------------------------------------
