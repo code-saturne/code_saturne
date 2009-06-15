@@ -1,4 +1,9 @@
 * 15/06/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update compiler flags for SX9 system and add -fbounds-check for gcc.
+  modified script:
+    config/cs_auto_flags.sh
+
+* 15/06/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix to avoid error in bounds checking with gcc.
   modified routine:
     src/base/covofi.f90

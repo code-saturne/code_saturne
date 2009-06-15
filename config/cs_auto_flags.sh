@@ -365,7 +365,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    SUPER-UX*)
+    SUPER-UX* | superux*)
 
       # Native NEC SX vectorizing C compiler (sxmpicc)
       #-------------------------------------
@@ -382,14 +382,14 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cs_linker_set=yes
 
         # Default compiler flags
-        cflags_default="-Kc99 -ftrace --pvctl,loopcnt=2147483647"
+        cflags_default="-Kc99 -pvctl,loopcnt=2147483647"
         cflags_default_opt=""
         cflags_default_dbg=""
         cflags_default_prf=""
         cflags_default_omp=""
 
         # Default linker flags
-        ldflags_default="-ftrace -Wf,-pvctl,loopcnt=2147483647 -f90lib"
+        ldflags_default=""
         ldflags_default_opt="-O"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-pg"
@@ -565,7 +565,7 @@ if test "$?" = "0" ; then
 
   # Default compiler flags
   fcflags_default="-x f95-cpp-input"
-  fcflags_default_dbg="-g"
+  fcflags_default_dbg="-g -fbounds-check"
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"
   fcflags_default_prf="-pg"
@@ -647,7 +647,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    SUPER-UX*)
+    SUPER-UX* | superux*)
 
       # Native NEC SX vectorizing Fortran compiler (sxmpif90)
       #-------------------------------------------
@@ -663,7 +663,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
         cs_fc_compiler_known=yes
 
         # Default compiler flags
-        fcflags_default="-Ep -C hopt -ftrace -I. -Wf,-pvctl,loopcnt=2147483647"
+        fcflags_default="-Ep -C hopt -I. -Wf,-pvctl,loopcnt=2147483647"
         fcflags_default_opt=""
         fcflags_default_hot=""
         fcflags_default_dbg=""
