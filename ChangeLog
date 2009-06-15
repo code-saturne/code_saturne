@@ -1,3 +1,8 @@
+* 15/06/2009 - Jérôme Lucas <jerome.lucas@incka.fr>
+  Fix a missing initialization in the halo structure.
+  modified routine:
+    src/base/cs_halo.c
+
 * 15/06/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Code cleaning.
   modified routines:

@@ -334,6 +334,11 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   halo->n_local_elts = 0;
 
+  for (i = 0; i < 2; i++) {
+    halo->n_send_elts[i] = 0;
+    halo->n_elts [i] = 0;
+  }
+
   BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
   /* Check if cs_glob_rank_id belongs to interface set in order to
