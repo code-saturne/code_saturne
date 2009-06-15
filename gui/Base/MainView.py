@@ -159,6 +159,7 @@ class MainView(QMainWindow, Ui_MainForm):
         self.connect(self.actionFont,            SIGNAL("activated()"), self.setFontSize)
 
         self.connect(self.displayLicenceAction,   SIGNAL("activated()"), self.displayLicence)
+        #self.connect(self.displayConfigAction,   SIGNAL("activated()"), self.displayConfig)
         self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
         self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
         self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
@@ -826,10 +827,10 @@ class MainView(QMainWindow, Ui_MainForm):
          - version
          - contact
         """
-        msg = "Code_Saturne Interface\n"                    +\
+        msg = "Code_Saturne\n"                              +\
               "version " + VERSION + "\n"                   +\
               "For information about this application "     +\
-              "please contact :\n\n"                        +\
+              "please contact:\n\n"                         +\
               "saturne-support@edf.fr\n\n"                  +\
               "Please visit our site:\n"                    +\
               "http://www.code-saturne.org"
@@ -847,17 +848,30 @@ class MainView(QMainWindow, Ui_MainForm):
 
 
     @pyqtSignature("")
-    def cmd_info_cs(self):
+    def displayConfig(self):
+        """
+        public slot
+
+        configuration information window
+        """
+        QMessageBox.about(self, 'Code_Saturne Interface', "see config.py") # TODO
+
+
+    def displayManual(self, manual, reader = None):
         """
         private method
 
-        test if the 'cs_info' command is valid
+        open a manual
         """
-        if os.system('which cs_info') == "": # TODO: use popen to test the command
+        try:
+            import cs_info
+        except:
             QMessageBox.warning(self, 'Code_Saturne Interface',
-                                "The shellscript 'cs_info' is not avalaible.")
-            return False
-        return True
+                                "The module 'cs_info' is not available.")
+            return
+        argv_info = ['--guide']
+        argv_info.append(manual)
+        cs_info.main(argv_info)
 
 
     @pyqtSignature("")
@@ -865,9 +879,9 @@ class MainView(QMainWindow, Ui_MainForm):
         """
         public slot
 
-        open the user manual (pdf)
+        open the user manual
         """
-        if self.cmd_info_cs(): os.system('cs_info --guide=user')
+        self.displayManual('user')
 
 
     @pyqtSignature("")
@@ -875,9 +889,9 @@ class MainView(QMainWindow, Ui_MainForm):
         """
         public slot
 
-        open the tutorial for Code_Saturne (pdf)
+        open the tutorial for Code_Saturne
         """
-        if self.cmd_info_cs(): os.system('cs_info --guide=tutorial')
+        self.displayManual('tutorial')
 
 
     @pyqtSignature("")
@@ -885,9 +899,9 @@ class MainView(QMainWindow, Ui_MainForm):
         """
         public slot
 
-        open the theory and programmer's guide (pdf)
+        open the theory and programmer's guide
         """
-        if self.cmd_info_cs(): os.system('cs_info --guide=theory')
+        self.displayManual('theory')
 
 
     @pyqtSignature("")
@@ -895,9 +909,9 @@ class MainView(QMainWindow, Ui_MainForm):
         """
         public slot
 
-        open the quick reference card for Code_Saturne (pdf)
+        open the quick reference card for Code_Saturne
         """
-        if self.cmd_info_cs(): os.system('cs_info --guide=refcard')
+        self.displayManual('refcard')
 
 
     @pyqtSignature("const QModelIndex &")

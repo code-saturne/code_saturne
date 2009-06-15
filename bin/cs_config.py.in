@@ -90,7 +90,7 @@ class build:
 
 #-------------------------------------------------------------------------------
 
-def main():
+def main(argv):
     """
     Main configuration info function.
     """
@@ -120,5 +120,5 @@ def main():
     print "  rpath = " + build.rpath
 
 if __name__ == '__main__':
-    main()
+    main(argv)
 

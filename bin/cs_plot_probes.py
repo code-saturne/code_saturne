@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -29,7 +27,7 @@ from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
 
-def process_cmd_line():
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
     
@@ -40,9 +38,9 @@ def process_cmd_line():
              string is split to create a list of arguments.
     """
 
-    parser = OptionParser(usage="usage: %prog <monitoring file>")
+    parser = OptionParser(usage="Usage: %prog <monitoring file>")
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
 
     if len(args) == 1:
         file = args[0]
@@ -99,7 +97,7 @@ def main(argv):
     Main function.
     """
 
-    file = process_cmd_line()
+    file = process_cmd_line(argv)
 
     retcode = plot(file)
 

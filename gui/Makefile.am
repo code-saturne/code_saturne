@@ -22,15 +22,11 @@
 
 SUBDIRS = Base Pages
 
-# Install binary scripts
-
-dist_bin_SCRIPTS = \
-cs_gui
-
 # Install Python library
 
-nodist_pkgpython_PYTHON = \
-__init__.py
+dist_pkgpython_PYTHON = \
+__init__.py \
+cs_gui.py
 
 # Install data
 

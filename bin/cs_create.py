@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -44,12 +42,6 @@ import os, sys, pwd, shutil, stat
 import types, string, re
 from optparse import OptionParser
 
-# Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
-
 import cs_config
 
 
@@ -58,7 +50,7 @@ import cs_config
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line():
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
     """
@@ -86,7 +78,7 @@ def process_cmd_line():
     parser.set_defaults(cases_name=[])
     parser.set_defaults(n_sat=1)
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
 
     if options.cases_name == []:
         if len(args) > 0:
@@ -325,8 +317,10 @@ class Study:
 # Creation of the study directory
 #-------------------------------------------------------------------------------
 
-
-if __name__ == "__main__":
+def main(argv):
+    """
+    Main function.
+    """
 
     welcome = """
 =================================================================
@@ -335,12 +329,16 @@ if __name__ == "__main__":
 =================================================================
     """ % { 'csvers': cs_config.package.version }
     
-    myStudy = process_cmd_line()
+    myStudy = process_cmd_line(argv)
 
     print welcome
 
     myStudy.dump()
     myStudy.create()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 
 
 #-------------------------------------------------------------------------------

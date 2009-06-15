@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -29,17 +27,11 @@ import tempfile
 
 from optparse import OptionParser
 
-# Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
-
 import cs_config
 
 #-------------------------------------------------------------------------------
 
-def process_cmd_line():
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
     
@@ -70,7 +62,7 @@ def process_cmd_line():
 
     parser.add_option("--opt-libs", dest="opt_libs", type="string",
                       metavar="<libs>",
-                      help="print Code_Saturne version number")
+                      help="optional libraries")
 
     parser.set_defaults(test_mode=False)
     parser.set_defaults(force_link=False)
@@ -78,7 +70,7 @@ def process_cmd_line():
     parser.set_defaults(dest_dir=os.getcwd())
     parser.set_defaults(opt_libs="")
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
 
     if len(args) > 0:
         parser.print_help()
@@ -213,13 +205,15 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
     return retval
 
 #-------------------------------------------------------------------------------
+# Main
+#-------------------------------------------------------------------------------
 
 def main(argv):
     """
     Main function.
     """
 
-    test_mode, force_link, src_dir, dest_dir, opt_libs = process_cmd_line()
+    test_mode, force_link, src_dir, dest_dir, opt_libs = process_cmd_line(argv)
         
     if test_mode == True:
         dest_dir = None
@@ -228,5 +222,10 @@ def main(argv):
 
     sys.exit(retcode)
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -34,7 +32,7 @@ from optparse import OptionParser
 # Process command line
 #-------------------------------------------------------------------------------
 
-def process_cmd_line():
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
     
@@ -63,7 +61,7 @@ def process_cmd_line():
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(nproc=1)
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
 
     if len(args) > 0:
         parser.print_help()
@@ -190,9 +188,19 @@ def checkConsistency(n_procs, param, src_dir):
 # Main
 #-------------------------------------------------------------------------------
 
+def main(argv):
+    """
+    Main function.
+    """
 
-if __name__ == "__main__":
-
-    n_procs, param, src_dir = process_cmd_line()
+    n_procs, param, src_dir = process_cmd_line(argv)
         
     checkConsistency(n_procs, param, src_dir)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

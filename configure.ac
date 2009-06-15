@@ -504,16 +504,14 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
-                 gui/cs_gui
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
-                 bin/cs_check_consistency bin/cs_check_mesh bin/cs_compile
-                 bin/cs_create bin/cs_info bin/cs_plot_probes
-                 bin/cs_config.py bin/runcase bin/runcase_coupling bin/SaturneGUI])
+                 bin/cs bin/cs_config.py
+                 bin/runcase bin/runcase_coupling bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 

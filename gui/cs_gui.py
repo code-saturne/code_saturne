@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne User Interface, element of the
@@ -67,12 +65,6 @@ if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
 # Application modules import
 #-------------------------------------------------------------------------------
 
-# Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
-
 try:
     import ncs
 except:
@@ -99,14 +91,14 @@ if ('-v' in sys.argv[1:]) or ('--version' in sys.argv[1:]):
 # Start point of the Graphical User Interface
 #-------------------------------------------------------------------------------
 
-def startGUI():
+def main(argv):
     """
     Start Qt and a session of the application.
     """
     case, spl, matisse, batch_window, batch_file, tree_window, read_only \
-       = process_cmd_line(sys.argv[1:])
+       = process_cmd_line(argv)
 
-    app = QApplication(sys.argv)
+    app = QApplication(argv)
     app.setOrganizationName("EDF R&D")
     app.setOrganizationDomain("www.code_saturne.org")
     app.setApplicationName("Code_Saturne GUI")
@@ -144,7 +136,7 @@ def startGUI():
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    startGUI()
+    main(sys.argv[1:])
 
 #-------------------------------------------------------------------------------
 # End

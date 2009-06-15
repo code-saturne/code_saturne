@@ -1,0 +1,118 @@
+#!@cs_python@
+# @configure_input@
+#-------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Solver.
+#
+#   Copyright (C) 2009  EDF
+#
+#   The Code_Saturne Preprocessor is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Preprocessor is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Preprocessor; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+import os
+import sys
+
+# Trick so that one doesn't have to set the PYTHONPATH variable
+prefix = "@prefix@"
+pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
+pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
+sys.path.insert(0, pkgpythondir)
+
+import cs_config
+
+#-------------------------------------------------------------------------------
+
+def usage(argv):
+    usage = \
+    """Usage: %(prog)s <topic>
+
+Topics:
+  help
+  check_consistency
+  check_mesh
+  config
+  create
+  gui
+  info
+  plot_probes
+
+Options:
+  -h, --help  show this help message and exit""" 
+
+    print usage % {'prog':sys.argv[0]}
+
+def check_consistency(argv):
+    import cs_check_consistency
+    cs_check_consistency.main(argv)
+
+def check_mesh(argv):
+    import cs_check_mesh
+    cs_check_mesh.main(argv)
+
+def compile(argv):
+    import cs_compile
+    cs_compile.main(argv)
+
+def config(argv):
+    import cs_config
+    cs_config.main(argv)
+
+def create(argv):
+    import cs_create
+    cs_create.main(argv)
+
+def gui(argv):
+    import cs_gui
+    cs_gui.main(argv)
+
+def info(argv):
+    import cs_info
+    cs_info.main(argv)
+
+def plot_probes(argv):
+    import cs_plot_probes
+    cs_plot_probes.main(argv)
+
+#-------------------------------------------------------------------------------
+
+def main(argv):
+    """
+    Main function.
+    """
+
+    commands = {'help':usage, '--help':usage, '-h':usage,
+                'check_consistency':check_consistency,
+                'check_mesh':check_mesh,
+                'compile':compile,
+                'config':config,
+                'create':create,
+                'gui':gui,
+                'info':info,
+                'plot_probes':plot_probes}
+
+    retcode = 1
+
+    if (len(argv) < 1) or (argv[0] not in commands):
+        usage(argv)
+    else:
+        command = argv[0]
+        sys.argv[0] = sys.argv[0] + ' ' + command
+        sys.argv.remove(command)
+        commands[command](argv[1:])
+
+    sys.exit(retcode)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

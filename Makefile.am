@@ -64,18 +64,19 @@ ACLOCAL_AMFLAGS = -I config
 
 # Install binary scripts
 
-dist_bin_SCRIPTS = \
-bin/cs_check_consistency \
-bin/cs_check_mesh \
-bin/cs_compile \
-bin/cs_create \
-bin/cs_info \
-bin/cs_plot_probes
+nodist_bin_SCRIPTS = \
+bin/cs
 
 # Install Python library
 
-nodist_pkgpython_PYTHON = \
-bin/cs_config.py
+dist_pkgpython_PYTHON = \
+bin/cs_check_consistency.py \
+bin/cs_check_mesh.py \
+bin/cs_compile.py \
+bin/cs_config.py \
+bin/cs_create.py \
+bin/cs_info.py \
+bin/cs_plot_probes.py
 
 # Install user scripts
 

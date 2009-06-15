@@ -1,3 +1,32 @@
+* 15/06/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Replace all the different user scripts by a single one.
+  modified scripts:
+    configure.ac
+    Makefile.am
+    doc/refcard/refcard.tex
+    gui/Makefile.am
+    gui/Base/MainView.py
+  added scripts:
+    bin/cs.in
+    bin/cs_check_consistency.py
+    bin/cs_check_mesh.py
+    bin/cs_compile.py
+    bin/cs_create.py
+    bin/cs_info.py
+    bin/cs_plot_probes.py
+    gui/cs_gui.py
+  removed scripts:
+    bin/cs_check_consistency.in
+    bin/cs_check_mesh.in
+    bin/cs_compile.in
+    bin/cs_config.py.in
+    bin/cs_create.in
+    bin/cs_info.in
+    bin/cs_plot_probes.in
+    bin/SaturneGUI.in
+    gui/cs_gui.in
+
 * 28/05/2009 - David Monfort <david.monfort@edf.fr>
   Add a trick to by-pass the PYTHONPATH environment variable.
   modified script:

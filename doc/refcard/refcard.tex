@@ -29,32 +29,41 @@
 
 \section*{User scripts}
 
-Here below are the most useful scripts for a \CS user from the study
+All \CS commands are available under a single script: \texttt{cs}.
+Here below are the most useful commands for a \CS user from the study
 creation to the post-processing. Complete information for each
-\texttt{script} can be obtained by typing:\\
-\texttt{<script> --help}.\\
+\texttt{command} can be obtained by typing:\\
+\texttt{cs <command> --help}.\\
 
-\refword{cs\_info}\\
+\refword{info}\\
 Get information on \CS. Open the documentation (user, theory,
 tutorial).\\
-\textit{e.g.} \texttt{cs\_info --guide=\emph{user}}\\
+\textit{e.g.} \texttt{cs info --guide=\emph{user}}\\
 
-\refword{cs\_create}\\
+\refword{config}\\
+Get information on the configuration and installation of \CS.\\
+\textit{e.g.} \texttt{cs config}\\
+
+\refword{create}\\
 Create a \CS template study or case.\\
-\textit{e.g.} \texttt{cs\_create --nogui --study=\emph{test}}\\
+\textit{e.g.} \texttt{cs create --nogui --study=\emph{test}}\\
 
-\refword{cs\_check\_mesh}\\
+\refword{gui}\\
+Launch \CS graphical user interface.\\
+\textit{e.g.} \texttt{cs gui --file=\emph{xmlfile}}\\
+
+\refword{check\_mesh}\\
 Check the mesh quality.\\
-\textit{e.g.} \texttt{cs\_check\_mesh -m \emph{mesh}}\\
+\textit{e.g.} \texttt{cs check\_mesh -m \emph{mesh}}\\
 
-\refword{cs\_compile}\\
+\refword{compile}\\
 Create a specific solver executable when some user subroutines are
 present.\\
-\textit{e.g.} \texttt{cs\_compile --test}\\
+\textit{e.g.} \texttt{cs compile --test}\\
 
-\refword{cs\_plot\_probes}\\
+\refword{plot\_probes}\\
 Wrapper around XmGrace for plotting probes monitoring.\\
-\textit{e.g.} \texttt{cs\_plot\_probes \emph{VitesseX.hst}}
+\textit{e.g.} \texttt{cs plot\_probes \emph{VitesseX.hst}}
 
 % User subroutines
 % ----------------

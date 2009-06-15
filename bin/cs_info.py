@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne User Interface, element of the
@@ -46,12 +44,6 @@ This module defines the following functions:
 import os, sys, pwd, shutil, stat
 from optparse import OptionParser
 
-# Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
-
 import cs_config
 
 
@@ -60,7 +52,7 @@ import cs_config
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line():
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
     
@@ -85,11 +77,11 @@ def process_cmd_line():
                       action="store_true",
                       help="print Code_Saturne version number")
 
-    parser.set_defaults(pdf_reader="kpdf")
+    parser.set_defaults(pdf_reader="evince")
     parser.set_defaults(guides=[])
     parser.set_defaults(version=False)
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
 
     if len(args) > 0:
         parser.print_help()
@@ -111,7 +103,6 @@ def print_version():
     msg = """
  Code_Saturne version: %(solver)s
  Preprocessor version: %(prepro)s
- GUI version:          %(gui)s
     """
 
     print msg % {'solver':cs_config.dirs.prefix,
@@ -137,9 +128,12 @@ def launch_manual(reader, m):
 #-------------------------------------------------------------------------------
 
 
-if __name__ == "__main__":
+def main(argv):
+    """
+    Main function.
+    """
 
-    manuals, reader, version = process_cmd_line()
+    manuals, reader, version = process_cmd_line(argv)
 
     if version:
         print_version()
@@ -147,6 +141,9 @@ if __name__ == "__main__":
     for m in manuals:
         launch_manual(reader, m)
 
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 
 #-------------------------------------------------------------------------------
 # End

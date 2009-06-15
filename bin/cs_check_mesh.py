@@ -1,5 +1,3 @@
-#!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -27,12 +25,6 @@ import sys, shutil
 import string
 import subprocess
 import tempfile
-
-# Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
 
 import cs_config
 
@@ -119,20 +111,14 @@ def run_check(opts):
 
 #-------------------------------------------------------------------------------
 
-def usage():
-    """
-    Indicate usage.
-    """
-    print "Usage: " + sys.argv[0] + " <monitoring file>"
-    print "-h, --help              print this message"
-
-#-------------------------------------------------------------------------------
-
-if __name__ == '__main__':
+def main(argv):
     """
     Main function.
     """
 
-    retcode = run_check(sys.argv[1:])
-
+    retcode = run_check(argv)
     sys.exit(retcode)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

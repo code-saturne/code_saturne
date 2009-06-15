@@ -32,8 +32,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 #
-export PYTHONPATH=@pythondir@:$PYTHONPATH
-@PYTHON@ ${bindir}/cs_gui $*
+${bindir}/cs gui $*
 
 exit
 
