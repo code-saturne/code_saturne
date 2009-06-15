@@ -483,15 +483,16 @@ endif
 !     Ordre 2 non pris en compte
 !     Pour l'instant rayonnement non compatible avec Fuel
 
-if ( irayon(iphas).ge.1 .and.                                     &
-     ippmod(icfuel) .ge. 0  .and.                                 &
-     ( isca(iscal) .ge. isca(ihlf(1)) .and.                       &
-       isca(iscal) .le. isca(ihlf(nclafu)) ) ) then
+if ( irayon(iphas).ge.1 ) then
+  if ( ippmod(icfuel) .ge. 0  .and.                               &
+     ( isca(iscal).ge.isca(ihlf(1)) .and.                       &
+       isca(iscal).le.isca(ihlf(nclafu)) ) ) then
 
   write(nfecra,9001)
   call csexit (1)
   !==========
 
+  endif
 endif
 
 ! --> Lagrangien (couplage retour thermique)
