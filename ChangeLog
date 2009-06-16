@@ -1,3 +1,15 @@
+* 16/06/2009 - David Monfort <david.monfort@edf.fr>
+  Remove executable bits for Python modules.
+  modified scripts:
+    bin/cs_check_consistency.py
+    bin/cs_check_mesh.py
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_create.py
+    bin/cs_info.py
+    bin/cs_plot_probes.py
+    gui/cs_gui.py
+
 * 16/06/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix bugs in the scalar source terms for pulverized coal combustion
   with CO2 equation (wrong pointer, wrong use of unitialize arrays).
