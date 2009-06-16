@@ -1,3 +1,9 @@
+* 16/06/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix bugs in the scalar source terms for pulverized coal combustion
+  with CO2 equation (wrong pointer, wrong use of unitialize arrays).
+  modified routine:
+    src/cplv/cptssc.f90
+
 * 15/06/2009 - David Monfort <david.monfort@edf.fr>
   Enable the multigrid algorithm for the diffusion equation in
   the electric arcs, Lagrangian, radiative transfert (P1 model)

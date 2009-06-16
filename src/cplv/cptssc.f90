@@ -352,7 +352,9 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
   ixchcl = isca(ixch(numcla))
   ixckcl = isca(ixck(numcla))
   ipcght = ipproc(igmhet(numcla))
-  ipghc2 = ipproc(ighco2(numcla))
+  if ( ihtco2 .eq. 1 ) then
+    ipghc2 = ipproc(ighco2(numcla))
+  endif
 
   do iel = 1, ncel
 
@@ -392,10 +394,8 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
 ! ---- Calcul des parties explicite et implicite du TS
 
-    rovsdt(iel) = rovsdt(iel) + max(w3(iel),zero)                 &
-                              + max(w5(iel),zero)
-    smbrs(iel)  = smbrs(iel)  + w1(iel) + w2(iel) + w4(iel)       &
-                              + w6(iel)
+    rovsdt(iel) = rovsdt(iel) + max(w3(iel),zero)
+    smbrs(iel)  = smbrs(iel)  + w1(iel) + w2(iel) + w4(iel)
 
   enddo
 
@@ -491,7 +491,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
   ipcte2 = ipproc(itemp2(numcla))
   ipcte1 = ipproc(itemp1)
   ipcght = ipproc(igmhet(numcla))
-  ipghc2 = ipproc(igmhet(numcla))
+  if ( ihtco2 .eq. 1 ) then
+    ipghc2 = ipproc(ighco2(numcla))
+  endif
 
   ipcgd1 = ipproc(igmdv1(numcla))
   ipcgd2 = ipproc(igmdv2(numcla))
