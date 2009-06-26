@@ -1,3 +1,8 @@
+* 26/06/2009 - David Monfort <david.monfort@edf.fr>
+  Remove warning on padding.
+  modified script:
+    config/cs_auto_flags.sh
+
 * 16/06/2009 - David Monfort <david.monfort@edf.fr>
   Remove executable bits for Python modules.
   modified scripts:

@@ -206,7 +206,7 @@ if test "x$cs_gcc" = "xgcc"; then
 
     gcc-3.*|gcc-4.*)
       cflags_default="`echo $cflags_default | sed -e 's/-ansi/-std=c99/g'`"
-      cflags_default="$cflags_default -Wfloat-equal -Wpadded"
+      cflags_default="$cflags_default -Wfloat-equal"
       ;;
 
   esac
