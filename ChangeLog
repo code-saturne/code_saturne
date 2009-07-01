@@ -1,3 +1,9 @@
+* 01/07/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a wrong division by the density in the norm calculation for
+  mass and lagrangian source terms.
+  modified routine:
+    src/base/resolp.f90
+
 * 01/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a wrong test on radiative transfer modelling activated by
   specific physics.

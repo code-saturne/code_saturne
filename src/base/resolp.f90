@@ -462,7 +462,7 @@ if(irnpnw.ne.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      w1(iel) = w1(iel) -volume(iel)*smacel(ii,ipriph)/propce(iel,ipcrom)
+      w1(iel) = w1(iel) -volume(iel)*smacel(ii,ipriph)
     enddo
   endif
 
@@ -471,7 +471,7 @@ if(irnpnw.ne.1) then
   if (iilagr.eq.2 .and. ltsmas.eq.1 .and. iphas.eq.ilphas) then
 
     do iel = 1, ncel
-      w1(iel) = w1(iel) -tslagr(iel,itsmas) / propce(iel,ipcrom)
+      w1(iel) = w1(iel) -tslagr(iel,itsmas)
     enddo
 
   endif
