@@ -1,4 +1,10 @@
 * 01/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong test on radiative transfer modelling activated by
+  specific physics.
+  modified routine:
+    src/rayt/rayopt.f90
+
+* 01/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a missing "if" when testing for radiative transfer.
   modified routine:
     src/base/covofi.f90

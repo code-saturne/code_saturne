@@ -278,7 +278,7 @@ endif
 !                           ou pas de variable thermique
 !       STOP.
 
-if(ippmod(iphpar).le.1) then
+if(ippmod(iphpar).ge.2) then
 
 !     Il y a une seule phase ; si on rayonne
   do iphas = 1, nphas
