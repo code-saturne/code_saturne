@@ -196,6 +196,7 @@ def main(argv):
     n_procs, param, src_dir = process_cmd_line(argv)
         
     checkConsistency(n_procs, param, src_dir)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

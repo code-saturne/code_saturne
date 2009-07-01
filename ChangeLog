@@ -1,4 +1,10 @@
 * 26/06/2009 - David Monfort <david.monfort@edf.fr>
+  Fix minor bugs introduced when committing user script modifications.
+  modified scripts:
+    bin/cs_check_consistency.py
+    bin/runcase.in
+
+* 26/06/2009 - David Monfort <david.monfort@edf.fr>
   Remove warning on padding.
   modified script:
     config/cs_auto_flags.sh
