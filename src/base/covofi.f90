@@ -468,14 +468,16 @@ endif
 !     Ordre 2 non pris en compte
 
 if ( irayon(iphas).ge.1 ) then
-  if ( ippmod(icp3pl) .gt. 0 .and.                                &
-     ( isca(iscal).ge.isca(ih2(1)) .and.                          &
-       isca(iscal).le.isca(ih2(nclacp)) ) ) then
+  if ( ippmod(icp3pl) .gt. 0 ) then
+    if ( isca(iscal).ge.isca(ih2(1)) .and.                        &
+         isca(iscal).le.isca(ih2(nclacp)) ) then
 
-    call cprays                                                   &
-    !==========
+      call cprays                                                 &
+      !==========
     ( ivar  ,ncelet, ncel  ,                                      &
       volume,propce,ra(itsre),ra(itsri),smbrs,rovsdt)
+
+    endif
   endif
 endif
 
@@ -484,14 +486,15 @@ endif
 !     Pour l'instant rayonnement non compatible avec Fuel
 
 if ( irayon(iphas).ge.1 ) then
-  if ( ippmod(icfuel) .ge. 0  .and.                               &
-     ( isca(iscal).ge.isca(ihlf(1)) .and.                       &
-       isca(iscal).le.isca(ihlf(nclafu)) ) ) then
+  if ( ippmod(icfuel) .ge. 0 ) then
+    if ( isca(iscal).ge.isca(ihlf(1)) .and.                       &
+         isca(iscal).le.isca(ihlf(nclafu)) ) then
 
-  write(nfecra,9001)
-  call csexit (1)
-  !==========
+      write(nfecra,9001)
+      call csexit (1)
+      !==========
 
+    endif
   endif
 endif
 

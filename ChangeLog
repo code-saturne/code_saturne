@@ -1,4 +1,9 @@
-* 26/06/2009 - David Monfort <david.monfort@edf.fr>
+* 01/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a missing "if" when testing for radiative transfer.
+  modified routine:
+    src/base/covofi.f90
+
+* 01/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix minor bugs introduced when committing user script modifications.
   modified scripts:
     bin/cs_check_consistency.py
