@@ -180,6 +180,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("k-omega SST"), "k-omega-SST")
         self.modelTurbModel.addItem(self.tr("LES (Smagorinsky)"), "LES_Smagorinsky")
         self.modelTurbModel.addItem(self.tr("LES (classical dynamic model)"), "LES_dynamique")
+        self.modelTurbModel.addItem(self.tr("LES (WALE)"), "LES_WALE")
 
         # Connections
 
@@ -245,11 +246,11 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.frameLength.show()
             self.frameAdvanced.hide()
             self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique'):
+        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             self.frameLength.hide()
             self.frameAdvanced.show()
 
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique'):
+        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             self.line.hide()
         else:
             self.line.show()

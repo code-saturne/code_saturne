@@ -117,7 +117,7 @@ class BlendingFactorDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        if self.turb.getTurbulenceModel() in ('LES_Smagorinsky', 'LES_dynamique'):
+        if self.turb.getTurbulenceModel() in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             validator = QtPage.DoubleValidator(editor, min=0.95, max=1.)
         else:
             validator = QtPage.DoubleValidator(editor, min=0., max=1.)

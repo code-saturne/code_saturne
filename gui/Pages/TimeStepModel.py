@@ -137,7 +137,7 @@ class TimeStepModel(Model):
         from TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
-        if model in ('LES_Smagorinsky', 'LES_dynamique'): 
+        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'): 
             v = 0
             self.setTimePassing(v)
 

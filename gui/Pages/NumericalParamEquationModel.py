@@ -109,7 +109,7 @@ class NumericalParamEquatModel(Model):
             self.default['blending_factor'] = 1.
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
-            ('LES_Smagorinsky', 'LES_dynamique'):
+            ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             if label in self.UVW:
                 self.default['slope_test'] = 'off'
 

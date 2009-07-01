@@ -372,7 +372,7 @@ do iphas = 1, nphas
       igrari(iphas),iclsyr(iphas),iclptr(iphas)
   elseif(itytur(iphas).eq.4) then
     write(nfecra,2521)                                            &
-      csmago(iphas),xlesfl(iphas),ales(iphas),                    &
+      csmago(iphas),cwale(iphas), xlesfl(iphas),ales(iphas),      &
       bles(iphas),idries(iphas),cdries(iphas), xlesfd(iphas),     &
       smagmx(iphas), ivrtex
   elseif(iturb(iphas).eq.50) then
@@ -510,11 +510,13 @@ write(nfecra,9900)
 '       ICLSYR = ',4X,I10,    ' (Implicitation en symetrie   )',/,&
 '       ICLPTR = ',4X,I10,    ' (Implicitation en paroi      )',/)
  2521 format(                                                           &
-'   - LES                 (ITURB = 40, 41)                    ',/,&
+'   - LES                 (ITURB = 40, 41, 42)                ',/,&
 '                               (Modele de sous-maille       )',/,&
 '                               (40 Modele de Smagorinsky    )',/,&
 '                               (41 Modele dynamique         )',/,&
+'                               (42 Modele WALE              )',/,&
 '       CSMAGO = ', E14.5,    ' (Constante de Smagorinski    )',/,&
+'       CWALE  = ', E14.5,    ' (Constante du modele WALE    )',/,&
 '       XLESFL = ', E14.5,    ' (La largeur du filtre en une )',/,&
 '       ALES   = ', E14.5,    ' (cellule s''ecrit            )',/,&
 '       BLES   = ', E14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&
@@ -682,11 +684,13 @@ write(nfecra,9900)
 '       ICLSYR = ',4X,I10,    ' (Symmetry implicitation      )',/,&
 '       ICLPTR = ',4X,I10,    ' (Wall implicitation          )',/)
  2521 format(                                                           &
-'   - LES                 (ITURB = 40, 41)'                    ,/,&
+'   - LES                 (ITURB = 40, 41, 42)'                ,/,&
 '                               (Sub-grid scale model        )',/,&
 '                               (40 Smagorinsky model        )',/,&
 '                               (41 Dynamic model            )',/,&
+'                               (42 WALE model               )',/,&
 '       CSMAGO = ', E14.5,    ' (Smagorinsky constant        )',/,&
+'       CWALE  = ', E14.5,    ' (WALE model constant         )',/,&
 '       XLESFL = ', E14.5,    ' (Filter with in a cell is    )',/,&
 '       ALES   = ', E14.5,    ' (written as                  )',/,&
 '       BLES   = ', E14.5,    ' (XLESFL*(ALES*VOLUME)**(BLES))',/,&

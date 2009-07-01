@@ -349,6 +349,7 @@ visort.f90 \
 vissec.f90 \
 vissma.f90 \
 vissst.f90 \
+viswal.f90 \
 vor2cl.f90 \
 vordep.f90 \
 vorimp.f90 \

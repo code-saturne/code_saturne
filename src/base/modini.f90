@@ -947,6 +947,8 @@ do iphas = 1, nphas
       idries(iphas) = 1
     elseif(iturb(iphas).eq.41) then
       idries(iphas) = 0
+    elseif(iturb(iphas).eq.42) then
+      idries(iphas) = 0
     endif
   endif
 enddo

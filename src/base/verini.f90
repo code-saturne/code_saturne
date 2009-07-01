@@ -922,8 +922,8 @@ do iphas = 1, nphas
   itrbph = iturb(iphas)
   if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
        itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
-       itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.50.and.        &
-       itrbph.ne.60) then
+       itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
+       itrbph.ne.50.and.itrbph.ne.60) then
     WRITE(NFECRA,2600) IPHAS,'ITURB  ',ITRBPH
     iok = iok + 1
   endif
@@ -942,7 +942,7 @@ if (ivrtex.eq.1 .and. nphas.gt.1) then
 endif
 iphas = 1
 if(ivrtex.eq.1.and.itytur(iphas).ne.4) then
-  write(nfecra,2606)itytur,ivrtex
+  write(nfecra,2606)itytur(iphas),ivrtex
   ivrtex = 0
 endif
 
@@ -1132,7 +1132,7 @@ do iphas = 1, nphas
       WRITE(NFECRA,2201) IPHAS,'IDRIES',IDRIES(IPHAS)
       iok = iok + 1
     endif
-    if(idries(iphas).ne.0.and.iturb(iphas).eq.41) then
+    if(idries(iphas).ne.0.and.(iturb(iphas).eq.41.or.iturb(iphas).eq.42)) then
       write(nfecra,2630) iphas,idries(iphas),iturb(iphas)
       iok = iok + 1
     endif
@@ -1472,6 +1472,10 @@ do iphas = 1, nphas
     endif
     if(csmago(iphas).lt.0.d0) then
       WRITE(NFECRA,2511)IPHAS, 'CSMAGO', CSMAGO(IPHAS)
+      iok = iok + 1
+    endif
+    if(cwale(iphas).lt.0.d0) then
+      WRITE(NFECRA,2511)IPHAS, 'CWALE', CWALE(IPHAS)
       iok = iok + 1
     endif
     if(idries(iphas).eq.1.and.cdries(iphas).lt.0) then
@@ -3193,7 +3197,7 @@ endif
 '@    =========                                               ',/,&
 '@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 10, 20, 21, 30, 31,',/,&
-'@    40, 41, 50, OU 60'                                       ,/,&
+'@    40, 41, 42, 50, OU 60'                                   ,/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
@@ -3397,8 +3401,9 @@ endif
 '@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@  On demande la prise en compte de l''amortissement de      ',/,&
-'@    Van Driest (IDRIES(IPHAS) = ', I10                       ,/,&
-'@    avec le modele dynamique (ITURB(IPHAS) = ',I10           ,/,&
+'@    Van Driest (IDRIES(IPHAS) = ', I10,')'                   ,/,&
+'@    avec un modele LES incompatible (ITURB(IPHAS) = ',I10,')',/,&
+'@    (modele dynamique et modele WALE)                       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas realise.                            ',/,&
 '@                                                            ',/,&
@@ -5688,7 +5693,7 @@ endif
 '@    =========                                               ',/,&
 '@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,',/, &
-'@    40, 41, 50, or 60'                                       ,/,&
+'@    40, 41, 42, 50, or 60'                                   ,/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
@@ -5892,8 +5897,9 @@ endif
 '@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@   Van Driest near wall damping was selected                ',/,&
-'@    Van Driest (IDRIES(IPHAS) = ', I10                       ,/,&
-'@    with the dynamic model (ITURB(IPHAS) = ',I10             ,/,&
+'@    Van Driest (IDRIES(IPHAS) = ', I10,')'                   ,/,&
+'@    with a LES model not compatible (ITURB(IPHAS) = ',I10,')',/,&
+'@    (dynamic model or WALE model)                           ',/,&
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&

@@ -1326,6 +1326,7 @@ do iphas = 1, nphsmx
   ales(iphas)   = 1.d0
   bles(iphas)   = 1.d0/3.d0
   csmago(iphas) = 0.065d0
+  cwale(iphas)  = 0.25d0
   xlesfd(iphas) = 1.5d0
   smagmx(iphas) = 10.d0*csmago(iphas)
   cdries(iphas) = 26.d0

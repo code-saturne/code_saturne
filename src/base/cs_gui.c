@@ -3700,6 +3700,9 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
   else if (cs_gui_strcmp(model, "LES_dynamique")){
      iturb[iphas] = 41;
    }
+  else if (cs_gui_strcmp(model, "LES_WALE")){
+     iturb[iphas] = 42;
+   }
   else if (cs_gui_strcmp(model, "v2f-phi")){
      iturb[iphas] = 50;
      cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);

@@ -39,8 +39,9 @@ subroutine phyvar &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
+   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   w7     , w8     , w9     , w10    , w11    , w12    ,          &
+   xmij   ,                                                       &
    rdevel , rtuser , ra     )
 
 !===============================================================================
@@ -121,7 +122,7 @@ subroutine phyvar &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
+! w1..12(ncelet    ! tr ! --- ! tableau de travail                             !
 ! xmij(ncelet,6    ! tr ! --- ! tableau de travail                             !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
@@ -184,7 +185,8 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
-double precision w9(ncelet),w10(ncelet),xmij(ncelet,6)
+double precision w9(ncelet),w10(ncelet),w11(ncelet),w12(ncelet)
+double precision xmij(ncelet,6)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
@@ -503,7 +505,7 @@ do iphas = 1, nphas
 
   elseif (iturb(iphas).eq.40) then
 
-! 3.4 LES Smagorinsky
+! 3.5 LES Smagorinsky
 ! ===================
 
     iph = iphas
@@ -530,7 +532,7 @@ do iphas = 1, nphas
 
   elseif(iturb(iphas).eq.41) then
 
-! 3.4 LES dynamique
+! 3.6 LES dynamique
 ! =================
 
     iph = iphas
@@ -556,9 +558,37 @@ do iphas = 1, nphas
    w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
    rdevel , rtuser , ra     )
 
+  elseif (iturb(iphas).eq.42) then
+
+! 3.7 LES WALE
+! ============
+
+    iph = iphas
+
+    call viswal                                                   &
+    !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   ia(iicepd(iphas)) ,                                            &
+   ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   w1     , w2     , w3     , w4     ,                            &
+   w5     , w6     , w7     , w8     ,                            &
+   w9     , w10    , w11    , w12    ,                            &
+   rdevel , rtuser , ra     )
+
   elseif (iturb(iphas).eq.50) then
 
-! 3.5 v2f phi-model
+! 3.8 v2f phi-model
 ! =================
     ikiph  = ik(iphas)
     ieiph  = iep(iphas)
@@ -581,7 +611,7 @@ do iphas = 1, nphas
 
   elseif (iturb(iphas).eq.60) then
 
-! 3.6 K-OMEGA SST
+! 3.9 K-OMEGA SST
 ! ===============
 
     iph = iphas

@@ -133,7 +133,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
 
-        if model in ('LES_Smagorinsky', 'LES_dynamique'):
+        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             idtvar = 0
             self.modelTimeOptions.setItem(str_model=str(idtvar))
             self.modelTimeOptions.disableItem(str_model='0')

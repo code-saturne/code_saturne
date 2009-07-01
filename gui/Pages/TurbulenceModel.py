@@ -82,10 +82,12 @@ class TurbulenceModel(Variables, Model):
                             'v2f-phi',
                             'k-omega-SST',
                             'LES_Smagorinsky',
-                            'LES_dynamique')
+                            'LES_dynamique',
+                            'LES_WALE')
 
         self.__turbLESmodel = ('LES_Smagorinsky',
-                               'LES_dynamique')
+                               'LES_dynamique',
+                               'LES_WALE')
 
         self.__allVariables = ['component_R11',
                                'component_R22',

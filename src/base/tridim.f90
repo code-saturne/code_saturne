@@ -621,7 +621,7 @@ call memphy                                                       &
    nvar   , ncelet , ncel   , nfac   , nfabor , nphas  ,          &
    iw1    , iw2    , iw3    , iw4    ,                            &
    iw5    , iw6    , iw7    , iw8    ,                            &
-   iw9    , iw10   , ixmij  ,                                     &
+   iw9    , iw10   , iw11   , iw12   , ixmij  ,                   &
    ifinia , ifinra )
 
 call phyvar                                                       &
@@ -637,9 +637,9 @@ call phyvar                                                       &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4),                            &
-   ra(iw5), ra(iw6), ra(iw7), ra(iw8), ra(iw9), ra(iw10),         &
-   ra(ixmij) ,                                                    &
+   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+   ra(iw7), ra(iw8), ra(iw9), ra(iw10), ra(iw11), ra(iw12),       &
+   ra(ixmij) ,                                                    & 
    rdevel , rtuser , ra     )
 
 if (itrale.gt.0) then

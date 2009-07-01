@@ -129,7 +129,8 @@ double precision  xkappa , cstlog , ypluli(nphsmx)  ,             &
                   xlomlg(nphsmx)  ,                               &
                   xlesfl(nphsmx)  , ales  (nphsmx), bles(nphsmx), &
                   csmago(nphsmx)  , cdries(nphsmx),               &
-                  xlesfd(nphsmx)  , smagmx(nphsmx)
+                  xlesfd(nphsmx)  , smagmx(nphsmx),               &
+                  cwale(nphsmx)
 common / rturbu / xkappa , cstlog , ypluli ,                      &
                   apow   , bpow   , cpow   , dpow   ,             &
                   cmu    , cmu025 , ce1    , ce2    , ce4    ,    &

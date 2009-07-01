@@ -188,6 +188,7 @@ endif
 !      31...Rij-epsilon SSG
 !      40...LES (Smagorinsky)
 !      41...LES (Dynamique)
+!      42...LES (WALE)
 !      50...v2f (phi-model)
 !      60...k-omega SST
 !  Pour 10, contacter l'equipe de developpement avant utilisation

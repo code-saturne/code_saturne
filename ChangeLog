@@ -1,3 +1,26 @@
+* 01/07/2009 - Richard Howard <richard.howard@edf.fr>
+  Add a new turbulence model for LES: the WALE model.
+  added routine:
+    src/base/viswal.f90
+  modified routines:
+    gui/Pages/NumericalParamEquationModel.py
+    gui/Pages/NumericalParamEquationView.py
+    gui/Pages/TimeStepModel.py
+    gui/Pages/TimeStepView.py
+    gui/Pages/TurbulenceModel.py
+    gui/Pages/TurbulenceView.py
+    include/base/cstphy.h
+    src/base/cs_gui.c
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/Makefile.am
+    src/base/memphy.f90
+    src/base/modini.f90
+    src/base/phyvar.f90
+    src/base/tridim.f90
+    src/base/verini.f90
+    users/base/usini1.f90
+
 * 01/07/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a wrong division by the density in the norm calculation for
   mass and lagrangian source terms.
