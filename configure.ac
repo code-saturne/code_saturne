@@ -459,10 +459,6 @@ AM_GNU_GETTEXT([external])
 # Pass compiler options to automake files and cs_config.py
 #------------------------------------------------------------------------------
 
-if test "$FCLIBS" != "x"; then
-  LIBS="${LIBS} ${FCLIBS}"
-fi
-
 AC_SUBST(CPPFLAGS)
 AC_SUBST(CFLAGS)
 AC_SUBST(FCFLAGS)

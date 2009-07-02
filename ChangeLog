@@ -1,3 +1,9 @@
+* 02/07/2009 - David Monfort <david.monfort@edf.fr>
+  Pass Fortran specific libraries only to executable link stage.
+  modified scripts:
+    configure.ac
+    src/apps/Makefile.am
+
 * 01/07/2009 - Richard Howard <richard.howard@edf.fr>
   Add a new turbulence model for LES: the WALE model.
   added routine:
