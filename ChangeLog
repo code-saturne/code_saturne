@@ -2,6 +2,7 @@
   Pass Fortran specific libraries only to executable link stage.
   modified scripts:
     configure.ac
+    bin/cs_config.py.in
     src/apps/Makefile.am
 
 * 01/07/2009 - Richard Howard <richard.howard@edf.fr>

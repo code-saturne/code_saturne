@@ -85,7 +85,7 @@ class build:
     cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
     fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
     ldflags="@MEI_LDFLAGS@ @FVM_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @BLAS_LDFLAGS@ @LIBXML2_LDFLAGS@ @LDFLAGS@"
-    libs="@MEI_LIBS@ @FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@"
+    libs="@MEI_LIBS@ @FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@ @FCLIBS@"
     rpath="@LDRPATH@"
 
 #-------------------------------------------------------------------------------
