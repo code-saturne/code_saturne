@@ -339,8 +339,17 @@ CS_AC_TEST_MEI
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
-CS_AC_TEST_PREPRO
-CS_AC_TEST_SYRCS
+CS_AC_TEST_SYRTHES
+
+#------------------------------------------------------------------------------
+# Checks for Code_Saturne preprocessor
+#------------------------------------------------------------------------------
+
+AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH],
+                                    [specify prefix directory for the Preprocessor])])
+
+AC_CHECK_PROG(ecs_prefix, cs_preprocess, $with_prepro, , $with_prepro/bin, )
+AC_SUBST(ecs_prefix)
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -499,6 +508,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 libsyrcs/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile

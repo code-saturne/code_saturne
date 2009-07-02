@@ -20,7 +20,11 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = src gui po doc
+if HAVE_SYRTHES
+LIBSYRCS = libsyrcs
+endif
+
+SUBDIRS = src gui po doc $(LIBSYRCS)
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \

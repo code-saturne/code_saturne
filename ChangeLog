@@ -1,4 +1,31 @@
 * 02/07/2009 - David Monfort <david.monfort@edf.fr>
+  Merge syr_cs library into the kernel package for an easier
+  maintenance and installation.
+  Move preprocessor serach macro in configure.ac script.
+  added script:
+    config/cs_syrthes.m4
+  removed script:
+    config/cs_tools.m4
+  modified scripts:
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/runcase_coupling.in
+    bin/runcase.in
+    bin/runcase_syrthes
+    configure.ac
+    Makefile.am
+  added routines:
+    libsyrcs
+    libsyrcs/Makefile.am
+    libsyrcs/syr_comm.c
+    libsyrcs/syr_comm.h
+    libsyrcs/syr_coupling.c
+    libsyrcs/syr_coupling.h
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.c
+    libsyrcs/syr_defs.h
+
+* 02/07/2009 - David Monfort <david.monfort@edf.fr>
   Pass Fortran specific libraries only to executable link stage.
   modified scripts:
     configure.ac

@@ -88,6 +88,15 @@ class build:
     libs="@MEI_LIBS@ @FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@ @FCLIBS@"
     rpath="@LDRPATH@"
 
+class build_syrthes:
+    cc="@SYRTHES_CC@"
+    fc="@SYRTHES_FC@"
+    cppflags="@SYRTHES_CPPFLAGS@"
+    cflags="@SYRTHES_CFLAGS@"
+    fcflags="@SYRTHES_FCFLAGS@"
+    ldflags="@SYRTHES_LDFLAGS@"
+    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
+
 #-------------------------------------------------------------------------------
 
 def main(argv):

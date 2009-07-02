@@ -636,7 +636,6 @@ echo '  ----------------------------------------------------'  >>$summary
 echo '    Kernel          : ' $prefix                          >>$summary
 echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
-echo '    SYR_CS          : ' $syrcs_prefix                    >>$summary
 echo '    HOMARD          : ' $homard_prefix                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary

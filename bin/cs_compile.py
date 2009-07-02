@@ -64,11 +64,16 @@ def process_cmd_line(argv):
                       metavar="<libs>",
                       help="optional libraries")
 
+    parser.add_option("--syrthes", dest="link_syrthes",
+                      action="store_true",
+                      help="SYRTHES link")
+
     parser.set_defaults(test_mode=False)
     parser.set_defaults(force_link=False)
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(dest_dir=os.getcwd())
     parser.set_defaults(opt_libs="")
+    parser.set_defaults(link_syrthes=False)
 
     (options, args) = parser.parse_args(argv)
 
@@ -90,7 +95,7 @@ def process_cmd_line(argv):
         print "Error: %s is not a directory" % dest_dir
         sys.exit(1)
 
-    return options.test_mode, options.force_link, src_dir, dest_dir, options.opt_libs
+    return options.test_mode, options.force_link, src_dir, dest_dir, options.opt_libs, options.link_syrthes
 
 #-------------------------------------------------------------------------------
 
@@ -205,6 +210,77 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
     return retval
 
 #-------------------------------------------------------------------------------
+
+def compile_and_link_syrthes(srcdir, destdir):
+    """
+    Compilation and link function.
+    """
+    retval = 0
+
+    exec_name = "syrthes"
+    if destdir != None:
+        exec_name = os.path.join(destdir, exec_name)
+
+    # Change to temporary directory
+
+    call_dir = os.getcwd()
+    temp_dir = tempfile.mkdtemp(suffix=".cs_compile_syrthes")
+    os.chdir(temp_dir)
+
+    # Find files to compile in source path
+
+    dir_files = os.listdir(srcdir)
+
+    c_files = fnmatch.filter(dir_files, '*.c')
+    h_files = fnmatch.filter(dir_files, '*.h')
+    f_files = fnmatch.filter(dir_files, '*.[fF]')
+
+    for f in c_files:
+        cmd = cs_config.build_syrthes.cc
+        if len(h_files) > 0:
+            cmd = cmd + " -I" + srcdir
+        cmd = cmd + " " + cs_config.build_syrthes.cppflags
+        cmd = cmd + " " + cs_config.build_syrthes.cflags
+        cmd = cmd + " -c " + os.path.join(srcdir, f)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    for f in f_files:
+        cmd = cs_config.build_syrthes.fc
+        if len(h_files) > 0:
+            cmd = cmd + " -I" + srcdir
+        cmd = cmd + " " + cs_config.build_syrthes.cppflags
+        cmd = cmd + " " + cs_config.build_syrthes.fcflags
+        cmd = cmd + " -c " + os.path.join(srcdir, f)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    if retval == 0:
+        # Link with Code_Saturne C compiler
+        cmd = cs_config.build.cc
+        cmd = cmd + " -o " + exec_name
+        if (len(f_files)) > 0:
+          cmd = cmd + " *.o"
+        cmd = cmd + " -L" + os.path.join(cs_config.dirs.prefix, "lib")
+        cmd = cmd + " -lsyrcs"
+        cmd = cmd + " " + cs_config.build_syrthes.ldflags
+        cmd = cmd + " " + cs_config.build_syrthes.libs
+        if cs_config.build.rpath != "":
+            cmd = cmd + " " + so_dirs_path(cmd)
+        if run_command(cmd) != 0:
+            retval = 1
+
+    # Cleanup
+
+    for f in os.listdir(temp_dir):
+        os.remove(os.path.join(temp_dir, f))
+
+    # Return to original directory
+
+    os.chdir(call_dir)
+    os.rmdir(temp_dir)
+
+#-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
 
@@ -213,12 +289,15 @@ def main(argv):
     Main function.
     """
 
-    test_mode, force_link, src_dir, dest_dir, opt_libs = process_cmd_line(argv)
+    test_mode, force_link, src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
         
     if test_mode == True:
         dest_dir = None
 
-    retcode = compile_and_link(src_dir, dest_dir, opt_libs, force_link)
+    if link_syrthes == True:
+        retcode = compile_and_link_syrthes(src_dir, dest_dir)
+    else:
+        retcode = compile_and_link(src_dir, dest_dir, opt_libs, force_link)
 
     sys.exit(retcode)
 

@@ -240,10 +240,6 @@ ecs_prefix=@ecs_prefix@
 ecs_exec_prefix=${ecs_prefix}
 ecs_bindir=${ecs_exec_prefix}/bin
 #
-# SYR_CS installation parameters
-#
-syrcs_prefix=@syrcs_prefix@
-#
 # HOMARD installation parameters (to be completed if needed)
 #
 homard_prefix=
@@ -529,7 +525,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   if [ $SYRTHES_COUPLING = yes ] ; then
 
     ${pkgdatadir}/runcase_syrthes -compile \
-      -syrcs-dir=${syrcs_prefix} -src-syr=${SRC_SYR} \
+      -cs-bindir=${bindir} -src-syr=${SRC_SYR} \
       -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log.${SUFFIX}
 
   fi
@@ -699,7 +695,6 @@ echo '  ----------------------------------------------------'  >>$summary
 echo '    Kernel          : ' $prefix                          >>$summary
 echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
-echo '    SYR_CS          : ' $syrcs_prefix                    >>$summary
 echo '    HOMARD          : ' $homard_prefix                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary

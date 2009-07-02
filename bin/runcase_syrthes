@@ -37,11 +37,11 @@
 if [ "$1" = "" -o "$1" = "-h" -o "$1" = "--help" ] ; then
   echo "Usage:"
   echo
-  echo "  $0 -compile -syrcs-dir=<dir> [-src-syr=<dir>] [-copy-dir=<dir>]"
+  echo "  $0 -compile -cs-bindir=<dir> [-src-syr=<dir>] [-copy-dir=<dir>]"
   echo "              [-log-dir=<dir>] [-exec-dir=<dir>]"
   echo
-  echo "   Indicate where to find the coupling library (mandatory):"
-  echo "     -syrcs-dir: directory where is installed the SYR_CS library."
+  echo "   Indicate where to find Code_Saturne main user script:"
+  echo "     -cs-bindir: directory where is installed Code_Saturne binaries."
   echo
   echo "   Compile and link SYRTHES, with the following optional arguments:"
   echo "     -src-syr:   source code directory; if none, link only."
@@ -70,7 +70,7 @@ fi
 
 # Parse secondary arguments
 
-unset SYRCS_DIR
+unset CS_BINDIR
 unset SRC_SYR
 unset EXEC_DIR
 unset RESULT_DIR
@@ -79,9 +79,9 @@ unset SYRTHES_ENV
 for arg in $*
 do
 
-  is_syrcs_dir=`echo $arg | grep -e "-syrcs-dir="`
-  if [ "$is_syrcs_dir" != "" ] ; then
-    SYRCS_DIR=`echo $arg | sed -e "s/-syrcs-dir=//"`
+  is_cs_bindir=`echo $arg | grep -e "-cs-bindir="`
+  if [ "$is_cs_bindir" != "" ] ; then
+    CS_BINDIR=`echo $arg | sed -e "s/-cs-bindir=//"`
   fi
 
   is_exec_dir=`echo $arg | grep -e "-exec-dir="`
@@ -144,14 +144,8 @@ if [ "$1" = "-compile" ] ; then
     done
   fi
 
-  # SYR_CS library installation parameters
-  SYRCS_BINDIR=${SYRCS_DIR}/bin
-
-  ln -s ${SYRCS_BINDIR}/Makefile .
-  . ${SYRCS_BINDIR}/syr_cs_profile
-  make syrthes > ./compil.log 2>&1
+  ${CS_BINDIR}/cs compile --syrthes > ./compil.log 2>&1
   make_ret=$?
-  make clean > /dev/null 2>&1
 
   if [ "${LOG_COPY}" != "" ] ; then
     cp ./compil.log ${LOG_COPY}
