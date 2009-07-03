@@ -352,6 +352,23 @@ AC_CHECK_PROG(ecs_prefix, cs_preprocess, $with_prepro, , $with_prepro/bin, )
 AC_SUBST(ecs_prefix)
 
 #------------------------------------------------------------------------------
+# Enables Code_Saturne graphical user interface
+#------------------------------------------------------------------------------
+
+AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
+                                   [disable the Graphical User Interface])],
+  [
+    case "${enableval}" in
+      yes) have_gui=yes ;;
+      no)  have_gui=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-gui]) ;;
+    esac
+  ],
+  [ have_gui=yes ]
+)
+AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
+
+#------------------------------------------------------------------------------
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
