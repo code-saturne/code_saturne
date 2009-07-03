@@ -106,7 +106,6 @@ include "optcal.h"
 include "cstphy.h"
 include "entsor.h"
 include "albase.h"
-include "radiat.h"
 include "period.h"
 include "parall.h"
 include "ppppar.h"
@@ -119,6 +118,7 @@ include "lagran.h"
 include "vortex.h"
 include "ihmpre.h"
 include "matiss.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -527,8 +527,7 @@ if (iirayo.gt.0 .and. isuird.eq.1) then
    ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idevel , ituser , ia     ,                                     &
-   ra(itsre)  , ra(itsri)  ,                                      &
-   ra(itparo) , ra(iqinci) ,  ra(ifconv) , ra(ihconv) ,           &
+   ra(ipropc) , ra(ipropb) ,                                      &
    rdevel , rtuser , ra     )
 
 endif
@@ -1378,9 +1377,6 @@ if(iisuit.eq.1) then
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   ra(itsre)  , ra(itsri)  ,                                      &
-   ra(itparo) , ra(iqinci) , ra(ixlam)  , ra(iepa)   , ra(ieps)  ,&
-   ra(ifnet)  , ra(ifconv) , ra(ihconv) ,                         &
    rdevel , rtuser , ra     )
   endif
 
@@ -1670,9 +1666,6 @@ if (iirayo.gt.0) then
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   ra(itsre)  , ra(itsri)  ,                                      &
-   ra(itparo) , ra(iqinci) , ra(ixlam)  , ra(iepa)   , ra(ieps)  ,&
-   ra(ifnet)  , ra(ifconv) , ra(ihconv) ,                         &
    rdevel , rtuser , ra     )
 
 endif

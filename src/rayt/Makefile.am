@@ -46,12 +46,10 @@ libcsrayt_la_SOURCES = \
 memra1.f90 \
 memra2.f90 \
 memra3.f90 \
-raybrd.f90 \
 raycli.f90 \
 raydak.f90 \
 raydir.f90 \
 raydom.f90 \
-rayens.f90 \
 raylec.f90 \
 rayopt.f90 \
 rayout.f90 \

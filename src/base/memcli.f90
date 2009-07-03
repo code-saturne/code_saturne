@@ -95,6 +95,7 @@ implicit none
 
 include "paramx.h"
 include "optcal.h"
+include "ppppar.h"
 include "radiat.h"
 
 !===============================================================================

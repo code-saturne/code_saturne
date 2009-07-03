@@ -32,7 +32,7 @@ subroutine raylec &
    ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idevel , ituser , ia     ,                                     &
-   rayexp , rayimp , tparoi , qincid , flconv , hfconv ,          &
+   propce , propfb ,                                              &
    rdevel , rtuser , ra     )
 
 !===============================================================================
@@ -62,18 +62,10 @@ subroutine raylec &
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! rayexp(ncelet    ! tr ! --> ! terme source radiatif explicite                !
-!   ,nphast)       !    !     !                                                !
-! rayimp(ncelet    ! tr ! --> ! terme source radiatif implicite                !
-!   ,nphast)       !    !     !                                                !
-! tparoi(nfabor    ! tr ! --- ! temperature de paroi en kelvin                 !
-!   ,nphast)       !    !     !                                                !
-! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
-!   ,nphast)       !    !     !                                                !
-! flconv(nfabor    ! tr ! --> ! densite de flux convectif aux faces            !
-!   ,nphast)       !    !     ! de bord                                        !
-! hfconv(nfabor    ! tr ! --> ! coefficient d'echange fluide aux               !
-!   ,nphast)       !    !     ! faces de bord                                  !
+! propce           ! tr ! <-- ! proprietes physiques au centre des             !
+! (ncelet,*)       !    !     !    cellules                                    !
+! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfabor,*)      !    !     !    faces de bord                               !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -96,6 +88,11 @@ include "numvar.h"
 include "optcal.h"
 include "pointe.h"
 include "entsor.h"
+include "cstphy.h"
+include "ppppar.h"
+include "ppthch.h"
+include "cpincl.h"
+include "ppincl.h"
 include "radiat.h"
 
 !===============================================================================
@@ -108,18 +105,18 @@ integer          nideve , nrdeve , nituse , nrtuse
 
 integer          idevel(nideve), ituser(nituse), ia(*)
 
-double precision rayexp(ncelet,nphast), rayimp(ncelet,nphast)
-double precision tparoi(nfabor,nphast), qincid(nfabor,nphast)
-double precision flconv(nfabor,nphast), hfconv(nfabor,nphast)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
+double precision propce(ncelet,*)
+double precision propfb(nfabor,*)
+!
 ! VARIABLES LOCALES
 
 character        rubriq*64
 character        cphase(nphsmx)*2
 integer          idebia, idebra
-integer          iphas, iok
+integer          iok
 
 integer          jphast
 integer          ncelok , nfaiok , nfabok , nsomok
@@ -140,21 +137,6 @@ idebra = idbra0
 !===============================================================================
 
 if (isuird.eq.1) then
-
-! ---> On code en chaine le numero des phases
-
-!     Verifications pour les format et les numero de phase
-!       et de scalaire en chaine.
-    if(nphsmx.gt.99) then
-      write(nfecra,9001)nphsmx
-      call csexit (1)
-    endif
-
-!     Codage en chaine de caracteres du numero de la phase
-!       Aller jusqu'a NPHAST suffirait
-    do iphas = 1, nphsmx
-      WRITE(CPHASE(IPHAS),'(I2.2)')IPHAS
-    enddo
 
 !  ---> Ouverture
 
@@ -206,25 +188,6 @@ if (isuird.eq.1) then
       iok = iok + 1
     endif
 
-!     Nombre de phases
-
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    RUBRIQ = 'nombre_phases_rayt'
-    jphast = -1
-    call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                jphast,ierror)
-
-    if(jphast.ne.nphast.or.ierror.ne.0) then
-      write(nfecra,1110) jphast,nphast
-      iok = iok + 1
-    endif
-
-!     Arret
-    if (iok.ne.0) then
-      call csexit (1)
-    endif
 
 !  ---> Pour test ulterieur si pb : arret
 
@@ -232,52 +195,49 @@ if (isuird.eq.1) then
 
 !  ---> Lecture des donnees
 
-    do iphas = 1, nphast
-
 !     Aux faces de bord
 
       itysup = 3
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'tparoi_fb_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'tparoi_fb'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           tparoi(1,iphas),ierror)
+           propfb(1,ipprob(itparo)),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'qincid_fb_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'qincid_fb'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           qincid(1,iphas),ierror)
+           propfb(1,ipprob(iqinci)),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'hfconv_fb_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'hfconv_fb'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           hfconv(1,iphas),ierror)
+           propfb(1,ipprob(ihconv)),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'flconv_fb_phase'//CPHASE(IPHAS)
+     RUBRIQ = 'flconv_fb'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           flconv(1,iphas),ierror)
+           propfb(1,ipprob(ifconv)),ierror)
       nberro=nberro+ierror
 
 
 !     Aux cellules
 
-      itysup = 1
+     itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'rayimp_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'rayimp_ce'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rayimp(1,iphas),ierror)
+           propce(1,ipproc(itsri(1))),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'rayexp_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'rayexp_ce'
       call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rayexp(1,iphas),ierror)
+           propce(1,ipproc(itsre(1))),ierror)
       nberro=nberro+ierror
 
-   enddo
 
 !  ---> Si pb : arret
 
@@ -407,21 +367,6 @@ endif
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :ARRET A LA LECTURE DU FICHIER SUITE          ',/,&
-'@    =========   RAYONNEMENT                                 ',/,&
-'@      Le nombre de phases    maximal NPHSMX doit etre       ',/,&
-'@        inferieur ou egal a  99, il vaut ici ',I10           ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme raycli.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

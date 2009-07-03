@@ -143,8 +143,6 @@ if ( ippmod(ielarc).ge.1 ) then
     call csexit (1)
     !==========
   endif
-!     Si IXKABE=1, il faut activer explicitement le rayonnement
-  if (ixkabe.eq.1) iraypp = 1
 
 ! ----- En fonction de la temperature pour chaque espece courante
 !          Enthalpie massique

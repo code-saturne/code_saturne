@@ -161,6 +161,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -440,7 +441,7 @@ endif
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si rayonnement
 
-if ( iraypp.gt.0 ) then
+if ( iirayo.gt.0 ) then
   do icg = 1, ngazg
     ipbycg = ipprob(iym(icg))
     ipcycg = ipproc(iym(icg))

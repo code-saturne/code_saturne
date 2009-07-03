@@ -28,10 +28,9 @@
 subroutine raysca &
 !================
 
- ( iisca  , iphas  ,                                              &
+ ( iisca  ,                                                       &
    ncelet , ncel   ,                                              &
-   smbrs  , rovsdt , volume ,                                     &
-   raye   , rayi   )
+   smbrs  , rovsdt , volume , propce  )
 
 !===============================================================================
 !  FONCTION  :
@@ -49,14 +48,13 @@ subroutine raysca &
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! iisca            ! e  ! <-- ! num scalaire temperature ou enthalpie          !
-! iphas            ! e  ! <-- ! numero de la phase courante                    !
 ! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
 ! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
 ! smbrs(ncelet)    ! tr ! <-- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! <-- ! tableau de travail pour terme instat           !
 ! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
-! raye(ncelet)     ! tr ! <-- ! terme source rayonnement explicite             !
-! rayi(ncelet)     ! tr ! <-- ! terme source rayonnement implicite             !
+! propce           ! tr ! <-- ! proprietes physiques au centre des             !
+! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -74,84 +72,56 @@ implicit none
 include "paramx.h"
 include "cstnum.h"
 include "cstphy.h"
+include "ppppar.h"
+include "ppthch.h"
+include "cpincl.h"
+include "ppincl.h"
 include "radiat.h"
 include "entsor.h"
+include "numvar.h"
 
 !===============================================================================
 
 ! Arguments
 
-integer          iisca , ncelet , ncel, iphas
+integer          iisca , ncelet , ncel
 
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision raye(ncelet,nphast)
-double precision rayi(ncelet,nphast)
+double precision propce(ncelet,*)
 
 ! VARIABLES LOCALES
 
-integer          iel , iph, iiph
+integer          iel
 
 !===============================================================================
-!===============================================================================
-! 1. RECHERCHE DE LA ZONE MEMOIRE (IPH) EN FONCTION DU NUMERO DE PHASE
-!    COURANT IPHAS POUR TROUVER LES BONS TERMES SOURCES
-!===============================================================================
-
-!     On determine le numero de phase reduit pour le rayonnement
-iph = 0
-do iiph = 1, nphast
-  if (irapha(iiph).eq.iphas) then
-    iph = iiph
-  endif
-enddo
-if(iph.eq.0) then
-  write(nfecra,9001)
-  call csexit (1)
-  !==========
-endif
 
 !===============================================================================
-! 2. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
+! 1. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
 !===============================================================================
 
 
 if (abs(iscsth(iisca)).eq.1 .or. iscsth(iisca).eq.2) then
 
   do iel = 1,ncel
-    rayi(iel,iph) = max(-rayi(iel,iph),zero)
+    propce(iel,ipproc(itsri(1))) = max(-propce(iel,ipproc(itsri(1))),zero)
   enddo
 
   do iel = 1,ncel
 
 !--> PARTIE EXPLICITE
 
-    smbrs(iel)  = smbrs(iel) +  raye(iel,iph)*volume(iel)
+    smbrs(iel) = smbrs(iel)  + propce(iel,ipproc(itsre(1)))*volume(iel)
 
 !--> PARTIE IMPLICITE
 
-    rovsdt(iel) = rovsdt(iel) + rayi(iel,iph)*volume(iel)
+    rovsdt(iel)= rovsdt(iel) + propce(iel,ipproc(itsri(1)))*volume(iel)
 
   enddo
 
 endif
-
-!--------
-! FORMATS
-!--------
-
- 9001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@      ERREUR SUR LE NOMBRE DE PHASES DANS RAYSCA            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+!
 
 !----
 ! FIN

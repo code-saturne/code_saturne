@@ -215,7 +215,6 @@ include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "elincl.h"
-include "radiat.h"
 
 !===============================================================================
 

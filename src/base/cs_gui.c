@@ -6266,8 +6266,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmdv1,
                                 const int *const igmdv2,
                                 const int *const igmhet,
-                                const int *const igmsec,
-                                const int *const ilumi)
+                                const int *const igmsec)
 {
   int i = 0;
   int n;
@@ -6481,12 +6480,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcpy(name, "Ga_SEC");
     }
   }
-
- /* ILUMI */
-  vars->properties_ipp[n] = ipppro[ ipproc[ *ilumi -1 ]-1 ];
-  vars->propce[n] = *ilumi;
-  BFT_MALLOC(vars->properties_name[n], strlen("ntLuminance_4PI")+1, char);
-  strcpy(vars->properties_name[n++], "ntLuminance_4PI");
 
   BFT_FREE(name);
   BFT_FREE(snumpp);

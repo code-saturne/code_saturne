@@ -93,6 +93,7 @@ include "paramx.h"
 include "entsor.h"
 include "numvar.h"
 include "optcal.h"
+include "ppppar.h"
 include "radiat.h"
 
 !===============================================================================
@@ -122,14 +123,14 @@ idebra = idbra0
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 
 iisoth =       idebia
-ifinia =       iisoth  + nfabor * nphast
+ifinia =       iisoth  + nfabor
 
 itek   =       idebra
-ifinra =       itek    + ncelet * nphast
+ifinra =       itek    + ncelet
 
 itint  =       ifinra
-itext  =       itint   + nfabor * nphast
-ifinra =       itext   + nfabor * nphast
+itext  =       itint   + nfabor
+ifinra =       itext   + nfabor
 
 !---> VERIFICATION
 

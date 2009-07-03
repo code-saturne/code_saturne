@@ -1,3 +1,100 @@
+* 03/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Several modifications of radiative transfer module.
+  - Only one radiating phase is now possible
+  - Use of propce and propfb arrays to store most of the variables
+  - Use of standard routines for post-processing, leveraging the
+  need of single-processor simulation for boundary variables output
+  - Activation of the radiative transfer module from usray1, and no
+  more from the different dp_XXX data files for specific physics
+  modified thermochemistry data files:
+    data/thch/dp_C3P
+    data/thch/dp_C3PSJ
+    data/thch/dp_C4P
+    data/thch/dp_FCP
+    data/thch/dp_FUE
+  modified scripts:
+    src/fuel/Makefile.am
+    src/rayt/Makefile.am
+  removed routines:
+    src/rayt/raybrd.f90
+    src/rayt/rayens.f90
+  modified routines:
+    include/base/cs_gui.h
+    include/base/cs_gui_radiative_transfer.h
+    include/lagr/lagran.h
+    include/pprt/ppincl.h
+    include/rayt/radiat.h
+    src/base/caltri.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/covofi.f90
+    src/base/cs_gui.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/dvvpst.f90
+    src/base/impini.f90
+    src/base/iniusi.f90
+    src/base/memcli.f90
+    src/base/tridim.f90
+    src/base/varpos.f90
+    src/base/verini.f90
+    src/cogz/coini1.f90
+    src/cogz/colecd.f90
+    src/cogz/coprop.f90
+    src/cogz/d3pint.f90
+    src/cogz/d3pphy.f90
+    src/cogz/ebuphy.f90
+    src/cogz/pdflwc.f90
+    src/cogz/pdfpp4.f90
+    src/cplv/cpini1.f90
+    src/cplv/cplecd.f90
+    src/cplv/cplin1.f90
+    src/cplv/cplpro.f90
+    src/cplv/cpprop.f90
+    src/cplv/cprays.f90
+    src/elec/ellecd.f90
+    src/elec/elphyv.f90
+    src/elec/elveri.f90
+    src/fuel/fuini1.f90
+    src/fuel/fulecd.f90
+    src/fuel/fuprop.f90
+    src/lagr/lagcou.f90
+    src/lagr/lagent.f90
+    src/lagr/lagich.f90
+    src/lagr/lagitp.f90
+    src/lagr/laglec.f90
+    src/lagr/lagopt.f90
+    src/lagr/lagout.f90
+    src/pprt/ppcabs.f90
+    src/pprt/ppinii.f90
+    src/pprt/ppray4.f90
+    src/rayt/memra1.f90
+    src/rayt/memra2.f90
+    src/rayt/memra3.f90
+    src/rayt/raycli.f90
+    src/rayt/raydir.f90
+    src/rayt/raydom.f90
+    src/rayt/raylec.f90
+    src/rayt/rayopt.f90
+    src/rayt/rayout.f90
+    src/rayt/raypar.f90
+    src/rayt/raypun.f90
+    src/rayt/raysca.f90
+    src/rayt/raysol.f90
+    users/cogz/usd3p1.f90
+    users/cogz/usebu1.f90
+    users/cogz/uslwc1.f90
+    users/cplv/uscpl1.f90
+    users/elec/uselph.f90
+    users/lagr/uslaed.f90
+    users/lagr/uslast.f90
+    users/rayt/usray1.f90
+    users/rayt/usray2.f90
+    users/rayt/usray3.f90
+    users/rayt/usray4.f90
+    users/rayt/usray5.f90
+
 * 03/07/2009 - David Monfort <david.monfort@edf.fr>
   Add a configure option to disable the graphical interface support.
   modified scripts:

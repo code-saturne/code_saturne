@@ -4,7 +4,6 @@
 3000.                   TMAX
                         Especes Gazeuses
             C3H8        O2         CO2        H2O        N2
-1                       Rayonnement : (0 : pas de rayonnement ; 1 : calcul a partir des CABS des especes ; 2 : par Modak ; 3 : comme 1 mais modele P-1 ; 4 : comme 2 mais modele P-1)
             .35        .35        .35        .35        .35        coeff absorption (ray) 
 4                       Nb especes elementaires / Composition CHON
  .012        3          0          1          0          0          

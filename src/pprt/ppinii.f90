@@ -90,10 +90,6 @@ do ipp = 1, nmodmx
   ippmod(ipp) = -1
 enddo
 
-! ---> Initialisation pour le rayonnement
-
-iraypp = 0
-
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
 ifm    = 0

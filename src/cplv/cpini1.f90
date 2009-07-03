@@ -508,14 +508,6 @@ ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! ---> Rayonnement
-
-ipp = ipppro(ipproc(ilumi))
-NOMVAR(IPP)   = 'IntLuminance_4PI'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
 endif
 
 

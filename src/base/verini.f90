@@ -570,7 +570,7 @@ enddo
 !     est incompatible avec les physiques particulieres
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
 
-if(ippmod(iphpar).gt.0) then
+if(ippmod(iphpar).ge.1) then
   istop = 0
   do ivar = 1, nvar
     if( (abs(thetav(ivar)-1.0d0).gt.1.d-3) ) istop = 1
@@ -1669,24 +1669,13 @@ if(iperio.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
 endif
 
 
-!C --- periodicite incompatible avec le rayonnement DOM
-!      IF(IPERIO.EQ.1.AND.IIRAYO.GT.0) THEN
-!        DO IPHAS = 1, NPHAS
-!          IF(IRAYON(IPHAS).EQ.1) THEN
-!            WRITE(NFECRA,5007) IPERIO , IPHAS, IRAYON(IPHAS)
-!            IOK = IOK + 1
-!          ENDIF
-!        ENDDO
-!      ENDIF
-
 ! --- periodicite de rotation incompatible avec le rayonnement DOM
+!if(iperio.gt.0.and.iirayo.gt.0) then ! de translation aussi ?
 if(iperot.gt.0.and.iirayo.gt.0) then
-  do iphas = 1, nphas
-    if(irayon(iphas).eq.1) then
-      write(nfecra,5008) iperio , iphas, irayon(iphas)
-      iok = iok + 1
-    endif
-  enddo
+  if(iirayo.eq.1) then
+    write(nfecra,5008) iperio , irapha, iirayo
+    iok = iok + 1
+  endif
 endif
 
 ! --- periodicite de rotation douteuse avec rij
@@ -4037,7 +4026,7 @@ endif
 !     &'@                                                            ',/,
 !     &'@  L''indicateur IPERIO a ete positionne a ',I10              ,/,
 !     &'@    dans usini1 (periodicite activee pour IPERIO=1).        ',/,
-!     &'@  L''indicateur IRAYON(',I10,') a ete positionne a ',I10     ,/,
+!     &'@  L''indicateur IIRAYO(',I10,') a ete positionne a ',I10     ,/,
 !     &'@    dans usray1.                                            ',/,
 !     &'@                                                            ',/,
 !     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -4058,7 +4047,7 @@ endif
 '@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
 '@    par IPERIO = ',I10,   ')                                ',/,&
 '@    et certaines periodicites sont de rotation.             ',/,&
-'@  L''indicateur IRAYON(',I10,') a ete positionne a ',I10     ,/,&
+'@  L''indicateur IIRAYO(',I10,') a ete positionne a ',I10     ,/,&
 '@    dans l''interface ou usray1.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6551,7 +6540,7 @@ endif
 !     &'@                                                            ',/,
 !     &'@  Flag  IPERIO is equl to ',I10                              ,/,
 !     &'@    in usini1 (periodicity actived if IPERIO=1).            ',/,
-!     &'@  Flag IRAYON(',I10,') is equal to ',I10                     ,/,
+!     &'@  Flag IIRAYO(',I10,') is equal to ',I10                     ,/,
 !     &'@    in usray1.                                              ',/,
 !     &'@                                                            ',/,
 !     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -6571,7 +6560,7 @@ endif
 '@ variable COMMANDE_PERIO was activated in the runcase script',/,&
 '@  Flag  IPERIO is equal to ',I10                             ,/,&
 '@              (periodicity actived if IPERIO=1).            ',/,&
-'@  Flag IRAYON(',I10,') is equal to ',I10                     ,/,&
+'@  Flag IIRAYO(',I10,') is equal to ',I10                     ,/,&
 '@    in usray1.                                              ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&

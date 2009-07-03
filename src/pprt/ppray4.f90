@@ -43,10 +43,8 @@
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
-
    tparop , hparop , tempk  ,                                     &
-
+   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -176,13 +174,13 @@ include "optcal.h"
 include "cstphy.h"
 include "cstnum.h"
 include "pointe.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "fuincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 
 !===============================================================================

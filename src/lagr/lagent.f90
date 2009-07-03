@@ -647,7 +647,7 @@ endif
 
 ! --> Proprietes des particules : Emissivite
 
-if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.eq.1) then
+if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
 
   do ii = 1, nfrlag
     nb = ilflag(ii)

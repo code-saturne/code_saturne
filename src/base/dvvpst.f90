@@ -168,10 +168,10 @@ include "parall.h"
 include "period.h"
 include "lagpar.h"
 include "lagran.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -1002,43 +1002,70 @@ endif
 !     Fin du test sur le numero de maillage post.
 
 !===============================================================================
-!     2.2. VARIABLES RAYONNEMENT
+!     2.2. VARIABLES RADIATIVES AUX FRONTIERES
 !===============================================================================
 
-if (iirayo.eq.1) then
 
-  do iip = 1, nphast
-    iph   = iip
-    iphas = irapha(iph)
-    do ivarl = 1,nbrayp
+if (nummai.eq.-2) then
 
-      if (irayvp(ivarl,iphas).eq.1) then
+  if (iirayo.gt.0) then
 
-        call rayens                                               &
-        !==========
- ( ifinia , ifinra , nummai ,                                     &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncelps , nfacps , nfbrps ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itypps , ifacel , ifabor , ifmfbr , ifmcel , iprfml ,          &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   lstcel , lstfac , lstfbr ,                                     &
-   idevel , ituser ,                                              &
-   ivarl  , iph    ,                                              &
-   ia     ,                                                       &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   tracel , trafac , trafbr , rdevel , rtuser , ra     )
+    do ivarl = 1,nbrayf
+
+      if (irayvf(ivarl).eq.1) then
+
+        name80 = nbrvaf(ivarl)
+        namevr = name80(1:32)
+
+        if (ivarl .eq. itparp)      then
+          ipp =  ipprob(itparo)
+        else if (ivarl .eq. iqincp) then
+          ipp = ipprob(iqinci)
+        else if (ivarl .eq. ixlamp)  then
+          ipp = ipprob(ixlam)
+        else if (ivarl .eq. iepap)   then
+          ipp = ipprob(iepa)
+        else if (ivarl .eq. iepsp)   then
+          ipp = ipprob(ieps)
+        else if (ivarl .eq. ifnetp)  then
+          ipp = ipprob(ifnet)
+        else if (ivarl .eq. ifconp) then
+          ipp = ipprob(ifconv)
+        else if (ivarl .eq. ihconp) then
+          ipp = ipprob(ihconv)
+        endif
+
+        do iloc = 1, nfbrps
+          ifac = lstfbr(iloc)
+          trafbr(iloc) = propfb(ifac,ipp)
+        enddo
+
+        idimt  = 1
+        ientla = 0
+        ivarpr = 0
+
+        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+                    ntcabs, ttcabs, rbid, rbid, trafbr)
 
       endif
-
     enddo
 
-  enddo
+    name80 = 'radiative_boundary_zones'
+    namevr = name80(1:32)
 
+    do iloc = 1, nfbrps
+      ifac = lstfbr(iloc)
+      trafbr(iloc) = ia(iizfrd+ifac-1)
+    enddo
+
+    idimt  = 1
+    ientla = 0
+    ivarpr = 0
+!
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
+         ntcabs, ttcabs, rbid, rbid, trafbr)
+
+  endif
 endif
 
 !===============================================================================

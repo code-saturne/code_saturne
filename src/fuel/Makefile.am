@@ -28,7 +28,6 @@ AM_FCFLAGS = \
 -I$(top_srcdir)/include/cogz \
 -I$(top_srcdir)/include/cplv \
 -I$(top_srcdir)/include/fuel \
--I$(top_srcdir)/include/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =

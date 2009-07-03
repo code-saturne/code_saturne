@@ -134,10 +134,6 @@ do icla = 1, nclafu
   igmhtf(icla) = iprop
 enddo
 
-!   Phase dispersee (Luminance)
-iprop  = iprop + 1
-ilumi  = iprop
-
 ! ---- Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
@@ -234,13 +230,6 @@ do icla = 1, nclafu
 
 enddo
 
-
-!    Rayonnement : luminance
-
-iprop         = iprop + 1
-ipproc(ilumi) = iprop
-ipppst        = ipppst + 1
-ipppro(iprop) = ipppst
 
 nproce = iprop
 

@@ -138,9 +138,10 @@ include "cstphy.h"
 include "cstnum.h"
 include "optcal.h"
 include "entsor.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagran.h"
+include "ppppar.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -200,7 +201,7 @@ enddo
 !     PRISE EN COMPTE DU RAYONNEMENT S'IL Y A LIEU
 !===============================================================================
 
-if (iirayo.eq.1) then
+if (iirayo.gt.0) then
 
   do npt = 1,nbpart
 
@@ -211,14 +212,14 @@ if (iirayo.eq.1) then
       if (nor.eq.1) then
 
         srad = pi *ettpa(npt,jdp) *ettpa(npt,jdp)                 &
-                  *tepa(npt,jreps) *(propce(iel,ipproc(ilumn))    &
+                  *tepa(npt,jreps) *(propce(iel,ipproc(ilumin))   &
                         -4.d0 *stephn *ettpa(npt,jtp)**4 )
         auxl2(npt) = ettpa(npt,jtf)                               &
                +auxl1(npt) *srad /ettpa(npt,jcp) /ettpa(npt,jmp)
       else
 
         srad = pi *ettp(npt,jdp) *ettp(npt,jdp) *tepa(npt,jreps)  &
-                *(propce(iel,ipproc(ilumn))                       &
+                *(propce(iel,ipproc(ilumin))                      &
                 -4.d0 *stephn *ettp(npt,jtp)**4 )
         auxl2(npt) = ettp(npt,jtf)                                &
                 +auxl1(npt) *srad /ettp(npt,jcp) /ettp(npt,jmp)

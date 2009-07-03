@@ -189,11 +189,11 @@ include "cstnum.h"
 include "pointe.h"
 include "entsor.h"
 include "albase.h"
-include "radiat.h"
 include "parall.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -246,7 +246,7 @@ integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          iclvar, ipcvsl, iclvaf
-integer          iph   , iiph  , iyplbp
+integer          iyplbp
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -353,21 +353,6 @@ if ( ippmod(icompf) .ge. 0 ) then
     ipccv  = ipproc(icv   (iphas))
   else
     ipccv = 0
-  endif
-endif
-
-! --- Rayonnement
-iph = 0
-if (irayon(iphas).ge.1) then
-  do iiph = 1, nphast
-    if (irapha(iiph).eq.iphas) then
-      iph = iiph
-    endif
-  enddo
-  if(iph.eq.0) then
-    write(nfecra,9000)
-    call csexit (1)
-    !==========
   endif
 endif
 
@@ -1048,8 +1033,8 @@ do ifac = 1, nfabor
 !               Si on rayonne sur la phase et que
 !                  le scalaire est la variable energetique
 
-            if (irayon(iphas).ge.1            .and.               &
-                ll           .eq.iscalt(iphas)     ) then
+            if (iirayo.ge.1         .and.                         &
+                ll.eq.iscalt(iphas) .and. iphas.eq.irapha   ) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
@@ -1057,33 +1042,29 @@ do ifac = 1, nfabor
               if(iscsth(ll).eq.2) then
 !                  Si Cp variable
                 if(ipccp.gt.0) then
-                  ra(ihconv-1+ifac+nfabor*(iph-1)) =              &
-                       hflui*propce(iel,ipccp )
+                  propfb(ifac,ipprob(ihconv)) = hflui*propce(iel,ipccp )
                 else
-                  ra(ihconv-1+ifac+nfabor*(iph-1)) =              &
-                       hflui*cp0(iphas)
+                  propfb(ifac,ipprob(ihconv)) = hflui*cp0(iphas)
                 endif
 
 !                  Si on resout en energie (compressible)
               elseif(iscsth(ll).eq.3) then
 !                    Si Cv variable
                 if(ipccv.gt.0) then
-                  ra(ihconv-1+ifac+nfabor*(iph-1)) =              &
-                       hflui*propce(iel,ipccv )
+                  propfb(ifac,ipprob(ihconv)) = hflui*propce(iel,ipccv )
                 else
-                  ra(ihconv-1+ifac+nfabor*(iph-1)) =              &
-                       hflui*cv0(iphas)
+                  propfb(ifac,ipprob(ihconv)) = hflui*cv0(iphas)
                 endif
 
 !                Si on resout en temperature
               elseif(abs(iscsth(ll)).eq.1) then
-                ra(ihconv-1+ifac+nfabor*(iph-1)) = hflui
+                propfb(ifac,ipprob(ihconv)) = hflui
               endif
 
 !                On recupere le flux h(Ti'-Tp) (sortant ou
 !                             negatif si gain pour le fluide) en W/m2
 
-              ra(ifconv-1+ifac+nfabor*(iph-1)) =                  &
+              propfb(ifac,ipprob(ifconv)) =                       &
                    hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
                          - coefa(ifac,iclvaf))
             endif
@@ -1180,17 +1161,6 @@ endif
  '------------------------------------------------------------',  &
  /,/)
 
- 9000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@      ERREUR SUR LE NOMBRE DE PHASES DANS CONDLI            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #else
 
@@ -1212,17 +1182,6 @@ endif
  '------------------------------------------------------------',  &
  /,/)
 
- 9000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: RADIATIVE TRANSFER                             ',/,&
-'@    ========                                                ',/,&
-'@      ERROR ON THE NUMBER OF PHASES IN CONDLI               ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #endif
 

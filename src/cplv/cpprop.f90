@@ -143,10 +143,6 @@ do icla = 1, nclacp
   endif
 enddo
 
-!   Phase dispersee (Luminance)
-iprop  = iprop + 1
-ilumi  = iprop
-
 ! ---- Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
@@ -256,13 +252,6 @@ do icla = 1, nclacp
 
 enddo
 
-!    Rayonnement : luminance
-
-iprop         = iprop + 1
-ipproc(ilumi) = iprop
-ipppst        = ipppst + 1
-ipppro(iprop) = ipppst
-
 nproce = iprop
 
 
@@ -286,7 +275,7 @@ if (iihmpr.eq.1) then
   call uicppr (nclacp, nsalpp, nsalto, ippmod, icp3pl, ipppro,    &
                ipproc, itemp1, irom1, iym1, immel,                &
                itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
-               igmdv2, igmhet, igmsec, ilumi)
+               igmdv2, igmhet, igmsec)
 
 endif
 

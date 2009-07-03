@@ -77,6 +77,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -107,7 +108,7 @@ if ( ippmod(icod3p).ge.0 ) then
     iprop    = iprop + 1
     iym(icg) = iprop
   enddo
-  if ( ippmod(icod3p).eq.1 .and. iraypp.gt.0 ) then
+  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
     iprop = iprop + 1
     ickabs= iprop
     iprop = iprop + 1
@@ -147,7 +148,7 @@ if ( ippmod(icod3p).ge.0 ) then
     ipppro(iprop)         = ipppst
   enddo
 
-  if ( ippmod(icod3p).eq.1 .and. iraypp.gt.0 ) then
+  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
 
     iprop                 = iprop + 1
     ipproc(ickabs)        = iprop
@@ -173,7 +174,7 @@ if ( ippmod(icod3p).ge.0 ) then
 !      Au centre des faces de bord
 
   iprop = nprofb
-  if ( ippmod(icod3p).eq.1 .and. iraypp.gt.0 ) then
+  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
     do icg = 1, ngazg
       iprop            = iprop + 1
       ipprob(iym(icg)) = iprop
@@ -223,7 +224,7 @@ if ( ippmod(icoebu).ge.0 ) then
     iym(icg) = iprop
   enddo
   if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
     iprop = iprop + 1
     ickabs= iprop
     iprop = iprop + 1
@@ -264,7 +265,7 @@ if ( ippmod(icoebu).ge.0 ) then
   enddo
 
   if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
 
     iprop                 = iprop + 1
     ipproc(ickabs)        = iprop
@@ -291,7 +292,7 @@ if ( ippmod(icoebu).ge.0 ) then
 
   iprop = nprofb
   if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
     do icg = 1, ngazg
       iprop            = iprop + 1
       ipprob(iym(icg)) = iprop
@@ -374,7 +375,7 @@ if ( ippmod(icolwc).ge.0 ) then
 
   if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
                              .or. ippmod(icolwc).eq.5 )           &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
     iprop = iprop + 1
     ickabs= iprop
     iprop = iprop + 1
@@ -457,7 +458,7 @@ if ( ippmod(icolwc).ge.0 ) then
 
   if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
                              .or. ippmod(icolwc).eq.5 )           &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
 
     iprop                 = iprop + 1
     ipproc(ickabs)        = iprop
@@ -490,7 +491,7 @@ if ( ippmod(icolwc).ge.0 ) then
   iprop = nprofb
   if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
                              .or. ippmod(icolwc).eq.5)            &
-       .and. ( iraypp.ge.1 )  ) then
+       .and. ( iirayo.gt.0 )  ) then
     do icg = 1, ngazg
       iprop            = iprop + 1
       ipprob(iym(icg)) = iprop

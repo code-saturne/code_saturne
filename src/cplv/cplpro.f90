@@ -112,10 +112,6 @@ enddo
 iprop = iprop + 1
 immel = iprop
 
-!   Rayonnement : Integrale de la Luminance sur 4 PI
-iprop  = iprop + 1
-ilumi  = iprop
-
 ! ---- Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
@@ -145,12 +141,6 @@ enddo
 iprop         = iprop + 1
 ipproc(immel) = iprop
  ipppst       = ipppst + 1
-ipppro(iprop) = ipppst
-
-!   Rayonnement : Integrale de la Luminance sur 4 PI
-iprop         = iprop + 1
-ipproc(ilumi) = iprop
-ipppst        = ipppst + 1
 ipppro(iprop) = ipppst
 
 nproce = iprop

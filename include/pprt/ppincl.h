@@ -78,14 +78,6 @@ parameter       (iphpar = 1 , icod3p = 2 , icodeq = 3 ,           &
                  ieljou = 10, ielarc = 11, ielion = 12,           &
                  icompf = 13, iatmos = 14, iaeros = 15)
 
-!--> MODULE RAYONNEMEMT
-!    IRAYPP =  0 : pas de rayonnement
-!           =  1 : DOM + calcul a partir des CABS des especes
-!           =  2 : DOM + CABS par Modak
-!           =  3 : P-1 + calcul a partir des CABS des especes
-!           =  4 : P-1 + CABS par Modak
-integer iraypp
-
 
 !--> NOMBRE DE VARIABLES ALGEBRIQUES OU D'ETAT
 !    pour la physique particuliere NSALPP
@@ -126,8 +118,6 @@ integer ix2(nclcpm)
 integer igmdch(nclcpm), igmhet(nclcpm) , ighco2(nclcpm)
 integer igmdv1(nclcpm), igmdv2(nclcpm)
 integer igmsec(nclcpm)
-!        Rayonnement : integrale de la luminance sur 4*PI
-integer ilumi
 
 !--> POINTEURS VARIABLES COMBUSTION FUEL
 
@@ -242,10 +232,6 @@ integer itemp4, ihumid
 integer ihm
 
 
-!--> REMPLISSAGE COMMON RAYONNEMENT
-
-common / iporay / iraypp
-
 !--> REMPLISSAGE COMMON POINTEURS VARIABLES TRANSPORTEES
 !                                 VARIABLES D'ETAT
 
@@ -288,8 +274,6 @@ common / ipovsa /                                                 &
 ! ---- Combustion fuel
                   iyfol, itemp3, irom3 , idiam3,                  &
                   ih1hlf, igmeva, igmhtf,                         &
-! ---- Rayonnement
-                  ilumi,                                          &
 ! ---- Versions electriques
                   iefjou, ilapla , iqelec ,                       &
                   idjr  , idji   , idrad  ,                       &

@@ -79,6 +79,7 @@ include "paramx.h"
 include "entsor.h"
 include "numvar.h"
 include "optcal.h"
+include "ppppar.h"
 include "radiat.h"
 
 !===============================================================================
@@ -92,7 +93,7 @@ integer          ifinia , ifinra
 
 ! VARIALBES LOCALES
 
-integer          idebia , idebra
+integer          idebia, idebra
 
 !===============================================================================
 
@@ -104,34 +105,12 @@ idebra = idbra0
 !--> NOMBRE DE PHASES POUR LESQUELLES ON FAIT DU RAYONNEMENT
 
 iizfrd =       idebia
-ifinia =       iizfrd + nfabor * nphast
+ifinia =       iizfrd + nfabor
 
-itsre  =       idebra
-itsri  =       itsre  + ncelet * nphasc
-iqx    =       itsri  + ncelet * nphasc
-iqy    =       iqx    + ncelet * nphast
-iqz    =       iqy    + ncelet * nphast
-iabs   =       iqz    + ncelet * nphast
-iemi   =       iabs   + ncelet * nphasc
-icak   =       iemi   + ncelet * nphasc
-ifinra =       icak   + ncelet * nphasc
-
-itparo =       ifinra
-iqinci =       itparo + nfabor * nphast
-ixlam  =       iqinci + nfabor * nphast
-iepa   =       ixlam  + nfabor * nphast
-ieps   =       iepa   + nfabor * nphast
-ifnet  =       ieps   + nfabor * nphast
-ifconv =       ifnet  + nfabor * nphast
-ihconv =       ifconv + nfabor * nphast
-ifinra =       ihconv + nfabor * nphast
 
 !---> VERIFICATION
 
 CALL IASIZE('MEMRA1',IFINIA)
-!     ==========
-
-CALL RASIZE('MEMRA1',IFINRA)
 !     ==========
 
 return

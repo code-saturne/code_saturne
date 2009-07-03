@@ -109,12 +109,10 @@ common / rlag22 / dnpclo , dnpkil , dnpcsu
 !          ITPVAR : EQUATION SUR LA TEMPERATURE
 !          IDPVAR : EQUATION SUR LE DIAMETRE
 !          IMPVAR : EQUATION SUR LA MASSE
-!          ILUMN  : POINTEUR QUI PERMET DE REPERER L INTEGRALE DE LA
-!                   LUMINANCE DANS LA TABLEAU PROPCE
 
 
-integer           iphyla, itpvar, idpvar, impvar, ilumn
-common / ilag41 / iphyla, itpvar, idpvar, impvar, ilumn
+integer           iphyla, itpvar, idpvar, impvar
+common / ilag41 / iphyla, itpvar, idpvar, impvar
 
 
 !       SI SUITE ET ENCLENCHEMENT ITPVAR =1 EN COUR DE CALCUL

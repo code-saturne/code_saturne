@@ -158,6 +158,7 @@ include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "cpincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -585,7 +586,7 @@ if (nor.eq.1) then
 !    Rayonnement
 
       aux3 = pi * diamp2                                          &
-           * ( propce(iel,ipproc(ilumi))                          &
+           * ( propce(iel,ipproc(ilumin))                         &
            - 4.d0*stephn*((ettp(npt,jhp)+tkelvi)**4) )
 
       aux4 = ettpa(npt,jtf) + aux1*(aux2+aux3)
@@ -623,7 +624,7 @@ else if (nor.eq.2) then
 !    Rayonnement
 
       aux3 = pi * diamp2                                          &
-           * ( propce(iel,ipproc(ilumi))                          &
+           * ( propce(iel,ipproc(ilumin))                         &
            - 4.d0*stephn*((ettp(npt,jhp)+tkelvi)**4) )
 
       aux4 = ettp(npt,jtf) + aux1*(aux2+aux3)

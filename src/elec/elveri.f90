@@ -228,14 +228,12 @@ endif
 ! ---> verif rayonnement/Arc electrique
 
 
-if ( ippmod(ielarc).ge.1 .and. ixkabe .eq. 2                      &
-                         .and. iirayo .gt. 0 ) then
+if ( ippmod(ielarc).ge.1 .and. ixkabe.eq.2 .and. iirayo.gt.0 ) then
   write(nfecra,2022)
   iok = iok + 1
 endif
 
-if ( ippmod(ielarc).ge.1 .and. ixkabe .ne. 1                      &
-                         .and. iirayo .gt. 0 ) then
+if ( ippmod(ielarc).ge.1 .and. ixkabe.ne.1 .and. iirayo.gt.0 ) then
   write(nfecra,2023)
   iok = iok + 1
 endif

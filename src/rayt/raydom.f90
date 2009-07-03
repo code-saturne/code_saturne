@@ -40,22 +40,14 @@ subroutine raydom &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
-
    dtr    , viscf  , viscb  ,                                     &
    dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   drtp   , smbrs  , rovsdt , tempk  ,                            &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
    rdevel , rtuser ,                                              &
-
-   rayexp , rayimp , qx     , qy     , qz     ,                   &
-   rayabs , rayemi , ck     , tempk  ,                            &
-   tparoi , qincid , xlam   , epa    , eps    ,                   &
-   flunet , flconv , hfconv ,                                     &
-
    ra     )
 
 !===============================================================================
@@ -118,7 +110,6 @@ subroutine raydom &
 ! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
 !   (nfabor+1)     !    !     !  (optionnel)                                   !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-!   ,nphast)       !    !     !                                                !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -159,37 +150,9 @@ subroutine raydom &
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rayexp(ncelet    ! tr ! --> ! terme source radiatif explicite                !
-!   ,nphasc)       !    !     !                                                !
-! rayimp(ncelet    ! tr ! --> ! terme source radiatif implicite                !
-!   ,nphasc)       !    !     !                                                !
-! qxqyqz(ncelet    ! tr ! --> ! composante du vecteur densite de flux          !
-!   ,nphast)       !    !     ! radiatif explicite                             !
-! rayabs(ncelet    ! tr ! --> ! part d'absorption du terme source              !
-!   ,nphasc)       !    !     ! radiatif                                       !
-! rayemi(ncelet    ! tr ! --> ! part d'emission du terme source                !
-!   ,nphasc)       !    !     ! radiatif explicite                             !
-! ck (ncelet       ! tr ! --> ! coefficient d'absorption du milieu             !
-!   ,nphasc)       !    !     ! (nul si transparent)                           !
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
 !   ,nphasc)       !    !     !                                                !
-! tparoi(nfabor    ! tr ! --- ! temperature de paroi en kelvin                 !
-!   ,nphast)       !    !     !                                                !
-! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
-!   ,nphast)       !    !     !                                                !
-! xlam(nfabor      ! tr ! --> ! coefficient de conductivite thermique          !
-!   ,nphast)       !    !     ! des facettes de paroi (w/m/k)                  !
-! epa (nfabor      ! tr ! --> ! epaisseur des facettes de paroi (m)            !
-!   ,nphast)       !    !     !                                                !
-! eps (nfabor      ! tr ! --> ! emissivite des facettes de bord                !
-!   ,nphast)       !    !     !                                                !
-! flunet(nfabor    ! tr ! --> ! densite de flux net radiatif aux               !
-!   ,nphast)       !    !     ! faces de bord                                  !
-! flconv(nfabor    ! tr ! --> ! densite de flux convectif aux faces            !
-!   ,nphast)       !    !     ! de bord                                        !
-! hfconv(nfabor    ! tr ! --> ! coefficient d'echange fluide aux               !
-!   ,nphast)       !    !     ! faces de bord                                  !
+! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -217,15 +180,15 @@ include "cstnum.h"
 include "pointe.h"
 include "parall.h"
 include "period.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagdim.h"
 include "lagran.h"
 include "ppppar.h"
 include "ppthch.h"
-include "cpincl.h"
 include "fuincl.h"
 include "ppincl.h"
+include "cpincl.h"
+include "radiat.h"
 include "ihmpre.h"
 
 
@@ -245,7 +208,7 @@ integer          ifmfbr(nfabor) , ifmcel(ncelet)
 integer          iprfml(nfml,nprfml) , itypfb(nfabor,nphas)
 integer          ipnfac(nfac+1), nodfac(lndfac)
 integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
-integer          izfrad(nfabor,nphast)
+integer          izfrad(nfabor)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
@@ -271,26 +234,14 @@ double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
 double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision w10(ncelet)
 
-double precision rayexp(ncelet,nphasc)
-double precision rayimp(ncelet,nphasc)
-double precision ck(ncelet,nphasc)
 double precision tempk(ncelet,nphasc)
-double precision rayabs(ncelet,nphasc)
-double precision rayemi(ncelet,nphasc)
-
-double precision qx(ncelet,nphast), qy(ncelet,nphast)
-double precision qz(ncelet,nphast)
-double precision tparoi(nfabor,nphast), qincid(nfabor,nphast)
-double precision xlam(nfabor,nphast), epa(nfabor,nphast)
-double precision eps(nfabor,nphast), flunet(nfabor,nphast)
-double precision flconv(nfabor,nphast), hfconv(nfabor,nphast)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
 
 integer          idebia , idebra
-integer          iph    , iphas  , iappel
+integer          iappel
 integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
@@ -331,17 +282,13 @@ write(nfecra,1000)
 unspi = 1.d0/pi
 
 !===============================================================================
-! 2. BOUCLE SUR LES PHASES...
+! 2. PHASE
 !===============================================================================
-
-do iph = 1, nphast
-
-  iphas = irapha(iph)
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 
-  iscat = iscalt(iphas)
-  ivart = isca(iscalt(iphas))
+  iscat = iscalt(irapha)
+  ivart = isca(iscalt(irapha))
 
 !===============================================================================
 ! 3.1 COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
@@ -350,7 +297,7 @@ do iph = 1, nphast
 !--> INITIALISATION NON ADMISSIBLE POUR TEST APRES USRAY3
 
   do iel = 1,ncel
-    ck(iel,iph) = -grand
+    propce(iel,ipproc(icak(1))) = -grand
   enddo
 
 !--> COEFFICIENT D'ABSORPTION POUR LA PHYSIQUE PARTICULIERE
@@ -366,9 +313,9 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  , irapha  ,                                    &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
@@ -376,7 +323,7 @@ do iph = 1, nphast
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     ,                                     &
    rdevel , rtuser ,                                              &
-   ck     ,  ra    )
+   ra    )
 
 !-----> W10 SERT A STOCKER TEMPORAIREMENT
 !       LE COEFFICIENT D'ABSORPTION DU MELANGE GAZ-PARTICULE
@@ -384,7 +331,7 @@ do iph = 1, nphast
     if (ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0) then
 
       do iel = 1,ncel
-        w10(iel) = ck(iel,iph)
+        w10(iel) = propce(iel,ipproc(icak(1)))
       enddo
 
       if (ippmod(icp3pl).ge.0 ) then
@@ -393,7 +340,7 @@ do iph = 1, nphast
           do iel = 1,ncel
             w10(iel) = w10(iel)                                   &
                    + ( propce(iel,ipproc(ix2(icla)))              &
-                   *   ck(iel,ipcla)                 )
+                   *   propce(iel,ipproc(icak(ipcla))) )
           enddo
         enddo
       else if ( ippmod(icfuel) .ge.0 ) then
@@ -401,13 +348,14 @@ do iph = 1, nphast
           ipcla = 1+icla
           do iel = 1,ncel
             w10(iel) = w10(iel)                                   &
-                     + rtpa(iel,isca(iyfol(icla)))*ck(iel,ipcla)
+                     + ( rtpa(iel,isca(iyfol(icla)))              &
+                       * propce(iel,ipproc(icak(ipcla))) )
           enddo
         enddo
       endif
 
       do iel = 1,ncel
-        ck(iel,iph) = w10(iel)
+        propce(iel,ipproc(icak(1))) = w10(iel)
       enddo
     endif
 
@@ -421,11 +369,10 @@ do iph = 1, nphast
 
     if (iihmpr.eq.1) then
 
-      call uiray3 (ck, iph, ncelet, ncel)
+      call uiray3(propce(1,ipproc(icak(1))),ncel)
       !==========
 
-      if (irayon(iphas).eq.2 .and. ippmod(iphpar).le.1            &
-          .and. ipadom.le.3) then
+      if (iirayo.eq.2 .and. ippmod(iphpar).le.1 .and. ipadom.le.3) then
         sf = 0.d0
         vv = 0.d0
 
@@ -456,7 +403,7 @@ do iph = 1, nphast
 
         iok = 0
         do iel = 1,ncel
-          if (ck(iel,iph).lt.xkmin) then
+          if (propce(iel,ipproc(icak(1))).lt.xkmin) then
             iok = iok +1
           endif
         enddo
@@ -477,14 +424,15 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iph    , iappel ,                            &
+   nvar   , nscal  , irapha , iappel ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
-   ipnfac , nodfac , ipnfbr , nodfbr , izfrad(1,iph) ,            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
+   ipnfac , nodfac , ipnfbr , nodfbr , izfrad ,                   &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   ck(1,iph), w1   , w2     , w3     , w4     , w5     ,  w6    , &
+   propce(1,ipproc(icak(1))),                                &
+   w1     , w2     , w3     , w4     , w5     ,  w6    ,          &
    rdevel , rtuser ,                                              &
    ra     )
 
@@ -495,11 +443,11 @@ do iph = 1, nphast
 !---> P-1 : VERIFICATION QUE CK DU MILIEU EST STRICTEMENT
 !       SUPERIEUR A ZERO POUR TOUTES CELLULES
 
-  if (irayon(iphas).eq.2) then
+  if (iirayo.eq.2) then
 
-    ckmin = ck(1,iph)
+    ckmin = propce(1,ipproc(icak(1)))
     do iel = 1, ncel
-      ckmin = min(ckmin,ck(iel,iph))
+      ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
     enddo
     if (ckmin.lt.0.d0) then
       write(nfecra,2020)
@@ -507,15 +455,15 @@ do iph = 1, nphast
       !==========
     endif
 
-  else if (irayon(iphas).eq.1) then
+  else if (iirayo.eq.1) then
 
-!---> DOM : VERIFICATION QUE CK DU MILIEU EST SUPERIEUR OU EGAL A -1D-12
+!---> DOM : VERIFICATION QUE CK DU MILIEU EST SUPERIEUR OU EGAL A 0
 
-    ckmin = ck(1,iph)
+    ckmin = propce(1,ipproc(icak(1)))
     do iel = 1, ncel
-      ckmin = min(ckmin,ck(iel,iph))
+      ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
     enddo
-    if (ckmin.le.-epzero) then
+    if (ckmin.lt.0.d0) then
       write(nfecra,2010) ckmin
       call csexit (1)
       !==========
@@ -527,7 +475,7 @@ do iph = 1, nphast
 
   aa = zero
   do iel = 1,ncel
-    aa = aa + ck(iel,iph)
+    aa = aa + propce(iel,ipproc(icak(1)))
   enddo
   if (irangp.ge.0) then
     call parmax(aa)
@@ -559,26 +507,28 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iphas  , iappel ,                            &
+   nvar   , nscal  , irapha  , iappel ,                           &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
-   ipnfac , nodfac , ipnfbr , nodfbr , izfrad(1,iph) ,            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
+   ipnfac , nodfac , ipnfbr , nodfbr , izfrad ,                   &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
+   propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
+   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
+   propce(1,ipproc(icak(1)))    ,                            &
    rdevel , rtuser ,                                              &
-   tparoi(1,iph) , qincid(1,iph) , flunet(1,iph) ,                &
-   xlam(1,iph)   , epa(1,iph)    , eps(1,iph)    , ck(1,iph)    , &
    ra     )
 
 
 !---> BLINDAGE POUR UN DIRICHLET SUR LA LUMINANCE
 !      (UNIQUEMENT POUR LA METHODE DOM, SANS OBJET POUR L'APPROX P-1)
 
-  if (irayon(iphas).eq.1) then
+  if (iirayo.eq.1) then
     do ifac = 1,nfabor
       cofrub(ifac) = zero
     enddo
@@ -598,30 +548,30 @@ do iph = 1, nphast
     if (cofrua(ifac).le.xlimit) then
       iok = iok + 1
       cofrmn = min(cofrmn,cofrua(ifac))
-      write(nfecra,3000)ifac,izfrad(ifac,iph),itypfb(ifac,iphas)
+      write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,irapha)
     endif
   enddo
 
   if (iok.ne.0) then
-    write(nfecra,3100) iphas, cofrmn
+    write(nfecra,3100) irapha, cofrmn
     call csexit (1)
     !==========
   endif
 
   cofrmn = rinfin
 
-  if (irayon(iphas).eq.2) then
+  if (iirayo.eq.2) then
 
     do ifac = 1,nfabor
       if (cofrub(ifac).le.xlimit) then
         iok = iok + 1
         cofrmn = min(cofrmn,cofrub(ifac))
-        write(nfecra,3000)ifac,izfrad(ifac,iph),itypfb(ifac,iphas)
+        write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,irapha)
       endif
     enddo
 
     if (iok.ne.0) then
-      write(nfecra,3200) iphas,cofrmn
+      write(nfecra,3200) irapha,cofrmn
       call csexit (1)
       !==========
     endif
@@ -640,11 +590,11 @@ do iph = 1, nphast
 
       if (iscsth(iscat).eq.-1) then
         do iel = 1, ncel
-          tempk(iel,iph) = rtpa(iel,ivart) + tkelvi
+          tempk(iel,1) = rtpa(iel,ivart) + tkelvi
         enddo
       else
         do iel = 1, ncel
-          tempk(iel,iph) = rtpa(iel,ivart)
+          tempk(iel,1) = rtpa(iel,ivart)
         enddo
       endif
 
@@ -661,20 +611,18 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  , irapha  ,                                    &
    nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
    rdevel , rtuser ,                                              &
-
-   tparoi(1,iph)   , flurdb , tempk(1,iph)   ,                    &
-
    ra     )
 
       else
@@ -684,18 +632,18 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  , irapha  ,                                    &
    nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
    rdevel , rtuser ,                                              &
-   tparoi(1,iph)   , flurdb , tempk(1,iph)   ,                    &
    ra     )
 
       endif
@@ -730,7 +678,7 @@ do iph = 1, nphast
       !==========
     endif
 
-!---> ON SE SERT DE RAYIMP(IEL,IPH) COMME UN AUXILIAIRE POUR
+!---> ON SE SERT DE PROPCE(IEL,IPPROC(ITSRI(1))) COMME UN AUXILIAIRE POUR
 !       STOCKER STEPHN*CK*TEMPK**4 ICI
 !       PLUS BAS ON JUSTIFIERA LE NOM.
 
@@ -740,7 +688,8 @@ do iph = 1, nphast
 !           Rayonnement standard, flamme CP ou fuel
 
       do iel = 1,ncel
-        rayimp(iel,iph) = stephn*ck(iel,iph)*(tempk(iel,iph)**4)
+        propce(iel,ipproc(itsri(1))) = stephn  *             &
+         propce(iel,ipproc(icak(1)))*(tempk(iel,1)**4)
       enddo
 
     else
@@ -748,8 +697,8 @@ do iph = 1, nphast
 !           Flamme de diffusion ou flamme de premelange
 
       do iel = 1,ncel
-        rayimp(iel,iph) = stephn*ck(iel,iph)                      &
-                             *propce(iel,ipproc(it4m))
+        propce(iel,ipproc(itsri(1))) = stephn  *             &
+         propce(iel,ipproc(icak(1)))*propce(iel,ipproc(it4m))
       enddo
 
     endif
@@ -760,8 +709,8 @@ do iph = 1, nphast
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
-          rayimp(iel,ipcla) =                                     &
-                  stephn*ck(iel,ipcla)*(tempk(iel,ipcla)**4)
+          propce(iel,ipproc(itsri(ipcla))) =  stephn  *           &
+            propce(iel,ipproc(icak(ipcla)))*(tempk(iel,ipcla)**4)
         enddo
       enddo
 
@@ -771,15 +720,15 @@ do iph = 1, nphast
       do icla = 1,nclafu
         ipcla = 1+icla
         do iel = 1,ncel
-          rayimp(iel,ipcla) =                                     &
-                  stephn*ck(iel,ipcla)*(tempk(iel,ipcla)**4)
+          propce(iel,ipproc(itsri(ipcla))) =  stephn  *           &
+            propce(iel,ipproc(icak(ipcla)))*(tempk(iel,ipcla)**4)
         enddo
       enddo
     endif
 
   else
     do iel = 1,ncel
-      rayimp(iel,iph) = zero
+      propce(iel,ipproc(itsri(1))) = zero
     enddo
 ! fin de IF (IDIVER.GE.0) THEN
   endif
@@ -788,13 +737,13 @@ do iph = 1, nphast
 ! 5.1 MODELE DE RAYONNEMENT P-1
 !===============================================================================
 
-  if (irayon(iphas).eq.2) then
+  if (iirayo.eq.2) then
 
 !--> Terme source explicite de l'equation sur Theta4
 
     do iel = 1, ncel
-      smbrs(iel) = 3.d0 * ck(iel,iph) * ( tempk(iel,iph) ** 4)    &
-                   * volume(iel)
+      smbrs(iel) = 3.d0 * propce(iel,ipproc(icak(1))) *      &
+         ( tempk(iel,1) ** 4) * volume(iel)
     enddo
 
 ! Tenir compte de l'absorption des particules
@@ -807,8 +756,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                                 &
                          + ( 3.d0 * propce(iel,ipproc(ix2(icla))) &
-                         *   ck(iel,ipcla)*(tempk(iel,ipcla)**4)  &
-                         *   volume(iel) )
+                         *   propce(iel,ipproc(icak(ipcla)))      &
+                         *  (tempk(iel,ipcla)**4) * volume(iel) )
         enddo
       enddo
 
@@ -820,8 +769,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                                 &
                       +( 3.d0 * rtpa(iel,isca(iyfol(icla)))       &
-                        *ck(iel,ipcla)*(tempk(iel,ipcla)**4)      &
-                        *volume(iel) )
+                         *   propce(iel,ipproc(icak(ipcla)))      &
+                         *  (tempk(iel,ipcla)**4) * volume(iel) )
         enddo
       enddo
     endif
@@ -829,7 +778,8 @@ do iph = 1, nphast
 !--> Terme source implicite de l'equation sur Theta4
 
     do iel = 1, ncel
-      rovsdt(iel) =  3.d0 * ck(iel,iph) * volume(iel)
+      rovsdt(iel) =  3.d0 * propce(iel,ipproc(icak(1)))      &
+                        * volume(iel)
     enddo
 
 ! Tenir compte de l'absorption des particules
@@ -842,7 +792,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel)                               &
                           + (3.d0 * propce(iel,ipproc(ix2(icla))) &
-                          *  ck(iel,ipcla) * volume(iel) )
+                          *  propce(iel,ipproc(icak(ipcla)))      &
+                          * volume(iel) )
         enddo
       enddo
 
@@ -854,7 +805,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel)                               &
                        + (3.d0*rtpa(iel,isca(iyfol(icla)))        &
-                              *ck(iel,ipcla)*volume(iel) )
+                          *  propce(iel,ipproc(icak(ipcla)))      &
+                          * volume(iel) )
         enddo
       enddo
 
@@ -865,7 +817,7 @@ do iph = 1, nphast
 !       securite  on le re-remplit
 
     do iel = 1, ncel
-      w10(iel) =  ck(iel,iph)
+      w10(iel) =  propce(iel,ipproc(icak(1)))
     enddo
 
 ! Tenir compte de l'absorption des particules
@@ -878,7 +830,7 @@ do iph = 1, nphast
         do iel = 1,ncel
           w10(iel) = w10(iel)                                     &
                     + ( propce(iel,ipproc(ix2(icla)))             &
-                       *ck(iel,ipcla)                )
+                      * propce(iel,ipproc(icak(ipcla)))   )
         enddo
       enddo
 
@@ -889,7 +841,8 @@ do iph = 1, nphast
         ipcla = 1+icla
         do iel = 1,ncel
           w10(iel) = w10(iel)                                     &
-                    +rtpa(iel,isca(iyfol(icla)))*ck(iel,ipcla)
+                    + ( rtpa(iel,isca(iyfol(icla)))               &
+                      * propce(iel,ipproc(icak(ipcla)))   )
         enddo
       enddo
 
@@ -900,7 +853,7 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  , irapha  ,                           &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb ,          &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
@@ -914,9 +867,11 @@ do iph = 1, nphast
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
 
-   rayabs(1,iph) , rayemi(1,iph) , rayexp(1,iph) ,                &
-   qx(1,iph)     , qy(1,iph)     , qz(1,iph)     ,                &
-   qincid(1,iph) , eps(1,iph)    , tparoi(1,iph) ,                &
+   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))), &
+   propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,     &
+   propce(1,ipproc(iqy))   , propce(1,ipproc(iqz))  ,             &
+   propfb(1,ipprob(iqinci)), propfb(1,ipprob(ieps)) ,             &
+   propfb(1,ipprob(itparo)),                                      &
 
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
@@ -926,13 +881,14 @@ do iph = 1, nphast
 ! 5.2 RESOLUTION DE L'EQUATION DES TRANSFERTS RADIATIFS
 !===============================================================================
 
-  else if (irayon(iphas).eq.1) then
+  else if (iirayo.eq.1) then
 
 !--> Terme source explicite de l'equation sur la luminance
 
 
     do iel = 1, ncel
-      smbrs(iel) = rayimp(iel,iph) *volume(iel) *unspi
+      smbrs(iel) = propce(iel,ipproc(itsri(1))) *volume(iel) &
+                                                    *unspi
     enddo
 
 !       Charbon
@@ -942,8 +898,9 @@ do iph = 1, nphast
         ipcla = 1+icla
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                                 &
-                      + propce(iel,ipproc(ix2(icla)))             &
-                       *rayimp(iel,ipcla)*volume(iel)*unspi
+                  + propce(iel,ipproc(ix2(icla)))                 &
+                   *propce(iel,ipproc(itsri(ipcla)))*volume(iel)  &
+                   *unspi
         enddo
       enddo
 
@@ -955,7 +912,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                                 &
                       + rtpa(iel,isca(iyfol(icla)))               &
-                       *rayimp(iel,ipcla)*volume(iel)*unspi
+                   *propce(iel,ipproc(itsri(ipcla)))*volume(iel)  &
+                   *unspi
         enddo
       enddo
 
@@ -965,7 +923,7 @@ do iph = 1, nphast
 !      KL + div(LS) = KL0 integre sur le volume de controle
 
     do iel = 1, ncel
-      rovsdt(iel) =  ck(iel,iph) * volume(iel)
+      rovsdt(iel) = propce(iel,ipproc(icak(1))) * volume(iel)
     enddo
 
 !        Charbon
@@ -976,7 +934,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel) +                             &
                           propce(iel,ipproc(ix2(icla)))           &
-                          * ck(iel,ipcla) * volume(iel)
+                          * propce(iel,ipproc(icak(ipcla)))       &
+                          * volume(iel)
         enddo
       enddo
 
@@ -988,7 +947,8 @@ do iph = 1, nphast
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel)                               &
                        + rtpa(iel,isca(iyfol(icla)))              &
-                        *ck(iel,ipcla)*volume(iel)
+                          * propce(iel,ipproc(icak(ipcla)))       &
+                          * volume(iel)
         enddo
       enddo
 
@@ -999,7 +959,7 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  , irapha  ,                           &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb ,          &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
@@ -1014,11 +974,11 @@ do iph = 1, nphast
    drtp   , smbrs  , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
+   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,&
+   propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,&
+   propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
+   propfb(1,ipprob(iqinci) ), propfb(1,ipprob(ifnet)) ,           &
    rdevel , rtuser ,                                              &
-   rayabs(1,iph) , rayemi(1,iph) , rayexp(1,iph) ,                &
-   qx(1,iph)     , qy(1,iph)     , qz(1,iph)     ,                &
-   qincid(1,iph) , flunet(1,iph) ,                                &
-
    ra     )
 
 
@@ -1030,20 +990,15 @@ do iph = 1, nphast
 
 !  Si dans le module lagrangien on resout une equation de la temperature
 !    sur les particules (IPHYLA=1 et ITPVAR=1) ou si les particules
-!    sont des grains de charbon (IPHYLA=2) alors on stocke
+!    sont des grains de charbon (IPHYLA=2), on a besoin de
 !                                     /    ->  ->
 !    l'integrale de la luminance SA= /  L( X , S ). DOMEGA
 !                                   /4.PI
+!  On stocke cette variable quelque soit le choix des options
 
-  if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
-    do iel = 1,ncel
-      propce(iel,ipproc(ilumi)) = rayexp(iel,iph)
-    enddo
-  else if (iilagr.gt.0 .and. iphyla.eq.2 .and. itpvar.eq.1) then
-    do iel = 1,ncel
-      propce(iel,ipproc(ilumn)) = rayexp(iel,iph)
-    enddo
-  endif
+  do iel = 1,ncel
+    propce(iel,ipproc(ilumin)) = propce(iel,ipproc(itsre(1)))
+  enddo
 
 !===============================================================================
 ! 6. FLUX NET RADIATIF AUX PAROIS : CALCUL ET INTEGRATION
@@ -1053,7 +1008,7 @@ do iph = 1, nphast
 !---> INITIALISATION NON ADMISSIBLE POUR TEST APRES USRAY5
 
   do ifac = 1,nfabor
-    flunet(ifac,iph) = -grand
+    propfb(ifac,ipprob(ifnet)) = -grand
   enddo
 
 !---> LECTURES DES DONNEES UTILISATEURS
@@ -1065,19 +1020,21 @@ do iph = 1, nphast
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , iphas  , iappel ,                            &
+   nvar   , nscal  , irapha  , iappel ,                           &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,iphas) , &
-   ipnfac , nodfac , ipnfbr , nodfbr , izfrad(1,iph) ,            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb(1,irapha), &
+   ipnfac , nodfac , ipnfbr , nodfbr , izfrad ,                   &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
+   propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
+   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
+   propce(1,ipproc(icak(1)))  ,                              &
    rdevel , rtuser ,                                              &
-   tparoi(1,iph) , qincid(1,iph) , flunet (1,iph)  ,              &
-   xlam(1,iph)   , epa(1,iph)    , eps(1,iph)    ,  ck(1,iph)  ,  &
    ra     )
 
 !---> VERIFICATION DE FLUNET
@@ -1087,15 +1044,15 @@ do iph = 1, nphast
   flunmn = grand
 
   do ifac = 1,nfabor
-    if (flunet(ifac,iph).le.xlimit) then
+    if (propfb(ifac,ipprob(ifnet)).le.xlimit) then
       iok = iok + 1
-      flunmn = min(flunmn,flunet(ifac,iph))
-      write(nfecra,4000)ifac,izfrad(ifac,iph), itypfb(ifac,iphas)
+      flunmn = min(flunmn,propfb(ifac,ipprob(ifnet)))
+      write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac,irapha)
     endif
   enddo
 
   if (iok.ne.0) then
-    write(nfecra,4100) iphas,flunmn
+    write(nfecra,4100) irapha,flunmn
     call csexit (1)
     !==========
   endif
@@ -1109,9 +1066,9 @@ do iph = 1, nphast
   enddo
   do ifac = 1,nfabor
     surfbn = ra(isrfbn-1+ifac)
-    izone = izfrad(ifac,iph)
+    izone = izfrad(ifac)
     flux(izone) = flux(izone)                                     &
-         + flunet(ifac,iph)*surfbn
+         + propfb(ifac,ipprob(ifnet))*surfbn
     iflux(izone) = 1
   enddo
   if(irangp.ge.0) then
@@ -1122,7 +1079,7 @@ do iph = 1, nphast
 
   write(nfecra,5000)
   write(nfecra,5010)
-  do izone = 1, nozarm(iphas)
+  do izone = 1, nozarm
     if(iflux(izone).eq.1) then
       write(nfecra,5020) izone,flux(izone)
     endif
@@ -1135,7 +1092,7 @@ do iph = 1, nphast
   aa = zero
   do ifac = 1,nfabor
     surfbn = ra(isrfbn-1+ifac)
-    aa =  aa + flunet(ifac,iph) * surfbn
+    aa =  aa + propfb(ifac,ipprob(ifnet)) * surfbn
   enddo
   if(irangp.ge.0) then
     call parsom(aa)
@@ -1157,13 +1114,13 @@ do iph = 1, nphast
 !    Attention : il faut conserver W9 dans la suite de la routine,
 !    car son contenu est utilisé plus loin
 
-    if (icp(iphas).gt.0) then
+    if (icp(irapha).gt.0) then
       do iel = 1,ncel
-        w9(iel) = 1.d0/propce(iel,ipproc(icp(iphas)))
+        w9(iel) = 1.d0/propce(iel,ipproc(icp(irapha)))
       enddo
     else
       do iel = 1,ncel
-        w9(iel) = 1.d0/cp0(iphas)
+        w9(iel) = 1.d0/cp0(irapha)
       enddo
     endif
 
@@ -1171,11 +1128,13 @@ do iph = 1, nphast
 
 !--> part d'absorption du terme source explicite
 
-      rayabs(iel,iph) = ck(iel,iph) * rayexp(iel,iph)
+      propce(iel,ipproc(iabs(1))) =                          &
+propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
 !--> part d'émission du terme source explicite
 
-      rayemi(iel,iph) = -4.d0 * rayimp(iel,iph)
+      propce(iel,ipproc(iemi(1))) = -4.d0 *                  &
+             propce(iel,ipproc(itsri(1)))
 
     enddo
 
@@ -1185,17 +1144,24 @@ do iph = 1, nphast
         ipcla = 1+icla
         do iel = 1,ncel
 !         Fluide
-          rayabs(iel,iph) = rayabs(iel,iph)                       &
-                           + propce(iel,ipproc(ix2(icla)))        &
-                            *ck(iel,ipcla)*rayexp(iel,iph)
-          rayemi(iel,iph) = rayemi(iel,iph)                       &
-                           - 4.0d0*propce(iel,ipproc(ix2(icla)))  &
-                                  * rayimp(iel,ipcla)
+          propce(iel,ipproc(iabs(1))) =                      &
+             propce(iel,ipproc(iabs(1)))                     &
+           + propce(iel,ipproc(ix2(icla))) *                      &
+ propce(iel,ipproc(icak(ipcla)))*propce(iel,ipproc(itsre(1)))
+!
+          propce(iel,ipproc(iemi(1))) =                      &
+                                propce(iel,ipproc(iemi(1)))  &
+                          - 4.0d0*propce(iel,ipproc(ix2(icla)))   &
+                          * propce(iel,ipproc(itsri(ipcla)))
 !         Particule
-          rayabs(iel,ipcla) = ck(iel,ipcla)*rayexp(iel,iph)
-          rayemi(iel,ipcla) = - 4.0d0 * rayimp(iel,ipcla)
-          rayexp(iel,ipcla) = rayabs(iel,ipcla)                   &
-                             +rayemi(iel,ipcla)
+          propce(iel,ipproc(iabs(ipcla))) =                       &
+                 propce(iel,ipproc(icak(ipcla))) *                &
+                 propce(iel,ipproc(itsre(1)))
+          propce(iel,ipproc(iemi(ipcla))) = - 4.0d0 *             &
+                 propce(iel,ipproc(itsri(ipcla)))
+          propce(iel,ipproc(itsre(ipcla))) =                      &
+                 propce(iel,ipproc(iabs(ipcla))) +                &
+                   propce(iel,ipproc(iemi(ipcla)))
         enddo
       enddo
 
@@ -1206,17 +1172,24 @@ do iph = 1, nphast
         ipcla = 1+icla
         do iel = 1,ncel
 !         Fluide
-          rayabs(iel,iph) = rayabs(iel,iph)                       &
-                           + rtpa(iel,isca(iyfol(icla)))          &
-                            *ck(iel,ipcla)*rayexp(iel,iph)
-          rayemi(iel,iph) = rayemi(iel,iph)                       &
-                         - 4.0d0*rtpa(iel,isca(iyfol(icla)))      &
-                                * rayimp(iel,ipcla)
+          propce(iel,ipproc(iabs(1))) =                      &
+             propce(iel,ipproc(iabs(1)))                     &
+           + rtpa(iel,isca(iyfol(icla))) *                        &
+ propce(iel,ipproc(icak(ipcla)))*propce(iel,ipproc(itsre(1)))
+!
+          propce(iel,ipproc(iemi(1))) =                      &
+                                propce(iel,ipproc(iemi(1)))  &
+                          - 4.0d0*rtpa(iel,isca(iyfol(icla)))     &
+                          * propce(iel,ipproc(itsri(ipcla)))
 !         Particule
-          rayabs(iel,ipcla) = ck(iel,ipcla)*rayexp(iel,iph)
-          rayemi(iel,ipcla) = -4.d0*rayimp(iel,ipcla)
-          rayexp(iel,ipcla) = rayabs(iel,ipcla)                   &
-                             +rayemi(iel,ipcla)
+          propce(iel,ipproc(iabs(ipcla))) =                       &
+                 propce(iel,ipproc(icak(ipcla))) *                &
+                 propce(iel,ipproc(itsre(1)))
+          propce(iel,ipproc(iemi(ipcla))) = - 4.0d0 *             &
+                 propce(iel,ipproc(itsri(ipcla)))
+          propce(iel,ipproc(itsre(ipcla))) =                      &
+                 propce(iel,ipproc(iabs(ipcla))) +                &
+                   propce(iel,ipproc(iemi(ipcla)))
         enddo
       enddo
 
@@ -1227,7 +1200,8 @@ do iph = 1, nphast
 !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
 
     do iel = 1,ncel
-      rayexp(iel,iph) = rayabs(iel,iph) + rayemi(iel,iph)
+      propce(iel,ipproc(itsre(1))) =                         &
+ propce(iel,ipproc(iabs(1)))+propce(iel,ipproc(iemi(1)))
     enddo
 
 !--> Terme source implicite,
@@ -1239,8 +1213,9 @@ do iph = 1, nphast
 !         Rayonnement standard, flamme CP ou fuel
 
     do iel = 1,ncel
-      rayimp(iel,iph) =                                           &
-       -16.d0*ck(iel,iph) *stephn *(tempk(iel,iph)**3) * w9(iel)
+      propce(iel,ipproc(itsri(1))) =                         &
+       -16.d0*propce(iel,ipproc(icak(1))) *stephn *          &
+         (tempk(iel,1)**3) * w9(iel)
     enddo
 
   else
@@ -1248,9 +1223,9 @@ do iph = 1, nphast
 !         Flamme de diffusion ou flamme de premelange
 
     do iel = 1,ncel
-      rayimp(iel,iph) =                                           &
-       -16.d0*stephn*ck(iel,iph)*propce(iel,ipproc(it3m))         &
-                              *w9(iel)
+      propce(iel,ipproc(itsri(1))) =                         &
+       -16.d0*stephn*propce(iel,ipproc(icak(1)))*            &
+           propce(iel,ipproc(it3m))  *  w9(iel)
     enddo
 
   endif
@@ -1262,13 +1237,14 @@ do iph = 1, nphast
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
-          rayimp(iel,iph) = rayimp(iel,iph)                       &
-       -16.d0*ck(iel,ipcla)*propce(iel,ipproc(ix2(icla)))         &
-                          *stephn*(tempk(iel,ipcla)**3)           &
-                              / cp2ch(ichcor(icla))
-          rayimp(iel,ipcla) =                                     &
-       -16.d0*ck(iel,ipcla) *stephn *(tempk(iel,ipcla)**3)        &
-                                / cp2ch(ichcor(icla))
+          propce(iel,ipproc(itsri(1))) =                     &
+                    propce(iel,ipproc(itsri(1))) -           &
+                    16.d0*propce(iel,ipproc(icak(ipcla))) *       &
+   propce(iel,ipproc(ix2(icla))) * stephn * (tempk(iel,ipcla)**3) &
+                    / cp2ch(ichcor(icla))
+          propce(iel,ipproc(itsri(ipcla))) =                      &
+               -16.d0*propce(iel,ipproc(icak(ipcla))) *stephn     &
+                  *(tempk(iel,ipcla)**3) / cp2ch(ichcor(icla))
         enddo
       enddo
 
@@ -1278,23 +1254,24 @@ do iph = 1, nphast
       do icla = 1,nclafu
         ipcla = 1+icla
         do iel = 1,ncel
-          rayimp(iel,iph) = rayimp(iel,iph)                       &
-           -16.d0*ck(iel,ipcla)*rtpa(iel,isca(iyfol(icla)))       &
-                 *stephn*(tempk(iel,ipcla)**3)                    &
+          propce(iel,ipproc(itsri(1))) =                     &
+                    propce(iel,ipproc(itsri(1))) -           &
+                    16.d0*propce(iel,ipproc(icak(ipcla))) *       &
+     rtpa(iel,isca(iyfol(icla))) * stephn * (tempk(iel,ipcla)**3) &
                  /cp2fol
-          rayimp(iel,ipcla) =                                     &
-           -16.d0*ck(iel,ipcla)*stephn*(tempk(iel,ipcla)**3)      &
-                           /cp2fol
+          propce(iel,ipproc(itsri(ipcla))) =                      &
+               -16.d0*propce(iel,ipproc(icak(ipcla))) *stephn     &
+                  *(tempk(iel,ipcla)**3) / cp2fol
         enddo
       enddo
     endif
 
   else
     do iel = 1,ncel
-      rayabs(iel,iph) = zero
-      rayemi(iel,iph) = zero
-      rayexp(iel,iph) = zero
-      rayimp(iel,iph) = zero
+      propce(iel,ipproc(iabs(1)))  = zero
+      propce(iel,ipproc(iemi(1)))  = zero
+      propce(iel,ipproc(itsre(1))) = zero
+      propce(iel,ipproc(itsri(1))) = zero
     enddo
   endif
 
@@ -1316,11 +1293,11 @@ do iph = 1, nphast
 
 !    Parallele
     if(irangp.ge.0) then
-      call parcom (qx(1,iph))
+      call parcom (propce(1,ipproc(iqx)))
       !==========
-      call parcom (qy(1,iph))
+      call parcom (propce(1,ipproc(iqy)))
       !==========
-      call parcom (qz(1,iph))
+      call parcom (propce(1,ipproc(iqz)))
       !==========
     endif
 
@@ -1331,9 +1308,9 @@ do iph = 1, nphast
       call percom                                                 &
       !==========
     ( idimte , itenso ,                                           &
-      qx(1,iph) , qx(1,iph) , qx(1,iph) ,                         &
-      qy(1,iph) , qy(1,iph) , qy(1,iph) ,                         &
-      qz(1,iph) , qz(1,iph) , qz(1,iph) )
+      propce(1,ipproc(iqx)) , propce(1,ipproc(iqx)) , propce(1,ipproc(iqx)) , &
+      propce(1,ipproc(iqy)) , propce(1,ipproc(iqy)) , propce(1,ipproc(iqy)) , &
+      propce(1,ipproc(iqz)) , propce(1,ipproc(iqz)) , propce(1,ipproc(iqz)) )
     endif
 
 
@@ -1353,7 +1330,7 @@ do iph = 1, nphast
     do ifac = 1,nfabor
       surfbn = ra(isrfbn-1+ifac)
       cofrua(ifac) =                                              &
-      flunet(ifac,iph) *surfbo(1,ifac) /surfbn
+      propfb(ifac,ipprob(ifnet)) *surfbo(1,ifac) /surfbn
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1374,13 +1351,13 @@ do iph = 1, nphast
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    w1     , w1     , w1     ,                                     &
-   qx(1,iph)       , cofrua , cofrub ,                            &
+   propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
    rdevel , rtuser , ra     )
 
     do iel = 1,ncel
-      rayexp(iel,iph) = - w1(iel)
+      propce(iel,ipproc(itsre(1))) = - w1(iel)
     enddo
 
 !------->>direction Y
@@ -1388,7 +1365,7 @@ do iph = 1, nphast
     do ifac = 1,nfabor
       surfbn = ra(isrfbn-1+ifac)
       cofrua(ifac) =                                              &
-      flunet(ifac,iph) *surfbo(2,ifac) /surfbn
+      propfb(ifac,ipprob(ifnet)) *surfbo(2,ifac) /surfbn
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1409,13 +1386,13 @@ do iph = 1, nphast
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    w1     , w1     , w1     ,                                     &
-   qy(1,iph)       , cofrua , cofrub ,                            &
+   propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
    rdevel , rtuser , ra     )
 
     do iel = 1,ncel
-      rayexp(iel,iph) = rayexp(iel,iph) - w2(iel)
+      propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - w2(iel)
     enddo
 
 !------->>direction Z
@@ -1423,7 +1400,7 @@ do iph = 1, nphast
     do ifac = 1,nfabor
       surfbn = ra(isrfbn-1+ifac)
       cofrua(ifac) =                                              &
-      flunet(ifac,iph) *surfbo(3,ifac) /surfbn
+      propfb(ifac,ipprob(ifnet)) *surfbo(3,ifac) /surfbn
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1444,13 +1421,14 @@ do iph = 1, nphast
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    w1     , w1     , w1     ,                                     &
-   qz(1,iph)       , cofrua , cofrub ,                            &
+   propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
    rdevel , rtuser , ra     )
 
     do iel = 1,ncel
-      rayexp(iel,iph) = rayexp(iel,iph) - w3(iel)
+      propce(iel,ipproc(itsre(1))) =                         &
+          propce(iel,ipproc(itsre(1))) - w3(iel)
     enddo
 
 ! Fin du calcul de la divergence
@@ -1468,12 +1446,13 @@ do iph = 1, nphast
 
     aa = zero
     do iel = 1,ncel
-      aa = aa + rayexp(iel,iph) * volume(iel)
+      aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
     enddo
 
     bb = zero
     do iel = 1,ncel
-      bb = bb + (rayabs(iel,iph) + rayemi(iel,iph)) * volume(iel)
+      bb = bb + (propce(iel,ipproc(iabs(1))) +               &
+            propce(iel,ipproc(iemi(1)))) * volume(iel)
     enddo
 
     if(irangp.ge.0) then
@@ -1486,7 +1465,9 @@ do iph = 1, nphast
 !---> correction du terme source semi-analytique par le conservatif
 
     do iel = 1,ncel
-      rayexp(iel,iph) = (rayabs(iel,iph) + rayemi(iel,iph)) * aa
+      propce(iel,ipproc(itsre(1))) =                         &
+       (propce(iel,ipproc(iabs(1)))  +                       &
+         propce(iel,ipproc(iemi(1)))) * aa
     enddo
 
   endif
@@ -1504,7 +1485,7 @@ do iph = 1, nphast
 
     aa = zero
     do iel = 1,ncel
-      aa = aa + rayexp(iel,iph) * volume(iel)
+      aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
     enddo
     if(irangp.ge.0) then
       call parsom(aa)
@@ -1517,9 +1498,10 @@ do iph = 1, nphast
 !    la variable transportee est la temperature
 !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
 
-    if (abs(iscsth(iscalt(iphas))).eq.1) then
+    if (abs(iscsth(iscalt(irapha))).eq.1) then
       do iel = 1,ncel
-        rayexp(iel,iph) = rayexp(iel,iph) * w9(iel)
+        propce(iel,ipproc(itsre(1))) =                       &
+          propce(iel,ipproc(itsre(1))) * w9(iel)
       enddo
     endif
 
@@ -1527,11 +1509,6 @@ do iph = 1, nphast
     write(nfecra,5000)
   endif
 
-!===============================================================================
-! 8. FIN DE LA BOUCLE SUR LES PHASES
-!===============================================================================
-
-enddo
 
 !--------
 ! FORMATS
@@ -1547,7 +1524,7 @@ enddo
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    LE RAYONNEMENT EST ACTIVE.                              ',/,&
+'@    LE RAYONNEMENT EST ACTIVE AVEC LE MODELE DOM.           ',/,&
 '@      LA VALEUR MINIMALE DU COEFFICIENT D ABSORPTION A EST  ',/,&
 '@      EGALE A ', E14.5                                       ,/,&
 '@                                                            ',/,&

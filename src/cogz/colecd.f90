@@ -63,6 +63,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -192,27 +193,16 @@ if (indjon.eq.1) then
 
 
 ! ---- Rayonnement
-!      IRAYPP =  0 : pas de rayonnement
-!             =  1 : DOM + calcul a partir des CABS des especes
-!             =  2 : DOM + CABS par Modak
-!             =  3 : P-1 + calcul a partir des CABS des especes
-!             =  4 : P-1 + CABS par Modak
 ! Le rayonnement n'est autorise qu'avec des modeles permeatiques,
 ! car en adiabatique l'enthalpie est une grandeur algebrique qui
 ! ne prend pas en compte les pertes par rayonnement.
 
-  read ( impfpp,*,err=999,end=999 ) iraypp
-  if ( iraypp.gt.4 .or. iraypp.lt.0 ) then
-    write(nfecra,9992) iraypp
-    call csexit (1)
-    !==========
-  endif
-  if ( iraypp.gt.0 .and. ippmod(icod3p).ne.1                      &
+  if ( iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
        .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
        .and. ippmod(icolwc).ne.1 .and. ippmod(icolwc).ne.3        &
        .and. ippmod(icolwc).ne.5 ) then
     write(nfecra,9993)                                            &
-         iraypp,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
+         iirayo,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
     call csexit (1)
     !==========
   endif
@@ -337,7 +327,7 @@ if (indjon.eq.1) then
              ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.    &
              ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.    &
              ippmod(icolwc).eq.5 )                                &
-           .and. (iraypp.ge.1) ) then
+           .and. (iirayo.ge.1) ) then
         ckabsg(igg) = 0.d0
       endif
       do ige = 1 , ngaze
@@ -347,7 +337,7 @@ if (indjon.eq.1) then
             ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.     &
             ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.     &
             ippmod(icolwc).eq.5 )                                 &
-             .and. (iraypp.ge.1)  ) then
+             .and. (iirayo.ge.1)  ) then
           ckabsg(igg) = ckabsg(igg)                               &
                + compog(ige,igg)*kabse(ige)*wmole(ige)
         endif
@@ -357,7 +347,7 @@ if (indjon.eq.1) then
           ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.       &
           ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.       &
           ippmod(icolwc).eq.5 )                                   &
-           .and. (iraypp.ge.1) ) then
+           .and. (iirayo.ge.1) ) then
         ckabsg(igg) = ckabsg(igg)/wmolg(igg)
       endif
     enddo
@@ -454,18 +444,12 @@ else
 
 ! --- Rayonnement
 
-  read (impfpp,*,err=999,end=999) iraypp
-  if ( iraypp.gt.4 .or. iraypp.lt.0 ) then
-    write(nfecra,9992) iraypp
-    call csexit (1)
-    !==========
-  endif
-  if ( iraypp.gt.0 .and. ippmod(icod3p).ne.1                      &
+  if ( iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
        .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
        .and. ippmod(icolwc).ne.1 .and. ippmod(icolwc).ne.3        &
        .and. ippmod(icolwc).ne.5 ) then
     write(nfecra,9993)                                            &
-         iraypp,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
+         iirayo,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
     call csexit (1)
     !==========
   endif
@@ -572,23 +556,6 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9992 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  IRAYPP doit etre un entier egal a 0, 1,  2, 3 ou 4        ',/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9993 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -600,8 +567,8 @@ call csexit (1)
 '@  LE RAYONNEMENT NE PEUT ETRE ACTIVE QU''AVEC UN MODELE DE  ',/,&
 '@   COMBUSTION EN CONDITIONS PERMEATIQUES.                   ',/,&
 '@                                                            ',/,&
-'@  Le fichier parametrique specifie un mode de rayonnement   ',/,&
-'@   IRAYPP = ',I10                                            ,/,&
+'@  Un mode de rayonnement a ete specifie                     ',/,&
+'@   IIRAYO = ',I10                                            ,/,&
 '@  Or dans usppmo on a :                                     ',/,&
 '@   IPPMOD(ICOD3P) = ',I10                                    ,/,&
 '@   IPPMOD(ICOEBU) = ',I10                                    ,/,&

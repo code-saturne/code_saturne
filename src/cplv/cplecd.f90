@@ -202,19 +202,6 @@ enddo
 
 read (impfpp,*,err=999,end=999 )
 
-!      IRAYPP =  0 : pas de rayonnement,
-!             =  1 : DOM + calcul a partir des CABS des especes
-!             =  2 : DOM + CABS par Modak
-!             =  3 : P-1 + calcul a partir des CABS des especes
-!             =  4 : P-1 + CABS par Modak
-
-read ( impfpp,*,err=999,end=999 ) iraypp
-if ( iraypp.gt.4 .or. iraypp.lt.0 ) then
-  write(nfecra,9994) iraypp
-  call csexit (1)
-  !==========
-endif
-
 ! ---- Coefficient d'absorption du melange gazeux
 
 read (impfpp,*,err=999,end=999 ) ckabs1
@@ -1307,23 +1294,6 @@ call csexit (1)
 '@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
 '@                                                            ',/,&
 '@  Le nombre d''especes elementaires est limite a ',I10       ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9994 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  IRAYPP doit etre un entier egal a 0, 1 2 3 ou 4.          ',/,&
 '@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&

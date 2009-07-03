@@ -224,6 +224,20 @@ call usppmo
 call varpos(nmodpp)
 !==========
 
+
+! --- Activation du module transferts radiatifs
+
+!     Il est necessaire de connaitre l'activation du module transferts
+!     radiatifs tres tot de maniere a pouvoir reserver less variables
+!     necessaires dans certaines physiques particuliere
+
+!   - Sous-programme utilisateur
+!     ==========================
+
+call usray1
+!==========
+
+
 ! --- Parametres dependant du nombre de scalaires utilisateurs
 
 !     Moyenne du carre des fluctuations d'un scalaire UTILISATEUR

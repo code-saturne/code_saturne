@@ -74,6 +74,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -183,7 +184,7 @@ ihisvr(ipp,1) = -1
 
 ! ---- Modele EBU AVEC RAYONNEMENT
 
-if ( iraypp.gt.0 ) then
+if ( iirayo.gt.0 ) then
 
 ! ---- Coeff d'absorption
   ipp = ipppro(ipproc(ickabs))

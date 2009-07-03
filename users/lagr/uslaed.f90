@@ -184,7 +184,6 @@ include "cstphy.h"
 include "cstnum.h"
 include "optcal.h"
 include "entsor.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagran.h"
 

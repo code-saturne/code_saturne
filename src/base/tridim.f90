@@ -154,7 +154,6 @@ include "pointe.h"
 include "albase.h"
 include "alstru.h"
 include "alaste.h"
-include "radiat.h"
 include "period.h"
 include "parall.h"
 include "ppppar.h"
@@ -168,6 +167,7 @@ include "lagran.h"
 include "vortex.h"
 include "ihmpre.h"
 include "matiss.h"
+include "radiat.h"
 
 ! les includes pp* ne servent que pour recuperer le pointeur IIZFPP
 
@@ -639,7 +639,7 @@ call phyvar                                                       &
    coefa  , coefb  ,                                              &
    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
    ra(iw7), ra(iw8), ra(iw9), ra(iw10), ra(iw11), ra(iw12),       &
-   ra(ixmij) ,                                                    & 
+   ra(ixmij) ,                                                    &
    rdevel , rtuser , ra     )
 
 if (itrale.gt.0) then
@@ -1222,10 +1222,7 @@ if(iirayo.gt.0 .and. itrfin.eq.1) then
    coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
 
-   ra(itsre)  , ra(itsri)  ,                                      &
-   ra(itparo) , ra(iqinci) , ra(ixlam) , ra(iepa)   , ra(ieps)  , &
-   ra(ifnet)  , ra(ifconv) , ra(ihconv) , ra(itext)  , ra(itint) ,&
-   ra(itek)   ,                                                   &
+   ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
 
    rdevel , rtuser , ra     )
 
@@ -2208,23 +2205,15 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-
    ra(icorua) , ra(icorub) ,                                      &
    ra(iflxma) , ra(iflxmb) ,                                      &
-
    ra(idtr)   , ra(iviscf) , ra(iviscb) ,                         &
    ra(idam  ) , ra(ixam  ) ,                                      &
-                ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,            &
+                ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itek)  ,&
    ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) , ra(iw5   ),&
    ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ) ,            &
    ra(iw10  ) ,                                                   &
    rdevel , rtuser ,                                              &
-
-   ra(itsre)  , ra(itsri)  , ra(iqx)    , ra(iqy)    , ra(iqz)   ,&
-   ra(iabs)   , ra(iemi)   , ra(icak)   , ra(itek)   ,            &
-   ra(itparo) , ra(iqinci) , ra(ixlam)  , ra(iepa)   , ra(ieps)  ,&
-   ra(ifnet)  , ra(ifconv) , ra(ihconv) ,                         &
-
    ra     )
 
 endif

@@ -39,22 +39,18 @@ subroutine raysol &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
-
    dtr    , viscf  , viscb  ,                                     &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
-   rdevel , rtuser ,                                              &
-
    ru     , rua    ,                                              &
    sa     ,                                                       &
    qx     , qy     , qz     ,                                     &
    qincid , snplus ,                                              &
-
+   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -214,6 +210,10 @@ include "optcal.h"
 include "cstphy.h"
 include "cstnum.h"
 include "pointe.h"
+include "ppppar.h"
+include "ppthch.h"
+include "cpincl.h"
+include "ppincl.h"
 include "radiat.h"
 
 

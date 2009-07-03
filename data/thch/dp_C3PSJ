@@ -26,6 +26,5 @@
  4850.    0.79746E+08    0.54485E+07    0.21821E+08
  .00219 .1387 .0159  Masse molaire fuel, oxydant, produit
  0.111111            Fraction de melange a la stoechiometrie
-1                    Rayonnement (0 non ; 1 oui ; 2 modak ; 3 : comme 1 mais modele P-1 ; 4 : comme 2 mais modele P-1)
 .3 .78 .4            Coeff. d'absorption fuel, oxydant, produits (pour rayonnement)
 1. 2.                Coeff. molaires de CO2 et H2O dans les produits (pour rayonnement)

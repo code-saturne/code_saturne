@@ -430,14 +430,6 @@ if ( ieqnox .eq. 1 ) then
 
 endif
 
-! ---> Rayonnement
-
-ipp = ipppro(ipproc(ilumi))
-NOMVAR(IPP)   = 'IntLuminance_4PI'
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = 0
-
 !===============================================================================
 ! 3. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================

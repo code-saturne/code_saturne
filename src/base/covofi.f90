@@ -174,7 +174,6 @@ include "entsor.h"
 include "optcal.h"
 include "cstphy.h"
 include "cstnum.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "coincl.h"
@@ -184,6 +183,7 @@ include "ppincl.h"
 include "lagpar.h"
 include "lagran.h"
 include "matiss.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -457,37 +457,36 @@ endif
 ! --> Rayonnement
 !     Ordre 2 non pris en compte
 
-if (irayon(iphas).ge.1 .and. iscal.eq.iscalt(iphas)) then
-  call raysca                                                     &
-  !==========
-  ( iscalt(iphas),iphas,ncelet,ncel,                              &
-    smbrs,rovsdt,volume,ra(itsre),ra(itsri))
-endif
+if ( iirayo.ge.1 .and. iphas.eq.irapha) then
 
-!     Charbon pulverise
-!     Ordre 2 non pris en compte
+  if (iscal.eq.iscalt(iphas)) then
+    call raysca                    &
+    !==========
+  ( iscalt(iphas),ncelet,ncel,     &
+    smbrs, rovsdt,volume,propce )
+  endif
 
-if ( irayon(iphas).ge.1 ) then
+  !-> Charbon pulverise
+  !   Ordre 2 non pris en compte
+
   if ( ippmod(icp3pl) .gt. 0 ) then
-    if ( isca(iscal).ge.isca(ih2(1)) .and.                        &
+    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
          isca(iscal).le.isca(ih2(nclacp)) ) then
 
-      call cprays                                                 &
+      call cprays                  &
       !==========
-    ( ivar  ,ncelet, ncel  ,                                      &
-      volume,propce,ra(itsre),ra(itsri),smbrs,rovsdt)
+    ( ivar  ,ncelet, ncel  ,       &
+      volume,propce,smbrs,rovsdt)
 
     endif
   endif
-endif
 
-! --> Fuel
-!     Ordre 2 non pris en compte
-!     Pour l'instant rayonnement non compatible avec Fuel
+  ! -> Fuel
+  !    Ordre 2 non pris en compte
+  !    Pour l'instant rayonnement non compatible avec Fuel
 
-if ( irayon(iphas).ge.1 ) then
   if ( ippmod(icfuel) .ge. 0 ) then
-    if ( isca(iscal).ge.isca(ihlf(1)) .and.                       &
+    if ( isca(iscal).ge.isca(ihlf(1)) .and.       &
          isca(iscal).le.isca(ihlf(nclafu)) ) then
 
       write(nfecra,9001)
@@ -496,6 +495,7 @@ if ( irayon(iphas).ge.1 ) then
 
     endif
   endif
+
 endif
 
 ! --> Lagrangien (couplage retour thermique)
@@ -818,7 +818,7 @@ call codits                                                       &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! 3. IMPRESSIONS ET CLIPPINGS
+! 4. IMPRESSIONS ET CLIPPINGS
 !===============================================================================
 
 if(ivarsc.gt.0) then

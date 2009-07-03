@@ -39,9 +39,6 @@ subroutine rayout &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rayexp , rayimp ,                                              &
-   tparoi , qincid , xlam   , epa    , eps    ,                   &
-   flunet , flconv , hfconv ,                                     &
    rdevel , rtuser , ra     )
 
 !===============================================================================
@@ -127,28 +124,6 @@ subroutine rayout &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! rayexp(ncelet    ! tr ! --> ! terme source radiatif explicite                !
-!   ,nphast)       !    !     !                                                !
-! rayimp(ncelet    ! tr ! --> ! terme source radiatif implicite                !
-!   ,nphast)       !    !     !                                                !
-! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
-!   ,nphast)       !    !     !                                                !
-! tparoi(nfabor    ! tr ! --- ! temperature de paroi en kelvin                 !
-!   ,nphast)       !    !     !                                                !
-! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
-!   ,nphast)       !    !     !                                                !
-! xlam(nfabor      ! tr ! --> ! coefficient de conductivite thermique          !
-!   ,nphast)       !    !     ! des facettes de paroi (w/m/k)                  !
-! epa (nfabor      ! tr ! --> ! epaisseur des facettes de paroi (m)            !
-!   ,nphast)       !    !     !                                                !
-! eps (nfabor      ! tr ! --> ! emissivite des facettes de bord                !
-!   ,nphast)       !    !     !                                                !
-! flunet(nfabor    ! tr ! --> ! densite de flux net radiatif aux               !
-!   ,nphast)       !    !     ! faces de bord                                  !
-! flconv(nfabor    ! tr ! --> ! densite de flux convectif aux faces            !
-!   ,nphast)       !    !     ! de bord                                        !
-! hfconv(nfabor    ! tr ! --> ! coefficient d'echange fluide aux               !
-!   ,nphast)       !    !     ! faces de bord                                  !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -174,6 +149,10 @@ include "optcal.h"
 include "cstphy.h"
 include "cstnum.h"
 include "pointe.h"
+include "ppppar.h"
+include "ppthch.h"
+include "cpincl.h"
+include "ppincl.h"
 include "radiat.h"
 include "parall.h"
 
@@ -205,11 +184,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rayexp(ncelet,nphast), rayimp(ncelet,nphast)
-double precision tparoi(nfabor,nphast), qincid(nfabor,nphast)
-double precision xlam(nfabor,nphast), epa(nfabor,nphast)
-double precision eps(nfabor,nphast), flunet(nfabor,nphast)
-double precision flconv(nfabor,nphast), hfconv(nfabor,nphast)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
@@ -220,7 +194,7 @@ integer          idebia , idebra
 integer          ifinia , ifinra
 integer          itrav1 , ip
 integer          ierror , nberro , irtyp , itysup , nbval
-integer          ivers  , ilecec , iphas
+integer          ivers  , ilecec
 integer          impavr
 
 !===============================================================================
@@ -235,20 +209,6 @@ idebra = idbra0
 ! 1. ECRITURE DU FICHIER SUITE DU MODULE DE RAYONNEMENT
 !===============================================================================
 
-
-! ---> On code en chaine le numero des phases
-
-!     Verifications pour les format et les numero de phase
-!       et de scalaire en chaine.
-if(nphas .gt.99) then
-  write(nfecra,9012)nphas
-  call csexit (1)
-endif
-
-!     Codage en chaine de caracteres du numero de la phase
-do iphas = 1, nphas
-  WRITE(CPHASE(IPHAS),'(I2.2)')IPHAS
-enddo
 
 ! ---> Ouverture (et on saute si erreur)
 !     ILECEC = 2 : ecriture
@@ -285,11 +245,6 @@ itysup = 0
 nbval  = 1
 irtyp  = 1
 
-RUBRIQ = 'nombre_phases_rayt'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,nphast,  &
-            ierror)
-nberro=nberro+ierror
-
 if(nberro.ne.0) then
   write(nfecra,9120)
   goto 9998
@@ -325,32 +280,30 @@ endif
 
 nberro = 0
 
-do iphas = 1, nphast
-
 !     Aux faces de bord
 
   itysup = 3
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'tparoi_fb_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'tparoi_fb'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              tparoi(1,iphas),ierror)
+              propfb(1,ipprob(itparo)),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'qincid_fb_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'qincid_fb'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              qincid(1,iphas),ierror)
+              propfb(1,ipprob(iqinci)),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'hfconv_fb_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'hfconv_fb'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              hfconv(1,iphas),ierror)
+              propfb(1,ipprob(ihconv)),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'flconv_fb_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'flconv_fb'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              flconv(1,iphas),ierror)
+              propfb(1,ipprob(ifconv)),ierror)
   nberro=nberro+ierror
 
 
@@ -360,17 +313,15 @@ do iphas = 1, nphast
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'rayimp_ce_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'rayimp_ce'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rayimp(1,iphas),ierror)
+              propce(1,ipproc(itsri(1))),ierror)
   nberro=nberro+ierror
 
-  RUBRIQ = 'rayexp_ce_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'rayexp_ce'
   call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rayexp(1,iphas),ierror)
+              propce(1,ipproc(itsre(1))),ierror)
   nberro=nberro+ierror
-
-enddo
 
 !  ---> Si pb : on saute
 
@@ -392,52 +343,6 @@ write(nfecra,6014)
 
 ! ---> En cas d'erreur, on continue quand meme
  9998 continue
-
-!===============================================================================
-! 2. ECRITURE DU FICHIER BORD DU MODULE DE RAYONNEMENT
-!===============================================================================
-
-!    Uniquement en monoprocesseur pour l'instant
-
-if (nrangp.eq.1) then
-
-  ifinia = idebia
-
-  itrav1 = idebra
-  ifinra = itrav1 + nfabor
-  CALL RASIZE ('RAYOUT',IFINRA)
-  !==========
-
-  do ip = 1,nphast
-
-    iph = ip
-
-    call raybrd                                                   &
-    !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndnod , lndfac , lndfbr , ncelbr ,                   &
-   nvar   , nscal  , nphas  , iph    ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iitypf) , ia(iitrif)  , ia(iizfrd) ,                        &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra(isrfbn) ,                                                   &
-   tparoi , qincid , xlam   , epa    , eps    ,                   &
-   flunet , flconv , hfconv , ra(itrav1) ,                        &
-   rdevel , rtuser , ra     )
-
-  enddo
-
-else
-
-  write(nfecra,7000)
-
-endif
 
 
 return
@@ -473,21 +378,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9012 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :ARRET A L''ECRITURE DU FICHIER SUITE         ',/,&
-'@    =========                                   RAYONNEMENT ',/,&
-'@                                                            ',/,&
-'@      Le nombre de phases            NPHAS  doit etre       ',/,&
-'@        inferieur ou egal a  99, il vaut ici ',I10           ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme rayout.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/)
 
  9120 format(                                                           &
 '@                                                            ',/,&

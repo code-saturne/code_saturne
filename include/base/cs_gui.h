@@ -762,8 +762,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const igmdv1,
                                 const int *const igmdv2,
                                 const int *const igmhet,
-                                const int *const igmsec,
-                                const int *const ilumi);
+                                const int *const igmsec);
 
 /*----------------------------------------------------------------------------
  * 1D profile postprocessing

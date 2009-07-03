@@ -44,8 +44,8 @@
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    w1     , w2     , w3     , w4     , w5     ,  w6     ,         &
-   rdevel , rtuser ,                                              &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   , &
+   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -240,11 +240,11 @@ include "cstnum.h"
 include "pointe.h"
 include "parall.h"
 include "period.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 include "ihmpre.h"
 
 !===============================================================================
@@ -331,7 +331,7 @@ if (iappel.eq.1) then
 
 
 
-  if (irayon(iphas).eq.1) then
+  if (iirayo.eq.1) then
 
     do ifac = 1,nfabor
 
@@ -391,7 +391,7 @@ if (iappel.eq.1) then
 
 
 
-  else if (irayon(iphas).eq.2) then
+  else if (iirayo.eq.2) then
 
     do ifac = 1,nfabor
 
@@ -510,11 +510,11 @@ else if (iappel.eq.2) then
     else if (itypfb(ifac).eq.ientre                               &
         .or. itypfb(ifac).eq.isolib) then
 
-      if (irayon(iphas).eq.1) then
+      if (iirayo.eq.1) then
 
       flunet(ifac)= qincid(ifac) -pi*cofrua(ifac)
 
-      else if (irayon(iphas).eq.2) then
+      else if (iirayo.eq.2) then
 
         flunet(ifac)= 0.d0
 

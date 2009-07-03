@@ -176,11 +176,11 @@ include "cstnum.h"
 include "pointe.h"
 include "parall.h"
 include "period.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 include "ihmpre.h"
 
 !===============================================================================
@@ -288,6 +288,7 @@ iok = 0
 
 
 if( ippmod(iphpar).le.1 ) then
+
   do iel = 1, ncel
     ck(iel) = 0.d0
   enddo
@@ -296,7 +297,7 @@ if( ippmod(iphpar).le.1 ) then
 !                d'absorption. Ce coefficient doit assurer une
 !                longueur optique au minimum de l'ordre de l'unite.
 
-  if (irayon(iphas).eq.2) then
+  if (iirayo.eq.2) then
     sf = 0.d0
     vv = 0.d0
 

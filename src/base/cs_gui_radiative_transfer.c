@@ -463,7 +463,7 @@ static void _cs_gui_copy_varname(const char *varname,
 void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
                                 int *const nbrayf,
                                 int *const nphas,
-                                int *const irayon,
+                                int *const iirayo,
                                 int *const isuird,
                                 int *const ndirec,
                                 int *const nfreqr,
@@ -473,7 +473,7 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
                                 int *const irayvp,
                                 int *const irayvf)
 {
-  int i, iphas = 0;
+  int i, iphas;
   int list_ind, record_ind = 0;
   char *model = NULL;
   char *label = NULL;
@@ -500,14 +500,14 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
     model = cs_gui_get_thermophysical_model("radiative_transfer");
 
     if (cs_gui_strcmp(model, "off"))
-      irayon[iphas] = 0;
+      *iirayo = 0;
     else if (cs_gui_strcmp(model, "dom"))
-      irayon[iphas] = 1;
+      *iirayo = 1;
     else if (cs_gui_strcmp(model, "p-1"))
-      irayon[iphas] = 2;
+      *iirayo = 2;
   }
 
-  if (irayon[iphas] != 0) {
+  if (*iirayo != 0) {
     cs_gui_radiative_transfer_char("restart", isuird);
     cs_gui_radiative_transfer_int("directions_number", ndirec);
     cs_gui_radiative_transfer_int("frequency", nfreqr);
@@ -540,9 +540,8 @@ void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
 
 #if _XML_DEBUG_
   bft_printf("==>UIRAY1\n");
-  for (iphas=0 ; iphas < *nphas ; iphas++)
-    bft_printf("--rayonnement : %s  (irayon = %i)\n", model, irayon[iphas]);
-  if (irayon[iphas] != 0) {
+  bft_printf("--rayonnement : %s  (iirayo = %i)\n", model, *iirayo);
+  if (*iirayo != 0) {
     bft_printf("--isuird = %d\n", *isuird);
     bft_printf("--ndirec = %d\n", *ndirec);
     bft_printf("--nfreqr = %d\n", *nfreqr);
@@ -692,8 +691,6 @@ void CS_PROCF (uiray2, UIRAY2)
  const    int *const iparoi,
  const    int *const iparug,
  const    int *const ivart,
- const    int *const iph,
- const    int *const nphast,
           int *const izfrdp,
           int *const isothp,
  const    int *const itpimp,
@@ -719,7 +716,7 @@ void CS_PROCF (uiray2, UIRAY2)
   int izone;
   int ith_zone;
   int ifbr;
-  int j, k, n;
+  int j, n;
   int *faces_list;
   int faces = 0;
   int iok = 0;
@@ -727,8 +724,6 @@ void CS_PROCF (uiray2, UIRAY2)
   char *nature = NULL;
   char *label = NULL;
   char *description = NULL;
-
-  k = (*iph -1) * (*nfabor);
 
   BFT_MALLOC(faces_list, *nfabor, int);
 
@@ -840,23 +835,23 @@ void CS_PROCF (uiray2, UIRAY2)
                       "The radiative boundary conditions given in GUI must be coherent \n"
                       "with these new natures.\n"));
 
-        izfrdp[k + ifbr] = boundary->output_zone[izone];
-        isothp[k + ifbr] = boundary->type[izone];
-        if (isothp[k + ifbr] == *itpimp) {
-          epsp[k + ifbr] = boundary->emissivity[izone];
-          tintp[k + ifbr] = boundary->internal_temp[izone];
-        } else if (isothp[k + ifbr] == *ipgrno) {
-          xlamp[k + ifbr] = boundary->thermal_conductivity[izone];
-          epap[k + ifbr] = boundary->thickness[izone];
-          textp[k + ifbr] = boundary->external_temp[izone];
-          tintp[k + ifbr] = boundary->internal_temp[izone];
+        izfrdp[ifbr] = boundary->output_zone[izone];
+        isothp[ifbr] = boundary->type[izone];
+        if (isothp[ifbr] == *itpimp) {
+          epsp[ifbr] = boundary->emissivity[izone];
+          tintp[ifbr] = boundary->internal_temp[izone];
+        } else if (isothp[ifbr] == *ipgrno) {
+          xlamp[ifbr] = boundary->thermal_conductivity[izone];
+          epap[ifbr] = boundary->thickness[izone];
+          textp[ifbr] = boundary->external_temp[izone];
+          tintp[ifbr] = boundary->internal_temp[izone];
           if (boundary->emissivity[izone] != 0.)
-             epsp[k + ifbr] = boundary->emissivity[izone];
-        } else if (isothp[k + ifbr] == *ifgrno) {
+             epsp[ifbr] = boundary->emissivity[izone];
+        } else if (isothp[ifbr] == *ifgrno) {
           rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr] = boundary->conduction_flux[izone];
-          tintp[k + ifbr] = boundary->internal_temp[izone];
+          tintp[ifbr] = boundary->internal_temp[izone];
           if (boundary->emissivity[izone] != 0.)
-            epsp[k + ifbr] = boundary->emissivity[izone];
+            epsp[ifbr] = boundary->emissivity[izone];
         }
       }
 
@@ -864,7 +859,7 @@ void CS_PROCF (uiray2, UIRAY2)
       j = output_zone_max++;
       for (n = 0; n < faces; n++) {
         ifbr = faces_list[n]-1;
-        izfrdp[k + ifbr] = j;
+        izfrdp[ifbr] = j;
       }
     } /* if nature == "wall" */
 
@@ -874,7 +869,7 @@ void CS_PROCF (uiray2, UIRAY2)
 
   iok = 0;
   for (n = 0; n < *nfabor; n++) {
-    if (izfrdp[k + n] == -1) iok = 1;
+    if (izfrdp[n] == -1) iok = 1;
   }
   if (iok == 1) {
     bft_printf("Warning: radiative boundary conditions in GUI are not totally defined \n");
@@ -919,8 +914,6 @@ void CS_PROCF (uiray2, UIRAY2)
 
 
 void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const iph,
-                                const    int *const ncelet,
                                 const    int *const ncel)
 {
   double value;
@@ -933,7 +926,7 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
 
     if (type == 0)
       for(i = 0; i < *ncel; i++)
-         ck[(*iph-1) * (*ncelet) + i] = value;
+         ck[i] = value;
 
 #if _XML_DEBUG_
   bft_printf("==>UIRAY3\n");

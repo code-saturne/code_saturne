@@ -29,7 +29,7 @@ subroutine cprays &
 !================
 
   ( ivar   , ncelet , ncel   ,                                    &
-    volume , propce , raye   , rayi   , smbrs  , rovsdt )
+    volume , propce , smbrs  , rovsdt )
 
 
 !===============================================================================
@@ -54,8 +54,6 @@ subroutine cprays &
 ! volume(ncelet    ! tr ! <-- ! volume des cellules                            !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! raye(ncelet      ! tr ! <-- ! terme source radiatif explicite                !
-! rayi(ncelet      ! tr ! <-- ! terme source radiatif implicite                !
 ! smbrs(ncelet     ! tr ! <-- ! second membre du systeme                       !
 ! rovsdt(ncelet    ! tr ! <-- ! diagonale du systeme                           !
 !__________________!____!_____!________________________________________________!
@@ -75,12 +73,12 @@ implicit none
 include "paramx.h"
 include "cstnum.h"
 include "cstphy.h"
-include "radiat.h"
 include "entsor.h"
 include "numvar.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -91,8 +89,6 @@ integer          ivar , ncelet, ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision raye(ncelet,nphasc)
-double precision rayi(ncelet,nphasc)
 double precision propce(ncelet,*)
 
 ! VARIABLES LOCALES
@@ -115,7 +111,7 @@ ipcl   = 1+numcla
 
 
 do iel = 1,ncel
-  rayi(iel,ipcl) = max(-rayi(iel,ipcl),zero)
+  propce(iel,ipproc(itsri(ipcl))) = max(-propce(iel,ipproc(itsri(ipcl))),zero)
 enddo
 
 do iel = 1,ncel
@@ -123,12 +119,12 @@ do iel = 1,ncel
 
 !--> PARTIE EXPLICITE
 
-    smbrs(iel)  = smbrs(iel) +  raye(iel,ipcl)*volume(iel)        &
+    smbrs(iel)  = smbrs(iel) +  propce(iel,ipproc(itsre(ipcl)))*volume(iel)        &
                                *propce(iel,ipproc(ix2(numcla)))
 
 !--> PARTIE IMPLICITE
 
-    rovsdt(iel) = rovsdt(iel) + rayi(iel,ipcl)*volume(iel)
+    rovsdt(iel) = rovsdt(iel) + propce(iel,ipproc(itsri(ipcl)))*volume(iel)
   endif
 
 enddo

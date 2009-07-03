@@ -295,6 +295,7 @@ include "cstnum.h"
 include "pointe.h"
 include "parall.h"
 include "period.h"
+include "ppppar.h"
 include "radiat.h"
 include "ihmpre.h"
 

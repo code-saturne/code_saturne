@@ -187,13 +187,13 @@ include "cstphy.h"
 include "pointe.h"
 include "period.h"
 include "parall.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagran.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "cpincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -510,7 +510,7 @@ endif
 
 NOMRTE(JRTSP) = 'temps_sejour_particules'
 NOMRTE(JRPOI) = 'poids_statistiques_particules'
-if (iphyla.eq.1 .and. itpvar.eq.1 .and.iirayo.eq.1) then
+if (iphyla.eq.1 .and. itpvar.eq.1 .and.iirayo.gt.0) then
   NOMRTE(JREPS) = 'emissivite_particules'
 endif
 if (iphyla.eq.2) then

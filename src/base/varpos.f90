@@ -66,7 +66,6 @@ include "cstnum.h"
 include "entsor.h"
 include "albase.h"
 include "parall.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagdim.h"
 include "lagran.h"
@@ -75,6 +74,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -207,8 +207,8 @@ if(ipass.eq.2) then
 ! ---> On positionne l'indicateur global IPPMOD(IPHPAR)
 !         0 : pas de physique particuliere
 !         1 : physique particuliere enclenchee
-!         2 : physique particuliere avec pilotage du rayonnement par
-!               fichier parametrique
+!         2 : physique particuliere avec definition du coefficient
+!             d'absorption par fichier parametrique pour le rayonnement
   ippmod(iphpar) = 0
   if (nmodpp.gt.0) then
     ippmod(iphpar) = 1
@@ -2046,20 +2046,161 @@ endif
 
 if (ipass.eq.5) then
 
-  if ( iirayo.eq.1 .and.                                          &
-       iilagr.gt.0 .and.                                          &
-       iphyla.eq.1 .and.                                          &
-       itpvar.eq.1       ) then
+  if ( iirayo.gt.0 ) then
 
+! --- Reprise du dernier numero de propriete
     iprop  = nprmax
-    ilumn  = iprop + 1
+
+! --- Numeros de propriete
+    iprop        = iprop + 1
+    ilumin       = iprop
+    iprop        = iprop + 1
+    iqx          = iprop
+    iprop        = iprop + 1
+    iqy          = iprop
+    iprop        = iprop + 1
+    iqz          = iprop
+
+
+    do iphas = 1, nphasc
+
+      iprop                = iprop + 1
+      itsre(iphas)         = iprop
+      iprop                = iprop + 1
+      itsri(iphas)         = iprop
+      iprop                = iprop + 1
+      iabs(iphas)          = iprop
+      iprop                = iprop + 1
+      iemi(iphas)          = iprop
+      iprop                = iprop + 1
+      icak(iphas)          = iprop
+
+    enddo
+
+
+! --- Sauvegarde du dernier numero de propriete
     nprmax = iprop
 
-    iprop = nproce
-    iprop = iprop + 1
-    ipproc(ilumn) = iprop
-    nproce = iprop
 
+! --- Reprise des derniers NPROCE et NPPMAX (PROPCE et POST-TRAITEMENT)
+    iprop         = nproce
+    ipppst        = nppmax
+
+! --- Positionnement
+    iprop          = iprop + 1
+    ipproc(ilumin) = iprop
+    ipppst         = ipppst + 1
+    ipppro(iprop)  = ipppst
+
+    iprop         = iprop + 1
+    ipproc(iqx)   = iprop
+    ipppst        = ipppst + 1
+    ipppro(iprop) = ipppst
+
+    iprop         = iprop + 1
+    ipproc(iqy)   = iprop
+    ipppst        = ipppst + 1
+    ipppro(iprop) = ipppst
+
+    iprop         = iprop + 1
+    ipproc(iqz)   = iprop
+    ipppst        = ipppst + 1
+    ipppro(iprop) = ipppst
+
+! Positionnement de ITSRE, ITSRI, ICAK, IABS et IEME
+! Leur dimensionnement n'est pas le meme si on est en charbon ou non
+
+
+    do iphas = 1, nphasc
+!
+      iprop                = iprop + 1
+      ipproc(itsre(iphas)) = iprop
+      ipppst               = ipppst + 1
+      ipppro(iprop)        = ipppst
+
+      iprop                = iprop + 1
+      ipproc(itsri(iphas)) = iprop
+      ipppst               = ipppst + 1
+      ipppro(iprop)        = ipppst
+!
+      iprop                = iprop + 1
+      ipproc(iabs(iphas))  = iprop
+      ipppst               = ipppst + 1
+      ipppro(iprop)        = ipppst
+
+      iprop                = iprop + 1
+      ipproc(iemi(iphas))  = iprop
+      ipppst               = ipppst + 1
+      ipppro(iprop)        = ipppst
+
+      iprop                = iprop + 1
+      ipproc(icak(iphas))  = iprop
+      ipppst               = ipppst + 1
+      ipppro(iprop)        = ipppst
+
+    enddo
+
+
+! --- Sauvegarde du dernier NPROCE et NPPMAX
+    nproce = iprop
+    nppmax = ipppst
+
+
+! --- Reprise du dernier numero de propriete
+    iprop = nprmax
+
+
+! --- Numeros de propriete
+    iprop        = iprop + 1
+    itparo       = iprop
+    iprop        = iprop + 1
+    iqinci       = iprop
+    iprop        = iprop + 1
+    ixlam        = iprop
+    iprop        = iprop + 1
+    iepa         = iprop
+    iprop        = iprop + 1
+    ieps         = iprop
+    iprop        = iprop + 1
+    ifnet        = iprop
+    iprop        = iprop + 1
+    ifconv       = iprop
+    iprop        = iprop + 1
+    ihconv       = iprop
+
+! --- Sauvegarde du dernier numero de propriete
+    nprmax = iprop
+
+! --- Reprise du dernier NPROFB (PROPFB)
+    iprop   = nprofb
+
+! --- Positionnement
+    iprop          = iprop + 1
+    ipprob(itparo) = iprop
+
+    iprop          = iprop + 1
+    ipprob(iqinci) = iprop
+
+    iprop          = iprop + 1
+    ipprob(ixlam)  = iprop
+
+    iprop          = iprop + 1
+    ipprob(iepa)   = iprop
+
+    iprop          = iprop + 1
+    ipprob(ieps)   = iprop
+
+    iprop          = iprop + 1
+    ipprob(ifnet)  = iprop
+
+    iprop          = iprop + 1
+    ipprob(ifconv) = iprop
+
+    iprop          = iprop + 1
+    ipprob(ihconv) = iprop
+!
+! --- Sauvegarde du dernier NPROFB
+    nprofb = iprop
 
 ! --- Verification de NPROCE, NPROFA, NPROFB
 

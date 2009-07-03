@@ -108,6 +108,7 @@ include "paramx.h"
 include "entsor.h"
 include "numvar.h"
 include "optcal.h"
+include "ppppar.h"
 include "radiat.h"
 
 !===============================================================================

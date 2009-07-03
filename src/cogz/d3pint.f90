@@ -90,6 +90,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 
 !===============================================================================
@@ -250,7 +251,7 @@ endif
 ! ---> Positions des variables, coefficients
 
 ipctem = ipproc(itemp)
-if ( iraypp.gt.0 ) then
+if ( iirayo.gt.0 ) then
   ipckab = ipproc(ickabs)
   ipct4  = ipproc(it4m)
   ipct3  = ipproc(it3m)
@@ -276,7 +277,7 @@ do icel = 1, ncel
                           dirmax(icel)*tinfue
     temsmm = dirmin(icel)/wmolg(2)*tinoxy                         &
            + dirmax(icel)/wmolg(1)*tinfue
-    if ( iraypp.gt.0 ) then
+    if ( iirayo.gt.0 ) then
       propce(icel,ipckab) =                                       &
         dirmin(icel)*ckabsg(2)  + dirmax(icel)*ckabsg(1)
       propce(icel,ipct4) =                                        &
@@ -340,7 +341,7 @@ do icel = 1, ncel
         d = (   1.d0/wmolg(1)-1.d0/wmolg(3))/(1.d0-fsir)
       endif
 
-      if ( iraypp.gt.0 ) then
+      if ( iirayo.gt.0 ) then
         if ( f1.lt.fsir ) then
 !         On a demarre cote pauvre
           u =   ckabsg(2)
@@ -425,7 +426,7 @@ do icel = 1, ncel
       d = (   1.d0/wmolg(1)-1.d0/wmolg(3))/(1.d0-fsir)
      endif
 
-    if ( iraypp.gt.0 ) then
+    if ( iirayo.gt.0 ) then
       if ( fm(icel).lt.fsir ) then
 !         On a demarre cote pauvre
         u =   ckabsg(2)

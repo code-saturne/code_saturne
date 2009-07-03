@@ -41,7 +41,7 @@ subroutine ppcabs &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     ,                                     &
    rdevel , rtuser ,                                              &
-   ck   ,   ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -132,8 +132,6 @@ subroutine ppcabs &
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! w1...3(ncelet    ! tr ! --- ! tableau de travail                             !
-! ck (ncelet,*)    ! tr ! --> ! coefficient d'absorption du milieu             !
-!                  !    !     ! (nul si transparent) et des charbons           !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -159,7 +157,6 @@ include "optcal.h"
 include "cstphy.h"
 include "cstnum.h"
 include "pointe.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "coincl.h"
@@ -167,6 +164,7 @@ include "cpincl.h"
 include "fuincl.h"
 include "ppincl.h"
 include "parall.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -195,7 +193,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision ck(ncelet,*)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
@@ -235,7 +232,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
     enddo
     call raydak(ncel,ncelet,                                      &
     !==========
-                ck,w1,w2,w3,propce(1,ipproc(itemp)))
+      propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp)))
 
     write(NFECRA,*) ' a verifier '
     write(NFECRA,*) ' a finir   : raydak '
@@ -245,7 +242,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
   else
     do iel = 1, ncel
-      ck(iel,1) = propce(iel,ipproc(ickabs))
+      propce(iel,ipproc(icak(1))) = propce(iel,ipproc(ickabs))
     enddo
   endif
 
@@ -269,11 +266,11 @@ else if ( ippmod(icp3pl).ge.0 ) then
 
     call raydak(ncel,ncelet,                                      &
     !==========
-                ck,w1,w2,w3,propce(1,ipproc(itemp1)))
+     propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp1)))
 
   else
     do iel = 1, ncel
-      ck(iel,1) = ckabs1
+      propce(iel,ipproc(icak(1))) = ckabs1
     enddo
   endif
 
@@ -297,11 +294,11 @@ else if ( ippmod(icfuel).ge.0 ) then
 
     call raydak(ncel,ncelet,                                      &
     !==========
-                ck,w1,w2,w3,propce(1,ipproc(itemp1)))
+     propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp1)))
 
   else
     do iel = 1, ncel
-      ck(iel,1) = ckabs1
+      propce(iel,ipproc(icak(1))) = ckabs1
     enddo
   endif
 
@@ -332,7 +329,8 @@ if ( ippmod(icp3pl).ge.0 ) then
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
 !         3./2. ROM/(ROM2*D2)
 
-      ck(iel,ipck) = 1.5d0*propce(iel,ipproc(irom(iphas)))        &
+      propce(iel,ipproc(icak(ipck))) =                            &
+                         1.5d0*propce(iel,ipproc(irom(iphas)))    &
                        / ( propce(iel,ipproc(irom2(icla)))*d2)
 
     enddo
@@ -354,7 +352,8 @@ if ( ippmod(icfuel).ge.0 ) then
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
 !         3./2. ROM/(ROM2*D2)
 
-      ck(iel,ipck) = 1.5d0*propce(iel,ipproc(irom(iphas)))        &
+      propce(iel,ipproc(icak(ipck))) =                            &
+                         1.5d0*propce(iel,ipproc(irom(iphas)))    &
                  / ( propce(iel,ipproc(irom3(icla)))              &
                     *propce(iel,ipproc(idiam3(icla))) )
 
@@ -375,7 +374,7 @@ if ( ippmod(ielarc).ge.1 ) then
 
 ! ---> Directement donne par le fichier dp_elec
 
-      ck(iel,1) = propce(iel,ipproc(idrad))
+      propce(iel,ipproc(icak(1))) = propce(iel,ipproc(idrad))
 
   enddo
 
@@ -391,12 +390,12 @@ endif
 !                 longueur optique au minimum de l'ordre de l'unite.
 
 
-  if (irayon(1).eq.2) then
+  if (iirayo.eq.2) then
 
 !         Coefficient d'absorption du melange gaz-particules de charbon
 
      do iel = 1, ncel
-       w3(iel) =  ck(iel,1)
+       w3(iel) =  propce(iel,ipproc(icak(1)))
      enddo
 
      if ( ippmod(icp3pl).ge.0 ) then
@@ -404,8 +403,8 @@ endif
          ipck = 1+icla
          do iel = 1,ncel
            w3(iel) = w3(iel)                                      &
-                    + propce(iel,ipproc(ix2(icla)))               &
-                     *ck(iel,ipck)
+                    + ( propce(iel,ipproc(ix2(icla)))             &
+                      * propce(iel,ipproc(icak(ipck))) )
          enddo
        enddo
      elseif ( ippmod(icfuel).ge.0 ) then
@@ -413,8 +412,8 @@ endif
          ipck = 1+icla
          do iel = 1,ncel
            w3(iel) = w3(iel)                                      &
-                    + propce(iel,ipproc(iyfol(icla)))             &
-                     *ck(iel,ipck)
+                    + ( propce(iel,ipproc(iyfol(icla)))           &
+                      * propce(iel,ipproc(icak(ipck))) )
          enddo
        enddo
      endif

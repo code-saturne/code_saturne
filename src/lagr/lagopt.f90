@@ -484,7 +484,7 @@ if (iok.ne.0) call csexit (1)
 
 !   APPEL A VARPOS SI RAYONNEMENT
 
-if (iirayo.eq.1 .and. iphyla.eq.1 .and. itpvar.eq.1) then
+if (iirayo.gt.0 .and. iphyla.eq.1 .and. itpvar.eq.1) then
   call varpos(iok)
   !==========
 endif
@@ -1127,7 +1127,7 @@ if (iphyla.eq.1) then
 
 !       --> EQUATION SUR LA TEMPERATURE ET RAYONNEMENT : EMISSIVITE
 
-  if (itpvar.eq.1 .and. iirayo.eq.1) nvep = nvep + 1
+  if (itpvar.eq.1 .and. iirayo.gt.0) nvep = nvep + 1
 
 else if (iphyla.eq.2) then
 
@@ -1268,7 +1268,7 @@ jrtsp = 1
 jrpoi = 2
 irf   = jrpoi
 
-if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.eq.1) then
+if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
   jreps = irf   + 1
   irf   = jreps
 endif

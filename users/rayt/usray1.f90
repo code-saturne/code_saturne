@@ -109,16 +109,17 @@ include "optcal.h"
 include "cstphy.h"
 include "parall.h"
 include "period.h"
-include "radiat.h"
 include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
-integer          iphas
+integer          iphas, ipp
 character*2      num
 
+integer       ipass
+data          ipass /0/
+save          ipass
 
 !===============================================================================
 
@@ -133,37 +134,19 @@ if(1.eq.1) return
 ! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 
 
+ipass = ipass + 1
+
+if (ipass.eq.1 .or. ipass.eq.2) then
 
 !===============================================================================
 ! 1. UTILISATION DU MODULE DE TRANSFERTS RADIATIFS
-
-
-!     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION/CHARBON/
-!                                                            ELEC/FIOUL)
-
-!         LES RENSEIGNEMENTS NE DOIVENT PAS ETRE FOURNIS
-!                            ==============
-!         (ils sont completes dans le fichiers de donnees)
-
-!     DANS LES AUTRES CAS
-!         LES RENSEIGNEMENTS SUIVANTS SONT OBLIGATOIRES
-
-
-
 !===============================================================================
 
-!--> Par defaut, il n'y a qu'une seule phase traitee.
-
-iphas = 1
-
-
-if( ippmod(iphpar).le.1 ) then
-
-!-->  IRAYON = 0 : PAS DE TRANSFERTS RADIATIFS (PAR DEFAUT)
+!-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS (PAR DEFAUT)
 !            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
 !            = 2 : TRANSFERTS RADIATIFS, APPROXIMATION P-1
 
-  irayon(iphas) = 1
+  iirayo = 1
 
 endif
 
@@ -171,21 +154,23 @@ endif
 ! 2. PARAMETRES DU MODULE DE TRANSFERTS RADIATIFS
 !===============================================================================
 
+if (ipass.eq.2) then
+
 !-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE DE RAYONNEMENT)
 !     (0      : PAS DE LECTURE D'UN FICHIER SUITE DE RAYONNEMENT
 !      1      : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT
 !      ISUITE : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT SI LE CALCUL FLUIDE EST
 !               AUSSI UNE SUITE )
 
-isuird = isuite
+  isuird = isuite
 
 !-->  FREQUENCE DE PASSAGE DANS LE MODULE DE RAYONNEMENT
 
-nfreqr = 1
+  nfreqr = 1
 
-!-->  NOMBRE DE DIRECTIONS : 32 OU 128 (UTILE UNIQUEMENT SI IRAYON=1)
+!-->  NOMBRE DE DIRECTIONS : 32 OU 128 (UTILE UNIQUEMENT SI IIRAYO=1)
 
-ndirec = 32
+  ndirec = 32
 
 !-->  INITIALISATION DU MODE DE CALCUL DU TERME SOURCE RADIATIF EXPLICITE
 !     IDIVER = 0 => CALCUL SEMI-ANALYTIQUE
@@ -193,64 +178,112 @@ ndirec = 32
 !     IDIVER = 2 => CALCUL SEMI-ANALYTIQUE CORRIGE POUR ETRE CONSERVATIF
 !     (EN RAYONNEMENT TRANSPARENT, LE CHOIX EST SANS INFLUENCE)
 
-idiver = 2
+  idiver = 2
 
 !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS TEMPERATURE DE PAROI
 
-iimpar = 1
+  iimpar = 1
 
 !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS SOLVEUR
 
-iimlum = 0
+  iimlum = 0
+
+!--> SI COMBUSTION GAZ OU CHARBON : CALCUL AUTOMATIQUE
+!    DU COEFFICIENT D'ABSORPTION
+
+!    IMODAK = 0 : PAS DE CALCUL AUTOMATIQUE (DEFAUT)
+!           = 1 : CALCUL AUTOMATIQUE (MODELE DE MODAK)
+
+  imodak = 0
+
+endif
 
 !===============================================================================
 ! 3. RENSEIGNEMENTS POUR LE POST-PROCESSING
 !===============================================================================
 
-! ATTENTION : les grandeurs physiques liees au milieu semi-transparent,
-!             controlees par le mot-cle IRAYVP, respectent la frequence
-!             de sortie chronologique imposée via NTCHR (dans USINI1.F),
-!             alors que les grandeurs liees a la frontiere ne sont
-!             disponibles que pour le dernier pas de temps.
-!             En cas de besoin de visualisation de l'evolution en temps
-!             de grandeurs surfaciques contacter l'equipe de
-!             developpement.
-
-do iphas = 1, nphas
-  WRITE(NUM,'(I1)') IPHAS
+if (ipass.eq.3) then
 
 !===============================================================================
 ! 3.1 VARIABLE DU MILIEU SEMI-TRANSPARENT
 !===============================================================================
 
-!=======================================================================
-!    * IL FAUT METTRE LA VALEUR DE IRAYVP A 1 POUR LA VISUALISATION *
-!=======================================================================
 
-!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
+!    ICHRVR( ) = sortie chono (oui 1/non 0)
+!    ILISVR( ) = suivi listing (oui 1/non 0)
+!    IHISVR( ) = sortie historique (nombre de sondes et numeros)
+!    si IHISVR(    .,1)  = -1 sortie sur toutes les sondes definies
+!                            dans usini1
 
-  NBRVAP(ITSRAY,IPHAS) = 'Srad_'//NUM
-  irayvp(itsray,iphas) = -1
+!--> LUMINENCE
+
+  ipp = ipppro(ipproc(ilumin))
+  nomvar(IPP)   = 'Lumin'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
 
 !--> VECTEUR DENSITE DE FLUX RADIATIF
 
-  NBRVAP(IQRAYP,IPHAS) = 'Qrad_'//NUM
-  irayvp(iqrayp,iphas) = -1
+!       composante x
+  ipp = ipppro(ipproc(iqx))
+  nomvar(IPP)   = 'Qxrad'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       composante y
+  ipp = ipppro(ipproc(iqy))
+  nomvar(IPP)   = 'Qyrad'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+!       composante z
+  ipp = ipppro(ipproc(iqz))
+  nomvar(IPP)   = 'Qzrad'
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+
+  do iphas = 1,nphasc
+
+    write(num,'(I1)') iphas
+
+!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
+
+    ipp = ipppro(ipproc(itsre(iphas)))
+    nomvar(IPP)   = 'Srad'//num
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
 
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
-  NBRVAP( IABSP,IPHAS) = 'Absorp_'//NUM
-  irayvp( iabsp,iphas) = -1
+    ipp = ipppro(ipproc(iabs(iphas)))
+    nomvar(IPP)   = 'Absorp'//num
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
 
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
-  NBRVAP( IEMIP,IPHAS) = 'Emiss_'//NUM
-  irayvp( iemip,iphas) = -1
+    ipp = ipppro(ipproc(iemi(iphas)))
+    nomvar(IPP)   = 'Emiss'//num
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
 
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
-  NBRVAP(  ICAKP,IPHAS) = 'CoefAb_'//NUM
-  irayvp(  icakp,iphas) = -1
+    ipp = ipppro(ipproc(icak(iphas)))
+    nomvar(IPP)   = 'CoefAb_'//num
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = -1
+
+  enddo
 
 !===============================================================================
 ! 3.2 VARIABLE SUR LES FRONTIERES DE TYPE PAROI DU DOMAINE DE CALCUL
@@ -262,47 +295,47 @@ do iphas = 1, nphas
 
 !--> TEMPERATURE DES FACES FRONTIERES DE PAROI
 
-  NBRVAF(ITPARP,IPHAS) = 'Temp_paroi_'//NUM
-  irayvf(itparp,iphas) = -1
+  nbrvaf(itparp) = 'Temp_paroi'
+  irayvf(itparp) = 0
 
 !--> FLUX INCIDENT RADIATIF RECU PAR LES FACES FRONTIERES DE PAROI
 
-  NBRVAF(IQINCP,IPHAS) = 'Flux_incident_'//NUM
-  irayvf(iqincp,iphas) = -1
+  nbrvaf(iqincp) = 'Flux_incident'
+  irayvf(iqincp) = 0
 
 !--> CONDUCTIVITE THERMIQUES DES FACES FRONTIERES DE PAROIS
 
-  NBRVAF(IXLAMP,IPHAS) = 'Conductivite_th_'//NUM
-  irayvf(ixlamp,iphas) = -1
+  nbrvaf(ixlamp) = 'Conductivite_th'
+  irayvf(ixlamp) = 0
 
 !--> EPAISSEUR DES FACES FRONTIERES DE PAROIS
 
-  NBRVAF( IEPAP,IPHAS) = 'Epaisseur_'//NUM
-  irayvf( iepap,iphas) = -1
+  nbrvaf(iepap) = 'Epaisseur'
+  irayvf(iepap) = 0
 
 !--> EMISSIVITE DES FACES FRONTIERES DE PAROIS
 
-  NBRVAF( IEPSP,IPHAS) = 'Emissivite_'//NUM
-  irayvf( iepsp,iphas) = -1
+  nbrvaf(iepsp) = 'Emissivite'
+  irayvf(iepsp) = 0
 
 !--> FLUX NET RADIATIF AUX FACES FRONTIERES DE PAROIS
 
-  NBRVAF(IFNETP,IPHAS) = 'Flux_net_'//NUM
-  irayvf(ifnetp,iphas) = -1
+  nbrvaf(ifnetp) = 'Flux_net'
+  irayvf(ifnetp) = 0
 
 !--> FLUX CONVECTIF AUX FACES FRONTIERES DE PAROIS
 
-  NBRVAF(IFCONP,IPHAS) = 'Flux_convectif_'//NUM
-  irayvf(ifconp,iphas) = -1
+  nbrvaf(ifconp) = 'Flux_convectif'
+  irayvf(ifconp) = 0
 
 !--> COEFFICIENT D'ECHANGE CONVECTIF AUX FACES FRONTIERES DE PAROIS
 
-  NBRVAF(IHCONP,IPHAS) = 'Coef_ech_convectif_'//NUM
-  irayvf(ihconp,iphas) = -1
+  nbrvaf(ihconp) = 'Coef_ech_convectif'
+  irayvf(ihconp) = 0
 
 !===============================================================================
 
-enddo
+endif
 
 return
 

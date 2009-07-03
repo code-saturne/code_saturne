@@ -69,6 +69,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -522,7 +523,7 @@ if ( ( ippmod(icod3p).eq.1 .or.                                   &
        ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.          &
        ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.          &
        ippmod(icolwc).eq.5 )                                      &
-      .and. (iraypp.ge.1) ) then
+      .and. (iirayo.ge.1) ) then
   ipp = ipppro(ipproc(ickabs))
   NOMVAR(IPP)   = 'KABS'
   ichrvr(ipp)   = 1

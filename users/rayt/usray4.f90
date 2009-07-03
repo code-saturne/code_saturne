@@ -36,9 +36,7 @@
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , iphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-
    mode   ,                                                       &
-
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , itypfb ,          &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
@@ -46,10 +44,8 @@
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
-
    tparop , hparop , tempk  ,                                     &
-
+   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -187,11 +183,11 @@ include "cstnum.h"
 include "pointe.h"
 include "parall.h"
 include "period.h"
-include "radiat.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 
 !===============================================================================

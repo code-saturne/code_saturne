@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine rayopt
+subroutine rayopt
 !================
 
 !===============================================================================
@@ -66,22 +66,38 @@ include "numvar.h"
 include "entsor.h"
 include "optcal.h"
 include "cstphy.h"
-include "radiat.h"
 include "ihmpre.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
 include "fuincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
 ! VARIABLES LOCALES
 
-integer          ii, jj, iphas, iphaok, iok , iiscal, iscaok
+integer          ii, jj, iphas, iok , iiscal, iscaok, ipp, iph
 character        car4*4
+character*2      num
 
 !===============================================================================
+!===============================================================================
+! 0. REDEFINITION DU NOMBRE DE PHASES POUR LE CHARBON PULVERISE
+!===============================================================================
+
+!--> NPHASC : EN CP, PHASE GAZ (= 1 FORCEMENT) + NOMBRE DE CLASSES
+!             SERT A STOCKER LE COEFF D'ABSORPTION PAR EXEMPLE POUR LE
+!             MELANGE ET LES CLASSES DE PARTICULES
+
+!--> Pour le Charbon Pulverise :
+if ( ippmod(icp3pl) .ge. 0 ) then
+  nphasc = 1 + nclacp
+else
+  nphasc = 1
+endif
+
 !===============================================================================
 ! 1. INITIALISATIONS PAR DEFAUT DU MODULE DE TRANSFERTS RADIATIFS
 !                        ^^^^^^
@@ -89,20 +105,15 @@ character        car4*4
 
 
 !-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS
-!            = 1 : TRANSFERTS RADIATIFS
-
-iirayo = 0
-
-!-->  POUR CHAQUE PHASE:
-!     IRAYON = 0 : PAS DE TRANSFERTS RADIATIFS
 !            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
 !            = 2 : TRANSFERTS RADIATIFS, APPROXIMATION P-1
 !     On initialise a -1 pour montrer que ce n'est pas initialise ...
 !        (on fera un test apres usray1)
-do iphas = 1,nphsmx
-  irayon(iphas) = -1
-enddo
+iirayo = -1
 
+!--> IRAPHA : NUMERO DE LA PHASE POUR LAQUELLE ON FAIT DU RAYONNEMENT
+
+irapha = 1
 
 !-->  CALCUL DU COEFFICIENT D'ABSORPTION
 !     (REMPLI AUTOMATIQUEMENT ENSUITE POUR LA PHYSIQUE PARTICULIERE)
@@ -148,125 +159,44 @@ iimpar = -1
 
 iimlum = -1
 
-!--> INITIALISATION DES DONNEES POST-PROCESSING
-!    NBRAYP : NOMBRE MAX DES SORTIES DE VARIABLES CELLULES
-!    NBRAYF : NOMBRE MAX DES SORTIES DE VARIABLES FACETTES DE BORD
-
-do iphas = 1,nphsmx
-  do ii = 1,nbrayp
-    WRITE(CAR4,'(I4.4)') II + NBRAYP * (IPHAS -1)
-    NBRVAP(II,IPHAS) = 'RAYTCE'//CAR4
-    irayvp(ii,iphas) = -1
-  enddo
-  do ii = 1,nbrayf
-    WRITE(CAR4,'(I4.4)') II+ NBRAYF * (IPHAS -1)
-    NBRVAF(II,IPHAS) = 'RAYTFB'//CAR4
-    irayvf(ii,iphas) = -1
-  enddo
-enddo
-
-!===============================================================================
-! 2. INITIALISATIONS UTILISATEURS
-!                    ^^^^^^^^^^^^
-!===============================================================================
-
 !   - Interface Code_Saturne
 !     ======================
 
 if (iihmpr.eq.1) then
 
-  do iphas = 1, nphas
-    do jj = 1,nbrayp
-      ii = jj + nbrayp * (iphas -1)
-      call fcnmra(nbrvap(jj,iphas), len(nbrvap(jj,iphas)), ii)
-    enddo
-  enddo
-  do iphas = 1, nphas
-    do jj = 1, nbrayf
-      ii = jj + nphas * nbrayp + nbrayf* (iphas -1)
-      call fcnmra(nbrvaf(jj,iphas), len(nbrvaf(jj,iphas)), ii)
-    enddo
-  enddo
-
-  call uiray1                                                     &
+! call uiray1
   !==========
-     ( nbrayp, nbrayf, nphas,                                     &
-       irayon, isuird, ndirec, nfreqr, idiver, iimpar, iimlum,    &
-       irayvp, irayvf )
-
-  do iphas = 1, nphas
-    do jj = 1,nbrayp
-      ii = jj + nbrayp * (iphas -1)
-      call cfnmra(nbrvap(jj,iphas), len(nbrvap(jj,iphas)), ii)
-    enddo
-  enddo
-  do iphas = 1, nphas
-    do jj = 1, nbrayf
-      ii = jj + nphas * nbrayp + nbrayf* (iphas -1)
-      call cfnmra(nbrvaf(jj,iphas), len(nbrvaf(jj,iphas)), ii)
-    enddo
-  enddo
+!( nbrayp, nbrayf, nphas, &
+!  iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum, &
+!  irayvf )
 
 endif
+
 
 call usray1
 !==========
 
 !===============================================================================
-! 3. VERIFICATION LA COHERENCE D'UTILISATION DU MODULE DE RAYONNEMENT
+! 2. VERIFICATION LA COHERENCE D'UTILISATION DU MODULE DE RAYONNEMENT
 !    AVEC LA THERMIQUE OU LES PHYSIQUES PARTICULIERES (COMBUSTION)
 !===============================================================================
 
 iok = 0
 
-!--> IRAYON
+!--> IIRAYO = 0 (pas de rayonnement).
 
-!     Si physique classique ou particuliere sans fichier paramétrique
-!       et IRAYON pas modifie dans USRAY1
-!       IRAYON(IPHAS) = 0 (pas de rayonnement).
+if(iirayo.eq.-1) then
+  iirayo = 0
+endif
 
-if( ippmod(iphpar).le.1 ) then
+if (iirayo.ne.0 .and. iirayo.ne.1 .and. iirayo.ne.2) then
+  write(nfecra,1010) iirayo
+  iok = iok + 1
+endif
 
-  do iphas = 1, nphas
-    if(irayon(iphas).eq.-1) then
-      irayon(iphas) = 0
-    endif
-  enddo
-
-
-!     Sinon, IRAYON doit etre issu du fichier
-!       parametrique ; IMODAK aussi.
-
-else
-
-  iphas = 1
-
-  if (irayon(iphas).eq.-1) then
-    if (iraypp.eq.0) then
-      irayon(iphas) = 0
-      imodak        = 0
-    elseif (iraypp.eq.1) then
-      irayon(iphas) = 1
-      imodak        = 0
-    elseif (iraypp.eq.2) then
-      irayon(iphas) = 1
-      imodak        = 1
-    elseif (iraypp.eq.3) then
-      irayon(iphas) = 2
-      imodak        = 0
-    elseif (iraypp.eq.4) then
-      irayon(iphas) = 2
-      imodak        = 1
-    else
-      write(nfecra,1010)
-      iok = iok + 1
-    endif
-
-  else
-    write(nfecra,2000)
-    iok = iok + 1
-  endif
-
+if (imodak.ne.0 .and. imodak.ne.1) then
+  write(nfecra,1020) imodak
+  iok = iok + 1
 endif
 
 !--> ISCSTH
@@ -281,55 +211,51 @@ endif
 if(ippmod(iphpar).ge.2) then
 
 !     Il y a une seule phase ; si on rayonne
-  do iphas = 1, nphas
-    if (irayon(iphas).eq.1 .or. irayon(iphas).eq.2) then
+    if (iirayo.eq.1 .or. iirayo.eq.2) then
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(iphas)) then
+        if (iiscal.eq.iscalt(irapha)) then
           iscaok = 1
 !           Et on regarde si on a dit enthalpie
           if (iscsth(iiscal).ne.2) then
-            write(nfecra,3000) iphas,iiscal,iiscal
+            write(nfecra,3000) irapha,iiscal,iiscal
             iok = iok + 1
           endif
         endif
       enddo
       if (iscaok.eq.0) then
-        write(nfecra,3001) iphas,iphas
+        write(nfecra,3001) irapha,irapha
         iok = iok + 1
       endif
     endif
-  enddo
 
 else
 
-!     Pour toutes les phases qui rayonnent
-  do iphas = 1, nphas
-    if (irayon(iphas).eq.1 .or. irayon(iphas).eq.2) then
+!     Pour la phase qui rayonne
+    if (iirayo.eq.1 .or. iirayo.eq.2) then
 
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(iphas)) then
+        if (iiscal.eq.iscalt(irapha)) then
           iscaok = 1
 
 !           Et on regarde si on a dit temp C, K ou enthalpie
           if (abs(iscsth(iiscal)).ne.1.and.                       &
                   iscsth(iiscal) .ne.2      ) then
-            write(nfecra,3010) iphas,iiscal,iiscal
+            write(nfecra,3010) irapha,iiscal,iiscal
             iok = iok + 1
           endif
 
         endif
       enddo
       if(iscaok.eq.0)then
-        write(nfecra,3011)iphas,iphas
+        write(nfecra,3011)irapha,irapha
         iok = iok + 1
       endif
 
     endif
-  enddo
 
 endif
 
@@ -346,25 +272,29 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    IRAYPP NE PEUT PRENDRE POUR VALEURS QUE 0 1 2 3 OU 4    ',/,&
+'@    IIRAYO NE PEUT PRENDRE POUR VALEURS QUE 0 1 OU 2        ',/,&
+'@    IIRAYO vaut ',I10                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Arret dans rayopt.                                        ',/,&
+'@  Verifier usray1 ou l''interface graphique.                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2000 format(                                                           &
+ 1020 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    EN PHYSIQUE PARTICULIERE IRAYON EST DONNE PAR FICHIER   ',/,&
+'@    IMODAK NE PEUT PRENDRE POUR VALEURS QUE 0 OU 1          ',/,&
+'@    IMODAK vaut',I10                                         ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1 (IRAYON ne doit pas etre modifie).        ',/,&
+'@  Arret dans rayopt.                                        ',/,&
+'@  Verifier usray1 ou l''interface graphique.                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -400,7 +330,7 @@ endif
 '@    =========                                               ',/,&
 '@    PHYSIQUE PARTICULIERE ACTIVEE : ENTHALPIE NECESSAIRE    ',/,&
 '@                                                            ',/,&
-'@  Lorsque le rayonnement est utilise (phase ',I10   ,', il  ',/,&
+'@  Lorsque le rayonnement est utilise (phase ',I10   ,'), il ',/,&
 '@    faut indiquer qu''un scalaire represente la variable    ',/,&
 '@    energetique (enthalpie) en renseignant                  ',/,&
 '@    ISCALT(',I10   ,') dans usini1 (numero du scalaire).    ',/,&
@@ -455,21 +385,17 @@ endif
 '@                                                            ',/)
 
 !===============================================================================
-! 4. FAIT-ON DU RAYONNEMENT SEMI-TRANSPARENT ?
-!===============================================================================
-
-iirayo = 0
-do iphas = 1,nphas
-  if (irayon(iphas).eq.1 .or. irayon(iphas).eq.2) iirayo = 1
-enddo
-
-!===============================================================================
-! 5. VERIFICATIONS (uniquement s'il y a du rayonnement)
+! 3. VERIFICATIONS (uniquement s'il y a du rayonnement)
 !===============================================================================
 
 iok = 0
 
-if (iirayo.eq.1) then
+if (iirayo.gt.0) then
+
+  ipp = 5
+
+  call varpos(ipp)
+  !==========
 
 ! --> ISUIRD
 
@@ -513,41 +439,208 @@ if (iirayo.eq.1) then
     iok = iok + 1
   endif
 
-! --> IRAYVP & IRAYVF
-!     Choix entre -1 et 1
-  do iphas = 1,nphas
-    if (irayon(iphas).eq.1 .or. irayon(iphas).eq.2) then
-      do ii = 1,nbrayp
-        if (irayvp(ii,iphas).ne.1 .and.                           &
-            irayvp(ii,iphas).ne.-1) then
-          write(nfecra,4060) nbrvap(ii,iphas), irayvp(ii,iphas)
-          iok = iok + 1
-        endif
-      enddo
-      do ii = 1,nbrayf
-        if (irayvf(ii,iphas).ne.1 .and.                           &
-            irayvf(ii,iphas).ne.-1) then
-          write(nfecra,4070) nbrvaf(ii,iphas), irayvf(ii,iphas)
-          iok = iok + 1
-        endif
-      enddo
-    endif
+else
+  return
+endif
+
+!--> Stop si erreur.
+
+if(iok.ne.0) then
+  call csexit (1)
+  !==========
+endif
+
+!===============================================================================
+! 5. POST-PROCESSING
+!===============================================================================
+
+!--> INITIALISATION DES DONNEES POST-PROCESSING
+!    NBRAYF : NOMBRE MAX DES SORTIES DE VARIABLES FACETTES DE BORD
+
+do ii = 1, nbrayf
+  WRITE(CAR4,'(I4.4)') II
+  NBRVAF(II) = 'RAYTFB'//CAR4
+  irayvf(ii) = 0
+enddo
+
+!--> LUMINENCE
+
+ipp = ipppro(ipproc(ilumin))
+NOMVAR(IPP)   = 'Lumin'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = 0
+ilisvr(ipp)   = 0
+
+!--> VECTEUR DENSITE DE FLUX RADIATIF
+
+!     composante x
+ipp = ipppro(ipproc(iqx))
+NOMVAR(IPP)   = 'Qxrad'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
+
+!     composante y
+ipp = ipppro(ipproc(iqy))
+NOMVAR(IPP)   = 'Qyrad'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
+
+!      composante z
+ ipp = ipppro(ipproc(iqz))
+ NOMVAR(IPP)   = 'Qzrad'
+ ichrvr(ipp)   = 0
+ ihisvr(ipp,1) = -1
+ ilisvr(ipp)   = 0
+
+
+do iphas = 1, nphasc
+
+  WRITE(NUM,'(I1)') IPHAS
+
+!--> TERME SOURCE IMPLICITE
+
+  ipp = ipppro(ipproc(itsri(iphas)))
+  NOMVAR(IPP)   = 'ITSRI'//NUM
+  ichrvr(ipp)   = 0
+  ihisvr(ipp,1) = 0
+  ilisvr(ipp)   = 0
+
+
+!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
+
+  ipp = ipppro(ipproc(itsre(iphas)))
+  NOMVAR(IPP)   = 'Srad'//NUM
+  ichrvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+  ilisvr(ipp)   = 0
+
+!--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
+
+  ipp = ipppro(ipproc(iabs(iphas)))
+  NOMVAR(IPP)   = 'Absorp'//NUM
+  ichrvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+  ilisvr(ipp)   = 0
+
+!--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
+
+  ipp = ipppro(ipproc(iemi(iphas)))
+  NOMVAR(IPP)   = 'Emiss'//NUM
+  ichrvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+  ilisvr(ipp)   = 0
+
+!--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
+
+  ipp = ipppro(ipproc(icak(iphas)))
+  NOMVAR(IPP)   = 'CoefAb_'//NUM
+  ichrvr(ipp)   = 0
+  ilisvr(ipp)   = 0
+  ihisvr(ipp,1) = -1
+
+enddo
+
+!===============================================================================
+!  6. INITIALISATIONS UTILISATEURS
+!                    ^^^^^^^^^^^^
+!===============================================================================
+
+!   - Interface Code_Saturne
+!     ======================
+
+
+if (iihmpr.eq.1) then
+
+  ipp = ipppro(ipproc(ilumin))
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+
+  ipp = ipppro(ipproc(iqx))
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  ipp = ipppro(ipproc(iqy))
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  ipp = ipppro(ipproc(iqz))
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  do iph = 1,nphasc
+
+    ipp = ipppro(ipproc(itsre(iph)))
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(itsri(iph)))
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(iabs(iph)))
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(iemi(iph)))
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
   enddo
 
-! --> CONNECTIVITE
-  iphaok = 0
-  do iphas = 1,nphas
-    do ii = 1,nbrayf
-      if (irayvf(ii,iphas).eq.1) iphaok = iphaok + 1
-    enddo
+  do jj = 1, nbrayf
+    !ii = jj + nbrayp
+    call fcnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
   enddo
-  if (iphaok.ne.0) then
-    if (nnod.eq.0 .or. (lndfac.eq.0 .and. lndfbr.eq.0)) then
-      write(nfecra,4080) nnod, lndfac, lndfbr
+
+! call uiray1
+  !==========
+!( nbrayp, nbrayf, nphas, &
+!  iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum, &
+!  irayvf )
+
+!
+  ipp = ipppro(ipproc(ilumin))
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  ipp = ipppro(ipproc(iqx))
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  ipp = ipppro(ipproc(iqy))
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  ipp = ipppro(ipproc(iqz))
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  do iph = 1,nphasc
+
+    ipp = ipppro(ipproc(itsre(iph)))
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(itsri(iph)))
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(iabs(iph)))
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+    ipp = ipppro(ipproc(iemi(iph)))
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+!
+  enddo
+
+  do jj = 1, nbrayf
+    !ii = jj + nbrayp
+    call cfnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
+  enddo
+
+endif
+
+call usray1
+!==========
+
+! --> IRAYVF
+!     Choix entre -1 et 1
+if (iirayo.eq.1 .or. iirayo.eq.2) then
+  do ii = 1, nbrayf
+    if (irayvf(ii).ne.1 .and.                                     &
+      irayvf(ii).ne.0) then
+      write(nfecra,4070) nbrvaf(ii), irayvf(ii)
       iok = iok + 1
     endif
-  endif
-
+  enddo
 endif
 
 !--> Stop si erreur.
@@ -663,25 +756,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4060 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT : ERREUR A L''ENTREE DES DONNEES',/,&
-'@    =========                                               ',/,&
-'@    INDICATEUR DE SORTIE EN POSTPROCESSING                  ',/,&
-'@    POUR ',A40                                               ,/,&
-'@    NON ADMISSIBLE                                          ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de postprocessing doit etre -1 ou 1         ',/,&
-'@    Il vaut ici IRAYVP = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  4070 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -695,68 +769,13 @@ endif
 '@  L''indicateur de postprocessing doit etre -1 ou 1         ',/,&
 '@    Il vaut ici IRAYVF = ',I10                               ,/,&
 '@                                                            ',/,&
-'@  Le calcul sera engage.                                    ',/,&
-'@                                                            ',/,&
-'@  On conseille donc de verifier usray1.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4080 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT : ERREUR A L''ENTREE DES DONNEES',/,&
-'@    =========                                               ',/,&
-'@    LES CONNECTIVITES FACES -> SOMMETS OU LES COORDONNEES   ',/,&
-'@    DES NOEUDS SOMMETS NE SONT PAS FOURNIS                  ',/,&
-'@                                                            ',/,&
-'@  Le module rayonnement est active mais les noeuds sommets  ',/,&
-'@   ou les connectivites faces -> sommets n''ont pas ete     ',/,&
-'@   fournis au noyau.                                        ',/,&
-'@                                                            ',/,&
-'@    NNDOD  = ', I10                                          ,/,&
-'@    LNDFAC = ', I10                                          ,/,&
-'@    LNDFBR = ', I10                                          ,/,&
-'@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier si le fichier geomet contient bien les           ',/,&
-'@    connectivites faces -> sommets si IFOENV = 0.           ',/,&
+'@  Verifier usray1.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-
-!===============================================================================
-! 6. NOMBRE DE PHASES POUR LESQUELLES ON FAIT DU RAYONNEMENT
-!===============================================================================
-
-!--> NPHAST : NOMBRE DE PHASES POUR LESQUELLES ON FAIT DU RAYONNEMENT
-!--> IRAPHA : NUMEROS DES PHASES POUR LESQUELLES ON FAIT DU RAYONNEMENT
-
-!--> NPHASC : EN CP, NOMBRE DE PHASE (= 1 FORCEMENT) + NOMBRE DE CLASSES
-!             SERT A STOCKER LE COEFF D'ABSORPTION PAR EXEMPLE POUR LE
-!             MELANGE ET LES CLASSES DE PARTICULES (VOIR MEMRA1)
-
-nphast = 0
-do iphas = 1,nphas
-  if (irayon(iphas).ge.1) then
-    nphast = nphast +1
-    irapha(nphast) = iphas
-  endif
-enddo
-
-nphasc = nphast
-
-!--> Pour le Charbon Pulverise :
-if ( ippmod(icp3pl) .ge. 0 ) then
-  nphasc = nphasc + nclacp
-endif
-
-!--> Pour le Fuel :
-if ( ippmod(icfuel) .ge. 0 ) then
-  nphasc = nphasc + nclafu
-endif
 
 return
 

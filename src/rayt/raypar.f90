@@ -193,6 +193,7 @@ include "cstphy.h"
 include "cstnum.h"
 include "pointe.h"
 include "parall.h"
+include "ppppar.h"
 include "radiat.h"
 
 
@@ -645,7 +646,7 @@ enddo
 !  (donc si des impressions sont necessaires)
 
 if (irangp.ge.0) then
-  call parimx(nozarm(iphas),indtp )
+  call parimx(nozarm,indtp )
   !==========
 endif
 
@@ -688,13 +689,13 @@ if(indtpm.gt.0) then
     enddo
 
     if(irangp.ge.0) then
-      call parrsm(nozarm(iphas),tzomoy)
+      call parrsm(nozarm,tzomoy)
       !==========
-      call parrsm(nozarm(iphas),flunet)
+      call parrsm(nozarm,flunet)
       !==========
-      call parrsm(nozarm(iphas),radios)
+      call parrsm(nozarm,radios)
       !==========
-      call parrsm(nozarm(iphas),surft )
+      call parrsm(nozarm,surft )
       !==========
     endif
 
@@ -781,9 +782,9 @@ if(indtpm.gt.0) then
       n1max  = inttm2(4)
       nrelax = inttm2(5)
 
-      call parrmx(nozarm(iphas),tzomax)
+      call parrmx(nozarm,tzomax)
       !==========
-      call parrmn(nozarm(iphas),tzomin)
+      call parrmn(nozarm,tzomin)
       !==========
 
       inttm1(1) = iitpim

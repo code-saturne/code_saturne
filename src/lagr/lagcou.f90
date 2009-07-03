@@ -158,12 +158,12 @@ include "cstphy.h"
 include "pointe.h"
 include "period.h"
 include "parall.h"
-include "radiat.h"
 include "lagpar.h"
 include "lagran.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -427,14 +427,14 @@ if (ltsthe.eq.1) then
 
     enddo
 
-    if (iirayo.eq.1) then
+    if (iirayo.gt.0) then
 
       do npt = 1,nbpart
 
         iel = indep(npt)
 
         aux1 = pi *ettp(npt,jdp) *ettp(npt,jdp) *tepa(npt,jreps)  &
-                *(propce(iel,ipproc(ilumn))                       &
+                *(propce(iel,ipproc(ilumin))                      &
                 -4.d0 *stephn *ettp(npt,jtp)**4 )
 
         tslag(iel,itste) =tslag(iel,itste)+aux1*tepa(npt,jrpoi)

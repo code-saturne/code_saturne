@@ -91,8 +91,6 @@ void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
                                 const    int *const iparoi,
                                 const    int *const iparug,
                                 const    int *const ivart,
-                                const    int *const iph,
-                                const    int *const nphast,
                                          int *const izfrdp,
                                          int *const isothp,
                                 const    int *const itpimp,
@@ -114,8 +112,6 @@ void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
 
 
 void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const iph,
-                                const    int *const ncelet,
                                 const    int *const ncel);
 
 /*-----------------------------------------------------------------------------

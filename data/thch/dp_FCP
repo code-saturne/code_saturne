@@ -11,7 +11,6 @@ CH4 C2H4 CO O2 CO2 H2O N2 C(S)
  .016        0          0          1          2          2          1          0          0
  .014        0          0          0          0          0          0          2          0
 RAYONNEMENT
-0                       Rayonnement : (0 : pas de rayonnement ; 1 : constant donne ci-dessous ; 2 : par Modak ; 3 : comme 1 mais modele P-1 ; 4 : comme 2 mais modele P-1)
 0.1                     Coeff absorption pour le melange gazeux constant 
 CARACTERISTIQUES CHARBONS
 2                                                                              Nb de charbons

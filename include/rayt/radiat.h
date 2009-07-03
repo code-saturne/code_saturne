@@ -29,35 +29,31 @@
 !===============================================================================
 
 
-!-->  IIRAYO = 1 rayonnement, =0 pas de rayonnement
-!-->  IRAYON = 1 DOM de la phase 2 P-1 de la phase, =0 pas de rayonnement de la phase
-!-->  NPHAST = nombre des phases qui rayonnent
-!-->  NPHASC = nombre des phases qui rayonnent augmente eventuellement
+!-->  IIRAYO = 0 pas de rayonnement, 1 DOM, 2 P-1
+!-->  NPHASC = 1 (phase qui rayonne) augmentee eventuellement
 !              du nombre de classe (Charbon)
-!-->  IRAPHA = numero des phases qui rayonnent
+!-->  IRAPHA = numero de la phase du rayonnement
 !-->  IIMPAR = 0,1,2 niveau d'impression du calcul des temperatures de paroi
 !-->  IIMLUM = 0,1,2 niveau d'impression de la resolution luminance
 !-->  IMODAK = 1 calcul du coefficient d'absorption a l'aide de Modak
 !            = 0 on n'utilise pas Modak
 
 integer           iirayo ,                                        &
-                  irayon(nphsmx)  ,                               &
-                  nphast , nphasc ,                               &
-                  irapha(nphsmx)  ,                               &
+                  nphasc ,                                        &
+                  irapha ,                                        &
                   iimpar ,                                        &
                   iimlum ,                                        &
                   imodak
 common / iiiray / iirayo ,                                        &
-                  irayon          ,                               &
-                  nphast , nphasc ,                               &
-                  irapha          ,                               &
+                  nphasc ,                                        &
+                  irapha ,                                        &
                   iimpar ,                                        &
                   iimlum ,                                        &
                   imodak
 
 
 
-!--> pointeur dans le macrotableau RA :
+!--> pointeur dans le macrotableau PROPCE :
 
 !                       ITSRE --> Terme source explicite
 !                       ITSRI --> Terme source implicite
@@ -65,15 +61,19 @@ common / iiiray / iirayo ,                                        &
 !                       IABS --> part d'absorption dans le terme source explicite
 !                       IEMI --> part d'emission dans le terme source explicite
 !                       ICAK --> coefficient d'absorption
+!                       ILUMIN --> POINTEUR QUI PERMET DE REPERER L INTEGRALE DE LA
+!                                  LUMINANCE DANS LA TABLEAU PROPCE
 
-integer           itsre ,                                         &
-                  itsri ,                                         &
+
+integer           itsre(1+nclcpm) ,                               &
+                  itsri(1+nclcpm) ,                               &
                   iqx   ,                                         &
                   iqy   ,                                         &
                   iqz   ,                                         &
-                  iabs  ,                                         &
-                  iemi  ,                                         &
-                  icak
+                  iabs(1+nclcpm)  ,                               &
+                  iemi(1+nclcpm)  ,                               &
+                  icak(1+nclcpm)  ,                               &
+                  ilumin
 
 common / iprayo / itsre ,                                         &
                   itsri ,                                         &
@@ -82,9 +82,10 @@ common / iprayo / itsre ,                                         &
                   iqz   ,                                         &
                   iabs  ,                                         &
                   iemi  ,                                         &
-                  icak
+                  icak  ,                                         &
+                  ilumin
 
-!--> pointeur dans le macrotableau RA :
+!--> pointeur dans le macrotableau PROPFB :
 !                       ITPARO --> temperature de paroi
 !                       IQINCI --> densite de flux incident radiatif
 !                       IXLAM  --> conductivite thermique de la paroi
@@ -180,10 +181,8 @@ common / ifrord / iizfrd
 ! NOZARM Numero de zone de bord atteint max
 !   exemple zones 1 4 2 : NZFRAD=3,NOZARM=4
 
-integer           nozarm(nphsmx), nzfrad(nphsmx),                 &
-                  ilzrad(nbzrdm,nphsmx)
-common / izonrd / nozarm        , nzfrad        ,                 &
-                  ilzrad
+integer           nozarm, nzfrad, ilzrad(nbzrdm)
+common / izonrd / nozarm, nzfrad, ilzrad
 
 
 !--> Types de condition pour les temperatures de paroi :
@@ -199,24 +198,20 @@ integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl
 parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32)
 
 
-!--> sortie postprocessing P0
-!    NBRAYP : nombre max de sorties cellules
-!    NBRAYF : nombre max de sorties facettes de bord
+!--> sortie postprocessing sur les facettes de bord
 
-integer     nbrayp,nbrayf
-parameter ( nbrayp = 5 , nbrayf = 8 )
+integer     nbrayf
+parameter ( nbrayf = 8 )
 
-character*80      nbrvap(nbrayp,nphsmx) , nbrvaf(nbrayf,nphsmx)
-common / aenray / nbrvap , nbrvaf
+character*80       nbrvaf(nbrayf)
+common / aenray /  nbrvaf
 
-integer           irayvp(nbrayp,nphsmx) , irayvf(nbrayf,nphsmx)
-common / ienray / irayvp , irayvf
+integer            irayvf(nbrayf)
+common / ienray /  irayvf
 
-integer           itsray , iqrayp , iabsp , iemip , icakp
-parameter (itsray=1 , iqrayp=2 , iabsp=3 , iemip=4 , icakp=5)
 
-integer           itparp , iqincp , ixlamp , iepap  ,             &
-                  iepsp  , ifnetp , ifconp , ihconp
-parameter (itparp=1 , iqincp=2 , ixlamp=3 , iepap=4  ,            &
-           iepsp=5  , ifnetp=6 , ifconp=7 , ihconp=8)
+integer     itparp   , iqincp   , ixlamp   , iepap    , &
+            iepsp    , ifnetp   , ifconp   , ihconp
+parameter ( itparp=1 , iqincp=2 , ixlamp=3 , iepap=4  , &
+            iepsp=5  , ifnetp=6 , ifconp=7 , ihconp=8 )
 

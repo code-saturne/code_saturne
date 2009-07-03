@@ -191,7 +191,7 @@ iphas = 1
 ipcrom = ipproc(irom(iphas))
 ipcmam = ipproc(imam)
 
-!      IF ( IRAYPP.GT.0 ) THEN
+!      IF ( IIRAYO.GT.0 ) THEN
 !        IPCKAB = IPPROC(ICKABS)
 !        IPT4  = IPPROC(IT4M)
 !        IPT3  = IPPROC(IT3M)
@@ -658,7 +658,7 @@ do iel = 1, ncel
 
 ! ---> Coefficients d'absorption pour les pics 1 et 2
 
-!            IF ( IRAYPP .GT. 0  ) THEN
+!            IF ( IIRAYO .GT. 0  ) THEN
 !              KABSGF = YFUEGF(IEL)*KABSG(1) + YOXYGF(IEL)*KABSG(2)
 !     &                                      + YPROGF(IEL)*KABSG(3)
 !              KABSGB = YFUEGB(IEL)*KABSG(1) + YOXYGB(IEL)*KABSG(2)
@@ -743,7 +743,7 @@ do iel = 1, ncel
 
 ! ---> Grandeurs relatives au rayonnement
 
-!            IF ( IRAYPP .GT. 0  ) THEN
+!            IF ( IIRAYO .GT. 0  ) THEN
 !              PROPCE(IEL,IPCKAB) = YGFM*KABSGF + YGBM*KABSGB
 !              PROPCE(IEL,IPT4)    = YGFM*TGF**4+YGBM*TGB**4
 !              PROPCE(IEL,IPT3)    = YGFM*TGF**3+YGBM*TGB**3

@@ -263,7 +263,7 @@ do iphas = 1, nphas
                        (xyzp0(ii,iphas),ii=1,3)
 enddo
 
-if (ippmod(iphpar).ge.2) write(nfecra,2030) diftl0
+if (ippmod(iphpar).ge.1) write(nfecra,2030) diftl0
 
 
 write(nfecra,9900)
@@ -835,22 +835,18 @@ write(nfecra,9900)
 
 ! --- Rayonnement thermique
 
-if (iirayo.eq.1) then
+if (iirayo.gt.0) then
   write(nfecra,2630)
-  do iphas = 1, nphas
-    write(nfecra,2640) iphas, irayon(iphas), iscalt(iphas),       &
-                       iscsth(iscalt(iphas))
-  enddo
+
+  write(nfecra,2640) irapha, iirayo, iscalt(irapha),       &
+                     iscsth(iscalt(irapha))
+
   write(nfecra,2650) isuird, nfreqr, ndirec,                      &
                      idiver, imodak, iimpar, iimlum
   write(nfecra,2660)
-  do iphas = 1, nphas
-    do ii = 1,nbrayp
-      if(irayvp(ii,iphas).eq.1) write(nfecra,2661)nbrvap(ii,iphas)
-    enddo
-    do ii = 1,nbrayf
-      if(irayvf(ii,iphas).eq.1) write(nfecra,2662)nbrvaf(ii,iphas)
-    enddo
+
+  do ii = 1,nbrayf
+    if(irayvf(ii).eq.1) write(nfecra,2662)nbrvaf(ii)
   enddo
 
   write(nfecra,9900)
@@ -865,7 +861,7 @@ endif
 '    -------------------------------                          ',/)
  2640 format(                                                           &
 ' --- Phase : ',I10                                            ,/,&
-'       IRAYON = ',4X,I10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
+'       IIRAYO = ',4X,I10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
 '       ICSALT = ',4X,I10,    ' (Num du sca thermique associe)',/,&
 '       ISCSTH = ',4X,I10,    ' (-1 : T(C) ; 1 : T(K) ; 2 : H)',/)
  2650 format(                                                           &
@@ -879,8 +875,6 @@ endif
 '       IIMLUM = ',4X,I10,    ' (0 1 ou 2: impr infos solveur)',/)
  2660 format(                                                           &
 ' --- Sorties graphiques :                                    '  )
- 2661 format(                                                           &
-'       NBRVAP = ',4X,A40                                        )
  2662 format(                                                           &
 '       NBRVAF = ',4X,A40                                        )
 
@@ -892,7 +886,7 @@ endif
 '    --------------------------'                               ,/)
  2640 format(                                                           &
 ' --- Phase: ',I10                                             ,/,&
-'       IRAYON = ',4X,I10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
+'       IIRAYO = ',4X,I10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
 '       ICSALT = ',4X,I10,    ' (Assoc. thermal scalar num.  )',/,&
 '       ISCSTH = ',4X,I10,    ' (-1: T(C); 1: T(K); 2: H     )',/)
  2650 format(                                                           &
@@ -906,8 +900,6 @@ endif
 '       IIMLUM = ',4X,I10,    ' (0 1 or 2: print solver info )',/)
  2660 format(                                                           &
 ' --- Graphical output:'                                         )
- 2661 format(                                                           &
-'       NBRVAP = ',4X,A40                                        )
  2662 format(                                                           &
 '       NBRVAF = ',4X,A40                                        )
 

@@ -155,6 +155,7 @@ include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -236,7 +237,7 @@ ipctem = ipproc(itemp)
 ipcfue = ipproc(iym(1))
 ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
-if ( iraypp.gt.0 ) then
+if ( iirayo.gt.0 ) then
   ipckab = ipproc(ickabs)
   ipt4 = ipproc(it4m)
   ipt3 = ipproc(it3m)
@@ -311,7 +312,7 @@ do iel = 1, ncel
 
 ! ---> Coefficients d'absorption des gaz frais et brules
 
-  if ( iraypp.gt.0 ) then
+  if ( iirayo.gt.0 ) then
      ckabgf = yfuegf(iel)*ckabsg(1) + yoxygf(iel)*ckabsg(2)       &
             + yprogf(iel)*ckabsg(3)
      ckabgb = yfuegb(iel)*ckabsg(1) + yoxygb(iel)*ckabsg(2)       &
@@ -405,7 +406,7 @@ do iel = 1, ncel
 
 ! ---> Grandeurs relatives au rayonnement
 
-  if ( iraypp.gt.0 ) then
+  if ( iirayo.gt.0 ) then
     propce(iel,ipckab) = ygfm*ckabgf + ygbm*ckabgb
     propce(iel,ipt4)   = ygfm*tgf**4 + ygbm*tgb**4
     propce(iel,ipt3)   = ygfm*tgf**3 + ygbm*tgb**3
@@ -479,7 +480,7 @@ endif
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si transport de H
 
-if ( iraypp.gt.0 ) then
+if ( iirayo.gt.0 ) then
   do igg = 1, ngazg
     ipbycg = ipprob(iym(igg))
     ipcycg = ipproc(iym(igg))
