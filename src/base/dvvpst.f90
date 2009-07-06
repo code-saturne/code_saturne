@@ -28,7 +28,7 @@
 subroutine dvvpst &
 !================
 
- ( idbia0 , idbra0 , nummai ,                                     &
+ ( idbia0 , idbra0 , nummai , numtyp ,                            &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , nvlsta , nvisbr ,                   &
@@ -57,6 +57,8 @@ subroutine dvvpst &
 ! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nummai           ! ec ! <-- ! numero du maillage post                        !
+! numtyp           ! ec ! <-- ! numero de type de post-traitement              !
+!                  !    !     ! (-1: volume, -2: bord, nummai par defaut)      !
 ! ndim             ! e  ! <-- ! dimension de l'espace                          !
 ! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
 ! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
@@ -178,7 +180,7 @@ include "radiat.h"
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nummai
+integer          nummai , numtyp
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfml   , nprfml
 integer          nnod   , lndfac , lndfbr , ncelbr
@@ -245,7 +247,7 @@ idebra = idbra0
 !     1.1. TRAITEMENT POUR LE MAILLAGE FLUIDE
 !===============================================================================
 
-if (nummai .eq. -1) then
+if (numtyp .eq. -1) then
 
 
 !       1.1.1 TRAITEMENT DES VARIABLES POST TRAITABLES
@@ -377,7 +379,7 @@ if (nummai .eq. -1) then
 !     1.2. TRAITEMENT POUR LE MAILLAGE DE BORD
 !===============================================================================
 
-else if  (nummai .eq. -2) then
+else if  (numtyp .eq. -2) then
 
 
 ! --    1.2.1 TRAITEMENT DE YPLUS AU BORD
