@@ -5,11 +5,13 @@
     include/base/cs_post.h
     include/base/cs_prototypes.h
     src/base/cs_post.c
+    src/base/dvvpst.f90
 
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a subroutine to control the behaviour of MPI I/O.
   modified routines:
     include/base/cs_io.h
+    src/apps/cs_solver.c
     src/base/cs_io.c
     src/base/cs_preprocessor_data.c
     src/base/cs_restart.c

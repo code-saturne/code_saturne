@@ -182,7 +182,7 @@ cs_run(void)
     cs_glob_pp_io = cs_io_initialize("preprocessor_output",
                                      "Face-based mesh definition, R0",
                                      CS_IO_MODE_READ,
-                                     0,
+                                     cs_glob_io_hints,
                                      CS_IO_ECHO_OPEN_CLOSE,
                                      cs_glob_mpi_comm);
 #else
