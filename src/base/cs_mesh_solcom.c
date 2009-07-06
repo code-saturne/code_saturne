@@ -413,7 +413,7 @@ cs_mesh_solcom_read(cs_mesh_t             *mesh,
 
     /* Transfer structure to post-processing */
 
-    cs_post_add_existing_mesh(-1, ext_mesh, true);
+    cs_post_add_existing_mesh(-1, ext_mesh, 0, true);
 
   }
   else if (mesh->vtx_coord == NULL) {

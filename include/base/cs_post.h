@@ -586,9 +586,17 @@ cs_post_add_mesh(int          mesh_id,
  * If the exportable mesh must still be shared, one must be careful to
  * maintain consistency between this mesh and the post-processing output.
  *
+ * The mesh in exportable dimension may be of a lower dimension than
+ * its parent mesh, if it has been projected. In this case, a
+ * dim_shift value of 1 indicates that parent cells are mapped to
+ * exportable faces, and faces to edges, while a dim_shift value of 2
+ * would indicate that parent cells are mapped to edges.
+ * This is important when variables values are exported.
+ *
  * parameters:
  *   mesh_id   <-- number of mesh to create (< 0 reserved, > 0 for user)
  *   exp_mesh  <-- mesh in exportable representation (i.e. fvm_nodal_t)
+ *   dim_shift <-- nonzero if exp_mesh has been projected
  *   transfer  <-- if true, ownership of exp_mesh is transferred to the
  *                 post-processing mesh
  *----------------------------------------------------------------------------*/
@@ -596,6 +604,7 @@ cs_post_add_mesh(int          mesh_id,
 void
 cs_post_add_existing_mesh(int           mesh_id,
                           fvm_nodal_t  *exp_mesh,
+                          int           dim_shift,
                           cs_bool_t     transfer);
 
 /*----------------------------------------------------------------------------

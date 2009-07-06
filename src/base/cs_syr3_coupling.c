@@ -1614,6 +1614,7 @@ void
 cs_syr3_coupling_post_init(int       coupling_id,
                            cs_int_t  writer_id)
 {
+  int  dim_shift = 0;
   cs_int_t  n_vertices = 0;
   cs_int_t  mesh_id = cs_post_get_free_mesh_id();
 
@@ -1651,8 +1652,12 @@ cs_syr3_coupling_post_init(int       coupling_id,
 
   /* Associate external mesh description with post processing subsystem */
 
+  if (syr_coupling->dim == 2)
+    dim_shift = 1;
+
   cs_post_add_existing_mesh(mesh_id,
                             syr_coupling->coupled_mesh,
+                            dim_shift,
                             false);
 
   cs_post_associate(mesh_id, writer_id);

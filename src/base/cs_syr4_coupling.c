@@ -1168,6 +1168,7 @@ cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
                            fvm_lnum_t  writer_id)
 {
   int type_id;
+  int dim_shift = 0;
 
   cs_syr4_coupling_t  *syr_coupling = cs_syr4_coupling_by_id(coupling_id);
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
@@ -1210,8 +1211,12 @@ cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
 
       /* Associate external mesh description with post processing subsystem */
 
+      if (syr_coupling->dim == 2)
+        dim_shift = 1;
+
       cs_post_add_existing_mesh(coupling_ent->post_mesh_id,
                                 coupling_ent->elts,
+                                dim_shift,
                                 false);
 
       cs_post_associate(coupling_ent->post_mesh_id, writer_id);

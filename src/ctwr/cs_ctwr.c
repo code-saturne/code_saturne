@@ -4217,6 +4217,7 @@ cs_ctwr_post_init(cs_int_t  ct_id,
 
   cs_post_add_existing_mesh(mesh_id,
                             ct->water_mesh,
+                            0,
                             CS_FALSE);
 
   cs_post_associate(mesh_id, writer_id);
