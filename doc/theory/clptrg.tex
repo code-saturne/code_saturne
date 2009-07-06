@@ -710,10 +710,7 @@ On calcule ensuite les vitesses de frottement qui sont stock\'ees dans
 frottement pour le mod\`ele \`a une \'echelle
 de vitesse (\var{IDEUCH}=0). Pour le mod\`ele \`a deux \'echelles
 (\var{IDEUCH}=1), le calcul (plus simple) de \var{UET} et de \var{UK} est fait directement
-dans \fort{clptur}. Le sous-programme utilisateur \fort{usruet} permet alors de
-donner la main \`a l'utilisateur qui souhaiterait  modifier les \'echelles de
-vitesses (prise en compte d'une paroi rugueuse, ou de variantes de
-la loi logarithmique par exemple). 
+dans \fort{clptur}.
 
 Dans le cas ou le mod\`ele \`a une \'echelle de vitesse est actif, on impose
 \var{UK=UET} afin de conserver la coh\'erence du codage dans la suite du

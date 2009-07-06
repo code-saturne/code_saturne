@@ -1,3 +1,16 @@
+* 06/07/2009 - David Monfort <david.monfort@edf.fr>
+  Remove nearly never used user subroutine for u* calculation.
+  removed routine:
+    users/base/usruet.f90
+  modified routine:
+    src/base/clptur.f90
+  modified documentation:
+    doc/theory/clptrg.tex
+    doc/theory/clptur.tex
+    doc/user/saturne1.tex
+  modified script:
+    src/base/Makefile.am
+
 * 03/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Several modifications of radiative transfer module.

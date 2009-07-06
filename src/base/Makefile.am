@@ -378,7 +378,6 @@ $(top_srcdir)/users/base/usnpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/usruet.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
 $(top_srcdir)/users/base/ussyrc.f90 \
@@ -413,7 +412,6 @@ $(top_srcdir)/users/base/usnpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/usruet.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
 $(top_srcdir)/users/base/ussyrc.f90 \

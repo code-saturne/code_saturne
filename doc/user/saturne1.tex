@@ -5231,24 +5231,6 @@ particularly sensible stage, a wrong use of {\em\texttt{usvist}} may
 seriously distort the results.}
 
 %==================================
-\subsection{Modification of the friction velocity: \textmd{\texttt{usruet}}}
-%==================================
-
-\noindent
-\textit{Subroutine called every time step for every wall face.}
-
-This subroutine is used to modify the calculation of the friction
-velocity $u_*$ (variable UET\index{UET}) for each phase. For more
-precisions concerning the friction velocity and the wall boundary
-conditions, the user may refer to the report \cite{bouckermattei00} and
-to the theoretical and computer documentation \cite{theory} of the
-subroutine \texttt{clptur}. To access to this document from a
-workstation, use the command \texttt{cs\_info --guide theory}.
-% or refer to \mbox{$_\text{\Large\~~\hspace{-0.2cm}}$\texttt{sc\_doc/saturne.html}}
-
-The subroutine allows in particular to access to the value of $y^+$ at
-the wall.
-
 %==================================
 \subsection{Modification of the variable $C$ of the dynamic LES model:
   \textmd{\texttt{ussmag}}}

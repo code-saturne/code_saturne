@@ -156,15 +156,13 @@ u^* \text{ solution de } \left\{\begin{array}{lll}
 \end{equation}
 
 
-{\bf Remark~:} Note that the user subroutine \fort{usruet} permits to modify 
-the value of the velocity scales. Hereafter, we provide three exemples 
+{\bf Remark~:} Hereafter, we provide three exemples 
 based on the two velocity scale model.
 \begin{itemize}
 \item In this way, one can implement a specific wall function~:
 $$\displaystyle\frac{u_{\tau,I'}}{u^*}=g(y^+)$$
 by simply imposing
-$\displaystyle{u^*}=u_{\tau,I'}/g(y^+)$ (the values of $u_{\tau,I'}$ and $y^+$
-are available in the arguments of \fort{usruet}).
+$\displaystyle{u^*}=u_{\tau,I'}/g(y^+)$.
 \item It is also possible to use a rough-wall wall function such as~:
 $$\displaystyle\frac{u_{\tau,I'}}{u^*}=\displaystyle\frac{1}{\kappa}\,ln(\frac{y}{\xi})+8,5$$
 where $\xi$ is the height of the roughness elements at the wall~: one just has to impose 
@@ -1099,9 +1097,7 @@ The friction velocities are then computed and stored in
  computes the friction velocity for the one velocity scale model 
 (\var{IDEUCH}=0). Fot the two velocity scale model (\var{IDEUCH}=1), 
 the (more simple) computation of \var{UET} and \var{UK} is performed 
-directly in  \fort{clptur}. The user can then modify the velocity scales 
-(to take into account a rough wall, or variants of the logarithmic law
-for instance) in the user subroutine  \fort{usruet}.
+directly in  \fort{clptur}.
 
 If one velocity scale model is activated, we impose \var{UK=UET} to 
 keep the coherence of the coding in the following of the subroutine. 
