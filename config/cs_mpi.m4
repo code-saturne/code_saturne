@@ -180,6 +180,62 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
     MPI_CPPFLAGS=""
     MPI_LDFLAGS=""
     MPI_LIBS=""
+  else
+    # Try to detect MPI variants as this may be useful for the run scripts to
+    # determine the correct mpi startup syntax (especially when multiple
+    # librairies are installed on the same machine).
+    CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+    MPI_TYPE=""
+    if test "x$MPI_TYPE" = "x"; then
+      AC_EGREP_CPP([mpich2],
+                   [
+                    #include <mpi.h>
+                    #ifdef MPICH2
+                    mpich2
+                    #endif
+                    ],
+		    [MPI_TYPE=MPICH2])
+    fi
+    if test "x$MPI_TYPE" = "x"; then
+      AC_EGREP_CPP([ompi],
+                   [
+                    #include <mpi.h>
+                    #ifdef OMPI_MAJOR_VERSION
+                    ompi
+                    #endif
+                    ],
+		    [MPI_TYPE=OpenMPI])
+    fi
+    if test "x$MPI_TYPE" = "x"; then
+      AC_EGREP_CPP([mpibull2],
+                   [
+                    #include <mpi.h>
+                    #ifdef MPIBULL2_NAME
+                    mpibull2
+                    #endif
+                    ],
+		    [MPI_TYPE=MPIBULL2])
+    fi
+    if test "x$MPI_TYPE" = "x"; then
+      AC_EGREP_CPP([lam_mpi],
+                   [
+                    #include <mpi.h>
+                    #ifdef LAM_MPI
+                    lam_mpi
+                    #endif
+                    ],
+		    [MPI_TYPE=LAM_MPI])
+    fi
+    if test "x$MPI_TYPE" = "x"; then
+      AC_EGREP_CPP([hp_mpi],
+                   [
+                    #include <mpi.h>
+                    #ifdef HP_MPI
+                    hp_mpi
+                    #endif
+                    ],
+		    [MPI_TYPE=HP_MPI])
+    fi
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -198,6 +254,7 @@ AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(MPI_BIN)
+AC_SUBST(MPI_TYPE)
 
 ])dnl
 

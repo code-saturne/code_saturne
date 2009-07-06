@@ -267,14 +267,14 @@ Option CS_LIB_ADD is more advanced, mainly for developers.
     Options --log and --logp may be specified together or separately
     through the ARG_CS_OUTPUT variable.
 
-  ECHOCOMM allows for echo of communications between the kernel,
-    and SYRTHES 3. This is only useful when debugging a coupled
-    calculation. To activate this options, assign a strictly positive
-    value to ECHOCOMM. For each message exchanged, the ECHOCOMM first
+  ECHO_SYR_COMM allows for echo of communications on the SYRTHES 3 side.
+    This is only useful when debugging a coupled calculation.
+    To activate this options, assign a strictly positive value to
+    ECHO_SYR_COMM. For each message exchanged, the ECHO_SYR_COMM first
     and last values will be printed (characters, integers, or doubles).
     By default, the string is kept empty.
     Reasonable activation value:
-      ECHOCOMM="10"
+      ECHO_SYR_COMM="10"
 
   ADAPTATION allows use of mesh adaptation with the HOMARD tool.
     If the variable is absent or empty, no adaptation occurs.

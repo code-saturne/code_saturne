@@ -75,6 +75,13 @@ class dirs:
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
 
+# Optional MPI library info
+#--------------------------
+
+class mpi_lib:
+    type = "@MPI_TYPE@"
+    bindir = "@MPI_BIN@"
+
 # Build tools, option, and libraries
 #-----------------------------------
 
@@ -117,6 +124,10 @@ def main(argv):
     print ""
     print "Auxiliary information:"
     print "  dirs.ecs_prefix = " + dirs.ecs_prefix
+    print ""
+    print "MPI library information:"
+    print "  mpi_lib.type = " + mpi_lib.type
+    print "  mpi_lib.bindir = " + mpi_lib.bindir
     print ""
     print "Compilers and associated options:"
     print "  cc = " + build.cc

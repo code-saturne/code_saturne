@@ -73,14 +73,14 @@ def process_cmd_line(argv):
         param = os.path.expandvars(param)
         param = os.path.abspath(param)
         if not os.path.isfile(param):
-            print "Error: cannot access to %s parameter file" % param
+            print >> sys.stderr, "Error: cannot access parameter file %s" % param
             sys.exit(1)
 
     src_dir = os.path.expanduser(options.src_dir)
     src_dir = os.path.expandvars(src_dir)
     src_dir = os.path.abspath(src_dir)
     if not os.path.isdir(src_dir):
-        print "Error: %s is not a directory" % src_dir
+        print  >> sys.stderr, "Error: %s is not a directory" % src_dir
         sys.exit(1)
 
     return options.nproc, param, src_dir
@@ -90,10 +90,10 @@ def process_cmd_line(argv):
 # Checking user files consistency
 #-------------------------------------------------------------------------------
 
-
-def checkConsistency(n_procs, param, src_dir):
+def check_consistency(param, src_dir, n_procs):
     """
-    Consistancy checks.
+    Return 0 if parameter file options and user subroutines are consistent,
+    or 1 if they are incompatible.
     """
 
     # List of the different available modules in Code_Saturne 
@@ -152,10 +152,10 @@ def checkConsistency(n_procs, param, src_dir):
     if isPresent(moduleFile['base']):
         for mod in modules:
             if moduleCheck[mod] and isPresent(moduleFile[mod]):
-                print errorMsg % {'f1':moduleFile[mod],
-                                  'f2':moduleFile['base'],
-                                  'mod':moduleName[mod]}
-                sys.exit(1)
+                print >> sys.stderr, errorMsg % {'f1':moduleFile[mod],
+                                                 'f2':moduleFile['base'],
+                                                 'mod':moduleName[mod]}
+                return 1
 
 
     # Test on the module used (standard module is not considered here)
@@ -165,7 +165,7 @@ def checkConsistency(n_procs, param, src_dir):
 
     for mod in modules[1:]:
         if isPresent(moduleFile[mod]):
-            print moduleMsg % {'mod':moduleName[mod]}
+            print >> sys.stdout, moduleMsg % {'mod':moduleName[mod]}
             moduleUse[mod] = True
 
 
@@ -175,13 +175,14 @@ def checkConsistency(n_procs, param, src_dir):
      parallel runs as of the current version.
     """
 
-    if n_procs > 1:
-        for mod in ['ctwr','lagr']:
-            if moduleUse[mod]:
-                print errorMsg % {'mod':moduleName[mod]}
-                sys.exit(1)
+    if n_procs != None:
+        if n_procs > 1:
+            for mod in ['ctwr','lagr']:
+                if moduleUse[mod]:
+                    print >> sys.stderr, errorMsg % {'mod':moduleName[mod]}
+                    return 1
 
-    return
+    return 0
 
 
 #-------------------------------------------------------------------------------
@@ -195,8 +196,8 @@ def main(argv):
 
     n_procs, param, src_dir = process_cmd_line(argv)
         
-    checkConsistency(n_procs, param, src_dir)
-    sys.exit(0)
+    ret_val = check_consistency(param, src_dir, n_procs)
+    sys.exit(ret_val)
 
 
 if __name__ == "__main__":

@@ -166,7 +166,6 @@ VALGRIND=
 #
 ARG_CS_VERIF=""
 ARG_CS_OUTPUT=""
-ECHOCOMM=""
 #
 # Adaptation using HOMARD
 ADAPTATION=
@@ -196,6 +195,7 @@ SYRTHES_ENV=syrthes.env
 #                             of a process is not determinable or if MPI can
 #                             not be used.
 COUPLING_MODE=MPI
+ECHO_SYR_COMM=""
 #
 #  Indicate which steps should be executed; if both the Preprocessor and the
 #  Kernel are executed, the "preprocessor_output" and eventual "domain_number_*"
@@ -409,8 +409,8 @@ fi
 # Communications
 #
 # To help debug coupling problems, make communication more verbose
-if [ ! -z "$ECHOCOMM" ] ; then
-  ECHOCOMMSYR="-echo-comm $ECHOCOMM"
+if [ ! -z "$ECHO_SYR_COMM" ] ; then
+  ECHOCOMMSYR="-echo-comm $ECHO_SYR_COMM"
 else
   ECHOCOMMSYR=""
 fi

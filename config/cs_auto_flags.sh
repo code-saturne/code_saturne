@@ -247,10 +247,12 @@ elif test "x$cs_gcc" = "xicc"; then
       ;;
   esac
 
+fi
+
 # Otherwise, are we using pgcc ?
 #-------------------------------
 
-else
+if test "x$cs_cc_compiler_known" != "xyes" ; then
 
   $CC -V 2>&1 | grep 'The Portland Group' > /dev/null
   if test "$?" = "0" ; then
@@ -273,60 +275,66 @@ else
 
 fi
 
+# Otherwise, are we using xlc ?
+#------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC -qversion 2>&1 | grep 'XL C' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is IBM XL C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC -qversion > $outfile 2>&1
+    cs_ac_cc_version=`grep 'XL C' $outfile`
+    cs_cc_compiler_known=yes
+    cs_linker_set=yes
+
+    # Default compiler flags
+    cflags_default="-q64"
+    cflags_default_opt="-O3"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_prf="-pg"
+    cflags_default_omp="-qsmp=omp"
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O3"
+    ldflags_default_dbg="-g"
+    ldflags_default_prf="-pg"
+
+    # Adjust options for IBM Blue Gene cross-compiler
+
+    grep 'Blue Gene' $outfile > /dev/null
+    if test "$?" = "0" ; then
+      # Default compiler flags
+      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
+      if test "$cs_ibm_bg_type" = "L" ; then
+        cppflags_default="-I/opt/ibmmath/essl/4.2/include -I/bgl/BlueLight/ppcfloor/bglsys/include"
+        cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg=""
+      elif test "$cs_ibm_bg_type" = "P" ; then
+        cppflags_default="-I/opt/ibmmath/essl/4.4/include -I/bgsys/drivers/ppcfloor/comm/include"
+        cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
+        cflags_default_opt="-O3"
+        cflags_default_hot="-O3 -qhot"
+        cflags_default_dbg=""
+      fi
+    fi
+
+  fi
+fi
+
 # Compiler still not identified
 #------------------------------
 
 if test "x$cs_cc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
-
-    linux* | none)
-
-      # IBM Blue Gene
-      #--------------
-
-      $CC -qversion 2>&1 | grep 'XL C' | grep 'Blue Gene' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is IBM XL C compiler for Blue Gene"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -qversion > $outfile 2>&1
-        cs_ac_cc_version=`grep 'XL C' $outfile`
-        cs_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
-          cppflags_default="-I/opt/ibmmath/essl/4.2/include -I/bgl/BlueLight/ppcfloor/bglsys/include"
-          cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
-          cflags_default_opt="-O3"
-          cflags_default_hot="-O3 -qhot"
-          cflags_default_dbg=""
-        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
-          cppflags_default="-I/opt/ibmmath/essl/4.4/include -I/bgsys/drivers/ppcfloor/comm/include"
-          cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
-          cflags_default_opt="-O3"
-          cflags_default_hot="-O3 -qhot"
-          cflags_default_dbg=""
-        else
-          cppflags_default=""
-          cflags_default=""
-          cflags_default_opt="-O3"
-          cflags_default_hot="-O3"
-          cflags_default_dbg="-g"
-        fi
-        cflags_default_prf="-pg"
-        cflags_default_omp="-qsmp=omp"
-
-        # Default  linker flags
-        ldflags_default=""
-        ldflags_default_opt="-O3"
-        ldflags_default_dbg="-g"
-        ldflags_default_prf="-pg"
-
-      fi
-      ;;
 
     osf*)
 
@@ -608,44 +616,56 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     esac
 
   fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using xlf ?
+  #-------------------
+
+  $FC -qversion 2>&1 | grep 'XL Fortran' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is IBM XL Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC -qversion > $outfile 2>&1
+    cs_ac_fc_version=`grep 'XL Fortran' $outfile`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-q64 -qextname -qsuffix=cpp=f90"
+    fcflags_default_opt="-O3"
+    fcflags_default_prf="-pg"
+    fcflags_default_omp="-qsmp=omp"
+
+    # Adjust options for IBM Blue Gene cross-compiler
+
+    grep 'Blue Gene' $outfile > /dev/null
+
+    if test "$?" = "0" ; then
+
+      # Default compiler flags
+      cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
+      if test "$cs_ibm_bg_type" = "L" ; then
+        fcflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsuffix=cpp=f90"
+        fcflags_default_dbg=""
+        fcflags_default_opt="-O3"
+        fcflags_default_hot="-O3 -qhot"
+      elif test "$cs_ibm_bg_type" = "P" ; then
+        fcflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsuffix=cpp=f90"
+        fcflags_default_dbg=""
+        fcflags_default_opt="-O3"
+        fcflags_default_hot="-O3 -qhot"
+      fi
+    fi
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
-
-    linux* | none)
-
-      # IBM Blue Gene
-      #--------------
-
-      $FC -qversion 2>&1 | grep 'XL Fortran' | grep 'Blue Gene' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$FC' is IBM XL Fortran compiler for Blue Gene"
-
-        # Version strings for logging purposes and known compiler flag
-        $FC -qversion > $outfile 2>&1
-        cs_ac_fc_version=`grep 'XL Fortran' $outfile`
-        cs_fc_compiler_known=yes
-
-        # Default compiler flags
-        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
-          fcflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440 -qextname -qsuffix=cpp=f90"
-          fcflags_default_dbg=""
-          fcflags_default_opt="-O3"
-          fcflags_default_hot="-O3 -qhot"
-        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
-          fcflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsuffix=cpp=f90"
-          fcflags_default_dbg=""
-          fcflags_default_opt="-O3"
-          fcflags_default_hot="-O3 -qhot"
-        else
-          fcflags_default="-qsuffix=cpp=f90"
-          fcflags_default_opt="-O3"
-        fi
-        fcflags_default_prf="-pg"
-        fcflags_default_omp="-qsmp=omp"
-
-      fi
-      ;;
 
     SUPER-UX* | superux*)
 
@@ -795,7 +815,7 @@ fi
 # Additional libraries and options for specific systems
 #------------------------------------------------------
 
-if test -d /bgl/BlueLight/ppcfloor/bglsys ; then #  For Blue Gene/L
+if test "$cs_ibm_bg_type" = "L" ; then #  For Blue Gene/L
 
   bg_sys_ldflags="-L/bgl/BlueLight/ppcfloor/bglsys/lib"
   bg_sys_libs="-lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
@@ -805,7 +825,7 @@ if test -d /bgl/BlueLight/ppcfloor/bglsys ; then #  For Blue Gene/L
   libs_default="-lmass -lmassv -lesslbg ${bg_trace} ${bg_sys_libs}"
   cs_disable_shared=yes
 
-elif test -d /bgsys/drivers/ppcfloor/comm/include ; then #  For Blue Gene/P
+elif test "$cs_ibm_bg_type" = "P" ; then #  For Blue Gene/P
 
   bg_sys_ldflags="-L/bgsys/drivers/ppcfloor/comm/lib -L/bgsys/drivers/ppcfloor/runtime/SPI"
   bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -lSPI.cna -lrt -lpthread"
