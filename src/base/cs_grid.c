@@ -899,7 +899,7 @@ _coarsen(const cs_grid_t   *f,
   /* Prolong mesh coarsening indicator to halo cells and build
      coarse mesh halos if necessary */
 
-  if (f->n_cells_ext > f->n_cells) {
+  if (f->halo != NULL) {
     _coarsen_halo(f, c);
     c->n_cells_ext = c->n_cells + c->halo->n_elts[0];
   }
