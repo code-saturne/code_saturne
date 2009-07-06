@@ -211,6 +211,33 @@ void CS_PROCF (pstedg, PSTEDG)
 );
 
 /*----------------------------------------------------------------------------
+ * Assign a category to a post-processing mesh.
+ *
+ * By default, each mesh is assigned a category id identical to its id.
+ * The automatic variables output associated with the main volume and
+ * boundary meshes will also be applied to meshes of the same categories
+ * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
+ * defined or not), so setting a user meshe's category to one of these
+ * values will automatically provide the same automatic variable output to
+ * the user mesh.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTCAT (NUMMAI, NUMWRI)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the alias to create
+ * INTEGER          NUMCAT      : <-- : Number of the assigned category
+ *                                      (-1: as volume, -2: as boundary)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstcat, PSTCAT)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numcat
+);
+
+/*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
  *
  * Fortran interface:

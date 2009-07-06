@@ -130,6 +130,12 @@ typedef struct {
                                             or boundary faces (ent_flag[2])
                                             on one processor at least */
 
+  int                     cat_id;        /* Optional category id for
+                                            as regards variables output
+                                            (-1 as base volume mesh, -2 as
+                                            base boundary mesh, identical
+                                            to id by default) */
+
   int                     alias;         /* If > -1, index in array of
                                             post-processing meshes of the
                                             first mesh sharing the same
@@ -367,6 +373,7 @@ _cs_post_add_mesh(int  mesh_id)
   post_mesh = _cs_post_meshes + _cs_post_n_meshes - 1;
 
   post_mesh->id = mesh_id;
+  post_mesh->cat_id = mesh_id;
   post_mesh->alias = -1;
 
   post_mesh->n_writers = 0;
@@ -1142,6 +1149,36 @@ void CS_PROCF (pstedg, PSTEDG)
 }
 
 /*----------------------------------------------------------------------------
+ * Assign a category to a post-processing mesh.
+ *
+ * By default, each mesh is assigned a category id identical to its id.
+ * The automatic variables output associated with the main volume and
+ * boundary meshes will also be applied to meshes of the same categories
+ * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
+ * defined or not), so setting a user meshe's category to one of these
+ * values will automatically provide the same automatic variable output to
+ * the user mesh.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PSTCAT (NUMMAI, NUMWRI)
+ * *****************
+ *
+ * INTEGER          NUMMAI      : <-- : Number of the alias to create
+ * INTEGER          NUMCAT      : <-- : Number of the assigned category
+ *                                      (-1: as volume, -2: as boundary)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstcat, PSTCAT)
+(
+ const cs_int_t  *nummai,
+ const cs_int_t  *numcat
+)
+{
+  cs_post_set_mesh_category(*nummai, *numcat);
+}
+
+/*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
  *
  * Fortran interface:
@@ -1394,7 +1431,7 @@ void CS_PROCF (pstvar, PSTVAR)
   cs_int_t   itypps[3];
   cs_int_t   ind_cel, ind_fac, dec_num_fbr;
   cs_int_t   n_elts, n_elts_max;
-  cs_int_t   nummai, imodif;
+  cs_int_t   nummai, numtyp, imodif;
 
   cs_bool_t  active;
 
@@ -1456,6 +1493,7 @@ void CS_PROCF (pstvar, PSTVAR)
       }
 
       nummai = post_mesh->id;
+      numtyp = post_mesh->cat_id;
 
       /* Get corresponding entity lists */
 
@@ -1637,6 +1675,7 @@ void CS_PROCF (pstvar, PSTVAR)
       }
 
       nummai = post_mesh->id;
+      numtyp = post_mesh->cat_id;
 
       /* Get corresponding element lists */
 
@@ -1732,8 +1771,8 @@ void CS_PROCF (pstvar, PSTVAR)
 
       /* Standard post-processing */
 
-      if (nummai < 0)
-        CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai,
+      if (numtyp < 0)
+        CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai, &numtyp,
                                   ndim, ncelet, ncel, nfac, nfabor, nfml, nprfml,
                                   nnod, lndfac, lndfbr, ncelbr,
                                   nvar, nscal, nphas, nvlsta, nvisbr,
@@ -2133,6 +2172,41 @@ cs_post_add_existing_mesh(int           mesh_id,
         post_mesh->ent_flag[i] = 0;
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Assign a category to a post-processing mesh.
+ *
+ * By default, each mesh is assigned a category id identical to its id.
+ * The automatic variables output associated with the main volume and
+ * boundary meshes will also be applied to meshes of the same categories
+ * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
+ * defined or not), so setting a user meshe's category to one of these
+ * values will automatically provide the same automatic variable output to
+ * the user mesh.
+ *
+ * parameters:
+ *   mesh_id     <-- id of associated mesh
+ *   category_id <-- id of mesh category (-1: as volume, -2: as boundary)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_set_mesh_category(int  mesh_id,
+                          int  category_id)
+{
+  /* local variables */
+
+  int _mesh_id;
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Get base structure (return if we do not own the mesh) */
+
+  _mesh_id = _cs_post_mesh_id(mesh_id);
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  /* Set category */
+
+  post_mesh->cat_id = category_id;
 }
 
 /*----------------------------------------------------------------------------
