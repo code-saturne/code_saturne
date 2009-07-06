@@ -421,8 +421,8 @@ do ifac = 1, nfabor
     rcodcz = rcodcl(ifac,iwiph,1)
 
 !     Si on n'est pas en ALE, on force la vitesse de deplacement
-!       de la face a etre tangentielle (et on met a jour RCODCL
-!       pour un passage eventuel dans usruet)
+!       de la face a etre tangentielle (et on met a jour rcodcl
+!       pour une utilisation eventuelle)
     if (iale.eq.0) then
       rcodsn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
       rcodcx = rcodcx -rcodsn*rnx
@@ -591,24 +591,6 @@ do ifac = 1, nfabor
       uk = cmu025*sqrt(ek)
 
     endif
-
-    call usruet                                                   &
-    !==========
- ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  , ifac   , iel    , &
-   uk     , utau   , yplus  ,                                     &
-   uet    ,                                                       &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , icodcl ,                   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
-
 
     if(ideuch(iphas).eq.0) then
       uk = uet

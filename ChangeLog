@@ -1,3 +1,8 @@
+* 06/07/2009 - David Monfort <david.monfort@edf.fr>
+  Remove call to the removed usruet subroutine.
+  modified routine:
+    src/base/clptrg.f90
+
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Code and comment cleaning.
   modified routines:
