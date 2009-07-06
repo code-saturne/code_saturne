@@ -3,6 +3,7 @@
   post-processing.
   modified routines:
     include/base/cs_post.h
+    include/base/cs_prototypes.h
     src/base/cs_post.c
 
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>

@@ -208,6 +208,8 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
  const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
+ const cs_int_t  *numtyp,    /* <-- number or post-processing type
+                              *     (-1 as volume, -2 as boundary, or nummai) */
  const cs_int_t  *ndim,      /* <-- spatial dimension */
  const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
  const cs_int_t  *ncel,      /* <-- number of cells */
