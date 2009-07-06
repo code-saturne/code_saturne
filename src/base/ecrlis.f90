@@ -146,28 +146,26 @@ do ipp = 2, nvppmx
     else
       ixmsdt = idebra
       ifinra = ixmsdt + ncel
-      CALL RASIZE ('ECRLIS', IFINRA)
+      call rasize ('ecrlis', ifinra)
       !==========
     endif
     if(idivdt.gt.0) then
       do iel = 1, ncel
-        ra(ixmsdt+iel-1) = ra(ira+iel-1)/                         &
-             max(ra(idivdt+iel-1),epzero)
+        ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(ra(idivdt+iel-1),epzero)
       enddo
     elseif(idivdt.lt.0) then
       do iel = 1, ncel
-        ra(ixmsdt+iel-1) = ra(ira+iel-1)/                         &
-             max(dtcmom(-idivdt),epzero)
+        ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(dtcmom(-idivdt),epzero)
       enddo
-!         ELSE
-!           RA(IXMSDT+IEL-1) = RA(IRA+IEL-1)
-!           inutile car on a pose IXMSDT = IRA
+!   else
+!     ra(ixmsdt+iel-1) = ra(ira+iel-1)
+!     inutile car on a pose ixmsdt = ira
     endif
 
     do icel = 1, ncel
-      if(ra(ixmsdt+icel-1).lt.varmin(ipp))                        &
+      if(ra(ixmsdt+icel-1).lt.varmin(ipp)) &
          varmin(ipp) = ra(ixmsdt+icel-1)
-      if(ra(ixmsdt+icel-1).gt.varmax(ipp))                        &
+      if(ra(ixmsdt+icel-1).gt.varmax(ipp)) &
          varmax(ipp) = ra(ixmsdt+icel-1)
     enddo
     if (irangp.ge.0) then
@@ -286,37 +284,37 @@ write(nfecra,1010)
 do ipp = 2, nvppmx
   if(ilisvr(ipp).eq.1.and.itrsvr(ipp).ge.1) then
 
-    CHAINC = 'c'
-    CHAIN = ' '
+    chainc = 'c'
+    chain = ' '
     ic = 4
     chain = nomvar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) rnsmbr(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+13
-    CHAIN = ' '
+    chain = ' '
     write(chain,4000) nbivar(ipp)
     chainc(ic:ic+7) = chain(1:7)
     ic=ic+9
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) resvar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) dervar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
 
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
+    write(nfecra,'(A)') chainc(1:ic)
 
   endif
 enddo
 
 write(nfecra,1010)
-WRITE(NFECRA,*) ' '
-WRITE(NFECRA,*) ' '
+write(nfecra,*) ' '
+write(nfecra,*) ' '
 
 
 !===============================================================================
@@ -332,17 +330,17 @@ write(nfecra,1110)
 do ipp = 2, nvppmx
   if(ilisvr(ipp).eq.1) then
 
-    CHAINC = 'v'
-    CHAIN = ' '
+    chainc = 'v'
+    chain = ' '
     ic = 4
     chain = nomvar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) varmin(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) varmax(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+16
@@ -366,29 +364,29 @@ do ipp = 2, nvppmx
           ipp.eq.ipprtp(iwma)) ipuvw = 1
     endif
     if(ipuvw.eq.1) then
-      CHAIN = '     --         --'
+      chain = '     --         --'
       chainc(ic:ic+18) = chain(1:18)
       ic = ic+18
     else
-      CHAIN = ' '
+      chain = ' '
       write(chain,4000) iclpmn(ipp)
       chainc(ic:ic+7) = chain(1:7)
       ic=ic+11
-      CHAIN = ' '
+      chain = ' '
       write(chain,4000) iclpmx(ipp)
       chainc(ic:ic+7) = chain(1:7)
       ic=ic+7
     endif
 
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
+    write(nfecra,'(A)') chain(1:ic)
 !MO          ICLPMN(IPP) = 0
 !MO          ICLPMX(IPP) = 0
   endif
 enddo
 
 write(nfecra,1110)
-WRITE(NFECRA,*) ' '
-WRITE(NFECRA,*) ' '
+write(nfecra,*) ' '
+write(nfecra,*) ' '
 
 
 
@@ -425,39 +423,39 @@ do ipp = 2, nvppmx
     endif
   enddo
   if(ilisvr(ipp).eq.1.and.itrsvr(ipp).gt.0.and.ipuvw.eq.0) then
-    CHAINC = 'a'
-    CHAIN = ' '
+    chainc = 'a'
+    chain = ' '
     ic = 4
     chain = nomvar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) varmna(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
-    CHAIN = ' '
+    chain = ' '
     write(chain,3000) varmxa(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+16
 
-    CHAIN = ' '
+    chain = ' '
     write(chain,4000) iclpmn(ipp)
     chainc(ic:ic+7) = chain(1:7)
     ic=ic+11
-    CHAIN = ' '
+    chain = ' '
     write(chain,4000) iclpmx(ipp)
     chainc(ic:ic+7) = chain(1:7)
     ic=ic+7
 
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
+    write(nfecra,'(A)') chainc(1:ic)
     iclpmn(ipp) = 0
     iclpmx(ipp) = 0
   endif
 enddo
 
 write(nfecra,1160)
-WRITE(NFECRA,*) ' '
-WRITE(NFECRA,*) ' '
+write(nfecra,*) ' '
+write(nfecra,*) ' '
 
 
 !===============================================================================
@@ -471,71 +469,71 @@ if (idtvar.ge.0) then
   write(nfecra,1211)
   write(nfecra,1210)
   do ii = 1, 6
-    CHAINC = ' '
-    IF(II.EQ.1) CHAINC = 'Courant min'
-    IF(II.EQ.2) CHAINC = 'Courant max'
-    IF(II.EQ.3) CHAINC = 'Fourier min'
-    IF(II.EQ.4) CHAINC = 'Fourier max'
-    IF(II.EQ.5) CHAINC = 'Cou_Fou min'
-    IF(II.EQ.6) CHAINC = 'Cou_Fou max'
+    chainc = ' '
+    if(ii.eq.1) chainc = 'Courant min'
+    if(ii.eq.2) chainc = 'Courant max'
+    if(ii.eq.3) chainc = 'Fourier min'
+    if(ii.eq.4) chainc = 'Fourier max'
+    if(ii.eq.5) chainc = 'Cou_Fou min'
+    if(ii.eq.6) chainc = 'Cou_Fou max'
 !    Compressible
     if(ippmod(icompf).ge.0) then
-      IF(II.EQ.5) CHAINC = 'CFL/Mas min'
-      IF(II.EQ.6) CHAINC = 'CFL/Mas max'
+      if(ii.eq.5) chainc = 'CFL/Mas min'
+      if(ii.eq.6) chainc = 'CFL/Mas max'
     endif
 
     ic = 13
     do jj = 1, 4
-      CHAIN = ' '
+      chain = ' '
       write(chain,3000) ptploc(ii,jj)
       chainc(ic:ic+13) = chain(1:13)
       ic = ic+13
     enddo
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
+    write(nfecra,'(A)') chainc(1:ic)
   enddo
   write(nfecra,1210)
 
   if(idtvar.gt.0) then
     do ii = 7, 8
-      CHAINC = ' '
-      IF(II.EQ.7) CHAINC = 'Dt min'
-      IF(II.EQ.8) CHAINC = 'Dt max'
+      chainc = ' '
+      if(ii.eq.7) chainc = 'Dt min'
+      if(ii.eq.8) chainc = 'Dt max'
       ic = 13
       do jj = 1, 4
-        CHAIN = ' '
+        chain = ' '
         write(chain,3000) ptploc(ii,jj)
         chainc(ic:ic+13) = chain(1:13)
         ic = ic+13
       enddo
-      WRITE(NFECRA,'(A)') CHAINC(1:IC)
+      write(nfecra,'(A)') chainc(1:ic)
     enddo
     write(nfecra,1210)
   endif
 
   if (iptlro.eq.1) then
-    CHAINC = ' '
-    CHAINC = 'Dt/Dtrho max'
+    chainc = ' '
+    chainc = 'Dt/Dtrho max'
     ic = 13
     do jj = 1, 4
-      CHAIN = ' '
+      chain = ' '
       write(chain,3000) rpdtro(jj)
       chainc(ic:ic+13) = chain(1:13)
       ic = ic+13
     enddo
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
-    CHAINC = ' '
-    CHAINC = 'Clips a Dtrho'
+    write(nfecra,'(A)') chainc(1:ic)
+    chainc = ' '
+    chainc = 'Clips a Dtrho'
     ic = 57
-    CHAIN = ' '
+    chain = ' '
     write(chain,4000) nclptr
     chainc(ic:ic+7) = chain(1:7)
     ic = ic+7
-    WRITE(NFECRA,'(A)') CHAINC(1:IC)
+    write(nfecra,'(A)') chainc(1:ic)
     write(nfecra,1210)
   endif
 
-  WRITE(NFECRA,*) ' '
-  WRITE(NFECRA,*) ' '
+  write(nfecra,*) ' '
+  write(nfecra,*) ' '
 
 endif
 
@@ -543,39 +541,39 @@ endif
 ! 3.
 !===============================================================================
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 FORMAT (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
+ 1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
           3X,'   -------------------------------')
- 1011 FORMAT ('   Variable    Norm 2nd mb.',                            &
+ 1011 format ('   Variable    Norm 2nd mb.',                      &
         '  Nbiter  Residu norme        derive')
- 1010 FORMAT ('---------------------------',                            &
+ 1010 format ('---------------------------',                      &
         '------------------------------------')
 
 
- 1100 FORMAT (/,3X,'** INFORMATIONS SUR LES VARIABLES',/,         &
+ 1100 format (/,3X,'** INFORMATIONS SUR LES VARIABLES',/,         &
           3X,'   ------------------------------')
- 1111 FORMAT ('   Variable      Valeur min    Valeur max',              &
+ 1111 format ('   Variable      Valeur min    Valeur max',        &
         '   Clip min   Clip max')
- 1110 FORMAT ('-----------------------------------------',              &
+ 1110 format ('-----------------------------------------',        &
         '----------------------')
 
- 1150 FORMAT (/,3X,'** INFORMATIONS SUR LES CLIPPINGS',/,         &
+ 1150 format (/,3X,'** INFORMATIONS SUR LES CLIPPINGS',/,         &
           3X,'   ------------------------------')
- 1161 FORMAT ('   Variable    Min ss clips  Max ss clips',              &
+ 1161 format ('   Variable    Min ss clips  Max ss clips',        &
         '   Clip min   Clip max')
- 1160 FORMAT ('-----------------------------------------',              &
+ 1160 format ('-----------------------------------------',        &
         '----------------------')
 
 
- 1200 FORMAT (/,3X,'** INFORMATIONS SUR LE PAS DE TEMPS',/,       &
+ 1200 format (/,3X,'** INFORMATIONS SUR LE PAS DE TEMPS',/,       &
           3X,'   --------------------------------')
- 1210 FORMAT ('---------------------------',                            &
+ 1210 format ('---------------------------',                      &
         '------------------------------------')
- 1211 FORMAT ('Critere      Valeur     en         xc',                  &
+ 1211 format ('Critere      Valeur     en         xc',            &
         '           yc           zc')
 
  3000 format (e12.5)
@@ -583,34 +581,34 @@ endif
 
 #else
 
- 1000 FORMAT (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
+ 1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
           3X,'   --------------------------')
- 1011 FORMAT ('   Variable    Rhs norm    ',                            &
+ 1011 format ('   Variable    Rhs norm    ',                      &
         '  N_iter  Norm. residual      derive')
- 1010 FORMAT ('---------------------------',                            &
+ 1010 format ('---------------------------',                      &
         '------------------------------------')
 
 
- 1100 FORMAT (/,3X,'** INFORMATION ON VARIABLES',/,               &
+ 1100 format (/,3X,'** INFORMATION ON VARIABLES',/,               &
           3X,'   ------------------------')
- 1111 FORMAT ('   Variable      Min. value    Max. value',              &
+ 1111 format ('   Variable      Min. value    Max. value',        &
         '   Min clip   Max clip')
- 1110 FORMAT ('-----------------------------------------',              &
+ 1110 format ('-----------------------------------------',        &
         '----------------------')
 
- 1150 FORMAT (/,3X,'** INFORMATION ON CLIPPINGS',/,               &
+ 1150 format (/,3X,'** INFORMATION ON CLIPPINGS',/,               &
           3X,'   ------------------------')
- 1161 FORMAT ('   Variable    Min wo clips  Max wo clips',              &
+ 1161 format ('   Variable    Min wo clips  Max wo clips',        &
         '   Min clip   Max clip')
- 1160 FORMAT ('-----------------------------------------',              &
+ 1160 format ('-----------------------------------------',        &
         '----------------------')
 
 
- 1200 FORMAT (/,3X,'** INFORMATION ON THE TIME STEP',/,           &
+ 1200 format (/,3X,'** INFORMATION ON THE TIME STEP',/,           &
          3X,'   -----------------------------')
- 1210 FORMAT ('---------------------------',                            &
+ 1210 format ('---------------------------',                      &
         '------------------------------------')
- 1211 FORMAT ('Criterion    Value      at         xc',                  &
+ 1211 format ('Criterion    Value      at         xc',            &
         '           yc           zc')
 
  3000 format (e12.5)

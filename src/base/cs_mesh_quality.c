@@ -105,10 +105,10 @@ BEGIN_C_DECLS
  * Compute the minimum and the maximum of a vector (locally).
  *
  * parameters:
- *   n_vals    --> local number of elements
- *   var       --> pointer to vector
- *   min       <-- minimum
- *   max       <-- maximum
+ *   n_vals    <-- local number of elements
+ *   var       <-- pointer to vector
+ *   min       --> minimum
+ *   max       --> maximum
  *----------------------------------------------------------------------------*/
 
 static void
@@ -133,9 +133,9 @@ _compute_local_minmax(cs_int_t         n_vals,
  * Display the distribution of values of a real vector.
  *
  * parameters:
- *   n_steps --> number of histogram steps
- *   var_min --> minimum variable value
- *   var_max --> maximum variable value
+ *   n_steps <-- number of histogram steps
+ *   var_min <-- minimum variable value
+ *   var_max <-- maximum variable value
  *   count   <-> count for each histogram slice (size: n_steps)
  *               local values in, global values out
  *----------------------------------------------------------------------------*/
@@ -202,8 +202,8 @@ _display_histograms(int         n_steps,
  * boundary faces.
  *
  * parameters:
- *   n_vals     --> number of values
- *   var        --> pointer to vector (size: n_vals)
+ *   n_vals     <-- number of values
+ *   var        <-- pointer to vector (size: n_vals)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -274,8 +274,8 @@ _histogram(cs_int_t         n_vals,
  * Display the distribution of values of a real vector on interior faces.
  *
  * parameters:
- *   mesh --> pointer to mesh structure
- *   var  --> pointer to vector (size: mesh->n_i_faces)
+ *   mesh <-- pointer to mesh structure
+ *   var  <-- pointer to vector (size: mesh->n_i_faces)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -350,8 +350,8 @@ _int_face_histogram(const cs_mesh_t  *mesh,
  * for internal faces.
  *
  * parameters:
- *   mesh             --> pointer to mesh structure.
- *   mesh_quantities  --> pointer to mesh quantities structures.
+ *   mesh             <-- pointer to mesh structure.
+ *   mesh_quantities  <-- pointer to mesh quantities structures.
  *   weighting        <-> array for weigthing coefficient.
  *   offsetting       <-> array for offsetting coefficient.
  *----------------------------------------------------------------------------*/
@@ -446,8 +446,8 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
  * adjacent cells. Evaluates a level of non-orthogonality.
  *
  * parameters:
- *   mesh             --> pointer to mesh structure.
- *   mesh_quantities  --> pointer to mesh quantities structures.
+ *   mesh             <-- pointer to mesh structure.
+ *   mesh_quantities  <-- pointer to mesh quantities structures.
  *   i_face_ortho     <-> array for internal faces.
  *   b_face_ortho     <-> array for border faces.
  *----------------------------------------------------------------------------*/
@@ -557,12 +557,12 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
  * Evaluate face warping angle.
  *
  * parameters:
- *   idx_start       --> first vertex index
- *   idx_end         --> last vertex index
- *   face_vertex_num --> face -> vertices connectivity
- *   face_normal     --> face normal
- *   vertex_coords   --> vertices coordinates
- *   face_warping    <-- face warping angle
+ *   idx_start       <-- first vertex index
+ *   idx_end         <-- last vertex index
+ *   face_vertex_num <-- face -> vertices connectivity
+ *   face_normal     <-- face normal
+ *   vertex_coords   <-- vertices coordinates
+ *   face_warping    --> face warping angle
  *----------------------------------------------------------------------------*/
 
 static void
@@ -626,11 +626,11 @@ _get_face_warping(cs_int_t         idx_start,
  * of a cell's faces.
  *
  * parameters:
- *   mesh            --> pointer to mesh structure
- *   default_value   --> default value for initialization
- *   i_face_val      --> interior face values
- *   b_face_val      --> boundary face values
- *   cell_val         <-- cell values
+ *   mesh            <-- pointer to mesh structure
+ *   default_value   <-- default value for initialization
+ *   i_face_val      <-- interior face values
+ *   b_face_val      <-- boundary face values
+ *   cell_val        --> cell values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -682,11 +682,11 @@ _cell_from_max_face(const cs_mesh_t      *mesh,
  * of a vertices's connected faces.
  *
  * parameters:
- *   mesh            --> pointer to mesh structure
- *   default_value   --> default value for initialization
- *   i_face_val      --> interior face values
- *   b_face_val      --> boundary face values
- *   vtx_val         <-- vertex values
+ *   mesh            <-- pointer to mesh structure
+ *   default_value   <-- default value for initialization
+ *   i_face_val      <-- interior face values
+ *   b_face_val      <-- boundary face values
+ *   vtx_val         --> vertex values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -749,11 +749,11 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
  * Evaluate face warping angle for internal and border faces..
  *
  * parameters:
- *   mesh             --> pointer to a cs_mesh_t structure
- *   i_face_normal    --> internal face normal
- *   b_face_normal    --> border face normal
- *   i_face_warping   <-- face warping angle for internal faces
- *   b_face_warping   <-- face warping angle for border faces
+ *   mesh             <-- pointer to a cs_mesh_t structure
+ *   i_face_normal    <-- internal face normal
+ *   b_face_normal    <-- border face normal
+ *   i_face_warping   --> face warping angle for internal faces
+ *   b_face_warping   --> face warping angle for border faces
  *
  * Returns:
  *----------------------------------------------------------------------------*/
@@ -828,8 +828,8 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
  * Compute mesh quality indicators
  *
  * parameters:
- *   mesh             --> pointer to mesh structure.
- *   mesh_quantities  --> pointer to mesh quantities structure.
+ *   mesh             <-- pointer to mesh structure.
+ *   mesh_quantities  <-- pointer to mesh quantities structure.
  *----------------------------------------------------------------------------*/
 
 void

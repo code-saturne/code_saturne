@@ -66,23 +66,23 @@ BEGIN_C_DECLS
 
 void CS_PROCF(clmlga, CLMLGA)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname,     /* --> variable name length */
- const cs_int_t   *ncelet,    /* --> Number of cells, halo included */
- const cs_int_t   *ncel,      /* --> Number of local cells */
- const cs_int_t   *nfac,      /* --> Number of internal faces */
- const cs_int_t   *isym,      /* --> Symmetry indicator:
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname,     /* <-- variable name length */
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of internal faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  cs_int_t         *iagmax,    /* <-> Maximum agglomeration count */
- const cs_int_t   *nagmax,    /* --> Agglomeration count limit */
- const cs_int_t   *ncpost,    /* --> If > 0, postprocess coarsening, using
+ const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
+ const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
- const cs_int_t   *iwarnp,    /* --> Verbosity level */
- const cs_int_t   *ngrmax,    /* --> Maximum number of grid levels */
- const cs_int_t   *ncegrm,    /* --> Maximum local number of cells on
+ const cs_int_t   *iwarnp,    /* <-- Verbosity level */
+ const cs_int_t   *ngrmax,    /* <-- Maximum number of grid levels */
+ const cs_int_t   *ncegrm,    /* <-- Maximum local number of cells on
                                      coarsest grid */
- const cs_real_t  *dam,       /* --> Matrix diagonal */
- const cs_real_t  *xam        /* --> Matrix extra-diagonal terms */
+ const cs_real_t  *dam,       /* <-- Matrix diagonal */
+ const cs_real_t  *xam        /* <-- Matrix extra-diagonal terms */
 );
 
 /*----------------------------------------------------------------------------
@@ -92,8 +92,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
 void CS_PROCF(dsmlga, DSMLGA)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname      /* --> variable name length */
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname      /* <-- variable name length */
 );
 
 /*----------------------------------------------------------------------------
@@ -102,37 +102,37 @@ void CS_PROCF(dsmlga, DSMLGA)
 
 void CS_PROCF(resmgr, RESMGR)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname,     /* --> variable name length */
- const cs_int_t   *ncelet,    /* --> Number of cells, halo included */
- const cs_int_t   *ncel,      /* --> Number of local cells */
- const cs_int_t   *nfac,      /* --> Number of faces */
- const cs_int_t   *isym,      /* --> Symmetry indicator:
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname,     /* <-- variable name length */
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- const cs_int_t   *iresds,    /* --> Descent smoother type:
+ const cs_int_t   *iresds,    /* <-- Descent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *iresas,    /* --> Ascent smoother type:
+ const cs_int_t   *iresas,    /* <-- Ascent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *ireslp,    /* --> Coarse Resolution type:
+ const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *ipol,      /* --> Preconditioning polynomial degree
+ const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
                                      (0: diagonal) */
- const cs_int_t   *ncymxp,    /* --> Max number of cycles */
- const cs_int_t   *nitmds,    /* --> Max number of iterations for descent */
- const cs_int_t   *nitmas,    /* --> Max number of iterations for ascent */
- const cs_int_t   *nitmap,    /* --> Max number of iterations for
+ const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
+ const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
+ const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
+ const cs_int_t   *nitmap,    /* <-- Max number of iterations for
                                      coarsest solution */
- const cs_int_t   *iinvpe,    /* --> Indicator to cancel increments
+ const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicity (2) or
                                      to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* --> Verbosity level */
- cs_int_t         *ncyclf,    /* <-- Number of cycles done */
- cs_int_t         *niterf,    /* <-- Number of iterations done */
- const cs_real_t  *epsilp,    /* --> Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* --> Residue normalization */
- cs_real_t        *residu,    /* <-- Final non normalized residue */
- const cs_int_t   *ifacel,    /* --> Face -> cell connectivity  */
- const cs_real_t  *rhs,       /* --> System right-hand side */
+ const cs_int_t   *iwarnp,    /* <-- Verbosity level */
+ cs_int_t         *ncyclf,    /* --> Number of cycles done */
+ cs_int_t         *niterf,    /* --> Number of iterations done */
+ const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
+ const cs_real_t  *rnorm,     /* <-- Residue normalization */
+ cs_real_t        *residu,    /* --> Final non normalized residue */
+ const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
+ const cs_real_t  *rhs,       /* <-- System right-hand side */
  cs_real_t        *vx         /* <-> System solution */
 );
 

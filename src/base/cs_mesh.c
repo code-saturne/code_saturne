@@ -123,7 +123,7 @@ cs_mesh_builder_t  *cs_glob_mesh_builder = NULL;
  * SUBROUTINE HALTYP (IVOSET)
  * *****************
  *
- * INTEGER          IVOSET      : --> : Indicator of necessity of extended mesh
+ * INTEGER          IVOSET      : <-- : Indicator of necessity of extended mesh
  *----------------------------------------------------------------------------*/
 
 extern void
@@ -161,10 +161,10 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
  * Compute the minimum and the maximum of a vector (locally).
  *
  * parameters:
- *   n_vals    --> local number of elements
- *   var       --> pointer to vector
- *   min       <-- minimum
- *   max       <-- maximum
+ *   n_vals    <-- local number of elements
+ *   var       <-- pointer to vector
+ *   min       --> minimum
+ *   max       --> maximum
  *----------------------------------------------------------------------------*/
 
 static void
@@ -189,8 +189,8 @@ _compute_local_minmax(cs_int_t        n_vals,
  * Display the distribution of values of a integer vector.
  *
  * parameters:
- *   n_vals    --> local number of elements
- *   var       --> pointer to vector
+ *   n_vals    <-- local number of elements
+ *   var       <-- pointer to vector
  *----------------------------------------------------------------------------*/
 
 static void
@@ -269,10 +269,10 @@ _display_histograms(cs_int_t        n_vals,
  * Write a sum-up about halo features in listing
  *
  * parameters:
- *   mesh                   --> pointer to cs_mesh_t structure
- *   interface_time         --> time elapsed in interface build
- *   halo_time              --> time elapsed in halo build
- *   ext_neighborhood_time  --> time elapsed in extended neighborhood
+ *   mesh                   <-- pointer to cs_mesh_t structure
+ *   interface_time         <-- time elapsed in interface build
+ *   halo_time              <-- time elapsed in halo build
+ *   ext_neighborhood_time  <-- time elapsed in extended neighborhood
  *                              connectivity building
  *----------------------------------------------------------------------------*/
 
@@ -429,14 +429,14 @@ _print_halo_info(cs_mesh_t  *mesh,
  * FUNCTION NUMGRP (NAME, LEN)
  * ***************
  *
- * CHARACTER*       NAME        : --> : Name of the group
- * INTEGER          LEN         : --> : Group name length
+ * CHARACTER*       NAME        : <-- : Name of the group
+ * INTEGER          LEN         : <-- : Group name length
  *----------------------------------------------------------------------------*/
 
 cs_int_t CS_PROCF (numgrp, NUMGRP)
 (
- const char       *name,    /* --> Group name */
- const cs_int_t   *len      /* --> Name length */
+ const char       *name,    /* <-- Group name */
+ const cs_int_t   *len      /* <-- Name length */
  CS_ARGF_SUPP_CHAINE        /*     (possible 'length' arguments added
                                    by many Fortran compilers) */
 )
@@ -776,7 +776,7 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
  * Print mesh characteristics.
  *
  * parameters:
- *   mesh <-- pointer to mesh structure
+ *   mesh --> pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -1110,7 +1110,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
  * Get the global number of ghost cells.
  *
  * parameters:
- *   mesh  -->  pointer to a mesh structure
+ *   mesh  <--  pointer to a mesh structure
  *
  * returns:
  *   global number of ghost cells
@@ -1227,7 +1227,7 @@ cs_mesh_init_selectors(void)
  * Print information on a mesh structure.
  *
  * parameters:
- *   mesh  -->  pointer to mesh structure.
+ *   mesh  <--  pointer to mesh structure.
  *----------------------------------------------------------------------------*/
 
 void
@@ -1248,7 +1248,7 @@ cs_mesh_print_info(const cs_mesh_t  *mesh)
  * Dump of a mesh structure.
  *
  * parameters:
- *   mesh  -->  pointer to mesh structure.
+ *   mesh  <--  pointer to mesh structure.
  *----------------------------------------------------------------------------*/
 
 void

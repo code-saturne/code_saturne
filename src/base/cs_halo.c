@@ -334,7 +334,7 @@ cs_halo_create(fvm_interface_set_t  *ifs)
 
   halo->n_local_elts = 0;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < CS_HALO_N_TYPES; i++) {
     halo->n_send_elts[i] = 0;
     halo->n_elts [i] = 0;
   }

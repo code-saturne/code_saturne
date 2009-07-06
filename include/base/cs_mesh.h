@@ -210,14 +210,14 @@ extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer to builder mesh
  * FUNCTION NUMGRP (NAME, LEN)
  * ***************
  *
- * CHARACTER*       NAME        : --> : Name of the group
- * INTEGER          LEN         : --> : Group name length
+ * CHARACTER*       NAME        : <-- : Name of the group
+ * INTEGER          LEN         : <-- : Group name length
  *----------------------------------------------------------------------------*/
 
 cs_int_t CS_PROCF (numgrp, NUMGRP)
 (
- const char       *name,    /* --> Group name */
- const cs_int_t   *len      /* --> Name length */
+ const char       *name,    /* <-- Group name */
+ const cs_int_t   *len      /* <-- Name length */
  CS_ARGF_SUPP_CHAINE        /*     (possible 'length' arguments added
                                    by many Fortran compilers) */
 );
@@ -288,7 +288,7 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh);
  * Print mesh characteristics
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
+ *   mesh         --> pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -322,7 +322,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh);
  * Get the global number of ghost cells.
  *
  * parameters:
- *  mesh -->  pointer to a mesh structure
+ *  mesh <--  pointer to a mesh structure
  *
  * returns:
  *  Global number of ghost cells
@@ -344,7 +344,7 @@ cs_mesh_init_selectors(void);
  * Print information on a mesh structure.
  *
  * parameters:
- *   mesh  -->  pointer to mesh structure.
+ *   mesh  <--  pointer to mesh structure.
  *----------------------------------------------------------------------------*/
 
 void

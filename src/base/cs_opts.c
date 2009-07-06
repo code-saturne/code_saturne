@@ -100,7 +100,7 @@ BEGIN_C_DECLS
  * Print command line help
  *
  * parameters:
- *   name  --> name of executable program
+ *   name  <-- name of executable program
  *----------------------------------------------------------------------------*/
 
 static void
@@ -171,10 +171,10 @@ _print_version(void)
  * Convert an argument to an integer and check its validity
  *
  * parameters:
- *   arg_id  --> index of argument in argv
- *   argc    --> number of command line arguments
- *   argv    --> array of command line arguments
- *   argerr  <-- error indicator
+ *   arg_id  <-- index of argument in argv
+ *   argc    <-- number of command line arguments
+ *   argv    <-- array of command line arguments
+ *   argerr  --> error indicator
  *
  * returns:
  *   integer value
@@ -209,10 +209,10 @@ _arg_to_int(int    arg_id,
  * Convert an argument to a double and check its validity
  *
  * parameters:
- *   arg_id  --> index of argument in argv
- *   argc    --> number of command line arguments
- *   argv    --> array of command line arguments
- *   argerr  <-- error indicator
+ *   arg_id  <-- index of argument in argv
+ *   argc    <-- number of command line arguments
+ *   argv    <-- array of command line arguments
+ *   argerr  --> error indicator
  *
  * returns:
  *   integer value
@@ -255,8 +255,8 @@ _arg_to_double(int    arg_id,
  * Print logfile header
  *
  * parameters:
- *   argc  --> number of command line arguments
- *   argv  --> array of command line arguments
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
  *----------------------------------------------------------------------------*/
 
 void
@@ -383,7 +383,7 @@ cs_opts_mpi_init(int    *argc,
 
   int arg_id = 0, flag = 0;
   int appnum = -1;
-  cs_int_t use_mpi = false;
+  int use_mpi = false;
 
 #if defined(MPICH_NAME)
 
@@ -408,6 +408,8 @@ cs_opts_mpi_init(int    *argc,
   if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
     use_mpi = true;
 
+  /* Notes: Blue Gene/L also defines the BGLMPI_SIZE environment variable.
+   *        Blue Gene/P defines BG_SIZE (plus BG_MAPPING, and BG_RELEASE). */
 #elif   defined(__blrts__) || defined(__bgp__) \
    || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   use_mpi = true;
@@ -417,9 +419,9 @@ cs_opts_mpi_init(int    *argc,
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)
+  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
     use_mpi = true;
-  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 */
     use_mpi = true;
 
 #elif defined(MPICH2)
@@ -455,7 +457,7 @@ cs_opts_mpi_init(int    *argc,
     /* Parallel run */
 
     if (strcmp(s, "--mpi") == 0) {
-      cs_int_t tmperr = 0;
+      int tmperr = 0;
       int _appnum = 0;
       use_mpi = true;
       _appnum = _arg_to_int(arg_id + 1, *argc, *argv, &tmperr);
@@ -512,9 +514,9 @@ cs_opts_mpi_init(int    *argc,
  * based on command line arguments
  *
  * parameters:
- *   argc  --> number of command line arguments
- *   argv  --> array of command line arguments
- *   opts  <-- options structure
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
+ *   opts  --> options structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -562,7 +564,7 @@ cs_opts_define(int         argc,
 #if defined(HAVE_MPI)
 
     else if (strcmp(s, "--mpi") == 0) {
-      cs_int_t tmperr = 0;
+      int tmperr = 0;
       (void)_arg_to_int(arg_id + 1, argc, argv, &tmperr);
       if (tmperr == 0) {
         arg_id++;
@@ -575,8 +577,8 @@ cs_opts_define(int         argc,
       opts->verif = true;
 
     else if (strcmp(s, "--log") == 0) {
-      cs_int_t n1 = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
+      int n1 = 0;
+      n1 = (int) _arg_to_int(++arg_id, argc, argv, &argerr);
       if (n1 == 0)
         opts->ilisr0 = 0;
       else if (n1 == 1)
@@ -586,8 +588,8 @@ cs_opts_define(int         argc,
     }
 
     else if (strcmp(s, "--logp") == 0) {
-      cs_int_t n1 = 0;
-      n1 = (cs_int_t) _arg_to_int(++arg_id, argc, argv, &argerr);
+      int n1 = 0;
+      n1 = (int) _arg_to_int(++arg_id, argc, argv, &argerr);
       if (n1 == -1)
         opts->ilisrp = 2;
       else if (n1 == 0)

@@ -75,12 +75,12 @@ typedef enum {
   CS_POST_TYPE_double
 } cs_post_type_t;
 
-/* Function pointer associated with a specific post-processing: such
-   functions are registered using the cs_post_add_time_dep_var(),
+/* Function pointer associated with a specific post-processing variables
+   output: such functions are registered using the cs_post_add_time_dep_var(),
    and all registered functions are automatically called by PSTVAR. */
 
 typedef void
-(cs_post_time_dep_var_t) (int        id_instance,
+(cs_post_time_dep_var_t) (int        instance_id,
                           int        nt_cur_abs,
                           cs_real_t  t_cur_abs);
 
@@ -215,7 +215,7 @@ void CS_PROCF (pstedg, PSTEDG)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTALM (NUMMAI, NUMWRI)
+ * SUBROUTINE PSTALM (NUMMAI, NUMREF)
  * *****************
  *
  * INTEGER          NUMMAI      : <-- : Number of the alias to create
@@ -560,10 +560,10 @@ cs_post_add_mesh(int          mesh_id,
  * maintain consistency between this mesh and the post-processing output.
  *
  * parameters:
- *   mesh_id  <-- id of mesh to create (< 0 reserved, > 0 for user)
- *   exp_mesh <-- mesh in exportable representation (i.e. fvm_nodal_t)
- *   transfer <-- if true, ownership of exp_mesh is transferred to the
- *                post-processing mesh
+ *   mesh_id   <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   exp_mesh  <-- mesh in exportable representation (i.e. fvm_nodal_t)
+ *   transfer  <-- if true, ownership of exp_mesh is transferred to the
+ *                 post-processing mesh
  *----------------------------------------------------------------------------*/
 
 void

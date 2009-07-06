@@ -71,7 +71,7 @@ include "parall.h"
 
 character        cprjsy
 integer          numsyr, nbcsyr, ii
-integer          ibosyr, ivlsyr, iwarns
+integer          iwarns
 
 !===============================================================================
 
@@ -101,8 +101,6 @@ do ii = 1, nbcsyr
   if (ii .eq. 1) then
 
     CPRJSY= ' '
-    ibosyr = 1
-    ivlsyr = 0
 
     CALL DEFSYR(NUMSYR, 'SYRTHES_01', CPRJSY, '3', ' ', IWARNS)
     !==========
@@ -113,8 +111,6 @@ do ii = 1, nbcsyr
   else if (ii .eq. 2) then
 
     CPRJSY= 'z'
-    ibosyr = 1
-    ivlsyr = 0
 
     CALL DEFSYR(NUMSYR, 'SYRTHES_02', CPRJSY,                     &
     !==========
@@ -127,8 +123,6 @@ do ii = 1, nbcsyr
   else if (ii .eq. 3) then
 
     CPRJSY= ' '
-    ibosyr = 1
-    ivlsyr = 0
 
     CALL DEFSYR(NUMSYR, 'SOLID', CPRJSY,                          &
     !==========

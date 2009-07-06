@@ -1823,8 +1823,8 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
 
 static void
 _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
-  cs_bool_t         symmetric,
-  const cs_real_t  *restrict xa)
+                             cs_bool_t         symmetric,
+                             const cs_real_t  *restrict xa)
 {
   cs_int_t  ii, jj, face_id;
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;

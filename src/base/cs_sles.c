@@ -182,8 +182,8 @@ const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
  * Return pointer to new linear system info structure.
  *
  * parameters:
- *   name --> system name
- *   type --> resolution method
+ *   name <-- system name
+ *   type <-- resolution method
  *
  * returns:
  *   pointer to newly created linear system info structure
@@ -292,8 +292,8 @@ _sles_info_dump(cs_sles_info_t *this_info)
  * "known" systems.
  *
  * parameters:
- *   name --> system name
- *   type --> resolution method
+ *   name <-- system name
+ *   type <-- resolution method
  *----------------------------------------------------------------------------*/
 
 static cs_sles_info_t *
@@ -357,14 +357,14 @@ _find_or_add_system(const char      *name,
  * Initialize or reset convergence info structure.
  *
  * parameters:
- *   solver_name --> solver name
- *   var_name    --> variable name
+ *   solver_name <-- solver name
+ *   var_name    <-- variable name
  *   convergence <-> Convergence info structure
- *   verbosity   --> Verbosity level
- *   n_iter_max  --> Maximum number of iterations
- *   precision   --> Precision limit
- *   r_norm      --> Residue normalization
- *   residue     --> Initial residue
+ *   verbosity   <-- Verbosity level
+ *   n_iter_max  <-- Maximum number of iterations
+ *   precision   <-- Precision limit
+ *   r_norm      <-- Residue normalization
+ *   residue     <-- Initial residue
  *----------------------------------------------------------------------------*/
 
 static void
@@ -399,10 +399,10 @@ _convergence_init(cs_sles_convergence_t  *convergence,
  * Convergence test.
  *
  * parameters:
- *   solver_name --> solver name
- *   var_name    --> variable name
- *   n_iter      --> Number of iterations done
- *   residue     --> Non normalized residue
+ *   solver_name <-- solver name
+ *   var_name    <-- variable name
+ *   n_iter      <-- Number of iterations done
+ *   residue     <-- Non normalized residue
  *   convergence <-> Convergence information structure
  *
  * returns:
@@ -482,9 +482,9 @@ _convergence_test(const char             *solver_name,
  * Compute dot product, summing result over all ranks.
  *
  * parameters:
- *   n_elts --> Local number of elements
- *   x      --> first vector in s = x.y
- *   y      --> second vector in s = x.y
+ *   n_elts <-- Local number of elements
+ *   x      <-- first vector in s = x.y
+ *   y      <-- second vector in s = x.y
  *
  * returns:
  *   result of s = x.y
@@ -514,13 +514,13 @@ _dot_product(cs_int_t          n_elts,
  * Compute 2 dot products, summing result over all ranks.
  *
  * parameters:
- *   n_elts --> Local number of elements
- *   x1     --> first vector in s1 = x1.y1
- *   y1     --> second vector in s1 = x1.y1
- *   x2     --> first vector in s2 = x2.y2
- *   y2     --> second vector in s2 = x2.y2
- *   s1     <-- result of s1 = x1.y1
- *   s2     <-- result of s2 = x2.y2
+ *   n_elts <-- Local number of elements
+ *   x1     <-- first vector in s1 = x1.y1
+ *   y1     <-- second vector in s1 = x1.y1
+ *   x2     <-- first vector in s2 = x2.y2
+ *   y2     <-- second vector in s2 = x2.y2
+ *   s1     --> result of s1 = x1.y1
+ *   s2     --> result of s2 = x2.y2
  *----------------------------------------------------------------------------*/
 
 inline static void
@@ -589,9 +589,9 @@ _dot_products_2(cs_int_t          n_elts,
  * Compute y <- x + alpha.y
  *
  * parameters:
- *   n     --> Number of elements in vectors x, y, z
- *   alpha --> Scalar alpha
- *   x     --> Vector x (size: n)
+ *   n     <-- Number of elements in vectors x, y, z
+ *   alpha <-- Scalar alpha
+ *   x     <-- Vector x (size: n)
  *   y     <-> Vector y (size: n)
  *----------------------------------------------------------------------------*/
 
@@ -634,13 +634,13 @@ _y_aypx(cs_int_t    n,
  *   2: Gk = (1/ad - (1/ad).ax.(1/ad) + (1/ad).ax.(1/ad).ax.(1/ad)).Rk
  *
  * parameters:
- *   n_cells       -->  Local number of cells
- *   poly_degree   -->  preconditioning polynomial degree (0: diagonal)
- *   rotation_mode -->  Halo update option for rotational periodicity
- *   ad_inv        -->  Inverse of matrix diagonal
- *   ax            -->  Non-diagonal part of linear equation matrix
- *   rk            -->  Residue vector
- *   gk            <--  Result vector
+ *   n_cells       <--  Local number of cells
+ *   poly_degree   <--  preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <--  Halo update option for rotational periodicity
+ *   ad_inv        <--  Inverse of matrix diagonal
+ *   ax            <--  Non-diagonal part of linear equation matrix
+ *   rk            <--  Residue vector
+ *   gk            -->  Result vector
  *   wk            ---  Working array
  *----------------------------------------------------------------------------*/
 
@@ -695,16 +695,16 @@ _polynomial_preconditionning(cs_int_t            n_cells,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      --> Variable name
- *   a             --> Matrix
- *   ax            --> Non-diagonal part of linear equation matrix
+ *   var_name      <-- Variable name
+ *   a             <-- Matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode --> Halo update option for rotational periodicity
- *   convergence   --> Convergence information structure
- *   rhs           --> Right hand side
- *   vx            <-- System solution
- *   aux_size      --> Number of elements in aux_vectors
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   convergence   <-- Convergence information structure
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -889,16 +889,16 @@ _conjugate_gradient_sp(const char             *var_name,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      --> Variable name
- *   a             --> Matrix
- *   ax            --> Non-diagonal part of linear equation matrix
+ *   var_name      <-- Variable name
+ *   a             <-- Matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode --> Halo update option for rotational periodicity
- *   convergence   --> Convergence information structure
- *   rhs           --> Right hand side
- *   vx            <-- System solution
- *   aux_size      --> Number of elements in aux_vectors
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   convergence   <-- Convergence information structure
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -1084,16 +1084,16 @@ _conjugate_gradient_mp(const char             *var_name,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      --> Variable name
- *   ad            --> Diagonal part of linear equation matrix
+ *   var_name      <-- Variable name
+ *   ad            <-- Diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   ax            --> Non-diagonal part of linear equation matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   rotation_mode --> Halo update option for rotational periodicity
- *   convergence   --> Convergence information structure
- *   rhs           --> Right hand side
- *   vx            <-- System solution
- *   aux_size      --> Number of elements in aux_vectors
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   convergence   <-- Convergence information structure
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -1211,16 +1211,16 @@ _jacobi(const char             *var_name,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      --> Variable name
- *   a             --> Matrix
- *   ax            --> Non-diagonal part of linear equation matrix
+ *   var_name      <-- Variable name
+ *   a             <-- Matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode --> Halo update option for rotational periodicity
- *   convergence   --> Convergence information structure
- *   rhs           --> Right hand side
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   convergence   <-- Convergence information structure
+ *   rhs           <-- Right hand side
  *   vx            <-- System solution
- *   aux_size      --> Number of elements in aux_vectors
+ *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -1451,30 +1451,30 @@ _bi_cgstab(const char             *var_name,
 
 void CS_PROCF(reslin, RESLIN)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname,     /* --> variable name length */
- const cs_int_t   *ncelet,    /* --> Number of cells, halo included */
- const cs_int_t   *ncel,      /* --> Number of local cells */
- const cs_int_t   *nfac,      /* --> Number of faces */
- const cs_int_t   *isym,      /* --> Symmetry indicator:
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname,     /* <-- variable name length */
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- const cs_int_t   *ireslp,    /* --> Resolution type:
+ const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *ipol,      /* --> Preconditioning polynomial degree
+ const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
                                      (0: diagonal) */
- const cs_int_t   *nitmap,    /* --> Number of max iterations */
- const cs_int_t   *iinvpe,    /* --> Indicator to cancel increments
+ const cs_int_t   *nitmap,    /* <-- Number of max iterations */
+ const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicty (2) or
                                      to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* --> Verbosity level */
- cs_int_t         *niterf,    /* <-- Number of iterations done */
- const cs_real_t  *epsilp,    /* --> Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* --> Residue normalization */
- cs_real_t        *residu,    /* <-- Final non normalized residue */
- const cs_int_t   *ifacel,    /* --> Face -> cell connectivity  */
- const cs_real_t  *dam,       /* --> Matrix diagonal */
- const cs_real_t  *xam,       /* --> Matrix extra-diagonal terms */
- const cs_real_t  *rhs,       /* --> System right-hand side */
+ const cs_int_t   *iwarnp,    /* <-- Verbosity level */
+ cs_int_t         *niterf,    /* --> Number of iterations done */
+ const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
+ const cs_real_t  *rnorm,     /* <-- Residue normalization */
+ cs_real_t        *residu,    /* --> Final non normalized residue */
+ const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
+ const cs_real_t  *dam,       /* <-- Matrix diagonal */
+ const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
+ const cs_real_t  *rhs,       /* <-- System right-hand side */
  cs_real_t        *vx         /* <-> System solution */
 )
 {
@@ -1615,13 +1615,13 @@ cs_sles_finalize(void)
  * The computed residue is also updated;
  *
  * parameters:
- *   var_name      --> Variable name
- *   solver_name   --> Name of solver
- *   n_rows        --> Number of (non ghost) rows in rhs
- *   verbosity     --> Verbosity level
- *   r_norm        --> Residue normalization
+ *   var_name      <-- Variable name
+ *   solver_name   <-- Name of solver
+ *   n_rows        <-- Number of (non ghost) rows in rhs
+ *   verbosity     <-- Verbosity level
+ *   r_norm        <-- Residue normalization
  *   residue       <-> Residue
- *   rhs           --> Right hand side
+ *   rhs           <-- Right hand side
  *
  * returns:
  *   1 if solving is required, 0 if the rhs is already zero within tolerance
@@ -1663,26 +1663,26 @@ cs_sles_needs_solving(const char        *var_name,
  * prior to this call, and will have been released upon returning.
  *
  * parameters:
- *   var_name      --> Variable name
- *   solver_type   --> Type of solver (PCG, Jacobi, ...)
- *   update_stats  --> Automatic solver statistics indicator
- *   symmetric     --> Symmetric coefficients indicator
- *   ad_coeffs     --> Diagonal coefficients of linear equation matrix
- *   ax_coeffs     --> Non-diagonal coefficients of linear equation matrix
+ *   var_name      <-- Variable name
+ *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
+ *   update_stats  <-- Automatic solver statistics indicator
+ *   symmetric     <-- Symmetric coefficients indicator
+ *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
+ *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
  *   a             <-> Matrix
  *   ax            <-> Non-diagonal part of linear equation matrix
  *                     (only necessary if poly_degree > 0)
- *   poly_degree   --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode --> Halo update option for rotational periodicity
- *   verbosity     --> Verbosity level
- *   n_max_iter    --> Maximum number of iterations
- *   precision     --> Precision limit
- *   r_norm        --> Residue normalization
- *   n_iter        <-- Number of iterations
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   verbosity     <-- Verbosity level
+ *   n_max_iter    <-- Maximum number of iterations
+ *   precision     <-- Precision limit
+ *   r_norm        <-- Residue normalization
+ *   n_iter        --> Number of iterations
  *   residue       <-> Residue
- *   rhs           --> Right hand side
- *   vx            <-- System solution
- *   aux_size      --> Number of elements in aux_vectors
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -1838,7 +1838,6 @@ cs_sles_solve(const char         *var_name,
 
     *n_iter = convergence.n_iterations;
     *residue = convergence.residue;
-
   }
 
   if (update_stats == true) {

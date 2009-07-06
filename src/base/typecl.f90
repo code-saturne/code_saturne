@@ -390,27 +390,27 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ientre
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree           ', ii, inb
+      write(nfecra,6020) 'Entree           ', ii, inb
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi lisse      ', ii, inb
+      write(nfecra,6020) 'Paroi lisse      ', ii, inb
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi rugueuse   ', ii, inb
+      write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Symetrie         ', ii, inb
+      write(nfecra,6020) 'Symetrie         ', ii, inb
       ii = isolib
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie libre     ', ii, inb
+      write(nfecra,6020) 'Sortie libre     ', ii, inb
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Indefini         ', ii, inb
+      write(nfecra,6020) 'Indefini         ', ii, inb
 
       do ii = 1, ntypmx
         if (ii.ne.ientre .and. &
@@ -422,7 +422,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
-            WRITE(NFECRA,6020) 'Type utilisateur ', ii, inb
+            write(nfecra,6020) 'Type utilisateur ', ii, inb
           endif
         endif
       enddo
@@ -432,47 +432,47 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ieqhcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree sub. enth.', ii, inb
+      write(nfecra,6020) 'Entree sub. enth.', ii, inb
 
       ii = ierucf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree subsonique', ii, inb
+      write(nfecra,6020) 'Entree subsonique', ii, inb
 
       ii = iesicf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Entree/Sortie imp', ii, inb
+      write(nfecra,6020) 'Entree/Sortie imp', ii, inb
 
       ii = isopcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie subsonique', ii, inb
+      write(nfecra,6020) 'Sortie subsonique', ii, inb
 
       ii = isspcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Sortie supersoniq', ii, inb
+      write(nfecra,6020) 'Sortie supersoniq', ii, inb
 
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi lisse      ', ii, inb
+      write(nfecra,6020) 'Paroi lisse      ', ii, inb
 
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Paroi rugueuse   ', ii, inb
+      write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
 
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Symetrie         ', ii, inb
+      write(nfecra,6020) 'Symetrie         ', ii, inb
 
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
-      WRITE(NFECRA,6020) 'Indefini         ', ii, inb
+      write(nfecra,6020) 'Indefini         ', ii, inb
 
       do ii = 1, ntypmx
         if (ii.ne.iesicf .and. &

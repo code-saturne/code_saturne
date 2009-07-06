@@ -110,7 +110,6 @@ void CS_PROCF (bcderr, BCDERR)
  * to defined types with inconsistent or incompatible values, the
  * absolute value indicating the original boundary condition type.
  *
- *
  * parameters:
  *   n_phases  <-- number of active phases
  *   bc_type   <-- array of BC type ids (per phase)

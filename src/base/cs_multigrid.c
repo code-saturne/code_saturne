@@ -195,8 +195,8 @@ static cs_multigrid_t **cs_glob_multigrid_systems = NULL;
  * Initialize multigrid info structure.
  *
  * parameters:
- *   name --> system name
- *   info --> pointer to multigrid info structure
+ *   name <-- system name
+ *   info <-- pointer to multigrid info structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -364,7 +364,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
  * Initialize multigrid info structure.
  *
  * parameters:
- *   name --> system name
+ *   name <-- system name
  *
  * returns:
  *   pointer to newly created multigrid structure
@@ -432,8 +432,8 @@ _multigrid_destroy(cs_multigrid_t  **mg)
  * Add grid to multigrid structure hierarchy.
  *
  * parameters:
- *   mg   --> multigrid structure
- *   grid --> grid to add
+ *   mg   <-- multigrid structure
+ *   grid <-- grid to add
  *----------------------------------------------------------------------------*/
 
 static void
@@ -471,7 +471,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
  * Get multigrid structure's id in list of know systems
  *
  * parameters:
- *   mg --> multigrid structure
+ *   mg <-- multigrid structure
  *
  * returns:
  *   id (0 to n-1) of structure in list of know systems, or -1 otherwise
@@ -500,7 +500,7 @@ _multigrid_id(const cs_multigrid_t  *mg)
  * "known" systems.
  *
  * parameters:
- *   name --> system name
+ *   name <-- system name
  *----------------------------------------------------------------------------*/
 
 static cs_multigrid_t *
@@ -566,7 +566,7 @@ _find_or_add_system(const char  *name)
  *
  * parameters:
  *   mg           <-> multigrid structure
- *   n_base_cells --> number of cells in base grid
+ *   n_base_cells <-- number of cells in base grid
  *----------------------------------------------------------------------------*/
 
 static void
@@ -605,9 +605,9 @@ _multigrid_add_post(cs_multigrid_t  *mg,
  * Post process variables associated with Syrthes couplings
  *
  * parameters:
- *   hierarchy_id        -->  Id of multigrid hierarchy
- *   nt_cur_abs          -->  Current time step
- *   t_cur_abs           -->  Current time value
+ *   hierarchy_id        <--  Id of multigrid hierarchy
+ *   nt_cur_abs          <--  Current time step
+ *   t_cur_abs           <--  Current time value
  *----------------------------------------------------------------------------*/
 
 static void
@@ -670,9 +670,9 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
  * Compute dot product, summing result over all ranks.
  *
  * parameters:
- *   n_elts --> Local number of elements
- *   x      --> first vector in s = x.y
- *   y      --> second vector in s = x.y
+ *   n_elts <-- Local number of elements
+ *   x      <-- first vector in s = x.y
+ *   y      <-- second vector in s = x.y
  *
  * returns:
  *   result of s = x.y
@@ -702,17 +702,17 @@ _dot_product(cs_int_t          n_elts,
  * Test if convergence is attained.
  *
  * parameters:
- *   var_name      --> Variable name
- *   n_f_cells     --> Number of cells on fine mesh
- *   n_max_cycles  --> Maximum number of cycles
- *   cycle_id      --> Number of current cycle
+ *   var_name      <-- Variable name
+ *   n_f_cells     <-- Number of cells on fine mesh
+ *   n_max_cycles  <-- Maximum number of cycles
+ *   cycle_id      <-- Number of current cycle
  *
- *   verbosity     --> Verbosity level
- *   n_iters       --> Number of iterations
- *   precision     --> Precision limit
- *   r_norm        --> Residue normalization
+ *   verbosity     <-- Verbosity level
+ *   n_iters       <-- Number of iterations
+ *   precision     <-- Precision limit
+ *   r_norm        <-- Residue normalization
  *   residue       <-> Residue
- *   rhs           <-- Right-hand side
+ *   rhs           --> Right-hand side
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
@@ -792,33 +792,34 @@ _convergence_test(const char         *var_name,
  * Sparse linear system resolution using multigrid.
  *
  * parameters:
- *   mg                    --> Multigrid system
- *   descent_smoother_type --> Type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  --> Type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    --> Type of solver (PCG, Jacobi, ...)
- *   symmetric             --> Symmetric coefficients indicator
- *   poly_degree           --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         --> Halo update option for rotational periodicity
- *   verbosity             --> Verbosity level
- *   cycle_id              --> Id of currect cycle
- *   n_max_cycles          --> Maximum number of cycles
- *   n_max_iter            --> Maximum number of iterations per grid level
+ *   mg                    <-- Multigrid system
+ *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
+ *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
+ *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
+ *   symmetric             <-- Symmetric coefficients indicator
+ *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode         <-- Halo update option for rotational periodicity
+ *   verbosity             <-- Verbosity level
+ *   cycle_id              <-- Id of currect cycle
+ *   n_max_cycles          <-- Maximum number of cycles
+ *   n_max_iter            <-- Maximum number of iterations per grid level
  *                             n_max_iter[level * 2]     for descent
  *                             n_max_iter[level * 2 + 1] for ascent
- *   precision             --> Precision limit
- *   r_norm                --> Residue normalization
+ *   precision             <-- Precision limit
+ *   r_norm                <-- Residue normalization
  *   n_level_iter          <-> Number of iterations per level
  *   residue               <-> Residue
- *   rhs                   --> Right hand side
- *   vx                    <-- System solution
- *   aux_size              --> Number of elements in aux_vectors
+ *   rhs                   <-- Right hand side
+ *   vx                    --> System solution
+ *   aux_size              <-- Number of elements in aux_vectors
  *   aux_vectors           --- Optional working area (allocation otherwise)
  *
  * Returns
- *   true if convergence has been reached, false otherwise
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   cycle number reached.
  *----------------------------------------------------------------------------*/
 
-static cs_bool_t
+static int
 _multigrid_cycle(cs_multigrid_t     *mg,
                  cs_sles_type_t      descent_smoother_type,
                  cs_sles_type_t      ascent_smoother_type,
@@ -842,6 +843,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   int level, coarsest_level;
   fvm_lnum_t ii;
 
+  int cvg = 0;
   int n_iter = 0;
   size_t alloc_size = 0;
   cs_real_t c_precision = precision;
@@ -1000,20 +1002,20 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     if (level == 0) {
 
-      int testval = _convergence_test(var_name,
-                                      n_cells,
-                                      n_max_cycles,
-                                      cycle_id,
-                                      verbosity,
-                                      n_level_iter[0],
-                                      precision,
-                                      r_norm,
-                                      residue,
-                                      wr);
+      cvg = _convergence_test(var_name,
+                              n_cells,
+                              n_max_cycles,
+                              cycle_id,
+                              verbosity,
+                              n_level_iter[0],
+                              precision,
+                              r_norm,
+                              residue,
+                              wr);
 
       /* If converged or cycle limit reached, break from descent loop */
 
-      if (testval != 0) {
+      if (cvg != 0) {
         end_cycle = true;
         break;
       }
@@ -1160,33 +1162,33 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   BFT_FREE(_rhs_vx);
   BFT_FREE(_rhs_vx_val);
 
-  return end_cycle;
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------
  * Sparse linear system resolution using multigrid.
  *
  * parameters:
- *   var_name              --> Variable name
- *   descent_smoother_type --> Type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  --> Type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    --> Type of solver (PCG, Jacobi, ...)
- *   symmetric             --> Symmetric coefficients indicator
- *   poly_degree           --> Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         --> Halo update option for rotational periodicity
- *   verbosity             --> Verbosity level
- *   n_max_cycles          --> Maximum number of cycles
- *   n_max_iter_descent    --> Maximum nb. of iterations for descent phases
- *   n_max_iter_ascent     --> Maximum nb. of iterations for ascent phases
- *   n_max_iter_coarse     --> Maximum nb. of iterations for coarsest solution
- *   precision             --> Precision limit
- *   r_norm                --> Residue normalization
- *   n_cycles              <-- Number of cycles
- *   n_iter                <-- Number of iterations
+ *   var_name              <-- Variable name
+ *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
+ *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
+ *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
+ *   symmetric             <-- Symmetric coefficients indicator
+ *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode         <-- Halo update option for rotational periodicity
+ *   verbosity             <-- Verbosity level
+ *   n_max_cycles          <-- Maximum number of cycles
+ *   n_max_iter_descent    <-- Maximum nb. of iterations for descent phases
+ *   n_max_iter_ascent     <-- Maximum nb. of iterations for ascent phases
+ *   n_max_iter_coarse     <-- Maximum nb. of iterations for coarsest solution
+ *   precision             <-- Precision limit
+ *   r_norm                <-- Residue normalization
+ *   n_cycles              --> Number of cycles
+ *   n_iter                --> Number of iterations
  *   residue               <-> Residue
- *   rhs                   --> Right hand side
- *   vx                    <-- System solution
- *   aux_size              --> Number of elements in aux_vectors
+ *   rhs                   <-- Right hand side
+ *   vx                    --> System solution
+ *   aux_size              <-- Number of elements in aux_vectors
  *   aux_vectors           --- Optional working area (allocation otherwise)
  *----------------------------------------------------------------------------*/
 
@@ -1251,9 +1253,8 @@ _multigrid_solve(const char         *var_name,
                             residue,
                             rhs) != 0) {
 
-    int cycle_id = 1;
+    int cycle_id = 1, cvg = 0;
     double it_count_num = 0.0;
-    cs_bool_t end_cycle = false;
 
     int *n_max_iter = NULL;
     int *n_level_iter = NULL;
@@ -1281,31 +1282,31 @@ _multigrid_solve(const char         *var_name,
 
     /* Cycle to solution */
 
-    while (end_cycle == false) {
+    while (cvg == 0) {
 
       if (verbosity > 2)
         bft_printf(_("Multigrid [%s]: cycle %4d\n"),
                    var_name, cycle_id);
 
-      end_cycle = _multigrid_cycle(mg,
-                                   descent_smoother_type,
-                                   ascent_smoother_type,
-                                   coarse_solver_type,
-                                   symmetric,
-                                   poly_degree,
-                                   rotation_mode,
-                                   verbosity,
-                                   cycle_id,
-                                   n_max_cycles,
-                                   n_max_iter,
-                                   precision,
-                                   r_norm,
-                                   n_level_iter,
-                                   residue,
-                                   rhs,
-                                   vx,
-                                   aux_size,
-                                   _aux_vectors);
+      cvg = _multigrid_cycle(mg,
+                             descent_smoother_type,
+                             ascent_smoother_type,
+                             coarse_solver_type,
+                             symmetric,
+                             poly_degree,
+                             rotation_mode,
+                             verbosity,
+                             cycle_id,
+                             n_max_cycles,
+                             n_max_iter,
+                             precision,
+                             r_norm,
+                             n_level_iter,
+                             residue,
+                             rhs,
+                             vx,
+                             aux_size,
+                             _aux_vectors);
 
       cycle_id++;
       *n_cycles += 1;
@@ -1387,23 +1388,23 @@ _multigrid_solve(const char         *var_name,
 
 void CS_PROCF(clmlga, CLMLGA)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname,     /* --> variable name length */
- const cs_int_t   *ncelet,    /* --> Number of cells, halo included */
- const cs_int_t   *ncel,      /* --> Number of local cells */
- const cs_int_t   *nfac,      /* --> Number of internal faces */
- const cs_int_t   *isym,      /* --> Symmetry indicator:
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname,     /* <-- variable name length */
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of internal faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  cs_int_t         *iagmax,    /* <-> Maximum agglomeration count */
- const cs_int_t   *nagmax,    /* --> Agglomeration count limit */
- const cs_int_t   *ncpost,    /* --> If > 0, postprocess coarsening, using
+ const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
+ const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
- const cs_int_t   *iwarnp,    /* --> Verbosity level */
- const cs_int_t   *ngrmax,    /* --> Maximum number of grid levels */
- const cs_int_t   *ncegrm,    /* --> Maximum local number of cells on
+ const cs_int_t   *iwarnp,    /* <-- Verbosity level */
+ const cs_int_t   *ngrmax,    /* <-- Maximum number of grid levels */
+ const cs_int_t   *ncegrm,    /* <-- Maximum local number of cells on
                                      coarsest grid */
- const cs_real_t  *dam,       /* --> Matrix diagonal */
- const cs_real_t  *xam        /* --> Matrix extra-diagonal terms */
+ const cs_real_t  *dam,       /* <-- Matrix diagonal */
+ const cs_real_t  *xam        /* <-- Matrix extra-diagonal terms */
 )
 {
   char *var_name;
@@ -1609,8 +1610,8 @@ void CS_PROCF(clmlga, CLMLGA)
 
 void CS_PROCF(dsmlga, DSMLGA)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname      /* --> variable name length */
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname      /* <-- variable name length */
 )
 {
   char *var_name;
@@ -1652,37 +1653,37 @@ void CS_PROCF(dsmlga, DSMLGA)
 
 void CS_PROCF(resmgr, RESMGR)
 (
- const char       *cname,     /* --> variable name */
- const cs_int_t   *lname,     /* --> variable name length */
- const cs_int_t   *ncelet,    /* --> Number of cells, halo included */
- const cs_int_t   *ncel,      /* --> Number of local cells */
- const cs_int_t   *nfac,      /* --> Number of faces */
- const cs_int_t   *isym,      /* --> Symmetry indicator:
+ const char       *cname,     /* <-- variable name */
+ const cs_int_t   *lname,     /* <-- variable name length */
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- const cs_int_t   *iresds,    /* --> Descent smoother type:
+ const cs_int_t   *iresds,    /* <-- Descent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *iresas,    /* --> Ascent smoother type:
+ const cs_int_t   *iresas,    /* <-- Ascent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *ireslp,    /* --> Coarse Resolution type:
+ const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
- const cs_int_t   *ipol,      /* --> Preconditioning polynomial degree
+ const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
                                      (0: diagonal) */
- const cs_int_t   *ncymxp,    /* --> Max number of cycles */
- const cs_int_t   *nitmds,    /* --> Max number of iterations for descent */
- const cs_int_t   *nitmas,    /* --> Max number of iterations for ascent */
- const cs_int_t   *nitmap,    /* --> Max number of iterations for
+ const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
+ const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
+ const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
+ const cs_int_t   *nitmap,    /* <-- Max number of iterations for
                                      coarsest solution */
- const cs_int_t   *iinvpe,    /* --> Indicator to cancel increments
+ const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicity (2) or
                                      to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* --> Verbosity level */
- cs_int_t         *ncyclf,    /* <-- Number of cycles done */
- cs_int_t         *niterf,    /* <-- Number of iterations done */
- const cs_real_t  *epsilp,    /* --> Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* --> Residue normalization */
- cs_real_t        *residu,    /* <-- Final non normalized residue */
- const cs_int_t   *ifacel,    /* --> Face -> cell connectivity  */
- const cs_real_t  *rhs,       /* --> System right-hand side */
+ const cs_int_t   *iwarnp,    /* <-- Verbosity level */
+ cs_int_t         *ncyclf,    /* --> Number of cycles done */
+ cs_int_t         *niterf,    /* --> Number of iterations done */
+ const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
+ const cs_real_t  *rnorm,     /* <-- Residue normalization */
+ cs_real_t        *residu,    /* --> Final non normalized residue */
+ const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
+ const cs_real_t  *rhs,       /* <-- System right-hand side */
  cs_real_t        *vx         /* <-> System solution */
 )
 {
@@ -1754,7 +1755,7 @@ void CS_PROCF(resmgr, RESMGR)
  * Initialize multigrid solver API.
  *
  * parameters:
- *   post_cell_max --> If > 0, activates postprocessing of coarseninsg,
+ *   post_cell_max <-- If > 0, activates postprocessing of coarseninsg,
  *                     projecting coarse cell numbers (modulo post_cell_max)
  *                     on the base grid
  *----------------------------------------------------------------------------*/

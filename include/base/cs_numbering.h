@@ -119,9 +119,10 @@ cs_numbering_create_vectorized(int  vector_size);
  * parameters:
  *   n_threads   <-- number of threads
  *   n_groups    <-- number of groups
- *   group_index <--group_index[thread_id*n_groups + group_id] defines the
- *                  start and end ids for entities in a given group and
- *                  thread; (size: n_groups *2 * n_threads)
+ *   group_index <-- group_index[thread_id*group_id*2 + group_id*2] and
+ *                   group_index[thread_id*group_id*2 + group_id*2 +1] define
+ *                   the start and end ids for entities in a given group and
+ *                   thread; (size: n_groups *2 * n_threads)
  *
  * returns:
  *   pointer to created cs_numbering_t structure

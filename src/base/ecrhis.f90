@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -52,7 +52,7 @@ subroutine ecrhis &
 ! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
 ! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
 ! modhis           ! e  ! <-- ! indicateur valant 0,1 ou 2                     !
-!                  !    !               ! 1,2 = ecriture intermediaire, finale |
+!                  !    !     ! 1,2 = ecriture intermediaire, finale           !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -126,7 +126,7 @@ if((ipass.eq.1.and.modhis.eq.2) .or. ncapt.eq.0) return
 ! 1. RECHERCHE DES NOEUDS PROCHES -> NODCAP
 !===============================================================================
 
-if(ipass.eq.1) then
+if (ipass.eq.1) then
 
   do ii = 1, ncapt
     call findpt                                                   &
@@ -143,16 +143,16 @@ endif
 !===============================================================================
 
 if(ipass.eq.1 .and. irangp.le.0) then
-  NOMFIC = ' '
+  nomfic = ' '
   nomfic = emphis
-  call verlon ( nomfic,ii1,ii2,lpos)
+  call verlon (nomfic,ii1,ii2,lpos)
   !==========
 
-  NOMFIC(II2+1:II2+8) = 'hist.tmp'
+  nomfic(ii2+1:ii2+8) = 'hist.tmp'
   ii2 = ii2+8
-  open ( unit=imphis(1), file=nomfic (ii1:ii2),                   &
-         STATUS='UNKNOWN', FORM='UNFORMATTED',                    &
-         ACCESS='SEQUENTIAL')
+  open (unit=imphis(1), file=nomfic(ii1:ii2), &
+        status='UNKNOWN', form='UNFORMATTED', &
+        access='SEQUENTIAL')
 endif
 
 !===============================================================================
@@ -172,22 +172,20 @@ if(modhis.eq.0.or.modhis.eq.1) then
       else
         ixmsdt = idebra
         ifinra = ixmsdt + ncel
-        CALL RASIZE ('ECRHIS', IFINRA)
+        call rasize ('ecrhis', ifinra)
         !==========
       endif
       if(idivdt.gt.0) then
         do iel = 1, ncel
-          ra(ixmsdt+iel-1) = ra(ira+iel-1)/                       &
-               max(ra(idivdt+iel-1),epzero)
+          ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(ra(idivdt+iel-1),epzero)
         enddo
       elseif(idivdt.lt.0) then
         do iel = 1, ncel
-          ra(ixmsdt+iel-1) = ra(ira+iel-1)/                       &
-               max(dtcmom(-idivdt),epzero)
+          ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(dtcmom(-idivdt),epzero)
         enddo
-!           ELSE
-!             RA(IXMSDT+IEL-1) = RA(IRA+IEL-1)
-!             inutile car on a pose IXMSDT = IRA
+!     else
+!       ra(ixmsdt+iel-1) = ra(ira+iel-1)
+!       inutile car on a pose ixmsdt = ira
       endif
 
       if(ihisvr(ipp,1).lt.0) then
@@ -195,9 +193,8 @@ if(modhis.eq.0.or.modhis.eq.1) then
           if (irangp.lt.0) then
             varcap(icap) = ra(ixmsdt+nodcap(icap)-1)
           else
-            call parhis(nodcap(icap), ndrcap(icap),               &
+            call parhis(nodcap(icap), ndrcap(icap), ra(ixmsdt), varcap(icap))
             !==========
-                        ra(ixmsdt), varcap(icap))
           endif
         enddo
         ncap = ncapt
@@ -206,17 +203,16 @@ if(modhis.eq.0.or.modhis.eq.1) then
           if (irangp.lt.0) then
             varcap(icap) = ra(ixmsdt+nodcap(ihisvr(ipp,icap+1))-1)
           else
-            call parhis(nodcap(ihisvr(ipp,icap+1)),               &
+            call parhis(nodcap(ihisvr(ipp,icap+1)), &
             !==========
-                        ndrcap(ihisvr(ipp,icap+1)),               &
+                        ndrcap(ihisvr(ipp,icap+1)), &
                         ra(ixmsdt), varcap(icap))
           endif
         enddo
         ncap = ihisvr(ipp,1)
       endif
       if (irangp.le.0) then
-        write(imphis(1)) ntcabs, ttcabs, (varcap(icap),           &
-                                           icap=1,ncap)
+        write(imphis(1)) ntcabs, ttcabs, (varcap(icap), icap=1,ncap)
       endif
     endif
   enddo
@@ -231,9 +227,9 @@ endif
 ! On sauve aussi au premier passage pour permettre une
 !     verification des le debut du calcul
 
-if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
+if(modhis.eq.1 .or. modhis.eq.2 .or. ipass.eq.1) then
 
-!       --> nombre de pas de temps enregistres
+  ! --> nombre de pas de temps enregistres
 
   if(modhis.eq.2) then
     nbpdte = ipass - 1
@@ -241,20 +237,20 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
     nbpdte = ipass
   endif
 
-!       --> nombre de capteur par variable
+  ! --> nombre de capteur par variable
   do ipp = 2, nvppmx
     nbcap(ipp) = ihisvr(ipp,1)
     if(nbcap(ipp).lt.0) nbcap(ipp) = ncapt
   enddo
 
-!       --> ecriture un fichier par variable
+  ! --> ecriture un fichier par variable
 
   do ipp = 2, nvppmx
-    if(ihisvr(ipp,1).ne.0) then
+    if (ihisvr(ipp,1).ne.0) then
 
-      if(irangp.le.0) then
-!           --> nom du fichier
-        NOMFIC = ' '
+      if (irangp.le.0) then
+        ! --> nom du fichier
+        nomfic = ' '
         nomfic = emphis
         call verlon ( nomfic,ii1,ii2,lpos)
         !==========
@@ -265,7 +261,7 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
         !==========
         nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
         ii2 = ii2+lpos
-        NOMFIC(II2+1:II2+1) = '.'
+        nomfic(ii2+1:ii2+1) = '.'
         ii2 = ii2+1
         nenvar = exthis
         call verlon(nenvar,inam1,inam2,lpos)
@@ -274,11 +270,11 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
         !==========
         nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
         ii2 = ii2+lpos
-!           --> ouverture
-        open ( unit=imphis(2), file=nomfic (ii1:ii2),             &
-               STATUS='UNKNOWN', FORM='FORMATTED',                &
-               ACCESS='SEQUENTIAL')
-!           --> entete
+        ! --> ouverture
+        open (unit=imphis(2), file=nomfic (ii1:ii2), &
+              status='UNKNOWN', form='FORMATTED',    &
+              access='SEQUENTIAL')
+        ! --> entete
         write(imphis(2),100)
         write(imphis(2),101)
         write(imphis(2),102) nomvar(ipp)
@@ -290,8 +286,7 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
 
       if(ihisvr(ipp,1).gt.0) then
         do ii=1,ihisvr(ipp,1)
-          if (irangp.lt.0 .or.                                    &
-              irangp.eq.ndrcap(ihisvr(ipp,ii+1))) then
+          if (irangp.lt.0 .or. irangp.eq.ndrcap(ihisvr(ipp,ii+1))) then
             xyztmp(1) = xyzcen(1,nodcap(ihisvr(ipp,ii+1)))
             xyztmp(2) = xyzcen(2,nodcap(ihisvr(ipp,ii+1)))
             xyztmp(3) = xyzcen(3,nodcap(ihisvr(ipp,ii+1)))
@@ -308,8 +303,7 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
         enddo
       elseif(ihisvr(ipp,1).lt.0) then
         do ii=1,ncapt
-          if (irangp.lt.0 .or.                                    &
-              irangp.eq.ndrcap(ii)) then
+          if (irangp.lt.0 .or. irangp.eq.ndrcap(ii)) then
             xyztmp(1) = xyzcen(1,nodcap(ii))
             xyztmp(2) = xyzcen(2,nodcap(ii))
             xyztmp(3) = xyzcen(3,nodcap(ii))
@@ -320,8 +314,7 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
             !==========
           endif
           if(irangp.le.0) then
-            write(imphis(2),105) ii,                              &
-                                 xyztmp(1), xyztmp(2), xyztmp(3)
+            write(imphis(2),105) ii, xyztmp(1), xyztmp(2), xyztmp(3)
           endif
         enddo
       endif
@@ -339,22 +332,21 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
         write(imphis(2),100)
         write(imphis(2),103)
 
-!           --> boucle sur les differents enregistrements
-!               et les variables
+        ! --> boucle sur les differents enregistrements et les variables
         rewind(imphis(1))
         do ii = 1, nbpdte
           do ipp2 = 2, nvppmx
             if(ihisvr(ipp2,1).ne.0) then
-              read(imphis(1))                                     &
+              read(imphis(1)) &
                 jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp2))
               if(ipp2.eq.ipp)                                     &
                 write(imphis(2),1000)                             &
-                jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp))
+                  jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp))
             endif
           enddo
         enddo
 
-!           --> fermeture fichier
+        ! --> fermeture fichier
         close(imphis(2))
 
       endif
@@ -370,37 +362,36 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 100  FORMAT ('# ---------------------------------------------------')
- 101  FORMAT ('#      FICHIER HISTORIQUE EN TEMPS')
- 102  FORMAT ('#      VARIABLE    ',A16)
- 103  FORMAT ('# ')
- 104  FORMAT ('#      POSITION DES CAPTEURS (colonne)')
- 105  FORMAT ('# ',I6,')',3(1X,E14.7))
- 106  FORMAT ('#      NOMBRE D''ENREGISTREMENTS :',I7)
- 107  format (                                                          &
-'# COLONNE 1       : NUMERO DU PAS DE TEMPS ',/,            &
-'#         2       : TEMPS PHYSIQUE (ou No pas de temps*DTREF ',/,&
-'#                               en pas de temps non uniforme)',/,&
-'#         3 A 100 : VALEUR AUX CAPTEURS')
- 1000 format ( 1(1x,i7,1x),101(1x,e14.7))
+ 100  format ('# ---------------------------------------------------')
+ 101  format ('#      Fichier historique en temps')
+ 102  format ('#      Variable    ',A16)
+ 103  format ('# ')
+ 104  format ('#      Position des capteurs (colonne)')
+ 105  format ('# ',I6,')',3(1X,E14.7))
+ 106  format ('#      Nombre d''enregistrements :',I7)
+ 107  format (                                                         &
+'# Colonne 1       : Numero du pas de temps ',/,                       &
+'#         2       : Temps physique (ou No pas de temps*dtref ',/,     &
+'#                                   en pas de temps non uniforme)',/, &
+'#         3 a 100 : Valeur aux capteurs')
 
 #else
 
- 100  FORMAT ('# ---------------------------------------------------')
- 101  FORMAT ('#      TIME MONITORING FILE')
- 102  FORMAT ('#      VARIABLE    ',A16)
- 103  FORMAT ('# ')
- 104  FORMAT ('#      MONITORING POINTS COORDINATES (column)')
- 105  FORMAT ('# ',I6,')',3(1X,E14.7))
- 106  FORMAT ('#      NUMBER OF RECORDS:',I7)
- 107  format (                                                          &
-'# COLUMN 1        : TIME STEP NUMBER ',/,                  &
-'#        2        : PHYSICAL TIME (or Nb of time steps*DTREF ',/,&
-'#                                with non uniform time step)',/, &
-'#        3 TO 100 : VALUE AT MONITORING POINTS')
- 1000 format ( 1(1x,i7,1x),101(1x,e14.7))
+ 100  format ('# ---------------------------------------------------')
+ 101  format ('#      Time monitoring file')
+ 102  format ('#      Variable    ',A16)
+ 103  format ('# ')
+ 104  format ('#      Monitoring point coordinates (column)')
+ 105  format ('# ',I6,')',3(1X,E14.7))
+ 106  format ('#      Number of records:',I7)
+ 107  format (                                                         &
+'# Column 1        : Time step number ',/,                             &
+'#        2        : Physical time (or Nb of time steps*dtref ',/,     &
+'#                                  with non uniform time step)',/,    &
+'#        3 to 100 : Value at monitoring points')
 
 #endif
 
+ 1000 format ( 1(1x,i7,1x),101(1x,e14.7))
 return
 end

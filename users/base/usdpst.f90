@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine  usdpst                              &
+subroutine  usdpst &
 !=================
 
  ( idbia0 , idbra0 ,                                              &
@@ -260,7 +260,6 @@ do icas = 1, nbcas
     NOMFMT = 'EnSight Gold'
     OPTFMT = 'binary, discard_polygons'
     indmod = 0
-    ntchrl = ntchr
     ntchrl = 4
 
   else if (icas .eq. 2) then
@@ -286,7 +285,7 @@ do icas = 1, nbcas
 
     NOMCAS = 'CHR'
     NOMREP = ' '
-    NOMFMT = 'text'
+    NOMFMT = 'MED'
     OPTFMT = ' '
     indmod = 1
     ntchrl = ntchr
@@ -295,9 +294,8 @@ do icas = 1, nbcas
 
 !       DEFINITION EFFECTIVE
 
-  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt,            &
+  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, indmod, ntchrl)
   !==========
-               indmod, ntchrl)
 
 enddo
 
@@ -384,8 +382,7 @@ do ipart = 1, nbpart
 
 !           Determination si la face appartient a la coupe
 
-      if ((icoul1.eq.2.and.icoul2.eq.3).or.                       &
-           (icoul1.eq.3.and.icoul2.eq.2)) then
+      if ((icoul1.eq.2.and.icoul2.eq.3).or.(icoul1.eq.3.and.icoul2.eq.2)) then
         nlfac = nlfac+1
         lstfac(nlfac)= ifac
       endif
@@ -469,10 +466,8 @@ do ipart = 1, nbpart
 !         PAS D'INTERVENTION UTILISATEUR REQUISE
 !===============================================================================
 
-  call pstcma (ipart, nommai,                                     &
+  call pstcma (ipart, nommai, nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
   !==========
-               nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
-
 
 !===============================================================================
 !       IDENTIFICATION DU MAILLAGE EXTRAIT ET GESTION DE SORTIE

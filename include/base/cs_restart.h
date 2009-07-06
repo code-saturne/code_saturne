@@ -308,7 +308,7 @@ cs_restart_destroy(cs_restart_t  *restart);
 /*----------------------------------------------------------------------------
  * Check the locations associated with a restart file.
  *
- * For each type of entity, the correspondinf flag is set to true if the
+ * For each type of entity, the corresponding flag is set to true if the
  * associated number of entities matches the current value (and so that we
  * consider the mesh locations are the same), false otherwise.
  *
@@ -342,7 +342,7 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
  *----------------------------------------------------------------------------*/
 
 int
-cs_restart_add_location(cs_restart_t        *restart,
+cs_restart_add_location(cs_restart_t      *restart,
                         const char        *location_name,
                         fvm_gnum_t         n_glob_ents,
                         fvm_lnum_t         n_ents,

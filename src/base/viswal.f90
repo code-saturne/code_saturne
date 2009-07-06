@@ -388,7 +388,7 @@ do iel = 1, ncel
 ! 3.  CALCUL DE LA VISCOSITE TURBULENTE
 !===============================================================================
 
-! Turbulent inverse time scale = 
+! Turbulent inverse time scale =
 !   (Sijd Sijd)^3/2 / [ (Sij Sij)^5/2 + (Sijd Sijd)^5/4 ]
 
   sinv = (s**2.5d0 + sd**1.25d0)

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -112,12 +112,12 @@ static int cs_glob_mesh_quantities_cell_cen = 0;
  * Compute quantities associated to faces (border or internal)
  *
  * parameters:
- *   dim             -->  dimension
- *   n_faces         -->  number of faces
- *   vtx_coord       -->  vertex coordinates
- *   face_vtx_idx    -->  "face -> vertices" connectivity index
- *   face_vtx_lst    -->  "face -> vertices" connectivity list
- *   face_normal     <--  surface normal of the face
+ *   dim             <--  dimension
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx_lst    <--  "face -> vertices" connectivity list
+ *   face_normal     -->  surface normal of the face
  *
  *
  *                          Pi+1
@@ -270,13 +270,13 @@ _compute_face_normal(cs_int_t         dim,
  * Compute quantities associated to faces (border or internal)
  *
  * parameters:
- *   dim             -->  dimension
- *   n_faces         -->  number of faces
- *   vtx_coord       -->  vertex coordinates
- *   face_vtx_idx    -->  "face -> vertices" connectivity index
- *   face_vtx_lst    -->  "face -> vertices" connectivity list
- *   face_cog        <--  coordinates of the centre of gravity of the faces
- *   face_norm       <--  surface normal of the face
+ *   dim             <--  dimension
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx_lst    <--  "face -> vertices" connectivity list
+ *   face_cog        -->  coordinates of the centre of gravity of the faces
+ *   face_norm       -->  surface normal of the face
  *
  *
  *                          Pi+1
@@ -541,8 +541,8 @@ _compute_face_quantities(const cs_int_t   dim,
  *          n    i=0
  *
  * parameters:
- *   mesh          -->  pointer to mesh structure
- *   cell_cen      <--  centre of gravity of cells
+ *   mesh          <--  pointer to mesh structure
+ *   cell_cen      -->  centre of gravity of cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -658,12 +658,12 @@ _compute_cell_cen_vertex(const cs_mesh_t  *const mesh,
  *           i=0
  *
  * parameters:
- *   mesh           -->  pointer to mesh structure
- *   i_face_norm    -->  surface normal of internal faces
- *   i_face_cog     -->  centre of gravity of internal faces
- *   b_face_norm    -->  surface normal of border faces
- *   b_face_cog     -->  centre of gravity of border faces
- *   cell_cen       <--  centre of gravity of cells
+ *   mesh           <--  pointer to mesh structure
+ *   i_face_norm    <--  surface normal of internal faces
+ *   i_face_cog     <--  centre of gravity of internal faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   b_face_cog     <--  centre of gravity of border faces
+ *   cell_cen       -->  centre of gravity of cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -804,12 +804,12 @@ _compute_cell_cen_face(const cs_mesh_t  *const mesh,
  *         3    i=0
  *
  * parameters:
- *   mesh           -->  pointer to mesh structure
- *   i_face_norm    -->  surface normal of internal faces
- *   i_face_cog     -->  centre of gravity of internal faces
- *   b_face_norm    -->  surface normal of border faces
- *   b_face_cog     -->  centre of gravity of border faces
- *   cell_cen       <--  centre of gravity of cells
+ *   mesh           <--  pointer to mesh structure
+ *   i_face_norm    <--  surface normal of internal faces
+ *   i_face_cog     <--  centre of gravity of internal faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   b_face_cog     <--  centre of gravity of border faces
+ *   cell_cen       -->  centre of gravity of cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -910,7 +910,7 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt)
  *    0 : computation based on faces (default choice)
  *    1 : computation based on vertices
  *
- * algo_choice  -->  choice of algorithm to compute cell centers.
+ * algo_choice  <--  choice of algorithm to compute cell centers.
  *
  * returns:
  *  1 or 2 according to the selected algorithm.
@@ -960,7 +960,7 @@ cs_mesh_quantities_create(void)
 /*----------------------------------------------------------------------------
  * Destroy a mesh quantities structure
  *
- * mesh_quantities --> pointer to a cs_mesh_quantities_t structure
+ * mesh_quantities <-- pointer to a cs_mesh_quantities_t structure
  *
  * returns:
  *   NULL
@@ -986,7 +986,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
  * Compute mesh quantities
  *
  * parameters:
- *   mesh            --> pointer to a cs_mesh_t structure
+ *   mesh            <-- pointer to a cs_mesh_t structure
  *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
  *----------------------------------------------------------------------------*/
 
@@ -1114,7 +1114,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
  * Compute internal and border face normal.
  *
  * parameters:
- *   mesh            --> pointer to a cs_mesh_t structure
+ *   mesh            <-- pointer to a cs_mesh_t structure
  *   p_i_face_normal <-> pointer to the internal face normal array
  *   p_b_face_normal <-> pointer to the border face normal array
  *----------------------------------------------------------------------------*/
@@ -1162,8 +1162,8 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
  * Dump a cs_mesh_quantities_t structure
  *
  * parameters:
- *   mesh            --> pointer to a cs_mesh_t structure
- *   mesh_quantities --> pointer to a cs_mesh_quantities_t structure
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-- pointer to a cs_mesh_quantities_t structure
  *----------------------------------------------------------------------------*/
 
 void

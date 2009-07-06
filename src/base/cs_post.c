@@ -91,7 +91,7 @@ typedef enum {
   CS_POST_LOCATION_B_FACE,       /* Values located at boundary faces */
   CS_POST_LOCATION_VERTEX        /* Values located at vertices */
 
-} cs_post_support_t;
+} cs_post_location_t;
 
 /* Writer structure */
 /*------------------*/
@@ -180,7 +180,7 @@ static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
 static cs_post_writer_t  *_cs_post_writers = NULL;
 
-/* Array of registered functions and instances */
+/* Array of registered variable output functions and instances */
 
 static int                _cs_post_nbr_var_tp = 0;
 static int                _cs_post_nbr_var_tp_max = 0;
@@ -1146,7 +1146,7 @@ void CS_PROCF (pstedg, PSTEDG)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTALM (NUMMAI, NUMWRI)
+ * SUBROUTINE PSTALM (NUMMAI, NUMREF)
  * *****************
  *
  * INTEGER          NUMMAI      : <-- : Number of the alias to create
@@ -1387,7 +1387,7 @@ void CS_PROCF (pstvar, PSTVAR)
        cs_real_t   ra[]
 )
 {
-  /* variables locales */
+  /* local variables */
 
   int i, j, k;
   int dim_ent;
@@ -1486,7 +1486,7 @@ void CS_PROCF (pstvar, PSTVAR)
           i_face_list[ind_fac] = 0;
       }
 
-      /* If the elements of the FVM mesh are divied, a same parent number
+      /* If the elements of the FVM mesh are divided, a same parent number
          may appear several times; we thus use a marker logic. */
 
       if (dim_ent == 3) {
@@ -1593,8 +1593,8 @@ void CS_PROCF (pstvar, PSTVAR)
 
   for (i = 0; i < _cs_post_nbr_var_tp; i++) {
     _cs_post_f_var_tp[i](_cs_post_i_var_tp[i],
-                             *ntcabs,
-                             *ttcabs);
+                         *ntcabs,
+                         *ttcabs);
   }
 
   /* Output of variables associated with post-processing meshes */
@@ -2014,13 +2014,13 @@ cs_post_add_mesh(int          mesh_id,
   /* Create mesh and assign to structure */
 
   _cs_post_define_mesh(post_mesh,
-                            mesh_name,
-                            n_cells,
-                            n_i_faces,
-                            n_b_faces,
-                            cell_list,
-                            i_face_list,
-                            b_face_list);
+                       mesh_name,
+                       n_cells,
+                       n_i_faces,
+                       n_b_faces,
+                       cell_list,
+                       i_face_list,
+                       b_face_list);
 }
 
 /*----------------------------------------------------------------------------
@@ -2035,10 +2035,10 @@ cs_post_add_mesh(int          mesh_id,
  * maintain consistency between this mesh and the post-processing output.
  *
  * parameters:
- *   mesh_id  <-- number of mesh to create (< 0 reserved, > 0 for user)
- *   exp_mesh <-- mesh in exportable representation (i.e. fvm_nodal_t)
- *   transfer <-- if true, ownership of exp_mesh is transferred to the
- *                post-processing mesh
+ *   mesh_id   <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   exp_mesh  <-- mesh in exportable representation (i.e. fvm_nodal_t)
+ *   transfer  <-- if true, ownership of exp_mesh is transferred to the
+ *                 post-processing mesh
  *----------------------------------------------------------------------------*/
 
 void

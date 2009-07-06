@@ -570,7 +570,7 @@ _file_open(cs_io_t     *cs_io,
            int          hints)
 #endif
 {
-  fvm_file_mode_t cs_io_mode;
+  fvm_file_mode_t f_mode;
   char header_data[128 + 24];
   fvm_file_off_t header_vals[3];
 
@@ -581,11 +581,11 @@ _file_open(cs_io_t     *cs_io,
   switch(cs_io->mode) {
 
   case CS_IO_MODE_READ:
-    cs_io_mode = FVM_FILE_MODE_READ;
+    f_mode = FVM_FILE_MODE_READ;
     break;
 
   case CS_IO_MODE_WRITE:
-    cs_io_mode = FVM_FILE_MODE_WRITE;
+    f_mode = FVM_FILE_MODE_WRITE;
     break;
 
   default:
@@ -597,9 +597,9 @@ _file_open(cs_io_t     *cs_io,
   /* Create interface file descriptor */
 
 #if defined(HAVE_MPI)
-  cs_io->f = fvm_file_open(name, cs_io_mode, hints, comm);
+  cs_io->f = fvm_file_open(name, f_mode, hints, comm);
 #else
-  cs_io->f = fvm_file_open(name, cs_io_mode, hints);
+  cs_io->f = fvm_file_open(name, f_mode, hints);
 #endif
 
   fvm_file_set_big_endian(cs_io->f);
