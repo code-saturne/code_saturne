@@ -95,9 +95,35 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
+/* Default hints for files using this API (for MPI-IO) */
+
+extern int       cs_glob_io_hints;
+
 /* Global structure associated with pre-processor output (kernel input) file */
 
 extern cs_io_t  *cs_glob_pp_io;
+
+/*============================================================================
+ * Public function prototypes for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the default kernel IO hints to the specified value.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE IOHINT (IHINT)
+ * *****************
+ *
+ * INTEGER          IHINT       : <-> : IO hints (bit mask)
+ *                                        0: default
+ *                                        1: disable MPI IO
+ *                                        4: MPI IO uses explicit offsets
+ *                                        8: MPI IO uses individual pointers
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (iohint, IOHINT) (const cs_int_t  *iopt);
 
 /*============================================================================
  * Public function prototypes

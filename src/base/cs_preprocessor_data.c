@@ -356,14 +356,14 @@ _read_cell_rank(cs_mesh_t       *mesh,
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
-                                0,
+                                cs_glob_io_hints,
                                 echo,
                                 cs_glob_mpi_comm);
 #else
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
-                                0,
+                                cs_glob_io_hints,
                                 echo);
 #endif
 

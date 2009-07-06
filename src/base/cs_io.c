@@ -189,6 +189,13 @@ static char  _type_name_u8[] =   "u8";  /* Unsigned 64 bit integer */
 static char  _type_name_r4[] =   "r4";  /* Single precision real */
 static char  _type_name_r8[] =   "r8";  /* Double precsision real */
 
+/* Default hints for files using this API (for MPI-IO) */
+#if defined(FVM_HAVE_MPI_IO)
+int  cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
+#else
+int  cs_glob_io_hints = 0;
+#endif
+
 /* Global pointer on preprocessor data file handle */
 cs_io_t  *cs_glob_pp_io = NULL;
 
@@ -796,9 +803,9 @@ _file_legacy_restart_open(cs_io_t    *inp,
   /* Create interface file descriptor */
 
 #if defined(HAVE_MPI)
-  inp->f = fvm_file_open(name, inp->mode, FVM_FILE_NO_MPI_IO, comm);
+  inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, FVM_FILE_NO_MPI_IO, comm);
 #else
-  inp->f = fvm_file_open(name, inp->mode, 0);
+  inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, 0);
 #endif
 
   fvm_file_set_big_endian(inp->f);
@@ -1067,9 +1074,9 @@ _file_reopen_read(cs_io_t   *inp,
     inp->index->f[i] = fvm_file_free(inp->index->f[i]);
 
 #if defined(HAVE_MPI)
-    inp->index->f[i] = fvm_file_open(tmpname, CS_IO_MODE_READ, hints, comm);
+    inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints, comm);
 #else
-    inp->index->f[i] = fvm_file_open(tmpname, CS_IO_MODE_READ, hints);
+    inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints);
 #endif
 
     fvm_file_set_big_endian(inp->index->f[i]);
@@ -2027,6 +2034,31 @@ _dump_index(const cs_io_sec_index_t  *idx)
     bft_printf(_("  \"%s\"\n"), fvm_file_get_name(idx->f[ii]));
 
   bft_printf("\n");
+}
+
+/*============================================================================
+ * Public functions definition for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the default kernel IO hints to the specified value.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE IOHINT (IHINT)
+ * *****************
+ *
+ * INTEGER          IHINT       : <-> : IO hints (bit mask)
+ *                                        0: default
+ *                                        1: disable MPI IO
+ *                                        4: MPI IO uses explicit offsets
+ *                                        8: MPI IO uses individual pointers
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (iohint, IOHINT) (const cs_int_t  *ihint)
+{
+  cs_glob_io_hints = *ihint;
 }
 
 /*============================================================================

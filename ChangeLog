@@ -1,4 +1,12 @@
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a subroutine to control the behaviour of MPI I/O.
+  modified routines:
+    include/base/cs_io.h
+    src/base/cs_io.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_restart.c
+
+* 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Refactor compiler detection to alleviate some issues with IBM
   compilers (autodetection of xlc on non-BlueGene systems and
   for two different BlueGene systems on the same frontal).
