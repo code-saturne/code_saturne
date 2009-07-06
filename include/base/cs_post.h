@@ -618,6 +618,26 @@ cs_post_add_mesh_edges(int  edges_id,
                        int  base_id);
 
 /*----------------------------------------------------------------------------
+ * Assign a category post-processing mesh.
+ *
+ * By default, each mesh is assigned a category id identical to its id.
+ * The automatic variables output associated with the main volume and
+ * boundary meshes will also be applied to meshes of the same categories
+ * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
+ * defined or not), so setting a user meshe's category to one of these
+ * values will automatically provide the same automatic variable output to
+ * the user mesh.
+ *
+ * parameters:
+ *   mesh_id     <-- id of associated mesh
+ *   category_id <-- id of mesh category (-1: as volume, -2: as boundary)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_set_mesh_category(int  mesh_id,
+                          int  category_id);
+
+/*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
  *
  * An alias allows association of an extra identifier (number) to an
