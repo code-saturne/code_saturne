@@ -5,9 +5,12 @@
     include/base/cs_prototypes.h
     include/base/parall.h
     include/base/paramx.h
+    src/apps/cs_solver.c
     src/base/cs_grid.c
     src/base/cs_multigrid.c
     src/base/cs_renumber.c
+    src/base/csinit.f90
+    src/base/majgeo.f90
 
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong post-processing management for 2D SYRTHES-coupled meshes.

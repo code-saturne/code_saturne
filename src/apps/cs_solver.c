@@ -291,6 +291,8 @@ cs_run(void)
     cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
     cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
     cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
+    cs_int_t nthrdi = 1;
+    cs_int_t nthrdb = 1;
     cs_int_t ngrpi = 1;
     cs_int_t ngrpb = 1;
     const cs_int_t *idxfi = NULL;
@@ -298,12 +300,14 @@ cs_run(void)
 
     if (cs_glob_mesh->i_face_numbering != NULL) {
       const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
+      nthrdi = _n->n_threads;
       ngrpi = _n->n_groups;
       idxfi = _n->group_index;
     }
 
     if (cs_glob_mesh->b_face_numbering != NULL) {
       const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
+      nthrdb = _n->n_threads;
       ngrpb = _n->n_groups;
       idxfb = _n->group_index;
     }
@@ -319,6 +323,8 @@ cs_run(void)
                               &n_g_i_faces,
                               &n_g_b_faces,
                               &n_g_vertices,
+                              &nthrdi,
+                              &nthrdb,
                               &ngrpi,
                               &ngrpb,
                               idxfi,

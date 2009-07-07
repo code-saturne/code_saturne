@@ -30,7 +30,7 @@ subroutine majgeo &
 
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,           &
    lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
-   ngrpi2 , ngrpb2 , idxfi  , idxfb   )
+   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb )
 
 !===============================================================================
 ! FONCTION :
@@ -54,6 +54,8 @@ subroutine majgeo &
 ! nfacg2           ! e  ! <-- ! nombre global de faces internes                !
 ! nfbrg2           ! e  ! <-- ! nombre global de faces de bord                 !
 ! nsomg2           ! e  ! <-- ! nombre global de sommets                       !
+! nthdi2           ! e  ! <-- ! nb. max de threads par groupe de faces inter   !
+! nthdb2           ! e  ! <-- ! nb. max de threads par groupe de faces de bord !
 ! ngrpi2           ! e  ! <-- ! nb. groupes de faces interieures               !
 ! ngrpb2           ! e  ! <-- ! nb. groupes de faces de bord                   !
 ! idxfi            ! e  ! <-- ! index pour faces internes                      !
@@ -83,7 +85,9 @@ include "parall.h"
 integer          ncel2, ncele2, nfac2, nfabo2, nsom2
 integer          lndfa2, lndfb2
 integer          ncelg2, nfacg2 , nfbrg2, nsomg2
-integer          ngrpi2, ngrpb2, idxfi, idxfb
+integer          nthdi2, nthdb2
+integer          ngrpi2, ngrpb2
+integer          idxfi(*), idxfb(*)
 
 ! VARIABLES LOCALES
 
@@ -156,14 +160,15 @@ iomplb(2, 1, 1) = nfabor
 ! Numerotations pour boucles OpenMP sur les faces interieures
 
 ngrpi = ngrpi2
+nthrdi = nthdi2
 
-if (nthrdp.gt.1 .and. ngrpi.gt.1) then
+if (nthrdi.gt.1 .and. ngrpi.gt.1) then
 
-  do ii = 1, nthrdp
+  do ii = 1, nthrdi
     do jj = 1, ngrpi
 
-      iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + jj - 1) + 1
-      iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + jj) + 1
+      iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj-1) + 1
+      iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj)
 
     enddo
   enddo
@@ -173,14 +178,15 @@ endif
 ! Numerotations pour boucles OpenMP sur les faces de bord
 
 ngrpb = ngrpb2
+nthrdb = nthdb2
 
-if (nthrdp.gt.1 .and. ngrpb.gt.1) then
+if (nthrdb.gt.1 .and. ngrpb.gt.1) then
 
-  do ii = 1, nthrdp
+  do ii = 1, nthrdb
     do jj = 1, ngrpb
 
-      iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + jj - 1) + 1
-      iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + jj) + 1
+      iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj-1) + 1
+      iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj)
 
     enddo
   enddo

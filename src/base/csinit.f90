@@ -93,7 +93,10 @@ character        name*300
 irangp = irgpar
 nrangp = nrgpar
 
-nthrdp = nthpar
+nthrdi = 1
+nthrdb = 1
+ngrpi = 1
+ngrpb = 1
 
 !===============================================================================
 ! Initialisation des paramètres de lecture des données Préprocesseur
