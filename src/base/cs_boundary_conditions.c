@@ -29,6 +29,10 @@
  * Boundary condition handling.
  *============================================================================*/
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -152,7 +156,7 @@ _min_gnum_face(fvm_gnum_t  *face_gnum,
     val_in.val = 1;
   val_in.rank = cs_glob_rank_id;
 
-  MPI_Allreduce(&val_in, &val_min, 1, CS_MPI_REAL_INT, MPI_MINLOC,
+  MPI_Allreduce(&val_in, &val_min, 1, MPI_2INT, MPI_MINLOC,
                 cs_glob_mpi_comm);
 
   /* Now exchange values */
