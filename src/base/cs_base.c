@@ -871,7 +871,7 @@ void CS_PROCF (rasize, RASIZE)
 void
 cs_base_mpi_init(int  app_num)
 {
-  int flag, nbr, rank;
+  int nbr, rank;
 
   int app_num_l = app_num, app_num_max = -1;
 
