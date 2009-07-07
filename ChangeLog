@@ -1,4 +1,10 @@
 * 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use a Fortran 95 feature - advance=no - in writing formats instead of
+  the deprecating use of the dollar symbol.
+  modified routine:
+    src/base/csprnt.f90
+
+* 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   When detecting a divergence in the linear system solver stage, abort
   and write graphical data of the given matrix (rhs, diagonal, ...).
   modified routines:

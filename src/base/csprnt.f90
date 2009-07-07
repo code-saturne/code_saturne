@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -42,7 +42,7 @@ subroutine csprnt &
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! chaine           ! c  ! <-- ! chaine a imprimer (tableau)                    !
-! taille           ! e  ! <-- ! nombre de caracteres      )                    !
+! taille           ! e  ! <-- ! nombre de caracteres                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -78,14 +78,8 @@ do ii = 1, taille
    chloc(ii:ii) = chaine(ii)
 enddo
 
-write(nfecra, 1000) chloc(1:taille)
+write(nfecra, '(a)', advance='no') chloc(1:taille)
 
 return
-
-!===============================================================================
-! 2. FORMATS
-!===============================================================================
-
- 1000 format(a, $)
 
 end
