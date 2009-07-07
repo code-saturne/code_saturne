@@ -275,6 +275,36 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
                          int               max_num,
                          int               c_cell_num[]);
 
+/*----------------------------------------------------------------------------
+ * Project variable from coarse grid to base grid
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   c_var        <-- Cell variable on coarse grid
+ *   f_var        --> Cell variable projected to fine grid
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_var(const cs_grid_t  *g,
+                    fvm_lnum_t        n_base_cells,
+                    const cs_real_t   c_var[],
+                    cs_real_t         f_var[]);
+
+/*----------------------------------------------------------------------------
+ * Compute diagonal dominance metric and project it to base grid
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   diag_dom     --> Diagonal dominance metric (on fine grid)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_diag_dom(const cs_grid_t  *g,
+                         fvm_lnum_t        n_base_cells,
+                         cs_real_t         diag_dom[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

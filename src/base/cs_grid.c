@@ -1624,6 +1624,150 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Project variable from coarse grid to base grid
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   c_var        <-- Cell variable on coarse grid
+ *   f_var        --> Cell variable projected to fine grid
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_var(const cs_grid_t  *g,
+                    fvm_lnum_t        n_base_cells,
+                    const cs_real_t   c_var[],
+                    cs_real_t         f_var[])
+{
+  fvm_lnum_t ii;
+
+  assert(g != NULL);
+  assert(c_var != NULL);
+  assert(f_var != NULL);
+
+  if (g->level == 0)
+    memcpy(f_var, c_var, n_base_cells*sizeof(cs_real_t));
+
+  /* Project to finer levels */
+
+  else if (g->level == 1) {
+
+    for (ii = 0; ii < n_base_cells; ii++)
+      f_var[ii] = c_var[g->coarse_cell[ii] - 1];
+
+  }
+  else { /* if g->level > 1) */
+
+    cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
+    const cs_grid_t *_g = g;
+
+    /* Allocate temporary arrays */
+
+    BFT_MALLOC(tmp_var_1, n_base_cells, cs_real_t);
+    BFT_MALLOC(tmp_var_2, n_base_cells, cs_real_t);
+
+    for (ii = 0; ii < g->n_cells; ii++)
+      tmp_var_1[ii] = c_var[ii];
+
+    for (_g = g; _g->level > 1; _g = _g->parent) {
+
+      fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+
+      for (ii = 0; ii < n_parent_cells; ii++)
+        tmp_var_2[ii] = tmp_var_1[_g->coarse_cell[ii] - 1];
+
+      for (ii = 0; ii < n_parent_cells; ii++)
+        tmp_var_1[ii] = tmp_var_2[ii];
+
+    }
+
+    assert(_g->level == 1);
+    assert(_g->parent->n_cells == n_base_cells);
+
+    for (ii = 0; ii < n_base_cells; ii++)
+      f_var[ii] = tmp_var_1[_g->coarse_cell[ii] - 1];
+
+    /* Free temporary arrays */
+
+    BFT_FREE(tmp_var_1);
+    BFT_FREE(tmp_var_2);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute diagonal dominance metric and project it to base grid
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   diag_dom     --> Diagonal dominance metric (on fine grid)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_diag_dom(const cs_grid_t  *g,
+                         fvm_lnum_t        n_base_cells,
+                         cs_real_t         diag_dom[])
+{
+  fvm_lnum_t ii, jj, face_id;
+
+  cs_real_t *dd = NULL;
+
+  assert(g != NULL);
+  assert(diag_dom != NULL);
+
+  if (g->level == 0)
+    dd = diag_dom;
+  else
+    BFT_MALLOC(dd, g->n_cells_ext, cs_real_t);
+
+  /* Compute coarse diagonal dominance */
+
+  {
+    const fvm_lnum_t n_cells = g->n_cells;
+    const fvm_lnum_t n_faces = g->n_faces;
+    const fvm_lnum_t *face_cel = g->face_cell;
+
+    /* Diagonal part of matrix.vector product */
+
+    for (ii = 0; ii < n_cells; ii++)
+      dd[ii] = fabs(g->da[ii]);
+
+    if (g->halo != NULL)
+      cs_halo_sync_var(g->halo, CS_HALO_STANDARD, dd);
+
+    if (g->symmetric) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        dd[ii] -= fabs(g->xa[face_id]);
+        dd[jj] -= fabs(g->xa[face_id]);
+      }
+    }
+    else {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        ii = face_cel[2*face_id] -1;
+        jj = face_cel[2*face_id + 1] -1;
+        dd[ii] -= fabs(g->xa[face_id]);
+        dd[jj] -= fabs(g->xa[face_id + n_faces]);
+      }
+    }
+
+    for (ii = 0; ii < n_cells; ii++) {
+      if (fabs(g->da[ii]) > 1.e-18)
+        dd[ii] /= fabs(g->da[ii]);
+    }
+
+  }
+
+  /* Now project to finer levels */
+
+  if (dd != diag_dom) {
+    cs_grid_project_var(g, n_base_cells, dd, diag_dom);
+    BFT_FREE(dd);
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

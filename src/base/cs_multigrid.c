@@ -716,7 +716,7 @@ _dot_product(cs_int_t          n_elts,
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached.
+ *   cycle number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
 static int
@@ -745,9 +745,14 @@ _convergence_test(const char         *var_name,
     = N_("   N. cycles: %4d; Fine mesh cumulative iter: %5d; "
          "Norm. residual %12.4e\n");
 
+  static double initial_residue = 0.;
+
   /* Compute residue */
 
   *residue = sqrt(_dot_product(n_f_cells, rhs, rhs));
+
+  if (cycle_id == 1)
+    initial_residue = *residue;
 
   if (*residue < precision*r_norm) {
 
@@ -782,10 +787,161 @@ _convergence_test(const char         *var_name,
     return -1;
   }
 
-  else if (verbosity > 2)
-    bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
+  else {
+
+    if (verbosity > 2)
+      bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
+
+    if (*residue > initial_residue * 10000.0 && *residue > 100.)
+      return -2;
+
+#if (_CS_STDC_VERSION >= 199901L)
+    if (isnan(*residue) || isinf(*residue))
+      return -2;
+#endif
+  }
 
   return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Handle error output in case if divergence.
+ *
+ * Depending on the multigrid level at which divergence is detected,
+ * output matrix hierarchy information, RHS, and variable info,
+ * and finally abort on error.
+ *
+ * parameters:
+ *   mg              <-- Multigrid system
+ *   level           <-- Multigrid level at which divergence is detected
+ *   symmetric       <-- Symmetric coefficients indicator
+ *   rotation_mode   <-- Halo update option for rotational periodicity
+ *   cycle_id        <-- Id of currect cycle
+ *   initial_residue <-- Initial residue
+ *   residue         <-- Residue
+ *   rhs             <-- Right hand side
+ *   vx              <-- System solution
+ *   c_rhs           <-- Right hand side for levels > 0
+ *   c_vx            <-- System solution for levels > 0
+ *----------------------------------------------------------------------------*/
+
+static void
+_abort_on_divergence(cs_multigrid_t    *mg,
+                     int                level,
+                     cs_bool_t          symmetric,
+                     cs_perio_rota_t    rotation_mode,
+                     int                cycle_id,
+                     double             initial_residue,
+                     double             residue,
+                     const cs_real_t    rhs[],
+                     cs_real_t          vx[],
+                     cs_real_t        **c_rhs,
+                     cs_real_t        **c_vx)
+{
+  int mesh_id = cs_post_init_error_writer_cells();
+
+  if (mesh_id != 0) {
+
+    char var_name[32];
+
+    int lv_id = 0;
+    cs_real_t *var = NULL;
+
+    const cs_real_t *_da = NULL, *_xa = NULL;
+    const cs_grid_t *g = mg->grid_hierarchy[0];
+    const fvm_lnum_t n_base_cells = cs_grid_get_n_cells(g);
+
+    BFT_MALLOC(var, cs_grid_get_n_cells_ext(g), cs_real_t);
+
+    /* Output info on main level */
+
+    cs_grid_get_matrix(g, &_da, &_xa, NULL);
+
+    cs_sles_post_error_output_def(mg->info.name,
+                                  mesh_id,
+                                  symmetric,
+                                  rotation_mode,
+                                  _da,
+                                  _xa,
+                                  rhs,
+                                  vx);
+
+    /* Output diagonal and diagonal dominance for all coarse levels */
+
+    for (lv_id = 1; lv_id < mg->n_levels; lv_id++) {
+
+      g = mg->grid_hierarchy[lv_id];
+
+      cs_grid_get_matrix(g, &_da, NULL, NULL);
+
+      cs_grid_project_var(g, n_base_cells, _da, var);
+      sprintf(var_name, "Diag_%04d", lv_id);
+      cs_sles_post_error_output_var(var_name, mesh_id, var);
+
+      cs_grid_project_diag_dom(g, n_base_cells, var);
+      sprintf(var_name, "Diag_Dom_%04d", lv_id);
+      cs_sles_post_error_output_var(var_name, mesh_id, var);
+    }
+
+    /* Output info on current level if > 0 */
+
+    if (level > 0) {
+
+      fvm_lnum_t ii;
+      fvm_lnum_t n_cells = 0;
+      fvm_lnum_t n_cells_ext = 0;
+
+      cs_real_t *c_res = NULL;
+      cs_matrix_t  *_matrix = NULL;
+
+      g = mg->grid_hierarchy[level];
+      n_cells = cs_grid_get_n_cells(g);
+      n_cells_ext = cs_grid_get_n_cells_ext(g);
+
+      cs_grid_project_var(g, n_base_cells, c_rhs[level], var);
+      sprintf(var_name, "RHS_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, var);
+
+      cs_grid_project_var(g, n_base_cells, c_vx[level], var);
+      sprintf(var_name, "X_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, var);
+
+      /* Compute residual */
+
+      BFT_MALLOC(c_res, n_cells_ext, cs_real_t);
+
+      cs_grid_get_matrix(g, &_da, &_xa, &_matrix);
+      cs_matrix_set_coefficients(_matrix, symmetric, _da, _xa);
+
+      cs_matrix_vector_multiply(rotation_mode, _matrix, c_vx[level], c_res);
+
+      for (ii = 0; ii < n_cells; ii++)
+        c_res[ii] = fabs(c_res[ii] - c_rhs[level][ii]);
+
+      cs_grid_project_var(g, n_base_cells, c_res, var);
+
+      BFT_FREE(c_res);
+
+      sprintf(var_name, "Residual_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, var);
+    }
+
+    cs_post_finalize();
+  }
+
+  /* Now abort */
+
+  if (level == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("algebraic multigrid [%s]: divergence after %d cycles:\n"
+                "  initial residual: %11.4e; current residual: %11.4e"),
+              _(mg->info.name), cycle_id, initial_residue, residue);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("algebraic multigrid [%s]: divergence after %d cycles\n"
+                "  during resolution at level %d:\n"
+                "  initial residual: %11.4e; current residual: %11.4e"),
+              _(mg->info.name), cycle_id, level, initial_residue, residue);
 }
 
 /*----------------------------------------------------------------------------
@@ -816,7 +972,7 @@ _convergence_test(const char         *var_name,
  *
  * Returns
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached.
+ *   cycle number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
 static int
@@ -843,7 +999,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   int level, coarsest_level;
   fvm_lnum_t ii;
 
-  int cvg = 0;
+  int cvg = 0, c_cvg = 0;
   int n_iter = 0;
   size_t alloc_size = 0;
   cs_real_t c_precision = precision;
@@ -855,6 +1011,9 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   char _var_lv_name[33];
   char *var_lv_name = _var_lv_name;
+
+  double initial_residue = *residue;
+  double _initial_residue = 0.;
 
   cs_real_t *_aux_vectors = aux_vectors;
   cs_real_t *wr = NULL;
@@ -958,26 +1117,34 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     cs_grid_get_matrix(f, &_da, &_xa, &_matrix);
 
-    cs_sles_solve(var_lv_name,
-                  descent_smoother_type,
-                  false, /* Stats not updated here */
-                  symmetric,
-                  _da,
-                  _xa,
-                  _matrix,
-                  NULL,
-                  poly_degree,
-                  rotation_mode,
-                  verbosity - 2,
-                  n_max_iter[level*2],
-                  precision,
-                  r_norm_l,
-                  &n_iter,
-                  &_residue,
-                  _rhs_level,
-                  _vx[level],
-                  _aux_size,
-                  _aux_vectors);
+    _initial_residue = _residue;
+
+    c_cvg = cs_sles_solve(var_lv_name,
+                          descent_smoother_type,
+                          false, /* Stats not updated here */
+                          symmetric,
+                          _da,
+                          _xa,
+                          _matrix,
+                          NULL,
+                          poly_degree,
+                          rotation_mode,
+                          verbosity - 2,
+                          n_max_iter[level*2],
+                          precision,
+                          r_norm_l,
+                          &n_iter,
+                          &_residue,
+                          _rhs_level,
+                          _vx[level],
+                          _aux_size,
+                          _aux_vectors);
+
+    if (c_cvg == -2)
+      _abort_on_divergence(mg, level,
+                           symmetric, rotation_mode, cycle_id,
+                           _initial_residue, _residue,
+                           rhs, vx, _rhs, _vx);
 
     n_level_iter[level] += n_iter;
 
@@ -1016,6 +1183,11 @@ _multigrid_cycle(cs_multigrid_t     *mg,
       /* If converged or cycle limit reached, break from descent loop */
 
       if (cvg != 0) {
+        if (cvg == -2)
+          _abort_on_divergence(mg, level,
+                               symmetric, rotation_mode, cycle_id,
+                               initial_residue, *residue,
+                               rhs, vx, _rhs, _vx);
         end_cycle = true;
         break;
       }
@@ -1059,26 +1231,34 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     cs_grid_get_matrix(c, &_da, &_xa, &_matrix);
 
-    cs_sles_solve(var_lv_name,
-                  coarse_solver_type,
-                  false, /* Stats not updated here */
-                  symmetric,
-                  _da,
-                  _xa,
-                  _matrix,
-                  NULL,
-                  poly_degree,
-                  rotation_mode,
-                  verbosity - 2,
-                  n_max_iter[level*2],
-                  c_precision,
-                  r_norm_l,
-                  &n_iter,
-                  &_residue,
-                  _rhs_level,
-                  _vx[level],
-                  _aux_size,
-                  _aux_vectors);
+    _initial_residue = _residue;
+
+    c_cvg = cs_sles_solve(var_lv_name,
+                          coarse_solver_type,
+                          false, /* Stats not updated here */
+                          symmetric,
+                          _da,
+                          _xa,
+                          _matrix,
+                          NULL,
+                          poly_degree,
+                          rotation_mode,
+                          verbosity - 2,
+                          n_max_iter[level*2],
+                          c_precision,
+                          r_norm_l,
+                          &n_iter,
+                          &_residue,
+                          _rhs_level,
+                          _vx[level],
+                          _aux_size,
+                          _aux_vectors);
+
+    if (c_cvg == -2)
+      _abort_on_divergence(mg, level,
+                           symmetric, rotation_mode, cycle_id,
+                           _initial_residue, _residue,
+                           rhs, vx, _rhs, _vx);
 
     n_level_iter[level] += n_iter;
 
@@ -1123,26 +1303,34 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
         cs_grid_get_matrix(f, &_da, &_xa, &_matrix);
 
-        cs_sles_solve(var_lv_name,
-                      ascent_smoother_type,
-                      false, /* Stats not updated here */
-                      symmetric,
-                      _da,
-                      _xa,
-                      _matrix,
-                      NULL,
-                      poly_degree,
-                      rotation_mode,
-                      verbosity - 2,
-                      n_max_iter[level*2 + 1],
-                      precision,
-                      r_norm_l,
-                      &n_iter,
-                      &_residue,
-                      _rhs[level],
-                      _vx[level],
-                      _aux_size,
-                      _aux_vectors);
+        _initial_residue = _residue;
+
+        c_cvg = cs_sles_solve(var_lv_name,
+                              ascent_smoother_type,
+                              false, /* Stats not updated here */
+                              symmetric,
+                              _da,
+                              _xa,
+                              _matrix,
+                              NULL,
+                              poly_degree,
+                              rotation_mode,
+                              verbosity - 2,
+                              n_max_iter[level*2 + 1],
+                              precision,
+                              r_norm_l,
+                              &n_iter,
+                              &_residue,
+                              _rhs[level],
+                              _vx[level],
+                              _aux_size,
+                              _aux_vectors);
+
+        if (c_cvg == -2)
+          _abort_on_divergence(mg, level,
+                               symmetric, rotation_mode, cycle_id,
+                               _initial_residue, _residue,
+                               rhs, vx, _rhs, _vx);
 
         n_level_iter[level] += n_iter;
       }

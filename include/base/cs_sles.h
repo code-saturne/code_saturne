@@ -187,9 +187,13 @@ cs_sles_needs_solving(const char        *var_name,
  *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-void
+int
 cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
               cs_bool_t           update_stats,
@@ -210,6 +214,44 @@ cs_sles_solve(const char         *var_name,
               cs_real_t          *vx,
               size_t              aux_size,
               void               *aux_vectors);
+
+/*----------------------------------------------------------------------------
+ * Output default post-processing data for failed system convergence.
+ *
+ * parameters:
+ *   var_name      <-- Variable name
+ *   mesh_id       <-- id of error output mesh, or 0 if none
+ *   symmetric     <-- indicates if matrix values are symmetric
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   ad            <-- Diagonal part of linear equation matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
+ *   rhs           <-- Right hand side
+ *   vx            <-> Current system solution
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_post_error_output_def(const char       *var_name,
+                              int               mesh_id,
+                              cs_bool_t         symmetric,
+                              cs_perio_rota_t   rotation_mode,
+                              const cs_real_t  *ad,
+                              const cs_real_t  *ax,
+                              const cs_real_t  *rhs,
+                              cs_real_t        *vx);
+
+/*----------------------------------------------------------------------------
+ * Output post-processing variable for failed system convergence.
+ *
+ * parameters:
+ *   var_name <-- Variable name
+ *   mesh_id  <-- id of error output mesh, or 0 if none
+ *   var      <-- Variable values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_post_error_output_var(const char  *var_name,
+                              int          mesh_id,
+                              cs_real_t   *var);
 
 /*----------------------------------------------------------------------------*/
 

@@ -70,6 +70,7 @@
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_perio.h"
+#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -407,7 +408,7 @@ _convergence_init(cs_sles_convergence_t  *convergence,
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached.
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
 static int
@@ -445,14 +446,17 @@ _convergence_test(const char             *solver_name,
       else if (isnan(residue) || isinf(residue))
         diverges = 1;
 #endif
-      if (diverges)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("%s [%s]: divergence after %u iterations:\n"
-                    "  initial residual: %11.4e; current residual: %11.4e"),
-                  solver_name, var_name,
-                  convergence->n_iterations,
-                  convergence->initial_residue, residue);
-      return 0;
+      if (diverges) {
+        bft_printf(_("\n\n"
+                     "%s [%s]: divergence after %u iterations:\n"
+                     "  initial residual: %11.4e; current residual: %11.4e\n"),
+                   solver_name, var_name,
+                   convergence->n_iterations,
+                   convergence->initial_residue, convergence->residue);
+        return -2;
+      }
+      else
+        return 0;
     }
     else {
       if (verbosity > 0) {
@@ -706,9 +710,13 @@ _polynomial_preconditionning(cs_int_t            n_cells,
  *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _conjugate_gradient_sp(const char             *var_name,
                        const cs_matrix_t      *a,
                        const cs_matrix_t      *ax,
@@ -878,6 +886,8 @@ _conjugate_gradient_sp(const char             *var_name,
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
+
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------
@@ -900,9 +910,13 @@ _conjugate_gradient_sp(const char             *var_name,
  *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _conjugate_gradient_mp(const char             *var_name,
                        const cs_matrix_t      *a,
                        const cs_matrix_t      *ax,
@@ -1076,6 +1090,8 @@ _conjugate_gradient_mp(const char             *var_name,
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
+
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------
@@ -1086,18 +1102,20 @@ _conjugate_gradient_mp(const char             *var_name,
  * parameters:
  *   var_name      <-- Variable name
  *   ad            <-- Diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   ax            <-- Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
  *   rhs           <-- Right hand side
  *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _jacobi(const char             *var_name,
         const cs_real_t        *restrict ad,
         const cs_matrix_t      *ax,
@@ -1200,6 +1218,8 @@ _jacobi(const char             *var_name,
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
+
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------
@@ -1219,12 +1239,16 @@ _jacobi(const char             *var_name,
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   convergence   <-- Convergence information structure
  *   rhs           <-- Right hand side
- *   vx            <-- System solution
+ *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _bi_cgstab(const char             *var_name,
            const cs_matrix_t      *a,
            const cs_matrix_t      *ax,
@@ -1348,18 +1372,23 @@ _bi_cgstab(const char             *var_name,
       else if (convergence->verbosity > 2)
         bft_printf("   %5d %11.4e %11.4e\n",
                    n_iter, residue, residue/convergence->r_norm);
-      return;
+
+      cvg = 0;
+      break;
     }
 
     if (CS_ABS(alpha) < _epzero) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s [%s]:\n"
-                  " @@ Warning: non convergence and abort\n"
-                  "\n"
-                  "    Alpha coefficient is lower than %12.4e\n"
-                  "\n"
-                  "    The matrix cannot be considered as invertible anymore."),
-                sles_name, var_name, alpha);
+      bft_printf
+        (_("\n\n"
+           "%s [%s]:\n"
+           " @@ Warning: non convergence and abort\n"
+           "\n"
+           "    Alpha coefficient is lower than %12.4e\n"
+           "\n"
+           "    The matrix cannot be considered as invertible anymore."),
+         sles_name, var_name, alpha);
+      cvg = -2;
+      break;
     }
 
     omega = beta*gamma / (alpha*betam1);
@@ -1415,15 +1444,18 @@ _bi_cgstab(const char             *var_name,
     _dot_products_2(n_rows, vk, rk, vk, vk, &ro_0, &ro_1);
 
     if (ro_1 < _epzero) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s [%s]:\n"
-                  " @@ Warning: non convergence and abort\n"
-                  "\n"
-                  "    The square of the norm of the descent vector\n"
-                  "    is lower than %12.4e\n"
-                  "\n"
-                  "    The resolution does not progress anymore."),
-                sles_name, var_name, _epzero);
+      bft_printf
+        (_("\n\n"
+           "%s [%s]:\n"
+           " @@ Warning: non convergence and abort\n"
+           "\n"
+           "    The square of the norm of the descent vector\n"
+           "    is lower than %12.4e\n"
+           "\n"
+           "    The resolution does not progress anymore."),
+         sles_name, var_name, _epzero);
+      cvg = -2;
+      break;
     }
 
     alpha = ro_0 / ro_1;
@@ -1439,6 +1471,174 @@ _bi_cgstab(const char             *var_name,
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Output post-processing data for failed system convergence.
+ *
+ * parameters:
+ *   n_vals        <-- Size of val and val_type array
+ *   val           <-> Values to post-process (set to 0 on output if not
+ *                     normal floating-point values)
+ *   val_type      --> 0: normal values, 1: infinite, 2: Nan
+ *
+ * returns:
+ *   number of non-normal values
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_value_type(size_t      n_vals,
+            cs_real_t   val[],
+            int         val_type[])
+{
+  size_t ii;
+  size_t retval = 0;
+
+#if (_CS_STDC_VERSION >= 199901L)
+
+  for (ii = 0; ii < n_vals; ii++) {
+
+    int v_type = fpclassify(val[ii]);
+
+    if (v_type == FP_INFINITE) {
+      val[ii] = 0.;
+      val_type[ii] = 1;
+      retval += 1;
+    }
+
+    else if (v_type == FP_NAN) {
+      val[ii] = 0.;
+      val_type[ii] = 2;
+      retval += 1;
+    }
+
+    else if (val[ii] > 1.e38 || val[ii] < -1.e38) {
+      val[ii] = 0.;
+      val_type[ii] = 1;
+      retval += 1;
+    }
+
+    else
+      val_type[ii] = 0;
+  }
+
+#else
+
+  for (ii = 0; ii < n_vals; ii++) {
+
+    if (val[ii] != val[ii]) { /* Test for NaN with IEEE 754 arithmetic */
+      val[ii] = 0.;
+      val_type[ii] = 2;
+      retval += 1;
+    }
+
+    else if (val[ii] > 1.e38 || val[ii] < -1.e38) {
+      val[ii] = 0.;
+      val_type[ii] = 1;
+      retval += 1;
+    }
+
+    else
+      val_type[ii] = 0;
+  }
+
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute per-cell residual for Ax = b.
+ *
+ * parameters:
+ *   symmetric     <-- indicates if matrix values are symmetric
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   ad            <-- Diagonal part of linear equation matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
+ *   rhs           <-- Right hand side
+ *   vx            <-> Current system solution
+ *   res           --> Residual
+ *----------------------------------------------------------------------------*/
+
+static void
+_cell_residual(cs_bool_t        symmetric,
+               cs_perio_rota_t  rotation_mode,
+               const cs_real_t  ad[],
+               const cs_real_t  ax[],
+               const cs_real_t  rhs[],
+               cs_real_t        vx[],
+               cs_real_t        res[])
+{
+  cs_int_t ii;
+
+  const cs_int_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_matrix_t *a = cs_glob_sles_base_matrix;
+
+  cs_matrix_set_coefficients(a, symmetric, ad, ax);
+
+  cs_matrix_vector_multiply(rotation_mode, a, vx, res);
+
+  for (ii = 0; ii < n_cells; ii++)
+    res[ii] = fabs(res[ii] - rhs[ii]);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute diagonal dominance metric.
+ *
+ * parameters:
+ *   symmetric <-- indicates if matrix values are symmetric
+ *   ad        <-- Diagonal part of linear equation matrix
+ *   ax        <-- Non-diagonal part of linear equation matrix
+ *   dd        <-- Diagonal dominance (normalized)
+ *----------------------------------------------------------------------------*/
+
+static void
+_diag_dominance(cs_bool_t        symmetric,
+                const cs_real_t  ad[],
+                const cs_real_t  ax[],
+                cs_real_t        dd[])
+{
+  cs_int_t ii, jj, face_id;
+
+  const cs_int_t n_cells = cs_glob_mesh->n_cells;
+  const cs_int_t n_faces = cs_glob_mesh->n_i_faces;
+  const cs_int_t *face_cel = cs_glob_mesh->i_face_cells;
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+
+  /* Diagonal part of matrix.vector product */
+
+  for (ii = 0; ii < n_cells; ii++)
+    dd[ii] = fabs(ad[ii]);
+
+  if (halo != NULL)
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
+
+  /* non-diagonal terms */
+
+  if (symmetric) {
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      ii = face_cel[2*face_id] -1;
+      jj = face_cel[2*face_id + 1] -1;
+      dd[ii] -= fabs(ax[face_id]);
+      dd[jj] -= fabs(ax[face_id]);
+    }
+  }
+  else {
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      ii = face_cel[2*face_id] -1;
+      jj = face_cel[2*face_id + 1] -1;
+      dd[ii] -= fabs(ax[face_id]);
+      dd[jj] -= fabs(ax[face_id + n_faces]);
+    }
+  }
+
+  for (ii = 0; ii < n_cells; ii++) {
+    if (fabs(ad[ii]) > 1.e-18)
+      dd[ii] /= fabs(ad[ii]);
+  }
 }
 
 /*============================================================================
@@ -1481,6 +1681,7 @@ void CS_PROCF(reslin, RESLIN)
   char *var_name;
   cs_sles_type_t type;
 
+  int cvg = 0;
   int n_iter = *niterf;
   cs_bool_t symmetric = (*isym == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
@@ -1511,28 +1712,50 @@ void CS_PROCF(reslin, RESLIN)
     assert(0);
   }
 
-  cs_sles_solve(var_name,
-                type,
-                true,
-                symmetric,
-                dam,
-                xam,
-                cs_glob_sles_base_matrix,
-                cs_glob_sles_native_matrix,
-                *ipol,
-                rotation_mode,
-                *iwarnp,
-                *nitmap,
-                *epsilp,
-                *rnorm,
-                &n_iter,
-                residu,
-                rhs,
-                vx,
-                0,
-                NULL);
+  cvg = cs_sles_solve(var_name,
+                      type,
+                      true,
+                      symmetric,
+                      dam,
+                      xam,
+                      cs_glob_sles_base_matrix,
+                      cs_glob_sles_native_matrix,
+                      *ipol,
+                      rotation_mode,
+                      *iwarnp,
+                      *nitmap,
+                      *epsilp,
+                      *rnorm,
+                      &n_iter,
+                      residu,
+                      rhs,
+                      vx,
+                      0,
+                      NULL);
 
   *niterf = n_iter;
+
+  /* If divergence is detected, try diagnostics and abort */
+
+  if (cvg == -2) {
+
+    int mesh_id = cs_post_init_error_writer_cells();
+
+    cs_sles_post_error_output_def(var_name,
+                                  mesh_id,
+                                  symmetric,
+                                  rotation_mode,
+                                  dam,
+                                  xam,
+                                  rhs,
+                                  vx);
+
+    cs_post_finalize();
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: error (divergence) solving for %s"),
+              _(cs_sles_type_name[type]), var_name);
+  }
 
   cs_base_string_f_to_c_free(&var_name);
 }
@@ -1684,9 +1907,13 @@ cs_sles_needs_solving(const char        *var_name,
  *   vx            --> System solution
  *   aux_size      <-- Number of elements in aux_vectors
  *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
 
-void
+int
 cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
               cs_bool_t           update_stats,
@@ -1710,6 +1937,7 @@ cs_sles_solve(const char         *var_name,
 {
   cs_int_t  n_rows;
   unsigned _n_iter = 0;
+  int cvg = 0;
   cs_sles_convergence_t  convergence;
 
   cs_sles_info_t *sles_info = NULL;
@@ -1776,50 +2004,50 @@ cs_sles_solve(const char         *var_name,
     switch (solver_type) {
     case CS_SLES_PCG:
       if (cs_glob_n_ranks == 1)
-        _conjugate_gradient_sp(var_name,
-                               _a,
-                               _ax,
-                               poly_degree,
-                               rotation_mode,
-                               &convergence,
-                               rhs,
-                               vx,
-                               aux_size,
-                               aux_vectors);
+        cvg = _conjugate_gradient_sp(var_name,
+                                     _a,
+                                     _ax,
+                                     poly_degree,
+                                     rotation_mode,
+                                     &convergence,
+                                     rhs,
+                                     vx,
+                                     aux_size,
+                                     aux_vectors);
       else
-        _conjugate_gradient_mp(var_name,
-                               _a,
-                               _ax,
-                               poly_degree,
-                               rotation_mode,
-                               &convergence,
-                               rhs,
-                               vx,
-                               aux_size,
-                               aux_vectors);
+        cvg = _conjugate_gradient_mp(var_name,
+                                     _a,
+                                     _ax,
+                                     poly_degree,
+                                     rotation_mode,
+                                     &convergence,
+                                     rhs,
+                                     vx,
+                                     aux_size,
+                                     aux_vectors);
       break;
     case CS_SLES_JACOBI:
-      _jacobi(var_name,
-              ad_coeffs,
-              _ax,
-              rotation_mode,
-              &convergence,
-              rhs,
-              vx,
-              aux_size,
-              aux_vectors);
+      cvg = _jacobi(var_name,
+                    ad_coeffs,
+                    _ax,
+                    rotation_mode,
+                    &convergence,
+                    rhs,
+                    vx,
+                    aux_size,
+                    aux_vectors);
       break;
     case CS_SLES_BICGSTAB:
-      _bi_cgstab(var_name,
-                 _a,
-                 _ax,
-                 poly_degree,
-                 rotation_mode,
-                 &convergence,
-                 rhs,
-                 vx,
-                 aux_size,
-                 aux_vectors);
+      cvg = _bi_cgstab(var_name,
+                       _a,
+                       _ax,
+                       poly_degree,
+                       rotation_mode,
+                       &convergence,
+                       rhs,
+                       vx,
+                       aux_size,
+                       aux_vectors);
       break;
     default:
       break;
@@ -1860,6 +2088,168 @@ cs_sles_solve(const char         *var_name,
 
     sles_info->wt_tot += (wt_stop - wt_start);
     sles_info->cpu_tot += (cpu_stop - cpu_start);
+  }
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Output default post-processing data for failed system convergence.
+ *
+ * parameters:
+ *   var_name      <-- Variable name
+ *   mesh_id       <-- id of error output mesh, or 0 if none
+ *   symmetric     <-- indicates if matrix values are symmetric
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   ad            <-- Diagonal part of linear equation matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
+ *   rhs           <-- Right hand side
+ *   vx            <-> Current system solution
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_post_error_output_def(const char       *var_name,
+                              int               mesh_id,
+                              cs_bool_t         symmetric,
+                              cs_perio_rota_t   rotation_mode,
+                              const cs_real_t  *ad,
+                              const cs_real_t  *ax,
+                              const cs_real_t  *rhs,
+                              cs_real_t        *vx)
+{
+  if (mesh_id != 0) {
+
+    const cs_mesh_t *mesh = cs_glob_mesh;
+
+    char base_name[32], val_name[32];
+
+    int val_id;
+    const cs_int_t n_cells = mesh->n_cells;
+
+    cs_real_t *val;
+
+    BFT_MALLOC(val, mesh->n_cells_with_ghosts, cs_real_t);
+
+    for (val_id = 0; val_id < 5; val_id++) {
+
+      switch(val_id) {
+
+      case 0:
+        strcpy(base_name, "Diag");
+        memcpy(val, ad, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 1:
+        strcpy(base_name, "RHS");
+        memcpy(val, rhs, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 2:
+        strcpy(base_name, "X");
+        memcpy(val, vx, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 3:
+        strcpy(base_name, "Residual");
+        _cell_residual(symmetric, rotation_mode, ad, ax, rhs, vx, val);
+        break;
+
+      case 4:
+        strcpy(base_name, "Diag_Dom");
+        _diag_dominance(symmetric, ad, ax, val);
+        break;
+
+      }
+
+      if (strlen(var_name) + strlen(base_name) < 31) {
+        strcpy(val_name, base_name);
+        strcat(val_name, "_");
+        strcat(val_name, var_name);
+      }
+      else {
+        strncpy(val_name, base_name, 31);
+        val_name[31] = '\0';
+      }
+
+      cs_sles_post_error_output_var(val_name,
+                                    mesh_id,
+                                    val);
+    }
+
+    BFT_FREE(val);
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Output post-processing variable for failed system convergence.
+ *
+ * parameters:
+ *   var_name <-- Variable name
+ *   mesh_id  <-- id of error output mesh, or 0 if none
+ *   var      <-- Variable values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_post_error_output_var(const char  *var_name,
+                              int          mesh_id,
+                              cs_real_t   *var)
+{
+  if (mesh_id != 0) {
+
+    const cs_mesh_t *mesh = cs_glob_mesh;
+
+    size_t n_non_norm;
+    const cs_int_t n_cells = mesh->n_cells;
+
+    int *val_type;
+
+    BFT_MALLOC(val_type, n_cells, int);
+
+    n_non_norm = _value_type(n_cells, var, val_type);
+
+    cs_post_write_var(mesh_id,
+                      var_name,
+                      1,
+                      false, /* no interlace */
+                      true,  /* use parents */
+                      CS_POST_TYPE_cs_real_t,
+                      -1,
+                      0.0,
+                      var,
+                      NULL,
+                      NULL);
+
+    if (n_non_norm > 0) {
+
+      char type_name[32];
+      size_t l = strlen(var_name);
+
+      if (l > 31)
+        l = 31;
+
+      l -= strlen("_fp_type");
+
+      strncpy(type_name, var_name, l);
+      type_name[l] = '\0';
+
+      strcat(type_name, "_fp_type");
+
+      cs_post_write_var(mesh_id,
+                        type_name,
+                        1,
+                        false, /* no interlace */
+                        true,  /* use parents */
+                        CS_POST_TYPE_int,
+                        -1,
+                        0.0,
+                        val_type,
+                        NULL,
+                        NULL);
+
+    }
+
+    BFT_FREE(val_type);
   }
 }
 

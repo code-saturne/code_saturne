@@ -1,4 +1,14 @@
 * 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  When detecting a divergence in the linear system solver stage, abort
+  and write graphical data of the given matrix (rhs, diagonal, ...).
+  modified routines:
+    include/base/cs_grid.h
+    include/base/cs_sles.h
+    src/base/cs_grid.c
+    src/base/cs_multigrid.c
+    src/base/cs_sles.c
+
+* 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add some management functions for post-processing writer definition
   in case of one encounters an error.
   modified routines:
