@@ -1458,6 +1458,7 @@ void CS_PROCF(clmlga, CLMLGA)
                                  symmetric,
                                  mesh->i_face_cells,
                                  mesh->halo,
+                                 mesh->i_face_numbering,
                                  mq->cell_cen,
                                  mq->cell_vol,
                                  mq->i_face_normal,

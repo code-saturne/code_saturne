@@ -177,5 +177,5 @@ parameter (nastmx=20)
 ! DIMENSIONS MAXIMALES DES TABLEAUX CONTENANT LES BORNES PAR THREAD
 
 integer nthrd1, nthrd2
-parameter (nthrd1=16, nthrd2=4)
+parameter (nthrd1=4, nthrd2=16)
 

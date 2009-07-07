@@ -442,6 +442,8 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *nfacgb,  /* <-- global number of interior faces */
  const cs_int_t   *nfbrgb,  /* <-- global number of boundary faces */
  const cs_int_t   *nsomgb,  /* <-- global number of vertices */
+ const cs_int_t   *nthrdi,  /* <-- max threads per interior faces group */
+ const cs_int_t   *nthrdb,  /* <-- max threads per boundary faces group */
  const cs_int_t   *ngrpi,   /* <-- number of interior face groups */
  const cs_int_t   *ngrpb,   /* <-- number of boundary face groups */
  const cs_int_t   *idxfi,   /* <-- interior face group/thread start/end ids */

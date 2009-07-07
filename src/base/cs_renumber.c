@@ -641,6 +641,7 @@ _renumber_for_threads(cs_mesh_t             *mesh,
 {
   int  update_c = 0, update_fi = 0, update_fb = 0;
   int  n_i_groups = 1, n_b_groups = 1;
+  int  n_i_threads = 1, n_b_threads = 1;
   cs_int_t  *inumc = NULL, *inumfi = NULL, *inumfb = NULL;
   fvm_lnum_t *i_group_index = NULL, *b_group_index = NULL;
 
@@ -693,15 +694,24 @@ _renumber_for_threads(cs_mesh_t             *mesh,
   /* Add numbering info to mesh */
   /*----------------------------*/
 
-  if (n_i_groups > 1) {
-    mesh->i_face_numbering = cs_numbering_create_threaded(cs_glob_n_threads,
+  /*
+   *  n_threads   <-- number of threads
+   *  n_groups    <-- number of groups
+   *  group_index <-- group_index[thread_id*group_id*2 + 2*group_id] and
+   *                  group_index[thread_id*group_id*2 + 2*group_id +1]
+   *                  define the tart and end ids (+1) for entities in a
+   *                  given group and thread (size: n_groups *2 * n_threads)
+   */
+
+  if (n_i_groups >= 1) {
+    mesh->i_face_numbering = cs_numbering_create_threaded(n_i_threads,
                                                           n_i_groups,
                                                           i_group_index);
     BFT_FREE(i_group_index);
   }
 
-  if (n_b_groups > 1) {
-    mesh->b_face_numbering = cs_numbering_create_threaded(cs_glob_n_threads,
+  if (n_b_groups >= 1) {
+    mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
                                                           n_b_groups,
                                                           b_group_index);
     BFT_FREE(b_group_index);

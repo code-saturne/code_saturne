@@ -35,18 +35,20 @@
 !     = -1 en mode sequentiel
 !     =  r (0 < r < nb_processus) en execution parallelle distribuee
 !   nrangp : nombre de processus (=1 si sequentiel)
-!   nthrdp : nombre de threads (> 1 avec OpenMP, 1 sinon)
+!   nthrdi : nombre de sous ensembles independants de faces internes max
+!            dans un groupe (>= 1 avec OpenMP, 1 sinon)
+!   nthrdb : nombre de sous ensembles independants de faces de bord max
+!            dans un groupe (>= 1 avec OpenMP, 1 sinon)
 !   ngrpi  : nombre de groupes de faces internes (> 1 avec OpenMP, 1 sinon)
 !   ngrpb  : nombre de groupes de faces de bord (> 1 avec OpenMP, 1 sinon)
 !   iompli : bornes par thread pour les faces internes
 !   iomplb : bornes par thread pour les faces de bord
-!            (pour le groupe j et le thread i, boucles
-!             de iompl.(1, j, i) à iompl.(2, j, i)
+!            pour le groupe (couleur) j et le thread i, boucles
+!            de iompl.(1, j, i) à iompl.(2, j, i)
 
-integer           irangp, nrangp, nthrdp, ngrpi, ngrpb,           &
-                  iompli(2, nthrd1, nthrd2),                      &
-                  iomplb(2, nthrd1, nthrd2)
-common / iparal / irangp, nrangp, nthrdp, ngrpi, ngrpb,           &
+integer           irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb,           &
+                  iompli(2, nthrd1, nthrd2), iomplb(2, nthrd1, nthrd2)
+common / iparal / irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb,           &
                   iompli, iomplb
 
 

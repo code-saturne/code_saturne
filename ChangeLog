@@ -1,4 +1,15 @@
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  OpenMP-related modifications.
+  modified routines:
+    include/base/cs_grid.h
+    include/base/cs_prototypes.h
+    include/base/parall.h
+    include/base/paramx.h
+    src/base/cs_grid.c
+    src/base/cs_multigrid.c
+    src/base/cs_renumber.c
+
+* 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong post-processing management for 2D SYRTHES-coupled meshes.
   modified routines:
     include/base/cs_post.h

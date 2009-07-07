@@ -86,6 +86,7 @@ typedef struct _cs_grid_t cs_grid_t;
  *   symmetric   <-- True if xam is symmetric, false otherwise
  *   face_cell   <-- Face -> cells connectivity (1 to n)
  *   halo        <-- Halo structure associated with this level, or NULL.
+ *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *   cell_cen    <-- Cell center (size: 3.n_cells_ext)
  *   cell_vol    <-- Cell volume (size: n_cells_ext)
  *   face_normal <-- Internal face normals (size: 3.n_faces)
@@ -98,17 +99,18 @@ typedef struct _cs_grid_t cs_grid_t;
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_create_from_shared(fvm_lnum_t         n_cells,
-                           fvm_lnum_t         n_cells_ext,
-                           fvm_lnum_t         n_faces,
-                           cs_bool_t          symmetric,
-                           const fvm_lnum_t  *face_cell,
-                           const cs_halo_t   *halo,
-                           const cs_real_t   *cell_cen,
-                           const cs_real_t   *cell_vol,
-                           const cs_real_t   *face_normal,
-                           const cs_real_t   *da,
-                           const cs_real_t   *xa);
+cs_grid_create_from_shared(fvm_lnum_t             n_cells,
+                           fvm_lnum_t             n_cells_ext,
+                           fvm_lnum_t             n_faces,
+                           cs_bool_t              symmetric,
+                           const fvm_lnum_t      *face_cell,
+                           const cs_halo_t       *halo,
+                           const cs_numbering_t  *numbering,
+                           const cs_real_t       *cell_cen,
+                           const cs_real_t       *cell_vol,
+                           const cs_real_t       *face_normal,
+                           const cs_real_t       *da,
+                           const cs_real_t       *xa);
 
 /*----------------------------------------------------------------------------
  * Destroy a grid structure.
