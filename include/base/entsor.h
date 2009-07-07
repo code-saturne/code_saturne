@@ -157,14 +157,15 @@ common / ifcppp / impfpp, impjnf, indjon
 
 !     IMPHIS : fichier stock + unite d'ecriture des variables
 !     EMPHIS : EMPlacement
+!     PREHIS : PREfixe des fichiers
 !     EXTHIS : EXTension des fichiers
 !     IMPUSH : Unite fichiers specifiques ushist
 !     FICUSH : Nom   fichiers specifiques ushist
 !     IMPSTH : fichier stock + unite d'ecriture des variables
 !              des structures mobiles
 
-character*80      emphis, exthis
-common / avhist / emphis, exthis
+character*80      emphis, prehis, exthis
+common / avhist / emphis, prehis, exthis
 
 character*13      ficush(nushmx)
 common / afhist / ficush

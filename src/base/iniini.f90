@@ -280,6 +280,7 @@ impmat = 28
 
 !     IMPHIS : fichier stock + unite d'ecriture des variables
 !     EMPHIS : EMPlacement
+!     PREHIS : PREfixe
 !     EXTHIS : EXTension
 !     IMPUSH : Unite fichiers specifiques ushist
 !     FICUSH : Nom   fichiers specifiques ushist
@@ -292,8 +293,9 @@ impsth(1) = 32
 !     Les fichiers d'ecriture ne sont pas ouverts en meme temps
 impsth(2) = imphis(2)
 
-EMPHIS = './'
-EXTHIS = 'hst'
+emphis = './'
+prehis = 'probes_'
+exthis = 'dat'
 
 do ii = 1, nushmx
   impush(ii) = 32+ii

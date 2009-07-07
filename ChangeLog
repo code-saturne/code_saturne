@@ -1,4 +1,15 @@
 * 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add tags in the time-monitoring files for SALOME.
+  Change the files name in probes_XXXX.dat
+  modified script:
+    bin/runcase.in
+  modified routines:
+    include/base/entsor.h
+    src/base/ecrhis.f90
+    src/base/iniini.f90
+
+* 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a missing cs_config.h header and wrong MPI type.
   modified routine:
     src/base/cs_boundary_conditions.c

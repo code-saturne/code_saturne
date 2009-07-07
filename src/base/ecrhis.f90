@@ -254,6 +254,14 @@ if(modhis.eq.1 .or. modhis.eq.2 .or. ipass.eq.1) then
         nomfic = emphis
         call verlon ( nomfic,ii1,ii2,lpos)
         !==========
+        nenvar = prehis
+        call verlon(nenvar,inam1,inam2,lpos)
+        !==========
+        call undscr(inam1,inam2,nenvar)
+        !==========
+        nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
+        call verlon ( nomfic,ii1,ii2,lpos)
+        !==========
         nenvar = nomvar(ipp)
         call verlon(nenvar,inam1,inam2,lpos)
         !==========
@@ -332,6 +340,11 @@ if(modhis.eq.1 .or. modhis.eq.2 .or. ipass.eq.1) then
         write(imphis(2),100)
         write(imphis(2),103)
 
+        write(imphis(2),110) nomvar(ipp)
+        write(imphis(2),111) (icap, icap=1,nbcap(ipp))
+        write(imphis(2),112) ('-', icap=1,nbcap(ipp))
+        write(imphis(2),103)
+
         ! --> boucle sur les differents enregistrements et les variables
         rewind(imphis(1))
         do ii = 1, nbpdte
@@ -392,6 +405,10 @@ endif
 
 #endif
 
+ 110  format ('#TITLE: ', A16)
+ 111  format ('#COLUMN_TITLES: nt | t ', 100(' | ',I3))
+ 112  format ('#COLUMN_UNITS: iter s', 100(1x, A))
  1000 format ( 1(1x,i7,1x),101(1x,e14.7))
+
 return
 end

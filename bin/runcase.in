@@ -967,7 +967,7 @@ if [ $EXEC_KERNEL = yes ] ; then
     fi
   done
 
-  for f in *.hst ; do
+  for f in probes_*.dat ; do
     if [ -f $f ] ; then
       if [ ! -d $RESU/HIST.$SUFFIX ] ; then
         mkdir $RESU/HIST.$SUFFIX
