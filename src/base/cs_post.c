@@ -182,6 +182,7 @@ static cs_post_mesh_t  *_cs_post_meshes = NULL;
 /* Array of writers for post-processing; */
 /* writers -1 (default) and -2 (show errors) are reserved */
 
+static int                _cs_post_min_writer_id = -2;
 static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
 static cs_post_writer_t  *_cs_post_writers = NULL;
@@ -1979,6 +1980,9 @@ cs_post_add_writer(int          writer_id,
 
   }
 
+  if (writer_id < _cs_post_min_writer_id)
+    _cs_post_min_writer_id = writer_id;
+
   _cs_post_n_writers += 1;
 
   /* Assign newly created writer to the structure */
@@ -2476,6 +2480,19 @@ cs_post_modify_mesh(int       mesh_id,
     _cs_post_divide_poly(post_mesh, writer);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the next "reservable" (i.e. non-user) writer id available.
+ *
+ * Returns:
+ *   the smallest negative integer present, -1
+ *----------------------------------------------------------------------------*/
+
+int
+cs_post_get_free_writer_id(void)
+{
+  return (_cs_post_min_writer_id - 1);
 }
 
 /*----------------------------------------------------------------------------
@@ -3466,6 +3483,56 @@ cs_post_init_error_writer(void)
                      optchr,
                      -1, /* No time dependency here */
                      ntchr);
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize post-processing writer with same format and associated
+ * options as default writer, but no time dependency, and associate
+ * and output global volume mesh.
+ *
+ * This is intended to help troubleshoot errors using fields based
+ * on cells.
+ *
+ * returns:
+ *   id of error output mesh (< 0), or 0 if all writers are deactivated
+ *----------------------------------------------------------------------------*/
+
+int
+cs_post_init_error_writer_cells(void)
+{
+  int mesh_id = 0;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  /* If post-processing is active, output info */
+  /*-------------------------------------------*/
+
+  if (mesh->i_face_vtx_idx != NULL || mesh->b_face_vtx_idx != NULL) {
+
+    const int writer_id = -2;
+    const cs_int_t n_cells = mesh->n_cells;
+
+    cs_post_init_error_writer();
+
+    mesh_id = cs_post_get_free_mesh_id();
+
+    cs_post_add_mesh(mesh_id,
+                     _("Calculation domain"),
+                     n_cells,
+                     0,
+                     0,
+                     NULL,
+                     NULL,
+                     NULL);
+
+    cs_post_associate(mesh_id, writer_id);
+
+    cs_post_activate_writer(writer_id, 1);
+
+    cs_post_write_meshes(-1, 0.0);
+  }
+
+  return mesh_id;
 }
 
 /*----------------------------------------------------------------------------

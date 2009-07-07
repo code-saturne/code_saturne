@@ -742,6 +742,16 @@ cs_post_modify_mesh(int       mesh_id,
                     cs_int_t  b_face_list[]);
 
 /*----------------------------------------------------------------------------
+ * Return the next "reservable" (i.e. non-user) writer id available.
+ *
+ * Returns:
+ *   the smallest negative integer present, -1
+ *----------------------------------------------------------------------------*/
+
+int
+cs_post_get_free_writer_id(void);
+
+/*----------------------------------------------------------------------------
  * Return the next "reservable" (i.e. non-user) mesh id available.
  *
  * Returns:
@@ -922,6 +932,21 @@ cs_post_init_main_meshes(void);
 
 void
 cs_post_init_error_writer(void);
+
+/*----------------------------------------------------------------------------
+ * Initialize post-processing writer with same format and associated
+ * options as default writer, but no time dependency, and associate
+ * and output global volume mesh.
+ *
+ * This is intended to help troubleshoot errors using fields based
+ * on cells.
+ *
+ * returns:
+ *   id of error output mesh (< 0), or 0 if all writers are deactivated
+ *----------------------------------------------------------------------------*/
+
+int
+cs_post_init_error_writer_cells(void);
 
 /*----------------------------------------------------------------------------
  * Register a processing of a time-dependent variable to the call to PSTVAR.
