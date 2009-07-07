@@ -516,17 +516,20 @@ _syr3_add_socket(int builder_id)
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
+ *
+ * parameters:
+ *   port_num <-- port number (only used for rank 0; automatic on others)
  *----------------------------------------------------------------------------*/
 
 static void
-_init_all_socket_syr(void)
+_init_all_socket_syr(int port_num)
 {
   int i;
 
   /* Initialize socket server */
 
   if (_syr_coupling_builder_size > 0)
-    cs_syr3_comm_init_socket();
+    cs_syr3_comm_init_socket(port_num);
 
   bft_printf
     ("SYRTHES couplings for which the socket interface will be used:\n"
@@ -1039,10 +1042,14 @@ cs_syr_coupling_define(int          syrthes_app_num,
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
+ *
+ * parameters:
+ *   port_num <-- port number for rank 0 to enable sockets,
+ *                < 0 to disable sockets
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_all_init(void)
+cs_syr_coupling_all_init(int  port_num)
 {
   /* First try using MPI */
 
@@ -1057,8 +1064,8 @@ cs_syr_coupling_all_init(void)
 
 #if defined(HAVE_SOCKET)
 
-  if (_syr_coupling_builder_size > 0)
-    _init_all_socket_syr();
+  if (_syr_coupling_builder_size > 0 && port_num > -1)
+    _init_all_socket_syr(port_num);
 
 #endif
 

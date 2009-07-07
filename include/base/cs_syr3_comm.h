@@ -185,10 +185,13 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
 
 /*----------------------------------------------------------------------------
  * Open an IP socket to prepare for this communication mode
+ *
+ * parameters:
+ *   port_num <-- port number (only used for rank 0; automatic on others)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_init_socket(void);
+cs_syr3_comm_init_socket(int port_num);
 
 /*----------------------------------------------------------------------------
  * Close an IP socket associated with this communication mode

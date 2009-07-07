@@ -845,24 +845,22 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
   elif [ $SYRTHES_COUPLING = yes  ] ; then
     # Socket communications
     #
+    # We provide the executables with a "random" port number.
+    PORT=35623
+    SOCKETNCS="--syr-socket $PORT"
+    SOCKETSYR="-comm-socket $PORT"
+    #
     localexec=$RUN/localexec
     echo '#!/bin/sh' > $localexec
     echo cd $RUN >> $localexec
     echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_MPI $COMMAND_CWF "\
                  " $ARG_CS_VERIF $ARG_CS_OUTPUT "\
-                 " $COMMAND_PARAM " >> $localexec
+                 " $COMMAND_PARAM $SOCKETNCS " >> $localexec
     echo "retour=\$?" >> $localexec
     echo "exit \$retour" >> $localexec
     chmod 700 $localexec
     $MPIBOOT
     $MPIRUN $localexec || EXECUTION_ERROR=true &
-    #
-    # We must obtain the machine and port information from the log;
-    #   we sleep to leave enough time to the Kernel to start and print
-    #   this information; we avoid while which could loop endlessly
-    sleep 10
-    MACHPORT=`grep "SYRTHES: port" listing | sed -e "s/SYRTHES: port <//" -e "s/>$//"`
-    SOCKETSYR="-comm-socket $MACHPORT"
     #
     ./$EXE_SYR $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
     #

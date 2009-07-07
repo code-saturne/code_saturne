@@ -148,6 +148,13 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -p, --param       <file_name> parameter file\n"));
 #endif
+
+#if defined(HAVE_SOCKET)
+  fprintf
+    (e, _(" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
+          "                   <port_num> port number on rank 0\n"));
+#endif
+
   fprintf
     (e, _(" --version         print version number\n"));
   fprintf
@@ -547,6 +554,8 @@ cs_opts_define(int         argc,
   opts->cwf_post = false;
   opts->cwf_criterion = 0.01;
 
+  opts->syr_socket = -1;
+
   opts->yacs_module = NULL;
 
   opts->proxy_socket = NULL;
@@ -578,7 +587,7 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "--log") == 0) {
       int n1 = 0;
-      n1 = (int) _arg_to_int(++arg_id, argc, argv, &argerr);
+      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
       if (n1 == 0)
         opts->ilisr0 = 0;
       else if (n1 == 1)
@@ -589,7 +598,7 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "--logp") == 0) {
       int n1 = 0;
-      n1 = (int) _arg_to_int(++arg_id, argc, argv, &argerr);
+      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
       if (n1 == -1)
         opts->ilisrp = 2;
       else if (n1 == 0)
@@ -635,6 +644,14 @@ cs_opts_define(int         argc,
     }
 
 #if defined(HAVE_SOCKET)
+
+    /* SYRTHES 3 coupling socket */
+
+    else if (strcmp(s, "--syr-socket") == 0) {
+      opts->syr_socket = _arg_to_int(arg_id + 1, argc, argv, &argerr);
+      if (argerr == 0)
+        arg_id++;
+    }
 
     /* Proxy connection options (do not appear in help as they
        are not destined to be used directly by a user) */

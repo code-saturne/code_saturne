@@ -83,6 +83,10 @@ typedef struct {
   cs_bool_t      cwf_post;      /* true if post-treatment is required */
   double         cwf_criterion; /* Criterion to choose which face to cut */
 
+  /* Server socket for SYRTHES 3 coupling */
+
+  int           syr_socket;     /* socket number to use, or -1 */
+
   /* Connection with YACS or proxy */
 
   char          *yacs_module;   /* Path to YACS module */

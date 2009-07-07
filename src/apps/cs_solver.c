@@ -210,7 +210,7 @@ cs_run(void)
 
   /* Initialize SYRTHES couplings and communication if necessary */
 
-  cs_syr_coupling_all_init();
+  cs_syr_coupling_all_init(opts.syr_socket);
 
   if (opts.ifoenv == 0) {
 

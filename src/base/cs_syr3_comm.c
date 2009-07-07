@@ -1471,15 +1471,17 @@ cs_syr3_comm_receive_body(const cs_syr3_comm_msg_header_t  *header,
 
 /*----------------------------------------------------------------------------
  * Open an IP socket to prepare for this communication mode
+ *
+ * parameters:
+ *   port_num <-- port number (only used for rank 0; automatic on others)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr3_comm_init_socket(void)
+cs_syr3_comm_init_socket(int port_num)
 {
   char       s[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 
   int        n_connect_max;
-  int        port_num;
 
 #if defined(_CS_ARCH_Linux)
   socklen_t sock_len;
@@ -1494,7 +1496,7 @@ cs_syr3_comm_init_socket(void)
   struct sockaddr_in   sock_addr;
   struct hostent      *host_ent;
 
-
+  int _port_num = port_num;
   int rank = (cs_glob_rank_id == -1 ? 0 : cs_glob_rank_id);
 
   /* Initialization */
@@ -1540,7 +1542,10 @@ cs_syr3_comm_init_socket(void)
   memset((char *) &sock_addr, 0, sock_len);
 
   sock_addr.sin_family = AF_INET;
-  sock_addr.sin_addr.s_addr = INADDR_ANY;
+  if (rank > 0)    /* port number automatic on ranks > 0) */
+    sock_addr.sin_addr.s_addr = INADDR_ANY;
+  else
+    sock_addr.sin_addr.s_addr = _port_num;
   sock_addr.sin_port = 0;
 
   if (cs_glob_comm_little_endian == true) {
@@ -1580,12 +1585,12 @@ cs_syr3_comm_init_socket(void)
     bft_error(__FILE__, __LINE__, errno,
               _("Initialization error for socket communication support.\n"));
 
-  port_num = sock_addr.sin_port;
+  _port_num = sock_addr.sin_port;
   if (cs_glob_comm_little_endian == true) {
     bft_file_swap_endian(&(sock_addr.sin_port),
                          &(sock_addr.sin_port),
                          sizeof(sock_addr.sin_port), 1);
-    port_num = sock_addr.sin_port;
+    _port_num = sock_addr.sin_port;
     bft_file_swap_endian(&(sock_addr.sin_port),
                          &(sock_addr.sin_port),
                          sizeof(sock_addr.sin_port), 1);
@@ -1603,14 +1608,14 @@ cs_syr3_comm_init_socket(void)
        (do not internationalize this string so that scripts
        my use it more easily). */
 
-    bft_printf("\n  SYRTHES: port <%s:%d>\n\n", s, port_num);
+    bft_printf("\n  SYRTHES server port initialized\n\n");
     bft_printf_flush();
 
   }
 
   memcpy(cs_glob_comm_sock_hostname, s, CS_LOC_SYR3_COMM_LNG_HOSTNAME);
   cs_glob_comm_sock_hostname[CS_LOC_SYR3_COMM_LNG_HOSTNAME] = '\0';
-  cs_glob_comm_sock_port_num = port_num;
+  cs_glob_comm_sock_port_num = _port_num;
 }
 
 /*----------------------------------------------------------------------------

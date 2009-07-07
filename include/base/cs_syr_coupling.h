@@ -324,10 +324,14 @@ cs_syr_coupling_define(int          syrthes_app_num,
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
+ *
+ * parameters:
+ *   port_num <-- port number for rank 0 to enable sockets,
+ *                < 0 to disable sockets
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_all_init(void);
+cs_syr_coupling_all_init(int  port_num);
 
 /*----------------------------------------------------------------------------
  * Finalize all SYRTHES couplings.

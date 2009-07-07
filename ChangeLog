@@ -1,4 +1,18 @@
-* 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+* 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make easier the launch of a SYRTHES 3 / Code_Saturne coupling.
+  through sockets.
+  modified script:
+    bin/runcase.in
+  modified routines:
+    include/base/cs_opts.h
+    include/base/cs_syr3_comm.h
+    include/base/cs_syr_coupling.h
+    src/apps/cs_solver.c
+    src/base/cs_opts.c
+    src/base/cs_syr3_comm.c
+    src/base/cs_syr_coupling.c
+  
+* 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   OpenMP-related modifications.
   modified routines:
     include/base/cs_grid.h
@@ -13,7 +27,8 @@
     src/base/majgeo.f90
 
 * 06/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fix a wrong post-processing management for 2D SYRTHES-coupled meshes.
+  Fix a wrong post-processing management for 2D SYRTHES-coupled meshes
+  with SYRTHES 4.
   modified routines:
     include/base/cs_post.h
     src/base/cs_mesh_solcom.c
