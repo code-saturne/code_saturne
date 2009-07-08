@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine usppmo
+subroutine usppmo
 !================
 
 
@@ -78,6 +78,7 @@ include "cpincl.h"
 include "fuincl.h"
 include "ppincl.h"
 include "ppcpfu.h"
+include "atincl.h"
 
 !===============================================================================
 
@@ -228,6 +229,8 @@ ippmod(ielion) = -1
 !----- ATMOS ecoulements atmospheriques
 !        si = -1   modele non utilise
 !        si = 0    modele active
+!        si = 1    atmosphere seche
+!        si = 2    atmosphere humide (non operationnelle)
 ippmod(iatmos) = -1
 
 !----- Aerorefrigerants (cooling tower)

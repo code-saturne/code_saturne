@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine ppvarp
+subroutine atvarp
 !================
 
 
@@ -33,8 +33,7 @@
 !  FONCTION  :
 !  ---------
 
-! INIT DES POSITIONS DES VARIABLES SELON
-!   LE TYPE DE PHYSIQUE PARTICULIERE
+!    INIT DES POSITIONS DES VARIABLES POUR LE MODULE ATMOSPHERIQUE
 ! REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 
 !-------------------------------------------------------------------------------
@@ -65,76 +64,71 @@ include "entsor.h"
 include "cstnum.h"
 include "ppppar.h"
 include "ppthch.h"
-include "coincl.h"
-include "cpincl.h"
 include "ppincl.h"
-include "elincl.h"
 include "atincl.h"
+include "ihmpre.h"
 
 !===============================================================================
 
+! VARIABLES LOCALES
+
+integer        isc, iphas
 
 !===============================================================================
+!===============================================================================
+! 1. DEFINITION DES POINTEURS
+!===============================================================================
 
-! ---> Physique particuliere : Combustion Gaz
+! 1.1  Dry atmosphere
+! =====================
 
-if (  ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                &
-                          .or. ippmod(icolwc).ge.0 ) then
-  call covarp
-  !==========
+if ( ippmod(iatmos).eq.1 ) then
+
+! ---- Potential temperature
+  itempp = iscapp(1)
+
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
 
-if ( ippmod(icp3pl).ge.0 ) then
-  call cpvarp
-  !==========
+! 1.2  Humid atmosphere
+! =====================
+
+if ( ippmod(iatmos).eq.2 ) then
+
+  ! ---- liquid potential temperature
+  itempl = iscapp(1)
+  ! ---- total water content
+  itotwt = iscapp(2)
+  ! ---- total number of droplets
+  intdrp = iscapp(3)
+
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
+!===============================================================================
+! 2. PROPRIETES PHYSIQUES
+!    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
+!      IPHSCA, IVISLS, ICP
+!===============================================================================
 
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplvar
-  !==========
-endif
+do isc = 1, nscapp
 
-! ---> Physique particuliere :  Combustion Fuel
+  if ( iscavr(iscapp(isc)).le.0 ) then
 
-if ( ippmod(icfuel).ge.0 ) then
-  call fuvarp
-  !==========
-endif
+    ! ---- Notre physique particuliere est monophasique
+    iphsca(iscapp(isc)) = 1
 
-! ---> Physique particuliere : Compressible
+    ! ---- Viscosite dynamique moleculaire constante pour les
+    !      scalaires ISCAPP(ISC)
+    ivisls(iscapp(isc)) = 0
 
-if ( ippmod(icompf).ge.0) then
-  call cfvarp
-  !==========
-endif
+  endif
 
-! ---> Physique particuliere : Versions Electriques
+enddo
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Version Atmospherique
-
-if ( ippmod(iatmos).ge.1 ) then
-  call atvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Aerorefrigerants
-
-if ( ippmod(iaeros).ge.0 ) then
-  call ctvarp
-  !==========
-endif
+! ---- Cp est constant
+iphas      = iphsca(iscapp(1))
+icp(iphas) = 0
 
 return
 end
+

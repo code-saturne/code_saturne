@@ -1,4 +1,30 @@
-* 07/07/2009 - David Monfort <david.monfort@edf.fr>
+* 08/07/2009 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
+               Maya Milliez <maya.milliez@edf.fr>
+  Add non-neutral atmosphere modelling (both dry and humid, though
+  humid atmosphere modelling is not yet fully functional).
+  added routines:
+    src/atmo/atmcls.f90
+    src/atmo/atphyv.f90
+    src/atmo/atprop.f90
+    src/atmo/atprke.f90
+    src/atmo/atvarp.f90
+  modified routines:
+    include/atmo/atincl.h
+    src/atmo/atini1.f90
+    src/atmo/atlecm.f90
+    src/atmo/attycl.f90
+    src/atmo/Makefile.am
+    src/base/clptrg.f90
+    src/base/turbke.f90
+    src/pprt/ppcsca.f90
+    src/pprt/ppphyv.f90
+    src/pprt/ppprop.f90
+    src/pprt/ppvarp.f90
+    users/atmo/usatcl.f90
+    users/atmo/usativ.f90
+    users/pprt/usppmo.f90
+
+* 08/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a check on the multigrid algorithm. Convert the abort on
   error from a test on the pressure to a test on the convection.
   modified routine:

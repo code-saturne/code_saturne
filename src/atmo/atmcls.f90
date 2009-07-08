@@ -1,12 +1,9 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
-
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,97 +25,34 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usativ &
+subroutine atmcls &
 !================
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
-   nbmetd , nbmett , nbmetm ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   nideve , nrdeve , nituse , nrtuse , iphas  , ifac   , iel    , &
+   uk     , utau   , yplus  ,                                     &
+   uet    ,                                                       &
+   gredu  , q0     , e0     , rib    , lmo    ,                   &
+   cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr , icodcl ,                   &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   tmprom , ztprom , zdprom , xmet   , ymet   , pmer   ,          &
-   ttprom , qvprom , uprom  , vprom  , ekprom , epprom ,          &
-   rprom  , tpprom , phprom ,                                     &
+   dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
+   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! FUNCTION :
 ! --------
+! Compute u*, q0, e0, (momentum, sensible heat and latent heat fluxes)
+!   for a non neutral atmospheric surface layer using the explicit formula
+!   developped for the ECMWF by Louis (1982)
 
-! ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
-!     POUR LA PHYSIQUE PARTICULIERE: VERSION ATMOSPHERIQUE
-!     PENDANT DE USINIV
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! Les proprietes physiaues sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
-
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-
-
-
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
-!     ET PAS ICI
-
-
-
-! POUR LA COMBUSTION, LE CHARBON, L'INITIALISATION EST FAITE
-!   PAR DEFAUT : IL EST CONSEILLE DE LA CONSERVER.
-
-! L'identification des cellules concernees peut s'appuyer sur la
-! commande GETCEL.
-
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
-
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
@@ -142,6 +76,20 @@ subroutine usativ &
 ! nphas            ! e  ! <-- ! nombre de phases                               !
 ! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
 ! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! iphas            ! e  ! <-- ! numero de phase                                !
+! ifac             ! e  ! <-- ! face de bord traitee                           !
+! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
+!                  !    !     !  traitee                                       !
+! uk               ! r  ! <-- ! vitesse de frottement cf entete                !
+! utau             ! r  ! <-- ! vitesse moyenne tangentielle                   !
+! yplus            ! r  ! <-- ! distance adim a la paroi                       !
+!                  !    !     !  calculee au moyen de uk                       !
+! uet              ! r  ! <-- ! vitesse de frottement cf entete                !
+! gredu            ! r  ! --> ! reduced gravity for non horizontal wall        !
+! q0, e0           ! r  ! <-- ! sensible and latent heat flux                  !
+! rib, lmo         ! r  ! <-- ! Richardson number and Monin-Obukhov length     !
+! coeffu,s,k,e     ! r  ! <-- ! non neutral correction coefficients for        !
+!                  !    !     !   profiles of momentum scalar turbulence       !
 ! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
 ! (2, nfac)        !    !     !                                                !
 ! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
@@ -152,8 +100,6 @@ subroutine usativ &
 ! (ncelet)         !    !     !                                                !
 ! iprfml           ! te ! <-- ! proprietes d'une famille                       !
 ! nfml  ,nprfml    !    !     !                                                !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
 !   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
 ! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
@@ -162,6 +108,15 @@ subroutine usativ &
 !   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
 ! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
 !   (nfabor+1)     !    !     !  (optionnel)                                   !
+! icodcl           ! te ! --> ! code de condition limites aux faces            !
+!  (nfabor,nvar    !    !     !  de bord                                       !
+!                  !    !     ! = 1   -> dirichlet                             !
+!                  !    !     ! = 3   -> densite de flux                       !
+!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
+!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
+!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
+!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
+!                  !    !     !  entrante eventuelle     bloquee               !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -179,17 +134,29 @@ subroutine usativ &
 ! (ndim,nnod)      !    !     !                                                !
 ! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
 ! (ncelet          !    !     !                                                !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
+! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
+! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
+!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
+!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
+!                  !    !     !  ext. (infinie si pas d'echange)               !
+!                  !    !     ! rcodcl(3) = valeur de la densite de            !
+!                  !    !     !  flux (negatif si gain) w/m2 ou                !
+!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
+!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
+!                  !    !     ! pour la pression             dt*gradp          !
+!                  !    !     ! pour les scalaires                             !
+!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
+! w1,2,3,4,5,6     ! tr ! --- ! tableaux de travail                            !
+!  (ncelet         !    !     !  (calcul du gradient de pression)              !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -212,168 +179,172 @@ include "pointe.h"
 include "numvar.h"
 include "optcal.h"
 include "cstphy.h"
+include "cstnum.h"
 include "entsor.h"
 include "parall.h"
 include "period.h"
+include "ppppar.h"
+include "ppthch.h"
+include "ppincl.h"
+include "atincl.h"
 
 !===============================================================================
+
+! Arguments
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfml   , nprfml
 integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
-integer          nbmetd , nbmett , nbmetm
 integer          nideve , nrdeve , nituse , nrtuse
+integer          iphas  , ifac   , iel
 
 integer          ifacel(2,nfac) , ifabor(nfabor)
 integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml), maxelt, lstelt(maxelt)
+integer          iprfml(nfml,nprfml)
 integer          ipnfac(nfac+1), nodfac(lndfac)
 integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
+integer          icodcl(nfabor,nvar)
 integer          idevel(nideve), ituser(nituse), ia(*)
 
+double precision uk, utau, yplus, uet
+double precision gredu, rib, lmo, q0, e0
+double precision cfnnu, cfnns, cfnnk,cfnne
 double precision xyzcen(ndim,ncelet)
 double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
 double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
 double precision xyznod(ndim,nnod), volume(ncelet)
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision tmprom(nbmetm)
-double precision ztprom(nbmett) , zdprom(nbmetd)
-double precision xmet(nbmetm)   , ymet(nbmetm)  , pmer(nbmetm)
-double precision ttprom(nbmett,nbmetm) , qvprom(nbmett,nbmetm)
-double precision uprom(nbmetd,nbmetm)  , vprom(nbmetd,nbmetm)
-double precision ekprom(nbmetd,nbmetm) , epprom(nbmetd,nbmetm)
-double precision rprom(nbmett,nbmetm)  , tpprom(nbmett,nbmetm)
-double precision phprom(nbmett,nbmetm)
+double precision rcodcl(nfabor,nvar,3)
+double precision w1(ncelet),w2(ncelet),w3(ncelet)
+double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
 
 integer          idebia, idebra
-integer          iel, iutile,iphas
-double precision d2s3
-double precision zent,xuent,xvent,xkent,xeent,tpent
+
+double precision tpot1,tpot2,tpotv1,tpotv2
+double precision rscp1,rscp2
+double precision actu,actt,b,c,d
+double precision fm,fh,fmden1,fmden2,fhden
+double precision rugd,rugt,distbf
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
-!===============================================================================
-
-if(1.eq.1) then
-!       Indicateur de non passage dans le sous-programme
-  iusini = 0
-  return
-endif
-
-!===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1.  INITIALISATIONS
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
-d2s3 = 2.d0/3.d0
 
-!===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
-!===============================================================================
+b = 5.d0
+c = 5.d0
+d = 5.d0
+rib = 0.d0
+lmo = 999.d0
+q0 = 0.d0
+e0 = 0.d0
 
-! --- INCONNUES
-!     Exemple : Initialisation a partir des profils meteo
+rugd = rcodcl(ifac,iu(iphas),3)
+distbf = yplus*rugd
+rugt = rcodcl(ifac,isca(iscalt(iphas)),3)
+actu = xkappa/log((distbf+rugd)/rugd)
+actt = xkappa/log((distbf+rugt)/rugt)
 
+! prise en compte de l'humidite dans le rapport r/cp
+!if ( ippmod(iatmos).eq.2 ) then
+!   rscp1=(rair/cp0(iphas))*(1.+(rvsra-cpvcpa)*qvs(ifac))
+!   rscp2=(rair/cp0(iphas))*(1.+(rvsra-cpvcpa)*qv(iel))
+!else
+    rscp1 = rair/cp0(iphas)
+    rscp2 = rair/cp0(iphas)
+!endif
 
-if (isuite.eq.0) then
+  tpot1 = rcodcl(ifac,isca(iscalt(iphas)),1)
+  tpot2 = rtp(iel,isca(iscalt(iphas)))
 
-! Initialisation with the input meteo profile
+!     .........    ............................................
+!     3.2 - compute virtual potential temperature at two levels
+!     .........    ............................................
+!if ( ippmod(iatmos).eq.2 ) then
+!    tpotv1=tpot1*(1.+(rvsra-1.)*qvs(ifac))
+!    tpotv2=tpot2*(1.+(rvsra-1.)*qv(iel))
+!else
+  tpotv1 = tpot1
+  tpotv2 = tpot2
+!endif
 
-  iphas=1
+!     .........    .....................................
+!     3.3 - compute layer average Richardson number
+!     .........    .....................................
 
-  do iel = 1, ncel
-
-    zent=xyzcen(3,iel)
-
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, uprom , zent  , ttcabs, xuent )
-
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, vprom , zent  , ttcabs, xvent )
-
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, ekprom, zent  , ttcabs, xkent )
-
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, epprom, zent  , ttcabs, xeent )
-
-    rtp(iel,iu(iphas))=xuent
-    rtp(iel,iv(iphas))=xvent
-    rtp(iel,iw(iphas))=0.d0
-
-!     ITYTUR est un indicateur qui vaut ITURB/10
-    if    (itytur(iphas).eq.2) then
-
-      rtp(iel,ik(iphas))  = xkent
-      rtp(iel,iep(iphas)) = xeent
-
-    elseif(itytur(iphas).eq.3) then
-
-      rtp(iel,ir11(iphas)) = d2s3*xkent
-      rtp(iel,ir22(iphas)) = d2s3*xkent
-      rtp(iel,ir33(iphas)) = d2s3*xkent
-      rtp(iel,ir12(iphas)) = 0.d0
-      rtp(iel,ir13(iphas)) = 0.d0
-      rtp(iel,ir23(iphas)) = 0.d0
-      rtp(iel,iep(iphas))  = xeent
-
-    elseif(iturb(iphas).eq.50) then
-
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iep(iphas))  = xeent
-      rtp(iel,iphi(iphas)) = d2s3
-      rtp(iel,ifb(iphas))  = 0.d0
-
-    elseif(iturb(iphas).eq.60) then
-
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iomg(iphas)) = xeent/cmu/xkent
-
-    endif
-
-    if (iscalt(iphas).ge.0) then
-! On suppose que le scalaire est la temperature potentielle :
-      call intprf                                                 &
-      !==========
-   (nbmett, nbmetm,                                               &
-    ztprom, tmprom, tpprom, zent  , ttcabs, tpent )
-
-      rtp(iel,isca(iscalt(iphas))) = tpent
-
-    endif
-  enddo
-
+if (abs(utau).le.epzero) then
+ rib = 0.d0
+else
+ rib = 2.d0*gredu*distbf*(tpotv2-tpotv1)/(tpotv1+tpotv2)/utau/utau
 endif
 
-!----
-! FORMATS
-!----
+!     .........    ..................................................
+!     3.4 - compute corrction factors based on ECMWF parametrisation
+!         Louis (1982)
+!     ...............................................................
+
+  if (rib.ge.0.d0) then
+     fm = 1./(1.+2.*b*rib/sqrt(1.+d*rib))
+     fh = 1/(1.+3.*b*rib*sqrt(1.+d*rib))
+  else
+     fmden1 = (distbf+rugt)*abs(rib)/rugt
+     fmden2 = 1.+3.d0*b*c*actu*actt*sqrt(fmden1)
+     fm = 1.d0-2.*b*rib/fmden2
+     fhden = 3.d0*b*c*actu*actt*sqrt((distbf+rugt)/rugt)
+     fh = 1.d0-(3.d0*b*rib)/(1.d0+fhden*sqrt(abs(rib)))
+  endif
+
+  cfnnu = 1.d0/sqrt(fm)
+  cfnns = sqrt(fm)/fh
+  cfnnk = sqrt(1.d0-rib)  ! +correction with turbulent Prandtl
+  cfnne = (1.d0-rib)/sqrt(fm)
+
+!     ------------------------------------
+!     4 - compute friction velocity  uet
+!     ------------------------------------
+
+  uet = actu * utau * sqrt(fm)
+
+!     -----------------------------------------
+!     5 - compute surface sensible heat flux q0
+!     -----------------------------------------
+
+  q0 = (tpot1-tpot2) * uet * actt * fh / sqrt(fm)
+
+!     -----------------------------------------------
+!     6 - compute Monin-Obukhov lenght (Garratt p 38)
+!     -----------------------------------------------
+
+if (abs(gredu*q0).le.epzero) then
+  lmo = -99999.d0
+else
+  lmo = -uet**3*(t0(iphas)+tkelvi)/(xkappa*abs(gredu)*q0)
+endif
+
+!     ---------------------------------------
+!     7 - compute surface latent heat flux e0
+!     ---------------------------------------
+
+!  if ( ippmod(iatmos).eq.2 ) then
+!    e0 = (qvs(ifac)-qv(iel)) * uet * actt * fh / sqrt(fm)
+!  endif
 
 !----
-! FIN
+! fin
 !----
 
 return
-end
+end subroutine

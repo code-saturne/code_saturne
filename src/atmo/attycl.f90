@@ -300,83 +300,84 @@ do ifac = 1, nfabor
     !==========
    (nbmett, nbmetm,                                               &
     ztprom, tmprom, tpprom, zent  , ttcabs, tpent )
+!
+    vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
     do iphas = 1, nphas
 
-      if (rcodcl(ifac,iu(iphas),1).gt.rinfin*0.5d0)               &
+
+!     On met a jour le type de face de bord s'il n'a pas ete specifie
+!       par l'utilisateur.
+!     Pour une entree, on remplit la condition de Dirichlet si elle n'a pas
+!     ete  specifiee par utilisateur.
+
+      if (vs.gt.0) then
+        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = isolib
+      else
+        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = ientre
+
+
+        if (rcodcl(ifac,iu(iphas),1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iu(iphas),1) = xuent
-      if (rcodcl(ifac,iv(iphas),1).gt.rinfin*0.5d0)               &
+        if (rcodcl(ifac,iv(iphas),1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iv(iphas),1) = xvent
-      if (rcodcl(ifac,iw(iphas),1).gt.rinfin*0.5d0)               &
+        if (rcodcl(ifac,iw(iphas),1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iw(iphas),1) = 0.d0
 
-      if    (itytur(iphas).eq.2) then
+        if    (itytur(iphas).eq.2) then
 
-        if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)             &
+          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
              rcodcl(ifac,ik(iphas),1) = xkent
-        if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)            &
+          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
              rcodcl(ifac,iep(iphas),1) = xeent
 
-      elseif(itytur(iphas).eq.3) then
+        elseif(itytur(iphas).eq.3) then
 
-        if (rcodcl(ifac,ir11(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir11(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-        if (rcodcl(ifac,ir22(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir22(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-        if (rcodcl(ifac,ir33(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir33(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-        if (rcodcl(ifac,ir12(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir12(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir12(iphas),1) = 0.d0
-        if (rcodcl(ifac,ir13(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir13(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir13(iphas),1) = 0.d0
-        if (rcodcl(ifac,ir23(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,ir23(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir23(iphas),1) = 0.d0
-        if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)            &
+          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
              rcodcl(ifac,iep(iphas),1) = xeent
 
-      elseif(iturb(iphas).eq.50) then
+        elseif(iturb(iphas).eq.50) then
 
-        if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)             &
+          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
              rcodcl(ifac,ik(iphas),1) = xkent
-        if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)            &
+          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
              rcodcl(ifac,iep(iphas),1) = xeent
-        if (rcodcl(ifac,iphi(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,iphi(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,iphi(iphas),1) = d2s3
-        if (rcodcl(ifac,ifb(iphas),1).gt.rinfin*0.5d0)            &
+          if (rcodcl(ifac,ifb(iphas),1).gt.rinfin*0.5d0)          &
              rcodcl(ifac,ifb(iphas),1) = 0.d0
 
-      elseif(iturb(iphas).eq.60) then
+        elseif(iturb(iphas).eq.60) then
 
-        if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)             &
+          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
              rcodcl(ifac,ik(iphas),1) = xkent
-        if (rcodcl(ifac,iomg(iphas),1).gt.rinfin*0.5d0)           &
+          if (rcodcl(ifac,iomg(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+
+        endif
+
+        if (iscalt(iphas).ne.-1) then
+
+          if (rcodcl(ifac,isca(iscalt(iphas)),1).gt.rinfin*0.5d0) &
+           rcodcl(ifac,isca(iscalt(iphas)),1) = tpent
+
+        endif
 
       endif
 
     enddo
-
-    if (nscal.ge.1) then
-
-      if (rcodcl(ifac,isca(1),1).gt.rinfin*0.5d0)                 &
-           rcodcl(ifac,isca(1),1) = tpent
-
-    endif
-
-!     On met a jour le type de face de bord s'il n'a pas ete specifie
-!       par l'utilisateur
-
-    vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
-
-    if (vs.gt.0) then
-      do iphas = 1, nphas
-        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = isolib
-      enddo
-    else
-      do iphas = 1, nphas
-        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = ientre
-      enddo
-    endif
 
   endif
 

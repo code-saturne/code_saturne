@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,23 +25,31 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine ppvarp
+subroutine atprop &
 !================
 
+ ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
 !  ---------
 
-! INIT DES POSITIONS DES VARIABLES SELON
-!   LE TYPE DE PHYSIQUE PARTICULIERE
-! REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
+!     INIT DES POSITIONS DES VARIABLES D'ETAT
+!            POUR LE MODULE ATMOSPHERIQUE
+!         (DANS VECTEURS PROPCE, PROPFA, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
+! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
+!                  !    !     !  (les proprietes sont dans propce,             !
+!                  !    !     !   propfa ou prpfb)                             !
+! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
+!                  !    !     !  derniere grandeur definie aux                 !
+!                  !    !     !  cellules (rtp,propce...) pour le              !
+!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -65,76 +73,78 @@ include "entsor.h"
 include "cstnum.h"
 include "ppppar.h"
 include "ppthch.h"
-include "coincl.h"
-include "cpincl.h"
-include "ppincl.h"
-include "elincl.h"
 include "atincl.h"
+include "ppincl.h"
+include "ihmpre.h"
 
 !===============================================================================
 
+! Arguments
+
+integer       ipropp, ipppst
+
+! VARIABLES LOCALES
+
+integer       iprop, ipropc
 
 !===============================================================================
+! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+!    Atmospheric modules:  dry and humid atmosphere
+!===============================================================================
 
-! ---> Physique particuliere : Combustion Gaz
 
-if (  ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                &
-                          .or. ippmod(icolwc).ge.0 ) then
-  call covarp
-  !==========
+! ---> Temperature (IPPMOD(IATMOS) = 1 or 2)
+!-------------------------------------------------------------------------------
+
+! ---> Definition des pointeurs relatifs aux variables d'etat
+
+iprop = ipropp
+
+iprop  = iprop + 1
+itempc = iprop
+
+! ---> Liquid water content (IPPMOD(IATMOS) = 2)
+!-------------------------------------------------------------------------------
+
+if ( ippmod(iatmos).eq.2) then
+  iprop  = iprop + 1
+  iliqwt = iprop
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
 
-if ( ippmod(icp3pl).ge.0 ) then
-  call cpvarp
-  !==========
+! ----  Nb de variables algebriques (ou d'etat)
+!         propre a la physique particuliere NSALPP
+!         total NSALTO
+
+nsalpp = iprop - ipropp
+nsalto = iprop
+
+! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
+!         etre numerotees ensuite
+
+ipropp = iprop
+
+
+! ---> Positionnement dans le tableau PROPCE
+!      et reperage du rang pour le post-traitement
+
+iprop = nproce
+
+iprop          = iprop + 1
+ipproc(itempc) = iprop
+ipppst         = ipppst + 1
+ipppro(iprop)  = ipppst
+
+if (ippmod(iatmos).eq.2) then
+
+  iprop          = iprop + 1
+  ipproc(iliqwt) = iprop
+  ipppst         = ipppst + 1
+  ipppro(iprop)  = ipppst
+
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
-
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplvar
-  !==========
-endif
-
-! ---> Physique particuliere :  Combustion Fuel
-
-if ( ippmod(icfuel).ge.0 ) then
-  call fuvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Compressible
-
-if ( ippmod(icompf).ge.0) then
-  call cfvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Versions Electriques
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Version Atmospherique
-
-if ( ippmod(iatmos).ge.1 ) then
-  call atvarp
-  !==========
-endif
-
-! ---> Physique particuliere : Aerorefrigerants
-
-if ( ippmod(iaeros).ge.0 ) then
-  call ctvarp
-  !==========
-endif
+nproce = iprop
 
 return
-end
+end subroutine

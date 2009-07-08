@@ -176,6 +176,9 @@ include "cstphy.h"
 include "optcal.h"
 include "lagpar.h"
 include "lagran.h"
+include "ppppar.h"
+include "ppthch.h"
+include "ppincl.h"
 
 !===============================================================================
 
@@ -546,7 +549,29 @@ endif
 !                                       W7 , W8, DAM, W9
 !===============================================================================
 
-if(igrake(iphas).eq.1) then
+if (igrake(iphas).eq.1 .and. ippmod(iatmos).ge.1) then
+
+    !  Calcul du terme de gravite pour la version atmospherique
+
+    call atprke                                                   &
+    !==========
+ ( idbia0 , idbra0 ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nscal  , nphas  ,                                              &
+   nideve , nrdeve , nituse , nrtuse , iphas  , ipcvto,           &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   coefa  , coefb  ,                                              &
+   w1     , w2     , w3    ,                                      &
+   w4     , w5     , w6    ,                                      &
+   tinstk , tinste ,                                              &
+   rdevel , rtuser , ra )
+
+else if (igrake(iphas).eq.1) then
 
 ! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
 !     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO

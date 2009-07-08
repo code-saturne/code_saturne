@@ -1,12 +1,9 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
-
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,98 +25,34 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usativ &
+subroutine atprke &
 !================
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nbmetd , nbmett , nbmetm ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
+   nscal  , nphas  ,                                              &
+   nideve , nrdeve , nituse , nrtuse , iphas  , ipcvto,           &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   tmprom , ztprom , zdprom , xmet   , ymet   , pmer   ,          &
-   ttprom , qvprom , uprom  , vprom  , ekprom , epprom ,          &
-   rprom  , tpprom , phprom ,                                     &
-   rdevel , rtuser , ra     )
+   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   coefa  , coefb  ,                                              &
+   w1     , w2     , w3    ,                                      &
+   w4     , w5     , w6    ,                                      &
+   tinstk , tinste ,                                              &
+   rdevel , rtuser , ra )
+
 
 !===============================================================================
 ! FONCTION :
 ! --------
-
-! ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
-!     POUR LA PHYSIQUE PARTICULIERE: VERSION ATMOSPHERIQUE
-!     PENDANT DE USINIV
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! Les proprietes physiaues sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
-
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-
-
-
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
-!     ET PAS ICI
-
-
-
-! POUR LA COMBUSTION, LE CHARBON, L'INITIALISATION EST FAITE
-!   PAR DEFAUT : IL EST CONSEILLE DE LA CONSERVER.
-
-! L'identification des cellules concernees peut s'appuyer sur la
-! commande GETCEL.
-
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
-
-! Arguments
+!  SPECIFIQUE AU CAS ATMOSPHERIQUE :
+!  CALCUL DU TERME DE PRODUCTION LIEE A LA FLOTTABILITE:
+!  G = G*GRAD(THETA)/PRDTUR/THETA
+!-------------------------------------------------------------------------------
+!ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
@@ -142,6 +75,7 @@ subroutine usativ &
 ! nphas            ! e  ! <-- ! nombre de phases                               !
 ! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
 ! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! iphas            ! e  ! <-- ! numero de phase                                !
 ! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
 ! (2, nfac)        !    !     !                                                !
 ! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
@@ -152,8 +86,6 @@ subroutine usativ &
 ! (ncelet)         !    !     !                                                !
 ! iprfml           ! te ! <-- ! proprietes d'une famille                       !
 ! nfml  ,nprfml    !    !     !                                                !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
 !   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
 ! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
@@ -161,7 +93,10 @@ subroutine usativ &
 ! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
 !   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
 ! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !  (optionnel)                                   !
+!   (nfabor+1)     !    !               !  (optionnel)
+! itypsm           ! te ! <-- ! type de source de masse pour les               !
+! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
+! irespr(ncelet    ! te ! --- ! tab entier multigrille                         !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -179,17 +114,19 @@ subroutine usativ &
 ! (ndim,nnod)      !    !     !                                                !
 ! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
 ! (ncelet          !    !     !                                                !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
+!  (nfabor,*)      !    !               !    faces de bord
+! coefa, coefb     ! tr !  <- ! conditions aux limites aux                     !
+!  (nfabor,*)      !    !               !    faces de bord
+! w1...6(ncelet    ! tr ! --- ! tableaux de travail                            !
+!tinstk(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq k             !
+!tinste(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq eps           !
 ! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
 ! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
@@ -199,6 +136,7 @@ subroutine usativ &
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
+!-------------------------------------------------------------------------------
 !===============================================================================
 
 implicit none
@@ -207,173 +145,151 @@ implicit none
 !     DONNEES EN COMMON
 !===============================================================================
 
+include "dimfbr.h"
 include "paramx.h"
-include "pointe.h"
 include "numvar.h"
-include "optcal.h"
-include "cstphy.h"
 include "entsor.h"
+include "cstnum.h"
+include "cstphy.h"
+include "optcal.h"
 include "parall.h"
 include "period.h"
+include "ppppar.h"
+include "ppthch.h"
+include "ppincl.h"
 
 !===============================================================================
+
+! Arguments
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfml   , nprfml
 integer          nnod   , lndfac , lndfbr , ncelbr
-integer          nvar   , nscal  , nphas
-integer          nbmetd , nbmett , nbmetm
-integer          nideve , nrdeve , nituse , nrtuse
+integer          nscal  , nphas
+integer          nideve , nrdeve , nituse , nrtuse, iphas
+integer          ipcvto
+
 
 integer          ifacel(2,nfac) , ifabor(nfabor)
 integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml), maxelt, lstelt(maxelt)
+integer          iprfml(nfml,nprfml)
 integer          ipnfac(nfac+1), nodfac(lndfac)
 integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          idevel(nideve), ituser(nituse)
+integer          ia(*)
 
+double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp (ncelet,*), rtpa (ncelet,*)
 double precision xyzcen(ndim,ncelet)
 double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
 double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
 double precision xyznod(ndim,nnod), volume(ncelet)
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision tmprom(nbmetm)
-double precision ztprom(nbmett) , zdprom(nbmetd)
-double precision xmet(nbmetm)   , ymet(nbmetm)  , pmer(nbmetm)
-double precision ttprom(nbmett,nbmetm) , qvprom(nbmett,nbmetm)
-double precision uprom(nbmetd,nbmetm)  , vprom(nbmetd,nbmetm)
-double precision ekprom(nbmetd,nbmetm) , epprom(nbmetd,nbmetm)
-double precision rprom(nbmett,nbmetm)  , tpprom(nbmett,nbmetm)
-double precision phprom(nbmett,nbmetm)
+double precision propce(ncelet,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision w1(ncelet), w2(ncelet), w3(ncelet)
+double precision w4(ncelet), w5(ncelet), w6(ncelet)
+double precision tinstk(ncelet), tinste(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
+integer         idebra, idebia
+integer         iel
+integer         itpp , icltpp
+integer         iccocg, inc
+integer         iivar, iphydp
+integer         nswrgp, epsrgp, imligp
+integer         iwarnp, climgp, extrap
 
-integer          idebia, idebra
-integer          iel, iutile,iphas
-double precision d2s3
-double precision zent,xuent,xvent,xkent,xeent,tpent
+double precision gravke, prdtur
 
+
+!
 !===============================================================================
-
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+!
 !===============================================================================
-
-if(1.eq.1) then
-!       Indicateur de non passage dans le sous-programme
-  iusini = 0
-  return
-endif
-
-!===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
-
-
-!===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1. Initialisation
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
-d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. Calcul des derivees de la temperature potentielle
 !===============================================================================
 
-! --- INCONNUES
-!     Exemple : Initialisation a partir des profils meteo
+if (ippmod(iatmos).eq.1) then
 
 
-if (isuite.eq.0) then
+  itpp = isca(iscalt(iphas))
+  icltpp = iclrtp(itpp,icoef)
 
-! Initialisation with the input meteo profile
+! ---- Options de calcul:
 
-  iphas=1
+  iccocg = 1
+  inc = 1
 
-  do iel = 1, ncel
+  nswrgp = nswrgr(itpp)
+  epsrgp = epsrgr(itpp)
+  imligp = imligr(itpp)
+  iwarnp = iwarni(itpp)
+  climgp = climgr(itpp)
+  extrap = extrag(itpp)
 
-    zent=xyzcen(3,iel)
+  iivar = 0
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, uprom , zent  , ttcabs, xuent )
+  iphydp = 0
+  call grdcel                                                     &
+  !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml , nprfml,    &
+   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   iivar  , imrgra , inc    , iccocg , nswrgp ,imligp, iphydp,    &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,xyznod , volume,   &
+   w1     , w1     , w1     ,                                     &
+   rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
+   w4     , w5     , w6     ,                                     &
+!        ------   ------   ------
+   w1     , w2     , w3     ,                                     &
+   rdevel , rtuser , ra     )
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, vprom , zent  , ttcabs, xvent )
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, ekprom, zent  , ttcabs, xkent )
+!      Production et terme de gravite
+!         TINSTK=P+G et TINSTE=P+(1-CE3)*G
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdprom, tmprom, epprom, zent  , ttcabs, xeent )
+  if(iscalt(iphas).gt.0.and.nscal.ge.iscalt(iphas)) then
+    prdtur = sigmas(iscalt(iphas))
+  else
+    prdtur = 1.d0
+  endif
 
-    rtp(iel,iu(iphas))=xuent
-    rtp(iel,iv(iphas))=xvent
-    rtp(iel,iw(iphas))=0.d0
-
-!     ITYTUR est un indicateur qui vaut ITURB/10
-    if    (itytur(iphas).eq.2) then
-
-      rtp(iel,ik(iphas))  = xkent
-      rtp(iel,iep(iphas)) = xeent
-
-    elseif(itytur(iphas).eq.3) then
-
-      rtp(iel,ir11(iphas)) = d2s3*xkent
-      rtp(iel,ir22(iphas)) = d2s3*xkent
-      rtp(iel,ir33(iphas)) = d2s3*xkent
-      rtp(iel,ir12(iphas)) = 0.d0
-      rtp(iel,ir13(iphas)) = 0.d0
-      rtp(iel,ir23(iphas)) = 0.d0
-      rtp(iel,iep(iphas))  = xeent
-
-    elseif(iturb(iphas).eq.50) then
-
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iep(iphas))  = xeent
-      rtp(iel,iphi(iphas)) = d2s3
-      rtp(iel,ifb(iphas))  = 0.d0
-
-    elseif(iturb(iphas).eq.60) then
-
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iomg(iphas)) = xeent/cmu/xkent
-
-    endif
-
-    if (iscalt(iphas).ge.0) then
-! On suppose que le scalaire est la temperature potentielle :
-      call intprf                                                 &
-      !==========
-   (nbmett, nbmetm,                                               &
-    ztprom, tmprom, tpprom, zent  , ttcabs, tpent )
-
-      rtp(iel,isca(iscalt(iphas))) = tpent
-
-    endif
-  enddo
+!     En production lineaire, on multiplie tout de suite le terme
+!     de gravite par VISCT, car le reste est deja multiplie.
+!     Dans les autres cas, la multiplication est faite plus tard.
+  if (iturb(iphas).eq.21) then
+    do iel = 1, ncel
+      gravke =   -(w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+               / (rtp(iel,itpp)*prdtur)
+      tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
+      tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
+    enddo
+  else
+    do iel = 1, ncel
+      gravke =   -(w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+               / (rtp(iel,itpp)*prdtur)
+      tinste(iel) = tinstk(iel) + max(gravke,zero)
+      tinstk(iel) = tinstk(iel) + gravke
+    enddo
+  endif
 
 endif
-
-!----
-! FORMATS
-!----
-
 !----
 ! FIN
 !----
-
 return
-end
+end subroutine

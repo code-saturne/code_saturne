@@ -252,7 +252,9 @@ double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptnf, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
-double precision uk, uet, yplus
+double precision uk, uet, tet, yplus
+double precision gredu, rib, lmo, q0, e0
+double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, clsyme, ek
 double precision xmutlm
 double precision rcprod, rcflux
@@ -278,6 +280,12 @@ idebra = idbra0
 uet = 1.d0
 utau = 1.d0
 sqrcmu = sqrt(cmu)
+
+! --- Constantes de relaxation en atmosphere non neutre
+cfnnu=1.d0
+cfnns=1.d0
+cfnnk=1.d0
+cfnne=1.d0
 
 und0   = 1.d0
 deuxd0 = 2.d0
@@ -592,6 +600,32 @@ do ifac = 1, nfabor
 
     endif
 
+  if (ippmod(iatmos).ge.1) then
+
+    ! Compute reduced gravity for non horizontal walls :
+    gredu = gx*rnx + gy*rny + gz*rnz
+
+    call atmcls                                                   &
+    !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse , iphas  , ifac   , iel    , &
+   uk     , utau   , yplus  ,                                     &
+   uet    ,                                                       &
+   gredu  , q0     , e0     , rib    ,lmo     ,                   &
+   cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr , icodcl ,                   &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
+   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   rdevel , rtuser , ra     )
+
+  endif
+
     if(ideuch(iphas).eq.0) then
       uk = uet
     endif
@@ -642,6 +676,7 @@ do ifac = 1, nfabor
            itytur(iphas).eq.3.or.itytur(iphas).eq.4) then
 
 ! Pseudo decalage de la paroi de la distance RUGD :
+! modified for non neutral boundary layer (cfnnu)
       distbf0=distbf+rugd
       xmutlm = xkappa*uk*distbf0*romc
 
@@ -651,8 +686,8 @@ do ifac = 1, nfabor
 
       rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distbf0
 
-      uiptn  = min(utau,max(utau - uk/xkappa*rcprod,0.d0))
-      uiptnf = utau - uet/xkappa*rcflux
+      uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
+      uiptnf = utau - uet/xkappa*rcflux*cfnnu
 
 !     Clipping :
 !     On borne U_f,grad entre 0 et Utau (il y a surement mieux...)
@@ -661,7 +696,7 @@ do ifac = 1, nfabor
 !     - Utau : la production turbulente ne peut etre nulle
 !     On empeche U_f,flux d'etre negatif
 
-      if (uiptnf.lt.0) uiptnf=0
+      if (uiptnf.lt.epzero) uiptnf = 0.d0
 
       uiptmx = max(uiptn,uiptmx)
       uiptmn = min(uiptn,uiptmn)
@@ -719,10 +754,10 @@ do ifac = 1, nfabor
     ydep = distbf*0.5d0+rugd
     if (itytur(iphas).eq.2) then
 
-      coefa(ifac,iclk)   = uk**2/sqrcmu
+      coefa(ifac,iclk)   = uk**2/sqrcmu*cfnnk
       coefb(ifac,iclk)   = 0.d0
 
-      coefa(ifac,iclep)  = uk**3/(xkappa*ydep**2)*distbf
+      coefa(ifac,iclep)  = uk**3/(xkappa*ydep**2)*distbf*cfnne
       coefb(ifac,iclep)  = 1.d0
 
 !===============================================================================
@@ -793,7 +828,7 @@ do ifac = 1, nfabor
 
         coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                &
                            (eloglo(jj,1)*eloglo(kk,2)+            &
-                            eloglo(jj,2)*eloglo(kk,1))*uet*uk
+                            eloglo(jj,2)*eloglo(kk,1))*uet*uk*cfnnk
 
       enddo
 
@@ -801,7 +836,7 @@ do ifac = 1, nfabor
 !      on traite comme en k-eps
 
 
-      coefa(ifac,iclep)  = uk**3/(xkappa*ydep**2)*distbf
+      coefa(ifac,iclep)  = uk**3/(xkappa*ydep**2)*distbf*cfnne
       coefb(ifac,iclep) = 1.d0
 
 !===============================================================================
@@ -942,7 +977,7 @@ do ifac = 1, nfabor
 ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
             rugt=rcodcl(ifac,ivar,3)
             act = xkappa/log((distbf+rugt)/rugt)
-            hflui = romc*cpp*uet*act
+            hflui = romc*cpp*uet*act*cfnns
           else
             hflui = hint
           endif

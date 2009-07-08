@@ -488,6 +488,30 @@ if ( ippmod(iaeros).ge.0 ) then
 
 endif
 
+! ---> Atmospheric Flows
+
+if ( ippmod(iatmos).ge.1 ) then
+
+   call atphyv                                                    &
+   !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr , ibrom  , ia(iizfpp) ,      &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   ,                                     &
+   propce , propfa , propfb ,                                     &
+   coefa  , coefb  ,                                              &
+   w1     , w2     , w3     , w4     ,                            &
+   w5     , w6     , w7     , w8     ,                            &
+   rdevel , rtuser , ra     )
+
+endif
+
 !----
 ! FIN
 !----

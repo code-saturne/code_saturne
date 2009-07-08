@@ -555,13 +555,14 @@ double precision tpent
 !       ET NON CELLE DE LA BIBLIOTHEQUE
 !===============================================================================
 
-if(1.eq.1) then
-  write(nfecra,9001)
+if(iihmpr.eq.1) then
+  return
+else
+  write(nfecra,9000)
   call csexit (1)
-  !==========
 endif
 
- 9001 format(                                                           &
+ 9000 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -576,6 +577,8 @@ endif
 '@                                                            ',/)
 
 ! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+
+
 
 !===============================================================================
 ! 1.  INITIALISATIONS

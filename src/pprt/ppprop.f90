@@ -75,6 +75,7 @@ include "ppppar.h"
 include "ppthch.h"
 include "coincl.h"
 include "cpincl.h"
+include "atincl.h"
 include "ppincl.h"
 
 !===============================================================================
@@ -128,6 +129,13 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
   call elprop(ipropp,ipppst)
+  !==========
+endif
+
+! ---> Physique particuliere : Atmospherique
+
+if ( ippmod(iatmos).ge.1 ) then
+  call atprop(ipropp,ipppst)
   !==========
 endif
 

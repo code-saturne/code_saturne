@@ -38,9 +38,7 @@
 
 ! 1. Pointers specific to the atmospheric physics
 
-
-
-! 1.1 Pointers specfic to the input meteo profile
+! 1.1 Pointers specific to the input meteo profile (in ra)
 !-------------------------------------------------------------------------------
 !         /IPROM/
 !   Pointers specific to values read in the input meteo file:
@@ -56,7 +54,7 @@
 !                    IXMET, IYMET --> cooordinates of the meteo profile
 
 !   Pointers specific to values calculated from the meteo file
-!   (cf ATLECM.F):
+!   (cf atlecm.f90):
 !                    IRMET -->  density profile
 !                    ITPMET -->  potential temperature profile
 !                    IPHMET -->  hydro. pressure from Laplace integration
@@ -95,14 +93,51 @@ common /iprom/ itmmet,                                            &
                itpmet,                                            &
                iphmet
 
+! 1.2 Pointers for the positions of the variables (in rtp, rtpa)
+!-------------------------------------------------------------------------------
+
+!         /IATVAR/
+!   Variables specific to the atmospheric physics:
+!   IPPMOD(IATMOS) = 1 (Dry atmosphere):
+!                    ITEMPP---> potential temperature
+!   IPPMOD(IATMOS) = 2 (Humid atmosphere):
+!                    ITEMPL---> liquid potential temperature
+!                    ITOTWT---> total water content
+!                    INTDRP---> total number of droplets
+
+integer        itempp, itempl, itotwt, intdrp
+
+common /iatvar/ itempp, itempl, itotwt, intdrp
+
+! 1.3 Pointers for the positions of the properties for the specific phys.
+!      (ipproc in propce, propfa, propfb)
+!-------------------------------------------------------------------------------
+
+!         /IATPRO/
+!   Properties specific to the atmospheric physics:
+!   IPPMOD(IATMOS) = 1 or 2 (Dry or Humid atmosphere):
+!                    ITEMPC---> temperature (in celsius)
+!   IPPMOD(IATMOS) = 2 (Humid atmosphere):
+!                    ILIQWT---> liquid water content
+
+integer        itempc,iliqwt
+
+common /iatpro/ itempc,iliqwt
+
 
 !-------------------------------------------------------------------------------
 
 ! 2. Data specific to the atmospheric physics
 
+! 2.1 Constant specific
+!-------------------------------------------------------------------------------
+!          /ATMCST/ RAIR --> perfect gaz constant for air (mixture)
+!                            defined in atini1
 
+ double precision rair
+ common /atmcst/ rair
 
-! 2.1 Data specific to the input meteo profile
+! 2.2 Data specific to the input meteo profile
 !-------------------------------------------------------------------------------
 !          /PROMET/
 !                   IMETEO --> flag for reading the meteo input file

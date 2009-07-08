@@ -70,6 +70,7 @@ include "ppincl.h"
 include "elincl.h"
 include "fuincl.h"
 include "ppcpfu.h"
+include "atincl.h"
 
 !===============================================================================
 
@@ -206,7 +207,9 @@ endif
 ! 6. MODELE ATMOSPHERIQUE (IATMOS)
 !===============================================================================
 
-if ( ippmod(iatmos).ge.0 ) nscapp = 0
+if ( ippmod(iatmos).eq.0 ) nscapp = 0
+if ( ippmod(iatmos).eq.1 ) nscapp = 1
+if ( ippmod(iatmos).eq.2 ) nscapp = 3
 
 !===============================================================================
 ! 8. MODELISATION DES AEROREFRIGERANTS (IAEROS)

@@ -93,7 +93,7 @@ double precision  phprom(nbmett,nbmetm)
 
 integer itp, ii, ios, k, iphas
 double precision annee,quant,heure,minute,second
-double precision rair,psol,rap,rscp,tmoy
+double precision psol,rap,rscp,tmoy
 character*80     ccomnt
 character*1      csaute
 
@@ -243,7 +243,6 @@ endif
 if (imode.eq.1) then
   iphas = 1
   phprom(1,itp)=pmer(itp)
-  rair=287.d0
   psol=p0(iphas)
   rscp=rair/cp0(iphas)
 
@@ -327,31 +326,23 @@ endif
 if (imode.eq.1) then
   if(itp.eq.1) then
     write(nfecra,*)
-    write(nfecra,*)                                               &
-         '==================================================='
-    write(nfecra,*)                                               &
-         'printing meteo profiles'
+    write(nfecra,*) '==================================================='
+    write(nfecra,*) 'printing meteo profiles'
   endif
-  write(nfecra,*)                                                 &
-       'annee,quantieme, heure, minute, seconde'
-  write(nfecra,7995)                                              &
-       annee, quant,heure,minute,second
+  write(nfecra,*) 'year, quant-day , hour, minute, second'
+  write(nfecra,7995) annee, quant,heure,minute,second
  7995   format(1x, 5f8.2)
-  write(nfecra,*)                                                 &
-       'tmprom(itp)'
-  write(nfecra,7996)                                              &
-       tmprom(itp)
+  write(nfecra,*) 'tmprom(itp)'
+  write(nfecra,7996) tmprom(itp)
  7996   format(1x, f8.2)
-  write(nfecra,*)                                                 &
-       'zdprom,uprom,vprom,ekprom,epprom'
+  write(nfecra,*) 'zdprom,uprom,vprom,ekprom,epprom'
   do ii=1,nbmetd
     write(nfecra,7997)                                            &
          zdprom(ii), uprom(ii,itp), vprom(ii,itp),                &
          ekprom(ii,itp), epprom(ii,itp)
  7997     format(1x, 3f8.2,2e10.3)
   enddo
-  write(nfecra,*)                                                 &
-       'ztprom,ttprom,tpprom,rprom,phprom,qvprom'
+  write(nfecra,*) 'ztprom,ttprom,tpprom,rprom,phprom,qvprom'
   do ii=1,nbmett
     write(nfecra,7998)                                            &
          ztprom(ii), ttprom(ii,itp), tpprom(ii,itp),              &
