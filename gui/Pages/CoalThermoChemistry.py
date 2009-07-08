@@ -52,7 +52,6 @@ class Coal(Model):
         self.PCIValue = 0
         self.thermalCapacity = 0
         self.density = 0
-        self.humidity = 0
         self.CDryCompositionCoke = 0
         self.HDryCompositionCoke = 0
         self.ODryCompositionCoke = 0
@@ -60,6 +59,7 @@ class Coal(Model):
         self.ashesRatio = 0
         self.ashesFormingEnthalpy = 0
         self.ashesThermalCapacity = 0
+        self.humidity = 0
         self.IY1CH = 0
         self.Y1CH = 0
         self.IY2CH = 0
@@ -68,9 +68,12 @@ class Coal(Model):
         self.A2CH = 0
         self.E1CH = 0
         self.E2CH = 0
-        self.AHETCH = 0
-        self.EHETCH = 0
-        self.IOCHET = 0
+        self.AHETCH_O2 = 0
+        self.EHETCH_O2 = 0
+        self.IOCHET_O2 = 0
+        self.AHETCH_CO2 = 0
+        self.EHETCH_CO2 = 0
+        self.IOCHET_CO2 = 0
 
 
     def setClassesNumber(self, value):
@@ -124,10 +127,6 @@ class Coal(Model):
         self.density = value
 
 
-    def setHumidity(self, value):
-        self.humidity = value
-
-
     def setCDryCompositionCoke(self, value):
         self.CDryCompositionCoke = value
 
@@ -154,6 +153,10 @@ class Coal(Model):
 
     def setAshesThermalCapacity(self, value):
         self.ashesThermalCapacity = value
+
+
+    def setHumidity(self, value):
+        self.humidity = value
 
 
     def setIY1CH(self, value):
@@ -188,16 +191,28 @@ class Coal(Model):
         self.E2CH = value
 
 
-    def setAHETCH(self, value):
-        self.AHETCH = value
+    def setAHETCH_O2(self, value):
+        self.AHETCH_O2 = value
 
 
-    def setEHETCH(self, value):
-        self.EHETCH = value
+    def setEHETCH_O2(self, value):
+        self.EHETCH_O2 = value
 
 
-    def setIOCHET(self, value):
-        self.IOCHET = value
+    def setIOCHET_O2(self, value):
+        self.IOCHET_O2 = value
+
+
+    def setAHETCH_CO2(self, value):
+        self.AHETCH_CO2 = value
+
+
+    def setEHETCH_CO2(self, value):
+        self.EHETCH_CO2 = value
+
+
+    def setIOCHET_CO2(self, value):
+        self.IOCHET_CO2 = value
 
 
     def getClassesNumber(self):
@@ -300,17 +315,32 @@ class Coal(Model):
         return self.E2CH
 
 
-    def getAHETCH(self):
-        return self.AHETCH
+    def getAHETCH_O2(self):
+        return self.AHETCH_O2
 
 
-    def getEHETCH(self):
-        return self.EHETCH
+    def getEHETCH_O2(self):
+        return self.EHETCH_O2
 
 
-    def getIOCHET(self):
-        return self.IOCHET
+    def getIOCHET_O2(self):
+        return self.IOCHET_O2
 
+
+    def getAHETCH_CO2(self):
+        return self.AHETCH_CO2
+
+
+    def getEHETCH_CO2(self):
+        return self.EHETCH_CO2
+
+
+    def getIOCHET_CO2(self):
+        return self.IOCHET_CO2
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class Coals(Model):
 
@@ -319,65 +349,71 @@ class Coals(Model):
         #
         # "CARACTERISTIQUES CHARBON" part
         self.Comment = {}
-        self.coalNumber                            = 0
+        self.coalNumber                         = 0
         self.Comment["coalNumber"]              = "Nb de charbons"
-        self.classesNumberList                     = []
+        self.classesNumberList                  = []
         self.Comment["classesNumberList"]       = "Nb de classes"
-        self.initDiameterClassesList               = []
+        self.initDiameterClassesList            = []
         self.Comment["initDiameterClassesList"] = "Diametre initial de la classe (m)"
-        self.CDryCompositionList                   = []
+        self.CDryCompositionList                = []
         self.Comment["CDryCompositionList"]     = "Composition C (%) sur sec"
-        self.HDryCompositionList                   = []
+        self.HDryCompositionList                = []
         self.Comment["HDryCompositionList"]     = "Composition H (%) sur sec"
-        self.ODryCompositionList                   = []
+        self.ODryCompositionList                = []
         self.Comment["ODryCompositionList"]     = "Composition O (%) sur sec"
-        self.DryList                               = []
+        self.DryList                            = []
         self.Comment["DryList"]                 = "PCI (J/kg) sur pur (0) sur sec 1"
-        self.PCIValueList                          = []
-        self.thermalCapacityList                   = []
+        self.PCIValueList                       = []
+        self.thermalCapacityList                = []
         self.Comment["thermalCapacityList"]     = "CP moyen du charbon (J/kg/K)"
-        self.densityList                           = []
+        self.densityList                        = []
         self.Comment["densityList"]             = "Masse volumique (kg/m3)"
-        self.humidityList                           = []
-        self.Comment["humidityList"]             = "Humidite du charbon(%)"
-        self.CDryCompositionCokeList               = []
+        self.humidityList                       = []
+        self.Comment["humidityList"]            = "Humidite du charbon(%)"
+        self.CDryCompositionCokeList            = []
         self.Comment["CDryCompositionCokeList"] = "Composition C (%) sur sec"
-        self.HDryCompositionCokeList               = []
+        self.HDryCompositionCokeList            = []
         self.Comment["HDryCompositionCokeList"] = "Composition H (%) sur sec"
-        self.ODryCompositionCokeList               = []
+        self.ODryCompositionCokeList            = []
         self.Comment["ODryCompositionCokeList"] = "Composition O (%) sur sec"
-        self.PCICokeValueList                      = []
+        self.PCICokeValueList                   = []
         self.Comment["PCICokeValueList"]        = "PCI sur sec (J/kg)"
-        self.ashesRatioList                        = []
+        self.ashesRatioList                     = []
         self.Comment["ashesRatioList"]          = "Taux de cendres en masse (%)"
-        self.ashesFormingEnthalpyList              = []
+        self.ashesFormingEnthalpyList           = []
         self.Comment["ashesFormingEnthalpyList"]= "Enthalpie de formation des cendres (J/kg)"
-        self.ashesThermalCapacityList              = []
+        self.ashesThermalCapacityList           = []
         self.Comment["ashesThermalCapacityList"]= "CP des cendres (J/kg/K)"
         #
         # "DEVOLATILISATION" part
-        self.IY1CHList                             = []
+        self.IY1CHList                          = []
         self.Comment["Y1CHList"]                = "Coef. stoe. (adim) Y1 si = 0 calcul automatique"
-        self.Y1CHList                              = []
+        self.Y1CHList                           = []
         self.Comment["Y2CHList"]                = "Coef. stoe. (adim) Y2 si = 0 calcul automatique"
-        self.IY2CHList                             = []
-        self.Y2CHList                              = []
-        self.A1CHList                              = []
+        self.IY2CHList                          = []
+        self.Y2CHList                           = []
+        self.A1CHList                           = []
         self.Comment["A1CHList"]                = "Facteur pre-exponentielle A1 (s-1)"
-        self.A2CHList                              = []
+        self.A2CHList                           = []
         self.Comment["A2CHList"]                = "Facteur pre-exponentielle A2 (s-1)"
-        self.E1CHList                              = []
+        self.E1CHList                           = []
         self.Comment["E1CHList"]                = "Energie d'activation E1 (J/mol)"
-        self.E2CHList                              = []
+        self.E2CHList                           = []
         self.Comment["E2CHList"]                = "Energie d'activation E2 (J/mol)"
         #
         # "COMBUSTION HETEROGENE" part
-        self.AHETCHList                            = []
-        self.Comment["AHETCHList"]              = "Constante pre-exponentielle (kg/m2/s/atm)"
-        self.EHETCHList                            = []
-        self.Comment["EHETCHList"]              = "Energie d'activation (kcal/mol)"
-        self.IOCHETList                            = []
-        self.Comment["IOCHETList"]              = "Ordre de la reaction 0.5 si = 0 1 si = 1"
+        self.AHETCH_O2List                      = []
+        self.Comment["AHETCH_O2List"]           = "Constante pre-exponentielle (kg/m2/s/atm)"
+        self.EHETCH_O2List                      = []
+        self.Comment["EHETCH_O2List"]           = "Energie d'activation (kcal/mol)"
+        self.IOCHET_O2List                      = []
+        self.Comment["IOCHET_O2List"]           = "Ordre de la reaction 0.5 si = 0 1 si = 1"
+        self.AHETCH_CO2List                     = []
+        self.Comment["AHETCH_CO2List"]          = "Constante pre-exponentielle (kg/m2/s/atm)"
+        self.EHETCH_CO2List                     = []
+        self.Comment["EHETCH_CO2List"]          = "Energie d'activation (kcal/mol)"
+        self.IOCHET_CO2List                     = []
+        self.Comment["IOCHET_CO2List"]          = "Ordre de la reaction 0.5 si = 0 1 si = 1"
 
 
     def getNumber(self):
@@ -388,8 +424,6 @@ class Coals(Model):
     # "CARACTERISTIQUES CHARBON" part
 
     def deleteCoal(self, number):
-        #
-        # utiliser self.AHETCHList.remove(number)
         self.coalNumber -= 1
         nb = number - 1
         self.classesNumberList.pop(nb)
@@ -417,13 +451,15 @@ class Coals(Model):
         self.A2CHList.pop(nb)
         self.E1CHList.pop(nb)
         self.E2CHList.pop(nb)
-        self.AHETCHList.pop(nb)
-        self.EHETCHList.pop(nb)
-        self.IOCHETList.pop(nb)
+        self.AHETCH_O2List.pop(nb)
+        self.EHETCH_O2List.pop(nb)
+        self.IOCHET_O2List.pop(nb)
+        self.AHETCH_CO2List.pop(nb)
+        self.EHETCH_CO2List.pop(nb)
+        self.IOCHET_CO2List.pop(nb)
 
     
     def addCoal(self, coal):
-
         self.coalNumber += 1
         self.isLowerOrEqual(self.coalNumber, 3)
         self.classesNumberList.append(coal.getClassesNumber())
@@ -451,13 +487,15 @@ class Coals(Model):
         self.A2CHList.append(coal.getA2CH())
         self.E1CHList.append(coal.getE1CH())
         self.E2CHList.append(coal.getE2CH())
-        self.AHETCHList.append(coal.getAHETCH())
-        self.EHETCHList.append(coal.getEHETCH())
-        self.IOCHETList.append(coal.getIOCHET())
+        self.AHETCH_O2List.append(coal.getAHETCH_O2())
+        self.EHETCH_O2List.append(coal.getEHETCH_O2())
+        self.IOCHET_O2List.append(coal.getIOCHET_O2())
+        self.AHETCH_CO2List.append(coal.getAHETCH_CO2())
+        self.EHETCH_CO2List.append(coal.getEHETCH_CO2())
+        self.IOCHET_CO2List.append(coal.getIOCHET_CO2())
 
 
     def updateCoal(self,number, coal) : 
-
         nb = number - 1
         self.classesNumberList[nb]        = coal.getClassesNumber()
         self.initDiameterClassesList[nb]  = coal.getInitDiameterClasses()
@@ -484,9 +522,12 @@ class Coals(Model):
         self.A2CHList[nb]                 = coal.getA2CH()
         self.E1CHList[nb]                 = coal.getE1CH()
         self.E2CHList[nb]                 = coal.getE2CH()
-        self.AHETCHList[nb]               = coal.getAHETCH()
-        self.EHETCHList[nb]               = coal.getEHETCH()
-        self.IOCHETList[nb]               = coal.getIOCHET()
+        self.AHETCH_O2List[nb]            = coal.getAHETCH_O2()
+        self.EHETCH_O2List[nb]            = coal.getEHETCH_O2()
+        self.IOCHET_O2List[nb]            = coal.getIOCHET_O2()
+        self.AHETCH_CO2List[nb]           = coal.getAHETCH_CO2()
+        self.EHETCH_CO2List[nb]           = coal.getEHETCH_CO2()
+        self.IOCHET_CO2List[nb]           = coal.getIOCHET_CO2()
 
 
     def getCoal(self, number):
@@ -517,9 +558,12 @@ class Coals(Model):
         coal.setA2CH(self.A2CHList[nb])                
         coal.setE1CH(self.E1CHList[nb]) 
         coal.setE2CH(self.E2CHList[nb]) 
-        coal.setAHETCH(self.AHETCHList[nb])
-        coal.setEHETCH(self.EHETCHList[nb])
-        coal.setIOCHET(self.IOCHETList[nb])
+        coal.setAHETCH_O2(self.AHETCH_O2List[nb])
+        coal.setEHETCH_O2(self.EHETCH_O2List[nb])
+        coal.setIOCHET_O2(self.IOCHET_O2List[nb])
+        coal.setAHETCH_CO2(self.AHETCH_CO2List[nb])
+        coal.setEHETCH_CO2(self.EHETCH_CO2List[nb])
+        coal.setIOCHET_O2(self.IOCHET_CO2List[nb])
         return coal
         
         
@@ -732,32 +776,58 @@ class Coals(Model):
         self.E2CHList = value
     #
     # "COMBUSTION HETEROGENE" part
-    def getAHETCHList(self):
-        return self.AHETCHList  
+    def getAHETCH_O2List(self):
+        return self.AHETCH_O2List  
 
 
-    def getEHETCHList(self):
-        return self.EHETCHList
+    def getEHETCH_O2List(self):
+        return self.EHETCH_O2List
 
 
-    def getIOCHETList(self):
-        return self.IOCHETList
+    def getIOCHET_O2List(self):
+        return self.IOCHET_O2List
 
 
-    def setAHETCHList(self, value):
-        self.AHETCHList = value  
+    def getAHETCH_CO2List(self):
+        return self.AHETCH_CO2List  
 
 
-    def setEHETCHList(self, value):
-        self.EHETCHList = value
+    def getEHETCH_CO2List(self):
+        return self.EHETCH_CO2List
 
 
-    def setIOCHETList(self, value):
-        self.IOCHETList = value
+    def getIOCHET_CO2List(self):
+        return self.IOCHET_CO2List
 
+
+    def setAHETCH_O2List(self, value):
+        self.AHETCH_O2List = value  
+
+
+    def setEHETCH_O2List(self, value):
+        self.EHETCH_O2List = value
+
+
+    def setIOCHET_O2List(self, value):
+        self.IOCHET_O2List = value
+
+
+    def setAHETCH_CO2List(self, value):
+        self.AHETCH_CO2List = value  
+
+
+    def setEHETCH_CO2List(self, value):
+        self.EHETCH_CO2List = value
+
+
+    def setIOCHET_CO2List(self, value):
+        self.IOCHET_CO2List = value
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class RadiativTransfer:
-
     def __init__(self):
         """ constructor """
         #
@@ -785,30 +855,218 @@ class RadiativTransfer:
     def setAbsorptionCoeff(self, value):
         self.absorptionCoeff = value
 
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class Oxydant:
+    """
+    Oxydant compisition in O2,N2,H2O,CO2
+    """
+    def __init__(self):
+        self.oxydantNumber = 1
+        self.O2  = 0.25
+        self.N2  = 0.75
+        self.H2O = 0
+        self.CO2 = 0
+
+
+    def setOxydantNumber(self, value):
+        self.oxydantNumber = value
+
+
+    def setO2(self, value):
+        self.O2 = value
+
+
+    def setN2(self, value):
+        self.N2 = value
+
+
+    def setH2O(self, value):
+        self.H2O = value
+
+
+    def setCO2(self, value):
+        self.CO2 = value
+
+
+    def getOxydantNumber(self):
+        return self.oxydantNumber
+
+
+    def getO2(self):
+        return self.O2
+
+
+    def getN2(self):
+        return self.N2
+
+
+    def getH2O(self):
+        return self.H2O
+
+
+    def getCO2(self):
+        return self.CO2
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class Oxydants(Model):
+    def __init__(self):
+        """ constructor """
+        self.Comment = {}
+        self.oxydantNumber = 0
+        self.Comment["oxydantNumber"] = ""
+        self.oxydantNumberList = []
+        self.Comment["oxydantNumberList"] = ""
+        self.O2List  = []
+        self.Comment["O2List"] = ""
+        self.N2List  = []
+        self.Comment["N2List"] = ""
+        self.H2OList = []
+        self.Comment["H2OList"] = ""
+        self.CO2List = []
+        self.Comment["CO2List"] = ""
+
+
+    def deleteOxydant(self, number):
+        self.oxydantNumber -= 1
+        nb = number - 1
+        self.oxydantNumberList.pop(nb)
+        self.O2List.pop(nb)
+        self.N2List.pop(nb)
+        self.H2OList.pop(nb)
+        self.CO2List.pop(nb)
+
+
+    def addOxydant(self, oxy):
+        self.oxydantNumber += 1
+        self.isLowerOrEqual(self.oxydantNumber, 3)
+        self.oxydantNumberList.append(oxy.getOxydantNumber())
+        self.O2List.append(oxy.getO2())
+        self.N2List.append(oxy.getN2())
+        self.H2OList.append(oxy.getH2O())
+        self.CO2List.append(oxy.getCO2())
+
+
+    def updateOxydant(self, number, oxy) : 
+        nb = number - 1
+        self.oxydantNumberList[nb] = oxy.getOxydantNumber()
+        self.O2List[nb] = oxy.getO2()
+        self.N2List[nb] = oxy.getN2()
+        self.H2OList[nb] = oxy.getH2O()
+        self.CO2List[nb] = oxy.getCO2()
+
+
+    def getOxydant(self, number):
+        oxy = Oxydant()
+        nb = number - 1
+        oxy.setOxydantNumber(self.oxydantNumberList[nb])
+        oxy.setO2(self.O2List[nb])
+        oxy.setN2(self.N2List[nb])
+        oxy.setH2O(self.H2OList[nb])
+        oxy.setCO2(self.CO2List[nb])
+        return oxy
+
+
+    def getNumber(self):
+        return self.oxydantNumber
+
+
+    def setNumber(self, value):
+        self.oxydantNumber = value
+        self.oxydantNumberList = []
+        for i in range(0, value):
+            self.oxydantNumberList.append(i)
+
+
+    def getOxydantNumberList(self):
+        return self.oxydantNumberList
+
+
+    def setOxydantNumberList(self, value):
+        self.oxydantNumberList = value
+        self.oxydantNumber = len(value)
+
+
+    def getO2List(self):
+        return self.O2List
+
+
+    def getN2List(self):
+        return self.N2List
+
+
+    def getH2OList(self):
+        return self.H2OList
+
+
+    def getCO2List(self):
+        return self.CO2List
+
+
+    def setO2List(self, value):
+        self.O2List = value
+
+
+    def setN2List(self, value):
+        self.N2List = value
+
+
+    def setH2OList(self, value):
+        self.H2OList = value
+
+
+    def setCO2List(self, value):
+        self.CO2List = value
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 
 class CoalThermoChemistryModel:
-
     def __init__(self, fileName, case):
         """ constructor """
         self.case = case
-        #
+
         # A remplacer par le bon repertoire
         self.fileName = fileName
         self.varComment = {}
-        
+
         self.species = CommonCombustion.Species()
         self.radiativTransfer = RadiativTransfer()
         self.coals = Coals()
-        #
+        self.oxydants = Oxydants()
+
         # Load file
         if not self.load():
-            coal = Coal()
-            #
+
             # create default coal
+            coal = Coal()
             self.coals.addCoal(coal)
-            #
+
             # create default species
             self.species.getDefault()
+
+            # create default oxydant
+            oxy = Oxydant()
+            self.oxydants.addOxydant(oxy)
+
+
+    def getCoals(self):
+        return self.coals
+
+
+    def getSpecies(self):
+        return self.species
+
+
+    def getOxydants(self):
+        return self.oxydants
+
 
     def load(self):
         """ read thermochimestry file"""
@@ -826,17 +1084,15 @@ class CoalThermoChemistryModel:
             msg = "Reading file error: " + filePath
             msg = msg + "\nNo string 'THERMOCHIMIE' in the first line\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readIntValue(line, "currentSpeciesNb", filePath)
+        value = self.__readIntValue(line, "currentSpeciesNb", filePath)
         self.species.setCurrentSpeciesNb(value)
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readIntValue(line, "enthalpyTempTabNb", filePath)
+        value = self.__readIntValue(line, "enthalpyTempTabNb", filePath)
         self.species.setEnthalpyTempTabNb(value)
-        #
+
         # "ESPECE COURANTE" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("^ESPECES COURANTES")
@@ -844,31 +1100,26 @@ class CoalThermoChemistryModel:
             msg =  "Reading file error: " + filePath
             msg = msg + "\nNo string 'ESPECES COURANTES' in the first line\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
         try:
             self.species.setCurrentSpeciesList(line.split())
         except:
             msg = "Reading file error: " + filePath + " bad list of current species"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readFloatValue(line, "MinTempTab", filePath)
+        value = self.__readFloatValue(line, "MinTempTab", filePath)
         self.species.setMinTempTab(value)
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readFloatValue(line, "MaxTempTab", filePath)
+        value = self.__readFloatValue(line, "MaxTempTab", filePath)
         self.species.setMaxTempTab(value)
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readIntValue(line, "ElementarySpeciesNb", filePath)
+        value = self.__readIntValue(line, "ElementarySpeciesNb", filePath)
         self.species.setElementarySpeciesNb(value)
-        #
-        #
+
         ElementarySpeciesMolarMassesList = []
         CurrentSpeciesCompositionList    = []
         for elemSpec in range(self.species.getElementarySpeciesNb()):
@@ -888,42 +1139,37 @@ class CoalThermoChemistryModel:
         self.species.setElementarySpeciesList(["C","H","O","N"])
         self.species.setElementarySpeciesMolarMassesList(ElementarySpeciesMolarMassesList)
         self.species.setCurrentSpeciesCompositionList(CurrentSpeciesCompositionList)
-        #
+
         # "RAYONNEMENT" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("^RAYONNEMENT")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'RAYONNEMENT'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readIntValue(line, "RadiativTransfer", filePath)
+        value = self.__readIntValue(line, "RadiativTransfer", filePath)
         self.radiativTransfer.setRadiativTransfer(value)
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readFloatValue(line, "AbsorptionCoeff", filePath)
+        value = self.__readFloatValue(line, "AbsorptionCoeff", filePath)
         self.radiativTransfer.setAbsorptionCoeff(value)
-        #
+
         # "CARACTERISTIQUES CHARBONS" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("^CARACTERISTIQUES CHARBONS")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'CARACTERISTIQUES CHARBONS'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        value = self._readIntValue(line, "CoalNumber", filePath)
+        value = self.__readIntValue(line, "CoalNumber", filePath)
         self.coals.setCoalNumber(value)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readIntCoalValues(line, "ClassesNumberList", filePath)
+        values = self.__readIntCoalValues(line, "ClassesNumberList", filePath)
         self.coals.setClassesNumberList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
         try:
             strList = line.split()
@@ -941,157 +1187,180 @@ class CoalThermoChemistryModel:
         except:
             msg = "Reading file error: " + filePath + "\nbad value for InitDiameterClassesList\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "CDryCompositionList", filePath)    
+        values = self.__readFloatCoalValues(line, "CDryCompositionList", filePath)    
         self.coals.setCDryCompositionList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "HDryCompositionList", filePath)    
+        values = self.__readFloatCoalValues(line, "HDryCompositionList", filePath)    
         self.coals.setHDryCompositionList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "ODryCompositionList", filePath)    
+        values = self.__readFloatCoalValues(line, "ODryCompositionList", filePath)    
         self.coals.setODryCompositionList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        intValues, floatValues = self._readIntFloatCoalValues(line, "PCIValue", filePath) 
+        intValues, floatValues = self.__readIntFloatCoalValues(line, "PCIValue", filePath) 
         self.coals.setDryList(intValues)
         self.coals.setPCIValueList(floatValues)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "thermalCapacity", filePath)    
+        values = self.__readFloatCoalValues(line, "thermalCapacity", filePath)    
         self.coals.setThermalCapacityList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "density", filePath)    
+        values = self.__readFloatCoalValues(line, "density", filePath)    
         self.coals.setDensityList(values)
-        #
-        #
-        line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "humidity", filePath)    
-        self.coals.setHumidityList(values)
-        #
+
         # "Coke" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("^Coke")
         if not RegExpr.match(line):
             msg = "_reading file error: " + filePath + "\nNo string 'Coke'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "CDryCompositionCokeList", filePath)    
+        values = self.__readFloatCoalValues(line, "CDryCompositionCokeList", filePath)    
         self.coals.setCDryCompositionCokeList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "HDryCompositionCokeList", filePath)    
+        values = self.__readFloatCoalValues(line, "HDryCompositionCokeList", filePath)    
         self.coals.setHDryCompositionCokeList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "ODryCompositionCokeList", filePath)    
+        values = self.__readFloatCoalValues(line, "ODryCompositionCokeList", filePath)    
         self.coals.setODryCompositionCokeList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "PCICokeValue", filePath)    
+        values = self.__readFloatCoalValues(line, "PCICokeValue", filePath)    
         self.coals.setPCICokeValueList(values)
-        #
+
         # "Cendres" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("^Cendres")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'Cendres'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "ashesRatioList", filePath)    
+        values = self.__readFloatCoalValues(line, "ashesRatioList", filePath)    
         self.coals.setAshesRatioList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "AshesFormingEnthalpy", filePath)    
+        values = self.__readFloatCoalValues(line, "AshesFormingEnthalpy", filePath)    
         self.coals.setAshesFormingEnthalpyList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "AshesThermalCapacity", filePath)    
+        values = self.__readFloatCoalValues(line, "AshesThermalCapacity", filePath)    
         self.coals.setAshesThermalCapacityList(values)
-        #
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatCoalValues(line, "humidity", filePath)    
+        self.coals.setHumidityList(values)
+
         # "Devolatilisation (Kobayashi)" part
         line = ThermoChFile.readline()
-        RegExpr = re.compile("Parametres de devolatilisation")
+        RegExpr = re.compile("^Parametres de devolatilisation")
         if not RegExpr.match(line):
             msg =  "Reading file error: " + filePath + \
                    "\nNo string 'Parametres de devolatilisation (modele de Kobayashi)'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        intValues, floatValues = self._readIntFloatCoalValues(line, "IY1CH", filePath)    
+        intValues, floatValues = self.__readIntFloatCoalValues(line, "IY1CH", filePath)    
         self.coals.setIY1CHList(intValues)
         self.coals.setY1CHList(floatValues)
-        #
-        #
+
         line = ThermoChFile.readline()
-        intValues, floatValues = self._readIntFloatCoalValues(line, "IY2CH", filePath)    
+        intValues, floatValues = self.__readIntFloatCoalValues(line, "IY2CH", filePath)    
         self.coals.setIY2CHList(intValues)
         self.coals.setY2CHList(floatValues)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "A1CH", filePath)    
+        values = self.__readFloatCoalValues(line, "A1CH", filePath)    
         self.coals.setA1CHList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "A2CH", filePath)    
+        values = self.__readFloatCoalValues(line, "A2CH", filePath)    
         self.coals.setA2CHList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "E1CH", filePath)    
+        values = self.__readFloatCoalValues(line, "E1CH", filePath)    
         self.coals.setE1CHList(values)
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "E2CH", filePath)    
+        values = self.__readFloatCoalValues(line, "E2CH", filePath)    
         self.coals.setE2CHList(values)
-        #
+
         # "Devolatisation (Kobayashi)" part
         line = ThermoChFile.readline()
         RegExpr = re.compile("Parametres de combustion heterogene")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + \
-                   "\nNo string 'Parametres de combustion heterogene'\n"
+                   "\nNo string '^Parametres de combustion heterogene O2 (modele a sphere retrecissante)'\n"
             raise ValueError, msg
-        #
-        #
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "AHETCH", filePath)    
-        self.coals.setAHETCHList(values)
-        #
-        #
+        values = self.__readFloatCoalValues(line, "AHETCH_O2", filePath)    
+        self.coals.setAHETCH_O2List(values)
+
         line = ThermoChFile.readline()
-        values = self._readFloatCoalValues(line, "EHETCH", filePath)    
-        self.coals.setEHETCHList(values)
-        #
-        #
+        values = self.__readFloatCoalValues(line, "EHETCH_O2", filePath)    
+        self.coals.setEHETCH_O2List(values)
+
         line = ThermoChFile.readline()
-        values = self._readIntCoalValues(line, "IOCHET", filePath)    
-        self.coals.setIOCHETList(values)
-        
+        values = self.__readIntCoalValues(line, "IOCHET_O2", filePath)    
+        self.coals.setIOCHET_O2List(values)
+
+        line = ThermoChFile.readline()
+        RegExpr = re.compile("^Parametres de combustion heterogene")
+        if not RegExpr.match(line):
+            msg = "Reading file error: " + filePath + \
+                   "\nNo string 'Parametres de combustion heterogene CO2 (modele a sphere retrecissante)'\n"
+            raise ValueError, msg
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatCoalValues(line, "AHETCH_CO2", filePath)    
+        self.coals.setAHETCH_CO2List(values)
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatCoalValues(line, "EHETCH_CO2", filePath)    
+        self.coals.setEHETCH_CO2List(values)
+
+        line = ThermoChFile.readline()
+        values = self.__readIntCoalValues(line, "IOCHET_CO2", filePath)    
+        self.coals.setIOCHET_CO2List(values)
+
+        line = ThermoChFile.readline()
+        RegExpr = re.compile("^CARACTERISTIQUES OXYDANTS")
+        if not RegExpr.match(line):
+            msg = "Reading file error: " + filePath + \
+                   "\nNo string 'CARACTERISTIQUES OXYDANTS (O2,N2,H2O,CO2)'\n"
+            raise ValueError, msg
+
+        line = ThermoChFile.readline()
+        value = self.__readIntValue(line, "oxydantNumber", filePath)
+        self.oxydants.setNumber(value)
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatOxydantsValues(line, "O2 for oxydants", filePath)    
+        self.oxydants.setO2List(values)
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatOxydantsValues(line, "N2 for oxydants", filePath)    
+        self.oxydants.setN2List(values)
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatOxydantsValues(line, "H2O for oxydants", filePath)    
+        self.oxydants.setH2OList(values)
+
+        line = ThermoChFile.readline()
+        values = self.__readFloatOxydantsValues(line, "CO2 for oxydants", filePath)    
+        self.oxydants.setCO2List(values)
+
         ThermoChFile.close()
-        
+
         return 1
 
 
@@ -1117,7 +1386,7 @@ class CoalThermoChemistryModel:
         ThermoChFile.write(chain + comment + "\n")
         #
         ThermoChFile.write("ESPECES COURANTES\n")
-        ThermoChFile.write(self._preWriteList(self.species.getCurrentSpeciesList())+"\n")
+        ThermoChFile.write(self.__preWriteList(self.species.getCurrentSpeciesList())+"\n")
 
         chain = str(self.species.getMinTempTab())
         comment = self.createComment(len(chain),self.species.Comment["minTempTab"])
@@ -1140,7 +1409,7 @@ class CoalThermoChemistryModel:
                 listTMP.append(j)
             ind += 1
             list2write.append(listTMP)
-        ThermoChFile.write(self._preWriteList(list2write))
+        ThermoChFile.write(self.__preWriteList(list2write))
         #
         ThermoChFile.write("RAYONNEMENT\n")
 
@@ -1158,7 +1427,7 @@ class CoalThermoChemistryModel:
         comment = self.createComment(len(chain),self.coals.Comment["coalNumber"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getClassesNumberList()))
+        chain = str(self.__preWriteList(self.coals.getClassesNumberList()))
         comment = self.createComment(len(chain),self.coals.Comment["classesNumberList"])
         ThermoChFile.write(chain + comment +"\n")
          
@@ -1166,19 +1435,19 @@ class CoalThermoChemistryModel:
         for i in self.coals.getInitDiameterClassesList():
             for j in i:
                 listTMP.append(j)
-        chain = str(self._preWriteList(listTMP))
+        chain = str(self.__preWriteList(listTMP))
         comment = self.createComment(len(chain),self.coals.Comment["initDiameterClassesList"])
         ThermoChFile.write(chain + comment + "\n")
 
-        chain = str(self._preWriteList(self.coals.getCDryCompositionList()))
+        chain = str(self.__preWriteList(self.coals.getCDryCompositionList()))
         comment = self.createComment(len(chain),self.coals.Comment["CDryCompositionList"])
         ThermoChFile.write(chain + comment +"\n")
         
-        chain = str(self._preWriteList(self.coals.getHDryCompositionList()))
+        chain = str(self.__preWriteList(self.coals.getHDryCompositionList()))
         comment = self.createComment(len(chain),self.coals.Comment["HDryCompositionList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getODryCompositionList()))
+        chain = str(self.__preWriteList(self.coals.getODryCompositionList()))
         comment = self.createComment(len(chain),self.coals.Comment["ODryCompositionList"])
         ThermoChFile.write(chain + comment +"\n")
 
@@ -1188,54 +1457,54 @@ class CoalThermoChemistryModel:
             list2write.append(self.coals.getDryList()[coal])
             list2write.append(self.coals.getPCIValueList()[coal])
 
-        chain = str(self._preWriteList(list2write))
+        chain = str(self.__preWriteList(list2write))
         comment = self.createComment(len(chain),self.coals.Comment["DryList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getThermalCapacityList()))
+        chain = str(self.__preWriteList(self.coals.getThermalCapacityList()))
         comment = self.createComment(len(chain),self.coals.Comment["thermalCapacityList"])
         ThermoChFile.write(chain + comment +"\n")
                            
-        chain = str(self._preWriteList(self.coals.getDensityList()))
+        chain = str(self.__preWriteList(self.coals.getDensityList()))
         comment = self.createComment(len(chain),self.coals.Comment["densityList"])
-        ThermoChFile.write(chain + comment +"\n")
-
-        chain = str(self._preWriteList(self.coals.getHumidityList()))
-        comment = self.createComment(len(chain),self.coals.Comment["humidityList"])
         ThermoChFile.write(chain + comment +"\n")
         #                   
         ThermoChFile.write("Coke\n")
 
-        chain = str(self._preWriteList(self.coals.getCDryCompositionCokeList()))
+        chain = str(self.__preWriteList(self.coals.getCDryCompositionCokeList()))
         comment = self.createComment(len(chain),self.coals.Comment["CDryCompositionCokeList"])
         ThermoChFile.write(chain + comment +"\n")
         
-        chain = str(self._preWriteList(self.coals.getHDryCompositionCokeList()))
+        chain = str(self.__preWriteList(self.coals.getHDryCompositionCokeList()))
         comment = self.createComment(len(chain),self.coals.Comment["HDryCompositionCokeList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getODryCompositionCokeList()))
+        chain = str(self.__preWriteList(self.coals.getODryCompositionCokeList()))
         comment = self.createComment(len(chain),self.coals.Comment["ODryCompositionCokeList"])
         ThermoChFile.write(chain + comment +"\n")
         
-        chain = str(self._preWriteList(self.coals.getPCICokeValueList()))
+        chain = str(self.__preWriteList(self.coals.getPCICokeValueList()))
         comment = self.createComment(len(chain),self.coals.Comment["PCICokeValueList"])
         ThermoChFile.write(chain + comment +"\n")
         #
         ThermoChFile.write("Cendres\n")
 
-        chain = str(self._preWriteList(self.coals.getAshesRatioList()))
+        chain = str(self.__preWriteList(self.coals.getAshesRatioList()))
         comment = self.createComment(len(chain),self.coals.Comment["ashesRatioList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getAshesFormingEnthalpyList()))
+        chain = str(self.__preWriteList(self.coals.getAshesFormingEnthalpyList()))
         comment = self.createComment(len(chain),self.coals.Comment["ashesFormingEnthalpyList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = str(self._preWriteList(self.coals.getAshesThermalCapacityList()))
+        chain = str(self.__preWriteList(self.coals.getAshesThermalCapacityList()))
         comment = self.createComment(len(chain),self.coals.Comment["ashesThermalCapacityList"])
         ThermoChFile.write(chain + comment +"\n")
-        
+
+        chain = str(self.__preWriteList(self.coals.getHumidityList()))
+        comment = self.createComment(len(chain),self.coals.Comment["humidityList"])
+        ThermoChFile.write(chain + comment +"\n")
+
         #
         ThermoChFile.write("Parametres de devolatilisation (modele de Kobayashi)\n")
 
@@ -1246,7 +1515,7 @@ class CoalThermoChemistryModel:
             list2write.append(i)
             list2write.append(j)
             ind += 1
-        chain = self._preWriteList(list2write)
+        chain = self.__preWriteList(list2write)
         comment = self.createComment(len(chain),self.coals.Comment["Y1CHList"])
         ThermoChFile.write(chain + comment +"\n")
         
@@ -1259,39 +1528,70 @@ class CoalThermoChemistryModel:
             list2write.append(j)
             ind += 1
 
-        chain = self._preWriteList(list2write)
+        chain = self.__preWriteList(list2write)
         comment = self.createComment(len(chain),self.coals.Comment["Y2CHList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = self._preWriteList(self.coals.getA1CHList())
+        chain = self.__preWriteList(self.coals.getA1CHList())
         comment = self.createComment(len(chain),self.coals.Comment["A1CHList"])
         ThermoChFile.write(chain + comment +"\n")
         
-        chain = self._preWriteList(self.coals.getA2CHList())
+        chain = self.__preWriteList(self.coals.getA2CHList())
         comment = self.createComment(len(chain),self.coals.Comment["A2CHList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = self._preWriteList(self.coals.getE1CHList())
+        chain = self.__preWriteList(self.coals.getE1CHList())
         comment = self.createComment(len(chain),self.coals.Comment["E1CHList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = self._preWriteList(self.coals.getE2CHList())
+        chain = self.__preWriteList(self.coals.getE2CHList())
         comment = self.createComment(len(chain),self.coals.Comment["E2CHList"])
         ThermoChFile.write(chain + comment +"\n")
 
-        ThermoChFile.write("Parametres de combustion heterogene\n")
+        ThermoChFile.write("Parametres de combustion heterogene O2 (modele a sphere retrecissante)\n")
 
-        chain = self._preWriteList(self.coals.getAHETCHList())
-        comment = self.createComment(len(chain),self.coals.Comment["AHETCHList"])
+        chain = self.__preWriteList(self.coals.getAHETCH_O2List())
+        comment = self.createComment(len(chain),self.coals.Comment["AHETCH_O2List"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = self._preWriteList(self.coals.getEHETCHList())
-        comment = self.createComment(len(chain),self.coals.Comment["EHETCHList"])
+        chain = self.__preWriteList(self.coals.getEHETCH_O2List())
+        comment = self.createComment(len(chain),self.coals.Comment["EHETCH_O2List"])
         ThermoChFile.write(chain + comment +"\n")
 
-        chain = self._preWriteList(self.coals.getIOCHETList())
-        comment = self.createComment(len(chain),self.coals.Comment["IOCHETList"])
+        chain = self.__preWriteList(self.coals.getIOCHET_O2List())
+        comment = self.createComment(len(chain),self.coals.Comment["IOCHET_O2List"])
         ThermoChFile.write(chain + comment +"\n")
+
+        ThermoChFile.write("Parametres de combustion heterogene CO2 (modele a sphere retrecissante)\n")
+
+        chain = self.__preWriteList(self.coals.getAHETCH_CO2List())
+        comment = self.createComment(len(chain),self.coals.Comment["AHETCH_CO2List"])
+        ThermoChFile.write(chain + comment +"\n")
+
+        chain = self.__preWriteList(self.coals.getEHETCH_CO2List())
+        comment = self.createComment(len(chain),self.coals.Comment["EHETCH_CO2List"])
+        ThermoChFile.write(chain + comment +"\n")
+
+        chain = self.__preWriteList(self.coals.getIOCHET_CO2List())
+        comment = self.createComment(len(chain),self.coals.Comment["IOCHET_CO2List"])
+        ThermoChFile.write(chain + comment +"\n")
+
+        ThermoChFile.write("CARACTERISTIQUES OXYDANTS (O2,N2,H2O,CO2)\n")
+
+        chain = str(self.oxydants.getNumber())
+        ThermoChFile.write(chain + "\n")
+
+        chain = self.__preWriteList(self.oxydants.getO2List())
+        ThermoChFile.write(chain + "\n")
+
+        chain = self.__preWriteList(self.oxydants.getN2List())
+        ThermoChFile.write(chain + "\n")
+
+        chain = self.__preWriteList(self.oxydants.getH2OList())
+        ThermoChFile.write(chain + "\n")
+
+        chain = self.__preWriteList(self.oxydants.getCO2List())
+        ThermoChFile.write(chain + "\n")
 
         ThermoChFile.close()
 
@@ -1306,7 +1606,7 @@ class CoalThermoChemistryModel:
         return blancString+comment
 
 
-    def _readIntValue(self, line, valueName, filePath):
+    def __readIntValue(self, line, valueName, filePath):
 
         try:
             value = int(line.split()[0])
@@ -1317,7 +1617,7 @@ class CoalThermoChemistryModel:
         return value
 
 
-    def _readFloatValue(self, line, valueName, filePath):
+    def __readFloatValue(self, line, valueName, filePath):
 
         try:
             value = float(line.split()[0])
@@ -1328,7 +1628,7 @@ class CoalThermoChemistryModel:
         return value
 
 
-    def _readFloatCoalValues(self, line, valueName, filePath):
+    def __readFloatCoalValues(self, line, valueName, filePath):
         """ read coal values"""
         try:
             strList = line.split()
@@ -1342,7 +1642,7 @@ class CoalThermoChemistryModel:
         return value
 
 
-    def _readIntCoalValues(self, line, valueName, filePath):
+    def __readIntCoalValues(self, line, valueName, filePath):
         """ read coal values"""
         try:
             strList = line.split()
@@ -1355,7 +1655,7 @@ class CoalThermoChemistryModel:
         return value
 
 
-    def _readIntFloatCoalValues(self, line, valueName, filePath):
+    def __readIntFloatCoalValues(self, line, valueName, filePath):
         """ read coal values"""
         try:
             strList = line.split()
@@ -1370,12 +1670,12 @@ class CoalThermoChemistryModel:
         return intValue, floatValue
 
 
-    def _preWriteList(self, List):
+    def __preWriteList(self, List):
         """build a line with elements list"""
         string = ""
         for i in List:
             if type(i) == type([]) :
-                stringTMP = self._preWriteList(i)
+                stringTMP = self.__preWriteList(i)
                 string += stringTMP + "\n"
             else:
                 if string != "":
@@ -1385,10 +1685,18 @@ class CoalThermoChemistryModel:
         return string
 
 
-    def getCoals(self):
-        return self.coals
+    def __readFloatOxydantsValues(self, line, valueName, filePath):
+        """ read oxydants values"""
+        try:
+            strList = line.split()
+            values = []
+            for oxy in range(self.oxydants.getNumber()):
+                values.append(float(strList[oxy]))
+        except:
+            msg = "Reading file error: " + filePath + "\nbad value for " + valueName
+            raise ValueError, msg
+        return values
 
-
-    def getSpecies(self):
-        return self.species
-            
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

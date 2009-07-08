@@ -1003,7 +1003,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cmd = 'bsub ' + script + ' ' + self.case['batchScript'][key] + ' &'
         elif key == 'sge':
             pass
-        os.system(cmd)
+
+        if self.case['salome']:
+            from SalomeHandler import runSolver
+            cmd = ['nice', 'nohup', script]
+            runSolver(self.case, cmd, self.mdl, batch1)
+        else:
+            os.system(cmd)
 
 
     def displayBatchScriptInfo(self):

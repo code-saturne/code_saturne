@@ -386,8 +386,9 @@ class StandardItemModelPeriod(QStandardItemModel):
         if index.column() == 1:
             row = index.row()
             new_name = str(value.toString())
-            self.mdl.changePeriodicityName(self.dataPeriod[row][1], new_name)
-            self.dataPeriod[row][1] = new_name
+            if new_name:
+                self.mdl.changePeriodicityName(self.dataPeriod[row][1], new_name)
+                self.dataPeriod[row][1] = new_name
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True

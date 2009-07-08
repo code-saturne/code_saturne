@@ -166,9 +166,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.velocityWidget.setup(self.__case)
         self.turbulenceWidget.setup(self.__case)
         self.coalWidget.setup(self.__case)
-        self.meteoWidget.setup(self.__case)
+        self.meteoWidget.setup(self.__case, self.velocityWidget, self.turbulenceWidget)
         self.scalarsWidget.setup(self.__case)
         self.mobileMeshWidget.setup(self.__case)
+        self.radiativeWidget.setup(self.__case)
 
         self.__hideAllWidgets()
 
@@ -219,6 +220,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.roughWidget.showWidget(boundary)
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
+        self.radiativeWidget.showWidget(boundary)
 
 
     def __selectOutletBoundary(self, boundary):
@@ -250,6 +252,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.meteoWidget.hideWidget()
         self.scalarsWidget.hideWidget()
         self.mobileMeshWidget.hideWidget()
+        self.radiativeWidget.hideWidget()
         #self.pressureWidget.hideWidget()
 
 

@@ -1036,9 +1036,17 @@ class XMLDocument(XMLElement):
         if isinstance(node, XMLElement):
             node = node.el
 
-        for n in node.childNodes:
-            if n.nodeType == Node.TEXT_NODE:
-                n.data = self.xmlNormalizeWhitespace(n.data)
+        if 'formula' not in node.tagName:
+            for n in node.childNodes:
+                if n.nodeType == Node.TEXT_NODE:
+                    n.data = self.xmlNormalizeWhitespace(n.data)
+        else:
+            for n in node.childNodes:
+                if n.nodeType == Node.TEXT_NODE:
+                    while n.data[0] in (" ", "\n", "\t"):
+                        n.data = n.data[1:]
+                    while n.data[-1] in (" ", "\n", "\t"):
+                        n.data = n.data[:-1]
 
         node.normalize()
 
@@ -1068,15 +1076,21 @@ class XMLDocument(XMLElement):
                 if n.hasChildNodes():
                     self.xmlCleanHightLevelBlank(n)
 
-        for n in node.childNodes:
-            if n.nodeType == Node.TEXT_NODE and not elementNode:
-                self.xmlCleanAllBlank(n.parentNode)
-
+        if 'formula' not in node.tagName:
+            for n in node.childNodes:
+                if n.nodeType == Node.TEXT_NODE and not elementNode:
+                    self.xmlCleanAllBlank(n.parentNode)
+        else:
+            for n in node.childNodes:
+                if n.nodeType == Node.TEXT_NODE:
+                    while n.data[0] in (" ", "\n", "\t"):
+                        n.data = n.data[1:]
+                    while n.data[-1] in (" ", "\n", "\t"):
+                        n.data = n.data[:-1]
 
 #-------------------------------------------------------------------------------
 # XML utility functions
 #-------------------------------------------------------------------------------
-
 
 class Case(Dico, XMLDocument):
     def __init__(self, file_name=""):

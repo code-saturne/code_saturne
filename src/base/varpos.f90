@@ -75,6 +75,7 @@ include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
 include "radiat.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -99,6 +100,7 @@ integer       ilsmom, ivers , inmfin
 integer       impamx
 integer       nfmtmo, nberro
 integer       idtold(nbmomx)
+integer       nprayc, nprayb
 
 double precision gravn2
 
@@ -2077,6 +2079,7 @@ if (ipass.eq.5) then
 
     enddo
 
+    nprayc = iprop - nprmax
 
 ! --- Sauvegarde du dernier numero de propriete
     nprmax = iprop
@@ -2198,6 +2201,19 @@ if (ipass.eq.5) then
 
     iprop          = iprop + 1
     ipprob(ihconv) = iprop
+
+    nprayb = iprop - nprofb
+
+    if (iihmpr.eq.1) then
+
+      call uirapr &
+      !==========
+    ( nprayc, nprayb, nphasc, ipppro, ipproc,           &
+      ilumin, iqx, iqy, iqz,                            &
+      itsre, itsri, iabs, iemi, icak)
+
+    endif
+
 !
 ! --- Sauvegarde du dernier NPROFB
     nprofb = iprop

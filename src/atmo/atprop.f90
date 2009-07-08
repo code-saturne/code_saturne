@@ -146,5 +146,18 @@ endif
 
 nproce = iprop
 
+
+!   - Interface Code_Saturne
+!     ======================
+
+if (iihmpr.eq.1) then
+
+  call uiatpr &
+  !==========
+( nsalpp, nsalto, ippmod, iatmos, &
+  ipppro, ipproc, itempc, iliqwt)
+
+endif
+
 return
 end subroutine

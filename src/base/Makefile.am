@@ -66,9 +66,13 @@ $(top_srcdir)/include/base/cs_ext_neighborhood.h \
 $(top_srcdir)/include/base/cs_gradient.h \
 $(top_srcdir)/include/base/cs_grid.h \
 $(top_srcdir)/include/base/cs_gui.h \
+$(top_srcdir)/include/base/cs_gui_boundary_conditions.h \
 $(top_srcdir)/include/base/cs_gui_matisse.h \
+$(top_srcdir)/include/base/cs_gui_mobil_mesh.h \
 $(top_srcdir)/include/base/cs_gui_radiative_transfer.h \
+$(top_srcdir)/include/base/cs_gui_specific_physics.h \
 $(top_srcdir)/include/base/cs_gui_util.h \
+$(top_srcdir)/include/base/cs_gui_variables.h \
 $(top_srcdir)/include/base/cs_halo.h \
 $(top_srcdir)/include/base/cs_io.h \
 $(top_srcdir)/include/base/cs_matrix.h \
@@ -200,7 +204,10 @@ csflsh.f90 \
 cs_gradient.c \
 cs_grid.c \
 cs_gui.c \
+cs_gui_boundary_conditions.c \
 cs_gui_matisse.c \
+cs_gui_mobil_mesh.c \
+cs_gui_specific_physics.c \
 cs_gui_radiative_transfer.c \
 cs_gui_util.c \
 cs_halo.c \

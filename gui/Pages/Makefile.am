@@ -63,6 +63,8 @@ BoundaryConditionsTurbulenceInletForm.py \
 BoundaryConditionsTurbulenceInletView.py \
 BoundaryConditionsVelocityInletForm.py \
 BoundaryConditionsVelocityInletView.py \
+BoundaryConditionsWallRadiativeTransferForm.py \
+BoundaryConditionsWallRadiativeTransferView.py \
 BoundaryConditionsView.py \
 Boundary.py \
 CoalCombustionForm.py \
@@ -161,8 +163,6 @@ ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorForm.py \
 QMeiEditorView.py \
-RadiativeBoundariesForm.py \
-RadiativeBoundariesView.py \
 ReferenceValuesForm.py \
 ReferenceValuesModel.py \
 ReferenceValuesView.py \

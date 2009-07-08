@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>202</height>
+    <height>236</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -34,16 +34,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <layout class="QGridLayout" >
-         <property name="leftMargin" >
-          <number>0</number>
-         </property>
-         <property name="topMargin" >
-          <number>0</number>
-         </property>
-         <property name="rightMargin" >
-          <number>0</number>
-         </property>
-         <property name="bottomMargin" >
+         <property name="margin" >
           <number>0</number>
          </property>
          <item row="0" column="0" >
@@ -53,7 +44,7 @@
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>21</width>
                <height>21</height>
@@ -103,7 +94,8 @@ creation of the symbolic link in the DATA directory</string>
                 <string>...</string>
                </property>
                <property name="icon" >
-                <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/document-open.png</iconset>
+                <iconset resource="resources_pages.qrc" >
+                 <normaloff>:/new/prefix1/icons/22x22/document-open.png</normaloff>:/new/prefix1/icons/22x22/document-open.png</iconset>
                </property>
                <property name="iconSize" >
                 <size>
@@ -134,7 +126,7 @@ creation of the symbolic link in the DATA directory</string>
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>80</width>
                <height>25</height>
@@ -169,16 +161,7 @@ creation of the symbolic link in the DATA directory</string>
          <enum>QFrame::Raised</enum>
         </property>
         <layout class="QGridLayout" >
-         <property name="leftMargin" >
-          <number>0</number>
-         </property>
-         <property name="topMargin" >
-          <number>0</number>
-         </property>
-         <property name="rightMargin" >
-          <number>0</number>
-         </property>
-         <property name="bottomMargin" >
+         <property name="margin" >
           <number>0</number>
          </property>
          <item row="0" column="0" >
@@ -188,7 +171,7 @@ creation of the symbolic link in the DATA directory</string>
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -218,7 +201,7 @@ creation of the symbolic link in the DATA directory</string>
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>16</width>
                <height>20</height>
@@ -253,16 +236,7 @@ creation of the symbolic link in the DATA directory</string>
          <enum>QFrame::Raised</enum>
         </property>
         <layout class="QGridLayout" >
-         <property name="leftMargin" >
-          <number>0</number>
-         </property>
-         <property name="topMargin" >
-          <number>0</number>
-         </property>
-         <property name="rightMargin" >
-          <number>0</number>
-         </property>
-         <property name="bottomMargin" >
+         <property name="margin" >
           <number>0</number>
          </property>
          <item row="0" column="0" >
@@ -272,7 +246,7 @@ creation of the symbolic link in the DATA directory</string>
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -293,7 +267,8 @@ creation of the symbolic link in the DATA directory</string>
               <string>...</string>
              </property>
              <property name="icon" >
-              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+              <iconset resource="resources_pages.qrc" >
+               <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
              </property>
              <property name="iconSize" >
               <size>
@@ -311,7 +286,7 @@ creation of the symbolic link in the DATA directory</string>
              <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0" >
               <size>
                <width>16</width>
                <height>16</height>
@@ -332,7 +307,7 @@ creation of the symbolic link in the DATA directory</string>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0" >
       <size>
        <width>16</width>
        <height>16</height>

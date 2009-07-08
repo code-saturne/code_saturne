@@ -216,14 +216,15 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         validatorCoeff = QtPage.DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
+        self.modelAbsorption.addItem('User subroutine (usray3)', 'variable')
+        self.modelAbsorption.addItem('User law', 'formula')
+        self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
+
         if self.mdl.isCoalCombustion():
-            self.modelAbsorption.addItem('Variable', 'variable')
             self.modelAbsorption.disableItem(str_model='variable')
-            self.modelAbsorption.addItem('Modak', 'modak')
         else:
-            self.modelAbsorption.addItem('Variable', 'variable')
-            self.modelAbsorption.addItem('Modak', 'modak')
             self.modelAbsorption.disableItem(str_model='modak')
+        self.modelAbsorption.disableItem(str_model='formula')
 
         # Initialization
 
@@ -240,6 +241,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         value = self.mdl.getTypeCoeff()
         self.modelAbsorption.setItem(str_model=value)
         self.slotTypeCoefficient(self.modelAbsorption.dicoM2V[value])
+
+        self.pushButtonCoeffFormula.setEnabled(False)
 
         self.lineEditCoeff.setText(QString(str(self.mdl.getAbsorCoeff())))
 
@@ -294,16 +297,11 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.mdl.setTypeCoeff(typeCoeff)
 
         if typeCoeff == 'constant':
-            self.labelVariCoeff.hide()
-            self.lineEditCoeff.show()
             self.lineEditCoeff.setEnabled(True)
         elif typeCoeff == 'modak':
-            self.labelVariCoeff.hide()
-            self.lineEditCoeff.show()
             self.lineEditCoeff.setDisabled(True)
         else:
-            self.labelVariCoeff.show()
-            self.lineEditCoeff.hide()
+            self.lineEditCoeff.setDisabled(True)
 
 
     @pyqtSignature("const QString &")

@@ -146,10 +146,13 @@ endif
 !   - Interface Code_Saturne
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML
-if(iihmpr.eq.1) then
-  call uicpsc (ncharb, nclacp, ippmod, icp3pl, ieqco2,            &
-               ihm, inp, ixch, ixck, ixwt, ih2,                   &
-               if1m, if2m, if3m, if4p2m, if5m, iyco2)
+
+if (iihmpr.eq.1) then
+  call uicpsc (ncharb, nclacp, noxyd, ippmod,       &
+               icp3pl, ieqco2, ihtco2,              &
+               ihm, inp, ixch, ixck, ixwt, ih2,     &
+               if1m, if2m, if3m, if3mc2, if4p2m,    &
+               if5m, if6m, if7m, iyco2)
 endif
 
 !===============================================================================

@@ -46,6 +46,7 @@ import os, sys, string, types, re
 import Base.Toolbox as Tool
 from SolutionDomainModel import SolutionDomainModel
 from CoalCombustionModel import CoalCombustionModel
+from AtmosphericFlowsModel import AtmosphericFlowsModel
 from ProfilesModel import ProfilesModel
 from Base.XMLvariables import Variables, Model
 
@@ -140,10 +141,10 @@ class BatchRunningModel(Model):
         self.dicoValues['ARG_CS_OUTPUT'] = ""
         self.dicoValues['ARG_CS_VERIF'] = ""
         self.dicoValues['THERMOCHEMISTRY_DATA'] = ""
+        self.dicoValues['METEO_DATA'] = ""
 
-        model = CoalCombustionModel(self.case).getCoalCombustionModel()
-        if model == 'coal_homo' or model == 'coal_homo2':
-            self.dicoValues['THERMOCHEMISTRY_DATA'] = 'dp_FCP'
+        if self.case['salome']:
+            self.mdl.dicoValues['ARG_CS_OUTPUT'] = "--log 0"
 
 
     def _getRegex(self, word):
@@ -247,7 +248,7 @@ class BatchRunningModel(Model):
         list = ['PBS_JOB_NAME','PBS_nodes','PBS_ppn','PBS_walltime','PBS_mem']
 
         for k in self.dicoValues.keys():
-            if k not in list and k != 'THERMOCHEMISTRY_DATA':
+            if k not in list and k not in ('THERMOCHEMISTRY_DATA', 'METEO_DATA'):
                 nbkey = 0
                 for i in range(len(lines)):
                     reg = self._getRegex(k)
@@ -323,6 +324,14 @@ class BatchRunningModel(Model):
                 if file not in vlist:
                     vlist.append(file)
             self.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
+
+        model = CoalCombustionModel(self.case).getCoalCombustionModel()
+        if model == 'coal_homo' or model == 'coal_homo2':
+            self.dicoValues['THERMOCHEMISTRY_DATA'] = 'dp_FCP'
+
+        atmo = AtmosphericFlowsModel(self.case)
+        if atmo.getAtmosphericFlowsModel() != 'off':
+            self.dicoValues['METEO_DATA'] = atmo.getMeteoDataFileName()
 
 
     def updateBatchScriptFile(self, keyword=None):
@@ -593,7 +602,8 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'VALGRIND':'',
         'ARG_CS_OUTPUT':'',
         'ARG_CS_VERIF':'',
-        'THERMOCHEMISTRY_DATA':''}
+        'THERMOCHEMISTRY_DATA':'', 
+        'METEO_DATA':''}
         for k in mdl.dicoValues.keys():
             if mdl.dicoValues[k] != dico[k]:
                 print "\nwarning for key: ", k

@@ -273,9 +273,9 @@ nprofa = iprop
 !     Construction de l'indirection entre la numerotation du noyau et XML
 if (iihmpr.eq.1) then
   call uicppr (nclacp, nsalpp, nsalto, ippmod, icp3pl, ipppro,    &
-               ipproc, itemp1, irom1, iym1, immel,                &
+               ipproc, ihtco2, itemp1, irom1, iym1, immel,        &
                itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
-               igmdv2, igmhet, igmsec)
+               igmdv2, igmhet, ighco2, igmsec)
 
 endif
 

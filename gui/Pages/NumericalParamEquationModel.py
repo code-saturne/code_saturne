@@ -133,6 +133,17 @@ class NumericalParamEquatModel(Model):
         return nodList
 
 
+    def _getMeteoScalarsNodes(self):
+        """ Private method: return list of pulverized coal scalar's nodes """
+        nodList = []
+        node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+	if not node: return []
+        model = node['model']
+        if model != 'off':
+            nodList = node.xmlGetNodeList('scalar')
+        return nodList
+
+
     def _getAdditionalScalarNodes(self):
         """ Private method: return list of additional scalar's nodes """
         n = self.case.xmlGetNode('additional_scalars')
@@ -156,6 +167,7 @@ class NumericalParamEquatModel(Model):
                      self.model.getTurbVariable(),
                      self._getThermalScalarNode(),
                      self._getPuCoalScalarsNodes(),
+                     self._getMeteoScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_shem.append(part)
         return self.var_shem
@@ -168,6 +180,7 @@ class NumericalParamEquatModel(Model):
                      self.model.getTurbVariable(),
                      self._getThermalScalarNode(),
                      self._getPuCoalScalarsNodes(),
+                     self._getMeteoScalarsNodes(),
                      self._getAdditionalScalarNodes(),
                      self._getAleVariablesNodes()):
             self.var_solv.append(part)

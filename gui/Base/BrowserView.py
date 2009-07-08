@@ -401,69 +401,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.connect(self.treeView, SIGNAL('collapsed(const QModelIndex &)'), self.onFolderClose)
 
 
-#    def _browser(self):
-#        tree ="""
-#Calculation environment
-#    Identity and paths
-#    Meshes selection
-#    Conjugate heat transfer
-#    Mesh quality criteria
-#    Volume regions definition
-#Storage system description
-#    Storage system type
-#    Storage system geometry
-#    Inlet description
-#    Outlet description
-#    Network description
-#Thermohydraulic parameters
-#    Hydraulic load
-#    Thermal load
-#Thermophysical models
-#    Calculation features
-#    Mobile mesh
-#    Turbulence models
-#    Thermal model
-#    Gas combustion
-#    Current species
-#    Pulverized coal combustion
-#    Electrical models
-#    Radiative transfers
-#    Initialization
-#    Head losses
-#Physical properties
-#    Reference values
-#    Fluid properties
-#    Gravity, hydrostatic pressure
-#Additional scalars
-#    Definition and initialization
-#    Physicals properties
-#Particles and droplets tracking
-#    Global parameters
-#    Statistics
-#Boundary conditions
-#    Definition of boundary regions
-#    Dynamic variables boundary conditions
-#    Scalars boundary conditions
-#    Radiative boundary conditions
-#Calculation control
-#    Time averages
-#    Time step
-#    Steady flow management
-#    Output control
-#    Volume solution control
-#    Surface solution control
-#    Profiles
-#Numerical parameters
-#    Equation parameters
-#    Global parameters
-#Calculation management
-#    User arrays
-#    Memory management
-#    Start/Restart
-#    Prepare batch calculation
-#"""
-#        return tree
-
     def _browser(self):
         tree ="""
     Identity and paths
@@ -507,8 +444,7 @@ Particles and droplets tracking
     Output
 Boundary conditions
     Definition of boundary regions
-    Dynamic variables boundary conditions
-    Radiative boundary conditions
+    Boundary conditions
     Particles boundary conditions
     Fluid structure interaction
 Numerical parameters
@@ -791,6 +727,7 @@ Calculation management
         node3 = node0.xmlGetNode('joule_effect',       'model')
         node4 = node0.xmlGetNode('thermal_scalar',     'model')
         node5 = node0.xmlGetNode('radiative_transfer', 'model')
+        node6 = node0.xmlGetNode('atmospheric_flows',  'model')
 
         if node1['model'] in ('ebu', '3p'):
             self.setRowClose(self.tr('Thermal model'))
@@ -799,10 +736,10 @@ Calculation management
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
-        elif node2['model'] in ('coal_homo', 'coal_homo2', 'coal_lagr'):
+        elif node2['model'] in ('coal_homo', 'coal_homo2'):
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Current species'))
-            self.setRowOpen(self.tr('Pulveried coal combustion'))
+            self.setRowOpen(self.tr('Pulverized coal combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
@@ -814,16 +751,19 @@ Calculation management
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
+        elif node6 and node6['model'] != 'off':
+            self.setRowClose(self.tr('Thermal model'))
+            self.setRowOpen(self.tr('Atmospheric flows'))
+            self.setRowOpen(self.tr('Radiative transfers'))
+            if node5.xmlGetAttribute('model') != 'off':
+                self.setRowOpen(self.tr('Radiative boundary conditions'))
+
         else:
             self.setRowOpen(self.tr('Thermal model'))
             if node4.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative transfers'))
                 if node5.xmlGetAttribute('model') != 'off':
                     self.setRowOpen(self.tr('Radiative boundary conditions'))
-
-        node6 = node0.xmlGetNode('atmospheric_flows',  'model')
-        if node6 and node6['model'] != 'off':
-            self.setRowOpen(self.tr('Atmospheric flows'))
 
         node7 = node0.xmlGetNode('ale_method', 'status')
         if node7 and node7['status'] == 'on':
@@ -835,9 +775,10 @@ Calculation management
 
     def __hideRow(self):
         """Only for developpement purpose"""
-        self.setRowClose(self.tr('Radiative transfers'))
-        self.setRowClose(self.tr('Radiative boundary conditions'))
+        #self.setRowClose(self.tr('Radiative transfers'))
+        #self.setRowClose(self.tr('Radiative boundary conditions'))
         self.setRowClose(self.tr('Head losses'))
+        self.setRowClose(self.tr('Current species'))
 
 
     def tr(self, text):

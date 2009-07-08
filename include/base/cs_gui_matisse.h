@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -29,26 +29,22 @@
 #define __CS_GUI_MATISSE_H__
 
 /*============================================================================
- * Reader of the parameters file: matisse
+ * Management of the GUI parameters file: Matisse module
  *============================================================================*/
-
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_base.h"
-
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Public functions prototypes
+/*============================================================================
+ * Public function prototypes for Fortran API
  *============================================================================*/
-
 
 void CS_PROCF (csgein, CSGEIN) (int    *const nptran,
                                 int    *const nplgrs,
@@ -127,7 +123,6 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
                                 int    *const nergch,
                                 double *const hbdtoi,
                                 int    *const neciel);
-
 
 /*----------------------------------------------------------------------------*/
 

@@ -164,14 +164,10 @@ iimlum = -1
 
 if (iihmpr.eq.1) then
 
-! call uiray1
+  call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
   !==========
-!( nbrayp, nbrayf, nphas, &
-!  iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum, &
-!  irayvf )
 
 endif
-
 
 call usray1
 !==========
@@ -488,11 +484,11 @@ ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
 !      composante z
- ipp = ipppro(ipproc(iqz))
- NOMVAR(IPP)   = 'Qzrad'
- ichrvr(ipp)   = 0
- ihisvr(ipp,1) = -1
- ilisvr(ipp)   = 0
+ipp = ipppro(ipproc(iqz))
+NOMVAR(IPP)   = 'Qzrad'
+ichrvr(ipp)   = 0 
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
 
 
 do iphas = 1, nphasc
@@ -554,77 +550,74 @@ enddo
 if (iihmpr.eq.1) then
 
   ipp = ipppro(ipproc(ilumin))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
 
   ipp = ipppro(ipproc(iqx))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   ipp = ipppro(ipproc(iqy))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   ipp = ipppro(ipproc(iqz))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   do iph = 1,nphasc
 
     ipp = ipppro(ipproc(itsre(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(itsri(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(iabs(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(iemi(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   enddo
 
-  do jj = 1, nbrayf
-    !ii = jj + nbrayp
-    call fcnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
-  enddo
+!  do jj = 1, nbrayf
+!    ii = jj + nbrayp
+!    call fcnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
+!  enddo
 
-! call uiray1
+  call uiray4(nbrayf, nphas, iirayo, irayvf)
   !==========
-!( nbrayp, nbrayf, nphas, &
-!  iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum, &
-!  irayvf )
 
-!
+
   ipp = ipppro(ipproc(ilumin))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   ipp = ipppro(ipproc(iqx))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   ipp = ipppro(ipproc(iqy))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   ipp = ipppro(ipproc(iqz))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   do iph = 1,nphasc
 
     ipp = ipppro(ipproc(itsre(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(itsri(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(iabs(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
     ipp = ipppro(ipproc(iemi(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ii)
-!
+    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
+
   enddo
 
-  do jj = 1, nbrayf
-    !ii = jj + nbrayp
-    call cfnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
-  enddo
+!  do jj = 1, nbrayf
+!    ii = jj + nbrayp
+!    call cfnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
+!  enddo
 
 endif
 

@@ -108,8 +108,12 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.__comboModel.addItem(self.tr("Fixed velocity"), "fixed_velocity")
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
 
-        self.connect(self.comboMobilBoundary, SIGNAL("activated(const QString&)"), self.__slotCombo) 
-        self.connect(self.pushButtonMobilBoundary, SIGNAL("clicked(bool)"), self.__slotFormula)
+        self.connect(self.comboMobilBoundary,
+                     SIGNAL("activated(const QString&)"),
+                     self.__slotCombo)
+        self.connect(self.pushButtonMobilBoundary,
+                     SIGNAL("clicked(bool)"),
+                     self.__slotFormula)
 
 
     @pyqtSignature("const QString&")
@@ -122,22 +126,22 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         
         if aleChoice == "fixed_velocity":
             if not exp:
-                exp = 'U_mesh ='
-            req = [('U_mesh', 'Fixed velocity of the mesh'),
-                   ('V_mesh', 'Fixed velocity of the mesh'),
-                   ('W_mesh', 'Fixed velocity of the mesh')]
-            exa = 'U_mesh=1000;\nV_mesh=1000;\nW_mesh=1000;'
+                exp = 'mesh_u ='
+            req = [('mesh_u', 'Fixed velocity of the mesh'),
+                   ('mesh_v', 'Fixed velocity of the mesh'),
+                   ('mesh_w', 'Fixed velocity of the mesh')]
+            exa = 'mesh_u = 1000;\nmesh_v = 1000;\nmesh_w = 1000;'
         elif aleChoice == "fixed_displacement":
             if not exp:
-                exp = 'X_mesh ='
-            req = [('X_mesh', 'Fixed displacement of the mesh'),
-                   ('Y_mesh', 'Fixed displacement of the mesh'),
-                   ('Z_mesh', 'Fixed displacement of the mesh')]
-            exa = 'X_mesh=1000;\nY_mesh=1000;\nZ_mesh=1000;'
+                exp = 'mesh_x ='
+            req = [('mesh_x', 'Fixed displacement of the mesh'),
+                   ('mesh_y', 'Fixed displacement of the mesh'),
+                   ('mesh_z', 'Fixed displacement of the mesh')]
+            exa = 'mesh_x = 1000;\nmesh_y = 1000;\nmesh_z = 1000;'
 
         symbs = [('dt', 'time step'),
                  ('t', 'current time'),
-                 ('nbIter', 'number of iteration')]
+                 ('iter', 'number of iteration')]
 
         dialog = QMeiEditorView(self, 
                                 expression = exp,
@@ -169,12 +173,12 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         Show the widget
         """
         if self.__model.getMethod() != "off":
-            self.show()
             self.__boundary = Boundary("mobile_boundary", b.getLabel(), self.__case)
             modelData = self.__boundary.getALEChoice()
             self.__comboModel.setItem(str_model=modelData)
             isFormulaEnabled = _have_mei and modelData in ["fixed_velocity", "fixed_displacement"]
             self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
+            self.show()
         else:
             self.hideWidget()
 

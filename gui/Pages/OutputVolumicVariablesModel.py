@@ -76,6 +76,7 @@ class OutputVolumicVariablesModel(Model):
                               self.getAdditionalScalarProperty(),
                               self.getFluidProperty(),
                               self.getTimeProperty(),
+                              self.getMeteoScalProper(),
                               self.getPuCoalScalProper(),
                               self._getWeightMatrixProperty(),
                               self.getListOfTimeMeans(),
@@ -97,6 +98,7 @@ class OutputVolumicVariablesModel(Model):
         default['status']    = "on"
 
         return default
+
 
     def _updateDicoLabelName(self):
         """
@@ -191,6 +193,25 @@ class OutputVolumicVariablesModel(Model):
                 for nodvar in nodList:
                     varList.append(nodvar)
         return varList
+
+
+    def getMeteoScalProper(self):
+        """
+        Return list fo nodes of atmospheric flows.
+        Also called by ProfilesModel and TimeAveragesModel
+        """
+        nodList = []
+        node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+	if not node: return []
+        model = node['model']
+        varList = []
+        if model != 'off':
+            for var in ('scalar', 'property'):
+                nodList = node.xmlGetNodeList(var)
+                for nodvar in nodList:
+                    varList.append(nodvar)
+        return varList
+
 
 
     def getAdditionalScalar(self):

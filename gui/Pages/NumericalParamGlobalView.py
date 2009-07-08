@@ -139,7 +139,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         import Pages.FluidCharacteristicsModel as FluidCharacteristics
         fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
-        modl_joul, modl_thermo, modl_gas, modl_coal = fluid.getThermoPhysicalModel()
+        modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal = fluid.getThermoPhysicalModel()
         if modl_joul != 'off' or modl_gas != 'off' or modl_coal != 'off':
             self.labelSRROM.show()
             self.lineEditSRROM.show()

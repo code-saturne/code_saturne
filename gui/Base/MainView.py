@@ -391,7 +391,7 @@ class MainView(QMainWindow, Ui_MainForm):
             settings = QSettings()
             if self.recentFiles:
                 recentFiles = QVariant(self.recentFiles)
-    	    else:
+            else:
                 recentFiles = QVariant()
             #recentFiles = QVariant(self.recentFiles) \
             #        if self.recentFiles else QVariant()
@@ -562,7 +562,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         self.addRecentFile(fn)
 
-        # Cleaning the '\n' and '\t' from file_name
+        # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 
         try:

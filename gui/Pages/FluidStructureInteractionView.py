@@ -75,7 +75,6 @@ Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 if _have_mei:
     from Pages.QMeiEditorView import QMeiEditorView
 
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -608,16 +607,16 @@ class CouplingManager:
                                           "setDampingMatrix", default, 
                                           dampingRequired, symbols, examples))
 
-        defaultFluidForce  = "Fx = "
-        requiredFluidForce = [('Fx', 'Force applied to the structure along X'),
-                              ('Fy', 'Force applied to the structure along Y'),
-                              ('Fz', 'Force applied to the structure along Z')]
+        defaultFluidForce  = "fx = "
+        requiredFluidForce = [('fx', 'Force applied to the structure along X'),
+                              ('fy', 'Force applied to the structure along Y'),
+                              ('fz', 'Force applied to the structure along Z')]
         symbolsFluidForce = symbols[:];
-        symbolsFluidForce.append( ('Fluid_Fx', 'Force of flow along X'))
-        symbolsFluidForce.append( ('Fluid_Fy', 'Force of flow along Y'))
-        symbolsFluidForce.append( ('Fluid_Fz', 'Force of flow along Z'))
+        symbolsFluidForce.append( ('fluid_fx', 'Force of flow along X'))
+        symbolsFluidForce.append( ('fluid_fy', 'Force of flow along Y'))
+        symbolsFluidForce.append( ('fluid_fz', 'Force of flow along Z'))
 
-        examplesFluidForce = "Fx = Fluid_Fx;\nFy = Fluid_Fy;\nFz = Fluid_Fz;"
+        examplesFluidForce = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
         couplings.append( FormulaCoupling( mainView.pushButtonFluidForce, 
                                            "getFluidForceMatrix",
                                            "setFluidForceMatrix", 

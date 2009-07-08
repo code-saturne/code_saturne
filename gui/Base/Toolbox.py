@@ -220,7 +220,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case)
 
-    elif page_name == tr("Dynamic variables boundary conditions"):
+    elif page_name == tr("Boundary conditions"):
         import Pages.BoundaryConditionsView as Page
         thisPage = Page.BoundaryConditionsView(root, case)
 
@@ -228,9 +228,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 #        import Pages.ScalarsBoundariesView as Page
 #        thisPage = Page.ScalarsBoundariesView(root, case)
 
-    elif page_name == tr("Radiative boundary conditions"):
-        import Pages.RadiativeBoundariesView as Page
-        thisPage = Page.RadiativeBoundariesView(root, case)
+#    elif page_name == tr("Radiative boundary conditions"):
+#        import Pages.RadiativeBoundariesView as Page
+#        thisPage = Page.RadiativeBoundariesView(root, case)
 
     elif page_name == tr("Particles boundary conditions"):
         import Pages.LagrangianBoundariesView as Page

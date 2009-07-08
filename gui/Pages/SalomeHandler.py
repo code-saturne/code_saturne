@@ -43,6 +43,7 @@ This module contains the following classes and function:
 
 import os
 import os.path
+import logging
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -54,11 +55,19 @@ import os.path
 
 import CFDSTUDYGUI
 import CFDSTUDYGUI_ProcessMgr
-from CFDSTUDYGUI_DataModel import _getStudy,_getEngine
+from CFDSTUDYGUI_DataModel import _getStudy, _getEngine
 from CFDSTUDYGUI_Commons import sg, sgPyQt
 from salome import lcc
 import smesh
 import GEOM
+
+#-------------------------------------------------------------------------------
+# log config
+#-------------------------------------------------------------------------------
+
+logging.basicConfig()
+log = logging.getLogger("SalomeHandler")
+log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
 
@@ -97,7 +106,7 @@ def BoundaryGroup():
     Import groups of faces.
     """
     if aSMESH_SO == None and aGEOM_SO == None:
-        return ""
+        raise ValueError,  "Component SMESH and GEOM not found"
 
     local = ""
     if sg.SelectedCount() > 0:
@@ -144,6 +153,7 @@ def BoundaryGroup():
                                 else:
                                     local += ' or ' + aGeomObject.GetName()
 
+    log.debug("BoundaryGroup -> %s" % str(local))
     return local
 
 
@@ -152,7 +162,7 @@ def VolumeGroup():
     Import groups of solid.
     """
     if aSMESH_SO == None and aGEOM_SO == None:
-        return ""
+        raise ValueError,  "Component SMESH and GEOM not found"
 
     local = ""
     if sg.SelectedCount() > 0:
@@ -194,6 +204,7 @@ def VolumeGroup():
                                 else:
                                     local += ' or ' + aGeomObject.GetName()
 
+    log.debug("VolumeGroup -> %s" % str(local))
     return local
 
 

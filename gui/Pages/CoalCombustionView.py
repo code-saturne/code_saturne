@@ -57,8 +57,8 @@ from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, DoubleValidator
 
 import Pages.CoalThermoChemistry as CoalThermoChemistry
-#from Pages.BoundaryConditionsModel import BoundaryConditionsModel
-from Pages.LocalizationModel import LocalizationModel, Zone
+from Pages.Boundary import Boundary
+from Pages.LocalizationModel import LocalizationModel
 from CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
@@ -83,6 +83,34 @@ class DiameterDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         v = DoubleValidator(editor, min=0.)
         v.setExclusiveMin()
+        editor.setValidator(v)
+        #editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if editor.validator().state == QValidator.Acceptable:
+            value, ok = editor.text().toDouble()
+            model.setData(index, QVariant(value), Qt.DisplayRole)
+
+#-------------------------------------------------------------------------------
+# Delegate for oxydant composition
+#-------------------------------------------------------------------------------
+
+class OxydantDelegate(QItemDelegate):
+    def __init__(self, parent):
+        super(OxydantDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        v = DoubleValidator(editor, min=0.)
         editor.setValidator(v)
         #editor.installEventFilter(self)
         return editor
@@ -179,7 +207,8 @@ class StandardItemModelClasses(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Number of classes"), self.tr("Initial diameter")]
+        self.headers = [self.tr("Number of classes"),
+                        self.tr("Initial diameter")]
         self.setColumnCount(len(self.headers))
         self.dataClasses = []
         self.coalNumber = None
@@ -263,6 +292,104 @@ class StandardItemModelClasses(QStandardItemModel):
         self.setRowCount(0)
 
 #-------------------------------------------------------------------------------
+# StandarItemModel for Oxydant
+#-------------------------------------------------------------------------------
+
+class StandardItemModelOxydant(QStandardItemModel):
+    def __init__(self, coalThermoChModel):
+        """
+        """
+        QStandardItemModel.__init__(self)
+        self.headers = [self.tr("Oxydant\nnumber"),
+                        self.tr("     O2      "), 
+                        self.tr("     N2      "),
+                        self.tr("     H2O     "),
+                        self.tr("     CO2     ")]
+        self.setColumnCount(len(self.headers))
+        self.dataClasses = []
+        self.coalThermoChModel = coalThermoChModel
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return QVariant()
+        if role == Qt.DisplayRole:
+            return QVariant(self.dataClasses[index.row()][index.column()])
+        return QVariant()
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        elif index.column() != 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return QVariant(self.headers[section])
+        return QVariant()
+
+
+    def setData(self, index, value, role):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        row = index.row()
+        col = index.column()
+        v, ok = value.toDouble()
+        self.dataClasses[row][col] = v
+
+        oxy = self.coalThermoChModel.getOxydants().getOxydant(row+1)
+        if col == 1:
+            oxy.setO2(v)
+        elif col == 2:
+            oxy.setN2(v)
+        elif col == 3:
+            oxy.setH2O(v)
+        elif col == 4:
+            oxy.setCO2(v)
+        self.coalThermoChModel.getOxydants().updateOxydant(row+1, oxy)
+        self.coalThermoChModel.save()
+
+        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        return True
+
+
+    def addItem(self, num, oxy):
+        """
+        Add a row in the table.
+        """
+        label = str(num)
+        item = [label, oxy.getO2(), oxy.getN2(), oxy.getH2O(),oxy.getCO2()]
+        self.dataClasses.append(item)
+        row = self.rowCount()
+        self.setRowCount(row+1)
+
+
+    def getItem(self, row):
+        return self.dataClasses[row]
+
+
+    def deleteRow(self, row):
+        """
+        Delete the row in the model
+        """
+        del self.dataClasses[row]
+        row = self.rowCount()
+        self.setRowCount(row-1)
+        self.coalThermoChModel.getOxydants().deleteOxydant(row+1)
+        self.coalThermoChModel.save()
+
+    def deleteAll(self):
+        """
+        Delete all the rows in the model
+        """
+        self.dataClasses = []
+        self.setRowCount(0)
+
+#-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
@@ -282,7 +409,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.stbar = stbar
 
         self.model = CoalCombustionModel(self.case)
-        #self.bdModel = BoundaryConditionsModel(self.case)
         self.coalThermoChModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
 
         self.coalNumber = 0
@@ -301,6 +427,13 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         self.modelClasses = StandardItemModelClasses(self.coalThermoChModel)
         self.treeViewClasses.setModel(self.modelClasses)
+        self.treeViewClasses.resizeColumnToContents(0)
+        self.treeViewClasses.resizeColumnToContents(1)
+
+        self.modelOxydants = StandardItemModelOxydant(self.coalThermoChModel)
+        self.tableViewOxydants.setModel(self.modelOxydants)
+        self.tableViewOxydants.resizeColumnsToContents()
+        self.tableViewOxydants.resizeRowsToContents()
 
         # set Coal number in modelClasses
         coalNumber = self.treeViewCoals.currentIndex().row()
@@ -309,6 +442,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         delegateDiameter = DiameterDelegate(self.treeViewClasses)
         self.treeViewClasses.setItemDelegateForColumn(1, delegateDiameter)
+        delegateOxydant = OxydantDelegate(self.tableViewOxydants)
+        self.tableViewOxydants.setItemDelegate(delegateOxydant)
 
         # Combo box
         # ---------
@@ -316,9 +451,13 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.modelPCI.addItem(self.tr("on dry"), "sec")
         self.modelPCI.addItem(self.tr("on pure"), "pur")
 
-        self.modelReactType = ComboModel(self.comboBoxReact,2,1)
-        self.modelReactType.addItem(self.tr("0.5"), "0.5")
-        self.modelReactType.addItem(self.tr("1"), "1")
+        self.modelReactTypeO2 = ComboModel(self.comboBoxReactO2,2,1)
+        self.modelReactTypeO2.addItem(self.tr("0.5"), "0.5")
+        self.modelReactTypeO2.addItem(self.tr("1"), "1")
+
+        self.modelReactTypeCO2 = ComboModel(self.comboBoxReactCO2,2,1)
+        self.modelReactTypeCO2.addItem(self.tr("0.5"), "0.5")
+        self.modelReactTypeCO2.addItem(self.tr("1"), "1")
 
         # Connections
         # -----------
@@ -327,6 +466,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.pushButtonDeleteCoal,  SIGNAL("clicked()"), self.slotDeleteCoal)
         self.connect(self.pushButtonAddClass,    SIGNAL("clicked()"), self.slotCreateClass)
         self.connect(self.pushButtonDeleteClass, SIGNAL("clicked()"), self.slotDeleteClass)
+        self.connect(self.pushButtonAddOxydant,    SIGNAL("clicked()"), self.slotCreateOxydant)
+        self.connect(self.pushButtonDeleteOxydant, SIGNAL("clicked()"), self.slotDeleteOxydant)
 
         self.connect(self.lineEditC, SIGNAL("textChanged(const QString &)"), self.slotCComposition)
         self.connect(self.lineEditH, SIGNAL("textChanged(const QString &)"), self.slotHComposition)
@@ -334,7 +475,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditPCI,      SIGNAL("textChanged(const QString &)"), self.slotPCI)
         self.connect(self.lineEditCp,       SIGNAL("textChanged(const QString &)"), self.slotThermalCapacity)
         self.connect(self.lineEditDensity,  SIGNAL("textChanged(const QString &)"), self.slotDensity)
-        self.connect(self.lineEditHumidity, SIGNAL("textChanged(const QString &)"), self.slotHumidity)
         self.connect(self.comboBoxPCIList,  SIGNAL("activated(const QString&)"), self.slotPCIType)
 
         self.connect(self.lineEditCokeC,   SIGNAL("textChanged(const QString &)"), self.slotCCompositionCoke)
@@ -345,6 +485,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditAshesRatio,    SIGNAL("textChanged(const QString &)"), self.slotAshesRatio)
         self.connect(self.lineEditAshesEnthalpy, SIGNAL("textChanged(const QString &)"), self.slotAshesFormingEnthalpy)
         self.connect(self.lineEditAshesCp,       SIGNAL("textChanged(const QString &)"), self.slotAshesThermalCapacity)
+        self.connect(self.lineEditHumidity, SIGNAL("textChanged(const QString &)"), self.slotHumidity)
 
         self.connect(self.lineEditCoefY1, SIGNAL("textChanged(const QString &)"), self.slotY1CH)
         self.connect(self.lineEditCoefY2, SIGNAL("textChanged(const QString &)"), self.slotY2CH)
@@ -355,9 +496,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.checkBoxY1, SIGNAL("clicked()"), self.slotIY1)
         self.connect(self.checkBoxY2, SIGNAL("clicked()"), self.slotIY2)
 
-        self.connect(self.lineEditConst,  SIGNAL("textChanged(const QString &)"), self.slotPreExpoCst)
-        self.connect(self.lineEditEnergy, SIGNAL("textChanged(const QString &)"), self.slotActivEnergy)
-        self.connect(self.comboBoxReact,  SIGNAL("activated(const QString&)"), self.slotReactType)
+        self.connect(self.lineEditConstO2,  SIGNAL("textChanged(const QString &)"), self.slotPreExpoCstO2)
+        self.connect(self.lineEditEnergyO2, SIGNAL("textChanged(const QString &)"), self.slotActivEnergyO2)
+        self.connect(self.comboBoxReactO2,  SIGNAL("activated(const QString&)"), self.slotReactTypeO2)
+        self.connect(self.lineEditConstCO2,  SIGNAL("textChanged(const QString &)"), self.slotPreExpoCstCO2)
+        self.connect(self.lineEditEnergyCO2, SIGNAL("textChanged(const QString &)"), self.slotActivEnergyCO2)
+        self.connect(self.comboBoxReactCO2,  SIGNAL("activated(const QString&)"), self.slotReactTypeCO2)
 
         # Validators
         # ----------
@@ -385,8 +529,10 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         validatorE1 = DoubleValidator(self.lineEditCoefE1, min=0.)
         validatorE2 = DoubleValidator(self.lineEditCoefE2, min=0.)
 
-        validatorConst = DoubleValidator(self.lineEditConst, min=0.)
-        validatorEnergy = DoubleValidator(self.lineEditEnergy, min=0.)
+        validatorConstO2 = DoubleValidator(self.lineEditConstO2, min=0.)
+        validatorEnergyO2 = DoubleValidator(self.lineEditEnergyO2, min=0.)
+        validatorConstCO2 = DoubleValidator(self.lineEditConstCO2, min=0.)
+        validatorEnergyCO2 = DoubleValidator(self.lineEditEnergyCO2, min=0.)
 
         self.lineEditC.setValidator(validatorC)
         self.lineEditH.setValidator(validatorH)
@@ -394,7 +540,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditPCI.setValidator(validatorPCI)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditDensity.setValidator(validatorDensity)
-        self.lineEditHumidity.setValidator(validatorHumidity)
 
         self.lineEditCokeC.setValidator(validatorCCoke)
         self.lineEditCokeH.setValidator(validatorHCoke)
@@ -404,6 +549,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditAshesRatio.setValidator(validatorAshesRatio)
         self.lineEditAshesEnthalpy.setValidator(validatorAshesEnthalpy)
         self.lineEditAshesCp.setValidator(validatorAshesCp)
+        self.lineEditHumidity.setValidator(validatorHumidity)
 
         self.lineEditCoefY1.setValidator(validatorY1)
         self.lineEditCoefY2.setValidator(validatorY2)
@@ -412,8 +558,10 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditCoefE1.setValidator(validatorE1)
         self.lineEditCoefE2.setValidator(validatorE2)
 
-        self.lineEditConst.setValidator(validatorConst)
-        self.lineEditEnergy.setValidator(validatorEnergy)
+        self.lineEditConstO2.setValidator(validatorConstO2)
+        self.lineEditEnergyO2.setValidator(validatorEnergyO2)
+        self.lineEditConstCO2.setValidator(validatorConstCO2)
+        self.lineEditEnergyCO2.setValidator(validatorEnergyCO2)
 
         # Initialize widgets
 
@@ -434,6 +582,19 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.labelHumidity.setDisabled(True)
             self.lineEditHumidity.setDisabled(True)
             self.labelUnitHumidity.setDisabled(True)
+
+        num = self.coalThermoChModel.getOxydants().getNumber()
+        for index in range(0, num):
+            oxy = self.coalThermoChModel.getOxydants().getOxydant(index+1)
+            self.modelOxydants.addItem(index+1, oxy)
+
+        # Update buttons
+        self.pushButtonAddOxydant.setEnabled(True)
+        self.pushButtonDeleteOxydant.setEnabled(True)
+        if num <= 1:
+            self.pushButtonDeleteOxydant.setDisabled(True)
+        if num >= 3:
+            self.pushButtonAddOxydant.setDisabled(True)
 
 
     @pyqtSignature("const QModelIndex &")
@@ -526,14 +687,22 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditCoefE2.setText(QString(str(coal.getE2CH())))
 
         # Combustion heterogene
-        self.lineEditConst.setText(QString(str(coal.getAHETCH())))
-        self.lineEditEnergy.setText(QString(str(coal.getEHETCH())))
+        self.lineEditConstO2.setText(QString(str(coal.getAHETCH_O2())))
+        self.lineEditEnergyO2.setText(QString(str(coal.getEHETCH_O2())))
+        self.lineEditConstCO2.setText(QString(str(coal.getAHETCH_CO2())))
+        self.lineEditEnergyCO2.setText(QString(str(coal.getEHETCH_CO2())))
 
-        if coal.getIOCHET() == 0:
+        if coal.getIOCHET_O2() == 0:
             key = "0.5"
         else:
             key = "1"
-        self.modelReactType.setItem(str_model=key)
+        self.modelReactTypeO2.setItem(str_model=key)
+
+        if coal.getIOCHET_CO2() == 0:
+            key = "0.5"
+        else:
+            key = "1"
+        self.modelReactTypeCO2.setItem(str_model=key)
 
 
     @pyqtSignature("")
@@ -587,8 +756,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             label = zone.getLabel()
             nature = zone.getNature()
             if nature == "inlet":
-                bdModel = Boundary("coal_inlet", label, self.case)
-                self.bdModel.deleteCoalFlow(number-1, self.coalThermoChModel.getCoals().getNumber())
+                bc = Boundary("coal_inlet", label, self.case)
+                bc.deleteCoalFlow(number-1, self.coalThermoChModel.getCoals().getNumber())
 
         self.coalThermoChModel.getCoals().deleteCoal(number)
 
@@ -623,11 +792,20 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         # Init
         ClassesNumber = coal.getClassesNumber()
         initDiameters = coal.getInitDiameterClasses()
-        number = ClassesNumber -1
-        self.modelClasses.addItem(number+1, initDiameters[number])
-        log.debug("slotCreateClass number + 1 = %i " % (number+1))
+        self.modelClasses.addItem(ClassesNumber, initDiameters[ClassesNumber -1])
+        log.debug("slotCreateClass number + 1 = %i " % (ClassesNumber))
         self.coalThermoChModel.save()
         self.model.createClassModelScalarsAndProperties(self.coalThermoChModel, self.coalNumber)
+
+#bug ici
+        # Update boundary conditions
+        log.debug("slotCreateClass: number of classes: %i " % coal.getClassesNumber())
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            if zone.getNature() == "inlet":
+                b = Boundary("coal_inlet", zone.getLabel(), self.case)
+                #b.getCoalRatios(self.coalNumber-1)
+                b.updateCoalRatios(self.coalNumber-1)
+#bug ici
 
         # Update buttons
         self.pushButtonDeleteClass.setEnabled(True)
@@ -648,16 +826,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model.deleteClassModelProperties(self.coalThermoChModel, self.coalNumber, number - 1)
         self.model.deleteClassModelScalars(self.coalThermoChModel, self.coalNumber, number - 1)
 
-        # Update boundary conditions (1/2)
         coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
-        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
-            label = zone.getLabel()
-            nature = zone.getNature()
-            if nature == "inlet":
-                bdModel = Boundary("coal_inlet", label, self.case)
-                self.bdModel.deleteClassRatio(self.coalNumber, number - 1, coal.getClassesNumber())
-##                 self.bdModel.updateRatio(self.coalNumber)
-
         coal.cancelInitDiameterClasses(number)
         self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
         self.coalThermoChModel.save()
@@ -670,10 +839,67 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.modelClasses.addItem(number+1, initDiameters[number])
             log.debug("slotDeleteClass number + 1 = %i " % (number+1))
 
+        # Update boundary conditions
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            if zone.getNature() == "inlet":
+                bc = Boundary("coal_inlet", zone.getLabel(), self.case)
+                bc.updateCoalRatios(self.coalNumber-1)
+
         # Update buttons
         self.pushButtonAddClass.setEnabled(True)
         if self.coalThermoChModel.getCoals().getCoal(self.coalNumber).getClassesNumber() <= 1:
             self.pushButtonDeleteClass.setDisabled(True)
+
+
+    @pyqtSignature("")
+    def slotCreateOxydant(self):
+        """Create a new oxydant"""
+        new_ox = CoalThermoChemistry.Oxydant()
+        self.coalThermoChModel.getOxydants().addOxydant(new_ox)
+        num = self.coalThermoChModel.getOxydants().getNumber()
+
+        self.modelOxydants.addItem(num, new_ox)
+        log.debug("slotCreateOxydant number = %i " % num)
+        self.coalThermoChModel.save()
+        #self.model.createOxydantModelScalarsAndProperties(self.coalThermoChModel, num)
+
+        # Update buttons
+        self.pushButtonDeleteOxydant.setEnabled(True)
+        if self.coalThermoChModel.getOxydants().getNumber() >= 3:
+            self.pushButtonAddOxydant.setDisabled(True)
+
+
+    @pyqtSignature("")
+    def slotDeleteOxydant(self):
+        """ delete an oxydant"""
+        row = self.tableViewOxydants.currentIndex().row()
+        log.debug("slotDeleteOxydants number = %i " % row)
+        if row == -1:
+            return
+
+        number = row + 1
+        self.coalThermoChModel.getOxydants().deleteOxydant(number)
+        self.coalThermoChModel.save()
+
+        # Update boundary conditions
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            label = zone.getLabel()
+            nature = zone.getNature()
+            if nature == "inlet":
+                bc = Boundary("coal_inlet", label, self.case)
+                oxy_max = bc.getOxydantNumber()
+                if oxy_max >= number:
+                    bc.setOxydantNumber(oxy_max-1)
+
+        self.modelOxydants.deleteAll()
+        for number in range(0, self.coalThermoChModel.getOxydants().getNumber()):
+            oxy = self.coalThermoChModel.getOxydants().getOxydant(number+1)
+            self.modelOxydants.addItem(number+1, oxy)
+
+        # Update buttons
+        self.pushButtonAddOxydant.setEnabled(True)
+        if self.coalThermoChModel.getOxydants().getNumber() <= 1:
+            self.pushButtonDeleteOxydant.setDisabled(True)
 
 
     @pyqtSignature("const QString&")
@@ -968,33 +1194,66 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
 
     @pyqtSignature("const QString&")
-    def slotPreExpoCst(self, text):
+    def slotPreExpoCstO2(self, text):
         AHETCH, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
-            coal.setAHETCH(AHETCH)
+            coal.setAHETCH_O2(AHETCH)
             self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
             self.coalThermoChModel.save()
 
 
     @pyqtSignature("const QString&")
-    def slotActivEnergy(self, text):
+    def slotActivEnergyO2(self, text):
         EHETCH, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
-            coal.setEHETCH(EHETCH)
+            coal.setEHETCH_O2(EHETCH)
             self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
             self.coalThermoChModel.save()
 
 
     @pyqtSignature("const QString&")
-    def slotReactType(self, text):
-        key = self.modelReactType.dicoV2M[str(text)]
+    def slotReactTypeO2(self, text):
+        key = self.modelReactTypeO2.dicoV2M[str(text)]
         coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
         if key == "0.5" :
-            coal.setIOCHET(0)
+            coal.setIOCHET_O2(0)
         else:
-            coal.setIOCHET(1)
+            coal.setIOCHET_O2(1)
+        self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
+        self.coalThermoChModel.save()
+        return key
+
+
+    @pyqtSignature("const QString&")
+    def slotPreExpoCstCO2(self, text):
+        AHETCH, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
+            coal.setAHETCH_CO2(AHETCH)
+            self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
+            self.coalThermoChModel.save()
+
+
+    @pyqtSignature("const QString&")
+    def slotActivEnergyCO2(self, text):
+        EHETCH, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
+            coal.setEHETCH_CO2(EHETCH)
+            self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
+            self.coalThermoChModel.save()
+
+
+    @pyqtSignature("const QString&")
+    def slotReactTypeCO2(self, text):
+        key = self.modelReactTypeCO2.dicoV2M[str(text)]
+        coal = self.coalThermoChModel.getCoals().getCoal(self.coalNumber)
+        if key == "0.5" :
+            coal.setIOCHET_CO2(0)
+        else:
+            coal.setIOCHET_CO2(1)
         self.coalThermoChModel.getCoals().updateCoal(self.coalNumber, coal)
         self.coalThermoChModel.save()
         return key
@@ -1005,15 +1264,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         Translation
         """
         return text
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pass
-
 
 #-------------------------------------------------------------------------------
 # End

@@ -29,7 +29,7 @@
 
 """
 This module contains the following classes:
--  BoundaryConditionsCoalInletView
+- BoundaryConditionsCoalInletView
 - ValueDelegate
 - StandardItemModelCoal
 - StandardItemModelCoalMass
@@ -48,16 +48,26 @@ import string, logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
+try:
+    import mei
+    _have_mei = True
+except:
+    _have_mei = False
+
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
+import Pages.CoalCombustionModel as CoalCombustion
+import Pages.CoalThermoChemistry as CoalThermoChemistry
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
+if _have_mei:
+    from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -66,7 +76,6 @@ from Pages.Boundary import Boundary
 logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsCoalInletView")
 log.setLevel(GuiParam.DEBUG)
-
 
 #-------------------------------------------------------------------------------
 # Line edit delegate with a Double validator (positive value)
@@ -93,18 +102,16 @@ class ValueDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             model.setData(index, QVariant(value), Qt.DisplayRole)
 
-
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
 #-------------------------------------------------------------------------------
 
 class StandardItemModelCoal(QStandardItemModel):
-
     def __init__(self, case):
         QStandardItemModel.__init__(self)
-        self.headers = [
-            self.tr("Coal name"), self.tr("Coal value"), self.tr("Coal unit"),
-            self.tr("Coal Temp. \nname"), self.tr("Coal Temp. \nvalue"), self.tr("Coal Temp. \nunit")]
+        self.headers = [self.tr("Coal number"),
+                        self.tr("Flow (kg/s)"),
+                        self.tr("Temperature \n(K)")]
         self.setColumnCount(len(self.headers))
         self.dataCoal = []
         self.__case = case
@@ -125,7 +132,7 @@ class StandardItemModelCoal(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        elif index.column() in [1,4]:
+        elif index.column() in [1,2]:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
@@ -147,14 +154,14 @@ class StandardItemModelCoal(QStandardItemModel):
         self.dataCoal[row][col] = v
         if col == 1:
             self.modelBoundary.setCoalFlow(v, row)
-        elif col == 4:
+        elif col == 2:
             self.modelBoundary.setCoalTemperature(v, row)
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
 
-    def insertItem(self, nameCoal, valCoal, unitCoal, nameCoalTemp, valCoalTemp, unitCoalTemp):
-        line = [nameCoal, valCoal, unitCoal, nameCoalTemp, valCoalTemp, unitCoalTemp]
+    def insertItem(self, nameCoal, valCoal, valCoalTemp):
+        line = [nameCoal, valCoal, valCoalTemp]
         self.dataCoal.append(line)
         row = self.rowCount()
         self.setRowCount(row+1)
@@ -163,8 +170,6 @@ class StandardItemModelCoal(QStandardItemModel):
     def deleteAll(self):
         self.dataCoal = []
         self.setRowCount(0)
-
-
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coal masses in a QTableView
@@ -228,7 +233,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
     
     def setData(self, index, value, role):
         if not hasattr(self, "modelBoundary"):
-            log.debug("ERROR in setData (StandardItemModelCoalMass) : no Boundary model defined")
+            log.debug("ERROR in setData (StandardItemModelCoalMass): no Boundary model defined")
             return
         classe = index.row()
         coal   = index.column()
@@ -247,19 +252,16 @@ class StandardItemModelCoalMass(QStandardItemModel):
             self.ratio[coal][self.coalClassesNumber[coal]-1] = lastValue
             liste[self.coalClassesNumber[coal]-1] = lastValue
             self.modelBoundary.setCoalRatios(coal, liste)
-##             self.__getRatioLastClass(coal)
         else :
-##             self.ratio[coal][classe].set(model.getClassCoalRatio(coal, classe))
             self.ratio[coal][classe] = liste[classe]
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
-    
+
     def deleteAll(self):
         self.ratio = []
         self.setRowCount(0)
-
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -273,338 +275,450 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         QWidget.__init__(self, parent)
 
         Ui_BoundaryConditionsCoalInletForm.__init__(self)
-        
-        
+        self.setupUi(self)
+
+
     def setup(self, case):
         """
         Setup the widget
         """
-        self.setupUi(self)
         self.__case = case
         self.__boundary = None
-        
-        # Coal table
-        self.__modelCoal = StandardItemModelCoal(self.__case)
-        self.tableViewCoal.setModel(self.__modelCoal)
-        delegateValue = ValueDelegate(self.tableViewCoal)
-        self.tableViewCoal.setItemDelegateForColumn(1, delegateValue)
-        self.tableViewCoal.setItemDelegateForColumn(4, delegateValue)
 
-        import Pages.CoalCombustionModel as CoalCombustion
-        coalModel =  CoalCombustion.CoalCombustionModel(self.__case)
-        if coalModel.getCoalCombustionModel() != "off" :
-            import Pages.CoalThermoChemistry as CoalThermoChemistry
+        # Connections
+        self.connect(self.comboBoxTypeInlet,
+                     SIGNAL("activated(const QString&)"),
+                     self.__slotInletType)
+        self.connect(self.comboBoxVelocity,
+                     SIGNAL("activated(const QString&)"),
+                     self.__slotChoiceVelocity)
+        self.connect(self.lineEditVelocity,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotVelocityValue)
+        self.connect(self.lineEditTemperature,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotTemperature)
+        self.connect(self.spinBoxOxydantNumber,
+                     SIGNAL("valueChanged(int)"),
+                     self.__slotOxydantNumber)
+
+        self.connect(self.comboBoxDirection,
+                     SIGNAL("activated(const QString&)"),
+                     self.__slotChoiceDirection)
+        self.connect(self.lineEditDirectionX,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotDirX)
+        self.connect(self.lineEditDirectionY,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotDirY)
+        self.connect(self.lineEditDirectionZ,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.__slotDirZ)
+
+        # Combo models
+        self.modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
+        self.modelTypeInlet.addItem(self.tr("Only oxydant"), 'oxydantFlow')
+        self.modelTypeInlet.addItem(self.tr("Oxydant and coal"), 'coalFlow')
+
+        self.modelVelocity = ComboModel(self.comboBoxVelocity, 4, 1)
+        self.modelVelocity.addItem(self.tr("Norm"), 'norm')
+        self.modelVelocity.addItem(self.tr("Mass flow rate"), 'flow1')
+        self.modelVelocity.addItem(self.tr("Norm (user law)"), 'norm_formula')
+        self.modelVelocity.addItem(self.tr("Mass flow rate (user law)"), 'flow1_formula')
+
+        self.modelDirection = ComboModel(self.comboBoxDirection, 3, 1)
+        self.modelDirection.addItem(self.tr("Normal to the inlet"), 'normal')
+        self.modelDirection.addItem(self.tr("Specified coordinates"), 'coordinates')
+        self.modelDirection.addItem(self.tr("User profile"), 'formula')
+
+        # Validators
+        validatorVelocity = DoubleValidator(self.lineEditVelocity)
+        validatorX = DoubleValidator(self.lineEditDirectionX)
+        validatorY = DoubleValidator(self.lineEditDirectionY)
+        validatorZ = DoubleValidator(self.lineEditDirectionZ)
+        validatorTemp = DoubleValidator(self.lineEditTemperature, min=0.)
+
+        # Apply validators
+        self.lineEditVelocity.setValidator(validatorVelocity)
+        self.lineEditDirectionX.setValidator(validatorX)
+        self.lineEditDirectionY.setValidator(validatorY)
+        self.lineEditDirectionZ.setValidator(validatorZ)
+        self.lineEditTemperature.setValidator(validatorTemp)
+
+        if _have_mei:
+            self.connect(self.pushButtonVelocityFormula,
+                         SIGNAL("clicked()"),
+                         self.__slotVelocityFormula)
+            self.connect(self.pushButtonDirectionFormula,
+                         SIGNAL("clicked()"),
+                         self.__slotDirectionFormula)
+        else:
+            self.pushButtonVelocityFormula.setEnabled(False)
+            self.pushButtonDirectionFormula.setEnabled(False)
+            self.modelVelocity.disableItem(str_model="norm_formula")
+            self.modelVelocity.disableItem(str_model="flow1_formula")
+            self.modelDirection.disableItem(str_model="formula")
+
+        # Usefull information about coals, classes, and ratios
+
+        mdl =  CoalCombustion.CoalCombustionModel(self.__case)
+        if mdl.getCoalCombustionModel() != "off":
             coalModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.__case)
             self.__coalNumber = coalModel.getCoals().getNumber()
             self.__coalClassesNumber = []
             for coal in range(0, self.__coalNumber):
                 self.__coalClassesNumber.append(coalModel.getCoals().getCoal(coal+1).getClassesNumber())
-        else :
+            self.__maxOxydantNumber = coalModel.getOxydants().getNumber()
+        else:
             self.__coalNumber = 0
             self.__coalClassesNumber = [0]
+            self.__maxOxydantNumber = 1
 
         self.__ratio = self.__coalNumber*[0]
-        for i in range(0, self.__coalNumber) :
+        for i in range(0, self.__coalNumber):
             self.__ratio[i] = self.__coalClassesNumber[i]*[0]
 
-        # Coal mass table
-        self.__modelCoalMass = StandardItemModelCoalMass(self.__case, self.__coalNumber, self.__coalClassesNumber)
+        # Coal table
+
+        self.__modelCoal = StandardItemModelCoal(self.__case)
+        self.tableViewCoal.setModel(self.__modelCoal)
+        delegateValue = ValueDelegate(self.tableViewCoal)
+        self.tableViewCoal.setItemDelegateForColumn(1, delegateValue)
+        self.tableViewCoal.setItemDelegateForColumn(2, delegateValue)
+
+        # Coal mass ratio table
+
+        self.__modelCoalMass = StandardItemModelCoalMass(self.__case,
+                                                         self.__coalNumber,
+                                                         self.__coalClassesNumber)
         self.tableViewCoalMass.setModel(self.__modelCoalMass)
 
         delegateValueMass = ValueDelegate(self.tableViewCoalMass)
         for c in range(self.__modelCoalMass.columnCount()):
             self.tableViewCoalMass.setItemDelegateForColumn(c, delegateValueMass)
 
-        # Combo models
-        self.__modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
-        self.__modelTypeInlet.addItem(self.tr("Air"), 'airflow')
-        self.__modelTypeInlet.addItem(self.tr("Air & Coal"), 'coalflow')
-
-        self.__modelAirVelocity = ComboModel(self.comboBoxAirVelocity, 6, 1)
-        self.__modelAirVelocity.addItem(self.tr("Velocity"), 'norm')
-        self.__modelAirVelocity.addItem(self.tr("Mass flow rate"), 'flow1')
-        self.__modelAirVelocity.addItem(self.tr("Volumic flow rate"), 'flow2')
-        self.__modelAirVelocity.addItem(self.tr("Velocity and direction"), 'norm+direction')
-        self.__modelAirVelocity.addItem(self.tr("Mass flow rate and direction"), 'flow1+direction')
-        self.__modelAirVelocity.addItem(self.tr("Volumic flow rate and direction"), 'flow2+direction')
-
-        # Validators
-        validatorAirFlow = DoubleValidator(self.lineEditAirVelocity)
-        validatorTemp = DoubleValidator(self.lineEditTemperature, min=0.)
-        validatorXCoal = DoubleValidator(self.lineEditXVelocityCoal)
-        validatorYCoal = DoubleValidator(self.lineEditYVelocityCoal)
-        validatorZCoal = DoubleValidator(self.lineEditZVelocityCoal)
-        
-        # Apply validators
-        self.lineEditAirVelocity.setValidator(validatorAirFlow)
-        self.lineEditTemperature.setValidator(validatorTemp)
-        self.lineEditXVelocityCoal.setValidator(validatorXCoal)
-        self.lineEditYVelocityCoal.setValidator(validatorYCoal)
-        self.lineEditZVelocityCoal.setValidator(validatorZCoal)
-
-# Coals
-        self.connect(self.comboBoxTypeInlet,   SIGNAL("activated(const QString&)"),\
-                     self.__slotCoalFlowType)
-        self.connect(self.comboBoxAirVelocity, SIGNAL("activated(const QString&)"),\
-                     self.__slotCoalChoiceVelocity)
-        self.connect(self.lineEditAirVelocity, SIGNAL("textChanged(const QString &)"),\
-                     self.__slotCoalAirFlow)
-        self.connect(self.lineEditTemperature, SIGNAL("textChanged(const QString &)"),\
-                     self.__slotTemperature)
-
-#        self.connect(self.comboBoxDirectionVelocityCoal, SIGNAL("activated(const QString&)"), self.__slotCoalDirY)
-        self.connect(self.lineEditXVelocityCoal, SIGNAL("textChanged(const QString &)"),\
-                     self.__slotCoalDirX)
-        self.connect(self.lineEditYVelocityCoal, SIGNAL("textChanged(const QString &)"),\
-                     self.__slotCoalDirY)
-        self.connect(self.lineEditZVelocityCoal, SIGNAL("textChanged(const QString &)"),\
-                     self.__slotCoalDirZ)
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalFlowType(self, text):
-        """
-        INPUT inlet type : 'air' or 'air + coal'
-        """
-        value = self.__modelTypeInlet.dicoV2M[str(text)]
-        log.debug("slotCoalFlowType value = %s " % value)
-        model = self.__boundary
-        label = model.getLabel()
-        coal_model = Boundary('coal_inlet', label, self.__case)
-        velocity = model.getVelocity()
-        self.lineEditAirVelocity.setText(QString(str(velocity)))
-        temperature = coal_model.getAirTemperature()
-        self.lineEditTemperature.setText(QString(str(temperature)))
-
-        if value == 'airflow':
-            self.groupBoxCoal.hide()
-            self.groupBoxCoalMass.hide()
-            #self.__slotCoalChoiceVelocity()
-##                 self.groupBoxDirection.show()
-##                 self.groupBoxCoal.show()
-        else :
-            self.groupBoxCoal.show()
-            self.groupBoxCoalMass.show()
-            self.groupBoxDirection.show()
-            self.groupBoxCoal.show()
-
-            self.__modelCoal.deleteAll()
-            self.__modelCoal.setBoundaryFromLabel(label)
-
-            self.__modelCoalMass.deleteAll()
-            self.__modelCoalMass.setBoundaryFromLabel(label)
-
-            for coal in range(0, self.__coalNumber):
-                # Flow and temperature
-                self.__modelCoal.insertItem(self.tr("Coal Flow") + " " + str(coal+1),
-                                        coal_model.getCoalFlow(coal), "kg/s",
-                                        self.tr("Coal temperature") + " " + str(coal+1),
-                                        coal_model.getCoalTemperature(coal), "K")
-
-            for coal in range(0, self.__coalNumber) :
-                lastValue = 0.
-                for coalClass in range(0, self.__coalClassesNumber[coal]-1):
-##                    lastValue += float(coal_model._getClassCoalRatio(coal, coalClass))
-                    list = coal_model.getCoalRatios(coal)
-                    lastValue += list[coalClass]
-
-                    self.__ratio[coal][coalClass] = list[coalClass]
-
-##                             if (coalClass == self.__coalClassesNumber[coal]-1) :
-##                                 self.coale5[coal][coalClass].bind("<<Event>>",TkPage.Callback(self.__getRatioLastClass, coal))
-##                             else:
-##                                 self.coale5[coal][coalClass].bind("<<Event>>",TkPage.Callback(self.getCoale5, coal, coalClass))
-##                                 self.coale5[coal][coalClass].config(fg='black')
-
-                # last class is computed
-                coalClass = self.__coalClassesNumber[coal]-1
-                lastValue = 100 - lastValue
-                self.__ratio[coal][coalClass] = lastValue
-                #
-                self.__getRatioLastClass(coal)
-
-        self.__modelCoalMass.setRatio(self.__ratio)
-        coal_model.setCoalType(value)
-
-
-    def __getRatioLastClass(self, coal):
-        label = self.__boundary.getLabel()
-        model = Boundary('coal_inlet', label, self.__case)
-##             model.setClassCoalRatio(self.__ratio[coal][self.__coalClassesNumber[coal]-1].get(), coal, self.__coalClassesNumber[coal]-1)
-
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalChoiceVelocity(self, text):
-        """
-        INPUT choice of method of calculation of the velocity for air (coal)
-        """
-        model = self.__boundary
-        label  = model.getLabel()
-        choice = model.getVelocityChoice()
-        coal_model = Boundary('coal_inlet', label, self.__case)
-        type = coal_model.getCoalType()
-        new_type = type
-        self.type_coal_flow = str(self.comboBoxTypeInlet.currentText())
-        new_type = self.type_coal_flow
-
-        coalchoiceflow = self.__modelAirVelocity.dicoV2M[str(self.comboBoxAirVelocity.currentText())]
-        log.debug("slotCoalChoiceVelocity coalchoiceflow = %s "%coalchoiceflow)
-        if coalchoiceflow != choice:
-            new_choice = coalchoiceflow
-        else:
-            new_choice = choice
-        model.setVelocityChoice(new_choice)
-
- #       self.forgetCoalWindows()
-#        self.groupBoxCoal.show()
-#        self.__turbulence.groupBoxTurbulence.show()
-
-        self.setWindowsForCoalVelocityChoice(new_choice)
-        val = model.getVelocity()
-        self.lineEditAirVelocity.setText(QString(str(val)))
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalAirFlow(self, text):
-        self.flow, ok = text.toDouble()
-        self.__boundary.setVelocity(self.flow)
-
-
-    @pyqtSignature("const QString&")
-    def __slotTemperature(self, text):
-        """
-        INPUT air temperature
-        """
-        label = self.__boundary.getLabel()
-        model = Boundary('coal_inlet', label, self.__case)
-        temperature, ok = text.toDouble()
-        if self.sender().validator().state == QValidator.Acceptable:
-            model.setAirTemperature(temperature)
-
-
-    @pyqtSignature("const QString&")
-    def slotCoalDirFlow(self, text):
-        """
-        INPUT Flow for the velocity
-        """
-        dico = {"normal" : 0, "vector" : 1, "formula" : 2}
-        self.frameVelocity.hide()
-        direction = self.modelDirVelocityCoal.dicoV2M[str(text)]
-        log.debug("__slotCoalDirY direction = %s "%direction)
-        dir = dico[direction]
-
-        model = self.__boundary
-        if dir == 1:
-            model.updateVelocityChoiceForDirection(dir)
-            self.frameVelocity.show()
-            x = model.getDirection('direction_x')
-            y = model.getDirection('direction_y')
-            z = model.getDirection('direction_z')
-            self.lineEditXVelocityCoal.setText(QString(str(x)))
-            self.lineEditYVelocityCoal.setText(QString(str(y)))
-            self.lineEditZVelocityCoal.setText(QString(str(z)))
-        else:
-            model.updateVelocityChoiceForDirection(dir)
-            model.deleteDirectionNodes()
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalDirX(self, text):
-        """
-        INPUT value into direction of inlet flow
-        """
-        model = self.__boundary
-        if model.getVelocityChoice()[-9:] == 'direction':
-            value, ok = text.toDouble()
-            if self.sender().validator().state == QValidator.Acceptable:
-                model.setDirection('direction_x', value)
-##         else:
-##             msg = self.tr("You must select one wall or inlet in the list.")
-##             self.stbar.showMessage(msg, 2000)
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalDirY(self, text):
-        """
-        INPUT value into direction of inlet flow
-        """
-        model = self.__boundary
-        if model.getVelocityChoice()[-9:] == 'direction':
-            value, ok = text.toDouble()
-            if self.sender().validator().state == QValidator.Acceptable:
-                model.setDirection('direction_y', value)
-##         else:
-##             msg = self.tr("You must select one wall or inlet in the list.")
-##             self.stbar.showMessage(msg, 2000)
-
-
-    @pyqtSignature("const QString&")
-    def __slotCoalDirZ(self, text):
-        """
-        INPUT value into direction of inlet flow
-        """
-        model = self.__boundary
-        if model.getVelocityChoice()[-9:] == 'direction':
-            value, ok = text.toDouble()
-            if self.sender().validator().state == QValidator.Acceptable:
-                model.setDirection('direction_z', value)
-##         else:
-##             msg = self.tr("You must select one wall or inlet in the list.")
-##             self.stbar.showMessage(msg, 2000)
-
-
-    def setWindowsForCoalVelocityChoice(self, choice):
-        """
-        Put windows beyond choice of velocity for inlet nature
-        """
-        if choice  == 'norm':
-            self.labelUnitVelocityAir.setText(QString(str('m/s')))
-        elif choice == 'flow1':
-            self.labelUnitVelocityAir.setText(QString(str('kg/s')))
-        elif choice == 'flow2':
-            self.labelUnitVelocityAir.setText(QString(str('m<sup>3</sup>/s')))
-    
-
-    def hideWidget(self):
-        """
-        Hide the widget
-        """
-        self.groupBoxFlowTemp.hide()
-        self.groupBoxCoal.hide()
-        self.groupBoxCoalMass.hide()
-        self.hide()
-
 
     def showWidget(self, b):
         """
         Show the widget
         """
-        if self.__coalNumber == 0:
-            choice = b.getVelocityChoice()
-            label = b.getLabel()
-            self.__boundary = Boundary('coal_inlet', label, self.__case)
-       
-            self.show()
-            self.groupBoxFlowTemp.show()
+        label = b.getLabel()
+        self.__boundary = Boundary('coal_inlet', label, self.__case)
+
+        # Initialize velocity
+        choice = self.__boundary.getVelocityChoice()
+        self.modelVelocity.setItem(str_model=choice)
+        self.__updateLabel()
+
+        if not _have_mei:
+            if self.__boundary.getVelocityChoice()[-7:] == "formula":
+                c = self.__boundary.defaultValues()['velocityChoice']
+                self.__boundary.setVelocityChoice(c)
+            if self.__boundary.getDirectionChoice() == "formula":
+                c = self.__boundary.defaultValues()['directionChoice']
+                self.__boundary.setDirectionChoice(c)
+
+        if choice[-7:] == "formula":
+            self.pushButtonVelocityFormula.setEnabled(True)
+            self.lineEditVelocity.setEnabled(False)
+        else:
+            self.pushButtonVelocityFormula.setEnabled(False)
+            self.lineEditVelocity.setEnabled(True)
+            v = self.__boundary.getVelocity()
+            self.lineEditVelocity.setText(QString(str(v)))
+
+        # Initialize oxydant and temperature
+        self.spinBoxOxydantNumber.setMaximum(self.__maxOxydantNumber)
+        o = self.__boundary.getOxydantNumber()
+        self.spinBoxOxydantNumber.setValue(o)
+        t = self.__boundary.getOxydantTemperature()
+        self.lineEditTemperature.setText(QString(str(t)))
+
+        # Initialize direction
+        choice = self.__boundary.getDirectionChoice()
+        self.modelDirection.setItem(str_model=choice)
+        text = self.modelDirection.dicoM2V[choice]
+        if choice == "formula":
+            self.pushButtonDirectionFormula.setEnabled(True)
+            self.frameDirectionCoordinates.hide()
+        elif choice == "coordinates":
+            self.pushButtonDirectionFormula.setEnabled(False)
+            self.frameDirectionCoordinates.show()
+            v = self.__boundary.getDirection('direction_x')
+            self.lineEditDirectionX.setText(QString(str(v)))
+            v = self.__boundary.getDirection('direction_y')
+            self.lineEditDirectionY.setText(QString(str(v)))
+            v = self.__boundary.getDirection('direction_z')
+            self.lineEditDirectionZ.setText(QString(str(v)))
+        elif choice == "normal":
+            self.pushButtonDirectionFormula.setEnabled(False)
+            self.frameDirectionCoordinates.hide()
+
+        log.debug("showWidget:inlet type: %s " % self.__boundary.getInletType())
+        if self.__boundary.getInletType() == "coalFlow":
+            self.modelTypeInlet.setItem(str_model="coalFlow")
             self.groupBoxCoal.show()
             self.groupBoxCoalMass.show()
-    
-            type = boundary.getCoalType()
-            if type in ("coalflow", "airflow"):
-                self.__modelTypeInlet.setItem(str_model=type)
-            else:
-                msg = "Error :invalid velocity_pressure choice for coal combustion"
-                raise ValueError, msg
-    
-            choice = string.split(choice, '+')[0]
-            log.debug("slotSelectBoundary COAL INLET choice = %s "%choice)
-            self.__slotCoalFlowType(self.comboBoxTypeInlet.currentText())
-    
-            self.setWindowsForCoalVelocityChoice(choice)
-            self.updateSpecDirWindowForCoal(self.__boundary.getLabel())
+            self.__updateTables()
+            self.__boundary.setInletType("coalFlow")
         else:
-            self.hideWidget()
+            self.__boundary.setInletType("oxydantFlow")
+            self.modelTypeInlet.setItem(str_model="oxydantFlow")
+            self.groupBoxCoal.hide()
+            self.groupBoxCoalMass.hide()
+
+        self.show()
+
+
+    def hideWidget(self):
+        """
+        Hide all
+        """
+        self.hide()
+
+
+    def __updateTables(self):
+        """
+        Insert rows in the two QTableView.
+        """
+        # clean the QTableView
+        self.__modelCoal.deleteAll()
+        self.__modelCoalMass.deleteAll()
+
+        label = self.__boundary.getLabel()
+        self.__modelCoalMass.setBoundaryFromLabel(label)
+        self.__modelCoal.setBoundaryFromLabel(label)
+
+        # fill the flow and temperature of the coal
+        for coal in range(0, self.__coalNumber):
+            self.__modelCoal.insertItem(self.tr("Coal ") + " " + str(coal+1),
+                                        self.__boundary.getCoalFlow(coal), 
+                                        self.__boundary.getCoalTemperature(coal))
+
+        # fill the ratio of mass for each class for each coal
+        for coal in range(0, self.__coalNumber) :
+            lastValue = 0.
+            for coalClass in range(0, self.__coalClassesNumber[coal]-1):
+                list = self.__boundary.getCoalRatios(coal)
+                lastValue += list[coalClass]
+                self.__ratio[coal][coalClass] = list[coalClass]
+
+            # last class is computed in order to assure that sum is egal to 100%
+            coalClass = self.__coalClassesNumber[coal]-1
+            lastValue = 100 - lastValue
+            self.__ratio[coal][coalClass] = lastValue
+
+        self.__modelCoalMass.setRatio(self.__ratio)
+
+
+    @pyqtSignature("const QString&")
+    def __slotChoiceVelocity(self, text):
+        """
+        Private slot.
+
+        Input the velocity boundary type choice (norm, ).
+
+        @type text: C{QString}
+        @param text: velocity boundary type choice.
+        """
+        c = self.modelVelocity.dicoV2M[str(text)]
+        log.debug("slotChoiceVelocity: %s " % c)
+        self.__boundary.setVelocityChoice(c)
+
+        if c[-7:] == "formula":
+            self.pushButtonVelocityFormula.setEnabled(True)
+            setGreenColor(self.pushButtonVelocityFormula, True)
+            self.lineEditVelocity.setEnabled(False)
+            self.lineEditVelocity.setText(QString(""))
+        else:
+            self.pushButtonVelocityFormula.setEnabled(False)
+            setGreenColor(self.pushButtonVelocityFormula, False)
+            self.lineEditVelocity.setEnabled(True)
+            v = self.__boundary.getVelocity()
+            self.lineEditVelocity.setText(QString(str(v)))
+
+        self.__updateLabel()
+
+
+    def __updateLabel(self):
+        """
+        Update the unit for the velocity specification.
+        """
+        c = self.__boundary.getVelocityChoice()
+        if c in ('norm', 'norm_formula'):
+            self.labelUnitVelocity.setText(QString(str('m/s')))
+        elif c in ('flow1', 'flow1_formula'):
+            self.labelUnitVelocity.setText(QString(str('kg/s')))
+        elif c in ('flow2', 'flow2_formula'):
+            self.labelUnitVelocity.setText(QString(str('m<sup>3</sup>/s')))
+
+
+    @pyqtSignature("const QString&")
+    def __slotVelocityValue(self, text):
+        """
+        Private slot.
+
+        New value associated to the velocity boundary type.
+
+        @type text: C{QString}
+        @param text: value
+        """
+        v, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setVelocity(v)
+
+
+    @pyqtSignature("")
+    def __slotVelocityFormula(self):
+        """
+        """
+        exp = self.__boundary.getVelocity()
+        c = self.__boundary.getVelocityChoice()
+        req = [('u_norm', 'Norm of the velocity')]
+        if c == 'norm_formula':
+            exa = "u_norm = 1.0;"
+        elif c == 'flow1_formula':
+            exa = "q_m = 1.0;"
+        elif c == 'flow2_formula':
+            exa = "q_v = 1.0;"
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration')]
+
+        dialog = QMeiEditorView(self, expression = exp,
+                                      required   = req,
+                                      symbols    = sym,
+                                      examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaVelocity -> %s" % str(result))
+            self.__boundary.setVelocity(result)
+            setGreenColor(self.pushButtonVelocityFormula, False)
+
+
+    @pyqtSignature("const QString&")
+    def __slotChoiceDirection(self, text):
+        """
+        Input the direction type choice.
+        """
+        c = self.modelDirection.dicoV2M[str(text)]
+        log.debug("slotChoiceVelocity: %s " % c)
+        self.__boundary.setDirectionChoice(c)
+
+        if c == "formula":
+            self.pushButtonDirectionFormula.setEnabled(True)
+            setGreenColor(self.pushButtonDirectionFormula, True)
+            self.frameDirectionCoordinates.hide()
+        elif c == "coordinates":
+            self.pushButtonDirectionFormula.setEnabled(False)
+            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.frameDirectionCoordinates.show()
+            v = self.__boundary.getDirection('direction_x')
+            self.lineEditDirectionX.setText(QString(str(v)))
+            v = self.__boundary.getDirection('direction_y')
+            self.lineEditDirectionY.setText(QString(str(v)))
+            v = self.__boundary.getDirection('direction_z')
+            self.lineEditDirectionZ.setText(QString(str(v)))
+        elif c == "normal":
+            self.pushButtonDirectionFormula.setEnabled(False)
+            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.frameDirectionCoordinates.hide()
+
+
+    @pyqtSignature("const QString&")
+    def __slotDirX(self, text):
+        """
+        INPUT value into direction of inlet flow
+        """
+        value, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setDirection('direction_x', value)
+
+
+    @pyqtSignature("const QString&")
+    def __slotDirY(self, text):
+        """
+        INPUT value into direction of inlet flow
+        """
+        value, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setDirection('direction_y', value)
+
+
+    @pyqtSignature("const QString&")
+    def __slotDirZ(self, text):
+        """
+        INPUT value into direction of inlet flow
+        """
+        value, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setDirection('direction_z', value)
+
+
+    @pyqtSignature("")
+    def __slotDirectionFormula(self):
+        """
+        """
+        exp = self.__boundary.getDirection('direction_formula')
+
+        req = [('dir_x', 'Direction of the flow along X'),
+               ('dir_y', 'Direction of the flow along Y'), 
+               ('dir_z', 'Direction of the flow along Z')]
+
+        exa = "dir_x = 3.0;\ndir_y = 1.0;\ndir_z = 0.0;\n"
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration')]
+
+        dialog = QMeiEditorView(self,expression = exp,
+                                     required   = req,
+                                     symbols    = sym, 
+                                     examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaDirection -> %s" % str(result))
+            self.__boundary.setDirection('direction_formula', result)
+            setGreenColor(self.pushButtonDirectionFormula, False)
+
+
+
+    @pyqtSignature("const QString&")
+    def __slotInletType(self, text):
+        """
+        INPUT inlet type : 'oxydant' or 'oxydant + coal'
+        """
+        value = self.modelTypeInlet.dicoV2M[str(text)]
+        log.debug("__slotInletType value = %s " % value)
+
+        self.__boundary.setInletType(value)
+
+        if value == 'oxydantFlow':
+            self.groupBoxCoal.hide()
+            self.groupBoxCoalMass.hide()
+        else:
+            self.groupBoxCoal.show()
+            self.groupBoxCoalMass.show()
+            self.__updateTables()
+
+
+    @pyqtSignature("const QString&")
+    def __slotTemperature(self, text):
+        t, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setOxydantTemperature(t)
+
+
+    @pyqtSignature("int")
+    def __slotOxydantNumber(self, i):
+        self.__boundary.setOxydantNumber(i)
 
 
     def getCoalNumber(self):
@@ -614,41 +728,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         return self.__coalNumber
 
 
-    def updateSpecDirWindowForCoal(self, label):
-        """
-        Put special window for direction of inlet for coal case
-        """
-        # ??? Same function as above ???
-        #self.updateSpecDirWindow(label)
-        model = Boundary('inlet', label, self.__case)
-        log.debug("updateSpecDirWindowForCoal model.getVelocityChoice() = %s"%model.getVelocityChoice())
-        if model.getVelocityChoice()[-9:] == "direction":
-            x = model.getDirection('direction_x')
-            y = model.getDirection('direction_y')
-            z = model.getDirection('direction_z')
-            self.lineEditXVelocityCoal.setText(QString(str(x)))
-            self.lineEditYVelocityCoal.setText(QString(str(y)))
-            self.lineEditZVelocityCoal.setText(QString(str(z)))
-            self.frameCoalVelocity.show()
-        else:
-            self.frameCoalVelocity.hide()
-            
-            
     def tr(self, text):
         """
         Translation
         """
         return text
-
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pass
-
 
 #-------------------------------------------------------------------------------
 # End

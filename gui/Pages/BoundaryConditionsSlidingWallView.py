@@ -110,9 +110,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         Show the widget
         """
         if MobileMeshModel(self.__case).getMethod() == "off":
-            self.show()
             self.__boundary = boundary
-
             if self.__boundary.getVelocityChoice() == "on":
                 self.groupBoxSliding.setChecked(True)
                 checked = True
@@ -120,6 +118,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
                 self.groupBoxSliding.setChecked(False)
                 checked = False
             self.__slotSlidingWall(checked)
+            self.show()
         else:
             self.hideWidget()
 

@@ -1,3 +1,93 @@
+* 08/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Numerous modifications in the Graphical User Interface.
+  - refactor of GUI reader.
+  - update coal combustion management for oxycombustion modelling
+  - update radiative transfer management (partly)
+  - activate formula management for b.c., phys. prop., ...
+  - activate atmospheric modelling
+  - activate mobile mesh and fluid structure interaction management
+  - several fixes
+  added file:
+    gui/Pages/icons/22x22/weather-few-clouds.png
+  added routines:
+    gui/Pages/BoundaryConditionsWallRadiativeTransferForm.ui
+    gui/Pages/BoundaryConditionsWallRadiativeTransferView.py
+    include/base/cs_gui_boundary_conditions.h
+    include/base/cs_gui_mobil_mesh.h
+    include/base/cs_gui_specific_physics.h
+    include/base/cs_gui_variables.h
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_gui_mobil_mesh.c
+    src/base/cs_gui_specific_physics.c
+  modified scripts:
+    gui/Pages/Makefile.am
+    src/base/Makefile.am
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/MainView.py
+    gui/Base/Toolbox.py
+    gui/Base/XMLengine.py
+    gui/Pages/AnalysisFeaturesView.py
+    gui/Pages/AtmosphericFlowsForm.ui
+    gui/Pages/AtmosphericFlowsModel.py
+    gui/Pages/AtmosphericFlowsView.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/BoundaryConditionsCoalInletForm.ui
+    gui/Pages/BoundaryConditionsCoalInletView.py
+    gui/Pages/BoundaryConditionsForm.ui
+    gui/Pages/BoundaryConditionsMeteoForm.ui
+    gui/Pages/BoundaryConditionsMeteoView.py
+    gui/Pages/BoundaryConditionsMobileMeshView.py
+    gui/Pages/BoundaryConditionsSlidingWallView.py
+    gui/Pages/BoundaryConditionsTurbulenceInletView.py
+    gui/Pages/BoundaryConditionsVelocityInletForm.ui
+    gui/Pages/BoundaryConditionsVelocityInletView.py
+    gui/Pages/BoundaryConditionsView.py
+    gui/Pages/Boundary.py
+    gui/Pages/CoalCombustionForm.ui
+    gui/Pages/CoalCombustionModel.py
+    gui/Pages/CoalCombustionView.py
+    gui/Pages/CoalThermoChemistry.py
+    gui/Pages/FluidCharacteristicsModel.py
+    gui/Pages/FluidCharacteristicsView.py
+    gui/Pages/FluidStructureInteractionView.py
+    gui/Pages/LocalizationView.py
+    gui/Pages/MobileMeshView.py
+    gui/Pages/NumericalParamEquationModel.py
+    gui/Pages/NumericalParamGlobalView.py
+    gui/Pages/OutputVolumicVariablesModel.py
+    gui/Pages/ProfilesModel.py
+    gui/Pages/QMeiEditorView.py
+    gui/Pages/resources_pages.qrc
+    gui/Pages/SalomeHandler.py
+    gui/Pages/SolutionDomainView.py
+    gui/Pages/StartRestartForm.ui
+    gui/Pages/ThermalRadiationForm.ui
+    gui/Pages/ThermalRadiationView.py
+    gui/Pages/TimeAveragesModel.py
+    gui/Pages/TimeStepModel.py
+    include/base/cs_gui.h
+    include/base/cs_gui_matisse.h
+    include/base/cs_gui_radiative_transfer.h
+    include/base/cs_gui_util.h
+    src/atmo/atini1.f90
+    src/atmo/atprop.f90
+    src/atmo/atvarp.f90
+    src/base/cs_gui.c
+    src/base/cs_gui_matisse.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_util.c
+    src/base/iniusi.f90
+    src/base/phyvar.f90
+    src/base/strdep.f90
+    src/base/tridim.f90
+    src/base/varpos.f90
+    src/cplv/cpprop.f90
+    src/cplv/cpvarp.f90
+    src/rayt/rayopt.f90
+    users/base/usalcl.f90
+
 * 08/07/2009 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
                Maya Milliez <maya.milliez@edf.fr>
   Add non-neutral atmosphere modelling (both dry and humid, though

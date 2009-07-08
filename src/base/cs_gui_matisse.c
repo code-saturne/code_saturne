@@ -26,7 +26,7 @@
  *============================================================================*/
 
 /*============================================================================
- * Reader of the parameters file: matisse
+ * Management of the GUI parameters file: Matisse module
  *============================================================================*/
 
 #if defined(HAVE_CONFIG_H)
@@ -74,15 +74,12 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-
 /* debugging switch */
 #define _XML_DEBUG_ 0
-
 
 /*============================================================================
  *  Static global variables
  *============================================================================*/
-
 
 static const char *const cs_matisse_map_type[4]=
 { "inlet_range",
@@ -94,7 +91,6 @@ static const char *const cs_matisse_map_axis[3]=
 { "line",
   "row",
   "height" };
-
 
 /*============================================================================
  * Private functions prototypes
@@ -198,9 +194,8 @@ cs_gui_warehousing_type(void)
   return intval;
 }
 
-
 /*============================================================================
- * Public functions API Fortran
+ * Public Fortran function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -231,7 +226,6 @@ void CS_PROCF (csgein, CSGEIN) (int *const nptran,
   bft_printf("--itypen = %d\n", *itypen);
 #endif
 }
-
 
 /*----------------------------------------------------------------------------
  * Treatment of geometric "real" parameters in the Matisse module
@@ -274,7 +268,6 @@ void CS_PROCF (csmhdb, CSMHDB) (double *const jeuchr,
   bft_printf("--jeurch = %f\n", *jeurch);
 #endif
 }
-
 
 /*----------------------------------------------------------------------------
  * Treatment of geometric "real" parameters in the Matisse module
@@ -322,7 +315,6 @@ void CS_PROCF (csgedb, CSGEDB) (double *const epregi,
   bft_printf("--dmcont = %f\n", *dmcont);
 #endif
 }
-
 
 /*----------------------------------------------------------------------------
  * Treatment of physical "double precision" parameters in the Matisse module
@@ -442,7 +434,6 @@ void CS_PROCF (csphat, CSPHAT)(int *const imdcnt,
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
  * Test if the Matisse header is in the XML file
  *----------------------------------------------------------------------------*/
@@ -467,11 +458,9 @@ void CS_PROCF(csmtpr,CSMTPR)(int *imatis)
   BFT_FREE(path);
 }
 
-
 /*----------------------------------------------------------------------------
  * Compute the number of zone for given map and direction
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF(csnbmp,CSNBMP) (int *const direction,
                               int *const carte,
@@ -500,11 +489,9 @@ void CS_PROCF(csnbmp,CSNBMP) (int *const direction,
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
  * Fill the 2D and 3D maps for head loss and thermal power
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF(csdfmp,CSDFMP) (   int *const zone,
                                  int *const direction,

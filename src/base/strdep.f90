@@ -145,6 +145,7 @@ implicit none
 
 include "dimfbr.h"
 include "paramx.h"
+include "ihmpre.h"
 include "cstphy.h"
 include "numvar.h"
 include "optcal.h"
@@ -279,6 +280,20 @@ endif
 
 
 if (nbstru.gt.0) then
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uistr2 &
+    !==========
+ ( xmstru, xcstru, xkstru,     &
+   forstr,                     &
+   dtref, ttcabs, ntcabs   )
+
+  endif
+
   call usstr2                                                     &
   !==========
  ( idebia , idebra ,                                              &
@@ -294,6 +309,7 @@ if (nbstru.gt.0) then
    dtstr  ,                                                       &
    rdevel , rtuser ,                                              &
    ra     )
+
 endif
 
 !===============================================================================

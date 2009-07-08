@@ -101,9 +101,9 @@ class TimeStepModel(Model):
         """
         thermal_case = 0
         from FluidCharacteristicsModel import FluidCharacteristicsModel
-        n_joul, n_thermo, n_gas, n_coal = FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
+        n_atmo, n_joul, n_thermo, n_gas, n_coal = FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
 
-        if n_joul != 'off' or  n_thermo != 'off' or  n_gas != 'off' or  n_coal != 'off':
+        if n_atmo != 'off' or n_joul != 'off' or  n_thermo != 'off' or  n_gas != 'off' or  n_coal != 'off':
            thermal_case = 1
 
         # gravity

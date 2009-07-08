@@ -106,17 +106,19 @@ class FluidCharacteristicsModel(Variables, Model):
         Return node and model of choosen thermophysical model
         """
         modelList = []
-        node1 = self.node_models.xmlGetNode('gas_combustion',  'model')
-        node2 = self.node_models.xmlGetNode('pulverized_coal', 'model')
-        node3 = self.node_models.xmlGetNode('joule_effect',    'model')
-        node4 = self.node_models.xmlGetNode('thermal_scalar',  'model')
+        node1 = self.node_models.xmlGetNode('gas_combustion',    'model')
+        node2 = self.node_models.xmlGetNode('pulverized_coal',   'model')
+        node3 = self.node_models.xmlGetNode('joule_effect',      'model')
+        node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
+        node5 = self.node_models.xmlGetNode('atmospheric_flows', 'model')
 
-        for node in (node1, node2, node3, node4):
-            if node['model'] == "":
-                node['model'] = "off"
-            if node['model'] != 'off':
-                modelList.append(node['model'])
-                nodeThermal = node
+        for node in (node1, node2, node3, node4, node5):
+            if node:
+                if node['model'] == "":
+                    node['model'] = "off"
+                if node['model'] != 'off':
+                    modelList.append(node['model'])
+                    nodeThermal = node
 
         if len(modelList) > 1:
             raise ValueError, "Erreur de model thermique dans le fichier XML"
@@ -133,16 +135,21 @@ class FluidCharacteristicsModel(Variables, Model):
         (also called by NumericalParamGlobalView and TimeStepView)
         """
         d = {}
-        d['joule_effect']    = 'off'
-        d['gas_combustion']  = 'off'
-        d['pulverized_coal'] = 'off'
-        d['thermal_scalar']  = 'off'
+        d['joule_effect']      = 'off'
+        d['gas_combustion']    = 'off'
+        d['pulverized_coal']   = 'off'
+        d['thermal_scalar']    = 'off'
+        d['atmospheric_flows'] = 'off'
 
         node, model = self.getThermalModel()
         if node:
             d[node.el.tagName] = model
 
-        return d['joule_effect'], d['thermal_scalar'], d['gas_combustion'], d['pulverized_coal']
+        return d['atmospheric_flows'], \
+               d['joule_effect'],      \
+               d['thermal_scalar'],    \
+               d['gas_combustion'],    \
+               d['pulverized_coal']
 
 
     def getInitialValue(self, tag):
@@ -294,7 +301,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        assert mdl.getThermoPhysicalModel() == ('off', 'temperature_celsius', 'off', 'off'),\
+        assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off'),\
         'Could not get thermophysical models in FluidCaracteristicsModel'
 
     def checkSetandGetInitialValue(self):

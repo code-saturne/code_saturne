@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -29,46 +29,39 @@
 #define __CS_GUI_RADIATIVE_TRANSFER_H__
 
 /*============================================================================
- * Reader of the parameters file: radiative transfer
+ * Management of the GUI parameters file: radiative transfer
  *============================================================================*/
-
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-
 #include "cs_base.h"
-
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*============================================================================
- * C API public functions
- *============================================================================*/
-
-/*============================================================================
- * Fortran API public functions
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray1, UIRAY1) (int *const nbrayb,
-                                int *const nbrayf,
-                                int *const nphas,
-                                int *const irayon,
+void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
                                 int *const isuird,
                                 int *const ndirec,
                                 int *const nfreqr,
-                                int *const iimpar,
                                 int *const idiver,
-                                int *const iimlum,
-                                int *const irayvp,
-                                int *const irayvf);
+                                int *const iimpar,
+                                int *const iimlum);
+
+
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
 
 void CS_PROCF(fcnmra, FCNMRA)
 (
@@ -78,6 +71,10 @@ void CS_PROCF(fcnmra, FCNMRA)
  CS_ARGF_SUPP_CHAINE
 );
 
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
+
 void CS_PROCF(cfnmra, CFNMRA)
 (
  char          *const fstr,    /* --> Fortran string */
@@ -85,6 +82,10 @@ void CS_PROCF(cfnmra, CFNMRA)
  int           *const var_id   /* --> Variable Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
+
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
 
 
 void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
@@ -110,9 +111,41 @@ void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
                                       double *const xlamp,
                                       double *const rcodcl);
 
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
+
 
 void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
                                 const    int *const ncel);
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
+                                int *const nphas,
+                                int *const iirayo,
+                                int *const irayvf);
+
+/*-----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of radiative transfer
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
+                                const int *const nprayb,
+                                const int *const nphasc,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const ilumin,
+                                const int *const iqx,
+                                const int *const iqy,
+                                const int *const iqz,
+                                const int *const itsre,
+                                const int *const itsri,
+                                const int *const iabs,
+                                const int *const iemi,
+                                const int *const icak);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.

@@ -152,6 +152,11 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
             expression = ""
             for p,q in required:
                 expression += p + " = \n"
+        else:
+            while expression[0] in (" ", "\n", "\t"):
+                expression = expression[1:]
+            while expression[-1] in (" ", "\n", "\t"):
+                expression = expression[:-1]
 
         # Predefined symbols for the mathematical expression
 
@@ -184,6 +189,8 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<b>sinh</b>: hyperbolic sine<br>"\
                   "<b>tanh</b>: hyperbolic tangent<br>"\
                   "<b>abs</b>: absolute value<br>"\
+                  "<b>mod</b>: modulo<br>"\
+                  "<b>int</b>: floor<br>"\
                   "<b>min</b>: minimum<br>"\
                   "<b>max</b>: maximum<br>"\
                   "<br>"\
@@ -193,7 +200,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<br>"\
                   "<big><u>Operators and statements:</u></big><br>"\
                   "<b><code> + - * / ^ </code></b><br>"\
-                  "<b><code> &lt; &gt; &lt;= &gt;= == != && || </code></b><br>"\
+                  "<b><code>! &lt; &gt; &lt;= &gt;= == != && || </code></b><br>"\
                   "<b><code>while if else</code></b><br>"\
                   "")
 

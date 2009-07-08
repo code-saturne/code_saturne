@@ -767,22 +767,23 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     @pyqtSignature("")
     def slotAddFromSalome(self):
         """
-	Create a new location with a selection criteria from Salome
-	"""
-	try:
-	   from SalomeHandler import BoundaryGroup, VolumeGroup
-	except:
-	   return
+        When GUI is embeded in the Salome desktop. Add selection criteria from
+        graphical selection in the VTK viwver, or in the ObjectBrowser.
+        """
+        if self.case['salome']:
+            from SalomeHandler import BoundaryGroup, VolumeGroup
 
-        if self.zoneType == 'VolumicZone':
-            loc = BoundaryGroup()
-        elif self.zoneType == 'BoundaryZone':
-            loc = VolumeGroup()
+            log.debug("slotAddFromSalome: zoneType -> %s" % self.zoneType)
+            if self.zoneType == 'VolumicZone':
+                loc = VolumeGroup()
+            elif self.zoneType == 'BoundaryZone':
+                loc = BoundaryGroup()
 
-        if loc not in self.mdl.getLocalizationsZonesList():
-            zone = Zone(self.zoneType, localization = loc)
-            self.mdl.addZone(zone)
-            self.modelLocalization.addItem(zone)
+            log.debug("slotAddFromSalome: selection criteria -> %s" % loc)
+            if loc not in self.mdl.getLocalizationsZonesList():
+                zone = Zone(self.zoneType, localization = loc)
+                self.mdl.addZone(zone)
+                self.modelLocalization.addItem(zone)
 
 
     @pyqtSignature("const QModelIndex &, const QModelIndex &")

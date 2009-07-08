@@ -151,6 +151,7 @@ include "pointe.h"
 include "albase.h"
 include "period.h"
 include "parall.h"
+include "ihmpre.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
@@ -335,6 +336,18 @@ if (imatis.eq.1) then
    rdevel , rtuser , ra     )
 
 else
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+    call uiphyv                                                    &
+    !===========
+  ( ncel, ncelet, nscaus,                                         &
+    irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
+    isca, iscalt, iscavr, ipproc,                                 &
+    ro0,  cp0,    rtp,    propce)
+  endif
 
 !     Utilisateur standard
   call usphyv                                                     &
@@ -705,6 +718,21 @@ enddo
 !===============================================================================
 
 if (iale.eq.1) then
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uivima                         &
+    !==========                         
+  ( ncel,                             &
+    propce(1,ipproc(ivisma(1))),      &
+    propce(1,ipproc(ivisma(2))),      &
+    propce(1,ipproc(ivisma(3))),      &
+    xyzcen, dtref, ttcabs, ntcabs )
+
+  endif
 
   call usvima                                                     &
   !==========

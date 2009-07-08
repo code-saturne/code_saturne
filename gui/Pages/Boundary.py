@@ -36,11 +36,20 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
 from Base.XMLvariables import Model
 from Base.XMLmodel import ModelTest
 from Base.XMLengine import *
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalScalarModel import ThermalScalarModel
+
+#-------------------------------------------------------------------------------
+# log config
+#-------------------------------------------------------------------------------
+
+logging.basicConfig()
+log = logging.getLogger("Boundary")
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -67,17 +76,20 @@ class Boundary(object) :
         elif nature == 'wall':
             return WallBoundary.__new__(WallBoundary, label, case)
         elif nature == 'radiative_wall':
-            Model().isNotInList(case.xmlInitNode('radiative_transfer')['model'], ("off",))
+            from ThermalRadiationModel import ThermalRadiationModel
+            Model().isNotInList(ThermalRadiationModel(case).getRadiativeModel(), ("off",))
             return RadiativeWallBoundary.__new__(RadiativeWallBoundary, label, case)
         elif nature == 'mobile_boundary':
             return MobilWallBoundary.__new__(MobilWallBoundary, label, case)
         elif nature == 'coupling_mobile_boundary':
             return CouplingMobilWallBoundary.__new__(CouplingMobilWallBoundary, label, case)
+        elif nature == 'meteo_inlet' or nature == 'meteo_outlet':
+            return MeteoBoundary.__new__(MeteoBoundary, label, case)
         else :
             raise ValueError, "Unknown boundary nature: " + nature
 
 
-    def __init__(self, nature , label, case) :
+    def __init__(self, nature, label, case) :
         """
         """
         self._label = label
@@ -88,14 +100,30 @@ class Boundary(object) :
 
         self.sca_model = DefineUserScalarsModel(self._case)
 
-        #
         # Create nodes
-        if nature not in ["coal_inlet", "radiative_wall", "mobile_boundary", "coupling_mobile_boundary"]:
+        if nature not in ["coal_inlet",
+                          "radiative_wall",
+                          "mobile_boundary",
+                          "coupling_mobile_boundary",
+                          "meteo_inlet",
+                          "meteo_outlet"]:
             self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode(nature, label = label)
-        elif nature == "coal_inlet":
-            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
-        elif nature in ["radiative_wall", "mobile_boundary", "coupling_mobile_boundary"]:
-            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
+
+        else:
+            if nature == "coal_inlet":
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+    
+            elif nature in ["radiative_wall",
+                            "mobile_boundary",
+                            "coupling_mobile_boundary"]:
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
+    
+            elif nature == "meteo_inlet":
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+    
+            elif nature == "meteo_outlet":
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
+
         self._initBoundary()
 
 
@@ -141,7 +169,7 @@ class Boundary(object) :
         self.boundNode.xmlRemoveNode()
 
 
-class InletBoundary(Boundary) :
+class InletBoundary(Boundary):
     """
     """
     def __new__(cls, label, case) :
@@ -155,164 +183,153 @@ class InletBoundary(Boundary) :
         """
         Initialize the boundary, add nodes in the boundary node
         """
-        self.__velocityChoices = [ 'norm', 'flow1', 'flow2', 
-                                   'norm+direction', 'flow1+direction', 'flow2+direction']
+        self.__velocityChoices = ['norm', 'flow1', 'flow2',
+                                  'norm_formula', 'flow1_formula', 'flow2_formula']
+        self.__directionChoices = ['normal', 'coordinates', 'formula']
+        self.__directionTags = ['direction_x', 'direction_y', 'direction_z', 'direction_formula']
         self.__turbulenceChoices = ['hydraulic_diameter', 'turbulent_intensity']
-        self.__flowTagList = ['flow1', 'flow2', 'flow1+direction', 'flow2+direction']
-        self.__componentsList = ['direction_x', 'direction_y', 'direction_z']
 
         self.th_model = ThermalScalarModel(self._case)
 
         # Initialize nodes if necessary
-        self.getVelocityChoice()
 
-        # Turbulence
+        self.getVelocityChoice()
+        self.getDirectionChoice()
         self.getTurbulenceChoice()
 
-        # Scalars
         for label in self.sca_model.getScalarLabelsList():
             self.getScalar(label)
 
         from CoalCombustionModel import CoalCombustionModel
         if CoalCombustionModel(self._case).getCoalCombustionModel() =="off":
-            self.boundNode.xmlRemoveChild('coal_flow')
-            n = self.boundNode.xmlGetNode('temperature')
-            if n:
-                n.xmlRemoveNode()
+            self.boundNode.xmlRemoveChild('coal')
+            self.boundNode.xmlRemoveChild('temperature')
 
 
-    def __deleteNormNodes(self, VelocityNode):
-        """ Delete nodes which depends of norm"""
-        node = VelocityNode.xmlGetChildNode('norm')
-        if node :
-            node.xmlRemoveNode()
-
-
-    def __deleteFlow1Nodes(self, VelocityNode):
-        """ Delete nodes which depends of mass flow"""
-        node = VelocityNode.xmlGetChildNode('flow1')
-        if node :
-            node.xmlRemoveNode()
-
-
-    def __deleteFlow2Nodes(self, VelocityNode):
-        """ Delete nodes which depends of volumic flow"""
-        node = VelocityNode.xmlGetChildNode('flow2')
-        if node :
-            node.xmlRemoveNode()
-
-
-    def isDirection(self):
-        """ verify if direction is selected or not"""
-        dir = 'off'
-        node = self.boundNode.xmlGetNode('velocity_pressure')
-
-        for component in self.__componentsList:
-            value = node.xmlGetChildDouble(component)
-            if value != None :
-                dir = 'on'
-
-        return dir
-
-
-    def defaultValues(self):
+    def __defaultValues(self):
         """
         Default values
         """
         dico = {}
         dico['velocityChoice'] = 'norm'
+        dico['directionChoice'] = 'normal'
         dico['turbulenceChoice'] = 'hydraulic_diameter'
         dico['hydraulic_diameter'] = 1
         dico['turbulent_intensity'] = 2
         dico['velocity'] = 0.0
-        dico['flow'] = 1
+        dico['flow1'] = 1
+        dico['flow2'] = 1
         dico['norm'] = 1
+        dico['flow1_formula'] = "q_m = 1;"
+        dico['flow2_formula'] = "q_v = 1;"
+        dico['norm_formula'] = "u_norm = 1;"
+        dico['direction_x'] = 0.0
+        dico['direction_y'] = 0.0
+        dico['direction_z'] = 0.0
+        dico['direction_formula'] = "dir_x = 1;\ndir_y = 0;\ndir_z = 0;\n"
         dico['scalar'] = 0.0
         dico['scalarChoice'] = 'dirichlet'
 
         return dico
 
 
-    def deleteDirectionNodes(self):
-        """ Delete nodes which depends of directions"""
-        self.updateVelocityChoiceForDirection(0)
-        VelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        node = VelocityNode.xmlGetChildNode('direction_x')
-        if node :
-            node.xmlRemoveNode()
-        node = VelocityNode.xmlGetChildNode('direction_y')
-        if node :
-            node.xmlRemoveNode()
-        node = VelocityNode.xmlGetChildNode('direction_z')
-        if node :
-            node.xmlRemoveNode()
+    def __initChoiceForVelocityAndDirection(self):
+        """
+        Get the choice of velocity and direction.
+        """
+        node = self.boundNode.xmlInitNode('velocity_pressure', 'choice', 'direction')
+        choice = node['choice']
+        if not choice:
+            choice = self.__defaultValues()['velocityChoice']
+            self.setVelocityChoice(choice)
+        dir = node['direction']
+        if not dir:
+            dir = self.__defaultValues()['directionChoice']
+            self.setDirectionChoice(dir)
+        return choice, dir
 
-        # update choice of velocity
-        choice = self.getVelocityChoice()
-        choice = string.split(choice, '+')[0]
-        self.setVelocityChoice(choice)
+
+    def getVelocityChoice(self):
+        """
+        Get the choice of velocity.
+        """
+        choice, dir = self.__initChoiceForVelocityAndDirection()
+        return choice
+
+
+    def getDirectionChoice(self):
+        """
+        Get the choice of direction.
+        """
+        choice, dir = self.__initChoiceForVelocityAndDirection()
+        return dir
 
 
     def getVelocity(self):
         """
-        Get value of velocity beyond choice - Global method for the view
+        Get value of velocity beyond choice.
         """
         choice = self.getVelocityChoice()
         Model().isInList(choice, self.__velocityChoices)
-        if choice in ('norm', 'norm+direction'):
-            value = self.getNorm()
-        elif choice in ('flow1', 'flow1+direction'):
-            value = self.getFlow('flow1')
-        elif choice in ('flow2', 'flow2+direction'):
-            value = self.getFlow('flow2')
+
+        XMLVelocityNode = self.boundNode.xmlGetNode('velocity_pressure')
+
+        if choice in ('norm', 'flow1', 'flow2'):
+            value = XMLVelocityNode.xmlGetChildDouble(choice)
+        elif choice in ('norm_formula', 'flow1_formula', 'flow2_formula'):
+            value = XMLVelocityNode.xmlGetChildString(choice)
+        if value == None:
+            value = self.__defaultValues()[choice]
+            self.setVelocity(value)
 
         return value
 
 
     def setVelocity(self, value):
         """
-        Set value of velocity beyond choice - Global method for the view
+        Set value of velocity.
         """
-        Model().isFloat(value)
-
         choice = self.getVelocityChoice()
         Model().isInList(choice, self.__velocityChoices)
 
-        if choice in ('norm', 'norm+direction'):
-            self.setNorm(value)
-        elif choice in ('flow1', 'flow1+direction'):
-            self.setFlow('flow1', value)
+        if choice in ('norm', 'flow1', 'flow2'):
+            Model().isFloat(value)
 
-        elif choice in ('flow2', 'flow2+direction'):
-            self.setFlow('flow2', value)
+        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
+        XMLVelocityNode.xmlSetData(choice, value)
 
 
-    def getVelocityChoice(self):
+    def getDirection(self, component):
         """
-        Get the choice velocity
+        Get the component velocity
         """
-        node = self.boundNode.xmlInitNode('velocity_pressure', 'choice')
-        choice = node['choice']
-        if not node['choice']:
-            choice = self.defaultValues()['velocityChoice']
-            self.setVelocityChoice(choice)
+        Model().isInList(component, self.__directionTags)
 
-        return choice
+        XMLVelocityNode = self.boundNode.xmlGetNode('velocity_pressure')
+
+        if XMLVelocityNode['direction'] == 'coordinates':
+            Model().isInList(component, ('direction_x', 'direction_y', 'direction_z'))
+            value = XMLVelocityNode.xmlGetChildDouble(component)
+        elif XMLVelocityNode['direction'] == 'formula':
+            Model().isInList(component, ('direction_formula',))
+            value = XMLVelocityNode.xmlGetChildString(component)
+
+        if value == None :
+            value = self.__defaultValues()[component]
+            self.setDirection(component, value)
+        return value
 
 
-    def updateVelocityChoiceForDirection(self, dir):
+    def setDirection(self, component, value):
         """
-        Update choice of velocity beyond dir=1 (with direction) or dir=0 (without direction)
+        Set the component velocity for fieldLabel
         """
-        Model().isInList(dir, (0,1))
-        if dir == 1:
-            choice = self.getVelocityChoice()
-            if choice[-9:] != 'direction':
-                self.setVelocityChoice(choice + "+" + 'direction')
-        elif dir == 0:
-            choice = self.getVelocityChoice()
-            if choice[-9:] == 'direction':
-                self.setVelocityChoice(choice[:-10])
+        Model().isInList(component, self.__directionTags)
+        if component != 'direction_formula':
+            Model().isFloat(value)
+
+        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
+        XMLVelocityNode.xmlSetData(component, value)
 
 
     def setVelocityChoice(self, value):
@@ -321,86 +338,46 @@ class InletBoundary(Boundary) :
         """
         Model().isInList(value, self.__velocityChoices)
 
-        if self.isDirection() == 'on' and value[-9:] != 'direction':
-            value = value + "+" + 'direction'
-        #
         # Check if value is a new velocity choice value
         XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
         if XMLVelocityNode['choice'] != None :
             if XMLVelocityNode['choice'] == value:
                 return
-        #
+
         # Update velocity choice
         XMLVelocityNode['choice'] = value
-        #
-        # Velocities updating
-        if value == 'norm' :
-            #
-            # Create norm node if necessary
-            self.getNorm()
+        self.getVelocity()
 
-            # Delete 'flow1', 'flow2' and 'direction' nodes
-            self.__deleteFlow1Nodes(XMLVelocityNode)
-            self.__deleteFlow2Nodes(XMLVelocityNode)
-            self.deleteDirectionNodes()
+        for tag in self.__velocityChoices:
+            if tag != value:
+                XMLVelocityNode.xmlRemoveChild(tag)
 
-        elif value == 'norm+direction' :
-            #
-            # Create norm node if necessary
-            self.getNorm()
-            #
-            # Create direction nodes if necessary
+
+    def setDirectionChoice(self, value):
+        """
+        Set the direction of the flow definition according to choice.
+        """
+        Model().isInList(value, self.__directionChoices)
+
+        # Check if value is a new direction choice
+        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
+        if XMLVelocityNode['direction'] != None :
+            if XMLVelocityNode['direction'] == value:
+                return
+
+        # Update direction choice
+        XMLVelocityNode['direction'] = value
+
+        if value == 'coordinates':
             self.getDirection('direction_x')
             self.getDirection('direction_y')
             self.getDirection('direction_z')
-            #
-            # Delete 'flow1' and 'flow2'" nodes
-            self.__deleteFlow1Nodes(XMLVelocityNode)
-            self.__deleteFlow2Nodes(XMLVelocityNode)
+            XMLVelocityNode.xmlRemoveChild('direction_formula')
 
-        elif value == 'flow1' :
-            # Create flow1 node if necessary
-            self.getFlow('flow1')
-
-            # Delete 'norm', 'flow2' and 'directio'n nodes
-            self.__deleteNormNodes(XMLVelocityNode)
-            self.__deleteFlow2Nodes(XMLVelocityNode)
-            self.deleteDirectionNodes()
-
-        elif value == 'flow1+direction' :
-            # Create flow1 node if necessary
-            self.getFlow('flow1')
-
-            # Create direction nodes if necessary
-            self.getDirection('direction_x')
-            self.getDirection('direction_y')
-            self.getDirection('direction_z')
-            #
-            # Delete 'norm', 'flow2'nodes
-            self.__deleteNormNodes(XMLVelocityNode)
-            self.__deleteFlow2Nodes(XMLVelocityNode)
-
-        elif value == 'flow2' :
-            # Create flow2 node if necessary
-            self.getFlow('flow2')
-
-            # Delete 'norm', 'flow1' and 'directio'n nodes
-            self.__deleteNormNodes(XMLVelocityNode)
-            self.__deleteFlow1Nodes(XMLVelocityNode)
-            self.deleteDirectionNodes()
-
-        elif value == 'flow2+direction' :
-            # Create flow2 node if necessary
-            self.getFlow('flow2')
-
-            # Create direction nodes if necessary
-            self.getDirection('direction_x')
-            self.getDirection('direction_y')
-            self.getDirection('direction_z')
-            #
-            # Delete 'norm', 'flow2'nodes
-            self.__deleteNormNodes(XMLVelocityNode)
-            self.__deleteFlow1Nodes(XMLVelocityNode)
+        elif value == 'formula':
+            self.getDirection('direction_formula')
+            for tag in ('direction_x', 'direction_y', 'direction_z'):
+                XMLVelocityNode.xmlRemoveChild(tag)
 
 
     def getTurbulenceChoice(self):
@@ -411,7 +388,7 @@ class InletBoundary(Boundary) :
 
         choice = XMLTurbulenceNode['choice']
         if choice not in self.__turbulenceChoices :
-            choice = self.defaultValues()['turbulenceChoice']
+            choice = self.__defaultValues()['turbulenceChoice']
             self.setTurbulenceChoice(choice)
 
         return choice
@@ -430,19 +407,13 @@ class InletBoundary(Boundary) :
                 return
 
         XMLTurbulenceNode['choice'] = value
-        #
+
         # Update values
         if value == 'hydraulic_diameter' :
             self.getHydraulicDiameter()
-            #
-            # Delete intensity node
-            node = XMLTurbulenceNode.xmlGetChildNode('turbulent_intensity')
-            if node :
-                node.xmlRemoveNode()
+            XMLTurbulenceNode.xmlRemoveChild('turbulent_intensity')
 
         elif value == 'turbulent_intensity' :
-            #
-            # Create velocities nodes if necessary
             self.getHydraulicDiameter()
             self.getTurbulentIntensity()
 
@@ -455,7 +426,7 @@ class InletBoundary(Boundary) :
         Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
         value = XMLTurbulenceNode.xmlGetDouble('hydraulic_diameter')
         if value == None :
-            value = self.defaultValues()['hydraulic_diameter']
+            value = self.__defaultValues()['hydraulic_diameter']
             self.setHydraulicDiameter(value)
         return value
 
@@ -467,7 +438,7 @@ class InletBoundary(Boundary) :
         Model().isStrictPositiveFloat(value)
 
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
-        Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
+        Model().isInList(XMLTurbulenceNode['choice'], self.__turbulenceChoices)
         XMLTurbulenceNode.xmlSetData('hydraulic_diameter', value)
 
 
@@ -479,7 +450,7 @@ class InletBoundary(Boundary) :
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
         value = XMLTurbulenceNode.xmlGetDouble('turbulent_intensity')
         if value == None :
-            value = self.defaultValues()['turbulent_intensity']
+            value = self.__defaultValues()['turbulent_intensity']
             self.setTurbulentIntensity(value)
 
         return value
@@ -496,91 +467,6 @@ class InletBoundary(Boundary) :
         XMLTurbulenceNode.xmlSetData('turbulent_intensity', value)
 
 
-    def getFlow(self, tag):
-        """
-        Get value for mass flow ('flow1') or volumic flow('flow2')
-        """
-        Model().isInList(tag, self.__flowTagList)
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-
-        flow = XMLVelocityNode.xmlGetChildDouble(tag)
-
-        if flow == None:
-            flow = self.defaultValues()['flow']
-            self.setFlow(tag, flow)
-        return flow
-
-
-    def setFlow(self, tag, value):
-        """
-        Set value for mass flow ('flow1') or volumic flow('flow2')
-        """
-        Model().isInList(tag, self.__flowTagList)
-        Model().isFloat(value)
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-
-        # Flow updating
-        XMLVelocityNode.xmlSetData(tag, value)
-
-
-    def getNorm(self):
-        """
-        Get norm for velocity
-        """
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        Model().isInList(XMLVelocityNode['choice'], ('norm', 'norm+direction'))
-
-        norm = XMLVelocityNode.xmlGetDouble('norm')
-        if norm == None:
-            norm = self.defaultValues()['norm']
-            self.setNorm(norm)
-        return norm
-
-
-    def setNorm(self, value):
-        """
-        Set norm for velocity
-        """
-        Model().isFloat(value)
-
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        Model().isInList(XMLVelocityNode['choice'], ('norm', 'norm+direction'))
-
-        # Flow updating
-        XMLVelocityNode.xmlSetData('norm', value)
-
-
-    def getDirection(self, component):
-        """
-        Get the component velocity
-        """
-        Model().isInList(component, self.__componentsList)
-
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        Model().isInList(XMLVelocityNode['choice'], ('norm+direction', 'flow1+direction', 'flow2+direction'))
-
-        # Get velocity
-        value = XMLVelocityNode.xmlGetChildDouble(component)
-        if value == None :
-            value = self.defaultValues()['velocity']
-            self.setDirection(component, value)
-        return value
-
-
-    def setDirection(self, component, value):
-        """
-        Set the component velocity for fieldLabel
-        """
-        Model().isInList(component, self.__componentsList)
-        Model().isFloat(value)
-
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        Model().isInList(XMLVelocityNode['choice'], ('norm+direction', 'flow1+direction', 'flow2+direction'))
-
-        # Update velocity
-        XMLVelocityNode.xmlSetData(component, value)
-
-
     def getScalar(self, scalarLabel) :
         """
         Get scalar value
@@ -594,7 +480,7 @@ class InletBoundary(Boundary) :
 
         value = scalarNode.xmlGetChildDouble('dirichlet')
         if value == None :
-            value = self.defaultValues()['scalar']
+            value = self.__defaultValues()['scalar']
             self.setScalar(scalarLabel, value)
         return value
 
@@ -622,6 +508,70 @@ class InletBoundary(Boundary) :
         self.setScalar(label, value)
 
 
+#-------------------------------------------------------------------------------
+# Atmospheric flow inlet/outlet boundary.
+#-------------------------------------------------------------------------------
+
+class MeteoBoundary(Boundary) :
+    """
+    Atmospheric flow inlet/outlet boundary.
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def __defaultValues(self):
+        """
+        Default values
+        """
+        dico = {}
+        dico['meteo_data'] = 'off'
+        dico['meteo_automatic'] = 'off'
+
+        return dico
+
+
+    def getMeteoDataStatus(self):
+        """
+        Return if one reads the meteorological data.
+        """
+        node = self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_data')
+        if node['status'] == None:
+            self.setMeteoDataStatus (self.__defaultValues()['meteo_data'])
+        return node['status']
+
+
+    def setMeteoDataStatus(self, status):
+        """
+        """
+        Model().isOnOff(status)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_data')['status'] = status
+
+
+    def getAutomaticNatureStatus(self):
+        """
+        The boundary could be set to an inlet or an outlet automaticaly.
+        """
+        node = self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_automatic')
+        if node['status'] == None:
+            self.setMeteoDataStatus (self.__defaultValues()['meteo_automatic'])
+        return node['status']
+
+
+    def setAutomaticNatureStatus(self, status):
+        """
+        The boundary could be set to an inlet or an outlet automaticaly.
+        """
+        Model().isOnOff(status)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_automatic')['status'] = status
+
+#-------------------------------------------------------------------------------
+# Coal flow inlet boundary
+#-------------------------------------------------------------------------------
+
 class CoalInletBoundary(InletBoundary) :
     """
     """
@@ -637,58 +587,66 @@ class CoalInletBoundary(InletBoundary) :
         Initialize the boundary, add nodes in the boundary node
         """
         InletBoundary._initBoundary(self)
-        self.typeList = ['airflow', 'coalflow']
+        self.typeList = ['oxydantFlow', 'coalFlow']
 
+        self.__updateCoalInfo()
+
+        # Initialize nodes if necessary
+        type = self.getInletType()
+        self.setInletType(type)
+
+
+    def __updateCoalInfo(self):
         from CoalThermoChemistry import CoalThermoChemistryModel
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self._case)
         self.coalNumber = coalThermoChModel.getCoals().getCoalNumber()
+        log.debug("__updateCoalInfo coalNumber: %i " % self.coalNumber)
         self.coalClassesNumber = []
-        for coal in range(0, self.coalNumber):
-            self.coalClassesNumber.append(coalThermoChModel.getCoals().getCoal(coal+1).getClassesNumber())
-
-        # Initialize nodes if necessary
-        self.getCoalType()
+        for c in range(0, self.coalNumber):
+            self.coalClassesNumber.append(coalThermoChModel.getCoals().getCoal(c+1).getClassesNumber())
+            log.debug("__updateCoalInfo number of classes: %i " % self.coalClassesNumber[c])
 
 
-    def _deleteCoalNodes(self):
+    def __deleteCoalNodes(self):
         """
         Delete all nodes udes for coal. Private method
         """
-        node = self.boundNode.xmlInitNode('velocity_pressure')
-        for n in node.xmlGetChildNodeList('coal_flow'):
+        node = self.boundNode.xmlGetNode('velocity_pressure')
+        for n in node.xmlGetChildNodeList('coal'):
             n.xmlRemoveNode()
 
 
-    def _getClassCoalRatio(self, coal, classe):
+    def __getClassCoalRatio(self, coal, classe):
         """
         Return ratio for classe for coal. Private method
         """
         Model().isInt(coal)
         Model().isInt(classe)
 
-        n = self.boundNode.xmlInitNode('velocity_pressure')
+        n = self.boundNode.xmlGetNode('velocity_pressure')
         num = '%2.2i' % (coal+1)
-        nc = n.xmlInitNode('coal_flow', name="coal"+num)
+        nc = n.xmlInitNode('coal', name="coal"+num)
         num = '%2.2i' % (classe+1)
         nratio = nc.xmlGetChildNode('ratio', name="class"+num)
         if nratio:
             ratio = nc.xmlGetChildDouble('ratio', name="class"+num)
         else:
+            #self.__updateCoalInfo()
             if self.coalClassesNumber[coal] > 1:
                 if classe == 0:
                     ratio = 100.
-                    self._setClassCoalRatio(ratio, coal, classe)
+                    self.__setClassCoalRatio(ratio, coal, classe)
                 else:
-                    ratio = self.defaultValues()['ratio']
-                    self._setClassCoalRatio(ratio, coal, classe)
+                    ratio = self.__defaultValues()['ratio']
+                    self.__setClassCoalRatio(ratio, coal, classe)
             else:
                 ratio = 100.
-                self._setClassCoalRatio(ratio, coal, classe)
+                self.__setClassCoalRatio(ratio, coal, classe)
 
         return ratio
 
 
-    def _setClassCoalRatio(self, value, coal, classe):
+    def __setClassCoalRatio(self, value, coal, classe):
         """
         Put value of ratio when several classes for coal. Private method
         """
@@ -696,84 +654,71 @@ class CoalInletBoundary(InletBoundary) :
         Model().isLowerOrEqual(value, 100.)
         Model().isInt(coal)
 
-        n = self.boundNode.xmlInitNode('velocity_pressure')
+        n = self.boundNode.xmlGetNode('velocity_pressure')
         num = '%2.2i' % (coal+1)
-        nc = n.xmlInitNode('coal_flow', name="coal"+ num)
+        nc = n.xmlInitNode('coal', name="coal"+ num)
 
         num = '%2.2i' % (classe+1)
         nc.xmlSetData('ratio', value, name="class"+ num)
 
 
-    def _verifySumRatios(self, coal, list):
-        """
-        Verify the addition of all ratios for one coal is equal to 100. Private method
-        """
-        Model().isInt(coal)
-        Model().isList(list)
-
-        som = 0.
-        for i in range(0, self.coalClassesNumber[coal]):
-            som += list[i]
-        Model().isFloatEqual(som, 100.)
-
-
-    def defaultValues(self):
+    def __defaultValues(self):
         """
         Default values
         """
         dico = {}
-        dico['flow'] = 1
+        dico['flow'] = 1.0
         dico['ratio'] = 0.0
+        dico['oxydant'] = 1
         from ReferenceValuesModel import ReferenceValuesModel
         dico['temperature'] = ReferenceValuesModel(self._case).getTemperature()
 
         return dico
 
 
-    def getCoalType(self):
+    def getInletType(self):
         """
-        Return type (air or air+coal) for velocities's boundary conditions for inlet coal flow.
+        Return type (oxydant or oxydant+coal) for velocities's boundary conditions for inlet coal flow.
         """
-        node = self.boundNode.xmlInitNode('velocity_pressure')
-        n = node.xmlGetChildNodeList('coal_flow')
-        if n:
-            type = "coalflow"
+        if self.boundNode.xmlGetNode('velocity_pressure').xmlGetChildNodeList('coal'):
+            type = "coalFlow"
         else:
-            type = "airflow"
+            type = "oxydantFlow"
         return type
 
 
-    def setCoalType(self, type):
+    def setInletType(self, type):
         """
-        Set type (air or air+coal) for velocities's boundary conditions for inlet coal flow.
+        Set type (oxydant or oxydant+coal) for velocities's boundary conditions for inlet coal flow.
         """
         Model().isInList(type, self.typeList)
-        node = self.boundNode.xmlInitNode('velocity_pressure')
 
-        self.getAirTemperature()
-        if type == "airflow":
-            self._deleteCoalNodes()
-        else:
-            for coal in range(0, self.coalNumber):
-                self.getCoalFlow(coal)
-                self.getCoalTemperature(coal)
-                self.getCoalRatios(coal)
+        self.getOxydantTemperature()
+
+        if type == "oxydantFlow":
+            self.__deleteCoalNodes()
+        elif type == "coalFlow":
+            #self.__updateCoalInfo()
+            for coal_idx in range(0, self.coalNumber):
+                self.getCoalFlow(coal_idx)
+                self.getCoalTemperature(coal_idx)
+                self.getCoalRatios(coal_idx)
 
 
-    def getCoalFlow(self, coal):
+    def getCoalFlow(self, coal_idx):
         """
         Return value of flow for coal
         """
-        Model().isInt(coal)
+        Model().isInt(coal_idx)
         
-        n = self.boundNode.xmlInitNode('velocity_pressure')
-        num = '%2.2i' % (coal+1)
-        n2 = n.xmlInitNode('coal_flow', name="coal"+num)
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        num = '%2.2i' % (coal_idx+1)
+        n2 = n.xmlInitNode('coal', name = "coal"+num)
         flow = n2.xmlGetDouble('flow1')
         if flow == None:
-            flow = self.defaultValues()['flow']
-            self.setCoalFlow(flow, coal)
-            
+            flow = self.__defaultValues()['flow']
+            self.setCoalFlow(flow, coal_idx)
+
         return flow
 
 
@@ -783,35 +728,52 @@ class CoalInletBoundary(InletBoundary) :
         """
         Model().isFloat(value)
         Model().isInt(coal)
-        
-        n = self.boundNode.xmlInitNode('velocity_pressure')
+
         num = '%2.2i' % (coal+1)
-        n2 = n.xmlGetNode('coal_flow', name="coal"+num)
-        if n2:
-            n2.xmlSetData('flow1',value)
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        n.xmlInitNode('coal', name = "coal"+num).xmlSetData('flow1', value)
 
 
-    def getAirTemperature(self) :
+    def getOxydantTemperature(self):
         """
-        Return value of the temperature for air for coal choice
+        Return value of the temperature for oxydant for coal choice
         """
-        n = self.boundNode.xmlInitNode('velocity_pressure')
+        n = self.boundNode.xmlGetNode('velocity_pressure')
         temperature = n.xmlGetChildDouble('temperature')
         if temperature == None:
-            temperature = self.defaultValues()['temperature']
-            self.setAirTemperature(temperature)
+            temperature = self.__defaultValues()['temperature']
+            self.setOxydantTemperature(temperature)
 
         return temperature
 
 
-    def setAirTemperature(self, value) :
+    def setOxydantNumber(self, value):
         """
-        Set value of the temperature for air for coal choice
+        Set value of the oxydant number.
+        """
+        Model().isInt(value)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('oxydant',value)
+
+
+    def getOxydantNumber(self):
+        """
+        Return value of oxydant number.
+        """
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        oxydant = n.xmlGetInt('oxydant')
+        if oxydant == None:
+            oxydant = self.__defaultValues()['oxydant']
+            self.setOxydantNumber(oxydant)
+
+        return oxydant
+
+
+    def setOxydantTemperature(self, value):
+        """
+        Set value of the temperature for oxydant for coal choice
         """
         Model().isFloat(value)
-        
-        n = self.boundNode.xmlInitNode('velocity_pressure')
-        n.xmlSetData('temperature',value)
+        self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
 
 
     def getCoalTemperature(self, coal):
@@ -819,42 +781,47 @@ class CoalInletBoundary(InletBoundary) :
         Return value of temperature for coal for coal choice
         """
         Model().isInt(coal)
-        
-        n = self.boundNode.xmlInitNode('velocity_pressure')
+
+        n = self.boundNode.xmlGetNode('velocity_pressure')
         num = '%2.2i' % (coal+1)
-        nt = n.xmlInitNode('coal_flow', name="coal"+ num)
+        nt = n.xmlInitNode('coal', name="coal"+ num)
         temperature = nt.xmlGetChildDouble('temperature')
         if temperature == None:
-            temperature = self.defaultValues()['temperature']
+            temperature = self.__defaultValues()['temperature']
             self.setCoalTemperature(temperature, coal)
-    
+
         return temperature
 
 
-    def setCoalTemperature(self, value, coal):
+    def setCoalTemperature(self, value, coal_idx):
         """
         Put value of temperature for coal for coal choice
         """
         Model().isFloat(value)
-        Model().isInt(coal)
-        
+        Model().isInt(coal_idx)
+
+        num = '%2.2i' % (coal_idx+1)
         n = self.boundNode.xmlInitNode('velocity_pressure')
-        num = '%2.2i' % (coal+1)
-        nc = n.xmlGetNode('coal_flow', name="coal"+ num)
-        if nc:
-            nc.xmlSetData('temperature',value)
+        n.xmlInitNode('coal', name="coal"+ num).xmlSetData('temperature',value)
 
 
-    def getCoalRatios(self, coal):
+    def getCoalRatios(self, coal_idx):
         """
         Put list of values of classe's ratio for one coal
         """
-        Model().isInt(coal)
-        list = []
+        Model().isInt(coal_idx)
+        #self.__updateCoalInfo()
+        Model().isLowerOrEqual(coal_idx, self.coalNumber-1)
 
-        for i in range(0, self.coalClassesNumber[coal]):
-            list.append(self._getClassCoalRatio(coal, i))
-        self._verifySumRatios(coal, list)
+        list = []
+        for i in range(0, self.coalClassesNumber[coal_idx]):
+            list.append(self.__getClassCoalRatio(coal_idx, i))
+
+        # check if sum of ratios of coal mass is equal to 100%
+        som = 0.
+        for i in range(0, self.coalClassesNumber[coal_idx]):
+            som += list[i]
+        Model().isFloatEqual(som, 100.)
 
         return list
 
@@ -863,26 +830,27 @@ class CoalInletBoundary(InletBoundary) :
         """
         Put list of values of classe's ratio for one coal
         """
+        #self.__updateCoalInfo()
         Model().isInt(coal)
         Model().isIntEqual(len(list), self.coalClassesNumber[coal])
         som = 0.
         for i in range(0, self.coalClassesNumber[coal]):
             som += list[i]
         Model().isFloatEqual(som, 100.)
-        
+
         n = self.boundNode.xmlInitNode('velocity_pressure')
         num = '%2.2i' % (coal+1)
-        nc = n.xmlInitNode('coal_flow', name="coal"+ num)
-        
+        nc = n.xmlInitNode('coal', name="coal"+ num)
+
         for i in range(0, len(list)):
             num = '%2.2i' % (i+1)
             nc.xmlSetData('ratio', list[i], name="class"+ num)
 
-   
-    # *********  the following methods are only used by CoalCombustionView *****
+
     def deleteCoalFlow(self, coal, nbCoals):
         """ 
-        delete coal_flow with name = coaln
+        Delete coal with name = coal.
+        Usefull only for CoalCombustionView.
         """
         Model().isInt(coal)
         Model().isInt(nbCoals)
@@ -890,46 +858,59 @@ class CoalInletBoundary(InletBoundary) :
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
             num = '%2.2i' % (coal+1)
-            n2 = n.xmlGetNode('coal_flow', name="coal"+ num)
+            n2 = n.xmlGetNode('coal', name="coal"+ num)
             # delete coal
             if n2:
                 n2.xmlRemoveNode()
                 # rename other coals
                 for icoal in range(coal+1, nbCoals):
-                    self._renameCoalFlow(icoal)
+                    self.__renameCoalFlow(icoal)
 
 
-    def _renameCoalFlow(self, coal):
+    def __renameCoalFlow(self, coal):
         """ 
-        coaln become coaln-1. Private method
-        """ 
+        coaln become coaln-1.
+        Usefull only for CoalCombustionView.
+       """ 
         Model().isInt(coal)
         
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
             num = '%2.2i' % (coal+1)
             newNum = '%2.2i' % coal
-            n2 = n.xmlGetNode('coal_flow', name="coal"+ num)
+            n2 = n.xmlGetNode('coal', name="coal"+ num)
             if n2:
                 n2['name'] = "coal"+newNum 
 
 
-    def deleteClassRatio(self, coal, classe, nbClasses):
+    def updateCoalRatios(self, coal):
         """ 
-        delete ratio with name = classe
-        """ 
+        Delete ratio with name = classe. Usefull only for CoalCombustionView.
+        """
         Model().isInt(coal)
-        Model().isInt(classe)
-        Model().isInt(nbClasses)
-        
+
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
             num = '%2.2i' % (coal+1)
-            n2 = n.xmlGetNode('coal_flow', name="coal"+num)
+            n2 = n.xmlGetNode('coal', name="coal"+num)
             if n2:
                 n2.xmlRemoveChild('ratio')
-                self.getCoalRatios(coal)
 
+            self.getCoalRatios(coal)
+
+
+    def deleteCoals(self):
+        """ 
+        Delete all information of coal combustion in boundary conditions.
+        """ 
+        n = self.boundNode.xmlGetNode('velocity_pressure')
+        n.xmlRemoveChild('oxydant')
+        n.xmlRemoveChild('coal')
+        n.xmlRemoveChild('temperature')
+
+#-------------------------------------------------------------------------------
+# Outlet boundary
+#-------------------------------------------------------------------------------
 
 class OutletBoundary(Boundary) :
     """
@@ -967,7 +948,7 @@ class OutletBoundary(Boundary) :
                 scalarNode.xmlRemoveChild(tt)
 
 
-    def defaultValues(self):
+    def __defaultValues(self):
         """
         Default values
         """
@@ -993,7 +974,7 @@ class OutletBoundary(Boundary) :
 
         choice = scalarNode['choice']
         if not choice:
-            choice = self.defaultValues()['scalarChoice']
+            choice = self.__defaultValues()['scalarChoice']
             self.setScalarChoice(label, choice)
             
         return choice
@@ -1038,7 +1019,7 @@ class OutletBoundary(Boundary) :
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
-            value = self.defaultValues()['scalar']
+            value = self.__defaultValues()['scalar']
             self.setScalar(label, value)
         return value
 
@@ -1103,7 +1084,7 @@ class OutletBoundary(Boundary) :
             self.setReferencePressure(self, 0.0)
         else:
             if node.xmlGetDouble('dirichlet', name='pressure') == None:
-                self.setReferencePressure(self.defaultValues()['pressure'])
+                self.setReferencePressure(self.__defaultValues()['pressure'])
 
 
     def getReferencePressure(self) :
@@ -1130,6 +1111,10 @@ class OutletBoundary(Boundary) :
             self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
 
+#-------------------------------------------------------------------------------
+# Symmetry boundary
+#-------------------------------------------------------------------------------
+
 class SymmetryBoundary(Boundary) :
     """
     """
@@ -1146,6 +1131,9 @@ class SymmetryBoundary(Boundary) :
         """
         pass
 
+#-------------------------------------------------------------------------------
+# Wall boundary
+#-------------------------------------------------------------------------------
 
 class WallBoundary(Boundary) :
     """
@@ -1200,7 +1188,7 @@ class WallBoundary(Boundary) :
                     scalarNode.xmlRemoveChild('exchange_coefficient')
 
 
-    def defaultValues(self):
+    def __defaultValues(self):
         """
         Default values
         """
@@ -1221,7 +1209,7 @@ class WallBoundary(Boundary) :
         node = self.boundNode.xmlInitNode('velocity_pressure', 'choice')
         choice = node['choice']
         if not choice:
-            choice = self.defaultValues()['velocityChoice']
+            choice = self.__defaultValues()['velocityChoice']
             self.setVelocityChoice(choice)
         return node['choice']
 
@@ -1261,17 +1249,17 @@ class WallBoundary(Boundary) :
         if n:
             u = node.xmlGetChildDouble('dirichlet', name='velocity_U')
         else:
-            u = self.defaultValues()['velocityValue']
+            u = self.__defaultValues()['velocityValue']
         n = node.xmlGetChildNode('dirichlet', name='velocity_V')
         if n:
             v = node.xmlGetChildDouble('dirichlet', name='velocity_V')
         else:
-            v = self.defaultValues()['velocityValue']
+            v = self.__defaultValues()['velocityValue']
         n = node.xmlGetChildNode('dirichlet', name='velocity_W')
         if n:
             w = node.xmlGetChildDouble('dirichlet', name='velocity_W')
         else:
-            w = self.defaultValues()['velocityValue']
+            w = self.__defaultValues()['velocityValue']
         self.setVelocities(u, v, w)
 
         return u, v, w
@@ -1327,7 +1315,7 @@ class WallBoundary(Boundary) :
             self.setRoughness(0.0)
         else:
             if node.xmlGetDouble('roughness') == None:
-                self.setRoughness(self.defaultValues()['roughness'])
+                self.setRoughness(self.__defaultValues()['roughness'])
 
 
     def getRoughness(self):
@@ -1369,7 +1357,7 @@ class WallBoundary(Boundary) :
 
         choice = scalarNode['choice']
         if not choice:
-            choice = self.defaultValues()['scalarChoice']
+            choice = self.__defaultValues()['scalarChoice']
             self.setScalarChoice(label, choice)
             
         return choice
@@ -1421,7 +1409,7 @@ class WallBoundary(Boundary) :
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
-            value = self.defaultValues()['scalar']
+            value = self.__defaultValues()['scalar']
             self.setScalar(label, value)
         return value
 
@@ -1459,7 +1447,7 @@ class WallBoundary(Boundary) :
         
         value = scalarNode.xmlGetChildDouble('dirichlet')
         if not value:
-            value = self.defaultValues()['scalarValue']
+            value = self.__defaultValues()['scalarValue']
             self.setScalarImposedValue(label, value)
 
         return value
@@ -1495,7 +1483,7 @@ class WallBoundary(Boundary) :
         
         value = scalarNode.xmlGetChildDouble('neumann')
         if not value:
-            value = self.defaultValues()['scalarValue']
+            value = self.__defaultValues()['scalarValue']
             self.setScalarImposedFlux(label, value)
 
         return value
@@ -1531,7 +1519,7 @@ class WallBoundary(Boundary) :
         
         value = scalarNode.xmlGetChildDouble('exchange_coefficient')
         if not value:
-            value = self.defaultValues()['scalarValue']
+            value = self.__defaultValues()['scalarValue']
             self.setScalarExchangeCoefficient(label, value)
 
         return value
@@ -1552,6 +1540,10 @@ class WallBoundary(Boundary) :
         
         scalarNode.xmlSetData('exchange_coefficient', value)
 
+
+#-------------------------------------------------------------------------------
+# Radiative wall boundary
+#-------------------------------------------------------------------------------
 
 class RadiativeWallBoundary(Boundary) :
     """
@@ -1592,19 +1584,19 @@ class RadiativeWallBoundary(Boundary) :
         return list
 
 
-    def defaultValues(self):
+    def __defaultValues(self):
         """
         Default values
         """
         dico = {}
-        dico['emissivity']  = 0.8
-        dico['thermal_conductivity']  = 3.0
-        dico['thickness']  = 0.10
-        dico['flux']  = 0.
-        dico['external_temperature_profile']  = 300.
-        dico['internal_temperature_profile']  = 300.
-        dico['choice_condition']  = 'itpimp'
-        dico['output_zone']  = 1
+        dico['emissivity'] = 0.8
+        dico['thermal_conductivity'] = 3.0
+        dico['thickness'] = 0.10
+        dico['flux'] = 0.
+        dico['external_temperature_profile'] = 300.
+        dico['internal_temperature_profile'] = 300.
+        dico['choice_condition'] = 'itpimp'
+        dico['output_zone'] = 1
         return dico
 
 
@@ -1615,7 +1607,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         choice = nod_ray_cond['choice']
         if not choice: 
-            choice = self.defaultValues()['choice_condition']
+            choice = self.__defaultValues()['choice_condition']
             self.setRadiativeChoice(choice)
         return choice
 
@@ -1631,7 +1623,7 @@ class RadiativeWallBoundary(Boundary) :
         list = self._getListValRay(choice)
         for i in list:
             if not nod_ray_cond.xmlGetChildNode(i):
-                nod_ray_cond.xmlSetData(i, self.defaultValues()[i])
+                nod_ray_cond.xmlSetData(i, self.__defaultValues()[i])
 
 
     def getEmissivity(self):
@@ -1641,7 +1633,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('emissivity')
         if not val:
-            val = self.defaultValues()['emissivity']
+            val = self.__defaultValues()['emissivity']
             self.setEmissivity(val)
         
         return val
@@ -1665,7 +1657,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('thermal_conductivity')
         if not val:
-            val = self.defaultValues()['thermal_conductivity']
+            val = self.__defaultValues()['thermal_conductivity']
             self.setThermalConductivity(val)
             
         return val
@@ -1688,7 +1680,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('thickness')
         if not val:
-            val = self.defaultValues()['thickness']
+            val = self.__defaultValues()['thickness']
             self.setThickness(val)
             
         return val
@@ -1711,7 +1703,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('external_temperature_profile')
         if not val:
-            val = self.defaultValues()['external_temperature_profile']
+            val = self.__defaultValues()['external_temperature_profile']
             self.setExternalTemperatureProfile(val)
 
         return val
@@ -1734,7 +1726,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('internal_temperature_profile')
         if not val:
-            val = self.defaultValues()['internal_temperature_profile']
+            val = self.__defaultValues()['internal_temperature_profile']
             self.setInternalTemperatureProfile(val)
 
         return val
@@ -1757,7 +1749,7 @@ class RadiativeWallBoundary(Boundary) :
 ##        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
 ##        val = nod_ray_cond.xmlGetChildDouble('flux')
 ##        if not val:
-##            val = self.defaultValues()['flux']
+##            val = self.__defaultValues()['flux']
 ##            self.setFlux(val)
         val = self.getValRay('flux')
         
@@ -1782,7 +1774,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         ival = nod_ray_cond.xmlGetInt('output_zone')
         if not ival:
-            ival = self.defaultValues()['output_zone']
+            ival = self.__defaultValues()['output_zone']
             self.setOutputRadiativeZone(ival)
 
         return ival
@@ -1810,7 +1802,7 @@ class RadiativeWallBoundary(Boundary) :
         else:
             val = nod_ray_cond.xmlGetDouble(rayvar)
         if not val:
-            val = self.defaultValues()[rayvar]
+            val = self.__defaultValues()[rayvar]
             self.setValRay(val, rayvar)
 
         return val
@@ -1829,7 +1821,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData(rayvar, val)
 
 #-------------------------------------------------------------------------------
-# MobilWallBoundary
+# Mobil wall boundary
 #-------------------------------------------------------------------------------
 
 class MobilWallBoundary(Boundary) :
@@ -2140,7 +2132,7 @@ class CouplingMobilWallBoundary(Boundary) :
         Get value of initial velocity Z from xml file.
         """ 
         return self._getDoubleData('initial_velocity', 'Z', self.setInitialVelocityZ)
- 
+
 
     # Matrix
     #-------   
@@ -2531,7 +2523,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         assert model != None, 'Could not instantiate CoalInletBoundary'
 
 
-    def checkSetAndGetCoalType(self):
+    def checkSetAndgetInletType(self):
         """Check whether the type of inlet coal could be set and get for coal inlet boundary."""
         from CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
@@ -2540,18 +2532,18 @@ class CoalInletBoundaryTestCase(ModelTest):
         coal_model = Boundary("coal_inlet", "charb1", self.case)
         node =  model._XMLBoundaryConditionsNode
         model.setVelocityChoice('norm')
-        coal_model.setCoalType('coalflow')
+        coal_model.setInletType('coalFlow')
 
         doc = '''<boundary_conditions>
                     <inlet label="charb1">
                         <velocity_pressure choice="norm">
                             <norm>1</norm>
                             <temperature>1273.15</temperature>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2560,12 +2552,12 @@ class CoalInletBoundaryTestCase(ModelTest):
                 </boundary_conditions>'''
         
         assert node == self.xmlNodeFromString(doc),\
-           'Could not set coalflow type for coal inlet boundary'
+           'Could not set coalFlow type for coal inlet boundary'
 
-        assert coal_model.getCoalType() == "coalflow",\
-           'Could not get coalflow type for coal inlet boundary'
+        assert coal_model.getInletType() == "coalFlow",\
+           'Could not get coalFlow type for coal inlet boundary'
            
-        coal_model.setCoalType('airflow')
+        coal_model.setInletType('oxydantFlow')
         doc1 = '''<boundary_conditions>
                     <inlet label="charb1">
                         <velocity_pressure choice="norm">
@@ -2578,14 +2570,14 @@ class CoalInletBoundaryTestCase(ModelTest):
                     </inlet>
                 </boundary_conditions>'''
         assert node == self.xmlNodeFromString(doc1),\
-           'Could not set airflow type for coal inlet boundary'
+           'Could not set oxydantFlow type for coal inlet boundary'
 
-        assert coal_model.getCoalType() == "airflow",\
-           'Could not get airflow type for coal inlet boundary'
+        assert coal_model.getInletType() == "oxydantFlow",\
+           'Could not get oxydantFlow type for coal inlet boundary'
 
 
-    def checkSetAndGetAirAndCoalTemperature(self):
-        """Check whether the temperature of air and coal could be set and get for coal inlet boundary."""
+    def checkSetAndGetOxydantAndCoalTemperature(self):
+        """Check whether the temperature of oxydant and coal could be set and get for coal inlet boundary."""
         from CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
 
@@ -2593,8 +2585,8 @@ class CoalInletBoundaryTestCase(ModelTest):
         coal_model = Boundary("coal_inlet", "charb1", self.case)
         node =  model._XMLBoundaryConditionsNode
         model.setVelocityChoice('norm')
-        coal_model.setCoalType('coalflow')
-        coal_model.setAirTemperature(500.)
+        coal_model.setInletType('coalFlow')
+        coal_model.setOxydantTemperature(500.)
         coal_model.setCoalTemperature(999.99, 0)
         
         doc = '''<boundary_conditions>
@@ -2602,11 +2594,11 @@ class CoalInletBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="norm">
                             <norm>1</norm>
                             <temperature>500.</temperature>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>1</flow1>
                                 <temperature>999.99</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2615,10 +2607,10 @@ class CoalInletBoundaryTestCase(ModelTest):
                 </boundary_conditions>'''
         
         assert node == self.xmlNodeFromString(doc),\
-           'Could not set air temperature for coal inlet boundary'
+           'Could not set oxydant temperature for coal inlet boundary'
 
-        assert coal_model.getAirTemperature() == 500.,\
-           'Could not get air temperature for coal inlet boundary'
+        assert coal_model.getOxydantTemperature() == 500.,\
+           'Could not get oxydant temperature for coal inlet boundary'
         
         assert coal_model.getCoalTemperature(0) == 999.99,\
            'Could not get coal temperature for coal inlet boundary'
@@ -2633,7 +2625,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         coal_model = Boundary("coal_inlet", "charb1", self.case)
         node =  model._XMLBoundaryConditionsNode
         model.setVelocityChoice('flow1')
-        coal_model.setCoalType('coalflow')
+        coal_model.setInletType('coalFlow')
         coal_model.setCoalFlow(123.5, 0)
 
         doc = '''<boundary_conditions>
@@ -2641,11 +2633,11 @@ class CoalInletBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="flow1">
                             <temperature>1273.15</temperature>
                             <flow1>1</flow1>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>123.5</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2690,9 +2682,9 @@ class CoalInletBoundaryTestCase(ModelTest):
         
         model.setVelocityChoice('flow1')
         model.setVelocity(12.5)
-        coal_model.setCoalType('coalflow')
+        coal_model.setInletType('coalFlow')
         coal_model.setCoalFlow(123.5, 0)
-        coal_model.setAirTemperature(500.)
+        coal_model.setOxydantTemperature(500.)
         coal_model.setCoalTemperature(999.99, 0)
 ##        coal_model.setCoalRatios(0, (45,))
         coal_model.setCoalRatios(1, (45, 55))
@@ -2704,17 +2696,17 @@ class CoalInletBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="flow1">
                             <temperature>500</temperature>
                             <flow1>12.5</flow1>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>123.5</flow1>
                                 <temperature>999.99</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
-                            <coal_flow name="coal02">
+                            </coal>
+                            <coal name="coal02">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">45</ratio>
                                 <ratio name="class02">55</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2765,9 +2757,9 @@ class CoalInletBoundaryTestCase(ModelTest):
         
         model.setVelocityChoice('flow1')
         model.setVelocity(12.5)
-        coal_model.setCoalType('coalflow')
+        coal_model.setInletType('coalFlow')
         coal_model.setCoalFlow(123.5, 0)
-        coal_model.setAirTemperature(500.)
+        coal_model.setOxydantTemperature(500.)
         coal_model.setCoalTemperature(999.99, 0)
         coal_model.setCoalRatios(1, (45, 55))
         coal_model.setCoalRatios(2, (10, 20, 70))
@@ -2778,24 +2770,24 @@ class CoalInletBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="flow1">
                             <temperature>500</temperature>
                             <flow1>12.5</flow1>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>123.5</flow1>
                                 <temperature>999.99</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
-                            <coal_flow name="coal02">
+                            </coal>
+                            <coal name="coal02">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">45</ratio>
                                 <ratio name="class02">55</ratio>
-                            </coal_flow>
-                            <coal_flow name="coal03">
+                            </coal>
+                            <coal name="coal03">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">10</ratio>
                                 <ratio name="class02">20</ratio>
                                 <ratio name="class03">70</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2812,18 +2804,18 @@ class CoalInletBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="flow1">
                             <temperature>500</temperature>
                             <flow1>12.5</flow1>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>123.5</flow1>
                                 <temperature>999.99</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
-                            <coal_flow name="coal02">
+                            </coal>
+                            <coal name="coal02">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">10</ratio>
                                 <ratio name="class02">20</ratio>
                                 <ratio name="class03">70</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
@@ -2833,24 +2825,24 @@ class CoalInletBoundaryTestCase(ModelTest):
                 
         assert node == self.xmlNodeFromString(doc1),\
            'Could not delete one coal for coal inlet boundary'
-           
-        coal_model.deleteClassRatio(1, 1, 3)
+        coal_model.updateCoalRatios(1)
+        coal_model.updateClassRatio(1)
         doc2 ='''<boundary_conditions>
                     <inlet label="charb1">
                         <velocity_pressure choice="flow1">
                             <temperature>500</temperature>
                             <flow1>12.5</flow1>
-                            <coal_flow name="coal01">
+                            <coal name="coal01">
                                 <flow1>123.5</flow1>
                                 <temperature>999.99</temperature>
                                 <ratio name="class01">100</ratio>
-                            </coal_flow>
-                            <coal_flow name="coal02">
+                            </coal>
+                            <coal name="coal02">
                                 <flow1>1</flow1>
                                 <temperature>1273.15</temperature>
                                 <ratio name="class01">100</ratio>
                                 <ratio name="class02">0</ratio>
-                            </coal_flow>
+                            </coal>
                         </velocity_pressure>
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>

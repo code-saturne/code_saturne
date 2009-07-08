@@ -168,7 +168,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelSteadyFlow.disableItem(str_model='on')
 
         self.modelLagrangian.disableItem(str_model='lagrangian') # to delete
-    
+
+        val = self.atmo.getAtmosphericFlowsModel()
+        self.modelAtmospheric.setItem(str_model=val)
+
         self.modelGasCombustionModel.setItem(str_model='off') # to delete
         self.modelGasCombustionModel.disableItem(str_model='ebu') # to delete
         self.modelGasCombustionModel.disableItem(str_model='d3p') # to delete
@@ -181,8 +184,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elec = self.elect.getElectricalModel()
         self.modelJouleEffect.setItem(str_model=elec)
 
-        self.modelPulverizedCoal.disableItem(str_model='coal_homo') # to delete
-        self.modelPulverizedCoal.disableItem(str_model='coal_homo2') # to delete
+        #self.modelPulverizedCoal.disableItem(str_model='coal_homo') # to delete
+        #self.modelPulverizedCoal.disableItem(str_model='coal_homo2') # to delete
         coal = self.pcoal.getCoalCombustionModel()
         self.modelPulverizedCoal.setItem(str_model=coal)
 
@@ -274,7 +277,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Change to NORMAL the state of the reactive flow OptionMenu buttons.
         """
         self.comboBoxSteadyFlow.setEnabled(True)
-        self.comboBoxLagrangian.setEnabled(True)
+        #self.comboBoxLagrangian.setEnabled(True)
         self.comboBoxGasCombustionModel.setEnabled(True)
         self.comboBoxPulverizedCoal.setEnabled(True)
         self.comboBoxJouleEffect.setEnabled(True)
@@ -287,7 +290,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Change to DISABLED the state of the reactive flow OptionMenu buttons.
         """
         self.comboBoxSteadyFlow.setEnabled(False)
-        self.comboBoxLagrangian.setEnabled(False)
+        #self.comboBoxLagrangian.setEnabled(False)
         self.comboBoxGasCombustionModel.setEnabled(False)
         self.comboBoxPulverizedCoal.setEnabled(False)
         self.comboBoxJouleEffect.setEnabled(False)
@@ -363,15 +366,24 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
         Called when the comboBoxAtmospheric changed
         """
-        atmospheric = self.__stringModelFromCombo('Atmospheric')
-        self.atmo.setAtmosphericFlowsModel(atmospheric)
-        self.browser.configureTree(self.case)
+        self.__activateComboBox()
 
-        if atmospheric != 'off': 
+        model = self.__stringModelFromCombo('Atmospheric')
+
+        if model != 'off':
+            # we inform that thermal scalar will be removed if it exists
+            th_label = self.scal.getThermalScalarLabel()
+            if th_label != '':
+                title = self.tr("Warning")
+                msg   = self.tr("This selection implies the destruction of the thermal scalar")
+                QMessageBox.warning(self, title, msg)
+
+            self.therm.setThermalModel('off')
             self.__disableComboBox()
             self.comboBoxAtmospheric.setEnabled(True)
-        else:
-            self.__activateComboBox()
+
+        self.atmo.setAtmosphericFlowsModel(model)
+        self.browser.configureTree(self.case)
 
 
     @pyqtSignature("const QString&")
@@ -410,10 +422,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('PulverizedCoal')
 
-        if model == 'coal_lagr':
-            self.modelLagrangian.disableItem(str_model='single_phase')
-        else:
-            self.modelLagrangian.enableItem(str_model='single_phase')
+        # WARNING: the 'coal_lagr' model is deprecated
+#        if model == 'coal_lagr':
+#            self.modelLagrangian.disableItem(str_model='single_phase')
+#        else:
+#            self.modelLagrangian.enableItem(str_model='single_phase')
 
         if model != 'off':
             # we inform that thermal scalar will be removed if it exists

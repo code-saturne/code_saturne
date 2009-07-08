@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -29,8 +29,12 @@
 #define __CS_GUI_UTIL_H__
 
 /*============================================================================
- * Reader of the parameters file: xpath request and utilities
+ * Management of the GUI parameters file: xpath request and utilities
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 
@@ -38,17 +42,16 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Public function prototypes
+/*============================================================================
+ * Public function prototypes for Fortran API
  *============================================================================*/
-
 
 /*-----------------------------------------------------------------------------
  * Return the information if the requested xml file is missing
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIHMP (ITURB, IDEUCH, IGRAKE, IGRAKI)
+ * SUBROUTINE CSIHMP (IIHMPR)
  * *****************
  *
  * INTEGER          IIHMPR   <--   1 if the file exists, 0 otherwise
@@ -56,6 +59,10 @@ BEGIN_C_DECLS
 
 void
 CS_PROCF (csihmp, CSIHMP) (int *const iihmpr);
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Load the xml file in memory. Return an error code for the main programme.
@@ -109,8 +116,8 @@ cs_xpath_add_all_elements(char **path);
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_element(       char **     path,
-                      const char *const element);
+cs_xpath_add_element(      char **     path,
+                     const char *const element);
 
 /*----------------------------------------------------------------------------
  * Add a list of elements (i.e. markup's label) to the path.
@@ -358,14 +365,6 @@ void
 cs_gui_strcpy_c2f(      char *const chainef,
                   const char *const chainec,
                   const int         lstrF);
-
-/*----------------------------------------------------------------------------*/
-
-/*
-int
-cs_gui_get_double_values(char    *const path,
-                         double **      values);
-*/
 
 /*----------------------------------------------------------------------------*/
 

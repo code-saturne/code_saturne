@@ -104,6 +104,16 @@ if ( ippmod(iatmos).eq.2 ) then
 
 endif
 
+!   - Interface Code_Saturne
+!     ======================
+
+if (iihmpr.eq.1) then
+
+  call uiatsc (ippmod, iatmos, itempp, itempl, itotwt, intdrp)
+  !==========
+
+endif
+
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)

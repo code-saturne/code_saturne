@@ -46,6 +46,7 @@ import unittest
 
 from Base.XMLvariables import Model
 from Base.XMLmodel     import  ModelTest
+from FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class
@@ -69,6 +70,7 @@ class AtmosphericFlowsModel(Model):
         Constructor.
         """
         self.__case = case
+        self.__fluidProp = FluidCharacteristicsModel(self.__case)
 
         models = case.xmlGetNode('thermophysical_models')
         self.__node_atmos  = models.xmlInitChildNode('atmospheric_flows')
@@ -79,6 +81,7 @@ class AtmosphericFlowsModel(Model):
         self.__default = {}
         self.__default[self.model] = AtmosphericFlowsModel.off
         self.__default[self.read_meteo_data] = AtmosphericFlowsModel.off
+        self.__default['meteo_data'] = "meteo"
 
 
     def setAtmosphericFlowsModel(self, model):
@@ -86,7 +89,7 @@ class AtmosphericFlowsModel(Model):
         Update the atmospheric flows model markup from the XML document.
         """
         self.isInList(model, self.__atmosphericModel)
-        self.__node_atmos[self.model]  = model
+        self.__node_atmos[self.model] = model
         self.__updateScalarAndProperty()
 
 
@@ -103,7 +106,7 @@ class AtmosphericFlowsModel(Model):
 
     def getMeteoDataStatus(self):
         """
-        Return if meteoData status is 'on' or 'off'
+        Return if reading meteo data status is 'on' or 'off'.
         """
         node = self.__node_atmos.xmlInitChildNode(self.read_meteo_data)
         if not node[self.status]:
@@ -114,46 +117,80 @@ class AtmosphericFlowsModel(Model):
 
     def setMeteoDataStatus(self, status):
         """
-        Set meteo data status to 'on' / 'off'
+        Set meteo data status to 'on' / 'off'.
         """
         self.isOnOff(status)
-        node = self.__node_atmos.xmlInitChildNode(self.read_meteo_data)
-        if status != node[self.status]:
-            node[self.status] = status
-            self.__updateScalarAndProperty()
+        self.__node_atmos.xmlInitChildNode(self.read_meteo_data)[self.status] = status
+
+        if status == 'off':
+            for tag in ['read_meteo_data', 'meteo_automatic']:
+                for node in self.__case.xmlGetNodeList(tag):
+                    node['status'] = "off"
+
+
+    def getMeteoDataFileName(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetString('meteo_data')
+        if f == None:
+            f = self.__default['meteo_data']
+            self.setMeteoDataFile(f)
+        return f
+
+
+    def setMeteoDataFileName(self, tag):
+        """
+        Set the name of the meteo data file.
+        """
+        self.__node_atmos.xmlSetData('meteo_data', tag)
 
 
     def __updateScalarAndProperty(self):
         """
         Update scalars and properties depending on model
         """
-        # Update only if getMeteoDataStatus is not off
+        node = self.__node_atmos
 
+        # Update only if getMeteoDataStatus is not off
         if self.getMeteoDataStatus() != AtmosphericFlowsModel.off:
 
             model = self.getAtmosphericFlowsModel()
-            node = self.__node_atmos
 
             if model == AtmosphericFlowsModel.dry:
                 self.__removeScalar(node, 'liquid_potential_temperature')
                 self.__removeScalar(node, 'total_water')
                 self.__removeScalar(node, 'number_of_droplets')
                 self.__removeProperty(node, 'liquid_water')
-
-                self.__setScalar(node, 'Potential temp', 
-                                 'potential_temperature', 'model')
-                self.__setProperty(node, 'Real temp', 'real_temperature' )
+                self.__setScalar(node, 'PotTemp', 'potential_temperature', 'model')
+                self.__setProperty(node, 'RealTemp', 'real_temperature')
+                if self.__fluidProp.getPropertyMode('density') == 'constant':
+                    self.__fluidProp.setPropertyMode('density', 'variable')
 
             elif model == AtmosphericFlowsModel.humid:
                 self.__removeScalar(node, 'potential_temperature')
+                self.__setScalar(node, 'LqPotTmp', 'liquid_potential_temperature', 'model')
+                self.__setScalar(node, 'TotWater', 'total_water', 'model')
+                self.__setScalar(node, 'TotDrop', 'number_of_droplets', 'model')
+                self.__setProperty(node, 'RealTemp', 'real_temperature')
+                self.__setProperty(node, 'LiqWater', 'liquid_water')
+                if self.__fluidProp.getPropertyMode('density') == 'constant':
+                    self.__fluidProp.setPropertyMode('density', 'variable')
 
-                self.__setScalar(node, 'Liq potential temp', 
-                                 'liquid_potential_temperature', 'model')
-                self.__setScalar(node, 'total water', 'total_water', 'model')
-                self.__setScalar(node, 'number of droplets', 
-                                'number_of_droplets', 'model')
-                self.__setProperty(node, 'Real temp', 'real_temperature')
-                self.__setProperty(node, 'Liquid water', 'liquid_water')
+            elif model == AtmosphericFlowsModel.constant:
+                self.__removeScalar(node, 'potential_temperature')
+                self.__removeScalar(node, 'liquid_potential_temperature')
+                self.__removeScalar(node, 'total_water')
+                self.__removeScalar(node, 'number_of_droplets')
+                self.__removeProperty(node, 'liquid_water')
+                FluidCharacteristicsModel(self.__case).setPropertyMode('density', 'constant')
+
+        else:
+            self.__removeScalar(node, 'potential_temperature')
+            self.__removeScalar(node, 'liquid_potential_temperature')
+            self.__removeScalar(node, 'total_water')
+            self.__removeScalar(node, 'number_of_droplets')
+            self.__removeProperty(node, 'liquid_water')
 
 
     def atmosphericFlowsNode(self):
@@ -184,14 +221,14 @@ class AtmosphericFlowsModel(Model):
         """
         Delete scalar
         """
-        scalar = parentNode.xmlRemoveChild('scalar', name = nameStr)
+        parentNode.xmlRemoveChild('scalar', name = nameStr)
 
 
     def __removeProperty(self, parentNode, nameStr):
         """
         Delete property
         """
-        prop = parentNode.xmlRemoveChild('property', name = nameStr)
+        parentNode.xmlRemoveChild('property', name = nameStr)
 
 #-------------------------------------------------------------------------------
 # AtmosphericFlowsModel test case 

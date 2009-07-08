@@ -57,6 +57,7 @@ implicit none
 
 include "paramx.h"
 include "dimens.h"
+include "ihmpre.h"
 include "numvar.h"
 include "optcal.h"
 include "cstphy.h"
@@ -207,6 +208,16 @@ endif
 !===============================================================================
 ! 4. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
+
+!   - Interface Code_Saturne
+!     ======================
+
+if (iihmpr.eq.1) then
+
+  call uiati1 (imeteo)
+  !==========
+
+endif
 
 call usati1
 !==========

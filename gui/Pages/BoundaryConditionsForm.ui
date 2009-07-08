@@ -6,14 +6,14 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>383</height>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" >
-   <item row="0" column="0" >
+  <layout class="QVBoxLayout" name="verticalLayout_2" >
+   <item>
     <widget class="QGroupBox" name="groupBoxMain" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="MinimumExpanding" hsizetype="Preferred" >
@@ -56,6 +56,16 @@
        </widget>
       </item>
       <item>
+       <widget class="BoundaryConditionsMeteoView" native="1" name="meteoWidget" >
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="BoundaryConditionsVelocityInletView" native="1" name="velocityWidget" >
         <property name="sizePolicy" >
          <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
@@ -86,34 +96,18 @@
        </widget>
       </item>
       <item>
-       <widget class="BoundaryConditionsMeteoView" native="1" name="meteoWidget" >
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="BoundaryConditionsScalarsView" native="1" name="scalarsWidget" />
       </item>
       <item>
        <widget class="BoundaryConditionsMobileMeshView" native="1" name="mobileMeshWidget" />
       </item>
+      <item>
+       <widget class="BoundaryConditionsWallRadiativeTransferView" native="1" name="radiativeWidget" />
+      </item>
      </layout>
-     <zorder>treeViewBoundaries</zorder>
-     <zorder>roughWidget</zorder>
-     <zorder>slidingWidget</zorder>
-     <zorder>velocityWidget</zorder>
-     <zorder>turbulenceWidget</zorder>
-     <zorder>meteoWidget</zorder>
-     <zorder>scalarsWidget</zorder>
-     <zorder>mobileMeshWidget</zorder>
-     <zorder>coalWidget</zorder>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item>
     <spacer name="verticalSpacer" >
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -175,6 +169,12 @@
    <class>BoundaryConditionsMobileMeshView</class>
    <extends>QWidget</extends>
    <header location="global" >BoundaryConditionsMobileMeshView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsWallRadiativeTransferView</class>
+   <extends>QWidget</extends>
+   <header location="global" >BoundaryConditionsWallRadiativeTransferView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

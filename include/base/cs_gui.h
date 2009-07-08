@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -29,7 +29,7 @@
 #define __CS_GUI_H__
 
 /*============================================================================
- * Reader of the parameters file: main parameters, boundary conditions
+ * Management of the GUI parameters file: main parameters
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -46,88 +46,20 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef enum {
-  DIRICHLET,
-  FLOW1,
-  HYDRAULIC_DIAMETER,
-  TURBULENT_INTENSITY,
-  NEUMANN,
-  COEF_ECHANGE,
-  COALFLOW,
-  WALL_FUNCTION
-} cs_boundary_value_t;
-
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_clean_memory(void);
-
-/*-----------------------------------------------------------------------------
- * Return the name of a thermophysical model.
- *
- * parameter:
- *   model_thermo          -->  thermophysical model
- *----------------------------------------------------------------------------*/
-
-char *
-cs_gui_get_thermophysical_model(const char *const model_thermo);
-
-/*-----------------------------------------------------------------------------
- * Return if a specific physics model is activated.
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_activ_thermophysical_model(void);
-
-/*-----------------------------------------------------------------------------
- * Return number of boundary regions definition
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_boundary_zones_number(void);
-
-/*-----------------------------------------------------------------------------
- * Return the nature of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-char *
-cs_gui_boundary_zone_nature(const int ith_zone);
-
-/*-----------------------------------------------------------------------------
- * Return the label of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-char *
-cs_gui_boundary_zone_label(const int ith_zone);
-
-
-/*-----------------------------------------------------------------------------
- * Return the zone number of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-int cs_gui_boundary_zone_number(const int ith_zone);
-
-/*-----------------------------------------------------------------------------
- * Return the description of a boundary zone
- *
- * parameters:
- *   nature                -->  nature of boundary zone (inlet, wall,...)
- *   label                 -->  label of boundary zone
- *----------------------------------------------------------------------------*/
-
-char *
-cs_gui_boundary_zone_localization(const char *const nature,
-                                  const char *const label);
-
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialise the global 'vars' structure.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uiinit
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiinit, UIINIT) (void);
 
 /*----------------------------------------------------------------------------
  * Turbulence model.
@@ -175,53 +107,6 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
-
-/*-----------------------------------------------------------------------------
- * Predefined physics indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPPMO
- * *****************
- *
- * INTEGER          IPPMOD <--  predefined physics indicator array
- * INTEGER          ICOD3P  --> diffusion flame in fast complete chemistry
- * INTEGER          ICODEQ  --> diffusion flame in fast chemistry to equilibrium
- * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
- * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
- * INTEGER          ICOLWC  --> Libby Williams premixing flame
- * INTEGER          ICP3PL  --> Coal combustion. Combustible moyen local
- * INTEGER          ICPL3C  --> Coal combustion coupled with lagrangien approach
- * INTEGER          ICFUEL  --> Fuel combustion
- * INTEGER          IELJOU  --> Joule effect
- * INTEGER          IELARC  --> electrical arc
- * INTEGER          IELION  --> ionique mobility
- * INTEGER          ICOMPF  --> compressible without shock
- * INTEGER          IATMOS  --> atmospheric flows
- * INTEGER          IAEROS  --> cooling tower
- * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
- *                              tabulation is used. INDJON=1: users tabulation
- * INTEGER          IEQCO2  --> CO2 massic fraction transport
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
-                                int *const icod3p,
-                                int *const icodeq,
-                                int *const icoebu,
-                                int *const icobml,
-                                int *const icolwc,
-                                int *const icp3pl,
-                                int *const icpl3c,
-                                int *const icfuel,
-                                int *const ieljou,
-                                int *const ielarc,
-                                int *const ielion,
-                                int *const icompf,
-                                int *const iatmos,
-                                int *const iaeros,
-                                int *const indjon,
-                                int *const ieqco2);
 
 /*----------------------------------------------------------------------------
  * User scalars which are variance.
@@ -280,31 +165,6 @@ void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
-
-
-/*----------------------------------------------------------------------------
- * ALE method.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIALIN()
- * *****************
- *
- * INTEGER          IALE    <--   iale method activation
- * INTEGER          NALINF  <--   number of sub iteration of initialization of fluid
- * INTEGER          NALIMX  <--   max number of iterations of implicitation of
- *                                the displacement of the structures
- * DOUBLE           EPALIM  <--   realtive precision of implicitation of
- *                                the displacement of the structures
- * INTEGER          IORTVM  <--   type of viscosity of mesh
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uialin, UIALIN) (int    *const iale,
-                                int    *const nalinf,
-                                int    *const nalimx,
-                                double *const epalim,
-                                int    *const iortvm);
 
 /*----------------------------------------------------------------------------
  *
@@ -530,7 +390,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
  * INTEGER          ALMAX  <--   reference length
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (cstini, CSTINI) (double *const uref,
                                 double *const almax);
 
@@ -610,159 +469,49 @@ void CS_PROCF(uiiniv, UIINIV) (const int    *const ncelet,
                                      double *const rtp);
 
 /*----------------------------------------------------------------------------
- * Boundary conditions treatment
+ * User law for material Properties
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICLIM
+ * SUBROUTINE UIPHYV (NCELET, ISCA, RTP)
  * *****************
  *
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
- * INTEGER          NCHARM  --> maximal number of coals
- * INTEGER          NCHARB  --> number of simulated coals
- * INTEGER          NCLPCH  --> number of simulated class per coals
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: smooth wall
- * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          IQIMP   --> 1 if flow rate is applied
- * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
- * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
- * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number for each boundary face
- * INTEGER          ICODCL  --> boundary conditions array type
- * DOUBLE PRECISION SURFBO  --> boundary faces surface
- * DOUBLE PRECISION QIMP    --> inlet flow rate
- * DOUBLE PRECISION QIMPAT  --> inlet air flow rate (coal)
- * DOUBLE PRECISION QIMPCP  --> inlet coal flow rate (coal)
- * DOUBLE PRECISION DH      --> hydraulic diameter
- * DOUBLE PRECISION XINTUR  --> turbulent intensity
- * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
- * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
- * DOUBLE PRECISION DISTCH  --> ratio for each coal
- * DOUBLE PRECISION RCODCL  --> boundary conditions array value
+ * INTEGER          NCEL     -->  number of cells whithout halo
+ * INTEGER          NCELET   -->  number of cells whith halo
+ * INTEGER          NSCAUS   -->  number of user scalar including thermal scalar
+ * INTEGER          IROM     -->  pointer for density rho
+ * INTEGER          IVISCL   -->  pointer for mulecular viscosity mu
+ * INTEGER          ICP      -->  pointer for predifined heat Cp
+ * INTEGER          IVISLS   -->  pointer for Lambda/Cp
+ * INTEGER          IROVAR   -->  =1 if rho variable, =0 if rho constant
+ * INTEGER          IVIVAR   -->  =1 if mu variable, =0 if mu constant
+ * INTEGER          ISCA     -->  indirection array for scalar number
+ * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
+ * INTEGER          ISCAVR   -->  scalars that are variance
+ * INTEGER          IPPROC   -->  indirection array for cell properties
+ * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
+ * DOUBLE PRECISION CP0      -->  value of predifined heat if ICP=0
+ * DOUBLE PRECISION RTP      -->  variables and scalars array
+ * DOUBLE PRECISION PROPCE  <--   cell properties array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const    int *const nfabor,
-                               const    int *const nozppm,
-                               const    int *const ncharm,
-                               const    int *const ncharb,
-                               const    int *const nclpch,
-                               const    int *const iindef,
-                               const    int *const ientre,
-                               const    int *const iparoi,
-                               const    int *const iparug,
-                               const    int *const isymet,
-                               const    int *const isolib,
-                                        int *const iqimp,
-                                        int *const icalke,
-                                        int *const ientat,
-                                        int *const ientcp,
-                                        int *const itypfb,
-                                        int *const izfppp,
-                                        int *const icodcl,
-                                     double *const surfbo,
-                                     double *const qimp,
-                                     double *const qimpat,
-                                     double *const qimpcp,
-                                     double *const dh,
-                                     double *const xintur,
-                                     double *const timpat,
-                                     double *const timpcp,
-                                     double *const distch,
-                                     double *const rcodcl);
-
-/*----------------------------------------------------------------------------
- * Boundary conditions input verification
- *
- * Fortran Interface:
- *
- * SUBROUTINE UICLVE
- * *****************
- *
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IPAROI  --> type of boundary: wall
- * INTEGER          IPARUG  --> type of boundary: wall with rugosity
- * INTEGER          ISYMET  --> type of boundary: symmetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiclve, UICLVE) (const int *const nfabor,
-                                const int *const iindef,
-                                const int *const ientre,
-                                const int *const iparoi,
-                                const int *const iparug,
-                                const int *const isymet,
-                                const int *const isolib,
-                                      int *const itypfb,
-                                      int *const izfppp);
-
-/*----------------------------------------------------------------------------
- * Density under relaxation
- *
- * Fortran Interface:
- *
- * SUBROUTINE UICPI1 (SRROM)
- * *****************
- * DOUBLE PRECISION SRROM   <--   density relaxation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
-
-/*----------------------------------------------------------------------------
- * Pointers definition for scalars and coal combustion
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
-                                const int *const nclass,
-                                const int *const ippmod,
-                                const int *const icp3pl,
-                                const int *const ieqco2,
-                                const int *const ihm,
-                                const int *const inp,
-                                const int *const ixch,
-                                const int *const ixck,
-                                const int *const ixwt,
-                                const int *const ih2,
-                                const int *const if1m,
-                                const int *const if2m,
-                                const int *const if3m,
-                                const int *const if4p2m,
-                                const int *const if5m,
-                                const int *const iyco2);
-
-/*----------------------------------------------------------------------------
- * Defintion des pointeurs des proprietes pour le charbon
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
-                                const int *const nsalpp,
-                                const int *const nsalto,
-                                const int *const ippmod,
-                                const int *const icp3pl,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const itemp1,
-                                const int *const irom1,
-                                const int *const ym1,
-                                const int *const imel,
-                                const int *const itemp2,
-                                const int *const ix2,
-                                const int *const irom2,
-                                const int *const idiam2,
-                                const int *const igmdch,
-                                const int *const igmdv1,
-                                const int *const igmdv2,
-                                const int *const igmhet,
-                                const int *const igmsec);
+void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
+                              const cs_int_t  *const ncelet,
+                              const cs_int_t  *const nscaus,
+                              const cs_int_t         irom[],
+                              const cs_int_t         iviscl[],
+                              const cs_int_t         icp[],
+                              const cs_int_t         ivisls[],
+                              const cs_int_t         irovar[],
+                              const cs_int_t         ivivar[],
+                              const cs_int_t         isca[],
+                              const cs_int_t         iscalt[],
+                              const cs_int_t         iscavr[],
+                              const cs_int_t         ipproc[],
+                              const cs_real_t        ro0[],
+                              const cs_real_t        cp0[],
+                              const cs_real_t        rtp[],
+                                    cs_real_t        propce[]);
 
 /*----------------------------------------------------------------------------
  * 1D profile postprocessing
@@ -808,7 +557,6 @@ void CS_PROCF (uidpst, UIDPST)(const int    *const ncelet,
                                const int    *const ncel,
                                const double *const xyzcen);
 
-
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.
  *
@@ -821,6 +569,17 @@ void CS_PROCF (uidpst, UIDPST)(const int    *const ncelet,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Free memory: clean global private variables and libxml2 variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_clean_memory(void);
 
 /*----------------------------------------------------------------------------*/
 

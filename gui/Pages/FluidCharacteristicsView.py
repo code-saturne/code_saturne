@@ -186,10 +186,10 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
 
         # Particular Widget initialization taking into account of "Calculation Features"
 
-        mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
 
-        # no 'thermal_conductivity' if not Joule and not Thermal scalar
-        if mdl_joule == 'off' and mdl_thermal == 'off':
+        # no 'thermal_conductivity' if not Joule and not Thermal scalar and not 
+        if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off':
             self.groupBoxAl.hide()
 
         for tag, symbol in list:
@@ -218,6 +218,11 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
                 __model.setItem(str_model='user_law')
                 __model.disableItem(str_model='constant')
                 self.mdl.setPropertyMode(name, 'user_law')
+
+            # Atmospheric Flows
+            if mdl_atmo != 'off':
+                if tag == 'density':
+                    __model.disableItem(str_model='constant')
 
 
     @pyqtSignature("const QString &")
@@ -367,9 +372,9 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
         """
         exp = self.mdl.getFormula('specific_heat')
         if not exp:
-            exp = "Cp ="
-        req = [('Cp', 'Specific heat')]
-        exa = "Cp = 3*2"
+            exp = "cp ="
+        req = [('cp', 'Specific heat')]
+        exa = "cp = 3*2"
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,

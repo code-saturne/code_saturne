@@ -263,9 +263,9 @@ subroutine usalcl &
 !  l'influence de la vitesse de maillage depend de sa signification
 !  physique.
 !  En effet, dans le cas d'une structure immergee par exemple, le
-!  mouvement des faces de paroi de la structure correspond à un mouvement
+!  mouvement des faces de paroi de la structure correspond a un mouvement
 !  physique et doit donc entrainer le fluide.
-!  Dans le cas d'un piston au contraire, les bords latéraux sont des
+!  Dans le cas d'un piston au contraire, les bords lateraux sont des
 !  parois ou le mouvement des noeuds n'a aucune signification physique et
 !  ne doit pas entrainer le fluide.
 !  Dans tous les cas, la vitesse de maillage normale a la face est prise
@@ -511,8 +511,12 @@ double precision delta, deltaa
 !       LA BIBLIOTHEQUE)
 !===============================================================================
 
-write(nfecra,9000)
-call csexit (1)
+if(iihmpr.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
+endif
 
  9000 format(                                                           &
 '@                                                            ',/,&

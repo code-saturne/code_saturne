@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/new/prefix1" >
+    <file>icons/22x22/weather-few-clouds.png</file>
     <file>icons/22x22/document-new.png</file>
     <file>icons/22x22/user-trash-full.png</file>
     <file>icons/22x22/edit-find-replace.png</file>

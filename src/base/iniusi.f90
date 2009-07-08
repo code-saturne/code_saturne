@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine iniusi(iverif)
+subroutine iniusi(iverif)
 !================
 
 !===============================================================================
@@ -85,6 +85,7 @@ include "coincl.h"
 include "cpincl.h"
 include "ppincl.h"
 include "ppcpfu.h"
+include "radiat.h"
 
 !===============================================================================
 
@@ -116,6 +117,10 @@ double precision relaxp, extrap
 !     IIHMPR a ete initialise a 0 juste avant (INIINI)
 
 call csihmp(iihmpr)
+!==========
+
+call uiinit
+!==========
 
 
 !===============================================================================
@@ -234,7 +239,7 @@ call varpos(nmodpp)
 !   - Sous-programme utilisateur
 !     ==========================
 
-call usray1
+call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
 !==========
 
 

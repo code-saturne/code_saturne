@@ -54,6 +54,8 @@ from Base.XMLmodel import ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.NumericalParamEquationModel import NumericalParamEquatModel
 from ThermalRadiationModel import ThermalRadiationModel
+from LocalizationModel import LocalizationModel
+from Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # Coal combustion model class
@@ -70,13 +72,13 @@ class CoalCombustionModel(Variables, Model):
 
         nModels         = self.case.xmlGetNode('thermophysical_models')
         self.node_lagr  = self.case.xmlGetNode('lagrangian', 'model')
-        self.node_turb  = nModels.xmlGetNode('turbulence',      'model')
+        self.node_turb  = nModels.xmlGetNode('turbulence',       'model')
         self.node_gas   = nModels.xmlInitNode('gas_combustion',  'model')
         self.node_coal  = nModels.xmlInitNode('pulverized_coal', 'model')
         self.node_joule = nModels.xmlInitNode('joule_effect',    'model')
         self.node_therm = nModels.xmlInitNode('thermal_scalar',  'model')
 
-        self.coalCombustionModel = ('off', 'coal_homo', 'coal_homo2', 'coal_lagr')
+        self.coalCombustionModel = ('off', 'coal_homo', 'coal_homo2')
 
 
     def defaultValues(self):
@@ -87,6 +89,8 @@ class CoalCombustionModel(Variables, Model):
         default = {}
         default['model'] = "off"
         default['diameter'] = 0.0001
+        default['ihtco2'] = 0
+        default['ieqco2'] = 0
 
         return default
 
@@ -100,7 +104,7 @@ class CoalCombustionModel(Variables, Model):
         coalCombustionList = self.coalCombustionModel
 
         if self.node_lagr and self.node_lagr['model'] != 'off':
-            coalCombustionList = ('off', 'coal_homo', 'coal_homo2', 'coal_lagr')
+            coalCombustionList = ('off', 'coal_homo', 'coal_homo2')
 
         n, m = FluidCharacteristicsModel(self.case).getThermalModel()
         if m != "off" and m not in coalCombustionList:
@@ -117,38 +121,74 @@ class CoalCombustionModel(Variables, Model):
         return coalCombustionList
 
 
-    def __createModelScalars(self , thermoChemistryModel):
+    def __createModelScalarsList(self , thermoChemistryModel):
         """
         Private method
-        Create model scalar
+        Create model scalar list
         """
         coalsNumber = thermoChemistryModel.getCoals().getCoalNumber()
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
 
+        list = []
         # add new scalars
-        self.setNewModelScalar(self.node_coal, "Enthalpy")
+        list.append("Enthalpy")
 
         baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
         if self.getCoalCombustionModel() == 'coal_homo2':
-            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
-        else:
-            self.__deleteWetScalarsAndProperty()
-        
+            baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "XWT_CP", "ENT_CP"]
+
         for baseName in baseNames:
             for classe in range(0,classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                self.setNewModelScalar(self.node_coal, name)
+                list.append(name)
         
         baseNames = [ "Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             for coal in range(0,coalsNumber):
                 name = '%s%2.2i' % (baseName, coal+1)
-                self.setNewModelScalar(self.node_coal, name)
+                list.append(name)
 
-        self.setNewModelScalar(self.node_coal, "Fr_HET")
-        self.setNewModelScalar(self.node_coal, "Var_AIR")
+        self.setNewModelScalar(self.node_coal, "Fr_HET_O2")
+        list.append("Fr_HET_O2")
+
+        if self.defaultValues()['ihtco2'] == 1:
+            list.append("Fr_HET_CO2")
+
+        list.append("Var_AIR")
+
         if self.getCoalCombustionModel() == 'coal_homo2':
-            self.setNewModelScalar(self.node_coal, "FR_H20")
+            list.append("FR_H20")
+
+        if thermoChemistryModel.getOxydants().getNumber() >= 2:
+            list.append("FR_OXYD2")
+
+        if thermoChemistryModel.getOxydants().getNumber() == 3:
+            list.append("FR_OXYD3")
+
+        if self.defaultValues()['ieqco2'] == 1:
+            list.append("FR_CO2")
+
+        return list
+
+
+    def __createModelScalars(self , thermoChemistryModel):
+        """
+        Private method
+        Create model scalar
+        """
+        previous_list = []
+        nodes = self.node_coal.xmlGetChildNodeList('scalar')
+        for node in nodes:
+            previous_list.append(node['name'])
+
+        new_list = self.__createModelScalarsList(thermoChemistryModel)
+        for name in previous_list:
+            if name not in new_list:
+                self.node_coal.xmlRemoveChild('scalar',  name = name)
+
+        for name in new_list:
+            if name not in previous_list:
+                self.setNewModelScalar(self.node_coal, name)
 
         NPE = NumericalParamEquatModel(self.case)
         for node in self.node_coal.xmlGetChildNodeList('scalar'):
@@ -157,42 +197,65 @@ class CoalCombustionModel(Variables, Model):
             NPE.setFluxReconstruction(node['label'], 'off')
 
 
-    def __createModelProperties(self, thermoChemistryModel):
+    def __createModelPropertiesList(self, thermoChemistryModel):
         """
         Private method
         Create model properties
         """
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
-        #
-        # delete old properties
-        #self.deleteAllModelProperties(self.node_coal)
-        #
-        # create new properties
-        self.setNewProperty(self.node_coal, "Temp_GAZ")
-        self.setNewProperty(self.node_coal, "ROM_GAZ")
-        self.setNewProperty(self.node_coal, "YM_CHx1m")
-        self.setNewProperty(self.node_coal, "YM_CHx2m")
-        self.setNewProperty(self.node_coal, "YM_CO")
-        self.setNewProperty(self.node_coal, "YM_O2")
-        self.setNewProperty(self.node_coal, "YM_CO2")
-        self.setNewProperty(self.node_coal, "YM_H2O")
-        self.setNewProperty(self.node_coal, "YM_N2")
-        self.setNewProperty(self.node_coal, "XM")
-        
+
+        list = []
+        list.append("Temp_GAZ")
+        list.append("ROM_GAZ")
+        list.append("YM_CHx1m")
+        list.append("YM_CHx2m")
+        list.append("YM_CO")
+        list.append("YM_O2")
+        list.append("YM_CO2")
+        list.append("YM_H2O")
+        list.append("YM_N2")
+        list.append("XM")
+
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET"]
+                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
+
+        if self.defaultValues()['ihtco2'] == 1:
+            baseNames.append("Ga_HET_CO2")
+
         if self.getCoalCombustionModel() == 'coal_homo2':
-            baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
+            baseNames.append("Ga_SEC")
+
         for baseName in baseNames: 
             for classe in range(0,classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
+                list.append(name)
+
+        list.append("IntLuminance_4PI")
+
+        return list
+
+
+    def __createModelProperties(self, thermoChemistryModel):
+        """
+        Private method
+        Create model properties
+        """
+        previous_list = []
+        nodes = self.node_coal.xmlGetChildNodeList('property')
+        for node in nodes:
+            previous_list.append(node['name'])
+
+        new_list = self.__createModelPropertiesList(thermoChemistryModel)
+        for name in previous_list:
+            if name not in new_list:
+                self.node_coal.xmlRemoveChild('property',  name = name)
+
+        for name in new_list:
+            if name not in previous_list:
                 self.setNewProperty(self.node_coal, name)
 
-        self.setNewProperty(self.node_coal, "ntLuminance_4PI")
 
-
-    def __createModel (self) :
+    def createModel (self) :
         """ 
         Private method
         Create scalars and properties when coal combustion is selected
@@ -279,7 +342,7 @@ class CoalCombustionModel(Variables, Model):
                     for classe in range(classMin, classMax):
                         name = '%s%2.2i' % (baseName, classe+1)
                         if (nameNode == name):
-                            node.xmlRemoveNode()              
+                            node.xmlRemoveNode()
         #
         # Rename other classes
         nodeList = self.node_coal.xmlGetNodeList('scalar')
@@ -469,14 +532,31 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(model, self.__coalCombustionModelsList())
 
         if model == 'off':
+            for tag in ('scalar',
+                        'property',
+                        'reference_mass_molar',
+                        'reference_temperature'):
+                for node in self.node_coal.xmlGetNodeList(tag):
+                    node.xmlRemoveNode()
+
+            for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+                if zone.getNature() == "inlet":
+                    Boundary("coal_inlet", zone.getLabel(), self.case).deleteCoals()
+
             ThermalRadiationModel(self.case).setRadiativeModel('off')
-            self.node_coal['model']   = 'off'
+            self.node_coal['model'] = 'off'
+
         else:
             self.node_gas['model']   = 'off'
             self.node_coal['model']  = model
             self.node_joule['model'] = 'off'
             self.node_therm['model'] = 'off'
-            self.__createModel()
+            self.createModel()
+            for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+                if zone.getNature() == "inlet":
+                    b = Boundary("coal_inlet", zone.getLabel(), self.case)
+                    b.getOxydantTemperature()
+                    b.getOxydantNumber()
 
         self.__updateCoalCombustionDensity(model)
 

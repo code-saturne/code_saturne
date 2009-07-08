@@ -114,7 +114,6 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.__boundary = boundary
 
         if TurbulenceModel(self.__case).getTurbulenceVariable():
-            self.show()
             turb_choice = boundary.getTurbulenceChoice()
             self.__modelTurbulence.setItem(str_model=turb_choice)
             if turb_choice == "hydraulic_diameter":
@@ -122,13 +121,14 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.frameTurbIntensity.hide()
                 d = boundary.getHydraulicDiameter()
                 self.lineEditDiameter.setText(QString(str(d)))
-            if turb_choice == "turbulent_intensity":
+            elif turb_choice == "turbulent_intensity":
                 self.frameTurbIntensity.show()
                 self.frameTurbDiameter.hide()
                 i = boundary.getTurbulentIntensity()
                 d = boundary.getHydraulicDiameter()
                 self.lineEditIntensity.setText(QString(str(i)))
                 self.lineEditDiameterIntens.setText(QString(str(d)))
+            self.show()
         else:
             self.hideWidget()
 

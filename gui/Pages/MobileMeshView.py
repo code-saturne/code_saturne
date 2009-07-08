@@ -215,12 +215,12 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
                    ('mesh_vi3', 'mesh viscosity Z')]
             exa = "mesh_vi1 = 1000;\nmesh_vi2 = 1;\nmesh_vi3 = mesh_vi2;"
 
-        symb = [('X', "X cell's gravity center"),
-                ('Y', "Y cell's gravity center"),
-                ('Z', "Z cell's gravity center"),
+        symb = [('x', "X cell's gravity center"),
+                ('y', "Y cell's gravity center"),
+                ('z', "Z cell's gravity center"),
                 ('dt', 'time step'),
                 ('t', 'current time'),
-                ('nbIter', 'number of iteration')]
+                ('iter', 'number of iteration')]
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
