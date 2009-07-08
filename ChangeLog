@@ -1,3 +1,9 @@
+* 07/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a check on the multigrid algorithm. Convert the abort on
+  error from a test on the pressure to a test on the convection.
+  modified routine:
+    src/base/verini.f90
+
 * 07/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Add tags in the time-monitoring files for SALOME.

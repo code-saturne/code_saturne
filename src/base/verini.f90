@@ -1380,7 +1380,7 @@ do ipp = 2, nvppmx
       iok = iok + 1
     endif
     do iphas = 1, nphas
-      if(imgr(ii).eq.1.and.ii.ne.ipr(iphas)) then
+      if(imgr(ii).eq.1.and.iconv(ii).eq.1) then
         write(nfecra,3001)
         iok = iok + 1
       endif
@@ -3657,7 +3657,7 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
 '@  L algorithme de resolution multigrille algebrique         ',/,&
-'@  n est disponible que pour la variable pression.           ',/,&
+'@  n est pas compatible avec les variables convectees.       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
@@ -6152,7 +6152,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
 '@  The multigrid algorithm for the linear system resolution  ',/,&
-'@  in only available for the pressure.                       ',/,&
+'@  is not compatible with convected variables.               ',/,&
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&
