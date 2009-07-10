@@ -486,7 +486,7 @@ ilisvr(ipp)   = 0
 !      composante z
 ipp = ipppro(ipproc(iqz))
 NOMVAR(IPP)   = 'Qzrad'
-ichrvr(ipp)   = 0 
+ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 

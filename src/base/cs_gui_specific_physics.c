@@ -789,12 +789,12 @@ void CS_PROCF (uiati1, UIATI1) (int *const imeteo)
  *
  * subroutine uiatpr
  * *****************
- * integer         nsalpp   -->   
- * integer         nsalto   -->   
+ * integer         nsalpp   -->
+ * integer         nsalto   -->
  * integer         ippmod   -->   specific physics indicator array
  * integer         iatmos   -->   index for atmospheric flow
- * integer         ipppro   -->   
- * integer         ipproc   -->   
+ * integer         ipppro   -->
+ * integer         ipproc   -->
  * integer         itempc   -->   index for real temperature
  * integer         iliqwt   -->   index for liquid water
  *----------------------------------------------------------------------------*/

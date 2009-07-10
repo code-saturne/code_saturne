@@ -258,14 +258,14 @@ cs_gui_get_ale_viscosity_type(int  * type)
 #ifdef HAVE_MEI
 static mei_tree_t *
 cs_gui_init_mei_tree(char         *formula,
-		     const char   **symbols,
-		     unsigned int symbol_nbr,
-		     const char   **variables,
-		     const double *variables_value,
-		     unsigned int variable_nbr,
-		     const double dtref,
-		     const double ttcabs,
-		     const int    ntcabs )
+                     const char   **symbols,
+                     unsigned int symbol_nbr,
+                     const char   **variables,
+                     const double *variables_value,
+                     unsigned int variable_nbr,
+                     const double dtref,
+                     const double ttcabs,
+                     const int    ntcabs )
 {
     unsigned int i = 0;
 
@@ -697,7 +697,7 @@ get_internal_coupling_xyz_values(const char *label,
  * node_name  --> xml node name ("displacement_prediction_alpha")
  *----------------------------------------------------------------------------*/
 
-static void 
+static void
 get_uistr1_advanced_double(const char *const keyword,
                                double *const value)
 {

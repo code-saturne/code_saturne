@@ -104,7 +104,7 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
 
 /*-----------------------------------------------------------------------------
  * uialcl
- * 
+ *
  * Fortran Interface:
  *
  * SUBROUTINE UIALCL
@@ -122,7 +122,7 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
  * depale       --> See uialcl_fixed_displacement
  * dtref        --> time step
  * ttcabs       --> current time
- * ntcabs       --> current iteration number 
+ * ntcabs       --> current iteration number
  * iuma         --> See uialcl_fixed_velocity
  * ivma         --> See uialcl_fixed_velocity
  * iwma         --> See uialcl_fixed_velocity
@@ -173,7 +173,7 @@ void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
                                  double           *aexxst,
                                  double           *bexxst,
                                  double           *cfopre,
-                                 int              *ihistr, 
+                                 int              *ihistr,
                                  double           *xstr0,
                                  double           *xstreq,
                                  double           *vstr0 );

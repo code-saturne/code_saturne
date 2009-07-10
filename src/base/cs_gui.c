@@ -819,7 +819,7 @@ cs_gui_gravity_value(const char   *const param,
 
 static void
 cs_gui_properties_value(const char   *const property_name,
-			      double *const value)
+                              double *const value)
 {
   char   *path = NULL;
   double  result;
@@ -846,7 +846,7 @@ cs_gui_properties_value(const char   *const property_name,
 
 static int
 cs_gui_properties_choice(const char *const property_name,
-			       int  *      choice)
+                               int  *      choice)
 {
   char *path = NULL;
   char *buff = NULL;

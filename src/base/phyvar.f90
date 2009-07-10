@@ -725,7 +725,7 @@ if (iale.eq.1) then
   if (iihmpr.eq.1) then
 
     call uivima                         &
-    !==========                         
+    !==========
   ( ncel,                             &
     propce(1,ipproc(ivisma(1))),      &
     propce(1,ipproc(ivisma(2))),      &

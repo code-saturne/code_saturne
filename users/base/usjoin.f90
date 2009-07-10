@@ -100,14 +100,14 @@ etf = 0.50d0    ! edge equivalence tolerance factor
                 ! Coef. used to modify locally the tolerance associated to
                 ! each vertex  BEFORE adding equivalences between vertices
                 ! after edge intersections.
-                !  If coef = 0.0 => add no equivalence 
+                !  If coef = 0.0 => add no equivalence
                 !  If coef < 1.0 => reduce the number of equivalences between
                 !  vertices sharing the same edge. (more stable)
                 !  If coef = 1.0 => no change
                 !  If coef > 1.0 => increase the number of equivalences between
                 !  vertices sharing the same edge. (more merges) Not advised
 
-rtf = 0.85d0    ! reduction tolerance factor during vertices merge 
+rtf = 0.85d0    ! reduction tolerance factor during vertices merge
                 ! Coef. used when there is a conflict between the resulting
                 ! merged vertex from a set of vertices and the tolerance
                 ! associated to each vertex of the set.
@@ -117,7 +117,7 @@ mtf = 1.00d0    ! merge tolerance factor
                 ! Coef. used to modify locally the tolerance associated
                 ! to each vertex BEFORE adding equivalences between vertices
                 ! after edge intersections.
-                !  If coef = 0.0 => add no equivalence 
+                !  If coef = 0.0 => add no equivalence
                 !  If coef < 1.0 => reduce the number of equivalences between
                 !  vertices sharing the same edge
                 !  If coef = 1.0 => no change

@@ -443,7 +443,7 @@ _boundary_scalar(const char *const nature,
  *   nclpch      -->  number of class for eah coal
  *----------------------------------------------------------------------------*/
 
-static void 
+static void
 _inlet_coal(const int         izone,
             const int  *const ncharb,
             const int  *const nclpch)
@@ -813,7 +813,7 @@ _init_boundaries(const int *const nfabor,
             else if (cs_gui_strcmp(choice_d, "formula"))
             {
                 const char *sym[] = {"dir_x", "dir_y", "dir_z"};
-                boundaries->direction[izone] = 
+                boundaries->direction[izone] =
                     _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"), sym, 3);
             }
 #endif
