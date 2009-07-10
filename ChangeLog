@@ -1,4 +1,38 @@
-* 08/07/2009 - David Monfort <david.monfort@edf.fr>
+* 10/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Add parall mesh joining feature.
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    include/base/cs_prototypes.h
+    src/apps/cs_solver.c
+  added routines:
+    include/base/cs_join.h
+    include/base/cs_join_intersect.h
+    include/base/cs_join_merge.h
+    include/base/cs_join_mesh.h
+    include/base/cs_join_post.h
+    include/base/cs_join_set.h
+    include/base/cs_join_split.h
+    include/base/cs_join_update.h
+    include/base/cs_join_util.h
+    include/base/cs_search.h
+    include/base/cs_sort.h
+    src/base/cs_join.c
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_post.c
+    src/base/cs_join_set.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_search.c
+    src/base/cs_sort.c
+    users/base/usjoin.f90
+
+* 10/07/2009 - David Monfort <david.monfort@edf.fr>
   Rename cs_xxxx_util.f90 in cs_xxxx_f2c.f90 to highlight Fortran API.
   added routines:
     src/base/cs_post_f2c.f90

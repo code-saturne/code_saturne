@@ -71,6 +71,7 @@
 #include "cs_ctwr.h"
 #include "cs_gui.h"
 #include "cs_io.h"
+#include "cs_join.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_solcom.h"
@@ -232,6 +233,12 @@ cs_run(void)
   /* Initialize main post-processing */
 
   cs_post_init_main_writer();
+
+  /* Join meshes if necessary */
+
+  CS_PROCF (usjoin, USJOIN)();
+
+  cs_join_all();
 
   /* Initialize ghost cells and other parallelism-related structures */
 
