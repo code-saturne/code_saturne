@@ -1,4 +1,17 @@
 * 08/07/2009 - David Monfort <david.monfort@edf.fr>
+  Rename cs_xxxx_util.f90 in cs_xxxx_f2c.f90 to highlight Fortran API.
+  added routines:
+    src/base/cs_post_f2c.f90
+    src/base/cs_selector_f2c.f90
+    src/base/cs_syr_f2c.f90
+  deleted routines:
+    src/base/cs_interpr_util.f90
+    src/base/cs_post_util.f90
+    src/base/cs_syr_util.f90
+  modified script:
+    src/base/Makefile.am
+
+* 08/07/2009 - David Monfort <david.monfort@edf.fr>
   Add missing tests on Xml file presence.
   modified routine:
     src/base/iniusi.f90
