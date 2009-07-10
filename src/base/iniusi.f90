@@ -119,9 +119,12 @@ double precision relaxp, extrap
 call csihmp(iihmpr)
 !==========
 
-call uiinit
-!==========
+if(iihmpr.eq.1) then
 
+  call uiinit
+  !==========
+
+endif
 
 !===============================================================================
 ! 1. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE PHASES
@@ -236,12 +239,15 @@ call varpos(nmodpp)
 !     radiatifs tres tot de maniere a pouvoir reserver less variables
 !     necessaires dans certaines physiques particuliere
 
-!   - Sous-programme utilisateur
-!     ==========================
+!   - Interface Code_Saturne
+!     ======================
 
-call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
-!==========
+if(iihmpr.eq.1) then
 
+  call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
+  !==========
+
+endif
 
 ! --- Parametres dependant du nombre de scalaires utilisateurs
 

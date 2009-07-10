@@ -1,3 +1,8 @@
+* 08/07/2009 - David Monfort <david.monfort@edf.fr>
+  Add missing tests on Xml file presence.
+  modified routine:
+    src/base/iniusi.f90
+
 * 08/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Numerous modifications in the Graphical User Interface.
   - refactor of GUI reader.
