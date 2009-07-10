@@ -1,3 +1,8 @@
+* 10/07/2009 - David Monfort <david.monfort@edf.fr>
+  Remove exthis modification in usipes.
+  modified routine:
+    users/base/usini1.f90
+
 * 10/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the calculation of the face-warping quality criterium.
   modified routine:

@@ -1771,10 +1771,6 @@ xyzcap(3,4) = 0.01d0
 ! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
 
 
-! --- extension historique
-EXTHIS = 'hst'
-
-
 ! --- variable courante
 
 !     Comme pour les autres variables,
