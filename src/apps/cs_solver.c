@@ -33,6 +33,10 @@
 #include "cs_config.h"
 #endif
 
+#if defined(__linux__) || defined(__linux) || defined(linux)
+#define _GNU_SOURCE
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -43,6 +47,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_GNU_SOURCE)
+#include <fenv.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
@@ -50,8 +58,11 @@
 #include <bft_config.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
-#include <bft_fp_trap.h>
 #include <bft_timer.h>
+
+#if !defined(_GNU_SOURCE)
+#include <bft_fp_trap.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -125,6 +136,11 @@ cs_run(void);
 
 static int        app_num = -1;
 static cs_opts_t  opts;
+
+#if defined(_GNU_SOURCE)
+static int _fenv_set = 0;    /* Indicates if behavior modified */
+static fenv_t _fenv_old;     /* Old exception mask */
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -547,7 +563,19 @@ main(int    argc,
 
   (void)bft_timer_wtime();
 
+  /* Trap floating-point exceptions */
+
+#if defined(_GNU_SOURCE)
+  if (_fenv_set == 0) {
+    if (fegetenv(&_fenv_old) == 0) {
+      feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+      _fenv_set = 1;
+      /* To revert to initial behavior: fesetenv(&_fenv_old); */
+    }
+  }
+#else
   bft_fp_trap_set();
+#endif
 
   /* Initialize memory management and signals */
 

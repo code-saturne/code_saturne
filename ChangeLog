@@ -1,3 +1,8 @@
+* 10/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  On Linux systems, use fenv library to trap floating point exceptions.
+  modified routine:
+    src/apps/cs_solver.c
+
 * 10/07/2009 - David Monfort <david.monfort@edf.fr>
   Blank removal.
 
