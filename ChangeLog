@@ -1,3 +1,8 @@
+* 10/07/2009 - François Jusserand <francois.jusserand@edf.fr>
+  Fix a bug when accounting for orthotropic mesh viscosity.
+  modified routine:
+    src/base/condli.f90
+
 * 10/07/2009 - David Monfort <david.monfort@edf.fr>
   Remove exthis modification in usipes.
   modified routine:

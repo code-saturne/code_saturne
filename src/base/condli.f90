@@ -1672,7 +1672,7 @@ if (iale.eq.1) then
     iel = ifabor(ifac)
     distbf = ra(idistb-1+ifac)
     surfbn = ra(isrfbn-1+ifac)**2
-    if (iortvm.eq.1) then
+    if (iortvm.eq.0) then
       hint = propce(iel,ipproc(ivisma(1)))/distbf
     else
       hint = ( propce(iel,ipproc(ivisma(1)))*surfbo(1,ifac)**2    &
