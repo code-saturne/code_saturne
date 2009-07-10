@@ -95,7 +95,7 @@ integer          iverif
 
 ! VARIABLES LOCALES
 
-integer          ii, iphas , iscal , nmodpp, iiiiii
+integer          ii, iphas , iscal , nmodpp
 integer          nphmax, nscmax, nesmax, nphusi, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce, imgrpr
@@ -145,7 +145,7 @@ nphas = 1
 ! --- Varpos
 !     Verification du nombre de phases
 !      1er passage
-call varpos(iiiiii)
+call varpos(nmodpp)
 !==========
 
 ! --- Parametres dependant du nombre de phases
@@ -417,7 +417,7 @@ if(iihmpr.eq.1) then
              iale, iuma, ivma, iwma,                              &
              isca, iscapp)
 
-!     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
+!     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figÃ©
   call csisui(isuite, ileaux, iccvfg)
   !==========
 
@@ -434,14 +434,14 @@ if(iihmpr.eq.1) then
 
   endif
 
-!      Options numériques locales
+!      Options numÃ©riques locales
 
   call uinum1                                                     &
   !==========
         (isca, iscapp, blencv, ischcv, isstpc, ircflu,            &
          cdtvar, nitmax, epsilo)
 
-!     Options numériques globales
+!     Options numÃ©riques globales
   relaxp = -999.d0
   extrap = 0.d0
   imgrpr = 0
@@ -503,7 +503,7 @@ call usipsu(nmodpp , iverif)
 
 ! --- Varpos
 !      4ieme passage
-call varpos(iiiiii)
+call varpos(nmodpp)
 !==========
 
 
@@ -553,6 +553,9 @@ if(iihmpr.eq.1) then
     call cfnmva(nomvar(ii), len(nomvar(ii)), ii)
     !==========
   enddo
+
+  call nvamem
+  !==========
 
 endif
 

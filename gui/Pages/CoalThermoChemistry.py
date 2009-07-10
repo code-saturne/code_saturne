@@ -833,23 +833,23 @@ class RadiativTransfer:
         #
         # "RAYONNEMENT" part
         self.Comment = {}
-        self.radiativTransfer                 = 0
-        self.Comment["radiativTransfer"]   = "Rayonnement : (0 : pas de rayonnement ; 1 : constant donne ci-dessous ; 2 : par Modak)"
+        #self.radiativTransfer                 = 0
+        #self.Comment["radiativTransfer"]   = "Rayonnement : (0 : pas de rayonnement ; 1 : constant donne ci-dessous ; 2 : par Modak)"
         self.absorptionCoeff                  = 0
         self.Comment["absorptionCoeff"]    = "Coeff absorption pour le melange gazeux constant"
 
     #
     # "RAYONNEMENT" part
-    def getRadiativTransfer(self) :
-        return self.radiativTransfer
+    #def getRadiativTransfer(self) :
+    #    return self.radiativTransfer
 
 
     def getAbsorptionCoeff(self):
         return self.absorptionCoeff
-    
 
-    def setRadiativTransfer(self, value) :
-        self.radiativTransfer = value
+
+    #def setRadiativTransfer(self, value) :
+    #    self.radiativTransfer = value
 
 
     def setAbsorptionCoeff(self, value):
@@ -1147,9 +1147,9 @@ class CoalThermoChemistryModel:
             msg = "Reading file error: " + filePath + "\nNo string 'RAYONNEMENT'\n"
             raise ValueError, msg
 
-        line = ThermoChFile.readline()
-        value = self.__readIntValue(line, "RadiativTransfer", filePath)
-        self.radiativTransfer.setRadiativTransfer(value)
+        #line = ThermoChFile.readline()
+        #value = self.__readIntValue(line, "RadiativTransfer", filePath)
+        #self.radiativTransfer.setRadiativTransfer(value)
 
         line = ThermoChFile.readline()
         value = self.__readFloatValue(line, "AbsorptionCoeff", filePath)
@@ -1413,9 +1413,9 @@ class CoalThermoChemistryModel:
         #
         ThermoChFile.write("RAYONNEMENT\n")
 
-        chain = str(self.radiativTransfer.getRadiativTransfer())
-        comment = self.createComment(len(chain),self.radiativTransfer.Comment["radiativTransfer"])
-        ThermoChFile.write(chain + comment +"\n")
+        #chain = str(self.radiativTransfer.getRadiativTransfer())
+        #comment = self.createComment(len(chain),self.radiativTransfer.Comment["radiativTransfer"])
+        #ThermoChFile.write(chain + comment +"\n")
 
         chain = str(self.radiativTransfer.getAbsorptionCoeff())
         comment = self.createComment(len(chain),self.radiativTransfer.Comment["absorptionCoeff"])

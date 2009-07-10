@@ -74,11 +74,19 @@ typedef struct {
   int   *propfb;          /* bound faces prop position in fortran array PROPFB */
 } cs_var_t;
 
+
+typedef struct {
+  int     _cs_gui_max_vars;
+  int     _cs_gui_last_var;
+  char  **_cs_gui_var_name;
+} cs_label_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-extern cs_var_t *cs_glob_var; /* Pointer to main variables structure */
+extern cs_var_t    *cs_glob_var;   /* Pointer to main variables structure */
+extern cs_label_t  *cs_glob_label; /* Pointer to main label structure */
 
 /*============================================================================
  * Public function prototypes for Fortran API

@@ -154,7 +154,7 @@ class BatchRunningModel(Model):
 ##  fonctionne mais incomplet:      regex = re.compile(r"""(^\s*""" + word + r""".*$)""")
 ##  fonctionne en tenant compte des lignes commencant par # :
 ##      regex = re.compile(r"""(^(?#)^\s*""" + word + r""".*$)""")
-        #tient compte a  la fois des commentaires et des "$word":
+        #tient compte aÂ  la fois des commentaires et des "$word":
         regex = re.compile(r"""(^(?#)^\s*(?<!$)""" + word + r""".*$)""")
 
         return regex

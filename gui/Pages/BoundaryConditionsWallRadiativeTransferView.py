@@ -274,8 +274,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotZone(self, text):
         nb_zone, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
-            bdModel = Boundary("radiative_wall", self.label, self.__case)
-            bdModel.setOutputRadiativeZone(nb_zone)
+            self.__boundary.setOutputRadiativeZone(nb_zone)
             return nb_zone
 
 

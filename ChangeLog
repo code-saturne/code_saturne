@@ -1,3 +1,29 @@
+* 10/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Graphical interface update for radiative transfer modelling.
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    gui/Base/XMLinitialize.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BoundaryConditionsWallRadiativeTransferView.py
+    gui/Pages/Boundary.py
+    gui/Pages/CoalCombustionView.py
+    gui/Pages/CoalThermoChemistry.py
+    gui/Pages/ThermalRadiationModel.py
+    gui/Pages/ThermalRadiationView.py
+    gui/Pages/TimeStepView.py
+    gui/Pages/WelcomeView.py
+    include/base/cs_gui_radiative_transfer.h
+    include/base/cs_gui_variables.h
+    src/base/cs_gui.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/iniusi.f90
+    src/base/strini.f90
+    src/pprt/ppcsca.f90
+    src/rayt/raydom.f90
+    src/rayt/rayopt.f90
+    users/rayt/usray1.f90
+
 * 10/07/2009 - François Jusserand <francois.jusserand@edf.fr>
   Fix a bug when accounting for orthotropic mesh viscosity.
   modified routine:

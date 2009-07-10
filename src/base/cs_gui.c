@@ -110,7 +110,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* debugging switch */
-#define _XML_DEBUG_ 1
+#define _XML_DEBUG_ 0
 
 /*============================================================================
  * Local Structure Definitions
@@ -133,22 +133,14 @@ extern xmlNodePtr node;               /* Pointer on the root node     */
  * Private global variables
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Private global variables for the treatment of NOMVAR.
- * NOMVAR is a characters fortran array
- *----------------------------------------------------------------------------*/
-
-static int      _cs_gui_max_vars = 0;
-static int      _cs_gui_last_var = 0;
-static char  ** _cs_gui_var_name = NULL;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 /* Pointer on the main variable structure */
 
-cs_var_t  *cs_glob_var = NULL;
+cs_var_t    *cs_glob_var = NULL;
+cs_label_t  *cs_glob_label = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -167,20 +159,20 @@ _gui_copy_varname(const char *varname, int ipp)
 {
   size_t l;
 
-  if (ipp < 1 || ipp > _cs_gui_last_var)
+  if (ipp < 1 || ipp > cs_glob_label->_cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
               _("Variable index %d out of bounds (1 to %d)"),
-                 ipp, _cs_gui_last_var);
+                 ipp, cs_glob_label->_cs_gui_last_var);
 
   l = strlen(varname);
 
-  if (_cs_gui_var_name[ipp-1] == NULL)
-    BFT_MALLOC(_cs_gui_var_name[ipp-1], l + 1, char);
+  if (cs_glob_label->_cs_gui_var_name[ipp-1] == NULL)
+    BFT_MALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
 
-  else if (strlen(_cs_gui_var_name[ipp-1]) != l)
-    BFT_REALLOC(_cs_gui_var_name[ipp-1], l + 1, char);
+  else if (strlen(cs_glob_label->_cs_gui_var_name[ipp-1]) != l)
+    BFT_REALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
 
-  strcpy(_cs_gui_var_name[ipp-1], varname);
+  strcpy(cs_glob_label->_cs_gui_var_name[ipp-1], varname);
 }
 
 /*----------------------------------------------------------------------------
@@ -2557,6 +2549,12 @@ void CS_PROCF (uiinit, UIINIT) (void)
     cs_glob_var->properties_name = NULL;
     cs_glob_var->properties_ipp  = NULL;
     cs_glob_var->propce          = NULL;
+
+    BFT_MALLOC(cs_glob_label, 1, cs_var_t);
+
+    cs_glob_label->_cs_gui_max_vars = 0;
+    cs_glob_label->_cs_gui_last_var = 0;
+    cs_glob_label->_cs_gui_var_name = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -3443,7 +3441,7 @@ void CS_PROCF (csphys, CSPHYS)
 
   cs_gui_reference_pressure(p0);
 
-  /* Varaible rho and viscl */
+  /* Variable rho and viscl */
   if (*nmodpp == 0) {
     if (cs_gui_properties_choice("density", &choice))
       irovar[iphas] = choice;
@@ -4141,17 +4139,17 @@ void CS_PROCF(fcnmva, FCNMVA)
 
   /* Resize array if necessary */
 
-  if (*var_id > _cs_gui_max_vars) {
+  if (*var_id > cs_glob_label->_cs_gui_max_vars) {
 
-    if (_cs_gui_max_vars == 0)
-      _cs_gui_max_vars = 16;
+    if (cs_glob_label->_cs_gui_max_vars == 0)
+      cs_glob_label->_cs_gui_max_vars = 16;
 
-    while (_cs_gui_max_vars <= *var_id)
-      _cs_gui_max_vars *= 2;
+    while (cs_glob_label->_cs_gui_max_vars <= *var_id)
+      cs_glob_label->_cs_gui_max_vars *= 2;
 
-    BFT_REALLOC(_cs_gui_var_name, _cs_gui_max_vars, char *);
-    for (i = _cs_gui_last_var; i < _cs_gui_max_vars; i++)
-      _cs_gui_var_name[i] = NULL;
+    BFT_REALLOC(cs_glob_label->_cs_gui_var_name, cs_glob_label->_cs_gui_max_vars, char *);
+    for (i = cs_glob_label->_cs_gui_last_var; i < cs_glob_label->_cs_gui_max_vars; i++)
+      cs_glob_label->_cs_gui_var_name[i] = NULL;
   }
 
   /* Compute string length (removing start or end blanks) */
@@ -4167,7 +4165,7 @@ void CS_PROCF(fcnmva, FCNMVA)
   l = i2 - i1 + 1;
 
   /* Should be called once per variable only */
-  assert(_cs_gui_var_name[*var_id - 1] == NULL);
+  assert(cs_glob_label->_cs_gui_var_name[*var_id - 1] == NULL);
 
   if (l > 0) {
 
@@ -4179,15 +4177,14 @@ void CS_PROCF(fcnmva, FCNMVA)
 
   cstr[l] = '\0';
 
-    _cs_gui_var_name[*var_id - 1] = cstr;
+    cs_glob_label->_cs_gui_var_name[*var_id - 1] = cstr;
 
   }
 
   /* Update variable counter */
-  _cs_gui_last_var = *var_id;
+  cs_glob_label->_cs_gui_last_var = *var_id;
 
 }
-
 
 /*----------------------------------------------------------------------------
  * Copy variable name from C to Fortran
@@ -4208,13 +4205,13 @@ void CS_PROCF(cfnmva, CFNMVA)
 
   /* Check that variable name was set */
 
-  if (*var_id < 1 || *var_id > _cs_gui_last_var)
+  if (*var_id < 1 || *var_id > cs_glob_label->_cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
               _("Name of variable %d was never set.\n"), var_id);
 
   /* Copy string */
 
-  cstr = _cs_gui_var_name[*var_id - 1];
+  cstr = cs_glob_label->_cs_gui_var_name[*var_id - 1];
 
   if (cstr != NULL) {
 
@@ -4233,6 +4230,23 @@ void CS_PROCF(cfnmva, CFNMVA)
 
   for (i = l; i < *len; i++)
     fstr[i] = ' ';
+}
+
+/*----------------------------------------------------------------------------
+ * Clean memory for fortran name of variables
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(nvamem, NVAMEM) (void)
+{
+    int i;
+
+    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
+
+    BFT_FREE(cs_glob_label->_cs_gui_var_name);
+
+    cs_glob_label->_cs_gui_max_vars = 0;
+    cs_glob_label->_cs_gui_last_var = 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -5021,12 +5035,12 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
     BFT_FREE(cs_glob_var->propce);
     BFT_FREE(cs_glob_var);
 
-    /* clean memory for fortran name of variables */
 
-    for (i = 0; i < _cs_gui_max_vars; i++)
-        BFT_FREE(_cs_gui_var_name[i]);
+    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+        BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
 
-    BFT_FREE(_cs_gui_var_name);
+    BFT_FREE(cs_glob_label->_cs_gui_var_name);
+    BFT_FREE(cs_glob_label);
 
     /* clean memory for xml document */
 

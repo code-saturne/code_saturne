@@ -117,7 +117,8 @@ void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
 
 
 void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const ncel);
+                                const    int *const ncel,
+                                         int *const imodak);
 /*----------------------------------------------------------------------------
  *
  *----------------------------------------------------------------------------*/

@@ -1561,8 +1561,11 @@ class RadiativeWallBoundary(Boundary) :
         """
         self._radiativeChoices = ['itpimp', 'ipgrno', 'ifgrno']
 
-        self.head_list = ['emissivity', 'thermal_conductivity', 'thickness', 'flux', 
-                          'external_temperature_profile','internal_temperature_profile', 
+        self.head_list = ['emissivity',
+                          'thermal_conductivity',
+                          'thickness', 'flux',
+                          'external_temperature_profile',
+                          'internal_temperature_profile',
                           'output_zone']
 
 
@@ -1617,7 +1620,7 @@ class RadiativeWallBoundary(Boundary) :
         Put variables according to choice of type of condition for the radiative wall
         """
         Model().isInList(choice, self._radiativeChoices)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond['choice'] = choice
         list = self._getListValRay(choice)

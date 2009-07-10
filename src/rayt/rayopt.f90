@@ -78,7 +78,7 @@ include "radiat.h"
 
 ! VARIABLES LOCALES
 
-integer          ii, jj, iphas, iok , iiscal, iscaok, ipp, iph
+integer          ii, jj, iphas, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
 character        car4*4
 character*2      num
 
@@ -87,16 +87,24 @@ character*2      num
 ! 0. REDEFINITION DU NOMBRE DE PHASES POUR LE CHARBON PULVERISE
 !===============================================================================
 
-!--> NPHASC : EN CP, PHASE GAZ (= 1 FORCEMENT) + NOMBRE DE CLASSES
-!             SERT A STOCKER LE COEFF D'ABSORPTION PAR EXEMPLE POUR LE
-!             MELANGE ET LES CLASSES DE PARTICULES
+!--> nphasc: for pulverized coal and fuel combustion:
+!            nphasc = 1 (gaz) + number of classes (particles or droplets)
 
-!--> Pour le Charbon Pulverise :
+!--> For pulverized coal and fuel combustion:
 if ( ippmod(icp3pl) .ge. 0 ) then
   nphasc = 1 + nclacp
+else if ( ippmod(icfuel) .ge. 0 ) then
+  nphasc = 1 + nclafu
 else
   nphasc = 1
 endif
+
+nmodpp = 0
+do ipp = 2, nmodmx
+  if (ippmod(ipp).ne.-1) then
+    nmodpp = nmodpp+1
+  endif
+enddo
 
 !===============================================================================
 ! 1. INITIALISATIONS PAR DEFAUT DU MODULE DE TRANSFERTS RADIATIFS
@@ -116,7 +124,6 @@ iirayo = -1
 irapha = 1
 
 !-->  CALCUL DU COEFFICIENT D'ABSORPTION
-!     (REMPLI AUTOMATIQUEMENT ENSUITE POUR LA PHYSIQUE PARTICULIERE)
 !      IMODAK = 0 : sans utiliser modak
 !               1 : a l'aide modak
 
@@ -388,22 +395,23 @@ iok = 0
 
 if (iirayo.gt.0) then
 
-  ipp = 5
+! Positionnement des pointeurs
+! 5eme passage (les autres sont dans iniusi)
 
-  call varpos(ipp)
+  call varpos(nmodpp)
   !==========
 
 ! --> ISUIRD
 
   if (isuird.ne.0 .and. isuird.ne.1 ) then
-    write(nfecra,4000)isuird
+    write(nfecra,4000) isuird
     iok = iok + 1
   endif
 
 ! --> NFREQR
 
   if (nfreqr.le.0) then
-    write(nfecra,4010)nfreqr
+    write(nfecra,4010) nfreqr
     iok = iok + 1
   endif
 
@@ -490,15 +498,55 @@ ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
+!--> TERME SOURCE IMPLICITE
 
-do iphas = 1, nphasc
+ipp = ipppro(ipproc(itsri(1)))
+NOMVAR(IPP)   = 'ITSRI'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = 0
+ilisvr(ipp)   = 0
+
+!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
+
+ipp = ipppro(ipproc(itsre(1)))
+NOMVAR(IPP)   = 'Srad'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
+
+!--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
+
+ipp = ipppro(ipproc(iabs(1)))
+NOMVAR(IPP)   = 'Absorp'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
+
+!--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
+
+ipp = ipppro(ipproc(iemi(1)))
+NOMVAR(IPP)   = 'Emiss'
+ichrvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+ilisvr(ipp)   = 0
+
+!--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
+
+ipp = ipppro(ipproc(icak(1)))
+NOMVAR(IPP)   = 'CoefAb'
+ichrvr(ipp)   = 0
+ilisvr(ipp)   = 0
+ihisvr(ipp,1) = -1
+
+
+do iphas = 1, nphasc-1
 
   WRITE(NUM,'(I1)') IPHAS
 
 !--> TERME SOURCE IMPLICITE
 
   ipp = ipppro(ipproc(itsri(iphas)))
-  NOMVAR(IPP)   = 'ITSRI'//NUM
+  NOMVAR(IPP)   = 'ITSRI_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = 0
   ilisvr(ipp)   = 0
@@ -507,7 +555,7 @@ do iphas = 1, nphasc
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
   ipp = ipppro(ipproc(itsre(iphas)))
-  NOMVAR(IPP)   = 'Srad'//NUM
+  NOMVAR(IPP)   = 'Srad_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -515,7 +563,7 @@ do iphas = 1, nphasc
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iabs(iphas)))
-  NOMVAR(IPP)   = 'Absorp'//NUM
+  NOMVAR(IPP)   = 'Absorp_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -523,7 +571,7 @@ do iphas = 1, nphasc
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iemi(iphas)))
-  NOMVAR(IPP)   = 'Emiss'//NUM
+  NOMVAR(IPP)   = 'Emiss_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -543,81 +591,52 @@ enddo
 !                    ^^^^^^^^^^^^
 !===============================================================================
 
-!   - Interface Code_Saturne
-!     ======================
-
+!   - Code_Saturne GUI
+!     ================
 
 if (iihmpr.eq.1) then
 
-  ipp = ipppro(ipproc(ilumin))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqx))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqy))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqz))
-  call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  do iph = 1,nphasc
-
-    ipp = ipppro(ipproc(itsre(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(itsri(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(iabs(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(iemi(iph)))
-    call fcnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
+  ! properties on boundaries
+  do ii = 1, nbrayf
+    call fcnmra(nbrvaf(ii), len(nbrvaf(ii)), ii)
   enddo
 
-!  do jj = 1, nbrayf
-!    ii = jj + nbrayp
-!    call fcnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
-!  enddo
+   call uiray4(nbrayf, nphas, iirayo, irayvf)
+   !==========
 
-  call uiray4(nbrayf, nphas, iirayo, irayvf)
+  do ii = 1, nbrayf
+    call cfnmra(nbrvaf(ii), len(nbrvaf(ii)), ii)
+  enddo
+
+  ! properties on cells
+  do ii = 1,nvppmx
+    call fcnmva (nomvar(ii), len(nomvar(ii)), ii)
+    !==========
+  enddo
+
+  call csenso                                                     &
+  !==========
+     ( nvppmx, ncapt,  nthist, ntlist,                            &
+       ichrvl, ichrbo, ichrsy, ichrmd,                            &
+       fmtchr, len(fmtchr), optchr, len(optchr),                  &
+       ntchr,  iecaux,                                            &
+       ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
+       ichrvr, ilisvr, ihisvr, isca, iscapp,                      &
+       ipprtp, ipppro, ipproc,                                    &
+       xyzcap )
+
+  do ii = 1,nvppmx
+    call cfnmva(nomvar(ii), len(nomvar(ii)), ii)
+    !==========
+  enddo
+
+  call nvamem
   !==========
 
-
-  ipp = ipppro(ipproc(ilumin))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqx))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqy))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  ipp = ipppro(ipproc(iqz))
-  call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  do iph = 1,nphasc
-
-    ipp = ipppro(ipproc(itsre(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(itsri(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(iabs(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-    ipp = ipppro(ipproc(iemi(iph)))
-    call cfnmra(nomvar(ipp), len(nomvar(ipp)), ipp)
-
-  enddo
-
-!  do jj = 1, nbrayf
-!    ii = jj + nbrayp
-!    call cfnmra(nbrvaf(jj), len(nbrvaf(jj)), ii)
-!  enddo
+  ! take into acount users modifications by subroutine usini1
+  iverif = 0
+  call usipes(nmodpp, iverif)
+  !==========
 
 endif
 
@@ -628,8 +647,7 @@ call usray1
 !     Choix entre -1 et 1
 if (iirayo.eq.1 .or. iirayo.eq.2) then
   do ii = 1, nbrayf
-    if (irayvf(ii).ne.1 .and.                                     &
-      irayvf(ii).ne.0) then
+    if (irayvf(ii).ne.1 .and. irayvf(ii).ne.-1) then
       write(nfecra,4070) nbrvaf(ii), irayvf(ii)
       iok = iok + 1
     endif

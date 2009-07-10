@@ -369,33 +369,6 @@ def dicoLabel(name):
 
     return label
 
-
-def dicoRayLabel():
-    """
-    """
-    dico = {}
-    rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
-                'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
-
-    raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
-                'Temp_paroi', 'Flux_incident', 'Conductivite_th', 'Epaisseur',
-            'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
-
-    raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
-                'Wall_temp', 'Flux_incident', 'Th_conductivity', 'Thickness',
-            'Emissivity','Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
-
-    dico['name'] = rayName
-    dico['labF'] = raylabF
-    dico['labE'] = raylabE
-    if GuiParam.lang == 'fr':
-        label = dico['labF']
-    else:
-        label = dico['labE']
-
-    return dico['name'], label
-
 #-------------------------------------------------------------------------------
 # End of Toolbox
 #-------------------------------------------------------------------------------

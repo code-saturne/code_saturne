@@ -797,7 +797,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.coalThermoChModel.save()
         self.model.createClassModelScalarsAndProperties(self.coalThermoChModel, self.coalNumber)
 
-#bug ici
+        # FIXME: bug ici
         # Update boundary conditions
         log.debug("slotCreateClass: number of classes: %i " % coal.getClassesNumber())
         for zone in LocalizationModel('BoundaryZone', self.case).getZones():
@@ -805,7 +805,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
                 b = Boundary("coal_inlet", zone.getLabel(), self.case)
                 #b.getCoalRatios(self.coalNumber-1)
                 b.updateCoalRatios(self.coalNumber-1)
-#bug ici
 
         # Update buttons
         self.pushButtonDeleteClass.setEnabled(True)

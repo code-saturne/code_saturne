@@ -47,12 +47,10 @@ from WelcomeForm import Ui_WelcomeForm
 # This class defines the welcome page
 #-------------------------------------------------------------------------------
 
-
 class WelcomeView(QtGui.QWidget, Ui_WelcomeForm):
     """
     Class for the welcome page
     """
-    
     def __init__(self):
         """
         Constructor
@@ -60,16 +58,6 @@ class WelcomeView(QtGui.QWidget, Ui_WelcomeForm):
         QtGui.QWidget.__init__(self)
         Ui_WelcomeForm.__init__(self)
         self.setupUi(self)
-        
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pass
-
 
 #-------------------------------------------------------------------------------
 # End 

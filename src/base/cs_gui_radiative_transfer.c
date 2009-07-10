@@ -125,6 +125,7 @@ static int      _cs_gui_max_vars = 0;
 static int      _cs_gui_last_var = 0;
 static char  ** _cs_gui_var_rayt = NULL;
 
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -296,6 +297,10 @@ _radiative_transfer_type(const char *const param,
       *keyword = 0;
     else if (cs_gui_strcmp(type, "variable"))
       *keyword = 1;
+    else if (cs_gui_strcmp(type, "formula"))
+      *keyword = 2;
+    else if (cs_gui_strcmp(type, "modak"))
+      *keyword = 3;
     else {
       bft_error (__FILE__, __LINE__, 0,
                  _("unknow type %s\n"), type);
@@ -514,20 +519,9 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
                                 int *const iirayo,
                                 int *const irayvf)
 {
-    int i, iphas;
+    int i, iphas = 0;
     int list_ind, record_ind = 0;
     char *label = NULL;
-
-    const char *const _cs_properties_name1[9] = {
-        "intensity",
-        "qrad_x",
-        "qrad_y",
-        "qrad_z",
-        "radiative_source_term",
-        "implicit_source_term",
-        "absorption",
-        "emission",
-        "absorption_coefficient"};
 
     const char *const _cs_properties_name2[8] = {
         "wall_temp",
@@ -539,22 +533,8 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
         "flux_convectif",
         "coeff_ech_conv"};
 
-/*    if (*iirayo)
+    if (*iirayo)
     {
-        for (i=0 ; i < *nbrayb; i++)
-        {
-            list_ind =  1;
-            record_ind =  1;
-            label = _radiative_transfer_char_post(_cs_properties_name1[i], &list_ind, &record_ind);
-            for (iphas=0 ; iphas < *nphas ; iphas++)
-            {
-                irayvp[(*nbrayb)*iphas + i] = record_ind;
-                if (label)
-                    _cs_gui_copy_varname(label, i + 1 + (*nbrayb)*iphas);
-            }
-            BFT_FREE(label);
-        }
-
         for (i=0 ; i < *nbrayf ; i++)
         {
             list_ind =  1;
@@ -564,7 +544,7 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
             {
                 irayvf[(*nbrayf)*iphas + i] = record_ind;
                 if (label)
-                    _cs_gui_copy_varname(label, i + 1 + (*nbrayb)*(*nphas) + (*nbrayf)*iphas);
+                    _cs_gui_copy_varname(label, i + 1 + (*nbrayf)*iphas);
             }
             BFT_FREE(label);
         }
@@ -573,26 +553,17 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
     bft_printf("==>UIRAY4\n");
     if (*iirayo)
     {
-        for (i=0 ; i < *nbrayb ; i++)
-        {
-            for (iphas=0 ; iphas < *nphas ; iphas++)
-            {
-                bft_printf(_("--output cells: %s value %i \n"),
-                           _cs_gui_var_rayt[i + (*nbrayb)*iphas],
-                           irayvp[(*nbrayb)*iphas + i]);
-            }
-        }
         for (i=0 ; i < *nbrayf ; i++)
         {
             for (iphas=0 ; iphas < *nphas ; iphas++)
             {
                 bft_printf(_("--output boundary faces: %s value %i \n"),
-                           _cs_gui_var_rayt[i + (*nbrayb)*(*nphas) + (*nbrayf)*iphas],
+                           _cs_gui_var_rayt[i + (*nbrayf)*iphas],
                 irayvf[(*nbrayf)*iphas + i]);
             }
         }
     }
-#endif*/
+#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -654,14 +625,19 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     BFT_MALLOC(vars->properties_name[n], strlen("qrad_z")+1, char);
     strcpy(vars->properties_name[n++], "qrad_z");
 
+    /* ITSRE */
+    vars->properties_ipp[n] = ipppro[ ipproc[ itsre[0] -1 ]-1 ];
+    vars->propce[n] = itsre[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("radiative_source_term")+1, char);
+    strcpy(vars->properties_name[n++], "radiative_source_term");
 
     /* ITSRE loop on classes */
-    BFT_MALLOC(name, strlen("radiative_source_term")+1 + 2, char);
+    BFT_MALLOC(name, strlen("radiative_source_term_")+1 + 2, char);
     BFT_MALLOC(snumpp, 1 + 2, char);
-    strcpy(name, "radiative_source_term");
-    for (i = 0; i < *nphasc; i++)
+    strcpy(name, "radiative_source_term_");
+    for (i = 1; i < *nphasc; i++)
     {
-        sprintf(snumpp, "%2.2i", i+1);
+        sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ ipproc[ itsre[i] -1 ]-1 ];
@@ -669,15 +645,21 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
-        strcpy(name, "radiative_source_term");
+        strcpy(name, "radiative_source_term_");
     }
 
+    /* ITSRI */
+    vars->properties_ipp[n] = ipppro[ ipproc[ itsri[0] -1 ]-1 ];
+    vars->propce[n] = itsri[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("implicit_source_term")+1, char);
+    strcpy(vars->properties_name[n++], "implicit_source_term");
+
     /* ITSRI loop on classes */
-    BFT_REALLOC(name, strlen("implicit_source_term")+1 + 2, char);
-    strcpy(name, "implicit_source_term");
-    for (i = 0; i < *nphasc; i++)
+    BFT_REALLOC(name, strlen("implicit_source_term_")+1 + 2, char);
+    strcpy(name, "implicit_source_term_");
+    for (i = 1; i < *nphasc; i++)
     {
-        sprintf(snumpp, "%2.2i", i+1);
+        sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ ipproc[ itsri[i] -1 ]-1 ];
@@ -685,15 +667,21 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
-        strcpy(name, "implicit_source_term");
+        strcpy(name, "implicit_source_term_");
     }
 
+    /* IABS */
+    vars->properties_ipp[n] = ipppro[ ipproc[ iabs[0] -1 ]-1 ];
+    vars->propce[n] = iabs[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("absorption")+1, char);
+    strcpy(vars->properties_name[n++], "absorption");
+
     /* IABS loop on classes */
-    BFT_REALLOC(name, strlen("absorption")+1 + 2, char);
-    strcpy(name, "absorption");
-    for (i = 0; i < *nphasc; i++)
+    BFT_REALLOC(name, strlen("absorption_")+1 + 2, char);
+    strcpy(name, "absorption_");
+    for (i = 1; i < *nphasc; i++)
     {
-        sprintf(snumpp, "%2.2i", i+1);
+        sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ ipproc[ iabs[i] -1 ]-1 ];
@@ -701,15 +689,21 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
-        strcpy(name, "absorption");
+        strcpy(name, "absorption_");
     }
 
+    /* IEMI */
+    vars->properties_ipp[n] = ipppro[ ipproc[ iemi[0] -1 ]-1 ];
+    vars->propce[n] = iemi[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("emission")+1, char);
+    strcpy(vars->properties_name[n++], "emission");
+
     /* IEMI loop on classes */
-    BFT_REALLOC(name, strlen("emission")+1 + 2, char);
-    strcpy(name, "emission");
-    for (i = 0; i < *nphasc; i++)
+    BFT_REALLOC(name, strlen("emission_")+1 + 2, char);
+    strcpy(name, "emission_");
+    for (i = 1; i < *nphasc; i++)
     {
-        sprintf(snumpp, "%2.2i", i+1);
+        sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ ipproc[ iemi[i] -1 ]-1 ];
@@ -717,15 +711,21 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
-        strcpy(name, "emission");
+        strcpy(name, "emission_");
     }
 
+    /* ICAK */
+    vars->properties_ipp[n] = ipppro[ ipproc[ icak[0] -1 ]-1 ];
+    vars->propce[n] = icak[0];
+    BFT_MALLOC(vars->properties_name[n], strlen("absorption_coefficient")+1, char);
+    strcpy(vars->properties_name[n++], "absorption_coefficient");
+
     /* ICAK loop on classes */
-    BFT_REALLOC(name, strlen("absorption_coefficient")+1 + 2, char);
-    strcpy(name, "absorption_coefficient");
-    for (i = 0; i < *nphasc; i++)
+    BFT_REALLOC(name, strlen("absorption_coefficient_")+1 + 2, char);
+    strcpy(name, "absorption_coefficient_");
+    for (i = 1; i < *nphasc; i++)
     {
-        sprintf(snumpp, "%2.2i", i+1);
+        sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ ipproc[ icak[i] -1 ]-1 ];
@@ -733,13 +733,13 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
-        strcpy(name, "absorption_coefficient");
+        strcpy(name, "absorption_coefficient_");
     }
 
     BFT_FREE(name);
     BFT_FREE(snumpp);
 
-    if (n != vars->nsalpp)
+    if (n != vars->nprop)
         bft_error(__FILE__, __LINE__, 0,
                   _("number of properties is not correct: %i instead of: %i\n"),
                     n, vars->nsalpp);
@@ -973,8 +973,8 @@ void CS_PROCF (uiray2, UIRAY2)
 
         if (cs_gui_strcmp(nature, "wall")) {
           boundary->type[izone] = _radiative_boundary_type(label,
-                                                                 *itpimp, *ipgrno, *iprefl,
-                                                                 *ifgrno, *ifrefl);
+                                                           *itpimp, *ipgrno, *iprefl,
+                                                           *ifgrno, *ifrefl);
           tmp = (double) boundary->output_zone[izone];
           _radiative_boundary(label, "output_zone", &tmp);
           boundary->output_zone[izone] = (int) tmp;
@@ -1007,9 +1007,10 @@ void CS_PROCF (uiray2, UIRAY2)
 
     BFT_FREE(description);
 
-    if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-
-      for (n = 0; n < faces; n++) {
+    if (cs_gui_strcmp(boundary->nature[izone], "wall"))
+    {
+      for (n = 0; n < faces; n++)
+      {
         ifbr = faces_list[n]-1;
 
         if (itypfb[ifbr] != *iparoi && itypfb[ifbr] != *iparug)
@@ -1022,21 +1023,28 @@ void CS_PROCF (uiray2, UIRAY2)
 
         izfrdp[ifbr] = boundary->output_zone[izone];
         isothp[ifbr] = boundary->type[izone];
-        if (isothp[ifbr] == *itpimp) {
-          epsp[ifbr] = boundary->emissivity[izone];
-          tintp[ifbr] = boundary->internal_temp[izone];
-        } else if (isothp[ifbr] == *ipgrno) {
+        if (isothp[ifbr] == *itpimp)
+        {
+            epsp[ifbr] = boundary->emissivity[izone];
+            tintp[ifbr] = boundary->internal_temp[izone];
+        }
+        else if (isothp[ifbr] == *ipgrno)
+        {
           xlamp[ifbr] = boundary->thermal_conductivity[izone];
           epap[ifbr] = boundary->thickness[izone];
           textp[ifbr] = boundary->external_temp[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
-          if (boundary->emissivity[izone] != 0.)
-             epsp[ifbr] = boundary->emissivity[izone];
-        } else if (isothp[ifbr] == *ifgrno) {
+          epsp[ifbr] = boundary->emissivity[izone];
+          if (boundary->emissivity[izone] == 0.)
+               isothp[ifbr] == *iprefl;
+        }
+        else if (isothp[ifbr] == *ifgrno)
+        {
           rcodcl[2 * (*nfabor) * (*nvar) + (*ivart) * (*nfabor) + ifbr] = boundary->conduction_flux[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
+          epsp[ifbr] = boundary->emissivity[izone];
           if (boundary->emissivity[izone] != 0.)
-            epsp[ifbr] = boundary->emissivity[izone];
+               isothp[ifbr] == *ifrefl;
         }
       }
 
@@ -1099,7 +1107,8 @@ void CS_PROCF (uiray2, UIRAY2)
 
 
 void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const ncel)
+                                const    int *const ncel,
+                                         int *const imodak)
 {
     double value;
     int i, type;
@@ -1114,9 +1123,14 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
             for(i = 0; i < *ncel; i++)
                 ck[i] = value;
         }
+        else if (type == 3)
+        {
+            *imodak = 1;
+        }
 #if _XML_DEBUG_
     bft_printf("==>UIRAY3\n");
     bft_printf("--absorption coefficient type: %d\n", type);
+    bft_printf("--absorption coefficient by modak: %i\n", imodak);
     if (type == 0)
         bft_printf("--absorption coefficient value = %f\n", value);
 #endif

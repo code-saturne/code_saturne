@@ -199,8 +199,6 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelDirection.addItem("32")
         self.modelDirection.addItem("128")
 
-        self.modelAbsorption.addItem('Constant', 'constant')
-
         # Connections
 
         self.connect(self.comboBoxRadModel,SIGNAL("activated(const QString&)"),self.slotRadiativeTransfer)
@@ -216,14 +214,18 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         validatorCoeff = QtPage.DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
-        self.modelAbsorption.addItem('User subroutine (usray3)', 'variable')
-        self.modelAbsorption.addItem('User law', 'formula')
+        self.modelAbsorption.addItem('Constant',                   'constant')
+        self.modelAbsorption.addItem('User subroutine (usray3)',   'variable')
+        self.modelAbsorption.addItem('User law',                   'formula')
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
         if self.mdl.isCoalCombustion():
             self.modelAbsorption.disableItem(str_model='variable')
+            self.modelAbsorption.enableItem(str_model='modak')
         else:
             self.modelAbsorption.disableItem(str_model='modak')
+            self.modelAbsorption.enableItem(str_model='variable')
+
         self.modelAbsorption.disableItem(str_model='formula')
 
         # Initialization

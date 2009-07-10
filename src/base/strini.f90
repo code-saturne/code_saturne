@@ -135,6 +135,7 @@ include "pointe.h"
 include "albase.h"
 include "alstru.h"
 include "alaste.h"
+include "ihmpre.h"
 include "period.h"
 include "parall.h"
 
@@ -232,6 +233,18 @@ enddo
 
 ! 2.1 STRUCTURES INTERNES :
 ! -----------------------
+
+if (iihmpr.eq.1) then
+
+  call uistr1 &
+  !==========
+( nfabor,                  &
+  ia(iidfst),              &
+  aexxst, bexxst, cfopre,  &
+  ihistr,                  &
+  xstp, xstreq, xpstr )
+ 
+endif
 
 call usstr1                                                       &
 !==========

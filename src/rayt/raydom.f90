@@ -369,7 +369,7 @@ unspi = 1.d0/pi
 
     if (iihmpr.eq.1) then
 
-      call uiray3(propce(1,ipproc(icak(1))),ncel)
+      call uiray3(propce(1,ipproc(icak(1))), ncel, imodak)
       !==========
 
       if (iirayo.eq.2 .and. ippmod(iphpar).le.1 .and. ipadom.le.3) then
