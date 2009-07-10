@@ -577,7 +577,7 @@ _get_face_warping(cs_int_t         idx_start,
   double  edge_cos_alpha;
   cs_real_t  vect[3];
 
-  double  cos_alpha = 1.;
+  double  cos_alpha = 0.;
 
   const int  dim = 3;
   const double  rad_to_deg = 180. / acos(-1.);
@@ -597,7 +597,7 @@ _get_face_warping(cs_int_t         idx_start,
 
     edge_cos_alpha = _COSINE_3D(vect, face_normal);
     edge_cos_alpha = CS_ABS(edge_cos_alpha);
-    cos_alpha = CS_MIN(cos_alpha, edge_cos_alpha);
+    cos_alpha = CS_MAX(cos_alpha, edge_cos_alpha);
 
   }
 
@@ -614,7 +614,7 @@ _get_face_warping(cs_int_t         idx_start,
 
   edge_cos_alpha = _COSINE_3D(vect, face_normal);
   edge_cos_alpha = CS_ABS(edge_cos_alpha);
-  cos_alpha = CS_MIN(cos_alpha, edge_cos_alpha);
+  cos_alpha = CS_MAX(cos_alpha, edge_cos_alpha);
   cos_alpha = CS_MIN(cos_alpha, 1.);
 
   *face_warping = 90. - acos(cos_alpha) * rad_to_deg;

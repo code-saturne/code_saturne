@@ -1,4 +1,9 @@
 * 10/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix the calculation of the face-warping quality criterium.
+  modified routine:
+    src/base/cs_mesh_quality.c
+
+* 10/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   On Linux systems, use fenv library to trap floating point exceptions.
   modified routine:
     src/apps/cs_solver.c
