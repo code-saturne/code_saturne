@@ -201,22 +201,36 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         # Connections
 
-        self.connect(self.comboBoxRadModel,SIGNAL("activated(const QString&)"),self.slotRadiativeTransfer)
-        self.connect(self.radioButtonOn,SIGNAL("clicked()"),self.slotStartRestart)
-        self.connect(self.radioButtonOff,SIGNAL("clicked()"),self.slotStartRestart)
-        self.connect(self.comboBoxDirection,SIGNAL("activated(const QString&)"),self.slotDirection)
-        self.connect(self.comboBoxAbsorption,SIGNAL("activated(const QString&)"),self.slotTypeCoefficient)
-        self.connect(self.lineEditCoeff,SIGNAL("textChanged(const QString &)"),self.slotAbsorptionCoefficient)
-        self.connect(self.toolButtonAdvanced,SIGNAL("clicked()"),self.slotAdvancedOptions)
+        self.connect(self.comboBoxRadModel,
+                     SIGNAL("activated(const QString&)"),
+                     self.slotRadiativeTransfer)
+        self.connect(self.radioButtonOn,
+                     SIGNAL("clicked()"),
+                     self.slotStartRestart)
+        self.connect(self.radioButtonOff,
+                     SIGNAL("clicked()"),
+                     self.slotStartRestart)
+        self.connect(self.comboBoxDirection,
+                     SIGNAL("activated(const QString&)"),
+                     self.slotDirection)
+        self.connect(self.comboBoxAbsorption,
+                     SIGNAL("activated(const QString&)"),
+                     self.slotTypeCoefficient)
+        self.connect(self.lineEditCoeff,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.slotAbsorptionCoefficient)
+        self.connect(self.toolButtonAdvanced,
+                     SIGNAL("clicked()"), 
+                     self.slotAdvancedOptions)
 
         # Validator
 
         validatorCoeff = QtPage.DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
-        self.modelAbsorption.addItem('Constant',                   'constant')
-        self.modelAbsorption.addItem('User subroutine (usray3)',   'variable')
-        self.modelAbsorption.addItem('User law',                   'formula')
+        self.modelAbsorption.addItem('constant',                   'constant')
+        self.modelAbsorption.addItem('user subroutine (usray3)',   'variable')
+        self.modelAbsorption.addItem('user law',                   'formula')
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
         if self.mdl.isCoalCombustion():

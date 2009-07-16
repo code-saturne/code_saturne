@@ -1,3 +1,52 @@
+* 16/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add particles tracking set-up within the graphical interface.
+  Code and comments cleaning, plus some fixes related to Xml file
+  management.
+  added routines:
+    gui/Pages/BoundaryConditionsParticlesModel.py
+    gui/Pages/BoundaryConditionsParticlesView.py
+    include/base/cs_gui_particles.h
+    src/base/cs_gui_particles.c
+  renamed routines:
+    include/base/cs_gui_mobile_mesh.h
+    src/base/cs_gui_mobile_mesh.c
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/BrowserView.py
+    gui/Base/QtPage.py
+    gui/Pages/AnalysisFeaturesView.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BoundaryConditionsVelocityInletView.py
+    gui/Pages/FluidCharacteristicsView.py
+    gui/Pages/LagrangianBoundariesForm.ui
+    gui/Pages/LagrangianBoundariesView.py
+    gui/Pages/Makefile.am
+    gui/Pages/MemoryAllocationForm.ui
+    gui/Pages/MobileMeshView.py
+    gui/Pages/NumericalParamGlobalForm.ui
+    gui/Pages/OutputVolumicVariablesModel.py
+    gui/Pages/ReferenceValuesModel.py
+    gui/Pages/SolutionDomainForm.ui
+    gui/Pages/SolutionVerifForm.ui
+    gui/Pages/SolutionVerifView.py
+    gui/Pages/ThermalRadiationView.py
+    gui/Pages/UserArraysForm.ui
+    gui/Pages/UserScalarPropertiesView.py
+    include/base/cs_gui.h
+    include/base/cs_gui_radiative_transfer.h
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_gui.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/iniusi.f90
+    src/base/Makefile.am
+    src/base/strini.f90
+    src/lagr/lagent.f90
+    src/lagr/lagopt.f90
+    src/rayt/raycli.f90
+    src/rayt/rayopt.f90
+
 * 16/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Autotools machinery improvement for SYRTHES coupling and BLAS libraries.
   modified scripts:

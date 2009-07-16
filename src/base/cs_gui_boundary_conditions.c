@@ -1060,7 +1060,8 @@ char *cs_gui_boundary_zone_localization(const char *const label)
  *----------------------------------------------------------------------------*/
 
 int*
-cs_gui_get_faces_list(const int   izone,                      const char *label,
+cs_gui_get_faces_list(const int   izone,
+                      const char *label,
                       const int   nfabor,
                       const int   nozppm,
                             int  *faces )
@@ -1365,7 +1366,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
 #endif
             }
-            else if (cs_gui_strcmp(choice_d, "normale"))
+            else if (cs_gui_strcmp(choice_d, "normal"))
             {
                 if (cs_gui_strcmp(choice_v, "norm"))
                 {

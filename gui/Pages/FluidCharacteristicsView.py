@@ -116,16 +116,16 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
-        self.modelRho.addItem(self.tr('user subroutine USPHYV'), 'variable')
+        self.modelRho.addItem(self.tr('user subroutine (usphyv)'), 'variable')
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
-        self.modelMu.addItem(self.tr('user subroutine USPHYV'), 'variable')
+        self.modelMu.addItem(self.tr('user subroutine (usphyv)'), 'variable')
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
-        self.modelCp.addItem(self.tr('user subroutine USPHYV'), 'variable')
+        self.modelCp.addItem(self.tr('user subroutine (usphyv)'), 'variable')
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
-        self.modelAl.addItem(self.tr('user subroutine USPHYV'), 'variable')
+        self.modelAl.addItem(self.tr('user subroutine (usphyv)'), 'variable')
 
         # Connections
 

@@ -486,11 +486,8 @@ if(iihmpr.eq.1) then
              ipptx, ippty, ipptz, ippdt,                          &
              ivisma, iappel)
 
-  call uimoyt                                                     &
+  call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========
-            (ndgmox, isca,                                        &
-             ipppro, ipproc,  icmome,                             &
-             ntdmom, imoold, idfmom)
 
 endif
 
@@ -546,8 +543,7 @@ if(iihmpr.eq.1) then
        ntchr,  iecaux,                                            &
        ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
        ichrvr, ilisvr, ihisvr, isca, iscapp,                      &
-       ipprtp, ipppro, ipproc,                                    &
-       xyzcap )
+       ipprtp, xyzcap )
 
   do ii = 1,nvppmx
     call cfnmva(nomvar(ii), len(nomvar(ii)), ii)

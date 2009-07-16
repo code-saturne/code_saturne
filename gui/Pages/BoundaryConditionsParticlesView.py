@@ -362,17 +362,15 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         validatorIJFRE  = IntValidator(self.lineEditIJFRE, min=0)
         validatorICLST  = IntValidator(self.lineEditICLST, min=0)
         validatorIDEBT  = DoubleValidator(self.lineEditIDEBT, min=0.)
-        validatorIPOIT  = DoubleValidator(self.lineEditIPOIT, min=0.)
-        validatorIPOIT.setExclusiveMin(True)
+        validatorIPOIT  = IntValidator(self.lineEditIPOIT, min=0)
         validatorIROPT  = DoubleValidator(self.lineEditIROPT, min=0.)
-        validatorIROPT.setExclusiveMin(True)
-
-        validatorIUNO = DoubleValidator(self.lineEditIUNO)
+        
+        validatorIUNO = DoubleValidator(self.lineEditIUNO) #, min=0.)
         validatorIUPT = DoubleValidator(self.lineEditIUPT)
         validatorIVPT = DoubleValidator(self.lineEditIVPT)
         validatorIWPT = DoubleValidator(self.lineEditIWPT)
         
-        validatorITPT  = DoubleValidator(self.lineEditITPT)
+        validatorITPT  = DoubleValidator(self.lineEditITPT)#, min=0.)
         validatorICPT  = DoubleValidator(self.lineEditICPT)
         validatorIEPSI = DoubleValidator(self.lineEditIEPSI)
         

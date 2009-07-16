@@ -55,6 +55,7 @@ from PyQt4 import QtGui, QtCore
 #-------------------------------------------------------------------------------
 
 from Toolbox import GuiParam
+from Common import LABEL_LENGTH_MAX
 
 #-------------------------------------------------------------------------------
 # log config
@@ -279,6 +280,8 @@ class IntValidator(QtGui.QIntValidator):
         QtGui.QIntValidator.__init__(self, parent)
         self.parent = parent
         self.state = QtGui.QValidator.Invalid
+        self.__min = min
+        self.__max = max
 
         if type(min) != int or type(max) != int:
             raise ValueError, "The given parameters are not integers (warning: long are not allowed)."
@@ -291,17 +294,47 @@ class IntValidator(QtGui.QIntValidator):
         self.default = 0
         self.fix = False
 
+        msg = ""
+        if min > vmin and max == vmax:
+            msg = self.tr("The integer value must be greater than or equal to %i" % min)
+        elif min == vmin and max < vmax:
+            msg = self.tr("The integer value must be lower than or equal to %i" % max)
+        elif min > vmin and max < vmax:
+            msg = self.tr("The integer value must be between than or equal to %i and %i" % (min, max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
+
 
     def setExclusiveMin(self, b=True):
         if type(b) != bool:
             raise ValueError, "The given parameter is not a boolean."
         self.exclusiveMin = b
 
+        msg = ""
+        if self.__min > vmin and self.__max == vmax:
+            msg = self.tr("The integer value must be greater than %i" % self.__min)
+        elif self.__min == vmin and self.__max < vmax:
+            msg = self.tr("The integer value must be lower than or equal to %i" % self.__max)
+        elif self.__min > vmin and self.__max < vmax:
+            msg = self.tr("The integer value must be greater %i and lower than or equal to %i" % (self.__min, self.__max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
+
 
     def setExclusiveMax(self, b=True):
         if type(b) != bool:
             raise ValueError, "The given parameter is not a boolean."
         self.exclusiveMax = b
+
+        msg = ""
+        if self.__min > vmin and self.__max == vmax:
+            msg = self.tr("The integer value must be greater than or equal to %i" % self.__min)
+        elif self.__min == vmin and self.__max < vmax:
+            msg = self.tr("The integer value must be lower than %i" % self.__max)
+        elif self.__min > vmin and self.__max < vmax:
+            msg = self.tr("The integer value must be greater than or equal to %i and lower than %i" % (self.__min, self.__max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
 
 
     def setFixup(self, v):
@@ -350,6 +383,12 @@ class IntValidator(QtGui.QIntValidator):
         return (state, pos)
 
 
+    def tr(self, text):
+        """
+        """
+        return text
+
+
 class DoubleValidator(QtGui.QDoubleValidator):
     """
     Validator for real data.
@@ -361,6 +400,8 @@ class DoubleValidator(QtGui.QDoubleValidator):
         QtGui.QDoubleValidator.__init__(self, parent)
         self.parent = parent
         self.state = QtGui.QValidator.Invalid
+        self.__min = min
+        self.__max = max
 
         self.setNotation(self.ScientificNotation)
 
@@ -375,17 +416,47 @@ class DoubleValidator(QtGui.QDoubleValidator):
         self.default = 0.0
         self.fix = False
 
+        msg = ""
+        if min > -1.e99 and max == 1.e99:
+            msg = self.tr("The float value must be greater than %.1f" % min)
+        elif min == -1.e99 and max < 1.e99:
+            msg = self.tr("The float value must be lower than %.1f" % max)
+        elif min > -1.e99 and max < 1.e99:
+            msg = self.tr("The float value must be between than %.1f and %.1f" % (min, max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
+
 
     def setExclusiveMin(self, b=True):
         if type(b) != bool:
             raise ValueError, "The given parameter is not a boolean."
         self.exclusiveMin = b
 
+        msg = ""
+        if self.__min > -1.e99 and self.__max == 1.e99:
+            msg = self.tr("The float value must be greater than %.1f" % self.__min)
+        elif self.__min == -1.e99 and self.__max < 1.e99:
+            msg = self.tr("The float value must be lower than or equal to %.1f" % self.__max)
+        elif self.__min > -1.e99 and self.__max < 1.e99:
+            msg = self.tr("The float value must be greater than %.1f and lower than or equal to %.1f" % (self.__min, self.__max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
+
 
     def setExclusiveMax(self, b=True):
         if type(b) != bool:
             raise ValueError, "The given parameter is not a boolean."
         self.exclusiveMax = b
+
+        msg = ""
+        if self.__min > -1.e99 and self.__max == 1.e99:
+            msg = self.tr("The float value must be greater than or equal to %.1f" % self.__min)
+        elif self.__min == -1.e99 and self.__max < 1.e99:
+            msg = self.tr("The float value must be lower than %.1f" % self.__max)
+        elif self.__min > -1.e99 and self.__max < 1.e99:
+            msg = self.tr("The float value must be greater than or equal to %.1f and lower than %.1f" % (self.__min, self.__max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
 
 
     def setFixup(self, v):
@@ -434,6 +505,12 @@ class DoubleValidator(QtGui.QDoubleValidator):
         return (state, pos)
 
 
+    def tr(self, text):
+        """
+        """
+        return text
+
+
 class RegExpValidator(QtGui.QRegExpValidator):
     """
     Validator for regular expression.
@@ -446,8 +523,11 @@ class RegExpValidator(QtGui.QRegExpValidator):
         self.parent = parent
         self.state = QtGui.QRegExpValidator.Invalid
 
-        regExp = QtCore.QRegExp(rx)
-        self.__validator = QtGui.QRegExpValidator(regExp, parent)
+        self.__validator = QtGui.QRegExpValidator(rx, parent)
+
+        if "{1," + str(LABEL_LENGTH_MAX) + "}" in rx.pattern():
+            msg = self.tr("The maximum length of the label is %i characters" % LABEL_LENGTH_MAX)
+            self.parent.setStatusTip(QtCore.QString(msg))
 
 
     def validate(self, string, pos):
@@ -472,6 +552,12 @@ class RegExpValidator(QtGui.QRegExpValidator):
         self.state = state
 
         return (state, pos)
+
+
+    def tr(self, text):
+        """
+        """
+        return text
 
 #-------------------------------------------------------------------------------
 # Paint in green a given widget

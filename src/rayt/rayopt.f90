@@ -622,8 +622,7 @@ if (iihmpr.eq.1) then
        ntchr,  iecaux,                                            &
        ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
        ichrvr, ilisvr, ihisvr, isca, iscapp,                      &
-       ipprtp, ipppro, ipproc,                                    &
-       xyzcap )
+       ipprtp, xyzcap )
 
   do ii = 1,nvppmx
     call cfnmva(nomvar(ii), len(nomvar(ii)), ii)

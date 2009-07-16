@@ -108,17 +108,17 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         # Combo models
         self.modelVelocity = ComboModel(self.comboBoxVelocity, 6, 1)
-        self.modelVelocity.addItem(self.tr("Norm"), 'norm')
-        self.modelVelocity.addItem(self.tr("Mass flow rate"), 'flow1')
-        self.modelVelocity.addItem(self.tr("Volumic flow rate"), 'flow2')
-        self.modelVelocity.addItem(self.tr("Norm (user law)"), 'norm_formula')
-        self.modelVelocity.addItem(self.tr("Mass flow rate (user law)"), 'flow1_formula')
-        self.modelVelocity.addItem(self.tr("Volumic flow rate (user law)"), 'flow2_formula')
+        self.modelVelocity.addItem(self.tr("norm"), 'norm')
+        self.modelVelocity.addItem(self.tr("mass flow rate"), 'flow1')
+        self.modelVelocity.addItem(self.tr("volumic flow rate"), 'flow2')
+        self.modelVelocity.addItem(self.tr("norm (user law)"), 'norm_formula')
+        self.modelVelocity.addItem(self.tr("mass flow rate (user law)"), 'flow1_formula')
+        self.modelVelocity.addItem(self.tr("volumic flow rate (user law)"), 'flow2_formula')
 
         self.modelDirection = ComboModel(self.comboBoxDirection, 3, 1)
-        self.modelDirection.addItem(self.tr("Normal to the inlet"), 'normal')
-        self.modelDirection.addItem(self.tr("Specified coordinates"), 'coordinates')
-        self.modelDirection.addItem(self.tr("User profile"), 'formula')
+        self.modelDirection.addItem(self.tr("normal direction to the inlet"), 'normal')
+        self.modelDirection.addItem(self.tr("specified coordiates"), 'coordinates')
+        self.modelDirection.addItem(self.tr("user profile"), 'formula')
 
         # Validators
         validatorVelocity = DoubleValidator(self.lineEditVelocity)

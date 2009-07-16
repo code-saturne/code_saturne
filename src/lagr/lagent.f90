@@ -199,6 +199,7 @@ include "ppthch.h"
 include "ppincl.h"
 include "cpincl.h"
 include "radiat.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -355,7 +356,13 @@ enddo
 maxelt = max(ncelet,nfac,nfabor)
 ils    = idebia
 idbia1 = ils + maxelt
-CALL IASIZE('LAGENT',IDBIA1)
+call iasize('lagent', idbia1)
+!==========
+
+if (iihmpr.eq.1) then
+  call uilag2 (iphyla, nclagm, nflagm, iusncl, iusclb, iuslag, ruslag)
+  !==========
+endif
 
 call uslag2                                                       &
 !==========

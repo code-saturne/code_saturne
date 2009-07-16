@@ -140,8 +140,8 @@ class TypeDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 2, 1)
-        self.modelCombo.addItem(self.tr("Constant"), 'constant')
-        self.modelCombo.addItem(self.tr("Variable"), 'variable')
+        self.modelCombo.addItem(self.tr("constant"), 'constant')
+        self.modelCombo.addItem(self.tr("variable"), 'variable')
         editor.installEventFilter(self)
         return editor
 
@@ -158,7 +158,7 @@ class TypeDelegate(QItemDelegate):
         value = self.modelCombo.dicoV2M[txt]
         log.debug("TypeDelegate value = %s"%value)
         if value == "variable":
-            msg = self.tr("You must complete usphyv.F")
+            msg = self.tr("You must complete the user subroutine usphyv")
             self.stbar.showMessage(msg, 2000)
 
         selectionModel = self.parent.selectionModel()

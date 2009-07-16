@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>428</width>
-    <height>1297</height>
+    <width>500</width>
+    <height>1153</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -37,7 +37,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -60,7 +60,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -80,7 +80,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -152,7 +152,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>31</width>
                  <height>20</height>
@@ -175,7 +175,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -201,7 +201,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>21</width>
                  <height>20</height>
@@ -260,7 +260,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>51</width>
                  <height>22</height>
@@ -286,7 +286,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>41</width>
                  <height>22</height>
@@ -303,6 +303,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -320,7 +323,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>40</width>
                       <height>20</height>
@@ -346,7 +349,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>40</width>
                       <height>20</height>
@@ -375,6 +378,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -392,7 +398,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>40</width>
                       <height>20</height>
@@ -449,7 +455,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -472,6 +478,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -508,7 +517,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -531,6 +540,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -568,7 +580,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>22</width>
                       <height>16</height>
@@ -611,7 +623,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>22</width>
                       <height>16</height>
@@ -685,7 +697,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -708,6 +720,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -745,7 +760,7 @@
                     <property name="orientation" >
                      <enum>Qt::Horizontal</enum>
                     </property>
-                    <property name="sizeHint" >
+                    <property name="sizeHint" stdset="0" >
                      <size>
                       <width>40</width>
                       <height>20</height>
@@ -793,7 +808,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -842,6 +857,9 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
                 <item row="0" column="0" >
                  <layout class="QGridLayout" >
                   <item row="0" column="0" >
@@ -1014,7 +1032,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -1040,7 +1058,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>121</width>
                  <height>22</height>
@@ -1076,7 +1094,7 @@
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0" >
                 <size>
                  <width>40</width>
                  <height>20</height>

@@ -314,6 +314,8 @@ class BatchRunningModel(Model):
         self.dicoValues['COMMAND_SYRTHES'] = sdm.getSyrthesCommand()
         self.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
 
+        # User 1D profiles are loaded as user result files
+
         list = prm.getProfilesLabelsList()
         if list:
             if self.dicoValues['USER_OUTPUT_FILES']:
@@ -324,6 +326,8 @@ class BatchRunningModel(Model):
                 if file not in vlist:
                     vlist.append(file)
             self.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
+
+        # Specific data file for specific physics
 
         model = CoalCombustionModel(self.case).getCoalCombustionModel()
         if model == 'coal_homo' or model == 'coal_homo2':
@@ -340,8 +344,12 @@ class BatchRunningModel(Model):
         If keyword == None, all keywords are updated
         If keyword == key, only key is updated.
         """
+        # update the name of the param, useful when the xml file is new
+        # and was never saved before
+        self.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
+
         l = self.dicoValues.keys()
-        l.append(None)
+        l.append(None) # Add 'None' when no keyword is specified in argument.
         self.isInList(keyword, l)
         lines = self.lines
 

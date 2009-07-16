@@ -775,8 +775,6 @@ Calculation management
 
     def __hideRow(self):
         """Only for developpement purpose"""
-        #self.setRowClose(self.tr('Radiative transfers'))
-        #self.setRowClose(self.tr('Radiative boundary conditions'))
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Current species'))
 

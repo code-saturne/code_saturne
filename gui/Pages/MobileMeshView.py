@@ -103,7 +103,7 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
         # Combo model MEI
         self.modelMEI = ComboModel(self.comboBoxMEI, 2, 1)
 
-        self.modelMEI.addItem(self.tr("user subroutine USVIMA"), 'user_subroutine')
+        self.modelMEI.addItem(self.tr("user subroutine (usvima)"), 'user_subroutine')
         self.modelMEI.addItem(self.tr("user formula"), 'user_function')
 
         # Connections

@@ -370,10 +370,6 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
-                                const int *const isca,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const icmome,
                                       int *const ntdmom,
                                       int *const imoold,
                                       int *const idfmom);
@@ -418,8 +414,6 @@ void CS_PROCF (csenso, CSENSO) (const    int *const nvppmx,
                                 const    int *const isca,
                                 const    int *const iscapp,
                                 const    int *const ipprtp,
-                                const    int *const ipppro,
-                                const    int *const ipproc,
                                       double *const xyzcap);
 
 void CS_PROCF(fcnmva, FCNMVA)
@@ -437,6 +431,8 @@ void CS_PROCF(cfnmva, CFNMVA)
  int           *const var_id   /* --> Variable Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
+
+void CS_PROCF(nvamem, NVAMEM) (void);
 
 /*----------------------------------------------------------------------------
  * Users arrays
@@ -539,23 +535,6 @@ void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
                                const double *const xyzcen,
                                const double *const rtp,
                                const double *const propce);
-
-/*----------------------------------------------------------------------------
- * 2D or 3D user's postprocessing : output mesh definition
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIDPST
- * *****************
- *
- * INTEGER          NCELET   -->  number of cells with halo
- * INTEGER          NCEL     -->  number of cells without halo
- * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uidpst, UIDPST)(const int    *const ncelet,
-                               const int    *const ncel,
-                               const double *const xyzcen);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.

@@ -243,7 +243,7 @@ if (iihmpr.eq.1) then
   aexxst, bexxst, cfopre,  &
   ihistr,                  &
   xstp, xstreq, xpstr )
- 
+
 endif
 
 call usstr1                                                       &

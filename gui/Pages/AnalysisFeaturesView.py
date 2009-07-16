@@ -115,28 +115,28 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelPulverizedCoal     = QtPage.ComboModel(self.comboBoxPulverizedCoal,3,1)
         self.modelJouleEffect        = QtPage.ComboModel(self.comboBoxJouleEffect,3,1)
 
-        self.modelSteadyFlow.addItem(self.tr("Steady flow"), "on")
-        self.modelSteadyFlow.addItem(self.tr("Unsteady flow"), "off")
+        self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
+        self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
 
-        self.modelLagrangian.addItem(self.tr("Single Phase Flow"), "single_phase")
-        self.modelLagrangian.addItem(self.tr("Particles and droplets tracking"), "lagrangian")
+        self.modelLagrangian.addItem(self.tr("single Phase Flow"), "single_phase")
+        self.modelLagrangian.addItem(self.tr("particles and droplets tracking"), "lagrangian")
 
-        self.modelAtmospheric.addItem(self.tr("Off"             ), "off")
-        self.modelAtmospheric.addItem(self.tr("Constant density"), "constant")
-        self.modelAtmospheric.addItem(self.tr("Dry atmosphere"  ), "dry")
-        self.modelAtmospheric.addItem(self.tr("Humid atmosphere"), "humid")
+        self.modelAtmospheric.addItem(self.tr("off"             ), "off")
+        self.modelAtmospheric.addItem(self.tr("constant density"), "constant")
+        self.modelAtmospheric.addItem(self.tr("dry atmosphere"  ), "dry")
+        self.modelAtmospheric.addItem(self.tr("humid atmosphere"), "humid")
 
-        self.modelGasCombustionModel.addItem(self.tr("Off"), "off")
-        self.modelGasCombustionModel.addItem(self.tr("Premixed flame (Eddy Break-Up)"), "ebu")
-        self.modelGasCombustionModel.addItem(self.tr("Equilibrium chemistry diffusion flame (Presumed PDF)"), "d3p")
+        self.modelGasCombustionModel.addItem(self.tr("off"), "off")
+        self.modelGasCombustionModel.addItem(self.tr("premixed flame (Eddy Break-Up)"), "ebu")
+        self.modelGasCombustionModel.addItem(self.tr("equilibrium chemistry diffusion flame (Presumed PDF)"), "d3p")
 
-        self.modelPulverizedCoal.addItem(self.tr("Off"), "off")
-        self.modelPulverizedCoal.addItem(self.tr("Homogeneous approach"), "coal_homo")
-        self.modelPulverizedCoal.addItem(self.tr("Homogeneous approach (wet)"), "coal_homo2")
+        self.modelPulverizedCoal.addItem(self.tr("off"), "off")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "coal_homo")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach (wet)"), "coal_homo2")
         # WARNING: the 'coal_lagr' model is deprecated
         #self.modelPulverizedCoal.addItem(self.tr("Gaseous phase coupling with Lagrangian coal transport"), "coal_lagr")
 
-        self.modelJouleEffect.addItem(self.tr("Off"), "off")
+        self.modelJouleEffect.addItem(self.tr("off"), "off")
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
         self.modelJouleEffect.addItem(self.tr("Joule Effect and Lorentz Forces"), "arc")
 
@@ -167,7 +167,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelLagrangian.setItem(str_model='lagrangian')
             self.modelSteadyFlow.disableItem(str_model='on')
 
-        self.modelLagrangian.disableItem(str_model='lagrangian') # to delete
+        #self.modelLagrangian.disableItem(str_model='lagrangian')
 
         val = self.atmo.getAtmosphericFlowsModel()
         self.modelAtmospheric.setItem(str_model=val)
@@ -249,6 +249,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel.setItem(str_model=flame)
         self.modelPulverizedCoal.setItem(str_model=coal)
         self.modelJouleEffect.setItem(str_model=joule)
+        self.modelAtmospheric.setItem(str_model=atmospheric)
 
         # If one model is turned on, the others are turned off
 

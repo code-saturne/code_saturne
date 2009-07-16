@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>428</width>
-    <height>829</height>
+    <width>450</width>
+    <height>867</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -19,16 +19,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>0</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
+   <property name="margin" >
     <number>0</number>
    </property>
    <item row="0" column="0" >
@@ -79,7 +70,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -106,7 +97,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -137,22 +128,10 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" >
-             <property name="leftMargin" >
+             <property name="margin" >
               <number>0</number>
              </property>
-             <property name="topMargin" >
-              <number>0</number>
-             </property>
-             <property name="rightMargin" >
-              <number>0</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>0</number>
-             </property>
-             <property name="horizontalSpacing" >
-              <number>6</number>
-             </property>
-             <property name="verticalSpacing" >
+             <property name="spacing" >
               <number>6</number>
              </property>
              <item row="0" column="0" >
@@ -162,7 +141,7 @@
                  <property name="orientation" >
                   <enum>Qt::Horizontal</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>20</width>
                    <height>20</height>
@@ -185,7 +164,7 @@
                  <property name="orientation" >
                   <enum>Qt::Horizontal</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>21</width>
                    <height>16</height>
@@ -205,7 +184,7 @@
                  <property name="sizeType" >
                   <enum>QSizePolicy::Minimum</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>20</width>
                    <height>20</height>
@@ -224,7 +203,7 @@
                  <property name="minimumSize" >
                   <size>
                    <width>350</width>
-                   <height>100</height>
+                   <height>150</height>
                   </size>
                  </property>
                  <property name="maximumSize" >
@@ -243,7 +222,7 @@
                  <property name="sizeType" >
                   <enum>QSizePolicy::Minimum</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>16</width>
                    <height>16</height>
@@ -277,22 +256,10 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" >
-             <property name="leftMargin" >
+             <property name="margin" >
               <number>0</number>
              </property>
-             <property name="topMargin" >
-              <number>0</number>
-             </property>
-             <property name="rightMargin" >
-              <number>0</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>0</number>
-             </property>
-             <property name="horizontalSpacing" >
-              <number>0</number>
-             </property>
-             <property name="verticalSpacing" >
+             <property name="spacing" >
               <number>0</number>
              </property>
              <item row="0" column="0" >
@@ -302,7 +269,7 @@
                  <property name="orientation" >
                   <enum>Qt::Horizontal</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>16</width>
                    <height>16</height>
@@ -327,7 +294,7 @@
                    <property name="orientation" >
                     <enum>Qt::Horizontal</enum>
                    </property>
-                   <property name="sizeHint" >
+                   <property name="sizeHint" stdset="0" >
                     <size>
                      <width>16</width>
                      <height>16</height>
@@ -352,7 +319,7 @@
                  <property name="orientation" >
                   <enum>Qt::Horizontal</enum>
                  </property>
-                 <property name="sizeHint" >
+                 <property name="sizeHint" stdset="0" >
                   <size>
                    <width>20</width>
                    <height>20</height>
@@ -401,7 +368,7 @@
          <property name="sizeType" >
           <enum>QSizePolicy::Expanding</enum>
          </property>
-         <property name="sizeHint" >
+         <property name="sizeHint" stdset="0" >
           <size>
            <width>428</width>
            <height>218</height>
@@ -458,7 +425,7 @@
             <property name="orientation" >
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0" >
              <size>
               <width>16</width>
               <height>16</height>
@@ -481,7 +448,7 @@
             <property name="orientation" >
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0" >
              <size>
               <width>20</width>
               <height>20</height>
@@ -522,7 +489,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -549,7 +516,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -589,7 +556,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -616,7 +583,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>21</height>
@@ -663,7 +630,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -689,7 +656,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>21</height>
@@ -742,7 +709,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -765,7 +732,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -827,7 +794,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -853,7 +820,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -892,7 +859,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -918,7 +885,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -957,7 +924,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -983,7 +950,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -1036,7 +1003,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -1059,7 +1026,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -1095,7 +1062,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -1124,7 +1091,7 @@
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0" >
                <size>
                 <width>20</width>
                 <height>20</height>
@@ -1142,7 +1109,7 @@
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
          </property>
-         <property name="sizeHint" >
+         <property name="sizeHint" stdset="0" >
           <size>
            <width>20</width>
            <height>20</height>

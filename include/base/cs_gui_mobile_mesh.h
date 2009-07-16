@@ -25,8 +25,8 @@
  *
  *============================================================================*/
 
-#ifndef __CS_GUI_MOBIL_MESH_H__
-#define __CS_GUI_MOBIL_MESH_H__
+#ifndef __CS_GUI_MOBILE_MESH_H__
+#define __CS_GUI_MOBILE_MESH_H__
 
 /*============================================================================
  * Management of the GUI parameters file: mobile mesh
@@ -242,4 +242,4 @@ cs_gui_get_ale_viscosity_type(int  * type);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_MOBIL_MESH_H__ */
+#endif /* __CS_GUI_MOBILE_MESH_H__ */

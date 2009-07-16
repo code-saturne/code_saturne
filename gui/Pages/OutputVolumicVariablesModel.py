@@ -202,7 +202,7 @@ class OutputVolumicVariablesModel(Model):
         """
         nodList = []
         node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
-	if not node: return []
+        if not node: return []
         model = node['model']
         varList = []
         if model != 'off':

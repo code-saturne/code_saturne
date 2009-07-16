@@ -53,6 +53,8 @@ BoundaryConditionsMeteoForm.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshForm.py \
 BoundaryConditionsMobileMeshView.py \
+BoundaryConditionsParticlesModel.py \
+BoundaryConditionsParticlesView.py \
 BoundaryConditionsRoughWallForm.py \
 BoundaryConditionsRoughWallView.py \
 BoundaryConditionsScalarsForm.py \

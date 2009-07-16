@@ -25,10 +25,8 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine lagopt
+subroutine lagopt
 !================
-
-
 
 !===============================================================================
 !  FONCTION  :
@@ -83,6 +81,7 @@ include "ppthch.h"
 include "ppincl.h"
 include "cpincl.h"
 include "radiat.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -224,9 +223,11 @@ seuil = -1.d0
 
 do ii = 1,nvplmx
 
-  WRITE(NOMLAG(II),'(A6,I4.4)') 'MoyLag',II
+  write(nomlag(II),'(A6,I4.4)') 'MoyLag',II
 
-  WRITE(NOMLAV(II),'(A6,I4.4)') 'VarLag',II
+  write(nomlav(II),'(A6,I4.4)') 'VarLag',II
+
+  write(nombrd(II),'(A6,I4.4)') 'BrdLag',II
 
 enddo
 
@@ -360,6 +361,36 @@ enddo
 ! 2.1 INITIALISATIONS UTILISATEUR DU MODULE LAGRANGIEN
 !                     ^^^^^^^^^^^
 !===============================================================================
+
+if (iihmpr.eq.1) then
+
+  do ii = 1, nvplmx
+    call fclag1(nomlag(ii), len(nomlag(ii)), ii)
+    call fclag2(nomlav(ii), len(nomlav(ii)), ii)
+    call fclag3(nombrd(ii), len(nombrd(ii)), ii)
+  enddo
+
+  call uilag1                                                      &
+  !==========
+ ( iilagr, isuila, isuist, nbpmax, isttio, injcon,                 &
+   iphyla, idpvar, itpvar, impvar,                                 &
+   iencra, tprenc, visref, enc1, enc2,                             &
+   nstits, ltsdyn, ltsmas, ltsthe,                                 &
+   nordre, idistu, idiffl, modcpl, idirla,                         &
+   iensi1, iensi2, ntlal,  nbvis, nvisla,                          &
+   ivisv1, ivisv2, ivistp, ivisdm, iviste,                         &
+   ivismp, ivishp, ivisdk, ivisch, ivisck,                         &
+   istala, nbclst, seuil, idstnt,                                  &
+   ihslag, iensi3, seuilf, nstbor,                                 &
+   inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr )
+
+  do ii = 1, nvplmx
+    call cfname(1, nomlag(ii), len(nomlag(ii)), ii)
+    call cfname(2, nomlav(ii), len(nomlav(ii)), ii)
+    call cfname(3, nombrd(ii), len(nombrd(ii)), ii)
+  enddo
+
+endif
 
 call uslag1
 !==========

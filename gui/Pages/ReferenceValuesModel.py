@@ -83,7 +83,7 @@ class ReferenceValuesModel(Model):
         Return reference values by default
         """
         default = {}
-        default['reference_pressure'] = 1.013e+5
+        default['reference_pressure'] = 1.01325e+5
         default['reference_temperature'] = 1273.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3

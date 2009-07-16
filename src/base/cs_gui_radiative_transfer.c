@@ -884,6 +884,7 @@ void CS_PROCF (uiray2, UIRAY2)
  const    int *const iprefl,
  const    int *const ifgrno,
  const    int *const ifrefl,
+ const    int *const nozppm,
  const    int *const nfabor,
  const    int *const nfml,
  const    int *const ifmfbr,
@@ -909,13 +910,9 @@ void CS_PROCF (uiray2, UIRAY2)
   double tmp = 0.;
   char *nature = NULL;
   char *label = NULL;
-  char *description = NULL;
-
-  BFT_MALLOC(faces_list, *nfabor, int);
 
   zones   = cs_gui_boundary_zones_number();
   output_zone_max = _radiative_boundary_output_zone_max();
-
 
  /* Fisrt iteration only : memory allocation */
   if (boundary == NULL) {
@@ -949,15 +946,9 @@ void CS_PROCF (uiray2, UIRAY2)
         BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
         strcpy(boundary->nature[izone], nature);
 
-        description = cs_gui_boundary_zone_localization(label);
-
-
-        fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                                    description,
-                                    &faces,
-                                    faces_list);
-
-        BFT_FREE(description);
+        faces_list = cs_gui_get_faces_list(izone,
+                                           boundaries->label[izone],
+                                           *nfabor, *nozppm, &faces);
 
         /* Default initialization: these values are the same that in raycli
            but given on each face in raycli whereas here one does not
@@ -998,14 +989,17 @@ void CS_PROCF (uiray2, UIRAY2)
 
     /* list of faces building */
 
-    description = cs_gui_boundary_zone_localization(boundary->label[izone]);
-
-    fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                          description,
-                          &faces,
-                          faces_list);
-
-    BFT_FREE(description);
+//     description = cs_gui_boundary_zone_localization(boundary->label[izone]);
+//
+//     fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+//                           description,
+//                           &faces,
+//                           faces_list);
+//
+//     BFT_FREE(description);
+    faces_list = cs_gui_get_faces_list(izone,
+                                       boundaries->label[izone],
+                                       *nfabor, *nozppm, &faces);
 
     if (cs_gui_strcmp(boundary->nature[izone], "wall"))
     {
@@ -1036,7 +1030,7 @@ void CS_PROCF (uiray2, UIRAY2)
           tintp[ifbr] = boundary->internal_temp[izone];
           epsp[ifbr] = boundary->emissivity[izone];
           if (boundary->emissivity[izone] == 0.)
-               isothp[ifbr] == *iprefl;
+               isothp[ifbr] = *iprefl;
         }
         else if (isothp[ifbr] == *ifgrno)
         {
@@ -1044,7 +1038,7 @@ void CS_PROCF (uiray2, UIRAY2)
           tintp[ifbr] = boundary->internal_temp[izone];
           epsp[ifbr] = boundary->emissivity[izone];
           if (boundary->emissivity[izone] != 0.)
-               isothp[ifbr] == *ifrefl;
+               isothp[ifbr] = *ifrefl;
         }
       }
 

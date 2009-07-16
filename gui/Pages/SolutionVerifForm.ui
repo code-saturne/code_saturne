@@ -193,7 +193,7 @@
       <item>
        <widget class="QGroupBox" name="groupBoxFaces" >
         <property name="title" >
-         <string>Interne faces selection for post-processing</string>
+         <string>Interior faces selection for post-processing</string>
         </property>
         <property name="checkable" >
          <bool>true</bool>

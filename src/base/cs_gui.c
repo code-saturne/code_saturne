@@ -91,7 +91,7 @@
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_specific_physics.h"
-#include "cs_gui_mobil_mesh.h"
+#include "cs_gui_mobile_mesh.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
 
@@ -305,18 +305,40 @@ cs_gui_thermal_scalar_number(int *const iscalt,
 }
 
 /*-----------------------------------------------------------------------------
+ * Return the name of the diffusion_coefficient property for a scalar
+ *
+ * parameters:
+ *   scalar_index   --> index of the scalar
+ *----------------------------------------------------------------------------*/
+
+static char *
+_scalar_diffusion_coefficient_name(const int idx)
+{
+    int ncar = 0;
+    char *name = NULL;
+    char *suf = NULL;
+
+    ncar = cs_gui_characters_number(idx+1);
+    BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
+    BFT_MALLOC(suf, 1 + ncar, char);
+    sprintf(suf, "%i", idx+1);
+    strcpy(name, "diffusion_coefficient");
+    strcat(name, "_");
+    strcat(name, suf);
+    BFT_FREE(suf);
+    return name;
+}
+
+/*-----------------------------------------------------------------------------
  * Return the value of choice for user scalar's property
  *
  * parameters:
  *   scalar_num     --> number of scalar
- *   property_name  --> name of property
  *   choice         --> choice for property
  *----------------------------------------------------------------------------*/
 
 static int
-cs_gui_scalar_properties_choice(const int         scalar_num,
-                                const char *const property_name,
-                                      int  *const choice)
+cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
 {
   char *path = NULL;
   char *buff = NULL;
@@ -336,7 +358,7 @@ cs_gui_scalar_properties_choice(const int         scalar_num,
   } else {
     ichoice = 1;
 
-    if (cs_gui_strcmp(buff, "variable"))
+    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -826,6 +848,27 @@ cs_gui_properties_value(const char   *const property_name,
 
   BFT_FREE(path);
 }
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute from a property name.
+ *
+ * parameters:
+ *   property_name        -->  name of the property
+ *----------------------------------------------------------------------------*/
+
+static char*
+_properties_choice(const char *const property_name)
+{
+  char *path   = NULL;
+  char *choice = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  return choice;
+}
 
 /*----------------------------------------------------------------------------
  * Get the value of the choice attribute from a property markup.
@@ -837,36 +880,23 @@ cs_gui_properties_value(const char   *const property_name,
  *----------------------------------------------------------------------------*/
 
 static int
-cs_gui_properties_choice(const char *const property_name,
-                               int  *      choice)
+cs_gui_properties_choice(const char *const property_name, int *choice)
 {
-  char *path = NULL;
   char *buff = NULL;
-  int   iok;
+  int   iok = 0;
 
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_attribute(&path, "choice");
-
-  buff = cs_gui_get_attribute_value(path);
-
-  if (buff == NULL)
-    iok = 0;
-  else {
+  buff = _properties_choice(property_name);
+  if (buff)
+  {
     iok = 1;
-
     if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
-    else
-      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
   }
-
+  else
+    iok = 0;
   BFT_FREE(buff);
-  BFT_FREE(path);
-
   return iok;
 }
 
@@ -1824,8 +1854,6 @@ cs_gui_model_property_post (const char  *const model,
                                   int   *const ihisvr,
                                   int   *const ilisvr,
                                   int   *const ichrvr,
-                            const int   *const ipppro,
-                            const int   *const ipproc,
                             const int   *const nvppmx)
 {
   int ipp;
@@ -2550,7 +2578,7 @@ void CS_PROCF (uiinit, UIINIT) (void)
     cs_glob_var->properties_ipp  = NULL;
     cs_glob_var->propce          = NULL;
 
-    BFT_MALLOC(cs_glob_label, 1, cs_var_t);
+    BFT_MALLOC(cs_glob_label, 1, cs_label_t);
 
     cs_glob_label->_cs_gui_max_vars = 0;
     cs_glob_label->_cs_gui_last_var = 0;
@@ -2801,9 +2829,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
 
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 ) {
-        if (cs_gui_scalar_properties_choice(i+1,
-                                            "diffusion_coefficient",
-                                            &choice1))
+        if (cs_gui_scalar_properties_choice(i+1, &choice1))
         if (iscalt[iphas] != i+1) ivisls[i] = choice1;
       }
     }
@@ -3485,7 +3511,7 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
                                       double *const scamin,
                                       double *const scamax)
 {
-  /* Coal combustion: the min max of the model scalar are not given */
+  /* Specific physics: the min max of the model scalar are not given */
 
   int i;
   cs_var_t  *vars = cs_glob_var;
@@ -3530,7 +3556,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
     if (cs_gui_thermal_scalar()) {
       result = 0;
       cs_gui_properties_value("specific_heat", &result);
-      if (!result)
+      if (result <= 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("Specific heat value is zero or not found in the xml file.\n"));
 
@@ -3551,7 +3577,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
           /* Air molar mass */
           result = 0.028966;
           cs_gui_reference_mass_molar(vars->model, &result);
-          if (!result)
+          if (result <= 0)
             bft_error(__FILE__, __LINE__, 0,
                       _("mass molar value is zero or not found in the xml file.\n"));
           density = *p0 * result / (8.31434 *(*t0));
@@ -3559,7 +3585,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
         else
           cs_gui_properties_value("density", &density);
 
-        if (!density)
+        if (density <= 0)
           bft_error(__FILE__, __LINE__, 0,
                     _("Density value is zero or not found in the xml file.\n"));
 
@@ -3641,9 +3667,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   int n;
   int i = 0;
   int nbp = 6;
-  int ncar = 0;
   char *name = NULL;
-  char *suf = NULL;
 
   /* Compute the new size of vars->properties_name,
      vars->properties_ipp and vars->propce */
@@ -3758,20 +3782,9 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
             BFT_MALLOC(cs_glob_var->properties_name[n], strlen("thermal_conductivity")+1, char);
             strcpy(cs_glob_var->properties_name[n++], "thermal_conductivity");
           } else {
-            /* search lenght of second character scalar property's suffixe: number i */
-            ncar = cs_gui_characters_number(i+1);
-
-            BFT_MALLOC(name, strlen("diffusion_coefficient") +2 +ncar, char);
-            BFT_MALLOC(suf, 1 + ncar, char);
-            sprintf(suf, "%i", i+1);
-            strcpy(name, "diffusion_coefficient");
-            strcat(name, "_");
-            strcat(name, suf);
-
+            name = _scalar_diffusion_coefficient_name(i);
             BFT_MALLOC(cs_glob_var->properties_name[n], strlen(name)+1, char);
             strcpy(cs_glob_var->properties_name[n++], name);
-
-            BFT_FREE(suf);
             BFT_FREE(name);
           }
         }
@@ -3840,10 +3853,6 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
-                                const int *const isca,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const icmome,
                                       int *const ntdmom,
                                       int *const imoold,
                                       int *const idfmom)
@@ -3931,8 +3940,6 @@ void CS_PROCF (csenso, CSENSO)
  const    int *const isca,
  const    int *const iscapp,
  const    int *const ipprtp,
- const    int *const ipppro,
- const    int *const ipproc,
        double *const xyzcap)
 {
   int i, j;
@@ -3996,8 +4003,7 @@ void CS_PROCF (csenso, CSENSO)
   if (vars->nsalpp > 0) {
     for (i=0 ; i < vars->nsalpp; i++) {
       cs_gui_model_property_post(vars->model, i,
-                                 ihisvr, ilisvr, ichrvr,
-                                 ipppro, ipproc, nvppmx);
+                                 ihisvr, ilisvr, ichrvr, nvppmx);
     }
   }
 
@@ -4190,7 +4196,6 @@ void CS_PROCF(fcnmva, FCNMVA)
  * Copy variable name from C to Fortran
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF(cfnmva, CFNMVA)
 (
  char          *const fstr,    /* --> Fortran string */
@@ -4239,6 +4244,12 @@ void CS_PROCF(cfnmva, CFNMVA)
 void CS_PROCF(nvamem, NVAMEM) (void)
 {
     int i;
+#if _XML_DEBUG_
+    bft_printf("==>NVAMEM\n");
+    for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+        if (cs_glob_label->_cs_gui_var_name[i])
+            bft_printf("-->label[%i] = %s\n", i, cs_glob_label->_cs_gui_var_name[i]);
+#endif
 
     for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
         BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
@@ -4425,7 +4436,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[])
 {
-#if defined(HAVE_MEI) && 0
+#if defined(HAVE_MEI)
 
     cs_var_t  *vars = cs_glob_var;
     mei_tree_t *ev_rho = NULL;
@@ -4451,7 +4462,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for density */
 
-    if (irovar[iphas] == 1)
+    if (irovar[iphas] == 1 && cs_gui_strcmp(_properties_choice("density"), "user_law"))
     {
         /* search the formula for the law */
 
@@ -4499,7 +4510,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for molecular viscosity */
 
-    if (ivivar[iphas] == 1)
+    if (ivivar[iphas] == 1 && cs_gui_strcmp(_properties_choice("molecular_viscosity"), "user_law"))
     {
         /* search the formula for the law */
 
@@ -4547,7 +4558,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for specific heat */
 
-    if (icp[iphas] > 0)
+    if (icp[iphas] > 0 && cs_gui_strcmp(_properties_choice("specific_heat"), "user_law"))
     {
         /* search the formula for the law */
 
@@ -4595,7 +4606,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for thermal conductivity */
 
-    if (ivisls[iscalt[iphas] -1] > 0)
+    if (ivisls[iscalt[iphas] -1] > 0 && cs_gui_strcmp(_properties_choice("thermal_conductivity"), "user_law"))
     {
         /* search the formula for the law */
 
@@ -4662,7 +4673,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     for (j = 0; j < *nscaus; j++)
     {
-        if (j != iscalt[iphas] -1 && iscavr[j] <= 0 && ivisls[j] > 0)
+        char *name = _scalar_diffusion_coefficient_name(j);
+
+        if (j != iscalt[iphas] -1 && iscavr[j] <= 0 && ivisls[j] > 0 &&
+            cs_gui_strcmp(_properties_choice(name), "user_law"))
         {
             ipcvsl = ipproc[ ivisls[j] -1 ] -1;
 
@@ -4728,6 +4742,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
             }
             mei_tree_destroy(ev_Ds);
         }
+        BFT_FREE(name);
     }
 
 #if _XML_DEBUG_
@@ -4962,15 +4977,15 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           }
 
           /* Send to other processors if parallel */
-          if (cs_glob_rank_id >= 0) {
 #if defined(HAVE_MPI)
+          if (cs_glob_rank_id >= 0) {
             MPI_Bcast(array,
                       nvar_prop4,
                       CS_MPI_REAL,
                       irangv,
                       cs_glob_mpi_comm);
-#endif
           }
+#endif
 
           if (cs_glob_rank_id <= 0) {
             for (iii=0; iii < nvar_prop4; iii++)
@@ -5001,10 +5016,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 {
     int i;
-    int ivar;
-    int izone;
-    int zones;
-    int icharb;
 
     cs_gui_boundary_conditions_free_memory(ncharb);
 

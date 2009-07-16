@@ -84,7 +84,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         Ui_MeshQualityCriteriaLogDialogForm.__init__(self)
         self.setupUi(self)
-	self.setWindowTitle(self.tr("Run mesh quality criteria"))
+        self.setWindowTitle(self.tr("Run mesh quality criteria"))
         self.pushButton.setEnabled(False)
 
         self.case = case
