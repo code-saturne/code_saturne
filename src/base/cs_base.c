@@ -279,7 +279,7 @@ static void
 _cs_base_err_vprintf(const char  *format,
                      va_list      arg_ptr)
 {
-  static cs_bool_t  initialise = false;
+  static cs_bool_t  initialized = false;
 
   /* message to the standard output */
 
@@ -300,7 +300,7 @@ _cs_base_err_vprintf(const char  *format,
   /* message on a specific error output, initialized only if the
      error output is really necessary */
 
-  if (initialise == false) {
+  if (initialized == false) {
 
     char nom_fic_err[81];
 
@@ -322,8 +322,7 @@ _cs_base_err_vprintf(const char  *format,
 
     freopen(nom_fic_err, "w", stderr);
 
-    initialise = true;
-
+    initialized = true;
   }
 
   vfprintf(stderr, format, arg_ptr);
@@ -412,6 +411,79 @@ _cs_base_gestion_erreur(const char  *nom_fic,
   bft_backtrace_print(3);
 
   _cs_base_exit(EXIT_FAILURE);
+}
+
+/*----------------------------------------------------------------------------
+ * Print memory usage summary in case of error
+ *----------------------------------------------------------------------------*/
+
+static void
+_error_mem_summary(void)
+{
+  size_t mem_usage;
+
+  _cs_base_err_printf(_("\n\n"
+                        "Memory allocation summary\n"
+                        "-------------------------\n\n"));
+
+  /* Available memory usage information */
+
+  _cs_base_err_printf
+    (_("Theoretical current allocated memory:   %lu kB\n"),
+     (unsigned long)(bft_mem_size_current()));
+
+  _cs_base_err_printf
+    (_("Theoretical maximum allocated memory:   %lu kB\n"),
+     (unsigned long)(bft_mem_size_max()));
+
+  if (bft_mem_usage_initialized() == 1) {
+
+    /* Maximum measured memory */
+
+    mem_usage = bft_mem_usage_max_pr_size();
+    if (mem_usage > 0)
+      _cs_base_err_printf
+        (_("Maximum program memory measure:         %lu kB\n"),
+         (unsigned long)mem_usage);
+
+    /* Current measured memory */
+
+    mem_usage = bft_mem_usage_pr_size();
+    if (mem_usage > 0)
+      _cs_base_err_printf
+        (_("Current program memory measure:         %lu kB\n"),
+         (unsigned long)mem_usage);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Memory allocation error handler.
+ *
+ * Memory status is written to the error output, and the general error
+ * handler used by bft_error() is called (which results in the termination
+ * of the current process).
+ *
+ * parameters:
+ *   file_name      <-- name of source file from which error handler called.
+ *   line_num       <-- line of source file from which error handler called.
+ *   sys_error_code <-- error code if error in system or libc call, 0 otherwise.
+ *   format         <-- format string, as printf() and family.
+ *   arg_ptr        <-> variable argument list based on format string.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_mem_error_handler(const char  *file_name,
+                      int          line_num,
+                      int          sys_error_code,
+                      const char  *format,
+                      va_list      arg_ptr)
+{
+  bft_error_handler_t * general_err_handler;
+
+  _error_mem_summary();
+
+  general_err_handler = bft_error_handler_get();
+  general_err_handler(file_name, line_num, sys_error_code, format, arg_ptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -839,7 +911,7 @@ void CS_PROCF (rasize, RASIZE)
        _caller, *memrdp, _cs_glob_mem_ra_size, *memrdp);
   }
 
-  /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
+  /* Update _cs_glob_mem_ra_peak and _cs_glob_srt_ra_peak */
 
   else if (*memrdp > _cs_glob_mem_ra_peak) {
 
@@ -1029,6 +1101,10 @@ cs_base_mem_init(void)
 {
   char  *nom_base;
   char  *nom_complet = NULL;
+
+  /* Set error handler */
+
+  bft_mem_error_handler_set(_cs_mem_error_handler);
 
   /* Memory usage measure initialization */
 
