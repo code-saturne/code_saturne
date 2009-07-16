@@ -48,29 +48,31 @@ cp $with_syrthes/bin/Makefile $outfile
 
 cat >> $outfile <<\_______EOF
 
-version:
-	@echo $(VERSION)
-cc:
-	@echo $(CC)
-fc:
-	@echo $(FC)
-cflags:
-	@echo $(CFLAGS)
-fcflags:
-	@echo $(FCFLAGS)
+syr_info:
+	@echo $(VERSION) > syr-version-tmp
+	@echo $(CC) > syr-cc-tmp
+	@echo $(FC) > syr-fc-tmp
+	@echo $(CFLAGS) > syr-cflags-tmp
+	@echo $(FCFLAGS) > syr-fcflags-tmp
 _______EOF
 
-SYRTHES_NOM_ARCH=${NOM_ARCH}
-SYRTHES_VERSION=`make -f $outfile version`
-SYRTHES_CC=`make -f $outfile cc`
-SYRTHES_FC=`make -f $outfile fc`
-SYRTHES_CFLAGS=`make -f $outfile cflags`
-SYRTHES_FCFLAGS=`make -f $outfile fcflags`
+make -f $outfile syr_info > /dev/null
 
-rm -f $outfile
+SYRTHES_NOM_ARCH=${NOM_ARCH}
+SYRTHES_VERSION=`cat syr-version-tmp`
+SYRTHES_CC=`cat syr-cc-tmp`
+SYRTHES_FC=`cat syr-fc-tmp`
+SYRTHES_CFLAGS=`cat syr-cflags-tmp`
+SYRTHES_FCFLAGS=`cat syr-fcflags-tmp`
+
+rm -f $outfile syr-version-tmp syr-cc-tmp syr-fc-tmp syr-cflags-tmp syr-fcflags-tmp
 
 # Get mandatory Fortran libs for linking stage
-# One assumes that SYRTHES is writtent in Fortran 77
+# We assume that only SYRTHES user subroutines written in Fortran 77
+# will need to be compiled (as versions older than 3.4 are not
+# supported, and version 4 will be coupled directly through FVM,
+# not through the syrcs wrapper).
+
 F77=$SYRTHES_FC
 AC_F77_LIBRARY_LDFLAGS
 SYRTHES_FCLIBS=$FLIBS

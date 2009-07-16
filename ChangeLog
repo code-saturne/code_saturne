@@ -1,3 +1,10 @@
+* 16/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Autotools machinery improvement for SYRTHES coupling and BLAS libraries.
+  modified scripts:
+    config/cs_blas.m4
+    config/cs_syrthes.m4
+    configure.ac
+
 * 10/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Graphical interface update for radiative transfer modelling.
   modified routines:

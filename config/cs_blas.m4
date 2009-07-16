@@ -71,7 +71,7 @@ if test "x$blas" = "xtrue" ; then
   fi
 
   if test "x$with_blas_type" = "x" ; then
-    if test -d /bgl/BlueLight/ppcfloor -o -d /bgsys/drivers/ppcfloor ; then
+    if test "x$cs_ibm_bg_type" != "x" ; then
       with_blas_type="ESSL"
     fi
   fi
@@ -132,7 +132,7 @@ if test "x$blas" = "xtrue" ; then
     
     if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
-      if test -d /bgl/BlueLight/ppcfloor -o -d /bgsys/drivers/ppcfloor ; then
+      if test "x$cs_ibm_bg_type" != "x" ; then
         BLAS_LIBS="" # Already set in cs_auto_flags so as to group with other options
       else
         BLAS_LIBS="-lesslsmp"
@@ -155,7 +155,7 @@ if test "x$blas" = "xtrue" ; then
 
       if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
         BLAS_LIBS="$with_blas_libs"
-      elif test -d /bgl/BlueLight/ppcfloor -o -d /bgsys/drivers/ppcfloor ; then
+      elif test "x$cs_ibm_bg_type" != "x" ; then
         BLAS_LIBS="" # Already set in cs_auto_flags so as to group with other options
       else
         BLAS_LIBS="-lessl"

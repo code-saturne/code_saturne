@@ -569,6 +569,7 @@ echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
 echo " MEI (Mathematical Expressions Interpreter) support: "$have_mei""
+echo " SYRTHES 3 coupling support: "$have_syrthes""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""
 echo
