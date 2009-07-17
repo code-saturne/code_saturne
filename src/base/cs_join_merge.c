@@ -1887,7 +1887,7 @@ _merge_vertices(cs_join_param_t    param,
 
   if (verbosity > 0) {   /* Display information */
 
-    fvm_gnum_t g_max_n_sub_elts = max_n_sub_elts;
+    fvm_lnum_t g_max_n_sub_elts = max_n_sub_elts;
     fvm_parall_counter_max(&g_max_n_sub_elts, 1);
 
     if (g_max_n_sub_elts < 2) {
