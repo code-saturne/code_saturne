@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,6 +95,12 @@ struct _cs_sat_coupling_t {
                                     interpolated*/
   fvm_nodal_t     *faces_sup;    /* Local faces at which distant values are
                                     interpolated*/
+
+  cs_real_t       *distant_dist_fbr; /* Distant vectors (distance JJ') */
+  cs_real_t       *distant_of;
+  cs_real_t       *local_of;
+  cs_real_t       *distant_pond_fbr; /* Distant weighting coefficient */
+  cs_real_t       *local_pond_fbr;   /* Local weighting coefficient */
 
 #if defined(HAVE_MPI)
 
@@ -248,6 +255,12 @@ _sat_coupling_create(cs_int_t  root_rank)
   couplage->cells_sup = NULL;
   couplage->faces_sup = NULL;
 
+  couplage->distant_dist_fbr = NULL;
+  couplage->distant_of       = NULL;
+  couplage->local_of         = NULL;
+  couplage->distant_pond_fbr = NULL;
+  couplage->local_pond_fbr   = NULL;
+
   return couplage;
 }
 
@@ -272,6 +285,12 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
   if (couplage->faces_sup != NULL)
     fvm_nodal_destroy(couplage->faces_sup);
 
+  BFT_FREE(couplage->distant_dist_fbr);
+  BFT_FREE(couplage->distant_of);
+  BFT_FREE(couplage->local_of);
+  BFT_FREE(couplage->distant_pond_fbr);
+  BFT_FREE(couplage->local_pond_fbr);
+
 #if defined(HAVE_MPI)
   if (   couplage->comm != MPI_COMM_WORLD
       && couplage->comm != cs_glob_mpi_comm)
@@ -281,6 +300,280 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
   BFT_FREE(couplage);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Computed some quantities needed for a centred-like interpolation
+ *  - distance JJ' for distant boundary faces
+ *  - local weighting coefficients
+ *----------------------------------------------------------------------------*/
+
+static void
+_sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
+{
+  int    icoo;
+  int    reverse;
+
+  cs_int_t    ind;
+  cs_int_t    iel;
+  cs_int_t    ifac;
+
+  cs_int_t    n_fbr_loc  = 0;
+  cs_int_t    n_fbr_dist = 0;
+
+  cs_real_t   pdt_scal;
+  cs_real_t   surface;
+
+  cs_real_t   distance_fbr_cel;
+  cs_real_t   distance_cel_cel;
+
+  cs_real_t   dist_cel_fbr[3];
+  cs_real_t   vect_surf_norm[3];
+
+  cs_real_t  *local_surf     = NULL;
+  cs_real_t  *local_xyzcen   = NULL;
+  cs_real_t  *distant_surf   = NULL;
+  cs_real_t  *distant_xyzcen = NULL;
+
+  const fvm_lnum_t   *lstfbr        = NULL;
+  const fvm_lnum_t   *element       = NULL;
+  const fvm_coord_t  *distant_coord = NULL;
+
+  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
+
+
+  /* Removing the connectivity and localization informations in case of
+     coupling update */
+
+  if (couplage->distant_dist_fbr != NULL)
+    BFT_FREE(couplage->distant_dist_fbr);
+  if (couplage->distant_of != NULL)
+    BFT_FREE(couplage->distant_of);
+  if (couplage->local_of != NULL)
+    BFT_FREE(couplage->local_of);
+  if (couplage->distant_pond_fbr != NULL)
+    BFT_FREE(couplage->local_pond_fbr);
+  if (couplage->local_pond_fbr != NULL)
+    BFT_FREE(couplage->local_pond_fbr);
+
+
+  /* Interpolation structure */
+
+  n_fbr_loc  = fvm_locator_get_n_interior(couplage->localis_fbr);
+  lstfbr     = fvm_locator_get_interior_list(couplage->localis_fbr);
+
+  n_fbr_dist    = fvm_locator_get_n_dist_points(couplage->localis_fbr);
+  element       = fvm_locator_get_dist_locations(couplage->localis_fbr);
+  distant_coord = fvm_locator_get_dist_coords(couplage->localis_fbr);
+
+
+  /* Calculation of the distance DJJPB defining the distance from */
+  /* the local cell centre to the distant boundary face norm      */
+  /*--------------------------------------------------------------*/
+
+  BFT_MALLOC(couplage->distant_dist_fbr, 3*n_fbr_dist, cs_real_t);
+
+  /* Store the local surface vector of the coupled boundary faces */
+
+  BFT_MALLOC(local_surf, 3*n_fbr_loc, cs_real_t);
+
+  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+
+    ifac = lstfbr[ind] - 1;
+
+    for (icoo = 0 ; icoo < 3 ; icoo++)
+      local_surf[ind*3 + icoo] = mesh_quantities->b_face_normal[ifac*3 + icoo];
+
+ }
+
+  /* Get the distant faces surface vector (reverse = 1) */
+
+  reverse = 1;
+
+  BFT_MALLOC(distant_surf, 3*n_fbr_dist, cs_real_t);
+
+  fvm_locator_exchange_point_var(couplage->localis_fbr,
+                                 distant_surf,
+                                 local_surf,
+                                 NULL,
+                                 sizeof(cs_real_t),
+                                 3,
+                                 reverse);
+
+  BFT_FREE(local_surf);
+
+  /* Calculation of the JJ' vectors */
+
+  BFT_MALLOC(distant_xyzcen, 3*n_fbr_dist, cs_real_t);
+
+  for (ind = 0; ind < n_fbr_dist; ind++) {
+
+    iel = element[ind] - 1;
+
+    surface = 0.;
+    for (icoo = 0; icoo < 3; icoo++)
+      surface += distant_surf[ind*3 + icoo]*distant_surf[ind*3 + icoo];
+    surface = sqrt(surface);
+
+    pdt_scal = 0.;
+    for (icoo = 0; icoo < 3; icoo++) {
+
+      dist_cel_fbr[icoo] =
+        distant_coord[ind*3 + icoo] - mesh_quantities->cell_cen[iel*3 + icoo];
+
+      /* Store the distant coordinates to compute the weighting coefficients */
+      distant_xyzcen[ind*3 + icoo] = mesh_quantities->cell_cen[iel*3 + icoo];
+
+      vect_surf_norm[icoo] =
+        distant_surf[ind*3 + icoo] / surface;
+
+      pdt_scal += dist_cel_fbr[icoo]*vect_surf_norm[icoo];
+
+    }
+
+    for (icoo = 0; icoo < 3; icoo++)
+      couplage->distant_dist_fbr[ind*3 + icoo] =
+        dist_cel_fbr[icoo] - pdt_scal*vect_surf_norm[icoo];
+
+  }
+
+  BFT_FREE(distant_surf);
+
+
+  /* Calculation of the local weighting coefficient */
+  /*------------------------------------------------*/
+
+  BFT_MALLOC(couplage->distant_pond_fbr, n_fbr_dist, cs_real_t);
+  BFT_MALLOC(couplage->local_pond_fbr, n_fbr_loc, cs_real_t);
+
+  /* Get the cell centres coordinates (reverse = 0) */
+
+  reverse = 0;
+
+  BFT_MALLOC(local_xyzcen, 3*n_fbr_loc, cs_real_t);
+
+  fvm_locator_exchange_point_var(couplage->localis_fbr,
+                                 distant_xyzcen,
+                                 local_xyzcen,
+                                 NULL,
+                                 sizeof(cs_real_t),
+                                 3,
+                                 reverse);
+
+  BFT_FREE(distant_xyzcen);
+
+  /* Calculation of the local weighting coefficients */
+
+  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+
+    ifac = lstfbr[ind] - 1;
+    iel  = mesh->b_face_cells[ifac] - 1;
+
+    surface = 0.;
+
+    distance_fbr_cel = 0.;
+    distance_cel_cel = 0.;
+
+    for (icoo = 0 ; icoo < 3 ; icoo++) {
+
+      surface += mesh_quantities->b_face_normal[ifac*3 + icoo]
+        * mesh_quantities->b_face_normal[ifac*3 + icoo];
+
+      distance_fbr_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
+        (local_xyzcen[ind*3 + icoo] - mesh_quantities->b_face_cog[ifac*3 + icoo]);
+
+      distance_cel_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
+        (local_xyzcen[ind*3 + icoo] - mesh_quantities->cell_cen[iel*3 + icoo]);
+
+    }
+
+    surface = sqrt(surface);
+
+    distance_fbr_cel /= surface;
+    distance_cel_cel /= surface;
+
+    if (fabs(distance_cel_cel) > 1.e-12)
+      couplage->local_pond_fbr[ind] = distance_fbr_cel / distance_cel_cel;
+    else
+      couplage->local_pond_fbr[ind] = 0.5;
+
+  }
+
+
+  /* Get the distant weighting coefficients (reverse = 1) */
+
+  reverse = 1;
+
+  fvm_locator_exchange_point_var(couplage->localis_fbr,
+                                 couplage->distant_pond_fbr,
+                                 couplage->local_pond_fbr,
+                                 NULL,
+                                 sizeof(cs_real_t),
+                                 1,
+                                 reverse);
+
+
+
+  /* Calculation of the OF distance */
+  /*--------------------------------*/
+
+  BFT_MALLOC(couplage->distant_of, 3*n_fbr_dist, cs_real_t);
+  BFT_MALLOC(couplage->local_of, 3*n_fbr_loc, cs_real_t);
+
+  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+
+    cs_real_t pond = couplage->local_pond_fbr[ind];
+
+    ifac = lstfbr[ind] - 1;
+    iel  = mesh->b_face_cells[ifac] - 1;
+
+    surface = 0.;
+
+    distance_fbr_cel = 0.;
+    distance_cel_cel = 0.;
+
+    for (icoo = 0 ; icoo < 3 ; icoo++) {
+
+      surface += mesh_quantities->b_face_normal[ifac*3 + icoo]
+        * mesh_quantities->b_face_normal[ifac*3 + icoo];
+
+      distance_fbr_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
+        (local_xyzcen[ind*3+icoo] - mesh_quantities->b_face_cog[ifac*3+icoo]);
+
+      distance_cel_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
+        (local_xyzcen[ind*3+icoo] - mesh_quantities->cell_cen[iel*3+icoo]);
+
+    }
+
+    surface = sqrt(surface);
+
+    distance_fbr_cel /= surface;
+    distance_cel_cel /= surface;
+
+    for (icoo = 0 ; icoo < 3 ; icoo++)
+
+      couplage->local_of[ind*3 + icoo] =
+        mesh_quantities->b_face_cog[ifac*3 + icoo]
+        -  (mesh_quantities->b_face_cog[ifac*3 + icoo] /*  O'  */
+            + mesh_quantities->b_face_normal[ifac*3 + icoo] *distance_fbr_cel/surface   /*J'=F+n*FJ'*/
+            - 0.5*mesh_quantities->b_face_normal[ifac*3 + icoo] *distance_cel_cel/surface );  /*-n*I'J'/2*/
+
+  }
+
+  reverse = 1;
+
+  fvm_locator_exchange_point_var(couplage->localis_fbr,
+                                 couplage->distant_of,
+                                 couplage->local_of,
+                                 NULL,
+                                 sizeof(cs_real_t),
+                                 3,
+                                 reverse);
+
+  BFT_FREE(local_xyzcen);
+
+
 }
 
 /*============================================================================
@@ -435,6 +728,13 @@ void CS_PROCF (defcpl, DEFCPL)
                         *nfbcpl,
                         lfbcpl,
                         mesh_quantities->b_face_cog);
+
+
+  /* Computed some quantities needed for a centred-like interpolation */
+
+  if (coupl->localis_fbr != NULL)
+    _sat_coupling_interpolate(coupl);
+
 
 #if 0
   /* TODO: associate the FVM meshes to the post-processing,
@@ -750,6 +1050,8 @@ void CS_PROCF (npdcpl, NPDCPL)
  * INTEGER          LOCPTS(*)      : <-- : "containing" number associated to
  *                                 :     :   each point
  * DOUBLE PRECISION COOPTS(3,*)    : <-- : distant point coordinates
+ * DOUBLE PRECISION DJPPTS(3,*)    : <-- : distant vectors to the coupled face
+ * DOUBLE PRECISION PNDPTS(*)      : <-- : distant weighting coefficients
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (coocpl, COOCPL)
@@ -759,7 +1061,10 @@ void CS_PROCF (coocpl, COOCPL)
  const cs_int_t  *itydis,
        cs_int_t  *ityloc,
        cs_int_t  *locpts,
-       cs_real_t *coopts
+       cs_real_t *coopts,
+       cs_real_t *djppts,
+       cs_real_t *dofpts,
+       cs_real_t *pndpts
 )
 {
   cs_int_t  ind, icoo;
@@ -819,6 +1124,90 @@ void CS_PROCF (coocpl, COOCPL)
         locpts[ind] = element[ind];
         for (icoo = 0 ; icoo < 3 ; icoo++)
           coopts[ind*3 + icoo] = coord[ind*3 + icoo];
+      }
+
+      if (*itydis == 2)
+        for (ind = 0 ; ind < n_pts_dist ; ind++)
+          for (icoo = 0 ; icoo < 3 ; icoo++) {
+            djppts[ind*3 + icoo] = coupl->distant_dist_fbr[ind*3 + icoo];
+            dofpts[ind*3 + icoo] = coupl->distant_of[ind*3 + icoo];
+            pndpts[ind] = coupl->distant_pond_fbr[ind];
+          }
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Get the weighting coefficient needed for a centred-like interpolation
+ * in the case of a coupling on boundary faces.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PNDCPL
+ * *****************
+ *
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRCPL         : --> : number of distant points
+ * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
+ *                                 :     : 2 : localization on the local faces
+ * DOUBLE PRECISION PONDCP(*)      : <-- : weighting coefficients
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pndcpl, PNDCPL)
+(
+ const cs_int_t  *const numcpl,
+ const cs_int_t  *const nbrpts,
+       cs_int_t  *const ityloc,
+       cs_real_t *const pondcp,
+       cs_real_t *const distof
+)
+{
+  int             icoo;
+  cs_int_t        ind;
+  cs_int_t        nfbcpl = 0;
+  cs_sat_coupling_t  *coupl = NULL;
+  fvm_locator_t  *localis = NULL;
+
+  /* Initializations and verifications */
+
+  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Impossible coupling number %d; there are %d couplings"),
+              *numcpl, cs_glob_nbr_couplages);
+  else
+    coupl = cs_glob_couplages[*numcpl - 1];
+
+  if (*ityloc == 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The centred interpolation scheme is not available\n"
+                "when coupling cells"));
+  else if (*ityloc == 2)
+    localis = coupl->localis_fbr;
+
+
+  if (localis != NULL)
+    nfbcpl = fvm_locator_get_n_interior(localis);
+
+  if (*nbrpts != nfbcpl)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Coupling %d: inconsistent arguments for PNDCPL().\n"
+                "ITYLOC = %d and NBRPTS = %d are indicated.\n"
+                "NBRPTS should be %d."),
+              *numcpl, (int)(*ityloc), (int)(*nbrpts), (int)nfbcpl);
+
+  /* Creation of the local lists */
+
+  if (localis != NULL) {
+
+    if (nfbcpl > 0) {
+
+      for (ind = 0 ; ind < nfbcpl ; ind++) {
+        pondcp[ind] = coupl->local_pond_fbr[ind];
+        for (icoo = 0 ; icoo < 3 ; icoo++)
+          distof[ind*3 + icoo] = coupl->local_of[ind*3 + icoo];
       }
 
     }
@@ -1063,6 +1452,61 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
     for (ind = 0; ind < nbr; ind++)
       varloc[ind] = vardis[ind];
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the maximum value of an integer variable associated to a coupling.
+ *
+ * It is assumed that the integer value is the same for each group of
+ * processus (local and distant).
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE MXICPL
+ * *****************
+ *
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          VALDIS         : --> : distant value (to send)
+ * INTEGER          VALMAX         : <-- : local maximum (to receive)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (mxicpl, MXICPL)
+(
+ const cs_int_t  *numcpl,
+       cs_int_t  *vardis,
+       cs_int_t  *varmax
+)
+{
+  cs_bool_t  distant = false;
+
+#if defined(_CS_HAVE_MPI)
+
+  cs_sat_coupling_t  *coupl = NULL;
+
+  /* Initializations and verifications */
+
+  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Impossible coupling number %d; there are %d couplings"),
+              *numcpl, cs_glob_nbr_couplages);
+  else
+    coupl = cs_glob_couplages[*numcpl - 1];
+
+  if (coupl->comm != MPI_COMM_NULL) {
+
+    distant = true;
+
+    MPI_Allreduce(vardis, varmax, 1, CS_MPI_INT, MPI_MAX, coupl->comm);
+
+  }
+
+#endif /* defined(_CS_HAVE_MPI) */
+
+  if (distant == false) {
+
+    *varmax = *vardis;
 
   }
 }

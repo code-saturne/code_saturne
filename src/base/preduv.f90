@@ -219,6 +219,7 @@ include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "matiss.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -1295,6 +1296,29 @@ do isou = 1, 3
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
+   w7     , drtp   ,                                              &
+!        ------   ------
+   dam    , xam    ,                                              &
+   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   rdevel , rtuser , ra     )
+
+    endif
+
+    if (nbrcpl.gt.0) then
+      call csccel                                                 &
+      !==========
+ ( ifinia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ivar   , iphas  ,                                              &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
+   coefa  , coefb  ,                                              &
    w7     , drtp   ,                                              &
 !        ------   ------
    dam    , xam    ,                                              &

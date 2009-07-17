@@ -119,6 +119,7 @@ include "vortex.h"
 include "ihmpre.h"
 include "matiss.h"
 include "radiat.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -991,6 +992,21 @@ if (iale.eq.1) then
 endif
 
 ! -- Fin de zone Structures mobiles en ALE
+
+! -- Couplage Code_Saturne/Code_Saturne
+
+call cscini                                                       &
+!==========
+ ( ifinia , ifinra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod ,          &
+   rdevel , rtuser , ra     )
 
 
 !===============================================================================

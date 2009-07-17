@@ -191,6 +191,7 @@ include "parall.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -254,12 +255,14 @@ integer          idimte, itenso
 integer          nbrval, iappel, iescop, idtsca
 integer          iflint, iflbrd, icocgv, ifinra
 integer          ndircp, icpt  , iecrw
+integer          numcpl
 double precision rnorm , rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom
 double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
 double precision ro0iph, p0iph, pr0iph, xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
+double precision xnrdis
 
 !===============================================================================
 
@@ -309,6 +312,15 @@ if(nterup.gt.1) then
         call parsom (xnrmu0(iphas))
         !==========
       endif
+! En cas de couplage entre deux instances de Code_Saturne, on calcule
+! la norme totale de la vitesse
+! Necessaire pour que l'une des instances ne stoppe pas plus tot que les autres
+! (il faudrait quand meme verifier les options numeriques, ...)
+      do numcpl = 1, nbrcpl
+        call tbrcpl ( numcpl, 1, 1, xnrmu0(iphas), xnrdis )
+        !==========
+        xnrmu0(iphas) = xnrmu0(iphas) + xnrdis
+      enddo
       xnrmu0(iphas) = sqrt(xnrmu0(iphas))
     endif
 
@@ -1328,6 +1340,12 @@ if(nterup.gt.1) then
 
     if(irangp.ge.0) call parsom (xnrmu(iphas))
                                 !==========
+! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
+    do numcpl = 1, nbrcpl
+      call tbrcpl ( numcpl, 1, 1, xnrmu(iphas), xnrdis )
+      !==========
+      xnrmu(iphas) = xnrmu(iphas) + xnrdis
+    enddo
     xnrmu(iphas) = sqrt(xnrmu(iphas))
 
 ! Indicateur de convergence du point fixe

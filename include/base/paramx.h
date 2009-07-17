@@ -137,10 +137,12 @@ integer    ntypmx
 parameter(ntypmx=200)
 
 integer    iindef, ientre, isolib, isymet, iparoi,                &
-   iparug, iesicf, isspcf, isopcf, ierucf, ieqhcf
+           iparug, iesicf, isspcf, isopcf, ierucf,                &
+           ieqhcf, icscpl
 
 parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
- iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10, ieqhcf=11)
+          iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
+          ieqhcf=11, icscpl=12)
 
 ! NESTMX : NOMBRE MAX D'ESTIMATEURS
 !  IESPRE, IESDER, IESCOR, IESTOT : Numeros

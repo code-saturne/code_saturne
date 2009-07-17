@@ -260,7 +260,35 @@ void CS_PROCF (coocpl, COOCPL)
  const cs_int_t  *itydis,
        cs_int_t  *ityloc,
        cs_int_t  *locpts,
-       cs_real_t *coopts
+       cs_real_t *coopts,
+       cs_real_t *djppts,
+       cs_real_t *dofpts,
+       cs_real_t *pndpts
+);
+
+/*----------------------------------------------------------------------------
+ * Get the weighting coefficient needed for a centred-like interpolation
+ * in the case of a coupling on boundary faces.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE PNDCPL
+ * *****************
+ *
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          NBRCPL         : --> : number of distant points
+ * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
+ *                                 :     : 2 : localization on the local faces
+ * DOUBLE PRECISION PONDCP(*)      : <-- : weighting coefficients
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pndcpl, PNDCPL)
+(
+ const cs_int_t  *numcpl,
+ const cs_int_t  *nbrcpl,
+       cs_int_t  *ityloc,
+       cs_real_t *pondcp,
+       cs_real_t *distof
 );
 
 /*----------------------------------------------------------------------------
@@ -345,6 +373,28 @@ void CS_PROCF (tbrcpl, TBRCPL)
        cs_real_t *varloc
 );
 
+/*----------------------------------------------------------------------------
+ * Compute the maximum value of an integer variable associated to a coupling.
+ *
+ * It is assumed that the integer value is the same for each group of
+ * processus (local and distant).
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE MXICPL
+ * *****************
+ *
+ * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          VALDIS         : --> : distant value (to send)
+ * INTEGER          VALMAX         : <-- : local maximum (to receive)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (mxicpl, MXICPL)
+(
+ const cs_int_t  *const numcpl,
+       cs_int_t  *const vardis,
+       cs_int_t  *const varmax
+);
 
 /*============================================================================
  * Public function definitions

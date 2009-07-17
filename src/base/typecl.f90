@@ -181,6 +181,7 @@ include "parall.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -407,6 +408,14 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
       write(nfecra,6020) 'Sortie libre     ', ii, inb
+
+      if (nbrcpl.ge.1) then
+        ii = icscpl
+        inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+        if (irangp.ge.0) call parcpt (inb)
+        write(nfecra,6020) 'Couplage sat/sat ', ii, inb
+      endif
+
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
@@ -418,6 +427,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
             ii.ne.iparug .and. &
             ii.ne.isymet .and. &
             ii.ne.isolib .and. &
+            ii.ne.icscpl .and. &
             ii.ne.iindef ) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
@@ -1356,6 +1366,15 @@ do iphas = 1, nphas
       endif
       write(nfecra,7020) 'Sortie libre     ',ii,inb,flumty(ii)
 
+      if (nbrcpl.ge.1) then
+        ii = icscpl
+        inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+        if (irangp.ge.0) then
+          call parcpt (inb)
+          call parsom (flumty(ii))
+        endif
+        write(nfecra,7020) 'Couplage sat/sat ',ii,inb,flumty(ii)
+      endif
 
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1371,6 +1390,7 @@ do iphas = 1, nphas
             ii.ne.iparug .and.                                    &
             ii.ne.isymet .and.                                    &
             ii.ne.isolib .and.                                    &
+            ii.ne.icscpl .and.                                    &
             ii.ne.iindef ) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) then

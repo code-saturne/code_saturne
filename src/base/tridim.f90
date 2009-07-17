@@ -161,7 +161,6 @@ include "ppthch.h"
 include "ppincl.h"
 include "cpincl.h"
 include "coincl.h"
-include "atincl.h"
 include "lagpar.h"
 include "lagdim.h"
 include "lagran.h"
@@ -169,6 +168,7 @@ include "vortex.h"
 include "ihmpre.h"
 include "matiss.h"
 include "radiat.h"
+include "cplsat.h"
 
 ! les includes pp* ne servent que pour recuperer le pointeur IIZFPP
 
@@ -606,6 +606,33 @@ endif
 
 
 !===============================================================================
+! 6.  MISE A JOUR DE LA LOCALISATION DES INTERFACES DE COUPLAGE CS/CS
+!===============================================================================
+
+! Localisation des interfaces de couplage via la librairie FVM
+
+! On fait cette mise a jour des interfaces de localisation juste apres
+! les changements de geometries dus :
+!   - soit a la methode ALE (en fin de pas de temps precedent)
+!   - soit a un deplacement impose (cf ci-dessus)
+
+if (nbrcpl.gt.0) then
+
+   call cscloc                                                    &
+   !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod ,          &
+   rdevel , rtuser , ra     )
+
+endif
+
+!===============================================================================
 ! 7.  CALCUL DES PROPRIETES PHYSIQUES VARIABLES
 !      SOIT VARIABLES AU COURS DU TEMPS
 !      SOIT VARIABLES LORS D'UNE REPRISE DE CALCUL
@@ -948,7 +975,7 @@ if (imatis.eq.0) then
 !     - Interface Code_Saturne
 !       ======================
 
-  if (iihmpr.eq.1) then
+  if(iihmpr.eq.1) then
 
 ! N.B. Zones de face de bord : on utilise provisoirement les zones des
 !    physiques particulieres, meme sans physique particuliere
@@ -956,12 +983,12 @@ if (imatis.eq.0) then
 
     call uiclim                                                   &
     !==========
- ( ntcabs, nfabor,                                                &
+ ( nfabor,                                                        &
    nozppm, ncharm, ncharb, nclpch,                                &
    iindef, ientre, iparoi, iparug, isymet, isolib,                &
-   iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
+   iqimp,  icalke, ientat, ientcp,                                &
    ia(iitypf), ia(iizfpp), ia(iicodc),                            &
-   dtref,  ttcabs, surfbo, cdgfbo,                                &
+   surfbo,                                                        &
    qimp,   qimpat, qimpcp, dh,     xintur,                        &
    timpat, timpcp, distch, ra(ircodc) )
 
@@ -1059,8 +1086,7 @@ if (imatis.eq.0) then
 
     call uiclve                                                   &
     !==========
- ( nfabor, nozppm,                                                &
-   iindef, ientre, iparoi, iparug, isymet, isolib,                &
+ ( nfabor, iindef, ientre, iparoi, iparug, isymet, isolib,        &
    ia(iitypf), ia(iizfpp) )
 
   endif
@@ -1092,6 +1118,31 @@ if(ivrtex.eq.1) then
 
 endif
 
+! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
+!       On s'occupe ici du couplage via les faces de bord, et de la
+!       transformation de l'information reçue en condition limite.
+
+if (nbrcpl.gt.0) then
+
+  call cscfbr                                                     &
+  !==========
+ ( ifinia , ifinra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
+   idevel , ituser , ia    ,                                      &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , ra(ircodc)      ,                            &
+   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+   ra(icoefu)      ,                                              &
+   rdevel , rtuser , ra     )
+
+endif
 
 ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 
@@ -1104,23 +1155,6 @@ if (iale.eq.1) then
   ils    = ifinia
   ifnia1 = ils + maxelt
   CALL IASIZE('TRIDIM',IFNIA1)
-
-  ! - Interface Code_Saturne
-  !   ======================
-
-  if (iihmpr.eq.1) then
-
-    call uialcl &
-    !==========
-  ( nfabor, nozppm, &
-    ibfixe, igliss, ivimpo, ia(iialty), ipnfbr,   &
-    ipnfbr, nnod, nodfbr, ia(iimpal),             &
-    ra(idepal),                                   &
-    dtref, ttcabs, ntcabs,                        &
-    iuma, ivma, iwma,                             &
-    ra(ircodc)  )
-
-  endif
 
   call usalcl                                                     &
   !==========

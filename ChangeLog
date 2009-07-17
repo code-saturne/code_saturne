@@ -1,3 +1,33 @@
+* 17/07/2009 - David Monfort <david.monfort@edf.fr>
+  Merge code/code coupling feature from the development branch.
+  This feature is not yet functional as it has not been updated
+  to the new communications initialization for codes coupling.
+  added routines:
+    include/base/cplsat.h
+    src/base/csc2cl.f90
+    src/base/csc2ts.f90
+    src/base/csccel.f90
+    src/base/cscfbr.f90
+    src/base/cscini.f90
+    src/base/cscloc.f90
+    src/base/cscpce.f90
+    src/base/cscpfb.f90
+    src/base/cs_sat_coupling.c
+    src/base/memcs1.f90
+    src/base/memcs2.f90
+    users/base/ussatc.f90
+  modified routines:
+    include/base/cs_sat_coupling.h
+    include/base/paramx.h
+    src/base/caltri.f90
+    src/base/iniini.f90
+    src/base/navsto.f90
+    src/base/preduv.f90
+    src/base/tridim.f90
+    src/base/typecl.f90
+  modified script:
+    src/base/Makefile.am
+
 * 17/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Improvements and fixes in the parallel join algorithm.

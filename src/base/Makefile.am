@@ -54,6 +54,7 @@ saturneinclude_HEADERS = \
 $(top_srcdir)/include/base/alaste.h \
 $(top_srcdir)/include/base/albase.h \
 $(top_srcdir)/include/base/alstru.h \
+$(top_srcdir)/include/base/cplsat.h \
 $(top_srcdir)/include/base/cs_ale.h \
 $(top_srcdir)/include/base/cs_ast_coupling.h \
 $(top_srcdir)/include/base/cs_base.h \
@@ -209,7 +210,15 @@ cs_ast_coupling.c \
 cs_base.c \
 cs_boundary_conditions.c \
 cs_calcium.c \
+csc2cl.f90 \
+csc2ts.f90 \
+csccel.f90 \
+cscfbr.f90 \
+cscini.f90 \
 csclli.f90 \
+cscloc.f90 \
+cscpce.f90 \
+cscpfb.f90 \
 cs_coupling.c \
 cs_ext_neighborhood.c \
 csflsh.f90 \
@@ -308,6 +317,8 @@ memale.f90 \
 memcbr.f90 \
 memclg.f90 \
 memcli.f90 \
+memcs1.f90 \
+memcs2.f90 \
 memdis.f90 \
 memdtv.f90 \
 memdyp.f90 \
@@ -411,6 +422,7 @@ $(top_srcdir)/users/base/usnpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
+$(top_srcdir)/users/base/ussatc.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
 $(top_srcdir)/users/base/ussyrc.f90 \
@@ -446,6 +458,7 @@ $(top_srcdir)/users/base/usnpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
+$(top_srcdir)/users/base/ussatc.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
 $(top_srcdir)/users/base/ussyrc.f90 \
