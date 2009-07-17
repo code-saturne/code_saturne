@@ -335,8 +335,7 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   for (i = 0; i < o2n_hist->n_elts; i++) {
 
-    int  reduce_rank = cs_search_gindex_binary(0,
-                                               reduce_size,
+    int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                o2n_hist->g_elts[i],
                                                reduce_index);
 
@@ -357,8 +356,7 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   for (i = 0; i < o2n_hist->n_elts; i++) {
 
-    int  reduce_rank = cs_search_gindex_binary(0,
-                                               reduce_size,
+    int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                o2n_hist->g_elts[i],
                                                reduce_index);
 
@@ -403,7 +401,7 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   cs_join_gset_destroy(&new_face_rank);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Exchange to do after the splitting operation:\n");
   for (i = 0; i < n_ranks; i++) {
     start = _send_rank_index[i];
@@ -731,7 +729,7 @@ _split_face(cs_int_t                face_id,
       cs_int_t  edge_num = head_edge_num;
       cs_int_t  edge_id = FVM_ABS(edge_num) - 1;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
         bft_printf(" face_gnum: %u, head_shift: %d, edge_num: %d\n",
                    work->face_gnum[face_id], head_edge_shift, edge_num);
@@ -756,7 +754,7 @@ _split_face(cs_int_t                face_id,
 
       first_vid = vid1;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
         bft_printf("  v1: %u, v2: %u, first: %u\n", vertices[vid1].gnum,
                    vertices[vid2].gnum, vertices[first_vid].gnum);
@@ -790,7 +788,7 @@ _split_face(cs_int_t                face_id,
 
             cs_int_t  connect_vid = edges->adj_vtx_lst[i]-1;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
             if (tst_dbg)
               bft_printf("  (%d) vertex connected to v2: %u\n",
                          i, vertices[connect_vid].gnum);
@@ -824,7 +822,7 @@ _split_face(cs_int_t                face_id,
 
                   cs_int_t  adj_face_id = edge_face_lst[j] - 1;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
                   if (tst_dbg)
                     bft_printf("\t Adj face (%u) through edge (%u)\n",
                                work->face_gnum[adj_face_id],
@@ -842,7 +840,7 @@ _split_face(cs_int_t                face_id,
                     dprod = _dot_product(adj_face_norm, face_norm);
                     dprod2 = dprod * dprod;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
                     if (tst_dbg)
                       bft_printf("\t dp: %g, dp2: %g Vs plane: %g -"
                                  " AdjNorm: [%g %g %g] - Norm: [%g %g %g]\n",
@@ -856,7 +854,7 @@ _split_face(cs_int_t                face_id,
                       if (face_face_connect == NULL) {
                         found = true;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
                         if (tst_dbg)
                           bft_printf("\t -> Adj face is OK\n");
 #endif
@@ -918,11 +916,11 @@ _split_face(cs_int_t                face_id,
 
                   cs_real_t  cprod[3], dprod, cosine;
 
-                  _cross_product(cprod, v1v2_vect, connect_vect);
+                  _cross_product(v1v2_vect, connect_vect, cprod);
                   dprod = _dot_product(cprod, face_norm);
                   cosine = _cosine(v1v2_vect, connect_vect);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
                   if (tst_dbg)
                     bft_printf("\t  dot_prod: %g, cosine: %g\n",
                                dprod, cosine);
@@ -969,7 +967,7 @@ _split_face(cs_int_t                face_id,
           else if (   left_min_cos  >= max_limit_cos
                    && right_max_cos <= min_limit_cos) {
 
-            /* Returns pointers */
+            /* Set return pointers */
 
             *head_edges = _head_edges;
             *ext_edges = _ext_edges;
@@ -984,10 +982,10 @@ _split_face(cs_int_t                face_id,
 
           }
 
-          assert(next_edge != -1);
-          assert(next_vertex != -1);
+          assert(next_edge != 0);
+          assert(next_vertex != 0);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
             bft_printf(" Result: next_vertex: %u - next_edge: %u\n",
                        vertices[next_vertex-1].gnum,
@@ -1011,7 +1009,7 @@ _split_face(cs_int_t                face_id,
 
           } /* End of loop on connected vertices */
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
             bft_printf(" Result (connect only by 2):"
                        " next_vertex: %u - next_edge: %u\n",
@@ -1146,14 +1144,14 @@ _split_face(cs_int_t                face_id,
       head_edge_shift++;
       n_subfaces++;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
         bft_printf(" END OF BUILDING subface %d\n\n", n_subfaces);
 #endif
 
       if (n_subfaces > max_subfaces) { /* Too many sub-faces */
 
-        /* Returns pointers */
+        /* Set return pointers */
 
         *head_edges = _head_edges;
         *ext_edges = _ext_edges;
@@ -1458,7 +1456,8 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   /* Create a new cs_join_mesh_t structure */
 
   BFT_MALLOC(new_mesh_name, strlen("AfterSplitting_n") + 5 + 1, char);
-  sprintf(new_mesh_name,"%s%05d", "AfterSplitting_n", cs_glob_rank_id);
+  sprintf(new_mesh_name,"%s%05d", "AfterSplitting_n",
+          CS_MAX(cs_glob_rank_id, 0));
 
   new_mesh = cs_join_mesh_create(new_mesh_name);
 
@@ -1630,8 +1629,7 @@ _keep_history(cs_join_mesh_t        *mesh,
     for (i = 0; i < builder->n_faces; i++) {
       for (j = builder->face_index[i]; j < builder->face_index[i+1]; j++) {
 
-        cs_int_t  id = cs_search_g_binary(0,
-                                          mesh->n_faces - 1,
+        cs_int_t  id = cs_search_g_binary(mesh->n_faces,
                                           builder->subface_gnum[j],
                                           mesh->face_gnum);
 
@@ -1685,9 +1683,11 @@ cs_join_split_faces(cs_join_param_t          param,
   face_builder_t  *loc_builder = NULL;
   cs_join_mesh_t  *_work = *work;
 
+  const double plane = cos(param.plane *acos(-1.0)/180.);
+
   const cs_int_t  n_init_faces = _work->n_faces;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(_work != NULL);
   assert(edges != NULL);
@@ -1763,7 +1763,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
       code = _split_face(i,       /* face_id */
                          block_id,
-                         param.plane,
+                         plane,
                          param.max_sub_faces,
                          param.verbosity,
                          face_normal,
@@ -1777,7 +1777,7 @@ cs_join_split_faces(cs_join_param_t          param,
                          &ext_edges,
                          &int_edges);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (param.verbosity > 1 && code != NO_SPLIT_ERROR) {
         bft_printf(_("  Split face: %d with returned code: %d\n"), i+1, code);
         _dump_face_builder(block_id, loc_builder);
@@ -1788,8 +1788,9 @@ cs_join_split_faces(cs_join_param_t          param,
 
         _n_problems++;
 
-        /* We change the way we scan edges to build the new face.
-           It can be enough to solve the problem when the face is warped. */
+        /* We change the starting edge for traversing edges to build
+           the new face. This may be enough to solve the problem when
+           the face is warped. */
 
         while (_n_problems < n_face_vertices && code > NO_SPLIT_ERROR) {
 
@@ -1812,7 +1813,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
           code = _split_face(i,   /* face_id */
                              block_id,
-                             param.plane,
+                             plane,
                              param.max_sub_faces,
                              param.verbosity,
                              face_normal,
@@ -1843,7 +1844,8 @@ cs_join_split_faces(cs_join_param_t          param,
             break;
 
           case EDGE_TRAVERSED_TWICE_ERROR:
-            cs_join_rset_resize(&edge_traversed_twice, edge_traversed_twice->n_elts);
+            cs_join_rset_resize(&edge_traversed_twice,
+                                edge_traversed_twice->n_elts);
             edge_traversed_twice->array[edge_traversed_twice->n_elts] = i + 1;
             edge_traversed_twice->n_elts += 1;
             break;
@@ -2015,7 +2017,8 @@ cs_join_split_faces(cs_join_param_t          param,
 
     }
 
-    _get_subface_gnum(loc_builder);
+    if (sub_connect_size > 0)
+      _get_subface_gnum(loc_builder);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     bft_printf("\nFINAL BUILDER STATE\n");
@@ -2195,7 +2198,8 @@ cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
 
     len = strlen("JoinDBG_o2nFaceHist.dat")+1+4;
     BFT_MALLOC(filename, len, char);
-    sprintf(filename, "JoinDBG_o2nFaceHist%04d.dat", cs_glob_rank_id);
+    sprintf(filename, "JoinDBG_o2nFaceHist%04d.dat",
+            CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, _o2n_hist);

@@ -61,8 +61,7 @@ BEGIN_C_DECLS
  * search. Array or list must be ordered.
  *
  * parameters:
- *   start  <--  start search from this index
- *   end    <--  end search to this index
+ *   size   <--  size of list
  *   gnum   <--  find index for this number
  *   lst    <--  list of ordered global numbers to scan
  *
@@ -71,48 +70,43 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_g_binary(int                start,
-                   int                end,
+cs_search_g_binary(size_t             size,
                    fvm_gnum_t         gnum,
                    const fvm_gnum_t   lst[]);
 
 /*----------------------------------------------------------------------------
  * Get the position inside an array related to a value thanks to a binary
- * search. Array or list must be ordered.
+ * search (binary search). Array or list must be ordered.
  *
  * parameters:
- *   start  <--  start search from this index
- *   end    <--  end search to this index
+ *   size   <--  size of list
  *   num    <--  find index for this number
  *   lst    <--  list of ordered numbers to scan
  *
  * returns:
- *   id associated to the current number. If not found, returned -1.
+ *   id associated to the current number. If not found, return -1.
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_binary(int              start,
-                 int              end,
+cs_search_binary(size_t           size,
                  cs_int_t         num,
                  const cs_int_t   lst[]);
 
 /*----------------------------------------------------------------------------
  * Get the position inside an array related to a value thanks to a binary
- * search. Index must be ordered and without null range.
+ * search (binary search). Index must be ordered and without null range.
  *
  * parameters:
- *   start    <--  start search from this index
- *   end      <--  end search to this index
- *   gnum     <--  number for which we want the position in index
- *   index    <--  index array
+ *   size   <--  size of index -1
+ *   gnum   <--  number for which we want the position in index
+ *   index  <--  index array
  *
  * returns:
  *   id in index of gnum.  If not found, returned -1.
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_gindex_binary(int                start,
-                        int                end,
+cs_search_gindex_binary(size_t             size,
                         fvm_gnum_t         gnum,
                         const fvm_gnum_t   index[]);
 

@@ -60,7 +60,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "cs_join_util.h"
-#include "cs_mesh_quantities.h"
+#include "cs_mesh.h"
 #include "cs_search.h"
 #include "cs_sort.h"
 
@@ -106,7 +106,7 @@ _compact_face_gnum_selection(cs_int_t     n_select_faces,
   fvm_gnum_t  *_reduce_gnum_index = *reduce_gnum_index;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(_reduce_gnum_index == NULL);
 
@@ -225,8 +225,8 @@ _extract_vertices(cs_int_t         n_select_faces,
  *   n_faces           <-- number of faces in the whole mesh
  *   f2v_idx           <-- "face -> vertex" connect. index
  *   f2v_lst           <-- "face -> vertex" connect. list
- *   n_contig_i_faces  <-> pointer to the number of contiguous interior faces
- *   contig_i_faces    <-> pointer to the list of contiguous interior faces
+ *   n_contig_faces    <-> pointer to the number of contiguous faces
+ *   contig_faces      <-> pointer to the list of contiguous faces
  *---------------------------------------------------------------------------*/
 
 static void
@@ -317,7 +317,7 @@ _extract_contig_faces(cs_int_t         n_vertices,
   for (i = 0; i < n_faces; i++) {
     if (counter[i] == 1) {
       _contig_faces[_n_contig_faces] = i+1;
-      n_contig_faces += 1;
+      _n_contig_faces += 1;
     }
   }
 
@@ -417,7 +417,7 @@ _add_s_vertex(const fvm_gnum_t   selection_tag[],
 
       _new_s_vertices[_n_new_s_vertices++] = vid1 + 1;
 
-      if (n_new_s_vertices >= max_size) {
+      if (_n_new_s_vertices >= _max_size) {
         _max_size *= 2;
         BFT_REALLOC(_new_s_vertices, _max_size, cs_int_t);
       }
@@ -628,6 +628,8 @@ _add_s_vertices_from_adj_faces(cs_int_t           n_vertices,
   BFT_FREE(ref_v2v_lst);
   BFT_FREE(count);
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Compute the cell center (= barycenter of the cell vertices) for the
@@ -853,6 +855,8 @@ _cell_cen_vtx(const cs_mesh_t  *mesh,
   return cell_cen;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Get the full selection of faces related to "single" vertices.
  * Done only if the run is parallel.
@@ -919,9 +923,11 @@ _single_faces_extraction(cs_int_t           n_b_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Get the full selection of vertices to extract. Only in parallel. Somme
- * vertices may have been selected on another rank and not on the local rank
- * but you have to take them into account to have a good update of the mesh
+ * Get the full selection of vertices to extract.
+ *
+ * Only reaquired in parallel, as some vertices may have been selected on
+ * another rank and not on the local rank, but we need to take them into
+ * account to have a good update of the mesh.
  *
  * parameters:
  *   b_f2v_idx    <-- border "face -> vertex" connect. index
@@ -947,15 +953,16 @@ _single_vertex_extraction(const cs_int_t     b_f2v_idx[],
   cs_int_t  i, id, rank, vid, shift;
   fvm_gnum_t  n_g, gnum;
 
+  int  _have_single_elts = 0, have_single_elts = 0;
   cs_int_t  n_select_vertices = 0;
   cs_int_t  *block_tag = NULL;
-  cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_int_t  *send_count = NULL, *recv_count = NULL;
+  int  *send_shift = NULL, *recv_shift = NULL;
+  int  *send_count = NULL, *recv_count = NULL;
   fvm_gnum_t  *send_glist = NULL, *recv_glist = NULL;
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = cs_glob_rank_id;
+  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
   const cs_join_block_info_t  block = cs_join_get_block_info(n_g_vertices,
                                                              n_ranks,
@@ -971,8 +978,8 @@ _single_vertex_extraction(const cs_int_t     b_f2v_idx[],
   for (i = 0; i < (cs_int_t)block.local_size; i++)
     block_tag[i] = 0; /* Not selected by default */
 
-  BFT_MALLOC(send_count, n_ranks, cs_int_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_int_t);
+  BFT_MALLOC(send_count, n_ranks, int);
+  BFT_MALLOC(recv_count, n_ranks, int);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -985,8 +992,8 @@ _single_vertex_extraction(const cs_int_t     b_f2v_idx[],
 
   MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
 
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_int_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, int);
+  BFT_MALLOC(recv_shift, n_ranks + 1, int);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -1044,9 +1051,6 @@ _single_vertex_extraction(const cs_int_t     b_f2v_idx[],
 
   MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
 
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_int_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_int_t);
-
   send_shift[0] = 0;
   recv_shift[0] = 0;
 
@@ -1100,287 +1104,297 @@ _single_vertex_extraction(const cs_int_t     b_f2v_idx[],
     if (send_glist[i] > 0)
       n_select_vertices += 1;
 
-  if (n_select_vertices != selection->n_vertices) {
+  if (n_select_vertices != selection->n_vertices)
+    _have_single_elts = 1;
+
+  MPI_Allreduce(&_have_single_elts, &have_single_elts, 1, MPI_INT, MPI_MAX, mpi_comm);
+
+  if (have_single_elts == 1) {
 
     cs_int_t  *loc_tag = NULL;
 
     bft_printf("\n  Synchronization of the vertex selection necessary.\n");
 
-    assert(n_select_vertices > selection->n_vertices);
+    if (n_select_vertices != selection->n_vertices) {
 
-    BFT_MALLOC(loc_tag, n_vertices, cs_int_t);
+      assert(n_select_vertices > selection->n_vertices);
 
-    for (i = 0; i < n_vertices; i++)
-      loc_tag[i] = 0;
+      BFT_MALLOC(loc_tag, n_vertices, cs_int_t);
 
-    for (i = 0; i < selection->n_vertices; i++)
-      loc_tag[selection->vertices[i] - 1] = 1;
+      for (i = 0; i < n_vertices; i++)
+        loc_tag[i] = 0;
 
-    selection->n_s_vertices = n_select_vertices - selection->n_vertices;
-    BFT_MALLOC(selection->s_vertices, selection->n_s_vertices, cs_int_t);
+      for (i = 0; i < selection->n_vertices; i++)
+        loc_tag[selection->vertices[i] - 1] = 1;
 
-    shift = 0;
-    for (i = 0; i < n_vertices; i++)
-      if (send_glist[i] > 0 && loc_tag[i] == 0)
-        selection->s_vertices[shift++] = i+1;
+      selection->n_s_vertices = n_select_vertices - selection->n_vertices;
+      BFT_MALLOC(selection->s_vertices, selection->n_s_vertices, cs_int_t);
 
-    assert(shift == selection->n_s_vertices);
+      shift = 0;
+      for (i = 0; i < n_vertices; i++)
+        if (send_glist[i] > 0 && loc_tag[i] == 0)
+          selection->s_vertices[shift++] = i+1;
 
-  } /* End if n_select_vertices != selection->n_vertices */
+      assert(shift == selection->n_s_vertices);
 
-  _add_s_vertices_from_adj_faces(n_vertices,
-                                 send_glist,
-                                 selection,
-                                 b_f2v_idx,
-                                 b_f2v_lst,
-                                 i_f2v_idx,
-                                 i_f2v_lst);
+      BFT_FREE(loc_tag);
 
-  if (selection->n_s_vertices > 0) {
+    } /* End if n_select_vertices != selection->n_vertices */
 
-    bft_printf(_("\n  Single vertices for the joining operations:\n"));
-    for (i = 0; i < selection->n_s_vertices; i++)
-      bft_printf(" %9d | %9d\n", i, selection->s_vertices[i]);
-    bft_printf("\n");
-    bft_printf_flush();
+    _add_s_vertices_from_adj_faces(n_vertices,
+                                   send_glist,
+                                   selection,
+                                   b_f2v_idx,
+                                   b_f2v_lst,
+                                   i_f2v_idx,
+                                   i_f2v_lst);
 
-  } /* End if selection->n_s_vertices > 0 */
+    if (selection->n_s_vertices > 0) {
 
-  /* Check if globally there are single vertices */
+      bft_printf(_("\n  Single vertices for the joining operation:\n"));
+      for (i = 0; i < selection->n_s_vertices; i++)
+        bft_printf(" %9d | %9d\n", i, selection->s_vertices[i]);
+      bft_printf("\n");
+      bft_printf_flush();
 
-  MPI_Allreduce(&(selection->n_s_vertices), &n_g, 1, FVM_MPI_GNUM,
-                MPI_SUM, mpi_comm);
+    } /* End if selection->n_s_vertices > 0 */
 
-  if (n_g > 0) {
+    /* Check globally if there are single vertices */
 
-    cs_int_t  j, k, ifs_size;
+    MPI_Allreduce(&(selection->n_s_vertices), &n_g, 1, FVM_MPI_GNUM,
+                  MPI_SUM, mpi_comm);
 
-    cs_int_t  *count = NULL;
-    fvm_gnum_t  *loc_s_v_gnum = NULL, *glob_s_v_gnum = NULL;
-    fvm_interface_set_t  *ifs = NULL;
+    if (n_g > 0) {
 
-    selection->do_single_sync = true;
+      cs_int_t  j, k, ifs_size;
 
-    /* NB: n_s_vertices and n_c_vertices values are assumed to be small */
+      cs_int_t  *count = NULL;
+      fvm_gnum_t  *loc_s_v_gnum = NULL, *glob_s_v_gnum = NULL;
+      fvm_interface_set_t  *ifs = NULL;
 
-    /* Define couple vertices (vertex related on a distant to a single
-       vertex) */
+      selection->do_single_sync = true;
 
-    MPI_Allgather(&(selection->n_s_vertices), 1, MPI_INT,
-                  recv_count                , 1, MPI_INT, mpi_comm);
+      /* NB: n_s_vertices and n_c_vertices values are assumed to be small */
 
-    recv_shift[0] = 0;
-    for (i = 0; i < n_ranks; i++)
-      recv_shift[i+1] = recv_shift[i] + recv_count[i];
+      /* Define couple vertices (vertex related on a distant to a single
+         vertex) */
 
-    assert(recv_shift[n_ranks] == (cs_int_t)n_g);
+      MPI_Allgather(&(selection->n_s_vertices), 1, MPI_INT,
+                    recv_count,                 1, MPI_INT, mpi_comm);
 
-    BFT_MALLOC(glob_s_v_gnum, recv_shift[n_ranks], fvm_gnum_t);
-    BFT_MALLOC(loc_s_v_gnum, selection->n_s_vertices, fvm_gnum_t);
+      recv_shift[0] = 0;
+      for (i = 0; i < n_ranks; i++)
+        recv_shift[i+1] = recv_shift[i] + recv_count[i];
 
-    for (i = 0; i < selection->n_s_vertices; i++)
-      loc_s_v_gnum[i] = v_gnum[selection->s_vertices[i]-1];
+      assert(recv_shift[n_ranks] == (cs_int_t)n_g);
 
-    MPI_Allgatherv(loc_s_v_gnum, selection->n_s_vertices, FVM_MPI_GNUM,
-                   glob_s_v_gnum, recv_count, recv_shift, FVM_MPI_GNUM,
-                   mpi_comm);
+      BFT_MALLOC(glob_s_v_gnum, recv_shift[n_ranks], fvm_gnum_t);
+      BFT_MALLOC(loc_s_v_gnum, selection->n_s_vertices, fvm_gnum_t);
 
-    /* Count the number of coupled vertices */
+      for (i = 0; i < selection->n_s_vertices; i++)
+        loc_s_v_gnum[i] = v_gnum[selection->s_vertices[i]-1];
 
-    for (rank = 0; rank < n_ranks; rank++) {
-      if (rank != loc_rank) {
+      MPI_Allgatherv(loc_s_v_gnum, selection->n_s_vertices, FVM_MPI_GNUM,
+                     glob_s_v_gnum, recv_count, recv_shift, FVM_MPI_GNUM,
+                     mpi_comm);
 
-        for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+      /* Count the number of coupled vertices */
 
-          id = cs_search_g_binary(0, n_vertices - 1,
-                                  glob_s_v_gnum[i],
-                                  v_gnum);
+      for (rank = 0; rank < n_ranks; rank++) {
+        if (rank != loc_rank) {
+
+          for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+
+            id = cs_search_g_binary(n_vertices ,
+                                    glob_s_v_gnum[i],
+                                    v_gnum);
+
+            if (id != -1) {
+
+              _Bool  in_s_list = false;
+
+              for (j = 0; j < selection->n_s_vertices; j++) {
+                if (selection->s_vertices[j] == id + 1) {
+                  in_s_list = true;
+                  break;
+                }
+              }
+
+              if (in_s_list == false)
+                selection->n_c_vertices += 1;
+
+            } /* id != -1 */
+
+          }
+
+        } /* rank != loc_rank */
+      } /* End of loop on ranks */
+
+      BFT_MALLOC(selection->c_vertices, selection->n_c_vertices, cs_int_t);
+      BFT_MALLOC(selection->c_vtx_rank_lst, selection->n_c_vertices, cs_int_t);
+
+      /* Defined coupled vertices list and its related rank */
+
+      for (shift = 0, rank = 0; rank < n_ranks; rank++) {
+        if (rank != loc_rank) {
+
+          for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+
+            id = cs_search_g_binary(n_vertices,
+                                    glob_s_v_gnum[i],
+                                    v_gnum);
+
+            if (id != -1) {
+
+              _Bool  in_s_list = false;
+
+              for (j = 0; j < selection->n_s_vertices; j++) {
+                if (selection->s_vertices[j] == id + 1) {
+                  in_s_list = true;
+                  break;
+                }
+              }
+
+              if (in_s_list == false) {
+                selection->c_vertices[shift] = id + 1;
+                selection->c_vtx_rank_lst[shift] = rank;
+                shift++;
+              }
+
+            } /* id != -1 */
+
+          }
+
+        }  /* rank != loc_rank */
+
+      } /* End of loop on ranks */
+
+      assert(shift == selection->n_c_vertices);
+
+      if (selection->n_c_vertices > 0) {
+
+        bft_printf(_("\n  Coupled vertices for the joining operations:\n"));
+        for (i = 0; i < selection->n_c_vertices; i++)
+          bft_printf(" %9d | %9d | %6d\n",
+                     i, selection->c_vertices[i], selection->c_vtx_rank_lst[i]);
+        bft_printf("\n");
+        bft_printf_flush();
+
+      }
+
+      /* Build index and list of distant vertices related to single
+         vertices */
+
+      ifs = fvm_interface_set_create(n_vertices,
+                                     NULL,
+                                     v_gnum,
+                                     NULL,
+                                     0,
+                                     NULL,
+                                     NULL,
+                                     NULL);
+
+      /* Define index for the single vertices */
+
+      BFT_MALLOC(selection->s_vtx_idx, selection->n_s_vertices + 1, cs_int_t);
+
+      for (i = 0; i < selection->n_s_vertices + 1; i++)
+        selection->s_vtx_idx[i] = 0;
+
+      ifs_size = fvm_interface_set_size(ifs);
+
+      for (i = 0; i < ifs_size; i++) {
+
+        const fvm_interface_t  *itf = fvm_interface_set_get(ifs, i);
+        const fvm_lnum_t  *loc_num = fvm_interface_get_local_num(itf);
+        int  itf_size = fvm_interface_size(itf);
+        int  dist_rank = fvm_interface_rank(itf);
+
+        for (j = 0; j < selection->n_s_vertices; j++) {
+
+          gnum = loc_s_v_gnum[j];
+          id = cs_search_binary(itf_size,
+                                selection->s_vertices[j],
+                                loc_num);
 
           if (id != -1) {
 
             _Bool  in_s_list = false;
 
-            for (j = 0; j < selection->n_s_vertices; j++) {
-              if (selection->s_vertices[j] == id + 1) {
+            for (k = recv_shift[dist_rank]; k < recv_shift[dist_rank+1]; k++) {
+              if (gnum == glob_s_v_gnum[k]) {
                 in_s_list = true;
                 break;
               }
             }
 
             if (in_s_list == false)
-              selection->n_c_vertices += 1;
+              selection->s_vtx_idx[j+1] += 1;
 
-          } /* id != -1 */
+          } /* Id != -1 */
 
-        }
+        } /* End of loop on single vertices */
 
-      } /* rank != loc_rank */
-    } /* End of loop on ranks */
+      } /* End of loop on interfaces */
 
-    BFT_MALLOC(selection->c_vertices, selection->n_c_vertices, cs_int_t);
-    BFT_MALLOC(selection->c_vtx_rank_lst, selection->n_c_vertices, cs_int_t);
+      BFT_MALLOC(count, selection->n_s_vertices, int);
 
-    /* Defined coupled vertices list and its related rank */
+      for (i = 0; i < selection->n_s_vertices; i++) {
+        selection->s_vtx_idx[i+1] += selection->s_vtx_idx[i];
+        count[i] = 0;
+      }
 
-    for (shift = 0, rank = 0; rank < n_ranks; rank++) {
-      if (rank != loc_rank) {
+      BFT_MALLOC(selection->s_vtx_rank_lst,
+                 selection->s_vtx_idx[selection->n_s_vertices], cs_int_t);
 
-        for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+      for (i = 0; i < ifs_size; i++) {
 
-          id = cs_search_g_binary(0, n_vertices - 1,
-                                  glob_s_v_gnum[i],
-                                  v_gnum);
+        const fvm_interface_t  *itf = fvm_interface_set_get(ifs, i);
+        const fvm_lnum_t  *loc_num = fvm_interface_get_local_num(itf);
+        int  itf_size = fvm_interface_size(itf);
+        int  dist_rank = fvm_interface_rank(itf);
+
+        for (j = 0; j < selection->n_s_vertices; j++) {
+
+          gnum = loc_s_v_gnum[j];
+          id = cs_search_binary(itf_size,
+                                selection->s_vertices[j],
+                                loc_num);
 
           if (id != -1) {
 
             _Bool  in_s_list = false;
 
-            for (j = 0; j < selection->n_s_vertices; j++) {
-              if (selection->s_vertices[j] == id + 1) {
+            for (k = recv_shift[dist_rank]; k < recv_shift[dist_rank+1]; k++) {
+              if (gnum == glob_s_v_gnum[k]) {
                 in_s_list = true;
                 break;
               }
             }
 
             if (in_s_list == false) {
-              selection->c_vertices[shift] = id + 1;
-              selection->c_vtx_rank_lst[shift] = rank;
-              shift++;
+              shift = selection->s_vtx_idx[j] + count[j];
+              selection->s_vtx_rank_lst[shift] = dist_rank;
+              count[j] += 1;
             }
 
-          } /* id != -1 */
+          } /* Id != -1 */
 
-        }
+        } /* End of loop on single vertices */
 
-      }  /* rank != loc_rank */
+      } /* End of loop on interfaces */
 
-    } /* End of loop on ranks */
+      /* Free memory */
 
-    assert(shift == selection->n_c_vertices);
+      BFT_FREE(loc_s_v_gnum);
+      BFT_FREE(glob_s_v_gnum);
+      BFT_FREE(count);
 
-    if (selection->n_c_vertices > 0) {
+      ifs = fvm_interface_set_destroy(ifs);
 
-      bft_printf(_("\n  Coupled vertices for the joining operations:\n"));
-      for (i = 0; i < selection->n_c_vertices; i++)
-        bft_printf(" %9d | %9d | %6d\n",
-                   i, selection->c_vertices[i], selection->c_vtx_rank_lst[i]);
-      bft_printf("\n");
-      bft_printf_flush();
+    } /* End if selection->n_g_s_vertices > 0 */
 
-    }
-
-    /* Build index and list of distant vertices related to single
-       vertices */
-
-    ifs = fvm_interface_set_create(n_vertices,
-                                   NULL,
-                                   v_gnum,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
-
-    /* Define index for the single vertices */
-
-    BFT_MALLOC(selection->s_vtx_idx, selection->n_s_vertices + 1, cs_int_t);
-
-    for (i = 0; i < selection->n_s_vertices + 1; i++)
-      selection->s_vtx_idx[i] = 0;
-
-    ifs_size = fvm_interface_set_size(ifs);
-
-    for (i = 0; i < ifs_size; i++) {
-
-      const fvm_interface_t  *itf = fvm_interface_set_get(ifs, i);
-      const fvm_lnum_t  *loc_num = fvm_interface_get_local_num(itf);
-      int  itf_size = fvm_interface_size(itf);
-      int  dist_rank = fvm_interface_rank(itf);
-
-      for (j = 0; j < selection->n_s_vertices; j++) {
-
-        gnum = loc_s_v_gnum[j];
-        id = cs_search_binary(0, itf_size-1,
-                              selection->s_vertices[j],
-                              loc_num);
-
-        if (id != -1) {
-
-          _Bool  in_s_list = false;
-
-          for (k = recv_shift[dist_rank]; k < recv_shift[dist_rank+1]; k++) {
-            if (gnum == glob_s_v_gnum[k]) {
-              in_s_list = true;
-              break;
-            }
-          }
-
-          if (in_s_list == false)
-            selection->s_vtx_idx[j+1] += 1;
-
-        } /* Id != -1 */
-
-      } /* End of loop on single vertices */
-
-    } /* End of loop on interfaces */
-
-    BFT_MALLOC(count, selection->n_s_vertices, int);
-
-    for (i = 0; i < selection->n_s_vertices; i++) {
-      selection->s_vtx_idx[i+1] += selection->s_vtx_idx[i];
-      count[i] = 0;
-    }
-
-    BFT_MALLOC(selection->s_vtx_rank_lst,
-               selection->s_vtx_idx[selection->n_s_vertices], cs_int_t);
-
-    for (i = 0; i < ifs_size; i++) {
-
-      const fvm_interface_t  *itf = fvm_interface_set_get(ifs, i);
-      const fvm_lnum_t  *loc_num = fvm_interface_get_local_num(itf);
-      int  itf_size = fvm_interface_size(itf);
-      int  dist_rank = fvm_interface_rank(itf);
-
-      for (j = 0; j < selection->n_s_vertices; j++) {
-
-        gnum = loc_s_v_gnum[j];
-        id = cs_search_binary(0,
-                              itf_size-1,
-                              selection->s_vertices[j],
-                              loc_num);
-
-        if (id != -1) {
-
-          _Bool  in_s_list = false;
-
-          for (k = recv_shift[dist_rank]; k < recv_shift[dist_rank+1]; k++) {
-            if (gnum == glob_s_v_gnum[k]) {
-              in_s_list = true;
-              break;
-            }
-          }
-
-          if (in_s_list == false) {
-            shift = selection->s_vtx_idx[j] + count[j];
-            selection->s_vtx_rank_lst[shift] = dist_rank;
-            count[j] += 1;
-          }
-
-        } /* Id != -1 */
-
-      } /* End of loop on single vertices */
-
-    } /* End of loop on interfaces */
-
-    /* Free memory */
-
-    BFT_FREE(loc_s_v_gnum);
-    BFT_FREE(glob_s_v_gnum);
-    BFT_FREE(count);
-
-    ifs = fvm_interface_set_destroy(ifs);
-
-  } /* End if selection->n_g_s_vertices > 0 */
+  } /* End if have_single_elements */
 
   /* Free memory */
 
@@ -1739,11 +1753,8 @@ cs_join_select_create(const char  *selection_criteria,
                        &(selection->cell_cen));
 
   if (verbosity > 0)
-    bft_printf(_("  Joining operation between:\n"
-                 "      number of selected border faces (local) : %10d\n"
-                 "      number of selected border faces (global): %10u\n"),
-               selection->n_faces, selection->n_g_faces);
-  bft_printf_flush();
+    bft_printf(_("  Number of boundary faces selected for joining: %10u\n"),
+               selection->n_g_faces);
 
   /* Define a compact global numbering on selected border faces and
      build an index on ranks on this compact numbering */
@@ -1925,6 +1936,7 @@ cs_join_select_destroy(cs_join_select_t  **join_select)
  * Build vertex -> vertex index for a selection of faces.
  *
  * "v2v_idx" is already allocated to the number of vertices in the mesh.
+ * At this stage, it is just a counter.
  *
  * parameters:
  *   n_faces <-- number of selected faces

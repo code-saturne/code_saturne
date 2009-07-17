@@ -1139,13 +1139,14 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Assign selectors to global mesh.
+ * Define group classes for a mesh based on its family definitions.
  *
- * Should be called once the mesh is fully built.
+ * parameters:
+ *   mesh <-> pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_init_selectors(void)
+cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 {
   int  i, j;
   int  grp_nbr, grp_num, grp_idx, color_nbr;
@@ -1153,35 +1154,38 @@ cs_mesh_init_selectors(void)
   int  *color = NULL;
   char **group = NULL;
 
-  cs_glob_mesh->class_defs = fvm_group_class_set_create();
+  if (mesh->class_defs != NULL)
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+  mesh->class_defs = fvm_group_class_set_create();
 
   /* Construction of the fvm_group_class structure */
 
-  BFT_MALLOC(group, cs_glob_mesh->n_max_family_items, char*);
-  BFT_MALLOC(color, cs_glob_mesh->n_max_family_items, int);
+  BFT_MALLOC(group, mesh->n_max_family_items, char*);
+  BFT_MALLOC(color, mesh->n_max_family_items, int);
 
-  for (i = 0; i < cs_glob_mesh->n_families; i++) {
+  for (i = 0; i < mesh->n_families; i++) {
 
     color_nbr = 0;
     grp_nbr  = 0;
 
-    for (j = 0; j <  cs_glob_mesh->n_max_family_items; j++) {
+    for (j = 0; j <  mesh->n_max_family_items; j++) {
 
-      if (cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i] > 0){
+      if (mesh->family_item[j * mesh->n_families + i] > 0){
         color[color_nbr++]
-          = cs_glob_mesh->family_item[j *cs_glob_mesh->n_families + i];
+          = mesh->family_item[j *mesh->n_families + i];
       }
-      else if (  cs_glob_mesh->family_item[j * cs_glob_mesh->n_families + i]
+      else if (  mesh->family_item[j * mesh->n_families + i]
                < 0) {
         /* Fortran formulation */
-        grp_num = -cs_glob_mesh->family_item[j*cs_glob_mesh->n_families + i] -1;
-        grp_idx = cs_glob_mesh->group_idx[grp_num];
-        group[grp_nbr++] = cs_glob_mesh->group_lst + grp_idx -1;
+        grp_num = -mesh->family_item[j*mesh->n_families + i] -1;
+        grp_idx = mesh->group_idx[grp_num];
+        group[grp_nbr++] = mesh->group_lst + grp_idx -1;
       }
 
     }
 
-    fvm_group_class_set_add(cs_glob_mesh->class_defs,
+    fvm_group_class_set_add(mesh->class_defs,
                             grp_nbr,
                             color_nbr,
                             (const char **)group,
@@ -1191,6 +1195,18 @@ cs_mesh_init_selectors(void)
 
   BFT_FREE(group);
   BFT_FREE(color);
+}
+
+/*----------------------------------------------------------------------------
+ * Assign selectors to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_selectors(void)
+{
+  cs_mesh_init_group_classes(cs_glob_mesh);
 
   /* Construction of the selectors */
 
@@ -1228,16 +1244,19 @@ cs_mesh_init_selectors(void)
  *
  * parameters:
  *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_print_info(const cs_mesh_t  *mesh)
+cs_mesh_print_info(const cs_mesh_t  *mesh,
+                   const char       *name)
 {
-  bft_printf(_(" Mesh\n"
+  bft_printf(_(" %s\n"
                "     Number of cells:          %lu\n"
                "     Number of interior faces: %lu\n"
                "     Number of boundary faces: %lu\n"
                "     Number of vertices:       %lu\n"),
+             name,
              (unsigned long)(mesh->n_g_cells),
              (unsigned long)(mesh->n_g_i_faces),
              (unsigned long)(mesh->n_g_b_faces),

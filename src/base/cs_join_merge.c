@@ -131,7 +131,7 @@ _initialize_merge_counter(void)
   _loc_merge_counter = 0;
 }
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
 
 /*----------------------------------------------------------------------------
  * Dump an cs_join_eset_t structure on vertices.
@@ -774,7 +774,7 @@ _parall_tag_init(fvm_gnum_t             n_g_vertices_to_treat,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   /* Allocate and intialize vtx_tag associated to the local rank */
 
@@ -1352,7 +1352,7 @@ _trivial_merge(cs_join_param_t     param,
   fvm_gnum_t  *sub_list = NULL, *init_list = NULL;
   cs_join_gset_t  *equiv_gnum = NULL;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (param.verbosity > 2) {
 
     int  len;
@@ -1362,7 +1362,7 @@ _trivial_merge(cs_join_param_t     param,
     len = strlen("JoinDBG_InitMergeSet.dat")+1+2+4;
     BFT_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_InitMergeSet%04d.dat",
-            param.num, cs_glob_rank_id);
+            param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, merge_set);
@@ -1698,7 +1698,7 @@ _merge_with_tol_reduction(cs_join_param_t    param,
       distances[shift++] = _compute_length(vertices[sub_list[i1]],
                                            vertices[sub_list[i2]]);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(_("\t\t\t  (BEGIN) Reduce tolerance\n"));
   cs_join_dump_array("gnum", "sub_list", n_sub_elts, &(sub_list[start]));
   cs_join_dump_array("gnum", "ref_tags", n_sub_elts, &(ref_tags[start]));
@@ -1840,7 +1840,7 @@ _merge_vertices(cs_join_param_t    param,
   merge_list = merge_set->g_list;
   merge_ref_elts = merge_set->g_elts;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
 
   if (verbosity > 2) {
 
@@ -1851,7 +1851,7 @@ _merge_vertices(cs_join_param_t    param,
     len = strlen("JoinDBG_MergeSet.dat")+1+2+4;
     BFT_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_MergeSet%04d.dat",
-            param.num, cs_glob_rank_id);
+            param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, merge_set);
@@ -1888,7 +1888,7 @@ _merge_vertices(cs_join_param_t    param,
   if (verbosity > 0) {   /* Display information */
 
     fvm_gnum_t g_max_n_sub_elts = max_n_sub_elts;
-    fvm_parall_counter(&g_max_n_sub_elts, 1);
+    fvm_parall_counter_max(&g_max_n_sub_elts, 1);
 
     if (g_max_n_sub_elts < 2) {
       bft_printf(_("\n  No need to merge vertices.\n"));
@@ -2001,7 +2001,7 @@ _merge_vertices(cs_join_param_t    param,
 
   if (equiv_gnum != NULL) {
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
 
     if (verbosity > 2) {
 
@@ -2012,7 +2012,7 @@ _merge_vertices(cs_join_param_t    param,
       len = strlen("JoinDBG_EquivMerge.dat")+1+2+4;
       BFT_MALLOC(filename, len, char);
       sprintf(filename, "Join%02dDBG_EquivMerge%04d.dat",
-              param.num, cs_glob_rank_id);
+              param.num, CS_MAX(cs_glob_rank_id, 0));
       dbg_file = fopen(filename, "w");
 
       cs_join_gset_dump(dbg_file, equiv_gnum);
@@ -2089,8 +2089,9 @@ _keep_global_vtx_evolution(cs_int_t                n_iwm_vertices,
   cs_join_block_info_t  block_info;
 
   int  n_ranks = cs_glob_n_ranks;
-  int  local_rank = cs_glob_rank_id;
   fvm_gnum_t  *o2n_vtx_gnum = NULL;
+
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(n_iwm_vertices <= n_vertices); /* after inter. >= init */
 
@@ -2196,7 +2197,7 @@ _keep_global_vtx_evolution(cs_int_t                n_iwm_vertices,
         fvm_gnum_t  n_gnum = recv_glist[i+1];
         cs_int_t  id = o_gnum - block_info.first_gnum;
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (o2n_vtx_gnum[id] != block_info.first_gnum + id)
           assert(o2n_vtx_gnum[id] == n_gnum);
 #endif
@@ -2452,7 +2453,7 @@ _get_faces_to_send(cs_int_t           n_faces,
   cs_int_t  *reduce_ids = NULL, *count = NULL;
   fvm_gnum_t  *reduce_index = NULL;
 
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
   /* Sanity checks */
@@ -2503,8 +2504,7 @@ _get_faces_to_send(cs_int_t           n_faces,
 
       /* The current face is a "main" face for the local rank */
 
-      int  reduce_rank = cs_search_gindex_binary(0,
-                                                 reduce_size,
+      int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                  face_gnum[i],
                                                  reduce_index);
 
@@ -2535,8 +2535,7 @@ _get_faces_to_send(cs_int_t           n_faces,
 
       /* The current face is a "main" face for the local rank */
 
-      int  reduce_rank = cs_search_gindex_binary(0,
-                                                 reduce_size,
+      int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                  face_gnum[i],
                                                  reduce_index);
 
@@ -2816,8 +2815,10 @@ cs_join_create_new_vertices(int                     verbosity,
 
   } /* End of loop on vertices */
 
+#if 0
   if (verbosity > 3)  /* Dump local structures */
     _dump_vtx_eset(vtx_equiv, work);
+#endif
 #endif
 
   /* Set return pointers */
@@ -2858,7 +2859,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   _initialize_merge_counter();
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
   if (param.verbosity > 3)
     _dump_vtx_eset(vtx_eset, work);
 #endif
@@ -3028,7 +3029,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                                                         future synchro. */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-    cs_join_dump_inter_edges(inter_edges, edges, mesh);
+    cs_join_inter_edges_dump(inter_edges, edges, mesh);
 #endif
 
     /* Update cs_join_mesh_t structure after the merge of vertices
@@ -3062,7 +3063,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                      mesh,
                      &local_mesh);
 
-  /* Clean mesh: remove degenerated and empty edges */
+  /* Clean mesh: remove degenerate and empty edges */
 
   cs_join_mesh_clean(mesh, param.verbosity);
 

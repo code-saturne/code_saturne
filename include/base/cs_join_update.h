@@ -71,45 +71,47 @@ BEGIN_C_DECLS
  * Update mesh structure (vertices + faces) after the fusion step.
  *
  * parameters:
- *  join_param         <--  set of parameters for the joining operation
- *  join_select        <--  list of all implied entities in the joining op.
- *  o2n_vtx_gnum       <--  in : array on slices on the new global vertex
- *                          out: local array on the new global vertex
- *  join_mesh          <--  pointer to the local cs_join_mesh_t structure
- *  mesh               <->  pointer of pointer to cs_mesh_t structure
+ *   join_param   <--  set of parameters for the joining operation
+ *   join_select  <--  list of all implied entities in the joining op.
+ *   o2n_vtx_gnum <->  in : array on blocks on the new global vertex
+ *                     out: local array on the new global vertex
+ *   join_mesh    <--  pointer to the local cs_join_mesh_t structure
+ *   mesh         <->  pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
-                                cs_join_select_t    *join_select,
-                                fvm_gnum_t            o2n_vtx_gnum[],
-                                cs_join_mesh_t      *join_mesh,
-                                cs_mesh_t           *mesh);
+cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
+                                const cs_join_select_t  *join_select,
+                                fvm_gnum_t               o2n_vtx_gnum[],
+                                cs_join_mesh_t          *join_mesh,
+                                cs_mesh_t               *mesh);
 
 /*----------------------------------------------------------------------------
  * Update mesh structure (vertices + faces) after the face split step.
  *
  * parameters:
- *  join_param        <--  set of parameters for the joining operation
- *  join_select       <--  list of all implied entities in the joining op.
- *  o2n_face_hist     <--  relation between faces before/after the joining
- *  join_mesh         <--  pointer to the local cs_join_mesh_t structure
- *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *   join_param      <-- set of parameters for the joining operation
+ *   join_select     <-- list of all implied entities in the joining op.
+ *   o2n_face_hist   <-- relation between faces before/after the joining
+ *   join_mesh       <-- pointer to the local cs_join_mesh_t structure
+ *   mesh            <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_update_mesh_after_split(cs_join_param_t      join_param,
-                                cs_join_select_t    *join_select,
-                                cs_join_gset_t      *o2n_face_hist,
-                                cs_join_mesh_t      *join_mesh,
-                                cs_mesh_t            *mesh);
+cs_join_update_mesh_after_split(cs_join_param_t          join_param,
+                                const cs_join_select_t  *join_select,
+                                const cs_join_gset_t    *o2n_face_hist,
+                                const cs_join_mesh_t    *join_mesh,
+                                cs_mesh_t               *mesh);
 
 /*----------------------------------------------------------------------------
- * Clean a cs_mesh_t struct.  (delete redundant and empty edge definition)
+ * Clean a cs_mesh_t struct.
+ *
+ * Delete redundant and empty edge definitions.
  *
  * parameters:
- *  param     <--  set of parameters for the joining operation
- *  mesh      <--  pointer to a cs_mesh_t struct.
+ *   para <-- set of parameters for the joining operation
+ *   mesh <-> pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void

@@ -178,12 +178,12 @@ _get_rank_from_index(cs_int_t          n_elts,
  * faces to receive.
  *
  * parameters:
- *   n_ranks           <-- number of ranks
- *   gnum_rank_index   <-- index on ranks for the global elements
- *   n_elts            <-- number of elements to get
- *   glob_list         <-- global number of faces to get (ordered)
- *   p_send_rank_index --> index on ranks for the faces to send
- *   p_send_faces      --> list of face ids to send
+ *   n_ranks         <-- number of ranks
+ *   gnum_rank_index <-- index on ranks for the global elements
+ *   n_elts          <-- number of elements to get
+ *   glob_list       <-- global number of faces to get (ordered)
+ *   send_rank_index --> index on ranks for the faces to send
+ *   send_faces      --> list of face ids to send
  *---------------------------------------------------------------------------*/
 
 static void
@@ -203,7 +203,7 @@ _get_send_faces(int                n_ranks,
 
   MPI_Comm  comm = cs_glob_mpi_comm;
 
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   /* Sanity checks */
 
@@ -681,7 +681,6 @@ _add_new_vtx_to_edge(cs_int_t                v1_num,
   /* Return pointer */
 
   *p_shift = shift;
-
 }
 
 /*============================================================================
@@ -882,40 +881,37 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
                                 const cs_int_t         selection[],
                                 const cs_join_mesh_t  *parent_mesh)
 {
-  cs_int_t  i, j, shift, id, parent_id, vtx_num, start, end;
+  cs_int_t  i, j, shift, parent_id, vtx_num, start, end;
 
   cs_int_t  n_select_vertices = 0;
-  cs_int_t  *select_vertices = NULL, *counter = NULL;
+  cs_int_t  *select_vtx_id = NULL;
 
   cs_join_mesh_t  *mesh = NULL;
 
   /* Get the selected vertices relative to the subset selection */
 
-  BFT_MALLOC(counter, parent_mesh->n_vertices, cs_int_t);
+  BFT_MALLOC(select_vtx_id, parent_mesh->n_vertices, cs_int_t);
 
   for (i = 0; i < parent_mesh->n_vertices; i++)
-    counter[i] = 0;
+    select_vtx_id[i] = -1;
 
   for (i = 0; i < subset_size; i++) {
 
     parent_id = selection[i] - 1;
 
     for (j = parent_mesh->face_vtx_idx[parent_id] - 1;
-         j < parent_mesh->face_vtx_idx[parent_id+1] - 1; j++)
-      counter[parent_mesh->face_vtx_lst[j]-1] += 1;
+         j < parent_mesh->face_vtx_idx[parent_id+1] - 1;
+         j++) {
+      select_vtx_id[parent_mesh->face_vtx_lst[j] - 1] = 0;
+    }
 
   }
 
-  for (i = 0; i < parent_mesh->n_vertices; i++)
-    if (counter[i] > 0)
-      n_select_vertices++;
-
-  BFT_MALLOC(select_vertices, n_select_vertices, cs_int_t);
-
   n_select_vertices = 0;
-  for (i = 0; i < parent_mesh->n_vertices; i++)
-    if (counter[i] > 0)
-      select_vertices[n_select_vertices++] = i+1;
+  for (i = 0; i < parent_mesh->n_vertices; i++) {
+    if (select_vtx_id[i] > -1)
+      select_vtx_id[i] = n_select_vertices++;
+  }
 
   /* Create a new cs_join_mesh_t structure */
 
@@ -951,16 +947,12 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
     end = parent_mesh->face_vtx_idx[parent_id+1] - 1;
     shift = mesh->face_vtx_idx[i] - 1;
 
-    for (j = 0; j < end - start; j++) {
+    for (j = start; j < end; j++) {
 
-      vtx_num = parent_mesh->face_vtx_lst[start + j];
+      vtx_num = parent_mesh->face_vtx_lst[j];
 
-      id = cs_search_binary(0,
-                            n_select_vertices,
-                            vtx_num,
-                            select_vertices);
-
-      mesh->face_vtx_lst[shift + j] = id + 1;
+      mesh->face_vtx_lst[shift + j - start]
+        = select_vtx_id[parent_mesh->face_vtx_lst[j] - 1] + 1;
 
     }
 
@@ -972,8 +964,11 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
   BFT_MALLOC(mesh->vertices, n_select_vertices, cs_join_vertex_t);
 
-  for (i = 0; i < n_select_vertices; i++)
-    mesh->vertices[i] = parent_mesh->vertices[select_vertices[i] - 1];
+  n_select_vertices = 0;
+  for (i = 0; i < parent_mesh->n_vertices; i++) {
+    if (select_vtx_id[i] > -1)
+      mesh->vertices[n_select_vertices++] = parent_mesh->vertices[i];
+  }
 
   /* Define global face numbering and linked global cell numbering */
 
@@ -1001,7 +996,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
     /* Get the global number of faces in the subset */
 
-    io_num = fvm_io_num_create(selection, mesh->face_gnum, subset_size, 0);
+    io_num = fvm_io_num_create(NULL, mesh->face_gnum, subset_size, 0);
 
     mesh->n_g_faces = fvm_io_num_get_global_count(io_num);
 
@@ -1026,13 +1021,11 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
     io_num = fvm_io_num_destroy(io_num);
 
     BFT_FREE(vtx_gnum);
-
   }
 
   /* Free memory */
 
-  BFT_FREE(counter);
-  BFT_FREE(select_vertices);
+  BFT_FREE(select_vtx_id);
 
   return  mesh;
 }
@@ -1112,8 +1105,7 @@ cs_join_mesh_create_from_extract(const char              *mesh_name,
 
       vtx_num = face_vtx_lst[start + j];
 
-      id = cs_search_binary(0,
-                            n_select_vertices,
+      id = cs_search_binary(n_select_vertices,
                             vtx_num,
                             selected_vertices);
 
@@ -1896,7 +1888,6 @@ cs_join_mesh_clean(cs_join_mesh_t  *mesh,
    */
 
   _remove_degenerate_edges(mesh, verbosity);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3098,10 +3089,16 @@ cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
     bft_printf(_("  Vertex %6d (%7u) - %3d - "),
                i+1, (mesh->vertices[i]).gnum, end - start);
 
-    for (j = start; j < end; j++)
-      bft_printf(" [ v: %7u, e: %7u] ",
-                 (mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
-                 edges->gnum[edges->edge_lst[j]]);
+    for (j = start; j < end; j++) {
+      if (edges->edge_lst[j] > 0)
+        bft_printf(" [ v: %7u, e: %7u] ",
+                   (mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
+                   edges->gnum[edges->edge_lst[j] - 1]);
+      else
+        bft_printf(" [ v: %7u, e: %7u] ",
+                   (mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
+                   edges->gnum[- edges->edge_lst[j] - 1]);
+    }
     bft_printf("\n");
 
   }

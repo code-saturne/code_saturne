@@ -332,6 +332,16 @@ cs_int_t
 cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Define group classes for a mesh based on its family definitions.
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_group_classes(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Assign selectors to global mesh.
  *
  * Should be called once the mesh is fully built.
@@ -345,10 +355,12 @@ cs_mesh_init_selectors(void);
  *
  * parameters:
  *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_print_info(const cs_mesh_t  *mesh);
+cs_mesh_print_info(const cs_mesh_t  *mesh,
+                   const char       *name);
 
 /*----------------------------------------------------------------------------
  * Dump of a mesh structure.

@@ -97,8 +97,8 @@ typedef struct {
 
   double  fraction;
 
-  /* parameter used to judge if two faces are in the same plane (during
-     the face split) */
+  /* maximum angle between normals of two faces considered to
+     be in the same plane (for face split) */
 
   double  plane;
 
@@ -321,6 +321,7 @@ cs_join_select_destroy(cs_join_select_t  **join_select);
  * Build vertex -> vertex index for a selection of faces.
  *
  * "v2v_idx" is already allocated to the number of vertices in the mesh.
+ * At this stage, it is just a counter.
  *
  * parameters:
  *   n_faces <-- number of selected faces

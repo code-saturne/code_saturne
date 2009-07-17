@@ -233,8 +233,8 @@ _get_global_tolerance(cs_int_t             n_vertices,
   const fvm_gnum_t  *io_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
-  int  local_rank = cs_glob_rank_id;
-  int  n_ranks = cs_glob_n_ranks;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  n_ranks = cs_glob_n_ranks;
 
   /* Define a fvm_io_num_t structure on vertices */
 
@@ -489,7 +489,7 @@ _extract_mesh(const char              *name,
 
   } /* End if selection->n_vertices > 0 */
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)   /* Sanity check */
+#if 0 && defined(DEBUG) && !defined(NDEBUG)   /* Sanity check */
   for (i = 0; i < selection->n_vertices; i++)
     if (vtx_data[i].tolerance > (DBL_MAX - 1.))
       bft_error(__FILE__, __LINE__, 0,
@@ -502,6 +502,7 @@ _extract_mesh(const char              *name,
   /* Parallel treatment : synchro over the ranks */
 
 #if defined(HAVE_MPI)
+
   if (n_ranks > 1) {
 
     /* Global number of selected vertices and associated
@@ -526,7 +527,8 @@ _extract_mesh(const char              *name,
     fvm_io_num_destroy(select_vtx_io_num);
 
   }
-#endif
+
+#endif /* defined(HAVE_MPI) */
 
   /* Define the join mesh strcuture from the selected faces and the
      related vtx_data on selected vertices */
@@ -551,9 +553,9 @@ _extract_mesh(const char              *name,
   cpu_end = bft_timer_cpu_time();
 
   if (param.verbosity > 2)
-    bft_printf(_("\n\t  Definition of local join mesh:\n"
-                 "\t      wall clock time elapsed:    %10.3g\n"
-                 "\t      cpu time elpased       :    %10.3g\n"),
+    bft_printf(_("\n\t  Definition of local joining mesh:\n"
+                 "\t      wall clock time:            %10.3g\n"
+                 "\t      CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   if (param.verbosity > 1)
@@ -569,7 +571,7 @@ _extract_mesh(const char              *name,
  * In serial mode, this is a subset of the local join mesh.
  * In parallel mode, this is a distributed subset of the global join mesh.
  *
- * Subset is a restriction on faces which could be intersected each other.
+ * Subset is a restriction on faces which could intersect each other.
  *
  * Distribution is made so that ther is a well-balanced number of faces
  * on each rank and so that faces in the mesh are spatially coherent
@@ -611,7 +613,7 @@ _get_work_struct(cs_join_param_t         param,
   cs_join_edges_t  *work_edges = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   /*
     Build a bounding box for each selected face.
@@ -636,8 +638,8 @@ _get_work_struct(cs_join_param_t         param,
 
   if (param.verbosity > 1)
     bft_printf(_("\n\t  Building possible intersections between faces:\n"
-                 "\t      wall clock time elapsed:    %10.3g\n"
-                 "\t      cpu time elpased       :    %10.3g\n"),
+                 "\t      wall clock time:            %10.3g\n"
+                 "\t      CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity
@@ -735,7 +737,7 @@ _build_join_structures(cs_join_param_t           join_param,
 
   if (cs_glob_n_ranks > 1) {
     BFT_MALLOC(mesh_name, strlen("LocalMesh_n") + 5 + 1, char);
-    sprintf(mesh_name,"%s%05d", "LocalMesh_n", cs_glob_rank_id);
+    sprintf(mesh_name,"%s%05d", "LocalMesh_n", CS_MAX(cs_glob_rank_id, 0));
   }
   else {
     BFT_MALLOC(mesh_name, strlen("LocalMesh") + 1, char);
@@ -789,8 +791,8 @@ _build_join_structures(cs_join_param_t           join_param,
 
   if (join_param.verbosity > 0)
     bft_printf(_("\n  Definition of structures for the joining algorithm:\n"
-                 "      wall clock time elapsed:    %10.3g\n"
-                 "      cpu time elpased       :    %10.3g\n"),
+                 "      wall clock time:            %10.3g\n"
+                 "      CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   /* Return pointers */
@@ -872,7 +874,7 @@ _intersect_edges(cs_join_param_t          param,
   cs_join_gset_destroy(p_edge_edge_vis);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump structures after inter. */
-  cs_join_dump_inter_set(inter_set, work_join_edges, work_join_mesh);
+  cs_join_inter_set_dump(inter_set, work_join_edges, work_join_mesh);
 #endif
 
   /* Synchronize join_type */
@@ -894,9 +896,9 @@ _intersect_edges(cs_join_param_t          param,
 #endif
 
   if (join_type == CS_JOIN_TYPE_CONFORM)
-    bft_printf(_("\n  Conform joining operation detected.\n"));
+    bft_printf(_("\n  Joining operation is conforming.\n"));
   else if (join_type == CS_JOIN_TYPE_NO_CONFORM)
-    bft_printf(_("\n  Not Conform joining operation detected.\n"));
+    bft_printf(_("\n  Joining operation is non-conforming.\n"));
   bft_printf_flush();
 
   if (join_type == CS_JOIN_TYPE_NO_CONFORM) {
@@ -966,9 +968,10 @@ _intersect_edges(cs_join_param_t          param,
   cpu_end = bft_timer_cpu_time();
 
   if (param.verbosity > 0)
-    bft_printf(_("\n  Edge intersections and vertex creation:\n"
-                 "      wall clock time elapsed:    %10.3g\n"
-                 "      cpu time elpased       :    %10.3g\n"),
+    bft_printf(_("\n"
+                 "  Edge intersections and vertex creation:\n"
+                 "    wall clock time:            %10.3g\n"
+                 "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   /* Returns pointers */
@@ -1020,7 +1023,7 @@ _merge_vertices(cs_join_param_t           param,
                 cs_join_mesh_t          **p_work_join_mesh,
                 cs_join_edges_t         **p_work_join_edges,
                 cs_join_mesh_t          **p_local_join_mesh,
-                cs_mesh_t               **p_mesh)
+                cs_mesh_t                *mesh)
 {
   int  i;
   double  clock_start, clock_end, cpu_start, cpu_end;
@@ -1032,7 +1035,6 @@ _merge_vertices(cs_join_param_t           param,
   cs_join_mesh_t  *local_join_mesh = *p_local_join_mesh;
   cs_join_mesh_t  *work_join_mesh = *p_work_join_mesh;
   cs_join_edges_t  *work_join_edges = *p_work_join_edges;
-  cs_mesh_t  *mesh = *p_mesh;
 
   assert(local_join_mesh != NULL);
   assert(work_join_mesh != NULL);
@@ -1052,7 +1054,7 @@ _merge_vertices(cs_join_param_t           param,
   for (i = 0; i < n_iwm_vertices; i++)
     iwm_vtx_gnum[i] = (work_join_mesh->vertices[i]).gnum;
 
-  /* Fuse vertices */
+  /* Merge vertices */
 
   cs_join_merge_vertices(param,
                          n_g_ai_vertices,  /* ai: after intersection */
@@ -1105,18 +1107,17 @@ _merge_vertices(cs_join_param_t           param,
   cpu_end = bft_timer_cpu_time();
 
   if (param.verbosity > 0)
-    bft_printf(_("\n  Merge vertices:\n"
-                 "      wall clock time elapsed:    %10.3g\n"
-                 "      cpu time elpased       :    %10.3g\n"),
+    bft_printf(_("\n"
+                 "  Merge vertices:\n"
+                 "    wall clock time:            %10.3g\n"
+                 "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
-  /* Returns pointers */
+  /* Set return pointers */
 
   *p_local_join_mesh = local_join_mesh;
   *p_work_join_mesh = work_join_mesh;
   *p_work_join_edges = work_join_edges;
-  *p_mesh = mesh;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1130,7 +1131,7 @@ _merge_vertices(cs_join_param_t           param,
  *  work_face_normal     <--  normal based on the original face definition
  *  rank_face_gnum_index <--  index on face global numering to determine the
  *                            related rank
- *  work_join_mesh       <--  pointer to a cs_join_mesh_t structure
+ *  p_work_join_mesh    <->  pointer to a cs_join_mesh_t structure
  *  local_join_mesh      <--  pointer to a cs_join_mesh_t structure
  *  p_mesh               <->  pointer to cs_mesh_t struct.
  *---------------------------------------------------------------------------*/
@@ -1140,7 +1141,7 @@ _split_faces(cs_join_param_t      param,
              cs_join_select_t    *join_select,
              cs_join_edges_t     *work_join_edges,
              fvm_coord_t         *work_face_normal,
-             cs_join_mesh_t      *work_join_mesh,
+             cs_join_mesh_t     **p_work_join_mesh,
              cs_join_mesh_t      *local_join_mesh,
              cs_mesh_t          **p_mesh)
 {
@@ -1156,12 +1157,12 @@ _split_faces(cs_join_param_t      param,
   cs_join_split_faces(param,
                       work_face_normal,
                       work_join_edges,
-                      &work_join_mesh,
+                      p_work_join_mesh,
                       &old2new_hist);
 
   /* Send back to the original rank the new face description */
 
-  cs_join_split_update_struct(work_join_mesh,
+  cs_join_split_update_struct(*p_work_join_mesh,
                               rank_face_gnum_index,
                               &old2new_hist,
                               &local_join_mesh);
@@ -1180,15 +1181,16 @@ _split_faces(cs_join_param_t      param,
   /* Partial free memory */
 
   if (param.verbosity > 0)
-    bft_printf(_("\n  Split old faces and define new faces\n"
-                 "      wall clock time elapsed:    %10.3g\n"
-                 "      cpu time elpased       :    %10.3g\n"),
+    bft_printf(_("\n"
+                 "  Split old faces and reconstruct new faces\n"
+                 "    wall clock time:            %10.3g\n"
+                 "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   /* Post if required and level of verbosity is reached */
 
   if (param.verbosity > 1)
-    cs_join_post_dump_mesh("SplitWorkMesh", work_join_mesh, param);
+    cs_join_post_dump_mesh("SplitWorkMesh", *p_work_join_mesh, param);
 
   /* Free memory */
 
@@ -1340,7 +1342,7 @@ cs_join_add(char   *sel_criteria,
             float   tmr,
             int     verbosity)
 {
-  cs_int_t  len;
+  size_t  l;
 
   cs_join_t  *join = NULL;
 
@@ -1349,30 +1351,37 @@ cs_join_add(char   *sel_criteria,
   if (fraction < 0.0 || fraction >= 1.0)
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
-                "  Incoherent value for the fraction parameter.\n"
+                "  Forbidden value for the fraction parameter.\n"
                 "  It must be between [0.0, 1.0[ and is here: %f\n"),
               fraction);
 
   if (rtf < 0.0 || rtf >= 1.0)
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
-                "  Incoherent value for the reduction of tolerance factor.\n"
-                "  It must be between [0.0, 1.0[ and is here: %f\n"),
+                "  Forbidden value for the tolerance reduction factor.\n"
+                "  It must be between [0.0, 1.0[ and not: %f\n"),
               rtf);
 
   if (mtf < 0.0)
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
-                "  Incoherent value for the merge tolerance factor.\n"
-                "  It must be positive or nul and is here: %f\n"),
+                "  Forbidden value for the merge tolerance factor.\n"
+                "  It must be positive or nul and not: %f\n"),
               mtf);
 
   if (etf < 0.0)
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
-                "  Incoherent value for the equivalence tolerance factor.\n"
-                "  It must be positive or nul and is here: %f\n"),
+                "  Forbidden value for the equivalence tolerance factor.\n"
+                "  It must be positive or zero and not: %f\n"),
               etf);
+
+  if (plane < 0.0 || plane >= 90.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the plane parameter.\n"
+                "  It must be between [0, 90] and is here: %f\n"),
+              plane);
 
   /* Allocate and initialize a cs_join_t structure */
 
@@ -1391,11 +1400,11 @@ cs_join_add(char   *sel_criteria,
                                      tmr,
                                      verbosity);
 
-  /* Copy the selection criteria for a future use */
+  /* Copy the selection criteria for future use */
 
-  len = strlen(sel_criteria);
-  BFT_MALLOC(join->criteria, len + 1, char);
-  strncpy(join->criteria, sel_criteria, len);
+  l = strlen(sel_criteria);
+  BFT_MALLOC(join->criteria, l + 1, char);
+  strcpy(join->criteria, sel_criteria);
 
   /* Update global array */
 
@@ -1414,6 +1423,7 @@ cs_join_all(void)
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  full_clock_start, full_clock_end, full_cpu_start, full_cpu_end;
 
+  cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   if (cs_glob_n_joinings < 1)
@@ -1427,9 +1437,7 @@ cs_join_all(void)
   full_clock_start = bft_timer_wtime();
   full_cpu_start = bft_timer_cpu_time();
 
-  bft_printf(_("  Local number of vertices : %10d\n"
-               "  Global number of vertices: %10u\n\n"),
-             mesh->n_vertices, mesh->n_g_vertices);
+  cs_join_post_init();
 
   /* Loop on each defined joining to deal with */
 
@@ -1446,19 +1454,24 @@ cs_join_all(void)
 
     bft_printf(_("\n -------------------------------------------------------\n"
                  "  Joining number %d:\n\n"), join_id + 1);
-    bft_printf(_("  Criteria selection: %s\n"), join_info->criteria);
+    bft_printf(_("  Selection criteria: \"%s\"\n"), join_info->criteria);
 
-    if (join_param.verbosity > 0)
-      bft_printf(_("\n  Parameter values to control the joining operation:\n"
-                   "    Fraction parameter          : %8.5f\n"
-                   "    Plane parameter             : %8.5f\n"
-                   "    Tolerance reduction factor  : %8.5f\n"
-                   "    Equiv. step tolerance factor: %8.5f\n"
-                   "    Merge step tolerance factor: %8.5f\n\n"),
-                 join_param.fraction, join_param.plane,
+    if (join_param.verbosity > 0) {
+      bft_printf(_("\n"
+                   "  Parameters for the joining operation:\n"
+                   "    Shortest incident edge fraction:          %8.5f\n"
+                   "      Main tolerance reduction factor:        %8.5f\n"
+                   "      Vertex matching tolerance reduction:    %8.5f\n"
+                   "      Merge step tolerance multiplier:        %8.5f\n"
+                   "    Maximum angle between joined face planes: %8.5f\n\n"),
+                 join_param.fraction,
                  join_param.reduce_tol_factor,
                  join_param.edge_equiv_tol_coef,
-                 join_param.merge_tol_coef);
+                 join_param.merge_tol_coef,
+                 join_param.plane);
+      cs_mesh_print_info(mesh, _(" Before joining"));
+      bft_printf("\n");
+    }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     {
@@ -1480,19 +1493,48 @@ cs_join_all(void)
     }
 #endif
 
-    /*
-       Get selected faces for this joining and define the related
+    /* Build arrays and structures required for selection;
+       will be destoyed after joining and rebuilt once all
+       join operations are finished */
+
+    cs_mesh_init_group_classes(mesh);
+
+    cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+
+    cs_glob_mesh->select_b_faces
+      = fvm_selector_create(mesh->dim,
+                            mesh->n_b_faces,
+                            mesh->class_defs,
+                            mesh->b_face_family,
+                            1,
+                            b_face_cog,
+                            b_face_normal);
+
+    /* Get selected faces for this joining and define the related
        cs_join_face_select_t structure.
-        - Compute the global number of selected faces
-        - Get the adjacent faces, ...
-    */
+       - Compute the global number of selected faces
+       - Get the adjacent faces, ...  */
 
     join_select = cs_join_select_create(join_info->criteria,
                                         join_param.verbosity);
 
-    if (join_select->n_g_faces > 0) { /* Make the join operation */
+    /* Free arrays and structures needed for selection */
 
-      cs_int_t  n_iwm_vertices;    /* iwm: initial work mesh */
+    BFT_FREE(b_face_cog);
+    BFT_FREE(b_face_normal);
+
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+    if (mesh->select_b_faces != NULL)
+      mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
+    if (mesh->class_defs != NULL)
+      mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+    /* Now execute the joining operation */
+
+    if (join_select->n_g_faces > 0) {
+
+      cs_int_t  n_iwm_vertices;      /* iwm: initial work mesh */
       fvm_gnum_t  n_g_ifm_vertices;  /* ifm: initial full mesh */
       fvm_gnum_t  n_g_new_vertices;
 
@@ -1515,7 +1557,7 @@ cs_join_all(void)
       n_iwm_vertices = work_join_mesh->n_vertices;
       n_g_ifm_vertices = mesh->n_g_vertices;
 
-      if (join_param.verbosity > 1)
+      if (join_param.verbosity > 2)
         bft_printf(_("\n  Number of faces to treat locally: %10d\n"),
                    work_join_mesh->n_faces);
 
@@ -1560,11 +1602,11 @@ cs_join_all(void)
                       &work_join_mesh,
                       &work_join_edges,
                       &local_join_mesh,
-                      &mesh);
+                      mesh);
 
       /*
          Split faces in work_join_mesh. Apply modification to the
-         local_join_mesh. Keep an history between old --> new faces.
+         local_join_mesh. Keep a history between old --> new faces.
          Update cs_mesh_t structure.
       */
 
@@ -1572,7 +1614,7 @@ cs_join_all(void)
                    join_select,
                    work_join_edges,
                    work_face_normal,
-                   work_join_mesh,
+                   &work_join_mesh,
                    local_join_mesh,
                    &mesh);
 
@@ -1590,7 +1632,7 @@ cs_join_all(void)
 
     }
     else
-      bft_printf(_("\nStop joinning algorithm : no face selected...\n"));
+      bft_printf(_("\nStop joining algorithm: no face selected...\n"));
 
     /* Free memory */
 
@@ -1599,9 +1641,10 @@ cs_join_all(void)
     clock_end = bft_timer_wtime();
     cpu_end = bft_timer_cpu_time();
 
-    bft_printf(_("\n\t  Complete joining treatment for join %2d\n"
-                 "\t      wall clock time elapsed:    %10.3g\n"
-                 "\t      cpu time elpased       :    %10.3g\n"),
+    bft_printf(_("\n"
+                 "  Complete joining treatment for joining %2d\n"
+                 "    wall clock time:            %10.3g\n"
+                 "    CPU time:                   %10.3g\n"),
                join_id+1, clock_end - clock_start, cpu_end - cpu_start);
     bft_printf_flush();
 
@@ -1633,25 +1676,30 @@ cs_join_all(void)
       MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
+    if (join_param.verbosity > 0) {
+      bft_printf("\n");
+      cs_mesh_print_info(mesh, _(" After joining"));
+      bft_printf("\n");
+    }
+
   } /* End of loop on joinings */
 
   /* Destroy all remaining structures relative to joining operation */
 
   _destroy_all_joinings();
 
-  cs_join_post_finalize();
-
   full_clock_end = bft_timer_wtime();
   full_cpu_end = bft_timer_cpu_time();
 
-  bft_printf(_("\n  All joining operations successfully done\n"
-               "\n  Time sum-up:\n"
-               "      wall clock time:            %10.3g\n"
-               "      CPU time:                   %10.3g\n"),
+  bft_printf(_("\n"
+               "  All joining operations successfully finished:\n"
+               "\n"
+               "  Time summary:\n"
+               "    wall clock time:            %10.3g\n"
+               "    CPU time:                   %10.3g\n\n"),
              full_clock_end - full_clock_start,
              full_cpu_end - full_cpu_start);
 
-  bft_printf(_("\n\n  End of all joining operations\n\n"));
   bft_printf_flush();
 }
 

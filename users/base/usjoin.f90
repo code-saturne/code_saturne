@@ -86,43 +86,48 @@ if(1.eq.1) return
 ! Parameters (default values)
 ! ---------------------------
 
-fract = 0.15d0  ! fraction parameter useful to build initial tolerance
-                ! around each selected vertices
+fract = 0.15d0  ! The initial tolerance radius associated to each
+                ! vertex is equal to the lenght of the shortest
+                ! incident edge, multiplied by this fraction.
 
-plane = 0.80d0  ! coplanarity coefficient for splitting faces
+plane = 30.0    ! When subdividing faces, 2 faces are considered
+                ! coplanar and may be joined if angle between their
+                ! unit normals (cosine) does not exceed this parameter.
 
-iwarnj = 1      ! associated verbose level
+iwarnj = 1      ! associated verbosity level
 
 ! Advanced parameters
 ! -------------------
 
-etf = 0.50d0    ! edge equivalence tolerance factor
-                ! Coef. used to modify locally the tolerance associated to
-                ! each vertex  BEFORE adding equivalences between vertices
+etf = 0.50d0    ! Edge equivalence tolerance factor
+                ! Used to locally modify the tolerance associated to each
+                ! vertex BEFORE adding equivalences between vertices, and
                 ! after edge intersections.
-                !  If coef = 0.0 => add no equivalence
-                !  If coef < 1.0 => reduce the number of equivalences between
-                !  vertices sharing the same edge. (more stable)
-                !  If coef = 1.0 => no change
-                !  If coef > 1.0 => increase the number of equivalences between
-                !  vertices sharing the same edge. (more merges) Not advised
+                !   = 0 => add no equivalence (may produce very small faces);
+                !   < 1 => reduce the number of equivalences between
+                !          vertices sharing the same edge (more stable);
+                !   = 1 => no change;
+                !   > 1 => increase the number of equivalences between
+                !          vertices sharing the same edge (more merges).
+                !          Not recommmended.
 
-rtf = 0.85d0    ! reduction tolerance factor during vertices merge
-                ! Coef. used when there is a conflict between the resulting
-                ! merged vertex from a set of vertices and the tolerance
-                ! associated to each vertex of the set.
+rtf = 0.85d0    ! Reduction tolerance factor during vertices merge
+                ! Used when the combination of merges would lead to a
+                ! resulting merged vertex from a set of vertices not lying
+                ! within the initial tolerance radius of at least one of
+                ! its parent vertices.
                 ! new tol. = tol * coef. Values between [0.0, 1.0[
 
-mtf = 1.00d0    ! merge tolerance factor
-                ! Coef. used to modify locally the tolerance associated
-                ! to each vertex BEFORE adding equivalences between vertices
-                ! after edge intersections.
-                !  If coef = 0.0 => add no equivalence
-                !  If coef < 1.0 => reduce the number of equivalences between
-                !  vertices sharing the same edge
-                !  If coef = 1.0 => no change
-                !  If coef > 1.0 => increase the number of equivalences between
-                ! vertices sharing the same edge. (more merges) Not advised
+mtf = 1.00d0    ! Merge tolerance factor
+                ! Used to locally modify the tolerance associated to each
+                ! vertex AFTER adding equivalences between vertices.
+                !   = 0 => add no equivalence (may produce very small faces);
+                !   < 1 => reduce the number of equivalences between
+                !          vertices sharing the same edge (more stable);
+                !   = 1 => no change;
+                !   > 1 => increase the number of equivalences between
+                !          vertices sharing the same edge (more merges).
+                !          Not recommmended.
 
 ! -------------------
 ! Joinings definition

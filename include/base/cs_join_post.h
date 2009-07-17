@@ -71,13 +71,6 @@ void
 cs_join_post_init(void);
 
 /*----------------------------------------------------------------------------
- * Delete the writer used to make post-treatment for the joining operation
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_post_finalize(void);
-
-/*----------------------------------------------------------------------------
  * Post-treatment of a cs_join_mesh_t structure.
  *
  * parameters:

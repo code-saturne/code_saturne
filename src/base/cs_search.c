@@ -91,6 +91,8 @@ _binary_search(int              start,
     int  range = (end - start)/2;
     int  middle = start + range;
 
+    assert(middle <= end);
+
     if (range == 0)
       return -1;
 
@@ -191,8 +193,7 @@ _binary_index_gsearch(int                 start,
  * search. Array or list must be ordered.
  *
  * parameters:
- *   start  <--  start search from this index
- *   end    <--  end search to this index
+ *   size   <--  size of list
  *   gnum   <--  find index for this number
  *   lst    <--  list of ordered global numbers to scan
  *
@@ -201,14 +202,11 @@ _binary_index_gsearch(int                 start,
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_g_binary(int                start,
-                   int                end,
+cs_search_g_binary(size_t             size,
                    fvm_gnum_t         gnum,
                    const fvm_gnum_t   lst[])
 {
-  assert(start > -1);
-
-  return _binary_gsearch(start, end, gnum, lst);
+  return _binary_gsearch(0, size - 1, gnum, lst);
 }
 
 /*----------------------------------------------------------------------------
@@ -216,24 +214,20 @@ cs_search_g_binary(int                start,
  * search (binary search). Array or list must be ordered.
  *
  * parameters:
- *   start  <--  start search from this index
- *   end    <--  end search to this index
+ *   size   <--  size of list
  *   num    <--  find index for this number
  *   lst    <--  list of ordered numbers to scan
  *
  * returns:
- *   id associated to the current number. If not found, returned -1.
+ *   id associated to the current number. If not found, return -1.
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_binary(int              start,
-                 int              end,
+cs_search_binary(size_t           size,
                  cs_int_t         num,
                  const cs_int_t   lst[])
 {
-  assert(start > -1);
-
-  return _binary_search(start, end, num, lst);
+  return _binary_search(0, size - 1, num, lst);
 }
 
 /*----------------------------------------------------------------------------
@@ -241,8 +235,7 @@ cs_search_binary(int              start,
  * search (binary search). Index must be ordered and without null range.
  *
  * parameters:
- *   start  <--  start search from this index
- *   end    <--  end search to this index
+ *   size   <--  size of index -1
  *   gnum   <--  number for which we want the position in index
  *   index  <--  index array
  *
@@ -251,14 +244,11 @@ cs_search_binary(int              start,
  *---------------------------------------------------------------------------*/
 
 int
-cs_search_gindex_binary(int                start,
-                        int                end,
+cs_search_gindex_binary(size_t             size,
                         fvm_gnum_t         gnum,
                         const fvm_gnum_t   index[])
 {
-  assert(start > -1);
-
-  return _binary_index_gsearch(start, end, gnum, index);
+  return _binary_index_gsearch(0, size, gnum, index);
 }
 
 /*---------------------------------------------------------------------------*/

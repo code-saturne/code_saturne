@@ -952,8 +952,7 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
   for (i = 0; i < set->n_elts; i++) {
     for (j = set->index[i]; j < set->index[i+1]; j++) {
 
-      elt_id = cs_search_g_binary(0,
-                                  invert_set->n_elts-1,
+      elt_id = cs_search_g_binary(invert_set->n_elts,
                                   set->g_list[j],
                                   invert_set->g_elts);
 
@@ -984,8 +983,7 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
   for (i = 0; i < set->n_elts; i++) {
     for (j = set->index[i]; j < set->index[i+1]; j++) {
 
-      elt_id = cs_search_g_binary(0,
-                                  invert_set->n_elts-1,
+      elt_id = cs_search_g_binary(invert_set->n_elts,
                                   set->g_list[j],
                                   invert_set->g_elts);
 

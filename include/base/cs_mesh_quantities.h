@@ -170,6 +170,23 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
                                cs_real_t         *p_b_face_normal[]);
 
 /*----------------------------------------------------------------------------
+ * Compute border face centers and normals.
+ *
+ * The corresponding arrays are allocated by this function, and it is the
+ * caller's responsibility to free them when they are no longer needed.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   p_b_face_cog    <-> pointer to the border face center array
+ *   p_b_face_normal <-> pointer to the border face normal array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
+                           cs_real_t         *p_b_face_cog[],
+                           cs_real_t         *p_b_face_normal[]);
+
+/*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure
  *
  * parameters:

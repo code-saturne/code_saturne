@@ -354,7 +354,7 @@ cs_run(void)
                               idxfb);
   }
 
-  cs_mesh_print_info(cs_glob_mesh);
+  cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
 
   /* Destroy the temporary structure used to build the main mesh */
 

@@ -282,19 +282,6 @@ cs_join_post_init(void)
 }
 
 /*----------------------------------------------------------------------------
- * Delete the writer used to make post-treatment for the joining operation
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_post_finalize(void)
-{
-  _cs_join_post_initialized = false;
-
-  if (_cs_join_post_param.writer != NULL)
-    fvm_writer_finalize(_cs_join_post_param.writer);
-}
-
-/*----------------------------------------------------------------------------
  * Post-treatment of a cs_join_mesh_t structure.
  *
  * parameters:
@@ -316,9 +303,9 @@ cs_join_post_mesh(const char            *mesh_name,
   cs_real_t  *vertex_coord = NULL;
   cs_int_t  *parent_vtx_num = NULL;
   fvm_nodal_t  *post_mesh = NULL;
-  fvm_writer_t  *writer = NULL;
+  fvm_writer_t  *writer = _cs_join_post_param.writer;
 
-  const cs_int_t  local_rank = cs_glob_rank_id;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
   const cs_int_t  face_list_shift[2] = {0, join_mesh->n_faces};
   const cs_int_t  *face_vertex_idx[1] = {join_mesh->face_vtx_idx};
   const cs_int_t  *face_vertex_lst[1] = {join_mesh->face_vtx_lst};
@@ -479,8 +466,8 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   sel_mesh_id = cs_post_get_free_mesh_id();
 
-  BFT_REALLOC(mesh_name, strlen("JoinFacesAfterFusion_j") + 2 + 1, char);
-  sprintf(mesh_name,"%s%02d", "JoinFacesAfterFusion_j", join_param.num);
+  BFT_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
+  sprintf(mesh_name,"%s%02d", "JoinFacesAfterMerge_j", join_param.num);
 
   cs_post_add_mesh(sel_mesh_id,
                    mesh_name,
@@ -677,9 +664,9 @@ cs_join_post_dump_mesh(const char            *basename,
   cs_join_mesh_t  *tmp;
 
   const  int  n_ranks = cs_glob_n_ranks;
-  const  int  rank_id = cs_glob_rank_id;
+  const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
   if (param.verbosity > 1) {
 
     int  len;

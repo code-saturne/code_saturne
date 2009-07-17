@@ -1,3 +1,28 @@
+* 17/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Improvements and fixes in the parallel join algorithm.
+  modified routines:
+    include/base/cs_join_post.h
+    include/base/cs_join_update.h
+    include/base/cs_join_util.h
+    include/base/cs_mesh.h
+    include/base/cs_mesh_quantities.h
+    include/base/cs_search.h
+    src/apps/cs_solver.c
+    src/base/cs_join.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_post.c
+    src/base/cs_join_set.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_search.c
+    users/base/usjoin.f90
+
 * 16/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the behaviour of memory consumption output in case of error trapping.
   modified routine:

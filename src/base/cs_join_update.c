@@ -109,12 +109,12 @@ typedef struct {
  * Compute the cross product of two vectors.
  *
  * parameters:
- *  v1     <--  first vector
- *  v2     <--  second vector
- *  result -->  cross product v1xv2
+ *   v1     <--  first vector
+ *   v2     <--  second vector
+ *   result -->  cross product v1xv2
  *
  * returns:
- *  the resulting cross product (v1 x v2)
+ *   the resulting cross product (v1 x v2)
  *----------------------------------------------------------------------------*/
 
 inline static void
@@ -131,11 +131,11 @@ _cross_product(double   v1[],
  * Compute the dot product of two vectors.
  *
  * parameters:
- *  v1     <--  first vector
- *  v2     <--  second vector
+ *   v1 <-- first vector
+ *   v2 <-- second vector
  *
  * returns:
- *  the resulting dot product (v1.v2)
+ *   the resulting dot product (v1.v2)
  *----------------------------------------------------------------------------*/
 
 inline static double
@@ -155,7 +155,7 @@ _dot_product(double   v1[],
  * Normalize a vector.
  *
  * parameters:
- *  v      <->  vector to normalize
+ *   v <-> vector to normalize
  *----------------------------------------------------------------------------*/
 
 inline static void
@@ -176,18 +176,18 @@ _normalize(double   v[])
  * vertex ids.
  *
  * parameters:
- *  v1_id         <--  first vertex id
- *  v2_id         <--  second vertex id
- *  edge_builder  <--  pointer to an edge_builder_t structure
+ *   v1_id        <-- first vertex id
+ *   v2_id        <-- second vertex id
+ *   edge_builder <-- pointer to an edge_builder_t structure
  *
- * return:
- *  related edge_id in edge_builder_t structure
+ * returns:
+ *   related edge_id in edge_builder_t structure
  *---------------------------------------------------------------------------*/
 
 inline static cs_int_t
-_get_join_edge_id(cs_int_t           v1_id,
-                  cs_int_t           v2_id,
-                  edge_builder_t    *edge_builder)
+_get_join_edge_id(cs_int_t               v1_id,
+                  cs_int_t               v2_id,
+                  const edge_builder_t  *edge_builder)
 {
   cs_int_t  i, va, vb;
   cs_int_t  edge_id = -1;
@@ -208,14 +208,15 @@ _get_join_edge_id(cs_int_t           v1_id,
 }
 
 #if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Retrieve the local new global numbering for the initial vertices from
  * the new vertex global numbering defined by block.
  *
  * parameters:
- *  mesh               <--  pointer of pointer to cs_mesh_t structure
- *  p_o2n_vtx_gnum     <->  in : array on blocks on the new global vertex
- *                          out: local array on the new global vertex
+ *   mesh           <-- pointer of pointer to cs_mesh_t structure
+ *   p_o2n_vtx_gnum <-> in : array on blocks on the new global vertex
+ *                      out: local array on the new global vertex
  *---------------------------------------------------------------------------*/
 
 static void
@@ -233,8 +234,8 @@ _get_local_o2n_vtx_gnum(cs_mesh_t    *mesh,
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const cs_int_t  n_ranks = cs_glob_n_ranks;
-  const cs_int_t  local_rank = cs_glob_rank_id;
+  const int  n_ranks = cs_glob_n_ranks;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
   const cs_join_block_info_t  block_info
     = cs_join_get_block_info(mesh->n_g_vertices,
                              n_ranks,
@@ -330,34 +331,33 @@ _get_local_o2n_vtx_gnum(cs_mesh_t    *mesh,
   /* Return pointer */
 
   *p_o2n_vtx_gnum = local_gnum;
-
 }
 
 /*----------------------------------------------------------------------------
  * Create arrays used to synchronize "single" elements from "coupled" elements
  *
  * parameters:
- *  sel               <--  list of all implied entities in the joining op.
- *  p_n_s_ranks       <->  number of ranks associated to single elements
- *  p_s_ranks         <->  list of "single" ranks
- *  p_s_rank2vtx_idx  <->  single ranks -> single vertices index
- *  p_s_rank2vtx_lst  <->  single ranks -> single vertices list
- *  p_n_c_ranks       <->  number of ranks associated to coupled elements
- *  p_c_ranks         <->  list of "coupled" ranks
- *  p_c_rank2vtx_idx  <->  coupled ranks -> coupled vertices index
- *  p_c_rank2vtx_lst  <->  coupled ranks -> coupled vertices list
+ *   sel              <-- list of all implied entities in the joining op.
+ *   p_n_s_ranks      <-> number of ranks associated to single elements
+ *   p_s_ranks        <-> list of "single" ranks
+ *   p_s_rank2vtx_idx <-> single ranks -> single vertices index
+ *   p_s_rank2vtx_lst <-> single ranks -> single vertices list
+ *   p_n_c_ranks      <-> number of ranks associated to coupled elements
+ *   p_c_ranks        <-> list of "coupled" ranks
+ *   p_c_rank2vtx_idx <-> coupled ranks -> coupled vertices index
+ *   p_c_rank2vtx_lst <-> coupled ranks -> coupled vertices list
  *---------------------------------------------------------------------------*/
 
 static void
-_prepare_single_sync(cs_join_select_t    *sel,
-                     cs_int_t            *p_n_s_ranks,
-                     cs_int_t            *p_s_ranks[],
-                     cs_int_t            *p_s_rank2vtx_idx[],
-                     cs_int_t            *p_s_rank2vtx_lst[],
-                     cs_int_t            *p_n_c_ranks,
-                     cs_int_t            *p_c_ranks[],
-                     cs_int_t            *p_c_rank2vtx_idx[],
-                     cs_int_t            *p_c_rank2vtx_lst[])
+_prepare_single_sync(const cs_join_select_t  *sel,
+                     cs_int_t                *p_n_s_ranks,
+                     cs_int_t                *p_s_ranks[],
+                     cs_int_t                *p_s_rank2vtx_idx[],
+                     cs_int_t                *p_s_rank2vtx_lst[],
+                     cs_int_t                *p_n_c_ranks,
+                     cs_int_t                *p_c_ranks[],
+                     cs_int_t                *p_c_rank2vtx_idx[],
+                     cs_int_t                *p_c_rank2vtx_lst[])
 {
   cs_int_t  i, j, rank, shift;
 
@@ -467,7 +467,7 @@ _prepare_single_sync(cs_join_select_t    *sel,
 
   BFT_FREE(count);
 
-  /* Return pointers */
+  /* Set return pointers */
 
   *p_n_s_ranks = n_s_ranks;
   *p_s_ranks = s_ranks;
@@ -477,24 +477,23 @@ _prepare_single_sync(cs_join_select_t    *sel,
   *p_c_ranks = c_ranks;
   *p_c_rank2vtx_idx = c_rank2vtx_idx;
   *p_c_rank2vtx_lst = c_rank2vtx_lst;
-
 }
 
 /*----------------------------------------------------------------------------
  * Return true if the current couple of vertices is a "single" edge to sync.
  *
  * parameters:
- *  vid1           <--  first vertex id
- *  vid2           <--  second vertex id
- *  tag            <--  array on vertices (1 if vertex is "single" else 0)
- *  edge_builder   <->  pointer to an edge_builder_t structure
+ *   vid1         <-- first vertex id
+ *   vid2         <-- second vertex id
+ *   tag          <-- array on vertices (1 if vertex is "single" else 0)
+ *   edge_builder <-> pointer to an edge_builder_t structure
  *---------------------------------------------------------------------------*/
 
 inline static cs_bool_t
-_is_s_edge(cs_int_t          vid1,
-           cs_int_t          vid2,
-           cs_int_t          tag[],
-           edge_builder_t   *edge_builder)
+_is_s_edge(cs_int_t         vid1,
+           cs_int_t         vid2,
+           const cs_int_t   tag[],
+           edge_builder_t  *edge_builder)
 {
   cs_int_t  e_id;
 
@@ -511,7 +510,6 @@ _is_s_edge(cs_int_t          vid1,
   }
   else
     return false;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -519,25 +517,25 @@ _is_s_edge(cs_int_t          vid1,
  * merge step.
  *
  * parameters:
- *  selection         <--  list of all implied entities in the joining op.
- *  n_bm_vertices     <--  number of vertices in mesh before the fusion step
- *  old_vtx_gnum      <--  old global vertex numbering
- *  o2n_vtx_id        <->  relation between init. and current local num.
- *  n_j_vertices      <--  number of vertices in join_mesh
- *  join2mesh_vtx_id  <->  relation between join mesh and after fusion vertex
- *  edge_builder      <->  pointer to an edge_builder_t structure
- *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *   selection        <-- list of all implied entities in the joining op.
+ *   n_bm_vertices    <-- number of vertices in mesh before the merge step
+ *   old_vtx_gnum     <-- old global vertex numbering
+ *   o2n_vtx_id       <-> relation between init. and current local num.
+ *   n_j_vertices     <-- number of vertices in join_mesh
+ *   join2mesh_vtx_id <-> relation between join mesh and after merge vertex
+ *   edge_builder     <-> pointer to an edge_builder_t structure
+ *   mesh             <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_sync_single_elements(cs_join_select_t    *selection,
-                      cs_int_t             n_bm_vertices,
-                      fvm_gnum_t           old_vtx_gnum[],
-                      cs_int_t             o2n_vtx_id[],
-                      cs_int_t             n_j_vertices,
-                      cs_int_t             join2mesh_vtx_id[],
-                      edge_builder_t      *edge_builder,
-                      cs_mesh_t           *mesh)
+_sync_single_elements(const cs_join_select_t  *selection,
+                      cs_int_t                 n_bm_vertices,
+                      const fvm_gnum_t         old_vtx_gnum[],
+                      cs_int_t                 o2n_vtx_id[],
+                      cs_int_t                 n_j_vertices,
+                      cs_int_t                 join2mesh_vtx_id[],
+                      edge_builder_t          *edge_builder,
+                      cs_mesh_t               *mesh)
 {
   cs_int_t  i, j, s, e, id, vid, fid, rank, shift, length, request_count;
 
@@ -553,7 +551,7 @@ _sync_single_elements(cs_join_select_t    *selection,
   MPI_Status   *status = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = cs_glob_rank_id;
+  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
   bft_printf("\n  Synchronization of the \"single\" elements after the merge"
@@ -869,13 +867,13 @@ _sync_single_elements(cs_join_select_t    *selection,
 
         /* Search for v1_gnum and v2_gnum in global_vtx_num */
 
-        vid1 = cs_search_g_binary(0, n_bm_vertices-1,
+        vid1 = cs_search_g_binary(n_bm_vertices,
                                   v1_gnum,
                                   old_vtx_gnum);
 
         if (vid1 > -1) {
 
-          vid2 = cs_search_g_binary(0, n_bm_vertices-1,
+          vid2 = cs_search_g_binary(n_bm_vertices,
                                     v2_gnum,
                                     old_vtx_gnum);
 
@@ -955,13 +953,13 @@ _sync_single_elements(cs_join_select_t    *selection,
         fvm_gnum_t  v1_gnum = c_gbuf[2*i];
         fvm_gnum_t  v2_gnum = c_gbuf[2*i+1];
 
-        vid1 = cs_search_g_binary(0, n_bm_vertices-1,
+        vid1 = cs_search_g_binary(n_bm_vertices,
                                   v1_gnum,
                                   old_vtx_gnum);
 
         if (vid1 > -1) {
 
-          vid2 = cs_search_g_binary(0, n_bm_vertices-1,
+          vid2 = cs_search_g_binary(n_bm_vertices,
                                     v2_gnum,
                                     old_vtx_gnum);
 
@@ -1141,7 +1139,7 @@ _sync_single_elements(cs_join_select_t    *selection,
         cur = s_sub_edge_def[order[i]];
         if (cur != prev) {
           prev = cur;
-          id = cs_search_g_binary(0, mesh->n_vertices-1,
+          id = cs_search_g_binary(mesh->n_vertices,
                                   cur,
                                   mesh->global_vtx_num);
           if (id == -1) /* Add vertex */
@@ -1165,7 +1163,7 @@ _sync_single_elements(cs_join_select_t    *selection,
         if (cur != prev) {
 
           prev = cur;
-          id = cs_search_g_binary(0, mesh->n_vertices-1,
+          id = cs_search_g_binary(mesh->n_vertices,
                                   cur,
                                   mesh->global_vtx_num);
 
@@ -1351,7 +1349,7 @@ _sync_single_elements(cs_join_select_t    *selection,
             for (k = new_v2v_sub_idx[edge_id];
                  k < new_v2v_sub_idx[edge_id+1]; k++) {
 
-              id = cs_search_g_binary(0, mesh->n_vertices-1,
+              id = cs_search_g_binary(mesh->n_vertices,
                                       s_sub_edge_def[shift++],
                                       mesh->global_vtx_num);
 
@@ -1374,7 +1372,7 @@ _sync_single_elements(cs_join_select_t    *selection,
           for (k = new_v2v_sub_idx[edge_id];
                k < new_v2v_sub_idx[edge_id+1]; k++) {
 
-            id = cs_search_g_binary(0, mesh->n_vertices-1,
+            id = cs_search_g_binary(mesh->n_vertices,
                                     s_sub_edge_def[shift++],
                                     mesh->global_vtx_num);
 
@@ -1407,7 +1405,7 @@ _sync_single_elements(cs_join_select_t    *selection,
             for (k = new_v2v_sub_idx[edge_id];
                  k < new_v2v_sub_idx[edge_id+1]; k++) {
 
-              id = cs_search_g_binary(0, mesh->n_vertices-1,
+              id = cs_search_g_binary(mesh->n_vertices,
                                       s_sub_edge_def[shift++],
                                       mesh->global_vtx_num);
 
@@ -1430,7 +1428,7 @@ _sync_single_elements(cs_join_select_t    *selection,
           for (k = new_v2v_sub_idx[edge_id];
                k < new_v2v_sub_idx[edge_id+1]; k++) {
 
-            id = cs_search_g_binary(0, mesh->n_vertices-1,
+            id = cs_search_g_binary(mesh->n_vertices,
                                     s_sub_edge_def[shift++],
                                     mesh->global_vtx_num);
 
@@ -1453,6 +1451,14 @@ _sync_single_elements(cs_join_select_t    *selection,
 
     } /* End if n_s_edges > 0 */
 
+    else {
+      BFT_FREE(s_sub_gbuf);
+      BFT_FREE(s_sub_coord);
+      BFT_FREE(s_count);
+      BFT_FREE(s_shift);
+      BFT_FREE(s_buf);
+    }
+
     /* Free memory */
 
     BFT_FREE(sub_elt_count);
@@ -1473,8 +1479,8 @@ _sync_single_elements(cs_join_select_t    *selection,
   BFT_FREE(request);
   BFT_FREE(status);
   BFT_FREE(selection_tag);
-
 }
+
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
@@ -1482,21 +1488,21 @@ _sync_single_elements(cs_join_select_t    *selection,
  * operation. Update the vertices after the merge step.
  *
  * parameters:
- *  o2n_vtx_gnum       <--  local array on the new global vertex
- *  join_mesh          <--  pointer to a local cs_join_mesh_t struct.
- *  mesh               <->  pointer of pointer to cs_mesh_t structure
- *  p_join2mesh_vtx_id -->  relation between join mesh and after vertex merge
- *  p_o2n_vtx_id       -->  relation between init. and current local num.
- *  p_old_vtx_gnum     -->  old global vertex numbering
+ *   o2n_vtx_gnum       <-- local array on the new global vertex
+ *   join_mesh          <-- pointer to a local cs_join_mesh_t struct.
+ *   mesh               <-> pointer to cs_mesh_t structure
+ *   p_join2mesh_vtx_id --> relation between join mesh and after vertex merge
+ *   p_o2n_vtx_id       --> relation between init. and current local num.
+ *   p_old_vtx_gnum     --> old global vertex numbering
  *---------------------------------------------------------------------------*/
 
 static void
-_update_vertices_after_merge(fvm_gnum_t         o2n_vtx_gnum[],
-                             cs_join_mesh_t    *join_mesh,
-                             cs_mesh_t         *mesh,
-                             cs_int_t          *p_join2mesh_vtx_id[],
-                             cs_int_t          *p_o2n_vtx_id[],
-                             fvm_gnum_t        *p_old_vtx_gnum[])
+_update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
+                             const cs_join_mesh_t  *join_mesh,
+                             cs_mesh_t             *mesh,
+                             cs_int_t              *p_join2mesh_vtx_id[],
+                             cs_int_t              *p_o2n_vtx_id[],
+                             fvm_gnum_t            *p_old_vtx_gnum[])
 {
   cs_int_t  i, j, k, o_id, j_id;
   fvm_gnum_t  prev, cur;
@@ -1642,7 +1648,6 @@ _update_vertices_after_merge(fvm_gnum_t         o2n_vtx_gnum[],
 
   *p_join2mesh_vtx_id = join2mesh_vtx_id;
   *p_o2n_vtx_id = o2n_vtx_id;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1650,15 +1655,15 @@ _update_vertices_after_merge(fvm_gnum_t         o2n_vtx_gnum[],
  * operation. Update the vertices after the face split step.
  *
  * parameters:
- *  join_mesh          <--  pointer to a local cs_join_mesh_t struct.
- *  mesh               <->  pointer of pointer to cs_mesh_t structure
- *  p_join2mesh_vtx_id -->  relation between join mesh and after merge vertex
+ *   join_mesh          <-- pointer to a local cs_join_mesh_t struct.
+ *   mesh               <-> pointer of pointer to cs_mesh_t structure
+ *   p_join2mesh_vtx_id --> relation between join mesh and after merge vertex
  *---------------------------------------------------------------------------*/
 
 static void
-_update_vertices_after_split(cs_join_mesh_t   *join_mesh,
-                             cs_mesh_t        *mesh,
-                             cs_int_t         *p_join2mesh_vtx_id[])
+_update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
+                             cs_mesh_t             *mesh,
+                             cs_int_t              *p_join2mesh_vtx_id[])
 {
   cs_int_t  i, j, k, o_id, j_id, v_id;
   fvm_gnum_t  prev, cur;
@@ -1810,16 +1815,16 @@ _update_vertices_after_split(cs_join_mesh_t   *join_mesh,
  * Equivalent to build a local edge-based connectivity for the selected faces.
  *
  * parameters:
- *  join_select   <--  list of all implied entities in the joining operation
- *  mesh          <--  pointer to a cs_mesh_t structure
+ *   join_select <-- list of entities participating in the join operation
+ *   mesh        <-- pointer to a cs_mesh_t structure
  *
  * returns:
- *  a new allocated pointer to an edge_builder_t structure.
+ *   a new allocated pointer to an edge_builder_t structure.
  *---------------------------------------------------------------------------*/
 
 static edge_builder_t *
-_init_edge_builder(cs_join_select_t    *join_select,
-                   cs_mesh_t           *mesh)
+_init_edge_builder(const cs_join_select_t  *join_select,
+                   const cs_mesh_t         *mesh)
 {
   cs_int_t  i, j, save, shift;
 
@@ -1953,23 +1958,23 @@ _init_edge_builder(cs_join_select_t    *join_select,
  * the merge step.
  *
  * parameters:
- *  select_id      <--  id of the selected face in selection array
- *  o2n_vtx_gnum   <--  local array on the new global vertex
- *  join_select    <--  list of all implied entities in the joining operation
- *  join_mesh      <--  pointer to the local cs_join_mesh_t structure
- *  mesh           <--  pointer to cs_mesh_t structure
- *  bm_tmp         <--  connectivity before the merge step
- *  am_tmp         <--  connectivity after the merge step
+ *   select_id    <-- id of the selected face in selection array
+ *   o2n_vtx_gnum <-- local array on the new global vertex
+ *   join_select  <-- list of all implied entities in the joining operation
+ *   join_mesh    <-- pointer to the local cs_join_mesh_t structure
+ *   mesh         <-- pointer to cs_mesh_t structure
+ *   bm_tmp       <-> connectivity before the merge step
+ *   am_tmp       <-> connectivity after the merge step
  *---------------------------------------------------------------------------*/
 
 static void
-_get_local_faces_connect(cs_int_t            select_id,
-                         fvm_gnum_t          o2n_vtx_gnum[],
-                         cs_join_select_t   *join_select,
-                         cs_join_mesh_t     *join_mesh,
-                         cs_mesh_t          *mesh,
-                         cs_int_t            bm_tmp[],
-                         cs_int_t            am_tmp[])
+_get_local_faces_connect(cs_int_t                 select_id,
+                         const fvm_gnum_t         o2n_vtx_gnum[],
+                         const cs_join_select_t  *join_select,
+                         const cs_join_mesh_t    *join_mesh,
+                         const cs_mesh_t         *mesh,
+                         cs_int_t                 bm_tmp[],
+                         cs_int_t                 am_tmp[])
 {
   cs_int_t  i, j, k, v_id, bm_shift;
   fvm_gnum_t  new_gnum, v_gnum;
@@ -1989,20 +1994,20 @@ _get_local_faces_connect(cs_int_t            select_id,
 
   assert(join_mesh->face_gnum[select_id] == fgnum);
 
-  /* Store the face connectivity before the fusion step */
+  /* Store the face connectivity before the merge step */
 
   for (i = bm_s, j = 0; i < bm_e; i++, j++)
     bm_tmp[j] = mesh->b_face_vtx_lst[i] - 1;
   bm_tmp[n_bm_face_vertices] = mesh->b_face_vtx_lst[bm_s] - 1;
 
-  /* Store the face connectivity after the fusion step */
+  /* Store the face connectivity after the merge step */
 
   for (i = am_s, j = 0; i < am_e; i++, j++)
     am_tmp[j] = join_mesh->face_vtx_lst[i] - 1;
   am_tmp[n_am_face_vertices] = join_mesh->face_vtx_lst[am_s] - 1;
 
   /* Find position of initial vertices in the face connectivity after the
-     fusion step. If not found -1 (initialized value) */
+     merge step. If not found -1 (initialized value) */
 
   bm_shift = 0;
   while (fst_match_id == -1 && bm_shift < n_bm_face_vertices) {
@@ -2026,10 +2031,10 @@ _get_local_faces_connect(cs_int_t            select_id,
   if (fst_match_id == -1)
     bft_error(__FILE__, __LINE__, 0,
               _("  Cannot find the first corresponding vertex between the face"
-                " connectivity before/after the fusion step.\n"
+                " connectivity before/after the merge step.\n"
                 "  Current global face number: %u\n"), fgnum);
 
-  /* Store the face connectivity before the fusion step */
+  /* Store the face connectivity before the merge step */
 
   for (i = 0; i < n_bm_face_vertices; i++) {
     j = bm_s + (bm_shift + i) % n_bm_face_vertices;
@@ -2037,7 +2042,7 @@ _get_local_faces_connect(cs_int_t            select_id,
   }
   bm_tmp[n_bm_face_vertices] = mesh->b_face_vtx_lst[bm_s + bm_shift] - 1;
 
-  /* Store the face connectivity after the fusion step */
+  /* Store the face connectivity after the merge step */
 
   for (i = 0; i < n_am_face_vertices; i++) {
     j = am_s + (fst_match_id + i) % n_am_face_vertices;
@@ -2063,26 +2068,26 @@ _get_local_faces_connect(cs_int_t            select_id,
  * Define the new edge connectivity for the initial edges.
  *
  * parameters:
- *  join_select       <--  keep all implied entities in the joining operation
- *  join_mesh         <--  pointer to the local cs_join_mesh_t structure
- *  mesh              <--  pointer of pointer to cs_mesh_t structure
- *  o2n_vtx_gnum      <--  local array on the new global vertex
- *  join2mesh_vtx_id  <--  relation between join mesh and after fusion vertex
- *  edge_builder      <->  pointer to an edge_builder_t structure
+ *   join_select      <-- keep all implied entities in the joining operation
+ *   join_mesh        <-- pointer to the local cs_join_mesh_t structure
+ *   mesh             <-- pointer of pointer to cs_mesh_t structure
+ *   o2n_vtx_gnum     <-- local array on the new global vertex
+ *   join2mesh_vtx_id <-- relation between join mesh and vertex after merge
+ *   edge_builder     <-> pointer to an edge_builder_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_complete_edge_builder(cs_join_select_t    *join_select,
-                       cs_join_mesh_t      *join_mesh,
-                       cs_mesh_t           *mesh,
-                       fvm_gnum_t           o2n_vtx_gnum[],
-                       cs_int_t             join2mesh_vtx_id[],
-                       edge_builder_t      *edge_builder)
+_complete_edge_builder(const cs_join_select_t  *join_select,
+                       const cs_join_mesh_t    *join_mesh,
+                       const cs_mesh_t         *mesh,
+                       const fvm_gnum_t         o2n_vtx_gnum[],
+                       const cs_int_t           join2mesh_vtx_id[],
+                       edge_builder_t          *edge_builder)
 {
   cs_int_t  i, j, j1, j2, k, shift;
   cs_int_t  v1_id, v2_id, edge_id, n_subs;
   fvm_gnum_t  v1_gnum, v2_gnum;
-  cs_bool_t  direct_scan, degenerated_edge;
+  cs_bool_t  direct_scan, degenerate_edge;
 
   cs_int_t  am_max = 0, bm_max = 0;
   cs_int_t  *am_tmp = NULL, *bm_tmp = NULL;
@@ -2136,7 +2141,7 @@ _complete_edge_builder(cs_join_select_t    *join_select,
 
     for (j = 0, j1 = 0, j2 = 0; j < n_bm_face_vertices; j++) {
 
-      degenerated_edge = false;
+      degenerate_edge = false;
       v1_id = bm_tmp[j];
       v2_id = bm_tmp[j+1];
       v1_gnum = o2n_vtx_gnum[v1_id];
@@ -2153,7 +2158,7 @@ _complete_edge_builder(cs_join_select_t    *join_select,
 
         if (v1_gnum == v2_gnum) { /* Initial edge has been deleted */
           n_subs = 1;
-          degenerated_edge = true;
+          degenerate_edge = true;
         }
         else { /* Look for the next initial vertex */
 
@@ -2164,7 +2169,7 @@ _complete_edge_builder(cs_join_select_t    *join_select,
           if (j2 == n_am_face_vertices + 1) { /* Init. edge has been deleted */
 
             j2 = j1 + 1;
-            degenerated_edge = true;
+            degenerate_edge = true;
             n_subs = 1;
 
           }
@@ -2183,15 +2188,15 @@ _complete_edge_builder(cs_join_select_t    *join_select,
           if (edge_builder->v2v_sub_idx[edge_id+1] != n_subs) {
 
             /* Different result for the same edge is only possible for
-               a degenerated edge */
+               a degenerate edge */
 
-            if (degenerated_edge == false && n_subs == 1)
+            if (degenerate_edge == false && n_subs == 1)
               bft_error(__FILE__, __LINE__, 0,
                         _("  Face %d (%u): Edge with two different"
                           " descriptions: (%d, %d) [%u, %u]\n"
                           "  n_subs: %d - previous n_subs: %d\n"
                           "  Impossible to continue the mesh update after the"
-                          " fusion operation.\n"),
+                          " merge operation.\n"),
                         fid+1, fgnum, v1_id+1, v2_id+1, v1_gnum, v2_gnum,
                         n_subs, edge_builder->v2v_sub_idx[edge_id+1]);
             else
@@ -2219,7 +2224,7 @@ _complete_edge_builder(cs_join_select_t    *join_select,
              edge_builder->v2v_sub_idx[edge_builder->n_edges], cs_int_t);
 
   for (i = 0; i < edge_builder->v2v_sub_idx[edge_builder->n_edges]; i++)
-    edge_builder->v2v_sub_lst[i] = -1; /* value = degenerated edge */
+    edge_builder->v2v_sub_lst[i] = -1; /* value = degenerate edge */
 
   /* Add sub-elements to each initial edge */
 
@@ -2260,13 +2265,13 @@ _complete_edge_builder(cs_join_select_t    *join_select,
 
         edge_id = _get_join_edge_id(v1_id, v2_id, edge_builder);
 
-        if (v1_gnum != v2_gnum) { /* Initial edge is not degenerated */
+        if (v1_gnum != v2_gnum) { /* Initial edge is not degenerate */
 
           for (j2 = j1 + 1; j2 < n_am_face_vertices + 1; j2++)
             if (v2_gnum == vertices[am_tmp[j2]].gnum)
               break;
 
-          if (j2 == n_am_face_vertices + 1) /* Initial edge is degenerated */
+          if (j2 == n_am_face_vertices + 1) /* Initial edge is degenerate */
             j2 = j1 + 1;
 
           else {  /* Add n_subs elements to the initial edge definition */
@@ -2288,7 +2293,7 @@ _complete_edge_builder(cs_join_select_t    *join_select,
 
           }
 
-        } /* Initial edge is not degenerated */
+        } /* Initial edge is not degenerate */
 
         j1 = j2;
 
@@ -2302,28 +2307,27 @@ _complete_edge_builder(cs_join_select_t    *join_select,
 
   BFT_FREE(am_tmp);
   BFT_FREE(bm_tmp);
-
 }
 
 /*----------------------------------------------------------------------------
  * Update selected face connectivity after the merge step.
  *
  * parameters:
- *  n_adj_faces     <--  number of adjacent faces
- *  adj_faces       <--  list of adjacent face numbers
- *  n_s_faces       <--  number of single faces
- *  s_faces         <--  list of "single" face numbers
- *  p_n_sel_faces   <--  pointer to the number of faces in the selection list
- *  p_sel_faces     <--  pointer to the selection list
+ *   n_adj_faces   <-- number of adjacent faces
+ *   adj_faces     <-- list of adjacent face numbers
+ *   n_s_faces     <-- number of single faces
+ *   s_faces       <-- list of "single" face numbers
+ *   p_n_sel_faces <-> pointer to the number of faces in the selection list
+ *   p_sel_faces   <-> pointer to the selection list
  *---------------------------------------------------------------------------*/
 
 static void
-_get_select_face_lst(cs_int_t     n_adj_faces,
-                     cs_int_t     adj_faces[],
-                     cs_int_t     n_s_faces,
-                     cs_int_t     s_faces[],
-                     cs_int_t    *p_n_sel_faces,
-                     cs_int_t    *p_sel_faces[])
+_get_select_face_lst(cs_int_t         n_adj_faces,
+                     const cs_int_t   adj_faces[],
+                     cs_int_t         n_s_faces,
+                     const cs_int_t   s_faces[],
+                     cs_int_t        *p_n_sel_faces,
+                     cs_int_t        *p_sel_faces[])
 {
   cs_int_t  i, shift, prev, cur, n;
 
@@ -2371,24 +2375,24 @@ _get_select_face_lst(cs_int_t     n_adj_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Update selected face connectivity after the fusion step.
+ * Update selected face connectivity after the merge step.
  *
  * parameters:
- *  join_select       <--  cs_join_select_t struct.
- *  join_mesh         <--  cs_join_mesh_t structure
- *  join2mesh_vtx_id  <--  relation between vtx_id of join_mesh & cs_mesh_t
- *  n_faces           <--  local number of faces in the mesh
- *  p_f2v_idx         <--  face -> vertex connectivity index
- *  p_f2v_lst         <--  face -> vertex connectivity list
+ *   join_select      <-- cs_join_select_t struct.
+ *   join_mesh        <-- cs_join_mesh_t structure
+ *   join2mesh_vtx_id <-- relation between vtx_id of join_mesh & cs_mesh_t
+ *   n_faces          <-- local number of faces in the mesh
+ *   p_f2v_idx        <-> face -> vertex connectivity index
+ *   p_f2v_lst        <-> face -> vertex connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_update_selected_face_connect(cs_join_select_t   *join_select,
-                              cs_join_mesh_t     *join_mesh,
-                              cs_int_t            join2mesh_vtx_id[],
-                              cs_int_t            n_faces,
-                              cs_int_t           *p_f2v_idx[],
-                              cs_int_t           *p_f2v_lst[])
+_update_selected_face_connect(const cs_join_select_t  *join_select,
+                              const cs_join_mesh_t    *join_mesh,
+                              const cs_int_t           join2mesh_vtx_id[],
+                              cs_int_t                 n_faces,
+                              cs_int_t                *p_f2v_idx[],
+                              cs_int_t                *p_f2v_lst[])
 {
   cs_int_t  i, j, shift, v_id, select_id, join_fid;
   fvm_gnum_t  fgnum;
@@ -2417,8 +2421,7 @@ _update_selected_face_connect(cs_join_select_t   *join_select,
       if (join_mesh->face_gnum[select_id] == fgnum)
         join_fid = select_id;
       else
-        join_fid = cs_search_g_binary(0,
-                                      join_mesh->n_faces-1,
+        join_fid = cs_search_g_binary(join_mesh->n_faces,
                                       fgnum,
                                       join_mesh->face_gnum);
 
@@ -2459,8 +2462,7 @@ _update_selected_face_connect(cs_join_select_t   *join_select,
       if (join_mesh->face_gnum[select_id] == fgnum)
         join_fid = select_id;
       else
-        join_fid = cs_search_g_binary(0,
-                                      join_mesh->n_faces-1,
+        join_fid = cs_search_g_binary(join_mesh->n_faces,
                                       fgnum,
                                       join_mesh->face_gnum);
 
@@ -2489,30 +2491,29 @@ _update_selected_face_connect(cs_join_select_t   *join_select,
 
   *p_f2v_idx = new_f2v_idx;
   *p_f2v_lst = new_f2v_lst;
-
 }
 
 /*----------------------------------------------------------------------------
  * Update adjacent face connectivity.
  *
  * parameters:
- *  n_adj_faces    <--  number of adjacent faces
- *  adj_faces      <--  list of adjacent face numbers
- *  edge_builder   <--  edge_builder_t structure
- *  o2n_vtx_id     <--  relation between old/new vertix id
- *  n_faces        <--  local number of faces in the mesh
- *  p_f2v_idx      <--  face -> vertex connectivity index
- *  p_f2v_lst      <--  face -> vertex connectivity list
+ *   n_adj_faces  <-- number of adjacent faces
+ *   adj_faces    <-- list of adjacent face numbers
+ *   edge_builder <-- edge_builder_t structure
+ *   o2n_vtx_id   <-- relation between old/new vertix id
+ *   n_faces      <-- local number of faces in the mesh
+ *   p_f2v_idx    <-- face -> vertex connectivity index
+ *   p_f2v_lst    <-- face -> vertex connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_update_adj_face_connect(cs_int_t          n_adj_faces,
-                         cs_int_t          adj_faces[],
-                         edge_builder_t   *edge_builder,
-                         cs_int_t          o2n_vtx_id[],
-                         cs_int_t          n_faces,
-                         cs_int_t         *p_f2v_idx[],
-                         cs_int_t         *p_f2v_lst[])
+_update_adj_face_connect(cs_int_t               n_adj_faces,
+                         const cs_int_t         adj_faces[],
+                         const edge_builder_t  *edge_builder,
+                         const cs_int_t         o2n_vtx_id[],
+                         cs_int_t               n_faces,
+                         cs_int_t              *p_f2v_idx[],
+                         cs_int_t              *p_f2v_lst[])
 {
   cs_int_t  i, j, k, l, v1_id, v2_id, n_face_vertices, shift, select_id;
   cs_int_t  s, e, v_s, v_e, v_sub_s, v_sub_e, edge_id;
@@ -2563,7 +2564,14 @@ _update_adj_face_connect(cs_int_t          n_adj_faces,
         else /* delete the current edge (count += 0) */
           v1_id = -1;
 
-        if (v1_id > -1) {
+        /* edge builder->n_vertices is still equal to the initial
+           number of vertices; this should not be a problem,
+           as an edge always starts with a previously existing
+           vertex */
+
+        assert(v1_id < edge_builder->n_vertices);
+
+        if (v1_id > -1 && v1_id < edge_builder->n_vertices) {
 
           v_s = edge_builder->v2v_idx[v1_id];
           v_e = edge_builder->v2v_idx[v1_id+1];
@@ -2646,7 +2654,7 @@ _update_adj_face_connect(cs_int_t          n_adj_faces,
         else /*  delete the current edge (count += 0) */
           v1_id = -1;
 
-        if (v1_id > -1) {
+        if (v1_id > -1 && v1_id < edge_builder->n_vertices) {
 
           v_s = edge_builder->v2v_idx[v1_id];
           v_e = edge_builder->v2v_idx[v1_id+1];
@@ -2676,7 +2684,7 @@ _update_adj_face_connect(cs_int_t          n_adj_faces,
                   for (l = v_sub_e - 1; l >= v_sub_s; l--, count++)
                     new_f2v_lst[shift + count] = edge_builder->v2v_sub_lst[l];
 
-              } /* edge is not degenerated */
+              } /* edge is not degenerate */
 
             } /* There are sub-elements to add */
 
@@ -2703,25 +2711,24 @@ _update_adj_face_connect(cs_int_t          n_adj_faces,
 
   *p_f2v_idx = new_f2v_idx;
   *p_f2v_lst = new_f2v_lst;
-
 }
 
 /*----------------------------------------------------------------------------
  * Compute barycenter and face normal for the current face.
  *
  * parameters:
- *  n_face_vertices    <--  number of vertices defining the face
- *  face_vtx_coord     <--  coordinates of each vertex of the face
- *                         (size: n_face_vertices+1)
- *  face_barycenter    -->  barycentre of the face
- *  face_normal        -->  normal of the face (norm = face area)
+ *   n_face_vertices <-- number of vertices defining the face
+ *   face_vtx_coord  <-- coordinates of each vertex of the face
+ *                        (size: n_face_vertices+1)
+ *   face_barycenter --> barycentre of the face
+ *   face_normal     --> normal of the face (norm = face area)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_face_quantity(cs_int_t     n_face_vertices,
-                   cs_real_t    face_vtx_coord[],
-                   cs_real_t    face_barycenter[],
-                   cs_real_t    face_normal[])
+_get_face_quantity(cs_int_t         n_face_vertices,
+                   const cs_real_t  face_vtx_coord[],
+                   cs_real_t        face_barycenter[],
+                   cs_real_t        face_normal[])
 {
   cs_int_t  i, coord;
   cs_real_t  v1[3], v2[3], tri_normal[3];
@@ -2777,10 +2784,10 @@ _get_face_quantity(cs_int_t     n_face_vertices,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_faces_to_send(cs_join_gset_t   *n2o_hist,
-                   fvm_gnum_t        gnum_rank_index[],
-                   cs_int_t         *p_send_rank_index[],
-                   fvm_gnum_t       *p_send_faces[])
+_get_faces_to_send(const cs_join_gset_t  *n2o_hist,
+                   const fvm_gnum_t       gnum_rank_index[],
+                   cs_int_t              *p_send_rank_index[],
+                   fvm_gnum_t            *p_send_faces[])
 {
   cs_int_t  i, j, rank, shift;
 
@@ -2832,8 +2839,7 @@ _get_faces_to_send(cs_join_gset_t   *n2o_hist,
 
     for (j = n2o_hist->index[i]; j < n2o_hist->index[i+1]; j++) {
 
-      int  reduce_rank = cs_search_gindex_binary(0,
-                                                 reduce_size,
+      int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                  n2o_hist->g_list[j],
                                                  reduce_index);
 
@@ -2858,8 +2864,7 @@ _get_faces_to_send(cs_join_gset_t   *n2o_hist,
 
     for (j = n2o_hist->index[i]; j < n2o_hist->index[i+1]; j++) {
 
-      int  reduce_rank = cs_search_gindex_binary(0,
-                                                 reduce_size,
+      int  reduce_rank = cs_search_gindex_binary(reduce_size,
                                                  n2o_hist->g_list[j],
                                                  reduce_index);
 
@@ -2897,8 +2902,8 @@ _get_faces_to_send(cs_join_gset_t   *n2o_hist,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Exchange to update mesh after the face split operation:\n");
   for (i = 0; i < n_ranks; i++) {
-    start = send_rank_index[i];
-    end = send_rank_index[i+1];
+    cs_int_t start = send_rank_index[i];
+    cs_int_t end = send_rank_index[i+1];
     bft_printf(" Send to rank %5d (n = %10d):", i, end - start);
     for (j = start; j < end; j++)
       bft_printf(" %d ", send_faces[j]);
@@ -2910,27 +2915,27 @@ _get_faces_to_send(cs_join_gset_t   *n2o_hist,
 
   *p_send_rank_index = send_rank_index;
   *p_send_faces = send_faces;
-
 }
 
 #if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Get the related global cell number for each old global face number
  *
  * parameters:
- *   n_ranks        <--  number of ranks in the mpi_comm
- *   send_shift     <--  index on ranks for the face distribution
- *   send_faces     <--  list of face ids to send
- *   join_select    <--  list all local entities implied in the joining op.
- *   mpi_comm       <--  mpi communicator on which take places comm.
+ *   n_ranks     <-- number of ranks in the mpi_comm
+ *   send_shift  <-- index on ranks for the face distribution
+ *   send_gbuf   <-> global cell numbers associated with faces
+ *   join_select <-- list all local entities implied in the joining op.
+ *   mpi_comm    <-- mpi communicator on which take places comm.
  *---------------------------------------------------------------------------*/
 
 static void
-_exchange_faces(cs_int_t            n_ranks,
-                cs_int_t            send_shift[],
-                fvm_gnum_t          send_gbuf[],
-                cs_join_select_t   *join_select,
-                MPI_Comm            mpi_comm)
+_exchange_faces(cs_int_t                 n_ranks,
+                cs_int_t                 send_shift[],
+                fvm_gnum_t               send_gbuf[],
+                const cs_join_select_t  *join_select,
+                MPI_Comm                 mpi_comm)
 {
   int  i, rank, fid;
   fvm_gnum_t  compact_fgnum;
@@ -2938,7 +2943,7 @@ _exchange_faces(cs_int_t            n_ranks,
   cs_int_t  *send_count = NULL, *recv_count = NULL, *recv_shift = NULL;
   fvm_gnum_t  *recv_gbuf = NULL;
 
-  const int  loc_rank = cs_glob_rank_id;
+  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
   const fvm_gnum_t  loc_rank_s = join_select->compact_rank_index[loc_rank];
   const fvm_gnum_t  loc_rank_e = join_select->compact_rank_index[loc_rank+1];
 
@@ -3009,23 +3014,23 @@ _exchange_faces(cs_int_t            n_ranks,
   BFT_FREE(recv_count);
   BFT_FREE(recv_shift);
   BFT_FREE(recv_gbuf);
-
 }
+
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Get the related global cell numbers connected to the old face numbers.
  *
  * parameters:
- *  join_select      <--  list of all implied entities in the joining op.
- *  n2o_face_hist    <--  face history structure (new -> old)
- *  cell_gnum        -->  pointer to the created array
+ *   join_select   <-- list of all implied entities in the joining op.
+ *   n2o_face_hist <-- face history structure (new -> old)
+ *   cell_gnum     --> pointer to the created array
  *---------------------------------------------------------------------------*/
 
 static void
-_get_linked_cell_gnum(cs_join_select_t    *join_select,
-                      cs_join_gset_t      *n2o_face_hist,
-                      fvm_gnum_t          *p_cell_gnum[])
+_get_linked_cell_gnum(const cs_join_select_t  *join_select,
+                      const cs_join_gset_t    *n2o_face_hist,
+                      fvm_gnum_t              *p_cell_gnum[])
 {
   cs_int_t  i, j;
   fvm_gnum_t  compact_fgnum;
@@ -3090,23 +3095,23 @@ _get_linked_cell_gnum(cs_join_select_t    *join_select,
  * and deleting old one.
  *
  * parameters:
- *  join_select       <--  list of all implied entities in the joining op.
- *  join_mesh         <--  pointer to the local cs_join_mesh_t structure
- *  join2mesh_vtx_id  <--  relation between vertices in join_mesh/mesh
- *  n_new_b_faces     <--  local number of border faces after the joining
- *  new_face_type     <--  type (border/interior) of new faces
- *  n2o_face_hist     <--  face history structure (new -> old)
- *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *   join_select      <-- list of all implied entities in the joining op.
+ *   join_mesh        <-- pointer to the local cs_join_mesh_t structure
+ *   join2mesh_vtx_id <-- relation between vertices in join_mesh/mesh
+ *   n_new_b_faces    <-- local number of border faces after the joining
+ *   new_face_type    <-- type (border/interior) of new faces
+ *   n2o_face_hist    <-- face history structure (new -> old)
+ *   mesh             <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_add_new_border_faces(cs_join_select_t     *join_select,
-                      cs_join_mesh_t       *join_mesh,
-                      cs_int_t              join2mesh_vtx_id[],
-                      cs_int_t              n_new_b_faces,
-                      cs_join_face_type_t   new_face_type[],
-                      cs_join_gset_t       *n2o_face_hist,
-                      cs_mesh_t            *mesh)
+_add_new_border_faces(const cs_join_select_t     *join_select,
+                      const cs_join_mesh_t       *join_mesh,
+                      const cs_int_t              join2mesh_vtx_id[],
+                      cs_int_t                    n_new_b_faces,
+                      const cs_join_face_type_t   new_face_type[],
+                      const cs_join_gset_t       *n2o_face_hist,
+                      cs_mesh_t                  *mesh)
 {
   cs_int_t  i, j, select_id, vid, fid, shift, n_face_vertices;
   fvm_gnum_t  compact_old_fgnum;
@@ -3118,7 +3123,7 @@ _add_new_border_faces(cs_join_select_t     *join_select,
   fvm_gnum_t  *new_fgnum = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  rank = cs_glob_rank_id;
+  const int  rank = CS_MAX(cs_glob_rank_id, 0);
   const fvm_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
   const fvm_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
@@ -3290,34 +3295,33 @@ _add_new_border_faces(cs_join_select_t     *join_select,
   mesh->b_face_cells = new_face_cells;
   mesh->b_face_family = new_face_family;
   mesh->b_face_vtx_connect_size = new_f2v_idx[n_fb_faces]-1;
-
 }
 
 /*----------------------------------------------------------------------------
  * Update mesh structure by adding new interior faces after the face split.
  *
  * parameters:
- *  join_select       <--  list of all implied entities in the joining op.
- *  join_mesh         <--  pointer to the local cs_join_mesh_t structure
- *  join2mesh_vtx_id  <--  relation between vertices in join_mesh/mesh
- *  cell_gnum         <--  global cell num. related to each initial face
- *  n_new_i_faces     <--  local number of interior faces after the joining
- *  default_family    <--  default family num to assign to each int. faces
- *  new_face_type     <--  type (border/interior) of new faces
- *  n2o_face_hist     <--  face history structure (new -> old)
- *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *   join_select      <-- list of all implied entities in the joining op.
+ *   join_mesh        <-- pointer to the local cs_join_mesh_t structure
+ *   join2mesh_vtx_id <-- relation between vertices in join_mesh/mesh
+ *   cell_gnum        <-- global cell num. related to each initial face
+ *   n_new_i_faces    <-- local number of interior faces after the joining
+ *   default_family   <-- default family num to assign to each int. faces
+ *   new_face_type    <-- type (border/interior) of new faces
+ *   n2o_face_hist    <-- face history structure (new -> old)
+ *   mesh             <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_add_new_interior_faces(cs_join_select_t      *join_select,
-                        cs_join_mesh_t        *join_mesh,
-                        cs_int_t               join2mesh_vtx_id[],
-                        fvm_gnum_t             cell_gnum[],
-                        cs_int_t               n_new_i_faces,
-                        cs_int_t               default_family,
-                        cs_join_face_type_t    new_face_type[],
-                        cs_join_gset_t        *n2o_face_hist,
-                        cs_mesh_t             *mesh)
+_add_new_interior_faces(const cs_join_select_t     *join_select,
+                        const cs_join_mesh_t       *join_mesh,
+                        const cs_int_t              join2mesh_vtx_id[],
+                        const fvm_gnum_t            cell_gnum[],
+                        cs_int_t                    n_new_i_faces,
+                        cs_int_t                    default_family,
+                        const cs_join_face_type_t   new_face_type[],
+                        const cs_join_gset_t       *n2o_face_hist,
+                        cs_mesh_t                  *mesh)
 {
   cs_int_t  i, j, k, vid, shift, n_face_vertices, fid[2];
   fvm_gnum_t  compact_fgnum, cgnum[2];
@@ -3331,7 +3335,7 @@ _add_new_interior_faces(cs_join_select_t      *join_select,
   fvm_gnum_t  *new_fgnum = mesh->global_i_face_num;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  rank = cs_glob_rank_id;
+  const int  rank = CS_MAX(cs_glob_rank_id, 0);
   const fvm_gnum_t  loc_rank_s = join_select->compact_rank_index[rank];
   const fvm_gnum_t  loc_rank_e = join_select->compact_rank_index[rank+1];
 
@@ -3471,14 +3475,14 @@ _add_new_interior_faces(cs_join_select_t      *join_select,
  * Get the family number to assign by default to the interior faces.
  *
  * parameters:
- *  mesh        <--  pointer to cs_mesh_t structure
+ *   mesh <-> pointer to cs_mesh_t structure
  *
  * returns:
- *  the value of the default family number.
+ *   the value of the default family number.
  *---------------------------------------------------------------------------*/
 
 static cs_int_t
-_get_default_family(cs_mesh_t   *mesh)
+_get_default_family(cs_mesh_t  *mesh)
 {
   int  i, j, n_grp, grp_num, grp_idx, n_colors, new_size;
 
@@ -3537,28 +3541,27 @@ _get_default_family(cs_mesh_t   *mesh)
   }
 
   return default_family;
-
 }
 
 /*----------------------------------------------------------------------------
  * Re-orientation of joined faces. Check and correct if needed.
  *
  * parameters:
- *  mesh             <--  pointer of pointer to cs_mesh_t structure
- *  n_old_i_faces    <--  initial number of interior faces
- *  n_old_b_faces    <--  initial number of border faces
- *  n_select_cells   <--  number of cells in the selection
- *  cell_selection   -->  selection array (size: mesh->n_cells)
- *  select_cell_cen  -->  cell center for the selected cells
+ *   mesh            <-- pointer to cs_mesh_t structure
+ *   n_old_i_faces   <-- initial number of interior faces
+ *   n_old_b_faces   <-- initial number of border faces
+ *   n_select_cells  <-- number of cells in the selection
+ *   cell_selection  <-- selection array (size: mesh->n_cells)
+ *   select_cell_cen --> cell center for the selected cells
  *---------------------------------------------------------------------------*/
 
 static void
-_reorient_faces(cs_mesh_t    *mesh,
-                cs_int_t      n_old_i_faces,
-                cs_int_t      n_old_b_faces,
-                cs_int_t      n_select_cells,
-                cs_int_t      cell_selection[],
-                cs_real_t     select_cell_cen[])
+_reorient_faces(cs_mesh_t       *mesh,
+                cs_int_t         n_old_i_faces,
+                cs_int_t         n_old_b_faces,
+                cs_int_t         n_select_cells,
+                const cs_int_t   cell_selection[],
+                cs_real_t        select_cell_cen[])
 {
   cs_int_t  i, j, k, shift, s, e, vid, cid1, cid2, n_face_vertices;
   cs_real_t  dot_prod;
@@ -3747,22 +3750,22 @@ _reorient_faces(cs_mesh_t    *mesh,
  * Define a new face connectivty without redundant edge definition.
  *
  * parameters:
- *  s        <--  starting index in f2v_lst
- *  e        <--  ending index in f2v_lst
- *  f2v_lst  <--  face -> vertex connectivity list
- *  connect  <--  buffer to store locally the new face connectivity
- *  kill     <--  buffer to store vertex to delete from the connectivity
+ *   s       <-- starting index in f2v_lst
+ *   e       <-- ending index in f2v_lst
+ *   f2v_lst <-- face -> vertex connectivity list
+ *   connect --> buffer to store locally the new face connectivity
+ *   kill    --> buffer to store vertex to delete from the connectivity
  *
  * returns:
- *  new number of vertices in the face connectivity.
+ *   new number of vertices in the face connectivity.
  *---------------------------------------------------------------------------*/
 
 static cs_int_t
-_delete_edges(cs_int_t    s,
-              cs_int_t    e,
-              cs_int_t    f2v_lst[],
-              cs_int_t    connect[],
-              cs_int_t    kill[])
+_delete_edges(cs_int_t        s,
+              cs_int_t        e,
+              const cs_int_t  f2v_lst[],
+              cs_int_t        connect[],
+              cs_int_t        kill[])
 {
   cs_int_t  j, k, shift, count;
 
@@ -3776,7 +3779,7 @@ _delete_edges(cs_int_t    s,
   connect[k] = f2v_lst[s], kill[k++] = 0;
   connect[k] = f2v_lst[s+1], kill[k++] = 0;
 
-  /* Find degenerated edges */
+  /* Find degenerate edges */
 
   count = 1;
   while (count > 0) {
@@ -3838,23 +3841,23 @@ _delete_edges(cs_int_t    s,
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update mesh structure (vertices + faces) after the fusion step.
+ * Update mesh structure (vertices + faces) after the merge step.
  *
  * parameters:
- *  join_param         <--  set of parameters for the joining operation
- *  join_select        <--  list of all implied entities in the joining op.
- *  o2n_vtx_gnum       <--  in : array on blocks on the new global vertex
- *                          out: local array on the new global vertex
- *  join_mesh          <--  pointer to the local cs_join_mesh_t structure
- *  mesh               <->  pointer of pointer to cs_mesh_t structure
+ *   join_param   <-- set of parameters for the joining operation
+ *   join_select  <-- list of all implied entities in the joining op.
+ *   o2n_vtx_gnum <-> in : array on blocks on the new global vertex
+ *                    out: local array on the new global vertex
+ *   join_mesh    <-- pointer to the local cs_join_mesh_t structure
+ *   mesh         <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
-                                cs_join_select_t    *join_select,
-                                fvm_gnum_t            o2n_vtx_gnum[],
-                                cs_join_mesh_t      *join_mesh,
-                                cs_mesh_t           *mesh)
+cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
+                                const cs_join_select_t  *join_select,
+                                fvm_gnum_t               o2n_vtx_gnum[],
+                                cs_join_mesh_t          *join_mesh,
+                                cs_mesh_t               *mesh)
 {
   cs_int_t  i, j, shift, select_id, adj_id, old_id, s_id, new_num, n_sel_faces;
 
@@ -3862,7 +3865,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
   fvm_gnum_t  *old_vtx_gnum = NULL;
   edge_builder_t  *edge_builder = NULL;
 
-  const cs_int_t  n_bm_vertices = mesh->n_vertices; /* bf: before fusion */
+  const cs_int_t  n_bm_vertices = mesh->n_vertices; /* bf: before merge */
   const cs_int_t  n_ranks = cs_glob_n_ranks;
 
   edge_builder = _init_edge_builder(join_select, mesh);
@@ -3900,12 +3903,13 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
 
   /* Update mesh structure. Define new vertices */
 
-  _update_vertices_after_merge(o2n_vtx_gnum,
-                               join_mesh,
-                               mesh,
-                               &join2mesh_vtx_id, /* size: join_mesh->n_vertices */
-                               &o2n_vtx_id,       /* size: n_bm_vertices */
-                               &old_vtx_gnum);    /* size: n_bm_vertices */
+  _update_vertices_after_merge
+    (o2n_vtx_gnum,
+     join_mesh,
+     mesh,
+     &join2mesh_vtx_id, /* size: join_mesh->n_vertices */
+     &o2n_vtx_id,       /* size: n_bm_vertices */
+     &old_vtx_gnum);    /* size: n_bm_vertices */
 
   /* Define the evolution of each initial edge in edge_builder_t struct. */
 
@@ -3915,6 +3919,8 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
                          o2n_vtx_gnum,
                          join2mesh_vtx_id,
                          edge_builder);
+
+  BFT_FREE(o2n_vtx_gnum); /* Not useful after this point */
 
 #if defined(HAVE_MPI)
   if (join_select->do_single_sync == true)
@@ -3941,7 +3947,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
                  "  n_edges   : %10d\n",
                  edge_builder->n_vertices, edge_builder->n_edges);
 
-      for (i = 0; i < edge_builder->n_vertices; i++) {
+      for (i = 0; i < mesh->n_vertices; i++) {
 
         bft_printf("%9d - [%10.4f %10.4f %10.4f]: (%d, %d) v-v:",
                    i+1, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
@@ -3973,11 +3979,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
                                 &(mesh->b_face_vtx_idx),
                                 &(mesh->b_face_vtx_lst));
 
-  /* Partial free memory */
-
-  BFT_FREE(o2n_vtx_gnum);
-
-  /* Update adjancent border face connectivity */
+  /* Update adjacent border face connectivity */
 
   if (join_select->n_b_s_faces > 0)
     _get_select_face_lst(join_select->n_b_adj_faces,
@@ -4003,7 +4005,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
   if (join_select->n_b_s_faces > 0)
     BFT_FREE(sel_faces);
 
-  /* Update adjancent interior face connectivity */
+  /* Update adjacent interior face connectivity */
 
   if (join_select->n_i_s_faces > 0)
     _get_select_face_lst(join_select->n_i_adj_faces,
@@ -4124,35 +4126,32 @@ cs_join_update_mesh_after_merge(cs_join_param_t      join_param,
 
   /* Post if required */
 
-  cs_join_post_after_merge(join_param, join_select);
+  if (join_param.verbosity > 2)
+    cs_join_post_after_merge(join_param, join_select);
 
   /* Free memory */
 
   BFT_FREE(join2mesh_vtx_id);
   BFT_FREE(o2n_vtx_id);
-
 }
 
 /*----------------------------------------------------------------------------
  * Update mesh structure (vertices + faces) after the face split step.
  *
  * parameters:
- *  join_param        <--  set of parameters for the joining operation
- *  join_select       <--  list of all implied entities in the joining op.
- *  o2n_face_hist     <--  relation between faces before/after the joining
- *  n_select_cells    <--  number of cells in the selection
- *  cell_selection    -->  selection array (size: mesh->n_cells)
- *  select_cell_cen   -->  cell center for the selected cells
- *  join_mesh         <--  pointer to the local cs_join_mesh_t structure
- *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *   join_param      <-- set of parameters for the joining operation
+ *   join_select     <-- list of all implied entities in the joining op.
+ *   o2n_face_hist   <-- relation between faces before/after the joining
+ *   join_mesh       <-- pointer to the local cs_join_mesh_t structure
+ *   mesh            <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_update_mesh_after_split(cs_join_param_t      join_param,
-                                cs_join_select_t    *join_select,
-                                cs_join_gset_t      *o2n_face_hist,
-                                cs_join_mesh_t       *join_mesh,
-                                cs_mesh_t            *mesh)
+cs_join_update_mesh_after_split(cs_join_param_t          join_param,
+                                const cs_join_select_t  *join_select,
+                                const cs_join_gset_t    *o2n_face_hist,
+                                const cs_join_mesh_t    *join_mesh,
+                                cs_mesh_t               *mesh)
 {
   int  i, n_matches, default_family;
 
@@ -4196,7 +4195,7 @@ cs_join_update_mesh_after_split(cs_join_param_t      join_param,
   }
 #endif
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (join_param.verbosity > 3) { /* Full dump of structures */
 
     int  len;
@@ -4206,7 +4205,7 @@ cs_join_update_mesh_after_split(cs_join_param_t      join_param,
     len = strlen("JoinDBG_n2oFaceHist.dat")+1+2+4;
     BFT_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_n2oFaceHist%04d.dat",
-            join_param.num, cs_glob_rank_id);
+            join_param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, n2o_face_hist);
@@ -4262,7 +4261,7 @@ cs_join_update_mesh_after_split(cs_join_param_t      join_param,
     MPI_Allreduce(&n_new_b_faces, &n_g_new_b_faces, 1, FVM_MPI_GNUM,
                   MPI_SUM, mpi_comm);
 
-    if (cs_glob_rank_id == 0)
+    if (cs_glob_rank_id <= 0)
       bft_printf(_("\n  Global configuration after the joining operation:\n"
                    "     Global number of border faces to add : %10u\n"),
                  n_g_new_b_faces);
@@ -4375,11 +4374,13 @@ cs_join_update_mesh_after_split(cs_join_param_t      join_param,
 }
 
 /*----------------------------------------------------------------------------
- * Clean a cs_mesh_t struct.  (delete redundant and empty edge definition)
+ * Clean a cs_mesh_t struct.
+ *
+ * Delete redundant and empty edge definitions.
  *
  * parameters:
- *  param     <--  set of parameters for the joining operation
- *  mesh      <--  pointer to a cs_mesh_t struct.
+ *   para <-- set of parameters for the joining operation
+ *   mesh <-> pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -4459,7 +4460,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   } /* End of loop on border faces */
 
   if (param.verbosity > 0)
-    bft_printf(_("\n  Degenerated connectivity for %d final border faces.\n"),
+    bft_printf(_("\n  Degenerate connectivity for %d final border faces.\n"),
                n_b_clean_faces);
 
   for (i = mesh->n_b_faces; i > 0; i--)
@@ -4519,7 +4520,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   } /* End of loop on interior faces */
 
   if (param.verbosity > 0)
-    bft_printf(_("  Degenerated connectivity for %d final interior faces.\n"
+    bft_printf(_("  Degenerate connectivity for %d final interior faces.\n"
                  "  Mesh cleaning done.\n"), n_i_clean_faces);
 
   for (i = mesh->n_i_faces; i > 0; i--)
