@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -34,11 +34,16 @@
 #include "cs_config.h"
 #endif
 
+/* To use Space-filling curve (Morton) for decomposition, define USE_SFC */
+#undef USE_SFC
+/* #define USE_SFC 1 */
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -460,12 +465,13 @@ _read_cell_rank(cs_mesh_t       *mesh,
  *
  * The mesh structure is also updated with face counts and connectivity sizes.
  *
- * mesh              <-> pointer to mesh structure
- * n_faces           <-- number of local faces
- * face_ifs          <-- parallel and periodic faces interfaces set
- * face_cell         <-- local face -> cell connectivity
- * face_vertices_idx <-- local face -> vertices index
- * face_type         --> face type marker
+ * parameters:
+ *   mesh              <-> pointer to mesh structure
+ *   n_faces           <-- number of local faces
+ *   face_ifs          <-- parallel and periodic faces interfaces set
+ *   face_cell         <-- local face -> cell connectivity
+ *   face_vertices_idx <-- local face -> vertices index
+ *   face_type         --> face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -536,15 +542,16 @@ _face_type_g(cs_mesh_t                  *mesh,
  *
  * The mesh structure is also updated with face counts and connectivity sizes.
  *
- * mesh               <-> pointer to mesh structure
- * n_faces            <-- number of local faces
- * n_periodic_couples <-- number of periodic couples associated with
- *                        each periodic list
- * periodic_couples   <-- array indicating periodic couples (using
- *                        global numberings) for each list
- * face_cell          <-- local face -> cell connectivity
- * face_vertices_idx  <-- local face -> vertices index
- * face_type          --> face type marker
+ * parameters:
+ *   mesh               <-> pointer to mesh structure
+ *   n_faces            <-- number of local faces
+ *   n_periodic_couples <-- number of periodic couples associated with
+ *                          each periodic list
+ *   periodic_couples   <-- array indicating periodic couples (using
+ *                          global numberings) for each list
+ *   face_cell          <-- local face -> cell connectivity
+ *   face_vertices_idx  <-- local face -> vertices index
+ *   face_type          --> face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -615,10 +622,11 @@ _face_type_l(cs_mesh_t                  *mesh,
  * The corresponding arrays in the mesh structure are allocated and
  * defined by this function, and should have been previously empty.
  *
- * mesh      <-> pointer to mesh structure
- * n_faces   <-- number of local faces
- * face_cell <-- local face -> cell connectivity
- * face_type <-- face type marker
+ * parameters:
+ *   mesh      <-> pointer to mesh structure
+ *   n_faces   <-- number of local faces
+ *   face_cell <-- local face -> cell connectivity
+ *   face_type <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -666,11 +674,12 @@ _extract_face_cell(cs_mesh_t         *mesh,
  * The corresponding arrays in the mesh structure are allocated and
  * defined by this function, and should have been previously empty.
  *
- * mesh              <-> pointer to mesh structure
- * n_faces           <-- number of local faces
- * face_vertices_idx <-- local face -> vertices index
- * face_vertices     <-- local face -> vertices connectivity
- * face_type         <-- face type marker
+ * parameters:
+ *   mesh              <-> pointer to mesh structure
+ *   n_faces           <-- number of local faces
+ *   face_vertices_idx <-- local face -> vertices index
+ *   face_vertices     <-- local face -> vertices connectivity
+ *   face_type         <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -748,10 +757,11 @@ _extract_face_vertices(cs_mesh_t         *mesh,
  * The corresponding arrays in the mesh structure are allocated and
  * defined by this function, and should have been previously empty.
  *
- * mesh            <-> pointer to mesh structure
- * n_faces         <-- number of local faces
- * global_face_num <-- global face numbers
- * face_type       <-- face type marker
+ * parameters:
+ *   mesh            <-> pointer to mesh structure
+ *   n_faces         <-- number of local faces
+ *   global_face_num <-- global face numbers
+ *   face_type       <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -840,10 +850,11 @@ _extract_face_gnum(cs_mesh_t         *mesh,
  * The corresponding arrays in the mesh structure are allocated and
  * defined by this function, and should have been previously empty.
  *
- * mesh       <-> pointer to mesh structure
- * n_faces    <-- number of local faces
- * face_gc_id <-- local face group class id
- * face_type  <-- face type marker
+ * parameters:
+ *   mesh       <-> pointer to mesh structure
+ *   n_faces    <-- number of local faces
+ *   face_gc_id <-- local face group class id
+ *   face_type  <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -881,9 +892,10 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
  * identical to those produced by the preprocessor in version 1.3,
  * so this step may be removed after sufficient testing.
  *
- * mesh_builder      <-> pointer to mesh builder structure
- * n_init_perio      <-- number of initial periodicities
- * i_face_cell       <-- interior face->cell connectivity
+ * parameters:
+ *   mesh_builder      <-> pointer to mesh builder structure
+ *   n_init_perio      <-- number of initial periodicities
+ *   i_face_cell       <-- interior face->cell connectivity
  *----------------------------------------------------------------------------*/
 
 static void
@@ -952,11 +964,12 @@ _orient_perio_couples(cs_mesh_builder_t  *mb,
  * Extract periodic face connectivity information for mesh builder when
  * running in parallel mode.
  *
- * mesh_builder      <-> pointer to mesh builder structure
- * n_init_perio      <-- number of initial periodicities
- * n_faces           <-- number of local faces
- * face_ifs          <-- parallel and periodic faces interfaces set
- * face_type         <-- face type marker
+ * parameters:
+ *   mesh_builder      <-> pointer to mesh builder structure
+ *   n_init_perio      <-- number of initial periodicities
+ *   n_faces           <-- number of local faces
+ *   face_ifs          <-- parallel and periodic faces interfaces set
+ *   face_type         <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1175,7 +1188,8 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
                     mb->per_face_lst[2*i+1], mb->per_rank_lst[i]-1);
        else
          bft_printf("%10d | %10d | %10d | %6d\n",
-                    i, mb->per_face_lst[2*i], mb->per_face_lst[2*i+1], local_rank);
+                    i, mb->per_face_lst[2*i], mb->per_face_lst[2*i+1],
+                    local_rank);
      }
      bft_printf_flush();
 
@@ -1196,14 +1210,15 @@ _extract_periodic_faces_g(cs_mesh_builder_t          *mb,
  * Extract periodic face connectivity information for mesh builder when
  * running in serial mode.
  *
- * mesh_builder       <-> pointer to mesh builder structure
- * n_init_perio       <-- number of initial periodicities
- * n_faces            <-- number of local faces
- * n_periodic_couples <-- number of periodic couples associated with
- *                        each periodic list
- * periodic_couples   <-- array indicating periodic couples (using
- *                        global numberings) for each list
- * face_type          <-- face type marker
+ * parameters:
+ *   mesh_builder       <-> pointer to mesh builder structure
+ *   n_init_perio       <-- number of initial periodicities
+ *   n_faces            <-- number of local faces
+ *   n_periodic_couples <-- number of periodic couples associated with
+ *                          each periodic list
+ *   periodic_couples   <-- array indicating periodic couples (using
+ *                          global numberings) for each list
+ *   face_type          <-- face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1263,12 +1278,406 @@ _extract_periodic_faces_l(cs_mesh_builder_t        *mb,
 
 #if defined(HAVE_MPI)
 
+#if defined(USE_SFC)
+
+/*----------------------------------------------------------------------------
+ * Compute cell centers using minimal local data.
+ *
+ * parameters:
+ *   n_cells      <-- number of cells
+ *   n_faces      <-- number of faces
+ *   face_cells   <-- face -> cells connectivity
+ *   face_vtx_idx <-- face -> vertices connectivity index
+ *   face_vtx     <-- face -> vertices connectivity
+ *   vtx_coord    <-- vertex coordinates
+ *   cell_center  --> cell centers
+ *----------------------------------------------------------------------------*/
+
+static void
+_cell_center(fvm_lnum_t        n_cells,
+             fvm_lnum_t        n_faces,
+             const fvm_lnum_t  face_cells[],
+             const fvm_lnum_t  face_vtx_idx[],
+             const fvm_lnum_t  face_vtx[],
+             const cs_real_t   vtx_coord[],
+             fvm_coord_t       cell_center[])
+{
+  fvm_lnum_t i, j;
+  fvm_lnum_t vtx_id, face_id, start_id, end_id;
+  fvm_lnum_t n_face_vertices;
+  fvm_coord_t ref_normal[3], vtx_cog[3], face_center[3];
+
+  fvm_lnum_t n_max_face_vertices = 0;
+
+  cs_point_t *face_vtx_coord = NULL;
+  fvm_coord_t *weight = NULL;
+
+  assert(face_vtx_idx[0] == 0);
+
+  BFT_MALLOC(weight, n_cells, fvm_coord_t);
+
+  for (i = 0; i < n_cells; i++) {
+    weight[i] = 0.0;
+    for (j = 0; j < 3; j++)
+      cell_center[i*3 + j] = 0.0;
+  }
+
+  /* Counting and allocation */
+
+  n_max_face_vertices = 0;
+
+  for (face_id = 0; face_id < n_faces; face_id++) {
+    n_face_vertices = face_vtx_idx[face_id + 1] - face_vtx_idx[face_id];
+    if (n_max_face_vertices <= n_face_vertices)
+      n_max_face_vertices = n_face_vertices;
+  }
+
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, cs_point_t);
+
+  /* Loop on each face */
+
+  for (face_id = 0; face_id < n_faces; face_id++) {
+
+    /* Initialization */
+
+    fvm_lnum_t tri_id;
+
+    fvm_lnum_t cell_id_0 = face_cells[face_id*2] -1;
+    fvm_lnum_t cell_id_1 = face_cells[face_id*2 + 1] -1;
+    fvm_coord_t face_surface = 0.0;
+
+    n_face_vertices = 0;
+
+    start_id = face_vtx_idx[face_id];
+    end_id = face_vtx_idx[face_id + 1];
+
+    /* Define the polygon (P) according to the vertices (Pi) of the face */
+
+    for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
+
+      fvm_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+      for (i = 0; i < 3; i++)
+        face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
+      n_face_vertices++;
+
+    }
+
+    /* Compute the barycentre of the face vertices */
+
+    for (i = 0; i < 3; i++) {
+      vtx_cog[i] = 0.0;
+      for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
+        vtx_cog[i] += face_vtx_coord[vtx_id][i];
+      vtx_cog[i] /= n_face_vertices;
+    }
+
+    /* Loop on the triangles of the face (defined by an edge of the face
+       and its barycentre) */
+
+    for (i = 0; i < 3; i++) {
+      ref_normal[i] = 0.;
+      face_center[i] = 0.0;
+    }
+
+    for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
+
+      fvm_coord_t tri_surface;
+      fvm_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
+
+      fvm_lnum_t id0 = tri_id;
+      fvm_lnum_t id1 = (tri_id + 1)%n_face_vertices;
+
+      /* Normal for each triangle */
+
+      for (i = 0; i < 3; i++) {
+        vect1[i] = face_vtx_coord[id0][i] - vtx_cog[i];
+        vect2[i] = face_vtx_coord[id1][i] - vtx_cog[i];
+      }
+
+      tri_normal[0] = vect1[1] * vect2[2] - vect2[1] * vect1[2];
+      tri_normal[1] = vect2[0] * vect1[2] - vect1[0] * vect2[2];
+      tri_normal[2] = vect1[0] * vect2[1] - vect2[0] * vect1[1];
+
+      if (tri_id == 0) {
+        for (i = 0; i < 3; i++)
+          ref_normal[i] = tri_normal[i];
+      }
+
+      /* Center of gravity for a triangle */
+
+      for (i = 0; i < 3; i++) {
+        tri_center[i] = (  vtx_cog[i]
+                         + face_vtx_coord[id0][i]
+                         + face_vtx_coord[id1][i]) / 3.0;
+      }
+
+      tri_surface = sqrt(  tri_normal[0]*tri_normal[0]
+                         + tri_normal[1]*tri_normal[1]
+                         + tri_normal[2]*tri_normal[2]) * 0.5;
+
+      if ((  tri_normal[0]*ref_normal[0]
+           + tri_normal[1]*ref_normal[1]
+           + tri_normal[2]*ref_normal[2]) < 0.0)
+        tri_surface *= -1.0;
+
+      /* Now compute contribution to face center and surface */
+
+      face_surface += tri_surface;
+
+      for (i = 0; i < 3; i++)
+        face_center[i] += tri_surface * tri_center[i];
+
+    } /* End of loop  on triangles of the face */
+
+    for (i = 0; i < 3; i++)
+      face_center[i] /= face_surface;
+
+    /* Now contribute to cell centers */
+
+    assert(cell_id_0 > -2 && cell_id_1 > -2);
+
+    if (cell_id_0 > -1) {
+      for (i = 0; i < 3; i++)
+        cell_center[cell_id_0*3 + i] += face_center[i]*face_surface;
+      weight[cell_id_0] += face_surface;
+    }
+
+    if (cell_id_1 > -1) {
+      for (i = 0; i < 3; i++)
+        cell_center[cell_id_1*3 + i] += face_center[i]*face_surface;
+      weight[cell_id_1] += face_surface;
+    }
+
+  } /* End of loop on faces */
+
+  BFT_FREE(face_vtx_coord);
+
+  for (i = 0; i < n_cells; i++) {
+    for (j = 0; j < 3; j++)
+      cell_center[i*3 + j] /= weight[i];
+  }
+
+  BFT_FREE(weight);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cell centers using block data read from file.
+ *
+ * parameters:
+ *   mr          <-- pointer to mesh reader helper structure
+ *   cell_center --> cell centers array
+ *   comm        <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_precompute_cell_center(const _mesh_reader_t     *mr,
+                        fvm_coord_t               cell_center[],
+                        MPI_Comm                  comm)
+{
+  fvm_lnum_t i;
+  int n_ranks = 0;
+
+  fvm_datatype_t gnum_type = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
+
+  fvm_lnum_t _n_cells = 0;
+  fvm_lnum_t _n_faces = 0;
+  fvm_lnum_t _n_vertices = 0;
+
+  fvm_gnum_t *_cell_num = NULL;
+  fvm_gnum_t *_face_num = NULL;
+  fvm_gnum_t *_vtx_num = NULL;
+  fvm_gnum_t *_face_gcells = NULL;
+  fvm_gnum_t *_face_gvertices = NULL;
+
+  fvm_lnum_t *_face_cells = NULL;
+  fvm_lnum_t *_face_vertices_idx = NULL;
+  fvm_lnum_t *_face_vertices = NULL;
+
+  cs_real_t *_vtx_coord = NULL;
+
+  fvm_block_to_part_t *d = NULL;
+
+  /* Initialization */
+
+  MPI_Comm_size(comm, &n_ranks);
+
+  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+
+  _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
+
+  BFT_MALLOC(_cell_num, _n_cells, fvm_gnum_t);
+
+  for (i = 0; i < _n_cells; i++)
+    _cell_num[i] = mr->cell_bi.gnum_range[0] + i;
+
+  if (_n_cells == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Number of cells on rank %d is zero.\n"
+                "(number of cells / number of processes ratio too low)."),
+              (int)cs_glob_rank_id);
+
+  /* Distribute faces */
+  /*------------------*/
+
+  d = fvm_block_to_part_create_by_adj_s(comm,
+                                        mr->face_bi,
+                                        mr->cell_bi,
+                                        2,
+                                        mr->face_cells,
+                                        NULL);
+
+  _n_faces = fvm_block_to_part_get_n_part_ents(d);
+
+  BFT_MALLOC(_face_gcells, _n_faces*2, fvm_gnum_t);
+
+  /* Face -> cell connectivity */
+
+  fvm_block_to_part_copy_array(d,
+                               gnum_type,
+                               2,
+                               mr->face_cells,
+                               _face_gcells);
+
+  /* Now convert face -> cell connectivity to local cell numbers */
+
+  BFT_MALLOC(_face_cells, _n_faces*2, fvm_lnum_t);
+
+  fvm_block_to_part_global_to_local(_n_faces*2,
+                                    1,
+                                    _n_cells,
+                                    _cell_num,
+                                    _face_gcells,
+                                    _face_cells);
+
+  BFT_FREE(_cell_num);
+  BFT_FREE(_face_gcells);
+
+  /* Face connectivity */
+
+  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, fvm_lnum_t);
+
+  fvm_block_to_part_copy_index(d,
+                               mr->face_vertices_idx,
+                               _face_vertices_idx);
+
+  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], fvm_gnum_t);
+
+  fvm_block_to_part_copy_indexed(d,
+                                 gnum_type,
+                                 mr->face_vertices_idx,
+                                 mr->face_vertices,
+                                 _face_vertices_idx,
+                                 _face_gvertices);
+
+  _face_num = fvm_block_to_part_transfer_gnum(d);
+
+  fvm_block_to_part_destroy(&d);
+
+  /* Vertices */
+
+  d = fvm_block_to_part_create_adj(comm,
+                                   mr->vertex_bi,
+                                   _face_vertices_idx[_n_faces],
+                                   _face_gvertices);
+
+  _n_vertices = fvm_block_to_part_get_n_part_ents(d);
+
+  BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
+
+  fvm_block_to_part_copy_array(d,
+                               real_type,
+                               3,
+                               mr->vertex_coords,
+                               _vtx_coord);
+
+  _vtx_num = fvm_block_to_part_transfer_gnum(d);
+
+  fvm_block_to_part_destroy(&d);
+
+  /* Now convert face -> vertex connectivity to local vertex numbers */
+
+  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], fvm_lnum_t);
+
+  fvm_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
+                                    1,
+                                    _n_vertices,
+                                    _vtx_num,
+                                    _face_gvertices,
+                                    _face_vertices);
+
+  BFT_FREE(_face_gvertices);
+
+  _cell_center(_n_cells,
+               _n_faces,
+               _face_cells,
+               _face_vertices_idx,
+               _face_vertices,
+               _vtx_coord,
+               cell_center);
+
+  BFT_FREE(_vtx_coord);
+  BFT_FREE(_vtx_num);
+
+  BFT_FREE(_face_cells);
+
+  BFT_FREE(_face_vertices_idx);
+  BFT_FREE(_face_vertices);
+
+  BFT_FREE(_face_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cell centers using block data read from file.
+ *
+ * parameters:
+ *   mr          <-_ pointer to mesh reader helper structure
+ *   cell_rank   --> cell rank
+ *   comm        <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_cell_rank_by_sfc(const _mesh_reader_t     *mr,
+                  int                       cell_rank[],
+                  MPI_Comm                  comm)
+{
+  fvm_lnum_t i;
+  fvm_lnum_t n_cells = 0, block_size = 0, rank_step = 0;
+  fvm_coord_t *cell_center = NULL;
+  fvm_io_num_t *cell_io_num = NULL;
+  const fvm_gnum_t *cell_num = NULL;
+
+  n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
+  block_size = mr->cell_bi.block_size;
+  rank_step = mr->cell_bi.rank_step;
+
+  BFT_MALLOC(cell_center, n_cells*3, fvm_coord_t);
+
+  _precompute_cell_center(mr, cell_center, comm);
+
+  cell_io_num = fvm_io_num_create_from_coords(cell_center, 3, n_cells);
+
+  BFT_FREE(cell_center);
+
+  cell_num = fvm_io_num_get_global_num(cell_io_num);
+
+  /* Determine rank based on global numbering with SFC ordering */
+  for (i = 0; i < n_cells; i++)
+    cell_rank[i] = ((cell_num[i] - 1) / block_size) * rank_step;
+
+  cell_io_num = fvm_io_num_destroy(cell_io_num);
+}
+
+#endif /* defined(USE_SFC) */
+
 /*----------------------------------------------------------------------------
  * Organize data read by blocks in parallel and build most mesh structures.
  *
- * mesh         <-- pointer to mesh structure
- * mesh_builder <-- pointer to mesh builder structure
- * mr           <-> pointer to mesh reader helper structure
+ * parameters:
+ *   mesh         <-> pointer to mesh structure
+ *   mesh_builder <-> pointer to mesh builder structure
+ *   mr           <-> pointer to mesh reader helper structure
+ *   comm         <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1284,11 +1693,9 @@ _decompose_data_g(cs_mesh_t          *mesh,
   fvm_datatype_t gnum_type = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
 
-  fvm_lnum_t _n_faces = 0;
-  fvm_gnum_t cell_block_size = 0;
-  fvm_gnum_t face_block_size = 0;
-  fvm_gnum_t vertex_block_size = 0;
+  int use_cell_rank = 0;
 
+  fvm_lnum_t _n_faces = 0;
   fvm_gnum_t *_face_num = NULL;
   fvm_gnum_t *_face_gcells = NULL;
   fvm_gnum_t *_face_gvertices = NULL;
@@ -1307,16 +1714,28 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   MPI_Comm_size(comm, &n_ranks);
 
-  cell_block_size = mesh->n_g_cells / n_ranks;
-  face_block_size = mr->n_g_faces / n_ranks;
-  vertex_block_size = mesh->n_g_vertices / n_ranks;
-
   assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
 
   /* Different handling of cells depending on whether decomposition
      data is available or not. */
 
-  if (mr->read_cell_rank != 0) {
+  if (mr->read_cell_rank != 0)
+    use_cell_rank = 1;
+
+#if defined(USE_SFC)
+  else if (mr->read_cell_rank == 0) {
+
+    fvm_lnum_t _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
+
+    BFT_MALLOC(mr->cell_rank, _n_cells, fvm_lnum_t);
+
+    _cell_rank_by_sfc(mr,  mr->cell_rank, comm);
+
+    use_cell_rank = 1;
+  }
+#endif
+
+  if (use_cell_rank != 0) {
 
     d = fvm_block_to_part_create_by_rank(comm,
                                          mr->cell_bi,
@@ -1546,9 +1965,10 @@ _decompose_data_g(cs_mesh_t          *mesh,
 /*----------------------------------------------------------------------------
  * Organize data read locally and build most mesh structures
  *
- * mesh         <-- pointer to mesh structure
- * mesh_builder <-- pointer to mesh builder structure
- * mr           <-> pointer to mesh reader helper structure
+ * parameters:
+ *   mesh         <-- pointer to mesh structure
+ *   mesh_builder <-- pointer to mesh builder structure
+ *   mr           <-> pointer to mesh reader helper structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1983,10 +2403,9 @@ void CS_PROCF(ledevi, LEDEVI)
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
  *
- * mesh         <-- pointer to mesh structure
- * mesh_builder <-- pointer to mesh builder structure
- *
- * returns:
+ * parameters:
+ *   mesh         <-- pointer to mesh structure
+ *   mesh_builder <-- pointer to mesh builder structure
  *----------------------------------------------------------------------------*/
 
 void
