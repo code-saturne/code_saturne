@@ -73,10 +73,15 @@ def process_cmd_line(argv):
                       metavar="<nsat>",
                       help="specify the number of Code_Saturne instances")
 
+    parser.add_option("--nsyr", dest="n_syr", type="int",
+                      metavar="<nsyr>",
+                      help="specify the number of SYRTHES instances")
+
     parser.set_defaults(use_gui=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(cases_name=[])
     parser.set_defaults(n_sat=1)
+    parser.set_defaults(n_syr=0)
 
     (options, args) = parser.parse_args(argv)
 
@@ -89,7 +94,8 @@ def process_cmd_line(argv):
     return Study(options.study_name,
                  options.cases_name,
                  options.use_gui,
-                 options.n_sat)
+                 options.n_sat,
+                 options.n_syr)
 
 
 #-------------------------------------------------------------------------------
@@ -135,7 +141,7 @@ def comments(filename, use_gui):
             if comment_line == 0:
                 fdt.write(line)
             else:
-                fdt.write('!ex'+line)
+                fdt.write('!ex '+line)
                 if kwd_end.search(line): comment_line = 0
 
     else:
@@ -159,7 +165,7 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, use_gui, n_sat):
+    def __init__(self, name, cases, use_gui, n_sat, n_syr):
         """
         Initialize the structure for a study.
         """
@@ -170,6 +176,7 @@ class Study:
             self.cases.append(string.upper(c))
         self.use_gui = use_gui
         self.n_sat = n_sat
+        self.n_syr = n_syr
 
 
     def create(self):
@@ -205,7 +212,7 @@ class Study:
             
         os.chdir(casename)
 
-        # Loop for dependancy on the number of instances of Code_Saturne
+        # Loop for dependency on the number of instances of Code_Saturne
 
         for i in range(self.n_sat):
 
@@ -221,7 +228,6 @@ class Study:
             thch_distpath = os.path.join(data_distpath, 'thch')
             thch          = os.path.join(data, 'THCH')
             shutil.copytree(thch_distpath, thch)
-
         
             if self.use_gui:
         
@@ -230,7 +236,6 @@ class Study:
             
                 shutil.copy(csguiscript, data)
                 make_executable(os.path.join(data, csguiname))
-
 
             # User source files directory
 
@@ -247,6 +252,35 @@ class Study:
             for file in ['usini1.f90','usalin.f90']:
                 f = os.path.join(users, 'base', file)
                 comments(f, self.use_gui)
+
+
+        # Loop for dependency on the number of instances of SYRTHES
+
+        for i in range(self.n_syr):
+
+            # Data directory
+
+            if self.n_syr == 1:
+                data_syr = 'DATA_SYR'
+            else:
+                data_syr = 'DATA_SYR.%(inst)d' % { 'inst' : i+1 }
+
+            os.mkdir(data_syr)
+
+            data_ref_syr = os.path.join(data_syr, 'REFERENCE')
+            shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix, 'data'), data_ref_syr)
+
+            # User source files directory
+
+            if self.n_syr == 1:
+                src_syr = 'SRC_SYR'
+            else:
+                src_syr = 'SRC_SYR.%(inst)d' % { 'inst' : i+1 }
+                
+            os.mkdir(src_syr)
+
+            users_syr = os.path.join(src_syr, 'REFERENCE')
+            shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix, 'usr'), users_syr)
 
 
         # Results directory (only one for all instances)
@@ -310,6 +344,8 @@ class Study:
         print "Use of the GUI:", self.use_gui
         if self.n_sat > 1:
             print "Number of Code_Saturne instances:", self.n_sat
+        if self.n_syr > 0:
+            print "Number of SYRTHES instances:", self.n_syr
         print
 
         

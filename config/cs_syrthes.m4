@@ -32,8 +32,9 @@ AC_ARG_WITH(syrthes, [AS_HELP_STRING([--with-syrthes=PATH], [specify prefix dire
 
 if test -f $with_syrthes/bin/syrthes.profile ; then
   have_syrthes=yes
-  AC_MSG_NOTICE([sourcing $with_syrthes/bin/syrthes.profile])
-  . "$with_syrthes/bin/syrthes.profile"
+  syrthes_prefix=$with_syrthes
+  AC_MSG_NOTICE([sourcing $syrthes_prefix/bin/syrthes.profile])
+  . "$syrthes_prefix/bin/syrthes.profile"
 else
   have_syrthes=no
   AC_MSG_WARN([cannot find syrthes.profile])
@@ -91,6 +92,8 @@ fi
 
 SYRTHES_LDFLAGS="$FVM_COUPL_LDFLAGS $BFT_LDFLAGS $MPI_LDFLAGS $SYRTHES_LDFLAGS"
 SYRTHES_LIBS="$FVM_COUPL_LIBS $BFT_LIBS $MPI_LIBS $SYRTHES_LIBS"
+
+AC_SUBST(syrthes_prefix)
 
 AC_SUBST(SYRTHES_CC)
 AC_SUBST(SYRTHES_FC)

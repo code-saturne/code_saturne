@@ -1,3 +1,11 @@
+* 20/07/2009 - David Monfort <david.monfort@edf.fr>
+  Scripts fixes and SYRTHES-related improvements.
+  modified scripts:
+    bin/cs_config.py.in
+    bin/cs_create.py
+    bin/runcase_coupling.in
+    config/cs_syrthes.m4
+
 * 20/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Update particles tracking setup via the graphical interface.
   modified routines:

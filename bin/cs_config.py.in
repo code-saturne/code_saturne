@@ -74,6 +74,7 @@ class dirs:
     ecs_prefix = "@ecs_prefix@"
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
+    syrthes_prefix = "@syrthes_prefix@"
 
 # Optional MPI library info
 #--------------------------
@@ -106,38 +107,61 @@ class build_syrthes:
 
 #-------------------------------------------------------------------------------
 
+def get_config():
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Directories:
+  dirs.prefix = %(prefix)s
+  dirs.exec_prefix = %(exec_prefix)s
+  dirs.bindir = %(bin)s
+  dirs.includedir = %(include)s
+  dirs.libdir = %(lib)s
+  dirs.datarootdir = %(dataroot)s
+  dirs.datadir = %(data)s
+  dirs.pkgdatadir = %(pkgdata)s
+  dirs.docdir = %(doc)s
+  dirs.pdfdir = %(pdf)s
+
+Auxiliary information:
+  dirs.ecs_prefix = %(ecs)s
+  dirs.syrthes_prefix = %(syrthes)s
+
+MPI library information:
+  mpi_lib.type = %(mpi_type)s
+  mpi_lib.bindir = %(mpi_bindir)s
+
+Compilers and associated options:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s
+  rpath = %(rpath)s\
+"""
+
+    return msg \
+        % { 'prefix':dirs.prefix, 'exec_prefix':dirs.exec_prefix,
+            'bin':dirs.bindir, 'include': dirs.includedir, 'lib':dirs.libdir,
+            'dataroot':dirs.datarootdir, 'data':dirs.datadir,
+            'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
+            'ecs':dirs.ecs_prefix, 'syrthes':dirs.syrthes_prefix,
+            'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
+            'cc':build.cc, 'fc':build.fc,
+            'cppflags':build.cppflags, 'cflags':build.cflags,
+            'fcflags':build.fcflags, 'ldflags':build.ldflags,
+            'libs':build.libs, 'rpath':build.rpath }
+
+#-------------------------------------------------------------------------------
+
 def main(argv):
     """
     Main configuration info function.
     """
-    print "Directories:"
-    print "  dirs.prefix = " + dirs.prefix
-    print "  dirs.exec_prefix = " + dirs.exec_prefix
-    print "  dirs.bindir = " + dirs.bindir
-    print "  dirs.includedir = " + dirs.includedir
-    print "  dirs.libdir = " + dirs.libdir
-    print "  dirs.datarootdir = " + dirs.datarootdir
-    print "  dirs.datadir = " + dirs.datadir
-    print "  dirs.pkgdatadir = " + dirs.pkgdatadir
-    print "  dirs.docdir = " + dirs.docdir
-    print "  dirs.pdfdir = " + dirs.pdfdir
-    print ""
-    print "Auxiliary information:"
-    print "  dirs.ecs_prefix = " + dirs.ecs_prefix
-    print ""
-    print "MPI library information:"
-    print "  mpi_lib.type = " + mpi_lib.type
-    print "  mpi_lib.bindir = " + mpi_lib.bindir
-    print ""
-    print "Compilers and associated options:"
-    print "  cc = " + build.cc
-    print "  fc = " + build.fc
-    print "  cppflags = " + build.cppflags
-    print "  cflags = " + build.cflags
-    print "  fcflags = " + build.fcflags
-    print "  ldflags = " + build.ldflags
-    print "  libs = " + build.libs
-    print "  rpath = " + build.rpath
+    print get_config()
 
 if __name__ == '__main__':
     main(argv)
