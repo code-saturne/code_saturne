@@ -436,7 +436,7 @@ _read_ent_values(cs_restart_t        *r,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
-  d = fvm_block_to_part_create_strided(cs_glob_mpi_comm,
+  d = fvm_block_to_part_create_by_gnum(cs_glob_mpi_comm,
                                        bi,
                                        n_ents,
                                        ent_global_num);
@@ -526,7 +526,7 @@ _write_ent_values(const cs_restart_t  *r,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
-  d = fvm_part_to_block_create_strided(cs_glob_mpi_comm,
+  d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                        bi,
                                        n_ents,
                                        ent_global_num);
