@@ -6,6 +6,10 @@
     src/fuel/Makefile.am
   modified routines:
     src/base/covofi.f90
+
+* 20/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug related to oxycombustion.
+  modified routine:
     src/cplv/cptehm.f90
 
 * 20/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
