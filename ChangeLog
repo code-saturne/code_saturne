@@ -1,3 +1,24 @@
+* 20/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Update particles tracking setup via the graphical interface.
+  modified routines:
+    gui/Pages/LagrangianBoundariesModel.py
+    gui/Pages/LagrangianBoundariesView.py
+    gui/Pages/LagrangianOutputForm.ui
+    gui/Pages/LagrangianStatisticsForm.ui
+    include/base/cs_gui_particles.h
+    include/base/cs_gui_radiative_transfer.h
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_gui.c
+    src/base/cs_gui_mobile_mesh.c
+    src/base/cs_gui_particles.c
+    src/base/cs_gui_radiative_transfer.c
+    src/base/cs_gui_specific_physics.c
+    src/lagr/lagent.f90
+    src/lagr/lagopt.f90
+    src/rayt/raycli.f90
+    users/lagr/uslag1.f90
+    users/lagr/uslag2.f90
+
 * 17/07/2009 - David Monfort <david.monfort@edf.fr>
   Merge code/code coupling feature from the development branch.
   This feature is not yet functional as it has not been updated

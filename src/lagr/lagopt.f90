@@ -117,34 +117,34 @@ ilphas = 1
 !            = 2 : DIPHASIQUE LAGRANGIEN AVEC COUPLAGE RETOUR
 !            = 3 : DIPHASIQUE LAGRANGIEN SUR CHAMP FIGE
 
-iilagr = -1
+iilagr = 0
 
 !     ISUILA = 0 : PAS DE SUITE LAGRANGIENNE
 !            = 1 : SUITE LAGRANGIENNE
 
-isuila = -1
+isuila = 0
 
 !     Suite statistiques et TS couplage retour si =1
 
-isuist = -1
+isuist = 0
 
 !     IPHYLA = 0 : PUREMENT DYNAMIQUE
 !            = 1 : EQUATION SUR TP, DP et MP
 !            = 2 : CHARBON
 
-iphyla = -1
+iphyla = 0
 
 !     EQUATION SUR LE DIAMETRE (O : NON , 1 : OUI)
 
-idpvar = -1
+idpvar = 0
 
 !     EQUATION SUR LA TEMPERATURE (O : NON , 1 : OUI)
 
-itpvar = -1
+itpvar = 0
 
 !     EQUATION SUR LA MASSE (O : NON , 1 : OUI)
 
-impvar = -1
+impvar = 0
 
 !     TEMPERATURE D'INITIALISATION DES PARTICULES DEJA PRESENTES
 
@@ -160,7 +160,7 @@ cppart = -999.d0
 !     TPRENC : TEMPERATURE MINIMUM POUR l'ENCRASSEMENT
 !     VISREF : VISCOSITE CRITIQUE
 
-iencra = -1
+iencra = 0
 
 do icha = 1 , ncharm2
   tprenc(icha) = -999.d0
@@ -169,65 +169,65 @@ enddo
 
 !     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
 
-nbpmax = -1
+nbpmax = 1000
 
 !     NOMBRE DE VARIABLES SUPPLEMENTAIRE SUR LES PARTICULES
 
-nvls = -1
+nvls = 0
 
 !     CARACTERE STATIONNAIRE DE L'ECOULEMENT DE LA PHASE CONTINUE
 
-isttio = -1
+isttio = 0
 
 !     Nombre de passages absolus (i.e. suite comprise) avant de faire
 !     une moyenne en temps (CALCUL STATIONNAIRE) des termes sources
 !     de couplage retour (seulement si ISTTIO = 1)
 
-nstits = -1
+nstits = 1
 
 !     COUPLAGE RETOUR SUR LA DYNAMIQUE (Vitesse + Turbulence)
 
-ltsdyn = -1
+ltsdyn = 0
 
 !     COUPLAGE UTILE SUR LA MASSE
 
-ltsmas = -1
+ltsmas = 0
 
 !     COUPLAGE UTILE SUR LA THERMIQUE OU LES VARIABLES CHARBON
 
-ltsthe = -1
+ltsthe = 0
 
 !     STATISTIQUES
 
 !     Calcul statistiques si  = 1 ; si 0 pas de stat ; si -1 stop
 
-istala = -1
+istala = 0
 
 !     Nombre de variables statistiques supplementaires
 
-nvlsts = -1
+nvlsts = 0
 
 !     Numero du pas de temps pour debut statistque
 
-idstnt = -1
+idstnt = 1
 
 !     Debut calcul stationnaire
 
-nstist = -1
+nstist = 1
 
 !     Seuil en POIDS STAT de particules pour les stats
 
-seuil = -1.d0
+seuil = 0.d0
 
 !     Nom des variables
 
 do ii = 1,nvplmx
 
-  write(nomlag(II),'(A6,I4.4)') 'MoyLag',II
+  write(nomlag(ii),'(A6,I4.4)') 'MoyLag',ii
 
-  write(nomlav(II),'(A6,I4.4)') 'VarLag',II
+  write(nomlav(ii),'(A6,I4.4)') 'VarLag',ii
 
-  write(nombrd(II),'(A6,I4.4)') 'BrdLag',II
+  write(nombrd(ii),'(A6,I4.4)') 'BrdLag',ii
 
 enddo
 
@@ -239,51 +239,51 @@ enddo
 
 !     INJECTION CONTINUE
 
-injcon = -1
+injcon = 0
 
 !     ROULETTE RUSSE
 
-iroule = -1
+iroule = 0
 
 !     ORDRE D'INTEGRATION
 
-nordre = -1
+nordre = 2
 
 !     DISPERSION TURBULENTE
 
-idistu = -1
+idistu = 1
 
 !     DIFFUSION TURBULENTE
 
-idiffl = -1
+idiffl = 1
 
-!     DISPERSION TURBULENTE
+!     MODEL COMPLET
 
-modcpl = -1
+modcpl = 0
 
-!     DISPERSION TURBULENTE
+!     DIRECTION ASSOCIEE AU MODEL COMPLET
 
 idirla = 0
 
-!     CORRECTION DE PRESSION
+!     CORRECTION DE PRESSION (EXPERIMENTAL)
 
-ilapoi = -1
+ilapoi = 0
 
 !     POSTPROCESSING MODE : TRAJECTOIRES
 
-iensi1 = -1
+iensi1 = 0
 
 !     POSTPROCESSING MODE : DEPLACEMENTS
 
-iensi2 = -1
+iensi2 = 0
 
 !     NOMBRE DE PARTICULES A VISUALISER MAXIMUM=NLISTE
 
-nbvis  = -1
+nbvis  = 20
 
 !     FREQUENCE D'AQUISITION DES DONNEES A VISUALISER
 
-nvisla = -1
+nvisla = 1
 
 !     INITIALISATION  : PAR DEFAUT ON NE VISUALISE AUCUNE PARTICULE
 
@@ -295,66 +295,70 @@ enddo
 
 !     POSTPROCESSING VARIABLE : VITESSE DU FLUIDE VU
 
-ivisv1  = -1
+ivisv1  = 0
 
 !     POSTPROCESSING VARIABLE : VITESSE DE LA PARTICULE
 
-ivisv2  = -1
+ivisv2  = 0
 
 !     POSTPROCESSING VARIABLE : TEMPS DE SEJOUR
 
-ivistp  = -1
+ivistp  = 0
 
 !     POSTPROCESSING VARIABLE : DIAMETRE
 
-ivisdm  = -1
+ivisdm  = 0
 
 !     POSTPROCESSING VARIABLE : MASSE
 
-ivismp  = -1
+ivismp  = 0
 
 !     POSTPROCESSING VARIABLE : TEMPERATURE
 
-iviste  = -1
+iviste  = 0
 
 !     POSTPROCESSING VARIABLE : TEMPERATURE CHARBON
 
-ivishp  = -1
+ivishp  = 0
 
 !     POSTPROCESSING VARIABLE : DIAMETRE DU COEUR RETRECISSANT
 
-ivisdk  = -1
+ivisdk  = 0
 
 !     POSTPROCESSING VARIABLE : MASSE CHARBON REACTIF
 
-ivisch  = -1
+ivisch  = 0
 
 !     POSTPROCESSING VARIABLE : MASSE COKE
 
-ivisck  = -1
+ivisck  = 0
 
 !     POSTPROCESSING MODE : INTERACTIONS PARTICULES/FRONTIERES
 
-iensi3 = -1
+iensi3 = 0
 
 !     POSTPROCESSING : STAT PARIETALES STATIONNAIRES
 
-nstbor = -1
+nstbor = 1
+
+!     Seuil en POIDS STAT de particules pour les stats
+
+seuilf = 0.d0
 
 !     INFORMATIONS A ENREGISTRER
 
-inbrbd = -1
-iflmbd = -1
-iangbd = -1
-ivitbd = -1
-iencbd = -1
+inbrbd = 0
+iflmbd = 0
+iangbd = 0
+ivitbd = 0
+iencbd = 0
 
-nusbor = -1
+nusbor = 0
 
 !     Type de moyenne applicable pour affichage et post-processing
 
 do ii = 1,nusbrd+10
-  imoybr(ii) = -1
+  imoybr(ii) = 0
 enddo
 
 !===============================================================================
@@ -411,12 +415,6 @@ iok = 0
 
 if (iilagr.lt.0 .or. iilagr.gt.3) then
   write(nfecra,1010) iilagr
-  iok = iok + 1
-endif
-
-if (iilagr.gt.0                                                   &
-    .and. (nnod.eq.0 .or. (lndfac.eq.0 .and. lndfbr.eq.0))) then
-  write(nfecra,1011) nnod, lndfac, lndfbr
   iok = iok + 1
 endif
 
@@ -512,13 +510,6 @@ endif
 
 if (iok.ne.0) call csexit (1)
               !==========
-
-!   APPEL A VARPOS SI RAYONNEMENT
-
-if (iirayo.gt.0 .and. iphyla.eq.1 .and. itpvar.eq.1) then
-  call varpos(iok)
-  !==========
-endif
 
 !     IENCRA TPRENC VISREF
 
@@ -1753,31 +1744,6 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de IILAGR dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1011 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    LES CONNECTIVITES FACES -> SOMMETS OU LES COORDONNEES   ',/,&
-'@    DES NOEUDS SOMMETS NE SONT PAS FOURNIS     (LAGOPT).    ',/,&
-'@                                                            ',/,&
-'@  Le module lagrangien est active mais les noeuds sommets   ',/,&
-'@   ou les connectivites faces -> sommets n''ont pas ete     ',/,&
-'@   fournis au noyau.                                        ',/,&
-'@                                                            ',/,&
-'@    NNDOD  = ', I10                                          ,/,&
-'@    LNDFAC = ', I10                                          ,/,&
-'@    LNDFBR = ', I10                                          ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier si le fichier geomet contient bien les           ',/,&
-'@    connectivites faces -> sommets si IFOENV = 0.           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

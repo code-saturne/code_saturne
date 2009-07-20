@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2009 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -228,24 +228,11 @@ class LagrangianBoundariesModel(Model):
         self.isInList(choice, ["inlet"])
         self.isInt(iclass)
         self.node_class = None
-##         from PyQt4.QtCore import pyqtRemoveInputHook
-##         pyqtRemoveInputHook()
-##         import pdb
-##         pdb.set_trace()
         nodes_list = self.node_particles.xmlGetChildNodeList('class')
         if nodes_list:
             nnodes = len(nodes_list)
             self.isLowerOrEqual(iclass, nnodes)
             self.node_class = nodes_list[iclass-1]
-        
-
-##     def getCurrentClassNode(self):
-##         """
-##         Return the current class node.
-##         """
-##         if hasattr(self, "node_class"):
-##             return self.node_class
-##         return None
 
 
     def setNumberOfParticulesInClassValue(self, label, iclass, value):
@@ -254,10 +241,8 @@ class LagrangianBoundariesModel(Model):
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-##         node = self.node_class.xmlInitChildNode('number')
-##         node.xmlSetTextNode(value)
         self.node_class.xmlSetData('number', value)
-        
+
 
     def getNumberOfParticulesInClassValue(self, label, iclass):
         """

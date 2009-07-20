@@ -360,8 +360,17 @@ call iasize('lagent', idbia1)
 !==========
 
 if (iihmpr.eq.1) then
-  call uilag2 (iphyla, nclagm, nflagm, iusncl, iusclb, iuslag, ruslag)
+  call uilag2                                                     &
   !==========
+ ( nfabor, nozppm, nclagm, nflagm, nbclst,                        &
+   ientrl, isortl, idepo1, idepo2, idepo3,                        &
+   idepfa, iencrl, irebol, iphyla,                                &
+   ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
+   ijprpd, ipoit,  idebt,  ijprdp, idpt,   ivdpt,                 &
+   iropt,  ijprtp, itpt,   icpt,   iepsi,                         &
+   ihpt,   inuchl, imcht,  imckt,                                 &
+   ichcor, cp2ch,  diam20, rho0ch, xashch,                        &
+   ifrlag, iusncl, iusclb, iuslag, ruslag     )
 endif
 
 call uslag2                                                       &
@@ -1008,7 +1017,7 @@ do ii = 1,nfrlag
             ettp(ip,jdp) = ruslag(nc,nb,idpt)                     &
                          + rd(1) * ruslag(nc,nb,ivdpt)
 
-!    On verifie qu'on obtient un diamètre dans la gamme des 99,7%
+!    On verifie qu'on obtient un diamï¿½tre dans la gamme des 99,7%
 
             d3 = 3.d0 * ruslag(nc,nb,ivdpt)
             if (ettp(ip,jdp).lt.ruslag(nc,nb,idpt)-d3)            &

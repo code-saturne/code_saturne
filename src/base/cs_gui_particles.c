@@ -57,6 +57,7 @@
 #include "cs_base.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
+#include "cs_gui_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -75,6 +76,19 @@ BEGIN_C_DECLS
 /* debugging switch */
 #define _XML_DEBUG_ 0
 
+//  rcodcl[ k * dim1 *dim2 + j *dim1 + i]
+//  iuslag (iclas,izone,ijnbp)
+//  iuslag[ijnbp][izone][iclas]
+//  iuslag[ijnbp*nclagm*nflagm + izone*nclagm + iclas]
+//  iuslag[ijnbp*nclagm*nflagm + izone*nclagm + iclas]
+
+// F77: IUSLAG(ICLAS, IZONE, I)
+// C  : &iuslag[i][izone][iclas] = &iuslag[ i*(*nclagm)*(*nflagm) + izone*(*nclagm) + iclas ]
+
+/* simplfied access for fortran arrays */
+#define IUSLAG(I_,J_,K_) (*(iuslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
+#define RUSLAG(I_,J_,K_) (*(ruslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
+
 /*============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -83,9 +97,26 @@ BEGIN_C_DECLS
  * Structures associated to lagrangian particles definition
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Private global variables for lagrangian particles
- *----------------------------------------------------------------------------*/
+typedef struct {
+  char       **label;             /* label for each boundary zone                    */
+  char       **nature;            /* nature for each boundary zone                   */
+  char       **p_nature;          /* specific nature of the boundary for particles   */
+  int         *n_classes;         /* number of classes for each zone                 */
+  int        **n_particles;       /* number of particles for each class              */
+  int        **frequency;         /* frequency of injection for each class           */
+  int        **statistical_groups;/* frequency of injection for each class           */
+  double     **statistical_weight;/* number of real particles for numerical particles*/
+  double     **mass_flow_rate;    /* mass flow rate of particles                     */
+  double     **density;           /* density for each class                          */
+  double     **diameter;          /* diameter for each class                         */
+  double     **standard_deviation;/* standard deviation of diameter for each class   */
+  double     **specific_heat;     /* specific heat for each class                    */
+  double     **emissivity;        /* emissivity for each class                       */
+#if defined(HAVE_MEI)
+//  mei_tree_t **velocity;        /* formula for norm or mass flow rate of velocity  */
+//  mei_tree_t **direction;       /* formula for direction of velocity               */
+#endif
+} cs_particles_boundary_t;
 
 /*----------------------------------------------------------------------------
  * Private global variables for the treatment
@@ -105,6 +136,14 @@ static int      _last_boundary_var = 0;
 static char  ** _array_boundary_varname = NULL;
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Pointer on the main boundaries structure */
+
+extern cs_boundary_t *boundaries;
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -113,30 +152,30 @@ static char  ** _array_boundary_varname = NULL;
  *----------------------------------------------------------------------------*/
 
 static void
-_get_particles_model(int *const imodel)
+_get_particles_model(const char *const model, int *const imodel)
 {
   char *path;
-  char *model;
+  char *attr;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "lagrangian", "particles_models");
+  cs_xpath_add_elements(&path, 2, "lagrangian", model);
   cs_xpath_add_attribute(&path, "model");
-  model = cs_gui_get_attribute_value(path);
+  attr = cs_gui_get_attribute_value(path);
 
-  if (model != NULL) {
-    if (cs_gui_strcmp(model, "off"))
+  if (attr != NULL) {
+    if (cs_gui_strcmp(attr, "off"))
       *imodel = 0;
-    else if (cs_gui_strcmp(model, "one_way"))
+    else if (cs_gui_strcmp(attr, "one_way"))
       *imodel = 1;
-    else if (cs_gui_strcmp(model, "two_way"))
+    else if (cs_gui_strcmp(attr, "two_way"))
       *imodel = 2;
-    else if (cs_gui_strcmp(model, "frozen_fields"))
+    else if (cs_gui_strcmp(attr, "frozen"))
       *imodel = 3;
-    else if (cs_gui_strcmp(model, "thermal"))
+    else if (cs_gui_strcmp(attr, "thermal"))
       *imodel = 1;
-    else if (cs_gui_strcmp(model, "coal"))
+    else if (cs_gui_strcmp(attr, "coal"))
       *imodel = 2;
-    BFT_FREE(model);
+    BFT_FREE(attr);
   }
   BFT_FREE(path);
 }
@@ -431,29 +470,12 @@ _get_char_post(const char *const type,
 static void
 _copy_mean_varname(char *varname, int ipp)
 {
-  int i;
   size_t  l;
-
   assert(ipp > 0);
-
-  /* Resize array if necessary */
-
-  if (ipp > _max_mean_vars) {
-
-    if (_max_mean_vars == 0)
-      _max_mean_vars = 16;
-
-    while (_max_mean_vars <= ipp)
-      _max_mean_vars *= 2;
-
-    BFT_REALLOC(_array_mean_varname, _max_mean_vars, char *);
-    for (i = _last_mean_var; i < _max_mean_vars; i++)
-      _array_mean_varname[i] = NULL;
-  }
 
   if (ipp < 1 || ipp > _last_mean_var+1)
     bft_error(__FILE__, __LINE__, 0,
-              _("Variable index %d out of bounds (1 to %d)"),
+              _("Variable index %i out of bounds (1 to %i)"),
               ipp, _last_mean_var);
 
   l = strlen(varname);
@@ -465,9 +487,6 @@ _copy_mean_varname(char *varname, int ipp)
     BFT_REALLOC(_array_mean_varname[ipp-1], l + 1, char);
 
   strcpy(_array_mean_varname[ipp-1], varname);
-
-  _last_mean_var = ipp;
-
 }
 
 /*-----------------------------------------------------------------------------
@@ -479,31 +498,14 @@ _copy_mean_varname(char *varname, int ipp)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_variance_varname(char *varname, int  ipp)
+_copy_variance_varname(char *varname, int ipp)
 {
-  int i;
   size_t  l;
-
   assert(ipp > 0);
-
-  /* Resize array if necessary */
-
-  if (ipp > _max_variance_vars) {
-
-    if (_max_variance_vars == 0)
-      _max_variance_vars = 16;
-
-    while (_max_variance_vars <= ipp)
-      _max_variance_vars *= 2;
-
-    BFT_REALLOC(_array_variance_varname, _max_variance_vars, char *);
-    for (i = _last_variance_var; i < _max_variance_vars; i++)
-      _array_variance_varname[i] = NULL;
-  }
 
   if (ipp < 1 || ipp > _last_variance_var+1)
     bft_error(__FILE__, __LINE__, 0,
-              _("Variable index %d out of bounds (1 to %d)"),
+              _("Variable index %i out of bounds (1 to %i)"),
               ipp, _last_variance_var);
 
   l = strlen(varname);
@@ -515,9 +517,6 @@ _copy_variance_varname(char *varname, int  ipp)
     BFT_REALLOC(_array_variance_varname[ipp-1], l + 1, char);
 
   strcpy(_array_variance_varname[ipp-1], varname);
-
-  _last_variance_var = ipp;
-
 }
 
 /*-----------------------------------------------------------------------------
@@ -529,31 +528,14 @@ _copy_variance_varname(char *varname, int  ipp)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_boundary_varname(char *varname, int  ipp)
+_copy_boundary_varname(char *varname, int ipp)
 {
-  int i;
   size_t  l;
-
   assert(ipp > 0);
-
-  /* Resize array if necessary */
-
-  if (ipp > _max_boundary_vars) {
-
-    if (_max_boundary_vars == 0)
-      _max_boundary_vars = 16;
-
-    while (_max_boundary_vars <= ipp)
-      _max_boundary_vars *= 2;
-
-    BFT_REALLOC(_array_boundary_varname, _max_boundary_vars, char *);
-    for (i = _last_boundary_var; i < _max_boundary_vars; i++)
-      _array_boundary_varname[i] = NULL;
-  }
 
   if (ipp < 1 || ipp > _last_boundary_var+1)
     bft_error(__FILE__, __LINE__, 0,
-              _("Variable index %d out of bounds (1 to %d)"),
+              _("Variable index %i out of bounds (1 to %i)"),
               ipp, _last_boundary_var);
 
   l = strlen(varname);
@@ -565,9 +547,6 @@ _copy_boundary_varname(char *varname, int  ipp)
     BFT_REALLOC(_array_boundary_varname[ipp-1], l + 1, char);
 
   strcpy(_array_boundary_varname[ipp-1], varname);
-
-  _last_boundary_var = ipp;
-
 }
 
 /*============================================================================
@@ -637,7 +616,6 @@ void CS_PROCF(fclag1, FCLAG1)
 
   /* Update variable counter */
   _last_mean_var = *var_id;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -797,19 +775,19 @@ void CS_PROCF(cfname, CFNAME)
   case 1:
     if (*var_id < 1 || *var_id > _last_mean_var)
       bft_error(__FILE__, __LINE__, 0,
-                _("Name of variable %d was never set.\n"), var_id);
+                _("Name of variable %i was never set.\n"), *var_id);
     cstr = _array_mean_varname[*var_id - 1];
     break;
   case 2:
     if (*var_id < 1 || *var_id > _last_variance_var)
       bft_error(__FILE__, __LINE__, 0,
-               _("Name of variable %d was never set.\n"), var_id);
+               _("Name of variable %i was never set.\n"), *var_id);
     cstr = _array_variance_varname[*var_id - 1];
     break;
   case 3:
     if (*var_id < 1 || *var_id > _last_boundary_var)
       bft_error(__FILE__, __LINE__, 0,
-                _("Name of variable %d was never set.\n"), var_id);
+                _("Name of variable %i was never set.\n"), *var_id);
     cstr = _array_boundary_varname[*var_id - 1];
     break;
   }
@@ -958,9 +936,21 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   char *path1 = NULL;
   char *fmt, *opt;
 
+  attr = _get_attr("model", 1, "lagrangian");
+  if (attr == NULL || cs_gui_strcmp(attr, "off"))
+  {
+      *iilagr = 0;
+#if _XML_DEBUG_
+      bft_printf("==>UILAG1\n");
+      bft_printf("--iilagr = %i\n", *iilagr);
+#endif
+      BFT_FREE(attr);
+      return;
+  }
+
   /* Global settings */
 
-  _get_particles_model(iilagr);
+  _get_particles_model("coupling_mode", iilagr);
   _get_status(isuila, 2, "lagrangian", "restart");
   _get_status(isttio, 2, "lagrangian", "carrier_field_stationary");
   _get_status(injcon, 2, "lagrangian", "continuous_injection");
@@ -968,7 +958,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
   /* Particles model */
 
-  _get_particles_model(iphyla);
+  _get_particles_model("particles_models", iphyla);
 
   switch (*iphyla) {
   case 1:
@@ -1206,113 +1196,113 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   BFT_FREE(label);
 
 #if _XML_DEBUG_
-  printf("==>UILAG1\n");
-  printf("--iilagr = %i\n", *iilagr);
-  printf("--isuila = %i\n", *isuila);
-  printf("--isttio = %i\n", *isttio);
-  printf("--nbpmax = %i\n", *nbpmax);
-  printf("--isttio = %i\n", *isttio);
-  printf("--injcon = %i\n", *injcon);
-  printf("--iphyla = %i\n", *iphyla);
+  bft_printf("==>UILAG1\n");
+  bft_printf("--iilagr = %i\n", *iilagr);
+  bft_printf("--isuila = %i\n", *isuila);
+  bft_printf("--isttio = %i\n", *isttio);
+  bft_printf("--nbpmax = %i\n", *nbpmax);
+  bft_printf("--isttio = %i\n", *isttio);
+  bft_printf("--injcon = %i\n", *injcon);
+  bft_printf("--iphyla = %i\n", *iphyla);
   switch(*iphyla) {
   case 0:
     break;
   case 1:
-    printf("--idpvar = %i\n", *idpvar);
-    printf("--impvar = %i\n", *impvar);
-    printf("--itpvar = %i\n", *itpvar);
+    bft_printf("--idpvar = %i\n", *idpvar);
+    bft_printf("--impvar = %i\n", *impvar);
+    bft_printf("--itpvar = %i\n", *itpvar);
     break;
   case 2:
-    printf("--iencra = %i\n", *iencra);
+    bft_printf("--iencra = %i\n", *iencra);
     for (icoal=1; icoal<=ncoals; icoal++)
       {
-        printf("--tprenc[%i] = %f\n", icoal, tprenc[icoal-1]);
-        printf("--visref[%i] = %f\n", icoal, visref[icoal-1]);
-        printf("--enc1[%i] = %f\n", icoal, enc1[icoal-1]);
-        printf("--enc2[%i] = %f\n", icoal, enc2[icoal-1]);
+        bft_printf("--tprenc[%i] = %f\n", icoal, tprenc[icoal-1]);
+        bft_printf("--visref[%i] = %f\n", icoal, visref[icoal-1]);
+        bft_printf("--enc1[%i] = %f\n", icoal, enc1[icoal-1]);
+        bft_printf("--enc2[%i] = %f\n", icoal, enc2[icoal-1]);
       }
     break;
   }
 
   if (*iilagr == 2) {
-    printf("--nstits = %i\n", *nstits);
-    printf("--ltsdyn = %i\n", *ltsdyn);
-    printf("--ltsmas = %i\n", *ltsmas);
-    printf("--ltsthe = %i\n", *ltsthe);
+    bft_printf("--nstits = %i\n", *nstits);
+    bft_printf("--ltsdyn = %i\n", *ltsdyn);
+    bft_printf("--ltsmas = %i\n", *ltsmas);
+    bft_printf("--ltsthe = %i\n", *ltsthe);
   }
 
-  printf("--nordre = %i\n", *nordre);
-  printf("--idistu = %i\n", *idistu);
-  printf("--idiffl = %i\n", *idiffl);
-  printf("--modcpl = %i\n", *modcpl);
-  printf("--idirla = %i\n", *idirla);
+  bft_printf("--nordre = %i\n", *nordre);
+  bft_printf("--idistu = %i\n", *idistu);
+  bft_printf("--idiffl = %i\n", *idiffl);
+  bft_printf("--modcpl = %i\n", *modcpl);
+  bft_printf("--idirla = %i\n", *idirla);
 
-  printf("--iensi1 = %i\n", *iensi1);
-  printf("--iensi2 = %i\n", *iensi2);
-  printf("--ivisv1 = %i\n", *ivisv1);
-  printf("--ivisv2 = %i\n", *ivisv2);
-  printf("--ivistp = %i\n", *ivistp);
-  printf("--ivisdm = %i\n", *ivisdm);
-  printf("--iviste = %i\n", *iviste);
-  printf("--ivismp = %i\n", *ivismp);
+  bft_printf("--iensi1 = %i\n", *iensi1);
+  bft_printf("--iensi2 = %i\n", *iensi2);
+  bft_printf("--ivisv1 = %i\n", *ivisv1);
+  bft_printf("--ivisv2 = %i\n", *ivisv2);
+  bft_printf("--ivistp = %i\n", *ivistp);
+  bft_printf("--ivisdm = %i\n", *ivisdm);
+  bft_printf("--iviste = %i\n", *iviste);
+  bft_printf("--ivismp = %i\n", *ivismp);
 
   if (*iphyla == 2) {
-    printf("--ivishp = %i\n", *ivishp);
-    printf("--ivisdk = %i\n", *ivisdk);
-    printf("--ivisch = %i\n", *ivisch);
-    printf("--ivisck = %i\n", *ivisck);
+    bft_printf("--ivishp = %i\n", *ivishp);
+    bft_printf("--ivisdk = %i\n", *ivisdk);
+    bft_printf("--ivisch = %i\n", *ivisch);
+    bft_printf("--ivisck = %i\n", *ivisck);
   }
 
-  printf("--nbvis  = %i\n", *nbvis);
-  printf("--nvisla = %i\n", *nvisla);
+  bft_printf("--nbvis  = %i\n", *nbvis);
+  bft_printf("--nvisla = %i\n", *nvisla);
 
-  printf("--isuist = %i\n", *isuist);
-  printf("--nbclst = %i\n", *nbclst);
+  bft_printf("--isuist = %i\n", *isuist);
+  bft_printf("--nbclst = %i\n", *nbclst);
 
-  printf("--istala = %i\n", *istala);
+  bft_printf("--istala = %i\n", *istala);
   if (*istala == 1) {
-    printf("--idstnt = %i\n", *idstnt);
-    printf("--seuil  = %f\n", *seuil);
+    bft_printf("--idstnt = %i\n", *idstnt);
+    bft_printf("--seuil  = %f\n", *seuil);
 
     /*
-    printf("--i        nomlag             nomlav              ihslag\n");
+    bft_printf("--i        nomlag             nomlav              ihslag\n");
     for (i=1; i <= 5; i++)
-      printf("  %i %30s %30s %5i\n", i, nomlag[i], nomlav[i], ihslag[i]);
+      bft_printf("  %i %30s %30s %5i\n", i, nomlag[i], nomlav[i], ihslag[i]);
     i = 5;
     if (*iphyla == 1) {
       if (*itpvar == 1) {
         i++;
-        printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+        bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
       }
       if (*idpvar == 1) {
         i++;
-        printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+        bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
       }
     }
     else if (*iphyla == 2) {
       //i++;
-      //printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+      //bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
       i++;
-      printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+      bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
       i++;
-      printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+      bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
       i++;
-      printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
+      bft_printf("  %i %s %s \n", i, nomlag[i], nomlav[i]);
     }
     i++;
-    printf("  %i %s \n", i, nomlag[i]);
+    bft_printf("  %i %s \n", i, nomlag[i]);
     */
   }
 
-  printf("--iensi3 = %i\n", *iensi3);
+  bft_printf("--iensi3 = %i\n", *iensi3);
   if (*iensi3 == 1) {
-    printf("--nstbor = %i\n", *nstbor);
-    printf("--seuilf = %f\n", *seuilf);
-    printf("--inbrbd = %i\n", *inbrbd);
-    printf("--iflmbd = %i\n", *iflmbd);
-    printf("--iangbd = %i\n", *iangbd);
-    printf("--ivitbd = %i\n", *ivitbd);
-    printf("--iencbd = %i\n", *iencbd);
+    bft_printf("--nstbor = %i\n", *nstbor);
+    bft_printf("--seuilf = %f\n", *seuilf);
+    bft_printf("--inbrbd = %i\n", *inbrbd);
+    bft_printf("--iflmbd = %i\n", *iflmbd);
+    bft_printf("--iangbd = %i\n", *iangbd);
+    bft_printf("--ivitbd = %i\n", *ivitbd);
+    bft_printf("--iencbd = %i\n", *iencbd);
   }
 
 #endif
@@ -1325,210 +1315,330 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  * subroutine uilag2
  * *****************
  *
- * integer          iphyla     -->   physica model associated to the particles
- * integer          nflagm     -->   max number of boundaries
- * integer          iusncl     <--   array for particles class(es) number
- * integer          iusclb     <--   array for particles boundary conditions
- * integer          iuslag     <--   array for integer variables
- * double precision ruslag     <--   array for real variables
+ * integer          nfabor  -->  number of boundary faces
+ * integer          nozppm  -->  max number of boundary conditions zone
+ * integer          nclagm  -->  max number of classes
+ * integer          nflagm  -->  max number of boundaries
+ * integer          iphyla  -->  physica model associated to the particles
+ * integer          iusncl  <--  array for particles class(es) number
+ * integer          iusclb  <--  array for particles boundary conditions
+ * integer          iuslag  <--  array for integer variables
+ * double precision ruslag  <--  array for real variables
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uilag2, UILAG2) (const int *const iphyla,
+
+void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
+                                const int *const nozppm,
                                 const int *const nclagm,
                                 const int *const nflagm,
+                                const int *const nbclst,
+                                const int *const ientrl,
+                                const int *const isortl,
+                                const int *const idepo1,
+                                const int *const idepo2,
+                                const int *const idepo3,
+                                const int *const idepfa,
+                                const int *const iencrl,
+                                const int *const irebol,
+                                const int *const iphyla,
+                                const int *const ijnbp,
+                                const int *const ijfre,
+                                const int *const iclst,
+                                const int *const ijuvw,
+                                const int *const iuno,
+                                const int *const iupt,
+                                const int *const ivpt,
+                                const int *const iwpt,
+                                const int *const ijprpd,
+                                const int *const ipoit,
+                                const int *const idebt,
+                                const int *const ijprdp,
+                                const int *const idpt,
+                                const int *const ivdpt,
+                                const int *const iropt,
+                                const int *const ijprtp,
+                                const int *const itpt,
+                                const int *const icpt,
+                                const int *const iepsi,
+                                const int *const ihpt,
+                                const int *const inuchl,
+                                const int *const imcht,
+                                const int *const imckt,
+                                int     ichcor[],
+                                int     cp2ch[],
+                                int     diam20[],
+                                int     rho0ch[],
+                                int     xashch[],
+                                int     ifrlag[],
                                 int     iusncl[],
                                 int     iusclb[],
                                 int     iuslag[],
                                 double  ruslag[])
 {
-  int izone, nzones;
-  int iclas, nclasses;
+  int izone, zones;
+  int iclas;
+  int ielt, ifac, nelt = 0;
   char *interaction = NULL;
-  char szone[15], sclass[10];
-  char *path, *path1, *path2;
-  char *choice, *nature, *zlabel = NULL;
+  char sclass[10];
+  char *path1, *path2;
+  char *choice;
+  int *faces_list = NULL;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "boundary");
-  nzones = cs_gui_get_nb_element(path);
-  path = NULL;
+  zones = cs_gui_boundary_zones_number();
 
-  for (izone=1; izone<=nzones; izone++)
-  {
-      path = cs_xpath_init_path();
-      sprintf(szone, "boundary[%i]", izone);
-      cs_xpath_add_elements(&path, 2, "boundary_conditions", szone);
-      zlabel = _get_attr("label",  2, "boundary_conditions", szone);
-      nature = _get_attr("nature", 2, "boundary_conditions", szone);
+  /* First iteration only: memory allocation */
 
-      path2 = cs_xpath_init_path();
-      cs_xpath_add_elements(&path2, 2, "boundary_conditions", nature);
-      cs_xpath_add_test_attribute(&path2, "label", zlabel);
-      cs_xpath_add_element(&path2, "particles");
+//  if (boundaries == NULL)
+//    _init_boundaries(nfabor, nozppm);
 
-      BFT_MALLOC(path1, strlen(path2)+1, char);
-      strcpy(path1, path2);
-      cs_xpath_add_attribute(&path1, "choice");
-      interaction = cs_gui_get_attribute_value(path1);
-      nclasses = 0;
 
-      if (interaction != NULL) {
+  for (izone=0; izone < zones; izone++) {
 
-        if (cs_gui_strcmp(interaction, "inlet"))
-        {
-            iusclb[izone] = 1;
-            strcpy(path1, path2);
-            cs_xpath_add_element(&path1, "class");
-            nclasses = cs_gui_get_nb_element(path1);
-            iusncl[izone] = nclasses;
-            strcpy(path1, path2);
+    faces_list = cs_gui_get_faces_list(izone,
+                                       boundaries->label[izone],
+                                       *nfabor, *nozppm, &nelt);
 
-            for (iclas=1; iclas<=nclasses; iclas++)
-            {
-                sprintf(sclass, "class[%i]", iclas);
-                BFT_REALLOC(path2, 20+strlen(nature)+10+strlen(zlabel)+13+strlen(sclass)+1, char);
-                strcpy(path2, "");
-                sprintf(path2, "boundary_conditions/%s[@label='%s']/particles/%s", nature, zlabel, sclass);
+    for ( ielt=0; ielt < nelt; ielt++ ) {
+      ifac = faces_list[ielt];
+      ifrlag[ifac-1] = izone+1;
+    }
 
-                // Arrays IUSLAG and RUSLAG defined in lagran.h as
-                //
-                // IUSLAG(NCLAGM, NFLAGM, NDLAIM) with NCLAGM = 20, NFLAGM = 100, NDLAIM = 10
-                // RUSLAG(NCLAGM, NFLAGM, NDLAGM) with NCLAGM = 20, NFLAGM = 100, NDLAGM = 50
-                //
-                // F77: IUSLAG(ICLAS, IZONE, I)
-                // C  : &iuslag[i][izone][iclas] = &iuslag[ i*(*nclagm)*(*nflagm) + izone*(*nclagm) + iclas ]
+    path2 = cs_xpath_init_path();
+    cs_xpath_add_elements(&path2, 2, "boundary_conditions", boundaries->nature[izone]);
+    cs_xpath_add_test_attribute(&path2, "label", boundaries->label[izone]);
+    cs_xpath_add_element(&path2, "particles");
 
-                _get_int(&iuslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "number");
-                _get_int(&iuslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "frequency");
-                _get_int(&iuslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statistical_groups");
+    BFT_MALLOC(path1, strlen(path2)+1, char);
+    strcpy(path1, path2);
+    cs_xpath_add_attribute(&path1, "choice");
+    interaction = cs_gui_get_attribute_value(path1);
 
-                choice = _get_attr("choice", 2, path2, "velocity");
-                if (cs_gui_strcmp(choice, "fluid"))
-                  iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = -1;
-                else if (cs_gui_strcmp(choice, "norm")) {
-                  iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 0;
-                  _get_double(&ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "norm");
-                }
-                else if (cs_gui_strcmp(choice, "components")) {
-                  iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
-                   _get_double(&ruslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_x");
-                   _get_double(&ruslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_y");
-                   _get_double(&ruslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_z");
-                }
-                else if (cs_gui_strcmp(choice, "subroutine"))
-                  iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 2;
+    if (interaction != NULL) {
 
-                choice = _get_attr("choice", 2, path2, "temperature");
-                if (cs_gui_strcmp(choice, "prescribed")) {
-                  iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
-                  _get_double(&ruslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "temperature");
-                }
-                else if (cs_gui_strcmp(choice, "subroutine"))
-                  iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 2;
+      if (cs_gui_strcmp(interaction, "inlet")) {
 
-                choice = _get_attr("choice", 2, path2, "diameter");
-                if (cs_gui_strcmp(choice, "prescribed")) {
-                  iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
-                  _get_double(&ruslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter");
-                  _get_double(&ruslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter_standard_deviation");
-                }
-                else if (cs_gui_strcmp(choice, "subroutine"))
-                  iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 2;
+        iusclb[izone] = *ientrl;
+        strcpy(path1, path2);
+        cs_xpath_add_element(&path1, "class");
+        iusncl[izone] = cs_gui_get_nb_element(path1);
+        strcpy(path1, path2);
 
-                _get_double(&ruslag[8*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "density");
+        for (iclas=0; iclas < iusncl[izone]; iclas++) {
 
-                if (*iphyla == 1) {
-                  _get_double(&ruslag[9*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "specific_heat");
-                }
+          sprintf(sclass, "class[%i]", iclas+1);
+          BFT_REALLOC(path2, 20+strlen(boundaries->nature[izone])+10+strlen(boundaries->label[izone])+13+strlen(sclass)+1, char);
+          strcpy(path2, "");
+          sprintf(path2,
+                  "boundary_conditions/%s[@label='%s']/particles/%s",
+                  boundaries->nature[izone],
+                  boundaries->label[izone],
+                  sclass);
 
-                _get_double(&ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "emissivity");
-                _get_double(&ruslag[11*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statitical_weight");
-                _get_double(&ruslag[12*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "mass_flow_rate");
+          _get_int(&IUSLAG((*ijnbp -1), izone, iclas), 2, path2, "number");
+          _get_int(&IUSLAG((*ijfre -1), izone, iclas), 2, path2, "frequency");
+          _get_int(&IUSLAG((*iclst -1), izone, iclas), 2, path2, "statistical_groups");
 
-                if (*iphyla == 2) {
-                  _get_int(&iuslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_number");
-                  _get_double(&ruslag[13*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_temperature");
-                  _get_double(&ruslag[14*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "raw_coal_mass_fraction");
-                  _get_double(&ruslag[15*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "char_mass_fraction");
-                }
+          /* velocity */
 
-              }
+          choice = _get_attr("choice", 2, path2, "velocity");
 
+          if (cs_gui_strcmp(choice, "fluid"))
+            //iuslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = -1;
+            IUSLAG((*ijuvw -1), izone, iclas) = -1;
+
+          else if (cs_gui_strcmp(choice, "norm")) {
+            IUSLAG((*ijuvw -1), izone, iclas) = 0;
+            //_get_double(&ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "norm");
+            _get_double(&RUSLAG((*iuno -1), izone, iclas), 3, path2, "velocity", "norm");
+          }
+          else if (cs_gui_strcmp(choice, "components")) {
+            //_get_double(&ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_x");
+            //_get_double(&ruslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_y");
+            //_get_double(&ruslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_z");
+            IUSLAG((*ijuvw -1), izone, iclas) = 1;
+            _get_double(&RUSLAG((*iupt -1), izone, iclas), 3, path2, "velocity", "velocity_x");
+            _get_double(&RUSLAG((*ivpt -1), izone, iclas), 3, path2, "velocity", "velocity_y");
+            _get_double(&RUSLAG((*iwpt -1), izone, iclas), 3, path2, "velocity", "velocity_z");
+          }
+          else if (cs_gui_strcmp(choice, "subroutine"))
+            IUSLAG((*ijuvw -1), izone, iclas) = 2;
+
+          /* statistical_weight, mass_flow_rate*/
+
+          choice = _get_attr("choice", 2, path2, "statistical_weight");
+
+          if (cs_gui_strcmp(choice, "prescribed")) {
+            //iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
+            //_get_double(&ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statistical_weight");
+            IUSLAG((*ijprpd -1), izone, iclas) = 1;
+            _get_double(&RUSLAG((*ipoit -1), izone, iclas), 2, path2, "statistical_weight");
+            RUSLAG((*idebt -1), izone, iclas) = 0;
+          }
+          else if (cs_gui_strcmp(choice, "rate")) {
+            //iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
+            //_get_double(&ruslag[11*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "mass_flow_rate");
+            IUSLAG((*ijprpd -1), izone, iclas) = 1;
+            _get_double(&RUSLAG((*idebt -1), izone, iclas), 2, path2, "mass_flow_rate");
+            RUSLAG((*ipoit -1), izone, iclas) = 1;
+          }
+          else if (cs_gui_strcmp(choice, "subroutine")) {
+            //iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 2;
+            //_get_double(&ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statistical_weight");
+            IUSLAG((*ijprpd -1), izone, iclas) = 2;
+            _get_double(&RUSLAG((*ipoit -1), izone, iclas), 2, path2, "statistical_weight");
+            RUSLAG((*idebt -1), izone, iclas) = 0;
           }
 
-        else if(cs_gui_strcmp(interaction, "outlet"))
-          iusclb[izone] = 2;
+          /* diameter */
 
-        else if(cs_gui_strcmp(interaction, "bounce"))
-          iusclb[izone] = 3;
+          choice = _get_attr("choice", 2, path2, "diameter");
 
-        else if(cs_gui_strcmp(interaction, "deposit1"))
-          iusclb[izone] = 4;
+          if (cs_gui_strcmp(choice, "prescribed")) {
+            //iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
+            //_get_double(&ruslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter");
+            //_get_double(&ruslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter_standard_deviation");
+            IUSLAG((*ijprdp -1), izone, iclas) = 1;
+            _get_double(&RUSLAG((*idpt -1), izone, iclas), 2, path2, "diameter");
+            _get_double(&RUSLAG((*ivdpt -1), izone, iclas), 2, path2, "diameter_standard_deviation");
 
-        else if(cs_gui_strcmp(interaction, "deposit2"))
-          iusclb[izone] = 5;
+          }
+          else if (cs_gui_strcmp(choice, "subroutine"))
+            IUSLAG((*ijprdp -1), izone, iclas) = 2;
 
-        else if(cs_gui_strcmp(interaction, "deposit3"))
-          iusclb[izone] = 6;
+          /* density */
 
-        else if(cs_gui_strcmp(interaction, "fouling"))
-          iusclb[izone] = 13;
+          //_get_double(&ruslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "density");
+          _get_double(&RUSLAG((*iropt -1), izone, iclas), 2, path2, "density");
 
+          if (*iphyla == 1) {
+
+            /* temperature, specific_heat, emissivity */
+
+            choice = _get_attr("choice", 2, path2, "temperature");
+
+            if (cs_gui_strcmp(choice, "prescribed")) {
+              //iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1;
+              //_get_double(&ruslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "temperature");
+              IUSLAG((*ijprtp -1), izone, iclas) = 1;
+              _get_double(&RUSLAG((*itpt -1), izone, iclas), 2, path2, "temperature");
+            }
+            else if (cs_gui_strcmp(choice, "subroutine"))
+              IUSLAG((*ijprtp -1), izone, iclas) = 2;
+
+            //_get_double(&ruslag[8*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "specific_heat");
+            //_get_double(&ruslag[9*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "emissivity");
+            _get_double(&RUSLAG((*icpt -1), izone, iclas), 2, path2, "specific_heat");
+            _get_double(&RUSLAG((*iepsi -1), izone, iclas), 2, path2, "emissivity");
+          }
+
+          /* coal */
+
+          if (*iphyla == 2) {
+            //_get_int(&iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_number");
+            //_get_double(&ruslag[12*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_temperature");
+            //_get_double(&ruslag[13*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "raw_coal_mass_fraction");
+            //_get_double(&ruslag[14*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "char_mass_fraction");
+            _get_int(&IUSLAG((*inuchl -1), izone, iclas), 2, path2, "coal_number");
+            _get_double(&RUSLAG((*ihpt -1), izone, iclas), 2, path2, "coal_temperature");
+            _get_double(&RUSLAG((*imcht -1), izone, iclas), 2, path2, "raw_coal_mass_fraction");
+            _get_double(&RUSLAG((*imckt -1), izone, iclas), 2, path2, "char_mass_fraction");
+          }
+        }
       }
 
-      BFT_FREE(path1);
-      BFT_FREE(path2);
+      else if(cs_gui_strcmp(interaction, "outlet"))
+        iusclb[izone] = *isortl;
 
-    }
-  BFT_FREE(path);
+      else if(cs_gui_strcmp(interaction, "bounce"))
+        iusclb[izone] = *irebol;
+
+      else if(cs_gui_strcmp(interaction, "deposit1"))
+        iusclb[izone] = *idepo1;
+
+      else if(cs_gui_strcmp(interaction, "deposit2"))
+        iusclb[izone] = *idepo2;
+
+      else if(cs_gui_strcmp(interaction, "deposit3"))
+        iusclb[izone] = *idepo3;
+
+      else if(cs_gui_strcmp(interaction, "fouling") && *iphyla == 2)
+        iusclb[izone] = *iencrl;
+
+      else if(cs_gui_strcmp(interaction, "fouling") && (*iphyla == 0  || *iphyla == 1))
+        iusclb[izone] = *idepfa;
+
+   }
+   BFT_FREE(path1);
+   BFT_FREE(path2);
+ }
 
 #if _XML_DEBUG_
-  printf("==>UILAG2\n");
-  for (izone=1; izone<=nzones; izone++)
-    {
-      printf("--iusclb[%i] = %i has %i class(es) \n", izone, iusclb[izone], iusncl[izone]);
+  bft_printf("==>UILAG2\n");
+  for (izone=0; izone<zones; izone++) {
 
-      if ( (iusclb[izone]==1) && (iusncl[izone]!=0) ) {
-        nclasses = iusncl[izone];
-        for (iclas=1; iclas<=nclasses; iclas++)
-          {
-            printf("--iusncl[%i] : class number %i \n", iclas-1, iclas);
+    bft_printf("--iusclb[%i] = %i has %i class(es) \n", izone, iusclb[izone], iusncl[izone]);
 
-            printf("--iuslag[%i] = %i \n", 1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--iuslag[%i] = %i \n", 2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--iuslag[%i] = %i \n", 3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--iuslag[%i] = %i velocity (-1:fluid, 0:norm, 1:components)\n", 4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            if (iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]==0)
-              printf("--ruslag[%i] = %f \n", 1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            else if (iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]==1) {
-              printf("--ruslag[%i] = %f \n", 2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            }
-            printf("--iuslag[%i] = %i temperature(1:prescribed, 2:subroutine)\n", 5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            if (iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]==1)
-              printf("--ruslag[%i] = %f \n", 5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
+    for (iclas=0; iclas < iusncl[izone]; iclas++) {
 
-            printf("--iuslag[%i] = %i diameter(1:prescribed, 2:subroutine)\n", 6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            if (iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]==1) {
-              printf("--ruslag[%i] = %f \n", 6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            }
-            printf("--ruslag[%i] = %f \n", 8*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[8*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            if (*iphyla == 1)
-                printf("--ruslag[%i] = %f \n", 9*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[9*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--ruslag[%i] = %f \n", 10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--ruslag[%i] = %f \n", 11*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[11*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            printf("--ruslag[%i] = %f \n", 12*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[12*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            if (*iphyla == 2) {
-              printf("--iuslag[%i] = %i \n", 7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, iuslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 13*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[13*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 14*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[14*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-              printf("--ruslag[%i] = %f \n", 15*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas, ruslag[15*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas]);
-            }
-          }
+      bft_printf("--zone %i : class number %i \n", izone, iusncl[izone]);
+      bft_printf("--        : label    %s \n", boundaries->label[izone]);
+      bft_printf("--        : nature   %s \n", boundaries->nature[izone]);
+      bft_printf("--        : p_nature %i \n", iusclb[izone]);
+
+      if ( (iusclb[izone] == *ientrl) && (iusncl[izone] != 0) ) {
+        bft_printf("---number = %i \n", IUSLAG((*ijnbp -1), izone, iclas));
+        bft_printf("---frequency = %i \n", IUSLAG((*ijfre -1), izone, iclas));
+        bft_printf("---statistical_groups = %i \n", IUSLAG((*iclst -1), izone, iclas));
+
+        bft_printf("---velocity choice: %i  (-1: fluid, 0: norm, 1: components, 2: subroutine)\n", IUSLAG((*ijuvw -1), izone, iclas));
+
+        if (IUSLAG((*ijuvw -1), izone, iclas) == 0)
+
+          bft_printf("----norm = %f \n", RUSLAG((*iuno -1), izone, iclas));
+
+        else if (IUSLAG((*ijuvw -1), izone, iclas) == 1) {
+
+          bft_printf("----u = %f \n", RUSLAG((*iupt -1), izone, iclas));
+          bft_printf("----v = %f \n", RUSLAG((*ivpt -1), izone, iclas));
+          bft_printf("----w = %f \n", RUSLAG((*iwpt -1), izone, iclas));
+        }
+
+        bft_printf("---statistical weight choice: %i  (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprpd -1), izone, iclas));
+
+        if (IUSLAG((*ijprpd -1), izone, iclas) == 1) {
+          bft_printf("----statistical weight = %f \n", RUSLAG((*ipoit -1), izone, iclas));
+          bft_printf("----mass flow rate = %f \n", RUSLAG((*idebt -1), izone, iclas));
+        }
+
+        bft_printf("---diameter choice = %i (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprdp -1), izone, iclas));
+
+        if (IUSLAG((*ijprdp -1), izone, iclas) == 1) {
+          bft_printf("----diameter = %f \n", RUSLAG((*idpt -1), izone, iclas));
+          bft_printf("----standard deviation = %f \n", RUSLAG((*ivdpt -1), izone, iclas));
+        }
+
+        bft_printf("---density = %f \n", RUSLAG((*iropt -1), izone, iclas));
+
+        if (*iphyla == 1) {
+
+          bft_printf("---temperature choice = %i (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprtp -1), izone, iclas));
+
+          if (IUSLAG((*ijprtp -1), izone, iclas) == 1)
+            bft_printf("----temperature = %f \n", RUSLAG((*itpt -1), izone, iclas));
+
+          bft_printf("---specific heat = %f \n", RUSLAG((*icpt -1), izone, iclas));
+          bft_printf("---emissivity = %f \n", RUSLAG((*iepsi -1), izone, iclas));
+        }
+
+        if (*iphyla == 2) {
+          bft_printf("---coal number = %i \n",            IUSLAG((*inuchl -1), izone, iclas));
+          bft_printf("---coal temperature = %f \n",       RUSLAG((*ihpt -1), izone, iclas));
+          bft_printf("---raw coal mass fraction = %f \n", RUSLAG((*imcht -1), izone, iclas));
+          bft_printf("---char mass fraction = %f \n",     RUSLAG((*imckt -1), izone, iclas));
+        }
       }
     }
+  }
 #endif
 }
 

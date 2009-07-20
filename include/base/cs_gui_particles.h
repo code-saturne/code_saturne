@@ -152,7 +152,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iensi3,
                                 double *const seuilf,
                                 int *const nstbor,
-                                int *const inbrbd, 
+                                int *const inbrbd,
                                 int *const iflmbd,
                                 int *const iangbd,
                                 int *const ivitbd,
@@ -165,18 +165,60 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  * subroutine uilag2
  * *****************
  *
- * integer          iphyla     -->   physica model associated to the particles
- * integer          nclagm     <--   max number of classes for particles
- * integer          nflagm     <--   max number of boundaries
- * integer          iusncl     <--   array for particles class(es) number
- * integer          iusclb     <--   array for particles boundary conditions
- * integer          iuslag     <--   array for integer variables
- * double precision ruslag     <--   array for real variables
+ * integer          nfabor  -->  number of boundary faces
+ * integer          nozppm  -->  max number of boundary conditions zone
+ * integer          nclagm  -->  max number of classes
+ * integer          nflagm  -->  max number of boundaries
+ * integer          iphyla  -->  physica model associated to the particles
+ * integer          iusncl  <--  array for particles class(es) number
+ * integer          iusclb  <--  array for particles boundary conditions
+ * integer          iuslag  <--  array for integer variables
+ * double precision ruslag  <--  array for real variables
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uilag2, UILAG2) (const int *const iphyla,
+void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
+                                const int *const nozppm,
                                 const int *const nclagm,
                                 const int *const nflagm,
+                                const int *const nbclst,
+                                const int *const ientrl,
+                                const int *const isortl,
+                                const int *const idepo1,
+                                const int *const idepo2,
+                                const int *const idepo3,
+                                const int *const idepfa,
+                                const int *const iencrl,
+                                const int *const irebol,
+                                const int *const iphyla,
+                                const int *const ijnbp,
+                                const int *const ijfre,
+                                const int *const iclst,
+                                const int *const ijuvw,
+                                const int *const iuno,
+                                const int *const iupt,
+                                const int *const ivpt,
+                                const int *const iwpt,
+                                const int *const ijprpd,
+                                const int *const ipoit,
+                                const int *const idebt,
+                                const int *const ijprdp,
+                                const int *const idpt,
+                                const int *const ivdpt,
+                                const int *const iropt,
+                                const int *const ijprtp,
+                                const int *const itpt,
+                                const int *const icpt,
+                                const int *const iepsi,
+                                const int *const ihpt,
+                                const int *const inuchl,
+                                const int *const imcht,
+                                const int *const imckt,
+                                int     ichcor[],
+                                int     cp2ch[],
+                                int     diam20[],
+                                int     rho0ch[],
+                                int     xashch[],
+                                int     ifrlag[],
                                 int     iusncl[],
                                 int     iusclb[],
                                 int     iuslag[],

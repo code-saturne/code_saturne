@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine uslag1
+subroutine uslag1
 !================
 
 
@@ -70,6 +70,7 @@ include "entsor.h"
 include "lagdim.h"
 include "lagpar.h"
 include "lagran.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -87,9 +88,10 @@ double precision sio2 , al2o3 , fe2o3 , cao
 !       ET NON CELLE DE LA BIBLIOTHEQUE
 !===============================================================================
 
-iilagr = 0
-
-if(1.eq.1) then
+if (iihmpr.eq.1) then
+  return
+else
+  iilagr = 0
   return
 endif
 

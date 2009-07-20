@@ -353,7 +353,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
         !==========
        ( itypfb, iparoi, iparug, ivart , izfrad,                  &
          isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,          &
-         nozppm, nfabor, nfml, ifmfbr , iprfml , nvar,            &
+         nozppm, nfabor, nvar,                                    &
          propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)),          &
          tint, text,                                              &
          propfb(1,ipprob(ixlam)), rcodcl)
@@ -441,7 +441,7 @@ endif
     !==========
   ( itypfb, iparoi, iparug, ivart , izfrad,                       &
     isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,               &
-    nozppm, nfabor, nfml, ifmfbr , iprfml , nvar,                 &
+    nozppm, nfabor, nvar,                                         &
     propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)), tint, text,   &
     propfb(1,ipprob(ixlam)), rcodcl)
 
@@ -449,7 +449,7 @@ endif
 
   ils    = idebia
   idbia1 = ils + maxelt
-  CALL IASIZE('RAYCLI',IDBIA1)
+  CALL iasize('raycli', idbia1)
 
   call usray2                                                     &
   !==========

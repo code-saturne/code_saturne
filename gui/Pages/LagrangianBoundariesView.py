@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2009 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -416,10 +416,10 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.groupBoxMain.hide()
         self.groupBoxRate.hide()
         self.groupBoxVelocity.hide()
-        self.groupBoxTemperature.hide()     
+        self.groupBoxTemperature.hide()
         self.groupBoxDiameter.hide()
         self.groupBoxCoal.hide()
-        
+
 
     @pyqtSignature("const QModelIndex&, const QModelIndex&")
     def slotEditBoundary(self, index, index2):
@@ -483,8 +483,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIPOIT.setItem(str_model=choice)
         text = self.modelIPOIT.dicoM2V[choice]
         self.slotIPOITChoice(QString(text))
-        
-            
+
         # Velocity 
         self.groupBoxVelocity.show()
         choice = self.model.getVelocityChoice(self.label, self.iclass)
@@ -526,22 +525,20 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.lineEditIMCKT.setText(QString(str(mass2)))
 
         # Diameter
-##         status = self.LM.getBreakUp()
-##         if part_model == "thermal" and status == "on":
-        if part_model == "thermal":
+        if part_model == "coal":
+            self.groupBoxDiameter.show()
+            self.modelIJRDP.setItem(str_model="prescribed")
+        else:
             self.groupBoxDiameter.show()
             choice = self.model.getDiameterChoice(self.label, self.iclass)
-            self.modelIJRDP.setItem(str_model=choice)       
+            self.modelIJRDP.setItem(str_model=choice)
             text = self.modelIJRDP.dicoM2V[choice]
             self.slotIJRDP(QString(text))
-        elif part_model == "coal":
-            self.groupBoxDiameter.show()
-            self.modelIJRDP.setItem(str_model="prescribed")       
 
         rho = self.model.getDensityValue(self.label, self.iclass)
         self.lineEditIROPT.setText(QString(str(rho)))
-        
-        
+
+
     @pyqtSignature("const QString&")
     def slotIJNBP(self, text):
         """

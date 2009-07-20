@@ -4212,7 +4212,7 @@ void CS_PROCF(cfnmva, CFNMVA)
 
   if (*var_id < 1 || *var_id > cs_glob_label->_cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
-              _("Name of variable %d was never set.\n"), var_id);
+              _("Name of variable %i was never set.\n"), *var_id);
 
   /* Copy string */
 

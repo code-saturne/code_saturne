@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine uslag2                               &
+subroutine uslag2                                                 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
@@ -207,6 +207,7 @@ include "lagran.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -262,7 +263,9 @@ double precision pis6 , mp0 , temp
 !       ET NON CELLE DE LA BIBLIOTHEQUE
 !===============================================================================
 
-if(1.eq.1) then
+if (iihmpr.eq.1) then
+  return
+else
   write(nfecra,9000)
   call csexit (1)
   !==========

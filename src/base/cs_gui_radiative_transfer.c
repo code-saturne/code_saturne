@@ -842,7 +842,7 @@ void CS_PROCF(cfnmra, CFNMRA)
 
   if (*var_id < 1 || *var_id > _cs_gui_last_var)
     bft_error(__FILE__, __LINE__, 0,
-              _("Name of variable %d was never set.\n"), var_id);
+              _("Name of variable %i was never set.\n"), *var_id);
 
   /* Copy string */
 
@@ -886,9 +886,6 @@ void CS_PROCF (uiray2, UIRAY2)
  const    int *const ifrefl,
  const    int *const nozppm,
  const    int *const nfabor,
- const    int *const nfml,
- const    int *const ifmfbr,
- const    int *const iprfml,
  const    int *const nvar,
        double *const epsp,
        double *const epap,
@@ -904,7 +901,7 @@ void CS_PROCF (uiray2, UIRAY2)
   int ith_zone;
   int ifbr;
   int j, n;
-  int *faces_list;
+  int *faces_list = NULL;
   int faces = 0;
   int iok = 0;
   double tmp = 0.;
@@ -1104,8 +1101,8 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
                                 const    int *const ncel,
                                          int *const imodak)
 {
-    double value;
-    int i, type;
+    double value = 0.;
+    int i, type = 0;
 
     if (!cs_gui_get_activ_thermophysical_model())
     {
