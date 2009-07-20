@@ -28,6 +28,7 @@ AM_FCFLAGS = \
 -I$(top_srcdir)/include/cogz \
 -I$(top_srcdir)/include/cplv \
 -I$(top_srcdir)/include/fuel \
+-I$(top_srcdir)/include/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -54,6 +55,7 @@ fuphy2.f90 \
 fuphyv.f90 \
 fuprop.f90 \
 fuptcl.f90 \
+furays.f90 \
 futeh1.f90 \
 futeh2.f90 \
 futhp1.f90 \

@@ -160,14 +160,18 @@ do 100 icel = 1, ncel
   ychx20 = zero
   do icha = 1, ncharb
     den1   = 1.d0                                                 &
-           / ( a1(icha)*wmole(ichx1c(icha))+b1(icha)*wmole(ico))
+           / ( a1(icha)*wmole(ichx1c(icha))                       &
+              +b1(icha)*wmole(ico)                                &
+              +c1(icha)*wmole(ih2o) )
     ychx10 = ychx10 + den1 *                                      &
        ( tbmcr(icel,if1mc(icha))*a1(icha)*wmole(ichx1c(icha)) )
     ehchx1 = ehchx1 + den1 *                                      &
        ( ehgaze(ichx1c(icha),i+1)*                                &
          tbmcr(icel,if1mc(icha))*a1(icha)*wmole(ichx1c(icha)) )
     den2   = 1.d0                                                 &
-           / ( a2(icha)*wmole(ichx2c(icha))+b2(icha)*wmole(ico))
+           / ( a2(icha)*wmole(ichx2c(icha))                       &
+              +b2(icha)*wmole(ico)                                &
+              +c2(icha)*wmole(ih2o) )
     ychx20 = ychx20 + den2 *                                      &
        ( tbmcr(icel,if2mc(icha))*a2(icha)*wmole(ichx2c(icha)) )
     ehchx2 = ehchx2 + den2 *                                      &
@@ -225,14 +229,18 @@ do 200 icel = 1, ncel
   ychx20 = zero
   do icha = 1, ncharb
     den1   = 1.d0                                                 &
-           / ( a1(icha)*wmole(ichx1c(icha))+b1(icha)*wmole(ico))
+           / ( a1(icha)*wmole(ichx1c(icha))                       &
+              +b1(icha)*wmole(ico)                                &
+              +c1(icha)*wmole(ih2o) )
     ychx10 = ychx10 + den1 *                                      &
        ( tbmcr(icel,if1mc(icha))*a1(icha)*wmole(ichx1c(icha)) )
     ehchx1 = ehchx1 + den1 *                                      &
        ( ehgaze(ichx1c(icha),i)*                                  &
          tbmcr(icel,if1mc(icha))*a1(icha)*wmole(ichx1c(icha)) )
     den2   = 1.d0                                                 &
-           / ( a2(icha)*wmole(ichx2c(icha))+b2(icha)*wmole(ico))
+           / ( a2(icha)*wmole(ichx2c(icha))                       &
+              +b2(icha)*wmole(ico)                                &
+              +c2(icha)*wmole(ih2o) )
     ychx20 = ychx20 + den2 *                                      &
        ( tbmcr(icel,if2mc(icha))*a2(icha)*wmole(ichx2c(icha)) )
     ehchx2 = ehchx2 + den2 *                                      &

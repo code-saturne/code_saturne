@@ -489,9 +489,10 @@ if ( iirayo.ge.1 .and. iphas.eq.irapha) then
     if ( isca(iscal).ge.isca(ihlf(1)) .and.       &
          isca(iscal).le.isca(ihlf(nclafu)) ) then
 
-      write(nfecra,9001)
-      call csexit (1)
+      call furays                  &
       !==========
+    ( ivar  ,ncelet, ncel  ,       &
+      volume,propce,smbrs,rovsdt)
 
     endif
   endif
@@ -876,19 +877,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR DANS COVOFI                          ',/,&
-'@    =========                                               ',/,&
-'@    RAYONNEMENT ET COMBUSTION FUEL NON COMPATIBLE DANS      ',/,&
-'@    LA VERSION ACTUELLE.                                    ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #else
 
@@ -904,19 +892,6 @@ endif
 '@    ========'                                                ,/,&
 '@    IVARSC MUST BE A STRICTLY POSITIVE INTEGER'              ,/,&
 '@    ITS VALUE IS ',I10                                       ,/,&
-'@'                                                            ,/,&
-'@  The calculation will not be run.'                          ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9001 format(                                                           &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: ERROR IN COVOFI'                                ,/,&
-'@    ========'                                                ,/,&
-'@    RADATIVE TRANSFER AND FUEL COMBUSTION NOT COMPATIBLE'    ,/,&
-'@    IN THE CURRENT VERSION'                                  ,/,&
 '@'                                                            ,/,&
 '@  The calculation will not be run.'                          ,/,&
 '@'                                                            ,/,&
