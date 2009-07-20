@@ -3042,8 +3042,8 @@ cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
     return;
 
   bft_printf(_("\n  Edge connectivity used in the joining operation:\n"));
-  bft_printf(_("  Number of edges    :  %8d\n"), edges->n_edges);
-  bft_printf(_("  Number of vertices :  %8d\n"), edges->n_vertices);
+  bft_printf(_("  Number of edges:      %8d\n"), edges->n_edges);
+  bft_printf(_("  Number of vertices:   %8d\n"), edges->n_vertices);
 
   for (i = 0; i < edges->n_edges; i++) { /* Dump edge connectivity */
 

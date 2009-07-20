@@ -1,4 +1,12 @@
 * 20/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor modifications regarding code and comments cleaning.
+  modified routines:
+    src/base/cs_join.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+
+* 20/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a space-filling-curve algorithm for parallel partitioning.
   This algorithm is based on a Morton curve and can be used by
   setting the variable USE_SFC to 1 in the file.

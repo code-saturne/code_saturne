@@ -520,9 +520,8 @@ _extract_mesh(const char              *name,
                           vtx_data);
 
     if (param.verbosity > 1)
-      bft_printf(_("  Local number of selected vertices :   %9d\n"
-                   "  Global number of selected vertices: %11d\n\n"),
-                 selection->n_vertices, selection->n_g_vertices);
+      bft_printf(_("  Global number of selected vertices: %11d\n\n"),
+                 selection->n_g_vertices);
 
     fvm_io_num_destroy(select_vtx_io_num);
 
@@ -553,9 +552,9 @@ _extract_mesh(const char              *name,
   cpu_end = bft_timer_cpu_time();
 
   if (param.verbosity > 2)
-    bft_printf(_("\n\t  Definition of local joining mesh:\n"
-                 "\t      wall clock time:            %10.3g\n"
-                 "\t      CPU time:                   %10.3g\n"),
+    bft_printf(_("\n    Definition of local joining mesh:\n"
+                 "        wall clock time:            %10.3g\n"
+                 "        CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   if (param.verbosity > 1)
@@ -622,12 +621,14 @@ _get_work_struct(cs_join_param_t         param,
     distributed over the ranks containing this information.
   */
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
-
   face_face_vis = cs_join_intersect_faces(param, local_mesh);
 
   /* Define an ordered list of all implied faces without redundancy */
+
+  /* TODO: check if this is necessary after cleanup done in face_face_vis */
+
+  clock_start = bft_timer_wtime();
+  cpu_start = bft_timer_cpu_time();
 
   cs_join_gset_single_order(face_face_vis,
                             &n_inter_faces,
@@ -637,9 +638,9 @@ _get_work_struct(cs_join_param_t         param,
   cpu_end = bft_timer_cpu_time();
 
   if (param.verbosity > 1)
-    bft_printf(_("\n\t  Building possible intersections between faces:\n"
-                 "\t      wall clock time:            %10.3g\n"
-                 "\t      CPU time:                   %10.3g\n"),
+    bft_printf(_("\n  Sorting possible intersections between faces:\n"
+                 "      wall clock time:            %10.3g\n"
+                 "      CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity

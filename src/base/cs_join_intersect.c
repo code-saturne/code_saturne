@@ -625,10 +625,12 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   const cs_join_vertex_t  p1e2 = mesh->vertices[p1e2_id];
   const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_bool_t  tst_dbg = (verbosity > 5 &&
                        (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
                         p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
                         true : false);
+#endif
 
   /* Initialize parameters */
 
@@ -1260,6 +1262,128 @@ _need_to_add_exch_inter(exch_inter_t                  inter,
   } /* End of loop on sub-elements of the current edge */
 
   return ret;
+}
+
+/*----------------------------------------------------------------------------
+ * Print statistics and timings for face bounding-box intersection search.
+ *
+ * parameters:
+ *   face_neighborhood <-- pointer to face neighborhood management structure.
+ *   box_wtime         <-- bounding box construction wall-clock time
+ *   box_wtime         <-- bounding box construction CPU time
+ *---------------------------------------------------------------------------*/
+
+static void
+_face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
+                        double                     box_wtime,
+                        double                     box_cpu_time)
+{
+  int i;
+  int  dim;
+  int  depth[3];
+  fvm_lnum_t  _n_leaves[3], _n_boxes[3];
+  fvm_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
+  size_t  _mem_final[3], _mem_required[3];
+  unsigned long  n_leaves[3], n_boxes[3], n_threshold_leaves[3];
+  int n_leaf_boxes[3];
+  unsigned long  mem_final[3], mem_required[3];
+  double  build_wtime, build_cpu_time, query_wtime, query_cpu_time;
+
+  dim = fvm_neighborhood_get_box_stats(face_neighborhood,
+                                       depth,
+                                       _n_leaves,
+                                       _n_boxes,
+                                       _n_threshold_leaves,
+                                       _n_leaf_boxes,
+                                       _mem_final,
+                                       _mem_required);
+
+  /* Convert to unsigned long (so as to ensure correct logging
+     whether fvm_lnum_t is 32 or 64-bit) */
+  for (i = 0; i < 3; i++) {
+    n_leaves[i] = _n_leaves[i];
+    n_boxes[i] = _n_boxes[i];
+    n_threshold_leaves[i] = _n_threshold_leaves[i];
+    n_leaf_boxes[i] = _n_leaf_boxes[i];
+    mem_final[i] = _mem_final[i] / 1024;
+    mem_required[i] = _mem_required[i] /1024;
+  }
+
+  fvm_neighborhood_get_times(face_neighborhood,
+                             &build_wtime,
+                             &build_cpu_time,
+                             &query_wtime,
+                             &query_cpu_time);
+
+  bft_printf(_("  Determination of possible face intersections:\n\n"
+               "    bounding-box tree layout: %dD\n"), dim);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    bft_printf
+      (_("                                   rank mean"
+         "      minimum      maximum\n"
+         "    depth:                        %10d | %10d | %10d\n"
+         "    number of leaves:             %10lu | %10lu | %10lu\n"
+         "    number of boxes:              %10lu | %10lu | %10lu\n"
+         "    leaves over threshold:        %10lu | %10lu | %10lu\n"
+         "    boxes per leaf:               %10d | %10d | %10d\n"
+         "    Memory footprint (kb):\n"
+         "      final search structure:     %10lu | %10lu | %10lu\n"
+         "      temporary search structure: %10lu | %10lu | %10lu\n\n"),
+               depth[0], depth[1], depth[2],
+               n_leaves[0], n_leaves[1], n_leaves[2],
+               n_boxes[0], n_boxes[1], n_boxes[2],
+               n_threshold_leaves[0], n_threshold_leaves[1],
+               n_threshold_leaves[2],
+               n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
+               mem_final[0], mem_final[1], mem_final[2],
+               mem_required[0], mem_required[1], mem_required[2]);
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1)
+    bft_printf
+      (_("    depth:                        %10d\n"
+         "    number of leaves:             %10lu\n"
+         "    number of boxes:              %10lu\n"
+         "    leaves over threshold:        %10lu\n"
+         "    boxes per leaf:               %10d mean [%d min, %d max]\n"
+         "    Memory footprint (kb):\n"
+         "      final search structure:     %10lu\n"
+         "      temporary search structure: %10lu\n\n"),
+       depth[0], n_leaves[0], n_boxes[0], n_threshold_leaves[0],
+       n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
+       mem_final[0], mem_required[0]);
+
+  bft_printf(_("    Associated times:           construction        query\n"
+               "      wall clock time:            %10.3g   %10.3g\n"),
+             build_wtime + box_wtime, query_wtime);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    double cpu_min[2], cpu_max[2], cpu_loc[2];
+    cpu_loc[0] = build_cpu_time + box_cpu_time;
+    cpu_loc[1] = query_cpu_time;
+
+    MPI_Allreduce(cpu_loc, cpu_min, 2, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(cpu_loc, cpu_max, 2, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+    bft_printf(_("      Min local CPU time:         %10.3g   %10.3g\n"
+                 "      Max local CPU time:         %10.3g   %10.3g\n"),
+               cpu_min[0], cpu_min[1], cpu_max[0], cpu_max[1]);
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1)
+    bft_printf(_("      CPU time:                   %10.3g   %10.3g\n"),
+               build_cpu_time + box_cpu_time, query_cpu_time);
 }
 
 /*============================================================================
@@ -2602,8 +2726,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
     bft_printf(_("\n"
                  "  Number of intersections detected: %12lu\n"
-                 "       Vertex-Vertex intersections: %12lu\n"
-                 "       Other intersections:         %12lu\n"),
+                 "    Vertex-Vertex intersections:    %12lu\n"
+                 "    Other intersections:            %12lu\n"),
                n_inter_detected, n_trivial_inter, n_real_inter);
 
     if (param.verbosity > 1)
@@ -2653,7 +2777,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                         const cs_join_mesh_t   *join_mesh)
 {
   cs_int_t  i;
-  double  clock_start, clock_end, cpu_start, cpu_end;
+  double  extents_wtime, extents_cpu_time;
 
   fvm_coord_t  *f_extents = NULL;
   fvm_neighborhood_t  *face_neighborhood = NULL;
@@ -2661,16 +2785,14 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   assert(join_mesh != NULL);
 
-  clock_start = bft_timer_wtime();
-  cpu_start = bft_timer_cpu_time();
+  extents_wtime = bft_timer_wtime();
+  extents_cpu_time = bft_timer_cpu_time();
 
 #if defined HAVE_MPI
   face_neighborhood = fvm_neighborhood_create(cs_glob_mpi_comm);
 #else
   face_neighborhood = fvm_neighborhood_create();
 #endif
-
-  fvm_neighborhood_set_verbosity(face_neighborhood, param.verbosity);
 
   fvm_neighborhood_set_options(face_neighborhood,
                                param.tree_max_level,
@@ -2691,13 +2813,21 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                       join_mesh->vertices,
                       f_extents + i*6);
 
+  extents_wtime = bft_timer_wtime() - extents_wtime;
+  extents_cpu_time = bft_timer_cpu_time() - extents_cpu_time;
+
   fvm_neighborhood_by_boxes(face_neighborhood,
                             3, /* spatial dimension */
                             join_mesh->n_faces,
                             join_mesh->face_gnum,
-                            f_extents);
+                            NULL,
+                            NULL,
+                            &f_extents);
 
-  BFT_FREE(f_extents);
+  if (param.verbosity > 0)
+    _face_bbox_search_stats(face_neighborhood,
+                            extents_wtime,
+                            extents_cpu_time);
 
   /* Retrieve face -> face visibility */
 
@@ -2712,18 +2842,6 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                                  &(face_visibility->g_list));
 
   fvm_neighborhood_destroy(&face_neighborhood);
-
-  /* Display timer info. */
-
-  clock_end = bft_timer_wtime();
-  cpu_end = bft_timer_cpu_time();
-
-  if (param.verbosity > 0)
-    bft_printf(_("\n  Building neighborhood between face bounding boxes:\n"
-                 "      wall clock time:  %10.3g\n"
-                 "      cpu time:         %10.3g\n"),
-               clock_end - clock_start, cpu_end - cpu_start);
-  bft_printf_flush();
 
   return face_visibility;
 }

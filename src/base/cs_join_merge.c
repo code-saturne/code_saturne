@@ -1699,7 +1699,7 @@ _merge_with_tol_reduction(cs_join_param_t    param,
                                            vertices[sub_list[i2]]);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\t\t\t  (BEGIN) Reduce tolerance\n"));
+  bft_printf("\t\t\t  (BEGIN) Reduce tolerance\n");
   cs_join_dump_array("gnum", "sub_list", n_sub_elts, &(sub_list[start]));
   cs_join_dump_array("gnum", "ref_tags", n_sub_elts, &(ref_tags[start]));
   shift = 0;
