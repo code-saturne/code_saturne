@@ -1,4 +1,10 @@
 * 22/07/2009 - David Monfort <david.monfort@edf.fr>
+  Do not relax turbulent variables (k/epsilon/omega) in unsteady
+  simulations.
+  modified routine:
+    src/base/modini.f90
+
+* 22/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the P1 model for radiative transfer, where a local
   variable "iel" was not defined. 
   modified routine:

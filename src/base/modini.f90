@@ -1142,14 +1142,14 @@ else
     if ( ikecou(iphas).eq.0) then
       if (itytur(iphas).eq.2 .or. itytur(iphas).eq.5) then
         if (abs(relaxv(ik(iphas))+999.d0).lt.epzero)              &
-             relaxv(ik(iphas)) = 0.7d0
+             relaxv(ik(iphas)) = 1.d0
         if (abs(relaxv(iep(iphas))+999.d0).lt.epzero)             &
-             relaxv(iep(iphas)) = 0.7d0
+             relaxv(iep(iphas)) = 1.d0
       else if (itytur(iphas).eq.6) then
         if (abs(relaxv(ik(iphas))+999.d0).lt.epzero)              &
-             relaxv(ik(iphas)) = 0.7d0
+             relaxv(ik(iphas)) = 1.d0
         if (abs(relaxv(iomg(iphas))+999.d0).lt.epzero)            &
-             relaxv(iomg(iphas)) = 0.7d0
+             relaxv(iomg(iphas)) = 1.d0
       endif
     endif
     if (abs(relaxv(ipr(iphas))+999.d0).lt.epzero)                 &
