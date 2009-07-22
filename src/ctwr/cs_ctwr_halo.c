@@ -1561,8 +1561,7 @@ cs_ctwr_halo_define(cs_ctwr_zone_t            *ct,
 
   /* Update mesh structure elements bound to halo management */
 
-  ct->n_ghost_npsct = halo->n_elts[0] / ct->nelect;
-  ct->nnpsct_with_ghosts = ct->nnpsct + ct->n_ghost_npsct;
+  ct->nnpsct_with_ghosts = ct->nnpsct + halo->n_elts[0] / ct->nelect;
 
   cs_halo_update_buffers(halo);
 

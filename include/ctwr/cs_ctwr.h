@@ -169,7 +169,6 @@ struct _cs_ctwr_zone_t {
                                       have an exchange area */
   cs_int_t    nnpsct_with_ghosts;  /* Total number of water nodes
                                      (nnpsct + n_ghost_wcells) */
-  cs_int_t    n_ghost_npsct;       /* Number of "ghost" water  nodes */
 
   cs_halo_t  *water_halo;          /* Structure used to manage ghost cells */
 

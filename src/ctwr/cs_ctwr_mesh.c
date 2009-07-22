@@ -568,6 +568,8 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   nb_dist = fvm_locator_get_n_dist_points(locator );
 
+  /* Construction de la connectivite Face->sommet du projete  */
+
   BFT_MALLOC(hmin_dist ,  nb_dist, fvm_coord_t );
 
   cs_reverse_vtx_faces_connect(fi_tmp_mesh        ,
@@ -1280,7 +1282,7 @@ void cs_ctwr_maille
 
     fvm_locator_set_nodal(ct->locat_air_water,
                           ct->cell_mesh,
-                          0,
+                          1,
                           3,
                           ct->nnpsct*ct->nelect,
                           NULL,
@@ -1402,10 +1404,12 @@ void cs_ctwr_adeau
   /* Coordonnées des centres des cellules  */
   const cs_real_t *coo_cel        = mesh_quantities->cell_cen;
   const cs_int_t  *i_face_cells   = mesh->i_face_cells       ;
+#if 0 // Is it no more needed?
   const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx     ;
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst     ;
   const cs_int_t  *family_item    = mesh->family_item        ;
   const cs_int_t  *cell_family    = mesh->cell_family        ;
+#endif
 
   cs_int_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
              nbn, nvois[ cs_ctwr_nmaxvoi ], ifac, icel_1, icel_2,icel, lf, indice, dim;
@@ -1434,7 +1438,9 @@ void cs_ctwr_adeau
 
   /* Make sure with have extended neighborhood */
 
+#if 0 // Is it no more needed?
   assert(cell_cells_idx != NULL);
+#endif
 
   /*---------------------------------------------*
    * Construction des coefficient d'interpolation*
@@ -1529,7 +1535,7 @@ void cs_ctwr_adeau
         }
       }
 
-
+#if 0 // Is it no more needed?
       for (icel = cell_cells_idx[ iair     ];
             icel < cell_cells_idx[ iair + 1 ]; icel++) {
 
@@ -1539,6 +1545,7 @@ void cs_ctwr_adeau
             nbvois += 1 ;
          }
       }
+#endif
 
       /* fin Recherche */
 
@@ -1815,7 +1822,7 @@ void cs_ctwr_adair
     BFT_MALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct) ,fvm_coord_t);
     fvm_nodal_get_element_centers(ct->water_mesh,FVM_INTERLACE,3, lst_xyz_water );
 
-    if(ct->n_ghost_npsct >0  ) {
+    if (ct->water_halo != NULL) {
       BFT_REALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct_with_ghosts) ,fvm_coord_t);
       cs_halo_sync_var_strided(ct->water_halo, ct->halo_type, lst_xyz_water, 3);
 

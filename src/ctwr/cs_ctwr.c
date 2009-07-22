@@ -96,13 +96,6 @@ enum {X, Y, Z} ;
 #define CS_LOC_MODULE(vect) \
   sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
 
-#define CS_PRODUIT_VECTORIEL(prod_vect, vect1, vect2)  \
-  (prod_vect[X] = vect1[Y] * vect2[Z] - vect2[Y] * vect1[Z], \
-   prod_vect[Y] = vect2[X] * vect1[Z] - vect1[X] * vect2[Z], \
-   prod_vect[Z] = vect1[X] * vect2[Y] - vect2[X] * vect1[Y])
-
-#define CS_CT_MPI_TAG    (int)('C'+'S'+'Z'+'E') /* MPI tag for FVM operations */
-
 
 /*============================================================================
  * Static global variables
@@ -125,11 +118,6 @@ cs_int_t  *  cs_stack_ct    = NULL;
 
 /* array containing the treatment order of the exchanges areas */
 cs_int_t  *  cs_chain_ct = NULL;
-
-
-#if defined(HAVE_MPI)
-MPI_Status status;
-#endif
 
 /*============================================================================
  * Private function definitions
@@ -564,7 +552,6 @@ void cs_ctwr_definit
   ct->post_mesh_id = 0;
 
   ct->nnpsct_with_ghosts = 0;
-  ct->n_ghost_npsct = 0;
   ct->water_halo    = NULL;
 
 
@@ -688,7 +675,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
      * synchronisation   Halo                             *
      *--------------------------------------------*/
 
-    if( ct->n_ghost_npsct >0 ){
+    if (ct->water_halo != NULL) {
 
       cs_halo_t *halo = ct->water_halo;
 
@@ -1143,10 +1130,6 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
   /*--------------------------------------------*/
 }
 
-/*---------------------------------------------------------------------------*
-* Function cs_ctwr_aeteau                                                      *
-* Resolution des variables eau                                               *
-*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------
 * Function cs_ctwr_aetssc
 * Calcul des termes source pour l'air
@@ -1212,7 +1195,8 @@ void cs_ctwr_aetssc
       /*--------------------------------------------*
       * synchronisation   Halo                            *
       *--------------------------------------------*/
-      if( ct->n_ghost_npsct >0 ){
+
+      if (ct->water_halo != NULL) {
 
         cs_halo_t *halo = ct->water_halo;
 
@@ -1352,7 +1336,8 @@ void cs_ctwr_aetssc
     /*--------------------------------------------*
     * synchronisation Halo                        *
     *--------------------------------------------*/
-    if (ct->n_ghost_npsct > 0) {
+
+    if (ct->water_halo != NULL) {
       cs_halo_t *halo = ct->water_halo;
       cs_halo_sync_var(halo, ct->halo_type, ct->teau);
       cs_halo_sync_var(halo, ct->halo_type, ct->fem);
@@ -1653,7 +1638,8 @@ void cs_ctwr_aetsvi
      /*--------------------------------------------*
     * synchronisation Halo                        *
     *--------------------------------------------*/
-    if (ct->n_ghost_npsct > 0) {
+
+    if (ct->water_halo != NULL) {
       cs_halo_t *halo = ct->water_halo;
       cs_halo_sync_var(halo, ct->halo_type, ct->teau);
       cs_halo_sync_var(halo, ct->halo_type, ct->fem);
@@ -2160,7 +2146,6 @@ cs_ctwr_by_id(cs_int_t ct_id)
 
 #undef CS_LOC_PRODUIT_SCALAIRE
 #undef CS_LOC_MODULE
-#undef CS_PRODUIT_VECTORIEL
 
 /*----------------------------------------------------------------------------*/
 
