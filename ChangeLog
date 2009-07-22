@@ -1,3 +1,10 @@
+* 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Update the translation files.
+  modified files:
+    po/POTFILES.in
+    po/fr.po
+
 * 22/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
                David Monfort <david.monfort@edf.fr>
   Fix several bugs in cooling-tower module and clean a few lines.

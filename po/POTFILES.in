@@ -65,5 +65,6 @@ src/base/tremai.c
 src/ctwr/cs_ctwr_air_props.c
 src/ctwr/cs_ctwr.c
 src/ctwr/cs_ctwr_halo.c
+src/ctwr/cs_ctwr_mesh.c
 src/lagr/cs_lagr.c
 src/lagr/cs_lagr_perio.c

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 1.3\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2009-03-27 15:33+0100\n"
+"POT-Creation-Date: 2009-07-22 19:03+0200\n"
 "PO-Revision-Date: 2009-03-25 16:40+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/apps/cs_solver.c:272
+#: src/apps/cs_solver.c:295
 #, c-format
 msgid ""
 "\n"
@@ -27,7 +27,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:278
+#: src/apps/cs_solver.c:301
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -35,7 +35,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:342
+#: src/apps/cs_solver.c:357
+msgid "Mesh"
+msgstr "Maillage"
+
+#: src/apps/cs_solver.c:371
 #, c-format
 msgid ""
 "\n"
@@ -44,7 +48,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:358
+#: src/apps/cs_solver.c:387
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -52,7 +56,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:375
+#: src/apps/cs_solver.c:404
 #, c-format
 msgid ""
 "\n"
@@ -67,7 +71,7 @@ msgstr ""
 "       LONGRA =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:385
+#: src/apps/cs_solver.c:414
 #, c-format
 msgid ""
 "\n"
@@ -80,7 +84,7 @@ msgstr ""
 "       NIDEVE =   %10d (Nombre d'entiers)\n"
 "       NRDEVE =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:391
+#: src/apps/cs_solver.c:420
 #, c-format
 msgid ""
 "\n"
@@ -93,8 +97,9 @@ msgstr ""
 " --- Tableaux de travail Fortran utilisateur :\n"
 "       NITUSE =   %10d (Nombre d'entiers)\n"
 "       NRTUSE =   %10d (Nombre de réels)\n"
+"\n"
 
-#: src/apps/cs_solver.c:453
+#: src/apps/cs_solver.c:482
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -111,7 +116,7 @@ msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
 
-#: src/base/cs_base.c:404
+#: src/base/cs_base.c:403
 #, c-format
 msgid ""
 "\n"
@@ -120,7 +125,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:406
+#: src/base/cs_base.c:405
 #, c-format
 msgid ""
 "\n"
@@ -131,7 +136,41 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:444
+#: src/base/cs_base.c:425
+msgid ""
+"\n"
+"\n"
+"Memory allocation summary\n"
+"-------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Résumé de l'allocation mémoire\n"
+"------------------------------\n"
+"\n"
+
+#: src/base/cs_base.c:432
+#, c-format
+msgid "Theoretical current allocated memory:   %lu kB\n"
+msgstr "Mémoire dynamique instrumentée théorique : %lu ko\n"
+
+#: src/base/cs_base.c:436
+#, c-format
+msgid "Theoretical maximum allocated memory:   %lu kB\n"
+msgstr "Mémoire dynamique instrumentée théorique : %lu ko\n"
+
+#: src/base/cs_base.c:446
+#, c-format
+msgid "Maximum program memory measure:         %lu kB\n"
+msgstr "Mémoire programme mesurée maximale:        %lu ko\n"
+
+#: src/base/cs_base.c:454
+#, c-format
+msgid "Current program memory measure:         %lu kB\n"
+msgstr "Mémoire programme mesurée courante:        %lu ko\n"
+
+#: src/base/cs_base.c:516
 msgid ""
 "\n"
 "Call stack:\n"
@@ -139,7 +178,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:472
+#: src/base/cs_base.c:544
 msgid ""
 "End of stack\n"
 "\n"
@@ -147,7 +186,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:490
+#: src/base/cs_base.c:562
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -155,7 +194,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:496
+#: src/base/cs_base.c:568
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -163,7 +202,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:501
+#: src/base/cs_base.c:573
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -171,24 +210,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:506
+#: src/base/cs_base.c:578
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:511
+#: src/base/cs_base.c:583
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:517
+#: src/base/cs_base.c:589
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:523
+#: src/base/cs_base.c:595
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:586
+#: src/base/cs_base.c:658
 #, c-format
 msgid ""
 "\n"
@@ -199,7 +238,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:589
+#: src/base/cs_base.c:661
 #, c-format
 msgid ""
 "\n"
@@ -210,7 +249,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:791
+#: src/base/cs_base.c:863
 #, c-format
 msgid ""
 " Sub-routine calling IASIZE:                %s\n"
@@ -225,7 +264,7 @@ msgstr ""
 "\n"
 " ----> Définir IASIZE au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:835
+#: src/base/cs_base.c:907
 #, c-format
 msgid ""
 " Sub-routine calling RASIZE:             %s\n"
@@ -240,15 +279,15 @@ msgstr ""
 "\n"
 " ----> Définir RASIZE au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1117
+#: src/base/cs_base.c:1193
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1118
+#: src/base/cs_base.c:1194
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1122
+#: src/base/cs_base.c:1198
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -258,22 +297,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1185
+#: src/base/cs_base.c:1261
 #, c-format
 msgid "  %s %12.3f %cb\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1190
+#: src/base/cs_base.c:1266
 #, c-format
 msgid "                             local minimum: %12.3f %cb  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1193
+#: src/base/cs_base.c:1269
 #, c-format
 msgid "                             local maximum: %12.3f %cb  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1233
+#: src/base/cs_base.c:1309
 #, c-format
 msgid ""
 "\n"
@@ -292,7 +331,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1270
+#: src/base/cs_base.c:1346
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -300,7 +339,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1284
+#: src/base/cs_base.c:1360
 #, c-format
 msgid ""
 "\n"
@@ -309,12 +348,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1286
+#: src/base/cs_base.c:1362
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1291
+#: src/base/cs_base.c:1367
 #, c-format
 msgid ""
 "\n"
@@ -323,12 +362,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1300
+#: src/base/cs_base.c:1376
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1311
+#: src/base/cs_base.c:1387
 #, c-format
 msgid ""
 "\n"
@@ -337,52 +376,52 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1314
+#: src/base/cs_base.c:1390
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1406
+#: src/base/cs_base.c:1482
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1408
+#: src/base/cs_base.c:1484
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1416
+#: src/base/cs_base.c:1492
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1418
+#: src/base/cs_base.c:1494
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1422
+#: src/base/cs_base.c:1498
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1425
+#: src/base/cs_base.c:1501
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1428
+#: src/base/cs_base.c:1504
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1432
+#: src/base/cs_base.c:1508
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1435
+#: src/base/cs_base.c:1511
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1438
+#: src/base/cs_base.c:1514
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1470
+#: src/base/cs_base.c:1546
 #, c-format
 msgid ""
 "\n"
@@ -749,7 +788,7 @@ msgstr "CSR, sym coeffs"
 msgid "CSR_sym"
 msgstr "CSR_sym"
 
-#: src/base/cs_boundary_conditions.c:277
+#: src/base/cs_boundary_conditions.c:307
 #, c-format
 msgid ""
 "\n"
@@ -760,7 +799,7 @@ msgstr ""
 "Phase %d :\n"
 "  "
 
-#: src/base/cs_boundary_conditions.c:279
+#: src/base/cs_boundary_conditions.c:309
 #, c-format
 msgid ""
 "\n"
@@ -775,24 +814,24 @@ msgstr ""
 "  a une condition aux limites de type %d, un centre (%g, %g, %g)\n"
 "\n"
 
-#: src/base/cs_boundary_conditions.c:320
+#: src/base/cs_boundary_conditions.c:350
 msgid "Faces with B.C. error"
 msgstr "Faces avec erreur de C.L."
 
-#: src/base/cs_boundary_conditions.c:346
+#: src/base/cs_boundary_conditions.c:376
 msgid "Faces with valid B.C.'s"
 msgstr "Faces avec C.L. valides"
 
-#: src/base/cs_boundary_conditions.c:371
+#: src/base/cs_boundary_conditions.c:401
 #, c-format
 msgid "Phase %d, "
 msgstr "Phase %d,"
 
-#: src/base/cs_boundary_conditions.c:377
+#: src/base/cs_boundary_conditions.c:407
 msgid "BC type"
 msgstr "Type de CL"
 
-#: src/base/cs_boundary_conditions.c:400
+#: src/base/cs_boundary_conditions.c:430
 msgid ""
 "\n"
 "Some boundary condition definitions are incomplete or incorrect.\n"
@@ -939,7 +978,7 @@ msgid ""
 "\n"
 " Size of complete cell-cell connectivity: %12lu\n"
 " Size of filtered cell-cell conectivity:  %12lu\n"
-" %lu cells removed, for a ratio of %4.2g %% used\n"
+" %lu connections removed, for a ratio of %4.2g %% used\n"
 msgstr ""
 "\n"
 " Limitation du voisinage étendu par non-orthogonalité\n"
@@ -947,7 +986,7 @@ msgstr ""
 "\n"
 " Taille de la connectivité cellules-cellules complète : %12lu\n"
 " Taille de la connectivité cellules-cellules filtrée :  %12lu\n"
-" %lu cellules supprimées soit un ratio de %4.2g %% utilisées\n"
+" %lu connexions supprimées, soit un ratio de %4.2g %% utilisées\n"
 
 #: src/base/cs_gradient.c:598
 #, c-format
@@ -967,63 +1006,26 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
-#: src/base/cs_gui.c:213 src/base/cs_gui_radiative_transfer.c:440
+#: src/base/cs_gui_boundary_conditions.c:467
 #, c-format
-msgid "Variable index %d out of bounds (1 to %d)"
+msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:256 src/base/cs_gui.c:415 src/base/cs_gui.c:482
-#: src/base/cs_gui.c:974 src/base/cs_gui.c:1456 src/base/cs_gui.c:1591
-#: src/base/cs_gui.c:1719 src/base/cs_gui.c:1851 src/base/cs_gui.c:2047
-#: src/base/cs_gui.c:2221 src/base/cs_gui.c:2968 src/base/cs_gui.c:3445
-#: src/base/cs_gui_matisse.c:120 src/base/cs_gui_matisse.c:143
-#: src/base/cs_gui_matisse.c:163 src/base/cs_gui_matisse.c:193
-#: src/base/cs_gui_util.c:539 src/base/cs_gui_util.c:639
-#: src/base/cs_gui_util.c:736 src/base/cs_gui_util.c:886
-#: src/base/cs_gui_util.c:929
+#: src/base/cs_gui_boundary_conditions.c:568 src/base/cs_gui.c:4488
+#: src/base/cs_gui.c:4536 src/base/cs_gui.c:4584 src/base/cs_gui.c:4632
+#: src/base/cs_gui.c:4706 src/base/cs_gui_mobile_mesh.c:281
 #, c-format
-msgid "Invalid xpath: %s\n"
+msgid "Error: can not interprete expression: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:332
+#: src/base/cs_gui_boundary_conditions.c:574 src/base/cs_gui.c:4492
+#: src/base/cs_gui.c:4540 src/base/cs_gui.c:4588 src/base/cs_gui.c:4636
+#: src/base/cs_gui.c:4710 src/base/cs_gui_mobile_mesh.c:291
 #, c-format
-msgid "Invalid thermal model: %s\n"
+msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:1393
-#, c-format
-msgid ""
-"Coordinate %s of the monitoring probe number %i not found.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#: src/base/cs_gui.c:2522
-#, c-format
-msgid ""
-"Unknown conditions type in this context: %s.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#: src/base/cs_gui.c:3229 src/base/cs_gui.c:5743
-#, c-format
-msgid "zone's label number %i is greater than %i, the maximum allowed \n"
-msgstr ""
-
-#: src/base/cs_gui.c:3247 src/base/cs_gui.c:5761 src/base/cs_gui.c:5998
-#: src/base/cs_gui.c:6122 src/base/cs_selector.c:243
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any boundary face.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune face de bord.\n"
-
-#: src/base/cs_gui.c:3264
+#: src/base/cs_gui_boundary_conditions.c:892
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1046,87 +1048,31 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3368
+#: src/base/cs_gui_boundary_conditions.c:1063
 #, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" name not found"
+msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui.c:3416
-#, c-format
-msgid ""
-"Invalid markup name: %s\n"
-" label not found"
-msgstr ""
-
-#: src/base/cs_gui.c:3715
-#, c-format
-msgid "Invalid turbulence model: %s.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:3792
-msgid "Trouble with the allocated memory for the global variable 'vars'.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:3901
-#, c-format
-msgid "Invalid coal model: %s.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:3953
-#, c-format
-msgid "Scalar: %i and its variance: %i are the same.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:4374
-#, c-format
-msgid ""
-"The kernel variables number %i and the calculated one by the GUI %i are not "
-"the same.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:4808
-msgid "Specific heat value is zero or not found in the xml file.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:4829
-msgid "mass molar value is zero or not found in the xml file.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:4837
-msgid "Density value is zero or not found in the xml file.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:5094 src/base/cs_gui.c:6493
-#, c-format
-msgid "number of properties is not correct: %i instead of: %i\n"
-msgstr ""
-
-#: src/base/cs_gui.c:5485 src/base/cs_gui_radiative_transfer.c:660
-#, c-format
-msgid "Name of variable %d was never set.\n"
-msgstr ""
-
-#: src/base/cs_gui.c:5568 src/base/cs_selector.c:315
+#: src/base/cs_gui_boundary_conditions.c:1081 src/base/cs_selector.c:243
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
 "criteria:\n"
 "\"%s\"\n"
-" does not correspond to any cell.\n"
+" does not correspond to any boundary face.\n"
 msgstr ""
 "Le groupe ou attribut \"%s\" figurant dans le\n"
 "critère de sélection:\n"
 "\"%s\"\n"
-" ne correspond à aucune cellule.\n"
+" ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui.c:5973 src/base/cs_gui.c:6155
+#: src/base/cs_gui_boundary_conditions.c:1649
+#: src/base/cs_gui_boundary_conditions.c:1812
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6163
+#: src/base/cs_gui_boundary_conditions.c:1825
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1150,7 +1096,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6193
+#: src/base/cs_gui_boundary_conditions.c:1864
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1174,47 +1120,171 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:6777 src/base/cs_gui_util.c:161
+#: src/base/cs_gui.c:164 src/base/cs_gui_radiative_transfer.c:447
+#, c-format
+msgid "Variable index %d out of bounds (1 to %d)"
+msgstr ""
+
+#: src/base/cs_gui.c:207 src/base/cs_gui.c:366 src/base/cs_gui.c:1379
+#: src/base/cs_gui.c:1514 src/base/cs_gui.c:1640 src/base/cs_gui.c:1770
+#: src/base/cs_gui.c:1963 src/base/cs_gui.c:2137 src/base/cs_gui.c:2538
+#: src/base/cs_gui_matisse.c:116 src/base/cs_gui_matisse.c:139
+#: src/base/cs_gui_matisse.c:159 src/base/cs_gui_matisse.c:189
+#: src/base/cs_gui_mobile_mesh.c:158 src/base/cs_gui_mobile_mesh.c:220
+#: src/base/cs_gui_util.c:537 src/base/cs_gui_util.c:637
+#: src/base/cs_gui_util.c:734 src/base/cs_gui_util.c:884
+#: src/base/cs_gui_util.c:927
+#, c-format
+msgid "Invalid xpath: %s\n"
+msgstr ""
+
+#: src/base/cs_gui.c:261
+#, c-format
+msgid "Invalid thermal model: %s\n"
+msgstr ""
+
+#: src/base/cs_gui.c:1316
+#, c-format
+msgid ""
+"Coordinate %s of the monitoring probe number %i not found.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#: src/base/cs_gui.c:2459
+#, c-format
+msgid ""
+"Invalid xpath: %s\n"
+" name not found"
+msgstr ""
+
+#: src/base/cs_gui.c:2509
+#, c-format
+msgid ""
+"Invalid markup name: %s\n"
+" label not found"
+msgstr ""
+
+#: src/base/cs_gui.c:2660
+#, c-format
+msgid "Invalid turbulence model: %s.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:2770
+#, c-format
+msgid "Scalar: %i and its variance: %i are the same.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:3130
+#, c-format
+msgid ""
+"The kernel variables number %i and the calculated one by the GUI %i are not "
+"the same.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:3561
+msgid "Specific heat value is zero or not found in the xml file.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:3582
+msgid "mass molar value is zero or not found in the xml file.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:3590
+msgid "Density value is zero or not found in the xml file.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:3835 src/base/cs_gui_radiative_transfer.c:744
+#: src/base/cs_gui_specific_physics.c:532
+#, c-format
+msgid "number of properties is not correct: %i instead of: %i\n"
+msgstr ""
+
+#: src/base/cs_gui.c:4215 src/base/cs_gui_particles.c:778
+#: src/base/cs_gui_particles.c:784 src/base/cs_gui_particles.c:790
+#: src/base/cs_gui_radiative_transfer.c:845
+#, c-format
+msgid "Name of variable %i was never set.\n"
+msgstr ""
+
+#: src/base/cs_gui.c:4321 src/base/cs_selector.c:315
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any cell.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune cellule.\n"
+
+#: src/base/cs_gui.c:4898 src/base/cs_gui_util.c:159
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:540
+#: src/base/cs_gui_matisse.c:527
 #, c-format
 msgid "Missing 'min' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:550
+#: src/base/cs_gui_matisse.c:537
 #, c-format
 msgid "Missing 'max' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_matisse.c:560
+#: src/base/cs_gui_matisse.c:547
 #, c-format
 msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:301
+#: src/base/cs_gui_mobile_mesh.c:321
+#, c-format
+msgid "Unknow ale property choice %s.\n"
+msgstr ""
+
+#: src/base/cs_gui_mobile_mesh.c:424 src/base/cs_gui_mobile_mesh.c:494
+#, c-format
+msgid "Boundary nature formula is null for %s.\n"
+msgstr ""
+
+#: src/base/cs_gui_mobile_mesh.c:628
+#, c-format
+msgid "cannot get value for %s %s %s"
+msgstr ""
+
+#: src/base/cs_gui_mobile_mesh.c:760
+#, c-format
+msgid "Formula is null for %s %s"
+msgstr ""
+
+#: src/base/cs_gui_mobile_mesh.c:949
+msgid "Formula is null for ale.\n"
+msgstr ""
+
+#: src/base/cs_gui_particles.c:478 src/base/cs_gui_particles.c:508
+#: src/base/cs_gui_particles.c:538
+#, c-format
+msgid "Variable index %i out of bounds (1 to %i)"
+msgstr ""
+
+#: src/base/cs_gui_radiative_transfer.c:306
 #, c-format
 msgid "unknow type %s\n"
 msgstr "type inconnu %s \n"
 
-#: src/base/cs_gui_radiative_transfer.c:388
+#: src/base/cs_gui_radiative_transfer.c:395
 #, c-format
 msgid "Xpath request failed %s \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:554
+#: src/base/cs_gui_radiative_transfer.c:560
 #, c-format
-msgid "--output cel: %s value %i \n"
+msgid "--output boundary faces: %s value %i \n"
 msgstr ""
 
-#: src/base/cs_gui_radiative_transfer.c:561
-#, c-format
-msgid "--output fb: %s value %i \n"
-msgstr ""
-
-#: src/base/cs_gui_radiative_transfer.c:837
+#: src/base/cs_gui_radiative_transfer.c:1009
 msgid ""
 "One tries to define radiative boundary conditions on boundary which is not a "
 "wall.\n"
@@ -1225,19 +1295,29 @@ msgid ""
 "with these new natures.\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:184
+#: src/base/cs_gui_specific_physics.c:211
+#, c-format
+msgid "Invalid coal model: %s.\n"
+msgstr ""
+
+#: src/base/cs_gui_specific_physics.c:223
+#, c-format
+msgid "Invalid atmospheric flow model: %s.\n"
+msgstr ""
+
+#: src/base/cs_gui_util.c:182
 #, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:208 src/base/cs_gui_util.c:288
-#: src/base/cs_gui_util.c:571 src/base/cs_gui_util.c:668
-#: src/base/cs_gui_util.c:767 src/base/cs_gui_util.c:897
-#: src/base/cs_gui_util.c:958
+#: src/base/cs_gui_util.c:206 src/base/cs_gui_util.c:286
+#: src/base/cs_gui_util.c:569 src/base/cs_gui_util.c:666
+#: src/base/cs_gui_util.c:765 src/base/cs_gui_util.c:895
+#: src/base/cs_gui_util.c:956
 msgid "Code_Saturne has been compiled without Xml support."
 msgstr ""
 
-#: src/base/cs_gui_util.c:240
+#: src/base/cs_gui_util.c:238
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1248,7 +1328,7 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:251
+#: src/base/cs_gui_util.c:249
 #, c-format
 msgid ""
 "========================================================\n"
@@ -1261,14 +1341,14 @@ msgid ""
 "========================================================\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:560
+#: src/base/cs_gui_util.c:558
 #, c-format
 msgid ""
 "The node type is not XML_ATTRIBUTE_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:600
+#: src/base/cs_gui_util.c:598
 #, c-format
 msgid ""
 "Several attributes found: %i \n"
@@ -1276,14 +1356,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:657
+#: src/base/cs_gui_util.c:655
 #, c-format
 msgid ""
 "The node type is not XML_ELEMENT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:697
+#: src/base/cs_gui_util.c:695
 #, c-format
 msgid ""
 "Several nodes name found: %i \n"
@@ -1291,14 +1371,14 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:756 src/base/cs_gui_util.c:946
+#: src/base/cs_gui_util.c:754 src/base/cs_gui_util.c:944
 #, c-format
 msgid ""
 "The node type is not XML_TEXT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:795
+#: src/base/cs_gui_util.c:793
 #, c-format
 msgid ""
 "Several text node found: %i \n"
@@ -1306,19 +1386,19 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:935
+#: src/base/cs_gui_util.c:933
 #, c-format
 msgid "No markup found: %s \n"
 msgstr ""
 
-#: src/base/cs_gui_util.c:994
+#: src/base/cs_gui_util.c:992
 #, c-format
 msgid ""
 "Invalid attribute value: %s \n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_io.c:276 src/base/cs_io.c:317
+#: src/base/cs_io.c:283 src/base/cs_io.c:324
 #, c-format
 msgid ""
 "Compilation configuration / porting error:\n"
@@ -1326,7 +1406,7 @@ msgid ""
 "size_t is %d bits, unsigned long long %d bits"
 msgstr ""
 
-#: src/base/cs_io.c:622
+#: src/base/cs_io.c:629
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1343,7 +1423,7 @@ msgstr ""
 "Les 64 premiers octets lus contiennent :\n"
 "\"%s\"\n"
 
-#: src/base/cs_io.c:642
+#: src/base/cs_io.c:649
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1356,12 +1436,12 @@ msgstr ""
 "On attendait \"%s\"\n"
 "On a lu \"%s\"."
 
-#: src/base/cs_io.c:689
+#: src/base/cs_io.c:696
 #, c-format
 msgid "Error writing the header of file: \"%s\".\n"
 msgstr "Erreur à l'écriture de l'entête du fichier : \"%s\".\n"
 
-#: src/base/cs_io.c:838
+#: src/base/cs_io.c:845
 #, c-format
 msgid ""
 "Restart file \"%s\"\n"
@@ -1370,7 +1450,7 @@ msgstr ""
 "Le fichier suite \"%s\"\n"
 "au format 1.1 n'est pas conforme."
 
-#: src/base/cs_io.c:887
+#: src/base/cs_io.c:894
 #, c-format
 msgid ""
 "Restart file \"%s\" does not correspond\n"
@@ -1379,7 +1459,7 @@ msgstr ""
 "Le fichier suite \"%s\" ne correspond pas\n"
 "à la partie %d du fichier suite d'origine."
 
-#: src/base/cs_io.c:1116
+#: src/base/cs_io.c:1123
 #, c-format
 msgid ""
 "\n"
@@ -1388,7 +1468,7 @@ msgstr ""
 "\n"
 "  Section lue sur \"%s\" :\n"
 
-#: src/base/cs_io.c:1121
+#: src/base/cs_io.c:1128
 #, c-format
 msgid ""
 "\n"
@@ -1397,7 +1477,7 @@ msgstr ""
 "\n"
 "  Section écrite sur \"%s\" :\n"
 
-#: src/base/cs_io.c:1150
+#: src/base/cs_io.c:1157
 #, c-format
 msgid ""
 "    section name:           \"%s\"\n"
@@ -1406,32 +1486,32 @@ msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %lu\n"
 
-#: src/base/cs_io.c:1184 src/base/cs_syr3_comm.c:849
+#: src/base/cs_io.c:1191 src/base/cs_syr3_comm.c:849
 #, c-format
 msgid "    element type name:      \"%s\"\n"
 msgstr "    nom du type d'élément : \"%s\"\n"
 
-#: src/base/cs_io.c:1228
+#: src/base/cs_io.c:1235
 msgid " (local)"
 msgstr " (locaux)"
 
-#: src/base/cs_io.c:1249
+#: src/base/cs_io.c:1256
 #, c-format
 msgid "    %d first and last elements%s:\n"
 msgstr "    %d premiers et derniers éléments%s :\n"
 
-#: src/base/cs_io.c:1254
+#: src/base/cs_io.c:1261
 #, c-format
 msgid "    elements%s:\n"
 msgstr "    éléments%s :\n"
 
-#: src/base/cs_io.c:1802 src/base/cs_io.c:1979 src/base/cs_io.c:2991
-#: src/base/cs_io.c:3078
+#: src/base/cs_io.c:1809 src/base/cs_io.c:1986 src/base/cs_io.c:3023
+#: src/base/cs_io.c:3110
 #, c-format
 msgid "Error writing %lu bytes to file \"%s\"."
 msgstr "Erreur à l'écriture de %lu octets dans le fichier \"%s\"."
 
-#: src/base/cs_io.c:2002
+#: src/base/cs_io.c:2009
 #, c-format
 msgid ""
 " %lu indexed records:\n"
@@ -1444,12 +1524,12 @@ msgstr ""
 "position)\n"
 "\n"
 
-#: src/base/cs_io.c:2015
+#: src/base/cs_io.c:2022
 #, c-format
 msgid " %40s %10lu %2u %2u %2u %6s %c %2u %ld\n"
 msgstr ""
 
-#: src/base/cs_io.c:2024
+#: src/base/cs_io.c:2031
 #, c-format
 msgid ""
 "\n"
@@ -1458,12 +1538,12 @@ msgstr ""
 "\n"
 " %u fichier(s) associé(s):\n"
 
-#: src/base/cs_io.c:2027
+#: src/base/cs_io.c:2034
 #, c-format
 msgid "  \"%s\"\n"
 msgstr "  \"%s\"\n"
 
-#: src/base/cs_io.c:2077 src/base/cs_io.c:2133
+#: src/base/cs_io.c:2109 src/base/cs_io.c:2165
 #, c-format
 msgid ""
 "\n"
@@ -1472,7 +1552,7 @@ msgstr ""
 "\n"
 " Lecture du fichier :  %s\n"
 
-#: src/base/cs_io.c:2079
+#: src/base/cs_io.c:2111
 #, c-format
 msgid ""
 "\n"
@@ -1481,17 +1561,17 @@ msgstr ""
 "\n"
 " Écriture du fichier : %s\n"
 
-#: src/base/cs_io.c:2190
+#: src/base/cs_io.c:2222
 #, c-format
 msgid " Finished reading:    %s\n"
 msgstr " Fin de la lecture :  %s\n"
 
-#: src/base/cs_io.c:2193
+#: src/base/cs_io.c:2225
 #, c-format
 msgid " Finished writing:    %s\n"
 msgstr " Fin de l'écriture :  %s\n"
 
-#: src/base/cs_io.c:2459
+#: src/base/cs_io.c:2491
 #, c-format
 msgid ""
 "Type \"%s\" is not known\n"
@@ -1500,7 +1580,7 @@ msgstr ""
 "Type \"%s\" inconnu\n"
 "Types connus : \"c \", \"i4\", \"i8\", \"u4\", \"u8\", \"r4\", \"r8\"."
 
-#: src/base/cs_io.c:2515
+#: src/base/cs_io.c:2547
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1509,7 +1589,7 @@ msgstr ""
 "Erreur à la lecture du fichier : \"%s\".\n"
 "Le type de données \"%s\" n'est pas reconnu."
 
-#: src/base/cs_io.c:2624
+#: src/base/cs_io.c:2656
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1521,7 +1601,7 @@ msgstr ""
 "\"%s\" est un entier signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2659
+#: src/base/cs_io.c:2691
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1533,7 +1613,7 @@ msgstr ""
 "\"%s\" est un entier non signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2690
+#: src/base/cs_io.c:2722
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -1544,7 +1624,7 @@ msgstr ""
 "Le type attendu pour la section : \"%s\"\n"
 "est \"r4\" ou \"r8\" (réel), et non \"%s\"."
 
-#: src/base/cs_io.c:2926
+#: src/base/cs_io.c:2958
 #, c-format
 msgid ""
 "    first element for next rank:\n"
@@ -1553,7 +1633,7 @@ msgstr ""
 "    premier élement rang suivant :\n"
 "    %10lu : %12d\n"
 
-#: src/base/cs_io.c:3100
+#: src/base/cs_io.c:3132
 msgid ""
 "\n"
 "\n"
@@ -1565,25 +1645,25 @@ msgstr ""
 " contenu du fichier :\n"
 "\n"
 
-#: src/base/cs_io.c:3103
+#: src/base/cs_io.c:3135
 #, c-format
 msgid "  file: %s\n"
 msgstr "  fichier : %s\n"
 
-#: src/base/cs_io.c:3105
+#: src/base/cs_io.c:3137
 #, c-format
 msgid "  contents: \"%s\"\n"
 msgstr "  contenu : \"%s\"\n"
 
-#: src/base/cs_io.c:3107
+#: src/base/cs_io.c:3139
 msgid "  mode: CS_IO_MODE_READ\n"
 msgstr "  mode : CS_IO_MODE_READ\n"
 
-#: src/base/cs_io.c:3109
+#: src/base/cs_io.c:3141
 msgid "  mode: CS_IO_MODE_WRITE\n"
 msgstr "  mode : CS_IO_MODE_WRITE\n"
 
-#: src/base/cs_io.c:3111
+#: src/base/cs_io.c:3143
 #, c-format
 msgid ""
 "  default header size: %lu\n"
@@ -1597,6 +1677,922 @@ msgstr ""
 "  alignement des corps :        %lu\n"
 "  niveau d'impression :         %ld\n"
 "\n"
+
+#: src/base/cs_join.c:411
+#, c-format
+msgid ""
+"Incompatible value for the \"fraction\" parameter.\n"
+"Value must be lower than 1.0 or greater than 0.0\n"
+"The current value is : %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:496
+#, c-format
+msgid ""
+"Incompatible value for the \"vertex tolerance\" parameter\n"
+"Value must be lower than DBL_MAX and current value is : %f (global "
+"numbering : %u)\n"
+msgstr ""
+
+#: src/base/cs_join.c:523
+#, c-format
+msgid ""
+"  Global number of selected vertices: %11d\n"
+"\n"
+msgstr ""
+"  Nombre global de sommets sélectionnés : %11d\n"
+"\n"
+
+#: src/base/cs_join.c:555
+#, c-format
+msgid ""
+"\n"
+"    Definition of local joining mesh:\n"
+"        wall clock time:            %10.3g\n"
+"        CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"    Définition du maillage de recollement local :\n"
+"        temps écoulé :              %10.3g\n"
+"        temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:641
+#, c-format
+msgid ""
+"\n"
+"  Sorting possible intersections between faces:\n"
+"      wall clock time:            %10.3g\n"
+"      CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Tri des intersection possibles entre faces:\n"
+"      temps écoulé :              %10.3g\n"
+"      temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:794
+#, c-format
+msgid ""
+"\n"
+"  Definition of structures for the joining algorithm:\n"
+"      wall clock time:            %10.3g\n"
+"      CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Définition de structures pour l'algorithme de recollement :\n"
+"      temps écoulé :              %10.3g\n"
+"      temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:900
+msgid ""
+"\n"
+"  Joining operation is conforming.\n"
+msgstr ""
+
+#: src/base/cs_join.c:902
+msgid ""
+"\n"
+"  Joining operation is non-conforming.\n"
+msgstr ""
+"\n"
+"  L'opération de recollement est non-conforme.\n"
+
+#: src/base/cs_join.c:972
+#, c-format
+msgid ""
+"\n"
+"  Edge intersections and vertex creation:\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Intersections d'arêtes et création de sommets :\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:1111
+#, c-format
+msgid ""
+"\n"
+"  Merge vertices:\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Fusion des sommets :\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:1185
+#, c-format
+msgid ""
+"\n"
+"  Split old faces and reconstruct new faces\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Découpage des anciennes faces et reconstruction de nouvelles faces\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:1354
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the fraction parameter.\n"
+"  It must be between [0.0, 1.0[ and is here: %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:1361
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the tolerance reduction factor.\n"
+"  It must be between [0.0, 1.0[ and not: %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:1368
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the merge tolerance factor.\n"
+"  It must be positive or nul and not: %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:1375
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the equivalence tolerance factor.\n"
+"  It must be positive or zero and not: %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:1382
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the plane parameter.\n"
+"  It must be between [0, 90] and is here: %f\n"
+msgstr ""
+
+#: src/base/cs_join.c:1456
+#, c-format
+msgid ""
+"\n"
+" -------------------------------------------------------\n"
+"  Joining number %d:\n"
+"\n"
+msgstr ""
+"\n"
+" -------------------------------------------------------\n"
+"  Recollement numéro %d :\n"
+"\n"
+
+#: src/base/cs_join.c:1458
+#, c-format
+msgid "  Selection criteria: \"%s\"\n"
+msgstr "  Critère de sélection : \"%s\"\n"
+
+#: src/base/cs_join.c:1461
+#, c-format
+msgid ""
+"\n"
+"  Parameters for the joining operation:\n"
+"    Shortest incident edge fraction:          %8.5f\n"
+"      Main tolerance reduction factor:        %8.5f\n"
+"      Vertex matching tolerance reduction:    %8.5f\n"
+"      Merge step tolerance multiplier:        %8.5f\n"
+"    Maximum angle between joined face planes: %8.5f\n"
+"\n"
+msgstr ""
+"\n"
+"  Paramètres de recollement :\n"
+"    Fraction de la plus petite arête incidente :        %8.5f\n"
+"      Facteur de réduction de tolérance principal :     %8.5f\n"
+"      Réduction de tolérance pour équivalence sommets : %8.5f\n"
+"      Multiplicateur de tolérance pour la fusion :      %8.5f\n"
+"    Angle maximum entre plans de faces recollées :      %8.5f\n"
+"\n"
+
+#: src/base/cs_join.c:1473
+msgid " Before joining"
+msgstr " Avant recollement"
+
+#: src/base/cs_join.c:1562
+#, c-format
+msgid ""
+"\n"
+"  Number of faces to treat locally: %10d\n"
+msgstr ""
+
+#: src/base/cs_join.c:1636
+msgid ""
+"\n"
+"Stop joining algorithm: no face selected...\n"
+msgstr ""
+"\n"
+"Arrêt du recollement: aucune face sélectionnée...\n"
+
+#: src/base/cs_join.c:1645
+#, c-format
+msgid ""
+"\n"
+"  Complete joining treatment for joining %2d\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Traitement pour le recollement %2d terminé\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join.c:1682
+msgid " After joining"
+msgstr " Après recollement"
+
+#: src/base/cs_join.c:1695
+#, c-format
+msgid ""
+"\n"
+"  All joining operations successfully finished:\n"
+"\n"
+"  Time summary:\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+"\n"
+msgstr ""
+"\n"
+"  Fin des étapes de recollement :\n"
+"\n"
+"  Temps associés :\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+"\n"
+
+#: src/base/cs_join_intersect.c:403
+#, c-format
+msgid ""
+"\n"
+"  Edge - Edge intersection warning between:\n"
+"    edge 1: %d (%u) [%d (%u), %d (%u)]\n"
+"    edge 2: %d (%u) [%d (%u), %d (%u)]\n"
+"  Intersection found for curv. abs. %f (e1) - %f (e2) will be ignored.\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:418
+#, c-format
+msgid ""
+" Failure for edge 1:  Distance [v_inter1, v_inter2]: %e > v_inter1.tol: %e\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:422
+#, c-format
+msgid ""
+" Failure for edge 2:  Distance [v_inter1, v_inter2]: %e > v_inter2.tol: %e\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:1318
+#, c-format
+msgid ""
+"  Determination of possible face intersections:\n"
+"\n"
+"    bounding-box tree layout: %dD\n"
+msgstr ""
+"  Détermination des intersections possibles entre faces :\n"
+"\n"
+"    répartition de l'arbre de boîtes englobantes : %dD\n"
+
+#: src/base/cs_join_intersect.c:1325
+#, c-format
+msgid ""
+"                                   rank mean      minimum      maximum\n"
+"    depth:                        %10d | %10d | %10d\n"
+"    number of leaves:             %10lu | %10lu | %10lu\n"
+"    number of boxes:              %10lu | %10lu | %10lu\n"
+"    leaves over threshold:        %10lu | %10lu | %10lu\n"
+"    boxes per leaf:               %10d | %10d | %10d\n"
+"    Memory footprint (kb):\n"
+"      final search structure:     %10lu | %10lu | %10lu\n"
+"      temporary search structure: %10lu | %10lu | %10lu\n"
+"\n"
+msgstr ""
+"                               moyenne des rangs      minimum      maximum\n"
+"    profondeur :                      %10d | %10d | %10d\n"
+"    nombre de feuilles :              %10lu | %10lu | %10lu\n"
+"    nombre de boîtes :                %10lu | %10lu | %10lu\n"
+"    feuilles au-dessus du seuil :     %10lu | %10lu | %10lu\n"
+"    boîtes par feuilles :             %10d | %10d | %10d\n"
+"    Empreinte mémoire (ko):\n"
+"      structure de recherche finale : %10lu | %10lu | %10lu\n"
+"      structure intermédiaire :       %10lu | %10lu | %10lu\n"
+"\n"
+
+#: src/base/cs_join_intersect.c:1348
+#, fuzzy, c-format
+msgid ""
+"    depth:                        %10d\n"
+"    number of leaves:             %10lu\n"
+"    number of boxes:              %10lu\n"
+"    leaves over threshold:        %10lu\n"
+"    boxes per leaf:               %10d mean [%d min, %d max]\n"
+"    Memory footprint (kb):\n"
+"      final search structure:     %10lu\n"
+"      temporary search structure: %10lu\n"
+"\n"
+msgstr ""
+"    profondeur :                      %10d\n"
+"    nombre de feuilles :              %10lu\n"
+"    nombre de boîtes :                %10lu\n"
+"    feuilles au-dessus du seuil :     %10lu\n"
+"    boîtes par feuille :              %10d moyenne [%d min, %d max]\n"
+"    Empreinte mémoire (ko) :\n"
+"      structure de recherche finale : %10lu\n"
+"      structure intermédiaire :       %10lu\n"
+"\n"
+
+#: src/base/cs_join_intersect.c:1360
+#, c-format
+msgid ""
+"    Associated times:           construction        query\n"
+"      wall clock time:            %10.3g   %10.3g\n"
+msgstr ""
+"    Temsp associés:             construction        requête\n"
+"      wall clock time:            %10.3g   %10.3g\n"
+
+#: src/base/cs_join_intersect.c:1377
+#, c-format
+msgid ""
+"      Min local CPU time:         %10.3g   %10.3g\n"
+"      Max local CPU time:         %10.3g   %10.3g\n"
+msgstr ""
+"      temps CPU local min :       %10.3g   %10.3g\n"
+"      temps CPU local max :       %10.3g   %10.3g\n"
+
+#: src/base/cs_join_intersect.c:1385
+#, c-format
+msgid "      CPU time:                   %10.3g   %10.3g\n"
+msgstr "      temps CPU :                 %10.3g   %10.3g\n"
+
+#: src/base/cs_join_intersect.c:1656
+#, c-format
+msgid ""
+"\n"
+"  Incoherency found in inter_edges structure for edge %d (%u):\n"
+"  Bad ordering of curvilinear abscissa.\n"
+"   Vertex %d (%u) of abscissa: %f is before vertex %d (%u) of abscissa: %f\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:1667
+#, c-format
+msgid ""
+"\n"
+"  Incoherency found in inter_edges structure.\n"
+"  Redundancy for edge %d (%u) :\n"
+"   v1_num :  %d\n"
+"   v2_num :  %d\n"
+"  Vertex %d appears twice.\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2453
+#, c-format
+msgid ""
+"  The received edge global number (%u) is unknown on the current rank.\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2565
+#, c-format
+msgid ""
+"\n"
+"  Add %d new vertices in the %s mesh definition.\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2727
+#, c-format
+msgid ""
+"\n"
+"  Number of intersections detected: %12lu\n"
+"    Vertex-Vertex intersections:    %12lu\n"
+"    Other intersections:            %12lu\n"
+msgstr ""
+"\n"
+"  Nombre d'intersections détecté :  %12lu\n"
+"    Intersections sommet-sommet :   %12lu\n"
+"    Autres intersections :          %12lu\n"
+
+#: src/base/cs_join_intersect.c:2734
+#, c-format
+msgid ""
+"\n"
+"  Number of edge-edge intersection warnings: %8d\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2737
+#, c-format
+msgid ""
+"\n"
+"  Number of equivalences between existing vertices: %9d\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2746
+#, c-format
+msgid ""
+"\n"
+"  Edge intersections (only)\n"
+"    wall clock time:            %10.3g\n"
+"    CPU time:                   %10.3g\n"
+msgstr ""
+"\n"
+"  Intersections d'arêtes (seulement)\n"
+"    temps écoulé :              %10.3g\n"
+"    temps CPU :                 %10.3g\n"
+
+#: src/base/cs_join_merge.c:355
+#, c-format
+msgid ""
+"  The number of new vertices to create is not consistent.\n"
+"     Previous number: %10d\n"
+"     Current number:  %10d\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:585
+#, c-format
+msgid ""
+"\n"
+"  The authorized maximum number of iterations  for the merge of vertices has "
+"been reached.\n"
+"  Local counter on iteration : %d (MAX =%d)\n"
+"  Check the fraction parameter.\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:690
+#, c-format
+msgid ""
+"\n"
+"  The authorized maximum number of iterations  for the merge of vertices has "
+"been reached.\n"
+"  Global counter on iteration : %d (MAX =%d)\n"
+"  Check the fraction parameter.\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:983
+#, c-format
+msgid ""
+"\n"
+"  Number of local iterations to converge on vertex equivalences: %3d\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:986
+#, c-format
+msgid ""
+"  Number of global iterations to converge on vertex equivalences: %3d\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:1525
+msgid ""
+"  Max number of tolerance reductions has been reached.\n"
+"  Check your joining parameters.\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:1682
+msgid ""
+"\n"
+"  Merge: Local tolerance reduction for the following vertices (global "
+"numbering):\n"
+"        "
+msgstr ""
+
+#: src/base/cs_join_merge.c:1894
+msgid ""
+"\n"
+"  No need to merge vertices.\n"
+msgstr ""
+"\n"
+"  Pas besoin de fusionner des sommets.\n"
+
+#: src/base/cs_join_merge.c:1898
+#, c-format
+msgid ""
+"\n"
+"  Max size of a merge list: %lu\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:1969
+#, c-format
+msgid ""
+"\n"
+"  Number of tolerance reductions: %4d\n"
+msgstr ""
+"\n"
+"  Nombre de réductions de tolérance : %4d\n"
+
+#: src/base/cs_join_merge.c:2045
+#, c-format
+msgid ""
+"\n"
+"  Tolerance reduction for %lu elements.\n"
+msgstr ""
+"\n"
+"  Réduction de tolérance pour %lu éléments.\n"
+
+#: src/base/cs_join_merge.c:2051
+#, c-format
+msgid ""
+"\n"
+"  Max. number of tolerance reductions: %lu\n"
+msgstr ""
+"\n"
+"  Nombre max de réductions de tolérance : %lu\n"
+
+#: src/base/cs_join_merge.c:2715
+#, c-format
+msgid "  Number of new vertices to create: %10lu\n"
+msgstr "  Nombre de nouveaux sommets à créer : %10lu\n"
+
+#: src/base/cs_join_merge.c:2810
+#, c-format
+msgid ""
+"  Inconsistent value found in cs_join_vertex_t struct.:\n"
+"    Vertex %d is defined by:\n"
+"      %u - [%7.4le, %7.4le, %7.4le] - %lg\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:2870
+#, c-format
+msgid ""
+"\n"
+"  Final number of equiv. between vertices; local: %9d\n"
+"                                          global: %9lu\n"
+msgstr ""
+
+#: src/base/cs_join_merge.c:2958
+#, c-format
+msgid ""
+"\n"
+"          Vertex merge (only)\n"
+"              wall clock time:       %10.3g\n"
+"              cpu time:              %10.3g\n"
+msgstr ""
+"\n"
+"          Fusion des sommets (seulement)\n"
+"              temps écoulé :         %10.3g\n"
+"              temps CPU :            %10.3g\n"
+
+#: src/base/cs_join_mesh.c:352
+#, c-format
+msgid ""
+"  The simplified face has less than 3 vertices.\n"
+"  Check your joining parameters.\n"
+"  Face %d (%u)\n"
+msgstr ""
+"  La face simplifiée a moins de 3 sommets.\n"
+"  Vérifier les paramètres de recollement.\n"
+"  Face %d (%u)\n"
+
+#: src/base/cs_join_mesh.c:368
+#, c-format
+msgid ""
+"\n"
+"  Number of simplified faces: %lu\n"
+msgstr ""
+"\n"
+"  Nombre de faces simplifiées : %lu\n"
+
+#: src/base/cs_join_mesh.c:586
+#, c-format
+msgid ""
+"\n"
+" Problem in mesh connectivity.\n"
+" Detected when updating connectivity.\n"
+" Edge number: %d (%u) - (%d, %d) in old numbering.\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2256
+#, c-format
+msgid ""
+" The given vertex number: %d is not defined in the edge structure (edges-"
+">vtx_idx).\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2268
+#, c-format
+msgid ""
+" The given couple of vertex numbers :\n"
+"   vertex 1 : %d\n"
+"   vertex 2 : %d\n"
+" is not defined in the edge structure.\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2362
+#, c-format
+msgid ""
+" Problem in mesh connectivity. Face: %lu\n"
+" Problem detected during connectivity update:\n"
+" The face is defined by less than 3 points (excessive merging has occured).\n"
+"\n"
+" Modify joining parameters to reduce merging (fraction & merge).\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2818 src/base/cs_join_mesh.c:2931
+#, c-format
+msgid ""
+"\n"
+"\n"
+"  -- Dump a cs_join_mesh_t structure: (%p) --\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2823 src/base/cs_join_mesh.c:2936
+#, c-format
+msgid ""
+"\n"
+"\n"
+"  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2825
+#, c-format
+msgid ""
+"\n"
+" mesh->n_faces:       %9d\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2826 src/base/cs_join_mesh.c:2939
+#, c-format
+msgid ""
+" mesh->n_g_faces:   %11u\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2835
+#, c-format
+msgid ""
+"\n"
+" face_id: %5d gnum: %9u - n_vertices: %4d\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2858 src/base/cs_join_mesh.c:2876
+#: src/base/cs_join_mesh.c:2971 src/base/cs_join_mesh.c:2990
+#, c-format
+msgid ""
+"  Incoherency found in the current mesh definition\n"
+"  Face number: %d (global: %u)\n"
+"  Vertices: local (%d, %d), global (%u, %u) are defined twice\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2892 src/base/cs_join_mesh.c:3006
+#, c-format
+msgid ""
+"\n"
+" Dump vertex data\n"
+"   mesh->vertices     :  %p\n"
+"   mesh->n_vertices   : %11d\n"
+"   mesh->n_g_vertices : %11u\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2900 src/base/cs_join_mesh.c:3014
+#, c-format
+msgid ""
+" Local Num | Global Num |  Tolerance  |        Coordinates\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2938
+#, c-format
+msgid ""
+"\n"
+" mesh->n_faces:     %11d\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:2948
+#, c-format
+msgid ""
+"\n"
+" face_id: %9d gnum: %10u - n_vertices : %4d\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3044
+msgid ""
+"\n"
+"  Edge connectivity used in the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3045
+#, c-format
+msgid "  Number of edges:      %8d\n"
+msgstr "  Nombre d'arêtes :     %8d\n"
+
+#: src/base/cs_join_mesh.c:3046
+#, c-format
+msgid "  Number of vertices:   %8d\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3055
+#, c-format
+msgid "  Edge %6d  (%7u) <Vertex> [%7u %7u]\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3082
+msgid ""
+"\n"
+"  Vertex -> Vertex connectivity :\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3089
+#, c-format
+msgid "  Vertex %6d (%7u) - %3d - "
+msgstr ""
+
+#: src/base/cs_join_post.c:238
+msgid ""
+" Size of \"int\" is not 4 or 8 bytes.\n"
+" Check the datatype of the field to export.\n"
+msgstr ""
+
+#: src/base/cs_join_post.c:374
+msgid "Rank"
+msgstr ""
+
+#: src/base/cs_join_post.c:394
+msgid "VtxTolerance"
+msgstr ""
+
+#: src/base/cs_join_set.c:961
+#, c-format
+msgid ""
+"  Fail to build an inverted cs_join_gset_t structure.\n"
+"  Cannot find %u in element list.\n"
+msgstr ""
+
+#: src/base/cs_join_set.c:1820
+#, c-format
+msgid " Unexpected type (%s) to display in the current dump.\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:866
+msgid ""
+"  face splitting with face -> face connectivity is not yet implemented\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1026
+#, c-format
+msgid ""
+" Joining operation : split face %d\n"
+" Problem in the connectivity. Could not find a connection with the vertex %"
+"d\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1417
+#, c-format
+msgid ""
+"\n"
+"  Global number of faces after splitting: %10u\n"
+msgstr ""
+"\n"
+"  Nombre global de faces après subdivision : %10u\n"
+
+#: src/base/cs_join_split.c:1782
+#, c-format
+msgid "  Split face: %d with returned code: %d\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1954
+#, c-format
+msgid ""
+"  Warning: (%lu) problem(s) found during the face splitting\n"
+"     %12lu  open cycles,\n"
+"     %12lu  edges traversed twice,\n"
+"     %12lu  faces split into more than max_subfaces (= %d)\n"
+"\n"
+"  => Eventually modify joining parameters\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:1185
+#, c-format
+msgid "  Add %d new vertices from the single elements sync.\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:2033
+#, c-format
+msgid ""
+"  Cannot find the first corresponding vertex between the face connectivity "
+"before/after the merge step.\n"
+"  Current global face number: %u\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:2195
+#, c-format
+msgid ""
+"  Face %d (%u): Edge with two different descriptions: (%d, %d) [%u, %u]\n"
+"  n_subs: %d - previous n_subs: %d\n"
+"  Impossible to continue the mesh update after the merge operation.\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4241
+#, c-format
+msgid ""
+"  Incompatible new face type found.\n"
+"  n_matches is not to 1 or 2: n_matches = %d\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4248
+#, c-format
+msgid ""
+"\n"
+"  Local configuration after the joining operation:\n"
+"    Number of interior faces to add: %9d\n"
+"    Number of border faces to add  : %9d\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4265
+#, c-format
+msgid ""
+"\n"
+"  Global configuration after the joining operation:\n"
+"     Global number of border faces to add : %10u\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4442
+#, c-format
+msgid "  Clean border face %d. New number of vertices: %d\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4463
+#, c-format
+msgid ""
+"\n"
+"  Degenerate connectivity for %d final border faces.\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4502
+#, c-format
+msgid "  Clean interior face %d. New number of vertices: %d\n"
+msgstr ""
+
+#: src/base/cs_join_update.c:4523
+#, c-format
+msgid ""
+"  Degenerate connectivity for %d final interior faces.\n"
+"  Mesh cleaning done.\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:899
+msgid ""
+"\n"
+"  Single border faces for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:916
+msgid ""
+"\n"
+"  Single interior faces for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1154
+msgid ""
+"\n"
+"  Single vertices for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1276
+msgid ""
+"\n"
+"  Coupled vertices for the joining operations:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1756
+#, c-format
+msgid "  Number of boundary faces selected for joining: %10u\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1858
+msgid ""
+"\n"
+"  Selected faces for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1865
+msgid ""
+"\n"
+"  Select vertices for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1873
+msgid ""
+"\n"
+"  Contiguous border faces for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1879
+msgid ""
+"\n"
+"  Contiguous interior faces for the joining operation:\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:1978 src/base/cs_join_util.c:1994
+#, c-format
+msgid ""
+"  Inconsistent mesh definition. Cannot build edges.\n"
+"  Face %d has the same vertex %d twice.\n"
+msgstr ""
 
 #: src/base/cs_matrix.c:317
 msgid "diagonal + faces"
@@ -1618,7 +2614,7 @@ msgstr ""
 "avec une synchronisation de halo externe, précédée d'une sauvegarde\n"
 "et suivie d'une restoration du halo de rotation."
 
-#: src/base/cs_matrix.c:1999
+#: src/base/cs_matrix.c:2001
 msgid ""
 "Assigning non-symmetric matrix coefficients to a matrix\n"
 "in a symmetric CSR format."
@@ -1626,7 +2622,7 @@ msgstr ""
 "Affectation de coefficients matriciels non symétriques\n"
 "à une matrice en stockage CSR symmétrique."
 
-#: src/base/cs_matrix.c:2577
+#: src/base/cs_matrix.c:2579
 #, c-format
 msgid ""
 "Handling of matrixes in %s format\n"
@@ -1635,9 +2631,9 @@ msgstr ""
 "La gestion des matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
-#: src/base/cs_matrix.c:2713 src/base/cs_matrix.c:2730
-#: src/base/cs_matrix.c:2756 src/base/cs_matrix.c:2776
-#: src/base/cs_matrix.c:2798
+#: src/base/cs_matrix.c:2715 src/base/cs_matrix.c:2732
+#: src/base/cs_matrix.c:2758 src/base/cs_matrix.c:2778
+#: src/base/cs_matrix.c:2800
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
 
@@ -1864,16 +2860,16 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:1236
+#: src/base/cs_mesh.c:1254
 #, c-format
 msgid ""
-" Mesh\n"
+" %s\n"
 "     Number of cells:          %lu\n"
 "     Number of interior faces: %lu\n"
 "     Number of boundary faces: %lu\n"
 "     Number of vertices:       %lu\n"
 msgstr ""
-" Maillage\n"
+" %s\n"
 "     Nombre de cellules :       %lu\n"
 "     Nombre de faces internes : %lu\n"
 "     Nombre de faces de bord :  %lu\n"
@@ -2152,7 +3148,7 @@ msgstr ""
 "  1 : calcul basé sur les sommets\n"
 "et non %d."
 
-#: src/base/cs_mesh_solcom.c:382 src/base/cs_post.c:3279
+#: src/base/cs_mesh_solcom.c:382 src/base/cs_post.c:3379
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -2391,7 +3387,7 @@ msgid ""
 msgstr ""
 "   Nb. cycles : %4d ; Cumul iter maillage fin : %5d ; Residu norme %12.4e\n"
 
-#: src/base/cs_multigrid.c:776
+#: src/base/cs_multigrid.c:781
 #, c-format
 msgid ""
 " @@ Warning: algebraic multigrid for [%s]\n"
@@ -2402,38 +3398,58 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-#: src/base/cs_multigrid.c:942
+#: src/base/cs_multigrid.c:936
+#, c-format
+msgid ""
+"algebraic multigrid [%s]: divergence after %d cycles:\n"
+"  initial residual: %11.4e; current residual: %11.4e"
+msgstr ""
+"multigrille algébrique [%s] : divergence après %d cycles :\n"
+"  résidu initial : %11.4e ; résidu courant : %11.4e"
+
+#: src/base/cs_multigrid.c:941
+#, c-format
+msgid ""
+"algebraic multigrid [%s]: divergence after %d cycles\n"
+"  during resolution at level %d:\n"
+"  initial residual: %11.4e; current residual: %11.4e"
+msgstr ""
+"multigrille algébrique [%s] : divergence après %d cycles :\n"
+"  au cours de la résolution au niveau %d:\n"
+"  résidu initial : %11.4e ; résidu courant : %11.4e"
+
+#: src/base/cs_multigrid.c:1103
 msgid "  Multigrid cycle: descent\n"
 msgstr "  Cycle multigrille : descente\n"
 
-#: src/base/cs_multigrid.c:955 src/base/cs_multigrid.c:1118
+#: src/base/cs_multigrid.c:1116 src/base/cs_multigrid.c:1300
 #, c-format
 msgid "    level %3d: smoother\n"
 msgstr "    niveau %3d : lisseur\n"
 
-#: src/base/cs_multigrid.c:1048
+#: src/base/cs_multigrid.c:1222
 msgid "  Resolution on coarsest level\n"
 msgstr "  Résolution sur le niveau le plus grossier\n"
 
-#: src/base/cs_multigrid.c:1087
+#: src/base/cs_multigrid.c:1269
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
 
-#: src/base/cs_multigrid.c:1247
+#: src/base/cs_multigrid.c:1437
 msgid "Multigrid"
 msgstr "Multigrille"
 
-#: src/base/cs_multigrid.c:1280
+#: src/base/cs_multigrid.c:1469
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
 
-#: src/base/cs_multigrid.c:1287
+#: src/base/cs_multigrid.c:1476
 #, c-format
 msgid "Multigrid [%s]: cycle %4d\n"
 msgstr "Multigrille [%s] : cycle %4d\n"
 
-#: src/base/cs_multigrid.c:1440
+#: src/base/cs_multigrid.c:1629
 #, c-format
 msgid ""
 "\n"
@@ -2442,7 +3458,7 @@ msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
 
-#: src/base/cs_multigrid.c:1483
+#: src/base/cs_multigrid.c:1673
 #, c-format
 msgid ""
 " CLMLGA: maximum number of coarse grids (%d)\n"
@@ -2451,7 +3467,7 @@ msgstr ""
 " CLMLGA : nombre de maillages grossiers maximal (%d)\n"
 "          atteint pour \"%s\".\n"
 
-#: src/base/cs_multigrid.c:1494
+#: src/base/cs_multigrid.c:1684
 #, c-format
 msgid ""
 "\n"
@@ -2460,7 +3476,7 @@ msgstr ""
 "\n"
 "   construction de la grille de niveau %2d\n"
 
-#: src/base/cs_multigrid.c:1530
+#: src/base/cs_multigrid.c:1720
 #, c-format
 msgid ""
 "                                  total       min        max\n"
@@ -2471,7 +3487,7 @@ msgstr ""
 "     nombre de cellules : %12lu %10d %10d\n"
 "     nombre de faces :                 %10d %10d\n"
 
-#: src/base/cs_multigrid.c:1539
+#: src/base/cs_multigrid.c:1729
 #, c-format
 msgid ""
 "     number of cells:     %10d\n"
@@ -2480,7 +3496,7 @@ msgstr ""
 "     nombre de cellules : %10d\n"
 "     nombre de faces :    %10d\n"
 
-#: src/base/cs_multigrid.c:1558
+#: src/base/cs_multigrid.c:1748
 #, c-format
 msgid ""
 "   number of coarse grids:           %d\n"
@@ -2594,12 +3610,19 @@ msgstr ""
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:152
+#: src/base/cs_opts.c:154
+#, c-format
+msgid ""
+" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
+"                   <port_num> port number on rank 0\n"
+msgstr ""
+
+#: src/base/cs_opts.c:159
 #, c-format
 msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"
 
-#: src/base/cs_opts.c:154
+#: src/base/cs_opts.c:161
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -2608,21 +3631,21 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/base/cs_opts.c:167
+#: src/base/cs_opts.c:174
 #, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
 
-#: src/base/cs_opts.c:320
+#: src/base/cs_opts.c:327
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:335
+#: src/base/cs_opts.c:342
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:339
+#: src/base/cs_opts.c:346
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -2631,7 +3654,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:342
+#: src/base/cs_opts.c:349
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -2666,7 +3689,7 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
-#: src/base/cs_post.c:274
+#: src/base/cs_post.c:281
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -2675,7 +3698,7 @@ msgstr ""
 "Le gestionnaire de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:305
+#: src/base/cs_post.c:312
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -2684,7 +3707,7 @@ msgstr ""
 "Le maillage de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:335
+#: src/base/cs_post.c:342
 msgid ""
 "The requested post-processing mesh number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -2692,7 +3715,7 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:341
+#: src/base/cs_post.c:348
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -2701,15 +3724,15 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:762
+#: src/base/cs_post.c:770
 msgid "parallel domain"
 msgstr ""
 
-#: src/base/cs_post.c:940
+#: src/base/cs_post.c:948
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:1842
+#: src/base/cs_post.c:1882
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -2718,7 +3741,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1851
+#: src/base/cs_post.c:1891
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -2727,7 +3750,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1918
+#: src/base/cs_post.c:1958
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -2735,7 +3758,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1924
+#: src/base/cs_post.c:1964
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -2744,7 +3767,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:2180
+#: src/base/cs_post.c:2267
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -2753,11 +3776,11 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:2245 src/base/cs_post.c:2248
+#: src/base/cs_post.c:2332 src/base/cs_post.c:2335
 msgid " edges"
 msgstr ""
 
-#: src/base/cs_post.c:3124
+#: src/base/cs_post.c:3224
 #, c-format
 msgid ""
 "\n"
@@ -2778,21 +3801,25 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:3296
+#: src/base/cs_post.c:3396
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_preprocessor_data.c:247
+#: src/base/cs_post.c:3520
+msgid "Calculation domain"
+msgstr "Domaine de calcul"
+
+#: src/base/cs_preprocessor_data.c:252
 #, c-format
 msgid " Adding periodicity %d (translation [%10.4e, %10.4e, %10.4e]).\n"
 msgstr " Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n"
 
-#: src/base/cs_preprocessor_data.c:252
+#: src/base/cs_preprocessor_data.c:257
 #, c-format
 msgid " Adding periodicity %d (rotation).\n"
 msgstr " Ajout de la périodicité %d (rotation).\n"
 
-#: src/base/cs_preprocessor_data.c:330 src/base/cs_preprocessor_data.c:1709
+#: src/base/cs_preprocessor_data.c:335 src/base/cs_preprocessor_data.c:2129
 #, c-format
 msgid ""
 "Message of type <%s> on <%s>\n"
@@ -2801,7 +3828,7 @@ msgstr ""
 "Message de type <%s> sur <%s>\n"
 "inattendu ou de taille incorrecte"
 
-#: src/base/cs_preprocessor_data.c:347
+#: src/base/cs_preprocessor_data.c:352
 #, c-format
 msgid ""
 " No \"%s\" file available;\n"
@@ -2810,7 +3837,7 @@ msgstr ""
 " Pas de fichier \"%s\" disponible ;\n"
 "   un découpage de domaines non optimisé sera utilisé.\n"
 
-#: src/base/cs_preprocessor_data.c:395
+#: src/base/cs_preprocessor_data.c:400
 #, c-format
 msgid ""
 "The number of cells reported by file\n"
@@ -2821,7 +3848,7 @@ msgstr ""
 "\"%s\" (%lu)\n"
 "ne correspond pas au maillage courant (%lu)."
 
-#: src/base/cs_preprocessor_data.c:416
+#: src/base/cs_preprocessor_data.c:421
 #, c-format
 msgid ""
 "Le number of ranks reported by file\n"
@@ -2832,7 +3859,7 @@ msgstr ""
 "\"%s\" (%d)\n"
 "ne correspond pas au nombre de rangs courant (%d)."
 
-#: src/base/cs_preprocessor_data.c:1357
+#: src/base/cs_preprocessor_data.c:1516 src/base/cs_preprocessor_data.c:1776
 #, c-format
 msgid ""
 "Number of cells on rank %d is zero.\n"
@@ -2841,7 +3868,7 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2010
+#: src/base/cs_preprocessor_data.c:2429
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -2924,7 +3951,7 @@ msgstr ""
 msgid "Closing communication: %s\n"
 msgstr "Fermeture de la communication : %s\n"
 
-#: src/base/cs_renumber.c:880
+#: src/base/cs_renumber.c:890
 #, c-format
 msgid ""
 "\n"
@@ -3052,7 +4079,7 @@ msgstr ""
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
 
-#: src/base/cs_sat_coupling.c:175
+#: src/base/cs_sat_coupling.c:182
 #, c-format
 msgid ""
 "Coupling definition is impossible: a distant root rank equal to\n"
@@ -3063,7 +4090,7 @@ msgstr ""
 "tête de groupe distant égal à %d, alors que le groupe\n"
 "local correspond aux rangs %d à %d\n"
 
-#: src/base/cs_sat_coupling.c:182
+#: src/base/cs_sat_coupling.c:189
 #, c-format
 msgid ""
 "Coupling definition is impossible: a distant root rank equal to\n"
@@ -3074,21 +4101,22 @@ msgstr ""
 "tête de groupe distant égal à %d, alors que les rangs\n"
 "globaux (MPI_COMM_WORLD) s'étendent de 0 à %d\n"
 
-#: src/base/cs_sat_coupling.c:210
+#: src/base/cs_sat_coupling.c:217
 #, c-format
 msgid "coupling: local_ranks = [%d..%d], distant ranks = [%d..%d]\n"
 msgstr "couplage : rangs locaux = [%d..%d], rangs distants = [%d..%d]\n"
 
-#: src/base/cs_sat_coupling.c:369 src/base/cs_sat_coupling.c:507
-#: src/base/cs_sat_coupling.c:574 src/base/cs_sat_coupling.c:649
-#: src/base/cs_sat_coupling.c:710 src/base/cs_sat_coupling.c:775
-#: src/base/cs_sat_coupling.c:868 src/base/cs_sat_coupling.c:959
-#: src/base/cs_sat_coupling.c:1035
+#: src/base/cs_sat_coupling.c:662 src/base/cs_sat_coupling.c:807
+#: src/base/cs_sat_coupling.c:874 src/base/cs_sat_coupling.c:949
+#: src/base/cs_sat_coupling.c:1010 src/base/cs_sat_coupling.c:1080
+#: src/base/cs_sat_coupling.c:1178 src/base/cs_sat_coupling.c:1257
+#: src/base/cs_sat_coupling.c:1348 src/base/cs_sat_coupling.c:1424
+#: src/base/cs_sat_coupling.c:1492
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 
-#: src/base/cs_sat_coupling.c:587
+#: src/base/cs_sat_coupling.c:887
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -3099,7 +4127,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:662
+#: src/base/cs_sat_coupling.c:962
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -3110,7 +4138,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:799
+#: src/base/cs_sat_coupling.c:1104
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -3121,7 +4149,24 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:885
+#: src/base/cs_sat_coupling.c:1185
+msgid ""
+"The centred interpolation scheme is not available\n"
+"when coupling cells"
+msgstr ""
+
+#: src/base/cs_sat_coupling.c:1196
+#, c-format
+msgid ""
+"Coupling %d: inconsistent arguments for PNDCPL().\n"
+"ITYLOC = %d and NBRPTS = %d are indicated.\n"
+"NBRPTS should be %d."
+msgstr ""
+"Couplage %d: arguments incohérents pour PNDCPL().\n"
+"On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
+"On devrait avoir la valeur %d pour NBRPTS."
+
+#: src/base/cs_sat_coupling.c:1274
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -3132,7 +4177,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:892
+#: src/base/cs_sat_coupling.c:1281
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -3156,19 +4201,19 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune face interne.\n"
 
-#: src/base/cs_sles.c:173
+#: src/base/cs_sles.c:174
 msgid "Conjugate gradient"
 msgstr "Gradient conjugué"
 
-#: src/base/cs_sles.c:174
+#: src/base/cs_sles.c:175
 msgid "Jacobi"
 msgstr "Jacobi"
 
-#: src/base/cs_sles.c:175
+#: src/base/cs_sles.c:176
 msgid "Bi-CGstab"
 msgstr "Bi-CGstab"
 
-#: src/base/cs_sles.c:248
+#: src/base/cs_sles.c:249
 #, c-format
 msgid ""
 "\n"
@@ -3189,7 +4234,7 @@ msgstr ""
 "  Nombre d'itérations moyen :       %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
 
-#: src/base/cs_sles.c:274
+#: src/base/cs_sles.c:275
 #, c-format
 msgid ""
 "  Min local total CPU time:         %12.3f\n"
@@ -3200,16 +4245,16 @@ msgstr ""
 "  Temps CPU cumulé local max :      %12.3f\n"
 "  Temps CPU cumulé total :          %12.3f\n"
 
-#: src/base/cs_sles.c:284
+#: src/base/cs_sles.c:285
 #, c-format
 msgid "  Total CPU time:                   %12.3f\n"
 msgstr "  Temps CPU cumulé :                %12.3f\n"
 
-#: src/base/cs_sles.c:393
+#: src/base/cs_sles.c:394
 msgid "  n_iter     res_abs     res_nor\n"
 msgstr "  n_iter     res_abs     res_nor\n"
 
-#: src/base/cs_sles.c:423 src/base/cs_sles.c:1346
+#: src/base/cs_sles.c:424 src/base/cs_sles.c:1370
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
@@ -3217,19 +4262,25 @@ msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 #: src/base/cs_sles.c:450
 #, c-format
 msgid ""
+"\n"
+"\n"
 "%s [%s]: divergence after %u iterations:\n"
-"  initial residual: %11.4e; current residual: %11.4e"
+"  initial residual: %11.4e; current residual: %11.4e\n"
 msgstr ""
-"%s [%s]: divergence après %u itérations :\n"
-"  résidu initial : %11.4e ; résidu courant : %11.4e"
+"\n"
+"\n"
+"%s [%s] : divergence après %u itérations :\n"
+"  résidu initial : %11.4e ; résidu courant : %11.4e\n"
 
-#: src/base/cs_sles.c:464
+#: src/base/cs_sles.c:468
 msgid " @@ Warning: non convergence\n"
 msgstr " @@ Attention : non convergence\n"
 
-#: src/base/cs_sles.c:1356
+#: src/base/cs_sles.c:1382
 #, c-format
 msgid ""
+"\n"
+"\n"
 "%s [%s]:\n"
 " @@ Warning: non convergence and abort\n"
 "\n"
@@ -3237,6 +4288,8 @@ msgid ""
 "\n"
 "    The matrix cannot be considered as invertible anymore."
 msgstr ""
+"\n"
+"\n"
 "%s [%s]:\n"
 " @@ Attention : non convergence et arrêt\n"
 "\n"
@@ -3244,9 +4297,11 @@ msgstr ""
 "\n"
 "    La matrice ne peut plus être considérée come  inversible."
 
-#: src/base/cs_sles.c:1419
+#: src/base/cs_sles.c:1448
 #, c-format
 msgid ""
+"\n"
+"\n"
 "%s [%s]:\n"
 " @@ Warning: non convergence and abort\n"
 "\n"
@@ -3255,6 +4310,8 @@ msgid ""
 "\n"
 "    The resolution does not progress anymore."
 msgstr ""
+"\n"
+"\n"
 "%s [%s]:\n"
 " @@ Attention : non convergence et arrêt\n"
 "\n"
@@ -3263,7 +4320,12 @@ msgstr ""
 "\n"
 "    La résolution ne progresse plus."
 
-#: src/base/cs_sles.c:1648
+#: src/base/cs_sles.c:1756
+#, c-format
+msgid "%s: error (divergence) solving for %s"
+msgstr ""
+
+#: src/base/cs_sles.c:1871
 #, c-format
 msgid ""
 "%s [%s]:\n"
@@ -3430,16 +4492,16 @@ msgstr ""
 "\n"
 "  Fermeture de la communication :  %s\n"
 
-#: src/base/cs_syr3_comm.c:1534 src/base/cs_syr3_comm.c:1569
-#: src/base/cs_syr3_comm.c:1573 src/base/cs_syr3_comm.c:1581
+#: src/base/cs_syr3_comm.c:1536 src/base/cs_syr3_comm.c:1574
+#: src/base/cs_syr3_comm.c:1578 src/base/cs_syr3_comm.c:1586
 msgid "Initialization error for socket communication support.\n"
 msgstr "Erreur d'initialisation du support de communication par socket.\n"
 
-#: src/base/cs_syr3_comm.c:1559
+#: src/base/cs_syr3_comm.c:1564
 msgid "Error obtaining computer's name"
 msgstr "Erreur de récupération du nom de la machine"
 
-#: src/base/cs_syr3_comm.c:1628
+#: src/base/cs_syr3_comm.c:1633
 msgid ""
 "\n"
 "Closing socket...\t [ok]\n"
@@ -3585,8 +4647,8 @@ msgstr ""
 "========================================================\n"
 
 #: src/base/cs_syr3_messages.c:276 src/base/cs_syr3_messages.c:359
-#: src/base/cs_syr_coupling.c:790 src/base/cs_syr_coupling.c:831
-#: src/base/cs_syr_coupling.c:870 src/base/cs_syr_coupling.c:909
+#: src/base/cs_syr_coupling.c:793 src/base/cs_syr_coupling.c:834
+#: src/base/cs_syr_coupling.c:873 src/base/cs_syr_coupling.c:912
 #, c-format
 msgid "SYRTHES coupling number %d impossible; there are %d couplings"
 msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
@@ -3781,7 +4843,7 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:1073
+#: src/base/cs_syr_coupling.c:1080
 msgid ""
 "At least 1 SYRTHES coupling was defined for which\n"
 "no communication with a SYRTHES instance is possible."
@@ -3996,19 +5058,11 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
-#: src/ctwr/cs_ctwr.c:1720
-msgid " Création des halos\n"
-msgstr ""
-
-#: src/ctwr/cs_ctwr.c:1725
-msgid " Définition des halos\n"
-msgstr ""
-
-#: src/ctwr/cs_ctwr.c:4256
+#: src/ctwr/cs_ctwr.c:2097
 msgid "T water"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:4268
+#: src/ctwr/cs_ctwr.c:2109
 msgid "Flux water"
 msgstr ""
 
@@ -4019,6 +5073,14 @@ msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 #: src/ctwr/cs_ctwr_halo.c:1553
 msgid "    Distant halo definition\n"
 msgstr "    Création du halo distant\n"
+
+#: src/ctwr/cs_ctwr_mesh.c:1233
+msgid " Création des halos\n"
+msgstr ""
+
+#: src/ctwr/cs_ctwr_mesh.c:1238
+msgid " Définition des halos\n"
+msgstr ""
 
 #: src/lagr/cs_lagr.c:175
 #, c-format
