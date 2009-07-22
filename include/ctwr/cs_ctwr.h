@@ -175,58 +175,26 @@ struct _cs_ctwr_zone_t {
 
 };
 
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* array of exchanges area */
+
+
+extern cs_int_t            cs_glob_ct_nbr_max;
+extern cs_int_t            cs_glob_ct_nbr;
+extern cs_ctwr_zone_t     ** cs_glob_ct_tab;
+
+/* array containing the stacking of the exchange area*/
+extern cs_int_t  *  cs_stack_ct;
+
+/* array containing the treatment order of the exchanges areas */
+extern cs_int_t  *  cs_chain_ct;
 
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get number of cooling tower exchange zones.
- *
- * Fortran interface:
- *
- * SUBROUTINE NBZECT
- * *****************
- *
- * INTEGER          NBRCTZ        : --> : number of exchange zones
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (nbzect, NBZECT)
-(
- cs_int_t  *nbrctz
-);
-
-/*----------------------------------------------------------------------------
- * Indicate if the cooling tower model used is that of Poppe or Merkel.
- *
- * Fortran interface:
- *
- * SUBROUTINE AEMODE
- * *****************
- *
- * INTEGER          IMCTCH        : --> : model type (1: Poppe; 2: Merkel)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aemode, AEMODE)
-(
- cs_int_t  *imctch
-);
-
-/*----------------------------------------------------------------------------
- * Add a constant to the temperature vector for all exchange zones.
- *
- * Fortran interface:
- *
- * SUBROUTINE AEPROT
- * *****************
- *
- * DOUBLE PRECISION DELTA         : --> : type de ct (Poppe ou Merkel)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aeprot, AEPROT)
-(
- cs_real_t  *delta
-);
 
 /*----------------------------------------------------------------------------
  * Define an exchange zone
@@ -280,6 +248,54 @@ void CS_PROCF (defct, DEFCT)
   const cs_real_t  *dgout,
   const cs_real_t  *visc,
   const cs_real_t  *conduc
+);
+
+/*----------------------------------------------------------------------------
+ * Get number of cooling tower exchange zones.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE NBZECT
+ * *****************
+ *
+ * INTEGER          NBRCTZ        : --> : number of exchange zones
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (nbzect, NBZECT)
+(
+ cs_int_t  *nbrctz
+);
+
+/*----------------------------------------------------------------------------
+ * Indicate if the cooling tower model used is that of Poppe or Merkel.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE AEMODE
+ * *****************
+ *
+ * INTEGER          IMCTCH        : --> : model type (1: Poppe; 2: Merkel)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (aemode, AEMODE)
+(
+ cs_int_t  *imctch
+);
+
+/*----------------------------------------------------------------------------
+ * Add a constant to the temperature vector for all exchange zones.
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE AEPROT
+ * *****************
+ *
+ * DOUBLE PRECISION DELTA         : --> : type de ct (Poppe ou Merkel)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (aeprot, AEPROT)
+(
+ cs_real_t  *delta
 );
 
 /*----------------------------------------------------------------------------
@@ -427,44 +443,6 @@ void CS_PROCF(pstict, PSTICT)
  void
 );
 
-/*----------------------------------------------------------------------------
- * Get the local (negative) numbers associated with the first and last
- * post processing meshes dedicated to exchange area
- *
- * Fortran interface:
- *
- * SUBROUTINE PSTEct
- * *****************
- *
- * INTEGER          first_id        : <-- : id of first post processing mesh
- * INTEGER          last_id         : <-- : id of last post processing mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstect, PSTECT)
-(
- cs_int_t  *const first_id,
- cs_int_t  *const last_id
-);
-
-/*----------------------------------------------------------------------------
- * Create nodal coupled mesh.
- * Send vertices's coordinates and connectivity of coupled mesh.
- *
- * Fortran Interface:
- *
- * SUBROUTINE GEOct
- * *****************
- *
- * INTEGER          n_ct     : <-- : number of exchange area
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(geoct, GEOCT)
-(
-  const cs_real_t  *const gx,           /* composante x de la gravite */
-  const cs_real_t  *const gy,           /* composante y de la gravite */
-  const cs_real_t  *const gz            /* composante z de la gravite */
-);
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -472,6 +450,7 @@ void CS_PROCF(geoct, GEOCT)
 /*----------------------------------------------------------------------------
  * Definition d'une zone d'echange (qui est ajoute a celles deja definies)
  *----------------------------------------------------------------------------*/
+
 void cs_ctwr_definit
 (
   const cs_int_t   idimct,           /* Dimemsion du probleme 2:2D  3:3D */
@@ -506,38 +485,11 @@ void cs_ctwr_definit
 );
 
 /*----------------------------------------------------------------------------
- * Construction du maillage eau
- *----------------------------------------------------------------------------*/
-
-void cs_ctwr_maille
-(
-  const cs_real_t               gx,             /* composante x de la gravite */
-  const cs_real_t               gy,             /* composante y de la gravite */
-  const cs_real_t               gz,             /* composante z de la gravite */
-  const cs_mesh_t             *mesh,      /* <-- structure maillage associee  */
-  const cs_mesh_quantities_t  *mesh_quantities   /* <-- grandeurs du maillage */
-);
-
-
-
-/*----------------------------------------------------------------------------
- * Interpolation AIR -> EAU
+ * Destruction des structures associees aux ventilateurs
  *----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_adeau(const cs_mesh_t             *mesh,
-              const cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------
- * Interpolation EAU -> AIR
- *----------------------------------------------------------------------------*/
-
-void cs_ctwr_adair
-(
-  const cs_real_t          gx,             /* composante x de la gravite */
-  const cs_real_t          gy,             /* composante y de la gravite */
-  const cs_real_t          gz             /* composante z de la gravite */
-);
+cs_ctwr_all_destroy(void);
 
 /*----------------------------------------------------------------------------
  * Resolution des variables eau
@@ -628,18 +580,6 @@ void cs_ctwr_bilanct
   const cs_mesh_quantities_t  *mesh_quantities   /* <-- grandeurs du maillage */
 );
 
-/*----------------------------------------------------------------------------*
- * Chaining of the exchange area                                              *
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_stacking
-(
-  const cs_real_t          gx,            /* composante x de la gravite */
-  const cs_real_t          gy,            /* composante y de la gravite */
-  const cs_real_t          gz             /* composante z de la gravite */
-);
-
 /*----------------------------------------------------------------------------
  * Initialict post-processing
  *
@@ -665,26 +605,6 @@ void
 cs_ctwr_post_function(cs_int_t   ct_id,
                       cs_int_t   nt_cur_abs,
                       cs_real_t  t_cur_abs);
-
-/*----------------------------------------------------------------------------
- * Destruction des structures associees aux ventilateurs
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_all_destroy(void);
-
-/*----------------------------------------------------------------------------
- * Get the local (negative) numbers associated with the first and last
- * post processing meshes dedicated to exchange area
- *
- * parameters:
- *   first_mesh_id       <--  Id of first post processing mesh
- *   last_mesh_id        <--  Id of last post processing mesh
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_post_id_extents(cs_int_t  *const id_mesh_start,
-                        cs_int_t  *const id_mesh_end);
 
 /*----------------------------------------------------------------------------
  * Get pointer to exchange area.

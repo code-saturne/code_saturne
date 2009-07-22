@@ -44,6 +44,7 @@ saturneinclude_HEADERS = \
 $(top_srcdir)/include/ctwr/cs_ctwr_air_props.h \
 $(top_srcdir)/include/ctwr/cs_ctwr.h \
 $(top_srcdir)/include/ctwr/cs_ctwr_halo.h \
+$(top_srcdir)/include/ctwr/cs_ctwr_mesh.h \
 $(top_srcdir)/include/ctwr/ctincl.h
 
 # Library source files
@@ -53,6 +54,7 @@ libcsctwr_la_SOURCES = \
 cs_ctwr_air_props.c \
 cs_ctwr.c \
 cs_ctwr_halo.c \
+cs_ctwr_mesh.c \
 ctini1.f90 \
 ctiniv.f90 \
 ctphyv.f90 \

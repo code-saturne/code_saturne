@@ -1,3 +1,16 @@
+* 22/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+               David Monfort <david.monfort@edf.fr>
+  Split main cooling-tower modelling routine in two for a better
+  understanding (mainly to move aside the mesh generation).
+  added routines:
+    include/ctwr/cs_ctwr_mesh.h
+    src/ctwr/cs_ctwr_mesh.c
+  modified script:
+    src/ctwr/Makefile.am
+  modified routines:
+    include/ctwr/cs_ctwr.h
+    src/ctwr/cs_ctwr.c
+
 * 22/07/2009 - David Monfort <david.monfort@edf.fr>
   Move tutorial examples into a dedicated examples directory.
 
