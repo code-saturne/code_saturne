@@ -108,23 +108,12 @@ enum {X, Y, Z} ;
 
 
 /*============================================================================
- * Static global variables
+ * Local variables
  *============================================================================*/
 
 static double _epsilon_denom = 1.e-14; /* Minimum denominator */
 
-/* array of exchanges area */
-
-cs_int_t            cs_glob_ct_nbr_max = 0;
 static cs_int_t            cs_ctwr_nmaxvoi  = 50;
-cs_int_t            cs_glob_ct_nbr = 0;
-cs_ctwr_zone_t     ** cs_glob_ct_tab = NULL;
-
-/* array containing the stacking of the exchange area*/
-cs_int_t  *  cs_stack_ct    = NULL;
-
-/*array containing the treatment order of the exchanges areas */
-cs_int_t  *  cs_chain_ct = NULL;
 
 #if defined(HAVE_MPI)
 MPI_Status status;
