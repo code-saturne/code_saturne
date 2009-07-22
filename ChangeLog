@@ -1,4 +1,7 @@
 * 22/07/2009 - David Monfort <david.monfort@edf.fr>
+  Move tutorial examples into a dedicated examples directory.
+
+* 22/07/2009 - David Monfort <david.monfort@edf.fr>
   Add missing changes in tridim.f90 for GUI improvement... sorry!
   modified routine:
     src/base/tridim.f90

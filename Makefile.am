@@ -62,7 +62,7 @@ $(ac_aux_dir)/cs_tools.m4
 # One adds two whole sub-directories and get rid of the .svn
 # directories with a dist-hook. The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
-EXTRA_DIST += extras patches
+EXTRA_DIST += examples extras patches
 
 nodist_include_HEADERS = cs_config.h
 
@@ -148,5 +148,6 @@ install-data-hook:
 	done
 
 dist-hook:
+	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
