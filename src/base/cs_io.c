@@ -1643,7 +1643,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
                           stride,
                           global_num_start,
                           global_num_end);
-    else
+    else if (n_vals > 0)
       fvm_file_read_global(inp->f,
                            _buf,
                            type_size,

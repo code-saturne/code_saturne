@@ -1,4 +1,9 @@
-* 22/07/2009 - David Monfort <david.monfort@edf.fr>
+* 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a minor failure in I/O management.
+  modified routine:
+    src/base/cs_io.c
+ 
+* 22/07/2009 - Sofiane Benhamadouche <sofiane.benhamadouche@edf.fr>
   Do not relax turbulent variables (k/epsilon/omega) in unsteady
   simulations.
   modified routine:
