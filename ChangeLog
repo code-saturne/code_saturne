@@ -1,3 +1,8 @@
+* 22/07/2009 - David Monfort <david.monfort@edf.fr>
+  Add missing changes in tridim.f90 for GUI improvement... sorry!
+  modified routine:
+    src/base/tridim.f90
+
 * 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a minor failure in I/O management.
   modified routine:

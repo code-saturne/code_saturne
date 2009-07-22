@@ -975,7 +975,7 @@ if (imatis.eq.0) then
 !     - Interface Code_Saturne
 !       ======================
 
-  if(iihmpr.eq.1) then
+  if (iihmpr.eq.1) then
 
 ! N.B. Zones de face de bord : on utilise provisoirement les zones des
 !    physiques particulieres, meme sans physique particuliere
@@ -983,12 +983,12 @@ if (imatis.eq.0) then
 
     call uiclim                                                   &
     !==========
- ( nfabor,                                                        &
+ ( ntcabs, nfabor,                                                &
    nozppm, ncharm, ncharb, nclpch,                                &
    iindef, ientre, iparoi, iparug, isymet, isolib,                &
-   iqimp,  icalke, ientat, ientcp,                                &
+   iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
    ia(iitypf), ia(iizfpp), ia(iicodc),                            &
-   surfbo,                                                        &
+   dtref,  ttcabs, surfbo, cdgfbo,                                &
    qimp,   qimpat, qimpcp, dh,     xintur,                        &
    timpat, timpcp, distch, ra(ircodc) )
 
@@ -1086,7 +1086,8 @@ if (imatis.eq.0) then
 
     call uiclve                                                   &
     !==========
- ( nfabor, iindef, ientre, iparoi, iparug, isymet, isolib,        &
+ ( nfabor, nozppm,                                                &
+   iindef, ientre, iparoi, iparug, isymet, isolib,                &
    ia(iitypf), ia(iizfpp) )
 
   endif
@@ -1151,6 +1152,24 @@ if (iale.eq.1) then
   do ii = 1, nnod
     ia(iimpal+ii-1) = 0
   enddo
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uialcl &
+    !==========
+  ( nfabor, nozppm,                    &
+    ibfixe, igliss, ivimpo,            &
+    ia(iialty), ipnfbr, nnod, nodfbr,  &
+    ia(iimpal),                        &
+    ra(idepal),                        &
+    dtref, ttcabs, ntcabs,             &
+    iuma, ivma, iwma,                  &
+    ra(ircodc)  )
+
+  endif
 
   ils    = ifinia
   ifnia1 = ils + maxelt
