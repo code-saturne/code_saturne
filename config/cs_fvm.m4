@@ -62,13 +62,13 @@ if test "$?" = "0" ; then
   FVM_CPPFLAGS="$FVM_CPPFLAGS `$fvm_config --cppflags`"
   FVM_DEP_LDFLAGS="`$fvm_config --ldflags`"
   FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags cgns`"
-  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags hdf5`"
   FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags med`"
+  FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags hdf5`"
   FVM_DEP_LDFLAGS="$FVM_DEP_LDFLAGS `$fvm_config --ldflags mpi`"
   FVM_DEP_LIBS="`$fvm_config --libs`"
   FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs cgns`"
-  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs hdf5`"
   FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs med`"
+  FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs hdf5`"
   FVM_DEP_LIBS="$FVM_DEP_LIBS `$fvm_config --libs mpi`"
 fi
 
