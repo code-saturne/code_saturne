@@ -516,9 +516,11 @@ _add_inter(cs_int_t              e1_id,
   }
 
   new_inter_e1.edge_id = e1_id;
+  new_inter_e1.vtx_id = -1;
   new_inter_e1.curv_abs = abs_e1;
 
   new_inter_e2.edge_id = e2_id;
+  new_inter_e2.vtx_id = -1;
   new_inter_e2.curv_abs = abs_e2;
 
   if (e1_id < e2_id) {
