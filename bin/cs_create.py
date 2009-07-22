@@ -114,7 +114,7 @@ def make_executable(filename):
     os.chmod(filename, mode | stat.S_IEXEC)
 
     return
-    
+
 
 #-------------------------------------------------------------------------------
 # Comment or uncomment examples in user files
@@ -129,8 +129,8 @@ def comments(filename, use_gui):
     fd = file(filename, 'r')
     fdt = file(filename+'.tmp','w')
     
-    kwd_beg = re.compile('CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT')
-    kwd_end = re.compile('CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN')
+    kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START')
+    kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
     
 
     if use_gui:
@@ -141,7 +141,10 @@ def comments(filename, use_gui):
             if comment_line == 0:
                 fdt.write(line)
             else:
-                fdt.write('!ex '+line)
+                if len(line) > 1:
+                    fdt.write('!ex '+line)
+                else:
+                    fdt.write('!ex'+line)
                 if kwd_end.search(line): comment_line = 0
 
     else:

@@ -139,8 +139,8 @@ install-data-hook:
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
-	comment1="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT"; \
-	comment2="^\! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN"; \
+	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
+	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
 	for file in $${user_files}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
 	  $(SED) -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \

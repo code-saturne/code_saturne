@@ -246,7 +246,7 @@ double precision vgauss(3)
 !===============================================================================
 
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
 !     Par defaut on ne les modifie pas.
@@ -254,7 +254,7 @@ double precision vgauss(3)
 if(1.eq.1) return
 
 !===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 if (nbpnew.eq.0) return
 

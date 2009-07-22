@@ -548,7 +548,7 @@ double precision tpent
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -576,7 +576,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 

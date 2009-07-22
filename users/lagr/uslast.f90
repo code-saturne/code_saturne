@@ -277,7 +277,7 @@ save             debm
 !===============================================================================
 
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 if(istala.eq.1 .and. iplas.ge.idstnt .and. nvlsts.gt.0) then
 
@@ -316,7 +316,7 @@ else
 
 endif
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 !===============================================================================

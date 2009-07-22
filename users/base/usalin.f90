@@ -28,8 +28,9 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine usalin
+subroutine usalin
 !================
+
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -72,7 +73,7 @@ include "albase.h"
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -81,9 +82,7 @@ include "albase.h"
 
 if(1.eq.1) return
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
-
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -96,7 +95,7 @@ if(1.eq.1) return
 !     IL EST POSSIBLE D'AJOUTER OU DE RETRANCHER DES PARAMETRES
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -105,17 +104,17 @@ if(1.eq.1) return
 !       L'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Activation de la methode ALE
 iale = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Nombre de sous-iterations d'initialisation du fluide. Dans le cas
 !     d'un calcul suite, il s'agit du nombre d'iterations a partir du
@@ -124,31 +123,31 @@ iale = 1
 
   nalinf = 75
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Nombre maximal d'iterations d'implicitation du deplacement des
 !     structures (=1 pour le couplage explicite)
 nalimx = 15
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Precision relative d'implicitation du deplacement des structures
 epalim = 1.d-5
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! --- Type de viscosite de maillage (cf. usvima)
 !     0 : isotrope
 !     1 : orthotrope
 iortvm = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! FORMATS

@@ -104,7 +104,7 @@ data             th /   100.d0,   200.d0,   300.d0,               &
 !       EVITER LES OPERATIONS FAISANT APPEL AU PARALLELISME
 !       ======
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 write(nfecra,9000)
 call csexit (1)
@@ -137,7 +137,7 @@ call csexit (1)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! EXEMPLES

@@ -167,13 +167,13 @@ double precision dgout,visc,conduc
 !===============================================================================
 
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
 if(1.eq.1) return
 
 !===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 ! Proprietes de l'air. Ne pas modifier           !

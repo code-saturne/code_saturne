@@ -225,13 +225,13 @@ isuit1 = isuite
 
 ifbt1d = 0
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
 if(1.eq.1) return
 
 !===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 if(iappel.eq.1.or.iappel.eq.2) then
 

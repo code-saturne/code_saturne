@@ -115,7 +115,7 @@ integer iphas
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -148,7 +148,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -165,7 +165,7 @@ endif
 !                      ====                          ce sous-programme.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -175,7 +175,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -193,12 +193,12 @@ endif
 !      60...k-omega SST
 !  Pour 10, contacter l'equipe de developpement avant utilisation
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 iturb(iphas) = 20
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Chaleur massique variable (ICP=1) ou non (ICP=0)
@@ -216,12 +216,12 @@ iturb(iphas) = 20
 !     =========   si et seulement si on a choisi CP variable ici
 !                                                   (avec ICP(IPHAS)=1)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 icp(iphas) = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! FORMATS
@@ -290,7 +290,7 @@ integer iverif
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -323,7 +323,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -340,7 +340,7 @@ endif
 !                      ====                          ce sous-programme.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -350,7 +350,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -377,11 +377,11 @@ endif
 
 !     Imposer NSCAUS = 0 s'il n'y a pas de scalaire utilisateur.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 nscaus = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! FORMATS
@@ -456,7 +456,7 @@ integer iutile, iscal
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -489,7 +489,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -506,7 +506,7 @@ endif
 !                      ====                          ce sous-programme.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -516,7 +516,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -544,7 +544,7 @@ endif
 !       donnees automatiquement par ailleurs : on ne modifie pas ISCAVR.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     Le test sur IUTILE permet de desactiver les instructions (qui
 !       ne sont fournies qu'a titre d'exemple a adapter)
@@ -554,7 +554,7 @@ if(iutile.eq.1) then
   iscavr(3) = 2
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 
@@ -583,7 +583,7 @@ endif
 
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 do iscal = 1, nscaus
 
@@ -597,7 +597,7 @@ do iscal = 1, nscaus
 
 enddo
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
 ! FORMATS
@@ -695,7 +695,7 @@ integer iphas, ialgce
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -728,7 +728,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -745,7 +745,7 @@ endif
 !                      ====                          ce sous-programme.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -755,7 +755,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -764,22 +764,22 @@ endif
 !                   2 : variable en espace et en temps
 !                  -1 : algorithme stationnaire)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 idtvar = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Couplage vitesse/pression (0 : algorithme classique,
 !                                1 : couplage instationnaire)
 !     Uniquement en monophasique
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ipucou = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Prise en compte de la pression hydrostatique
@@ -787,11 +787,11 @@ ipucou = 0
 !                                1 : prise en compte explicite)
 !     Uniquement en monophasique
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphydr = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Estimateurs pour Navier-Stokes (champ de vitesse non fige)
@@ -799,7 +799,7 @@ iphydr = 0
 !       temps en activant les plus parlants ci dessous
 !        (=2 pour activer, =0 pour desactiver).
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 !       div(rho u) -Gamma
@@ -807,7 +807,7 @@ iescal(iescor,iphas) = 0
 !       precision de la resolution de la quantite de mouvement
 iescal(iestot,iphas) = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !----
@@ -888,7 +888,7 @@ integer iphas, iutile, ii, jj, imom
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -921,7 +921,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -938,7 +938,7 @@ endif
 !     LE NUMERO DES PROPRIETES PHYSIQUES ET DES  VARIABLES EST CONNU
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -948,7 +948,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -959,12 +959,12 @@ endif
 ! --- Suite de calcul : ISUITE ( = 1) ou non (0)
 !     Avec relecture du fichier suite auxiliaire ILEAUX ( = 1) ou non (0)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 isuite = 0
 ileaux = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Duree
 !       NTMABS = numero absolu du dernier pas de temps desire
@@ -972,20 +972,20 @@ ileaux = 1
 !         et qu'on veut en faire 10 autres,
 !           il faut imposer NTMABS a 10 + 10 = 20
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ntmabs = 10
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Pas de temps de reference
 !     L'exemple donne ici est probablement inadapte a votre cas
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 dtref  = 0.01d0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Pas de temps maximal DTMAX
 !     Imposer une valeur a partir de grandeurs caracteristiques du cas
@@ -1053,7 +1053,7 @@ dtref  = 0.01d0
 !    Si les physiques particulieres ne sont pas activees
 !       (charbon, combustion, electrique : voir usppmo)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if(nmodpp.eq.0) then
 
@@ -1073,15 +1073,15 @@ if(nmodpp.eq.0) then
 
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Calcul (suite) a champ de vitesse fige (1 oui, 0 non)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iccvfg = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Methode des vortex pour les conditions d'entree en L.E.S.
 !              (0 : non activee,  1 : activee)
@@ -1090,14 +1090,14 @@ iccvfg = 0
 !     Pour utiliser la methode des vortex, veuillez renseigner
 !       le sous-programme usvort.F
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 if (itytur(iphas).eq.4) then
   ivrtex = 0
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Schema convectif
 
@@ -1126,7 +1126,7 @@ endif
 !                                         on ne modifie pas BLENCV ici.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 
@@ -1139,7 +1139,7 @@ if(nscaus.ge.1) then
   enddo
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Parametres  multigrille algebrique
@@ -1149,12 +1149,12 @@ endif
 
 !     Uniquement disponible pour la pression
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 imgr(ipr(iphas)) = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !=========================================================================
@@ -1174,7 +1174,7 @@ imgr(ipr(iphas)) = 1
 !                                  et IRCFLU(IEP(IPHAS))  = 0
 !     (noter que la variable ITYTUR vaut ITURB/10)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     Le test sur IUTILE permet de desactiver les instructions (qui
 !       ne sont fournies qu'a titre d'exemple a adapter)
@@ -1190,7 +1190,7 @@ if(iutile.eq.1) then
 
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! Constantes physiques (cstphy.h)
@@ -1198,13 +1198,13 @@ endif
 
 ! --- gravite (g en m/s2, avec le signe dans le repere de calcul)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 gx = 0.d0
 gy = 0.d0
 gz = 0.d0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Proprietes  de reference du fluide (pour chaque phase)
 
@@ -1317,7 +1317,7 @@ gz = 0.d0
 !             la presion totale
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 
@@ -1325,7 +1325,7 @@ ro0   (iphas) = 0.235d0
 viscl0(iphas) = 0.84d-6
 cp0   (iphas) = 1219.d0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 iphas = 1
 
@@ -1358,7 +1358,7 @@ p0    (iphas) = 1.013d5
 
 !       a titre d'exemple, on suppose ci-dessous qu'elles sont constantes
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if(nmodpp.eq.0) then
   iphas = 1
@@ -1366,7 +1366,7 @@ if(nmodpp.eq.0) then
   ivivar(iphas) = 0
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Valeurs min SCAMIN et max SCAMAX admissibles pour
@@ -1388,7 +1388,7 @@ endif
 !         donnees automatiquement par ailleurs : on ne renseigne pas
 !         SCAMIN SCAMAX.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     S'il y a des scalaires utilisateur
 if(nscaus.gt.0) then
@@ -1405,7 +1405,7 @@ if(nscaus.gt.0) then
 
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Diffusivite de reference VISLS0 en kg/(m s) pour
 !        chaque scalaire UTILISATEUR   hormis  pour ceux qui
@@ -1436,7 +1436,7 @@ endif
 !       suivent le fluide.
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     S'il y a des scalaires utilisateur
 if(nscaus.gt.0) then
@@ -1452,18 +1452,18 @@ if(nscaus.gt.0) then
 
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Vitesse de reference pour l'initialisation de la turbulence (m2/s)
 !      (utile seulement en turbulence)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 uref(iphas)    = 1.d0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Echelle de longueur de reference en metres pour
 !      initialisation de epsilon (et clipping particulier
@@ -1473,12 +1473,12 @@ uref(iphas)    = 1.d0
 !      peut se developper
 !      (utile seulement en turbulence)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 almax(iphas) = -grand
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- Definition des moments
 !     (au maximum NBMOMX moments, correlations d'ordre maximum NDGMOX)
@@ -1599,7 +1599,7 @@ integer iphas, ipp, imom
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -1632,7 +1632,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
@@ -1649,7 +1649,7 @@ endif
 !     LE NUMERO DES PROPRIETES PHYSIQUES ET DES  VARIABLES EST CONNU
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
 
@@ -1659,7 +1659,7 @@ endif
 !       l'utilisateur pourra, si necessaire, les decommenter et les
 !       adapter a ses besoins.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
@@ -1669,20 +1669,20 @@ endif
 
 ! --- ecriture du fichier suite auxiliaire IECAUX = 1 oui, 0 non
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iecaux = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- pas des sorties listing
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ntlist = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! --- post traitement
 
@@ -1714,7 +1714,7 @@ ntlist = 1
 !              'split_tensors'     (ecrit les tenseurs en tant que
 !                                   scalaires separes)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ichrvl = 1
 ichrbo = 0
@@ -1725,31 +1725,31 @@ ichrmd = 0
 FMTCHR = 'EnSight Gold'
 OPTCHR = 'binary'
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- pas des chrono (-1 : une seule sortie en fin de calcul)
 !                    (valeur strictement positive : periode)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ntchr = -1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- pas des sorties historiques
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 nthist = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Nombre de sondes et positions (limite a NCAPTM=100)
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ncapt  = 4
 xyzcap(1,1) = 0.30d0
@@ -1768,7 +1768,7 @@ xyzcap(1,4) = 0.60d0
 xyzcap(2,4) =-0.05d0
 xyzcap(3,4) = 0.01d0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- variable courante
@@ -1788,7 +1788,7 @@ xyzcap(3,4) = 0.01d0
 
 
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     Variables dynamiques courantes
 
@@ -1938,7 +1938,7 @@ elseif(iturb(iphas).eq.60) then
 
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !     Variables scalaires utilisateur
 
@@ -1954,7 +1954,7 @@ endif
 !         implicitement definis selon le modele, les informations sont
 !         donnees automatiquement par ailleurs : on ne modifie pas BLENCV.
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if(isca(1).gt.0.and.nscaus.ge.1) then
  ipp = ipprtp(isca  (1))
@@ -1972,14 +1972,14 @@ if(isca(2).gt.0.and.nscaus.ge.2) then
   ihisvr(ipp,1)= -1
 endif
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !     Autres variables
 
 iphas = 1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     variable masse volumique (sortie en post uniquement si variable
 !                               ou si physique particuliere)
@@ -2082,7 +2082,7 @@ ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !----
@@ -2154,13 +2154,13 @@ integer          nideve, nituse, nrdeve, nrtuse
 
 !===============================================================================
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
 if(1.eq.1) return
 
 !===============================================================================
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! 1. DIMENSION DES MACROS TABLEAUX IA ET RA :
@@ -2187,7 +2187,7 @@ if(1.eq.1) return
 
 !===============================================================================
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     DIMENSION DU MACRO TABLEAU D'ENTIERS IA
 
@@ -2197,13 +2197,13 @@ longia = 0
 
 longra = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 ! 2. DIMENSIONS DES TABLEAUX UTILISATEUR ITUSER ET RTUSER
 !===============================================================================
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_DEBUT
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 !     DIMENSION DU TABLEAU D'ENTIERS ITUSER
 
@@ -2213,7 +2213,7 @@ nituse = 0
 
 nrtuse = 0
 
-! CODE_FOURNI_COMME_EXEMPLE_A_ADAPTER_PAR_L_UTILISATEUR_FIN
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !----

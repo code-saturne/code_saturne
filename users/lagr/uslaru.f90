@@ -259,7 +259,7 @@ do iel = 1,ncel
   croule(iel) = 1.d0
 enddo
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! -1.  SI L'UTILISATEUR N'INTERVIENT PAS, ON LAISSE CROULE = 1 PARTOUT
 !===============================================================================
@@ -268,7 +268,7 @@ if(1.eq.1) then
   return
 endif
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! 2. CALCUL DE LA FONCTION D'IMPORTANCE PAR L'UTILISATEUR

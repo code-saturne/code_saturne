@@ -1,4 +1,10 @@
 * 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translation in English of magic strings in user files.
+  modified scripts:
+    bin/cs_create
+    Makefile.am
+
+* 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Update the translation files.
   modified files:

@@ -298,7 +298,7 @@ ipass = ipass + 1
 
 iphas = 1
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 ! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
 !       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
@@ -346,7 +346,7 @@ endif
 ' Module arc electrique: pas d''intervention utilisateur pour ',/,&
 '                          le calcul des proprietes physiques.',/)
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !     Message au premier passage pour indiquer que l'utilisateur a
 !       rapatrie le sous-programme.
@@ -543,7 +543,8 @@ if ( ippmod(ieljou).ge.1 ) then
 !       utilisee pour le potentiel reel.
 !       IL NE FAUT PAS la renseigner.
 
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
 !     Conductivite electrique imaginaire :
 !     La conductivite reelle et imaginaire sont dans le meme tableau.
 !       Ce choix est fait en dur dans varpos.
@@ -557,7 +558,8 @@ if ( ippmod(ieljou).ge.1 ) then
       enddo
     endif
   endif
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 !       Diffusivite variable a l'exclusion de l'enthalpie et du potentiel

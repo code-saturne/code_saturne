@@ -739,7 +739,7 @@ else if (iusclb(kzone).eq.iencrl) then
 
 
 else if (iusclb(kzone).eq.jbord1                                  &
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_DEBUT
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !    en standard, sans intervention de l'utilisateur,
 !      on ne souhaite pas passer ici
 !    mais on desire
@@ -747,7 +747,7 @@ else if (iusclb(kzone).eq.jbord1                                  &
 !      que le source ci-dessous soit compile pour verifier
 !         qu'il n y a pas d'erreur
          .and.(0.eq.1)                                            &
-! TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
                                 ) then
 
 !     ----------------------------------------------------
