@@ -532,6 +532,8 @@ cs_mesh_create(void)
 
   mesh->cell_cells_idx = NULL;
   mesh->cell_cells_lst = NULL;
+  mesh->gcell_vtx_idx = NULL;
+  mesh->gcell_vtx_lst = NULL;
 
   /* Numbering info */
 
@@ -625,6 +627,11 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);
     BFT_FREE(mesh->cell_cells_lst);
+  }
+
+  if (mesh->gcell_vtx_idx != NULL) {
+    BFT_FREE(mesh->gcell_vtx_idx);
+    BFT_FREE(mesh->gcell_vtx_lst);
   }
 
   /* Free halo structure */
@@ -1078,20 +1085,20 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf(_(" Extended neighborhood structures definition\n"));
     bft_printf_flush();
 
-    cs_ext_neighborhood_define(mesh,
-                               gcell_vtx_idx,
-                               gcell_vtx_lst);
+    mesh->gcell_vtx_idx = gcell_vtx_idx;
+    mesh->gcell_vtx_lst = gcell_vtx_lst;
+
+    cs_ext_neighborhood_define(mesh);
 
     bft_printf_flush();
     t2 = bft_timer_wtime();
     ext_neighborhood_time = t2-t1;
 
   }
-
-  /* Free memory */
-
-  BFT_FREE(gcell_vtx_idx);
-  BFT_FREE(gcell_vtx_lst);
+  else {
+    BFT_FREE(gcell_vtx_idx);
+    BFT_FREE(gcell_vtx_lst);
+  }
 
   /* Output for listing */
 

@@ -317,6 +317,8 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
  *   mesh           --> pointer to a cs_mesh_t structure
  *   vtx_cells_idx  <-- pointer to the "vtx -> cells" connectivity index
  *   vtx_cells_lst  <-- pointer to the "vtx -> cells" connectivity list
+ *   vtx_gcells_idx <-- pointer to the "vtx -> gcells" connectivity index
+ *   vtx_gcells_lst <-- pointer to the "vtx -> gcells" connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
@@ -324,7 +326,9 @@ _tag_cells(cs_int_t    face_id,
            cs_int_t    cell_id,
            cs_mesh_t  *mesh,
            cs_int_t    vtx_cells_idx[],
-           cs_int_t    vtx_cells_lst[])
+           cs_int_t    vtx_cells_lst[],
+           cs_int_t    vtx_gcells_idx[],
+           cs_int_t    vtx_gcells_lst[])
 {
   cs_int_t  i, j, k;
   cs_int_t  vtx_id, ext_cell_num, cell_num;
@@ -339,32 +343,55 @@ _tag_cells(cs_int_t    face_id,
   if (cell_id < n_cells) {
 
     for (i = cell_cells_idx[cell_id] - 1;
-         i < cell_cells_idx[cell_id+1] - 1; i++) {
+         i < cell_cells_idx[cell_id+1] - 1;
+         i++) {
 
       ext_cell_num = cell_cells_lst[i];
 
-      /* Extended neighborhood not kept yet */
+      /* For cell not tagged yet */
 
       if (ext_cell_num > 0) {
 
         /* Cells sharing a vertex with the face */
 
         for (j = face_vtx_idx[face_id] - 1;
-             j < face_vtx_idx[face_id+1] - 1; j++) {
+             j < face_vtx_idx[face_id+1] - 1;
+             j++) {
 
           vtx_id = face_vtx_lst[j] - 1;
 
-          for (k = vtx_cells_idx[vtx_id] - 1;
-               k < vtx_cells_idx[vtx_id+1] - 1; k++) {
+          if (ext_cell_num <= n_cells) { /* true cell */
 
-            cell_num = vtx_cells_lst[k];
+            for (k = vtx_cells_idx[vtx_id] - 1;
+                 k < vtx_cells_idx[vtx_id+1] - 1;
+                 k++) {
 
-            /* Comparison and selection */
+              cell_num = vtx_cells_lst[k];
 
-            if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
-              cell_cells_lst[i] = - cell_cells_lst[i];
+              /* Comparison and selection */
 
-          } /* End of loop on cells sharing this vertex */
+              if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
+                cell_cells_lst[i] = - cell_cells_lst[i];
+
+            } /* End of loop on cells sharing this vertex */
+
+          }
+          else { /* ext_cell_num >= n_cells; i.e. ghost cell */
+
+            for (k = vtx_gcells_idx[vtx_id];
+                 k < vtx_gcells_idx[vtx_id+1];
+                 k++) {
+
+              cell_num = vtx_gcells_lst[k] + n_cells + 1;
+
+              /* Comparison and selection */
+
+              if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
+                cell_cells_lst[i] = - cell_cells_lst[i];
+
+            }
+
+          }
 
         } /* End of loop on vertices of the face */
 
@@ -937,6 +964,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
   cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
+  cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
   cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
   cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
 
@@ -984,146 +1012,161 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
     }
     else {
 
+      /*
+        For each internal face, we select in the extended neighborhood
+        of the two cells sharing this face all the cells sharing a
+        vertex of this face if the non-orthogonality angle is above a
+        criterion.
+      */
 
-    /*
-      For each internal face, we select in the extended neighborhood
-      of the two cells sharing this face all the cells sharing a
-      vertex of this face if the non-orthogonality angle is above a
-      criterion.
-    */
+      /*
+        First: re-build a "vertex -> cells" connectivity
+        ------------------------------------------------
+        We have to invert the "face -> vertices" connectivity and then
+        we will use the "face -> cells" conectivity.
+      */
 
-    /*
-      First: re-build a "vertex -> cells" connectivity
-      ------------------------------------------------
-      We have to invert the "face -> vertices" connectivity and then
-      we will use the "face -> cells" conectivity.
-    */
+      _create_vtx_cells_connect(mesh,
+                                &vtx_cells_idx,
+                                &vtx_cells_lst);
 
-    _create_vtx_cells_connect(mesh,
-                              &vtx_cells_idx,
-                              &vtx_cells_lst);
+      if (cs_mesh_n_g_ghost_cells(mesh) > 0)
+        _create_vtx_gcells_connect(mesh->halo,
+                                   mesh->n_vertices,
+                                   mesh->gcell_vtx_idx,
+                                   mesh->gcell_vtx_lst,
+                                   &vtx_gcells_idx,
+                                   &vtx_gcells_lst);
 
-    /* Tag cells to eliminate (set a negative number) */
+      /* Tag cells to eliminate (set a negative number) */
 
-    for (face_id = 0 ; face_id < n_faces ; face_id++) {
+      for (face_id = 0 ; face_id < n_faces ; face_id++) {
 
-      /* We compute the cosine of the non-orthogonality angle
-         of internal faces (angle between the normal of the face
-         and the line between I (center of the cell I) and J (center
-         of the cell J) */
+        /* We compute the cosine of the non-orthogonality angle
+           of internal faces (angle between the normal of the face
+           and the line between I (center of the cell I) and J (center
+           of the cell J) */
 
-      /* Vector IJ and normal of the face */
+        /* Vector IJ and normal of the face */
 
-      cell_i = face_cells[2*face_id] - 1;
-      cell_j = face_cells[2*face_id + 1] - 1;
-      dprod = 0;
+        cell_i = face_cells[2*face_id] - 1;
+        cell_j = face_cells[2*face_id + 1] - 1;
+        dprod = 0;
 
-      for (i = 0; i < 3; i++) {
-        v_ij[i] = cell_cen[3*cell_j + i] - cell_cen[3*cell_i + i];
-        face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
-        dprod += v_ij[i]*face_normal[i];
-      }
-
-      norm_ij = CS_LOC_MODULE(v_ij);
-      face_norm = CS_LOC_MODULE(face_normal);
-
-      assert(norm_ij > 0.);
-      assert(face_norm > 0.);
-
-      /* Dot product : norm_ij . face_norm */
-
-      cos_ij_fn = dprod / (norm_ij * face_norm);
-
-      /* Comparison to a predefined limit.
-         This is non-orthogonal if we are below the limit and so we keep
-         the cell in the extended neighborhood of the two cells sharing
-         the face. (The cell is tagged (<0) then we will change the sign
-         and eliminate all cells < 0 */
-
-      if (cos_ij_fn <= cos_ij_fn_min) {
-
-        /* For each cell sharing the face : intersection between
-           cells in the extended neighborhood and cells sharing a
-           vertex of the face. */
-
-        _tag_cells(face_id, cell_i, mesh, vtx_cells_idx, vtx_cells_lst);
-        _tag_cells(face_id, cell_j, mesh, vtx_cells_idx, vtx_cells_lst);
-
-      }
-
-    } /* End of loop on faces */
-
-    /* Free "vertex -> cells" connectivity */
-
-    BFT_FREE(vtx_cells_idx);
-    BFT_FREE(vtx_cells_lst);
-
-    /* Change all signs in cell_cells_lst in order to have cells to
-       eliminate < 0 */
-
-    for (i = 0 ; i < mesh->cell_cells_idx[n_cells]-1 ; i++)
-      mesh->cell_cells_lst[i] = - mesh->cell_cells_lst[i];
-
-    /* Delete negative cells */
-
-    init_cell_cells_connect_size = cell_cells_idx[n_cells] - 1;
-
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      for (i = previous_idx; i < cell_cells_idx[cell_id+1] - 1; i++) {
-
-        if (cell_cells_lst[i] > 0) {
-          new_idx++;
-          cell_cells_lst[new_idx] = cell_cells_lst[i];
+        for (i = 0; i < 3; i++) {
+          v_ij[i] = cell_cen[3*cell_j + i] - cell_cen[3*cell_i + i];
+          face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
+          dprod += v_ij[i]*face_normal[i];
         }
-        else
-          n_deleted_cells++;
 
-      } /* End of loop on cells in the extended neighborhood of cell_id+1 */
+        norm_ij = CS_LOC_MODULE(v_ij);
+        face_norm = CS_LOC_MODULE(face_normal);
 
-      previous_idx = cell_cells_idx[cell_id+1] - 1;
-      cell_cells_idx[cell_id+1] -= n_deleted_cells;
+        assert(norm_ij > 0.);
+        assert(face_norm > 0.);
 
-    } /* End of loop on cells */
+        /* Dot product : norm_ij . face_norm */
 
-    /* Reallocation of cell_cells_lst */
+        cos_ij_fn = dprod / (norm_ij * face_norm);
 
-    BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells]-1, cs_int_t);
+        /* Comparison to a predefined limit.
+           This is non-orthogonal if we are below the limit and so we keep
+           the cell in the extended neighborhood of the two cells sharing
+           the face. (The cell is tagged (<0) then we will change the sign
+           and eliminate all cells < 0 */
 
-    /* Output for listing */
+        if (cos_ij_fn <= cos_ij_fn_min) {
+
+          /* For each cell sharing the face : intersection between
+             cells in the extended neighborhood and cells sharing a
+             vertex of the face. */
+
+          _tag_cells(face_id, cell_i, mesh,
+                     vtx_cells_idx, vtx_cells_lst,
+                     vtx_gcells_idx, vtx_gcells_lst);
+          _tag_cells(face_id, cell_j, mesh,
+                     vtx_cells_idx, vtx_cells_lst,
+                     vtx_gcells_idx, vtx_gcells_lst);
+
+        }
+
+      } /* End of loop on faces */
+
+      /* Free "vertex -> cells" connectivity */
+
+      BFT_FREE(vtx_cells_idx);
+      BFT_FREE(vtx_cells_lst);
+
+      if (cs_mesh_n_g_ghost_cells(mesh) > 0) {
+        BFT_FREE(vtx_gcells_idx);
+        BFT_FREE(vtx_gcells_lst);
+      }
+
+      /* Change all signs in cell_cells_lst in order to have cells to
+         eliminate < 0 */
+
+      for (i = 0 ; i < mesh->cell_cells_idx[n_cells]-1 ; i++)
+        mesh->cell_cells_lst[i] = - mesh->cell_cells_lst[i];
+
+      /* Delete negative cells */
+
+      init_cell_cells_connect_size = cell_cells_idx[n_cells] - 1;
+
+      for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+        for (i = previous_idx; i < cell_cells_idx[cell_id+1] - 1; i++) {
+
+          if (cell_cells_lst[i] > 0) {
+            new_idx++;
+            cell_cells_lst[new_idx] = cell_cells_lst[i];
+          }
+          else
+            n_deleted_cells++;
+
+        } /* End of loop on cells in the extended neighborhood of cell_id+1 */
+
+        previous_idx = cell_cells_idx[cell_id+1] - 1;
+        cell_cells_idx[cell_id+1] -= n_deleted_cells;
+
+      } /* End of loop on cells */
+
+      /* Reallocation of cell_cells_lst */
+
+      BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells]-1, cs_int_t);
+
+      /* Output for listing */
 
 #if defined(HAVE_MPI)
 
-    if (cs_glob_n_ranks > 1) {
+      if (cs_glob_n_ranks > 1) {
 
-      unsigned long count_g[2];
-      unsigned long count_l[2] = {init_cell_cells_connect_size,
-                                  n_deleted_cells};
-      MPI_Allreduce(count_l, count_g, 2, MPI_UNSIGNED_LONG,
-                    MPI_SUM, cs_glob_mpi_comm);
+        unsigned long count_g[2];
+        unsigned long count_l[2] = {init_cell_cells_connect_size,
+                                    n_deleted_cells};
+        MPI_Allreduce(count_l, count_g, 2, MPI_UNSIGNED_LONG,
+                      MPI_SUM, cs_glob_mpi_comm);
 
-      init_cell_cells_connect_size = count_g[0];
-      n_deleted_cells = count_g[1];
-
-    }
+        init_cell_cells_connect_size = count_g[0];
+        n_deleted_cells = count_g[1];
+      }
 
 #endif
 
-    ratio = 100. * (init_cell_cells_connect_size - n_deleted_cells)
-                 / init_cell_cells_connect_size;
+      ratio = 100. * (init_cell_cells_connect_size - n_deleted_cells)
+                   / init_cell_cells_connect_size;
 
-    bft_printf
-      (_("\n"
-         " Extended neighborhood reduced by non-orthogonality\n"
-         " --------------------------------------------------\n"
-         "\n"
-         " Size of complete cell-cell connectivity: %12lu\n"
-         " Size of filtered cell-cell conectivity:  %12lu\n"
-         " %lu cells removed, for a ratio of %4.2g %% used\n"),
-       (unsigned long)init_cell_cells_connect_size,
-       (unsigned long)(init_cell_cells_connect_size - n_deleted_cells),
-       (unsigned long)n_deleted_cells,
-       ratio);
+      bft_printf
+        (_("\n"
+           " Extended neighborhood reduced by non-orthogonality\n"
+           " --------------------------------------------------\n"
+           "\n"
+           " Size of complete cell-cell connectivity: %12lu\n"
+           " Size of filtered cell-cell conectivity:  %12lu\n"
+           " %lu connections removed, for a ratio of %4.2g %% used\n"),
+         (unsigned long)init_cell_cells_connect_size,
+         (unsigned long)(init_cell_cells_connect_size - n_deleted_cells),
+         (unsigned long)n_deleted_cells,
+         ratio);
 
 #if 0 /* For debugging purpose */
       for (i = 0; i < mesh->n_cells ; i++) {
@@ -1137,7 +1180,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
       }
 #endif
 
-    } /* If there is extended neighborhood */
+    } /* If there is and extended neighborhood */
 
   } /* If _first_call == 0 */
 
@@ -1249,14 +1292,10 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t    var[],
  *
  * parameters:
  *   mesh           <->  pointer to a mesh structure.
- *   gcell_vtx_idx  <--  pointer to the connectivity index
- *   gcell_vtx_lst  <--  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
-cs_ext_neighborhood_define(cs_mesh_t   *mesh,
-                           cs_int_t    *gcell_vtx_idx,
-                           cs_int_t    *gcell_vtx_lst)
+cs_ext_neighborhood_define(cs_mesh_t   *mesh)
 {
   cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
   cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
@@ -1285,8 +1324,8 @@ cs_ext_neighborhood_define(cs_mesh_t   *mesh,
 
     _create_vtx_gcells_connect(halo,
                                mesh->n_vertices,
-                               gcell_vtx_idx,
-                               gcell_vtx_lst,
+                               mesh->gcell_vtx_idx,
+                               mesh->gcell_vtx_lst,
                                &vtx_gcells_idx,
                                &vtx_gcells_lst);
 

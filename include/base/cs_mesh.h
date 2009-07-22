@@ -144,6 +144,9 @@ typedef struct {
                                   extended halo. Only defined if extended
                                   neighborhood is built. */
 
+  cs_int_t  *gcell_vtx_idx;    /* ghost cells -> vertices index */
+  cs_int_t  *gcell_vtx_lst;    /* ghost cells -> vertices list */
+
   /* Group and family features */
 
   cs_int_t    n_groups;    /* Number of groups */
