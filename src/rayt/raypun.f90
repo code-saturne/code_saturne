@@ -471,6 +471,8 @@ enddo
 
 do ifac = 1, nfabor
 
+  iel = ifabor(ifac)
+
   if (itypfb(ifac,iphas).eq.iparoi .or.                           &
       itypfb(ifac,iphas).eq.iparug ) then
 
@@ -478,10 +480,9 @@ do ifac = 1, nfabor
 
     aaaa = tparoi(ifac)**4
 
-    aaa  = 1.5d0 * ra(idistb-1+ifac) / ckmel(ifabor(ifac))        &
+    aaa  = 1.5d0 * ra(idistb-1+ifac) / ckmel(iel)                 &
            * ( 2.d0 /(2.d0-eps(ifac)) -1.d0 )
-    aa   = ( aaa * aaaa + theta4(ifabor(ifac)) )                  &
-         / (1.d0 + aaa)
+    aa   = ( aaa * aaaa + theta4(iel) ) / (1.d0 + aaa)
 
     qincid(ifac) = stephn * (2.d0 * aa - eps(ifac) * aaaa)        &
                        / (2.d0 - eps(ifac))
@@ -493,7 +494,7 @@ do ifac = 1, nfabor
 !    &  / (2.D0 - EPS(IFAC))
 
   else
-    qincid(ifac) = stephn * theta4(ifabor(ifac))                  &
+    qincid(ifac) = stephn * theta4(iel)                           &
                + ( qx(iel) * surfbo(1,ifac) +                     &
                    qy(iel) * surfbo(2,ifac) +                     &
                    qz(iel) * surfbo(3,ifac) ) /                   &

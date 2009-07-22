@@ -1,3 +1,9 @@
+* 22/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in the P1 model for radiative transfer, where a local
+  variable "iel" was not defined. 
+  modified routine:
+    src/rayt/raypun.f90
+  
 * 22/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Adapt 1d-profiles file to SALOME format for title and labels.
   modified routine:
