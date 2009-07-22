@@ -1,3 +1,8 @@
+* 22/07/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Adapt 1d-profiles file to SALOME format for title and labels.
+  modified routine:
+    src/base/cs_gui.c
+
 * 20/07/2009 - David Monfort <david.monfort@edf.fr>
   Add radiative transfert support for fuel combustion.
   added routine:

@@ -4899,8 +4899,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           break;
         }
 
-        BFT_FREE(filename);
-
         fprintf(file, "# Code_Saturne 1D result's profile\n#\n");
         fprintf(file, "# Iteration output: %i\n", *ntcabs);
         fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
@@ -4908,13 +4906,15 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
                 x1, y1, z1);
         fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
                 x2, y2, z2);
-        fprintf(file, "# Distance X Y Z ");
+        fprintf(file, "#TITLE: %s\n", filename);
+        fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
         for (ii = 0 ; ii < nvar_prop ; ii++) {
           buffer = _get_profile_label_name(i, ii);
-          fprintf(file, "%s ", buffer);
+          fprintf(file, " | %s", buffer);
           BFT_FREE(buffer);
         }
         fprintf(file, "\n");
+        BFT_FREE(filename);
       }
 
       npoint = 200;
