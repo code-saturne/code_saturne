@@ -1221,7 +1221,8 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
 
     /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
-    ii_prev = face_cel_p[0] - 1;
+    ii = face_cel_p[0] - 1;
+    ii_prev = ii;
     y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1] - 1];
 
     for (kk = 1; kk < kk_max; ++kk) {

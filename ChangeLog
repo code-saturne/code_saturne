@@ -1,4 +1,9 @@
 * 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a possible uninitialized variable in benchmark routines.
+  modified routine:
+    src/base/cs_benchmark.c
+
+* 22/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a possible compilation issue on BlueGene systems.
   modified script:
     config/cs_fvm.m4
