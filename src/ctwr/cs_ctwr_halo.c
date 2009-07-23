@@ -1478,6 +1478,8 @@ cs_ctwr_halo_define(cs_ctwr_zone_t            *ct,
 
   cs_halo_t  *halo = ct->water_halo;
 
+  ct->halo_type = CS_HALO_EXTENDED;
+
   /*  Define vtx -> faces connectivity for ghost faces */
 
   _create_gvtx_faces_connect(ct,
@@ -1544,9 +1546,9 @@ cs_ctwr_halo_define(cs_ctwr_zone_t            *ct,
                               g_vtx_faces_idx,
                               g_vtx_faces_lst);
 
-#if 0
+
   _build_halo_with_extrusion(ct);
-#endif
+
   /* Fill cs_halo_t structure for out_halo.
      We use the data from in_halo structure */
 

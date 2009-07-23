@@ -1,3 +1,8 @@
+* 23/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+  Fix a bug in parallel simulations with cooling-tower module.
+  modified routine:
+    src/ctwr/cs_ctwr_halo.c
+
 * 23/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a bug introduced a couple of rev. ago in listing output.
   modified routine:
