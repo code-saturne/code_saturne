@@ -454,6 +454,7 @@ if (iverif.eq.0) then
   endif
 endif
 
+ 9000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1140,6 +1141,16 @@ endif
 gx = 0.d0
 gy = 0.d0
 gz = 0.d0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! --- rotation vector of the reference frame (omega in s-1)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+omegax = 0.d0
+omegay = 0.d0
+omegaz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
