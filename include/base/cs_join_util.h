@@ -156,6 +156,16 @@ typedef struct {
  * implied in the joining operation
  *----------------------------------------------------------------------------*/
 
+typedef struct { /* Structure used to synchronize single elements */
+
+  int      n_elts;
+  int      n_ranks;
+  int     *ranks;
+  int     *index;
+  int     *array;
+
+} cs_join_sync_t;
+
 typedef struct {
 
   cs_int_t      n_faces;     /* Number of border faces selected
@@ -197,22 +207,12 @@ typedef struct {
      s = single / c = coupled
   */
 
-  cs_int_t     n_s_vertices;
-  cs_int_t     n_c_vertices;
-
-  cs_int_t    *s_vertices;
-  cs_int_t    *s_vtx_idx;
-  cs_int_t    *s_vtx_rank_lst;
-  cs_int_t    *c_vertices;
-  cs_int_t    *c_vtx_idx;
-  cs_int_t    *c_vtx_rank_lst;
-
-  cs_int_t     n_b_s_faces;
-  cs_int_t     n_i_s_faces;
-  cs_int_t    *b_s_faces;
-  cs_int_t    *i_s_faces;
-
   cs_bool_t    do_single_sync;
+
+  cs_join_sync_t  *s_vertices;
+  cs_join_sync_t  *c_vertices;
+  cs_join_sync_t  *s_edges;
+  cs_join_sync_t  *c_edges;
 
 } cs_join_select_t;
 

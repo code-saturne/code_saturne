@@ -67,6 +67,7 @@
 #include "cs_search.h"
 #include "cs_sort.h"
 #include "cs_join_post.h"
+#include "cs_join_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -334,1151 +335,631 @@ _get_local_o2n_vtx_gnum(cs_mesh_t    *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Create arrays used to synchronize "single" elements from "coupled" elements
- *
- * parameters:
- *   sel              <-- list of all implied entities in the joining op.
- *   p_n_s_ranks      <-> number of ranks associated to single elements
- *   p_s_ranks        <-> list of "single" ranks
- *   p_s_rank2vtx_idx <-> single ranks -> single vertices index
- *   p_s_rank2vtx_lst <-> single ranks -> single vertices list
- *   p_n_c_ranks      <-> number of ranks associated to coupled elements
- *   p_c_ranks        <-> list of "coupled" ranks
- *   p_c_rank2vtx_idx <-> coupled ranks -> coupled vertices index
- *   p_c_rank2vtx_lst <-> coupled ranks -> coupled vertices list
- *---------------------------------------------------------------------------*/
-
-static void
-_prepare_single_sync(const cs_join_select_t  *sel,
-                     cs_int_t                *p_n_s_ranks,
-                     cs_int_t                *p_s_ranks[],
-                     cs_int_t                *p_s_rank2vtx_idx[],
-                     cs_int_t                *p_s_rank2vtx_lst[],
-                     cs_int_t                *p_n_c_ranks,
-                     cs_int_t                *p_c_ranks[],
-                     cs_int_t                *p_c_rank2vtx_idx[],
-                     cs_int_t                *p_c_rank2vtx_lst[])
-{
-  cs_int_t  i, j, rank, shift;
-
-  cs_int_t  n_s_ranks = 0, n_c_ranks = 0;
-  cs_int_t  *count = NULL, *s_ranks = NULL, *c_ranks = NULL;
-  cs_int_t  *s_rank2vtx_idx = NULL, *s_rank2vtx_lst = NULL;
-  cs_int_t  *c_rank2vtx_idx = NULL, *c_rank2vtx_lst = NULL;
-
-  const int  n_ranks = cs_glob_n_ranks;
-
-  BFT_MALLOC(count, n_ranks, cs_int_t);
-
-  for (i = 0; i < n_ranks; i++)
-    count[i] = 0;
-
-  /* Define s_ranks and n_s_ranks */
-
-  for (i = 0; i < sel->s_vtx_idx[sel->n_s_vertices]; i++)
-    count[sel->s_vtx_rank_lst[i]] += 1;
-
-  for (i = 0; i < n_ranks; i++)
-    if (count[i] > 0)
-      n_s_ranks++;
-
-  BFT_MALLOC(s_ranks, n_s_ranks, cs_int_t);
-
-  n_s_ranks = 0;
-  for (i = 0; i < n_ranks; i++)
-    if (count[i] > 0)
-      s_ranks[n_s_ranks++] = i;
-
-  /* Define c_ranks and n_c_ranks */
-
-  for (i = 0; i < n_ranks; i++)
-    count[i] = 0;
-
-  for (i = 0; i < sel->n_c_vertices; i++)
-    count[sel->c_vtx_rank_lst[i]] += 1;
-
-  for (i = 0; i < n_ranks; i++)
-    if (count[i] > 0)
-      n_c_ranks++;
-
-  BFT_MALLOC(c_ranks, n_c_ranks, cs_int_t);
-
-  n_c_ranks = 0;
-  for (i = 0; i < n_ranks; i++)
-    if (count[i] > 0)
-      c_ranks[n_c_ranks++] = i;
-
-  /* Invert sel->s_vtx_rank_idx */
-
-  BFT_MALLOC(s_rank2vtx_idx, n_ranks + 1, cs_int_t);
-
-  for (i = 0; i < n_ranks + 1; i++)
-    s_rank2vtx_idx[i] = 0;
-
-  for (i = 0; i < sel->n_s_vertices; i++)
-    for (j = sel->s_vtx_idx[i]; j < sel->s_vtx_idx[i+1]; j++)
-      s_rank2vtx_idx[sel->s_vtx_rank_lst[j] + 1] += 1;
-
-  for (i = 0; i < n_ranks; i++)
-    s_rank2vtx_idx[i+1] += s_rank2vtx_idx[i];
-
-  BFT_MALLOC(s_rank2vtx_lst, s_rank2vtx_idx[n_ranks], cs_int_t);
-
-  for (i = 0; i < n_ranks; i++)
-    count[i] = 0;
-
-  for (i = 0; i < sel->n_s_vertices; i++) {
-    for (j = sel->s_vtx_idx[i]; j < sel->s_vtx_idx[i+1]; j++) {
-
-      rank = sel->s_vtx_rank_lst[j];
-      shift = s_rank2vtx_idx[rank] + count[rank];
-      s_rank2vtx_lst[shift] = sel->s_vertices[i];
-      count[rank] += 1;
-
-    }
-  }
-
-  /* Invert sel->c_vtx_rank_lst */
-
-  BFT_MALLOC(c_rank2vtx_idx, n_ranks + 1, cs_int_t);
-
-  for (i = 0; i < n_ranks + 1; i++)
-    c_rank2vtx_idx[i] = 0;
-
-  for (i = 0; i < sel->n_c_vertices; i++)
-    c_rank2vtx_idx[sel->c_vtx_rank_lst[i] + 1] += 1;
-
-  for (i = 0; i < n_ranks; i++)
-    c_rank2vtx_idx[i+1] += c_rank2vtx_idx[i];
-
-  BFT_MALLOC(c_rank2vtx_lst, c_rank2vtx_idx[n_ranks], cs_int_t);
-
-  for (i = 0; i < n_ranks; i++)
-    count[i] = 0;
-
-  for (i = 0; i < sel->n_c_vertices; i++) {
-
-    rank = sel->c_vtx_rank_lst[i];
-    shift = c_rank2vtx_idx[rank] + count[rank];
-    c_rank2vtx_lst[shift] = sel->c_vertices[i];
-    count[rank] += 1;
-
-  }
-
-  BFT_FREE(count);
-
-  /* Set return pointers */
-
-  *p_n_s_ranks = n_s_ranks;
-  *p_s_ranks = s_ranks;
-  *p_s_rank2vtx_idx = s_rank2vtx_idx;
-  *p_s_rank2vtx_lst = s_rank2vtx_lst;
-  *p_n_c_ranks = n_c_ranks;
-  *p_c_ranks = c_ranks;
-  *p_c_rank2vtx_idx = c_rank2vtx_idx;
-  *p_c_rank2vtx_lst = c_rank2vtx_lst;
-}
-
-/*----------------------------------------------------------------------------
- * Return true if the current couple of vertices is a "single" edge to sync.
- *
- * parameters:
- *   vid1         <-- first vertex id
- *   vid2         <-- second vertex id
- *   tag          <-- array on vertices (1 if vertex is "single" else 0)
- *   edge_builder <-> pointer to an edge_builder_t structure
- *---------------------------------------------------------------------------*/
-
-inline static cs_bool_t
-_is_s_edge(cs_int_t         vid1,
-           cs_int_t         vid2,
-           const cs_int_t   tag[],
-           edge_builder_t  *edge_builder)
-{
-  cs_int_t  e_id;
-
-  if (tag[vid1] == 1 || tag[vid2] == 1) {
-
-    e_id = _get_join_edge_id(vid1, vid2, edge_builder);
-    assert(e_id != -1);
-
-    if (edge_builder->v2v_sub_idx[e_id+1]-edge_builder->v2v_sub_idx[e_id] > 0)
-      return false;
-    else
-      return true;
-
-  }
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------
  * Update elements of a cs_mesh_t structure related to the vertices after the
- * merge step.
+ * fusion step.
  *
  * parameters:
- *   selection        <-- list of all implied entities in the joining op.
- *   n_bm_vertices    <-- number of vertices in mesh before the merge step
- *   old_vtx_gnum     <-- old global vertex numbering
- *   o2n_vtx_id       <-> relation between init. and current local num.
- *   n_j_vertices     <-- number of vertices in join_mesh
- *   join2mesh_vtx_id <-> relation between join mesh and after merge vertex
- *   edge_builder     <-> pointer to an edge_builder_t structure
- *   mesh             <-> pointer of pointer to cs_mesh_t structure
+ *  selection         -->  list of all implied entities in the joining op.
+ *  o2n_vtx_id        <->  relation between init. and current local num.
+ *  mesh              <->  pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_sync_single_elements(const cs_join_select_t  *selection,
-                      cs_int_t                 n_bm_vertices,
-                      const fvm_gnum_t         old_vtx_gnum[],
+_sync_single_vertices(const cs_join_select_t  *selection,
                       cs_int_t                 o2n_vtx_id[],
-                      cs_int_t                 n_j_vertices,
-                      cs_int_t                 join2mesh_vtx_id[],
-                      edge_builder_t          *edge_builder,
                       cs_mesh_t               *mesh)
 {
-  cs_int_t  i, j, s, e, id, vid, fid, rank, shift, length, request_count;
+  cs_int_t  i, s, e, rank, shift, length, request_count;
 
-  cs_int_t  n_s_ranks = 0, n_c_ranks = 0;
-  cs_int_t  *selection_tag = NULL, *s_ranks = NULL, *c_ranks = NULL;
-  cs_int_t  *s_rank2vtx_idx = NULL, *s_rank2vtx_lst = NULL;
-  cs_int_t  *c_rank2vtx_idx = NULL, *c_rank2vtx_lst = NULL;
-  cs_int_t  *new_v2v_sub_idx = NULL, *new_v2v_sub_lst = NULL;
-  fvm_gnum_t  *new_vtx_gnum = NULL;
-  cs_real_t  *new_coord = NULL;
-
+  cs_int_t  *selection_tag = NULL;
+  double  *s_buf = NULL, *c_buf = NULL;
+  cs_join_sync_t  *s_vertices = selection->s_vertices;
+  cs_join_sync_t  *c_vertices = selection->c_vertices;
   MPI_Request  *request = NULL;
   MPI_Status   *status = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
+  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
 
-  bft_printf("\n  Synchronization of the \"single\" elements after the merge"
+  bft_printf("\n  Synchronization of the \"single\" elements after the fusion"
              " step.\n");
   bft_printf_flush();
 
   assert(n_ranks > 1);
 
-  _prepare_single_sync(selection,
-                       &n_s_ranks,
-                       &s_ranks,
-                       &s_rank2vtx_idx,
-                       &s_rank2vtx_lst,
-                       &n_c_ranks,
-                       &c_ranks,
-                       &c_rank2vtx_idx,
-                       &c_rank2vtx_lst);
-
   /* Allocate MPI buffers used for exchanging data */
 
-  BFT_MALLOC(request, n_c_ranks + n_s_ranks, MPI_Request);
-  BFT_MALLOC(status, n_c_ranks + n_s_ranks, MPI_Status);
+  BFT_MALLOC(request, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Request);
+  BFT_MALLOC(status, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Status);
   BFT_MALLOC(selection_tag, mesh->n_vertices, cs_int_t);
 
   /* Define a selection tag to find quickly "single" vertices */
 
   for (i = 0; i < mesh->n_vertices; i++)
     selection_tag[i] = 0;
-  for (i = 0; i < selection->n_s_vertices; i++)
-    selection_tag[selection->s_vertices[i]-1] = 1;
 
-  {  /* Synchronization of vertex coordinates */
+  for (i = 0; i < s_vertices->n_elts; i++)
+    selection_tag[s_vertices->array[i]-1] = 1;
 
-    double  *s_buf = NULL, *c_buf = NULL;
+  /* Synchronization of vertex coordinates */
 
-    BFT_MALLOC(s_buf, 3*s_rank2vtx_idx[n_ranks], double);
+  BFT_MALLOC(s_buf, 3*s_vertices->n_elts, double);
 
-    /* Receive data from distant ranks */
+  /* Receive data from distant ranks */
 
-    request_count = 0;
+  request_count = 0;
 
-    for (i = 0; i < n_s_ranks; i++) {
+  for (i = 0; i < s_vertices->n_ranks; i++) {
 
-      rank = s_ranks[i];
-      s = s_rank2vtx_idx[rank];
-      e = s_rank2vtx_idx[rank+1];
-      length = 3*(e-s);
+    rank = s_vertices->ranks[i];
+    s = s_vertices->index[i];
+    e = s_vertices->index[i+1];
+    length = 3*(e-s);
 
-      MPI_Irecv(&(s_buf[3*s]), length, MPI_DOUBLE,
-                rank, rank, mpi_comm, &(request[request_count++]));
+    MPI_Irecv(&(s_buf[3*s]),
+              length,
+              MPI_DOUBLE,
+              rank,
+              rank,
+              mpi_comm,
+              &(request[request_count++]));
 
-    }
+  }
 
-    /* We wait for posting all receives (often recommended) */
+  /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(mpi_comm);
+  MPI_Barrier(mpi_comm);
 
-    /* Build c_buf = buffer to send */
+  /* Build c_buf = buffer to send */
 
-    BFT_MALLOC(c_buf, 3*c_rank2vtx_idx[n_ranks], double);
+  BFT_MALLOC(c_buf, 3*c_vertices->n_elts, double);
 
-    for (shift = 0, i = 0; i < c_rank2vtx_idx[n_ranks]; i++) {
+  for (shift = 0, i = 0; i < c_vertices->n_elts; i++) {
 
-      int  new_id = o2n_vtx_id[c_rank2vtx_lst[i]-1];
+    int  new_id = o2n_vtx_id[c_vertices->array[i]-1];
 
-      c_buf[shift++] = mesh->vtx_coord[3*new_id];
-      c_buf[shift++] = mesh->vtx_coord[3*new_id+1];
-      c_buf[shift++] = mesh->vtx_coord[3*new_id+2];
+    c_buf[shift++] = mesh->vtx_coord[3*new_id];
+    c_buf[shift++] = mesh->vtx_coord[3*new_id+1];
+    c_buf[shift++] = mesh->vtx_coord[3*new_id+2];
 
-    }
+  }
 
-    /* Send data to distant ranks */
+  /* Send data to distant ranks */
 
-    for (i = 0; i < n_c_ranks; i++) {
+  for (i = 0; i < c_vertices->n_ranks; i++) {
 
-      rank = c_ranks[i];
-      s = c_rank2vtx_idx[rank];
-      e = c_rank2vtx_idx[rank+1];
-      length = 3*(e-s);
+    rank = c_vertices->ranks[i];
+    s = c_vertices->index[i];
+    e = c_vertices->index[i+1];
+    length = 3*(e-s);
 
-      MPI_Isend(&(c_buf[3*s]), length, MPI_DOUBLE,
-                rank, loc_rank, mpi_comm, &(request[request_count++]));
+    MPI_Isend(&(c_buf[3*s]),
+              length,
+              MPI_DOUBLE,
+              rank,
+              loc_rank,
+              mpi_comm,
+              &(request[request_count++]));
 
-    }
+  }
 
-    /* Wait for all exchanges */
+  /* Wait for all exchanges */
 
-    MPI_Waitall(request_count, request, status);
+  MPI_Waitall(request_count, request, status);
 
-    /* Update vertex coordinates */
+  /* Update vertex coordinates */
 
-    for (i = 0; i < s_rank2vtx_idx[n_ranks]; i++) {
+  for (shift = 0, i = 0; i < s_vertices->n_elts; i++) {
 
-      int  new_id = o2n_vtx_id[s_rank2vtx_lst[i]-1];
+    int  new_id = o2n_vtx_id[s_vertices->array[i]-1];
 
-      mesh->vtx_coord[3*new_id]   = s_buf[shift++];
-      mesh->vtx_coord[3*new_id+1] = s_buf[shift++];
-      mesh->vtx_coord[3*new_id+2] = s_buf[shift++];
+    mesh->vtx_coord[3*new_id]   = s_buf[shift++];
+    mesh->vtx_coord[3*new_id+1] = s_buf[shift++];
+    mesh->vtx_coord[3*new_id+2] = s_buf[shift++];
 
-    }
-
-    BFT_FREE(c_buf);
-    BFT_FREE(s_buf);
-
-  } /* End of vertex coordinates synchronization */
-
-  /* Get single edges (at least connected to a single vertices.
-     Loop on single border and interior faces. */
-
-  {
-    int  k, edge_id, vid1, vid2;
-    fvm_gnum_t  cur, prev;
-
-    int  n_s_edges = 0, c_sub_size = 0, s_sub_size = 0, n_new_vertices = 0;
-    cs_int_t  *sub_elt_count = NULL;
-    int  *s_count = NULL, *s_shift = NULL, *s_buf = NULL;
-    int  *c_count = NULL, *c_shift = NULL, *c_buf = NULL;
-    fvm_gnum_t  *s_edge_def = NULL, *s_sub_edge_def = NULL, *c_gbuf = NULL;
-    fvm_gnum_t  *c_sub_gbuf = NULL, *s_sub_gbuf = NULL;
-    cs_real_t  *c_sub_coord = NULL, *s_sub_coord = NULL;
-    cs_real_t  *s_sub_coord_def = NULL;
-
-    BFT_MALLOC(s_count, n_s_ranks, int); /* interior + border */
-    BFT_MALLOC(c_count, n_c_ranks, int);
-
-    /* Send number of edges for border and interior faces */
-
-    for (i = 0; i < n_s_ranks; i++)
-      s_count[i] = 0;
-    for (i = 0; i < n_c_ranks; i++)
-      c_count[i] = 0;
-
-    for (i = 0; i < selection->n_b_s_faces; i++) {
-
-      fid = selection->b_s_faces[i] - 1;
-      s = mesh->b_face_vtx_idx[fid] - 1;
-      e = mesh->b_face_vtx_idx[fid+1] - 1;
-
-      for (j = s; j < e - 1; j++) {
-
-        vid1 = mesh->b_face_vtx_lst[j] - 1;
-        vid2 = mesh->b_face_vtx_lst[j+1] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder))
-          n_s_edges += 1;
-
-      }
-
-      vid1 = mesh->b_face_vtx_lst[e-1] - 1;
-      vid2 = mesh->b_face_vtx_lst[s] - 1;
-
-      if (_is_s_edge(vid1, vid2, selection_tag, edge_builder))
-        n_s_edges += 1;
-
-    }
-
-    for (i = 0; i < selection->n_i_s_faces; i++) {
-
-      fid = selection->i_s_faces[i] - 1;
-      s = mesh->i_face_vtx_idx[fid] - 1;
-      e = mesh->i_face_vtx_idx[fid+1] - 1;
-
-      for (j = s; j < e - 1; j++) {
-
-        vid1 = mesh->i_face_vtx_lst[j] - 1;
-        vid2 = mesh->i_face_vtx_lst[j+1] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder))
-          n_s_edges += 1;
-
-      }
-
-      vid1 = mesh->i_face_vtx_lst[e-1] - 1;
-      vid2 = mesh->i_face_vtx_lst[s] - 1;
-
-      if (_is_s_edge(vid1, vid2, selection_tag, edge_builder))
-        n_s_edges += 1;
-
-    }
-
-    request_count = 0;
-
-    for (i = 0; i < n_c_ranks; i++)
-      MPI_Irecv(&(c_count[i]), 1, MPI_INT, c_ranks[i], c_ranks[i],
-                mpi_comm, &(request[request_count++]));
-
-    /* We wait for posting all receives (often recommended) */
-
-    MPI_Barrier(mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (i = 0; i < n_s_ranks; i++)
-      MPI_Isend(&n_s_edges, 1, MPI_INT,
-                s_ranks[i], loc_rank, mpi_comm, &(request[request_count++]));
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, request, status);
-
-    /* Send edge definition */
-
-    BFT_MALLOC(s_edge_def, 2*n_s_edges, fvm_gnum_t);
-
-    /* Define edges for border faces */
-
-    shift = 0;
-    for (i = 0; i < selection->n_b_s_faces; i++) {
-
-      fid = selection->b_s_faces[i] - 1;
-      s = mesh->b_face_vtx_idx[fid] - 1;
-      e = mesh->b_face_vtx_idx[fid+1] - 1;
-
-      for (j = s; j < e - 1; j++) {
-
-        vid1 = mesh->b_face_vtx_lst[j] - 1;
-        vid2 = mesh->b_face_vtx_lst[j+1] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-          s_edge_def[shift++] = old_vtx_gnum[vid1];
-          s_edge_def[shift++] = old_vtx_gnum[vid2];
-        }
-
-      }
-
-      vid1 = mesh->b_face_vtx_lst[e-1] - 1;
-      vid2 = mesh->b_face_vtx_lst[s] - 1;
-
-      if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-        s_edge_def[shift++] = old_vtx_gnum[vid1];
-        s_edge_def[shift++] = old_vtx_gnum[vid2];
-      }
-
-    }
-
-    /* Define edges for interior faces */
-
-    for (i = 0; i < selection->n_i_s_faces; i++) {
-
-      fid = selection->i_s_faces[i] - 1;
-      s = mesh->i_face_vtx_idx[fid] - 1;
-      e = mesh->i_face_vtx_idx[fid+1] - 1;
-
-      for (j = s; j < e - 1; j++) {
-
-        vid1 = mesh->i_face_vtx_lst[j] - 1;
-        vid2 = mesh->i_face_vtx_lst[j+1] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-          s_edge_def[shift++] = old_vtx_gnum[vid1];
-          s_edge_def[shift++] = old_vtx_gnum[vid2];
-        }
-
-      }
-
-      vid1 = mesh->i_face_vtx_lst[e-1] - 1;
-      vid2 = mesh->i_face_vtx_lst[s] - 1;
-
-      if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-        s_edge_def[shift++] = old_vtx_gnum[vid1];
-        s_edge_def[shift++] = old_vtx_gnum[vid2];
-      }
-
-    }
-
-    assert(shift == 2*n_s_edges);
-
-    BFT_MALLOC(c_shift, n_c_ranks + 1, int);
-
-    c_shift[0] = 0;
-    for (rank = 0; rank < n_c_ranks; rank++)
-      c_shift[rank+1] = c_shift[rank] + c_count[rank];
-
-    BFT_MALLOC(c_gbuf, 2*c_shift[n_c_ranks], fvm_gnum_t);
-
-    /* Exchange edge definition */
-
-    request_count = 0;
-
-    for (i = 0; i < n_c_ranks; i++) {
-      rank = c_ranks[i];
-      length = 2 * c_count[i];
-      MPI_Irecv(&(c_gbuf[2*c_shift[i]]), length, FVM_MPI_GNUM,
-                rank, rank, mpi_comm, &(request[request_count++]));
-    }
-
-    /* We wait for posting all receives (often recommended) */
-
-    MPI_Barrier(mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (i = 0; i < n_s_ranks; i++) {
-      rank = s_ranks[i];
-      MPI_Isend(s_edge_def, 2*n_s_edges, FVM_MPI_GNUM,
-                rank, loc_rank, mpi_comm, &(request[request_count++]));
-    }
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, request, status);
-
-    /* Get a number of sub-element for each received edge */
-
-    BFT_MALLOC(c_buf, c_shift[n_c_ranks], int);
-
-    for (rank = 0; rank < n_c_ranks; rank++) {
-
-      for (i = c_shift[rank]; i < c_shift[rank+1]; i++) {
-
-        fvm_gnum_t  v1_gnum = c_gbuf[2*i];
-        fvm_gnum_t  v2_gnum = c_gbuf[2*i+1];
-
-        /* Search for v1_gnum and v2_gnum in global_vtx_num */
-
-        vid1 = cs_search_g_binary(n_bm_vertices,
-                                  v1_gnum,
-                                  old_vtx_gnum);
-
-        if (vid1 > -1) {
-
-          vid2 = cs_search_g_binary(n_bm_vertices,
-                                    v2_gnum,
-                                    old_vtx_gnum);
-
-          if (vid2 > -1) {
-
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-            if (edge_id != -1)
-              c_buf[i] =  edge_builder->v2v_sub_idx[edge_id+1]
-                        - edge_builder->v2v_sub_idx[edge_id];
-            else
-              c_buf[i] = 0; /* Not in edge_builder_t structure */
-
-          }
-          else
-            c_buf[i] = 0;
-
-        }
-        else
-          c_buf[i] = 0;
-
-      } /* End of loop on edges received from rank */
-
-    } /* End of loop on "coupled" ranks */
-
-    /* Exchange number of sub elements for each edge */
-
-    BFT_MALLOC(sub_elt_count, n_s_edges, int);
-    BFT_MALLOC(s_buf, n_s_edges * n_s_ranks, int);
-
-    for (i = 0; i < n_s_edges; i++)
-      sub_elt_count[i] = 0;
-
-    request_count = 0;
-
-    for (i = 0; i < n_s_ranks; i++)
-      MPI_Irecv(&(s_buf[i*n_s_edges]), n_s_edges, MPI_INT,
-                s_ranks[i], s_ranks[i], mpi_comm, &(request[request_count++]));
-
-    /* We wait for posting all receives (often recommended) */
-
-    MPI_Barrier(mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (i = 0; i < n_c_ranks; i++)
-      MPI_Isend(&(c_buf[c_shift[i]]), c_count[i], MPI_INT,
-                c_ranks[i], loc_rank, mpi_comm, &(request[request_count++]));
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, request, status);
-
-    /* We assume that the sub-edge definition is identical for all ranks where
-       a sub-edge definition exists */
-
-    for (rank = 0; rank < n_s_ranks; rank++) {
-      for (i = 0; i < n_s_edges; i++)
-        if (s_buf[rank*n_s_edges + i] > 0)
-          sub_elt_count[i] = s_buf[rank*n_s_edges + i];
-    }
-
-    /* Define buffer to send whith sub-elements from "coupled" ranks to
-       "single" ranks */
-
-    for (i = 0; i < c_shift[n_c_ranks]; i++)
-      c_sub_size += c_buf[i];
-
-    BFT_MALLOC(c_sub_gbuf, c_sub_size, fvm_gnum_t);
-    BFT_MALLOC(c_sub_coord, 3*c_sub_size, cs_real_t);
-
-    shift = 0;
-    for (rank = 0; rank < n_c_ranks; rank++) {
-
-      for (i = c_shift[rank]; i < c_shift[rank+1]; i++) {
-
-        fvm_gnum_t  v1_gnum = c_gbuf[2*i];
-        fvm_gnum_t  v2_gnum = c_gbuf[2*i+1];
-
-        vid1 = cs_search_g_binary(n_bm_vertices,
-                                  v1_gnum,
-                                  old_vtx_gnum);
-
-        if (vid1 > -1) {
-
-          vid2 = cs_search_g_binary(n_bm_vertices,
-                                    v2_gnum,
-                                    old_vtx_gnum);
-
-          if (vid2 > -1) {
-
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-            if (edge_id != -1) {
-
-              for (j = edge_builder->v2v_sub_idx[edge_id];
-                   j < edge_builder->v2v_sub_idx[edge_id+1]; j++) {
-
-                vid = edge_builder->v2v_sub_lst[j] - 1;
-                c_sub_gbuf[shift] = mesh->global_vtx_num[vid];
-                for (k = 0; k < 3; k++)
-                  c_sub_coord[3*shift+k] = mesh->vtx_coord[3*vid+k];
-                shift++;
-
-              }
-
-            } /* edge_id != -1 */
-
-          } /* vid2 > -1 */
-
-        } /* vid1 > -1 */
-
-      } /* End of loop on edges received from rank */
-
-    } /* End of loop on ranks */
-
-    BFT_MALLOC(s_shift, n_s_ranks + 1, cs_int_t);
-
-    s_shift[0] = 0;
-    for (rank = 0; rank < n_s_ranks; rank++) {
-      for (i = 0; i < n_s_edges; i++)
-        s_count[rank] += s_buf[rank*n_s_edges + i];
-      s_shift[rank+1] = s_shift[rank] + s_count[rank];
-    }
-
-    BFT_MALLOC(s_sub_gbuf, s_shift[n_s_ranks], fvm_gnum_t);
-    BFT_MALLOC(s_sub_coord, 3*s_shift[n_s_ranks], cs_real_t);
-
-    s_sub_size = 0;
-    for (i = 0; i < n_s_edges; i++)
-      s_sub_size += sub_elt_count[i];
-
-    BFT_MALLOC(s_sub_edge_def, s_sub_size, fvm_gnum_t);
-    BFT_MALLOC(s_sub_coord_def, 3*s_sub_size, cs_real_t);
-
-    /* Exchange sub-edge definition: global vertex number  */
-
-    request_count = 0;
-
-    for (i = 0; i < n_s_ranks; i++)
-      MPI_Irecv(&(s_sub_gbuf[s_shift[i]]), s_count[i], FVM_MPI_GNUM,
-                s_ranks[i], s_ranks[i], mpi_comm, &(request[request_count++]));
-
-    /* We wait for posting all receives (often recommended) */
-
-    MPI_Barrier(mpi_comm);
-
-    /* Send data to distant ranks */
-
-    c_sub_size = 0;
-    for (i = 0; i < n_c_ranks; i++) {
-
-      c_count[i] = 0;
-      for (j = c_shift[i]; j < c_shift[i+1]; j++)
-        c_count[i] += c_buf[j];
-
-      MPI_Isend(&(c_sub_gbuf[c_sub_size]), c_count[i], FVM_MPI_GNUM,
-                c_ranks[i], loc_rank, mpi_comm, &(request[request_count++]));
-
-      c_sub_size += c_count[i];
-
-    } /* End of loop on ranks */
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, request, status);
-
-    /* Exchange sub-edge definition: vertex coordinates */
-
-    request_count = 0;
-
-    for (i = 0; i < n_s_ranks; i++)
-      MPI_Irecv(&(s_sub_coord[3*s_shift[i]]), 3*s_count[i], FVM_MPI_COORD,
-                s_ranks[i], s_ranks[i], mpi_comm, &(request[request_count++]));
-
-    /* We wait for posting all receives (often recommended) */
-
-    MPI_Barrier(mpi_comm);
-
-    /* Send data to distant ranks */
-
-    c_sub_size = 0;
-    for (i = 0; i < n_c_ranks; i++) {
-
-      c_count[i] = 0;
-      for (j = c_shift[i]; j < c_shift[i+1]; j++)
-        c_count[i] += 3*c_buf[j];
-
-      MPI_Isend(&(c_sub_coord[c_sub_size]), c_count[i], FVM_MPI_COORD,
-                c_ranks[i], loc_rank, mpi_comm, &(request[request_count++]));
-
-      c_sub_size += c_count[i];
-
-    } /* End of loop on ranks */
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, request, status);
-
-    /* Free memory */
-
-    BFT_FREE(c_count);
-    BFT_FREE(c_shift);
-    BFT_FREE(c_buf);
-    BFT_FREE(c_gbuf);
-    BFT_FREE(c_sub_gbuf);
-    BFT_FREE(c_sub_coord);
-    BFT_FREE(s_count);
-
-    if (n_s_edges > 0) {
-
-      cs_int_t  n_sub_elts, e_shift;
-
-      cs_int_t  *inv_order = NULL;
-      fvm_lnum_t  *order = NULL;
-
-      /* Define s_sub_edge_def from the received s_sub_gbuf */
-
-      for (rank = 0; rank < n_s_ranks; rank++) {
-
-        e_shift = 0;
-        shift = s_shift[rank];
-
-        for (i = 0; i < n_s_edges; i++) {
-
-          n_sub_elts = s_buf[rank*n_s_edges + i];
-
-          if (sub_elt_count[i] == n_sub_elts) {
-
-            for (j = 0; j < n_sub_elts; j++) {
-              s_sub_edge_def[e_shift + j] = s_sub_gbuf[shift + j];
-              for (k = 0; k < 3; k++)
-                s_sub_coord_def[3*(e_shift+j)+k] = s_sub_coord[3*(shift+j)+k];
-            }
-
-          }
-          e_shift += sub_elt_count[i];
-          shift += n_sub_elts;
-
-        } /* End of loop on edges */
-
-        assert(e_shift == s_sub_size);
-
-      } /* End of loop on ranks */
-
-      BFT_FREE(s_sub_gbuf);
-      BFT_FREE(s_sub_coord);
-      BFT_FREE(s_count);
-      BFT_FREE(s_shift);
-      BFT_FREE(s_buf);
-
-      /* Update vertices from list of sub elements. Define new vertices */
-
-      BFT_MALLOC(order, s_sub_size, fvm_lnum_t);
-
-      fvm_order_local_allocated(NULL, s_sub_edge_def, order, s_sub_size);
-
-      prev = 0;
-      n_new_vertices = 0;
-
-      for (i = 0; i < s_sub_size; i++) {
-
-        cur = s_sub_edge_def[order[i]];
-        if (cur != prev) {
-          prev = cur;
-          id = cs_search_g_binary(mesh->n_vertices,
-                                  cur,
-                                  mesh->global_vtx_num);
-          if (id == -1) /* Add vertex */
-            n_new_vertices++;
-        }
-
-      }
-
-      BFT_REALLOC(mesh->global_vtx_num,
-                  mesh->n_vertices + n_new_vertices, fvm_gnum_t);
-
-      BFT_REALLOC(mesh->vtx_coord,
-                  3*(mesh->n_vertices + n_new_vertices), cs_real_t);
-
-      prev = 0;
-      n_new_vertices = 0;
-
-      for (i = 0; i < s_sub_size; i++) {
-
-        cur = s_sub_edge_def[order[i]];
-        if (cur != prev) {
-
-          prev = cur;
-          id = cs_search_g_binary(mesh->n_vertices,
-                                  cur,
-                                  mesh->global_vtx_num);
-
-          if (id == -1) { /* Add vertex */
-
-            shift = mesh->n_vertices + n_new_vertices;
-            mesh->global_vtx_num[shift] = cur;
-            for (k = 0; k < 3; k++)
-              mesh->vtx_coord[3*shift+k] = s_sub_coord_def[3*order[i]+k];
-            n_new_vertices++;
-
-          }
-
-        }
-
-      }
-
-      mesh->n_vertices += n_new_vertices;
-      bft_printf(_("  Add %d new vertices from the single elements sync.\n"),
-                 n_new_vertices);
-
-      /* Reorder global_vtx_num in order to have an ordered list */
-
-      BFT_REALLOC(order, mesh->n_vertices, fvm_lnum_t);
-
-      fvm_order_local_allocated(NULL,
-                                mesh->global_vtx_num,
-                                order,
-                                mesh->n_vertices);
-
-      BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, fvm_gnum_t);
-
-      for (i = 0; i < mesh->n_vertices; i++)
-        new_vtx_gnum[i] = mesh->global_vtx_num[order[i]];
-
-      BFT_FREE(mesh->global_vtx_num);
-      mesh->global_vtx_num = new_vtx_gnum;
-
-      /* Define a new mesh->vtx_coord */
-
-      BFT_MALLOC(new_coord, 3*mesh->n_vertices, cs_real_t);
-
-      for (i = 0; i < mesh->n_vertices; i++) {
-        vid = order[i];
-        for (k = 0; k < 3; k++)
-          new_coord[3*i+k] = mesh->vtx_coord[3*vid+k];
-      }
-
-      BFT_FREE(mesh->vtx_coord);
-      mesh->vtx_coord = new_coord;
-
-      /* Define a new o2n_vtx_id and o2n_vtx_gnum */
-
-      BFT_MALLOC(inv_order, mesh->n_vertices, cs_int_t);
-
-      for (i = 0; i < mesh->n_vertices; i++) {
-        j = order[i];
-        inv_order[j] = i;
-      }
-
-      for (i = 0; i < n_bm_vertices; i++) {
-        vid = o2n_vtx_id[i];
-        o2n_vtx_id[i] = inv_order[vid];
-      }
-
-      /* Define a new join2mesh_vtx_id */
-
-      for (i = 0; i < n_j_vertices; i++) {
-        vid = join2mesh_vtx_id[i];
-        join2mesh_vtx_id[i] = inv_order[vid];
-      }
-
-      /* Update edge_builder_t structure (v2v_sub_idx and v2v_sub_lst) */
-
-      BFT_MALLOC(new_v2v_sub_idx, edge_builder->n_edges + 1, cs_int_t);
-
-      for (i = 0; i < edge_builder->n_edges; i++)
-        new_v2v_sub_idx[i+1] =  edge_builder->v2v_sub_idx[i+1]
-                              - edge_builder->v2v_sub_idx[i];
-
-      /* Update index for single border faces */
-
-      e_shift = 0;
-      for (i = 0; i < selection->n_b_s_faces; i++) {
-
-        fid = selection->b_s_faces[i] - 1;
-        s = mesh->b_face_vtx_idx[fid] - 1;
-        e = mesh->b_face_vtx_idx[fid+1] - 1;
-
-        for (j = s; j < e - 1; j++) {
-
-          vid1 = mesh->b_face_vtx_lst[j] - 1;
-          vid2 = mesh->b_face_vtx_lst[j+1] - 1;
-
-          if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-            new_v2v_sub_idx[edge_id+1] = sub_elt_count[e_shift++];
-          }
-
-        }
-
-        vid1 = mesh->b_face_vtx_lst[e-1] - 1;
-        vid2 = mesh->b_face_vtx_lst[s] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-          edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-          new_v2v_sub_idx[edge_id+1] = sub_elt_count[e_shift++];
-        }
-
-      }
-
-      /* Update index for single interior faces */
-
-      for (i = 0; i < selection->n_i_s_faces; i++) {
-
-        fid = selection->i_s_faces[i] - 1;
-        s = mesh->i_face_vtx_idx[fid] - 1;
-        e = mesh->i_face_vtx_idx[fid+1] - 1;
-
-        for (j = s; j < e - 1; j++) {
-
-          vid1 = mesh->i_face_vtx_lst[j] - 1;
-          vid2 = mesh->i_face_vtx_lst[j+1] - 1;
-
-          if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-            new_v2v_sub_idx[edge_id+1] = sub_elt_count[e_shift++];
-          }
-
-        }
-
-        vid1 = mesh->i_face_vtx_lst[e-1] - 1;
-        vid2 = mesh->i_face_vtx_lst[s] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-          edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-          new_v2v_sub_idx[edge_id+1] = sub_elt_count[e_shift++];
-        }
-
-      }
-
-      new_v2v_sub_idx[0] = 0;
-      for (i = 0; i < edge_builder->n_edges; i++)
-        new_v2v_sub_idx[i+1] += new_v2v_sub_idx[i];
-
-      /* Update v2v_sub_lst */
-
-      BFT_MALLOC(new_v2v_sub_lst,
-                 new_v2v_sub_idx[edge_builder->n_edges], cs_int_t);
-
-      for (i = 0; i < edge_builder->n_edges; i++) {
-
-        shift = new_v2v_sub_idx[i];
-
-        for (j = edge_builder->v2v_sub_idx[i];
-             j < edge_builder->v2v_sub_idx[i+1]; j++) {
-          vid = edge_builder->v2v_sub_lst[j] - 1;
-          new_v2v_sub_lst[shift++] = inv_order[vid] + 1;
-        }
-
-      }
-
-      /* Update sub list for single border faces */
-
-      e_shift = 0;
-      shift = 0;
-
-      for (i = 0; i < selection->n_b_s_faces; i++) {
-
-        fid = selection->b_s_faces[i] - 1;
-        s = mesh->b_face_vtx_idx[fid] - 1;
-        e = mesh->b_face_vtx_idx[fid+1] - 1;
-
-        for (j = s; j < e - 1; j++) {
-
-          vid1 = mesh->b_face_vtx_lst[j] - 1;
-          vid2 = mesh->b_face_vtx_lst[j+1] - 1;
-
-          if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-            for (k = new_v2v_sub_idx[edge_id];
-                 k < new_v2v_sub_idx[edge_id+1]; k++) {
-
-              id = cs_search_g_binary(mesh->n_vertices,
-                                      s_sub_edge_def[shift++],
-                                      mesh->global_vtx_num);
-
-              assert(id != -1);
-              new_v2v_sub_lst[k] = id + 1;
-
-            }
-
-          }
-
-        }  /* End of loop face connect */
-
-        vid1 = mesh->b_face_vtx_lst[e-1] - 1;
-        vid2 = mesh->b_face_vtx_lst[s] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-
-          edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-          for (k = new_v2v_sub_idx[edge_id];
-               k < new_v2v_sub_idx[edge_id+1]; k++) {
-
-            id = cs_search_g_binary(mesh->n_vertices,
-                                    s_sub_edge_def[shift++],
-                                    mesh->global_vtx_num);
-
-            assert(id != -1);
-            new_v2v_sub_lst[k] = id + 1;
-
-          }
-
-        }
-
-      } /* End of loop on single border faces */
-
-      /* Update sub list for single interior faces */
-
-      for (i = 0; i < selection->n_i_s_faces; i++) {
-
-        fid = selection->i_s_faces[i] - 1;
-        s = mesh->i_face_vtx_idx[fid] - 1;
-        e = mesh->i_face_vtx_idx[fid+1] - 1;
-
-        for (j = s; j < e - 1; j++) {
-
-          vid1 = mesh->i_face_vtx_lst[j] - 1;
-          vid2 = mesh->i_face_vtx_lst[j+1] - 1;
-
-          if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-
-            edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-            for (k = new_v2v_sub_idx[edge_id];
-                 k < new_v2v_sub_idx[edge_id+1]; k++) {
-
-              id = cs_search_g_binary(mesh->n_vertices,
-                                      s_sub_edge_def[shift++],
-                                      mesh->global_vtx_num);
-
-              assert(id != -1);
-              new_v2v_sub_lst[k] = id + 1;
-
-            }
-
-          }
-
-        } /* End of loop face connect */
-
-        vid1 = mesh->i_face_vtx_lst[e-1] - 1;
-        vid2 = mesh->i_face_vtx_lst[s] - 1;
-
-        if (_is_s_edge(vid1, vid2, selection_tag, edge_builder)) {
-
-          edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
-
-          for (k = new_v2v_sub_idx[edge_id];
-               k < new_v2v_sub_idx[edge_id+1]; k++) {
-
-            id = cs_search_g_binary(mesh->n_vertices,
-                                    s_sub_edge_def[shift++],
-                                    mesh->global_vtx_num);
-
-            assert(id != -1);
-            new_v2v_sub_lst[k] = id + 1;
-
-          }
-
-        }
-
-      } /* End of loop on single interior faces */
-
-      BFT_FREE(order);
-      BFT_FREE(inv_order);
-      BFT_FREE(edge_builder->v2v_sub_idx);
-      BFT_FREE(edge_builder->v2v_sub_lst);
-
-      edge_builder->v2v_sub_idx = new_v2v_sub_idx;
-      edge_builder->v2v_sub_lst = new_v2v_sub_lst;
-
-    } /* End if n_s_edges > 0 */
-
-    else {
-      BFT_FREE(s_sub_gbuf);
-      BFT_FREE(s_sub_coord);
-      BFT_FREE(s_count);
-      BFT_FREE(s_shift);
-      BFT_FREE(s_buf);
-    }
-
-    /* Free memory */
-
-    BFT_FREE(sub_elt_count);
-    BFT_FREE(s_sub_edge_def);
-    BFT_FREE(s_sub_coord_def);
-    BFT_FREE(s_edge_def);
-
-  } /* Update edge_builder structure */
+  }
 
   /* Free memory */
 
-  BFT_FREE(s_rank2vtx_idx);
-  BFT_FREE(s_rank2vtx_lst);
-  BFT_FREE(s_ranks);
-  BFT_FREE(c_rank2vtx_idx);
-  BFT_FREE(c_rank2vtx_lst);
-  BFT_FREE(c_ranks);
+  BFT_FREE(c_buf);
+  BFT_FREE(s_buf);
   BFT_FREE(request);
   BFT_FREE(status);
   BFT_FREE(selection_tag);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Update cs_join_edges_t through the synchronization of "single" edges.
+ *
+ * parameters:
+ *  selection         -->  list of all implied entities in the joining op.
+ *  n_bm_vertices     -->  number of vertices in mesh before the merge step
+ *  o2n_vtx_id        <->  relation between init. and current local num.
+ *  n_j_vertices      -->  number of vertices in join_mesh
+ *  join2mesh_vtx_id  <->  relation between join mesh and after fusion vertex
+ *  join_edges        <->  pointer to a cs_join_edges_t structure
+ *  mesh              <->  pointer of pointer to cs_mesh_t structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_sync_single_edges(const cs_join_select_t   *selection,
+                   cs_int_t                  n_bm_vertices,
+                   cs_int_t                  o2n_vtx_id[],
+                   cs_int_t                  n_j_vertices,
+                   cs_int_t                  join2mesh_vtx_id[],
+                   edge_builder_t           *edge_builder,
+                   cs_mesh_t                *mesh)
+{
+  int  i, j, k, id, vid, rank, shift, edge_id, vid1, vid2;
+  int  length, request_count, distant_rank;
+  fvm_gnum_t  cur, prev;
+
+  int  c_sub_size = 0, s_sub_size = 0, n_new_vertices = 0;
+  cs_int_t  *new_v2v_sub_idx = NULL, *new_v2v_sub_lst = NULL;
+  int  *s_count = NULL, *s_sub_index = NULL;
+  int  *c_count = NULL, *c_sub_index = NULL;
+  fvm_gnum_t  *c_sub_gbuf = NULL, *s_sub_gbuf = NULL;
+  fvm_gnum_t  *new_vtx_gnum = NULL;
+  cs_real_t  *c_sub_coord = NULL, *s_sub_coord = NULL, *new_coord = NULL;
+
+  MPI_Request  *request = NULL;
+  MPI_Status   *status = NULL;
+  MPI_Comm  mpi_comm = cs_glob_mpi_comm;
+
+  const int  n_ranks = cs_glob_n_ranks;
+  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
+  const cs_join_sync_t  *s_edges = selection->s_edges;
+  const cs_join_sync_t  *c_edges = selection->c_edges;
+
+  assert(n_ranks > 1);
+
+  /* Allocate MPI buffers used for exchanging data */
+
+  BFT_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
+  BFT_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
+
+  /* Get a number of sub-element for each received edge */
+
+  BFT_MALLOC(s_count, s_edges->n_elts, int);
+  BFT_MALLOC(c_count, c_edges->n_elts, int);
+
+  for (i = 0; i < s_edges->n_elts; i++)
+    s_count[i] = 0;
+  for (i = 0; i < c_edges->n_elts; i++)
+    c_count[i] = 0;
+
+  for (i = 0; i < c_edges->n_elts; i++) {
+
+    vid1 = c_edges->array[2*i] - 1;
+    vid2 = c_edges->array[2*i+1] - 1;
+    edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
+
+    assert(edge_id != -1);
+
+    c_count[i] =  edge_builder->v2v_sub_idx[edge_id+1]
+                - edge_builder->v2v_sub_idx[edge_id];
+
+  } /* End of loop on c_edges */
+
+  /* Exchange number of sub elements for each edge */
+
+  request_count = 0;
+
+  for (i = 0; i < s_edges->n_ranks; i++) {
+
+    int  *recv_buf;
+
+    distant_rank = s_edges->ranks[i];
+    length = s_edges->index[i+1] - s_edges->index[i];
+    recv_buf = s_count + s_edges->index[i];
+
+    MPI_Irecv(recv_buf,
+              length,
+              MPI_INT,
+              distant_rank,
+              distant_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* We wait for posting all receives (often recommended) */
+
+  MPI_Barrier(mpi_comm);
+
+  /* Send data to distant ranks */
+
+  for (i = 0; i < c_edges->n_ranks; i++) {
+
+    int  *send_buf;
+
+    distant_rank = c_edges->ranks[i];
+    length = c_edges->index[i+1] - c_edges->index[i];
+    send_buf = c_count + c_edges->index[i];
+
+    MPI_Isend(send_buf,
+              length,
+              MPI_INT,
+              distant_rank,
+              loc_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Define buffer to send whith sub-elements from "coupled" edges to
+     "single" edges */
+
+  BFT_MALLOC(c_sub_index, c_edges->n_ranks + 1, int);
+
+  c_sub_index[0] = 0;
+  for (i = 0; i < c_edges->n_ranks; i++) {
+    c_sub_index[i+1] = 0;
+    for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++)
+      c_sub_index[i+1] += c_count[j];
+  }
+
+  for (i = 0; i < c_edges->n_ranks; i++)
+    c_sub_index[i+1] += c_sub_index[i];
+
+  c_sub_size = c_sub_index[c_edges->n_ranks];
+
+  BFT_MALLOC(c_sub_gbuf, c_sub_size, fvm_gnum_t);
+  BFT_MALLOC(c_sub_coord, 3*c_sub_size, cs_real_t);
+
+  shift = 0;
+  for (rank = 0; rank < c_edges->n_ranks; rank++) {
+
+    for (i = c_edges->index[rank]; i < c_edges->index[rank+1]; i++) {
+
+      vid1 = c_edges->array[2*i] - 1;
+      vid2 = c_edges->array[2*i+1] - 1;
+      edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
+
+      for (j = edge_builder->v2v_sub_idx[edge_id];
+           j < edge_builder->v2v_sub_idx[edge_id+1]; j++) {
+
+        vid = edge_builder->v2v_sub_lst[j] - 1;
+
+        c_sub_gbuf[shift] = mesh->global_vtx_num[vid];
+        for (k = 0; k < 3; k++)
+          c_sub_coord[3*shift+k] = mesh->vtx_coord[3*vid+k];
+
+        shift++;
+
+      }
+
+    } /* End of loop on edges received from rank */
+
+  } /* End of loop on ranks */
+
+  BFT_MALLOC(s_sub_index, s_edges->n_ranks + 1, int);
+
+  s_sub_index[0] = 0;
+  for (i = 0; i < s_edges->n_ranks; i++) {
+    s_sub_index[i+1] = 0;
+    for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
+      s_sub_index[i+1] += s_count[j];
+  }
+
+  for (i = 0; i < s_edges->n_ranks; i++)
+    s_sub_index[i+1] += s_sub_index[i];
+
+  s_sub_size = s_sub_index[s_edges->n_ranks];
+
+  BFT_MALLOC(s_sub_gbuf, s_sub_size, fvm_gnum_t);
+  BFT_MALLOC(s_sub_coord, 3*s_sub_size, cs_real_t);
+
+  /* Exchange sub-edge definition: global vertex number  */
+
+  request_count = 0;
+
+  for (i = 0; i < s_edges->n_ranks; i++) {
+
+    fvm_gnum_t  *recv_gbuf;
+
+    distant_rank = s_edges->ranks[i];
+    length = s_sub_index[i+1] - s_sub_index[i];
+    recv_gbuf = s_sub_gbuf + s_sub_index[i];
+
+    MPI_Irecv(recv_gbuf,
+              length,
+              FVM_MPI_GNUM,
+              distant_rank,
+              distant_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* We wait for posting all receives (often recommended) */
+
+  MPI_Barrier(mpi_comm);
+
+  /* Send data to distant ranks */
+
+  for (i = 0; i < c_edges->n_ranks; i++) {
+
+    fvm_gnum_t  *send_gbuf;
+
+    distant_rank = c_edges->ranks[i];
+    length = c_sub_index[i+1] - c_sub_index[i];
+    send_gbuf = c_sub_gbuf + c_sub_index[i];
+
+    MPI_Isend(send_gbuf,
+              length,
+              FVM_MPI_GNUM,
+              distant_rank,
+              loc_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Exchange sub-edge definition: vertex coordinates */
+
+  request_count = 0;
+
+  for (i = 0; i < s_edges->n_ranks; i++) {
+
+    cs_real_t  *recv_dbuf;
+
+    distant_rank = s_edges->ranks[i];
+    length = 3*(s_sub_index[i+1] - s_sub_index[i]);
+    recv_dbuf = s_sub_coord + 3*s_sub_index[i];
+
+    MPI_Irecv(recv_dbuf,
+              length,
+              CS_MPI_REAL,
+              distant_rank,
+              distant_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* We wait for posting all receives (often recommended) */
+
+  MPI_Barrier(mpi_comm);
+
+  /* Send data to distant ranks */
+
+  for (i = 0; i < c_edges->n_ranks; i++) {
+
+    cs_real_t  *send_dbuf;
+
+    distant_rank = c_edges->ranks[i];
+    length = 3*(c_sub_index[i+1] - c_sub_index[i]);
+    send_dbuf = c_sub_coord + 3*c_sub_index[i];
+
+    MPI_Isend(send_dbuf,
+              length,
+              CS_MPI_REAL,
+              distant_rank,
+              loc_rank,
+              mpi_comm,
+              &(request[request_count++]));
+
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Free memory */
+
+  BFT_FREE(c_count);
+  BFT_FREE(c_sub_index);
+  BFT_FREE(c_sub_gbuf);
+  BFT_FREE(c_sub_coord);
+  BFT_FREE(s_sub_index);
+  BFT_FREE(request);
+  BFT_FREE(status);
+
+  if (s_edges->n_elts > 0) {
+
+    fvm_lnum_t  *order = NULL, *inv_order = NULL;
+
+    /* Update vertices from list of sub elements. Define new vertices */
+
+    BFT_MALLOC(order, s_sub_size, fvm_lnum_t);
+
+    fvm_order_local_allocated(NULL, s_sub_gbuf, order, s_sub_size);
+
+    prev = 0;
+    n_new_vertices = 0;
+
+    for (i = 0; i < s_sub_size; i++) {
+
+      cur = s_sub_gbuf[order[i]];
+      if (cur != prev) {
+        prev = cur;
+        id = cs_search_g_binary(mesh->n_vertices,
+                                cur,
+                                mesh->global_vtx_num);
+        if (id == -1) /* Add vertex */
+          n_new_vertices++;
+      }
+
+    }  /* End of loop on received sub-elements */
+
+    BFT_REALLOC(mesh->global_vtx_num,
+                mesh->n_vertices + n_new_vertices, fvm_gnum_t);
+
+    BFT_REALLOC(mesh->vtx_coord,
+                3*(mesh->n_vertices + n_new_vertices), cs_real_t);
+
+    prev = 0;
+    n_new_vertices = 0;
+
+    for (i = 0; i < s_sub_size; i++) {
+
+      cur = s_sub_gbuf[order[i]];
+      if (cur != prev) {
+        prev = cur;
+        id = cs_search_g_binary(mesh->n_vertices,
+                                cur,
+                                mesh->global_vtx_num);
+
+        if (id == -1) { /* Add vertex */
+
+          shift = mesh->n_vertices + n_new_vertices;
+          mesh->global_vtx_num[shift] = cur;
+          for (k = 0; k < 3; k++)
+            mesh->vtx_coord[3*shift+k] = s_sub_coord[3*order[i]+k];
+          n_new_vertices++;
+
+        }
+
+      }
+
+    } /* End of loop on received sub-elements */
+
+    mesh->n_vertices += n_new_vertices;
+    bft_printf(_("  Add %d new vertices from the single elements sync.\n"),
+               n_new_vertices);
+
+    /* Reorder global_vtx_num in order to have an ordered list */
+
+    BFT_REALLOC(order, mesh->n_vertices, fvm_lnum_t);
+
+    fvm_order_local_allocated(NULL,
+                              mesh->global_vtx_num,
+                              order,
+                              mesh->n_vertices);
+
+    BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, fvm_gnum_t);
+
+    for (i = 0; i < mesh->n_vertices; i++)
+      new_vtx_gnum[i] = mesh->global_vtx_num[order[i]];
+
+    BFT_FREE(mesh->global_vtx_num);
+    mesh->global_vtx_num = new_vtx_gnum;
+
+    /* Define a new mesh->vtx_coord */
+
+    BFT_MALLOC(new_coord, 3*mesh->n_vertices, cs_real_t);
+
+    for (i = 0; i < mesh->n_vertices; i++) {
+      vid = order[i];
+      for (k = 0; k < 3; k++)
+        new_coord[3*i+k] = mesh->vtx_coord[3*vid+k];
+    }
+
+    BFT_FREE(mesh->vtx_coord);
+    mesh->vtx_coord = new_coord;
+
+    /* Define a new o2n_vtx_id and o2n_vtx_gnum */
+
+    BFT_MALLOC(inv_order, mesh->n_vertices, fvm_lnum_t);
+
+    for (i = 0; i < mesh->n_vertices; i++) {
+      j = order[i];
+      inv_order[j] = i;
+    }
+
+    for (i = 0; i < n_bm_vertices; i++) {
+      vid = o2n_vtx_id[i];
+      o2n_vtx_id[i] = inv_order[vid];
+    }
+
+    /* Define a new join2mesh_vtx_id */
+
+    for (i = 0; i < n_j_vertices; i++) {
+      vid = join2mesh_vtx_id[i];
+      join2mesh_vtx_id[i] = inv_order[vid];
+    }
+
+    /* Update edge_builder_t structure (v2v_sub_idx and v2v_sub_lst) */
+
+    BFT_MALLOC(new_v2v_sub_idx, edge_builder->n_edges + 1, cs_int_t);
+
+    for (i = 0; i < edge_builder->n_edges; i++)
+      new_v2v_sub_idx[i+1] =  edge_builder->v2v_sub_idx[i+1]
+                            - edge_builder->v2v_sub_idx[i];
+
+    for (i = 0; i < s_edges->n_elts; i++) {
+
+      vid1 = s_edges->array[2*i] - 1;
+      vid2 = s_edges->array[2*i+1] - 1;
+      edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
+      assert(edge_id != -1);
+      new_v2v_sub_idx[edge_id+1] = s_count[i];
+
+    }
+
+    new_v2v_sub_idx[0] = 0;
+    for (i = 0; i < edge_builder->n_edges; i++)
+      new_v2v_sub_idx[i+1] += new_v2v_sub_idx[i];
+
+    /* Update v2v_sub_lst */
+
+    BFT_MALLOC(new_v2v_sub_lst,
+               new_v2v_sub_idx[edge_builder->n_edges], cs_int_t);
+
+    for (i = 0; i < edge_builder->n_edges; i++) {
+
+      shift = new_v2v_sub_idx[i];
+
+      for (j = edge_builder->v2v_sub_idx[i];
+           j < edge_builder->v2v_sub_idx[i+1]; j++) {
+        vid = edge_builder->v2v_sub_lst[j] - 1;
+        new_v2v_sub_lst[shift++] = inv_order[vid] + 1;
+      }
+
+    }
+
+    /* Update sub list for single edges */
+
+    shift = 0;
+
+    for (i = 0; i < s_edges->n_elts; i++) {
+
+      vid1 = s_edges->array[2*i] - 1;
+      vid2 = s_edges->array[2*i+1] - 1;
+      edge_id = _get_join_edge_id(vid1, vid2, edge_builder);
+      assert(edge_id != -1);
+
+      for (j = new_v2v_sub_idx[edge_id];
+           j < new_v2v_sub_idx[edge_id+1]; j++) {
+
+        id = cs_search_g_binary(mesh->n_vertices,
+                                s_sub_gbuf[shift++],
+                                mesh->global_vtx_num);
+
+        assert(id != -1);
+        new_v2v_sub_lst[j] = id + 1;
+
+      }
+
+    }
+
+    BFT_FREE(order);
+    BFT_FREE(inv_order);
+    BFT_FREE(edge_builder->v2v_sub_idx);
+    BFT_FREE(edge_builder->v2v_sub_lst);
+
+    edge_builder->v2v_sub_idx = new_v2v_sub_idx;
+    edge_builder->v2v_sub_lst = new_v2v_sub_lst;
+
+  } /* End if s_edges->n_elts > 0 */
+
+  /* Free memory */
+
+  BFT_FREE(s_count);
+  BFT_FREE(s_sub_gbuf);
+  BFT_FREE(s_sub_coord);
+
 }
 
 #endif /* HAVE_MPI */
@@ -1493,7 +974,6 @@ _sync_single_elements(const cs_join_select_t  *selection,
  *   mesh               <-> pointer to cs_mesh_t structure
  *   p_join2mesh_vtx_id --> relation between join mesh and after vertex merge
  *   p_o2n_vtx_id       --> relation between init. and current local num.
- *   p_old_vtx_gnum     --> old global vertex numbering
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1501,8 +981,7 @@ _update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
                              const cs_join_mesh_t  *join_mesh,
                              cs_mesh_t             *mesh,
                              cs_int_t              *p_join2mesh_vtx_id[],
-                             cs_int_t              *p_o2n_vtx_id[],
-                             fvm_gnum_t            *p_old_vtx_gnum[])
+                             cs_int_t              *p_o2n_vtx_id[])
 {
   cs_int_t  i, j, k, o_id, j_id;
   fvm_gnum_t  prev, cur;
@@ -1608,7 +1087,7 @@ _update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
   mesh->n_g_vertices = mesh->n_vertices;
 
   BFT_REALLOC(new_vtx_gnum, n_am_vertices, fvm_gnum_t);
-  *p_old_vtx_gnum = mesh->global_vtx_num;
+  BFT_FREE(mesh->global_vtx_num);
   mesh->global_vtx_num = new_vtx_gnum;
 
 #if defined(HAVE_MPI)
@@ -1856,19 +1335,17 @@ _init_edge_builder(const cs_join_select_t  *join_select,
                           mesh->b_face_vtx_lst,
                           edge_builder->v2v_idx);
 
-  if(join_select->n_b_s_faces > 0)
-    cs_join_build_edges_idx(join_select->n_b_s_faces,
-                            join_select->b_s_faces,
-                            mesh->b_face_vtx_idx,
-                            mesh->b_face_vtx_lst,
-                            edge_builder->v2v_idx);
+  if (cs_glob_n_ranks > 1) {   /* Add edges from "single" edges */
 
-  if(join_select->n_i_s_faces > 0)
-    cs_join_build_edges_idx(join_select->n_i_s_faces,
-                            join_select->i_s_faces,
-                            mesh->i_face_vtx_idx,
-                            mesh->i_face_vtx_lst,
-                            edge_builder->v2v_idx);
+    cs_join_sync_t  *s_edges = join_select->s_edges;
+
+    assert(s_edges != NULL);
+
+    if (s_edges->n_elts > 0)
+      for (i = 0; i < s_edges->n_elts; i++)
+        edge_builder->v2v_idx[s_edges->array[2*i]] += 1;
+
+  }
 
   BFT_MALLOC(count, edge_builder->n_vertices, cs_int_t);
 
@@ -1893,23 +1370,25 @@ _init_edge_builder(const cs_join_select_t  *join_select,
                           edge_builder->v2v_idx,
                           edge_builder->v2v_lst);
 
-  if(join_select->n_b_s_faces > 0)
-    cs_join_build_edges_lst(join_select->n_b_s_faces,
-                            join_select->b_s_faces,
-                            mesh->b_face_vtx_idx,
-                            mesh->b_face_vtx_lst,
-                            count,
-                            edge_builder->v2v_idx,
-                            edge_builder->v2v_lst);
+  /* Add edges from "single" edges */
 
-  if(join_select->n_i_s_faces > 0)
-    cs_join_build_edges_lst(join_select->n_i_s_faces,
-                            join_select->i_s_faces,
-                            mesh->i_face_vtx_idx,
-                            mesh->i_face_vtx_lst,
-                            count,
-                            edge_builder->v2v_idx,
-                            edge_builder->v2v_lst);
+  if (cs_glob_n_ranks > 1) {   /* Add edges from "single" edges */
+
+    cs_join_sync_t  *s_edges = join_select->s_edges;
+
+    for (i = 0; i < s_edges->n_elts; i++) {
+
+      int  vid1 = s_edges->array[2*i] - 1;
+      int  vid2 = s_edges->array[2*i+1] - 1;
+
+      assert(vid1 < vid2);
+      shift = edge_builder->v2v_idx[vid1] + count[vid1];
+      edge_builder->v2v_lst[shift] = vid2 + 1;
+      count[vid1] += 1;
+
+    }
+
+  }
 
   /* Free memory */
 
@@ -2307,71 +1786,6 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
 
   BFT_FREE(am_tmp);
   BFT_FREE(bm_tmp);
-}
-
-/*----------------------------------------------------------------------------
- * Update selected face connectivity after the merge step.
- *
- * parameters:
- *   n_adj_faces   <-- number of adjacent faces
- *   adj_faces     <-- list of adjacent face numbers
- *   n_s_faces     <-- number of single faces
- *   s_faces       <-- list of "single" face numbers
- *   p_n_sel_faces <-> pointer to the number of faces in the selection list
- *   p_sel_faces   <-> pointer to the selection list
- *---------------------------------------------------------------------------*/
-
-static void
-_get_select_face_lst(cs_int_t         n_adj_faces,
-                     const cs_int_t   adj_faces[],
-                     cs_int_t         n_s_faces,
-                     const cs_int_t   s_faces[],
-                     cs_int_t        *p_n_sel_faces,
-                     cs_int_t        *p_sel_faces[])
-{
-  cs_int_t  i, shift, prev, cur, n;
-
-  cs_int_t  *order = NULL, *tmp = NULL;
-
-  n = n_adj_faces + n_s_faces;
-
-  BFT_MALLOC(tmp, n, cs_int_t);
-
-  shift = 0;
-  for (i = 0; i < n_adj_faces; i++)
-    tmp[shift++] = adj_faces[i];
-  for (i = 0; i < n_s_faces; i++)
-    tmp[shift++] = s_faces[i];
-
-  assert(shift == n);
-
-  /* Order selection and eliminate redundancies */
-
-  BFT_MALLOC(order, n, cs_int_t);
-
-  fvm_order_local_allocated(tmp, NULL, order, n);
-
-  prev = 0;
-  shift = 0;
-
-  for (i = 0; i < n; i++) {
-
-    cur = tmp[order[i]];
-    if (cur != prev) {
-      prev = cur;
-      order[shift++] = cur;
-    }
-
-  }
-
-  BFT_FREE(tmp);
-  BFT_REALLOC(order, shift, cs_int_t);
-
-  /* Return pointers */
-
-  *p_n_sel_faces = shift;
-  *p_sel_faces = order;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3859,10 +3273,9 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
                                 cs_join_mesh_t          *join_mesh,
                                 cs_mesh_t               *mesh)
 {
-  cs_int_t  i, j, shift, select_id, adj_id, old_id, s_id, new_num, n_sel_faces;
+  cs_int_t  i, j, shift, select_id, adj_id, old_id, new_num;
 
-  cs_int_t  *o2n_vtx_id = NULL, *join2mesh_vtx_id = NULL, *sel_faces = NULL;
-  fvm_gnum_t  *old_vtx_gnum = NULL;
+  cs_int_t  *o2n_vtx_id = NULL, *join2mesh_vtx_id = NULL;
   edge_builder_t  *edge_builder = NULL;
 
   const cs_int_t  n_bm_vertices = mesh->n_vertices; /* bf: before merge */
@@ -3908,8 +3321,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
      join_mesh,
      mesh,
      &join2mesh_vtx_id, /* size: join_mesh->n_vertices */
-     &o2n_vtx_id,       /* size: n_bm_vertices */
-     &old_vtx_gnum);    /* size: n_bm_vertices */
+     &o2n_vtx_id);      /* size: n_bm_vertices */
 
   /* Define the evolution of each initial edge in edge_builder_t struct. */
 
@@ -3923,18 +3335,22 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
   BFT_FREE(o2n_vtx_gnum); /* Not useful after this point */
 
 #if defined(HAVE_MPI)
-  if (join_select->do_single_sync == true)
-    _sync_single_elements(join_select,
-                          n_bm_vertices,
-                          old_vtx_gnum,
-                          o2n_vtx_id,
-                          join_mesh->n_vertices,
-                          join2mesh_vtx_id,
-                          edge_builder,
-                          mesh);
-#endif
+  if (join_select->do_single_sync == true) {
 
-  BFT_FREE(old_vtx_gnum);
+    _sync_single_vertices(join_select,
+                          o2n_vtx_id,
+                          mesh);
+
+    _sync_single_edges(join_select,
+                       n_bm_vertices,
+                       o2n_vtx_id,
+                       join_mesh->n_vertices,
+                       join2mesh_vtx_id,
+                       edge_builder,
+                       mesh);
+
+  }
+#endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump the structure */
   if (join_param.verbosity > 2) {
@@ -3981,55 +3397,23 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
 
   /* Update adjacent border face connectivity */
 
-  if (join_select->n_b_s_faces > 0)
-    _get_select_face_lst(join_select->n_b_adj_faces,
-                         join_select->b_adj_faces,
-                         join_select->n_b_s_faces,
-                         join_select->b_s_faces,
-                         &n_sel_faces,
-                         &sel_faces);
-
-  else {
-    n_sel_faces = join_select->n_b_adj_faces;
-    sel_faces = join_select->b_adj_faces;
-  }
-
-  _update_adj_face_connect(n_sel_faces,
-                           sel_faces,
+  _update_adj_face_connect(join_select->n_b_adj_faces,
+                           join_select->b_adj_faces,
                            edge_builder,
                            o2n_vtx_id,
                            mesh->n_b_faces,
                            &(mesh->b_face_vtx_idx),
                            &(mesh->b_face_vtx_lst));
 
-  if (join_select->n_b_s_faces > 0)
-    BFT_FREE(sel_faces);
-
   /* Update adjacent interior face connectivity */
 
-  if (join_select->n_i_s_faces > 0)
-    _get_select_face_lst(join_select->n_i_adj_faces,
-                         join_select->i_adj_faces,
-                         join_select->n_i_s_faces,
-                         join_select->i_s_faces,
-                         &n_sel_faces,
-                         &sel_faces);
-
-  else {
-    n_sel_faces = join_select->n_i_adj_faces;
-    sel_faces = join_select->i_adj_faces;
-  }
-
-  _update_adj_face_connect(n_sel_faces,
-                           sel_faces,
+  _update_adj_face_connect(join_select->n_i_adj_faces,
+                           join_select->i_adj_faces,
                            edge_builder,
                            o2n_vtx_id,
                            mesh->n_i_faces,
                            &(mesh->i_face_vtx_idx),
                            &(mesh->i_face_vtx_lst));
-
-  if (join_select->n_i_s_faces > 0)
-    BFT_FREE(sel_faces);
 
   /* Free memory */
 
@@ -4041,7 +3425,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
 
   /* Update initial face connectivity for the remaining faces */
 
-  for (i = 0, select_id = 0, adj_id = 0, s_id = 0; i < mesh->n_b_faces; i++) {
+  for (i = 0, select_id = 0, adj_id = 0; i < mesh->n_b_faces; i++) {
 
     cs_bool_t  do_update = true;
 
@@ -4056,13 +3440,6 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
       if (i+1 == join_select->b_adj_faces[adj_id]) {
         do_update = false; /* Already done */
         adj_id++;
-      }
-    }
-
-    if (s_id < join_select->n_b_s_faces) {
-      if (i+1 == join_select->b_s_faces[s_id]) {
-        do_update = false; /* Already done */
-        s_id++;
       }
     }
 
@@ -4081,7 +3458,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
 
   } /* End of loop on border faces */
 
-  for (i = 0, adj_id = 0, s_id = 0; i < mesh->n_i_faces; i++) {
+  for (i = 0, adj_id = 0; i < mesh->n_i_faces; i++) {
 
     cs_bool_t  do_update = true;
 
@@ -4089,13 +3466,6 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
       if (i+1 == join_select->i_adj_faces[adj_id]) {
         do_update = false; /* Already done */
         adj_id++;
-      }
-    }
-
-    if (s_id < join_select->n_i_s_faces) {
-      if (i+1 == join_select->i_s_faces[s_id]) {
-        do_update = false; /* Already done */
-        s_id++;
       }
     }
 
