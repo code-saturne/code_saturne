@@ -1873,7 +1873,7 @@ _merge_vertices(cs_join_param_t    param,
 
   /* Modify the tolerance for the merge operation if needed */
 
-  if (fabs(param.merge_tol_coef - 1.0) < 1e-30) {
+  if (fabs(param.merge_tol_coef - 1.0) > 1e-30) {
     for (i = 0; i < n_vertices; i++)
       vertices[i].tolerance *= param.merge_tol_coef;
   }

@@ -1,4 +1,9 @@
 * 22/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a test on tolerance in the merge stage.
+  modified routine:
+    src/base/cs_join_merge.c
+
+* 22/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a possible uninitialized variable in joining algorithm.
   modified routine:
     src/base/cs_join_intersect.c
