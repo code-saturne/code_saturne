@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -27,29 +27,26 @@
 !     Boston, MA  02110-1301  USA
 
 !-------------------------------------------------------------------------------
+! Purpose:
+! -------
 
-!  FONCTION  :
-!  ---------
+! User subroutines for input of calculation parameters (Fortran commons).
+!   These subroutines are called in all cases.
 
-! ROUTINES UTILISATEUR POUR ENTREE DES PARAMETRES DE CALCUL (COMMONS)
-!  ON PASSE ICI POUR TOUS LES CALCULS
+! If the Code_Saturne GUI is used, this file is not required (but may be
+!   used to override parameters entered through the GUI, and to set
+!   parameters not accessible through the GUI).
 
-! SI L'ON UTILISE L'IHM DE CODE_SATURNE, LE FICHIER PRESENT N'EST
-!   PAS INDISPENSABLE (IL COMPLETE OU PREND LE PAS SUR LES
-!   PARAMETRES ENTRES PAR L'INTERFACE)
+! Several routines are present in the file, each destined to defined
+!   specific parameters.
 
-! ON TROUVERA PLUSIEURS ROUTINES DANS LE FICHIER PRESENT, CHACUNE
-!   DESTINEE A RENSEIGNER CERTAINS PARAMETRES PARTICULIERS
+! To modify the default value of parameters which do not appear in the
+!   examples provided, code should be placed as follows:
+!   - usipsu   for numerical and physical options
+!   - usipes   for input-output related options
 
-! POUR MODIFIER LA VALEUR PAR DEFAUT DE PARAMETRES N'APPARAISSANT
-!   PAS DANS LES EXEMPLES FOURNIS ICI, INTERVENIR CI-DESSOUS DANS
-!   - USIPSU   POUR LES OPTIONS NUMERIQUES ET PHYSIQUES
-!   - USIPES   POUR LES OPTIONS RELATIVES AUX ENTREES-SORTIES
-
-! PAR CONVENTION "PHYSIQUE PARTICULIERE" RENVOIE AUX MODULES
-!   SUIVANTS UNIQUEMENT :
-!           CHARBON PULVERISE, COMBUSTION GAZ, ELECTRIQUE
-
+! As a convention, "specific physics" defers to the following modules only:
+!   pulverized coal, gas combustion, electric arcs.
 
 !-------------------------------------------------------------------------------
 
@@ -64,41 +61,39 @@ subroutine usipph &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DES PARAMETRES DEPENDANT DU NOMBRE DE PHASES
+! User subroutine for input of parameters depending on the number of phases.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nphmax           ! e  ! <-- ! nombre de phases maximum                       !
-! nphas            ! e  ! <-- ! nombre de phases actives                       !
-! iihmpu           ! e  ! <-- ! indique si un fichier de donnees de            !
-!                  !    !     ! l'ihm est utilise (1: oui, 0: non)             !
-! nfecra           ! e  ! <-- ! numero d'unite std pour impression             !
-! iturb(nphmax)    ! te ! <-- ! modele de turbulence                           !
-! icp  (nphmax)    ! te ! <-- ! indicateur de cp uniforme ou non               !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! nphmax           ! i  ! <-- ! maximum number of phases                       !
+! nphas            ! i  ! <-- ! number of active phases                        !
+! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
+! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
+! iturb(nphmax)    ! ia ! <-> ! turbulence model                               !
+! icp(nphmax)      ! ia ! <-> ! flag for uniform Cp or not                     !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
-!     AUCUN COMMON NE DOIT APPARAITRE ICI
+! No common should appear here
 
 
 !===============================================================================
@@ -117,12 +112,10 @@ integer iphas
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -134,64 +127,64 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usipph DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usipph'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     ON NE RENSEIGNERA DANS CE SOUS-PROGRAMME QUE LES PARAMETRES
+!     In this subroutine, only the parameters which already appear may
 
-!       qui y apparaissent deja, A L'EXCLUSION DE tout autre.
-!                                ================
+!       be set, to the exclusion of any other.
+!               ================
 
 
-!     SI L'ON NE DISPOSE PAS DE L'INTERFACE DE CODE_SATURNE :
+!     If we are not using the Code_Saturne GUI:
 
-!       on renseignera TOUS les parametres qui apparaissent dans
-!                      ====                          ce sous-programme.
+!       All the parameters which appear in this subroutine must be set.
+!       ===
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
-! --- Turbulence (pour chaque phase)
-!       0...Laminaire
-!      10...Longueur de melange
+! --- Turbulence (for each phase)
+!       0...Laminar
+!      10...Mixing length
 !      20...k-epsilon
-!      21...k-epsilon a production lineaire
-!      30...Rij-epsilon standard (LRR)
-!      31...Rij-epsilon SSG
+!      21...k-epsilon (linear production)
+!      30...Rij-epsilon, (standard LRR)
+!      31...Rij-epsilon (SSG)
 !      40...LES (Smagorinsky)
-!      41...LES (Dynamique)
+!      41...LES (Dynamic)
 !      42...LES (WALE)
 !      50...v2f (phi-model)
 !      60...k-omega SST
-!  Pour 10, contacter l'equipe de developpement avant utilisation
+!  For 10, contact the development team before use
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -201,20 +194,20 @@ iturb(iphas) = 20
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Chaleur massique variable (ICP=1) ou non (ICP=0)
-!       pour chaque phase IPHAS
+! --- Variable specific heat (ICP=1) or not (ICP=0)
+!       for each phase IPHAS
 
-!     A renseigner uniquement si les physiques particulieres (charbon,
-!       combustion, electrique) NE SONT PAS activees.
+!     Should be set only if specific physics (coal, combustion, electric arcs)
+!       ARE NOT activated.
 
-!     Pour ces physiques particulieres, il NE FAUT PAS modifier ICP ici
-!       et les choix suivants sont imposes
-!          charbon et combustion : CP constant ;
-!          electrique            : CP variable.
+!     For these specific physics, ICP MUST NOT BE MODIFIED here, and the
+!       following options are forced:
+!          coal and combustion: constant CP constant;
+!          electric arcs:       variable CP.
 
-!     Attention : completer usphyv avec la loi donnant Cp
-!     =========   si et seulement si on a choisi CP variable ici
-!                                                   (avec ICP(IPHAS)=1)
+!     Caution:    complete usphyv with the law defining Cp
+!     =========   if and only if variable Cp has been selected here
+!                 (with icp(iphas)=1)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -224,13 +217,12 @@ icp(iphas) = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
-! FORMATS
+! Formats
 !----
 
 
-
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -243,38 +235,36 @@ subroutine usinsc &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DU NOMBRE DE SCALAIRES UTILISATEUR
+! User subroutine for input of the number of user scalars.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iihmpu           ! e  ! <-- ! indique si un fichier de donnees de            !
-!                  !    !     ! l'ihm est utilise (1: oui, 0: non)             !
-! nfecra           ! e  ! <-- ! numero d'unite std pour impression             !
-! nscaus           ! e  ! <-- ! nombre de scalaires utilisateur                !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
+! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
+! nscaus           ! i  ! <-> ! number of user scalars                         !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
-!     AUCUN COMMON NE DOIT APPARAITRE ICI
+! No common should appear here
 
 
 !===============================================================================
@@ -285,19 +275,17 @@ integer iihmpu, nfecra
 integer nscaus
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -309,73 +297,70 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usinsc DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usinsc'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     ON NE RENSEIGNERA DANS CE SOUS-PROGRAMME QUE LES PARAMETRES
+!     In this subroutine, only the parameters which already appear may
 
-!       qui y apparaissent deja, A L'EXCLUSION DE tout autre.
-!                                ================
+!       be set, to the exclusion of any other.
+!               ================
 
 
-!     SI L'ON NE DISPOSE PAS DE L'INTERFACE DE CODE_SATURNE :
+!     If we are not using the Code_Saturne GUI:
 
-!       on renseignera TOUS les parametres qui apparaissent dans
-!                      ====                          ce sous-programme.
+!       All the parameters which appear in this subroutine must be set.
+!       ===
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
-! --- Nombre de scalaires UTILISATEUR (thermiques ou non et quelle que
-!       soit leur phase porteuse). Il s'agit des scalaires qui viennent
-!       en supplement des scalaires "de base" suivants (naturellement
-!       inclus dans la modelisation) :
-!        - pression
-!        - grandeurs turbulentes
-!        - NSCAPP scalaires introduits par l'eventuel modele de
-!          combustion, charbon ou electrique mis en oeuvre
+! --- Number of USER scalars (thermal or not, and whatever their carrier phase).
+!       These scalars come in addition to the following "basic" scalars
+!       (which are naturally included in the model):
+!        - pressure
+!        - turbulent variables
+!        - nscapp scalars introduced by an active combustion, coal,
+!          or electric arc module.
 
-!     Ainsi, pour un calcul sans modele de combustion, de charbon
-!       pulverise ni de modele electrique, les scalaires utilisateurs
-!       pourront etre par exemple :
-!        - la temperature ou l'enthalpie,
-!        - des fractions massiques de scalaires transportes
-!        - la moyenne du carre des fluctuations d'un autre scalaire
-!          utilisateur
+!     Thus, for a calculation with no specific physics, the user scalars
+!       may for example be:
+!        - temperature or enthalpy,
+!        - mass fractions of transported scalars
+!        - the variance of another user scalar
 
-!     Le nombre de scalaires maximal est donne par NSCAMX dans paramx.h :
-!       il s'agit de la valeur maximale admissible pour NSCAUS + NSCAPP.
+!     The maximum number of scalars is defined by 'nscamx' in paramx.h;
+!       it is the maximum admissible value for: nscaus + nscapp.
 
 
-!     Imposer NSCAUS = 0 s'il n'y a pas de scalaire utilisateur.
+!     Set nscaus = 0 if there is no user scalar.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -384,13 +369,12 @@ nscaus = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
-! FORMATS
+! Formats
 !----
 
 
-
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -403,43 +387,40 @@ subroutine usipsc &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES UTILISATEUR
+! User subroutine for the input of parameters depending on the
+!   number of user scalars.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nscmax           ! e  ! <-- ! nombre de scalaires maximal                    !
-! nscaus           ! e  ! <-- ! nombre de scalaires utilisateur                !
-! iihmpu           ! e  ! <-- ! indique si un fichier de donnees de            !
-!                  !    !     ! l'ihm est utilise (1: oui, 0: non)             !
-! nfecra           ! e  ! <-- ! numero d'unite std pour impression             !
-! iscavr(nscmax    ! te ! <-- ! numero du scalaire correspondant               !
-!                  !    !     ! pour les scalaires variance                    !
-! ivisls(nscmax    ! te ! <-- ! diffusivite des scalaires uniforme             !
-!                  !    !     ! ou non                                         !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! nscmax           ! i  ! <-- ! maximum number of scalars                      !
+! nscaus           ! i  ! <-- ! number of user scalars                         !
+! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
+! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
+! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
+! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
-!     AUCUN COMMON NE DOIT APPARAITRE ICI
+! No common should appear here
 
 
 !===============================================================================
@@ -450,7 +431,7 @@ integer nscmax, nscaus, iihmpu, nfecra
 integer iscavr(nscmax), ivisls(nscmax)
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer iutile, iscal
 
@@ -458,12 +439,10 @@ integer iutile, iscal
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -475,79 +454,77 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usipsc DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usipsc'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     ON NE RENSEIGNERA DANS CE SOUS-PROGRAMME QUE LES PARAMETRES
+!     In this subroutine, only the parameters which already appear may
 
-!       qui y apparaissent deja, A L'EXCLUSION DE tout autre.
-!                                ================
+!       be set, to the exclusion of any other.
+!               ================
 
 
-!     SI L'ON NE DISPOSE PAS DE L'INTERFACE DE CODE_SATURNE :
+!     If we are not using the Code_Saturne GUI:
 
-!       on renseignera TOUS les parametres qui apparaissent dans
-!                      ====                          ce sous-programme.
+!       All the parameters which appear in this subroutine must be set.
+!       ===
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
-! --- Moyenne du carre des fluctuations d'un scalaire UTILISATEUR :
-!     Si on souhaite qu'un scalaire utilisateur j represente la moyenne
-!      du carre des fluctuations du scalaire utilisateur k, on indique
-!      ISCAVR(j) = k.
-!     Les valeurs prises par ISCAVR sont donc naturellement superieures
-!      ou egales a 1 et inferieures ou egales au nombre total de scalaires.
-!      Ainsi, si on impose ISCAVR(j) = k, il faut
-!            0<j<NSCAUS+1, 0<k<NSCAUS+1 et j different de k.
+! --- Variance of a USER scalar:
+!     If we wish a user scalar j to represent the variance of a
+!       user scalar k, we set
+!       iscavr(j) = k.
+!     The values taken by iscavr are thus naturally greater or equal to 1
+!       and less than or equal to the total number of scalars.
+!       So, if we set iscavr(j) = k, we must have
+!       0 < j < nscaus+1, 0< k < nscaus+1 and j different from k.
 
-!     Par exemple pour que le scalaire utilisateur 3 soit la moyenne
-!      du carre des fluctuations du scalaire utilisateur 2, on impose :
-!                         ISCAVR(3) = 2
-!      avec NSCAUS au moins egal a 3.
+!     For example for user scalar 3 to be the variance of user scalar 3,
+!       we set:
+!       iscavr(3) = 2
+!       with nscaus at least equal to 3.
 
-!     Ne pas intervenir si l'on ne souhaite pas inclure explicitement a
-!       la simulation la moyenne du carre des fluctuations d'un scalaire
-!       utilisateur.
+!     Do not intervene if you do not wish to explicitly include the
+!       variance of a user scalar in the simulation.
 
-!     Pour les scalaires non utilisateur relatifs a des physiques
-!       particulieres, (charbon, combustion, electrique : voir usppmo)
-!       implicitement definis selon le modele, les informations sont
-!       donnees automatiquement par ailleurs : on ne modifie pas ISCAVR.
+!     For non-user scalars relative to specific physics (coal, combustion,
+!       electric arcs: see usppmo) implicitly defined in the model,
+!       the corresponding information is given automatically, and
+!       iscavr should not be modified.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     Le test sur IUTILE permet de desactiver les instructions (qui
-!       ne sont fournies qu'a titre d'exemple a adapter)
+!     The test on iutile allows deactivation of the instructions
+!       (which are only given as an example).
 
 iutile = 0
 if(iutile.eq.1) then
@@ -559,27 +536,23 @@ endif
 
 
 
-! --- Diffusivite variable (IVISLS=1) ou constante (IVISLS=0) pour
-!       chaque scalaire UTILISATEUR     hormis ceux qui
-!       representent la moyenne du carre des fluctuations d'un autre.
+! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
+!       each USER scalar, EXCEPT those which represent the variance
+!       of another.
 
-!     Pour les scalaires utilisateur ISCAL qui representent la moyenne du
-!       carre des fluctuations d'un autre scalaire utilisateur,
-!                                on ne renseigne pas IVISLS(ISCAL) ici.
-!       C'est l'objet du test sur ISCAVR(ISCAL) dans l'exemple ci-dessous.
-!       En effet, la diffusivite de la moyenne du carre des fluctuations
-!       d'un scalaire est supposee avoir le meme comportement que la
-!       diffusivite de ce scalaire.
+!     For user scalars iscal which represent the variance of another user
+!       scalar, we do not set ivisls(iscal) here.
+!       This is the purpose of the test on iscavr(ISCAL) in the example below.
+!       Indeed, the diffusivity of the variance of a scalar is assumed to
+!       have the same behavior as the diffusivity of this scalar.
 
-!     Pour les scalaires non utilisateur relatifs a des physiques
-!       particulieres, (charbon, combustion, electrique : voir usppmo)
-!       implicitement definis selon le modele,
-!       les informations sont donnees automatiquement par ailleurs :
-!                                          on ne modifie pas IVISLS ici.
+!     For non-user scalars relative to specific physics (coal, combustion,
+!       electric arcs: see usppmo) implicitly defined in the model,
+!       the corresponding information is given automatically, and
+!       ivisls should not be modified here.
 
-!     Attention : completer usphyv avec la loi donnant la diffusivite
-!     =========   si et seulement si on a choisi IVISLS=1 ici
-
+!     Caution:    complete usphyv with the law defining the diffusivity
+!     =========   if and only if ivisls = 1 has been set here.
 
 
 
@@ -587,8 +560,7 @@ endif
 
 do iscal = 1, nscaus
 
-!     Pour les scalaires utilisateur qui ne representent pas
-!       la moyenne du carre des fluctuations d'un autre scalaire
+  ! For user scalars which do not represent the variance of another scalar
   if(iscavr(iscal).le.0) then
 
     ivisls(iscal) = 0
@@ -600,13 +572,13 @@ enddo
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !----
-! FORMATS
+! Formats
 !----
 
 
 
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -622,60 +594,51 @@ subroutine usipgl &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DE PARAMETRES GLOBAUX
+! User subroutine for the setting of global parameters.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nphmax           ! e  ! <-- ! nombre de phases maximal                       !
-! nesmax           ! e  ! <-- ! nombre d'estimateurs d'erreur                  !
-!                  !    !     !   maximal pour une phase                       !
-! iespre           ! e  ! <-- ! numero de l'estimateur d'erreur                !
-!                  !    !     !   prediction                                   !
-! iesder           ! e  ! <-- ! numero de l'estimateur d'erreur                !
-!                  !    !     !   derive                                       !
-! iescor           ! e  ! <-- ! numero de l'estimateur d'erreur                !
-!                  !    !     !   correction                                   !
-! iestot           ! e  ! <-- ! numero de l'estimateur d'erreur                !
-!                  !    !     !   total                                        !
-! nphas            ! e  ! <-- ! nombre de phases actives                       !
-! iihmpu           ! e  ! <-- ! indique si un fichier de donnees de            !
-!                  !    !     ! l'ihm est utilise (1: oui, 0: non)             !
-! nfecra           ! e  ! <-- ! numero d'unite std pour impression             !
-! idtvar           ! e  ! --> ! indicateur pas de temps variable               !
-! ipucou           ! e  ! --> ! indicateur couplage u-p renforce               !
-! iphydr           ! e  ! --> ! indicateur de prise en compte de               !
-!                  !    !     ! l'equilibre entre le gradient de               !
-!                  !    !     ! pression et les termes de gravite et           !
-!                  !    !     ! de perte de charge                             !
-! ialgce           ! e  ! <-- ! indicateur de methode de calcul des            !
-!                  !    !     !  centres de gravite des cellules               !
-! iescal           ! te ! <-- ! indicateur d'activation des                    !
-!(nesmax,nphmax    !    !     ! estimateurs d'erreur pour navier               !
-!                  !    !     ! stokes                                         !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! nphmax           ! i  ! <-- ! maximum number of phases                       !
+! nesmax           ! i  ! <-- ! maximum number of error estimators per phase   !
+! iespre           ! i  ! <-- ! number of the prediction error estimator       !
+! iesder           ! i  ! <-- ! number of the derivative error estimator       !
+! iescor           ! i  ! <-- ! number of the correction error estimator       !
+! iestot           ! i  ! <-- ! number of the total error estimator            !
+! nphas            ! i  ! <-- ! number of active phases                        !
+! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
+! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
+! idtvar           ! i  ! --> ! variable time step flag                        !
+! ipucou           ! i  ! --> ! reinforced u-p coupling flag                   !
+! iphydr           ! i  ! --> ! flag for handling of the equilibrium between   !
+!                  !    !     ! the pressure gradient and the gravity and      !
+!                  !    !     ! head-loss terms                                !
+! ialgce           ! i  ! <-- ! option for the method of calculation of        !
+!                  !    !     !  cell centers                                  !
+! iescal           ! ia ! <-- ! flag for activation of error estimators for    !
+!  (nesmax,nphmax) !    !     ! Navier-Stokes                                  !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
-!     AUCUN COMMON NE DOIT APPARAITRE ICI
+! No common should appear here
 
 
 !===============================================================================
@@ -689,7 +652,7 @@ integer idtvar, ipucou, iphydr
 integer iescal(nesmax,nphmax)
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer iphas, ialgce
 
@@ -697,12 +660,10 @@ integer iphas, ialgce
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -714,55 +675,55 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usipgl DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usipgl'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     ON NE RENSEIGNERA DANS CE SOUS-PROGRAMME QUE LES PARAMETRES
+!     In this subroutine, only the parameters which already appear may
 
-!       qui y apparaissent deja, A L'EXCLUSION DE tout autre.
-!                                ================
+!       be set, to the exclusion of any other.
+!               ================
 
 
-!     SI L'ON NE DISPOSE PAS DE L'INTERFACE DE CODE_SATURNE :
+!     If we are not using the Code_Saturne GUI:
 
-!       on renseignera TOUS les parametres qui apparaissent dans
-!                      ====                          ce sous-programme.
+!       All the parameters which appear in this subroutine must be set.
+!       ===
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
-! --- Pas de temps (0 : uniforme et constant
-!                   1 : variable en temps et uniforme en espace
-!                   2 : variable en espace et en temps
-!                  -1 : algorithme stationnaire)
+! --- Time step  (0 : uniform and constant
+!                 1 : variable in time, uniform in space
+!                 2 : variable in time and space
+!                -1 : steady algorithm)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -771,9 +732,9 @@ idtvar = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Couplage vitesse/pression (0 : algorithme classique,
-!                                1 : couplage instationnaire)
-!     Uniquement en monophasique
+! --- Velocity/pressure coupling (0 : classical algorithm,
+!                                 1 : transient coupling)
+!     Only in single-phase
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -782,10 +743,10 @@ ipucou = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Prise en compte de la pression hydrostatique
-!                               (0 : algorithme usuel
-!                                1 : prise en compte explicite)
-!     Uniquement en monophasique
+! --- Handling of hydrostatic pressure
+!                               (0 : usual algorithm
+!                                1 : specific handling)
+!     Only in single-phase
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -794,30 +755,29 @@ iphydr = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Estimateurs pour Navier-Stokes (champ de vitesse non fige)
-!     On conseille de realiser une suite de calcul sur quelques pas de
-!       temps en activant les plus parlants ci dessous
-!        (=2 pour activer, =0 pour desactiver).
+! --- Estimators for Navier-Stokes (non-frozen velocity field)
+!     We recommend running a calculation restart on a few time steps
+!       with the activation of the most interesting of those.
+!        (=2 to activate, =0 to deactivate).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 !       div(rho u) -Gamma
 iescal(iescor,iphas) = 0
-!       precision de la resolution de la quantite de mouvement
+!       resolution precision for the momentum
 iescal(iestot,iphas) = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 !----
-! FORMATS
+! Formats
 !----
 
 
-
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -830,31 +790,29 @@ subroutine usipsu &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES
+! User subroutine for the input of additional user parameters.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nmodpp           ! e  ! <-- ! nombre de modeles phys.part. actives           !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! nmodpp           ! i  ! <-- ! number of active specific physics models       !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -882,7 +840,7 @@ include "elincl.h"
 integer nmodpp
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer iphas, iutile, ii, jj, imom
 
@@ -890,12 +848,10 @@ integer iphas, iutile, ii, jj, imom
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -907,57 +863,56 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usipsu DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usipsu'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     CE SOUS-PROGRAMME PERMET DE RENSEIGNER LES PARAMETRES
+!     This subroutine allows setting parameters
 
-!       qui n'apparaissent pas deja dans les autres sous-programmes
-!       du present fichier.
-
-
-!     IL EST POSSIBLE D'AJOUTER OU DE RETRANCHER DES PARAMETRES
+!       which do not already appear in the other subroutines of this file.
 
 
-!     LE NUMERO DES PROPRIETES PHYSIQUES ET DES  VARIABLES EST CONNU
+!     It is possible to add or remove parameters.
+
+
+!     The number of physical properties and variables is known here.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
 
-! Options du calcul (optcal.h)
-! ============================
+! Calculation options (optcal.h)
+! ==============================
 
-! --- Suite de calcul : ISUITE ( = 1) ou non (0)
-!     Avec relecture du fichier suite auxiliaire ILEAUX ( = 1) ou non (0)
+! --- Calculation restart: isuite (= 1) or not (0)
+!     In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -966,11 +921,10 @@ ileaux = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Duree
-!       NTMABS = numero absolu du dernier pas de temps desire
-!         si on a deja fait 10 pas de temps
-!         et qu'on veut en faire 10 autres,
-!           il faut imposer NTMABS a 10 + 10 = 20
+! --- Duration
+!       ntmabs = absolute number of the last time step required
+!         if we have already run 10 time steps and want to
+!         run 10 more, ntmabs must be set to 10 + 10 = 20
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -978,8 +932,8 @@ ntmabs = 10
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Pas de temps de reference
-!     L'exemple donne ici est probablement inadapte a votre cas
+! --- Reference time step
+!     The example given below is probably not adapted to your case.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -987,87 +941,72 @@ dtref  = 0.01d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Pas de temps maximal DTMAX
-!     Imposer une valeur a partir de grandeurs caracteristiques du cas
-!      sinon, le code prendra par defaut un multiple de dtref
-!     Ex. avec
-!        Ld : longueur "dynamique" ie par exemple longueur du domaine
-!        Ud : Vitesse debitante caracteristique
-!        Lt : longueur thermique ie par exemple la hauteur du domaine
-!                                                    (selon la gravite)
-!        Delta_rho/rho : ecart relatif de masse volumique
-!        g : acceleration de la pesanteur
+! --- Maximum time step: dtmax
+!     Set a value base on characteristic values of your case.
+!      otherwise, the code will use a multiple of dtref by default.
+!     Example with
+!        Ld: "dynamic" length (for example, the domain length)
+!        Ud: characteristic flow velocity
+!        Lt: thermal length (for example, the domain height gravity-wise)
+!        Delta_rho/rho: relative density difference
+!        g: gravity acceleration
 
-
-!     DTMAX = Min(Ld/Ud,Sqrt(Lt/(g Delta_rho/rho)))
-
+!     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
 
 
 
+! --- Temperature or enthalpy
 
 
 
-
-! --- Temperature ou enthalpie
-
-
-
-!   Lorsque des physiques particulieres sont activees
-!                                       (charbon, combustion, electrique)
-!     on NE renseigne PAS cette section : on NE modifie ni ISCALT ni ISCSTH
-!                                   (le test IF(NMODPP.EQ.0) sert a cela).
+!   When specific physics are activated (coal, combustion, electric arcs)
+!     we DO NOT edit this section: we DO NOT modify 'iscalt' nor 'iscsth'
+!    (the test: if (nmodpp.eq.0) is used for this).
 
 
-!   Par contre, si ces physiques particulieres ne sont PAS activees :
+!   On the other hand, if specific physics are NOT activated:
 
-!     Si un scalaire UTILISATEUR represente la temperature ou l'enthalpie
-!       (de la phase IPHAS) :
-!          on donne le numero de ce scalaire dans ISCALT(IPHAS) et
-!          on indique  ISCSTH(ISCALT(IPHAS)) = 1 si c'est la temperature
-!                  ou  ISCSTH(ISCALT(IPHAS)) = 2 si c'est l'enthalpie
+!     If a USER scalar represents the temperature or enthalpy (of phase iphas):
+!       we define the number of this scalar in iscalt(iphas) and
+!       we set iscsth(iscalt(iphas)) = 1 if it is the temperature
+!          or  iscsth(iscalt(iphas)) = 2 if it is the enthalpy.
 
-!     Si aucun scalaire ne represente la temperature ou l'enthalpie (de
-!       la phase IPHAS)
-!          on indique ISCALT(IPHAS) = -1
-!          et on ne renseigne pas ISCSTH(ISCALT(IPHAS))
+!     If no scalar represents the temperature or enthalpy (of phase iphas)
+!       we set iscalt(iphas) = -1
+!       and we do not define iscsth(iscalt(iphas)).
 
 
-!     Pour le module rayonnement mis en oeuvre en dehors des physiques
-!      charbon, combustion, electrique :
-!      si l'on a choisi de resoudre en temperature (c'est-a-dire si
-!      ISCSTH(ISCALT(IPHAS)) = 1), la temperature du fluide est alors
-!      supposee en KELVIN (attention aux conditions aux limites et a
-!      l'expression des proprietes physiques dependantes de la
-!      temperature).
-!      Neanmoins, bien que ce soit deconseille, si l'on souhaite
-!      que le solveur fluide travaille avec une temperature en degres
-!      Celsius, on doit imposer ISCSTH(ISCALT(IPHAS)) = -1.
-!      Ce choix est source d'erreurs pour l'utilisateur. En effet, les
-!      conditions aux limites pour la temperature du fluide seront alors
-!      en degres Celsius, alors que les conditions aux limites imposees
-!      pour le rayonnement dans usray2 devront, pour leur part, etre
-!      obligatoirement en Kelvin.
+!     For the radiative module when used without specific physics, if we
+!      have chosen to solve in temperature (that is if
+!      iscsth(iscalt(iphas)) = 1), the fluid temperature is considered to
+!      be in degrees KELVIN (be careful for boundary conditions an expression
+!      of physical properties depending on temperature).
+!      Nonetheless, even though it is not recommended, if we wish for the
+!      fluid solver to work with a temperature in degrees Celsius, we must set
+!      iscsth(iscalt(iphas)) = -1.
+!      This choice is a source of user errors. Indeed, the boundary conditions
+!      for the fluid temperature will then be in degrees Celsius, while the
+!      boundary conditions for radiation in usray2 must still be in Kelvin.
 
 
-
-!    Si les physiques particulieres ne sont pas activees
-!       (charbon, combustion, electrique : voir usppmo)
+!    If specific physics are not activated
+!       (coal, combustion, electric arcs: see usppmo):
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if(nmodpp.eq.0) then
 
   iphas = 1
-!         Numero du scalaire representant la temperature ou l'enthalpie
-!                                               ou -1 s'il n'y en a pas
-!         Lorsque le choix est fait par l'interface de Code_Saturne,
-!           le scalaire representant la temperature ou l'enthalpie
-!           est obligatoirement le premier
+
+  ! Number of the scalar representing temperature or enthalpy,
+  !   or -1 if there is none.
+  ! When the choice is done by the Code_Saturne GUI, the scalar representing
+  !   the temperature or enthalpy is always the first.
   iscalt(iphas) = -1
 
-!         S'il y a une variable temperature ou enthalpie
+! If there is a temperature or enthalpy variable:
   if(iscalt(iphas).gt.0) then
-!           on indique si c'est la temperature (=1) ou l'enthalpie (=2)
+    ! we indicate if it is the temperature (=1) or the enthalpy (=2).
     iscsth(iscalt(iphas)) = 1
   endif
 
@@ -1075,7 +1014,7 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Calcul (suite) a champ de vitesse fige (1 oui, 0 non)
+! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1083,12 +1022,11 @@ iccvfg = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Methode des vortex pour les conditions d'entree en L.E.S.
-!              (0 : non activee,  1 : activee)
-!     La methode des vortex ne concerne que les modeles L.E.S.
-!       et n'est valable qu'avec une seule phase
-!     Pour utiliser la methode des vortex, veuillez renseigner
-!       le sous-programme usvort.F
+! --- Vortex method for inlet conditions in L.E.S.
+!       (0: not activated,  1: activated)
+!     The vortex method only regards the L.E.S. models
+!       and is only valid with one phase.
+!     To use the vortex method, edit the 'usvort.f90' user file.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1099,31 +1037,30 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Schema convectif
+! --- Convective scheme
 
-!       BLENCV = 0 pour upwind (ordre 1 en espace, "stable mais diffusif")
-!              = 1 pour centre/second order (ordre 2 en espace)
-!           on peut utiliser des valeurs reelles intermediaires
-!       Ici on choisit
-!         pour la vitesse de la phase 1 et les scalaires utilisateurs :
-!            un schema centre upwind a 100% de centre (BLENCV=1)
-!         pour les autres variables
-!            la valeur par defaut du code (upwind en standard, centre en LES)
+!     blencv = 0 for upwind (order 1 in space, "stable but diffusive")
+!            = 1 for centered/second order (order 2 in space)
+!       we may use intermediate real values.
+!       Here we choose:
+!         for the velocity of phase 1 and user scalars:
+!           an upwind-centered scheme with 100% centering (blencv=1)
+!         for other variables
+!           the default code value (upwind standard, centered in LES)
 
-!     En particulier, pour les scalaires utilisateur
-!       si l'on suspecte un niveau de diffusion numerique trop grand
-!         sur une variable IVAR representant un scalaire utilisateur
-!         ISCAL (avec IVAR=ISCA(ISCAL)), il peut etre utile d'imposer
-!         BLENCV(IVAR) = 1.0D0 pour utiliser un schema d'ordre 2 en
-!         espace pour la convection. Pour la temperature ou l'enthalpie,
-!         en particulier, on pourra donc choisir dans ce cas :
-!          BLENCV(ISCA(ISCALT(IPHAS))) = 1.0D0
+!     Specifically, for user scalars
+!       if we suspect an excessive level of numerical diffusion on
+!         a variable ivar representing a user scalar
+!         iscal (with ivar=isca(iscal)), it may be useful to set
+!         blencv(ivar) = 1.0d0 to use a second-order scheme in space for
+!         convection. For temperature or enthalpy in particular, we
+!         may thus choose in this case:
+!          blencv(isca(iscalt(iphas))) = 1.0d0
 
-!       Pour les scalaires non utilisateur relatifs a des physiques
-!         particulieres, (charbon, combustion, electrique : voir usppmo)
-!         implicitement definis selon le modele,
-!         les informations sont donnees automatiquement par ailleurs :
-!                                         on ne modifie pas BLENCV ici.
+!       For non-user scalars relative to specific physics (coal, combustion,
+!         electric arcs: see usppmo) implicitly defined by the model,
+!         the corresponding information is set automatically elsewhere:
+!         we do not modify blencv here.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
@@ -1142,12 +1079,12 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Parametres  multigrille algebrique
+! --- Algebraic multigrid parameters
 
-!     IMGR = 0 : PAS DE MULTIGRILLE
-!     IMGR = 1 : MULTIGRILLE ALGEBRIQUE
+!     imgr = 0: no multigrid
+!     imgr = 1: algebraic multigrid
 
-!     Uniquement disponible pour la pression
+!     Only available for pressure and purely diffusive variables.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1159,25 +1096,25 @@ imgr(ipr(iphas)) = 1
 
 !=========================================================================
 
-! --- Stabilisation en regime turbulent
+! --- Stabilization in turbulent regime
 
-!     Pour les cas difficiles, une stabilisation peut etre obtenue en
-!     ne reconstruisant pas les flux de convection et de diffusion
-!     pour les variables du modele de turbulence, soit
-!       en k-epsilon : IF (ITYTUR(IPHAS).EQ.2) THEN
-!          IRCFLU(IK(IPHAS))   = 0 et IRCFLU(IEP(IPHAS))  = 0
-!       en Rij-epsilon : IF (ITYTUR(IPHAS).EQ.3) THEN
-!          IRCFLU(IR11(IPHAS)) = 0,   IRCFLU(IR22(IPHAS)) = 0,
-!          IRCFLU(IR33(IPHAS)) = 0,
-!          IRCFLU(IR12(IPHAS)) = 0,   IRCFLU(IR23(IPHAS)) = 0,
-!          IRCFLU(IR23(IPHAS)) = 0,
-!                                  et IRCFLU(IEP(IPHAS))  = 0
-!     (noter que la variable ITYTUR vaut ITURB/10)
+!     For difficult cases, a stabilization may be obtained by not
+!     reconstructing the convective and diffusive flux for variables
+!     of the turbulence model, that is
+!       in k-epsilon: if (itytur(iphas).eq.2) then
+!          ircflu(ik(iphas))   = 0 and ircflu(iep(iphas))  = 0
+!       in Rij-epsilon: if (itytur(iphas).eq.3) then
+!          ircflu(ir11(iphas)) = 0,    ircflu(ir22(iphas)) = 0,
+!          ircflu(ir33(iphas)) = 0,
+!          ircflu(ir12(iphas)) = 0,    ircflu(ir23(iphas)) = 0,
+!          ircflu(ir23(iphas)) = 0,
+!                                  and ircflu(iep(iphas))  = 0
+!     (note that variable itytur is equal to iturb/10)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     Le test sur IUTILE permet de desactiver les instructions (qui
-!       ne sont fournies qu'a titre d'exemple a adapter)
+!     The test on iutile allows deactivation of the instructions
+!       (which are only given as an example).
 
 iutile = 0
 if(iutile.eq.1) then
@@ -1193,10 +1130,10 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! Constantes physiques (cstphy.h)
-! ===============================
+! Physical constants (cstphy.h)
+! =============================
 
-! --- gravite (g en m/s2, avec le signe dans le repere de calcul)
+! --- gravity (g in m/s2, with the sign in the calculation coordinate axes).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1206,157 +1143,148 @@ gz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Proprietes  de reference du fluide (pour chaque phase)
+! --- Reference fluid properties (for each phase)
 
-!       RO0        : masse volumique en kg/m3
-!       VISCL0     : viscosite dynamique en kg/(m s)
-!       CP0        : chaleur specifique en J/(degres kg)
-!       T0         : temperature de reference en Kelvin
-!       P0         : pression totale de reference en Pascal
-!                    le calcul est par contre effectue sur
-!                    une pression reduite P*=Ptot-ro0*g.(x-xref)
-!                    (sauf en compressible)
-!       XYZP0(3,.) : coordonnees du point de reference pour
-!                    la pression totale (la ou elle vaut P0)
+!       ro0        : density in kg/m3
+!       viscl0     : dynamic viscosity in kg/(m s)
+!       cp0        : specific heat in J/(degres kg)
+!       t0         : reference temperature in Kelvin
+!       p0         : total reference pressure in Pascal
+!                    the calculation is based on a
+!                    reduced pressure P*=Ptot-ro0*g.(x-xref)
+!                    (except in compressible case)
+!       xyzp0(3,.) : coordinates of the reference point for
+!                    the total pressure (where it is equal to p0)
 
-!     En general, il n'est pas necessaire de fournir un point
-!       de reference XYZ0. S'il y a des sorties, le code
-!       prendra le centre de la face de sortie de reference.
-!       Par contre, si on prevoit de fixer explicitement des
-!       conditions de Dirichlet pour la pression, mieux vaut
-!       indiquer a quelle reference les valeurs se rapportent
-!       (pour une meilleure resolution de la pression reduite)
+!     In general, it is not necessary to furnish a reference point xyz0.
+!       If there are outlets, the code will take the center of the
+!       reference outlet face.
+!       On the other hand, if we plan to explicitly fix Dirichlet conditions
+!       for pressure, it is better to indicate to which reference the
+!       values relate (for a better resolution of reduced pressure).
 
 
-!     Les autres proprietes seront fournies par defaut dans tous
-!       les cas    .
+!     Other properties are given by default in all cases.
 
-!     Neanmoins, on peut noter que :
+!     Nonetheless, we may note that:
 
-!       Dans les cas standard (ni combustion gaz, ni charbon, ni electrique,
-!                              ni compressible) :
+!       In the standard case (no gas combustion, coal, electric arcs,
+!                             compressibility):
 !       ---------------------
-!         RO0, VISCL0 et CP0
-!             sont utiles et representent soit les proprietes du fluide
-!             si elles sont constantes, soit de simples valeurs moyennes
-!             pour l'initialisation si les proprietes sont variables et
-!             donnees dans usphyv.
-!         T0  est inutile
-!         P0  est utile mais n'est pas utilise dans une loi d'etat. P0
-!             est une valeur de reference pour le solveur incompressible
-!             qui servira a caler la pression a la sortie (eventuelle)
-!             du domaine. On peut la prendre nulle ou egale a une valeur
-!             physique en Pascal.
+!         ro0, viscl0 and cp0
+!             are useful and represent either the fluid properties if they
+!             are constant, either simple mean values for the initialization
+!             if properties are variable and defined in usphyv.
+!         t0  is not useful
+!         p0  is useful but is not used in an equation of state. p0
+!             is a reference value for the incompressible solver
+!             which will serve to set the (possible) domain outlet pressure.
+!             We may also take it as 0 or as a physical value in Pascals.
 
-!       En modules electriques :
-!       ----------------------
-!         RO0, VISCL0 et CP0
-!             sont utiles mais representent de simples valeurs moyennes
-!             initiales ; la masse volumique, la viscosite dynamique
-!             moleculaire et la chaleur massique sont donnees
-!             obligatoirement dans PROPCE (qu'elles soient physiquement
-!             variables ou non) : voir uselph pour le module effet Joule
-!             et le fichier de donnees dp_ELE en arc electrique.
-!         T0  est utile et doit etre en Kelvin (> 0) mais represente
-!             une simple valeur d'initialisation.
-!         P0  est utile mais n'est pas utilise dans une loi d'etat. P0
-!             est une valeur de reference pour le solveur incompressible
-!             qui servira a caler la pression a la sortie (eventuelle)
-!             du domaine. On peut la prendre nulle ou egale a une valeur
-!             physique en Pascal.
+!       With the electric module:
+!       ------------------------
+!         ro0, viscl0 and cp0
+!             are useful but simply represent mean initial values;
+!             the density, molecular dynamic viscosity, and specific
+!             heat are necessarily given in propce (whether they are
+!             physically variable or not): see uselph for the Joule effect
+!             module and the electric arcs dp_ELE data file.
+!         t0  is useful an must be in Kelvin (> 0) but represents a simple
+!             initialization value.
+!         p0  is useful bu is not used in the equation of state. p0
+!             is a reference value for the incompressible solver which
+!             will be used to calibrate the (possible) outlet pressure
+!             of the domain. We may take it as zero or as a physical
+!             value in Pascals.
 
-!       En combustion gaz :
-!       -----------------
-!         RO0 est inutile (il est recalcule automatiquement par la
-!             loi des gaz parfaits a partir de T0 et P0).
-!         VISCL0 est indispensable : c'est la viscosite dynamique
-!             moleculaire, supposee constante pour le fluide
-!         CP0 est indispensable : c'est la chaleur massique,
-!             supposee constante (modelisation des termes sources faisant
-!             intervenir un Nusselt local dans
-!             le module lagrangien, valeur de reference permettant
-!             de calculer un couple (temperature, coefficient d'echange)
-!             en rayonnement)
-!         T0  est indispensable et doit etre en Kelvin (> 0)
-!         P0  est indispensable et doit etre en Pascal (> 0)
-
-!       En charbon pulverise :
+!       With gas combustion:
 !       --------------------
-!         RO0 est inutile (il est recalcule automatiquement par la
-!             loi des gaz parfaits a partir de T0 et P0).
-!         VISCL0 est indispensable : c'est la viscosite dynamique
-!             moleculaire, supposee constante pour le fluide (son
-!             effet est a priori faible devant les effets turbulents)
-!         CP0 est indispensable : c'est la chaleur massique,
-!             supposee constante (modelisation des termes sources faisant
-!             intervenir un Nusselt local dans le module charbon ou
-!             le module lagrangien, valeur de reference permettant
-!             de calculer un couple (temperature, coefficient d'echange)
-!             en rayonnement)
-!         T0  est indispensable et doit etre en Kelvin (> 0)
-!         P0  est indispensable et doit etre en Pascal (> 0)
+!         ro0 is not useful (it is automatically recalculated by the
+!             law of ideal gases from t0 and p0).
+!         viscl0 is indispensable: it is the molecular dynamic viscosity,
+!             assumed constant for the fluid.
+!         cp0 is indispensable: it is the heat capacity, assumed constant,
+!             (modelization of source terms involving a local Nusselt in
+!             the Lagrangian module, reference value allowing the
+!             calculation of a radiative
+!             (temperature, exchange coefficient) couple).
+!         t0  is indispensible and must be in Kelvin (> 0).
+!         p0  is indispensable and must be in Pascal (> 0).
 
-!       En compressible :
-!       --------------------
-!         RO0 est inutile, stricto sensu ; neanmoins, comme l'experience
-!             montre que les utilisateurs se servent souvent de cette
-!             variable, on demande de lui affecter ici une valeur
-!             strictement positive (par exemple, une valeur initiale)
-!         VISCL0 est utile et represente la viscosite dynamique
-!             moleculaire, lorsqu'elle est constante ou une valeur qui
-!             servira lors des initialisations (ou dans les conditions
-!             d'entree de la turbulence, selon le choix de l'utilisateur)
-!         CP0 est indispensable : c'est la chaleur massique,
-!             supposee constante dans la thermodynamique disponible par
-!             defaut
-!         T0  est indispensable et doit etre en Kelvin (> 0)
-!         P0  est indispensable et doit etre en Pascal (> 0)
-!             Avec la loi thermodynamique disponible par defaut,
-!             T0 et P0 servent a l'initialisation de la masse volumique.
-!         XYZP0 est inutile car la variable pression represente directement
-!             la presion totale
+!       With pulverized coal:
+!       ---------------------
+!         ro0 is not useful (it is automatically recalculated by the
+!             law of ideal gases from t0 and p0).
+!         viscl0 is indispensable: it is the molecular dynamic viscosity,
+!             assumed constant for the fluid (its effect is expected to
+!             be small compared to turbulent effects).
+!         cp0 is indispensable: it is the heat capacity, assumed constant,
+!             (modelization of source terms involving a local Nusselt in
+!             the coal or Lagrangian module, reference value allowing the
+!             calculation of a radiative
+!             (temperature, exchange coefficient) couple).
+!         t0  is indispensable and must be in Kelvin (> 0).
+!         p0  is indispensable and must be in Pascal (> 0).
+
+!       With compressibility:
+!       ---------------------
+!         ro0 is not useful, stricto sensu; nonetheless, as experience
+!             shows that users often use this variable, it is required
+!             to assign to it a strictly positive value (for example,
+!             an initial value).
+!         viscl0 is useful and represents the molecular dynamic viscosity,
+!             when it is constant, or a value which will be used during
+!             initializations (or in inlet turbulence conditions,
+!             depending on the user choice.
+!         cp0 is indispensable: it is the heat capacity, assumed constant
+!             in the thermodynamics available by default
+!         t0  is indispensable and must be in Kelvin (> 0).
+!         p0  is indispensable and must be in Pascal (> 0).
+!             With the thermodynamic law available by default,
+!             t0 and p0 are used for the initialization of the density.
+!         xyzp0 is not useful because the pressure variable directly
+!             represents the total pressure.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
 
-ro0   (iphas) = 0.235d0
+ro0(iphas)    = 0.235d0
 viscl0(iphas) = 0.84d-6
-cp0   (iphas) = 1219.d0
+cp0(iphas)    = 1219.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 iphas = 1
 
-t0    (iphas) = 1000.d0 + 273.15d0
-p0    (iphas) = 1.013d5
-!     On ne specifie XYZ0 que si on compte explicitement fixer
-!       des conditions de Dirichlet sur la pression
-!      XYZP0(1,IPHAS) = 0.D0
-!      XYZP0(2,IPHAS) = 0.D0
-!      XYZP0(3,IPHAS) = 0.D0
+t0(iphas) = 1000.d0 + 273.15d0
+p0(iphas) = 1.013d5
+! We only specify XYZ0 if we explicitely fix Dirichlet conditions
+! for the pressure.
+! xyzp0(1,iphas) = 0.d0
+! xyzp0(2,iphas) = 0.d0
+! xyzp0(3,iphas) = 0.d0
 
 
-! --- IROVAR IVIVAR : masse volumique et viscosite constantes ou non
+! --- irovar, ivivar: density and viscosity constant or not ?
 
-!     Lorsqu'un modele physique particuliere a ete active
-!                  (charbon, combustion, modules electriques, compressible)
-!       on ne renseigne PAS les variables IROVAR et IVIVAR ici
-!                                  elles sont definies automatiquement.
-!       Pour le compressible, cependant, IVIVAR peut être modifie dans
-!                                  le sous-programme utilisateur uscfx1.
+!     When a specific physics module is active
+!       (coal, combustion, electric arcs, compressible: see usppmo)
+!       we DO NOT set variables 'irovar' and 'ivivar' here, as
+!       they are defined automatically.
+!     Nonetheless, for the compressible case, ivivar may be modified
+!       in the uscfx1 user subroutine.
 
-!     Lorsqu'aucun modele physique particuliere n'a ete active,
-!         (i.e. charbon, combustion, electrique, compressible : voir usppmo)
-!       il faut indiquer si la masse volumique et la viscosite moleculaire
-!         sont constantes (IROVAR=0, IVIVAR=0)
-!           ou variables  (IROVAR=1, IVIVAR=1)
+!     When no specific physics module is active, it is necessary to
+!       specify is the density and the molecular viscosity
+!         are constant (irovar=0, ivivar=0)
+!          or variable (irovar=1, ivivar=1)
 
-!       si elles sont variables , il faut alors definir la loi dans usphyv.
-!       si elles sont constantes, elles prennent les valeurs RO0 et VISCL0
+!       if they are variable, the law must be defined in usphyv;
+!       if they are constant, they take values ro0 and viscl0.
 
-!       a titre d'exemple, on suppose ci-dessous qu'elles sont constantes
+!       as an example, we assume below that they are constant.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1369,35 +1297,33 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Valeurs min SCAMIN et max SCAMAX admissibles pour
-!        chaque scalaire UTILISATEUR :
+! --- Minimum (scamin) and maximum (scamax) admissible values for
+!        each USER scalar:
 
-!      Les resultats sont clipppes a la fin de chaque pas de temps
+!      Results are clipped at the end of each time step.
 
-!      Si SCAMIN > SCAMAX, on ne clippe pas.
+!      If scamin > scamax, we do not clip.
 
-!      Pour un scalaire JJ representant la moyenne du carre des
-!         fluctuations d'un autre, on pourra s'abstenir de renseigner
-!         ces valeurs (un clipping par defaut est mis en place).
-!         C'est l'objet du test sur ISCAVR(JJ) dans l'exemple ci-dessous.
+!      For a scalar jj representing the variance of another, we may
+!        abstain from defining these values
+!        (a default clipping is set in place).
+!        This is the purpose of the test on iscavr(jj) in the example below.
 
-
-!      Pour les scalaires non utilisateur relatifs a des physiques
-!         particulieres, (charbon, combustion, electrique : voir usppmo)
-!         implicitement definis selon le modele, les informations sont
-!         donnees automatiquement par ailleurs : on ne renseigne pas
-!         SCAMIN SCAMAX.
+!      For non-user scalars relative to specific physics (coal, combustion,
+!        electric arcs: see usppmo) implicitly defined according to the
+!        model, the information is automatically set elsewhere: we
+!        do not set scamin or scamax.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     S'il y a des scalaires utilisateur
+! If there are user scalars
 if(nscaus.gt.0) then
 
-!       On boucle sur les scalaires utilisateurs :
+  ! Loop on user scalars:
   do jj = 1, nscaus
-!         Pour les scalaires qui ne sont pas des variances
+    ! For scalars which are not variances
     if(iscavr(jj).le.0) then
-!           On definit la borne min et la borne max
+      ! We define the min and max bounds
       scamin(jj) =-grand
       scamax(jj) =+grand
     endif
@@ -1407,45 +1333,40 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Diffusivite de reference VISLS0 en kg/(m s) pour
-!        chaque scalaire UTILISATEUR   hormis  pour ceux qui
-!        representent la moyenne du carre des fluctuations d'un autre.
+! --- Reference diffusivity visls0 in kg/(m s) for each
+!        USER scalar except those which represent the variance of another.
 
-!     Pour les scalaires non utilisateur relatifs a des physiques
-!       particulieres, (charbon, combustion, electrique : voir usppmo)
-!       implicitement definis selon le modele,
-!       les informations sont donnees automatiquement par ailleurs :
-!                                        on ne modifie pas VISLS0 ici.
+!     For non-user scalars relative to specific physics (coal, combustion,
+!       electric arcs: see usppmo) implicitly defined in the model,
+!       the information is given automatically elsewhere:
+!       we do not modify visls0 here.
 
-!     Pour les scalaires utilisateur JJ qui representent la moyenne du
-!       carre des fluctuations d'un autre scalaire utilisateur,
-!                                   on ne renseigne pas VISLS0(JJ) ici.
-!       C'est l'objet du test sur ISCAVR(JJ) dans l'exemple ci-dessous.
-!       En effet la diffusivite de la moyenne du carre des fluctuations
-!       d'un scalaire est supposee identique à la diffusivite de ce
-!       scalaire.
+!     For user scalars JJ which represent the variance of another user
+!       scalar, we do not define visls0(jj) here.
+!       This is the purpose of the test on iscavr(jj) in the example below.
+!       Indeed the diffusivity of the variance of a scalar is assumed
+!       identical to that scalar's diffusivity.
 
-!     Lorsqu'on n'a pas active de physique particuliere
-!       (charbon, combustion, electrique) et si un scalaire utilisateur
-!        represente la temperature ou l'enthalpie,
-!        on definit ici pour la temperature ou l'enthalpie :
-!                                     VISLS0(ISCALT(IPHAS)) = Lambda/Cp
+!     When no specific physics has been activated
+!       (coal, combustion, electric arcs) and if a user scalar represents
+!       the temperature or enthalpy:
+!       visls0(iscalt(iphas)) = Lambda/Cp
 
-!     Ici, a titre d'exemple, on affecte a la VISCL0 la viscosite de
-!       la phase porteuse, ce qui convient a des traceurs passifs qui
-!       suivent le fluide.
+!     Here, as an example, we assign to viscl0 the viscosity of the
+!       carrier phase, which is fitting for passive tracers which
+!       follow the fluid.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     S'il y a des scalaires utilisateur
+! If there are user scalars
 if(nscaus.gt.0) then
 
-!       On boucle sur les scalaires utilisateurs :
+  ! We loop on user scalars:
   do jj = 1, nscaus
-!         Pour les scalaires qui ne sont pas des variances
+    ! For scalars which are not variances
     if(iscavr(jj).le.0) then
-!           On definit la diffusivite
+      ! We define the diffusivity
       visls0(jj) = viscl0(iphsca(jj))
     endif
   enddo
@@ -1455,8 +1376,8 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Vitesse de reference pour l'initialisation de la turbulence (m2/s)
-!      (utile seulement en turbulence)
+! --- Reference velocity for turbulence initialization (m2/s)
+!       (useful only with turbulence)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1465,13 +1386,12 @@ uref(iphas)    = 1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Echelle de longueur de reference en metres pour
-!      initialisation de epsilon (et clipping particulier
-!      de la turbulence, mais ce n'est pas l'option par defaut)
-!      Donner une valeur de l'ordre de la plus grande
-!      dimension du domaine physique dans lequel l'ecoulement
-!      peut se developper
-!      (utile seulement en turbulence)
+! --- Reference length scale in meters for initialization
+!       of epsilon (and specific clipping of turbulence, but
+!       this is not the default option)
+!       Assign a value of the order of the largest dimension of the
+!       physical domain in which the flow may develop.
+!       (useful only for turbulence).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1480,40 +1400,41 @@ almax(iphas) = -grand
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- Definition des moments
-!     (au maximum NBMOMX moments, correlations d'ordre maximum NDGMOX)
+! --- Definition of moments
+!     (at the most nbmomx moments, correlations of maximum order ndgmox)
 
-!     On calcule des moyennes temporelles du type <f1*f2*f3*...*fn>
-!     Les fi sont des variables definies aux cellules (tableaux RTP et PROPCE)
+!     We calculate temporal means of the type <f1*f2*f3*...*fn>
+!     The fi's are cell-defined variables (arrays rtp and propce).
 
-!        IDFMOM(i,IMOM) repere la variable fi du moment IMOM
-!          si IDFMOM > 0 c'est une variable resolue (RTP)
-!          si IDFMOM < 0 c'est une variable auxiliaire (PROPCE)
-!        IMOOLD(IMOM) donne en cas de suite le numero, dans l'ancien calcul
-!                du moment a utiliser pour initialiser le moment IMOM du
-!                nouveau calcul (par defaut IMOOLD(IMOM)=IMOM).
-!                La valeur -1 indique qu'on doit reinitialiser le moment IMOM
-!        NTDMOM(IMOM) donne le pas de temps de debut du calcul du moment
+!        idfmom(i,imom) ientifies the variable fi of moment imom
+!          if idfmom > 0 it is a resolved variable (rtp)
+!          if idfmom < 0 it is an auxiliary variable (propce)
+!        imoold(imom) defined in the case of a restart the number, in the
+!          previous calculation, of the moment to use to initialize moment
+!          imom of the new calculation (by default imoold(imom)=imom).
+!            Value -1 indicates the we must reinitialize moment imom.
+!        ntdmom(imom) defined the time step at which the moment calculation
+!          is started.
 
-!     On donne ci dessous l'exemple du calcul des moments <u> et <rho u v>
-!       le moment <u> est relu dans le fichier suite si on est en suite,
-!         le moment <rho u v> est reinitialise a zero
-!       le moment <u> est calcule a partir du pas de temps 1000
-!         le moment <rho u v> est calcule a partir du pas de temps 10000
+!     We give below the example of the calculation of moments <u> and <rho u v>
+!       the moment <u> is reread in the restart file if we are restarting,
+!         the moment <rho u v> is reinitialized to zero.
+!       Moment <u> is calculated starting from time step 1000
+!         Moment <rho u v> is calculated from time step 10000.
 
 
-!     Le test sur IUTILE permet de desactiver les instructions (qui
-!       ne sont fournies qu'a titre d'exemple a adapter)
+!     The test on iutile allows deactivation of the instructions
+!       (which are only given as an example).
 
 iutile = 0
 if(iutile.eq.1) then
 
-!     Premier moment : <u>
+  ! First moment: <u>
   imom  = 1
   iphas = 1
   idfmom(1,imom) =  iu(iphas)
   ntdmom(imom)   =  1000
-!     Second moment : <rho u v>
+  ! Second moment: <rho u v>
   imom  = 2
   iphas = 1
   idfmom(1,imom) = -irom(iphas)
@@ -1525,13 +1446,12 @@ if(iutile.eq.1) then
 endif
 
 !----
-! FORMATS
+! Formats
 !----
 
 
-
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -1544,31 +1464,30 @@ subroutine usipes &
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES
+! User subroutine for the input of additional user parameters for
+! input/output.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nmodpp           ! e  ! <-- ! nombre de modeles phys.part. actives           !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! nmodpp           ! i  ! <-- ! number of active specific physics models       !
+! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -1593,7 +1512,7 @@ include "ppincl.h"
 integer nmodpp
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer iphas, ipp, imom
 
@@ -1601,12 +1520,10 @@ integer iphas, ipp, imom
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iverif.eq.0) then
@@ -1618,56 +1535,55 @@ if (iverif.eq.0) then
   endif
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usipes DOIT ETRE COMPLETE',/,&
-'@       DANS LE FICHIER usini1.F                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usipes'' must be completed',/,       &
+'@       in file usini1.f90',/,                                   &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 
 
-!     CE SOUS-PROGRAMME PERMET DE RENSEIGNER LES PARAMETRES
+!     This subroutine allows setting parameters
 
-!       qui n'apparaissent pas deja dans les autres sous-programmes
-!       du present fichier.
-
-
-!     IL EST POSSIBLE D'AJOUTER OU DE RETRANCHER DES PARAMETRES
+!       which do not already appear in the other subroutines of this file.
 
 
-!     LE NUMERO DES PROPRIETES PHYSIQUES ET DES  VARIABLES EST CONNU
+!     It is possible to add or remove parameters.
+
+
+!     The number of physical properties and variables is known here.
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
+!     If we are using the Code_Saturne GUI:
 
-!       on trouvera dans les sous-programmes utilisateur
-!       des exemples commentes sur le modele de la section presente.
+!       we will find in the user subroutines commented examples
+!       on the model of the present section.
 
-!       l'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
+!       If necessary, the user may uncomment them and adapt them to
+!       his needs.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
 
 !===============================================================================
-! 1. ENTREE-SORTIE (optcal.h)
+! 1. Input-output (optcal.h)
 !===============================================================================
 
-! --- ecriture du fichier suite auxiliaire IECAUX = 1 oui, 0 non
+! --- write auxiliary restart file iecaux = 1 yes, 0 no
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1676,7 +1592,7 @@ iecaux = 1
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- pas des sorties listing
+! --- no log (listing) output
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1684,35 +1600,33 @@ ntlist = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- post traitement
+! --- post-processing output
 
-!     ICHRVL : post traitement du domaine fluide (oui 1/non 0)
-!     ICHRBO : post traitement du bord du domaine (oui 1/non 0)
-!     ICHRSY : Post traitement des zones couplees avec Syrthes
-!              (1 oui, 0 non)
-!     ICHRMD : indique si les maillages ecrits seront :
-!               0 : fixes,
-!               1 : deformables a topologie constante,
-!               2 : modifiables (pourront etre completement redefinis en
-!                   cours de calcul via le sous-programme USMPST).
-!              10 : comme INDMOD = 0, avec champ de déplacement
-!              11 : comme INDMOD = 1, avec champ de déplacement
-!              12 : comme INDMOD = 2, avec champ de déplacement
+!     ichrvl: post-processing of the fluid domain (yes 1/no 0)
+!     ichrbo: post-processing of the domain boundary (yes 1/no 0)
+!     ichrsy: post-processing of zones coupled with SYRTHES (yes 1/ no 0)
+!     ichrmd: indicates if the meshes output are:
+!               0: fixed,
+!               1: deformable with constant connectivity,
+!               2: modifyable (may be completely redefined during the
+!                  calculation using the usmpst subroutine).
+!              10: as indmod = 0, with a displacement field
+!              11: as indmod = 1, with a displacement field
+!              11: as indmod = 2, with a displacement field
 
-!     FMTCHR : format de sortie, parmi
-!              'EnSight Gold', 'MED_fichier', ou 'CGNS'
-!     OPTCHR : options associees au format de sortie, separees
-!              par des virgules, parmi
-!              'text'              (format texte, pour EnSight)
-!              'binary'            (format binaire, choix par defaut)
-!              'big_endian'        (force les sorties EnSight binaires
-!                                   en mode 'big-endian')
-!              'discard_polygons'  (ignore faces de type polygone)
-!              'discard_polyhedra' (ignore cellules de type polyedre)
-!              'divide_polygons'   (decoupe faces de type polygone)
-!              'divide_polyhedra'  (decoupe cellules de type polyedre)
-!              'split_tensors'     (ecrit les tenseurs en tant que
-!                                   scalaires separes)
+!     fmtchr: output format, amid
+!               'EnSight Gold', 'MED', or 'CGNS'
+!     optchr: options associated with the output format, separated by
+!             commas, from the following list:
+!               'text'              (text format, for EnSight)
+!               'binary'            (binary format, default choice)
+!               'big_endian'        (forces binary EnSight output to
+!                                   'big-endian' mode)
+!               'discard_polygons'  (ignore polygon-type faces)
+!               'discard_polyhedra' (ignore polyhedron-type cells)
+!               'divide_polygons'   (subdivides polygon-type faces)
+!               'divide_polyhedra'  (subdivides polyhedron-type cells)
+!               'split_tensors'     (writes tensors as separate scalars)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1728,8 +1642,9 @@ OPTCHR = 'binary'
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- pas des chrono (-1 : une seule sortie en fin de calcul)
-!                    (valeur strictement positive : periode)
+! --- chronological output step
+!       (-1: only one valua at calculation end)
+!       (strictly positive valeu: output periodicity)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1738,7 +1653,7 @@ ntchr = -1
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- pas des sorties historiques
+! --- history output step
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1747,7 +1662,8 @@ nthist = 1
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- Nombre de sondes et positions (limite a NCAPTM=100)
+! --- Number of monitoring points (probes) and their positions
+!     (limited to ncaptm=100)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
@@ -1771,121 +1687,121 @@ xyzcap(3,4) = 0.01d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- variable courante
+! --- current variable
 
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
+!     As for other variables,
+!       if we do not assign the following array values,
+!       default values will be used
 
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
+!     nomvar( ) = variable name
+!     ichrvr( ) = chonological output (yes 1/no 0)
+!     ilisvr( ) = logging in listing (yes 1/no 0)
+!     ihisvr( ) = history output (number of probes and their numbers)
+!     if ihisvr(.,1)  = -1, output for all probes
 
-!     NB : Seuls les 8 premiers caracteres du nom seront repris dans le
-!          listing le plus detaille
+!     Note: Only the fist 8 characters of a name will be used in the most
+!           detailed log.
 
 
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     Variables dynamiques courantes
+! Current dynamic variables
 
-!     Exemples pour la phase 1
+! Examples for phase 1
 iphas = 1
 
-!     variable pression
+! pressure variable
 ipp = ipprtp(ipr   (iphas))
-NOMVAR(IPP)   = 'Pression'
+nomvar(ipp)   = 'Pression'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     variable v1x
+! variable v1x
 ipp = ipprtp(iu    (iphas))
-NOMVAR(IPP)   = 'VitesseX'
+nomvar(ipp)   = 'VitesseX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     variable v1y
+! v1y variable
 ipp = ipprtp(iv    (iphas))
-NOMVAR(IPP)   = 'VitesseY'
+nomvar(ipp)   = 'VitesseY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     variable v1z
+! v1z variable
 ipp = ipprtp(iw    (iphas))
-NOMVAR(IPP)   = 'VitesseZ'
+nomvar(ipp)   = 'VitesseZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 if(itytur(iphas).eq.2) then
 
-!     energie turbulente
+  ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
-  NOMVAR(IPP)   = 'EnerTurb'
+  nomvar(ipp)   = 'EnerTurb'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     dissipation turbulente
+  ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
-  NOMVAR(IPP)   = 'Dissip'
+  nomvar(ipp)   = 'Dissip'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 elseif(itytur(iphas).eq.3) then
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir11  (iphas))
-  NOMVAR(IPP)   = 'Tens.R11'
+  nomvar(ipp)   = 'Tens.R11'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir22  (iphas))
-  NOMVAR(IPP)   = 'Tens.R22'
+  nomvar(ipp)   = 'Tens.R22'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir33  (iphas))
-  NOMVAR(IPP)   = 'Tens.R33'
+  nomvar(ipp)   = 'Tens.R33'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir12  (iphas))
-  NOMVAR(IPP)   = 'Tens.R12'
+  nomvar(ipp)   = 'Tens.R12'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir13  (iphas))
-  NOMVAR(IPP)   = 'Tens.R13'
+  nomvar(ipp)   = 'Tens.R13'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     tensions de Reynolds
+  ! Reynolds stresses
   ipp = ipprtp(ir23  (iphas))
-  NOMVAR(IPP)   = 'Tens.R23'
+  nomvar(ipp)   = 'Tens.R23'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     dissipation turbulente
+  ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
-  NOMVAR(IPP)   = 'Dissip'
+  nomvar(ipp)   = 'Dissip'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1894,44 +1810,44 @@ elseif(iturb(iphas).eq.50) then
 
 !     energie turbulente
   ipp = ipprtp(ik    (iphas))
-  NOMVAR(IPP)   = 'EnerTurb'
+  nomvar(ipp)   = 'EnerTurb'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 !     dissipation turbulente
   ipp = ipprtp(iep   (iphas))
-  NOMVAR(IPP)   = 'Dissip'
+  nomvar(ipp)   = 'Dissip'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 !     phi
   ipp = ipprtp(iphi  (iphas))
-  NOMVAR(IPP)   = 'Phi'
+  nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 !     f_barre
   ipp = ipprtp(ifb   (iphas))
-  NOMVAR(IPP)   = 'f_barre'
+  nomvar(ipp)   = 'f_barre'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
 elseif(iturb(iphas).eq.60) then
 
-!-->  energie turbulente
+  ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
-  NOMVAR(IPP)   = 'EnerTurb'
+  nomvar(ipp)   = 'EnerTurb'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!-->  omega
+  ! omega
   ipp = ipprtp(iomg  (iphas))
-  NOMVAR(IPP)   = 'Omega'
+  nomvar(ipp)   = 'Omega'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1940,25 +1856,20 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-!     Variables scalaires utilisateur
+! User scalar variables.
 
-!     On peut modifier ici les tableaux relatifs aux scalaires utilisateurs
-!       mais les scalaires reserves pour les physiques particulieres sont
-!       geres automatiquement. D'ou les tests sur NSCAUS qui assurent que
-!       les scalaires vises sont effectivement des scalaires utilisateurs.
-!       Par physique particuliere, on entend
-!        uniquement celles definies par des modules specifiques
-!        du code tels que charbon, combustion, electrique : voir usppmo)
-!       Pour les scalaires non utilisateur relatifs a des physiques
-!         particulieres, (charbon, combustion, electrique : voir usppmo)
-!         implicitement definis selon le modele, les informations sont
-!         donnees automatiquement par ailleurs : on ne modifie pas BLENCV.
+! We may modify here the arrays relative to user scalars, but scalars
+!   reserved for specific physics are handled automatically. This explains
+!   the tests on 'nscaus', which ensure that the targeted scalars are
+!   truly user scalars.
+! By specific physics, we mean only those which are handled in specific
+!   modules of the code, such as coal, combustion, electric arcs (see usppmo).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if(isca(1).gt.0.and.nscaus.ge.1) then
- ipp = ipprtp(isca  (1))
-  NOMVAR(IPP)  = 'scal 1'
+  ipp = ipprtp(isca  (1))
+  nomvar(ipp)  = 'scal 1'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -1966,7 +1877,7 @@ endif
 
 if(isca(2).gt.0.and.nscaus.ge.2) then
   ipp = ipprtp(isca  (2))
-  NOMVAR(IPP)  = 'scal 2'
+  nomvar(ipp)  = 'scal 2'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -1975,109 +1886,108 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-!     Autres variables
+! Other variables
 
 iphas = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     variable masse volumique (sortie en post uniquement si variable
-!                               ou si physique particuliere)
+! Density variable (output for post-processing only if variable or
+!                   in the case of specific physics)
 ipp = ipppro(ipproc(irom  (iphas)))
-NOMVAR(IPP)   = 'masse vol'
+nomvar(ipp)   = 'masse vol'
 ichrvr(ipp)   = max(irovar(iphas),nmodpp)
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     chaleur specifique
+! specific heat
 if(icp   (iphas).gt.0) then
   ipp = ipppro(ipproc(icp   (iphas)))
-  NOMVAR(IPP)   = 'chal. spec.'
+  nomvar(ipp)   = 'chal. spec.'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = 0
 endif
 
-!     viscosite laminaire
+! laminar viscosity
 ipp = ipppro(ipproc(iviscl(iphas)))
-NOMVAR(IPP)   = 'visc. laminaire'
+nomvar(ipp)   = 'visc. laminaire'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 
-!     viscosite turbulente
+! turbulent viscosity
 ipp = ipppro(ipproc(ivisct(iphas)))
-NOMVAR(IPP)   = 'visc. turb1'
+nomvar(ipp)   = 'visc. turb1'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     nombre de Courant
+! Courant number
 ipp = ipppro(ipproc(icour(iphas)))
-NOMVAR(IPP)   = 'Nb Courant'
+nomvar(ipp)   = 'Nb Courant'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
-!     nombre de Fourier
+! Fourier number
 ipp = ipppro(ipproc(ifour(iphas)))
-NOMVAR(IPP)   = 'Nb Fourier'
+nomvar(ipp)   = 'Nb Fourier'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
-!     variable CSMAGO dans le cas des modeles L.E.S. dynamiques
-!     (carre de la "constante" de Smagorinsky)
+! 'csmago' variable for dynamic L.E.S. models
+!    (square of the Samgorinsky "constant")
 if(ismago(iphas).gt.0) then
   ipp = ipppro(ipproc(ismago(iphas)))
-  NOMVAR(IPP)   = 'Csdyn2'
+  nomvar(ipp)   = 'Csdyn2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 endif
 
-!     moyennes temporelles (exemple pour le moment 1)
+! temporal means (example for moment 1)
 if(nbmomt.gt.0) then
   imom = 1
   ipp = ipppro(ipproc(icmome(imom)))
-  NOMVAR(IPP) = 'MoyTps01'
+  nomvar(ipp) = 'MoyTps01'
   ichrvr(ipp) = 1
   ilisvr(ipp) = 1
   ihisvr(ipp,1) = -1
 endif
 
-!     pression totale (non definie en compressible)
+! total pressure (not defined in compressible case)
 if (ippmod(icompf).lt.0) then
   ipp = ipppro(ipproc(iprtot(iphas)))
-  NOMVAR(IPP)   = 'Pression totale'
+  nomvar(ipp)   = 'Pression totale'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 endif
 
-!     pas de temps local
+! local time step
 ipp = ippdt
-NOMVAR(IPP)   = 'pdt local'
+nomvar(ipp)   = 'pdt local'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     temps caracteristique du couplage
-!        instationnaire vitesse/pression
+! characteristic time of transient velocity/pressure coupling
 ipp = ipptx
-NOMVAR(IPP)   = 'Tx'
+nomvar(ipp)   = 'Tx'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ipp = ippty
-NOMVAR(IPP)   = 'Ty'
+nomvar(ipp)   = 'Ty'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ipp = ipptz
-NOMVAR(IPP)   = 'Tz'
+nomvar(ipp)   = 'Tz'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
@@ -2086,13 +1996,13 @@ ihisvr(ipp,1) = -1
 
 
 !----
-! FORMATS
+! Formats
 !----
 
 
 
 return
-end
+end subroutine
 
 
 !===============================================================================
@@ -2106,42 +2016,40 @@ subroutine ustbtr &
    nideve , nituse , nrdeve , nrtuse )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR DEFINIR LES DIMENSIONS
-!   DES MACROS TABLEAUX IA ET RA
-!   DES TABLEAUX UTILISATEUR ITUSER ET RTUSER
-!   DES TABLEAUX DEVELOPPEUR IDEVEL ET RDEVEL
+! User subroutine to define the sizes of macro-arrays ia and ra,
+!   of user arrays ituser and rtuser,
+!   of developper arrays idevel and rdevel.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncel             ! e  ! <-- ! nombre de cellules hors halo                   !
-! ncelet           ! e  ! <-- ! nombre de cellules halo inclus                 !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nnod             ! e  ! <-- ! nombre de noeuds                               !
-! longia           ! e  ! --> ! dimension du tableau ia                        !
-! longra           ! e  ! --> ! dimension du tableau ra                        !
-! nideve           ! e  ! --> ! dimension du tableau idevel                    !
-! nituse           ! e  ! --> ! dimension du tableau ituser                    !
-! nrdeve           ! e  ! --> ! dimension du tableau rdevel                    !
-! nrtuse           ! e  ! --> ! dimension du tableau rtuser                    !
+! ncel             ! i  ! <-- ! number of cells                                !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! longia           ! i  ! --> ! size of array ia                               !
+! longra           ! i  ! --> ! size of array ra                               !
+! nideve           ! i  ! --> ! size of array idevel                           !
+! nituse           ! i  ! --> ! size of array ituser                           !
+! nrdeve           ! i  ! --> ! size of array rdevel                           !
+! nrtuse           ! i  ! --> ! size of array rtuser                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 !===============================================================================
@@ -2156,6 +2064,10 @@ integer          nideve, nituse, nrdeve, nrtuse
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 
 if(1.eq.1) return
 
@@ -2165,35 +2077,33 @@ if(1.eq.1) return
 !===============================================================================
 ! 1. DIMENSION DES MACROS TABLEAUX IA ET RA :
 
-!  L'utilisateur peut avoir a modifier la taille des tableaux
-!    d'entiers et de reels ici : LONGIA et LONGRA respectivement
+!  The user may need to modify the size of integer and real work
+!    arrays here: longia and longra respectively.
 
-!  Le nombre d'entiers LONGIA et le nombre de reels LONGRA
-!    dependent des options de calcul, du type d'elements,
-!    d es caracteristiques du maillage (2d, 3d, hybride,
-!    non conforme ...) et du nombre de variables, par exemple.
-!    En k-epsilon, si on note NCEL le nombre de cellules du
-!    maillage, on peut la plupart du temps utiliser la majoration
-!    grossiere suivante : LONGIA =  45*NCEL et LONGRA = 220*NCEL
-!    En Rij-epsilon, une majoration de 20% pourra etre appliquee.
-!    Ces valeurs sont relativement elevees pour prendre en compte
-!    les maillages 2D qui comprennent de nombreuses faces de bord :
-!    une formule plus precise mais plus complexe serait necessaire.
-!    Pour les gros cas 3D, une estimation plus precise est donnee
-!    par : LONGIA =  25*NCEL et LONGRA = 120*NCEL.
+!  The number of integers 'longia' and the number of reals 'longra' depend
+!    on calculation options, on the element type and mesh characteristics
+!    (2d, 3d, hybrid, non-conforming, ...) and on the number of variables.
+!  In k-epsilon, if we note 'ncel' the local number of cells in the mesh,
+!    we ay usually use the following coarse overestimation:
+!    longia = 45*ncel and longra = 220*ncel. In Rij-epsilon, an additional
+!    20% may be applied.
+!  These values are relatively high so as to account for 2D meshes which
+!    have many boundary faces. A more precise but complex formula would be
+!    necessary. For large 3D cases, a more precise estimation is given by:
+!    longia = 25*ncel  and longra = 120*ncel.
 
-!  Si LONGIA et LONGRA sont laisses a 0, alors ces valeurs sont
-!    remplies de maniere automatique
+!  If longia and longra are left at 0, then these values are estimated
+!    and set automatically.
 
 !===============================================================================
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     DIMENSION DU MACRO TABLEAU D'ENTIERS IA
+! Size of main integer work array 'ia'
 
 longia = 0
 
-!     DIMENSION DU MACRO TABLEAU DE REELS RA
+! Size of main real work array 'ra'
 
 longra = 0
 
@@ -2205,11 +2115,11 @@ longra = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     DIMENSION DU TABLEAU D'ENTIERS ITUSER
+! Size user-reserved integer array 'ituser'
 
 nituse = 0
 
-!     DIMENSION DU TABLEAU DE REELS RTUSER
+! Size user-reserved real array 'rtuser'
 
 nrtuse = 0
 
@@ -2217,10 +2127,9 @@ nrtuse = 0
 
 
 !----
-! FORMATS
+! Formats
 !----
 
 
-
 return
-end
+end subroutine

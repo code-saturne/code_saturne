@@ -1,3 +1,10 @@
+* 23/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translation of the two main user subroutines (initialization
+  and boundary conditions).
+  modified routines:
+    users/base/usclim.f90
+    users/base/usini1.f90
+
 * 22/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a test on tolerance in the merge stage.
   modified routine:
