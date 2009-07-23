@@ -252,6 +252,7 @@ write(nfecra,9900)
 
 write(nfecra,2000)
 write(nfecra,2010) gx,gy,gz
+write(nfecra,2011) omegax, omegay, omegaz, icorio
 
 do iphas = 1, nphas
     write(nfecra,2020) iphas,                                     &
@@ -279,6 +280,11 @@ write(nfecra,9900)
 '       GX     = ', E14.5,    ' (Composante x de la gravite  )',/,&
 '       GY     = ', E14.5,    ' (Composante y de la gravite  )',/,&
 '       GZ     = ', E14.5,    ' (Composante z de la gravite  )',/)
+ 2011 format(                                                           &
+'       OMEGAX = ', E14.5,    ' (Composante x du vecteur rot.)',/,&
+'       OMEGAY = ', E14.5,    ' (Composante y du vecteur rot.)',/,&
+'       OMEGAZ = ', E14.5,    ' (Composante z du vecteur rot.)',/,&
+'       ICORIO = ', I10,      ' (Termes source de Coriolis   )',/)
  2020 format(                                                           &
 '  -- Phase : ',I10                                            ,/,&
                                                                 /,&
@@ -308,6 +314,11 @@ write(nfecra,9900)
 '       GX     = ', E14.5,    ' (Gravity x component         )',/,&
 '       GY     = ', E14.5,    ' (Gravity y component         )',/,&
 '       GZ     = ', E14.5,    ' (Gravity z component         )',/)
+ 2011 format(                                                           &
+'       OMEGAX = ', E14.5,    ' (Rotation vector x component )',/,&
+'       OMEGAY = ', E14.5,    ' (Rotation vector y component )',/,&
+'       OMEGAZ = ', E14.5,    ' (Rotation vector z component )',/,&
+'       ICORIO = ', I10,      ' (Coriolis source terms       )',/)
  2020 format(                                                           &
 '  -- Phase: ',I10                                             ,/,&
                                                                 /,&

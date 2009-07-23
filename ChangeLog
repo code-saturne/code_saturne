@@ -1,3 +1,15 @@
+* 23/07/2009 - David Monfort <david.monfort@edf.fr>
+  Add Coriolis source terms in standard calculations.
+  modified routines:
+    include/base/cs_gui.h
+    include/base/cstphy.h
+    src/base/cs_gui.c
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/iniusi.f90
+    src/base/preduv.f90
+    users/base/usini1.f90
+
 * 23/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the parallel joining for specific cases.
   modified routines:

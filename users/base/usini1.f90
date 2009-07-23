@@ -1144,6 +1144,24 @@ gz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
+! --- rotation vector of the reference frame (omega in s-1)
+
+!       If the rotation is not nul, then
+!          icorio = 0: rotation is taken into account by rotating the mesh
+!                      (simulation in the absolute frame)
+!                 = 1: rotation is taken into account by Coriolis source terms
+!                      (simulation in the relative frame)
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+icorio = 0
+
+omegax = 0.d0
+omegay = 0.d0
+omegaz = 0.d0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
 ! --- Reference fluid properties (for each phase)
 
 !       ro0        : density in kg/m3

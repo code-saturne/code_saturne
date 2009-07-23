@@ -53,6 +53,14 @@ parameter (        stephn = 5.6703d-8)
 double precision   gx,gy,gz
 common / rgravi /  gx,gy,gz
 
+! Vecteur rotation
+
+integer            icorio
+common / irotat /  icorio
+
+double precision   omegax, omegay, omegaz
+common / rrotat /  omegax, omegay, omegaz
+
 ! CONSTANTES PHYSIQUES DU FLUIDE
 !   IXYZP0 : INDICATEUR DE REMPLISSAGE DE XYZP0
 !   RO0    : MASSE VOLUMIQUE    DE REFERENCE

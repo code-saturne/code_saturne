@@ -1247,6 +1247,14 @@ gx = 0.d0
 gy = 0.d0
 gz = 0.d0
 
+! --- Vecteur rotation
+
+icorio = 0
+
+omegax = 0.d0
+omegay = 0.d0
+omegaz = 0.d0
+
 ! --- Constantes physiques de chaque phase
 !       RO0,VISCL0 et CP0 devront etre initialises par l'utilisateur
 !       P0 est donne par phase, mais seul P0(1) est utilise, idem

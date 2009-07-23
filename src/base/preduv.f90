@@ -297,6 +297,7 @@ double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets , dtsrom
 double precision diipbx, diipby, diipbz
+double precision cx    , cy    , cz
 
 !===============================================================================
 
@@ -395,6 +396,17 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
+    enddo
+  endif
+!     Ajout eventuel de la force de Coriolis
+  if (icorio.eq.1) then
+    do iel = 1, ncel
+      cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
+      cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
+      cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+      dfrcxt(iel,1,iphas) = dfrcxt(iel,1,iphas) - 2.d0*propce(iel,ipcrom)*cx
+      dfrcxt(iel,2,iphas) = dfrcxt(iel,2,iphas) - 2.d0*propce(iel,ipcrom)*cy
+      dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas) - 2.d0*propce(iel,ipcrom)*cz
     enddo
   endif
 
@@ -1039,6 +1051,63 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
 endif
 
+
+! ---> TERMES DE CORIOLIS
+!     SI IPHYDR=1 LE TERME A DEJA ETE PRIS EN COMPTE AVANT
+
+if (icorio.eq.1.and.iphydr.eq.0) then
+
+  ! A la premiere iter sur navsto, on ajoute la partie issue des
+  ! termes explicites
+  if (iterns.eq.1) then
+
+    ! Si on extrapole les termes source en temps :
+    if(isno2t(iphas).gt.0) then
+
+      do iel = 1, ncel
+        cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
+        cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
+        cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+        romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+        propce(iel,iptsna  ) = propce(iel,iptsna  ) + romvom*cx
+        propce(iel,iptsna+1) = propce(iel,iptsna+1) + romvom*cy
+        propce(iel,iptsna+2) = propce(iel,iptsna+2) + romvom*cz
+      enddo
+
+    ! Si on n'extrapole pas les termes source en temps :
+    else
+
+      ! Si on n'itere pas sur navsto : TRAV
+      if (nterup.eq.1) then
+
+        do iel = 1, ncel
+          cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
+          cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
+          cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+          romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+          trav(iel,1) = trav(iel,1) + romvom*cx
+          trav(iel,2) = trav(iel,2) + romvom*cy
+          trav(iel,3) = trav(iel,3) + romvom*cz
+        enddo
+
+      ! Si on itere sur navsto : TRAVA
+      else
+
+        do iel = 1, ncel
+          cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
+          cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
+          cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+          romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+          trava(iel,1,iphas) = trava(iel,1,iphas) + romvom*cx
+          trava(iel,2,iphas) = trava(iel,2,iphas) + romvom*cy
+          trava(iel,3,iphas) = trava(iel,3,iphas) + romvom*cz
+        enddo
+
+      endif
+
+    endif
+  endif
+endif
 
 
 ! ---> - DIVERGENCE DE RIJ
