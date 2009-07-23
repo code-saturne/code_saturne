@@ -1144,16 +1144,6 @@ gz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- rotation vector of the reference frame (omega in s-1)
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-omegax = 0.d0
-omegay = 0.d0
-omegaz = 0.d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 ! --- Reference fluid properties (for each phase)
 
 !       ro0        : density in kg/m3
