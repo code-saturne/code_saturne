@@ -130,7 +130,7 @@ def comments(filename, use_gui):
     fdt = file(filename+'.tmp','w')
     
     kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START')
-    kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
+    kwd_end = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
     
 
     if use_gui:
