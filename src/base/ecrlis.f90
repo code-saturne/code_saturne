@@ -378,7 +378,7 @@ do ipp = 2, nvppmx
       ic=ic+7
     endif
 
-    write(nfecra,'(A)') chain(1:ic)
+    write(nfecra,'(A)') chainc(1:ic)
 !MO          ICLPMN(IPP) = 0
 !MO          ICLPMX(IPP) = 0
   endif

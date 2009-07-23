@@ -1,4 +1,9 @@
 * 23/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug introduced a couple of rev. ago in listing output.
+  modified routine:
+    src/base/ecrlis.f90
+
+* 23/07/2009 - David Monfort <david.monfort@edf.fr>
   Add Coriolis source terms in standard calculations.
   modified routines:
     include/base/cs_gui.h
