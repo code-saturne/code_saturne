@@ -442,6 +442,42 @@ void CS_PROCF(pstict, PSTICT)
  void
 );
 
+/*----------------------------------------------------------------------------
+ * Write the restart file of the cooling tower module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECT1D
+ * *****************
+ *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecrctw, ECRCTW)
+(
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom
+);
+
+/*----------------------------------------------------------------------------
+ * Read the restart file of the cooling tower module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECT1D
+ * *****************
+ *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lecctw, LECCTW)
+(
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom
+);
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

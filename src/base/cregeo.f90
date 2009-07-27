@@ -249,6 +249,11 @@ if (ippmod(iaeros).ge.0) then
     endif
   endif
 
+  if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
+     call lecctw ( ficmct , len(ficmct) )
+     !==========
+  endif
+
 endif
 
 

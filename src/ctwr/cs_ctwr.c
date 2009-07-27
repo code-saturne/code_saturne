@@ -63,6 +63,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <fvm_locator.h>
+#include <fvm_nodal_extract.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -73,6 +74,7 @@
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
 #include "cs_post.h"
+#include "cs_restart.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -119,9 +121,40 @@ cs_int_t  *  cs_stack_ct    = NULL;
 /* array containing the treatment order of the exchanges areas */
 cs_int_t  *  cs_chain_ct = NULL;
 
+/* Restart file */
+
+static cs_restart_t *cs_glob_ctwr_suite = NULL;
+
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Open the restart file associated to cs_tpar1d
+ * Allocate cs_glob_ctwr_suite
+ *
+ * parameters:
+ *   nomsui <- name of the restart file
+ *   lngnom <- name length
+ *   ireawr <- 1 for reading, 2 for writing
+ *----------------------------------------------------------------------------*/
+
+static void
+cs_loc_ctwr_opnsuite(const char              *nomsui,
+                     const cs_int_t          *lngnom,
+                     const cs_restart_mode_t  ireawr)
+{
+  char            *nombuf;
+
+  /* Name treatment for the C API */
+  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
+
+  cs_glob_ctwr_suite = cs_restart_create(nombuf, ireawr);
+
+  /* Free the memory if necessary */
+  cs_base_string_f_to_c_free(&nombuf);
+}
 
 /*============================================================================
  *  Fonctions publiques pour API Fortran
@@ -400,6 +433,512 @@ void CS_PROCF(pstict, PSTICT)
 
   for (ct_id = 0; ct_id < cs_glob_ct_nbr; ct_id++)
     cs_ctwr_post_init(ct_id, -1);
+}
+
+/*----------------------------------------------------------------------------
+ * Write the restart file of the cooling tower module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECT1D
+ * *****************
+ *
+ * CHARACTER        NOMSUI : <-- : Name of the restart file
+ * INTEGER          LNGNOM : <-- : Name length
+
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecrctw, ECRCTW)
+(
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom
+)
+{
+  cs_int_t  nbvent, ierror;
+  cs_int_t  ict;
+
+  cs_restart_t         *suite;
+  cs_restart_location_t location_id,support;
+  cs_type_t             typ_val;
+
+  cs_ctwr_zone_t  *ct;
+  char            *location_name = NULL;
+  cs_int_t         length        = 0;
+  fvm_gnum_t      *g_elt_num     = NULL;
+
+  fvm_lnum_t n_g_elements, n_elements;
+
+  ierror = CS_RESTART_SUCCES;
+
+  /* Open the restart file */
+
+  cs_loc_ctwr_opnsuite(nomsui, lngnom, CS_RESTART_MODE_WRITE);
+
+  /* Pointer to the global restart structure */
+  suite = cs_glob_ctwr_suite;
+
+  if (cs_glob_ctwr_suite == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while opening the cooling tower module restart "
+                "file in write mode.\n"
+                "Verify the existence and the name of the restart file: %s\n"),
+              *nomsui);
+
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
+
+    ct = cs_glob_ct_tab[ict];
+
+    length = strlen("Cooling_Tower_restart_") + 3 ;
+    BFT_MALLOC(location_name, length, char);
+    sprintf(location_name, "Cooling_Tower_restart_%02d", ct->num);
+
+    n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
+    n_elements = fvm_nodal_get_n_elements(ct->water_mesh, FVM_CELL_HEXA);
+
+    BFT_MALLOC(g_elt_num, n_g_elements, fvm_gnum_t);
+
+    fvm_nodal_get_global_element_num(ct->water_mesh,
+                                     FVM_CELL_HEXA,
+                                     g_elt_num);
+
+    location_id = cs_restart_add_location(suite,
+                                          location_name,
+                                          n_g_elements,
+                                          n_elements,
+                                          g_elt_num);
+
+
+    { /* Write the header */
+      char * nomrub;
+      cs_int_t   *tabvar;
+
+      length = strlen("Parametres_int_ctwr_") + 3 ;
+      BFT_MALLOC(nomrub, length, char);
+      sprintf(nomrub, "Parametres_int_ctwr_%02d", ct->num);
+
+
+      BFT_MALLOC(tabvar, 3, cs_int_t);
+
+      tabvar[ 0 ] = ct->imctch; /* modele*/
+      tabvar[ 1 ] = ct->ntypct; /* Type*/
+      tabvar[ 2 ] = ct->nelect; /* nb of node per segment*/
+
+      nbvent  = 3;
+      support = CS_RESTART_LOCATION_NONE;
+      typ_val = CS_TYPE_cs_int_t;
+
+      cs_restart_write_section(suite,
+                               nomrub,
+                               support,
+                               nbvent,
+                               typ_val,
+                               tabvar);
+
+      BFT_FREE(tabvar);
+    }
+
+    {/* Write the header */
+      char * nomrub;
+      cs_real_t   *tabvar;
+
+      length = strlen("Parametres_real_ctwr_") + 3 ;
+      BFT_MALLOC(nomrub, length, char);
+      sprintf(nomrub, "Parametres_real_ctwr_%02d", ct->num);
+
+      BFT_MALLOC(tabvar, 4, cs_real_t);
+
+      tabvar[ 0 ] = ct->cl_teau; /*  Water entry temperature*/
+      tabvar[ 1 ] = ct->cl_fem;  /*  Water flow */
+      tabvar[ 2 ] = ct->xap;     /* xap         */
+      tabvar[ 3 ] = ct->xnp;     /* xnp         */
+
+
+      nbvent  = 4;
+      support = CS_RESTART_LOCATION_NONE;
+      typ_val = CS_TYPE_cs_real_t;
+
+      cs_restart_write_section(suite,
+                               nomrub,
+                               support,
+                               nbvent,
+                               typ_val,
+                               tabvar);
+
+      BFT_FREE(tabvar);
+    }
+
+
+    { /* Write the temperature */
+      char       nomrub[] = "Temperature_eau";
+
+      typ_val = CS_TYPE_cs_real_t;
+      nbvent  = 1;
+      cs_restart_write_section(suite,
+                               nomrub,
+                               location_id,
+                               nbvent,
+                               typ_val,
+                               ct->teau);
+
+    }
+
+    { /* Write the  */
+      char       nomrub[] = "Flux_eau";
+
+      typ_val = CS_TYPE_cs_real_t;
+      nbvent  = 1;
+      cs_restart_write_section(suite,
+                               nomrub,
+                               location_id,
+                               nbvent,
+                               typ_val,
+                               ct->fem);
+
+    }
+
+    {/* Write the  */
+      char       nomrub[] = "vitesse_goutte";
+
+      typ_val = CS_TYPE_cs_real_t;
+      nbvent  = 1;
+      cs_restart_write_section(suite,
+                               nomrub,
+                               location_id,
+                               nbvent,
+                               typ_val,
+                               ct->vgoutte);
+
+    }
+
+  }
+
+  /* Close the restart file and free structures */
+  cs_restart_destroy(cs_glob_ctwr_suite);
+  cs_glob_ctwr_suite = NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Read the restart file of the cooling tower module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECTWR
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lecctw, LECCTW)
+(
+ const char       *const nomsui,
+ const cs_int_t   *const lngnom
+)
+{
+  cs_bool_t           corresp_cel, corresp_fac, corresp_fbr, corresp_som;
+  cs_int_t            nbvent;
+  cs_int_t            i, ict,indfac, ierror;
+
+  cs_restart_t         *suite;
+  cs_restart_location_t location_id,support;
+  cs_type_t             typ_val;
+
+  fvm_lnum_t n_g_elements, n_elements;
+
+  cs_ctwr_zone_t  *ct;
+
+  char        *location_name = NULL;
+  cs_int_t     length        = 0;
+  fvm_gnum_t  *g_elt_num     = NULL;
+
+  ierror = CS_RESTART_SUCCES;
+
+  /* Open the restart file */
+
+  cs_loc_ctwr_opnsuite(nomsui, lngnom, CS_RESTART_MODE_READ);
+
+
+  if (cs_glob_ctwr_suite == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while opening the cooling tower AERO module restart file "
+                "in read mode.\n"
+                "Verify the existence and the name of the restart file: %s\n"),
+              *nomsui);
+
+
+  /* Pointer to the global restart structure */
+  suite = cs_glob_ctwr_suite;
+
+  /* Verification of the associated "support" to the restart file */
+  cs_restart_check_base_location(suite, &corresp_cel, &corresp_fac,
+                                 &corresp_fbr, &corresp_som);
+
+  /* Only boundary faces are of interest */
+  indfac = (corresp_fbr == true ? 1 : 0);
+  if (indfac == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Abort while reading the 1D-wall thermal module restart file.\n"
+                "The number of boundary faces has been modified\n"
+                "Verify that the restart file corresponds to "
+                "the present study.\n"));
+
+  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+
+    ct = cs_glob_ct_tab[ict];
+    length = strlen("Cooling_Tower_restart_") + 3 ;
+    BFT_MALLOC(location_name, length, char);
+    sprintf(location_name, "Cooling_Tower_restart_%02d", ct->num);
+
+    n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
+    n_elements   = fvm_nodal_get_n_elements  (ct->water_mesh, FVM_CELL_HEXA);
+
+    BFT_MALLOC( g_elt_num , n_g_elements, fvm_gnum_t );
+
+    fvm_nodal_get_global_element_num( ct->water_mesh ,
+                                      FVM_CELL_HEXA  ,
+                                      g_elt_num );
+
+    location_id = cs_restart_add_location( suite,
+                                           location_name,
+                                           n_g_elements,
+                                           n_elements,
+                                           g_elt_num  );
+
+
+    {
+      char * nomrub;
+      length = strlen("Parametres_int_ctwr_") + 3 ;
+      BFT_MALLOC(nomrub, length, char);
+      sprintf(nomrub, "Parametres_int_ctwr_%02d", ct->num);
+      cs_int_t   *tabvar;
+
+      BFT_MALLOC(tabvar, 3, cs_int_t);
+
+      nbvent  = 3;
+      support = CS_RESTART_LOCATION_NONE;
+      typ_val = CS_TYPE_cs_int_t;
+
+      ierror = cs_restart_read_section(suite,
+                                       nomrub,
+                                       support,
+                                       nbvent,
+                                       typ_val,
+                                       tabvar);
+
+      if (ierror < CS_RESTART_SUCCES)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Problem while reading section in the restart file\n"
+                    "for the cooling tower module:\n"
+                    "<%s>\n"
+                    "The calculation will not be run.\n"), nomrub);
+
+      /* Coherency checks between the read   and the one from usctdz */
+
+      if (tabvar[ 0 ] != ct->imctch )/* modele*/
+        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                     "********               cooling tower MODULE\n"
+                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                     "\n"
+                     "The model is different \n"
+                     "PREVIOUS: %d \n"
+                     "CURRENT:  %d \n" ), tabvar[ 0 ], ct->imctch);
+
+      if (tabvar[ 1 ] != ct->ntypct ) /* Type*/
+        bft_error(   __FILE__, __LINE__, 0,
+                     _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                       "********               cooling tower MODULE\n"
+                       "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                       "\n"
+                       "The type is different \n"
+                       "PREVIOUS: %d \n"
+                       "CURRENT:  %d \n" ), tabvar[ 1 ], ct->ntypct);
+
+      if (tabvar[ 2 ] != ct->nelect ) /* nb of node per segment*/
+        bft_error(__FILE__, __LINE__, 0,
+                  _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                    "********               cooling tower MODULE\n"
+                    "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                    "\n"
+                    "The number of nodes on each vertical mesh for \n"
+                    "the water mesh has been modified.\n"
+                    "PREVIOUS: %d nodes\n"
+                    "CURRENT:  %d nodes\n"
+                    "\n"
+                    "The calculation will not be run.\n"
+                    "\n"
+                    "Verify that the restart file corresponds to a\n"
+                    "restart file for the cooling tower  module.\n"
+                    "Verify usctdz.\n"), tabvar[ 2 ], ct->nelect);
+
+
+      BFT_FREE(tabvar);
+
+    }
+
+    {
+      char * nomrub;
+      length = strlen("Parametres_real_ctwr_") + 3 ;
+      BFT_MALLOC(nomrub, length, char);
+      sprintf(nomrub, "Parametres_real_ctwr_%02d", ct->num);
+      cs_real_t   *tabvar;
+
+
+      BFT_MALLOC(tabvar, 4, cs_real_t);
+
+      nbvent  = 4;
+      support = CS_RESTART_LOCATION_NONE;
+      typ_val = CS_TYPE_cs_real_t;
+
+      ierror = cs_restart_read_section(suite,
+                                       nomrub,
+                                       support,
+                                       nbvent,
+                                       typ_val,
+                                       tabvar);
+
+      if (ierror < CS_RESTART_SUCCES)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Problem while reading section in the restart file\n"
+                    "for the cooling tower module:\n"
+                    "<%s>\n"
+                    "The calculation will not be run.\n"), nomrub);
+
+      /* Coherency checks between the read   and the one from usctdz */
+
+      if ( CS_ABS( tabvar[ 0 ] - ct->cl_teau  ) > 1e-10 )
+        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                     "********               cooling tower MODULE\n"
+                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                     "\n"
+                     "The Water entry temperature  is different \n"
+                     "PREVIOUS: %f \n"
+                     "CURRENT:  %f \n" ), tabvar[ 0 ], ct->cl_teau );
+
+      if ( CS_ABS( tabvar[ 1 ] - ct->cl_fem  ) > 1e-10 )
+        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                     "********               cooling tower MODULE\n"
+                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                     "\n"
+                     "The Water entry flow is different \n"
+                     "PREVIOUS: %f \n"
+                     "CURRENT:  %f \n" ), tabvar[ 1 ], ct->cl_fem);
+
+      if (CS_ABS( tabvar[ 2 ] - ct->xap  ) > 1e-10 )
+        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                     "********               cooling tower MODULE\n"
+                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                     "\n"
+                     "The value of Exchange law lambda coefficient is different \n"
+                     "PREVIOUS: %f \n"
+                     "CURRENT:  %f \n" ), tabvar[ 2 ], ct->xap);
+
+      if (CS_ABS( tabvar[ 3 ] - ct->xnp  ) > 1e-10 )
+        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
+                     "********               cooling tower MODULE\n"
+                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
+                     "\n"
+                     "The value of Exchange law lambda coefficient is different \n"
+                     "PREVIOUS: %f \n"
+                     "CURRENT:  %f \n" ), tabvar[ 3 ], ct->xnp);
+
+      BFT_FREE(tabvar);
+    }
+
+
+
+
+    { /* Read the wall thickness and check the coherency with USPT1D*/
+      char        nomrub[] = "Temperature_eau";
+      cs_real_t   *tabvar;
+
+
+      BFT_MALLOC(tabvar, n_elements, cs_real_t);
+
+      nbvent  = 1;
+      typ_val = CS_TYPE_cs_real_t;
+
+      ierror = cs_restart_read_section(suite      ,
+                                       nomrub     ,
+                                       location_id,
+                                       nbvent     ,
+                                       typ_val    ,
+                                       tabvar     );
+
+      if (ierror < CS_RESTART_SUCCES)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Problem while reading section in the restart file\n"
+                    "for thethe cooling tower module:\n"
+                    "<%s>\n"
+                    "The calculation will not be run.\n"), nomrub);
+
+      for (i = 0; i < n_elements; i++)
+        ct->teau[i]= tabvar[i];
+
+      BFT_FREE(tabvar);
+
+    }
+
+    { /* Read the wall thickness and check the coherency with USPT1D*/
+      char        nomrub[] = "Flux_eau";
+      cs_real_t   *tabvar;
+
+      BFT_MALLOC(tabvar, n_elements, cs_real_t);
+
+      nbvent  = 1;
+      typ_val = CS_TYPE_cs_real_t;
+
+      ierror = cs_restart_read_section(suite,
+                                       nomrub,
+                                       location_id,
+                                       nbvent,
+                                       typ_val,
+                                       tabvar);
+
+      if (ierror < CS_RESTART_SUCCES)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Problem while reading section in the restart file\n"
+                    "for thethe cooling tower module:\n"
+                    "<%s>\n"
+                    "The calculation will not be run.\n"), nomrub);
+
+      for (i = 0; i < n_elements; i++)
+        ct->fem[i]= tabvar[i];
+
+      BFT_FREE(tabvar);
+    }
+
+    { /* Read the wall thickness and check the coherency with USPT1D*/
+      char        nomrub[] = "vitesse_goutte";
+      cs_real_t   *tabvar;
+
+
+      BFT_MALLOC(tabvar, n_elements, cs_real_t);
+
+      nbvent  = 1;
+      typ_val = CS_TYPE_cs_real_t;
+
+      ierror = cs_restart_read_section(suite,
+                                       nomrub,
+                                       location_id,
+                                       nbvent,
+                                       typ_val,
+                                       tabvar);
+
+      if (ierror < CS_RESTART_SUCCES)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Problem while reading section in the restart file\n"
+                    "for thethe cooling tower module:\n"
+                    "<%s>\n"
+                    "The calculation will not be run.\n"), nomrub);
+
+      for (i = 0; i < n_elements; i++)
+        ct->vgoutte[i]= tabvar[i];
+
+      BFT_FREE(tabvar);
+    }
+
+  }
+
+  /* Close the restart file and free structures */
+  cs_restart_destroy(cs_glob_ctwr_suite);
+  cs_glob_ctwr_suite = NULL;
 }
 
 /*============================================================================

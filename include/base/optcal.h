@@ -260,11 +260,12 @@ common / rmultg / rlxp1
 !   IECAUX : ecriture du suite auxiliaire
 !   ILEAUX : lecture  du suite auxiliaire
 !   ISUIT1 : suite du module thermique 1d en paroi
+!   ISUICT : suite du module aerorefrigerant
 !   ISUIVO : suite de la methode des vortex
 
 integer           isuite , ileaux, iecaux, iscold(nscamx),        &
-                  isuit1 , isuivo
-common / istart / isuite , ileaux, iecaux, iscold, isuit1, isuivo
+                  isuit1 , isuict, isuivo
+common / istart / isuite , ileaux, iecaux, iscold, isuit1, isuict, isuivo
 
 
 ! GESTION DES PAS DE TEMPS

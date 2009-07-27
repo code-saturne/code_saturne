@@ -552,6 +552,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
         vara=voramo
       elif [ $varb = t1dava ] ; then
         vara=t1damo
+      elif [ $varb = ctwava ] ; then
+        vara=ctwamo
+      elif [ $varb = rayava ] ; then
       elif [ $varb = rayava ] ; then
         vara=rayamo
       elif [ $varb = lagava ] ; then
@@ -829,13 +832,13 @@ if [ $EXEC_KERNEL = yes ] ; then
   iok=1
   mkdir ${RESTART_OUT} || iok=0
   if [ $iok = 1 ] ; then
-    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+    for f in suiava suiavx t1dava ctwava vorava rayava lagava* lasava* ; do
       if [ -f $f ] ; then
         cp $f ${RESTART_OUT}
       fi
     done
   else
-    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+    for f in suiava suiavx t1dava ctwava vorava rayava lagava* lasava* ; do
       if [ -f $f ] ; then
         cp $f $RESU/$f.$SUFFIX
       fi

@@ -48,13 +48,14 @@ common / igeotl /         impgeo
 !     FICAMO        --> fichier suite de base
 !     FICAMX        --> fichier suite auxiliaire
 !     FICMT1        --> fichier suite module thermique 1D
+!     FICMCT        --> fichier suite module aerorefrigerants
 !     FICMVO,IMPMVO --> fichier suite methode des vortex (ASCII
 !                       obligatoirement, structure specifique)
 !     IMPDVO        --> fichier de donnees de la methode des vortex
 !                       (nom FICDAT laisse a l'utilisateur dans usvort)
 
-character*13      ficamo,ficamx,ficmt1,ficmvo
-common / afamon / ficamo,ficamx,ficmt1,ficmvo
+character*13      ficamo,ficamx,ficmt1,ficmct,ficmvo
+common / afamon / ficamo,ficamx,ficmt1,ficmct,ficmvo
 
 integer                   impmvo, impdvo
 common / ifamon /         impmvo, impdvo
@@ -64,12 +65,13 @@ common / ifamon /         impmvo, impdvo
 !     FICAVA        --> fichier suite de base
 !     FICAVX        --> fichier suite auxiliaire
 !     FICVT1        --> fichier suite module thermique 1D
+!     FICVCT        --> fichier suite module aerorefrigerants
 !     FICVVO,IMPVVO --> fichier suite methode des vortex (ASCII
 !                       obligatoirement, structure specifique)
 
 
-character*13      ficava,ficavx,ficvt1,ficvvo
-common / afaval / ficava,ficavx,ficvt1,ficvvo
+character*13      ficava,ficavx,ficvt1,ficvct,ficvvo
+common / afaval / ficava,ficavx,ficvt1,ficvct,ficvvo
 
 integer           ntsuit, impvvo
 common / ifaval / ntsuit, impvvo

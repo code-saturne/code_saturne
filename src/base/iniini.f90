@@ -142,6 +142,9 @@ FICAMX = 'suiamx'
 !    Module thermique 1D en paroi
 FICMT1 = 't1damo'
 
+!    Module aerorefrigerants
+FICMCT = 'ctwamo'
+
 !    Methode des vortex : on utilise la meme unite
 !                  Pour le fichier de donnees, on specifie l'unite ici, mais le
 !                  nom est laisse dans usvort. On utilise 20 et pas 11
@@ -181,6 +184,9 @@ ntsuit = 0
 
 !    Module thermique 1D en paroi
 FICVT1 = 't1dava'
+
+!    Module aerorefrigerants
+FICVCT = 'ctwava'
 
 !    Methode des vortex : on utilise la meme unite
 !                  et le format ascii obligatoirement

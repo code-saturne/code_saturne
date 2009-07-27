@@ -1,3 +1,18 @@
+* 27/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add restarting capabilities for cooling-towers module.
+  modified routine:
+    bin/runcase_coupling.in
+    bin/runcase.in
+    include/base/entsor.h
+    include/base/optcal.h
+    include/ctwr/cs_ctwr.h
+    src/base/caltri.f90
+    src/base/cregeo.f90
+    src/base/iniini.f90
+    src/ctwr/cs_ctwr.c
+    users/ctwr/uscti1.f90
+
 * 23/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the parallel joining for specific cases.
   modified routines:

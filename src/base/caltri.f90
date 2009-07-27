@@ -110,6 +110,7 @@ include "period.h"
 include "parall.h"
 include "ppppar.h"
 include "ppthch.h"
+include "ppincl.h"
 include "coincl.h"
 include "cpincl.h"
 include "lagpar.h"
@@ -1351,6 +1352,11 @@ if(iisuit.eq.1) then
    nfabor   , ra(itppt1) , ia(iifpt1))
   endif
 
+  if (ippmod(iaeros).ge.0) then
+     call ecrctw ( ficvct , len(ficvct) )
+     !==========
+  endif
+
   if (iilagr.gt.0) then
 
     call lagout                                                   &
@@ -1636,6 +1642,11 @@ if (nfpt1t.gt.0) then
   !==========
  ( ficvt1   , len(ficvt1), nfpt1d   ,  nmxt1d  ,                  &
    nfabor   , ra(itppt1) , ia(iifpt1))
+endif
+
+if (ippmod(iaeros).ge.0) then
+  call ecrctw ( ficvct , len(ficvct) )
+  !==========
 endif
 
 if (iilagr.gt.0) then
