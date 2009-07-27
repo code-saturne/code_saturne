@@ -32,6 +32,8 @@
 # cflags_default_hot     # Optimization for specific files   (default: "-O")
 # cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
+# cflags_default_ext     # Added to $CFLAGS for extended     (default: "")
+#                        # precision if available
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
@@ -184,8 +186,10 @@ if test "x$cs_gcc" = "xgcc"; then
           case "$cs_cc_vendor-$cs_cc_version" in
             gcc-2.9[56]*|gcc-3*|gcc-4*)
               cflags_default_opt="$cflags_default_opt -march=i686"
-            ;;
+              ;;
           esac
+          ;;
+
       esac
       ;;
 
@@ -244,6 +248,7 @@ elif test "x$cs_gcc" = "xicc"; then
   case "$host-os-$host_cpu" in
     *ia64)
       cflags_default_opt="-O2 -mcpu=itanium2-p9000"
+      cflags_default_ext="-fp-model extended"
       ;;
   esac
 

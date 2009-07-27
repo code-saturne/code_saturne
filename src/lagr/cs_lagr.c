@@ -77,14 +77,13 @@ BEGIN_C_DECLS
 
 /* variable for _orient3D_set_maxvalue */
 
-static cs_real_t MAX0;                /* precision on coordinates                  */
-static cs_real_t MAX24;               /* bounding box size                         */
-static cs_real_t SNAP_TO_GRID;        /* for rounding of coordinates               */
-static cs_real_t Orient3D_split_2_25; /* split to bit MAX0^2 * 2^25                */
-static cs_real_t C1_ORIENTATION_3D;   /* static orientation filter                 */
-static cs_real_t C2_ORIENTATION_3D;   /* semi-static orientation filter            */
-static cs_real_t C3_ORIENTATION_3D;   /* half degree 3 unit for semi-static filter */
-static cs_real_t C4_PERTURB_OR_3D;    /* static filter for perturbation            */
+static double MAX24;               /* bounding box size */
+static double SNAP_TO_GRID;        /* for rounding of coordinates */
+static double Orient3D_split_2_25; /* split to bit MAX0^2 * 2^25 */
+static double C1_ORIENTATION_3D;   /* static orientation filter */
+static double C2_ORIENTATION_3D;   /* semi-static orientation filter */
+static double C3_ORIENTATION_3D;   /* half degree 3 unit for semi-static filter */
+static double C4_PERTURB_OR_3D;    /* static filter for perturbation */
 
 /* variable for _orientation3D */
 
@@ -107,9 +106,9 @@ static const cs_int_t COPLANAR   =  0 ;
 static cs_int_t
 _check_ieee_standard(void)
 {
-  cs_real_t  dd;
+  double  dd;
 
-  cs_real_t  d = 9007199254740992.0;  /* 2^53 */
+  double  d = 9007199254740992.0;  /* 2^53 */
 
   dd = d + 1;
   if (dd != d) return EXIT_FAILURE;  /* compute with too much bits */
@@ -130,11 +129,13 @@ _check_ieee_standard(void)
  *----------------------------------------------------------------------------*/
 
 static inline void
-_orient3D_set_maxvalue(cs_real_t  d)
+_orient3D_set_maxvalue(double  d)
 {
   float  D;
 
-  MAX0 = 1.0;                                        /* 2^0 */
+  /* Coordinates precision */
+  double MAX0 = 1.0;                                 /* 2^0 */
+
   MAX24 = 16777216.0;                                /* 2^24 */
   SNAP_TO_GRID = 6755399441055744.0;                 /* 3 * 2^51 */
   Orient3D_split_2_25 = 453347182355485940514816.0;  /* 3 * 2^77 */
@@ -144,8 +145,34 @@ _orient3D_set_maxvalue(cs_real_t  d)
   C4_PERTURB_OR_3D  = 5066549580791808.0;            /* 9 * 2^49 */
 
   D = d * 4503599627370497.0;         /* 2^52 + 1 */
-  D = ( d + D ) -D;                   /* get the power of two closer to d */
-  if ( D < ((float)d) ) D *= 2;       /* grid max size 2^b */
+
+  /* On x86 or compatible, force extended-precision (80-bit) calculation
+     using x87 FPU instead of SSE instructions (64-bit). */
+
+#if defined(__GNUC__) && (   defined(__i386) \
+                          || defined(__x86_64__) || defined(__amd64__))
+  {
+    double s = D;
+    __asm__ __volatile__("fldl %1\n\t"  \
+                         "faddl %2\n\t" \
+                         "fsubl %2\n\t" \
+                         "fstpl %0"
+                         : "=m" (s)
+                         : "m" (d), "m" (s));
+    D = s;
+  }
+
+/* On other architectures, a compiler option such ICC's
+   "-fp-model extended" is required. If the architecture does not
+   support Intel-type 80-bit precision calculations, the code
+   must be adapted. */
+
+#else
+  D = (d + D) -D;                     /* get the power of two closer to d */
+#endif
+
+  if (D < ((float)d))
+    D *= 2;                           /* grid max size 2^b */
 
   MAX0 = D / 16777216.0;              /* grid step 2^k = 2^b / 2^24 */
   MAX24 = D;
@@ -178,8 +205,32 @@ _orient3D_normalize(float  *value)
     *value=0.0;
 
   }
-  else
+  else {
+
+    /* On x86 or compatible, force extended-precision (80-bit) calculation
+       using x87 FPU instead of SSE instructions (64-bit). */
+
+#if defined(__GNUC__) && (   defined(__i386) \
+                          || defined(__x86_64__) || defined(__amd64__))
+    {
+      double d = *value, s = SNAP_TO_GRID;
+      __asm__ __volatile__("fldl %1\n\t"  \
+                           "faddl %2\n\t" \
+                           "fsubl %2\n\t" \
+                           "fstpl %0"
+                           : "=m" (d)
+                           : "m" (d), "m" (s));
+      *value = d;
+    }
+
+    /* On other architectures, a compiler option such ICC's
+       "-fp-model extended" is required. If the architecture does not
+       support Intel-type 80-bit precision calculations, the code
+       must be adapted. */
+#else
     *value = ( *value + SNAP_TO_GRID ) - SNAP_TO_GRID;
+#endif
+  }
 
 }
 
@@ -202,14 +253,14 @@ _orient3D_normalize(float  *value)
  *----------------------------------------------------------------------------*/
 
 static inline void
-_orient3D_split(cs_real_t    a,
-                cs_real_t   *a1,
-                cs_real_t   *a0,
-                cs_real_t    format)
+_orient3D_split(double    a,
+                double   *a1,
+                double   *a0,
+                double    format)
 {
- *a1 = a + format;
- *a1 -= format;
- *a0 = a - *a1;
+  volatile double _a1 = (a + format);
+  *a1 = _a1 -format;
+  *a0 = a - *a1;
 }
 
 /*----------------------------------------------------------------------------
@@ -252,32 +303,32 @@ _orientation3D(float      ax,
                float      dz,
                cs_int_t   PERTURBED)
 {
-  cs_real_t  error;
-  cs_real_t  M10, M11, M20, M21, M30, M31;
-  cs_real_t  RA, RB, RC, RD;
-  cs_real_t  RB0, RB1, RC0, RC1, RD0, RD1;
+  double  error;
+  double  M10, M11, M20, M21, M30, M31;
+  double  RA, RB, RC, RD;
+  double  RB0, RB1, RC0, RC1, RD0, RD1;
 
   /* points are assumed to be distincts */
 
-  cs_real_t  A = (cs_real_t)bx - (cs_real_t)ax;    /*    x y z   */
-  cs_real_t  B = (cs_real_t)by - (cs_real_t)ay;
-  cs_real_t  C = (cs_real_t)bz - (cs_real_t)az;    /*  | A B C | */
-  cs_real_t  D = (cs_real_t)cx - (cs_real_t)ax;    /*  | D E F | */
-  cs_real_t  E = (cs_real_t)cy - (cs_real_t)ay;    /*  | G H I | */
-  cs_real_t  F = (cs_real_t)cz - (cs_real_t)az;
-  cs_real_t  G = (cs_real_t)dx - (cs_real_t)ax;
-  cs_real_t  H = (cs_real_t)dy - (cs_real_t)ay;
-  cs_real_t  I = (cs_real_t)dz - (cs_real_t)az;
+  double  A = (double)bx - (double)ax;    /*    x y z   */
+  double  B = (double)by - (double)ay;
+  double  C = (double)bz - (double)az;    /*  | A B C | */
+  double  D = (double)cx - (double)ax;    /*  | D E F | */
+  double  E = (double)cy - (double)ay;    /*  | G H I | */
+  double  F = (double)cz - (double)az;
+  double  G = (double)dx - (double)ax;
+  double  H = (double)dy - (double)ay;
+  double  I = (double)dz - (double)az;
 
   /* minors computation */
 
-  cs_real_t  M1 = D*H - E*G;
-  cs_real_t  M2 = A*H - B*G;
-  cs_real_t  M3 = A*E - B*D;
+  double  M1 = D*H - E*G;
+  double  M2 = A*H - B*G;
+  double  M3 = A*E - B*D;
 
   /* determinant computation */
 
-  cs_real_t  det = (C*M1 - F*M2) + I*M3;
+  double  det = (C*M1 - F*M2) + I*M3;
 
   if (det >   C1_ORIENTATION_3D ) return POSITIVE;
   if (det <  -C1_ORIENTATION_3D ) return NEGATIVE;
@@ -389,7 +440,6 @@ _orientation3D(float      ax,
   /* points are colinear */
 
   return COPLANAR;
-
 }
 
 /*============================================================================
@@ -415,7 +465,6 @@ CS_PROCF (csieee,CSIEEE)(void)
                 "current architecture."));
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
