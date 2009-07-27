@@ -30,6 +30,11 @@ pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages
 pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
 sys.path.insert(0, pkgpythondir)
 
+# Same trick for the MEI library (supposed to be installed in site-packages/mei)
+meipythondir = os.path.join(pythondir, "mei")
+if os.path.isdir(meipythondir):
+   sys.path.insert(0, meipythondir)
+
 import cs_config
 
 #-------------------------------------------------------------------------------

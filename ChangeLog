@@ -1,3 +1,8 @@
+* 27/07/2009 - David Monfort <david.monfort@edf.fr>
+  Add a trick to find MEI Python module when not in standard path.
+  modified script:
+    bin/cs.in
+
 * 27/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong assumed behaviour on x86_64 and IA64 computers
   in the particles tracking algorithm. One assumed that the internal
