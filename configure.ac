@@ -175,10 +175,12 @@ if test "x$auto_flags" = "xtrue" ; then
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
   fi
+  CFLAGS_EXT="$cflags_default_ext"
 
   AC_SUBST(CFLAGS_DBG)
   AC_SUBST(CFLAGS_OPT)
   AC_SUBST(CFLAGS_HOT)
+  AC_SUBST(CFLAGS_EXT)
 
   AC_SUBST(FCFLAGS_DBG)
   AC_SUBST(FCFLAGS_OPT)

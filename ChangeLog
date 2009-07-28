@@ -12,6 +12,7 @@
   modified scripts:
     config/cs_auto_flags.sh
     src/lagr/Makefile.am
+    configure.ac
   modified routine:
     src/lagr/cs_lagr.c
 
