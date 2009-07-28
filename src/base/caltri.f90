@@ -350,8 +350,8 @@ if (imatis.eq.1) then
 
 endif
 
-!     Reservations memoire pour les tableaux complémentaires
-!         nécesaires pour les physiques particulieres
+!     Reservations memoire pour les tableaux complementaires
+!         necesaires pour les physiques particulieres
 
 idbia1 = ifinia
 idbra1 = ifinra
@@ -1329,10 +1329,19 @@ if(ntcabs.lt.ntmabs) then
       iisuit = 1
     endif
   endif
+  if (itrale.eq.0) iisuit = 0
+else if(ntcabs.eq.ntmabs) then
+  iisuit = 1
+  if(iwarn0.gt.0) then
+    write(nfecra,4000)
+  endif
 endif
-if (itrale.eq.0) iisuit = 0
 
-if(iisuit.eq.1) then
+if (iisuit.eq.1) then
+
+  call dmtmps(tecrf1)
+  !==========
+
   call ecrava                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
@@ -1402,11 +1411,14 @@ if(iisuit.eq.1) then
    rdevel , rtuser , ra     )
   endif
 
+  call dmtmps(tecrf2)
+  !==========
+
   if(iwarn0.gt.0) then
-    write(nfecra,3020)ntcabs,ttcabs
+    write(nfecra,3020)ntcabs,ttcabs, tecrf2-tecrf1
   endif
 
-endif
+endif ! iisuit = 1
 
 !===============================================================================
 ! 20. TEST POUR SAVOIR SI ON SORT UN FICHIER POST OU NON
@@ -1537,10 +1549,10 @@ call ushist                                                       &
    ra(icoefa) , ra(icoefb) ,                                      &
    rdevel , rtuser , ra     )
 
+
 !===============================================================================
 ! 23. ECRITURE LISTING TOUTES LES NTLIST ITERATIONS
 !===============================================================================
-
 
 if(ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
@@ -1614,88 +1626,11 @@ ifinra = iditra
 
 
 !===============================================================================
-! 25. ECRITURE DES SUITES + FINALISATION HISTORIQUES
+! 25. FINALISATION HISTORIQUES
 !===============================================================================
 
 call dmtmps(tecrf1)
 !==========
-
-if(iwarn0.gt.0) then
-  write(nfecra,4000)
-endif
-
-call ecrava                                                       &
-!==========
-( ifinia , ifinra ,                                               &
-  ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,           &
-  nvar   , nscal  , nphas  ,                                      &
-  nideve , nrdeve , nituse , nrtuse ,                             &
-  idevel , ituser , ia     ,                                      &
-  xyzcen     , surfac     , surfbo     , cdgfac     , cdgfbo    , &
-  ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb), &
-  ra(icoefa) , ra(icoefb) , ra(ifrcx)  ,                          &
-  rdevel , rtuser , ra     )
-
-if (nfpt1t.gt.0) then
-
-  call ecrt1d                                                     &
-  !==========
- ( ficvt1   , len(ficvt1), nfpt1d   ,  nmxt1d  ,                  &
-   nfabor   , ra(itppt1) , ia(iifpt1))
-endif
-
-if (ippmod(iaeros).ge.0) then
-  call ecrctw ( ficvct , len(ficvct) )
-  !==========
-endif
-
-if (iilagr.gt.0) then
-
-  call lagout                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndnod , lndfac , lndfbr , ncelbr ,                   &
-   nvar   , nscal  , nphas  ,                                     &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicoce) , ia(iityce) , ia(iiitep) ,                         &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iitepa) , ra(istatf) ,                         &
-   ra(istatc) , ra(istatv) , ra(itslag) ,                         &
-   rdevel , rtuser , ra     )
-
-endif
-
-! Ecriture du fichier suite
-if (iirayo.gt.0) then
-
-  call rayout                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndnod , lndfac , lndfbr , ncelbr ,                   &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
-
-endif
 
 ! ICI ON SAUVE LES HISTORIQUES (SI ON EN A STOCKE)
 
@@ -1758,7 +1693,7 @@ endif
 ! 26. MEMOIRE UTILISEE
 !===============================================================================
 
-!     Libération des structures liées à la lecture du fichier xml
+!     Liberation des structures liees a la lecture du fichier xml
 
 if (iihmpr.eq.1) then
 
@@ -1816,9 +1751,9 @@ write(nfecra,7000)
 '===============================================================',&
  /)
  3020 format(/,/,                                                 &
- ' Sortie intermediaire d''un fichier suite ',/,            &
- '   Sauvegarde a l''iteration ',    I10,                         &
-                                    ', Temps physique ',E14.5,/,/)
+ ' Sortie intermediaire de fichiers suite',/,                     &
+ '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,&
+ '   Temps CPU pour les fichiers suite : ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1832,7 +1767,7 @@ write(nfecra,7000)
 ' =========================================================== ',/,&
                                                                 /,&
                                                                 /)
- 4010 format(                                                         /,&
+ 4010 format(                                                   /,&
  3X,'** TEMPS CPU POUR LES SORTIES FINALES : ',E14.5           ,/,&
  3X,'   ----------------------------------                    ',/)
  7000 format(/,/,                                                 &
@@ -1886,8 +1821,9 @@ write(nfecra,7000)
 '===============================================================',&
  /)
  3020 format(/,/,                                                 &
- ' Write an intermediate restart file',/,                   &
- '   Backup at iteration ',    I10,  ', Physical time ',E14.5,/,/)
+ ' Write intermediate restart files',/,                           &
+ '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/, &
+ '   CPU time for restart files: ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1901,7 +1837,7 @@ write(nfecra,7000)
 ' =========================================================== ',/,&
                                                                 /,&
                                                                 /)
- 4010 format(                                                         /,&
+ 4010 format(                                                   /,&
  3X,'** CPU TIME FOR FINAL WRITING: ',E14.5                    ,/,&
  3X,'   ---------------------------                           ',/)
  7000 format(/,/,                                                 &
