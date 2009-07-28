@@ -265,9 +265,9 @@ do icel = 1, ncelf
     iw(irspr2+icel-1) = iglob
     iw(indic+iglob-1) = +1
   else
-    WRITE(NFECRA,*) ' pb de programmation dans ustmgr.F  '
-    WRITE(NFECRA,*) ' arret dans ustmgr.F '
-    WRITE(NFECRA,*) ' IP, JP, KP = ', IP, JP, KP
+    write(nfecra,*) ' pb de programmation dans ustmgr.f90'
+    write(nfecra,*) ' arret dans ustmgr.F'
+    write(nfecra,*) ' ip, jp, kp = ', IP, JP, KP
     call csexit(1)
   endif
 

@@ -1,4 +1,13 @@
 * 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Comments translation and documentation update.
+  modifed files:
+    doc/user/saturne1.tex
+    src/base/autmgr.f90
+    src/base/crstgr.f90
+    src/base/iniini.f90
+    users/base/ustmgr.f90
+
+* 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor comments improvement.
   modified files:
     gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui

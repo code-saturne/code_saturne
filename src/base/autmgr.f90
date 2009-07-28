@@ -28,7 +28,6 @@
 subroutine autmgr &
 !================
 
-
     ( igr    , isym   , iagmax , nagmax ,                         &
       ncelf  , ncelfe , nfacf  , iwarnp ,                         &
       ifacef ,                                                    &
@@ -122,8 +121,7 @@ double precision surfaf(3,nfacf), volumf(ncelfe)
 double precision xyzfin(3,ncelfe)
 double precision w1(ncelfe), w2(ncelfe)
 
-
-! VARIABLES LOCALES
+! Local variables
 
 double precision critr, epslon
 
@@ -133,10 +131,9 @@ integer          inditt, noaglo, ngros, incvoi
 integer          ihist(10)
 integer          i, j, imin, imax
 
-
 !===============================================================================
 
-!     PARAMETRES PAR DEFAUT
+! Default parameters
 
 epslon = +1.d-6
 ngros  = 8
@@ -144,7 +141,7 @@ npasmx = 10
 incvoi = 1
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 do icel = 1, ncelfe
@@ -157,7 +154,8 @@ do ifac = 1, nfacf
   irsfac(ifac) = ifac
 enddo
 
-!     CALCUL DU CARDINAL (NOMBRE DE VOISINS DE CHAQUE CELLULE -1)
+! Compute cardinality (number of neighbors for each cell -1)
+
 do ifac = 1, nfacf
   i = ifacef(1,ifac)
   j = ifacef(2,ifac)
@@ -170,9 +168,9 @@ nfacnr = nfacf
 npass  = 0
 noaglo = ncelf
 
- 100  continue
+! Passes
 
-!     LES PASSES
+ 100  continue
 
 npass = npass+1
 nfacn = nfacnr
@@ -191,21 +189,20 @@ if (nfacn .lt. nfacf) then
 endif
 
 if (iwarnp .gt. 3) then
-  WRITE(NFECRA,*) '    autmgr.F : passe ', NPASS,                 &
-                  'NFACNR = ', NFACNR, ' NOAGLO = ',NOAGLO
+    write(nfecra,2001) npass, nfacnr, noaglo
 endif
 
-!     INCREMENTATION DU NOMBRE DE VOISINS
+  ! Increment number of neighbors
 
 do icel = 1, ncelf
   indic(icel) = indic(icel) + incvoi
 enddo
 
-!     INITIALISATION DE FACES NON ELIMINEES
+  ! Initialize non-eliminated faces
 
 nfacnr = 0
 
-!     BOUCLE SUR LES FACES NON ELIMINEES
+  ! Loop on non-eliminated faces
 
 do ifac1 = 1, nfacn
 
@@ -213,10 +210,9 @@ do ifac1 = 1, nfacn
   i = ifacef(1,ifac)
   j = ifacef(2,ifac)
 
-!       ON NE CONSIDERE PAS LES FACES EN FRONTIERE PARALLELE OU
-!       PERIODIQUE, POUR NE PAS AGGLOMERER LA GRILLE A TRAVERS
-!       CE TYPE DE FRONTIERES (CE QUI DEMANDERAIT UNE CONSTRUCTION
-!       PLUS COMPLEXE PUIS CHANGERAIT LE SCEMA DE COMMUNICATION).
+    ! Exclude faces on parallel or periodic boundary, so as not to
+    ! coarsen the grid across those boundaries (which would change
+    ! the communication pattern and require a more complex algorithm).
 
   if (i.le.ncelf .and. j.le.ncelf) then
 
@@ -250,7 +246,7 @@ do ifac1 = 1, nfacn
     endif
 
     if (inditt.ne.0 .and.inditt.ne.1) then
-      WRITE(NFECRA,*)' Bug dans autmgr.F, arret '
+      write(nfecra,*) ' Bug in autmgr, contact support.'
       call csexit(1)
     endif
 
@@ -263,14 +259,14 @@ do ifac1 = 1, nfacn
 
 enddo
 
-!     CONTROLE DU NOMBRE DE CELLULES GROSSIERES CREE
+  ! Check the number of coarse cells created
 
 noaglo = 0
 do icel=1,ncelf
   if (irscel(icel).le.0) noaglo = noaglo+1
 enddo
 
-!     PASSES SUIVANTES SI AGGLOMERATION INSUFFISANTE
+! Loop on passes
 
 if (noaglo.gt.0) then
   if ((ncelg+noaglo)*ngros .ge. ncelf) then
@@ -280,7 +276,7 @@ if (noaglo.gt.0) then
   endif
 endif
 
-!     ON TERMINE L'ASSEMBLAGE
+! Finish assembly
 
 do icel = 1, ncelf
   if (irscel(icel).le.0) then
@@ -289,7 +285,7 @@ do icel = 1, ncelf
   endif
 enddo
 
-!     CONTROLE DIVERS ET VARIES
+! Various checks
 
 imax = 0
 imin = 2*ncelf
@@ -305,13 +301,12 @@ endif
 
 if (iwarnp.gt.3) then
 
-  WRITE(NFECRA,*) '    autmgr.F : INOMBR MIN = ', IMIN,           &
-                  ' MAX = ', IMAX, ' CIBLE = ', NAGMAX
-  WRITE(NFECRA,*) '      histogramme '
+  write(nfecra,2002) imin, imax, nagmax
+  write(nfecra,2003)
   noaglo=imax-imin+1
   if (noaglo.gt.0) then
     if (noaglo.gt.10) then
-      WRITE(NFECRA,*) ' IHIST MAL DIMENSIONNE DANS autmgr.F'
+      write(nfecra,*) ' ihist badly dimensioned in autmgr'
       call csexit(1)
     endif
     do i = 1, noaglo
@@ -329,8 +324,7 @@ if (iwarnp.gt.3) then
     endif
     do i = 1, noaglo
       epslon = 100.d0*ihist(i)/ncelg
-      WRITE(NFECRA,*) '        regroupement ',IMIN+I-1,'  =  ',   &
-                      EPSLON,' % '
+      write(nfecra,2004) imin+i-1, epslon
     enddo
   endif
 
@@ -359,25 +353,29 @@ if (irangp .ge. 0) then
 endif
 
 if (iwarnp.gt.3) then
-  WRITE(NFECRA,*) '    autmgr.F : agglomeration MIN = ', J,       &
-                  ' MAX= ',I
+  write(nfecra,2005) j, i
 endif
 
 if (noaglo .ne. ncelf) then
-  WRITE(NFECRA,*) 'BUG DANS autmgr.f, Contacter l''assistance.'
+  write(nfecra,*) ' Bug in autmgr, contact support.'
   call csexit(1)
 endif
 
+!--------
+! Formats
+!--------
+
+ 2001 format(&
+  '    autmgr: pass ', i3, 'nfacnr = ', i10, ' noaglo = ', i10)
+ 2002 format(&
+  '    autmgr: inombr min = ', i10, ' max = ', i10, ' target = ', i10)
+ 2003 format(&
+  '      histogram ')
+ 2004 format(&
+  '        regroupment ', i10,' = ', e12.5,' %')
+ 2005 format(&
+  '    autmgr: agglomeration min = ', i10, ' max= ', i10)
 !==============================================================================
-
-!--------
-! FORMATS
-!--------
-
-
-!----
-! FIN
-!----
 
 return
 end

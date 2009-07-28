@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -97,22 +97,21 @@ subroutine crstgr &
 ! icelce           ! te ! --- ! connectivite cellules->cellules                !
 !  (2*nfacf)       !    !     ! voisines du maillage fin                       !
 ! rw(ncelf)        ! tr ! --- ! tableau de travail                             !
-!ifaclf(2,nfacf    ! te ! <-- ! cell. voisines face intrn maill fin            !
-!xaf0(nfacf,isym tr ! <-- ! extradiagonale matrice p0 mailage fin          !
+! ifaclf(2,nfacf   ! te ! <-- ! cell. voisines face intrn maill fin            !
+! xaf0(nfacf,isym) ! tr ! <-- ! extradiagonale matrice p0 mailage fin          !
 ! volumf(ncelf)    ! tr ! <-- ! volume cellule maillage fin                    !
-!xyzfin(3,ncelf) tr ! <-- ! coordonnes cellule maillage fin                !
-!surfaf(3,nfacf) tr ! <-- ! surface face interne maillage fin              !
-!xafxf0(2,nfacf) tr ! <-- ! integ. xaf0*coord.cell adj. mail.fin           !
+! xyzfin(3,ncelf)  ! tr ! <-- ! coordonnes cellule maillage fin                !
+! surfaf(3,nfacf)  ! tr ! <-- ! surface face interne maillage fin              !
+! xafxf0(2,nfacf)  ! tr ! <-- ! integ. xaf0*coord.cell adj. mail.fin           !
 ! ncelg            ! e  ! <-- ! nombre d'elements maillage grossier            !
-! nfacg            ! e  !  <- ! nombre faces internes maill. grossier          !
-!ifaclg(2,nfacg    ! te !  <- ! cell. voisines face intrn mail. gros           !
-!xag0(nfacg,isym tr !  <- ! extradiagonale matrice p0 maill.gros.          !
-! volumg(ncelg)    ! tr !  <- ! volume cellule maillage grossier               !
-!xyzgro(3,ncelg) tr !  <- ! coordonnes cellule maillage grossier           !
-!surfag(3,nfacg) tr !  <- ! surface face interne maill. grossier           !
-!xagxg0(2,nfacg) tr !  <- ! integ. xag0*coord.cell adj. mail.gro           !
-!argu !W1,..,4 (NCEL)! TR ! <->           ! TABLEAUX DE TRAVAILS
-!__________________!____!_____!________________________________________________!
+! nfacg            ! e  ! <-- ! nombre faces internes maill. grossier          !
+! ifaclg(2,nfacg)  ! te ! <-- ! cell. voisines face internes maillage grossier !
+! xag0(nfacg,isym) ! tr ! <-- ! extradiagonale matrice p0 maillage grossier    !
+! volumg(ncelg)    ! tr ! <-- ! volume cellule maillage grossier               !
+! xyzgro(3,ncelg)  ! tr ! <-- ! coordonnes cellule maillage grossier           !
+! surfag(3,nfacg)  ! tr ! <-- ! surface face interne maillage grossier         !
+! xagxg0(2,nfacg)  ! tr ! <-- ! integ. xag0*coord.cell adj. maillage grossier  !
+! w1,..,4(ncel)    ! tr ! <-> ! tableaux de travail                            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -154,7 +153,7 @@ double precision surfaf(3, nfacf), xaf0ij(3, nfacf)
 double precision surfag(3, nfacg), xag0ij(3, nfacg)
 double precision w1(ncelfe), w2(ncelfe), w3(ncelfe), w4(ncelfe)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, ii, jj, ig, jg
 integer          ifacg, imin, imax
@@ -168,7 +167,7 @@ double precision anmin(2), anmax(2)
 
 !===============================================================================
 
-! CREATION VOLUME, CdG CELLULES GROSSIERES : XYZGRO(3,NCELG)
+! Compute volume and center of coarse cells: xyzgro(3,ncelg)
 !==========================================================================
 
 if (iappel .eq. 1) then
@@ -195,15 +194,15 @@ if (iappel .eq. 1) then
     xyzgro(3, ig) = xyzgro(3, ig) / volumg(ig)
   enddo
 
-!       RETOUR A LA FONCTION APPELANTE POUR SYNCHRONISATION
-!       PARALLELE / PERIODIQUE DE XYZGRO ET VOLUMG
+! Return to calling function for parallel / periodic synchronization
+! of xyzgro and volumg
 
   return
 
 endif
 
-! RESTRICTION P0 MATRICES, SURFACE "INTERNE" :
-!       XAG0(NFACG), SURFAG(3,NFACG), XAGXG0(2,NFACG)
+! P0 restriction of matrixes, "internal" surface:
+! xag0(nfacg), surfag(3,nfacgl), xagxg0(2,nfacg)
 !==========================================================================
 
 imax = 0
@@ -252,20 +251,18 @@ enddo
 
 
 !===============================================================================
-! FINALISATION CALCUL DE LA MATRICE  DANS DAG, XAG
+! Finalize computation of matrix in dag, xag
 !===============================================================================
 
-! INTERP= 0 : RESTRICTION P0 /PROLONGATION P0 => XAG=XAG0
-! INTERP= 1 : RESTRICTION P0 /PROLONGATION P1 => XAG=XAG0IJ/IgJg
+! interp = 0 : P0 restriction / P0 prolongation => XAG = XAG0
+! interp = 1 : P0 restriction / P1 prolongation => XAG = XAG0ij/IgJg
 
-!     INITIALISATION
+! Initialization
 
 interp = 0
 interp = 1
 
-
-!     INITIALISATION TERME NON DIFFERENTIEL MESH FIN STOCKE DANS W1
-!==============================
+! Initialize non differential fine mesh term saved in w1
 
 do iel = 1, ncelf
   w1(iel) = daf(iel)
@@ -280,9 +277,7 @@ do ifac = 1, nfacf
   w1(jj) = w1(jj) + xaf(ifac, isym)
 enddo
 
-
-!     INITIALISATION STOCKAGE MATRICE MESH GROSSIER SUR (DAG, XAG)
-!=============================
+! Initialize coarse matrix storage on (dag, xag)
 
 do iel = 1, ncelge
   dag(iel) = 0.d0
@@ -292,12 +287,10 @@ do ifac = 1, nfacg
   xag(ifac, isym)= 0.d0
 enddo
 
+! Extradiagonal terms
+! (symmetric matrixes for now, even with non symmetric storage isym=2)
 
-!     TERMES EXTRADIAGONAUX
-!     (matrices sym. pour l'instant, meme si stockage non syme isym=2)
-!========================================
-
-!     MATRICE INTIALISEE A XAG0 (INTERP=0)
+! Matrix intialized to xag0 (interp=0)
 
 do ifacg = 1, nfacg
   xag(ifacg, 1) = xag0(ifacg)
@@ -324,12 +317,12 @@ if (interp.eq.1) then
 
     if (abs(dsigjg) .gt. epzero) then
 
-!           STANDARD
+      ! Standard
       xag(ifacg, 1)    = dsxaij/dsigjg
       xag(ifacg, isym) = dsxaij/dsigjg
 
-!           MATRICE CLIPPEE
-      cclip= dsxaij/dsigjg
+      ! Clipped matrix
+      cclip = dsxaij/dsigjg
       if (cclip .lt. xag0(ifacg)) imin = imin+1
       if (cclip .gt. 0.d0)  imax = imax +1
       if (cclip .lt. xag0(ifacg) .or. cclip .gt. 0.d0) then
@@ -346,35 +339,28 @@ if (interp.eq.1) then
       call parcpt(imin)
       call parcpt(imax)
     endif
-    write(nfecra, *)                                              &
-      '    crstgr.F : matrice grossiere < XAG0 en ',IMIN,' faces'
-    write(nfecra, *)                                              &
-      '    crstgr.F : matrice grossiere > 0    en ',IMAX,' faces'
+    write(nfecra, 2001) imin, imax
   endif
 
-!       RELAXATION EVENTUELLE MATRICE P1 / MATRICE P0 DEFINI PAR UTILISATEUR
-!       DANS usini1.F
+  ! Possible P1 matrix / P0 matrix relaxation defined by the user in usini1.f90
 
   do ifacg = 1, nfacg
-    xag(ifacg, 1)                                                 &
-      = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
-    xag(ifacg, isym)                                              &
-      = rlxp1*xag(ifacg, isym) +(1.d0-rlxp1)*xag0(ifacg)
+    xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
+    xag(ifacg, isym) = rlxp1*xag(ifacg, isym) +(1.d0-rlxp1)*xag0(ifacg)
   enddo
 
 endif
 
 if (interp.ne.0 .and. interp.ne.1) then
 
-  WRITE(NFECRA,*) 'INTERP MAL DEFINI DANS crstgr.F'
-  WRITE(NFECRA,*) '--> ARRET DANS crstgr.F '
+  write(nfecra,*) 'interp incorrectly defined in crstgr'
+  write(nfecra,*) '--> Stop in crstgr '
   call csexit(1)
 
 endif
 
 
-!     TERME DIAGONAL
-!============================
+! Diagonal term
 
 do ii = 1, ncelf
   ig = irscel(ii)
@@ -391,13 +377,12 @@ do ifacg = 1, nfacg
 
 enddo
 
-!     CONTROLE
-!=============
-!     WRITE(NFECRA,*) 'TYPE INTERPOLATION MATRICE = ',INTERP
-
-!     EVALUATION ANISOTROPIE DES MATRICES FINE ET GROSSIERE
+! Check
+!======
 
 if (iwarnp .gt. 3) then
+
+  ! Evaluate fine and coarse matrixes anisotropy
 
   do ii = 1, ncelfe
     w1(ii) =-1.d12
@@ -460,7 +445,7 @@ if (iwarnp .gt. 3) then
 
   if (iwarnp .gt. 3) then
 
-    write (nfecra, 2000) anmin(1), anmax(1), anmin(2), anmax(2)
+    write (nfecra, 2002) anmin(1), anmax(1), anmin(2), anmax(2)
 
     if (interp .eq. 1) then
 
@@ -476,8 +461,7 @@ if (iwarnp .gt. 3) then
         call parmax(rmax)
       endif
 
-      WRITE(NFECRA, *) '      minimum XAG_P1/XAG_P0 = ', RMIN
-      WRITE(NFECRA, *) '      maximum XAG_P1/XAG_P0 = ', RMAX
+    write(nfecra, 2003) rmin, rmax
 
     endif
 
@@ -486,16 +470,23 @@ if (iwarnp .gt. 3) then
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 2000 format('       anisotropie maillage fin :      min = ', E12.5, /, &
-       '                                       max = ', E12.5, /, &
-       '       anisotropie maillage grossier : min = ', E12.5, /, &
-       '                                       max = ', E12.5, /)
+ 2001 format(&
+  '    crstgr: coarse matrix < xag0 at ', i10,' faces', /, &
+  '                          > 0    at ', i10,' faces')
+ 2002 format(&
+  '       fine mesh anisotropy:   min = ', e12.5, /, &
+  '                               max = ', e12.5, /, &
+  '       coarse mesh anisotropy: min = ', e12.5, /, &
+  '                               max = ', e12.5, /)
+ 2003 format(&
+  '       minimum xag_p1/xag_p0 = ', e12.5, /, &
+  '       maximum xag_p1/xag_p0 = ', e12.5, /)
 
 !----
-! FIN
+! End
 !----
 
 return
