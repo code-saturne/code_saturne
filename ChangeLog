@@ -1,3 +1,10 @@
+* 28/07/2009 - David Monfort <david.monfort@edf.fr>
+  Adapt main script so that it handles non standard directory for
+  MEI installation (precisely not the same as the kernel).
+  modified scripts:
+    bin/cs.in
+    confi/cs_mei.m4
+
 * 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove seemingly useless test for restart files writing. All files
   are now written at the same moment (even for the last time-step).
