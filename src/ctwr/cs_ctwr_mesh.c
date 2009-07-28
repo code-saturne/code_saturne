@@ -1741,29 +1741,13 @@ void cs_ctwr_adair (void)
   cs_int_t   ict,icol, ilig,ieau,ii,jj,iair,nbvois,
              nbn,nvois[ cs_ctwr_nmaxvoi ],lf,indice;
   cs_int_t   dim, nb_air_node;
-  cs_real_t  norme_g,dhi,dmin,dist,coeff[ cs_ctwr_nmaxvoi ],ouv,aux,gravite[3];
+  cs_real_t  dhi,dmin,dist,coeff[ cs_ctwr_nmaxvoi ],ouv,aux;
   cs_real_t  dx,dy,dz,dxx,dyy,dzz;
   cs_real_t  cx,cy,cz,epgauss,w;
   cs_real_t  pp[4][4], ppInv[4][4] ;
   cs_real_t  vectBase[3][3];
   fvm_lnum_t loca_cel;
   cs_ctwr_zone_t  *ct;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
-  /*--------------------------------------------*
-   * parametres et initialisation               *
-   *--------------------------------------------*/
-  /* Vecteur gravite */
-  gravite[0] = ct_prop->gravx;
-  gravite[1] = ct_prop->gravy;
-  gravite[2] = ct_prop->gravz;
-
-  norme_g = sqrt( pow(gravite[0],2.)
-                  +pow(gravite[1],2.)
-                  +pow(gravite[2],2.) );
-
-
-
-  /* fin parametres et initialisation */
 
   /*---------------------------------------------*
    * Construction des coefficient d'interpolation*
