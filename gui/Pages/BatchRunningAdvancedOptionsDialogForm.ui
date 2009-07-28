@@ -265,7 +265,7 @@ directory (CS_TMP_PREFIX)</string>
        <item>
         <widget class="QGroupBox" name="groupBox" >
          <property name="title" >
-          <string>Outputs redirections management (ARG_CS_OUTPUT)</string>
+          <string>Output redirection management (ARG_CS_OUTPUT)</string>
          </property>
          <layout class="QGridLayout" >
           <item row="0" column="0" >

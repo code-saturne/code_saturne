@@ -232,7 +232,7 @@
               <item>
                <widget class="QLabel" name="label_2" >
                 <property name="text" >
-                 <string>Criterion for interne faces selection (optional)</string>
+                 <string>Criterion for interior faces selection (optional)</string>
                 </property>
                </widget>
               </item>

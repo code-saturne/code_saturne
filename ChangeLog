@@ -1,3 +1,11 @@
+* 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor comments improvement.
+  modified files:
+    gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/SolutionVerifForm.ui
+    gui/Pages/UserScalarPropertiesForm.ui
+
 * 28/07/2009 - David Monfort <david.monfort@edf.fr>
   Modify libsyrcs code so that one can compile SYRTHES/Code_Saturne
   coupling library without SYRTHES. Information on SYRTHES installation

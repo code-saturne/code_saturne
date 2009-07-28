@@ -57,7 +57,7 @@
            </font>
           </property>
           <property name="text" >
-           <string>You must complete USPHYV.F</string>
+           <string>You must complete usphyv.f90</string>
           </property>
          </widget>
         </item>

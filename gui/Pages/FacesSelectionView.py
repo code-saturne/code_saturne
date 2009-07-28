@@ -334,7 +334,7 @@ class StandardItemModelFaces(QStandardItemModel):
 
         elif self.tag == "faces_select":
             if self.mdl.getSelectFaces() or self.rowCount() == 1:
-                msg = self.tr("For interne faces selection, only a single criterion is allowed.")
+                msg = self.tr("For interior faces selection, only a single criterion is allowed.")
                 QMessageBox.information(self.parent, title, msg)
                 return
 
