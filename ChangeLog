@@ -1,5 +1,12 @@
 * 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
                David Monfort <david.monfort@edf.fr>
+  Make temperature difference setup available from uscti1.f90
+  modified routines:
+    include/ctwr/ctincl.h
+    users/ctwr/uscti1.f90
+
+* 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
+               David Monfort <david.monfort@edf.fr>
   Add a global structure in cooling tower module to store common
   fluid properties and gravity vector.
   modified routines:

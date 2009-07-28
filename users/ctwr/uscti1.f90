@@ -135,6 +135,27 @@ aetemx = 80.d0
 !     MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
 aetemn = 10.d0
 
+!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE ENTREE EAU
+
+nbzsup = 2
+
+!     LISTE DES NBZSUP ZONES D'ECHANGES EN BORD DE L'ENTREE EAU
+
+lizsup(1) = 1
+lizsup(2) = 2
+
+!     NOMBRE DE ZONES D'ECHANGES AYANT UNE FRONTIERE SORTIE EAU
+nbzinf = 2
+
+!     LISTE DES NBZINF ZONES D'ECHANGES EN BORD DE LA SORTIE EAU
+
+lizinf(1) = 1
+lizinf(2) = 2
+
+!     INSTANT ACTIVATION ECART IMPOSE
+
+inbaei = 1000.D0
+
 !===============================================================================
 ! 2.  POST-PROCESSING DES ZONES D'ECHANGES
 !===============================================================================

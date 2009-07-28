@@ -34,18 +34,20 @@
 !-------------------------------------------------------------------------------
 
 ! IAEERI : ACTIVATION DE L'ECART IMPOSE
-! IAERRP : FREQUENCE DE MODIFICATION DE LA TEMPERATURE
+! IAEERP : FREQUENCE DE MODIFICATION DE LA TEMPERATURE
 
-integer           iaeeri, iaeerp
+integer           iaeeri, iaeerp, nbzsup, nbzinf
 
-common / ictvar / iaeeri, iaeerp
+common / ictvar / iaeeri, iaeerp, nbzsup, nbzinf
 
 ! VAEERI : ECART DE REFRIGERATION A IMPOSER
 ! PASERI : PAS DE TEMPERATURE POUR LE CALCUL DE LA PENTE DE ECARTREF(TEAU)
 ! AETEMN : MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
 ! AETEMX : MAXIMUM DE LA TEMPERATURE D'EAU CHAUDE MOYENNE PONDEREE
 
-double precision  vaeeri, paseri, aetemn, aetemx
+double precision  vaeeri, paseri, aetemn, aetemx, inbaei, &
+       lizsup(100), lizinf(100)
 
-common / rctvar / vaeeri, paseri, aetemn, aetemx
+common / rctvar / vaeeri, paseri, aetemn, aetemx, inbaei, &
+                  lizsup, lizinf
 
