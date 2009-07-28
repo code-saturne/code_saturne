@@ -75,6 +75,7 @@
 #include "cs_halo.h"
 #include "cs_post.h"
 #include "cs_restart.h"
+#include "cs_selector.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -165,7 +166,7 @@ cs_loc_ctwr_opnsuite(const char              *nomsui,
  *
  * Interface Fortran :
  *
- * SUBROUTINE DEFct
+ * SUBROUTINE DEFCT1
  *
  * INTEGER          ICOUL       : <-- : Couleur des elements de la zone d'echange
  * INTEGER          IMctCH      : <-- :
@@ -176,10 +177,11 @@ cs_loc_ctwr_opnsuite(const char              *nomsui,
  * REAL             SURFACE     : <-- : Surface de la face superieure de la ct
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (defct, DEFCT)
+void CS_PROCF (defct1, DEFCT1)
 (
   const cs_int_t   *const idimct,   /* Dimemsion du probleme 2:2D  3:3D       */
-  const cs_int_t   *const icoul,    /* Couleur des elements de la ct          */
+  const char  *ze_name,              /* Name of Ct area */
+  cs_int_t    *ze_n_len,                  /* lenght of Name of Ct area */
   const cs_int_t   *const imctch,   /* 1: Modele de Poppe
                                        2: Merkel 0: Rien                      */
   const cs_int_t   *const ntypct,   /* 1: Contre courant  2: Courant croises
@@ -198,8 +200,19 @@ void CS_PROCF (defct, DEFCT)
                                        les zones de pluie                     */
 )
 {
-  cs_ctwr_definit(*idimct,*icoul,*imctch,*ntypct,*nelect,
-                  *deltat,*teau,*fem,*xap,*xnp,*surface,*dgout);
+  char *_ze_name = NULL;
+
+  if (ze_name != NULL && *ze_n_len > 0)
+    _ze_name = cs_base_string_f_to_c_create(ze_name,
+                                                      *ze_n_len);
+  if (_ze_name != NULL && strlen(_ze_name) == 0)
+    cs_base_string_f_to_c_free(&_ze_name);
+
+  cs_ctwr_definit(*idimct,_ze_name, *imctch,*ntypct,*nelect,
+              *deltat,*teau,*fem,*xap,*xnp,*surface,*dgout);
+
+  if (_ze_name != NULL)
+    cs_base_string_f_to_c_free(&_ze_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -934,7 +947,7 @@ void CS_PROCF (lecctw, LECCTW)
 void cs_ctwr_definit
 (
   const cs_int_t   idimct,    /* Dimemsion du probleme 2:2D  3:3D */
-  const cs_int_t   icoul,     /* Couleur des elements de la ct */
+  const char  *ze_name,   /* Nom de la zone aero */
   const cs_int_t   imctch,    /* 1: Modele de Poppe
                                  2: Merkel
                                  0: Rien */
@@ -967,7 +980,6 @@ void cs_ctwr_definit
   ct->num = cs_glob_ct_nbr + 1;
 
   ct->idimct = idimct;
-  ct->icoul = icoul;
   ct->imctch = imctch;
   ct->ntypct = ntypct;
   ct->nelect = nelect;
@@ -1037,6 +1049,14 @@ void cs_ctwr_definit
   ct->debit_s = 0.0 ;
 
   ct->dgout = dgout ;
+
+  /* Selection des cellules */
+
+  BFT_MALLOC(ct->ze_cell_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+
+  cs_selector_get_cell_list(ze_name, &(ct->nbevct), ct->ze_cell_list);
+
+  BFT_REALLOC(ct->ze_cell_list, ct->nbevct, fvm_lnum_t);
 
   /* Redimensionnement du tableau des zones d'echange si necessaire */
 
@@ -2254,8 +2274,6 @@ void cs_ctwr_bilanct
 {
   const cs_real_t  *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t  *b_face_normal = mesh_quantities->b_face_normal;
-  const cs_int_t   *family_item = mesh->family_item; /* Propriétés des familles */
-  const cs_int_t   *cell_family  = mesh->cell_family;    /* Familles des cellules */
   cs_int_t         icel_1, icel_2, icel, ifac, ict, idim, i, j, ieau_Sup,
     ieau_inf, length;
   cs_real_t   cpe, cpv, cpa, hv0;
@@ -2390,14 +2408,14 @@ void cs_ctwr_bilanct
         if( j==2) ifac = (cs_int_t) face_lat[i] - mesh->n_b_faces - 1;
         icel_1 = i_face_cells[ifac * 2]     - 1;
         icel_2 = i_face_cells[ifac * 2 + 1] - 1;
-        if ( family_item[cell_family[icel_1]-1] == ct->icoul ) {
+        if ( ct->mark_ze[icel_1] == 1 ) {
 
           icel = icel_2 ;
           for (idim = 0 ; idim < 3 ; idim++) {
             n_sortant[idim] =  coo_cen[icel_2*3 + idim] - coo_cen[icel_1*3 + idim];
           }
         }
-        if ( family_item[cell_family[icel_2]-1] == ct->icoul ) {
+        if ( ct->mark_ze[icel_2] == 1 ) {
 
           icel = icel_1 ;
           for (idim = 0 ; idim < 3 ; idim++) {

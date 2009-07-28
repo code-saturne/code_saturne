@@ -70,7 +70,7 @@ struct _cs_ctwr_zone_t {
 
   int        idimct;          /* Problem dimension (2 or 3) */
   int        num;             /* Exchange zone number */
-  int        icoul;           /* Exchange zone elements color */
+  char      *ze_name;         /* Exchange zone elements name */
   int        imctch;          /* 0: None; 1: Poppe's model; 2: Merkel's model */
   int        ntypct;          /* 1: Counter currents; 2: Crossed-currents;
                                  3: Rain zone */
@@ -113,10 +113,12 @@ struct _cs_ctwr_zone_t {
 
   fvm_nodal_t *water_mesh;    /* Nodal mesh of water in the exchange area */
 
+  cs_int_t   *ze_cell_list;        /* List of cells of ct criteria */
   cs_int_t   *voiseau;        /* List of water neighbors of air cells */
   cs_int_t   *pvoiseau;       /* Positions in the list of water neighbors */
   cs_int_t   *voisair;        /* List of air neighbors of water points */
   cs_int_t   *pvoisair;       /* Positions in the list of air neighbors */
+  cs_int_t   *mark_ze;       /* Cell marker for ct */
 
   cs_int_t   *fac_sup_connect_idx; /* Top faces point connectivity index */
   cs_int_t   *fac_sup_connect_lst; /* Top faces point connectivity */
@@ -193,11 +195,10 @@ extern cs_int_t  *  cs_chain_ct;
  *
  * Fortran interface:
  *
- * SUBROUTINE DEFCT
- * ****************
+ * SUBROUTINE DEFCT1
+ * *****************
  *
  * INTEGER          IDIMCT        : --> : problem dimension (2 or 3)
- * INTEGER          ICOUL         : --> : exchange zone selection criteria
  * INTEGER          IMCTCH        : --> : 1: Poppe's Model; 2: Merkel's model
  * INTEGER          NTYPCT        : --> : 1: Counter-currents
  *                                :     : 2: Crossed-currents
@@ -213,10 +214,11 @@ extern cs_int_t  *  cs_chain_ct;
  * DOUBLE PRECISION DGOUT         : --> : drop diameter for rain zones
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (defct, DEFCT)
+void CS_PROCF (defct1, DEFCT1)
 (
   const cs_int_t   *idimct,
-  const cs_int_t   *icoul,
+  const char       *zecrit,
+  cs_int_t         *ze_n_len,
   const cs_int_t   *imctch,
   const cs_int_t   *ntypct,
   const cs_int_t   *nelect,
@@ -460,7 +462,7 @@ void CS_PROCF (lecctw, LECCTW)
 void cs_ctwr_definit
 (
   const cs_int_t   idimct,           /* Dimemsion du probleme 2:2D  3:3D */
-  const cs_int_t   icoul,            /* Couleur des elements de la ct */
+  const char      *ze_crit,          /* Critere de selection */
   const cs_int_t   imctch,           /* 1: Modele de Poppe
                                         2: Merkel
                                         0: Rien */

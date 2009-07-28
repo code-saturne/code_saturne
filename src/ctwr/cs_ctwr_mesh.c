@@ -704,12 +704,11 @@ void cs_ctwr_maille
 {
 
 
-  cs_int_t   icel_1, icel_2, ii, icel, length, nb, rank,
+  cs_int_t   icel_1, icel_2, ii, length, nb, rank,
              dist_rank, res_loc, res_dist;
   cs_int_t   ifac, ict, icpt, icpti, icptl, icptla, icptfac,
-             iaux, i, dim, j;
+             iaux, i, j;
   cs_real_t  aux       , gravite[3], v_aux[3] , alpha ;
-  cs_int_t    *lst_aux;
   fvm_coord_t *extrusion_vectors, *lst_xyz_cel, *lst_xyz;
   fvm_lnum_t  *lst_par_fac_sup;
   fvm_gnum_t  *fsup_gb_vt_num = NULL;
@@ -743,9 +742,6 @@ void cs_ctwr_maille
   const cs_int_t  *b_face_cells  = mesh->b_face_cells;
   const cs_real_t *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t *b_face_normal = mesh_quantities->b_face_normal;
-  const cs_int_t  *family_item   = mesh->family_item ;
-  const cs_int_t  *cell_family   = mesh->cell_family;
-  const cs_int_t  nbr_cel        = mesh->n_cells;
 
   fvm_interface_set_t  *interface_set = NULL;
   cs_ctwr_zone_t  *ct;
@@ -759,21 +755,6 @@ void cs_ctwr_maille
   gravite[1] = ct_prop->gravy;
   gravite[2] = ct_prop->gravz;
 
-  /*--------------------------------------------*/
-  /* Numbers of air noode in the EA: nbevct     */
-  /*--------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
-   ct = cs_glob_ct_tab[ict];
-   dim = ct->idimct;
-    for (icel = 0 ; icel <  nbr_cel ; icel++) {
-      if (ct->icoul == family_item[cell_family[icel]-1]){
-        ct->nbevct++;
-      }
-    }
-  }
-  /*--------------------------------------------*/
-  /* End Numbers of air noode in the EA: nbevct */
-  /*--------------------------------------------*/
 
   /*--------------------------------------------*/
   /* List of air nodes for each Exchange Area   */
@@ -782,25 +763,32 @@ void cs_ctwr_maille
 
     icpt = 0;
     ct = cs_glob_ct_tab[ict];
-    BFT_MALLOC(lst_aux,ct->nbevct,cs_int_t);
-
-    for (icel = 0 ; icel <  nbr_cel; icel++) {
-      if (ct->icoul == family_item[cell_family[icel]-1]) {
-        assert(icpt < ct->nbevct);
-        lst_aux[++icpt-1] = icel + 1;
-      }
-    }
-
     length = strlen("cell_mesh_ct_") + 1 + 1;
     BFT_MALLOC(mesh_name, length, char);
     sprintf(mesh_name, "cell_mesh_ct_%d", ict);
 
-
     ct->cell_mesh = cs_mesh_connect_cells_to_nodal(mesh,
                                                    mesh_name,
                                                    ct->nbevct,
-                                                   lst_aux);
-  }
+                                                   ct->ze_cell_list);
+
+    BFT_MALLOC(ct->mark_ze,mesh->n_cells ,cs_int_t );
+
+    /*----------------------------------------------------------*
+     * Begin identification of air nodes for each Exchange Area *
+     *----------------------------------------------------------*/
+
+    for (i = 0; i < mesh->n_cells; i++)
+          for (j = 0; j < ct->nbevct; j++) {
+                  if ((ct->ze_cell_list[j]) == i+1) {
+                  ct->mark_ze[i]=1;
+                  break;
+        }
+        else
+                  ct->mark_ze[i]=0;
+        }
+     }
+
   /*---------------------------------------------*
    * End list of air nodes for each Exchange Area*
    *---------------------------------------------*/
@@ -818,13 +806,13 @@ void cs_ctwr_maille
       icel_1 = i_face_cells[ifac * 2]     - 1;/* indice de la cellule 1 */
       icel_2 = i_face_cells[ifac * 2 + 1] - 1;/* indice  de la cellule 2 */
       /* Comparaison  des couleurs des cellules 1 et 2 */
-      if((family_item[cell_family[icel_1]-1] == ct->icoul ) ||
-         (family_item[cell_family[icel_2]-1] == ct->icoul)) {
-        if  (family_item[cell_family[icel_1]-1] != family_item[cell_family[icel_2]-1]) {
-          if (family_item[cell_family[icel_1]-1] == ct->icoul ) {
+      if((ct->mark_ze[icel_1] == 1) ||
+          (ct->mark_ze[icel_2] == 1)) {
+        if  (ct->mark_ze[icel_1] != ct->mark_ze[icel_2]) {
+          if (ct->mark_ze[icel_1] == 1) {
             aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, 1);
           }
-          if (family_item[cell_family[icel_2]-1] == ct->icoul ) {
+          if (ct->mark_ze[icel_2] == 1) {
             aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, -1);
           }
 
@@ -848,7 +836,7 @@ void cs_ctwr_maille
     /* Contribution faces externes */
     for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
       icel_1 = b_face_cells[ifac] - 1; /* indice de la cellule  */
-      if (family_item[cell_family[icel_1]-1] == ct->icoul ) {
+      if (ct->mark_ze[icel_1] == 1) {
 
         aux = _dot_product_ng(ifac,ct->idimct, b_face_normal, gravite, 1);
 
@@ -900,15 +888,13 @@ void cs_ctwr_maille
       icel_1 = i_face_cells[ifac * 2]     - 1; /* indice de la cellule 1 */
       icel_2 = i_face_cells[ifac * 2 + 1] - 1; /* indice  de la cellule 2 */
       /* Comparaison  couleur de la ct et couleur des cellules 1 et 2 */
-      if((family_item[cell_family[icel_1]-1] == ct->icoul )||
-         (family_item[cell_family[icel_2]-1] == ct->icoul)){
-
-        if (family_item[cell_family[icel_1]-1] != family_item[cell_family[icel_2]-1] ){
-
-          if (family_item[cell_family[icel_1]-1] == ct->icoul ) {
+      if((ct->mark_ze[icel_1] == 1) ||
+          (ct->mark_ze[icel_2] ==1)) {
+        if  (ct->mark_ze[icel_1] != ct->mark_ze[icel_2]) {
+          if (ct->mark_ze[icel_1] ==1) {
             aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, 1);
           }
-          if (family_item[cell_family[icel_2]-1] == ct->icoul ) {
+          if (ct->mark_ze[icel_2] == 1) {
             aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, -1);
           }
 
@@ -946,7 +932,7 @@ void cs_ctwr_maille
     for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
 
       icel_1 = b_face_cells[ifac] - 1;/* indice de la cellule  */
-      if (family_item[cell_family[icel_1]-1] == ct->icoul ) {
+      if ( ct->mark_ze[icel_1]== 1 ) {
 
         aux = _dot_product_ng(ifac, ct->idimct, b_face_normal, gravite, 1);
 
@@ -1292,7 +1278,6 @@ void cs_ctwr_maille
     BFT_FREE(fbr_inf         );
     BFT_FREE(fbr_lat         );
     BFT_FREE(face_ct         );
-    BFT_FREE(lst_aux         );
     BFT_FREE(lst_xyz         );
     BFT_FREE(lst_xyz_cel     );
     BFT_FREE(fsup_gb_vt_num  );
@@ -1400,7 +1385,6 @@ void cs_ctwr_adeau
 #if 0 // Is it no more needed?
   const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx     ;
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst     ;
-  const cs_int_t  *family_item    = mesh->family_item        ;
   const cs_int_t  *cell_family    = mesh->cell_family        ;
 #endif
 
@@ -1533,7 +1517,7 @@ void cs_ctwr_adeau
             icel < cell_cells_idx[ iair + 1 ]; icel++) {
 
          indice = cell_cells_lst[ icel ] - 1;
-         if (ct->icoul == family_item[ cell_family[ indice ]]){
+         if (ct->mark_ze[indice+1]==1){
             nvois[nbvois]= indice ;
             nbvois += 1 ;
          }

@@ -51,8 +51,9 @@ $(top_srcdir)/include/ctwr/ctincl.h
 
 noinst_LTLIBRARIES = libcsctwr.la
 libcsctwr_la_SOURCES = \
-cs_ctwr_air_props.c \
 cs_ctwr.c \
+cs_ctwr_air_props.c \
+cs_ctwr_f2c.f90 \
 cs_ctwr_halo.c \
 cs_ctwr_mesh.c \
 ctini1.f90 \

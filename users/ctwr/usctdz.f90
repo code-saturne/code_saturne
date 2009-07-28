@@ -157,7 +157,7 @@ double precision ra(*)
 
 ! VARIABLES LOCALES
 
-integer          imzech,ntypze,idimze,neleze,icoul
+integer          imzech,ntypze,idimze,neleze
 
 double precision teaueze,qeaueze,deltat
 double precision xap,xnp,surface,dgout
@@ -185,7 +185,6 @@ imzech  = ippmod(iaeros)
 
 ! Definition de la zone d'echange
 
-icoul   = 6
 idimze  = 2
 ntypze  = 2
 neleze  = 20
@@ -197,9 +196,9 @@ xnp     = 0.5d0
 surface = 5183.6d0
 dgout   = 0.005d0
 
-call defct                                                        &
+call defct &
 !=========
- ( idimze, icoul, imzech, ntypze, neleze,                         &
+ ( idimze, '2 or 3', imzech, ntypze, neleze,          &
    deltat, teaueze, qeaueze, xap, xnp, surface, dgout )
 
 

@@ -1,5 +1,16 @@
 * 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
-               David Monfort <david.monfort@edf.fr>
+  Use selection mechanism for exchange zone definition.
+  added routine:
+    src/ctwr/cs_ctwr_f2c.f90
+  modified script:
+    src/ctwr/Makefile.am
+  modified routines:
+    include/ctwr/cs_ctwr.h
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_mesh.c
+    users/ctwr/usctdz.f90
+
+* 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Make temperature difference setup available from uscti1.f90
   modified routines:
     include/ctwr/ctincl.h
