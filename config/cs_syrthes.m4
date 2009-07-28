@@ -106,6 +106,4 @@ AC_SUBST(SYRTHES_LIBS)
 
 fi
 
-AM_CONDITIONAL(HAVE_SYRTHES, [test "x$have_syrthes" = "xyes"])
-
 ])dnl

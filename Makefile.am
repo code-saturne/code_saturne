@@ -24,11 +24,7 @@ if HAVE_GUI
 GUI = gui
 endif
 
-if HAVE_SYRTHES
-LIBSYRCS = libsyrcs
-endif
-
-SUBDIRS = src po doc $(GUI) $(LIBSYRCS)
+SUBDIRS = src libsyrcs po doc $(GUI)
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \

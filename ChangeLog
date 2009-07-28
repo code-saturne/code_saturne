@@ -1,4 +1,16 @@
 * 28/07/2009 - David Monfort <david.monfort@edf.fr>
+  Modify libsyrcs code so that one can compile SYRTHES/Code_Saturne
+  coupling library without SYRTHES. Information on SYRTHES installation
+  and compilers could now be given after Code_Saturne installation.
+  modified scripts:
+    config/cs_syrthes.m4
+    libsyrcs/Makefile.am
+    Makefile.am
+  modified routines:
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.h
+
+* 28/07/2009 - David Monfort <david.monfort@edf.fr>
   Change CFLAGS to gnu99 standard for compilation on Cygwin.
   modified script:
     config/cs_auto_flags.sh

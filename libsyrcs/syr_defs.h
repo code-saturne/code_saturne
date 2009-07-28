@@ -57,6 +57,35 @@ typedef enum {
 #define SYR_MIN(a,b)   ((a) > (b) ?  (b) : (a))
 #define SYR_MAX(a,b)   ((a) < (b) ?  (b) : (a))
 
+/* Copy of SYRTHES macros for C/Fortran interoperability */
+
+#if    defined(__sgi)     || defined(__uxpv__) || defined(__aix__) \
+    || defined(__linux__) 
+
+#define name2(a,b)  a##b
+#define proc(x,y) name2(x,_)
+#define proci(x)  x
+
+#elif defined(sun) || defined(__alpha)
+
+#define name2(a,b)  a/**/b
+#define proc(x,y) name2(x,_)
+#define proci(x)  x
+
+#elif defined(CRAY)
+
+#define name2(a,b)  a/**/b
+#define proc(x,y) y
+#define proci(x)  x
+
+#else
+
+#define name2(a,b)  a/**/b
+#define proc(x,y)  x
+#define proci(x) name2(x,_)
+
+#endif
+
 /*============================================================================
  * Global variables
  *============================================================================*/
