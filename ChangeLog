@@ -1,4 +1,9 @@
 * 28/07/2009 - David Monfort <david.monfort@edf.fr>
+  Change CFLAGS to gnu99 standard for compilation on Cygwin.
+  modified script:
+    config/cs_auto_flags.sh
+
+* 28/07/2009 - David Monfort <david.monfort@edf.fr>
   Adapt main script so that it handles non standard directory for
   MEI installation (precisely not the same as the kernel).
   modified scripts:
