@@ -95,12 +95,12 @@ extern "C" {
 
 void
 proc(syrtc1, SYRTC1)(int *ndim_,
-		     int *npoinf,
-		     int *nodebf,
-		     int *nelebf,
-		     double *xyzf,
-		     double *tf,
-		     double *hht);
+                     int *npoinf,
+                     int *nodebf,
+                     int *nelebf,
+                     double *xyzf,
+                     double *tf,
+                     double *hht);
 
 /*----------------------------------------------------------------------------
  * SYRTHES solver for Code_Saturne coupling
@@ -108,10 +108,10 @@ proc(syrtc1, SYRTC1)(int *ndim_,
 
 void
 proc(syrtc2, SYRTC2)(int *fin,
-		     int *npoinf,
-		     double *dtfluid,
-		     double *tf,
-		     double *hht);
+                     int *npoinf,
+                     double *dtfluid,
+                     double *tf,
+                     double *hht);
 
 /*============================================================================
  * Private function definitions

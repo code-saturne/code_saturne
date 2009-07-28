@@ -60,7 +60,7 @@ typedef enum {
 /* Copy of SYRTHES macros for C/Fortran interoperability */
 
 #if    defined(__sgi)     || defined(__uxpv__) || defined(__aix__) \
-    || defined(__linux__) 
+    || defined(__linux__)
 
 #define name2(a,b)  a##b
 #define proc(x,y) name2(x,_)
