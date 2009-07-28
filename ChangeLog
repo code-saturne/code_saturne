@@ -1,4 +1,11 @@
 * 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Replace a goto statement with a do while loop.
+  Add an anisotropy criterion calculation for coarse matrices.
+  modified routines:
+    src/base/autmgr.f90
+    src/base/crstgr.f90
+
+* 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Comments translation and documentation update.
   modifed files:
     doc/user/saturne1.tex

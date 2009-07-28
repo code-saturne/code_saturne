@@ -170,111 +170,105 @@ noaglo = ncelf
 
 ! Passes
 
- 100  continue
+do while (npass .lt. npasmx)
 
-npass = npass+1
-nfacn = nfacnr
-iagmax= iagmax +1
-iagmax= min(iagmax, nagmax)
+  npass = npass+1
+  nfacn = nfacnr
+  iagmax= iagmax +1
+  iagmax= min(iagmax, nagmax)
 
-do ifac=1,nfacn
-  irsfac(ifac) = indicf(ifac)
-  indicf(ifac) = 0
-enddo
-if (nfacn .lt. nfacf) then
-  do ifac = nfacn+1, nfacf
+  do ifac=1,nfacn
+    irsfac(ifac) = indicf(ifac)
     indicf(ifac) = 0
-    irsfac(ifac) = 0
   enddo
-endif
+  if (nfacn .lt. nfacf) then
+    do ifac = nfacn+1, nfacf
+      indicf(ifac) = 0
+      irsfac(ifac) = 0
+    enddo
+  endif
 
-if (iwarnp .gt. 3) then
+  if (iwarnp .gt. 3) then
     write(nfecra,2001) npass, nfacnr, noaglo
-endif
+  endif
 
   ! Increment number of neighbors
 
-do icel = 1, ncelf
-  indic(icel) = indic(icel) + incvoi
-enddo
+  do icel = 1, ncelf
+    indic(icel) = indic(icel) + incvoi
+  enddo
 
   ! Initialize non-eliminated faces
 
-nfacnr = 0
+  nfacnr = 0
 
   ! Loop on non-eliminated faces
 
-do ifac1 = 1, nfacn
+  do ifac1 = 1, nfacn
 
-  ifac = irsfac(ifac1)
-  i = ifacef(1,ifac)
-  j = ifacef(2,ifac)
+    ifac = irsfac(ifac1)
+    i = ifacef(1,ifac)
+    j = ifacef(2,ifac)
 
     ! Exclude faces on parallel or periodic boundary, so as not to
     ! coarsen the grid across those boundaries (which would change
     ! the communication pattern and require a more complex algorithm).
 
-  if (i.le.ncelf .and. j.le.ncelf) then
+    if (i.le.ncelf .and. j.le.ncelf) then
 
-    inditt = 0
-    critr  = (daf(i)/indic(i))*(daf(j)/indic(j))                  &
-             /( xaf(ifac,1)*xaf(ifac,isym))
+      inditt = 0
+      critr  = (daf(i)/indic(i))*(daf(j)/indic(j)) &
+               /( xaf(ifac,1)*xaf(ifac,isym))
 
-    if (       critr.lt.(1.d0-epslon)                             &
-         .and. irscel(i)*irscel(j).le.0) then
+      if (critr.lt.(1.d0-epslon) .and. irscel(i)*irscel(j).le.0) then
 
-      if (irscel(i).gt.0 .and. irscel(j).le.0) then
-        if(inombr(irscel(i)) .le. iagmax) then
-          irscel(j) = irscel(i)
-          inombr(irscel(i)) = inombr(irscel(i)) +1
+        if (irscel(i).gt.0 .and. irscel(j).le.0) then
+          if(inombr(irscel(i)) .le. iagmax) then
+            irscel(j) = irscel(i)
+            inombr(irscel(i)) = inombr(irscel(i)) +1
+            inditt = inditt +1
+          endif
+        else if (irscel(i).le.0 .and. irscel(j).gt.0) then
+          if (inombr(irscel(j)).le.iagmax) then
+            irscel(i) = irscel(j)
+            inombr(irscel(j)) = inombr(irscel(j)) + 1
+            inditt = inditt +1
+          endif
+        else if (irscel(i).le.0 .and. irscel(j).le.0) then
+          ncelg = ncelg+1
+          irscel(i) = ncelg
+          irscel(j) = ncelg
+          inombr(ncelg) = inombr(ncelg) +1
           inditt = inditt +1
         endif
-      else if (irscel(i).le.0 .and. irscel(j).gt.0) then
-        if (inombr(irscel(j)).le.iagmax) then
-          irscel(i) = irscel(j)
-          inombr(irscel(j)) = inombr(irscel(j)) + 1
-          inditt = inditt +1
-        endif
-      else if (irscel(i).le.0 .and. irscel(j).le.0) then
-        ncelg = ncelg+1
-        irscel(i) = ncelg
-        irscel(j) = ncelg
-        inombr(ncelg) = inombr(ncelg) +1
-        inditt = inditt +1
+
+      endif
+
+      if (inditt.eq.0 .and. irscel(i)*irscel(j).le.0) then
+        nfacnr = nfacnr +1
+        indicf(nfacnr) = ifac
       endif
 
     endif
 
-    if (inditt.ne.0 .and.inditt.ne.1) then
-      write(nfecra,*) ' Bug in autmgr, contact support.'
-      call csexit(1)
-    endif
-
-    if (inditt.eq.0 .and. irscel(i)*irscel(j).le.0) then
-      nfacnr = nfacnr +1
-      indicf(nfacnr) = ifac
-    endif
-
-  endif
-
-enddo
+  enddo
 
   ! Check the number of coarse cells created
 
-noaglo = 0
-do icel=1,ncelf
-  if (irscel(icel).le.0) noaglo = noaglo+1
-enddo
+  noaglo = 0
+  do icel=1,ncelf
+    if (irscel(icel).le.0) noaglo = noaglo+1
+  enddo
 
-! Loop on passes
+  ! Additional passes if agglomeration is insufficient
 
-if (noaglo.gt.0) then
-  if ((ncelg+noaglo)*ngros .ge. ncelf) then
-    if (npass.lt.npasmx .and. nfacnr.gt.0) then
-      goto 100
-    endif
+  if (     (noaglo.eq.0) &
+      .or. ((ncelg+noaglo)*ngros .lt. ncelf) &
+      .or. (nfacnr.eq.0)) then
+    npasmx = npass
   endif
-endif
+
+enddo ! Loop on passes
 
 ! Finish assembly
 

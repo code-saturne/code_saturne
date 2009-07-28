@@ -443,29 +443,89 @@ if (iwarnp .gt. 3) then
     call parrmx(ii, anmax)
   endif
 
-  if (iwarnp .gt. 3) then
+  write (nfecra, 2002) anmin(1), anmax(1), anmin(2), anmax(2)
 
-    write (nfecra, 2002) anmin(1), anmax(1), anmin(2), anmax(2)
+  if (interp .eq. 1) then
 
-    if (interp .eq. 1) then
+    rmin = +1.d10
+    rmax = -1.d10
+    do ifacg=1,nfacg
+      rmin = min(rmin, xag(ifacg,1)/xag0(ifacg))
+      rmax = max(rmax, xag(ifacg,1)/xag0(ifacg))
+    enddo
 
-      rmin = +1.d10
-      rmax = -1.d10
-      do ifacg=1,nfacg
-        rmin = min(rmin, xag(ifacg,1)/xag0(ifacg))
-        rmax = max(rmax, xag(ifacg,1)/xag0(ifacg))
-      enddo
-
-      if (irangp .ge. 0) then
-        call parmin(rmin)
-        call parmax(rmax)
-      endif
+    if (irangp .ge. 0) then
+      call parmin(rmin)
+      call parmax(rmax)
+    endif
 
     write(nfecra, 2003) rmin, rmax
 
-    endif
-
   endif
+
+  ! Evaluate fine and coarse matrixes diagonal dominance
+
+  do ii = 1, ncelf
+    w1(ii) = abs(daf(ii))
+  enddo
+  do ii = ncelf+1, ncelfe
+    w1(ii) = 0.d0
+  enddo
+  do ig = 1, ncelg
+    w3(ig) = abs(dag(ig))
+  enddo
+  do ig = ncelg+1, ncelge
+    w3(ig) = 0.d0
+  enddo
+
+  do ifac = 1, nfacf
+    ii = ifaclf(1, ifac)
+    jj = ifaclf(2, ifac)
+    w1(ii) = w1(ii) - abs(xaf(ifac, 1))
+    w1(jj) = w1(jj) - abs(xaf(ifac, isym))
+  enddo
+
+  do ifacg = 1, nfacg
+    ig = ifaclg(1, ifacg)
+    jg = ifaclg(2, ifacg)
+    w3(ig) = w3(ig) - abs(xag(ifacg, 1))
+    w3(jg) = w3(jg) - abs(xag(ifacg, isym))
+  enddo
+
+  do ii = 1, ncelf
+    w1(ii) = w1(ii) / abs(daf(ii))
+  enddo
+  do ig = 1, ncelg
+    w3(ig) = w3(ig) / abs(dag(ig))
+  enddo
+
+  anmin(1) = w1(1)
+  anmax(1) = w1(1)
+  do ii = 2, ncelf
+    if (w1(ii) .lt. anmin(1)) then
+      anmin(1) = w1(ii)
+    else if (w1(ii) .gt. anmax(1)) then
+      anmax(1) = w1(ii)
+    endif
+  enddo
+
+  anmin(2) = w3(1)
+  anmax(2) = w3(1)
+  do ig = 2, ncelg
+    if (w3(ig) .lt. anmin(2)) then
+      anmin(2) = w3(ig)
+    else if (w3(ig) .gt. anmax(2)) then
+      anmax(2) = w3(ig)
+    endif
+  enddo
+
+  if (irangp .ge. 0) then
+    ii = 2
+    call parrmn(ii, anmin)
+    call parrmx(ii, anmax)
+  endif
+
+  write (nfecra, 2004) anmin(1), anmax(1), anmin(2), anmax(2)
 
 endif
 
@@ -485,9 +545,14 @@ endif
   '       minimum xag_p1/xag_p0 = ', e12.5, /, &
   '       maximum xag_p1/xag_p0 = ', e12.5, /)
 
+ 2004 format(&
+  '       fine mesh diag dominance:   min = ', e12.5, /, &
+  '                                   max = ', e12.5, /, &
+  '       coarse mesh diag dominance: min = ', e12.5, /, &
+  '                                   max = ', e12.5, /)
 !----
 ! End
 !----
 
 return
-end
+end subroutine
