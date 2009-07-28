@@ -1983,7 +1983,7 @@ msgstr ""
 "\n"
 
 #: src/base/cs_join_intersect.c:1348
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "    depth:                        %10d\n"
 "    number of leaves:             %10lu\n"
