@@ -73,6 +73,7 @@
 
 #include "cs_base.h"
 #include "cs_ctwr.h"
+#include "cs_ctwr_air_props.h"
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
 #include "cs_mesh_connect.h"
@@ -139,22 +140,17 @@ MPI_Status status;
  * INTEGER          n_ct     : <-- : number of exchange area
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(geoct, GEOCT)
-(
-  const cs_real_t  *const gx,           /* composante x de la gravite */
-  const cs_real_t  *const gy,           /* composante y de la gravite */
-  const cs_real_t  *const gz            /* composante z de la gravite */
-)
+void CS_PROCF(geoct, GEOCT) (void)
 {
   /* construction du maillage eau*/
-  cs_ctwr_maille(*gx, *gy, *gz, cs_glob_mesh, cs_glob_mesh_quantities );
+  cs_ctwr_maille(cs_glob_mesh, cs_glob_mesh_quantities );
 
   /* chainage des ct*/
-  cs_ctwr_stacking(*gx, *gy, *gz);
+  cs_ctwr_stacking();
   /* construction de l'interpolation  AIR -> EAU    */
   cs_ctwr_adeau(cs_glob_mesh, cs_glob_mesh_quantities);
   /* construction de l'interpolation  EAU -> AIR   */
-  cs_ctwr_adair(*gx, *gy, *gz);
+  cs_ctwr_adair();
 
 }
 
@@ -702,9 +698,6 @@ _search_height(cs_ctwr_zone_t   *ct,
 
 void cs_ctwr_maille
 (
-  const cs_real_t          gx,             /* composante x de la gravite      */
-  const cs_real_t          gy,             /* composante y de la gravite      */
-  const cs_real_t          gz,             /* composante z de la gravite      */
   const cs_mesh_t       *mesh,             /* <-- structure maillage associée */
   const cs_mesh_quantities_t *mesh_quantities   /* <-- grandeurs du maillage  */
 )
@@ -756,15 +749,15 @@ void cs_ctwr_maille
 
   fvm_interface_set_t  *interface_set = NULL;
   cs_ctwr_zone_t  *ct;
-
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
   iaux = 0;
   alpha = 0.875;
 
   /* Vecteur gravite */
-  gravite[0] = gx;
-  gravite[1] = gy;
-  gravite[2] = gz;
+  gravite[0] = ct_prop->gravx;
+  gravite[1] = ct_prop->gravy;
+  gravite[2] = ct_prop->gravz;
 
   /*--------------------------------------------*/
   /* Numbers of air noode in the EA: nbevct     */
@@ -1754,12 +1747,7 @@ void cs_ctwr_adeau
  * Function cs_ctwr_adair                                                        *
  * Interpolation EAU -> AIR                                                    *
  *-----------------------------------------------------------------------------*/
-void cs_ctwr_adair
-(
-  const cs_real_t          gx,            /* composante x de la gravite */
-  const cs_real_t          gy,            /* composante y de la gravite */
-  const cs_real_t          gz             /* composante z de la gravite */
-)
+void cs_ctwr_adair (void)
 {
   /* Coordonnées des centres des cellules  */
 
@@ -1776,13 +1764,14 @@ void cs_ctwr_adair
   cs_real_t  vectBase[3][3];
   fvm_lnum_t loca_cel;
   cs_ctwr_zone_t  *ct;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
   /*--------------------------------------------*
    * parametres et initialisation               *
    *--------------------------------------------*/
   /* Vecteur gravite */
-  gravite[0] = gx;
-  gravite[1] = gy;
-  gravite[2] = gz;
+  gravite[0] = ct_prop->gravx;
+  gravite[1] = ct_prop->gravy;
+  gravite[2] = ct_prop->gravz;
 
   norme_g = sqrt( pow(gravite[0],2.)
                   +pow(gravite[1],2.)
@@ -2130,9 +2119,7 @@ void cs_ctwr_adair
  *----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_stacking(const cs_real_t  gx,
-                 const cs_real_t  gy,
-                 const cs_real_t  gz)
+cs_ctwr_stacking(void)
 {
   cs_int_t i, j, rank, dist_rank, nb, nb_ct, itmp, ict, ict_uw;
   cs_int_t * aux;
@@ -2143,13 +2130,14 @@ cs_ctwr_stacking(const cs_real_t  gx,
   const double tolerance = 0.1;
 
   nb = cs_glob_ct_nbr  * cs_glob_ct_nbr;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
   BFT_MALLOC(cs_stack_ct, nb, cs_int_t);
   BFT_MALLOC(cs_chain_ct, cs_glob_ct_nbr, cs_int_t);
 
-  gravite[0]= gx;
-  gravite[1]= gy;
-  gravite[2]= gz;
+  gravite[0]= ct_prop->gravx;
+  gravite[1]= ct_prop->gravy;
+  gravite[2]= ct_prop->gravz;
 
   for (i=0 ; i < cs_glob_ct_nbr ; i++)
     for (j=0 ; j < cs_glob_ct_nbr ; j++)

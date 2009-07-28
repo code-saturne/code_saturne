@@ -58,6 +58,25 @@ BEGIN_C_DECLS
  * Structure definition
  *============================================================================*/
 
+/* Structure associated to general properties */
+
+typedef struct {
+
+  cs_real_t  cpa;             /* Capacite calorifique de l air */
+  cs_real_t  cpv;             /* Capacite calorifique de la vapeur */
+  cs_real_t  cpe;             /* Capacite calorifique de l eau */
+  cs_real_t  hv0;             /* Chaleur latente */
+  cs_real_t  rhoe;            /* Masse volumique de l eau*/
+  cs_real_t  visc;            /* Viscosite Dynamique */
+  cs_real_t  cond;            /* Conductivite */
+  cs_real_t  gravx;           /* Gravite x */
+  cs_real_t  gravy;           /* Gravite y */
+  cs_real_t  gravz;           /* Gravite z */
+
+} cs_ctwr_fluid_props_t;
+
+extern  cs_ctwr_fluid_props_t  *cs_glob_ctwr_props;
+
 /* Structure associated to air properties */
 
 typedef struct {
@@ -111,6 +130,28 @@ void CS_PROCF (dxsath, DXSATH)
        cs_real_t  *dxsat
 );
 
+/*----------------------------------------------------------------------------
+ * Communication des proprietes physiques
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE COMPPF
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ctprof, CTPROF)
+(
+ const cs_real_t  *cpa,             /* Capacite calorifique de l air */
+ const cs_real_t  *cpv,            /* Capacite calorifique de la vapeur */
+ const cs_real_t  *cpe,            /* Capacite calorifique de l eau */
+ const cs_real_t  *hv0,            /* Chaleur latente */
+ const cs_real_t  *rhoe,           /* Masse volumique de l eau*/
+ const cs_real_t  *visc,           /* Viscosite Dynamique */
+ const cs_real_t  *cond,           /* Conductivite */
+ const cs_real_t  *gravx,          /* Gravite x */
+ const cs_real_t  *gravy,          /* Gravite y */
+ const cs_real_t  *gravz           /* Gravite z */
+);
 
 /*============================================================================
  *  Prototypes of public function

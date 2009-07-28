@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine uscti1
+subroutine uscti1
 !================
 
 
@@ -73,6 +73,8 @@ include "ctincl.h"
 !===============================================================================
 
 integer          iphas
+
+double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 
 !===============================================================================
 
@@ -145,9 +147,27 @@ ichrze = 1
 
 isuict = isuite
 
+!===============================================================================
+! 4.  PROPRIETES DE L'AIR
+!===============================================================================
+
+! Il est deconseille de modifier ici ces proprietes
+
+cpa    = 1006.0d0
+cpv    = 1831.0d0
+cpe    = 4179.0d0
+hv0    = 2501600.0d0
+rhoe   = 997.85615d0
+visc   = 1.765d-5
+conduc = 0.02493d0
+
+call ctprof &
+!==========
+( cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz )
+
 !----
 ! FIN
 !----
 
 return
-end
+end subroutine

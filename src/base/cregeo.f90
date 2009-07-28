@@ -241,8 +241,8 @@ if (ippmod(iaeros).ge.0) then
   !==========
 
   if (nbzech .gt. 0) then
-    call geoct(gx,gy,gz)
-!         ==========
+    call geoct
+    !=========
     if (ichrze.gt.0) then
       call pstict
       !==========

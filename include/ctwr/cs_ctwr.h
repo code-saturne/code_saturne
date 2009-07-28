@@ -145,14 +145,7 @@ struct _cs_ctwr_zone_t {
   cs_real_t  debit_e;         /* Air entry flow */
   cs_real_t  debit_s;         /* Air exit flow */
 
-  cs_real_t  cpa;             /* Specific heat of air */
-  cs_real_t  cpv;             /* Specific heat of vapor */
-  cs_real_t  cpe;             /* Specific heat of water */
-  cs_real_t  hv0;             /* Latent heat */
-  cs_real_t  rhoe;            /* Water density */
   cs_real_t  dgout;           /* Drop diameter for rain zones */
-  cs_real_t  visc;            /* Dynamic viscosity */
-  cs_real_t  conduc;          /* Conductivity */
 
   fvm_locator_t   *locat_air_water; /* Locator water -> air interpolation */
   fvm_locator_t   *locat_water_air; /* Locator for air -> water interpolation */
@@ -217,13 +210,7 @@ extern cs_int_t  *  cs_chain_ct;
  * DOUBLE PRECISION FEM           : --> : water inlet flow
  * DOUBLE PRECISION XAP           : --> : exchange law lambda coeffcient
  * DOUBLE PRECISION XNP           : --> : exchange law n exponent
- * DOUBLE PRECISION CPA           : --> : specific heat of air
- * DOUBLE PRECISION CPV           : --> : specific heat of vapor
- * DOUBLE PRECISION CPE           : --> : specific heat of water
- * DOUBLE PRECISION HV0           : --> : latent heat
  * DOUBLE PRECISION DGOUT         : --> : drop diameter for rain zones
- * DOUBLE PRECISION VISC          : --> : dynamic viscosity
- * DOUBLE PRECISION CONDUC        : --> : conductivity
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (defct, DEFCT)
@@ -239,14 +226,7 @@ void CS_PROCF (defct, DEFCT)
   const cs_real_t  *xap,
   const cs_real_t  *xnp,
   const cs_real_t  *surface,
-  const cs_real_t  *cpa,
-  const cs_real_t  *cpv,
-  const cs_real_t  *cpe,
-  const cs_real_t  *hv0,
-  const cs_real_t  *rhoe,
-  const cs_real_t  *dgout,
-  const cs_real_t  *visc,
-  const cs_real_t  *conduc
+  const cs_real_t  *dgout
 );
 
 /*----------------------------------------------------------------------------
@@ -322,10 +302,7 @@ void CS_PROCF (aeteau, AETEAU)
   cs_real_t   rho[],
   cs_real_t   vitx[],
   cs_real_t   vity[],
-  cs_real_t   vitz[],
-  const cs_real_t  *gx,
-  const cs_real_t  *gy,
-  const cs_real_t  *gz
+  cs_real_t   vitz[]
 );
 
 /*----------------------------------------------------------------------------
@@ -360,10 +337,7 @@ void CS_PROCF (aetssc, AETSSC)
   cs_real_t         utsex[],
   cs_real_t         vitx[],
   cs_real_t         vity[],
-  cs_real_t         vitz[],
-  const cs_real_t  *gx,
-  const cs_real_t  *gy,
-  const cs_real_t  *gz
+  cs_real_t         vitz[]
 );
 
 /*----------------------------------------------------------------------------
@@ -383,9 +357,6 @@ void CS_PROCF (aetsvi, AETSVI)
   const cs_real_t   vity[],             /* vitesse air suivant y */
   const cs_real_t   vitz[],             /* vitesse air suivant z */
   const cs_real_t   xair[],             /* humidite de l'air */
-  const cs_real_t   *const gx,          /*   */
-  const cs_real_t   *const gy,          /*   */
-  const cs_real_t   *const gz,          /*   */
   cs_real_t   utsex[]                   /* terme source explicite */
 );
 
@@ -508,15 +479,8 @@ void cs_ctwr_definit
 
   const cs_real_t  surface,           /* Surface arrivee d eau de la ct */
 
-  const cs_real_t   cpa,              /* Capacite calorifique de l air */
-  const cs_real_t   cpv,              /* Capacite calorifique de la vapeur */
-  const cs_real_t   cpe,              /* Capacite calorifique de l eau */
-  const cs_real_t   hv0,              /* Chaleur latente */
-  const cs_real_t   rhoe,             /* Masse volumique de l eau*/
-  const cs_real_t   dgout,            /* Diametre de goutte pour les zones
+  const cs_real_t   dgout             /* Diametre de goutte pour les zones
                                          de pluie */
-  const cs_real_t   visc,             /* Viscosite Dynamique */
-  const cs_real_t   conduc            /* Conductivite */
 );
 
 /*----------------------------------------------------------------------------
@@ -537,10 +501,7 @@ void cs_ctwr_aeteau
   cs_real_t   rho[],              /* masse volumique air */
   cs_real_t   vitx[],             /* vitesse air suivant x */
   cs_real_t   vity[],             /* vitesse air suivant y */
-  cs_real_t   vitz[],             /* vitesse air suivant z */
-  const cs_real_t   gx,                 /* composante x de la gravite */
-  const cs_real_t   gy,                 /* composante y de la gravite */
-  const cs_real_t   gz                  /* composante z de la gravite */
+  cs_real_t   vitz[]              /* vitesse air suivant z */
 );
 
 /*----------------------------------------------------------------------------
@@ -558,10 +519,7 @@ void cs_ctwr_aetssc
   cs_real_t   utsex[],                  /* vitesse horizontale air */
   cs_real_t   vitx[],             /* vitesse air suivant x */
   cs_real_t   vity[],             /* vitesse air suivant y */
-  cs_real_t   vitz[],             /* vitesse air suivant z */
-  const cs_real_t   gx,                 /* composante x de la gravite */
-  const cs_real_t   gy,                 /* composante y de la gravite */
-  const cs_real_t   gz                  /* composante z de la gravite */
+  cs_real_t   vitz[]              /* vitesse air suivant z */
 );
 
 /*----------------------------------------------------------------------------
@@ -576,9 +534,6 @@ void cs_ctwr_aetsvi
   const cs_real_t   vity[],      /* vitesse air suivant y */
   const cs_real_t   vitz[],      /* vitesse air suivant z */
   const cs_real_t   xair[],             /* humidite de l'air */
-  const cs_real_t   gx,          /*   */
-  const cs_real_t   gy,          /*   */
-  const cs_real_t   gz,          /*   */
   cs_real_t   utsex[]            /* terme source explicite */
 );
 

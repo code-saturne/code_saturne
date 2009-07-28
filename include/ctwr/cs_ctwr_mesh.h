@@ -60,12 +60,7 @@ BEGIN_C_DECLS
  * INTEGER          n_ct     : <-- : number of exchange area
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(geoct, GEOCT)
-(
-  const cs_real_t  *const gx,           /* composante x de la gravite */
-  const cs_real_t  *const gy,           /* composante y de la gravite */
-  const cs_real_t  *const gz            /* composante z de la gravite */
-);
+void CS_PROCF(geoct, GEOCT) (void);
 
 /*============================================================================
  * Public function definitions
@@ -77,9 +72,6 @@ void CS_PROCF(geoct, GEOCT)
 
 void cs_ctwr_maille
 (
-  const cs_real_t               gx,             /* composante x de la gravite */
-  const cs_real_t               gy,             /* composante y de la gravite */
-  const cs_real_t               gz,             /* composante z de la gravite */
   const cs_mesh_t             *mesh,      /* <-- structure maillage associee  */
   const cs_mesh_quantities_t  *mesh_quantities   /* <-- grandeurs du maillage */
 );
@@ -96,24 +88,14 @@ cs_ctwr_adeau(const cs_mesh_t             *mesh,
  * Interpolation EAU -> AIR
  *----------------------------------------------------------------------------*/
 
-void cs_ctwr_adair
-(
-  const cs_real_t          gx,             /* composante x de la gravite */
-  const cs_real_t          gy,             /* composante y de la gravite */
-  const cs_real_t          gz             /* composante z de la gravite */
-);
+void cs_ctwr_adair (void);
 
 /*----------------------------------------------------------------------------*
  * Chaining of the exchange area                                              *
  *----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_stacking
-(
-  const cs_real_t          gx,            /* composante x de la gravite */
-  const cs_real_t          gy,            /* composante y de la gravite */
-  const cs_real_t          gz             /* composante z de la gravite */
-);
+cs_ctwr_stacking (void);
 
 /*----------------------------------------------------------------------------*/
 

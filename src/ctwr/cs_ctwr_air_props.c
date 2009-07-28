@@ -70,8 +70,51 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+cs_ctwr_fluid_props_t  *cs_glob_ctwr_props = NULL;
+
+/*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Definition des proprietes physiques
+ *
+ * Interface Fortran :
+ *
+ * SUBROUTINE CTPROF
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ctprof, CTPROF)
+(
+  const cs_real_t   *cpa,   /* Capacite calorifique de l air          */
+  const cs_real_t   *cpv,   /* Capacite calorifique de la vapeur      */
+  const cs_real_t   *cpe,   /* Capacite calorifique de l eau          */
+  const cs_real_t   *hv0,   /* Chaleur latente                        */
+  const cs_real_t   *rhoe,  /* Masse volumique de l eau               */
+  const cs_real_t   *visc,  /* Viscosite Dynamique                    */
+  const cs_real_t   *cond,  /* Conductivite                           */
+  const cs_real_t   *gravx, /* gravite selon x                        */
+  const cs_real_t   *gravy, /* gravite selon y                        */
+  const cs_real_t   *gravz  /* gravite selon z                        */
+)
+{
+  if (cs_glob_ctwr_props == NULL)
+    BFT_MALLOC(cs_glob_ctwr_props, 1, cs_ctwr_fluid_props_t);
+
+  cs_glob_ctwr_props->cpa   = *cpa;
+  cs_glob_ctwr_props->cpv   = *cpv;
+  cs_glob_ctwr_props->cpe   = *cpe;
+  cs_glob_ctwr_props->hv0   = *hv0;
+  cs_glob_ctwr_props->rhoe  = *rhoe;
+  cs_glob_ctwr_props->visc  = *visc;
+  cs_glob_ctwr_props->cond  = *cond;
+  cs_glob_ctwr_props->gravx = *gravx;
+  cs_glob_ctwr_props->gravy = *gravy;
+  cs_glob_ctwr_props->gravz = *gravz;
+}
 
 /*----------------------------------------------------------------------------
  * Calculation of the air humidity at saturation for a given temperature

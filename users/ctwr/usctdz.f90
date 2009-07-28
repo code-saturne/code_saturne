@@ -160,8 +160,7 @@ double precision ra(*)
 integer          imzech,ntypze,idimze,neleze,icoul
 
 double precision teaueze,qeaueze,deltat
-double precision cpa,cpe,cpv,hv0,rhoe,xap,xnp,surface
-double precision dgout,visc,conduc
+double precision xap,xnp,surface,dgout
 
 
 !===============================================================================
@@ -175,17 +174,6 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
-! Proprietes de l'air. Ne pas modifier           !
-
-cpa    = 1006.0d0
-cpv    = 1831.0d0
-cpe    = 4179.0d0
-hv0    = 2501600.0d0
-rhoe   = 997.85615d0
-dgout  = 0.005d0
-visc   = 1.765d-5
-conduc = 0.02493d0
 
 ! La modelisation choisie doit etre coherente avec IPPMOD
 
@@ -207,12 +195,12 @@ qeaueze = 33737.d0
 xap     = 0.2d0
 xnp     = 0.5d0
 surface = 5183.6d0
+dgout   = 0.005d0
 
 call defct                                                        &
-!     ==========
+!=========
  ( idimze, icoul, imzech, ntypze, neleze,                         &
-   deltat, teaueze, qeaueze, xap, xnp, surface,                   &
-   cpa, cpv, cpe, hv0, rhoe, dgout, visc, conduc)
+   deltat, teaueze, qeaueze, xap, xnp, surface, dgout )
 
 
 !===============================================================================
@@ -220,5 +208,5 @@ call defct                                                        &
 !===============================================================================
 
 return
-end
+end subroutine
 

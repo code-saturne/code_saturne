@@ -1,3 +1,18 @@
+* 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add a global structure in cooling tower module to store common
+  fluid properties and gravity vector.
+  modified routines:
+    include/ctwr/cs_ctwr_air_props.h
+    include/ctwr/cs_ctwr.h
+    include/ctwr/cs_ctwr_mesh.h
+    src/base/cregeo.f90
+    src/ctwr/cs_ctwr_air_props.c
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_mesh.c
+    users/ctwr/usctdz.f90
+    users/ctwr/uscti1.f90
+
 * 28/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Replace a goto statement with a do while loop.
   Add an anisotropy criterion calculation for coarse matrices.

@@ -193,22 +193,13 @@ void CS_PROCF (defct, DEFCT)
   const cs_real_t  *const fem,      /* fem en entree de la zone d'echange     */
   const cs_real_t  *const xap,      /* coefficient lambda de la loi d'echange */
   const cs_real_t  *const xnp,      /* exposant n de la loi d'echange         */
-
   const cs_real_t  *const surface,  /* Surface totale arrivee d eau de la ct  */
-
-  const cs_real_t   *const   cpa,   /* Capacite calorifique de l air          */
-  const cs_real_t   *const   cpv,   /* Capacite calorifique de la vapeur      */
-  const cs_real_t   *const   cpe,   /* Capacite calorifique de l eau          */
-  const cs_real_t   *const   hv0,   /* Chaleur latente                        */
-  const cs_real_t   *const   rhoe,  /* Masse volumique de l eau               */
-  const cs_real_t   *const   dgout, /* Diametre de goutte pour
+  const cs_real_t   *const   dgout  /* Diametre de goutte pour
                                        les zones de pluie                     */
-  const cs_real_t   *const   visc,  /* Viscosite Dynamique                    */
-  const cs_real_t   *const   conduc /* Conductivite                           */
 )
 {
-  cs_ctwr_definit(*idimct,*icoul,*imctch,*ntypct,*nelect,*deltat,*teau,*fem,*xap,*xnp,*surface,
-                *cpa,*cpv,*cpe,*hv0,*rhoe,*dgout,*visc,*conduc);
+  cs_ctwr_definit(*idimct,*icoul,*imctch,*ntypct,*nelect,
+                  *deltat,*teau,*fem,*xap,*xnp,*surface,*dgout);
 }
 
 /*----------------------------------------------------------------------------
@@ -300,14 +291,11 @@ void CS_PROCF (aeteau, AETEAU)
   cs_real_t          rho[] ,               /* masse volumique air */
   cs_real_t          vitx[],              /* vitesse air suivant x */
   cs_real_t          vity[],              /* vitesse air suivant y */
-  cs_real_t          vitz[],              /* vitesse air suivant z */
-  const cs_real_t   *const gx,      /* composante x de la gravite */
-  const cs_real_t   *const gy,      /* composante y de la gravite */
-  const cs_real_t   *const gz       /* composante z de la gravite */
+  cs_real_t          vitz[]               /* vitesse air suivant z */
 
 )
 {
-   cs_ctwr_aeteau(temp,xa,rho,vitx,vity,vitz,*gx,*gy,*gz);
+   cs_ctwr_aeteau(temp,xa,rho,vitx,vity,vitz);
 }
 
 
@@ -330,13 +318,10 @@ void CS_PROCF (aetssc, AETSSC)
   cs_real_t             utsex[],   /* vitesse horizontale air    */
   cs_real_t             vitx[] ,   /* vitesse air suivant x      */
   cs_real_t             vity[] ,   /* vitesse air suivant y      */
-  cs_real_t             vitz[] ,   /* vitesse air suivant z      */
-  const cs_real_t   *const gx,     /* composante x de la gravite */
-  const cs_real_t   *const gy,     /* composante y de la gravite */
-  const cs_real_t   *const gz      /* composante z de la gravite */
+  cs_real_t             vitz[]     /* vitesse air suivant z      */
 )
 {
-  cs_ctwr_aetssc(*iscal, temp,xa,rho,utsim,utsex,vitx,vity,vitz,*gx,*gy,*gz);
+  cs_ctwr_aetssc(*iscal, temp,xa,rho,utsim,utsex,vitx,vity,vitz);
 }
 
 
@@ -358,14 +343,11 @@ void CS_PROCF (aetsvi, AETSVI)
   const cs_real_t   vity[],             /* vitesse air suivant y  */
   const cs_real_t   vitz[],             /* vitesse air suivant z  */
   const cs_real_t   xair[],             /* humidite de l'air      */
-  const cs_real_t   *const gx,          /*                        */
-  const cs_real_t   *const gy,          /*                        */
-  const cs_real_t   *const gz,          /*                        */
   cs_real_t   utsex[]                   /* terme source explicite */
 
 )
 {
-  cs_ctwr_aetsvi(*idim,rho,vitx,vity,vitz,xair,*gx,*gy,*gz,utsex);
+  cs_ctwr_aetsvi(*idim,rho,vitx,vity,vitz,xair,utsex);
 
 }
 
@@ -968,14 +950,7 @@ void cs_ctwr_definit
   const cs_real_t  xap,       /* coefficient lambda de la loi d'echange */
   const cs_real_t  xnp,       /* exposant n de la loi d'echange */
   const cs_real_t  surface,   /* Surface totale arrive d eau de la ct */
-  const cs_real_t   cpa,      /* Capacite calorifique de l air */
-  const cs_real_t   cpv,      /* Capacite calorifique de la vapeur */
-  const cs_real_t   cpe,      /* Capacite calorifique de l eau */
-  const cs_real_t   hv0,      /* Chaleur latente */
-  const cs_real_t   rhoe,     /* Masse volumique de l eau*/
-  const cs_real_t   dgout,    /* Diametre de goutte pour les zones de pluie */
-  const cs_real_t   visc,     /* Viscosite Dynamique */
-  const cs_real_t   conduc    /* Conductivite */
+  const cs_real_t   dgout     /* Diametre de goutte pour les zones de pluie */
 )
 {
   cs_ctwr_zone_t  *ct;
@@ -1061,14 +1036,8 @@ void cs_ctwr_definit
   ct->debit_e = 0.0 ;
   ct->debit_s = 0.0 ;
 
-  ct->cpa   = cpa ;
-  ct->cpv   = cpv ;
-  ct->cpe   = cpe ;
-  ct->hv0   = hv0 ;
-  ct->rhoe  = rhoe ;
   ct->dgout = dgout ;
-  ct->visc  = visc ;
-  ct->conduc  = conduc ;
+
   /* Redimensionnement du tableau des zones d'echange si necessaire */
 
   if (cs_glob_ct_nbr == cs_glob_ct_nbr_max) {
@@ -1138,7 +1107,7 @@ cs_ctwr_all_destroy(void)
 
   BFT_FREE(cs_stack_ct);
   BFT_FREE(cs_chain_ct);
-
+  BFT_FREE(cs_glob_ctwr_props);
 
   BFT_FREE(cs_glob_ct_tab);
 }
@@ -1153,10 +1122,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
                cs_real_t   rho[],       /* masse volumique air */
                  cs_real_t   vitx[],      /* vitesse air suivant x */
                cs_real_t   vity[],      /* vitesse air suivant y */
-               cs_real_t   vitz[],      /* vitesse air suivant z */
-               const cs_real_t   gx,          /* composante x de la gravite */
-               const cs_real_t   gy,          /* composante y de la gravite */
-               const cs_real_t   gz           /* composante z de la gravite */
+               cs_real_t   vitz[]       /* vitesse air suivant z */
 
 )
 {
@@ -1176,10 +1142,11 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
   cs_real_t *tai_inter, *xai_inter, *rhoai_inter,*vx_inter, *vy_inter,*vz_inter;
   cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *teau_upw_rec, *teau_upw_send ;
   cs_real_t *fem_upw_rec, *fem_upw_send;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
-  gravite[0] = -gx;
-  gravite[1] = -gy;
-  gravite[2] = -gz;
+  gravite[0] = -ct_prop->gravx;
+  gravite[1] = -ct_prop->gravy;
+  gravite[2] = -ct_prop->gravz;
 
   norme_g = sqrt( pow(gravite[0],2.)
                   +pow(gravite[1],2.)
@@ -1201,14 +1168,15 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     if ((ct->ntypct>=2) && ( ct->idimct==2) )
      gravite[2] = 1.0;
 
-    cpa    = ct->cpa ;
-    cpv    = ct->cpv ;
-    cpe    = ct->cpe ;
-    hv0    = ct->hv0 ;
-    rhoe   = ct->rhoe ;
+    cpa    = ct_prop->cpa ;
+    cpv    = ct_prop->cpv ;
+    cpe    = ct_prop->cpe ;
+    hv0    = ct_prop->hv0 ;
+    rhoe   = ct_prop->rhoe ;
+    visc   = ct_prop->visc ;
+    conduc = ct_prop->cond  ;
+
     dgout  = ct->dgout ;
-    visc   = ct->visc ;
-    conduc = ct->conduc  ;
 
     /*--------------------------------------------*
      * synchronisation   Halo                             *
@@ -1684,10 +1652,7 @@ void cs_ctwr_aetssc
   cs_real_t   utsex[],     /* vitesse horizontale air */
   cs_real_t   vitx[],      /* vitesse air suivant x */
   cs_real_t   vity[],      /* vitesse air suivant y */
-  cs_real_t   vitz[],      /* vitesse air suivant z */
-  const cs_real_t   gx,    /* composante x de la gravite */
-  const cs_real_t   gy,    /* composante y de la gravite */
-  const cs_real_t   gz     /* composante z de la gravite */
+  cs_real_t   vitz[]       /* vitesse air suivant z */
 )
 {
   cs_int_t  ict,iseg,iloc,ieau,iair,i,nb,nb_dist_water,nb_dist_air;
@@ -1701,10 +1666,11 @@ void cs_ctwr_aetssc
             *tei_inter, *femei_inter, *vgin_inter;
   cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *tei, *femei, *vgin;
   fvm_lnum_t  *lst_par_cel;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
-  gravite[0] = -gx;
-  gravite[1] = -gy;
-  gravite[2] = -gz;
+  gravite[0] = -ct_prop->gravx;
+  gravite[1] = -ct_prop->gravy;
+  gravite[2] = -ct_prop->gravz;
 
   norme_g = sqrt( pow(gravite[0],2.)
                   +pow(gravite[1],2.)
@@ -1722,14 +1688,16 @@ void cs_ctwr_aetssc
   for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
 
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    cpa    = ct->cpa ;
-    cpv    = ct->cpv ;
-    cpe    = ct->cpe ;
-    hv0    = ct->hv0 ;
-    rhoe   = ct->rhoe ;
+    cpa    = ct_prop->cpa ;
+    cpv    = ct_prop->cpv ;
+    cpe    = ct_prop->cpe ;
+    hv0    = ct_prop->hv0 ;
+    rhoe   = ct_prop->rhoe ;
+    visc   = ct_prop->visc ;
+    conduc = ct_prop->cond  ;
+
     dgout  = ct->dgout ;
-    visc   = ct->visc ;
-    conduc = ct->conduc  ;
+
     if (ct->ntypct==3){
       /*--------------------------------------------*
       * synchronisation   Halo                            *
@@ -1861,14 +1829,15 @@ void cs_ctwr_aetssc
     if ((ct->ntypct >= 2) && ( ct->idimct==2) )
      gravite[2] = 1.0;
 
-    cpa    = ct->cpa ;
-    cpv    = ct->cpv ;
-    cpe    = ct->cpe ;
-    hv0    = ct->hv0 ;
-    rhoe   = ct->rhoe ;
+    cpa    = ct_prop->cpa ;
+    cpv    = ct_prop->cpv ;
+    cpe    = ct_prop->cpe ;
+    hv0    = ct_prop->hv0 ;
+    rhoe   = ct_prop->rhoe ;
+    visc   = ct_prop->visc ;
+    conduc = ct_prop->cond  ;
+
     dgout  = ct->dgout ;
-    visc   = ct->visc ;
-    conduc = ct->conduc  ;
 
     nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
 
@@ -2149,9 +2118,6 @@ void cs_ctwr_aetsvi
   const cs_real_t   vity[],      /* vitesse air suivant y */
   const cs_real_t   vitz[],      /* vitesse air suivant z */
   const cs_real_t   xair[],      /* humidite de l'air */
-  const cs_real_t   gx,          /*   */
-  const cs_real_t   gy,          /*   */
-  const cs_real_t   gz,          /*   */
   cs_real_t   utsex[]            /* terme source explicite */
 )
 {
@@ -2162,17 +2128,18 @@ void cs_ctwr_aetsvi
   cs_real_t  *femei_inter, *vgin_inter;
   cs_real_t  *femei, *vgin;
   cs_ctwr_zone_t  *ct;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
-  absgrv = sqrt(pow(gx,2.)+pow(gy,2.)+pow(gz,2.));
+  absgrv = sqrt(pow(ct_prop->gravx,2.)+pow(ct_prop->gravy,2.)+pow(ct_prop->gravz,2.));
 
   /*--------------------------------------------*/
   /* Calcul de Kg pour chaque ct                */
   /*--------------------------------------------*/
   for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    rhoe   = ct->rhoe ;
+    rhoe   = ct_prop->rhoe ;
     dgout  = ct->dgout ;
-    visc   = ct->visc ;
+    visc   = ct_prop->visc ;
 
      /*--------------------------------------------*
     * synchronisation Halo                        *
@@ -2224,9 +2191,9 @@ void cs_ctwr_aetsvi
       for (iloc = 0 ; iloc < ct->nbevct ; iloc++) {
         iair = lst_par_cel[iloc]-1;
 
-        vginu  = - gx / absgrv * vgin[iloc];
-        vginv  = - gy / absgrv * vgin[iloc];
-        vginw  = - gz / absgrv * vgin[iloc];
+        vginu  = -ct_prop->gravx/ absgrv * vgin[iloc];
+        vginv  = -ct_prop->gravy/ absgrv * vgin[iloc];
+        vginw  = -ct_prop->gravz/ absgrv * vgin[iloc];
         dvg = sqrt( pow((vitx[iair]+vginu ),2.)
               + pow((vity[iair]+vginv ),2.)
               + pow((vitz[iair]+vginw ),2.) );
@@ -2306,16 +2273,17 @@ void cs_ctwr_bilanct
   bft_file_t *f;
   char  *file_name = NULL;
   bft_file_type_t file_type;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
   file_type = BFT_FILE_TYPE_TEXT;
 
   for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
 
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    cpa    = ct->cpa ;
-    cpv    = ct->cpv ;
-    cpe    = ct->cpe ;
-    hv0    = ct->hv0 ;
+    cpa    = ct_prop->cpa ;
+    cpv    = ct_prop->cpv ;
+    cpe    = ct_prop->cpe ;
+    hv0    = ct_prop->hv0 ;
     cs_int_t nbr_fbr_air[3][2] = {{ct->nnpsct,ct->nbfbr_sct},
                                  {(ct->nbfbr_ict + ct->nbfac_ict),ct->nbfbr_ict},
                                  {(ct->nbfbr_lct + ct->nbfac_lct),ct->nbfbr_lct}};
@@ -2393,11 +2361,11 @@ void cs_ctwr_bilanct
 
     ct->teau_e /= ct->fem_e ;
     ct->fem_e  /= ct->surface_in;
-    ct->heau_e *= ct->cpe ;
+    ct->heau_e *= ct_prop->cpe ;
 
     ct->teau_s /= ct->fem_s ;
     ct->fem_s  /= ct->surface_out  ;
-    ct->heau_s *= ct->cpe ;
+    ct->heau_s *= ct_prop->cpe ;
 
 
     /* calcul des valeurs air */
