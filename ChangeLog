@@ -1,3 +1,6 @@
+* 29/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update tutorial examples to new Fortran format and Xml model.
+
 * 29/07/2009 - David Monfort <david.monfort@edf.fr>
   Move loop on velocity/pressure system so that it includes
   the boundary conditions calculation.

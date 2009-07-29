@@ -1,0 +1,1125 @@
+#!/bin/sh
+# bin/runcase.  Generated from runcase.in by configure.
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 1998-2009 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+########################################################################
+#
+#                  BATCH FILE FOR THE CCRT (Platine under LSF)
+#                  ===========================================
+#
+#BSUB -n 2
+#BSUB -W 00:30
+#BSUB -o stratified_junctioncaseo.%J 
+#BSUB -e stratified_junctioncasee.%J 
+#BSUB -J stratified_junctioncase
+#
+#  -n : number of processors
+#  -W : walltime as hh:mm
+#  -o : output file name
+#  -e : error file name
+#  -J : job name
+#
+# ------------------------------------------------------------------
+#
+#                  BATCH FILE FOR THE Chatou CLUSTER (PBS)
+#                  =======================================
+#
+#PBS -l nodes=4:ppn=2
+#PBS -l walltime=1:00:00
+#PBS -l mem=320mb
+#
+#PBS -j eo
+#PBS -N stratified_junctioncase5
+#
+#  nodes    : number of nodes
+#  ppn      : number of process per node
+#  walltime : wall clock time (hh:mm:ss)
+#  mem      : memory
+#
+#WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
+#         instance of SYRTHES. The Kernel will be executed on the remaining
+#         processors, so make sure to reserve a sufficiently high number
+#         of processors.
+#
+# ------------------------------------------------------------------
+#
+#                  BATCH FILE (University of Manchester Cluster)
+#                  =============================================
+#
+# set the name of the job
+##$ -N stratified_junctioncase5
+#
+# request between 2 and 4 slots
+##$ -pe mpich 2-4
+#
+# Execute the job from the current working directory
+# Job output will appear in this directory
+##$ -cwd
+#   can use -o dirname to redirect stdout
+#   can use -e dirname to redirect stderr
+
+#  Export these environment variables
+##$ -v MPI_HOME
+
+#set -x
+#
+# ------------------------------------------------------------------
+#
+#                  BATCH FILE (AIX, Loadlever)
+#                  ===========================
+#
+#@ shell = /bin/sh
+#
+#@ job_name = stratified_junctioncase5
+#
+#@ job_type = parallel
+#@ cpus = 128
+#@ node_usage = not_shared
+#
+#@ network.MPI = csss,shared,US
+#@ bulkxfer = yes
+#
+#@ wall_clock_limit = 00:20:00
+#@ account_no = z001
+#
+#@ output = $(job_name).$(schedd_host).$(jobid).out
+#@ error  = $(job_name).$(schedd_host).$(jobid).err
+#@ notification = never
+#
+#@ queue
+# suggested environment settings:
+#  export MP_EAGER_LIMIT=65536
+#  export MP_SHARED_MEMORY=yes
+#  export MEMORY_AFFINITY=MCM
+#  export MP_TASK_AFFINITY=MCM
+#
+########################################################################
+#
+# BEGINNING OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
+#
+# runcase.help gives more details about the different variables.
+#
+#                    -------------------------------
+#
+SOLCOM=0
+#
+# On some systems, some external libraries may require TERM to be defined.
+export TERM=xterm
+#
+STUDY=STRATIFIED_JUNCTION
+CASE=CASE5
+PARAM=case5.xml
+MESH=sn_total.des
+COMMAND_REORIENT=
+COMMAND_JOIN=
+COMMAND_CWF=
+COMMAND_PERIO=
+THERMOCHEMISTRY_DATA=
+METEO_DATA=
+#
+# Choose the total number of processors used (if empty, automatic detection
+# through the batch system if possible, set to 1 otherwise).
+# When coupling with SYRTHES with COUPLING_MODE=MPI, the 1st processor is
+# used by SYRTHES, so the effective number of processors assigned to the
+# Kernel is reduced by 1.
+# The processors list is only usable when not running on a batch system
+# (as such a system usually already defines a similar list)
+NUMBER_OF_PROCESSORS=
+PROCESSOR_LIST=
+#
+PARTITION_LIST=
+#
+USER_INPUT_FILES=""
+USER_OUTPUT_FILES=""
+#
+# Working directory (leave empty for automatic default directory)
+CS_TMP_PREFIX=
+#CS_TMP_PREFIX=/local00/users/`whoami`
+#
+CS_LIB_ADD=
+VALGRIND=
+#
+ARG_CS_VERIF=""
+ARG_CS_OUTPUT=""
+#
+# Adaptation using HOMARD
+ADAPTATION=
+#
+summary=summary
+CASEDIR=/home/saturne/TEST_CASE/STRATIFIED_JUNCTION/CASE5
+DATA=$CASEDIR/DATA
+RESU=$CASEDIR/RESU
+SRC=$CASEDIR/SRC
+SCRIPTS=$CASEDIR/SCRIPTS
+RESTART_IN=$DATA/RESTART
+PREPROCESSOR_OUTPUT_IN=$DATA/preprocessor_output
+PARTITION_OUTPUT_IN=$DATA/PARTITION_OUTPUT
+MESHDIR=$CASEDIR/../MESH
+#
+# The following variables are only used in case of coupling with SYRTHES.
+#  DATA_SYR: directory where to find SYRTHES_ENV
+#  SRC_SYR:  directory where to find possible user source files
+DATA_SYR=$CASEDIR/DATA_SYR
+SRC_SYR=$CASEDIR/SRC_SYR
+SYRTHES_ENV=syrthes.env
+#
+# The possible coupling mode with SYRTHES may be chosen here.
+#
+#  COUPLING_MODE=MPI        : should work on most machines.
+#  COUPLING_MODE=sockets    : should be activated on clusters when the MPI rank
+#                             of a process is not determinable or if MPI can
+#                             not be used.
+COUPLING_MODE=MPI
+ECHO_SYR_COMM=""
+#
+#  Indicate which steps should be executed; if both the Preprocessor and the
+#  Kernel are executed, the "preprocessor_output" and eventual "domain_number_*"
+#  files are not saved. If only the preprocessor and / or partitioner are
+#  executed, the corresponding files will be saved in a RESU/PREPROCESSOR_OUTPUT
+#  and RESU/PARTITION directory. If the Preprocessor is not executed,
+#  "preprocessor_output" will be read from $PREPROCESSOR_OUTPUT_IN. If the
+#  Partitioner is not executed, "domain_number_*" will be read from
+#  $PARTITION_OUTPUT_IN if available (otherwise, unoptimized default
+#  partitioning will be used).
+#
+#  EXEC_PREPROCESS : should the Preprocessor be run ? (yes/no)
+#  EXEC_PARTITION  : should the Partitioner be run ? (yes/no)
+#  EXEC_KERNEL     : should the Kernel be run ? (yes/no)
+#
+EXEC_PREPROCESS=yes
+EXEC_PARTITION=yes
+EXEC_KERNEL=yes
+#
+#
+#
+########################################################################
+#
+# END OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
+#
+########################################################################
+#
+# Kernel installation parameters
+#
+prefix=/home/saturne/Code_Saturne/2.0-beta2/arch/Linux_x86_64
+#
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+datarootdir=${prefix}/share
+datadir=${datarootdir}
+pkgdatadir=${datadir}/ncs
+#
+# Preprocessor installation parameters
+#
+ecs_prefix=
+#
+ecs_exec_prefix=${ecs_prefix}
+ecs_bindir=${ecs_exec_prefix}/bin
+#
+# HOMARD installation parameters (to be completed if needed)
+#
+homard_prefix=
+#
+########################################################################
+#  Mesh Adaptation
+#
+if [ ! -z  "${ADAPTATION}" ] ; then
+  if [ "${ADAPTATION}" = "-help" ] ; then
+    ${homard_prefix}/saturne_homard ${ADAPTATION}
+    exit 0
+  else
+    HOMARD_options="  -v"
+    ${homard_prefix}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $CASEDIR \
+                    -Pilotage_Adaptation $ADAPTATION $HOMARD_options || exit 1
+  fi
+fi
+#
+#########################################################################
+#
+N_SYRTHES_COUPLINGS=0
+if [ -f "${SRC}/ussyrc.f90" ] ; then
+  N_SYRTHES_COUPLINGS=`grep -e ^' ' ${SRC}/ussyrc.f90 | grep -i -c defsyr`
+fi
+#
+if [ $N_SYRTHES_COUPLINGS = 0 ] ; then
+  SYRTHES_COUPLING=no
+else
+  SYRTHES_COUPLING=yes
+  export SYRTHES
+  if [ $N_SYRTHES_COUPLINGS -gt 1 ] ; then
+   echo "This script can not handle multiple couplings with SYRTHES"
+   echo "Number of SYRTHES couplings requested: $N_SYRTHES_COUPLINGS"
+  fi
+fi
+#
+if [ $SYRTHES_COUPLING = yes ] ; then
+  if [ $SOLCOM -eq 1 ] ; then
+   echo "SYRTHES coupling is not compatible with SOLCOM-type meshes"
+   exit 1
+  fi
+else
+  COUPLING_MODE=
+fi
+#
+########################################################################
+#
+# Parameters for execution
+#
+# General variables
+THISSCRIPT=$0
+USER=`whoami`
+DATE=`date '+%m%d%H%M'`
+SUFFIX=$DATE
+EXE=cs_solver
+EXE_SYR=syrthes
+#
+# Copy runcase before changing to the working directory
+# (as after that, the relative path will not be up to date).
+#
+cp $0 $RESU/runcase.$SUFFIX
+#
+# Execution directory (reachable by all the processors)
+#
+if [ ! -z "$CS_TMP_PREFIX" ] ; then
+  RUN=${CS_TMP_PREFIX}/tmp_Saturne/$STUDY.$CASE.$DATE
+#
+else
+#  Default if not specified by the user
+#
+#  On the CCRT, there is no TMPDIR. We work by default in SCRATCHDIR
+  if [ "$SCRATCHDIR" != "" ] ; then
+    RUN=$SCRATCHDIR/tmp_Saturne/$STUDY.$CASE.$DATE
+#
+  elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
+    RUN=$TMPDIR/tmp_Saturne/$STUDY.$CASE.$DATE
+  else
+    RUN=$HOME/tmp_Saturne/$STUDY.$CASE.$DATE
+  fi
+fi
+#
+# Create directory if necessary
+if [ "$RUN" != "$TMPDIR" ] ; then
+  if [ ! -d $RUN ] ; then
+    mkdir -p $RUN || exit 1
+  else
+    echo "RUN=$RUN already exists."
+    echo "The simulation will not be run."
+    exit 1
+  fi
+fi
+#
+# Create a temporary file for Salome (equivalent to "ficstp")
+if [ "$ARG_CS_OUTPUT" = "--log 0" ] ; then
+  echo $RUN > $SCRIPTS/runningstd.$DATE
+else
+  echo $RUN > $SCRIPTS/runningext.$DATE
+fi
+#
+cd $RUN
+#
+########################################################################
+#
+# Set up MPI environment
+#
+# Use makefile query to obtain the path to MPI binaries if those are
+# not on the default path. This is a peculiar use of make, but allows
+# us to avoid defining the MPI configuration in multiple files.
+
+CS_MPI_PATH=/home/saturne/opt/openmpi-1.3.1/arch/Linux_x86_64/bin
+
+# NUMBER_OF_PROCESSORS is determined here if not already set;
+# MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are
+# defined by the sourced script, and PATH may be updated.
+#
+. ${pkgdatadir}/runcase_mpi_env
+#
+# Check for the number of requested processors
+nproc_kernel="${NUMBER_OF_PROCESSORS}"
+echo
+echo
+if [ $SYRTHES_COUPLING = yes ] ; then
+  echo "Coupling of Code_Saturne and SYRTHES activated."
+  #  1 processor is reserved for SYRTHES if coupled through MPI.
+  if [ "$COUPLING_MODE" = "MPI" ] ; then
+    (( nproc_kernel = nproc_kernel - N_SYRTHES_COUPLINGS ))
+    if [ $nproc_kernel -lt 1 ] ; then
+      echo
+      echo
+      echo " Warning, if COUPLING_MODE = MPI, SYRTHES reserves 1 processor"
+      echo " (which need not be a physical processor)."
+      echo " Here, NUMBER_OF_PROCESSORS=${NUMBER_OF_PROCESSORS}, while it must"
+      echo " be strictly greater than 1."
+      echo " Increase the number of requested processors."
+      echo
+      exit 1
+    fi
+  fi
+fi
+if [ $nproc_kernel -gt 1 ] ; then
+  echo "Parallel Code_Saturne with partitioning in $nproc_kernel sub-domains"
+  if [ $SOLCOM = 1 ] ; then
+    echo
+    echo
+    echo " Parallel run impossible with SOLCOM = $SOLCOM "
+    echo " Use SOLCOM = 0 "
+    echo
+    exit 1
+  fi
+else
+  echo "Single processor Code_Saturne simulation"
+fi
+if [ ! -z "$MPIHOSTS" ] ; then
+  echo "Total number of processors: $NUMBER_OF_PROCESSORS"
+fi
+#
+# In parallel mode, the corresponding argument must be set
+if [ $nproc_kernel -gt 1 ] ; then
+  ARG_CS_MPI=" --mpi"
+else
+  ARG_CS_MPI=""
+fi
+#
+#
+########################################################################
+#
+# Communications
+#
+# To help debug coupling problems, make communication more verbose
+if [ ! -z "$ECHO_SYR_COMM" ] ; then
+  ECHOCOMMSYR="-echo-comm $ECHO_SYR_COMM"
+else
+  ECHOCOMMSYR=""
+fi
+########################################################################
+# Greeting message
+#
+echo ' '
+echo '                      Code_Saturne is running '
+echo '                      *********************** '
+echo ' '
+echo ' Working directory (to be periodically cleaned) : '
+echo '    ' $RUN
+#
+########################################################################
+#
+# Compilation and link
+#
+# Note: we also check the for the presence of certain user subroutines here.
+#
+echo
+echo ' Kernel version:          ' $prefix
+echo ' Preprocessor version:    ' $ecs_prefix
+
+if [ "${EXEC_KERNEL}" = "yes" ] ; then
+
+  cur_dir=`pwd`
+
+  source_cas=$SRC
+
+  #
+  # Copy of the parameter file
+  if [ ! -z "$PARAM" ] ; then
+    var=$DATA/$PARAM
+    if [ -f $var ] ; then
+      COMMAND_PARAM="--param $PARAM"
+      cp $var .
+    else
+      echo ' '
+      echo ' -- ERROR -- '
+      echo ' The parameters file ' $var
+      echo ' can not be accessed.'
+      exit 1
+    fi
+  fi
+
+  src_files=`ls ${source_cas}/*.[fF]90 ${source_cas}/*.[ch] 2>/dev/null`
+
+  if [ ! -z "${src_files}" ] ; then
+
+    echo
+    echo  "  ***************************************************************"
+    echo  "   Compilation of user subroutines and linking of Code_Saturne"
+    echo  "  ***************************************************************"
+
+    if [ -f compil.log ] ; then
+      rm -f compil.log
+    fi
+
+    src_dir="src_saturne"
+
+    # Copy of the user source files
+    # (no links: the directory is copied later)
+    mkdir ${src_dir}
+    for f in ${src_files} ; do
+      if [ -f $f ] ; then
+        cp ${f} ${src_dir}/
+      fi
+    done
+
+    # Detect presence and test for compatibility of modules.
+    if [ ! -z "$PARAM" ] ; then
+      ${bindir}/cs check_consistency --source=$src_dir --param=$PARAM --nproc=$nproc_kernel
+    else
+      ${bindir}/cs check_consistency --nproc=$nproc_kernel
+    fi
+    if [ $? = 1 ] ; then
+      exit 1
+    fi
+
+    # Compilation
+    if [ ! -z "${CS_LIB_ADD}" ] ; then
+      OPTLIBS="--opt-libs=${CS_LIB_ADD}"
+    fi
+    ${bindir}/cs compile \
+      --source=$src_dir ${OPTLIBS} 2>>$cur_dir/compil.log 1>&2
+    if [ $? -ne 0 ]
+    then
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
+      echo "COMPILE OR LINK ERROR"
+      rm -f *.o
+      exit 1
+    else
+      cp $cur_dir/compil.log $RESU/compil.log.$SUFFIX
+    fi
+
+  else
+
+    # Detect presence and test for compatibility of modules.
+    if [ ! -z "$PARAM" ] ; then
+      ${bindir}/cs check_consistency --param=$PARAM --nproc=$nproc_kernel
+    else
+      ${bindir}/cs check_consistency --nproc=$nproc_kernel
+    fi
+    if [ $? = 1 ] ; then
+      exit 1
+    fi
+
+    ln -s ${bindir}/$EXE .
+
+  fi
+
+  if [ $SYRTHES_COUPLING = yes ] ; then
+
+    ${pkgdatadir}/runcase_syrthes -compile \
+      -cs-bindir=${bindir} -src-syr=${SRC_SYR} \
+      -src-copy=${RESU}/SRC_SYR.${SUFFIX} -log=${RESU}/compil_syrthes.log.${SUFFIX}
+
+  fi
+
+fi # EXEC_KERNEL = yes
+
+#
+########################################################################
+#
+# Data setup
+#
+echo
+echo  "  ********************************************"
+echo  "             Preparing calculation            "
+echo  "  ********************************************"
+echo
+#
+ERROR=false
+PREPROCESS_ERROR=false
+PARTITION_ERROR=false
+EXECUTION_ERROR=false
+#
+if [ $SOLCOM = 1 ]
+then
+  EXEC_PREPROCESS=no
+  EXEC_PARTITION=no
+  ln -s $MESHDIR/$MESH geomet || exit 1
+fi
+#
+if [ "${EXEC_PREPROCESS}" = "yes" ]
+then
+  for var in $MESH ; do
+    ln -s $MESHDIR/$var $var || exit 1
+    # Special case for meshes in EnSight format: link to .geo file necessary
+    # (retrieve name through .case file)
+    var2=`basename $var .case`
+    if [ $var2 != $var ] ; then
+      ficgeo_ensight=`awk '/^model:/ {print $2}' $var`
+      ln -s $MESHDIR/$ficgeo_ensight $ficgeo_ensight || FIN
+    fi
+  done
+else
+  if [ -f ${PREPROCESSOR_OUTPUT_IN} ] ; then
+    ln -s ${PREPROCESSOR_OUTPUT_IN} preprocessor_output || exit 1
+  else
+    echo "Error: no preprocessor output file is available;"
+    echo "       (${PREPROCESSOR_OUTPUT_IN} does not exist."
+    echo "       or is not a standard file."
+    exit 1
+  fi
+fi
+#
+if [ $nproc_kernel -eq 1 -a "${EXEC_KERNEL}" = "yes" ] ; then
+  EXEC_PARTITION=no
+elif [ "${EXEC_PARTITION}" = "no" -a "${PARTITION_OUTPUT_IN}" != "" ]
+then
+  if [ -f ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel} ] ; then
+    ln -s ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel} .
+  else
+    echo "Warning: no partitioning file is available;"
+    echo "         (no ${PARTITION_OUTPUT_IN}/domain_number_${nproc_kernel})."
+    echo
+    echo "         Unoptimized partitioning will be used."
+    echo "         Parallel performance may be degraded."
+  fi
+fi
+#
+if [ "${EXEC_KERNEL}" = "yes" ] ; then
+
+  for var in ${RESTART_IN}/* ; do
+    if [ -f $var ] ; then
+      varb=`basename $var`
+      if   [ $varb = suiava ] ; then
+        vara=suiamo
+      elif [ $varb = suiavx ] ; then
+        vara=suiamx
+      elif [ $varb = vorava ] ; then
+        vara=voramo
+      elif [ $varb = t1dava ] ; then
+        vara=t1damo
+      elif [ $varb = rayava ] ; then
+        vara=rayamo
+      elif [ $varb = lagava ] ; then
+        vara=lagamo
+      elif [ $varb = lasava ] ; then
+        vara=lasamo
+      else
+        vara=$varb
+      fi
+      ln -s $var $vara
+    fi
+  done
+  #
+  if [ "$THERMOCHEMISTRY_DATA" != "" ] ; then
+    var=$DATA/$THERMOCHEMISTRY_DATA
+    if [ -f $var ] ; then
+      cp $var dp_tch
+      # Copy so as to have correct name upon backup
+      if [ "$THERMOCHEMISTRY_DATA" != "dp_tch" ] ; then
+        cp dp_tch $THERMOCHEMISTRY_DATA
+      fi
+    else
+      echo ' '
+      echo ' -- ERROR -- '
+      echo ' The thermochemistry file ' $var
+      echo ' can not be accessed. '
+      exit 1
+    fi
+  fi
+  #
+  if [ "$METEO_DATA" != "" ] ; then
+    var=$DATA/$METEO_DATA
+    if [ -f $var ] ; then
+      cp $var meteo
+      # Copy so as to have correct name upon backup
+      if [ "$METEO_DATA" != "meteo" ] ; then
+        cp meteo $METEO_DATA
+      fi
+    else
+      echo ' '
+      echo ' -- ERROR -- '
+      echo ' The meteo profile file ' $var
+      echo ' can not be accessed. '
+      exit 1
+    fi
+  fi
+  #
+  for f in uscpcl.f90 usd3pc.f90 usebuc.f90 uslwcc.f90 usfucl.f90
+  do
+    if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
+      cp ${datadir}/data/thch/JANAF JANAF
+    fi
+  done
+  #
+  if [ $SYRTHES_COUPLING = yes ] ; then
+    #
+    ${pkgdatadir}/runcase_syrthes -copy-data -syrthes-env=${DATA_SYR}/$SYRTHES_ENV
+    #
+  fi
+  #
+  if [ ! -z "$USER_INPUT_FILES" ] ; then
+    for f in $USER_INPUT_FILES ; do
+      cp $DATA/$f .
+    done
+  fi
+  #
+fi # EXEC_KERNEL = yes
+
+########################################################################
+# Maximum time for PBS (done here so as to leave time for PBS to
+# realize that things have started).
+#
+if [ "$PBS_JOBID" != "" ] ; then
+  CS_MAXTIME=`qstat -r $PBS_JOBID | grep $PBS_JOBID | sed -e's/ \{1,\}/ /g' | cut -d ' ' -f 9`
+  export CS_MAXTIME
+fi
+#
+########################################################################
+#
+# Summary: start
+#
+CURDATE=`unset LANG ; date`
+#
+echo '========================================================'>>$summary
+echo '   Start time       : ' $CURDATE                         >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Kernel          : ' $prefix                          >>$summary
+echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    HOMARD          : ' $homard_prefix                   >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary
+echo '    PATH            : ' $PATH                            >>$summary
+echo '    ------------------------------------------------  '  >>$summary
+echo '    User            : ' $USER                            >>$summary
+echo '========================================================'>>$summary
+echo '    Machine         : '                                  >>$summary
+     uname -a                                                  >>$summary
+if [ -z "$NUMBER_OF_PROCESSORS" ] ; then
+  echo '    N Procs         : ' 1                              >>$summary
+else
+  echo '    N Procs         : ' $NUMBER_OF_PROCESSORS          >>$summary
+fi
+if [ -z "$PROCESSOR_LIST" ] ; then
+  echo '    Processors      : ' default                        >>$summary
+else
+  echo '    Processors      : ' $PROCESSOR_LIST                >>$summary
+fi
+echo '========================================================'>>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Case            : ' $CASE                            >>$summary
+echo '      DATA          : ' $DATA                            >>$summary
+echo '      SRC           : ' $SRC                             >>$summary
+echo '      RESU          : ' $RESU                            >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+echo '    Exec. dir.      : ' $RUN                             >>$summary
+echo '  ----------------------------------------------------'  >>$summary
+if [ "$EXEC_PREPROCESSOR" = "yes" ] ; then
+  echo '    Preprocessor    : ' ${ecs_bindir}/cs_preprocess    >>$summary
+fi
+if [ "$EXEC_PARTITION" = "yes" ] ; then
+  echo '    Partitioner     : ' ${ecs_bindir}/cs_partition     >>$summary
+fi
+if [ "$EXEC_KERNEL" = "yes" ] ; then
+  echo '    Executable      : ' $EXE                           >>$summary
+fi
+echo '  ----------------------------------------------------'  >>$summary
+#
+# Execution
+echo
+echo  "  ********************************************"
+echo  "             Starting calculation"
+echo  "  ********************************************"
+echo
+#
+# Preprocessor start
+#
+if [ "${EXEC_PREPROCESS}" = "yes" ] ; then
+  #
+  ${ecs_bindir}/cs_preprocess --mesh $MESH "--case" $CASE \
+                   $COMMAND_REORIENT $COMMAND_JOIN $COMMAND_PERIO \
+                   > listpre 2>&1
+  if [ $? != 0 ] ; then
+    echo "Error running the preprocessor."
+    echo "Check preprocessor log (listpre) for details."
+    echo
+    PREPROCESS_ERROR=true
+    ERROR=true
+  fi
+  #
+  if [ "${EXEC_KERNEL}" = "no" ] ; then
+    #
+    PREPROCESSOR_OUTPUT_OUT=$RESU/preprocessor_output.$SUFFIX
+    cp preprocessor_output ${PREPROCESSOR_OUTPUT_OUT}
+  fi
+  #
+fi
+#
+# Partitioner start
+#
+if [ ! -f ${ecs_bindir}/cs_partition ] ; then
+  echo "Warning: ${ecs_bindir}/cs_partition not found."
+  echo
+  echo "The partitioner may not have been installed"
+  echo "  (this is the case if neither METIS nor."
+  echo "  SCOTCH are avaialable)."
+  echo
+  echo "Unoptimized partitioning will be used, so"
+  echo "parallel performance may be degraded."
+  echo
+  EXEC_PARTITION=no
+fi
+#
+if [ "${EXEC_PARTITION}" = "yes" ] ; then
+  #
+  if [ "${EXEC_KERNEL}" = "yes" ] ; then
+    ${ecs_bindir}/cs_partition $nproc_kernel > listpart 2>&1
+  else
+    if [ -z "$PARTITION_LIST" ] ; then
+      echo "Error running the partitioner."
+      echo "PARTITION_LIST is not set."
+      echo "This variable should contain the number of processors"
+      echo "for which we partition (or a list of such numbers)."
+      PARTITION_ERROR=true
+      ERROR=true
+    else
+      ${ecs_bindir}/cs_partition $PARTITION_LIST > listpart 2>&1
+    fi
+  fi
+  if [ $? != 0 -a $PARTITION_ERROR = false ] ; then
+    echo "Error running the partitioner."
+    echo "Check partitioner log (listpart) for details."
+    echo
+    PARTITION_ERROR=true
+    ERROR=true
+  fi
+  #
+  if [ "${EXEC_KERNEL}" = "no" ] ; then
+    #
+    PARTITION_OUTPUT_OUT=$RESU/PARTITION_OUTPUT.$SUFFIX
+    mkdir $PARTITION_OUTPUT_OUT
+    cp -r domain_number_* ${PARTITION_OUTPUT_OUT}/
+  fi
+#
+fi
+#
+# Run calculation proper.
+#
+if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
+#
+  if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
+    # MPI Communication
+    #
+    # Make sure to transmit possible additional arguments assigned by mpirun to
+    # the executable with some MPI-1 implementations (vanilla MPICH 1.2 sets the
+    # parameters needed by MPI_Init through argc/argv): we use $@ to forward
+    # arguments passed to localexec to the true executable files.
+    #
+    localexec=$RUN/localexec
+    echo '#!/bin/sh' > $localexec
+    echo "MPI_RANK=\`${pkgdatadir}/runcase_mpi_rank \$@\`" >> $localexec
+    echo cd $RUN >> $localexec
+    echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
+    echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
+    echo "else" >> $localexec
+    echo "  $VALGRIND $RUN/$EXE \$@ --mpi 1 $COMMAND_CWF "\
+         "$ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM " >> $localexec
+    echo "fi" >> $localexec
+    echo "retour=\$?" >> $localexec
+    echo "exit \$retour" >> $localexec
+    chmod 700 $localexec
+    #
+    $MPIBOOT
+    $MPIRUN $localexec || EXECUTION_ERROR=true
+    $MPIHALT
+    #
+  elif [ $SYRTHES_COUPLING = yes  ] ; then
+    # Socket communications
+    #
+    # We provide the executables with a "random" port number.
+    PORT=35623
+    SOCKETNCS="--syr-socket $PORT"
+    SOCKETSYR="-comm-socket $PORT"
+    #
+    localexec=$RUN/localexec
+    echo '#!/bin/sh' > $localexec
+    echo cd $RUN >> $localexec
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_MPI $COMMAND_CWF "\
+                 " $ARG_CS_VERIF $ARG_CS_OUTPUT "\
+                 " $COMMAND_PARAM $SOCKETNCS " >> $localexec
+    echo "retour=\$?" >> $localexec
+    echo "exit \$retour" >> $localexec
+    chmod 700 $localexec
+    $MPIBOOT
+    $MPIRUN $localexec || EXECUTION_ERROR=true &
+    #
+    ./$EXE_SYR $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
+    #
+    $MPIHALT
+    #
+  elif [ $SOLCOM = 0 ] ; then
+    #
+    localexec=$RUN/localexec
+    echo '#!/bin/sh' > $localexec
+    echo cd $RUN >> $localexec
+    echo "$VALGRIND $RUN/$EXE \$@ $ARG_CS_MPI "\
+         " $COMMAND_CWF $ARG_CS_VERIF $ARG_CS_OUTPUT "\
+         " $COMMAND_PARAM "  >> $localexec
+    echo "retour=\$?" >> $localexec
+    echo "exit \$retour" >> $localexec
+    chmod 700 $localexec
+    $MPIBOOT
+    $MPIRUN $localexec || EXECUTION_ERROR=true
+    $MPIHALT
+    #
+  else # cas SOLCOM = 1
+    #
+    $VALGRIND $RUN/$EXE --solcom \
+          $ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM \
+          || EXECUTION_ERROR=true
+    #
+  fi
+#
+fi
+#
+# Remove the Salome temporary files
+rm -f $SCRIPTS/running*.$DATE
+#
+########################################################################
+#
+if [ "$EXECUTION_ERROR" = "true" ] ; then
+  if [ "$SYRTHES_COUPLING" = "yes" -a "$COUPLING_MODE" = "MPI" ] ; then
+    echo "Error running the coupled calculation."
+    echo "Either the Kernel or SYRTHES may have failed."
+    echo
+    echo "Check Kernel log (listing) and SYRTHES log (listsyr) for details,"
+    echo "as well as eventual error* files."
+    echo
+  else
+    echo "Error running the calculation."
+    echo
+    echo "Check Kernel log (listing) and error* files for details"
+    echo
+  fi
+  ERROR=true
+fi
+#
+# Treatment of the ouput files:
+#   Starts with the restart files
+#   (in case of full disk, increases chances of being able to continue).
+#
+if [ $EXEC_KERNEL = yes ] ; then
+
+  RESTART_OUT=$RESU/RESTART.$SUFFIX
+  iok=1
+  mkdir ${RESTART_OUT} || iok=0
+  if [ $iok = 1 ] ; then
+    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+      if [ -f $f ] ; then
+        cp $f ${RESTART_OUT}
+      fi
+    done
+  else
+    for f in suiava suiavx t1dava vorava rayava lagava* lasava* ; do
+      if [ -f $f ] ; then
+        cp $f $RESU/$f.$SUFFIX
+      fi
+    done
+  fi
+
+  resuser=0
+  for f in ${USER_OUTPUT_FILES} ; do
+    if [ -f $f ] ; then
+      resuser=1
+    fi
+  done
+  if [ ${resuser} = 1 ] ; then
+    RES_USER=$RESU/RES_USER.$SUFFIX
+    iok=1
+    mkdir ${RES_USER} || iok=0
+    if [ $iok = 1 ] ; then
+      for f in ${USER_OUTPUT_FILES} ; do
+        if [ -f $f ] ; then
+          cp $f ${RES_USER}
+        fi
+      done
+    else
+      for f in ${USER_OUTPUT_FILES} ; do
+        if [ -f $f ] ; then
+          cp $f $RESU/$f.$SUFFIX
+        fi
+      done
+    fi
+  fi
+
+  for f in $PARAM $THERMOCHEMISTRY_DATA $METEO_DATA ; do
+    if [ -f $f ] ; then
+      cp $f $RESU/$f.$SUFFIX
+    fi
+  done
+
+  for f in probes_*.dat ; do
+    if [ -f $f ] ; then
+      if [ ! -d $RESU/HIST.$SUFFIX ] ; then
+        mkdir $RESU/HIST.$SUFFIX
+      fi
+      cp $f $RESU/HIST.$SUFFIX
+    fi
+  done
+  for f in ush* ; do
+    if [ -f $f ] ; then
+      if [ ! -d $RESU/HIST.$SUFFIX ] ; then
+        mkdir $RESU/HIST.$SUFFIX
+      fi
+      cp $f $RESU/HIST.$SUFFIX
+    fi
+  done
+
+fi  # output files
+
+for f in list* error* *.med *.cgns ; do
+  if [ -f $f ] ; then
+    cp $f $RESU/$f.$SUFFIX
+  fi
+done
+
+# Treatment of EnSight and MED files
+#   The $dir (=*.ensight and/or *.med) directories are copied
+#   to $DIR.$SUFFIX
+
+#   We place directories $dir (=*.ensight and/or *.med)
+#   in $DIR.$SUFFIX
+
+cas=`echo $CASE |tr "[:upper:]" "[:lower:]"`
+
+for dir in *.ensight *.med ; do
+  if [ -d $dir ] ; then
+    DIR=`echo $dir |tr "[:lower:]" "[:upper:]"`
+    mkdir $RESU/$DIR.$SUFFIX
+    if [ $? -ne 0 ] ; then
+      echo Creating $RESU/$DIR.$SUFFIX failed
+    else
+      for f in $dir/*  ; do
+        if [ -f $f ] ; then
+          cp -R ${f} $RESU/$DIR.$SUFFIX/.
+        fi
+      done
+    fi
+  fi
+done
+
+if [ $EXEC_KERNEL = yes ] ; then
+
+  rayt_list=`ls bord* 2>/dev/null`
+  if [ ! -z "${rayt_list}" ] ; then
+    for f in $rayt_list ; do
+      if [ ! -d $RESU/CHR.$SUFFIX ] ; then
+        mkdir $RESU/CHR.$SUFFIX
+      fi
+      cp $f $RESU/CHR.$SUFFIX/.
+    done
+  fi
+
+  lagr_list=`ls debug* deplacement* trajectoire* frontiere* 2>/dev/null`
+  if [ ! -z "${lagr_list}" ] ; then
+    mkdir $RESU/LAGR.$SUFFIX
+    for f in $lagr_list ; do
+      cp $f $RESU/LAGR.$SUFFIX
+    done
+  fi
+
+  # Matisse output files
+  if [ -f ${RUN}/resuMatisse ] ; then
+    matisse=`grep -i matisse $DATA/$PARAM`
+    if [ ! -z "$matisse" ] ; then
+  # The date is added to the first line of resuMatisse
+      AFDATE="Date of the case                                       : "$DATE
+      sed  "1i\ ${AFDATE}" ${RUN}/resuMatisse >> ${RUN}/resuMatisse.mod
+      mv ${RUN}/resuMatisse.mod ${RUN}/resuMatisse
+    fi
+    cp ${RUN}/resuMatisse ${RESU}/resuMatisse.$SUFFIX
+  fi
+
+  for dir in src_saturne ; do
+    if [ -d $dir ] ; then
+      mkdir $RESU/SRC.$SUFFIX
+      if [ $? -ne 0 ] ; then
+        echo Failure creating $RESU/SRC.$SUFFIX
+      else
+        for f in $dir/*.[fF]90 $dir/*.[ch] ; do
+          if [ -f ${f} ] ; then
+            cp -R ${f} $RESU/SRC.$SUFFIX/.
+            fbase=`basename ${f}`
+            chmod a-w $RESU/SRC.$SUFFIX/${fbase}
+          fi
+        done
+      fi
+    fi
+  done
+
+  if [ $SYRTHES_COUPLING = yes ] ; then
+    ${pkgdatadir}/runcase_syrthes -copy-results \
+      -result-dir=${RESU}/RESU_SYR.${SUFFIX}
+  fi
+
+fi  # input data and outputs
+#
+########################################################################
+#
+# Summary: end
+#
+if  [ "$PREPROCESS_ERROR" = "true" ] ; then
+  EXEC_PREPROCESS="failed"
+fi
+echo "    Preprocessing   : " $EXEC_PREPROCESS                 >>$summary
+if  [ "$PARTITION_ERROR" = "true" ] ; then
+  EXEC_PARTITION="failed"
+fi
+echo "    Partitioning    : " $EXEC_PARTITION                  >>$summary
+if  [ "$EXECUTION_ERROR" = "true" ] ; then
+  EXEC_KERNEL="failed"
+fi
+echo "    Calculation     : " $EXEC_KERNEL                     >>$summary
+#
+CURDATE=`unset LANG ; date`
+#
+echo '  ----------------------------------------------------'  >>$summary
+echo '   Finish time      : ' $CURDATE                         >>$summary
+echo '========================================================'>>$summary
+#
+cp $summary  $RESU/$summary.$SUFFIX
+#
+########################################################################
+#
+#
+# Finish
+#
+echo
+echo  "  ********************************************"
+if [ "$EXECUTION_ERROR" = "true" ] ; then
+  echo  "         Error in calculation stage."
+elif  [ "$PARTITION_ERROR" = "true" ] ; then
+  echo  "         Error in partitioning stage."
+elif  [ "$PREPROCESS_ERROR" = "true" ] ; then
+  echo  "         Error in preprocessing stage."
+else
+  echo  "           Normal simulation finish"
+fi
+echo  "  ********************************************"
+
+if [ "$ERROR" = "true" ] ; then
+  exit 1
+else
+  exit 0
+fi
+#
+########################################################################

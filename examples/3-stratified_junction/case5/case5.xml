@@ -1,82 +1,89 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Code_Saturne_GUI case="CASE5" study="STRATIFIED_JUNCTION" version="0.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="CASE5" study="STRATIFIED_JUNCTION" version="1.0">
 	<solution_domain>
 		<volumic_conditions>
-			<zone label="all_cells" name="1">all[]</zone>
+			<zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" scalar_source_term="off" thermal_source_term="off">all[]</zone>
 		</volumic_conditions>
 		<meshes_list>
 			<mesh format="des" name="sn_total.des"/>
 		</meshes_list>
-		<paste_meshes status="off"/>
+		<join_meshes status="off"/>
 		<faces_cutting status="off"/>
+		<reorientation status="off"/>
 		<syrthes_coupling status="off"/>
-		<periodic_boundary status="off"/>
-		<standalone>
-			<post-processing format="ensight7 gold" status="on"/>
-			<post-processing format="med" status="off"/>
-			<post-processing format="cgns" status="off"/>
-			<simulation_communication status="on"/>
-		</standalone>
+		<periodic_boundary/>
+		<standalone/>
 	</solution_domain>
 	<thermophysical_models>
 		<velocity_pressure>
-			<variable label="Pressure" name="pressure">
-				<reference_pressure>101300</reference_pressure>
+			<variable label="Pression" name="pressure">
+				<reference_pressure>101325</reference_pressure>
 			</variable>
-			<variable label="VelocitU" name="velocity_U"/>
-			<variable label="VelocitV" name="velocity_V"/>
-			<variable label="VelocitW" name="velocity_W"/>
+			<variable label="VitesseX" name="velocity_U">
+				<blending_factor>1</blending_factor>
+			</variable>
+			<variable label="VitesseY" name="velocity_V">
+				<blending_factor>1</blending_factor>
+			</variable>
+			<variable label="VitesseZ" name="velocity_W">
+				<blending_factor>1</blending_factor>
+			</variable>
 			<property label="total_pressure" name="total_pressure"/>
+			<property label="Yplus" name="yplus" support="boundary"/>
+			<property label="Efforts" name="effort" support="boundary"/>
+			<property label="all_variables" name="all_variables" support="boundary"/>
 		</velocity_pressure>
 		<ale_method status="off"/>
 		<turbulence model="k-epsilon">
-			<variable label="TurbEner" name="turb_k">
-				<blending_factor>0</blending_factor>
-				<order_scheme choice="upwind"/>
-			</variable>
-			<variable label="Dissip" name="turb_eps">
-				<blending_factor>0</blending_factor>
-				<order_scheme choice="upwind"/>
-			</variable>
-			<property label="turb. vi" name="turb_viscosity"/>
-			<initialization choice="reference_velocity" zone="1">
+			<variable label="EnerTurb" name="turb_k"/>
+			<variable label="Dissip" name="turb_eps"/>
+			<property label="visc. tu" name="turb_viscosity"/>
+			<initialization choice="reference_velocity">
 				<reference_velocity>0.03183</reference_velocity>
 			</initialization>
+			<scale_model>1</scale_model>
+			<gravity_terms status="on"/>
 		</turbulence>
-		<thermal_scalar model="temperature_celsius"/>
+		<thermal_scalar model="temperature_celsius">
+			<property label="Flux_thermique_entrant" name="input_thermal_flux" support="boundary"/>
+		</thermal_scalar>
+		<radiative_transfer model="off"/>
 		<gas_combustion model="off"/>
 		<pulverized_coal model="off"/>
 		<joule_effect model="off"/>
-		<radiative_transfer model="off"/>
+		<atmospheric_flows model="off">
+			<read_meteo_data status="off"/>
+		</atmospheric_flows>
 	</thermophysical_models>
 	<numerical_parameters>
-		<gradient_transpose/>
-		<pressure_relaxation/>
-		<density_relaxation/>
-		<wall_pressure_extrapolation/>
-		<velocity_pressure_coupling/>
-		<gradient_reconstruction/>
+		<multigrid status="on"/>
+		<gradient_transposed status="on"/>
+		<velocity_pressure_coupling status="off"/>
+		<pressure_relaxation>1</pressure_relaxation>
+		<wall_pressure_extrapolation>0</wall_pressure_extrapolation>
+		<gradient_reconstruction choice="0"/>
 	</numerical_parameters>
 	<physical_properties>
 		<fluid_properties>
-			<property choice="variable" label="Density" name="density">
+			<property choice="variable" label="Masse vo" name="density">
 				<initial_value>998.671</initial_value>
 			</property>
-			<property choice="variable" label="Lam. vis" name="molecular_viscosity">
+			<property choice="variable" label="Visc. la" name="molecular_viscosity">
 				<initial_value>4.45e-05</initial_value>
 			</property>
-			<property choice="constant" label="Sp. heat" name="specific_heat">
+			<property choice="constant" label="Ch.spec." name="specific_heat">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>4182.88</initial_value>
 			</property>
-			<property choice="constant" label="Th. cond" name="thermal_conductivity">
+			<property choice="constant" label="Cond. th" name="thermal_conductivity">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>0.601498</initial_value>
 			</property>
 		</fluid_properties>
 		<gravity>
+			<gravity_x>0</gravity_x>
+			<gravity_y>0</gravity_y>
 			<gravity_z>-9.81</gravity_z>
 		</gravity>
 		<hydrostatic_pressure status="on"/>
@@ -86,64 +93,66 @@
 			<initial_value zone="1">38.5</initial_value>
 			<min_value>18.26</min_value>
 			<max_value>38.5</max_value>
+			<blending_factor>1</blending_factor>
 		</scalar>
 	</additional_scalars>
-	<lagrangian model="off"/>
 	<boundary_conditions>
-		<boundary_definition>
-			<inlet label="cold_inlet" zone="1">2</inlet>
-			<inlet label="hot_inlet" zone="2">6</inlet>
-			<outlet label="outlet" zone="5">7</outlet>
-			<wall label="wall" zone="3">5</wall>
-		</boundary_definition>
+		<boundary label="cold_inlet" name="1" nature="inlet">2</boundary>
 		<inlet label="cold_inlet">
-			<velocity_pressure choice="dirichlet">
-				<dirichlet name="velocity_U">0.0</dirichlet>
-				<dirichlet name="velocity_V">0.0</dirichlet>
-				<dirichlet name="velocity_W">0.03183</dirichlet>
+			<velocity_pressure choice="norm" direction="normal">
+				<norm>0.03183</norm>
+				<direction_x>0</direction_x>
+				<direction_y>0</direction_y>
+				<direction_z>0</direction_z>
 			</velocity_pressure>
 			<turbulence choice="hydraulic_diameter">
 				<hydraulic_diameter>0.4</hydraulic_diameter>
 			</turbulence>
-			<scalar choice="dirichlet" label="Temp.C" type="thermal">
+			<scalar choice="dirichlet" label="Temp.C" name="temperature_celsius" type="thermal">
 				<dirichlet>18.6</dirichlet>
 			</scalar>
 		</inlet>
+		<boundary label="hot_inlet" name="2" nature="inlet">6</boundary>
 		<inlet label="hot_inlet">
-			<velocity_pressure choice="dirichlet">
-				<dirichlet name="velocity_U">0.0</dirichlet>
-				<dirichlet name="velocity_V">0.0</dirichlet>
-				<dirichlet name="velocity_W">0.03183</dirichlet>
+			<velocity_pressure choice="norm" direction="normal">
+				<norm>0.03183</norm>
 			</velocity_pressure>
 			<turbulence choice="hydraulic_diameter">
 				<hydraulic_diameter>0.4</hydraulic_diameter>
 			</turbulence>
-			<scalar choice="dirichlet" label="Temp.C" type="thermal">
+			<scalar choice="dirichlet" label="Temp.C" name="temperature_celsius" type="thermal">
 				<dirichlet>38.5</dirichlet>
 			</scalar>
 		</inlet>
-		<outlet label="outlet">
-			<scalar choice="neumann" label="Temp.C" type="thermal">
-				<neumann>0</neumann>
-			</scalar>
-		</outlet>
+		<boundary label="wall" name="3" nature="wall">5</boundary>
 		<wall label="wall">
-			<velocity_pressure choice="off"/>
-			<scalar choice="neumann" label="Temp.C" type="thermal">
+			<velocity_pressure choice="off">
+				<dirichlet name="velocity_U">0</dirichlet>
+				<dirichlet name="velocity_V">0</dirichlet>
+				<dirichlet name="velocity_W">0</dirichlet>
+			</velocity_pressure>
+			<scalar choice="neumann" label="Temp.C" name="temperature_celsius" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 		</wall>
+		<boundary label="outlet" name="5" nature="outlet">7</boundary>
+		<outlet label="outlet">
+			<scalar choice="neumann" label="Temp.C" name="temperature_celsius" type="thermal">
+				<neumann>0</neumann>
+			</scalar>
+		</outlet>
+		<variable/>
 	</boundary_conditions>
 	<analysis_control>
 		<output>
 			<postprocessing_mesh_options choice="0"/>
-			<listing_printing_frequency>1</listing_printing_frequency>
-			<postprocessing_frequency>10</postprocessing_frequency>
-			<fluid_domain status="on"/>
-			<domain_boundary status="off"/>
 			<postprocessing_format choice="EnSight"/>
 			<postprocessing_options choice="binary"/>
+			<listing_printing_frequency>1</listing_printing_frequency>
+			<postprocessing_frequency>10</postprocessing_frequency>
 			<probe_recording_frequency>1</probe_recording_frequency>
+			<fluid_domain status="on"/>
+			<domain_boundary status="off"/>
 			<probe name="1" status="on">
 				<probe_x>0.010025</probe_x>
 				<probe_y>0.01534</probe_y>
@@ -166,22 +175,53 @@
 			</probe>
 		</output>
 		<time_parameters>
-			<property label="Courant nb" name="courant_number"/>
-			<property label="Fourier nb" name="fourier_number"/>
+			<property label="Nb Courant" name="courant_number"/>
+			<property label="Nb Fourier" name="fourier_number"/>
 			<time_step_ref>1</time_step_ref>
-			<iterations>100</iterations>
+			<iterations>10</iterations>
 			<time_passing>1</time_passing>
+			<thermal_time_step status="on"/>
+			<zero_time_step status="off"/>
+			<property label="pdtlocal" name="local_time_step"/>
 			<max_courant_num>20</max_courant_num>
 			<max_fourier_num>60</max_fourier_num>
 			<time_step_min>0.01</time_step_min>
 			<time_step_max>70</time_step_max>
 			<time_step_var>0.1</time_step_var>
-			<thermal_time_step status="on"/>
-			<zero_time_step status="off"/>
-			<property label="loc.time" name="local_time_step"/>
 		</time_parameters>
 		<steady_management status="off"/>
 		<time_averages/>
+		<profiles/>
 	</analysis_control>
-	<calcul_management/>
+	<calcul_management>
+		<start_restart>
+			<restart status="off"/>
+			<frozen_field status="off"/>
+		</start_restart>
+		<integer_user_array>
+			<ncelet>0</ncelet>
+			<nfac>0</nfac>
+			<nfabor>0</nfabor>
+			<dimless>0</dimless>
+		</integer_user_array>
+		<real_user_array>
+			<ncelet>0</ncelet>
+			<nfac>0</nfac>
+			<nfabor>0</nfabor>
+			<dimless>0</dimless>
+		</real_user_array>
+		<integer_work_array>
+			<ncelet>0</ncelet>
+			<nfac>0</nfac>
+			<nfabor>0</nfabor>
+			<dimless>0</dimless>
+		</integer_work_array>
+		<real_work_array>
+			<ncelet>0</ncelet>
+			<nfac>0</nfac>
+			<nfabor>0</nfabor>
+			<dimless>0</dimless>
+		</real_work_array>
+	</calcul_management>
+	<lagrangian model="off"/>
 </Code_Saturne_GUI>
