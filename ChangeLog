@@ -1,4 +1,10 @@
 * 29/07/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a spurious copy/paste un the runcase(s) scripts.
+  modified scripts:
+    bin/runcase.in
+    bin/runcase_coupling.in
+
+* 29/07/2009 - David Monfort <david.monfort@edf.fr>
   Tagging version 2.0-beta2
 
 * 29/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>

@@ -609,7 +609,6 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
       elif [ $varb = ctwava ] ; then
         vara=ctwamo
       elif [ $varb = rayava ] ; then
-      elif [ $varb = rayava ] ; then
         vara=rayamo
       elif [ $varb = lagava ] ; then
         vara=lagamo
