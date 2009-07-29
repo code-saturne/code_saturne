@@ -128,12 +128,28 @@ if test "x$blas" = "xtrue" ; then
     # Fortran libraries, and header is for C. Test library (link) first,
     # as header is only useful if library is present.
 
+    if test "x$BLAS_CPPFLAGS" = "x" ; then
+      if test "x$cs_ibm_bg_type" = "xL" ; then
+        BLAS_CPPFLAGS="-I/opt/ibmmath/essl/4.2/include"
+      elif test "x$cs_ibm_bg_type" = "xP" ; then
+        BLAS_CPPFLAGS="-I/opt/ibmmath/essl/4.4/include"
+      fi
+    fi
+
+    if test "x$BLAS_LDFLAGS" = "x" ; then
+      if test "x$cs_ibm_bg_type" = "xL" ; then
+        BLAS_LDFLAGS="-L/opt/ibmmath/essl/4.2/lib"
+      elif test "x$cs_ibm_bg_type" = "xP" ; then
+        BLAS_LDFLAGS="-L/opt/ibmmath/essl/4.4/lib"
+      fi
+    fi
+
     AC_LANG_PUSH([Fortran])
     
     if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
-      if test "x$cs_ibm_bg_type" != "x" ; then
-        BLAS_LIBS="" # Already set in cs_auto_flags so as to group with other options
+      if test "x$cs_ibm_bg_type" = "xP" ; then
+        BLAS_LIBS="-lesslsmpbg -lesslbg"
       else
         BLAS_LIBS="-lesslsmp"
       fi
@@ -153,10 +169,10 @@ if test "x$blas" = "xtrue" ; then
     if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
                                           # or explicitely specified libs second
 
-      if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
+      if test "x$cs_ibm_bg_type" != "x" ; then
+        BLAS_LIBS="-lesslbg"
+      elif test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
         BLAS_LIBS="$with_blas_libs"
-      elif test "x$cs_ibm_bg_type" != "x" ; then
-        BLAS_LIBS="" # Already set in cs_auto_flags so as to group with other options
       else
         BLAS_LIBS="-lessl"
       fi
@@ -181,7 +197,7 @@ if test "x$blas" = "xtrue" ; then
 
       CPPFLAGS="${CPPFLAGS} ${BLAS_CPPFLAGS}"
 
-      AC_MSG_CHECKING([for smp ESSL BLAS headers])
+      AC_MSG_CHECKING([for ESSL BLAS headers])
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <essl.h>]],
                         [[ ddot(0, 0, 0, 0, 0); ]])],
                         [ AC_DEFINE([HAVE_ESSL_H], 1, [ESSL BLAS headers])

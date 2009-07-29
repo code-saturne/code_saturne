@@ -323,13 +323,13 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       # Default compiler flags
       cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
       if test "$cs_ibm_bg_type" = "L" ; then
-        cppflags_default="-I/opt/ibmmath/essl/4.2/include -I/bgl/BlueLight/ppcfloor/bglsys/include"
+        cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
         cflags_default="-g -qmaxmem=-1 -qarch=440d -qtune=440"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg=""
       elif test "$cs_ibm_bg_type" = "P" ; then
-        cppflags_default="-I/opt/ibmmath/essl/4.4/include -I/bgsys/drivers/ppcfloor/comm/include"
+        cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
@@ -832,8 +832,8 @@ if test "$cs_ibm_bg_type" = "L" ; then #  For Blue Gene/L
   bg_sys_libs="-lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
   bg_trace="/bgl/local/lib/libmpitrace.a"
 
-  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib -L/opt/ibmmath/essl/4.2/lib ${bg_sys_ldflags}"
-  libs_default="-lmass -lmassv -lesslbg ${bg_trace} ${bg_sys_libs}"
+  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib ${bg_sys_ldflags}"
+  libs_default="-lmass -lmassv ${bg_trace} ${bg_sys_libs}"
   cs_disable_shared=yes
 
 elif test "$cs_ibm_bg_type" = "P" ; then #  For Blue Gene/P
@@ -842,8 +842,8 @@ elif test "$cs_ibm_bg_type" = "P" ; then #  For Blue Gene/P
   bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -lSPI.cna -lrt -lpthread"
   bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
 
-  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib -L/opt/ibmmath/essl/4.4/lib ${bg_sys_ldflags}"
-  libs_default="-lmass -lmassv -lesslsmpbg -lesslbg ${bg_trace} ${bg_sys_libs}"
+  ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib ${bg_sys_ldflags}"
+  libs_default="-lmass -lmassv ${bg_trace} ${bg_sys_libs}"
   cs_disable_shared=yes
 
 fi

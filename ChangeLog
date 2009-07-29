@@ -1,3 +1,9 @@
+* 29/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix BLAS ESSL link on BlueGene systems.
+  modified scripts:
+    config/cs_auto_flags.sh
+    config/cs_blas.m4
+
 * 29/07/2009 - David Monfort <david.monfort@edf.fr>
   Fix a spurious copy/paste un the runcase(s) scripts.
   modified scripts:
